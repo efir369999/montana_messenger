@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Join the beta
+    url: https://testflight.apple.com/join/BHaSYWkz
+    about: Public TestFlight link for iPhone (iOS 17.2 or later).
+  - name: Security reports
+    url: mailto:contact@montana.quest
+    about: Please report weaknesses by e-mail, not in a public issue.
