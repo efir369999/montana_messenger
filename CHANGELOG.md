@@ -1,9 +1,13 @@
 # Changelog
 
-Beta builds published on the public TestFlight link. Version and build number are those
-shown in Settings → About.
+Version and build number are those shown in Settings → About. Builds before 1.0 were
+published on the public TestFlight link only.
 
-## 0.313 (1344) — 2026-09-05
+## 1.0 (1344) — 2026-09-06
+
+The first release. Build 1344 is the release build: the App Store (United States) and
+TestFlight carry the same binary under version 1.0.
+
 
 - Forwarding now delivers: a forwarded text, photo, video, voice message or document rides
   the same road as a sent one and reaches the recipient. Earlier builds put the copy into
