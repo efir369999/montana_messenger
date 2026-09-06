@@ -16,7 +16,7 @@ protocol; the reference client is developed at [montana.quest](https://montana.q
 | Platform | iPhone, iOS 17.2 or later |
 | Distribution | TestFlight, public link |
 | Link | https://testflight.apple.com/join/BHaSYWkz |
-| Current release | 1.0 (build 1344) |
+| Current release | 1.0 (build 1344) — App Store, in review; TestFlight 1.0 (build 1348) |
 | Feedback | GitHub Issues in this repository, or contact@montana.quest |
 | Privacy policy | https://montana.quest/privacy/ |
 
@@ -89,9 +89,9 @@ an issue.
 ## Known limits of this beta
 
 - History lives on the device only and is never sent to a server or a platform backup.
-  Deleting the application erases the history on that device; the 24 words bring back the
-  identity and the address, not the conversations. Replication to a second device of the
-  same person exists in the code and is not yet verified live.
+  Deleting the application erases the history on that device. From build 1348, "Forget this
+  device" keeps the sealed archive and the same 24 words bring the conversations back; a
+  conversation whose key was lost before that build returns as readable history only.
 - Groups exist on the device only; a group message is not yet carried to the other members.
 - Two phones that are both behind carrier NAT, without IPv6 and without a forwarded port,
   cannot reach each other directly and talk through the nodes.

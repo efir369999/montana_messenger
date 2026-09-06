@@ -3,6 +3,18 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1348) — 2026-09-06, TestFlight
+
+- The 24 words open your history: the sealed archive on the device is read back into the
+  chats after "Forget this device" and a sign-in with the same words; conversations return with
+  their names and can be answered. Each conversation carries its key and the correspondent's
+  name sealed beside its letters, so a second device of the same person receives them too.
+- A conversation whose key was lost before this build comes back as "Recovered history":
+  readable, not answerable.
+- Share a contact: a correspondent's one-day code can be passed on from their profile, the way
+  you share your own; it reaches you when either side opens the chat and stays shareable for a day.
+- "Forget this device" says exactly what it does; deleting the app erases the history as well.
+
 ## 1.0 (1344) — 2026-09-06
 
 The first release. Build 1344 is the release build: the App Store (United States) and
