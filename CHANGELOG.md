@@ -3,7 +3,39 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1391) — 2026-09-08, TestFlight
+
+- Delivery status in words: "Sent", "Delivered" and "Read" stand under your last message
+  instead of checkmarks in the bubble. "Read" is sent only while the chat is on the
+  correspondent's screen with the app in the foreground; "mark as read" from the chat list no
+  longer reports "read" to the other side.
+- No more false "Retry" on a delivered message: the red mark now needs evidence — the node's
+  mailbox is asked before a message is painted unsent, and a message waiting for its receipt
+  asks the mailbox on every attempt.
+- Long messages and forwarded files reach every build: the two storage nodes answer for each
+  other when a file lies on the other one; a raw service reference is never shown or sent as
+  text, and rows left by older builds are healed when the chat opens.
+- Ringback tells the truth: soft searching pips until the other phone confirms ringing, then
+  the ring tone; captions "Calling…" → "Ringing…" → "Connecting…".
+- Music player: a full page with the chat's music as a queue, search across every chat's music,
+  a web search that opens inside the app and saves the found file to Saved Messages; the page
+  folds into a bar over the chat and the chat list; a music button beside the chats title.
+- Business card: a gold plate written in the attachment sheet, sent as a sticker, filled in
+  live on the correspondent's screen while it is typed.
+- Saved Messages: a note to yourself never shows "Retry"; tags (your reactions) and source
+  chats narrow the search; long-press the send arrow for "Remind me" — the system rings at
+  the chosen time even with the app closed.
+- Chat profile: "Links" and "Music" panes beside media, video, files and voice; links open
+  inside the app.
+- The invitation link is an https link everywhere; opening it shows the inviter's photo at once.
+- Sharing from other apps keeps the file's own name; the share sheet lists chats in the same
+  order as the chat list.
+- Avatars are hexagons everywhere, including the photo crop.
+
 ## 1.0 (1348) — 2026-09-06, TestFlight
+
+Submitted to the App Store (United States) on 2026-09-08 in place of build 1344, after passing
+the TestFlight beta review.
 
 - The 24 words open your history: the sealed archive on the device is read back into the
   chats after "Forget this device" and a sign-in with the same words; conversations return with
