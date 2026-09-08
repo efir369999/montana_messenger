@@ -3,6 +3,19 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1403) — 2026-09-08, TestFlight
+
+- Delivery receipts and "Read" no longer get stuck between two phones in a chat: the node keeps
+  every letter even when a pair's ring budget is spent (only the ring is dosed), and a phone with
+  the chat open is told at once that its mailbox has something; a newer read mark replaces the
+  queued one.
+- No clock inside the bubble: the three dots under your last message carry the state; only the
+  red mark of a failed send stays (tap to retry).
+- A close button in a hexagon over any opened file.
+- QR code with the time symbol in a hexagon; the chats search bar and the profile picture wear
+  the same shapes; the share sheet shows a correspondent's new photo at once.
+- The invitation page offers the TestFlight beta to a phone without Montana.
+
 ## 1.0 (1400) — 2026-09-08, TestFlight (beta review approved); submitted to the App Store the same evening
 
 - Privacy on the network side: the storage nodes keep no address logs any more — the reverse
