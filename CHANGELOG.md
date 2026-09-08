@@ -3,6 +3,20 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1400) — 2026-09-08, TestFlight
+
+- Privacy on the network side: the storage nodes keep no address logs any more — the reverse
+  proxy and relay journals that recorded who asked what and when are off, and the remaining
+  journals live two to three days. Push notifications no longer carry a conversation tag in the
+  part Apple can read; each receiver gets its own thread tag.
+- One name per message: every row carries its own name from birth, quotes and pins follow it,
+  and an old history is healed once when a chat opens (a message stored twice under one name
+  is shown once).
+- A media message that lost the three-second push race is now boxed on the node like any
+  letter — it used to stay "sending" while the two texts beside it arrived.
+- Chats header: the title plate and the corner buttons are octagons, the player button a hexagon.
+- Node: the mailbox keeps a waiting letter for one day; abandoned upload chunks are swept again.
+
 ## 1.0 (1391) — 2026-09-08, TestFlight (beta review approved); submitted to the App Store the same day
 
 - Delivery status in words: "Sent", "Delivered" and "Read" stand under your last message
