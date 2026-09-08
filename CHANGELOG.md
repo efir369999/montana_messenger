@@ -3,6 +3,14 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1404) — 2026-09-08, TestFlight
+
+- A small photo no longer crawls behind the app's own noise: a file already on the node is not
+  uploaded again (the profile picture used to be re-sent on every retry, twelve times a minute,
+  and a 221 KB photo took nineteen seconds beside it); after a local socket fault a door is
+  knocked again after the fast step, not in a loop; the diaries-only door is no longer handed
+  out as a network door.
+
 ## 1.0 (1403) — 2026-09-08, TestFlight
 
 - Delivery receipts and "Read" no longer get stuck between two phones in a chat: the node keeps
