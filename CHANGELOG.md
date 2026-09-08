@@ -3,7 +3,7 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
-## 1.0 (1400) — 2026-09-08, TestFlight
+## 1.0 (1400) — 2026-09-08, TestFlight (beta review approved); submitted to the App Store the same evening
 
 - Privacy on the network side: the storage nodes keep no address logs any more — the reverse
   proxy and relay journals that recorded who asked what and when are off, and the remaining
