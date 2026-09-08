@@ -3,7 +3,7 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
-## 1.0 (1391) — 2026-09-08, TestFlight
+## 1.0 (1391) — 2026-09-08, TestFlight (beta review approved); submitted to the App Store the same day
 
 - Delivery status in words: "Sent", "Delivered" and "Read" stand under your last message
   instead of checkmarks in the bubble. "Read" is sent only while the chat is on the
