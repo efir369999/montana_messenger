@@ -3,6 +3,22 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1449) — 2026-09-10, TestFlight
+
+- Chats: the logo folds and unfolds its bar and the search as one; a pull on the feed refreshes
+  with the Montana coin spinning; the crest stands behind the conversations; the compose button
+  wears the bar's glass; the native skin is the default for everyone. The list no longer crashes on scrolling (a layout recursion of the
+  previous builds is gone) and builds of one screen compile in a minute and a half after the
+  source was cut into screen files.
+- Pictures pasted into the message field stand above it as attachments and go out as photos;
+  a see-through picture is sent as a sticker.
+- The photo viewer pages through every photo of the conversation; the strip at the bottom is a
+  cover flow — the centred cover is the page; one tap hides the strip and the button.
+- Calls: renegotiation is idempotent (a duplicate offer or answer from the second signal road is
+  buried), so turning video on no longer stalls for a minute; the battery, the charger, Low
+  Power Mode and the thermal state are measured during a call and drive a power floor on the
+  video ladder — half resolution and 15 fps under pressure, the voice untouched.
+
 ## 1.0 (1430) — 2026-09-10, TestFlight
 
 - The Chats tab wears one glass bar, the mirror of the tab bar below: seven glyphs on one plate
