@@ -3,6 +3,21 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1430) — 2026-09-10, TestFlight
+
+- The Chats tab wears one glass bar, the mirror of the tab bar below: seven glyphs on one plate
+  (menu, player, links, logo, photos, video, globe), and a glass puck that flows to the glyph you
+  tap. The search field is the first row of the list and scrolls with it; while it holds focus
+  the results stand under it.
+- Two new feeds: every link and every photo of your conversations as a still of that minute —
+  five messages before, three after, drawn with the chat's own bubbles — swiped vertically like
+  the video feed; a tap under the still opens the chat at that message.
+- A sent message floats from the field into its bubble at one size, without widening or
+  narrowing on the way; each skin keeps its own lift.
+- Links are white and underlined under the native skin; round video notes arrive round and open
+  full width over the chat, then fold into a video dock; voice messages carry the waveform and
+  1x / 1.5x / 2x speed; the music player is music only, with a playlist on a swipe up.
+
 ## 1.0 (1404) — 2026-09-08, TestFlight
 
 - A small photo no longer crawls behind the app's own noise: a file already on the node is not
