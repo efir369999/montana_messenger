@@ -3,6 +3,28 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1470) — 2026-09-11, TestFlight
+
+- Chats: the refresh coin has its own pull — both faces turn with the finger, a full turn presses
+  the logo, and every pull checks the mailbox in the background. Status dots stand left of the hour
+  on the row, the same three as under your last bubble; the name and the preview sit centred between
+  the row lines. Saved Messages wears your own face, shows no status and can no longer fall into
+  "Retry".
+- Presence: a peer's last time online is learned without opening the chat (the node answers one
+  question for every peer at once); anything under a minute reads as one minute.
+- Bubbles: translucent by the dark reference — theirs dark grey, yours blue, white text on both,
+  the fill as see-through as the slider allows by default; one default for every message style,
+  and the appearance preview draws exactly your own settings. One text bubble holds 4500 characters.
+- The system text size changes the letters of a message and nothing else: menus, buttons,
+  reactions, the call screen and the photo viewer keep their shape at every setting.
+- Media: a save circle to the right of their photo or video — saving does not open the picture;
+  a green diskette marks a saved file. Photos and videos share one gallery with the strip, the
+  play button in the middle of the frame; the photo feed uses the video feed's format; links are a
+  list in time order.
+- Bubble menu: the status of your letter and the time it reached it stand above the actions.
+- Calls: the Calls tab wears the Chats tab's style and is built from one call log fed by the
+  native recents and the chats; a battery light replaces the saving notice.
+
 ## 1.0 (1449) — 2026-09-10, TestFlight
 
 - Chats: the logo folds and unfolds its bar and the search as one; a pull on the feed refreshes
