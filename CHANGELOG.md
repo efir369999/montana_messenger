@@ -3,6 +3,28 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1490) — 2026-09-12, TestFlight
+
+- Calls: a call no longer drops half a minute in. A phone could receive its own ring letter back
+  from the node and answer it with a hang-up sent to the other side; now the node never wakes the
+  sender of a word, the phone buries a call word carrying its own seed, and the ring letter leaves
+  the queue the moment the other phone rings. The caller's name is learned in one place — the
+  branch that accepts the call — so a returned echo can no longer rename a contact.
+- Calls: the call record tells the road from the person — the time from the answering hand to
+  the first media path stands apart from the ringing; every end is named (the lock-screen End
+  too); the battery is read for voice calls as well.
+- Album: the pages are the system's own paging — the picture follows the finger and settles;
+  the album opens on the photo you tapped and the strip below stands on it; a tap at the left or
+  right edge turns exactly one page, and a tap that lands mid-turn is taken right after it; a
+  button bottom left returns to the message in the chat; closing is a plain pull, no fly-back.
+- Attachments: tapping a photo in the picker opens the album from below with the caption field
+  and the send button under it — pick, write and send without going back to the grid; sending
+  with nothing picked sends the page on screen.
+- The app icon and the logo carry the gold time symbol, centred on its trunk.
+- Diagnostics: a death of the app on screen is judged for a cause (a reinstall, a reboot, a
+  stalled main thread, a memory warning) instead of a bare verdict; a main-thread reading that
+  crossed sleep is thrown away and says so.
+
 ## 1.0 (1470) — 2026-09-11, TestFlight
 
 - Chats: the refresh coin has its own pull — both faces turn with the finger, a full turn presses
