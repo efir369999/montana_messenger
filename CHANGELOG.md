@@ -3,6 +3,28 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1496) — 2026-09-13, TestFlight
+
+- Calls: the ring reaches the other phone by every road for the whole life of a call. The caller
+  knocks every five seconds until the other phone says it is ringing; a call lives ninety seconds
+  on both phones and at the wake service alike, one number; a wake delayed longer than that never
+  rings as a ghost.
+- Calls: the second bell. When the wake was accepted but the other phone did not say "ringing"
+  within ten seconds, the invitation arrives as an ordinary notification — "incoming call, tap to
+  answer"; the tap opens the app and the call rings natively while it is still alive. The native
+  ring, the missed-call word and the end of the call take that notification down.
+- Calls: a call carries one name on every road (the wake, the letter, the live channel), so a late
+  copy of an invitation cannot ring after the call has ended, and a call born on the live channel
+  is no longer lost by the node queue; an invitation from an older build that came without the
+  name is kept and adopted when the named one arrives.
+- Calls: the phone knocks the doors alive for it first and stands one attempt on each; "the other
+  phone is not set up for calls" is said only when every wake service says so; the relay pass is
+  renewed before a call when it nears its end.
+- Calls: the call record names whose side a missed call is on — a wake accepted by Apple without
+  a ring word, no road to the network, no registration, the other person's hand, the media path.
+- Diagnostics: the notification extension stamps the moment it drew breath, so the delivery time
+  of a push is measurable from the diaries.
+
 ## 1.0 (1490) — 2026-09-12, TestFlight
 
 - Calls: a call no longer drops half a minute in. A phone could receive its own ring letter back
