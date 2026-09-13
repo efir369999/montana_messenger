@@ -3,6 +3,24 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1511) — 2026-09-13, TestFlight
+
+- Calls: a call on a cellular network connects in about a second where it could take half a minute.
+  The relay a phone is given is named by the address family that phone actually holds — a name
+  carrying an address of a family the network does not route is a wall, and the media engine spent
+  its whole retransmission budget on it before reaching the living address (measured: twenty of a
+  call's twenty-four seconds). The phone refuses such an address on its own side as well.
+- Calls: the answer takes the road the invitation came by. An invitation rides inside the wake and
+  is in hand the instant the phone stirs, while the answer used to wait for a signalling lane the
+  answering phone still had to build from nothing after sleep. It now rides the wake back, and only
+  to a caller whose build declares it reads one.
+- Calls: a call owns the radio. While a call is being set up or held, the phone knocks the doors of
+  the correspondent being called and of no one else, instead of walking the dead addresses of every
+  correspondent it knows.
+- Calls: a ring raised by the wake carries its own end — it cannot outlive the ninety seconds of the
+  call — and the signalling lane stays awake for as long as the phone rings, so a hang-up is
+  collected at once instead of lying on the node.
+
 ## 1.0 (1507) — 2026-09-13, TestFlight
 
 - Calls: a ringing phone stops the moment the caller hangs up. A ring raised by the wake carries its
