@@ -3,6 +3,36 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1507) — 2026-09-13, TestFlight
+
+- Calls: a ringing phone stops the moment the caller hangs up. A ring raised by the wake carries its
+  own end — it cannot outlive the call's ninety seconds — and the signalling lane stays awake for as
+  long as the phone rings, so the hang-up is collected at once instead of lying on the node.
+- Calls: ringback starts in seconds instead of a dozen. The phone knocks the doors it has proof of
+  first, and a standing question leaves a door the moment that door falls silent; a call's birth
+  and a network change cut it by the same one move.
+- Calls: the camera of a person who answers from the lock screen comes up seconds sooner — a camera
+  the system holds is awaited and then tested, never torn down against the system's own resume.
+- Calls: no line under the name on the call screen. The status line and the light say what the call
+  is doing; every cause behind a failure is written to the diaries instead of the screen.
+- Notifications: one call shows exactly one notification. A missed call is announced loudly only to
+  a phone that never rang; the second bell waits the ten seconds it names; the bell and the
+  missed-call word share one place on the screen, so the newer replaces the older; and a
+  notification left over from a call the phone has already served is taken down by itself.
+- Notifications: when the extension cannot run, the words a phone shows are in its own language and
+  true to the event — Incoming call, Missed call, New message — resolved from the phone's own
+  catalogue. A build that does not hold those words is sent the wording it has always been sent.
+- Messages: editing a message changes it on the other person's screen too, with an edited mark. A
+  word off the wire can never rewrite one's own letters, and an edit that outran its letter is
+  applied the moment the letter lands.
+- Messages: every rung of the delivery ladder carries its word — Sending, Sent, Delivered, Read,
+  Not sent. Dots without a word are gone.
+- Sharing: the share sheet asks the door that answered last and holds one deadline instead of
+  standing on a dead one; a link shared from any app arrives as a link in a text bubble, never as a
+  text file.
+- Presence: a locked phone is no longer shown as being in the chat — only a live word lights
+  presence — and leaving a chat reaches the other side even as the app goes to the background.
+
 ## 1.0 (1496) — 2026-09-13, TestFlight
 
 - Calls: the ring reaches the other phone by every road for the whole life of a call. The caller
