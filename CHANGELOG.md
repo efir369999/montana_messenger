@@ -3,6 +3,17 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1556) — 2026-09-14, TestFlight
+
+- Voice message style is per side. On the style screen a tap on either orb chooses the side you
+  edit — its colour (or the orb's own colours), its bubble size and its motion; every knob below
+  applies to the chosen side alone. Voice bubbles are 15 % smaller by default, the play glyph
+  inside them reads at a glance.
+- Playing a voice, or tapping any control of a bubble, no longer folds the keyboard: the feed's
+  background tap is a background tap and never takes a touch a bubble's own control claimed.
+- The music page opens on the newest track with the true count of the library; the play button
+  starts a track standing ready.
+
 ## 1.0 (1553) — 2026-09-14, TestFlight
 
 - Voice messages: the liquid orb. A voice message is an orb in the feed — the peer's in gold, your
