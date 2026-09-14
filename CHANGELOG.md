@@ -3,6 +3,35 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1553) — 2026-09-14, TestFlight
+
+- Voice messages: the liquid orb. A voice message is an orb in the feed — the peer's in gold, your
+  own in the orb's own colours — with a play glyph inside it and the duration under it. A hold on
+  the microphone records: the feed blurs, the orb breathes in the middle of the visible feed with
+  the seconds above it, the button under the finger swells into a gold shape that lives with the
+  voice. Slide left to cancel; carry the button up to the lock and let go to record hands-free —
+  the swollen button stays, sends on a tap, a pause stands above it. The keyboard stays exactly
+  where it was through all of it; the swollen button is drawn above it.
+- Voice player: one folded player bar for music and voice, above the message field in a chat and
+  over the list outside it — the slider on top, the speaker's name, speed by tap (1 → 1.5 → 2),
+  close by the system's own button. Voices play one after another by themselves. Raise the phone
+  to the ear and the voice moves to the receiver; when the last voice of a correspondent ends at
+  the ear, a tone sounds and a reply records at the ear — take the phone away and the tape stands
+  on screen, to send or to bin.
+- Voice quality: the system's own voice processing (noise suppression, echo cancellation, gain) at
+  24 kHz mono AAC — clear speech at four kilobytes a second, a tenth of the old weight.
+- Appearance → Voice message style: a screen with both orbs live, a colour for each side (or the
+  orb's own colours) and the motion of the ball — speed, liquid, zoom, exposure, glass, colour
+  fringe, sheen.
+- Live chat: the privacy switch is one switch. It gates both what you send and what you show, so
+  live typing is seen only when both people keep it on; off, whatever stood on the other screen is
+  ended at once. Playing a voice, or tapping any control of a bubble, no longer folds the keyboard.
+- Compose bar: the platform's own field height (36 pt) for «+», the field and the microphone;
+  the field lives through a recording so the keyboard never moves under the finger.
+- Delivery: a burst of voice notes to a correspondent whose phone is asleep no longer queues
+  behind the first note's receipt — the store gate counts bytes, not letters (8 MiB per
+  conversation; a big video still goes alone).
+
 ## 1.0 (1511) — 2026-09-13, TestFlight
 
 - Calls: a call on a cellular network connects in about a second where it could take half a minute.
