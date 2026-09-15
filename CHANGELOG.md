@@ -3,16 +3,40 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1613) — 2026-09-15, TestFlight and App Store (resubmitted)
+
+- Round video messages. Hold the camera button to record a circle: the feed blurs and dims, the
+  circle stands at the centre of the visible feed at the screen's width. Flip the camera, turn on
+  the fill light, or record both cameras at once — the front camera rides as a round badge over the
+  circle and can be dragged to any corner. Pinch to zoom, pause, slide up to lock and record
+  hands-free; up to 6:39. A note plays in the chat like a voice message: it flies out of its bubble
+  to the screen's width, the player bar carries it (seek, speed, close) and it flies back on close.
+  The receiver sees exactly what the sender saw, badge included.
+- Block, second pass. A blocked person is refused at every door — the network door, the call lane
+  and the VoIP ring; their subscriptions are withdrawn from the nodes so no push is born; a letter
+  met while blocked is buried for good and an unblock resurrects nothing. The profile and the list
+  share one confirmation sheet.
+- Calls. The audio button is the system's route menu (speaker, phone, AirPods, car); the
+  loudspeaker is offered only from the earpiece; the fold arrow and camera flip wear the chat's
+  glyphs.
+- Delivery. A word-sized letter (a voice, a photo under 1 MiB) never waits behind a large cargo.
+- Player bar. A tap on a voice or a note jumps to its bubble; a list row shows the voice's orb or
+  the note's poster.
+- Profile. A hold opens the chat's menu; share a contact from every profile; one delete road for
+  the chat and the profile.
+- Safety. One address for questions and reports: contact@montana.quest (Settings > Ask a
+  question, Terms of Use).
+
 ## 1.0 (1561) — 2026-09-15, TestFlight
 
 - Safety. Terms of Use are shown once after the identity is created and must be agreed to before
   the first message; they stay in Settings > Terms of Use. Montana has no tolerance for
   objectionable content or abusive users, and the app carries the tools: a filter that folds
   incoming messages carrying objectionable words (Privacy, on by default; a tap unfolds); Report on
-  any received message or contact (a reason, an optional block, a mail to abuse@montana.quest);
+  any received message or contact (a reason, an optional block, a mail to contact@montana.quest);
   Block enforced on every road — a blocked person can neither reach you nor ring, and shows no
-  banner; Settings > Privacy > Blocked users; Settings > Ask a question shows the real support and
-  abuse addresses with one-tap mail. Reports are reviewed within 24 hours; an address barred after a
+  banner; Settings > Privacy > Blocked users; Settings > Ask a question shows the real contact address
+  with one-tap mail. Reports are reviewed within 24 hours; an address barred after a
   report is refused by every phone.
 - Photos with a caption: the bubble takes the caption's own width, as a text bubble would; a
   picture narrower than the bubble stands in the middle on a mirrored blur of itself.
