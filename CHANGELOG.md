@@ -3,6 +3,23 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1561) — 2026-09-15, TestFlight
+
+- Safety. Terms of Use are shown once after the identity is created and must be agreed to before
+  the first message; they stay in Settings > Terms of Use. Montana has no tolerance for
+  objectionable content or abusive users, and the app carries the tools: a filter that folds
+  incoming messages carrying objectionable words (Privacy, on by default; a tap unfolds); Report on
+  any received message or contact (a reason, an optional block, a mail to abuse@montana.quest);
+  Block enforced on every road — a blocked person can neither reach you nor ring, and shows no
+  banner; Settings > Privacy > Blocked users; Settings > Ask a question shows the real support and
+  abuse addresses with one-tap mail. Reports are reviewed within 24 hours; an address barred after a
+  report is refused by every phone.
+- Photos with a caption: the bubble takes the caption's own width, as a text bubble would; a
+  picture narrower than the bubble stands in the middle on a mirrored blur of itself.
+- Voice: the line under the orb is symmetric about the orb's centre at any bubble size.
+- Delivery: a burst of media to a sleeping correspondent no longer waits behind the first one's
+  receipt; an upload that never began before the app was killed resumes by itself at launch.
+
 ## 1.0 (1556) — 2026-09-14, TestFlight
 
 - Voice message style is per side. On the style screen a tap on either orb chooses the side you
