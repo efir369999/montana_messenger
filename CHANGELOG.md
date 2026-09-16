@@ -3,6 +3,12 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1614) — 2026-09-16, TestFlight and App Store (resubmitted)
+
+- Round video messages: the bin and the pause of a locked recording are the recorder's own
+  controls above the dim (the bin of 1613 did not answer); leaving the chat ends the recording,
+  and a recording that reaches its length leaves nothing hanging.
+
 ## 1.0 (1613) — 2026-09-15, TestFlight and App Store (resubmitted)
 
 - Round video messages. Hold the camera button to record a circle: the feed blurs and dims, the
