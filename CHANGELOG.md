@@ -3,6 +3,12 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1667) — 2026-09-17, TestFlight
+
+- Chats. A full swipe left to right on a conversation row places the audio call at once, the
+  platform's own full-swipe action; a short swipe still shows the two call tiles. Right to left
+  a full swipe never deletes: the tiles only unfold.
+
 ## 1.0 (1666) — 2026-09-17, TestFlight and App Store (resubmitted)
 
 - Navigation. The tab bar is gone: a side drawer (the face top left, or a swipe from the left
