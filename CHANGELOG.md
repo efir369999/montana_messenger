@@ -3,6 +3,38 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1666) — 2026-09-17, TestFlight and App Store (resubmitted)
+
+- Navigation. The tab bar is gone: a side drawer (the face top left, or a swipe from the left
+  edge — the platform's own, one to one with the finger) holds Contacts, Calls and Settings;
+  Settings open as a sheet with a close cross. The top bar keeps the logo at the centre folded
+  and unfolded; the face appears only on the unfolded bar.
+- The Time Panel. Chats, Contacts and Calls stand under one law: pull the coin to refresh and to
+  unfold the bar with the search; the same search, the same results, on every page. A red badge
+  at the logo (or on the face when unfolded) counts unread chats and missed calls; the drawer's
+  rows carry their own counts.
+- Contacts. The last presence under the name, the freshest first; a tap opens the chat, a hold
+  opens the menu (Write, Profile, calls, Archive, Delete, Block); the page keeps its own pin and
+  archive, apart from the chats'. The share button hands out your link.
+- Calls. The log parts the days like a chat, shows the clock per call, dials back on a tap;
+  a hold offers Select, Delete and Block; selecting shows a bar with the cross, a bin for the
+  chosen and a bin for all. A missed call counts on the Calls page only — never as an unread chat,
+  and never twice.
+- Swipes. On chats, contacts and calls: right for voice and video call, left for the rest — every
+  tile on the same glass. The chats' selection bar has a cross to leave it.
+- Invitations. Two links under the QR code — Permanent (montana.quest/perp/…) and Temporary
+  (montana.quest/temp/…, renews daily). A permanent link never expires and keeps whoever comes by
+  it in your contacts even if the chat is deleted. Share sends the words and the link as two
+  messages. Older links (montana.quest/r/…) keep opening.
+- Saved Messages is always in the list from the first launch and cannot be deleted; with no other
+  chats the code card stands under it.
+- Sound. Voice messages and round video messages record through the plain microphone at normal
+  loudness (the telephone chain with its automatic gain is gone).
+- Share sheet. Everything shared lands in the sender's chat first, then travels; a failed upload
+  is retried by the app instead of being dropped. History is written to a sealed file with a
+  read-back check; a read message no longer comes back unread after a relaunch.
+- Devices. The same build runs on iPhone, iPad and Apple silicon Macs (TestFlight on all three).
+
 ## 1.0 (1614) — 2026-09-16, TestFlight and App Store (resubmitted)
 
 - Round video messages: the bin and the pause of a locked recording are the recorder's own
