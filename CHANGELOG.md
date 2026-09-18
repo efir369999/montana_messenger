@@ -3,6 +3,45 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1745) — 2026-09-19, TestFlight
+
+- Stability. On iPhone 17 the app died when sealing a long letter or when a call came in. The
+  core's randomness self-test measured a fixed piece of work on the device clock; on the A19 the
+  work fit into so few clock steps that the test read every source as dead, cached the refusal
+  and the next draw stopped the app. The sample work now calibrates itself to the measured clock
+  step, a source is called dead only after three widening windows, the self-test remembers only
+  success, the seed is gathered on its own thread before anyone draws and never under a lock,
+  and the diary names what the randomness stands on.
+- Delivery. A door that answers after silence drains the outgoing queue at once; a wake drains
+  it too; a media letter survives a broken upload and rides the drain; an unreadable queue is
+  never overwritten.
+- Media. Pictures picked together stand on one plate with one caption; the picker grid is the
+  platform's collection view — pinch for the columns, a drag from the circle selects; the gallery
+  opens as the platform grid and no longer aborts on a repeated file; a document opens as a page
+  under the platform's viewer and wears the platform thumbnailer's face.
+- Round video notes. Three quality steps in Appearance; the frame's angle is the camera's own;
+  in a dual note the flip swaps the circles; the chat's next note follows by the voice's law.
+- Players. One UIKit slider for every player: the note seeks on the fly, the thumb under the
+  finger is the slider's alone, the bars wear the system's marks.
+- Chat. The back swipe is the platform's screen-edge pan; the keyboard leaves with the screen;
+  the emoji panel has one height; a new row rises into place on a UIKit spring; the bar marks
+  are the system's own glyphs.
+- Profile. The page is the platform's grouped list; the tab strip is UIKit's segmented control
+  in a scroll view; one gallery for pictures, videos and round notes; the edit page is the
+  platform's; text on a photo is read with Live Text.
+- The Time Panel. Left to right: the face, Contacts, Calls, the logo at the centre, Chats, the
+  dynamic glyph (the last chosen of the player and the gallery), the globe. Badges are drawn over
+  the glyphs — unread on Chats, missed on Calls, the sum on the folded logo; the app icon counts
+  missed calls together with unread letters.
+- Names. Your own record of a person stands first everywhere; the peer's word about themselves
+  lives in one slot; the lock screen shows the person's name when the system hides previews (a
+  switch in Notifications).
+- Music. The page rides in the platform's own sheet, folds top-down by the native grab bar and
+  leaves by a swipe.
+- Pages. Settings, profile, network, gallery and music live in one sliding container over their
+  owner and close with the platform's back swipe. Every bar mark stands on a 44-point target and
+  answers at the first touch.
+
 ## 1.0 (1667) — 2026-09-17, TestFlight
 
 - Chats. A full swipe left to right on a conversation row places the audio call at once, the
