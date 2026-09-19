@@ -3,6 +3,18 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1754) — 2026-09-19, TestFlight
+
+- Chat. A hold on a message opens its menu through the platform's own recogniser on the feed,
+  and the hold cancels the touch: a tap and a hold never both fire on one finger. The send
+  button is the platform's tap-or-hold control — a hold opens «Send later» without sending. The
+  play buttons, reactions, emoji keys and stickers are native buttons on full-size targets.
+- Recording. One state with one owner: a locked recording's arrow, pause and bin live where they
+  are drawn and answer on iOS 18 with the keyboard up; a system-taken touch locks the tape, the
+  app folding locks it too.
+- The code page. The face — the photo, or the initial when there is none — under the bar on every
+  phone; the page scrolls; the code is a fixed size.
+
 ## 1.0 (1746) — 2026-09-19, TestFlight
 
 - Voice and video notes. The record button is the platform's own control. On iOS 18 with the
