@@ -3,6 +3,18 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1746) — 2026-09-19, TestFlight
+
+- Voice and video notes. The record button is the platform's own control. On iOS 18 with the
+  keyboard up, releasing the microphone was read as a cancel and the recording was lost (six of
+  six on two phones); the release now decides once, on the dominant direction of the finger —
+  release to send, slide left to cancel, slide up to lock. A recording is never discarded because
+  the system took the touch: it locks and rolls on. A locked recording sends on the first touch of
+  the big button. A press too short for a recording answers with a warning tap and «Hold to record»
+  in the field; a quick tap switches microphone and camera. Every release writes its verdict to
+  the diagnostics diary.
+- The video note's bin, pause, flash, flip and dual-camera controls are native buttons.
+
 ## 1.0 (1745) — 2026-09-19, TestFlight
 
 - Stability. On iPhone 17 the app died when sealing a long letter or when a call came in. The
