@@ -3,6 +3,18 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1802) — 2026-09-21, TestFlight
+
+- The keyboard. The message bar and the letters rise and fall with the keys as one — the
+  keyboard's own spring, no lag and no overlap. Dragging the keyboard down carries the bar frame
+  by frame; a release settles at once. A tap anywhere on the feed folds the keyboard; the play
+  button of a voice and a reaction plate keep it.
+- Reactions. The quick row over a captioned photo or video answers the first tap. The chat list
+  shows a reaction the way the plate under the bubble does — the face of whoever answered, the
+  answer, the letter's words — and keeps it until a newer letter lands.
+- Names and faces. A face set by hand shows in the notification banner and on the call screen
+  too; a contact you renamed keeps your name, whatever the word.
+
 ## 1.0 (1789) — 2026-09-20, TestFlight
 
 - Reactions. The quick row over a captioned photo or video answers the first tap; the row holds
