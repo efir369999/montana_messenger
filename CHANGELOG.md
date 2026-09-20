@@ -3,6 +3,21 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1789) — 2026-09-20, TestFlight
+
+- Reactions. The quick row over a captioned photo or video answers the first tap; the row holds
+  what fits the screen. Your own reaction stays yours after a restart. The plate in Saved
+  Messages wears your face. A photo or video with a caption keeps its shape across rotation.
+- Names and faces. A person's profile is the one source: a changed callsign, name or photo lands
+  in the chat list, the chat header, the reactions, the call screen and the notification banner at
+  once, and a face you set by hand shows there too. A face that went stale while a phone was
+  offline is asked for and re-sent by itself. The edit page offers the original name and a
+  one-tap return to the original photo; a contact you renamed keeps your name. The letter or
+  emoji in a circle is derived from the name, never stored.
+- Saved Messages wears your own face — your photo, or your callsign's emoji.
+- The call screen stays inside the screen on every phone; the avatar crop circle sits on the
+  picture.
+
 ## 1.0 (1754) — 2026-09-19, TestFlight
 
 - Chat. A hold on a message opens its menu through the platform's own recogniser on the feed,
