@@ -3,6 +3,18 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1829) — 2026-09-21, TestFlight
+
+- Media. A received photo or video no longer vanishes from the chat while it loads. A node that
+  is busy for a moment is waited for; «not received» is shown only when every door says the
+  cargo is gone, and even then the bubble stays with a tap to retry. Chunks already downloaded
+  are kept.
+- Live typing. The words of a message that has already landed can no longer linger as a draft
+  bubble with a caret under it.
+- Nodes. A phone asking for chunks that no longer exist no longer spends the download budget of
+  every phone behind the same network exit; a node's momentary refusal is reported as «busy»,
+  never as «gone».
+
 ## 1.0 (1802) — 2026-09-21, TestFlight
 
 - The keyboard. The message bar and the letters rise and fall with the keys as one — the
