@@ -3,6 +3,28 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1860) — 2026-09-22, TestFlight
+
+- The feed. Scrolling a long chat is smooth again: the rows of the feed are built once per change
+  of the letters instead of on every move of the keyboard or every tick of the player, the date
+  formatters live once, and the day pill is read only when the top row changes. The frame meter
+  now names what a late frame was building and who woke the screen.
+- The mini player. One player for a track, a voice and a video note: the play button above «+»,
+  the title plate is the scrubber — grab the edge of the grey fill and drag; a tap on the title
+  opens the page (a track) or jumps to the bubble (a voice, a note). The timer at the right shows
+  the position, or the remaining time after a tap; a voice and a note show the speed instead.
+  Playing a track no longer opens the page by itself.
+- The message field wears the same glass as the mini player's plate.
+- Recording. The bar stays above the keys at the first tape; the live wave follows the loudest
+  slot; the note's buttons stand on the bar's line; recording uses the default audio mode at
+  48 kHz — louder, cleaner voices.
+- Calls. The camera never switches to the back by itself — only by the mark at the top; the
+  top row wears the chat's marks; the self picture stands below the marks and above the buttons.
+- Nodes. The archive key is born once, on its own queue: a voice after a cold start no longer
+  waits seconds for the first append.
+- Notifications. A banner tap opens the chat without the earlier pauses; the twin push rides
+  passive and takes the early «New message» banner down.
+
 ## 1.0 (1829) — 2026-09-21, TestFlight
 
 - Media. A received photo or video no longer vanishes from the chat while it loads. A node that
