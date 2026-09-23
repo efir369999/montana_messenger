@@ -3,6 +3,50 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1909) — 2026-09-23, TestFlight
+
+- Links. A bare address like example.com is recognised among words and opens on the first tap. The
+  link card is seen before the message leaves and inside it — a small picture beside the words or a
+  wide one under them. Settings → Privacy has a switch for link previews, on by default: off, nothing
+  outside is opened and the message carries the bare link.
+- GIFs. Search and send GIFs; the phone asks our own node, never the GIF service itself. A tapped GIF
+  lands in the chat at once and the full one follows; it plays three times when first shown, then on a
+  tap, and a tap stops it. The feed keeps loading as you scroll.
+- Stickers. Cut a sticker out of any photo — the system lifts the subject; keep your own set; a set
+  travels with the stickers that came from it; the ones you used stand at the top of the panel.
+- Voice. Listen to a voice message before sending it.
+- Places. The location button opens a map with the spot and the places around it; a place in a
+  message is drawn as a map and opens its own page.
+- Gallery and the message bar. The attachment gallery is a page of its own and scrolls smoothly; the
+  row of buttons folds into «+» and nothing around the bar jumps.
+- Chat background. A chooser of thumbnails with ten built-in grounds and only the cross and the
+  checkmark; your own photo can be moved, shrunk and enlarged, and the chat wears exactly what the
+  preview showed. The pages' background option is gone.
+- Calls. The name is centred at the top with the timer under it; a long name scrolls; the call's
+  state stands under the top row; the small picture stays clear of the buttons, at the top or the
+  bottom.
+- Copy of your chats. An encrypted copy in your own iCloud, sealed and opened by the same 24 words;
+  you choose which attachments go in; what the screen says about the copy is read from iCloud itself.
+- Network. The P2P tab lists the nodes with a «Use VPN nodes» switch; a media chunk moves on to the
+  next live node when one dies; the VPN list is the system's own, with its swipes.
+- Fixes. A crash around GIFs; the keyboard left hanging over an opened page; several screen freezes
+  measured and cut.
+
+## 1.0 (1870) — 2026-09-22, TestFlight
+
+- Pins. Pin a message for both or for yourself; the pinned message floats under the name, and a pin
+  for both reaches the other side.
+- Replies. The reply and edit plates stand above the field and lead to their message on a tap; the
+  reply swipe works beside the bubble too.
+- Chat background. A chat's own background, chosen from the profile's «More» and seen before it is
+  set; your photo is placed by the finger.
+- The mini player mirrors the message row to the pixel.
+- The chat list says when: the time today, the weekday within the week, the date beyond it.
+- A captioned picture opens only from the picture; a long message opens its menu with every action in
+  view. The profile's four buttons are glyphs only.
+- VPN. A subscription link loads every server of the plan; a plan is a section of its own with its
+  servers, traffic and end date.
+
 ## 1.0 (1860) — 2026-09-22, TestFlight
 
 - The feed. Scrolling a long chat is smooth again: the rows of the feed are built once per change
