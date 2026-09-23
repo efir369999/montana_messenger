@@ -3,6 +3,32 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1915) — 2026-09-23, TestFlight
+
+- Calls. Leave the app during a video call and the other person keeps playing in the platform's own
+  floating window over your other apps, upright or wide as they hold their camera; it needs
+  Settings → General → Picture in Picture → Start PiP Automatically. One tap in Recents starts one
+  call. The camera waits out the system's hold, and a cover stands while your own camera is paused.
+  After every end the system's own list of calls is read, and a call or its audio left behind is
+  ended.
+- Meeting by code. After a scan the other person's name and face appear at once, and the code page
+  closes itself when their first message comes through. The safety-number scan compares only a
+  safety number and says when the two do not match; a denied camera shows its road to Settings.
+- Sharing. With Siri's suggestions for sharing on, the system share sheet offers your Montana chats,
+  and a suggested chat opens the sheet already chosen.
+- Photos under limited access. «All Photos» opens the system's own limited picker; the photos you
+  pick are attached to the message at once and stay in the gallery grid.
+- Round video notes. The cover is the note's own frame at full size, and no ring is drawn around the
+  circle in the chat or while it plays.
+- Lists. Chats, calls and contacts run to the screen's edges; a row is drawn whole and redrawn only
+  when its own values change. A message keeps its own read mark, and the menu marks read and unread
+  both ways. Contacts stand one to one with the chats; the archive row and the stories stay on the
+  Chats page; a name edited from Contacts is kept. GIF and sticker search types on the page.
+- Copy of your chats. The copy carries everything: every setting, the VPN, the people, your name and
+  link, faces, backgrounds and stories. A wait at iCloud is shown as a wait, not a refusal.
+- Fixes. A crash of the camera during a call; the keyboard rising over a page from a stale focus; the
+  call screen shrinking for a keyboard.
+
 ## 1.0 (1909) — 2026-09-23, TestFlight
 
 - Links. A bare address like example.com is recognised among words and opens on the first tap. The
