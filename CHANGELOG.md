@@ -3,6 +3,38 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1921) — 2026-09-24, TestFlight
+
+- Moving between pages. A swipe left or right from the middle of the screen moves between Contacts,
+  Calls, Chats and Music; the page follows the finger and the highlight in the top bar rides with it,
+  and a stroke that lands while the pages still settle continues from where they stand. A chat row's
+  own swipe starts near the screen's edge, and a page opened over the tabs (the archive, a person's
+  page) keeps every swipe of its own.
+- Profile. A short bio and one link of your own, in Profile; the people you write to see them under
+  your name on your page, and «My profile» shows that page as they see it. The photo opens to the full
+  width, closes into a circle as the page scrolls up and fills the screen on a second tap — one
+  drawing for Settings, a person's page and My profile.
+- Music. A Music page in the top bar. The + lends a folder at any depth: the tracks play where they
+  lie, nothing is copied into a chat, and the list stands after every launch. Every row is in the mini
+  player's form, newest first; FLAC covers, names and artists are read; a folder's picture stands in
+  for a missing cover; the platform's scroll bar carries the track's number; the page's search narrows
+  its own tracks. A file iCloud keeps is brought down on play and never opened unasked.
+- Calls. The floating call window closes when you come back to the app. On an iPhone with the Dynamic
+  Island a folded call shows a green bubble behind the clock; a tap on the status bar over the lists
+  returns to the call.
+- Keyboard panel. The emoji, sticker and GIF panel keeps the keys' height when the phone turns, floats
+  on the platform's glass with no ground of its own, and the Emoji tab has the same search line and
+  arrow as the other two.
+- Messages and round notes. A reply of one emoji carries its quote. «Last seen» reads the same on every
+  phone and stands steady. What the content filter hid shows on every tap. A round note records while
+  music plays and sounds whole; the receiver's circle is no longer left blurred; the small circle has no
+  dark rim.
+- Language. Choosing a language in Settings switches the app at once, notifications and sharing
+  included; a system language Montana does not speak gives English.
+- Privacy and photos. No photo prompt when a chat opens; Photos and Contacts stand under Settings →
+  Privacy beside Location, with the system's own words and road. With limited photo access the gallery
+  opens the whole library at once, nothing ticked.
+
 ## 1.0 (1915) — 2026-09-23, TestFlight
 
 - Calls. Leave the app during a video call and the other person keeps playing in the platform's own
