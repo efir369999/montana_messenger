@@ -3,6 +3,42 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1935) — 2026-09-25, TestFlight
+
+- Your page and the wall. Every person's page carries a wall: the people its owner allows write posts
+  with photos, videos and files, a post stands at once as it will be published, each picture in the
+  frame its writer set, and only the wall's owner deletes posts on it. Settings → Privacy has «Who can
+  write on my wall» and «Who can see my wall», Everyone by default. The page is whole and scrolls as
+  one, as the Chats page does: the face is its first row and scrolls away with the posts, and the rows
+  fade into the background at the top and bottom edges. Posts stand in transparent glass bubbles;
+  pictures are sharp on every page, and the Media tab's covers are drawn at the screen's own
+  resolution. «Change page background», above the face in the page editor, sets a background for your
+  page: it is made light at the checkmark, stands behind the whole page, and the people you write to
+  see it on your page. A person's page opens with the face closed into its circle and a tap opens it;
+  «My page» opens from Settings and from the face in the side menu. A bio and a link reach the people
+  you write to with a receipt, as your name does.
+- Names. A name is taken at the network's keeper and read the same way by every node; pzr.me followed
+  by the name is a standing link to your page.
+- Calls. A new call from the same person replaces a stale one, and a phone that no longer has the call
+  says so. A call outlives the app: if iOS ends Montana during a call, the call rejoins when you come
+  back, on either side. The audio button is named by where the sound is — with the phone alone one
+  press moves the sound between the ear and the loudspeaker, with headphones, a car or another device
+  it is the system's route menu; microphone off is shown as the system's own call shows it, and a press
+  is felt. The call holds the phone's sound; an audio call stays upright on a phone, and the proximity
+  sensor is never switched off at the ear. Nothing is drawn behind the clock any more. Screen sharing
+  proves the call's key both ways and keeps its pixels.
+- Chats and presence. One person, one conversation: meeting the same person again continues the old
+  one. An opened chat slides in from the side again. «typing…» lights only when a key is pressed, and
+  «Last seen» reads the same moment on every phone even when a phone's clock is off. A recovered
+  history says so. On iPad a second window no longer takes delivery away from the first. The dual
+  round note keeps its second circle inside the row's margin.
+- Top panel. One highlight under every icon; the panel is liquid glass.
+- VPN. The VPN nodes box is off by default, and calls then use the phone's own network; with the box
+  ticked, calls go through a server checked to carry call packets. The tunnel reconnects by itself
+  through the system's On Demand unless you switch it off, and raises a silent connection again by
+  itself. Subscriptions refresh only on the update button; plans and the hand-added section remember
+  their fold and pin from their menu.
+
 ## 1.0 (1921) — 2026-09-24, TestFlight
 
 - Moving between pages. A swipe left or right from the middle of the screen moves between Contacts,
