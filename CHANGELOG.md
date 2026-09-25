@@ -3,6 +3,29 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1943) — 2026-09-25, TestFlight
+
+- Top panel. The panel's plate is plain liquid glass again: a tap on the folded panel unfolds it
+  exactly as the pull of the coin does. The highlight under the chosen icon rides the unfold with its
+  icon. The leftmost button is the system's list icon, the size of the other icons; it opens the side
+  menu, and your face lives in the menu and on My page. A tap on the logo opens the feed of your
+  people's walls; folding and unfolding stay with the pull down and the coin.
+- Pages under the panel. The pages stay built once looked at, and the two beside the current one are
+  prepared after the launch, so a swipe between pages no longer flickers or hangs; the search row moves
+  with the panel's spring. Glass rows everywhere: the safety screens, both editors and every grouped
+  list stand on one glass plate, and a person's page rows stand on the system's glass as its buttons
+  do. No ring around any face on any page.
+- The wall and the feed. Your wall's posts are the page's own rows; the feed of your contacts' walls
+  lives beside the pages and in the side menu, with Write and its own search. A repost stands under the
+  publishing bar and opens its source and its writer; a repost's comments are its original's; a
+  comment's head is the post's head, with its face. Only contacts may see your wall or write on it; a
+  post can be reported and the wall filtered. A post nobody has answered keeps its one-person question,
+  and its page says whose phone it waits for.
+- Media and chat. A voice message is marked Listened and a round video note Viewed only when actually
+  played. A video up to 40 MB comes sharp, and posters are decoded off the main thread. Nothing heavy
+  runs at the sound of a call.
+- Settings. The settings stand without the face; their cards are on glass.
+
 ## 1.0 (1935) — 2026-09-25, TestFlight
 
 - Your page and the wall. Every person's page carries a wall: the people its owner allows write posts
