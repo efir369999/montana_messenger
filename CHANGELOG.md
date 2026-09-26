@@ -3,6 +3,22 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1963) — 2026-09-26, TestFlight
+
+- Long messages. A message longer than eight lines folds as the system's messages fold it: its first
+  eight lines and a chevron. A tap opens the whole message on a page of its own, with the first line for
+  its title: it scrolls, a part of it can be selected, links open and long words break across lines. A
+  folded message scrolls smoothly on both sides of the chat.
+- Long posts. A post longer than eight lines on the wall and in the feed folds the same way and opens
+  on the same page.
+- Glass. Every liquid glass plate (a message's, a post's, a row's, a card's) is rendered in its own glass
+  container.
+- New contacts. A message from a new contact ends the introduction on any road it came by, so your
+  messages to them go through the node and wake their phone at once.
+- Names and photos. A person's name, photo, bio and page background are on the phone's disk before their
+  arrival is confirmed to the sender: a new photo is no longer lost when the app is closed at that very
+  moment.
+
 ## 1.0 (1960) — 2026-09-26, TestFlight
 
 - App icon. A new icon in the platform's liquid glass: the gold logo on one-tone glass. The classic gold
