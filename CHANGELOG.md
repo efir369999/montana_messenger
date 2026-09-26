@@ -3,6 +3,38 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## 1.0 (1960) — 2026-09-26, TestFlight
+
+- App icon. A new icon in the platform's liquid glass: the gold logo on one-tone glass. The classic gold
+  on black stays to choose in Settings → Appearance → App icon, shown as the icons themselves. The logo in
+  the middle of the top panel stands on the system's glass too.
+- Lists. Chats, contacts and calls stand as one canvas of liquid glass, as the Settings pages do: close to
+  the screen's edges, rounded at the first and last rows, with no dividing lines; calls are grouped by
+  day. Music stands on the same canvas with its thin rows, and so does the playlist. The search results
+  on these pages stand the same way.
+- Messages. A correspondent's bubble is one-tone liquid glass; yours is liquid glass tinted with the
+  system blue, with white words. The delivery status under your messages, the presence under the name in
+  the chat header and the date shown while scrolling are in the system blue; the date sits on glass.
+- Search. The platform's own search bar on every page; its cross closes the search at the first tap.
+  Searching chats no longer freezes the screen, and the pages' search fields no longer fight for the
+  keyboard.
+- Your page. Your page's background stands under every page and every chat without a background of its
+  own; its preview shows your real header and a sample post. The wall's posts are one-tone liquid glass;
+  the buttons of a person's page stand on clear glass.
+- Player. The mini player appears on the feed and keeps a track's place under a voice message, a video
+  note or a recording.
+- Network page. VPN, mesh and nodes stand on the same glass; the chosen server is marked in the system
+  blue.
+- Swipes. No call swipes on the contacts and calls pages: calls stay in the hold menu, and a tap on a
+  call dials back.
+- Fixes. The screen no longer stops responding after Share.
+
+## 1.0 (1949) — 2026-09-25, TestFlight
+
+- Drafts of wall posts and posts on their way are kept across launches. Media plays while it arrives.
+  The gallery and network pages; the settings' background and bar. The tablet's first opening no longer
+  freezes.
+
 ## 1.0 (1943) — 2026-09-25, TestFlight
 
 - Top panel. The panel's plate is plain liquid glass again: a tap on the folded panel unfolds it
