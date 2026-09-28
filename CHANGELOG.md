@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T14:35:31+00:00 — The softened chats ground is drawn once when the ground is set and kept on the disk under what it is made of; every launch after meets it there, drawn by nobody. Copy guard names the cache file as staying.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1972 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
+- **Staged source tree:** `4433d838aa96c7ad32d01ff23e195836db89c36e`. Commit: pending.
+<!-- montana-change {"id": "305b7c98-65f5-4bf5-8a4c-bdb83255a12d", "utc": "2026-09-28T14:35:31+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "The softened chats ground is drawn once when the ground is set and kept on the disk under what it is made of; every launch after meets it there, drawn by nobody. Copy guard names the cache file as staying.", "tree": "4433d838aa96c7ad32d01ff23e195836db89c36e", "parents": ["9854ef564b85b71a6ff851f4efa91a5e924f3e42"], "commit": null} -->
+
 ### 2026-09-28T14:35:02+00:00 — The tunnel lifts its reconnect when the system stops it for an app update: after a reinstall the system no longer raises a tunnel that cannot start before the new app is verified, a verification that needs the network the tunnel holds. Typecheck of the extension clean.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
