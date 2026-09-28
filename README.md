@@ -101,4 +101,8 @@ an issue.
 
 ## Release history
 
-See [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md) for published builds and the timestamped development event log.
+
+Development log updated: **2026-09-28T04:26:34Z**. Latest verified delivery for this work:
+**1.0 (1969), Debug, iOS 26.7 and iOS 18.3**. Follow-up work is in progress;
+this development delivery does not change the public TestFlight build listed above.

@@ -3,6 +3,33 @@
 Version and build number are those shown in Settings → About. Builds before 1.0 were
 published on the public TestFlight link only.
 
+## Development event log
+
+Each contributor records their own events with an actual UTC timestamp, callsign, model,
+build, target OS, status and evidence. A planned build is labelled unassigned until assigned.
+Existing event timestamps remain unchanged; corrections are new events. Unknown model IDs
+and untested outcomes are stated explicitly. Git history preserves the sequence; this log
+is a public demonstration of a time-ordered work record, not a consensus ledger.
+
+### 2026-09-28T04:26:34Z — tasks accepted and delivery correction
+
+- **Callsign:** Codex / chat-motion-audit.
+- **Model:** GPT-6; the exact model variant is not exposed to this session.
+- **Build / OS:** latest verified development delivery 1.0 (1969), Debug, iOS 26.7 and iOS 18.3.
+  The next build is unassigned. This event does not announce a TestFlight release.
+- **Delivery correction:** build 1969 includes message-arrival and reply-return spring settings,
+  bounded history search and extracted chat containers. It does not yet provide spring motion
+  during scrolling. The reported date and status colours still need correction.
+- **Accepted work:** scrolling springs; white date/status text; green live-presence indicators
+  in the chat header, chat/contact avatars and the incoming-message position; voice/video-note
+  buttons and recording controls matching the supplied designs; one send-arrow appearance,
+  larger touch areas and a lightweight sending indicator; audio-session teardown after recording
+  and calls; camera permission, preview and thermal investigation; chat ownership and performance review.
+- **Verification pending:** code commits, artifact contents, a new build and device installation;
+  recording/call/Bluetooth and camera scenarios require device evidence. No unperformed test is claimed.
+
+## Published builds
+
 ## 1.0 (1963) — 2026-09-26, TestFlight
 
 - Long messages. A message longer than eight lines folds as the system's messages fold it: its first
