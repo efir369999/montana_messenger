@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T21:49:25+00:00 — Grouped sidebar and full app library with persistent view choice, contextual pins and Montana icon badges; static checks passed, compilation and installation pending
+
+- **Callsign / model:** Codex / sidebar-alphabetical / GPT-6.
+- **Build / OS:** 1983 source baseline; next artifact unassigned; iOS target 17.2 and later; device validation pending. No new compilation or installation claimed.
+- **Staged source tree:** `f3485079dd5806e637b388764e3142efaaabf5c9`. Commit: pending.
+<!-- montana-change {"id": "85f47767-eab4-4ffa-8bd6-bc181fc922ac", "utc": "2026-09-28T21:49:25+00:00", "callsign": "Codex / sidebar-alphabetical", "model": "GPT-6", "build": "1983 source baseline; next artifact unassigned", "os": "iOS target 17.2 and later; device validation pending", "summary": "Grouped sidebar and full app library with persistent view choice, contextual pins and Montana icon badges; static checks passed, compilation and installation pending", "tree": "f3485079dd5806e637b388764e3142efaaabf5c9", "parents": ["9c2e1d5fba23c4a5b632875c88343e6b7b72f2e8"], "commit": null} -->
+
 ### 2026-09-28T21:37:30+00:00 — checklist: TestFlight 1983 published -- notes, Montana Team and Public Beta, beta review submitted
 
 - **Callsign / model:** Claude / stage/outer-shell (build master, the author's word 28.09) / Claude Fable 5.1.
