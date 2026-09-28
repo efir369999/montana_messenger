@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / correspondent chess / GPT-6 (variant not exposed).
 - **Build / OS:** source 1977; not built or installed; macOS 26.7. No new compilation or installation claimed.
-- **Staged source tree:** `414b1ea6a91368e04ecf67b768cf94cc6b2d44f0`. Commit: pending.
-<!-- montana-change {"id": "5c24ea1b-35df-496c-9ff8-3cdf44218f54", "utc": "2026-09-28T19:34:32+00:00", "callsign": "Codex / correspondent chess", "model": "GPT-6 (variant not exposed)", "build": "source 1977; not built or installed", "os": "macOS 26.7", "summary": "Chess actions share the replay validator; open games follow merged correspondence; history browsing does not suspend own expiry. Two serialized participant histories pass 61 model assertions. App compilation and device exchange remain unverified; no minting change.", "tree": "414b1ea6a91368e04ecf67b768cf94cc6b2d44f0", "parents": ["47e85e141b01fa94be7b79078141a9e7fdc59f31"], "commit": null} -->
+- **Staged source tree:** `414b1ea6a91368e04ecf67b768cf94cc6b2d44f0`. Commit: `8a627c909d963b0c5afe521d6295c72df84590e4`.
+<!-- montana-change {"id": "5c24ea1b-35df-496c-9ff8-3cdf44218f54", "utc": "2026-09-28T19:34:32+00:00", "callsign": "Codex / correspondent chess", "model": "GPT-6 (variant not exposed)", "build": "source 1977; not built or installed", "os": "macOS 26.7", "summary": "Chess actions share the replay validator; open games follow merged correspondence; history browsing does not suspend own expiry. Two serialized participant histories pass 61 model assertions. App compilation and device exchange remain unverified; no minting change.", "tree": "414b1ea6a91368e04ecf67b768cf94cc6b2d44f0", "parents": ["47e85e141b01fa94be7b79078141a9e7fdc59f31"], "commit": "8a627c909d963b0c5afe521d6295c72df84590e4"} -->
 
 ### 2026-09-28T19:29:40+00:00 — build: 1979 -- on 1978: the outer shell, stages 0-4 (login by an outer service from the first screen, its chats and conversations in Montana's rows and bubbles, two faces in the drawer, the launch rule by the app icon)
 
