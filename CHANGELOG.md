@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1973 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
-- **Staged source tree:** `748976aac35826d3b694d8cce1ea290984feee9d`. Commit: pending.
-<!-- montana-change {"id": "fe26ffea-ad1a-4fda-860e-c673c57a96d0", "utc": "2026-09-28T15:03:59+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1973 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "The page ground is softened wherever it stands: every page under the bar, the pages over them, the drawer, and the chats that chose no ground of their own; one still picture made when the ground is set.", "tree": "748976aac35826d3b694d8cce1ea290984feee9d", "parents": ["86bfad622dbb3aa36db6c3b85348a123ce5724b1"], "commit": null} -->
+- **Staged source tree:** `748976aac35826d3b694d8cce1ea290984feee9d`. Commit: `ab501d3079e49ca98286893c671dda9d8beef3d6`.
+<!-- montana-change {"id": "fe26ffea-ad1a-4fda-860e-c673c57a96d0", "utc": "2026-09-28T15:03:59+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1973 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "The page ground is softened wherever it stands: every page under the bar, the pages over them, the drawer, and the chats that chose no ground of their own; one still picture made when the ground is set.", "tree": "748976aac35826d3b694d8cce1ea290984feee9d", "parents": ["86bfad622dbb3aa36db6c3b85348a123ce5724b1"], "commit": "ab501d3079e49ca98286893c671dda9d8beef3d6"} -->
 
 ### 2026-09-28T15:03:35+00:00 — Ping: each server bounded at 8 s (the app waited up to 90 s twice a server), the power button shows the gauge and the count in its middle with a thick ring while the check runs, the measured row shows a spinner.
 
