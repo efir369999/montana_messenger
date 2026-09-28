@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** after 1976; not built; none -- a merge of main into the branch. No new compilation or installation claimed.
-- **Staged source tree:** `9396fed773e6c08854dff6bc3fedbf1e21cb1e19`. Commit: pending.
-<!-- montana-change {"id": "5b51658d-c80d-4072-82fa-cde5085f84c0", "utc": "2026-09-28T16:40:34+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "after 1976; not built", "os": "none -- a merge of main into the branch", "summary": "Merge rollback-898 (1976, 309c0bef) into ui/voice-bubble-light: the transport checklist keeps both chronicles, 1975 above 1976; no other conflict.", "tree": "9396fed773e6c08854dff6bc3fedbf1e21cb1e19", "parents": ["99bbe6a308f6a488f2dff726b0fa4fd742d119a9", "309c0bef38c109612c18aa49821091b173e04d9e"], "commit": null} -->
+- **Staged source tree:** `9396fed773e6c08854dff6bc3fedbf1e21cb1e19`. Commit: `2dea503b6680f328c9ac49a6aa3389e4f1f980e5`.
+<!-- montana-change {"id": "5b51658d-c80d-4072-82fa-cde5085f84c0", "utc": "2026-09-28T16:40:34+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "after 1976; not built", "os": "none -- a merge of main into the branch", "summary": "Merge rollback-898 (1976, 309c0bef) into ui/voice-bubble-light: the transport checklist keeps both chronicles, 1975 above 1976; no other conflict.", "tree": "9396fed773e6c08854dff6bc3fedbf1e21cb1e19", "parents": ["99bbe6a308f6a488f2dff726b0fa4fd742d119a9", "309c0bef38c109612c18aa49821091b173e04d9e"], "commit": "2dea503b6680f328c9ac49a6aa3389e4f1f980e5"} -->
 
 ### 2026-09-28T16:39:00+00:00 — Delivery of 1976: the sealed artifact of e4eb79b7 built on two jobs (563 s, no errors), installed on T1 (the prepare road lifted the reconnect, 3.1 s) and T2 (locked: prepare refused, install went on); T3 unavailable since 18:33 local, the install road waits for it; the chronicle of 1976 in the transport checklist
 
