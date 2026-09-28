@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** pending; iOS. No new compilation or installation claimed.
-- **Staged source tree:** `70e40bd0ed1339a9d31fe7cf3c709f1445866db5`. Commit: pending.
-<!-- montana-change {"id": "f5679018-50ff-4a31-8904-0a69d2d5194c", "utc": "2026-09-28T20:27:49+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Finish the pending integration of the existing outer shell into the correspondent-chess branch, preserving both implementations.", "tree": "70e40bd0ed1339a9d31fe7cf3c709f1445866db5", "parents": ["2fb6abb2c3da27137a91d073fa265b17c80bc26b", "89ca6430e80003b0814b82f91e4fdf22d631bd46"], "commit": null} -->
+- **Staged source tree:** `70e40bd0ed1339a9d31fe7cf3c709f1445866db5`. Commit: `8b7f5ec6d12230c0c103569e36e2ae3849d2547a`.
+<!-- montana-change {"id": "f5679018-50ff-4a31-8904-0a69d2d5194c", "utc": "2026-09-28T20:27:49+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Finish the pending integration of the existing outer shell into the correspondent-chess branch, preserving both implementations.", "tree": "70e40bd0ed1339a9d31fe7cf3c709f1445866db5", "parents": ["2fb6abb2c3da27137a91d073fa265b17c80bc26b", "89ca6430e80003b0814b82f91e4fdf22d631bd46"], "commit": "8b7f5ec6d12230c0c103569e36e2ae3849d2547a"} -->
 
 ### 2026-09-28T20:27:25+00:00 — Unify the application catalogue and expose Chess, Wallet and the external messaging service in the Montana app library, retaining the service icon inside the glass tile and the existing login boundary.
 
