@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T20:28:15+00:00 — Resolve the pending service-login integration while preserving the grouped app library and its visible login entry.
+
+- **Callsign / model:** Codex / GPT-6.
+- **Build / OS:** pending; iOS. No new compilation or installation claimed.
+- **Staged source tree:** `7e71722f099c7c82b2269f4e80aa0f290e355bad`. Commit: pending.
+<!-- montana-change {"id": "fbb01a76-eac8-4623-9e8c-d452f4824b40", "utc": "2026-09-28T20:28:15+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Resolve the pending service-login integration while preserving the grouped app library and its visible login entry.", "tree": "7e71722f099c7c82b2269f4e80aa0f290e355bad", "parents": ["3236c73d9a50d4af2125cf0bef05e140f6570732", "53d97feb6efbf8e843b39380529aac3d3251ca3d"], "commit": null} -->
+
 ### 2026-09-28T20:27:49+00:00 — Finish the pending integration of the existing outer shell into the correspondent-chess branch, preserving both implementations.
 
 - **Callsign / model:** Codex / GPT-6.
