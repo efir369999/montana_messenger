@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1971 assembly; merge of rollback-898 (registry 260d4743) into perf/chats-native-speed; iOS 26.7 (T1), iOS 18.3 (T3) -- not yet built. No new compilation or installation claimed.
-- **Staged source tree:** `f8665351306fa834477f8b949101cc5e5be4a20a`. Commit: pending.
-<!-- montana-change {"id": "6d8b691c-bcc9-4e59-9262-0f402620bda6", "utc": "2026-09-28T14:13:35+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1971 assembly; merge of rollback-898 (registry 260d4743) into perf/chats-native-speed", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- not yet built", "summary": "Merge: the main branch registry line (1970 on TestFlight) into the performance branch before the 1971 build; no code change from the main side.", "tree": "f8665351306fa834477f8b949101cc5e5be4a20a", "parents": ["507635fc076e4e3b9d5d7825050b3d6dbd78379d", "260d474351953b11e87e37732b96091ac1370e09"], "commit": null} -->
+- **Staged source tree:** `f8665351306fa834477f8b949101cc5e5be4a20a`. Commit: `916a9895ae4401858789090ae17f2f486acf951e`.
+<!-- montana-change {"id": "6d8b691c-bcc9-4e59-9262-0f402620bda6", "utc": "2026-09-28T14:13:35+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1971 assembly; merge of rollback-898 (registry 260d4743) into perf/chats-native-speed", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- not yet built", "summary": "Merge: the main branch registry line (1970 on TestFlight) into the performance branch before the 1971 build; no code change from the main side.", "tree": "f8665351306fa834477f8b949101cc5e5be4a20a", "parents": ["507635fc076e4e3b9d5d7825050b3d6dbd78379d", "260d474351953b11e87e37732b96091ac1370e09"], "commit": "916a9895ae4401858789090ae17f2f486acf951e"} -->
 
 ### 2026-09-28T13:38:32+00:00 — The softened chats ground: the first picture of a launch waits 0.6 s past the launch frames (T3 chats tab first seconds stand 0.6-0.7 s on main), the sharp ground stands meanwhile. Typecheck clean, PROVEN ring green; device check pending.
 
