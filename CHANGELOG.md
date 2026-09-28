@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** pending; iOS. No new compilation or installation claimed.
-- **Staged source tree:** `c9bceb306223314b3dd62185c66446d323297a0c`. Commit: pending.
-<!-- montana-change {"id": "84128a95-3cf1-4018-84a3-b453ebd49a36", "utc": "2026-09-28T20:18:15+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Integrate the app library and shared chat-style rows for music, network, calls and contacts into the current client.", "tree": "c9bceb306223314b3dd62185c66446d323297a0c", "parents": ["6d47f3f46647dc877c267275aacb5afd221375ae", "c8b0fe8579b1482454ce91975e4b3e0b716d0260"], "commit": null} -->
+- **Staged source tree:** `c9bceb306223314b3dd62185c66446d323297a0c`. Commit: `2b16857f269228ca22dee4b0b7df77f15ecfa93b`.
+<!-- montana-change {"id": "84128a95-3cf1-4018-84a3-b453ebd49a36", "utc": "2026-09-28T20:18:15+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Integrate the app library and shared chat-style rows for music, network, calls and contacts into the current client.", "tree": "c9bceb306223314b3dd62185c66446d323297a0c", "parents": ["6d47f3f46647dc877c267275aacb5afd221375ae", "c8b0fe8579b1482454ce91975e4b3e0b716d0260"], "commit": "2b16857f269228ca22dee4b0b7df77f15ecfa93b"} -->
 
 ### 2026-09-28T20:16:25+00:00 — Apply the existing chat-list row dimensions and native separators to music, contacts, calls and network. Reuse the shared page background and retain playback, contact and connection actions.
 
