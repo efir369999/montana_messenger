@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1973 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
-- **Staged source tree:** `e7add65bc4fd2dc9d0a23cdd919ffc9de32de2f2`. Commit: pending.
-<!-- montana-change {"id": "7b67a309-bdfb-4b14-ad7e-39cdda241653", "utc": "2026-09-28T15:03:35+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1973 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "Ping: each server bounded at 8 s (the app waited up to 90 s twice a server), the power button shows the gauge and the count in its middle with a thick ring while the check runs, the measured row shows a spinner.", "tree": "e7add65bc4fd2dc9d0a23cdd919ffc9de32de2f2", "parents": ["50c86d1b4342a2f5f604a5bcec27dd05f27d6170"], "commit": null} -->
+- **Staged source tree:** `e7add65bc4fd2dc9d0a23cdd919ffc9de32de2f2`. Commit: `86bfad622dbb3aa36db6c3b85348a123ce5724b1`.
+<!-- montana-change {"id": "7b67a309-bdfb-4b14-ad7e-39cdda241653", "utc": "2026-09-28T15:03:35+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1973 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "Ping: each server bounded at 8 s (the app waited up to 90 s twice a server), the power button shows the gauge and the count in its middle with a thick ring while the check runs, the measured row shows a spinner.", "tree": "e7add65bc4fd2dc9d0a23cdd919ffc9de32de2f2", "parents": ["50c86d1b4342a2f5f604a5bcec27dd05f27d6170"], "commit": "86bfad622dbb3aa36db6c3b85348a123ce5724b1"} -->
 
 ### 2026-09-28T15:03:10+00:00 — The default icon is the author file Media/Montana_AppIcon_iOS_1024.png as it is: the one layer of the icon document, no glass, no effects; the chooser previews rendered from it.
 
