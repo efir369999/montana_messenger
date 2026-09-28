@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / sidebar-alphabetical / GPT-6.
 - **Build / OS:** 1984 prepared; not yet compiled; iOS 17.2 and later. No new compilation or installation claimed.
-- **Staged source tree:** `d9ace8cdfb3875b5cd028e2d0e3275aac6e18f66`. Commit: pending.
-<!-- montana-change {"id": "d7368850-2839-43d9-8cd5-7f72b10a0fe1", "utc": "2026-09-28T22:12:07+00:00", "callsign": "Codex / sidebar-alphabetical", "model": "GPT-6", "build": "1984 prepared; not yet compiled", "os": "iOS 17.2 and later", "summary": "Prepare build 1984 for grouped app library and music bubble delivery on T1 T2 T3; CPU limit lifted by the author", "tree": "d9ace8cdfb3875b5cd028e2d0e3275aac6e18f66", "parents": ["15874f0333257819867990bf81fce9eff5f20d36"], "commit": null} -->
+- **Staged source tree:** `d9ace8cdfb3875b5cd028e2d0e3275aac6e18f66`. Commit: `e987dba03157d7f8119910e490aca19c3abf1e0e`.
+<!-- montana-change {"id": "d7368850-2839-43d9-8cd5-7f72b10a0fe1", "utc": "2026-09-28T22:12:07+00:00", "callsign": "Codex / sidebar-alphabetical", "model": "GPT-6", "build": "1984 prepared; not yet compiled", "os": "iOS 17.2 and later", "summary": "Prepare build 1984 for grouped app library and music bubble delivery on T1 T2 T3; CPU limit lifted by the author", "tree": "d9ace8cdfb3875b5cd028e2d0e3275aac6e18f66", "parents": ["15874f0333257819867990bf81fce9eff5f20d36"], "commit": "e987dba03157d7f8119910e490aca19c3abf1e0e"} -->
 
 ### 2026-09-28T22:11:10+00:00 — Restore music bubble rows and keep the active cell at either viewport edge; record lifted CPU limits; full project guards and syntax parsing passed, compilation and device behavior unverified
 
