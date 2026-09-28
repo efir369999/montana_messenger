@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T17:18:19+00:00 — build: 1977 -- on 1976: the whole voice bubble plays on a tap (the author on 1976: a tap anywhere on the bubble did nothing) -- one owner voiceToggle for the root's tap, the round and the finger on the wave
+
+- **Callsign / model:** Claude / build master by the author's word (claude-1c) / Claude Fable 5.1.
+- **Build / OS:** 1977 (number set; not yet built); iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- to be installed on all three. No new compilation or installation claimed.
+- **Staged source tree:** `a9737329cd7d6a6e7159c761c063103424028425`. Commit: pending.
+<!-- montana-change {"id": "8e06305b-f11c-4ca7-9f1b-44c4c49098e0", "utc": "2026-09-28T17:18:19+00:00", "callsign": "Claude / build master by the author's word (claude-1c)", "model": "Claude Fable 5.1", "build": "1977 (number set; not yet built)", "os": "iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- to be installed on all three", "summary": "build: 1977 -- on 1976: the whole voice bubble plays on a tap (the author on 1976: a tap anywhere on the bubble did nothing) -- one owner voiceToggle for the root's tap, the round and the finger on the wave", "tree": "a9737329cd7d6a6e7159c761c063103424028425", "parents": ["5cc9cb3879cf12589f54659986908eb25e97dd18"], "commit": null} -->
+
 ### 2026-09-28T17:02:40+00:00 — TestFlight 1976: the sealed composition of e4eb79b7 archived from the main tree, exported and uploaded; VALID; whatsNew; both groups; Beta App Review. Lesson of 1975: the internal Montana Team group is what reaches the author's phone.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
