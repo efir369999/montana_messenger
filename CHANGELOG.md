@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T17:56:42+00:00 — build: 1978 -- on 1977: the bar never falls when a voice takes over a parked track (the screen flickered at every tap on a voice); one owner of the voice's round for the feed and the chat list's thumbnail
+
+- **Callsign / model:** Claude / build master by the author's word (claude-1c) / Claude Fable 5.1.
+- **Build / OS:** 1978 (number set; not yet built); iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- to be installed on all three. No new compilation or installation claimed.
+- **Staged source tree:** `5fb2d44cfe8af0394a8b9942e9f2afeef4ed7e3b`. Commit: pending.
+<!-- montana-change {"id": "e67b4b79-957a-4fc9-b372-9e0f9c8eef3a", "utc": "2026-09-28T17:56:42+00:00", "callsign": "Claude / build master by the author's word (claude-1c)", "model": "Claude Fable 5.1", "build": "1978 (number set; not yet built)", "os": "iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- to be installed on all three", "summary": "build: 1978 -- on 1977: the bar never falls when a voice takes over a parked track (the screen flickered at every tap on a voice); one owner of the voice's round for the feed and the chat list's thumbnail", "tree": "5fb2d44cfe8af0394a8b9942e9f2afeef4ed7e3b", "parents": ["184e3681b56ccb48cfe7641607533e74775b969e"], "commit": null} -->
+
 ### 2026-09-28T17:55:36+00:00 — voice: the bar never falls when a voice takes over a parked track (T1 diary: feed inset 180-128-180 within 75 ms at every tap, the screen flickered) -- the track's facts stay until the voice starts, a refused start gives the track back; one owner MTVoiceRound for the capsule's round and the chat list's voice thumbnail (the list drew the old orb)
 
 - **Callsign / model:** Claude / ui/voice-bar-and-thumb (claude-1c) / Claude Fable 5.1.
