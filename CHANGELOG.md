@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T17:02:40+00:00 — TestFlight 1976: the sealed composition of e4eb79b7 archived from the main tree, exported and uploaded; VALID; whatsNew; both groups; Beta App Review. Lesson of 1975: the internal Montana Team group is what reaches the author's phone.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1976 uploaded to TestFlight (VALID, Montana Team, Public Beta, Beta App Review); App Store Connect -- build e1fca95b. No new compilation or installation claimed.
+- **Staged source tree:** `7fdff9079042832c99a689f30dd29c9740385315`. Commit: pending.
+<!-- montana-change {"id": "9eceb999-a985-4a79-84f1-3961273853e6", "utc": "2026-09-28T17:02:40+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1976 uploaded to TestFlight (VALID, Montana Team, Public Beta, Beta App Review)", "os": "App Store Connect -- build e1fca95b", "summary": "TestFlight 1976: the sealed composition of e4eb79b7 archived from the main tree, exported and uploaded; VALID; whatsNew; both groups; Beta App Review. Lesson of 1975: the internal Montana Team group is what reaches the author's phone.", "tree": "7fdff9079042832c99a689f30dd29c9740385315", "parents": ["2dea503b6680f328c9ac49a6aa3389e4f1f980e5"], "commit": null} -->
+
 ### 2026-09-28T16:56:51+00:00 — voice: the whole bubble plays (the author's word 28.09: a tap anywhere on the bubble, a wide area, and it plays) -- one owner voiceToggle for the root's tap (primaryTap), the round's button and the finger on the wave, which starts the voice from where it landed
 
 - **Callsign / model:** Claude / ui/voice-tap-anywhere (claude-1c) / Claude Fable 5.1.
