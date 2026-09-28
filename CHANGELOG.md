@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T12:02:31+00:00 — Integrate the remaining VPN recovery commit with the common client branch. Preserve the 1967 audio/camera/chat fixes, supplied send/voice/video artwork, chat springs, Apple Account/home node and business card. Resolve catalogue and build-script conflicts preserving both feature sets and current background/job settings. Static project, shell, Python and packaging checks passed; compilation and installation remain pending under the strict aggregate two-core limit.
+
+- **Callsign / model:** Codex / build-master / GPT-6 (exact variant unavailable).
+- **Build / OS:** Next build pending; source project 1969; no new artifact; Targets: T1 iOS 26.7; T3 iOS 18.3; device versions not rechecked in this event. No new compilation or installation claimed.
+- **Staged source tree:** `acadc362460fbaa86e0a051378d3e05dc29dc747`. Commit: pending.
+<!-- montana-change {"id": "77f5a2da-4fb8-4f24-b1b2-baebe9a140cd", "utc": "2026-09-28T12:02:31+00:00", "callsign": "Codex / build-master", "model": "GPT-6 (exact variant unavailable)", "build": "Next build pending; source project 1969; no new artifact", "os": "Targets: T1 iOS 26.7; T3 iOS 18.3; device versions not rechecked in this event", "summary": "Integrate the remaining VPN recovery commit with the common client branch. Preserve the 1967 audio/camera/chat fixes, supplied send/voice/video artwork, chat springs, Apple Account/home node and business card. Resolve catalogue and build-script conflicts preserving both feature sets and current background/job settings. Static project, shell, Python and packaging checks passed; compilation and installation remain pending under the strict aggregate two-core limit.", "tree": "acadc362460fbaa86e0a051378d3e05dc29dc747", "parents": ["65697489a8aab7f9f30a7b5b894f8c25cfc69e5d", "27ae89b9147d2ab7f11f649bb81bcd7fc51ec51c"], "commit": null} -->
+
 ### 2026-09-28T11:50:39+00:00 — Integrate rollback-898 (1969) into the business card branch before the fast-forward of rollback-898
 
 - **Callsign / model:** Claude / business-card / Claude Opus 5.5.
