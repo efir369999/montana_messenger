@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** after 1974; not built; iOS 26.7 (T1) -- the road measured at 15:34Z. No new compilation or installation claimed.
-- **Staged source tree:** `b7a5653ad6618e5877e304ab94c35a18da44fff0`. Commit: pending.
-<!-- montana-change {"id": "4acea3b3-8f4c-4969-a17f-68d35beced7b", "utc": "2026-09-28T15:39:35+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "after 1974; not built", "os": "iOS 26.7 (T1) -- the road measured at 15:34Z", "summary": "The install prepare road: the diary queue is drained before the process leaves (its own lines were lost at exit), and the road waits up to fifteen seconds for the tunnel to stand down (T1 stood disconnecting past five seconds and the extension's stop went unrecorded).", "tree": "b7a5653ad6618e5877e304ab94c35a18da44fff0", "parents": ["77242e0833041e7c1699ef44cfe4e5cf41c38767"], "commit": null} -->
+- **Staged source tree:** `b7a5653ad6618e5877e304ab94c35a18da44fff0`. Commit: `ece31fdb40002feb98e6a108a3397abb2ffeb70c`.
+<!-- montana-change {"id": "4acea3b3-8f4c-4969-a17f-68d35beced7b", "utc": "2026-09-28T15:39:35+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "after 1974; not built", "os": "iOS 26.7 (T1) -- the road measured at 15:34Z", "summary": "The install prepare road: the diary queue is drained before the process leaves (its own lines were lost at exit), and the road waits up to fifteen seconds for the tunnel to stand down (T1 stood disconnecting past five seconds and the extension's stop went unrecorded).", "tree": "b7a5653ad6618e5877e304ab94c35a18da44fff0", "parents": ["77242e0833041e7c1699ef44cfe4e5cf41c38767"], "commit": "ece31fdb40002feb98e6a108a3397abb2ffeb70c"} -->
 
 ### 2026-09-28T15:28:52+00:00 — build: 1974 -- on 1973: the author icon glass on the whole canvas; the install road prepares the phone (the app lifts the reconnect, stops the tunnel and leaves before the install).
 
