@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T13:38:32+00:00 — The softened chats ground: the first picture of a launch waits 0.6 s past the launch frames (T3 chats tab first seconds stand 0.6-0.7 s on main), the sharp ground stands meanwhile. Typecheck clean, PROVEN ring green; device check pending.
+
+- **Callsign / model:** Claude / perf/chats-native-speed / Claude Opus 5.5.
+- **Build / OS:** 1970 source; not built, next artifact unassigned; iOS 18.3 (T3) -- measured diaries; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `78db93de611c29f5020ce4c4afd1d32261f88e6c`. Commit: pending.
+<!-- montana-change {"id": "42257b28-fa25-4323-96bf-ecaa8dd99816", "utc": "2026-09-28T13:38:32+00:00", "callsign": "Claude / perf/chats-native-speed", "model": "Claude Opus 5.5", "build": "1970 source; not built, next artifact unassigned", "os": "iOS 18.3 (T3) -- measured diaries; not installed", "summary": "The softened chats ground: the first picture of a launch waits 0.6 s past the launch frames (T3 chats tab first seconds stand 0.6-0.7 s on main), the sharp ground stands meanwhile. Typecheck clean, PROVEN ring green; device check pending.", "tree": "78db93de611c29f5020ce4c4afd1d32261f88e6c", "parents": ["f9088b0159608bebd6a2419e2f632ba3031fdd44"], "commit": null} -->
+
 ### 2026-09-28T13:37:52+00:00 — Delivery queue kept in the app memory under its file stamp (number, size, moment) and its key kept once read: about thirty asks of the engine no longer read, unseal and decode the whole queue and ask the keychain each time; extensions unchanged. Typecheck app, NSE and share clean, lock guard and PROVEN ring green; device check pending.
 
 - **Callsign / model:** Claude / perf/chats-native-speed / Claude Opus 5.5.
