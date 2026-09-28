@@ -10,7 +10,8 @@ published on the public TestFlight link only.
 - **Callsign / model:** Codex / delivery-lineage-guard / GPT-6.
 - **Build / OS:** 1969 source; next build must be greater than 1969; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
 - **Staged source tree:** `f600981dbe93db9b64d085a8350a6f7575370330`. Commit: pending.
-<!-- montana-change {"id": "5989e5be-7a5b-4ce3-9c39-30e9f2fe72f2", "utc": "2026-09-28T11:28:17+00:00", "callsign": "Codex / delivery-lineage-guard", "model": "GPT-6", "build": "1969 source; next build must be greater than 1969", "os": "iOS 26.7 / 18.3 targets", "summary": "Guard Git integration, require a published staged-tree record, reserve unique builds and verify installation artifacts", "tree": "f600981dbe93db9b64d085a8350a6f7575370330", "parents": ["4b138000c110856242b4b74e3eceb7e0a1d8cc0e"], "commit": null} -->
+**Withdrawn before commit:** Superseded before commit: the integration test now clears inherited Git repository and index variables. The rejected commit did not change application files or history.
+<!-- montana-change {"id": "5989e5be-7a5b-4ce3-9c39-30e9f2fe72f2", "utc": "2026-09-28T11:28:17+00:00", "callsign": "Codex / delivery-lineage-guard", "model": "GPT-6", "build": "1969 source; next build must be greater than 1969", "os": "iOS 26.7 / 18.3 targets", "summary": "Guard Git integration, require a published staged-tree record, reserve unique builds and verify installation artifacts", "tree": "f600981dbe93db9b64d085a8350a6f7575370330", "parents": ["4b138000c110856242b4b74e3eceb7e0a1d8cc0e"], "commit": null, "withdrawn": "Superseded before commit: the integration test now clears inherited Git repository and index variables. The rejected commit did not change application files or history."} -->
 
 ### 2026-09-28T11:26:38+00:00 — Require preservation of delivered changes and published per-commit records in the Architect policy
 
