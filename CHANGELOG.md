@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T16:32:57+00:00 — Delivery of 1975: the sealed artifact of a4997115 built on every core, installed on T1 and T2 through the prepare road (measured), T3 unreachable and handed to the 1976 build; Release archive exported and uploaded, VALID, whatsNew, Public Beta, Beta App Review; chronicle written.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1975 built, installed (T1, T2) and uploaded to TestFlight (VALID, Public Beta, Beta App Review); iOS 26.7 (T1), iOS 26.6 (T2) -- devicectl bundleVersion 1975; T3 unavailable, handed to 1976. No new compilation or installation claimed.
+- **Staged source tree:** `6d5578d3e631b915bd39e3c9872068b47d4519fa`. Commit: pending.
+<!-- montana-change {"id": "46fd6290-d52e-4d1a-8800-f867eb74db9a", "utc": "2026-09-28T16:32:57+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1975 built, installed (T1, T2) and uploaded to TestFlight (VALID, Public Beta, Beta App Review)", "os": "iOS 26.7 (T1), iOS 26.6 (T2) -- devicectl bundleVersion 1975; T3 unavailable, handed to 1976", "summary": "Delivery of 1975: the sealed artifact of a4997115 built on every core, installed on T1 and T2 through the prepare road (measured), T3 unreachable and handed to the 1976 build; Release archive exported and uploaded, VALID, whatsNew, Public Beta, Beta App Review; chronicle written.", "tree": "6d5578d3e631b915bd39e3c9872068b47d4519fa", "parents": ["5d8dde2f1821b9d7326bca76a4700cacebb741e4"], "commit": null} -->
+
 ### 2026-09-28T16:26:06+00:00 — build: 1976 -- on 1975: the voice capsule stands on the call bubble's height (one number rowPlate), its round, wave, time and plates in the proportions of the author's two pictures in Media
 
 - **Callsign / model:** Claude / build master by the author's word (claude-1c) / Claude Fable 5.1.
