@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T16:39:00+00:00 — Delivery of 1976: the sealed artifact of e4eb79b7 built on two jobs (563 s, no errors), installed on T1 (the prepare road lifted the reconnect, 3.1 s) and T2 (locked: prepare refused, install went on); T3 unavailable since 18:33 local, the install road waits for it; the chronicle of 1976 in the transport checklist
+
+- **Callsign / model:** Claude / build master by the author's word (claude-1c) / Claude Fable 5.1.
+- **Build / OS:** 1976 built and installed (T1, T2); T3 unavailable to the Mac, a waiter stands; iOS 26.7 (T1), iOS 26.6 (T2) -- devicectl bundleVersion 1976 on both at 16:36Z; iOS 18.3 (T3) -- not installed yet. No new compilation or installation claimed.
+- **Staged source tree:** `ece8b1dbce3180475691086d1ec6e78b5cc3f2d7`. Commit: pending.
+<!-- montana-change {"id": "d3448143-3a57-43c5-be97-3b1a31dacc28", "utc": "2026-09-28T16:39:00+00:00", "callsign": "Claude / build master by the author's word (claude-1c)", "model": "Claude Fable 5.1", "build": "1976 built and installed (T1, T2); T3 unavailable to the Mac, a waiter stands", "os": "iOS 26.7 (T1), iOS 26.6 (T2) -- devicectl bundleVersion 1976 on both at 16:36Z; iOS 18.3 (T3) -- not installed yet", "summary": "Delivery of 1976: the sealed artifact of e4eb79b7 built on two jobs (563 s, no errors), installed on T1 (the prepare road lifted the reconnect, 3.1 s) and T2 (locked: prepare refused, install went on); T3 unavailable since 18:33 local, the install road waits for it; the chronicle of 1976 in the transport checklist", "tree": "ece8b1dbce3180475691086d1ec6e78b5cc3f2d7", "parents": ["e4eb79b7e94bdbbb2fbbd555fbc2ef7ba3c99595"], "commit": null} -->
+
 ### 2026-09-28T16:32:57+00:00 — Delivery of 1975: the sealed artifact of a4997115 built on every core, installed on T1 and T2 through the prepare road (measured), T3 unreachable and handed to the 1976 build; Release archive exported and uploaded, VALID, whatsNew, Public Beta, Beta App Review; chronicle written.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
