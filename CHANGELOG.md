@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T19:38:33+00:00 — Use the author-supplied post artwork byte-for-byte in wall creation, feed creation, draft resume and composer publish controls. One image owner and native buttons with 44-point minimum targets. Asset byte equality, source syntax and precommit checks pass; device appearance remains unverified.
+
+- **Callsign / model:** Codex / post artwork / GPT-6 (variant not exposed).
+- **Build / OS:** source 1977; not built or installed; macOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `441cba04cdf37abd0e45650818aa2ce02d85fde0`. Commit: pending.
+<!-- montana-change {"id": "a2c8aaad-c86f-43f7-9b91-8d11eda5eccc", "utc": "2026-09-28T19:38:33+00:00", "callsign": "Codex / post artwork", "model": "GPT-6 (variant not exposed)", "build": "source 1977; not built or installed", "os": "macOS 26.7", "summary": "Use the author-supplied post artwork byte-for-byte in wall creation, feed creation, draft resume and composer publish controls. One image owner and native buttons with 44-point minimum targets. Asset byte equality, source syntax and precommit checks pass; device appearance remains unverified.", "tree": "441cba04cdf37abd0e45650818aa2ce02d85fde0", "parents": ["eeafe7d05c4060b8f1ffb79d3395f613c961b248"], "commit": null} -->
+
 ### 2026-09-28T19:35:37+00:00 — Open a single attached clip through the existing native video player instead of a poster-only photo view. One-item library previews retain their media-page play control. Source syntax and precommit guards pass; device playback remains unverified. Draft, caption and media delivery are unchanged.
 
 - **Callsign / model:** Codex / attached video preview / GPT-6 (variant not exposed).
