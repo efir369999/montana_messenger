@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** pending; iOS. No new compilation or installation claimed.
-- **Staged source tree:** `7fc4a65781b7c705e6da5089ecdc97028ca78026`. Commit: pending.
-<!-- montana-change {"id": "7797f4df-35cd-4750-bb2a-390e19d898cb", "utc": "2026-09-28T20:24:04+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Integrate correspondent chess, the wallet reader, native video preview and post creation artwork with the current app library. Preserve both the service and protocol boundaries.", "tree": "7fc4a65781b7c705e6da5089ecdc97028ca78026", "parents": ["c8b0fe8579b1482454ce91975e4b3e0b716d0260", "2fb6abb2c3da27137a91d073fa265b17c80bc26b"], "commit": null} -->
+- **Staged source tree:** `7fc4a65781b7c705e6da5089ecdc97028ca78026`. Commit: `158fca5cf8538bd03dfbf9bfc608c85e8a8a807a`.
+<!-- montana-change {"id": "7797f4df-35cd-4750-bb2a-390e19d898cb", "utc": "2026-09-28T20:24:04+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Integrate correspondent chess, the wallet reader, native video preview and post creation artwork with the current app library. Preserve both the service and protocol boundaries.", "tree": "7fc4a65781b7c705e6da5089ecdc97028ca78026", "parents": ["c8b0fe8579b1482454ce91975e4b3e0b716d0260", "2fb6abb2c3da27137a91d073fa265b17c80bc26b"], "commit": "158fca5cf8538bd03dfbf9bfc608c85e8a8a807a"} -->
 
 ### 2026-09-28T20:20:53+00:00 — Outer shell: the login row stands under the drawer's faces until the session stands -- the door in plain sight for a phone that already holds a seed (the author's word 28.09)
 
