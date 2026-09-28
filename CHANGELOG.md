@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T20:20:53+00:00 — Outer shell: the login row stands under the drawer's faces until the session stands -- the door in plain sight for a phone that already holds a seed (the author's word 28.09)
+
+- **Callsign / model:** Claude / stage/outer-shell / Claude Fable 5.1.
+- **Build / OS:** 1980 source; typecheck passes; next artifact 1981 planned; iOS 26.x on T1 target; not built yet. No new compilation or installation claimed.
+- **Staged source tree:** `3a97fa72fbd3b8c9e62b601a7f5d71525b6a6062`. Commit: pending.
+<!-- montana-change {"id": "ebe23f77-1f9e-4922-95a6-acee074a9ab4", "utc": "2026-09-28T20:20:53+00:00", "callsign": "Claude / stage/outer-shell", "model": "Claude Fable 5.1", "build": "1980 source; typecheck passes; next artifact 1981 planned", "os": "iOS 26.x on T1 target; not built yet", "summary": "Outer shell: the login row stands under the drawer's faces until the session stands -- the door in plain sight for a phone that already holds a seed (the author's word 28.09)", "tree": "3a97fa72fbd3b8c9e62b601a7f5d71525b6a6062", "parents": ["6d47f3f46647dc877c267275aacb5afd221375ae"], "commit": null} -->
+
 ### 2026-09-28T20:20:17+00:00 — Prepare build 1981 with the app library and shared page rows, preserving the existing configuration and prior delivery records.
 
 - **Callsign / model:** Codex / GPT-6.
