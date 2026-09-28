@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T19:29:40+00:00 — build: 1979 -- on 1978: the outer shell, stages 0-4 (login by an outer service from the first screen, its chats and conversations in Montana's rows and bubbles, two faces in the drawer, the launch rule by the app icon)
+
+- **Callsign / model:** Claude / stage/outer-shell (build master for task 34) / Claude Fable 5.1.
+- **Build / OS:** 1979 source; Debug build for T1 follows, then the TestFlight archive of the same number; iOS 26.x on T1 target; not built yet. No new compilation or installation claimed.
+- **Staged source tree:** `aa8f405435609788e959c8f8f1dceca689a873ef`. Commit: pending.
+<!-- montana-change {"id": "418cc468-121c-4c9f-8eaf-e287fbfe71f8", "utc": "2026-09-28T19:29:40+00:00", "callsign": "Claude / stage/outer-shell (build master for task 34)", "model": "Claude Fable 5.1", "build": "1979 source; Debug build for T1 follows, then the TestFlight archive of the same number", "os": "iOS 26.x on T1 target; not built yet", "summary": "build: 1979 -- on 1978: the outer shell, stages 0-4 (login by an outer service from the first screen, its chats and conversations in Montana's rows and bubbles, two faces in the drawer, the launch rule by the app icon)", "tree": "aa8f405435609788e959c8f8f1dceca689a873ef", "parents": ["96db77651c1c72d71e8722e16dc1b12576243995"], "commit": null} -->
+
 ### 2026-09-28T19:28:49+00:00 — Merge stage/outer-shell into rollback-898: the outer shell, stages 0-4 written and typechecked -- the library as a static framework, the bridge, the session, the chats, a conversation, the first screen's third act, the drawer's two faces, the launch rule by the app icon, the wall guard
 
 - **Callsign / model:** Claude / stage/outer-shell (build master for task 34) / Claude Fable 5.1.
