@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T15:39:58+00:00 — Delivery of 1974: the sealed artifact of 77242e08 built on every core, its icon checked, installed on T1, T2 and T3 through the install road; the prepare road measured on all three (T1 with the tunnel up); chronicle written.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1974 built and installed (T1, T2, T3); iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- devicectl bundleVersion 1974 on all three. No new compilation or installation claimed.
+- **Staged source tree:** `44234c90132cf74b3da23427e7b5351d3ac1f5a4`. Commit: pending.
+<!-- montana-change {"id": "0457134e-d270-481d-b793-ba1d0076d7d9", "utc": "2026-09-28T15:39:58+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1974 built and installed (T1, T2, T3)", "os": "iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- devicectl bundleVersion 1974 on all three", "summary": "Delivery of 1974: the sealed artifact of 77242e08 built on every core, its icon checked, installed on T1, T2 and T3 through the install road; the prepare road measured on all three (T1 with the tunnel up); chronicle written.", "tree": "44234c90132cf74b3da23427e7b5351d3ac1f5a4", "parents": ["ece31fdb40002feb98e6a108a3397abb2ffeb70c"], "commit": null} -->
+
 ### 2026-09-28T15:39:35+00:00 — The install prepare road: the diary queue is drained before the process leaves (its own lines were lost at exit), and the road waits up to fifteen seconds for the tunnel to stand down (T1 stood disconnecting past five seconds and the extension's stop went unrecorded).
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
