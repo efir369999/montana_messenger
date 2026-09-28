@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T14:35:02+00:00 — The tunnel lifts its reconnect when the system stops it for an app update: after a reinstall the system no longer raises a tunnel that cannot start before the new app is verified, a verification that needs the network the tunnel holds. Typecheck of the extension clean.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1972 source; not built yet; iOS 26.7 (T1) -- the reinstall of 1971 at 17:25 local. No new compilation or installation claimed.
+- **Staged source tree:** `fba3fd6c6a2483264c28eb8c9999e8d81a17e067`. Commit: pending.
+<!-- montana-change {"id": "c8eb32f7-4fbd-457f-bec5-d62bb35ff56a", "utc": "2026-09-28T14:35:02+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 source; not built yet", "os": "iOS 26.7 (T1) -- the reinstall of 1971 at 17:25 local", "summary": "The tunnel lifts its reconnect when the system stops it for an app update: after a reinstall the system no longer raises a tunnel that cannot start before the new app is verified, a verification that needs the network the tunnel holds. Typecheck of the extension clean.", "tree": "fba3fd6c6a2483264c28eb8c9999e8d81a17e067", "parents": ["e808a13960b30d85553c8681acff4dfabe1812e9"], "commit": null} -->
+
 ### 2026-09-28T14:34:34+00:00 — The default app icon as the author new picture: a graphite plate with a blue-grey light from the top (linear gradient), the gold symbol at 0.94 as a glass layer, specular and individual lighting; the chooser previews rendered from the same document. actool compiles it with the gold alternate.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
