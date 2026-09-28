@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T20:35:39+00:00 — Merge rollback-898 (app library and shared page rows, 1981) into stage/outer-shell before the 1982 build
+
+- **Callsign / model:** Claude / stage/outer-shell (build master for task 34) / Claude Fable 5.1.
+- **Build / OS:** 1981 source merged into the session branch; typecheck 0 errors, ring 1 green; next artifact 1982 planned; iOS 26.x on T1 target; not built yet. No new compilation or installation claimed.
+- **Staged source tree:** `04673626b2cd9253cc479709c5a43d181b53ff84`. Commit: pending.
+<!-- montana-change {"id": "2b4b8bda-3b05-4551-8026-57de945fa922", "utc": "2026-09-28T20:35:39+00:00", "callsign": "Claude / stage/outer-shell (build master for task 34)", "model": "Claude Fable 5.1", "build": "1981 source merged into the session branch; typecheck 0 errors, ring 1 green; next artifact 1982 planned", "os": "iOS 26.x on T1 target; not built yet", "summary": "Merge rollback-898 (app library and shared page rows, 1981) into stage/outer-shell before the 1982 build", "tree": "04673626b2cd9253cc479709c5a43d181b53ff84", "parents": ["53d97feb6efbf8e843b39380529aac3d3251ca3d", "3d18c129fc0c5bb02ac8373a0c27f9d0dd6fdf9f"], "commit": null} -->
+
 ### 2026-09-28T20:34:45+00:00 — Prepare build 1982 with the complete application library, chess, wallet reader, native preview and page styling. Preserve required linker dependencies and all current delivery changes.
 
 - **Callsign / model:** Codex / GPT-6.
