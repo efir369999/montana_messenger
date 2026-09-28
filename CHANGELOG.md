@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / sidebar-alphabetical / GPT-6.
 - **Build / OS:** 1983 source baseline; next artifact unassigned; iOS target 17.2 and later; device validation pending. No new compilation or installation claimed.
-- **Staged source tree:** `5bac18190d9297abb8489242560d8095d2a084cc`. Commit: pending.
-<!-- montana-change {"id": "797f2a41-ab99-4142-9b1f-ce1b480600bb", "utc": "2026-09-28T22:11:10+00:00", "callsign": "Codex / sidebar-alphabetical", "model": "GPT-6", "build": "1983 source baseline; next artifact unassigned", "os": "iOS target 17.2 and later; device validation pending", "summary": "Restore music bubble rows and keep the active cell at either viewport edge; record lifted CPU limits; full project guards and syntax parsing passed, compilation and device behavior unverified", "tree": "5bac18190d9297abb8489242560d8095d2a084cc", "parents": ["ad5596982bb9e563bb263059607143ab71ed844d"], "commit": null} -->
+- **Staged source tree:** `5bac18190d9297abb8489242560d8095d2a084cc`. Commit: `15874f0333257819867990bf81fce9eff5f20d36`.
+<!-- montana-change {"id": "797f2a41-ab99-4142-9b1f-ce1b480600bb", "utc": "2026-09-28T22:11:10+00:00", "callsign": "Codex / sidebar-alphabetical", "model": "GPT-6", "build": "1983 source baseline; next artifact unassigned", "os": "iOS target 17.2 and later; device validation pending", "summary": "Restore music bubble rows and keep the active cell at either viewport edge; record lifted CPU limits; full project guards and syntax parsing passed, compilation and device behavior unverified", "tree": "5bac18190d9297abb8489242560d8095d2a084cc", "parents": ["ad5596982bb9e563bb263059607143ab71ed844d"], "commit": "15874f0333257819867990bf81fce9eff5f20d36"} -->
 
 ### 2026-09-28T21:49:25+00:00 — Grouped sidebar and full app library with persistent view choice, contextual pins and Montana icon badges; static checks passed, compilation and installation pending
 
