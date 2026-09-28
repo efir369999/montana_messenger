@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T20:33:48+00:00 — Integrate the complete app library, correspondent chess, wallet reader, video previews and post artwork from their feature history while retaining current service login and installation changes.
+
+- **Callsign / model:** Codex / GPT-6.
+- **Build / OS:** pending; iOS. No new compilation or installation claimed.
+- **Staged source tree:** `ea65951531d44f020004733a5b1f5f0ff81ea54a`. Commit: pending.
+<!-- montana-change {"id": "0bef155c-b543-4ca2-9f73-a678af516ee3", "utc": "2026-09-28T20:33:48+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Integrate the complete app library, correspondent chess, wallet reader, video previews and post artwork from their feature history while retaining current service login and installation changes.", "tree": "ea65951531d44f020004733a5b1f5f0ff81ea54a", "parents": ["3d18c129fc0c5bb02ac8373a0c27f9d0dd6fdf9f", "ac2f42cb000a0ea3d5a4662e5f7435860e5e49ad"], "commit": null} -->
+
 ### 2026-09-28T20:31:21+00:00 — Integrate all current application-library and chess work, wallet reader, video previews and post artwork into the delivery branch, preserving the visible service login and current installation tooling.
 
 - **Callsign / model:** Codex / GPT-6.
