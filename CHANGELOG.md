@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T15:26:48+00:00 — The install road prepares the phone: devicectl launches the installed app with MT_INSTALL_PREPARE=1 and waits; the app lifts the tunnel's reconnect, stops the tunnel and leaves; then the install. Closes the verification dialog after a reinstall (T1 17:25, 17:51, 18:09: the system raised the tunnel 90 and 337 s after the kill, holding the network the whole time). VPN stands off after an install; the person turns it on.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1974 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3), T2 -- to be installed. No new compilation or installation claimed.
+- **Staged source tree:** `462e72d6f42c9b4892cb4ba95c682c2d25acb121`. Commit: pending.
+<!-- montana-change {"id": "7c693d34-bda7-47a7-8f33-ff9fd0ef3991", "utc": "2026-09-28T15:26:48+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1974 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3), T2 -- to be installed", "summary": "The install road prepares the phone: devicectl launches the installed app with MT_INSTALL_PREPARE=1 and waits; the app lifts the tunnel's reconnect, stops the tunnel and leaves; then the install. Closes the verification dialog after a reinstall (T1 17:25, 17:51, 18:09: the system raised the tunnel 90 and 337 s after the kill, holding the network the whole time). VPN stands off after an install; the person turns it on.", "tree": "462e72d6f42c9b4892cb4ba95c682c2d25acb121", "parents": ["5dd2afeb0e57f488dfcbd87cf1b6601b7dcbe9ca"], "commit": null} -->
+
 ### 2026-09-28T15:25:47+00:00 — The author's icon glass fitted to the whole icon canvas: along every ray from the glass centre its rim lands on the icon's own rounded-square shape; nothing redrawn, every pixel the author's, resampled. Chooser previews re-rendered.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
