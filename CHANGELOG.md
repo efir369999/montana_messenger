@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build-master / Claude Opus 5.5.
 - **Build / OS:** 1970 uploaded to TestFlight (Release archive of 10e6b441, delivery bfae0bb4); Apple processing; installed Debug 1970 on T1 iOS 26.7 and T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `d3dfcbaa92eacb7c734367748efa304cd8566b6d`. Commit: pending.
-<!-- montana-change {"id": "79e6c436-efa4-495f-aa68-0eb0af287432", "utc": "2026-09-28T13:29:05+00:00", "callsign": "Claude / build-master", "model": "Claude Opus 5.5", "build": "1970 uploaded to TestFlight (Release archive of 10e6b441, delivery bfae0bb4)", "os": "Apple processing; installed Debug 1970 on T1 iOS 26.7 and T3 iOS 18.3", "summary": "registry: 1970 uploaded to TestFlight (10e6b441); the compat guard pins it", "tree": "d3dfcbaa92eacb7c734367748efa304cd8566b6d", "parents": ["10e6b4418dbda912b57d2adb055e237a9251b3b1"], "commit": null} -->
+- **Staged source tree:** `d3dfcbaa92eacb7c734367748efa304cd8566b6d`. Commit: `260d474351953b11e87e37732b96091ac1370e09`.
+<!-- montana-change {"id": "79e6c436-efa4-495f-aa68-0eb0af287432", "utc": "2026-09-28T13:29:05+00:00", "callsign": "Claude / build-master", "model": "Claude Opus 5.5", "build": "1970 uploaded to TestFlight (Release archive of 10e6b441, delivery bfae0bb4)", "os": "Apple processing; installed Debug 1970 on T1 iOS 26.7 and T3 iOS 18.3", "summary": "registry: 1970 uploaded to TestFlight (10e6b441); the compat guard pins it", "tree": "d3dfcbaa92eacb7c734367748efa304cd8566b6d", "parents": ["10e6b4418dbda912b57d2adb055e237a9251b3b1"], "commit": "260d474351953b11e87e37732b96091ac1370e09"} -->
 
 ### 2026-09-28T13:27:34+00:00 — Chats page as the App Library list: plain platform list with native separators from the words edge, 72 pt lines with 48 pt faces under the search field edge; no glass plate or hosting controller per cell; the page ground softened once into a small still picture (zero per-frame cost). Typecheck clean, PROVEN ring green; device check pending.
 
