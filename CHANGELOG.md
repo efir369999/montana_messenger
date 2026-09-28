@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1972 built and installed (T1, T3); iOS 26.7 (T1), iOS 18.3 (T3) -- devicectl bundleVersion 1972 on both. No new compilation or installation claimed.
-- **Staged source tree:** `49d379c763516683930fe347b661b220e9ce61a7`. Commit: pending.
-<!-- montana-change {"id": "28b496e0-78a2-4ccb-a07e-4ebf7a406b75", "utc": "2026-09-28T14:49:01+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 built and installed (T1, T3)", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- devicectl bundleVersion 1972 on both", "summary": "Delivery of 1972: the sealed artifact of 0abebea7 built on every core and installed on T1 and T3 (not launched by the tool); chronicle written.", "tree": "49d379c763516683930fe347b661b220e9ce61a7", "parents": ["0abebea797007752a28e182fd4e31a71cf52d650"], "commit": null} -->
+- **Staged source tree:** `49d379c763516683930fe347b661b220e9ce61a7`. Commit: `6f0e11fb9a27c19acaede67368b67e858f6e7e69`.
+<!-- montana-change {"id": "28b496e0-78a2-4ccb-a07e-4ebf7a406b75", "utc": "2026-09-28T14:49:01+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 built and installed (T1, T3)", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- devicectl bundleVersion 1972 on both", "summary": "Delivery of 1972: the sealed artifact of 0abebea7 built on every core and installed on T1 and T3 (not launched by the tool); chronicle written.", "tree": "49d379c763516683930fe347b661b220e9ce61a7", "parents": ["0abebea797007752a28e182fd4e31a71cf52d650"], "commit": "6f0e11fb9a27c19acaede67368b67e858f6e7e69"} -->
 
 ### 2026-09-28T14:41:29+00:00 — build: 1972 -- on 1971: voice capsule with live scrubbing, the new default icon, the tunnel lifts its reconnect on an app update, the softened ground kept on disk, live chat video with the system player, the build road on every core by request.
 
