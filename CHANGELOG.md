@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** pending; iOS. No new compilation or installation claimed.
-- **Staged source tree:** `d1d66518d7100a8961f0309960b3a7cb18e5f02b`. Commit: pending.
-<!-- montana-change {"id": "51ef7518-1657-4a21-8be3-c15ee31f1dcf", "utc": "2026-09-28T20:29:14+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Join the completed chess integration history while retaining the unified app catalogue and both service and protocol imports.", "tree": "d1d66518d7100a8961f0309960b3a7cb18e5f02b", "parents": ["ac2f42cb000a0ea3d5a4662e5f7435860e5e49ad", "8b7f5ec6d12230c0c103569e36e2ae3849d2547a"], "commit": null} -->
+- **Staged source tree:** `d1d66518d7100a8961f0309960b3a7cb18e5f02b`. Commit: `d96380f14e5152735dbc203acfd4fde8ef0ceb5f`.
+<!-- montana-change {"id": "51ef7518-1657-4a21-8be3-c15ee31f1dcf", "utc": "2026-09-28T20:29:14+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Join the completed chess integration history while retaining the unified app catalogue and both service and protocol imports.", "tree": "d1d66518d7100a8961f0309960b3a7cb18e5f02b", "parents": ["ac2f42cb000a0ea3d5a4662e5f7435860e5e49ad", "8b7f5ec6d12230c0c103569e36e2ae3849d2547a"], "commit": "d96380f14e5152735dbc203acfd4fde8ef0ceb5f"} -->
 
 ### 2026-09-28T20:28:15+00:00 — Resolve the pending service-login integration while preserving the grouped app library and its visible login entry.
 
