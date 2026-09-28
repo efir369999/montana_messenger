@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T14:34:34+00:00 — The default app icon as the author new picture: a graphite plate with a blue-grey light from the top (linear gradient), the gold symbol at 0.94 as a glass layer, specular and individual lighting; the chooser previews rendered from the same document. actool compiles it with the gold alternate.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1972 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
+- **Staged source tree:** `ccea609d58cdd0b9b298a4e5f07112edde99f0fa`. Commit: pending.
+<!-- montana-change {"id": "43f775f0-7973-400f-ac8e-eb0613f05677", "utc": "2026-09-28T14:34:34+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "The default app icon as the author new picture: a graphite plate with a blue-grey light from the top (linear gradient), the gold symbol at 0.94 as a glass layer, specular and individual lighting; the chooser previews rendered from the same document. actool compiles it with the gold alternate.", "tree": "ccea609d58cdd0b9b298a4e5f07112edde99f0fa", "parents": ["a21cc96cc899e2c0b16f34e297120619a7faae52"], "commit": null} -->
+
 ### 2026-09-28T14:33:50+00:00 — Voice messages as a capsule of our letters glass (the author pictures): the play glyph on a glass round with a still sheen, the still wave as one shape, the length inside, the mic and stamp plates under it, live scrubbing by the app one scrubber; no orb, no Metal surface per letter, no animation. Typecheck clean.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
