@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / stage/outer-shell / Claude Fable 5.1.
 - **Build / OS:** 1978 source; not built, next artifact unassigned; iOS 26.x on T1/T3 targets; not built. No new compilation or installation claimed.
-- **Staged source tree:** `210b9c0ccb78a005f9b349121301093b075f53fe`. Commit: pending.
-<!-- montana-change {"id": "ccf5966c-953a-45a7-b1bf-581dec8c64f4", "utc": "2026-09-28T18:18:09+00:00", "callsign": "Claude / stage/outer-shell", "model": "Claude Fable 5.1", "build": "1978 source; not built, next artifact unassigned", "os": "iOS 26.x on T1/T3 targets; not built", "summary": "Checklist v1: the outer shell -- login by an outer service from the first screen, the shell chosen in the drawer, the icon that opens it, the library pinned and kept fresh", "tree": "210b9c0ccb78a005f9b349121301093b075f53fe", "parents": ["5866c491feae56e670cd172227ff794c5beafc68"], "commit": null} -->
+- **Staged source tree:** `210b9c0ccb78a005f9b349121301093b075f53fe`. Commit: `5c128fb7216bbc6b00451788852d6a43c6593c4e`.
+<!-- montana-change {"id": "ccf5966c-953a-45a7-b1bf-581dec8c64f4", "utc": "2026-09-28T18:18:09+00:00", "callsign": "Claude / stage/outer-shell", "model": "Claude Fable 5.1", "build": "1978 source; not built, next artifact unassigned", "os": "iOS 26.x on T1/T3 targets; not built", "summary": "Checklist v1: the outer shell -- login by an outer service from the first screen, the shell chosen in the drawer, the icon that opens it, the library pinned and kept fresh", "tree": "210b9c0ccb78a005f9b349121301093b075f53fe", "parents": ["5866c491feae56e670cd172227ff794c5beafc68"], "commit": "5c128fb7216bbc6b00451788852d6a43c6593c4e"} -->
 
 ### 2026-09-28T18:07:23+00:00 — Delivery of 1978: the sealed artifact of 5866c491 built on two jobs (487 s, no errors), installed on T1 and T2 through the install road; T3 still unavailable, the road waits for it; the chronicle of 1978 in the transport checklist with the diary evidence of the flicker
 
