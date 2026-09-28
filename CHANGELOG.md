@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T12:06:06+00:00 — Record the complete delivery checklist: all four 1967 fix commits, supplied send/voice/video buttons and chat motion, Apple Account and home node, business card, and VPN recovery are in the common client branch. Reconciled eight stale checkout files after preserving their bytes, patch and index. Static guards passed; Swift compilation, installation and device acceptance remain pending. Strict aggregate two-core quota remains unverified; no new build or phone installation is claimed.
+
+- **Callsign / model:** Codex / build-master / GPT-6 (exact variant unavailable).
+- **Build / OS:** New artifact pending; project 1969 is historical and will not be reused; Targets T1 iOS 26.7 and T3 iOS 18.3, last verified OS versions. No new compilation or installation claimed.
+- **Staged source tree:** `355cf82e3dee3320e6adcae1ef962c0602a1f5a0`. Commit: pending.
+<!-- montana-change {"id": "4ea3ebe5-449e-41e1-b59b-89fb9569b2fb", "utc": "2026-09-28T12:06:06+00:00", "callsign": "Codex / build-master", "model": "GPT-6 (exact variant unavailable)", "build": "New artifact pending; project 1969 is historical and will not be reused", "os": "Targets T1 iOS 26.7 and T3 iOS 18.3, last verified OS versions", "summary": "Record the complete delivery checklist: all four 1967 fix commits, supplied send/voice/video buttons and chat motion, Apple Account and home node, business card, and VPN recovery are in the common client branch. Reconciled eight stale checkout files after preserving their bytes, patch and index. Static guards passed; Swift compilation, installation and device acceptance remain pending. Strict aggregate two-core quota remains unverified; no new build or phone installation is claimed.", "tree": "355cf82e3dee3320e6adcae1ef962c0602a1f5a0", "parents": ["f93cd70ae61c3a63a62012a044d7951a61c1f609"], "commit": null} -->
+
 ### 2026-09-28T12:02:31+00:00 — Integrate the remaining VPN recovery commit with the common client branch. Preserve the 1967 audio/camera/chat fixes, supplied send/voice/video artwork, chat springs, Apple Account/home node and business card. Resolve catalogue and build-script conflicts preserving both feature sets and current background/job settings. Static project, shell, Python and packaging checks passed; compilation and installation remain pending under the strict aggregate two-core limit.
 
 - **Callsign / model:** Codex / build-master / GPT-6 (exact variant unavailable).
