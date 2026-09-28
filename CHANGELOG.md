@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T14:14:26+00:00 — build: 1971 -- the performance branch (network index and one-at-a-time ping, feed memo, chats page as the App Library list with the softened ground, the player face, contacts once a pass, the queue in memory, the soft ground launch pause) on top of 1970.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1971 (number set; not yet built); iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
+- **Staged source tree:** `9bcb813553a00bdc21fc69b511dd57f50b29adc2`. Commit: pending.
+<!-- montana-change {"id": "cb60ad21-4043-484f-93c8-c2ec45b49ac3", "utc": "2026-09-28T14:14:26+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1971 (number set; not yet built)", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "build: 1971 -- the performance branch (network index and one-at-a-time ping, feed memo, chats page as the App Library list with the softened ground, the player face, contacts once a pass, the queue in memory, the soft ground launch pause) on top of 1970.", "tree": "9bcb813553a00bdc21fc69b511dd57f50b29adc2", "parents": ["916a9895ae4401858789090ae17f2f486acf951e"], "commit": null} -->
+
 ### 2026-09-28T14:13:35+00:00 — Merge: the main branch registry line (1970 on TestFlight) into the performance branch before the 1971 build; no code change from the main side.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
