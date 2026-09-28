@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T17:55:36+00:00 — voice: the bar never falls when a voice takes over a parked track (T1 diary: feed inset 180-128-180 within 75 ms at every tap, the screen flickered) -- the track's facts stay until the voice starts, a refused start gives the track back; one owner MTVoiceRound for the capsule's round and the chat list's voice thumbnail (the list drew the old orb)
+
+- **Callsign / model:** Claude / ui/voice-bar-and-thumb (claude-1c) / Claude Fable 5.1.
+- **Build / OS:** after 1977; not built, next artifact unassigned; iOS 26.7 (T1) -- diary evidence 17:45:00Z; guard ring and swiftc -typecheck (95 files, rc 0) on the tree; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `b79d31a63d11a9ee1776299f775b5e279c648871`. Commit: pending.
+<!-- montana-change {"id": "b1442343-adda-468b-bf6c-9abb3d475d58", "utc": "2026-09-28T17:55:36+00:00", "callsign": "Claude / ui/voice-bar-and-thumb (claude-1c)", "model": "Claude Fable 5.1", "build": "after 1977; not built, next artifact unassigned", "os": "iOS 26.7 (T1) -- diary evidence 17:45:00Z; guard ring and swiftc -typecheck (95 files, rc 0) on the tree; not installed", "summary": "voice: the bar never falls when a voice takes over a parked track (T1 diary: feed inset 180-128-180 within 75 ms at every tap, the screen flickered) -- the track's facts stay until the voice starts, a refused start gives the track back; one owner MTVoiceRound for the capsule's round and the chat list's voice thumbnail (the list drew the old orb)", "tree": "b79d31a63d11a9ee1776299f775b5e279c648871", "parents": ["0824761f352c7e7f88643062b330c053f32e63d6"], "commit": null} -->
+
 ### 2026-09-28T17:29:46+00:00 — Delivery of 1977: the sealed artifact of d5913f6a built on two jobs (525 s, no errors), installed on T1 and T2 through the install road (the prepare step lifted the reconnect on both); T3 still unavailable, the road waits for it; the chronicle of 1977 in the transport checklist
 
 - **Callsign / model:** Claude / build master by the author's word (claude-1c) / Claude Fable 5.1.
