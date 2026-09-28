@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / app-library / GPT-6.
 - **Build / OS:** unassigned; source only; macOS 26.7; target iOS 17.2 and later, unbuilt. No new compilation or installation claimed.
-- **Staged source tree:** `80c9d5089f839b6419bfc8d55f0eb37dad9b903b`. Commit: pending.
-<!-- montana-change {"id": "26323375-ebfe-45de-90cf-8468bb1a0498", "utc": "2026-09-28T19:57:55+00:00", "callsign": "Codex / app-library", "model": "GPT-6", "build": "unassigned; source only", "os": "macOS 26.7; target iOS 17.2 and later, unbuilt", "summary": "Prepare a grouped app library with glass icons and alphabetical search; preserve existing destinations and shell selection. Static pre-commit checks and Swift syntax parsing passed. Full compilation and installation remain pending verified aggregate CPU enforcement.", "tree": "80c9d5089f839b6419bfc8d55f0eb37dad9b903b", "parents": ["4dfa7f461f1e69d918c436367afee9ba0bf554eb"], "commit": null} -->
+- **Staged source tree:** `80c9d5089f839b6419bfc8d55f0eb37dad9b903b`. Commit: `e5b2d3b021e24be626bb51298330077122a61757`.
+<!-- montana-change {"id": "26323375-ebfe-45de-90cf-8468bb1a0498", "utc": "2026-09-28T19:57:55+00:00", "callsign": "Codex / app-library", "model": "GPT-6", "build": "unassigned; source only", "os": "macOS 26.7; target iOS 17.2 and later, unbuilt", "summary": "Prepare a grouped app library with glass icons and alphabetical search; preserve existing destinations and shell selection. Static pre-commit checks and Swift syntax parsing passed. Full compilation and installation remain pending verified aggregate CPU enforcement.", "tree": "80c9d5089f839b6419bfc8d55f0eb37dad9b903b", "parents": ["4dfa7f461f1e69d918c436367afee9ba0bf554eb"], "commit": "e5b2d3b021e24be626bb51298330077122a61757"} -->
 
 ### 2026-09-28T19:52:32+00:00 — checklist: TestFlight 1979 published -- notes, Montana Team and Public Beta, beta review submitted; the door awaits the author's developer credentials
 
