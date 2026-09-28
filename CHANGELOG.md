@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** pending; iOS. No new compilation or installation claimed.
-- **Staged source tree:** `29e3319f5e4a953ada6b58579f3792f939b5b0b9`. Commit: pending.
-<!-- montana-change {"id": "265a1803-54e2-4de7-9a14-5ea8ac19e44d", "utc": "2026-09-28T20:27:25+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Unify the application catalogue and expose Chess, Wallet and the external messaging service in the Montana app library, retaining the service icon inside the glass tile and the existing login boundary.", "tree": "29e3319f5e4a953ada6b58579f3792f939b5b0b9", "parents": ["158fca5cf8538bd03dfbf9bfc608c85e8a8a807a"], "commit": null} -->
+- **Staged source tree:** `29e3319f5e4a953ada6b58579f3792f939b5b0b9`. Commit: `ac2f42cb000a0ea3d5a4662e5f7435860e5e49ad`.
+<!-- montana-change {"id": "265a1803-54e2-4de7-9a14-5ea8ac19e44d", "utc": "2026-09-28T20:27:25+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Unify the application catalogue and expose Chess, Wallet and the external messaging service in the Montana app library, retaining the service icon inside the glass tile and the existing login boundary.", "tree": "29e3319f5e4a953ada6b58579f3792f939b5b0b9", "parents": ["158fca5cf8538bd03dfbf9bfc608c85e8a8a807a"], "commit": "ac2f42cb000a0ea3d5a4662e5f7435860e5e49ad"} -->
 
 ### 2026-09-28T20:24:04+00:00 — Integrate correspondent chess, the wallet reader, native video preview and post creation artwork with the current app library. Preserve both the service and protocol boundaries.
 
