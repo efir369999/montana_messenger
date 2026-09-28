@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / perf/chats-native-speed / Claude Opus 5.5.
 - **Build / OS:** 1970 source; not built, next artifact unassigned; iOS 26.7 (T1), iOS 18.3 (T3) -- measured diaries; not installed. No new compilation or installation claimed.
-- **Staged source tree:** `fc76e01db729220d4e162678cde6f273c86c31ad`. Commit: pending.
-<!-- montana-change {"id": "e8b8093d-c6e2-48ae-8e86-62635bd05eb7", "utc": "2026-09-28T13:32:29+00:00", "callsign": "Claude / perf/chats-native-speed", "model": "Claude Opus 5.5", "build": "1970 source; not built, next artifact unassigned", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- measured diaries; not installed", "summary": "Bubbles watch the player face (file, pause, length, voice speed) instead of the whole player; only the playing bubble wave watches the 4 Hz clock. Typecheck clean, PROVEN ring green; device check pending.", "tree": "fc76e01db729220d4e162678cde6f273c86c31ad", "parents": ["da8f2ce21ea1b9d80fbf9f255755debe2be822fe"], "commit": null} -->
+- **Staged source tree:** `fc76e01db729220d4e162678cde6f273c86c31ad`. Commit: `de2919fb7bdaa39e2b7ec4cbdf696f810103bd8b`.
+<!-- montana-change {"id": "e8b8093d-c6e2-48ae-8e86-62635bd05eb7", "utc": "2026-09-28T13:32:29+00:00", "callsign": "Claude / perf/chats-native-speed", "model": "Claude Opus 5.5", "build": "1970 source; not built, next artifact unassigned", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- measured diaries; not installed", "summary": "Bubbles watch the player face (file, pause, length, voice speed) instead of the whole player; only the playing bubble wave watches the 4 Hz clock. Typecheck clean, PROVEN ring green; device check pending.", "tree": "fc76e01db729220d4e162678cde6f273c86c31ad", "parents": ["da8f2ce21ea1b9d80fbf9f255755debe2be822fe"], "commit": "de2919fb7bdaa39e2b7ec4cbdf696f810103bd8b"} -->
 
 ### 2026-09-28T13:29:05+00:00 — registry: 1970 uploaded to TestFlight (10e6b441); the compat guard pins it
 
