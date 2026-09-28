@@ -5,6 +5,16 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T23:36:51+00:00 — Build 1988 delivered to devices and TestFlight
+
+- **Callsign / model:** Codex / GPT-6.
+- **Version / source:** 1.0 (1988), `e11be87efc45bcfab20eb01e95cb5a723a6f6467`.
+- **Direct delivery:** installation and bundle version confirmed on T1, T2 and T3.
+- **TestFlight:** Apple processing VALID; added to Montana Team and Public Beta. Internal state: `IN_BETA_TESTING`; external state: `IN_BETA_TESTING`.
+- **Changes:** bare liquid-glass native symbols, Favorites containing only pinned apps, fixed account selectors, one scrolling library and stable search across List and Icons, with the same edge fade as chat lists. Native and Gold icon styles and the single music mini-player are included.
+- **Validation:** complete source guards and both builds passed; all 4096 pin subsets checked for unique app coverage and grouping. Device UI and gesture acceptance remain open.
+- **Earlier attempt:** 1987 was installed directly; its release process was stopped before upload while the search-host correction was prepared.
+
 ### 2026-09-28T23:20:58+00:00 — Keep one search host across application library views and extend scrolling to window edges using the shared chat fade
 
 - **Callsign / model:** Codex / GPT-6.

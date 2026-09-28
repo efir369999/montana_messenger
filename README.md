@@ -16,7 +16,7 @@ protocol; the reference client is developed at [montana.quest](https://montana.q
 | Platform | iPhone, iOS 17.2 or later |
 | Distribution | TestFlight, public link |
 | Link | https://testflight.apple.com/join/BHaSYWkz |
-| Current release | 1.0 (build 1666) — App Store, resubmitted for review; TestFlight 1.0 (build 1963), uploaded 2026-09-26 |
+| Current release | 1.0 (build 1666) — App Store, resubmitted for review; TestFlight 1.0 (build 1988), uploaded 2026-09-28 |
 | Feedback | GitHub Issues in this repository, or contact@montana.quest |
 | Privacy policy | https://montana.quest/privacy/ |
 
@@ -103,7 +103,7 @@ an issue.
 
 See [CHANGELOG.md](CHANGELOG.md) for published builds and the timestamped development event log.
 
-Development log updated: **2026-09-28T23:21:37+00:00**. Current development-device queries report
+Development log updated: **2026-09-28T23:36:51+00:00**. Current development-device queries report
 **1.0 (1968), iOS 26.7 and iOS 18.3**. Follow-up source changes are committed but have not
 been compiled or installed. See the log for the correction to the earlier device-version
 record and the outstanding checks. The public TestFlight build listed above is unchanged.
