@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / delivery-lineage-guard / GPT-6.
 - **Build / OS:** 1969 source; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `b1b471325bf0632456c7743928a346cbf0b373fb`. Commit: pending.
-<!-- montana-change {"id": "0727e14b-8a80-40f4-a11f-7d8d95f518fd", "utc": "2026-09-28T11:32:48+00:00", "callsign": "Codex / delivery-lineage-guard", "model": "GPT-6", "build": "1969 source; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Enforce complete delivery ancestry, published commit records and artifact identity; verify isolated Git hook tests", "tree": "b1b471325bf0632456c7743928a346cbf0b373fb", "parents": ["4b138000c110856242b4b74e3eceb7e0a1d8cc0e"], "commit": null} -->
+- **Staged source tree:** `b1b471325bf0632456c7743928a346cbf0b373fb`. Commit: `0ff6a1992a908a039317b6eded547f1299766add`.
+<!-- montana-change {"id": "0727e14b-8a80-40f4-a11f-7d8d95f518fd", "utc": "2026-09-28T11:32:48+00:00", "callsign": "Codex / delivery-lineage-guard", "model": "GPT-6", "build": "1969 source; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Enforce complete delivery ancestry, published commit records and artifact identity; verify isolated Git hook tests", "tree": "b1b471325bf0632456c7743928a346cbf0b373fb", "parents": ["4b138000c110856242b4b74e3eceb7e0a1d8cc0e"], "commit": "0ff6a1992a908a039317b6eded547f1299766add"} -->
 
 ### 2026-09-28T11:28:17+00:00 — Guard Git integration, require a published staged-tree record, reserve unique builds and verify installation artifacts
 
