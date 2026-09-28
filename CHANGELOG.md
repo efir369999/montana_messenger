@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T22:16:36+00:00 — Simplify application-library change signature into typed field appends to resolve Swift type-check complexity; prepare the next build attempt
+
+- **Callsign / model:** Codex / sidebar-alphabetical / GPT-6.
+- **Build / OS:** 1985 prepared after compiler failure in 1984; iOS 17.2 and later. No new compilation or installation claimed.
+- **Staged source tree:** `b2b642b3155066517f12cfd0b5c244c9c3768e42`. Commit: pending.
+<!-- montana-change {"id": "fb5d84a5-4acf-43e4-a229-0f0aeb24075e", "utc": "2026-09-28T22:16:36+00:00", "callsign": "Codex / sidebar-alphabetical", "model": "GPT-6", "build": "1985 prepared after compiler failure in 1984", "os": "iOS 17.2 and later", "summary": "Simplify application-library change signature into typed field appends to resolve Swift type-check complexity; prepare the next build attempt", "tree": "b2b642b3155066517f12cfd0b5c244c9c3768e42", "parents": ["bfc501bbaa0e57fe44b205c22eb1c8efa23f90ec"], "commit": null} -->
+
 ### 2026-09-28T22:13:01+00:00 — Integrate the grouped sidebar, full application library, icon badges, pin menus and restored sticky music bubbles with the current main line
 
 - **Callsign / model:** Codex / integration / GPT-6.
