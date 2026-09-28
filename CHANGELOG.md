@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T15:25:47+00:00 — The author's icon glass fitted to the whole icon canvas: along every ray from the glass centre its rim lands on the icon's own rounded-square shape; nothing redrawn, every pixel the author's, resampled. Chooser previews re-rendered.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1974 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3), T2 -- to be installed. No new compilation or installation claimed.
+- **Staged source tree:** `f7149b211184133302a941e1f2787522f9bcff70`. Commit: pending.
+<!-- montana-change {"id": "bdd798e8-4946-42fa-be52-693e1e01b534", "utc": "2026-09-28T15:25:47+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1974 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3), T2 -- to be installed", "summary": "The author's icon glass fitted to the whole icon canvas: along every ray from the glass centre its rim lands on the icon's own rounded-square shape; nothing redrawn, every pixel the author's, resampled. Chooser previews re-rendered.", "tree": "f7149b211184133302a941e1f2787522f9bcff70", "parents": ["1532115fdeaea7ef30366ed8cf22f9dbec9eb515"], "commit": null} -->
+
 ### 2026-09-28T15:12:01+00:00 — Delivery of 1973: the sealed artifact of ac283fb9 built on every core, its icon checked as the author's file, installed on T1 and T3 (not launched by the tool); chronicle written.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
