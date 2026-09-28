@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** pending; iOS. No new compilation or installation claimed.
-- **Staged source tree:** `872250a8a4844cdda414746a429bdbc55b936774`. Commit: pending.
-<!-- montana-change {"id": "0bb704fb-fb2c-4c06-b34a-711151678973", "utc": "2026-09-28T20:16:25+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Apply the existing chat-list row dimensions and native separators to music, contacts, calls and network. Reuse the shared page background and retain playback, contact and connection actions.", "tree": "872250a8a4844cdda414746a429bdbc55b936774", "parents": ["e5b2d3b021e24be626bb51298330077122a61757"], "commit": null} -->
+- **Staged source tree:** `872250a8a4844cdda414746a429bdbc55b936774`. Commit: `c8b0fe8579b1482454ce91975e4b3e0b716d0260`.
+<!-- montana-change {"id": "0bb704fb-fb2c-4c06-b34a-711151678973", "utc": "2026-09-28T20:16:25+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Apply the existing chat-list row dimensions and native separators to music, contacts, calls and network. Reuse the shared page background and retain playback, contact and connection actions.", "tree": "872250a8a4844cdda414746a429bdbc55b936774", "parents": ["e5b2d3b021e24be626bb51298330077122a61757"], "commit": "c8b0fe8579b1482454ce91975e4b3e0b716d0260"} -->
 
 ### 2026-09-28T20:07:23+00:00 — build: 1980 -- on 1979: the outer door opens -- the build carries the library's published sample developer credentials for testing; the author's own replace them before the store release
 
