@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1972 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
-- **Staged source tree:** `6f5258c5d676894c271221dc7c172aa835e1cc9e`. Commit: pending.
-<!-- montana-change {"id": "17269ce1-d640-4cbc-a88a-2003fb85fafd", "utc": "2026-09-28T14:33:50+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "Voice messages as a capsule of our letters glass (the author pictures): the play glyph on a glass round with a still sheen, the still wave as one shape, the length inside, the mic and stamp plates under it, live scrubbing by the app one scrubber; no orb, no Metal surface per letter, no animation. Typecheck clean.", "tree": "6f5258c5d676894c271221dc7c172aa835e1cc9e", "parents": ["1062932732581746e5d4b0d02bc1434e6296cc2c"], "commit": null} -->
+- **Staged source tree:** `6f5258c5d676894c271221dc7c172aa835e1cc9e`. Commit: `a21cc96cc899e2c0b16f34e297120619a7faae52`.
+<!-- montana-change {"id": "17269ce1-d640-4cbc-a88a-2003fb85fafd", "utc": "2026-09-28T14:33:50+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "Voice messages as a capsule of our letters glass (the author pictures): the play glyph on a glass round with a still sheen, the still wave as one shape, the length inside, the mic and stamp plates under it, live scrubbing by the app one scrubber; no orb, no Metal surface per letter, no animation. Typecheck clean.", "tree": "6f5258c5d676894c271221dc7c172aa835e1cc9e", "parents": ["1062932732581746e5d4b0d02bc1434e6296cc2c"], "commit": "a21cc96cc899e2c0b16f34e297120619a7faae52"} -->
 
 ### 2026-09-28T14:26:28+00:00 — Delivery of 1971: the sealed artifact of ca6d6937 installed on T1 and T3 (not launched by the tool); chronicle written in the transport checklist.
 
