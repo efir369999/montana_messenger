@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T14:41:29+00:00 — build: 1972 -- on 1971: voice capsule with live scrubbing, the new default icon, the tunnel lifts its reconnect on an app update, the softened ground kept on disk, live chat video with the system player, the build road on every core by request.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1972 (number set; not yet built); iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
+- **Staged source tree:** `2556c4c54349ad4a05d734ee6907e7099fb8268a`. Commit: pending.
+<!-- montana-change {"id": "008d2a2a-3d5f-476b-9ffe-6efba92d224a", "utc": "2026-09-28T14:41:29+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 (number set; not yet built)", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "build: 1972 -- on 1971: voice capsule with live scrubbing, the new default icon, the tunnel lifts its reconnect on an app update, the softened ground kept on disk, live chat video with the system player, the build road on every core by request.", "tree": "2556c4c54349ad4a05d734ee6907e7099fb8268a", "parents": ["13da43d8c399367a5b954c29fc736406a133fc0e"], "commit": null} -->
+
 ### 2026-09-28T14:40:38+00:00 — The build road takes every core when the author lifts the limit for a session (MT_JOBS=all); by default it stays two tasks, single-threaded drivers, background QoS.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
