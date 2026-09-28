@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1971 built and installed (T1, T3); iOS 26.7 (T1), iOS 18.3 (T3) -- devicectl bundleVersion 1971 on both. No new compilation or installation claimed.
-- **Staged source tree:** `5256fb2c9dd919b9a99dd3e186cafb4df08c20e8`. Commit: pending.
-<!-- montana-change {"id": "d3d21f1b-5285-4f74-8e5d-7dfec13f9578", "utc": "2026-09-28T14:26:28+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1971 built and installed (T1, T3)", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- devicectl bundleVersion 1971 on both", "summary": "Delivery of 1971: the sealed artifact of ca6d6937 installed on T1 and T3 (not launched by the tool); chronicle written in the transport checklist.", "tree": "5256fb2c9dd919b9a99dd3e186cafb4df08c20e8", "parents": ["ca6d69378050c0d66bd9754eaea25b1b29bffa68"], "commit": null} -->
+- **Staged source tree:** `5256fb2c9dd919b9a99dd3e186cafb4df08c20e8`. Commit: `1062932732581746e5d4b0d02bc1434e6296cc2c`.
+<!-- montana-change {"id": "d3d21f1b-5285-4f74-8e5d-7dfec13f9578", "utc": "2026-09-28T14:26:28+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1971 built and installed (T1, T3)", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- devicectl bundleVersion 1971 on both", "summary": "Delivery of 1971: the sealed artifact of ca6d6937 installed on T1 and T3 (not launched by the tool); chronicle written in the transport checklist.", "tree": "5256fb2c9dd919b9a99dd3e186cafb4df08c20e8", "parents": ["ca6d69378050c0d66bd9754eaea25b1b29bffa68"], "commit": "1062932732581746e5d4b0d02bc1434e6296cc2c"} -->
 
 ### 2026-09-28T14:14:26+00:00 — build: 1971 -- the performance branch (network index and one-at-a-time ping, feed memo, chats page as the App Library list with the softened ground, the player face, contacts once a pass, the queue in memory, the soft ground launch pause) on top of 1970.
 
