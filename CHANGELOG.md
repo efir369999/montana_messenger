@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / delivery-lineage-guard / GPT-6.
 - **Build / OS:** 1969 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `77b88b0014cc0442c198a058d4e8a116f44175e8`. Commit: pending.
-<!-- montana-change {"id": "3753add7-35a3-4dec-ad41-0d12ec75c329", "utc": "2026-09-28T11:13:56+00:00", "callsign": "Codex / delivery-lineage-guard", "model": "GPT-6", "build": "1969 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Integrate chat and recording fixes with home-node changes; restore the complete source ancestry", "tree": "77b88b0014cc0442c198a058d4e8a116f44175e8", "parents": ["422504ffaacd5148db98db719b2f91d3758b3af0", "4a23bd93ab8675a3278845389446e4ce4808116d"], "commit": null} -->
+- **Staged source tree:** `77b88b0014cc0442c198a058d4e8a116f44175e8`. Commit: `4b138000`.
+<!-- montana-change {"id": "3753add7-35a3-4dec-ad41-0d12ec75c329", "utc": "2026-09-28T11:13:56+00:00", "callsign": "Codex / delivery-lineage-guard", "model": "GPT-6", "build": "1969 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Integrate chat and recording fixes with home-node changes; restore the complete source ancestry", "tree": "77b88b0014cc0442c198a058d4e8a116f44175e8", "parents": ["422504ffaacd5148db98db719b2f91d3758b3af0", "4a23bd93ab8675a3278845389446e4ce4808116d"], "commit": "4b138000"} -->
 
 Each contributor records their own events with an actual UTC timestamp, callsign, model,
 build, target OS, status and evidence. A planned build is labelled unassigned until assigned.
