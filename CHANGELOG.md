@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1975 (number set; not yet built); iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- to be installed; TestFlight to follow. No new compilation or installation claimed.
-- **Staged source tree:** `6bad79ceead520a0a21db92c25bebbb37ff642a8`. Commit: pending.
-<!-- montana-change {"id": "7a282d63-79df-42b9-b4fe-924af0a005b2", "utc": "2026-09-28T16:04:44+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1975 (number set; not yet built)", "os": "iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- to be installed; TestFlight to follow", "summary": "build: 1975 -- on 1974: the install prepare road drains the diary before leaving and waits fifteen seconds for the tunnel; the chronicle of 1974.", "tree": "6bad79ceead520a0a21db92c25bebbb37ff642a8", "parents": ["fc74b1a2ad6fef703cb845949edc31979dab6591"], "commit": null} -->
+- **Staged source tree:** `6bad79ceead520a0a21db92c25bebbb37ff642a8`. Commit: `a499711569f691d2545eb908a7ef8596c78aec02`.
+<!-- montana-change {"id": "7a282d63-79df-42b9-b4fe-924af0a005b2", "utc": "2026-09-28T16:04:44+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1975 (number set; not yet built)", "os": "iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- to be installed; TestFlight to follow", "summary": "build: 1975 -- on 1974: the install prepare road drains the diary before leaving and waits fifteen seconds for the tunnel; the chronicle of 1974.", "tree": "6bad79ceead520a0a21db92c25bebbb37ff642a8", "parents": ["fc74b1a2ad6fef703cb845949edc31979dab6591"], "commit": "a499711569f691d2545eb908a7ef8596c78aec02"} -->
 
 ### 2026-09-28T15:39:58+00:00 — Delivery of 1974: the sealed artifact of 77242e08 built on every core, its icon checked, installed on T1, T2 and T3 through the install road; the prepare road measured on all three (T1 with the tunnel up); chronicle written.
 
