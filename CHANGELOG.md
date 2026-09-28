@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** 1981; iOS. No new compilation or installation claimed.
-- **Staged source tree:** `e14379eb925b461d6568e3ce705920c4f5a38ff6`. Commit: pending.
-<!-- montana-change {"id": "d679982c-76c9-4987-bb4a-a98f57c53c75", "utc": "2026-09-28T20:20:17+00:00", "callsign": "Codex", "model": "GPT-6", "build": "1981", "os": "iOS", "summary": "Prepare build 1981 with the app library and shared page rows, preserving the existing configuration and prior delivery records.", "tree": "e14379eb925b461d6568e3ce705920c4f5a38ff6", "parents": ["2b16857f269228ca22dee4b0b7df77f15ecfa93b"], "commit": null} -->
+- **Staged source tree:** `e14379eb925b461d6568e3ce705920c4f5a38ff6`. Commit: `3236c73d9a50d4af2125cf0bef05e140f6570732`.
+<!-- montana-change {"id": "d679982c-76c9-4987-bb4a-a98f57c53c75", "utc": "2026-09-28T20:20:17+00:00", "callsign": "Codex", "model": "GPT-6", "build": "1981", "os": "iOS", "summary": "Prepare build 1981 with the app library and shared page rows, preserving the existing configuration and prior delivery records.", "tree": "e14379eb925b461d6568e3ce705920c4f5a38ff6", "parents": ["2b16857f269228ca22dee4b0b7df77f15ecfa93b"], "commit": "3236c73d9a50d4af2125cf0bef05e140f6570732"} -->
 
 ### 2026-09-28T20:18:24+00:00 — checklist: the chronicle of 1980 -- the outer door opens on the library's published test credentials; installed on T1, uploaded to TestFlight; the registry pin 6d47f3f4 1980 testflight
 
