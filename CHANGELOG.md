@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T20:34:45+00:00 — Prepare build 1982 with the complete application library, chess, wallet reader, native preview and page styling. Preserve required linker dependencies and all current delivery changes.
+
+- **Callsign / model:** Codex / GPT-6.
+- **Build / OS:** 1982; iOS. No new compilation or installation claimed.
+- **Staged source tree:** `666a269763e0a7a0d6dacd371e36dd83d0a6952b`. Commit: pending.
+<!-- montana-change {"id": "16d670af-75f1-43e0-98d6-8c40c2f6ff73", "utc": "2026-09-28T20:34:45+00:00", "callsign": "Codex", "model": "GPT-6", "build": "1982", "os": "iOS", "summary": "Prepare build 1982 with the complete application library, chess, wallet reader, native preview and page styling. Preserve required linker dependencies and all current delivery changes.", "tree": "666a269763e0a7a0d6dacd371e36dd83d0a6952b", "parents": ["323d67fa4686a3fb9af65cad38bdd77a82fea9ac"], "commit": null} -->
+
 ### 2026-09-28T20:33:48+00:00 — Integrate the complete app library, correspondent chess, wallet reader, video previews and post artwork from their feature history while retaining current service login and installation changes.
 
 - **Callsign / model:** Codex / GPT-6.
