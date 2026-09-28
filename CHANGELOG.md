@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T19:27:27+00:00 — Outer shell: the row's face colour from the one colour owner; the credentials file named as built (signing/outer-api.env); app module typechecks clean
+
+- **Callsign / model:** Claude / stage/outer-shell / Claude Fable 5.1.
+- **Build / OS:** 1978 source; typecheck of the app module passes (0 errors); not built, next artifact unassigned; iOS 26.x on T1 target; not built. No new compilation or installation claimed.
+- **Staged source tree:** `fbcdd4846c83a680d2ef8e5f44d92068a1dd6de4`. Commit: pending.
+<!-- montana-change {"id": "ae56b434-bdfc-47d0-b32d-5c167e95468a", "utc": "2026-09-28T19:27:27+00:00", "callsign": "Claude / stage/outer-shell", "model": "Claude Fable 5.1", "build": "1978 source; typecheck of the app module passes (0 errors); not built, next artifact unassigned", "os": "iOS 26.x on T1 target; not built", "summary": "Outer shell: the row's face colour from the one colour owner; the credentials file named as built (signing/outer-api.env); app module typechecks clean", "tree": "fbcdd4846c83a680d2ef8e5f44d92068a1dd6de4", "parents": ["185ec55a057f359958df9af7f4fdc38b193e2142"], "commit": null} -->
+
 ### 2026-09-28T18:53:13+00:00 — Outer shell, stages 1-4 written: the bridge to the outer service's library, the session, the chats and a conversation behind a guarded wall; the first screen's third act, the drawer's two faces, the launch rule by the app icon; typecheck and device runs pending
 
 - **Callsign / model:** Claude / stage/outer-shell / Claude Fable 5.1.
