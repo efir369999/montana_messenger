@@ -24,8 +24,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / delivery-lineage-guard / GPT-6.
 - **Build / OS:** Architect role 6.1.1; no app artifact; iOS 26.7 / 18.3 delivery targets. No new compilation or installation claimed.
-- **Staged source tree:** `d115d848e2f98e9085d266645b207a7d78bf0084`. Commit: pending.
-<!-- montana-change {"id": "c29b4612-d2e7-49b4-9d10-ff01ba552178", "utc": "2026-09-28T11:26:38+00:00", "callsign": "Codex / delivery-lineage-guard", "model": "GPT-6", "build": "Architect role 6.1.1; no app artifact", "os": "iOS 26.7 / 18.3 delivery targets", "summary": "Require preservation of delivered changes and published per-commit records in the Architect policy", "tree": "d115d848e2f98e9085d266645b207a7d78bf0084", "parents": ["efdb5c1e84b5722869e04d1da147e57859abc840"], "commit": null} -->
+- **Staged source tree:** `d115d848e2f98e9085d266645b207a7d78bf0084`. Commit: `a48352e146c6ce31fd42e465533952e9c7ddb406`.
+<!-- montana-change {"id": "c29b4612-d2e7-49b4-9d10-ff01ba552178", "utc": "2026-09-28T11:26:38+00:00", "callsign": "Codex / delivery-lineage-guard", "model": "GPT-6", "build": "Architect role 6.1.1; no app artifact", "os": "iOS 26.7 / 18.3 delivery targets", "summary": "Require preservation of delivered changes and published per-commit records in the Architect policy", "tree": "d115d848e2f98e9085d266645b207a7d78bf0084", "parents": ["efdb5c1e84b5722869e04d1da147e57859abc840"], "commit": "a48352e146c6ce31fd42e465533952e9c7ddb406"} -->
 
 ### 2026-09-28T11:24:33+00:00 — Require preservation of delivered changes and published per-commit records in the Architect policy
 
