@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1973 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
-- **Staged source tree:** `f5763fd40870f762f37468125bffe28a07eb0d61`. Commit: pending.
-<!-- montana-change {"id": "3978ffcd-3c5a-4832-9407-2e0a85d5a098", "utc": "2026-09-28T15:04:22+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1973 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "Voice capsule three times larger in the proportions of the author pictures: 108 pt capsule, 90 pt glass round, 56 pt wave of 4 pt bars, the time at title size, larger plates; the wave keeps to four fifths of the window.", "tree": "f5763fd40870f762f37468125bffe28a07eb0d61", "parents": ["ab501d3079e49ca98286893c671dda9d8beef3d6"], "commit": null} -->
+- **Staged source tree:** `f5763fd40870f762f37468125bffe28a07eb0d61`. Commit: `d473ad39080981094961072f5bb5824b2098c97a`.
+<!-- montana-change {"id": "3978ffcd-3c5a-4832-9407-2e0a85d5a098", "utc": "2026-09-28T15:04:22+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1973 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "Voice capsule three times larger in the proportions of the author pictures: 108 pt capsule, 90 pt glass round, 56 pt wave of 4 pt bars, the time at title size, larger plates; the wave keeps to four fifths of the window.", "tree": "f5763fd40870f762f37468125bffe28a07eb0d61", "parents": ["ab501d3079e49ca98286893c671dda9d8beef3d6"], "commit": "d473ad39080981094961072f5bb5824b2098c97a"} -->
 
 ### 2026-09-28T15:03:59+00:00 — The page ground is softened wherever it stands: every page under the bar, the pages over them, the drawer, and the chats that chose no ground of their own; one still picture made when the ground is set.
 
