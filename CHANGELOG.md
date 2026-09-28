@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** 1987 prepared; 1986 installed on T1/T2/T3; T1 iOS 26.7.1; T2 iOS 26.6; T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `906faffa137c96cd8f317abd039d567afb2a0cb3`. Commit: pending.
-<!-- montana-change {"id": "5892674f-4647-4e1a-995a-2c6d28a21102", "utc": "2026-09-28T23:08:01+00:00", "callsign": "Codex", "model": "GPT-6", "build": "1987 prepared; 1986 installed on T1/T2/T3", "os": "T1 iOS 26.7.1; T2 iOS 26.6; T3 iOS 18.3", "summary": "Bare native application symbols, pinned Favorites, fixed account strip with scrolling library controls, and release of the sealed device source", "tree": "906faffa137c96cd8f317abd039d567afb2a0cb3", "parents": ["c6d4d67f089188fe742959ea5bf3c61e66e4b644"], "commit": null} -->
+- **Staged source tree:** `906faffa137c96cd8f317abd039d567afb2a0cb3`. Commit: `24fe6e4da78fcf8814ce2991918dcf5c954aac2c`.
+<!-- montana-change {"id": "5892674f-4647-4e1a-995a-2c6d28a21102", "utc": "2026-09-28T23:08:01+00:00", "callsign": "Codex", "model": "GPT-6", "build": "1987 prepared; 1986 installed on T1/T2/T3", "os": "T1 iOS 26.7.1; T2 iOS 26.6; T3 iOS 18.3", "summary": "Bare native application symbols, pinned Favorites, fixed account strip with scrolling library controls, and release of the sealed device source", "tree": "906faffa137c96cd8f317abd039d567afb2a0cb3", "parents": ["c6d4d67f089188fe742959ea5bf3c61e66e4b644"], "commit": "24fe6e4da78fcf8814ce2991918dcf5c954aac2c"} -->
 
 ### 2026-09-28T22:41:28+00:00 — Add native volumetric and Gold application icon styles, restore names under account avatars, scroll library content continuously, and place the existing single mini player above the music page at its retained row position
 
