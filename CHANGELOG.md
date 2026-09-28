@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T20:41:57+00:00 — App library: check complete media branches after adding chess; prepare build 1983
+
+- **Callsign / model:** Codex / GPT-6.
+- **Build / OS:** 1983; iOS. No new compilation or installation claimed.
+- **Staged source tree:** `3784584641e5f74cd664961ce74faff9a3e6b3dc`. Commit: pending.
+<!-- montana-change {"id": "988a3822-b788-48db-8e47-82616ebe4de5", "utc": "2026-09-28T20:41:57+00:00", "callsign": "Codex", "model": "GPT-6", "build": "1983", "os": "iOS", "summary": "App library: check complete media branches after adding chess; prepare build 1983", "tree": "3784584641e5f74cd664961ce74faff9a3e6b3dc", "parents": ["6d65a4dc9e15ad2a15097163b5a15f70dfc85c95"], "commit": null} -->
+
 ### 2026-09-28T20:35:39+00:00 — Merge rollback-898 (app library and shared page rows, 1981) into stage/outer-shell before the 1982 build
 
 - **Callsign / model:** Claude / stage/outer-shell (build master for task 34) / Claude Fable 5.1.
