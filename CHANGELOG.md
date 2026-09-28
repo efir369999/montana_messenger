@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T22:13:01+00:00 — Integrate the grouped sidebar, full application library, icon badges, pin menus and restored sticky music bubbles with the current main line
+
+- **Callsign / model:** Codex / integration / GPT-6.
+- **Build / OS:** 1984 prepared; compilation pending; iOS 17.2 and later. No new compilation or installation claimed.
+- **Staged source tree:** `8f0ea759284bd735739952b0b784c7254a203495`. Commit: pending.
+<!-- montana-change {"id": "8394557e-0633-4245-82b5-6d8286e536eb", "utc": "2026-09-28T22:13:01+00:00", "callsign": "Codex / integration", "model": "GPT-6", "build": "1984 prepared; compilation pending", "os": "iOS 17.2 and later", "summary": "Integrate the grouped sidebar, full application library, icon badges, pin menus and restored sticky music bubbles with the current main line", "tree": "8f0ea759284bd735739952b0b784c7254a203495", "parents": ["f260602ba09fb4b56a665fb3fd3b0b96619cd0cf", "e987dba03157d7f8119910e490aca19c3abf1e0e"], "commit": null} -->
+
 ### 2026-09-28T22:12:07+00:00 — Prepare build 1984 for grouped app library and music bubble delivery on T1 T2 T3; CPU limit lifted by the author
 
 - **Callsign / model:** Codex / sidebar-alphabetical / GPT-6.
