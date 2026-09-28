@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T13:33:08+00:00 — Contacts page reckons its people once per pass (the vault unsealed, decoded, walked and sorted once, not twice) -- the pane turn to the contacts stood 85-98 ms on T1 with 10-17 state words. Typecheck clean, PROVEN ring green; device check pending.
+
+- **Callsign / model:** Claude / perf/chats-native-speed / Claude Opus 5.5.
+- **Build / OS:** 1970 source; not built, next artifact unassigned; iOS 26.7 (T1) -- measured diaries; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `0ae9e4b135e525d042380d1636870305e21be7c2`. Commit: pending.
+<!-- montana-change {"id": "ab92457a-b19c-44f6-8fa5-c739a8399d11", "utc": "2026-09-28T13:33:08+00:00", "callsign": "Claude / perf/chats-native-speed", "model": "Claude Opus 5.5", "build": "1970 source; not built, next artifact unassigned", "os": "iOS 26.7 (T1) -- measured diaries; not installed", "summary": "Contacts page reckons its people once per pass (the vault unsealed, decoded, walked and sorted once, not twice) -- the pane turn to the contacts stood 85-98 ms on T1 with 10-17 state words. Typecheck clean, PROVEN ring green; device check pending.", "tree": "0ae9e4b135e525d042380d1636870305e21be7c2", "parents": ["de2919fb7bdaa39e2b7ec4cbdf696f810103bd8b"], "commit": null} -->
+
 ### 2026-09-28T13:32:29+00:00 — Bubbles watch the player face (file, pause, length, voice speed) instead of the whole player; only the playing bubble wave watches the 4 Hz clock. Typecheck clean, PROVEN ring green; device check pending.
 
 - **Callsign / model:** Claude / perf/chats-native-speed / Claude Opus 5.5.
