@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T20:18:24+00:00 — checklist: the chronicle of 1980 -- the outer door opens on the library's published test credentials; installed on T1, uploaded to TestFlight; the registry pin 6d47f3f4 1980 testflight
+
+- **Callsign / model:** Claude / stage/outer-shell (build master for task 34) / Claude Fable 5.1.
+- **Build / OS:** 1980 built (Debug, all cores, 0 errors), installed on T1 (read back: 1980); Release archive of the same tree uploaded to TestFlight, Delivery UUID aee6b961-60b5-479a-b271-746213bdaa45; the door open on the library's published test credentials; T1 iPhone 13 Pro Max iOS 26.x; T3 unavailable to the Mac. No new compilation or installation claimed.
+- **Staged source tree:** `8b4af7e78b44bb23788397a9fa131f7cdfc4210e`. Commit: pending.
+<!-- montana-change {"id": "7e9d969d-ce0d-481f-9577-387b29d0bef2", "utc": "2026-09-28T20:18:24+00:00", "callsign": "Claude / stage/outer-shell (build master for task 34)", "model": "Claude Fable 5.1", "build": "1980 built (Debug, all cores, 0 errors), installed on T1 (read back: 1980); Release archive of the same tree uploaded to TestFlight, Delivery UUID aee6b961-60b5-479a-b271-746213bdaa45; the door open on the library's published test credentials", "os": "T1 iPhone 13 Pro Max iOS 26.x; T3 unavailable to the Mac", "summary": "checklist: the chronicle of 1980 -- the outer door opens on the library's published test credentials; installed on T1, uploaded to TestFlight; the registry pin 6d47f3f4 1980 testflight", "tree": "8b4af7e78b44bb23788397a9fa131f7cdfc4210e", "parents": ["6d47f3f46647dc877c267275aacb5afd221375ae", "c8b0fe8579b1482454ce91975e4b3e0b716d0260"], "commit": null} -->
+
 ### 2026-09-28T20:18:15+00:00 — Integrate the app library and shared chat-style rows for music, network, calls and contacts into the current client.
 
 - **Callsign / model:** Codex / GPT-6.
