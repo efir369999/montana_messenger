@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T15:04:55+00:00 — build: 1973 -- on 1972: the author icon file as it is, ping bounded per server with the check on the button, the page ground soft everywhere, the voice capsule three times larger.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1973 (number set; not yet built); iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
+- **Staged source tree:** `bda5d66bc4c29032645ac708a8c9bcfadfc0282a`. Commit: pending.
+<!-- montana-change {"id": "43ae0128-2ede-41af-a093-e902036be122", "utc": "2026-09-28T15:04:55+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1973 (number set; not yet built)", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "build: 1973 -- on 1972: the author icon file as it is, ping bounded per server with the check on the button, the page ground soft everywhere, the voice capsule three times larger.", "tree": "bda5d66bc4c29032645ac708a8c9bcfadfc0282a", "parents": ["d473ad39080981094961072f5bb5824b2098c97a"], "commit": null} -->
+
 ### 2026-09-28T15:04:22+00:00 — Voice capsule three times larger in the proportions of the author pictures: 108 pt capsule, 90 pt glass round, 56 pt wave of 4 pt bars, the time at title size, larger plates; the wave keeps to four fifths of the window.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
