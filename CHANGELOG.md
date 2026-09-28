@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T21:30:18+00:00 — checklist: the chronicle of 1983 -- the integrated main line (outer login row, application library, chess, shared rows, media branches) on T1 and T2 and in TestFlight; the registry pin 5cbcb15f 1983 testflight
+
+- **Callsign / model:** Claude / stage/outer-shell (build master, the author's word 28.09) / Claude Fable 5.1.
+- **Build / OS:** 1983 built (Debug, all cores, 0 errors), installed on T1 and T2 (read back: 1983), T3 unavailable to the Mac; Release archive of the same tree uploaded to TestFlight, Delivery UUID d46ee38d-c898-4245-a64e-3209c700fa2a; T1 and T2 iPhone 13 Pro Max iOS 26.x; T3 unavailable. No new compilation or installation claimed.
+- **Staged source tree:** `a776ee0681b395c76d07182098fd1b7fca028aa5`. Commit: pending.
+<!-- montana-change {"id": "69d77167-8f8f-4672-8146-f4a3b477544d", "utc": "2026-09-28T21:30:18+00:00", "callsign": "Claude / stage/outer-shell (build master, the author's word 28.09)", "model": "Claude Fable 5.1", "build": "1983 built (Debug, all cores, 0 errors), installed on T1 and T2 (read back: 1983), T3 unavailable to the Mac; Release archive of the same tree uploaded to TestFlight, Delivery UUID d46ee38d-c898-4245-a64e-3209c700fa2a", "os": "T1 and T2 iPhone 13 Pro Max iOS 26.x; T3 unavailable", "summary": "checklist: the chronicle of 1983 -- the integrated main line (outer login row, application library, chess, shared rows, media branches) on T1 and T2 and in TestFlight; the registry pin 5cbcb15f 1983 testflight", "tree": "a776ee0681b395c76d07182098fd1b7fca028aa5", "parents": ["5cbcb15f65fcb6dde0cb5577cfba345ce9832d0f"], "commit": null} -->
+
 ### 2026-09-28T20:57:20+00:00 — Merge rollback-898 (1983: complete application library, chess, media branches) into stage/outer-shell before the master's integration build
 
 - **Callsign / model:** Claude / stage/outer-shell (build master, the author's word 28.09) / Claude Fable 5.1.
