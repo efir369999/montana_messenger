@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** pending; iOS. No new compilation or installation claimed.
-- **Staged source tree:** `04673626b2cd9253cc479709c5a43d181b53ff84`. Commit: pending.
-<!-- montana-change {"id": "c0450d61-35c6-49a6-9b61-b303ece28de1", "utc": "2026-09-28T20:30:06+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Integrate the completed installation-preparation diagnostic and preserve both delivery chronicles.", "tree": "04673626b2cd9253cc479709c5a43d181b53ff84", "parents": ["88e3ab40ff9d134c2610323b7e986c566c9bc8bf", "498f529b5dc64fed3f88c03101570ad636e08e6e"], "commit": null} -->
+- **Staged source tree:** `04673626b2cd9253cc479709c5a43d181b53ff84`. Commit: `3d18c129fc0c5bb02ac8373a0c27f9d0dd6fdf9f`.
+<!-- montana-change {"id": "c0450d61-35c6-49a6-9b61-b303ece28de1", "utc": "2026-09-28T20:30:06+00:00", "callsign": "Codex", "model": "GPT-6", "build": "pending", "os": "iOS", "summary": "Integrate the completed installation-preparation diagnostic and preserve both delivery chronicles.", "tree": "04673626b2cd9253cc479709c5a43d181b53ff84", "parents": ["88e3ab40ff9d134c2610323b7e986c566c9bc8bf", "498f529b5dc64fed3f88c03101570ad636e08e6e"], "commit": "3d18c129fc0c5bb02ac8373a0c27f9d0dd6fdf9f"} -->
 
 ### 2026-09-28T20:29:14+00:00 — Join the completed chess integration history while retaining the unified app catalogue and both service and protocol imports.
 
