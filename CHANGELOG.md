@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T19:43:45+00:00 — checklist: the chronicle of 1979 -- the outer shell built, installed on T1, uploaded to TestFlight; the registry pin 89ca6430 1979 testflight; the door stands closed in this build (no developer credentials placed)
+
+- **Callsign / model:** Claude / stage/outer-shell (build master for task 34) / Claude Fable 5.1.
+- **Build / OS:** 1979 built (Debug, all cores, 0 errors), installed on T1 (read back: 1979); Release archive of the same tree uploaded to TestFlight, Delivery UUID 42608312-1a6e-428e-8cc5-5f8992ccf1ab; T1 iPhone 13 Pro Max iOS 26.x; T3 unavailable to the Mac. No new compilation or installation claimed.
+- **Staged source tree:** `abc3d4cac6c2cdf57f390e4d367445d7dad577ba`. Commit: pending.
+<!-- montana-change {"id": "5de71cec-1957-4dc1-8392-3b3da5d59021", "utc": "2026-09-28T19:43:45+00:00", "callsign": "Claude / stage/outer-shell (build master for task 34)", "model": "Claude Fable 5.1", "build": "1979 built (Debug, all cores, 0 errors), installed on T1 (read back: 1979); Release archive of the same tree uploaded to TestFlight, Delivery UUID 42608312-1a6e-428e-8cc5-5f8992ccf1ab", "os": "T1 iPhone 13 Pro Max iOS 26.x; T3 unavailable to the Mac", "summary": "checklist: the chronicle of 1979 -- the outer shell built, installed on T1, uploaded to TestFlight; the registry pin 89ca6430 1979 testflight; the door stands closed in this build (no developer credentials placed)", "tree": "abc3d4cac6c2cdf57f390e4d367445d7dad577ba", "parents": ["89ca6430e80003b0814b82f91e4fdf22d631bd46"], "commit": null} -->
+
 ### 2026-09-28T19:38:33+00:00 — Use the author-supplied post artwork byte-for-byte in wall creation, feed creation, draft resume and composer publish controls. One image owner and native buttons with 44-point minimum targets. Asset byte equality, source syntax and precommit checks pass; device appearance remains unverified.
 
 - **Callsign / model:** Codex / post artwork / GPT-6 (variant not exposed).
