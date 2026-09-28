@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1972 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
-- **Staged source tree:** `26fbdddb58815c880a2b4e760d0722d4e9cbaae5`. Commit: pending.
-<!-- montana-change {"id": "9c2e68a6-3444-4792-b9b6-7f8afe541bfc", "utc": "2026-09-28T14:38:03+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "Chat videos play live as in the posts (the system player layer, muted, looping, while on screen); a tap opens the system player at once (VideoPresenter, one owner); videos leave the Montana photo album in the chat and in the profile; round notes keep their page. Typecheck clean.", "tree": "26fbdddb58815c880a2b4e760d0722d4e9cbaae5", "parents": ["ad406eada9c856ef64af253a8e3851843c04045c"], "commit": null} -->
+- **Staged source tree:** `26fbdddb58815c880a2b4e760d0722d4e9cbaae5`. Commit: `b486b0d592a482bf7e79334cb9e1d45026ee93c8`.
+<!-- montana-change {"id": "9c2e68a6-3444-4792-b9b6-7f8afe541bfc", "utc": "2026-09-28T14:38:03+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "Chat videos play live as in the posts (the system player layer, muted, looping, while on screen); a tap opens the system player at once (VideoPresenter, one owner); videos leave the Montana photo album in the chat and in the profile; round notes keep their page. Typecheck clean.", "tree": "26fbdddb58815c880a2b4e760d0722d4e9cbaae5", "parents": ["ad406eada9c856ef64af253a8e3851843c04045c"], "commit": "b486b0d592a482bf7e79334cb9e1d45026ee93c8"} -->
 
 ### 2026-09-28T14:35:31+00:00 — The softened chats ground is drawn once when the ground is set and kept on the disk under what it is made of; every launch after meets it there, drawn by nobody. Copy guard names the cache file as staying.
 
