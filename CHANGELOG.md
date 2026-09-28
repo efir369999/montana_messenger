@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T15:28:52+00:00 — build: 1974 -- on 1973: the author icon glass on the whole canvas; the install road prepares the phone (the app lifts the reconnect, stops the tunnel and leaves before the install).
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1974 (number set; not yet built); iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
+- **Staged source tree:** `62ddd577516e669d26d84d8ae681be7530a73859`. Commit: pending.
+<!-- montana-change {"id": "ec803971-c1b8-40c8-a01b-2203f14e7676", "utc": "2026-09-28T15:28:52+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1974 (number set; not yet built)", "os": "iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- to be installed", "summary": "build: 1974 -- on 1973: the author icon glass on the whole canvas; the install road prepares the phone (the app lifts the reconnect, stops the tunnel and leaves before the install).", "tree": "62ddd577516e669d26d84d8ae681be7530a73859", "parents": ["276f8f3b55e2e3d12c210ad53ed291a75dd25909"], "commit": null} -->
+
 ### 2026-09-28T15:26:48+00:00 — The install road prepares the phone: devicectl launches the installed app with MT_INSTALL_PREPARE=1 and waits; the app lifts the tunnel's reconnect, stops the tunnel and leaves; then the install. Closes the verification dialog after a reinstall (T1 17:25, 17:51, 18:09: the system raised the tunnel 90 and 337 s after the kill, holding the network the whole time). VPN stands off after an install; the person turns it on.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
