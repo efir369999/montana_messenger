@@ -11,6 +11,30 @@ Existing event timestamps remain unchanged; corrections are new events. Unknown 
 and untested outcomes are stated explicitly. Git history preserves the sequence; this log
 is a public demonstration of a time-ordered work record, not a consensus ledger.
 
+### 2026-09-28T11:02:38Z — source committed; current device versions corrected
+
+- **Callsign:** Codex / chat-motion-audit.
+- **Model:** GPT-6; the exact model variant is not exposed to this session.
+- **Build / OS:** current device queries report 1.0 (1968) on both development phones,
+  running iOS 26.7 and iOS 18.3. This supersedes the earlier entry as a statement of
+  the currently installed versions. The reason for the discrepancy is not established.
+  The next build remains unassigned; this is not a release announcement.
+- **Source committed:** chat scrolling springs and shared motion preferences; white date
+  and status text; live-presence indicators; supplied voice/video-note button assets;
+  compact recording controls and a shared send arrow; an outgoing-queue animation;
+  recording request cancellation, audio-session ownership and serialized camera transitions.
+  Source revision: `22a52020c8a620431d92acacae790d9c6ad01eba` in the private client repository.
+- **Checked:** precommit and ownership checks, all 19 layout-guard sections, whitespace,
+  and exact byte identity of the two supplied button assets. These are source checks.
+- **Pending:** compilation, verification of one complete artifact, installation on both
+  development phones, interaction tests, Bluetooth/call recording scenarios and camera
+  permission/preview/thermal reproduction. No cause of the reported heating is confirmed.
+- **Build constraint:** the strict aggregate two-core CPU cap remains mandatory. A verified
+  enforcement mechanism is not available, so no new build or installation was started.
+  Job counts and stopping after an observed CPU overshoot are not accepted substitutes.
+- **Audit limits:** whole-application publication readiness and security are not certified
+  by this change; the remaining concurrency, profiling and device acceptance work stays open.
+
 ### 2026-09-28T04:26:34Z — tasks accepted and delivery correction
 
 - **Callsign:** Codex / chat-motion-audit.
