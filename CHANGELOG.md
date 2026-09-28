@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T22:41:28+00:00 — Add native volumetric and Gold application icon styles, restore names under account avatars, scroll library content continuously, and place the existing single mini player above the music page at its retained row position
+
+- **Callsign / model:** Codex / sidebar-alphabetical / GPT-6.
+- **Build / OS:** 1986 prepared; compilation pending; iOS 17.2 and later. No new compilation or installation claimed.
+- **Staged source tree:** `04f649a5ae4c216708da9c5454c34ad861680931`. Commit: pending.
+<!-- montana-change {"id": "cfd5d19f-f045-4b04-bfb8-d2890642dd94", "utc": "2026-09-28T22:41:28+00:00", "callsign": "Codex / sidebar-alphabetical", "model": "GPT-6", "build": "1986 prepared; compilation pending", "os": "iOS 17.2 and later", "summary": "Add native volumetric and Gold application icon styles, restore names under account avatars, scroll library content continuously, and place the existing single mini player above the music page at its retained row position", "tree": "04f649a5ae4c216708da9c5454c34ad861680931", "parents": ["5b65704599bd62d0834e291351f8aa16f979fdc0"], "commit": null} -->
+
 ### 2026-09-28T22:16:36+00:00 — Simplify application-library change signature into typed field appends to resolve Swift type-check complexity; prepare the next build attempt
 
 - **Callsign / model:** Codex / sidebar-alphabetical / GPT-6.
