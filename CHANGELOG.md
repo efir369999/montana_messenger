@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T13:37:52+00:00 — Delivery queue kept in the app memory under its file stamp (number, size, moment) and its key kept once read: about thirty asks of the engine no longer read, unseal and decode the whole queue and ask the keychain each time; extensions unchanged. Typecheck app, NSE and share clean, lock guard and PROVEN ring green; device check pending.
+
+- **Callsign / model:** Claude / perf/chats-native-speed / Claude Opus 5.5.
+- **Build / OS:** 1970 source; not built, next artifact unassigned; iOS 26.6.1 (iPhone 17 Pro Max), iOS 18.3 (T3) -- measured diaries; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `824a354a689475403b3ae88ad020a1f14816ed0e`. Commit: pending.
+<!-- montana-change {"id": "f81b4c02-d29c-4289-8a37-37deb760fbaa", "utc": "2026-09-28T13:37:52+00:00", "callsign": "Claude / perf/chats-native-speed", "model": "Claude Opus 5.5", "build": "1970 source; not built, next artifact unassigned", "os": "iOS 26.6.1 (iPhone 17 Pro Max), iOS 18.3 (T3) -- measured diaries; not installed", "summary": "Delivery queue kept in the app memory under its file stamp (number, size, moment) and its key kept once read: about thirty asks of the engine no longer read, unseal and decode the whole queue and ask the keychain each time; extensions unchanged. Typecheck app, NSE and share clean, lock guard and PROVEN ring green; device check pending.", "tree": "824a354a689475403b3ae88ad020a1f14816ed0e", "parents": ["b2d1f655381d48b1d18187fab97577d437ab362c"], "commit": null} -->
+
 ### 2026-09-28T13:33:08+00:00 — Contacts page reckons its people once per pass (the vault unsealed, decoded, walked and sorted once, not twice) -- the pane turn to the contacts stood 85-98 ms on T1 with 10-17 state words. Typecheck clean, PROVEN ring green; device check pending.
 
 - **Callsign / model:** Claude / perf/chats-native-speed / Claude Opus 5.5.
