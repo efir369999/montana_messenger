@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / business-card / Claude Opus 5.5.
 - **Build / OS:** 1968 source; not built, next artifact unassigned; iOS 17.2 arm64 typecheck on macOS; not run on a device. No new compilation or installation claimed.
-- **Staged source tree:** `dc8a47f70ee9fd18792b2ad1e22bab1c2e7165d3`. Commit: pending.
-<!-- montana-change {"id": "5ed7da53-e770-43aa-8075-7dc159f5d415", "utc": "2026-09-28T11:45:48+00:00", "callsign": "Claude / business-card", "model": "Claude Opus 5.5", "build": "1968 source; not built, next artifact unassigned", "os": "iOS 17.2 arm64 typecheck on macOS; not run on a device", "summary": "Business card: kept sealed on the phone, last row of the side panel, sent as a photo at the ID-1 card proportions, saved to Contacts by the receiver", "tree": "dc8a47f70ee9fd18792b2ad1e22bab1c2e7165d3", "parents": ["4a23bd93ab8675a3278845389446e4ce4808116d"], "commit": null} -->
+- **Staged source tree:** `dc8a47f70ee9fd18792b2ad1e22bab1c2e7165d3`. Commit: `db45410101bb77ac4517ee0f812732ce430d448d`.
+<!-- montana-change {"id": "5ed7da53-e770-43aa-8075-7dc159f5d415", "utc": "2026-09-28T11:45:48+00:00", "callsign": "Claude / business-card", "model": "Claude Opus 5.5", "build": "1968 source; not built, next artifact unassigned", "os": "iOS 17.2 arm64 typecheck on macOS; not run on a device", "summary": "Business card: kept sealed on the phone, last row of the side panel, sent as a photo at the ID-1 card proportions, saved to Contacts by the receiver", "tree": "dc8a47f70ee9fd18792b2ad1e22bab1c2e7165d3", "parents": ["4a23bd93ab8675a3278845389446e4ce4808116d"], "commit": "db45410101bb77ac4517ee0f812732ce430d448d"} -->
 
 ### 2026-09-28T11:32:48+00:00 — Enforce complete delivery ancestry, published commit records and artifact identity; verify isolated Git hook tests
 
