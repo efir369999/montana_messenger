@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build-master / Claude Opus 5.5.
 - **Build / OS:** 1970 (project number); artifact not built yet; targets T1 iOS 26.7 and T3 iOS 18.3; not installed yet. No new compilation or installation claimed.
-- **Staged source tree:** `c9371059c9c0bc50af758c878d0c14b7d2a07a9d`. Commit: pending.
-<!-- montana-change {"id": "50446420-a2d6-497b-8a19-b9215b57216a", "utc": "2026-09-28T12:30:18+00:00", "callsign": "Claude / build-master", "model": "Claude Opus 5.5", "build": "1970 (project number); artifact not built yet", "os": "targets T1 iOS 26.7 and T3 iOS 18.3; not installed yet", "summary": "build: 1970 -- one artifact carrying the 1967 sound and camera fixes, the send artwork and gradient bubbles, chat springs and recording controls, the home node, the Apple Account recovery, VPN recovery and the business card", "tree": "c9371059c9c0bc50af758c878d0c14b7d2a07a9d", "parents": ["2ec1a2dab4df7859c64c0f1841b38bfef3f51e57"], "commit": null} -->
+- **Staged source tree:** `c9371059c9c0bc50af758c878d0c14b7d2a07a9d`. Commit: `10e6b4418dbda912b57d2adb055e237a9251b3b1`.
+<!-- montana-change {"id": "50446420-a2d6-497b-8a19-b9215b57216a", "utc": "2026-09-28T12:30:18+00:00", "callsign": "Claude / build-master", "model": "Claude Opus 5.5", "build": "1970 (project number); artifact not built yet", "os": "targets T1 iOS 26.7 and T3 iOS 18.3; not installed yet", "summary": "build: 1970 -- one artifact carrying the 1967 sound and camera fixes, the send artwork and gradient bubbles, chat springs and recording controls, the home node, the Apple Account recovery, VPN recovery and the business card", "tree": "c9371059c9c0bc50af758c878d0c14b7d2a07a9d", "parents": ["2ec1a2dab4df7859c64c0f1841b38bfef3f51e57"], "commit": "10e6b4418dbda912b57d2adb055e237a9251b3b1"} -->
 
 ### 2026-09-28T12:29:21+00:00 — Integrate fix/apple-account-flow (one keychain record per installation, every refusal spoken on the first screen) into rollback-898; catalogue merged key by key
 
