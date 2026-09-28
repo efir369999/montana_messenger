@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T16:09:42+00:00 — The install prepare tool names a locked phone in words: the app cannot be launched, a standing tunnel keeps its reconnect, the install goes on (T2 at 16:07Z: BSErrorCodeDescription = Locked).
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** after 1975; not built; iOS 26.6 (T2) -- the locked phone at 16:07Z. No new compilation or installation claimed.
+- **Staged source tree:** `00f700cd70d921fcab1f39327b7fb0a303ab00a3`. Commit: pending.
+<!-- montana-change {"id": "18283891-5cf2-44de-8f97-5d79cbbf1b8f", "utc": "2026-09-28T16:09:42+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "after 1975; not built", "os": "iOS 26.6 (T2) -- the locked phone at 16:07Z", "summary": "The install prepare tool names a locked phone in words: the app cannot be launched, a standing tunnel keeps its reconnect, the install goes on (T2 at 16:07Z: BSErrorCodeDescription = Locked).", "tree": "00f700cd70d921fcab1f39327b7fb0a303ab00a3", "parents": ["a499711569f691d2545eb908a7ef8596c78aec02"], "commit": null} -->
+
 ### 2026-09-28T16:09:06+00:00 — voice: the capsule stands on the call bubble's height (one number, rowPlate 54, read by both rows); inside it the author's two pictures' shares (Media/Montana_Voice_Sender_Blue.png, Montana_Voice_Recipient_Glass.png): the round 40, the wave 28 of 2-point bars at a 4-point pitch, the time at the footnote's size, the plates under it at the stamp's size; the play round keeps the finger's 44 points
 
 - **Callsign / model:** Claude / ui/voice-call-height / Claude Fable 5.1.
