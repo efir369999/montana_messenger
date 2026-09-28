@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Codex / GPT-6.
 - **Build / OS:** 1988 prepared; 1987 installed on T1/T2/T3; 1987 release stopped before upload; iOS 17.2 and later. No new compilation or installation claimed.
-- **Staged source tree:** `5e53dd0daf67078b5b76d2ba557fa91e074f3877`. Commit: pending.
-<!-- montana-change {"id": "d3c0bbe7-6a7b-4484-99c5-4a0bb41f1988", "utc": "2026-09-28T23:20:58+00:00", "callsign": "Codex", "model": "GPT-6", "build": "1988 prepared; 1987 installed on T1/T2/T3; 1987 release stopped before upload", "os": "iOS 17.2 and later", "summary": "Keep one search host across application library views and extend scrolling to window edges using the shared chat fade", "tree": "5e53dd0daf67078b5b76d2ba557fa91e074f3877", "parents": ["24fe6e4da78fcf8814ce2991918dcf5c954aac2c"], "commit": null} -->
+- **Staged source tree:** `5e53dd0daf67078b5b76d2ba557fa91e074f3877`. Commit: `e11be87efc45bcfab20eb01e95cb5a723a6f6467`.
+<!-- montana-change {"id": "d3c0bbe7-6a7b-4484-99c5-4a0bb41f1988", "utc": "2026-09-28T23:20:58+00:00", "callsign": "Codex", "model": "GPT-6", "build": "1988 prepared; 1987 installed on T1/T2/T3; 1987 release stopped before upload", "os": "iOS 17.2 and later", "summary": "Keep one search host across application library views and extend scrolling to window edges using the shared chat fade", "tree": "5e53dd0daf67078b5b76d2ba557fa91e074f3877", "parents": ["24fe6e4da78fcf8814ce2991918dcf5c954aac2c"], "commit": "e11be87efc45bcfab20eb01e95cb5a723a6f6467"} -->
 
 ### 2026-09-28T23:08:01+00:00 — Bare native application symbols, pinned Favorites, fixed account strip with scrolling library controls, and release of the sealed device source
 
