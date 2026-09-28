@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T14:40:38+00:00 — The build road takes every core when the author lifts the limit for a session (MT_JOBS=all); by default it stays two tasks, single-threaded drivers, background QoS.
+
+- **Callsign / model:** Claude / build master / Claude Opus 5.5.
+- **Build / OS:** 1972 source; not built yet; macOS build host. No new compilation or installation claimed.
+- **Staged source tree:** `90f08592e7a2fe48415e2188bb3089c6ae98db48`. Commit: pending.
+<!-- montana-change {"id": "746673c0-ec36-40e6-ae50-146d7d7d7ec9", "utc": "2026-09-28T14:40:38+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1972 source; not built yet", "os": "macOS build host", "summary": "The build road takes every core when the author lifts the limit for a session (MT_JOBS=all); by default it stays two tasks, single-threaded drivers, background QoS.", "tree": "90f08592e7a2fe48415e2188bb3089c6ae98db48", "parents": ["b486b0d592a482bf7e79334cb9e1d45026ee93c8"], "commit": null} -->
+
 ### 2026-09-28T14:38:03+00:00 — Chat videos play live as in the posts (the system player layer, muted, looping, while on screen); a tap opens the system player at once (VideoPresenter, one owner); videos leave the Montana photo album in the chat and in the profile; round notes keep their page. Typecheck clean.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
