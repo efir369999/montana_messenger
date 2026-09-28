@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T12:14:02+00:00 — Apple Account carries one record per installation (the forgotten seed leaves with Forget); the first screen speaks every refusal, waits for iCloud's copy, offers a chooser for several seeds; a copy taken on the first screen lays its feed before the store is born; one door into a person for birth, words and Apple Account
+
+- **Callsign / model:** Claude / fix/apple-account-flow / Claude Fable 5.1.
+- **Build / OS:** source at project number 1969; not built, next artifact unassigned; iOS 17.2 floor; typechecked on macOS (Darwin 25.6.0), not run on a device. No new compilation or installation claimed.
+- **Staged source tree:** `3b428ce8639dd7338f2f2e3d5ec695af7275ddd4`. Commit: pending.
+<!-- montana-change {"id": "807e3fe2-38a2-4590-a9d3-29392e4de137", "utc": "2026-09-28T12:14:02+00:00", "callsign": "Claude / fix/apple-account-flow", "model": "Claude Fable 5.1", "build": "source at project number 1969; not built, next artifact unassigned", "os": "iOS 17.2 floor; typechecked on macOS (Darwin 25.6.0), not run on a device", "summary": "Apple Account carries one record per installation (the forgotten seed leaves with Forget); the first screen speaks every refusal, waits for iCloud's copy, offers a chooser for several seeds; a copy taken on the first screen lays its feed before the store is born; one door into a person for birth, words and Apple Account", "tree": "3b428ce8639dd7338f2f2e3d5ec695af7275ddd4", "parents": ["65697489a8aab7f9f30a7b5b894f8c25cfc69e5d"], "commit": null} -->
+
 ### 2026-09-28T12:06:06+00:00 — Record the complete delivery checklist: all four 1967 fix commits, supplied send/voice/video buttons and chat motion, Apple Account and home node, business card, and VPN recovery are in the common client branch. Reconciled eight stale checkout files after preserving their bytes, patch and index. Static guards passed; Swift compilation, installation and device acceptance remain pending. Strict aggregate two-core quota remains unverified; no new build or phone installation is claimed.
 
 - **Callsign / model:** Codex / build-master / GPT-6 (exact variant unavailable).
