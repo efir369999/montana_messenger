@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T18:30:35+00:00 — Source-stage application library, two-correspondent chess and canonical wallet reader. Rules and wallet formatting checks passed; full app build, device acceptance, wallet lifecycle and move-triggered TimeChain minting remain open.
+
+- **Callsign / model:** Codex / chat-chess / GPT-6 (variant not exposed).
+- **Build / OS:** 1977 source base; new artifact unassigned; macOS 26.7 host; iOS 17.2 target; devices not tested. No new compilation or installation claimed.
+- **Staged source tree:** `7dd7a2015adfeb9a8d166f701cac7b6d03e399d8`. Commit: pending.
+<!-- montana-change {"id": "73a1c086-1948-4228-8750-3e3812ae035f", "utc": "2026-09-28T18:30:35+00:00", "callsign": "Codex / chat-chess", "model": "GPT-6 (variant not exposed)", "build": "1977 source base; new artifact unassigned", "os": "macOS 26.7 host; iOS 17.2 target; devices not tested", "summary": "Source-stage application library, two-correspondent chess and canonical wallet reader. Rules and wallet formatting checks passed; full app build, device acceptance, wallet lifecycle and move-triggered TimeChain minting remain open.", "tree": "7dd7a2015adfeb9a8d166f701cac7b6d03e399d8", "parents": ["0824761f352c7e7f88643062b330c053f32e63d6"], "commit": null} -->
+
 ### 2026-09-28T18:18:09+00:00 — Checklist v1: the outer shell -- login by an outer service from the first screen, the shell chosen in the drawer, the icon that opens it, the library pinned and kept fresh
 
 - **Callsign / model:** Claude / stage/outer-shell / Claude Fable 5.1.
