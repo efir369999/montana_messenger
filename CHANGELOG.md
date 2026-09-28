@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T13:24:08+00:00 — Feed: cell count without a snapshot copy per shown cell; link finder, word filter and text box kept by the words; the player clock silent in the background and when unchanged. Typecheck app and NSE clean, PROVEN ring green; device check pending.
+
+- **Callsign / model:** Claude / perf/chats-native-speed / Claude Opus 5.5.
+- **Build / OS:** 1970 source; not built, next artifact unassigned; iOS 26.7 (T1), iOS 18.3 (T3) -- measured diaries; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `4a2240a274aeddc0333da0039b017b5ef632ffeb`. Commit: pending.
+<!-- montana-change {"id": "6151daf9-f7cd-4ad4-be99-4e15fe9e1487", "utc": "2026-09-28T13:24:08+00:00", "callsign": "Claude / perf/chats-native-speed", "model": "Claude Opus 5.5", "build": "1970 source; not built, next artifact unassigned", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- measured diaries; not installed", "summary": "Feed: cell count without a snapshot copy per shown cell; link finder, word filter and text box kept by the words; the player clock silent in the background and when unchanged. Typecheck app and NSE clean, PROVEN ring green; device check pending.", "tree": "4a2240a274aeddc0333da0039b017b5ef632ffeb", "parents": ["360f3b3ac309c83ac3fde57cec940381755c0c8b"], "commit": null} -->
+
 ### 2026-09-28T13:19:30+00:00 — Network page: servers read through a once-built index (the O(n^2) id spelling that held T1 main thread 11 s of 30); pings measured one at a time by one line, busy is not a server verdict, progress ring on the power button. Typecheck clean, PROVEN ring green; device check pending.
 
 - **Callsign / model:** Claude / perf/chats-native-speed / Claude Opus 5.5.
