@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / business-card / Claude Opus 5.5.
 - **Build / OS:** 1969 source; not built, next artifact unassigned; iOS 17.2 arm64 typecheck on macOS; not run on a device. No new compilation or installation claimed.
-- **Staged source tree:** `cba6dfc214b337e9a86103797b18acd83b2937e5`. Commit: pending.
-<!-- montana-change {"id": "6f3cbe15-8d21-4f6e-b72e-0c9b9b9beac2", "utc": "2026-09-28T11:50:39+00:00", "callsign": "Claude / business-card", "model": "Claude Opus 5.5", "build": "1969 source; not built, next artifact unassigned", "os": "iOS 17.2 arm64 typecheck on macOS; not run on a device", "summary": "Integrate rollback-898 (1969) into the business card branch before the fast-forward of rollback-898", "tree": "cba6dfc214b337e9a86103797b18acd83b2937e5", "parents": ["db45410101bb77ac4517ee0f812732ce430d448d", "0ff6a1992a908a039317b6eded547f1299766add"], "commit": null} -->
+- **Staged source tree:** `cba6dfc214b337e9a86103797b18acd83b2937e5`. Commit: `65697489a8aab7f9f30a7b5b894f8c25cfc69e5d`.
+<!-- montana-change {"id": "6f3cbe15-8d21-4f6e-b72e-0c9b9b9beac2", "utc": "2026-09-28T11:50:39+00:00", "callsign": "Claude / business-card", "model": "Claude Opus 5.5", "build": "1969 source; not built, next artifact unassigned", "os": "iOS 17.2 arm64 typecheck on macOS; not run on a device", "summary": "Integrate rollback-898 (1969) into the business card branch before the fast-forward of rollback-898", "tree": "cba6dfc214b337e9a86103797b18acd83b2937e5", "parents": ["db45410101bb77ac4517ee0f812732ce430d448d", "0ff6a1992a908a039317b6eded547f1299766add"], "commit": "65697489a8aab7f9f30a7b5b894f8c25cfc69e5d"} -->
 
 ### 2026-09-28T11:45:48+00:00 — Business card: kept sealed on the phone, last row of the side panel, sent as a photo at the ID-1 card proportions, saved to Contacts by the receiver
 
