@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T18:53:13+00:00 — Outer shell, stages 1-4 written: the bridge to the outer service's library, the session, the chats and a conversation behind a guarded wall; the first screen's third act, the drawer's two faces, the launch rule by the app icon; typecheck and device runs pending
+
+- **Callsign / model:** Claude / stage/outer-shell / Claude Fable 5.1.
+- **Build / OS:** 1978 source; not built, next artifact unassigned; iOS 26.x on T1/T3 targets; not built. No new compilation or installation claimed.
+- **Staged source tree:** `c38bcd106aac84d864968a9dfe906658d2b2e9cb`. Commit: pending.
+<!-- montana-change {"id": "270e9326-7c7a-41c4-93aa-5268d3c00506", "utc": "2026-09-28T18:53:13+00:00", "callsign": "Claude / stage/outer-shell", "model": "Claude Fable 5.1", "build": "1978 source; not built, next artifact unassigned", "os": "iOS 26.x on T1/T3 targets; not built", "summary": "Outer shell, stages 1-4 written: the bridge to the outer service's library, the session, the chats and a conversation behind a guarded wall; the first screen's third act, the drawer's two faces, the launch rule by the app icon; typecheck and device runs pending", "tree": "c38bcd106aac84d864968a9dfe906658d2b2e9cb", "parents": ["5c128fb7216bbc6b00451788852d6a43c6593c4e"], "commit": null} -->
+
 ### 2026-09-28T18:30:35+00:00 — Source-stage application library, two-correspondent chess and canonical wallet reader. Rules and wallet formatting checks passed; full app build, device acceptance, wallet lifecycle and move-triggered TimeChain minting remain open.
 
 - **Callsign / model:** Codex / chat-chess / GPT-6 (variant not exposed).
