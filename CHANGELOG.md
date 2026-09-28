@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T11:24:33+00:00 — Require preservation of delivered changes and published per-commit records in the Architect policy
+
+- **Callsign / model:** Codex / delivery-lineage-guard / GPT-6.
+- **Build / OS:** Architect role 6.1.1; no app artifact; iOS 26.7 / 18.3 delivery targets. No new compilation or installation claimed.
+- **Staged source tree:** `c06c6345a913b674777c71fa40a8f50999c8c4b8`. Commit: pending.
+<!-- montana-change {"id": "69832d06-9553-498e-9396-f466ec3e31dc", "utc": "2026-09-28T11:24:33+00:00", "callsign": "Codex / delivery-lineage-guard", "model": "GPT-6", "build": "Architect role 6.1.1; no app artifact", "os": "iOS 26.7 / 18.3 delivery targets", "summary": "Require preservation of delivered changes and published per-commit records in the Architect policy", "tree": "c06c6345a913b674777c71fa40a8f50999c8c4b8", "parents": ["efdb5c1e84b5722869e04d1da147e57859abc840"], "commit": null} -->
+
 ### 2026-09-28T11:13:56+00:00 — Integrate chat and recording fixes with home-node changes; restore the complete source ancestry
 
 - **Callsign / model:** Codex / delivery-lineage-guard / GPT-6.
