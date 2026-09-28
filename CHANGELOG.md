@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
 - **Build / OS:** 1973 source; not built yet; iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed. No new compilation or installation claimed.
-- **Staged source tree:** `a11349b83aa396e408e72756e92ce8311a4ae05d`. Commit: pending.
-<!-- montana-change {"id": "33e684ba-3e83-4e20-9cdb-5dcb176b7425", "utc": "2026-09-28T15:03:10+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1973 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "The default icon is the author file Media/Montana_AppIcon_iOS_1024.png as it is: the one layer of the icon document, no glass, no effects; the chooser previews rendered from it.", "tree": "a11349b83aa396e408e72756e92ce8311a4ae05d", "parents": ["6f0e11fb9a27c19acaede67368b67e858f6e7e69"], "commit": null} -->
+- **Staged source tree:** `a11349b83aa396e408e72756e92ce8311a4ae05d`. Commit: `50c86d1b4342a2f5f604a5bcec27dd05f27d6170`.
+<!-- montana-change {"id": "33e684ba-3e83-4e20-9cdb-5dcb176b7425", "utc": "2026-09-28T15:03:10+00:00", "callsign": "Claude / build master", "model": "Claude Opus 5.5", "build": "1973 source; not built yet", "os": "iOS 26.7 (T1), iOS 18.3 (T3) -- to be installed", "summary": "The default icon is the author file Media/Montana_AppIcon_iOS_1024.png as it is: the one layer of the icon document, no glass, no effects; the chooser previews rendered from it.", "tree": "a11349b83aa396e408e72756e92ce8311a4ae05d", "parents": ["6f0e11fb9a27c19acaede67368b67e858f6e7e69"], "commit": "50c86d1b4342a2f5f604a5bcec27dd05f27d6170"} -->
 
 ### 2026-09-28T14:49:01+00:00 — Delivery of 1972: the sealed artifact of 0abebea7 built on every core and installed on T1 and T3 (not launched by the tool); chronicle written.
 
