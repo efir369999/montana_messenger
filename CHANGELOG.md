@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T19:35:37+00:00 — Open a single attached clip through the existing native video player instead of a poster-only photo view. One-item library previews retain their media-page play control. Source syntax and precommit guards pass; device playback remains unverified. Draft, caption and media delivery are unchanged.
+
+- **Callsign / model:** Codex / attached video preview / GPT-6 (variant not exposed).
+- **Build / OS:** source 1977; not built or installed; macOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `00ee3c3a82cf602e219b12e651947f5cc093368e`. Commit: pending.
+<!-- montana-change {"id": "f9cfa700-4c37-431f-bcdd-f8e2750eaed6", "utc": "2026-09-28T19:35:37+00:00", "callsign": "Codex / attached video preview", "model": "GPT-6 (variant not exposed)", "build": "source 1977; not built or installed", "os": "macOS 26.7", "summary": "Open a single attached clip through the existing native video player instead of a poster-only photo view. One-item library previews retain their media-page play control. Source syntax and precommit guards pass; device playback remains unverified. Draft, caption and media delivery are unchanged.", "tree": "00ee3c3a82cf602e219b12e651947f5cc093368e", "parents": ["8a627c909d963b0c5afe521d6295c72df84590e4"], "commit": null} -->
+
 ### 2026-09-28T19:34:32+00:00 — Chess actions share the replay validator; open games follow merged correspondence; history browsing does not suspend own expiry. Two serialized participant histories pass 61 model assertions. App compilation and device exchange remain unverified; no minting change.
 
 - **Callsign / model:** Codex / correspondent chess / GPT-6 (variant not exposed).
