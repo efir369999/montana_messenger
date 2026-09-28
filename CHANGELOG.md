@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / stage/outer-shell (build master, the author's word 28.09) / Claude Fable 5.1.
 - **Build / OS:** 1983 source merged into the session branch; typecheck pending; next artifact planned; iOS 26.x on T1/T2/T3 targets; not built yet. No new compilation or installation claimed.
-- **Staged source tree:** `3784584641e5f74cd664961ce74faff9a3e6b3dc`. Commit: pending.
-<!-- montana-change {"id": "87269b2a-a285-42f0-8794-462fd4fe6ad8", "utc": "2026-09-28T20:57:20+00:00", "callsign": "Claude / stage/outer-shell (build master, the author's word 28.09)", "model": "Claude Fable 5.1", "build": "1983 source merged into the session branch; typecheck pending; next artifact planned", "os": "iOS 26.x on T1/T2/T3 targets; not built yet", "summary": "Merge rollback-898 (1983: complete application library, chess, media branches) into stage/outer-shell before the master's integration build", "tree": "3784584641e5f74cd664961ce74faff9a3e6b3dc", "parents": ["f98398c185a4c5f621f92c61b70d8ec18593edbe", "3925b8576b7fa5410576dff34a45f4038c7fd849"], "commit": null} -->
+- **Staged source tree:** `3784584641e5f74cd664961ce74faff9a3e6b3dc`. Commit: `5cbcb15f65fcb6dde0cb5577cfba345ce9832d0f`.
+<!-- montana-change {"id": "87269b2a-a285-42f0-8794-462fd4fe6ad8", "utc": "2026-09-28T20:57:20+00:00", "callsign": "Claude / stage/outer-shell (build master, the author's word 28.09)", "model": "Claude Fable 5.1", "build": "1983 source merged into the session branch; typecheck pending; next artifact planned", "os": "iOS 26.x on T1/T2/T3 targets; not built yet", "summary": "Merge rollback-898 (1983: complete application library, chess, media branches) into stage/outer-shell before the master's integration build", "tree": "3784584641e5f74cd664961ce74faff9a3e6b3dc", "parents": ["f98398c185a4c5f621f92c61b70d8ec18593edbe", "3925b8576b7fa5410576dff34a45f4038c7fd849"], "commit": "5cbcb15f65fcb6dde0cb5577cfba345ce9832d0f"} -->
 
 ### 2026-09-28T20:41:57+00:00 — App library: check complete media branches after adding chess; prepare build 1983
 
