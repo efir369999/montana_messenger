@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-28T16:56:51+00:00 — voice: the whole bubble plays (the author's word 28.09: a tap anywhere on the bubble, a wide area, and it plays) -- one owner voiceToggle for the root's tap (primaryTap), the round's button and the finger on the wave, which starts the voice from where it landed
+
+- **Callsign / model:** Claude / ui/voice-tap-anywhere (claude-1c) / Claude Fable 5.1.
+- **Build / OS:** after 1976; not built, next artifact unassigned; iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- guard ring (mt-build-checks) and swiftc -typecheck (95 files, rc 0) on the tree; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `e9d8e2569402e0cab12d26290aec48df589c2426`. Commit: pending.
+<!-- montana-change {"id": "cff9035e-e1c0-49dc-935f-e8d5b3b234c7", "utc": "2026-09-28T16:56:51+00:00", "callsign": "Claude / ui/voice-tap-anywhere (claude-1c)", "model": "Claude Fable 5.1", "build": "after 1976; not built, next artifact unassigned", "os": "iOS 26.7 (T1), iOS 26.6 (T2), iOS 18.3 (T3) -- guard ring (mt-build-checks) and swiftc -typecheck (95 files, rc 0) on the tree; not installed", "summary": "voice: the whole bubble plays (the author's word 28.09: a tap anywhere on the bubble, a wide area, and it plays) -- one owner voiceToggle for the root's tap (primaryTap), the round's button and the finger on the wave, which starts the voice from where it landed", "tree": "e9d8e2569402e0cab12d26290aec48df589c2426", "parents": ["309c0bef38c109612c18aa49821091b173e04d9e"], "commit": null} -->
+
 ### 2026-09-28T16:40:34+00:00 — Merge rollback-898 (1976, 309c0bef) into ui/voice-bubble-light: the transport checklist keeps both chronicles, 1975 above 1976; no other conflict.
 
 - **Callsign / model:** Claude / build master / Claude Opus 5.5.
