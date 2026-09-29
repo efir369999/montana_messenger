@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e (wallet) / Claude Opus 5.5.
 - **Build / OS:** none: branch stage/wallet-chat-transfers over 2021; macOS, Darwin 25.6.0. No new compilation or installation claimed.
-- **Staged source tree:** `5acbe3625776061093598573f0041a8d0a8437e2`. Commit: pending.
-<!-- montana-change {"id": "6128c725-df44-4093-a2bc-5ec795d24b70", "utc": "2026-09-29T23:43:04+00:00", "callsign": "claude-9e (wallet)", "model": "Claude Opus 5.5", "build": "none: branch stage/wallet-chat-transfers over 2021", "os": "macOS, Darwin 25.6.0", "summary": "Wallet and money letters in the chat: exact amounts in whole smallest units, a request letter between two people, the transfer sheet and plate that say transfers open with the network launch", "tree": "5acbe3625776061093598573f0041a8d0a8437e2", "parents": ["62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": null} -->
+- **Staged source tree:** `5acbe3625776061093598573f0041a8d0a8437e2`. Commit: `35ccb4c4cfbc4723709f844c2c8d09d0021b9d9b`.
+<!-- montana-change {"id": "6128c725-df44-4093-a2bc-5ec795d24b70", "utc": "2026-09-29T23:43:04+00:00", "callsign": "claude-9e (wallet)", "model": "Claude Opus 5.5", "build": "none: branch stage/wallet-chat-transfers over 2021", "os": "macOS, Darwin 25.6.0", "summary": "Wallet and money letters in the chat: exact amounts in whole smallest units, a request letter between two people, the transfer sheet and plate that say transfers open with the network launch", "tree": "5acbe3625776061093598573f0041a8d0a8437e2", "parents": ["62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": "35ccb4c4cfbc4723709f844c2c8d09d0021b9d9b"} -->
 
 ### 2026-09-29T23:40:46+00:00 — Merge rollback-898 (aa91a596, build 2020) into fix/feeds-scroll-top: the main line under the lists' arrow to the top, the number on the platform's thumb, the playlist's placeholder and the source filter
 
