@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:58:34+00:00 — council wall: the author word on IronClaw at Lauterbourg, the onboarding agent verdict, the new tasks, and the lesson that the wall is written at the moment of the event
+
+- **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
+- **Build / OS:** 2014 source; building; macOS (notes). No new compilation or installation claimed.
+- **Staged source tree:** `949700e697ce7de627c5273a8032ee4e68cd900d`. Commit: pending.
+<!-- montana-change {"id": "71bbd046-a378-4ee7-812d-c2536b4093f8", "utc": "2026-09-29T20:58:34+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2014 source; building", "os": "macOS (notes)", "summary": "council wall: the author word on IronClaw at Lauterbourg, the onboarding agent verdict, the new tasks, and the lesson that the wall is written at the moment of the event", "tree": "949700e697ce7de627c5273a8032ee4e68cd900d", "parents": ["47878d591a3ce8d99108b5805263c787dfa38746"], "commit": null} -->
+
 ### 2026-09-29T20:58:27+00:00 — outer shell, native on the service's API: pictures, videos, voices (Ogg Opus carried into CAF for the platform's player), files and stickers in the feed through the Montana bubble; sending pictures, videos, files and a voice; reply, edit, delete, resend; pages of history back; the other side's typing and presence shown and the person's online said by the foreground (terms 1.4); channels open with their sponsored messages (terms 3.3); search, contacts, a new message, the seat's log out; the service named on the number step (terms 2.2)
 
 - **Callsign / model:** claude-9e council / outer-native / Claude Opus 5.5.
