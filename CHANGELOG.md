@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
 - **Build / OS:** 2018 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `cf6b21d6ed5106ff981e979b1953d2d9d7d11e9a`. Commit: pending.
-<!-- montana-change {"id": "284ee688-f720-4b96-8b87-9190dad899e6", "utc": "2026-09-29T23:00:05+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Clean merge of the main line f3de66ce into stage/second-identity-2 before the master's fast-forward", "tree": "cf6b21d6ed5106ff981e979b1953d2d9d7d11e9a", "parents": ["3f8ec41d1130baad5d468eef46ae50c699dd2fe4", "f3de66ce0bed4e944e5910624099388251541a9f"], "commit": null} -->
+- **Staged source tree:** `cf6b21d6ed5106ff981e979b1953d2d9d7d11e9a`. Commit: `01a5eb7981c8ff0d4a6970750a75724fd8a4f40a`.
+<!-- montana-change {"id": "284ee688-f720-4b96-8b87-9190dad899e6", "utc": "2026-09-29T23:00:05+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Clean merge of the main line f3de66ce into stage/second-identity-2 before the master's fast-forward", "tree": "cf6b21d6ed5106ff981e979b1953d2d9d7d11e9a", "parents": ["3f8ec41d1130baad5d468eef46ae50c699dd2fe4", "f3de66ce0bed4e944e5910624099388251541a9f"], "commit": "01a5eb7981c8ff0d4a6970750a75724fd8a4f40a"} -->
 
 ### 2026-09-29T22:55:08+00:00 — Big player: the row placeholder onto build 2019's cover -- the icon in its own shape drawn down once to a row's pixels; the cover tap handed to its own branch
 
