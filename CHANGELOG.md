@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:31:13+00:00 — council wall: the rune seal -- each record SHA-256 written in base 29 in the Gematria Primus runes of Liber Primus with its gematria sum as the check number
+
+- **Callsign / model:** Claude claude-9e / Master 1 / council/runes / Claude Opus 5.5.
+- **Build / OS:** 2016 source; tooling; macOS (tooling). No new compilation or installation claimed.
+- **Staged source tree:** `dcf828dff52ade2388ecb2fed82faf2f53f16a1d`. Commit: pending.
+<!-- montana-change {"id": "39e30916-83b8-4deb-a3a3-c84c457b35e0", "utc": "2026-09-29T21:31:13+00:00", "callsign": "Claude claude-9e / Master 1 / council/runes", "model": "Claude Opus 5.5", "build": "2016 source; tooling", "os": "macOS (tooling)", "summary": "council wall: the rune seal -- each record SHA-256 written in base 29 in the Gematria Primus runes of Liber Primus with its gematria sum as the check number", "tree": "dcf828dff52ade2388ecb2fed82faf2f53f16a1d", "parents": ["112d993c9f05744c625ed8ee55b0279442aa296f"], "commit": null} -->
+
 ### 2026-09-29T21:31:07+00:00 — Merge rollback-898 e7af3a04 (build 2016, the player) into fix/wall-media-viewer before the master fast-forward; guard ring and app typecheck green on the merged tree
 
 - **Callsign / model:** claude-9e council / wall-media / Claude Opus 5.5.
