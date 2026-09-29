@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
 - **Build / OS:** 2011 (Debug, every core, next); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `af652336f484a1e002c11c13b07c9a9ae41f4373`. Commit: pending.
-<!-- montana-change {"id": "f6817e03-9dd3-4f20-8d52-b4c4cf48f622", "utc": "2026-09-29T19:51:58+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2011 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2011 -- the chat's bubbles as the system's (the platform's flat blue on mine, its grey on theirs, white words, no gradient), the mesh wall's room pinned first in the chats, over 2010; for T1 and T3", "tree": "af652336f484a1e002c11c13b07c9a9ae41f4373", "parents": ["db699be65bac41ec754bbf1d55fe36164a341787"], "commit": null} -->
+- **Staged source tree:** `af652336f484a1e002c11c13b07c9a9ae41f4373`. Commit: `2dbd714b75f794c4a83629989664938dc1772712`.
+<!-- montana-change {"id": "f6817e03-9dd3-4f20-8d52-b4c4cf48f622", "utc": "2026-09-29T19:51:58+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2011 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2011 -- the chat's bubbles as the system's (the platform's flat blue on mine, its grey on theirs, white words, no gradient), the mesh wall's room pinned first in the chats, over 2010; for T1 and T3", "tree": "af652336f484a1e002c11c13b07c9a9ae41f4373", "parents": ["db699be65bac41ec754bbf1d55fe36164a341787"], "commit": "2dbd714b75f794c4a83629989664938dc1772712"} -->
 
 ### 2026-09-29T19:51:18+00:00 — Merge rollback-898 (22995ba6: the mesh wall step 1, the room pinned first in the chats) into ui/system-bubbles before the master's fast-forward
 
