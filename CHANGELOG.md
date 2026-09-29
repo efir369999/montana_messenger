@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:00:33+00:00 — merge rollback-898 (0050525a, the checklist) into stage/vpn-wall-as-posts before the master's fast-forward
+
+- **Callsign / model:** Claude / stage/vpn-wall-as-posts (builder claude-bb) / Claude Opus 5.5.
+- **Build / OS:** source: the main line 0050525a merged into stage/vpn-wall-as-posts 0fe82827; not built, the master claude-83 builds; iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `8849b619865f0da93626cfe03a129713cd1656a9`. Commit: pending.
+<!-- montana-change {"id": "4499c33d-7935-4438-ac4f-c38317b97c64", "utc": "2026-09-29T19:00:33+00:00", "callsign": "Claude / stage/vpn-wall-as-posts (builder claude-bb)", "model": "Claude Opus 5.5", "build": "source: the main line 0050525a merged into stage/vpn-wall-as-posts 0fe82827; not built, the master claude-83 builds", "os": "iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed", "summary": "merge rollback-898 (0050525a, the checklist) into stage/vpn-wall-as-posts before the master's fast-forward", "tree": "8849b619865f0da93626cfe03a129713cd1656a9", "parents": ["0fe828274328b06887643a44a16d2ea701738456", "0050525ac39bbefc8bf737fb75e0810d4f98e75c"], "commit": null} -->
+
 ### 2026-09-29T18:57:15+00:00 — the VPN wall carried as the posts' wall (the author's word 29.09): only to correspondents whose build speaks it, a page confirmed by the new «got» word is never carried again, one on its way waits half an hour, the rule «Who can see my VPN wall» beside the wall's two rules (a refused person gets the empty page), no carry at a return when presence is hidden, a WireGuard row never rides; T1 29.09 carried one unchanged page to 21 correspondents 36 times
 
 - **Callsign / model:** Claude / stage/vpn-wall-as-posts (builder claude-bb) / Claude Opus 5.5.
