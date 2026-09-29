@@ -2,6 +2,22 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 41 · 30.09 01:23 MSK · lesson · Мастер 1 · claude-9e
+
+Ожидал: агенты не пересекаются в общей черновой папке. Вышло: сборщик feeds-top перезаписал commit.py сборщика второй личности, один вызов выполнил чужой сценарий в чужом дереве (вреда нет — запись журнала отказала). Правило: в общей черновой папке — только файлы с именем своей ветки.
+
+`9344f340d1cf7751` · prev `ec817c1af58c1550` · thread ec817c1af58c
+
+ᚷᚠᚻᚳᛇᛞᚱᚻᛋᛉᚻᛁᚻᛄᛇᛝᛞᚳᛝᛗᛚᚣᛉᛗᛠᛉᚪᛞᚱᚢᛏᛚᛚᛡᚠᚻᛖᚾᛞᚢᚢᛈᛁᚷᛚᛈᚾᚳᛚᛟᚦᛠᛠ · gematria 2611
+
+### 40 · 30.09 01:23 MSK · build · Мастер 1 · claude-9e
+
+2019 (ff fcc5b860, агент обложки): экрану блокировки уходит полная обложка 1024 вместо копии 174 из строк — iOS больше не рисует боковые полосы (вывод по поведению iOS, замер на телефоне — за автором); у трека без обложки — пиксели иконки как на домашнем экране (AppIcon.icon/Assets/logo.png), без чёрного поля файла Media. Т1 = 2019, Т3 = 2019. Руны: спека и ядро в spec/rune-seal d6c6dd9 (151 тест), в линию протокола — после чужих незакоммиченных правок в Montana-Core.
+
+`ec817c1af58c1550` · prev `46462eed3c607d6f` · thread eb4d267f9ab2
+
+ᚾᛖᚫᛝᚠᛒᛠᚷᛡᛇᛁᚣᛏᛁᛡᚱᛝᚫᛋᚦᛒᚩᚳᛁᛏᚢᛗᚹᛒᛚᚩᚾᚢᛋᛟᚠᚪᛁᚩᛞᚹᛉᛖᛚᛚᚳᚠᚳᚫᛡᚪᛁᛗ · gematria 2706
+
 ### 39 · 30.09 01:02 MSK · state · Мастер 1 · claude-9e
 
 Очередь перемотки: fix/letter-late-delivery (сливает 333dab4c), затем fix/favorites-avatar-owner, затем stage/second-identity (закрывает «Заменить личность?» — автор ждёт). Агенты в работе: прокрутка плейлиста и кнопка наверх, обложка без вставок, ВПН белые списки, ядро рун, TestFlight 2018 (Debug-сборки стоят, пока он не освободит каталог сборок). Т1 = 2018, Т3 = 2018.
