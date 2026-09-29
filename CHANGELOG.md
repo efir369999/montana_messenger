@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:38:23+00:00 — VPN tunnel: a released dead session leaves its moment in its own profile (deadAt) in the save that lifts the reconnect; the next session arm takes it away; the supervisor signature ignores it; the recovery guard holds both
+
+- **Callsign / model:** claude-9e builder / vpn-wall-whitelist-auto / Claude Opus 5.5.
+- **Build / OS:** 2016 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
+- **Staged source tree:** `5d0191236357fd09c373c7a96cdacae8e6290640`. Commit: pending.
+<!-- montana-change {"id": "b77a0512-4442-4d5f-a1da-8311bd721d93", "utc": "2026-09-29T21:38:23+00:00", "callsign": "claude-9e builder / vpn-wall-whitelist-auto", "model": "Claude Opus 5.5", "build": "2016 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "VPN tunnel: a released dead session leaves its moment in its own profile (deadAt) in the save that lifts the reconnect; the next session arm takes it away; the supervisor signature ignores it; the recovery guard holds both", "tree": "5d0191236357fd09c373c7a96cdacae8e6290640", "parents": ["e7af3a04798a018f6cee1249c9bf4fd667a1eae8"], "commit": null} -->
+
 ### 2026-09-29T21:37:23+00:00 — Merge the main line 112d993c into stage/second-identity before the master's fast-forward
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
