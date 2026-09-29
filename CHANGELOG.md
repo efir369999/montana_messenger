@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:14:47+00:00 — build 2003 bump: the feed and the wall queue the whole page's tracks for the mini player (claude-10); the typecheck tool reuses one folder. Fast-forward only; not built yet at this record.
+
+- **Callsign / model:** Claude / build-master (claude-10) / Claude Opus 5.5.
+- **Build / OS:** 2003 source; the Debug artifact follows this record; iOS 17.2+ target; to be installed on T1 (iOS 26.7) and T3 (iOS 18.3, unreachable so far). No new compilation or installation claimed.
+- **Staged source tree:** `828183aa2a7f0f88b2ed15795c14e760b8d82614`. Commit: pending.
+<!-- montana-change {"id": "58ed634e-3792-435b-9e68-b7c0036c3215", "utc": "2026-09-29T18:14:47+00:00", "callsign": "Claude / build-master (claude-10)", "model": "Claude Opus 5.5", "build": "2003 source; the Debug artifact follows this record", "os": "iOS 17.2+ target; to be installed on T1 (iOS 26.7) and T3 (iOS 18.3, unreachable so far)", "summary": "build 2003 bump: the feed and the wall queue the whole page's tracks for the mini player (claude-10); the typecheck tool reuses one folder. Fast-forward only; not built yet at this record.", "tree": "828183aa2a7f0f88b2ed15795c14e760b8d82614", "parents": ["103e2bec7df7cda443f66efd041299857e413163"], "commit": null} -->
+
 ### 2026-09-29T18:14:11+00:00 — the page is the playlist: a track touched in the feed queues every track of the feed in its order, on a wall every track of that wall (MTBoardPlaylist, one owner of the rule: each track once by its file, from the disk or on its own loader from its pieces); a post on its way plays its own. The bar's track buttons and a track's end walk the whole page, not the post's neighbours. Typecheck rc 0, ring 1 and guards green.
 
 - **Callsign / model:** Claude / fix/mini-seek-and-hold-menu / Claude Opus 5.5.
