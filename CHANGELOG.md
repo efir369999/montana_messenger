@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:59:48+00:00 — VPN wall road: on the tunnel dead mark with the VPN off, the line is measured afresh; under the permitted list the wall rows race six at a time on the phone own engine and the fastest of the first live batch rises by the ordinary start; the person hand stands ten minutes; the page says what happened in the person language
+
+- **Callsign / model:** claude-9e builder / vpn-wall-whitelist-auto / Claude Opus 5.5.
+- **Build / OS:** 2016 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
+- **Staged source tree:** `7ebadfc33960094326fe43b52a83d58d00d8b371`. Commit: pending.
+<!-- montana-change {"id": "9c9fed91-9598-4cd2-b3ae-978507990d57", "utc": "2026-09-29T21:59:48+00:00", "callsign": "claude-9e builder / vpn-wall-whitelist-auto", "model": "Claude Opus 5.5", "build": "2016 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "VPN wall road: on the tunnel dead mark with the VPN off, the line is measured afresh; under the permitted list the wall rows race six at a time on the phone own engine and the fastest of the first live batch rises by the ordinary start; the person hand stands ten minutes; the page says what happened in the person language", "tree": "7ebadfc33960094326fe43b52a83d58d00d8b371", "parents": ["1d49288c2894591b707526835e6b61bb25010b6b"], "commit": null} -->
+
 ### 2026-09-29T21:57:41+00:00 — Merge rollback-898 (e36aab68, build 2018) into fix/letter-late-delivery: the main line into the roads-back drain fix; clean merge, ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LAYOUT clean, LOCK none new), typecheck 112 files exit 0.
 
 - **Callsign / model:** claude-9e-agent / claude-opus-5-5.
