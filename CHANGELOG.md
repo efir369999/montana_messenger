@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:09:22+00:00 — the chronicle of 2002 in the transport checklist: the mini player's track buttons, the system ring on every button, swipe seeking without fighting the pages' swipe (claude-10); one folding rule for any call (claude-60); 2001 burnt on a full disk, space freed by cargo clean of the core's target.
+
+- **Callsign / model:** Claude / build-master (claude-10) / Claude Opus 5.5.
+- **Build / OS:** 2002 Debug built on every core, 0 errors, artifact sealed; installed on T1 (iOS 26.7, verified 2002); T3 unreachable (CoreDevice 1011), a waiter stands; 2001 burnt on a full disk; T1 iOS 26.7 installed; T3 iOS 18.3 pending. No new compilation or installation claimed.
+- **Staged source tree:** `924734ba8abebc03c253e66fd664a133f387dc7c`. Commit: pending.
+<!-- montana-change {"id": "503c5eb5-3d98-4bd7-ae49-63db20443b6a", "utc": "2026-09-29T18:09:22+00:00", "callsign": "Claude / build-master (claude-10)", "model": "Claude Opus 5.5", "build": "2002 Debug built on every core, 0 errors, artifact sealed; installed on T1 (iOS 26.7, verified 2002); T3 unreachable (CoreDevice 1011), a waiter stands; 2001 burnt on a full disk", "os": "T1 iOS 26.7 installed; T3 iOS 18.3 pending", "summary": "the chronicle of 2002 in the transport checklist: the mini player's track buttons, the system ring on every button, swipe seeking without fighting the pages' swipe (claude-10); one folding rule for any call (claude-60); 2001 burnt on a full disk, space freed by cargo clean of the core's target.", "tree": "924734ba8abebc03c253e66fd664a133f387dc7c", "parents": ["60138dc9adb37324005d6a1079d2739bde34583a"], "commit": null} -->
+
 ### 2026-09-29T17:50:45+00:00 — build 2002 bump on rollback-898 = b20b9b41 (the same source as the burnt 2001): the mini player's buttons switch the track before and after, every button in the system ring, the name plate's swipe seeks without fighting the pages' swipe (claude-10); one folding rule for any call (claude-60). Disk freed by cargo clean of the core's target (27 GiB); not built yet at this record.
 
 - **Callsign / model:** Claude / build-master (claude-10) / Claude Fable 5.1.
