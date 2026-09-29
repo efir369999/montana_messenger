@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
 - **Build / OS:** 2012 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `faa93b3872f66639b526279764e1689f72a90634`. Commit: pending.
-<!-- montana-change {"id": "78203ab3-ed93-4df6-9d09-bc731852ba65", "utc": "2026-09-29T21:17:23+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Seats: a parked person's wall drafts park with the seat; the wall rereads on a lift only", "tree": "faa93b3872f66639b526279764e1689f72a90634", "parents": ["07077739f1e6a09a9d5751d55159c3d457b71773"], "commit": null} -->
+- **Staged source tree:** `faa93b3872f66639b526279764e1689f72a90634`. Commit: `e1c0002c090b1ac9024c241e6475651815a71978`.
+<!-- montana-change {"id": "78203ab3-ed93-4df6-9d09-bc731852ba65", "utc": "2026-09-29T21:17:23+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Seats: a parked person's wall drafts park with the seat; the wall rereads on a lift only", "tree": "faa93b3872f66639b526279764e1689f72a90634", "parents": ["07077739f1e6a09a9d5751d55159c3d457b71773"], "commit": "e1c0002c090b1ac9024c241e6475651815a71978"} -->
 
 ### 2026-09-29T21:17:12+00:00 — Merge rollback-898 (77c4aeae, build 2014) into fix/player-cover-keys-copy before the master fast-forward
 
