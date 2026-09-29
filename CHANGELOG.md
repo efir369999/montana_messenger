@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
 - **Build / OS:** 2016 (Debug, bump; artifact not built yet); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `19c300747dcd31ea5cd1f93a12fd2b01223cd09a`. Commit: pending.
-<!-- montana-change {"id": "9a7510ed-63cd-4014-b6d9-515e91fa9f92", "utc": "2026-09-29T21:23:12+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2016 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2016 bump: the player -- the author icon as the cover without its own, the search keys as in the chat, a long press copies the title, no places under tracks, the music page scroll, swipe to delete", "tree": "19c300747dcd31ea5cd1f93a12fd2b01223cd09a", "parents": ["61b05a3ad3f5fa8883f4e133b1f2cb823eb469c6"], "commit": null} -->
+- **Staged source tree:** `19c300747dcd31ea5cd1f93a12fd2b01223cd09a`. Commit: `e7af3a04798a018f6cee1249c9bf4fd667a1eae8`.
+<!-- montana-change {"id": "9a7510ed-63cd-4014-b6d9-515e91fa9f92", "utc": "2026-09-29T21:23:12+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2016 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2016 bump: the player -- the author icon as the cover without its own, the search keys as in the chat, a long press copies the title, no places under tracks, the music page scroll, swipe to delete", "tree": "19c300747dcd31ea5cd1f93a12fd2b01223cd09a", "parents": ["61b05a3ad3f5fa8883f4e133b1f2cb823eb469c6"], "commit": "e7af3a04798a018f6cee1249c9bf4fd667a1eae8"} -->
 
 ### 2026-09-29T21:22:58+00:00 — Wall media viewer: a post picture or video opens a page of the stack with the platform paging scroll up and down, the way out the system back to the side; poster at once, sharp from the file, video from its first pieces
 
