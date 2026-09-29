@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:28:31+00:00 — council wall: the post of 2016 and the author rule to install every fix at once on T1 and T3
+
+- **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
+- **Build / OS:** 2016 installed on T1 and T3; iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `12f5264a40eed5ca85fa33327464a2fd971d7eca`. Commit: pending.
+<!-- montana-change {"id": "2ad0df78-1953-493d-9d35-48f2f2c6a243", "utc": "2026-09-29T21:28:31+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2016 installed on T1 and T3", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "council wall: the post of 2016 and the author rule to install every fix at once on T1 and T3", "tree": "12f5264a40eed5ca85fa33327464a2fd971d7eca", "parents": ["e7af3a04798a018f6cee1249c9bf4fd667a1eae8"], "commit": null} -->
+
 ### 2026-09-29T21:25:23+00:00 — Merge the main line 08930981 into stage/second-identity before the master's fast-forward
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
