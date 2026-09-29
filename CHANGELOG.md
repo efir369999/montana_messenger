@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:07:05+00:00 — music: the cover without a black frame -- the home icon picture in its own shape; the lock screen gets the cover at its own measure, no bars
+
+- **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/player-cover-no-inset over build 2018; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
+- **Staged source tree:** `e855c3dfab0d3a5042a2f509fec7f66e9269e9ab`. Commit: pending.
+<!-- montana-change {"id": "3cab0bf4-903d-4b17-8cff-32d7639175f2", "utc": "2026-09-29T22:07:05+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-no-inset over build 2018", "os": "macOS (Darwin 25.6.0); no device", "summary": "music: the cover without a black frame -- the home icon picture in its own shape; the lock screen gets the cover at its own measure, no bars", "tree": "e855c3dfab0d3a5042a2f509fec7f66e9269e9ab", "parents": ["e36aab6819678f2316d0bc0c566f08e95703b619"], "commit": null} -->
+
 ### 2026-09-29T22:06:55+00:00 — Merge the main line 333dab4c into stage/second-identity before the master's fast-forward
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
