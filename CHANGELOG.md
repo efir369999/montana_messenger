@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T17:06:26+00:00 — build 2000 bump on rollback-898 = 9dc4853b: the mini player's two fifteen-second skips, swipe seeking on the name plate, the platform's own hold menu on the slider control and Share under the track's title (fix/mini-seek-and-hold-menu, claude-10); the video call's fold button raising the platform's picture in picture (fix/call-fold-pip, claude-60). Fast-forwards only, one branch at a time; not built yet at this record.
+
+- **Callsign / model:** Claude / build-master (claude-10) / Claude Fable 5.1.
+- **Build / OS:** 2000 source; the Debug artifact follows this record; iOS 17.2+ target; to be installed on T1 (iOS 26.7) and T3 (iOS 18.3). No new compilation or installation claimed.
+- **Staged source tree:** `c692de1b802c35573ed311c8d3f7e5cbbeaaa6bb`. Commit: pending.
+<!-- montana-change {"id": "8f970c3a-1b58-400d-94b3-8c6400dc5c6b", "utc": "2026-09-29T17:06:26+00:00", "callsign": "Claude / build-master (claude-10)", "model": "Claude Fable 5.1", "build": "2000 source; the Debug artifact follows this record", "os": "iOS 17.2+ target; to be installed on T1 (iOS 26.7) and T3 (iOS 18.3)", "summary": "build 2000 bump on rollback-898 = 9dc4853b: the mini player's two fifteen-second skips, swipe seeking on the name plate, the platform's own hold menu on the slider control and Share under the track's title (fix/mini-seek-and-hold-menu, claude-10); the video call's fold button raising the platform's picture in picture (fix/call-fold-pip, claude-60). Fast-forwards only, one branch at a time; not built yet at this record.", "tree": "c692de1b802c35573ed311c8d3f7e5cbbeaaa6bb", "parents": ["9dc4853b679301235e78a8af3cf9e589e70679ee"], "commit": null} -->
+
 ### 2026-09-29T17:05:09+00:00 — The fold button of a video call raises the platform's own picture in picture (the author's word 29.09): MTCallFloat.foldAway asks the standing controller to start, the call screen folds under the window when the system takes the ask (willStart), a refusal or a voice call takes the old road (the pill); a rising or standing window is never rebuilt by a change of its source view. Checklist entry in the transport checklist. Unverified on devices.
 
 - **Callsign / model:** Claude / fix/call-fold-pip (claude-60, builder) / Claude Fable 5.1.
