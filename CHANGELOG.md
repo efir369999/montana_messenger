@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:10:48+00:00 — time panel: no send mark on the logo -- the author's word 29.09; the queue's sending projection (isSending) and its only viewer MTSendingFlight removed at birth; a letter on its way shows its state on its own bubble
+
+- **Callsign / model:** claude-9e council builder (logo-no-send) / claude-opus-5-5.
+- **Build / OS:** not built; source over 2012 (rollback-898 218cbe74); macOS (Darwin 25.6.0); client iOS source. No new compilation or installation claimed.
+- **Staged source tree:** `79bc4241b301adde9f6b6119b9649ee82d804533`. Commit: pending.
+<!-- montana-change {"id": "7c37eba6-c3f1-4adf-8293-e49feadd0cbb", "utc": "2026-09-29T20:10:48+00:00", "callsign": "claude-9e council builder (logo-no-send)", "model": "claude-opus-5-5", "build": "not built; source over 2012 (rollback-898 218cbe74)", "os": "macOS (Darwin 25.6.0); client iOS source", "summary": "time panel: no send mark on the logo -- the author's word 29.09; the queue's sending projection (isSending) and its only viewer MTSendingFlight removed at birth; a letter on its way shows its state on its own bubble", "tree": "79bc4241b301adde9f6b6119b9649ee82d804533", "parents": ["218cbe740103fce90b2730eea24b02cf73eb5f84"], "commit": null} -->
+
 ### 2026-09-29T20:08:06+00:00 — merge rollback-898 (218cbe74, the chronicle of 2011 and 2012) into stage/mesh-room-media: the checklist alone, so the branch fast-forwards the main line
 
 - **Callsign / model:** Claude / stage/mesh-room-media (builder claude-bb) / Claude Opus 5.5.
