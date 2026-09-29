@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:06:26+00:00 — Outer shell multi-login: a seat per login into the outer service with its own library client, record folder and key; the sealed book of seats in the one device keychain item (JSON v2, the earlier 32-byte key adopted as seat 0 with its folders); the bridge routes updates by client id; the drawer shows one face per seat with name, picture and unread, the plus opens the first screen from zero; a face tap activates its seat; the login of one more seat through the book; the Montana door hidden on the first screen while a seed is held. Library upstream HEAD equals the pinned 42e6a525, no rebuild. Guard ring, PROVEN ring 1, SETTINGS green; app module typechecks (111 files). Not built, not installed.
+
+- **Callsign / model:** Claude / stage/outer-multi / Claude Fable 5.1.
+- **Build / OS:** 1995 source; not built, next artifact unassigned; iOS 17.2 floor; source only, no device run. No new compilation or installation claimed.
+- **Staged source tree:** `9b7656ee2042a6616712a0d77df5024eef7a9820`. Commit: pending.
+<!-- montana-change {"id": "c70c25a4-5c28-4f37-8204-be6a4bb1dfb4", "utc": "2026-09-29T15:06:26+00:00", "callsign": "Claude / stage/outer-multi", "model": "Claude Fable 5.1", "build": "1995 source; not built, next artifact unassigned", "os": "iOS 17.2 floor; source only, no device run", "summary": "Outer shell multi-login: a seat per login into the outer service with its own library client, record folder and key; the sealed book of seats in the one device keychain item (JSON v2, the earlier 32-byte key adopted as seat 0 with its folders); the bridge routes updates by client id; the drawer shows one face per seat with name, picture and unread, the plus opens the first screen from zero; a face tap activates its seat; the login of one more seat through the book; the Montana door hidden on the first screen while a seed is held. Library upstream HEAD equals the pinned 42e6a525, no rebuild. Guard ring, PROVEN ring 1, SETTINGS green; app module typechecks (111 files). Not built, not installed.", "tree": "9b7656ee2042a6616712a0d77df5024eef7a9820", "parents": ["719a265f640b94a1636d92474a79406090437788"], "commit": null} -->
+
 ### 2026-09-29T15:02:13+00:00 — Checklist: the chronicle of 1995 -- the chess mark beside the handset and the White icons in one style, installed on T1 and T3 at 18:00 and 18:01 MSK, artifact proof; not uploaded to TestFlight
 
 - **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
