@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
 - **Build / OS:** 1989 (07acbb36) built with zero errors and installed on T1 and T3, verified by devicectl; T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7. No new compilation or installation claimed.
-- **Staged source tree:** `4e87fc7d29bd7ad0027ca0d0adaf4aba80b85165`. Commit: pending.
-<!-- montana-change {"id": "a752ec44-822c-4059-bbe1-ab0f06453dc9", "utc": "2026-09-29T00:16:19+00:00", "callsign": "Claude / signal-lane", "model": "Claude Fable 5.1", "build": "1989 (07acbb36) built with zero errors and installed on T1 and T3, verified by devicectl", "os": "T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7", "summary": "The chronicle of 1989: the signal storm of 1988 and its closure, the 1949 drawer and the chess steps -- installed on T1 and T3", "tree": "4e87fc7d29bd7ad0027ca0d0adaf4aba80b85165", "parents": ["07acbb36af72a5af9a3becc811571d65e2179c36"], "commit": null} -->
+- **Staged source tree:** `4e87fc7d29bd7ad0027ca0d0adaf4aba80b85165`. Commit: `67378c0c96823e6fe3d45a0615b4ed0dedc0bd3d`.
+<!-- montana-change {"id": "a752ec44-822c-4059-bbe1-ab0f06453dc9", "utc": "2026-09-29T00:16:19+00:00", "callsign": "Claude / signal-lane", "model": "Claude Fable 5.1", "build": "1989 (07acbb36) built with zero errors and installed on T1 and T3, verified by devicectl", "os": "T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7", "summary": "The chronicle of 1989: the signal storm of 1988 and its closure, the 1949 drawer and the chess steps -- installed on T1 and T3", "tree": "4e87fc7d29bd7ad0027ca0d0adaf4aba80b85165", "parents": ["07acbb36af72a5af9a3becc811571d65e2179c36"], "commit": "67378c0c96823e6fe3d45a0615b4ed0dedc0bd3d"} -->
 
 ### 2026-09-29T00:10:36+00:00 — Build 1989: the project number for the signal lane, the music page's floating player, the chess steps and the 1949 drawer, for T1 and T3
 
