@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:45:40+00:00 — Merge of the main line (c5d34108: build 1997 and its chronicle) into fix/vpn-ping-grpc-ams (79a44dcf: the wall order), no conflicts; ring and typecheck green on the merged tree. The master waits for the three sessions named by the author before build 1998.
+
+- **Callsign / model:** Claude / fix/vpn-ping-grpc-ams / Claude Fable 5.1.
+- **Build / OS:** 1997 source; next artifact 1998; iOS 26.7 and 18.3 targets (T1, T3). No new compilation or installation claimed.
+- **Staged source tree:** `372983be3b400423638902c77f350de8c37be1b6`. Commit: pending.
+<!-- montana-change {"id": "04de160a-28ac-4db6-93b5-824cae0b4e8f", "utc": "2026-09-29T15:45:40+00:00", "callsign": "Claude / fix/vpn-ping-grpc-ams", "model": "Claude Fable 5.1", "build": "1997 source; next artifact 1998", "os": "iOS 26.7 and 18.3 targets (T1, T3)", "summary": "Merge of the main line (c5d34108: build 1997 and its chronicle) into fix/vpn-ping-grpc-ams (79a44dcf: the wall order), no conflicts; ring and typecheck green on the merged tree. The master waits for the three sessions named by the author before build 1998.", "tree": "372983be3b400423638902c77f350de8c37be1b6", "parents": ["79a44dcf5ae5cf1a44267ee79682145cac307348", "c5d341086c09a2fde33fb6d98b6a088397c06526"], "commit": null} -->
+
 ### 2026-09-29T15:45:22+00:00 — Outer login redrawn in the style of the service own app on its own API: phone step with country flag and name from getCountries and getCountryCode, the number formatted by getPhoneNumberInfo, a searchable country list; code step with digit boxes, the next way and its countdown, a full code checked at once; password with hint and Forgot password through recovery; e-mail address and code steps; registration with the terms in the platform dialog; the QR road with three steps. One login page with both doors always; the Montana road asks before replacing a held seed (a second Montana seat is the next stage, checklist written). 34 catalogue keys ru and zh-Hans. Guard ring, PROVEN ring 1, SETTINGS green; app module typechecks (111 files). Not built, not installed.
 
 - **Callsign / model:** Claude / stage/outer-multi / Claude Fable 5.1.
