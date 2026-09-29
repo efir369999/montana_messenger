@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T11:32:27+00:00 — Captioned video draws its plate (an emoji caption no longer hides the media); the notification extension lays small cargo onto the shared shelf; the diary names landed and waiting media; a cargo lane wait has a term
+
+- **Callsign / model:** Claude / fix/cargo-shelf-emoji-caption / Claude Fable 5.1.
+- **Build / OS:** 1990 source; not built, next artifact unassigned; iOS 26.7 and iOS 26.6.2 targets; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `0ce4aded000d1c735c6e959d6a3aa9f945c28a76`. Commit: pending.
+<!-- montana-change {"id": "b3de8bb9-aad6-4b8e-8218-d5428b455712", "utc": "2026-09-29T11:32:27+00:00", "callsign": "Claude / fix/cargo-shelf-emoji-caption", "model": "Claude Fable 5.1", "build": "1990 source; not built, next artifact unassigned", "os": "iOS 26.7 and iOS 26.6.2 targets; not installed", "summary": "Captioned video draws its plate (an emoji caption no longer hides the media); the notification extension lays small cargo onto the shared shelf; the diary names landed and waiting media; a cargo lane wait has a term", "tree": "0ce4aded000d1c735c6e959d6a3aa9f945c28a76", "parents": ["3e5149ac7e43251242abe127d289c2b09ac5c6a2"], "commit": null} -->
+
 ### 2026-09-29T11:31:06+00:00 — The Montana room tells of a new TestFlight build: a second local room with the crown beside the name and the logo for a face, a release row with what changed and an Update button that opens TestFlight, a Montana banner; the nodes serve /release from release.json, the publish road writes it
 
 - **Callsign / model:** Claude / call-setup / Claude Fable 5.1.
