@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T11:17:29+00:00 — VPN: a dead session releases the phone -- a silent upstream after 90 s, a system block witnessed by the app restarts once then releases; zero packets alone is never a verdict
+
+- **Callsign / model:** Claude / fix/vpn-live-rule / Claude Opus 5.5.
+- **Build / OS:** source on 2ab68a11 (1990 base); not built, next artifact unassigned; iOS 17.2+ target; app and tunnel typecheck, VPN recovery executable checks on macOS; no device. No new compilation or installation claimed.
+- **Staged source tree:** `169ea0dba8d852e0977385e62365f436eea96a9f`. Commit: pending.
+<!-- montana-change {"id": "33194477-f040-4fbe-905c-5a892d2e4481", "utc": "2026-09-29T11:17:29+00:00", "callsign": "Claude / fix/vpn-live-rule", "model": "Claude Opus 5.5", "build": "source on 2ab68a11 (1990 base); not built, next artifact unassigned", "os": "iOS 17.2+ target; app and tunnel typecheck, VPN recovery executable checks on macOS; no device", "summary": "VPN: a dead session releases the phone -- a silent upstream after 90 s, a system block witnessed by the app restarts once then releases; zero packets alone is never a verdict", "tree": "169ea0dba8d852e0977385e62365f436eea96a9f", "parents": ["2ab68a118fb06db358c8e76617737c93fb2ce8df"], "commit": null} -->
+
 ### 2026-09-29T11:15:23+00:00 — Montana OS icons in the drawer: every row of the 1949 drawer draws its application icon from the sculpted glass set at 30 points through MTApplicationIcon, the size the outer service's row had; the style is named Montana OS on screen (en, ru, zh-Hans), its stored word stays; the Gold logo badge is drawn on tiles of 48 points and more; MTFeedMark removed; SETTINGS.md and Checklist/APP-LIBRARY.md updated
 
 - **Callsign / model:** Claude / ui/montana-os-icons / Claude Fable 5.1.
