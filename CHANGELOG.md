@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council builder (logo-no-send) / claude-opus-5-5.
 - **Build / OS:** not built; merge of the main line 31c249d2 into fix/time-logo-no-send-badge; macOS (Darwin 25.6.0); client iOS source. No new compilation or installation claimed.
-- **Staged source tree:** `3b1723cbddc9f7ffed62876be4b0818c6bde1793`. Commit: pending.
-<!-- montana-change {"id": "e6234d59-9e09-4a60-b316-b5ae7606372c", "utc": "2026-09-29T20:28:33+00:00", "callsign": "claude-9e council builder (logo-no-send)", "model": "claude-opus-5-5", "build": "not built; merge of the main line 31c249d2 into fix/time-logo-no-send-badge", "os": "macOS (Darwin 25.6.0); client iOS source", "summary": "Merge rollback-898 (31c249d2, the council wall) into fix/time-logo-no-send-badge before the master's fast-forward; ring green, typecheck exit 0 on the merged tree", "tree": "3b1723cbddc9f7ffed62876be4b0818c6bde1793", "parents": ["328a45664d7046be252ccc13f0bca784d431c372", "31c249d2d7763036c58f35f62f02570cdb9f506a"], "commit": null} -->
+- **Staged source tree:** `3b1723cbddc9f7ffed62876be4b0818c6bde1793`. Commit: `bb5f94dabd7944100e8f348aa2b8d30453aaa363`.
+<!-- montana-change {"id": "e6234d59-9e09-4a60-b316-b5ae7606372c", "utc": "2026-09-29T20:28:33+00:00", "callsign": "claude-9e council builder (logo-no-send)", "model": "claude-opus-5-5", "build": "not built; merge of the main line 31c249d2 into fix/time-logo-no-send-badge", "os": "macOS (Darwin 25.6.0); client iOS source", "summary": "Merge rollback-898 (31c249d2, the council wall) into fix/time-logo-no-send-badge before the master's fast-forward; ring green, typecheck exit 0 on the merged tree", "tree": "3b1723cbddc9f7ffed62876be4b0818c6bde1793", "parents": ["328a45664d7046be252ccc13f0bca784d431c372", "31c249d2d7763036c58f35f62f02570cdb9f506a"], "commit": "bb5f94dabd7944100e8f348aa2b8d30453aaa363"} -->
 
 ### 2026-09-29T20:23:43+00:00 — chat: a plate stands where its slowest letter stands -- the line under the plate, its stamp, the menu line and the chat row read one rung (fix/chat-list-late-dots)
 
