@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
 - **Build / OS:** 2012 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `ac0107f8b286e2494d3523ee636ff2843cd75af7`. Commit: pending.
-<!-- montana-change {"id": "60db760a-d823-4b65-8501-2d21f2451650", "utc": "2026-09-29T21:25:23+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge the main line 08930981 into stage/second-identity before the master's fast-forward", "tree": "ac0107f8b286e2494d3523ee636ff2843cd75af7", "parents": ["e1c0002c090b1ac9024c241e6475651815a71978", "08930981e4c9fc7df5e98f05c218708fcee3637a"], "commit": null} -->
+- **Staged source tree:** `ac0107f8b286e2494d3523ee636ff2843cd75af7`. Commit: `fc5625a88a531b46cc47bbafa5cccd01147cffa0`.
+<!-- montana-change {"id": "60db760a-d823-4b65-8501-2d21f2451650", "utc": "2026-09-29T21:25:23+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge the main line 08930981 into stage/second-identity before the master's fast-forward", "tree": "ac0107f8b286e2494d3523ee636ff2843cd75af7", "parents": ["e1c0002c090b1ac9024c241e6475651815a71978", "08930981e4c9fc7df5e98f05c218708fcee3637a"], "commit": "fc5625a88a531b46cc47bbafa5cccd01147cffa0"} -->
 
 ### 2026-09-29T21:23:12+00:00 — build 2016 bump: the player -- the author icon as the cover without its own, the search keys as in the chat, a long press copies the title, no places under tracks, the music page scroll, swipe to delete
 
