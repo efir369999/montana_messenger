@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
 - **Build / OS:** not built; branch fix/player-cover-no-inset over build 2018; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
-- **Staged source tree:** `fc47db8f589c997f3444b4a6a322b4e152091d8c`. Commit: pending.
-<!-- montana-change {"id": "1b49f3af-6c46-4d2e-9bfe-44d6c38e6479", "utc": "2026-09-29T22:09:23+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-no-inset over build 2018", "os": "macOS (Darwin 25.6.0); no device", "summary": "Merge rollback-898 (333dab4c) into fix/player-cover-no-inset before the master fast-forward", "tree": "fc47db8f589c997f3444b4a6a322b4e152091d8c", "parents": ["baad22c9ffcf3bcb85d2aadacf90c6bb119cdee0", "333dab4ce53c96449fe0a735bfbd394348048d6d"], "commit": null} -->
+- **Staged source tree:** `fc47db8f589c997f3444b4a6a322b4e152091d8c`. Commit: `fcc5b860db34fa4723e18e66df0687b752107eda`.
+<!-- montana-change {"id": "1b49f3af-6c46-4d2e-9bfe-44d6c38e6479", "utc": "2026-09-29T22:09:23+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-no-inset over build 2018", "os": "macOS (Darwin 25.6.0); no device", "summary": "Merge rollback-898 (333dab4c) into fix/player-cover-no-inset before the master fast-forward", "tree": "fc47db8f589c997f3444b4a6a322b4e152091d8c", "parents": ["baad22c9ffcf3bcb85d2aadacf90c6bb119cdee0", "333dab4ce53c96449fe0a735bfbd394348048d6d"], "commit": "fcc5b860db34fa4723e18e66df0687b752107eda"} -->
 
 ### 2026-09-29T22:09:06+00:00 — Merge rollback-898 cea6b56b (build 2018, the council wall) into fix/vpn-wall-whitelist-auto before the master fast-forward; ring and typecheck of the app and PacketTunnel green on the merged tree
 
