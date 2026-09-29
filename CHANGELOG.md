@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T13:06:53+00:00 — Fourth merge of the main line (fd621715: the sharp-pictures branch) into fix/vpn-protocols-and-ping: no conflicts (the wall files, the copy-scope guard and a checklist came from main). Guard ring green (the merged copy-scope guard included), swiftc -typecheck green for the Montana target. Ready to fast-forward the main line. Not built, not installed.
+
+- **Callsign / model:** Claude / fix/vpn-protocols-and-ping / Claude Fable 5.1.
+- **Build / OS:** source only; not built, next artifact unassigned; iOS 26.7 (T1) and iOS 18.3 (T3) targets; nothing installed. No new compilation or installation claimed.
+- **Staged source tree:** `7d9a221a3eb3317b46ad99d3ba88a3f962d93b35`. Commit: pending.
+<!-- montana-change {"id": "d2473a15-0f07-4055-bd1b-3acc3d469514", "utc": "2026-09-29T13:06:53+00:00", "callsign": "Claude / fix/vpn-protocols-and-ping", "model": "Claude Fable 5.1", "build": "source only; not built, next artifact unassigned", "os": "iOS 26.7 (T1) and iOS 18.3 (T3) targets; nothing installed", "summary": "Fourth merge of the main line (fd621715: the sharp-pictures branch) into fix/vpn-protocols-and-ping: no conflicts (the wall files, the copy-scope guard and a checklist came from main). Guard ring green (the merged copy-scope guard included), swiftc -typecheck green for the Montana target. Ready to fast-forward the main line. Not built, not installed.", "tree": "7d9a221a3eb3317b46ad99d3ba88a3f962d93b35", "parents": ["8d7d5e5942f86bd80be666ac84d9996631f5e7fe", "fd621715b1d06543b51b4c2ecc5e0841cd5a4d9c"], "commit": null} -->
+
 ### 2026-09-29T13:04:06+00:00 — The gRPC verdict for T1 (the author's word: measure by the tunnel road): from the phone's tunnel process 65 grpc+tls rows of the plan timed out and none answered while 25 tcp/reality rows answered in 16-315 ms; the loopback control (scripts/xray-ios/measure_grpc_test.go: a real VLESS+gRPC+TLS server, the outbound exactly as the app writes it, fingerprints none/chrome/safari and multiMode all answer, a wrong serviceName fails) shows our grpc config right at the engine level, so the phone's grpc rows fail by the network or the servers. Found on the way and fixed: this engine removed TLS allowInsecure and refuses a config that carries it; the generator never writes it now and the link's pinSHA256 goes to pinnedPeerCertSha256. The engine's own error word now rides the diary behind the class with hosts scrubbed (timeout, reset, closed, refused ...). Go tests green, typecheck green, ring green; not built, not installed.
 
 - **Callsign / model:** Claude / fix/vpn-protocols-and-ping / Claude Fable 5.1.
