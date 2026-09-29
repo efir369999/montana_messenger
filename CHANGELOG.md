@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:01:16+00:00 — the big player, the author's words 29.09: no background -- the logo's gold on a black square is gone from the upper half; the ground is the system's clear glass (MTClearGlassPlate, new beside the tree's glass plates) and the buttons stay the bar's one-tone plates with the blue ring, so they read over it; the playlist sheet stands on the same clear ground under its one-tone rows. The name block keeps the track's name alone (the place line and the count gone), and a long press on the name copies it with the platform's success tap. Typecheck rc 0; ring 1, the 44-point target, language and owner guards green.
+
+- **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
+- **Build / OS:** source only; not built (the master builds); iOS 17.2+ target (Debug typecheck on macOS); not installed. No new compilation or installation claimed.
+- **Staged source tree:** `eecb9aeee6c4c60ac39108e70af12ac8e01bf2f3`. Commit: pending.
+<!-- montana-change {"id": "84f7773d-9f5f-4b50-b274-4a9058a7d90f", "utc": "2026-09-29T19:01:16+00:00", "callsign": "Claude / fix/mini-seek-and-hold-menu (builder for claude-83)", "model": "Claude Opus 5.5", "build": "source only; not built (the master builds)", "os": "iOS 17.2+ target (Debug typecheck on macOS); not installed", "summary": "the big player, the author's words 29.09: no background -- the logo's gold on a black square is gone from the upper half; the ground is the system's clear glass (MTClearGlassPlate, new beside the tree's glass plates) and the buttons stay the bar's one-tone plates with the blue ring, so they read over it; the playlist sheet stands on the same clear ground under its one-tone rows. The name block keeps the track's name alone (the place line and the count gone), and a long press on the name copies it with the platform's success tap. Typecheck rc 0; ring 1, the 44-point target, language and owner guards green.", "tree": "eecb9aeee6c4c60ac39108e70af12ac8e01bf2f3", "parents": ["0050525ac39bbefc8bf737fb75e0810d4f98e75c"], "commit": null} -->
+
 ### 2026-09-29T19:00:33+00:00 — merge rollback-898 (0050525a, the checklist) into stage/vpn-wall-as-posts before the master's fast-forward
 
 - **Callsign / model:** Claude / stage/vpn-wall-as-posts (builder claude-bb) / Claude Opus 5.5.
