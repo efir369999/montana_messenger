@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T16:02:49+00:00 — Merge of the final main line (ee500692: the share sheet's suggestion, the chess lane and End game, the outer service's login page) into fix/vpn-ping-grpc-ams (50d5172a: the VPN wall and its order), no conflicts; ring and typecheck (111 files) green on the merged tree. All three sessions named by the author are in; next: the fast-forward and build 1998 by this session.
+
+- **Callsign / model:** Claude / fix/vpn-ping-grpc-ams / Claude Fable 5.1.
+- **Build / OS:** 1997 source; next artifact 1998; iOS 26.7 and 18.3 targets (T1, T3). No new compilation or installation claimed.
+- **Staged source tree:** `aefd8e1e7ac4110c7e9305c563304906640030bd`. Commit: pending.
+<!-- montana-change {"id": "06d5da09-1d7f-4b4d-9dfc-faa7d2b53667", "utc": "2026-09-29T16:02:49+00:00", "callsign": "Claude / fix/vpn-ping-grpc-ams", "model": "Claude Fable 5.1", "build": "1997 source; next artifact 1998", "os": "iOS 26.7 and 18.3 targets (T1, T3)", "summary": "Merge of the final main line (ee500692: the share sheet's suggestion, the chess lane and End game, the outer service's login page) into fix/vpn-ping-grpc-ams (50d5172a: the VPN wall and its order), no conflicts; ring and typecheck (111 files) green on the merged tree. All three sessions named by the author are in; next: the fast-forward and build 1998 by this session.", "tree": "aefd8e1e7ac4110c7e9305c563304906640030bd", "parents": ["50d5172a9aeea7d8859cc61c644f0af2ade7ec15", "ee500692ac9527c04047c37e139015c16ab43bee"], "commit": null} -->
+
 ### 2026-09-29T15:59:26+00:00 — Second merge of the main line (1a149d8e: the chess board own lane and the End game item) into the outer login page branch, so the master can fast-forward. No conflicts; guard ring, PROVEN ring 1 and SETTINGS green on the merged tree; the app module typechecks (111 files). Not built, not installed.
 
 - **Callsign / model:** Claude / stage/outer-multi / Claude Fable 5.1.
