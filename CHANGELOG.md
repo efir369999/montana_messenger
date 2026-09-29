@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
 - **Build / OS:** 2017 (Debug, bump; artifact not built yet); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `bc6051b228c152891b78edb1173defd43e203e66`. Commit: pending.
-<!-- montana-change {"id": "2fa730a4-d615-4334-aada-c38ce37dcacd", "utc": "2026-09-29T21:35:08+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2017 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2017 bump: the outer service shell -- media in the conversation, sending albums, files and voices, history paging, chats search, channels, presence and typing, new message and sign out", "tree": "bc6051b228c152891b78edb1173defd43e203e66", "parents": ["f87857ed78c0b6f5c002892baa55a70071665ac8"], "commit": null} -->
+- **Staged source tree:** `bc6051b228c152891b78edb1173defd43e203e66`. Commit: `a61539cf3b3f0ac46962363970bd1a20478ee11f`.
+<!-- montana-change {"id": "2fa730a4-d615-4334-aada-c38ce37dcacd", "utc": "2026-09-29T21:35:08+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2017 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2017 bump: the outer service shell -- media in the conversation, sending albums, files and voices, history paging, chats search, channels, presence and typing, new message and sign out", "tree": "bc6051b228c152891b78edb1173defd43e203e66", "parents": ["f87857ed78c0b6f5c002892baa55a70071665ac8"], "commit": "a61539cf3b3f0ac46962363970bd1a20478ee11f"} -->
 
 ### 2026-09-29T21:34:14+00:00 — Merge rollback-898 7d34df94 (the council wall) into fix/outer-shell-native before the master fast-forward; no conflicts, no code in the merge
 
