@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T11:15:23+00:00 — Montana OS icons in the drawer: every row of the 1949 drawer draws its application icon from the sculpted glass set at 30 points through MTApplicationIcon, the size the outer service's row had; the style is named Montana OS on screen (en, ru, zh-Hans), its stored word stays; the Gold logo badge is drawn on tiles of 48 points and more; MTFeedMark removed; SETTINGS.md and Checklist/APP-LIBRARY.md updated
+
+- **Callsign / model:** Claude / ui/montana-os-icons / Claude Fable 5.1.
+- **Build / OS:** source only; not built, next artifact unassigned; iOS 17.2 floor, Debug; typecheck of the app module, no device. No new compilation or installation claimed.
+- **Staged source tree:** `1b199f34d8d41ee7d6c502e09d4799f30dea2177`. Commit: pending.
+<!-- montana-change {"id": "3666fbaf-6ab0-495f-9f4c-00c64154117f", "utc": "2026-09-29T11:15:23+00:00", "callsign": "Claude / ui/montana-os-icons", "model": "Claude Fable 5.1", "build": "source only; not built, next artifact unassigned", "os": "iOS 17.2 floor, Debug; typecheck of the app module, no device", "summary": "Montana OS icons in the drawer: every row of the 1949 drawer draws its application icon from the sculpted glass set at 30 points through MTApplicationIcon, the size the outer service's row had; the style is named Montana OS on screen (en, ru, zh-Hans), its stored word stays; the Gold logo badge is drawn on tiles of 48 points and more; MTFeedMark removed; SETTINGS.md and Checklist/APP-LIBRARY.md updated", "tree": "1b199f34d8d41ee7d6c502e09d4799f30dea2177", "parents": ["89c7ee82a680feccc96a9bf1d8ccdbff718679eb"], "commit": null} -->
+
 ### 2026-09-29T11:01:48+00:00 — VPN: a save that changes the kernel rule of the profile restarts the live session instead of hot-swapping the plan (three phones lost all network after the first profile upgrade)
 
 - **Callsign / model:** Claude / fix/vpn-live-rule / Claude Opus 5.5.
