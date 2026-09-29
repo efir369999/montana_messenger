@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
 - **Build / OS:** 2013 (Debug, installed on T1; T3 not reachable); iOS 26 (T1). No new compilation or installation claimed.
-- **Staged source tree:** `d9e0b627011cd6d2602a49987160f39f11d04028`. Commit: pending.
-<!-- montana-change {"id": "6a566d7c-b8e9-46a8-a99d-04e26d5fa9c1", "utc": "2026-09-29T20:45:47+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2013 (Debug, installed on T1; T3 not reachable)", "os": "iOS 26 (T1)", "summary": "council wall: the post of build 2013 on the masters timechain", "tree": "d9e0b627011cd6d2602a49987160f39f11d04028", "parents": ["ac01b6c48770911dd95623dea13c34c192d06134"], "commit": null} -->
+- **Staged source tree:** `d9e0b627011cd6d2602a49987160f39f11d04028`. Commit: `3b0a1b5f395e3da5aa2040be7c371b886d84390d`.
+<!-- montana-change {"id": "6a566d7c-b8e9-46a8-a99d-04e26d5fa9c1", "utc": "2026-09-29T20:45:47+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2013 (Debug, installed on T1; T3 not reachable)", "os": "iOS 26 (T1)", "summary": "council wall: the post of build 2013 on the masters timechain", "tree": "d9e0b627011cd6d2602a49987160f39f11d04028", "parents": ["ac01b6c48770911dd95623dea13c34c192d06134"], "commit": "3b0a1b5f395e3da5aa2040be7c371b886d84390d"} -->
 
 ### 2026-09-29T20:43:14+00:00 — Merge rollback-898 (b542c701) into design/onboarding-os-style before the master's fast-forward: no conflicts; the guard ring and the app module typecheck green on the merged tree
 
