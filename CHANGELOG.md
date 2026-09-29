@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:01:55+00:00 — Lists: the arrow back to the top, one owner in the container; the row number rides the platform's own thumb
+
+- **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
+- **Build / OS:** 2018 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
+- **Staged source tree:** `a08834a7f988e093872309dc59e290eaaddab13b`. Commit: pending.
+<!-- montana-change {"id": "fc42088e-9dfb-4435-a324-2212cbdfca3a", "utc": "2026-09-29T22:01:55+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Lists: the arrow back to the top, one owner in the container; the row number rides the platform's own thumb", "tree": "a08834a7f988e093872309dc59e290eaaddab13b", "parents": ["e36aab6819678f2316d0bc0c566f08e95703b619"], "commit": null} -->
+
 ### 2026-09-29T22:00:18+00:00 — council wall: the wall data leaves the main line (on disk and the public showcase), the master wall of squeezed twins with the adapted Weissman score
 
 - **Callsign / model:** Claude claude-9e / Master 1 / council/master-wall / Claude Opus 5.5.
