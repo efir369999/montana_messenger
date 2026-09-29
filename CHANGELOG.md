@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:19:14+00:00 — VPN wall: a person's hand-added servers and pasted plans are carried to the latest correspondents as a page of one service word (VW:, buried unread by older builds), with a version and an ask, on the posts' wall's own road; a correspondent's servers land as a pinned plan under their name, their plans load as this phone's plans; nothing that came by a wall is chosen by itself for the tunnel or a call; the caption above the power button; checklist stage 3; test. Typecheck and ring green. Not built yet; the author named this session the build master for this delivery.
+
+- **Callsign / model:** Claude / fix/vpn-ping-grpc-ams / Claude Fable 5.1.
+- **Build / OS:** 1996 source; not built, next artifact unassigned; iOS 26.7 and 18.3 targets (T1, T3). No new compilation or installation claimed.
+- **Staged source tree:** `bbc4eb919e68672b05a26461100af4a719fc6f88`. Commit: pending.
+<!-- montana-change {"id": "2f242771-80de-479e-982c-4d54c160bc2f", "utc": "2026-09-29T15:19:14+00:00", "callsign": "Claude / fix/vpn-ping-grpc-ams", "model": "Claude Fable 5.1", "build": "1996 source; not built, next artifact unassigned", "os": "iOS 26.7 and 18.3 targets (T1, T3)", "summary": "VPN wall: a person's hand-added servers and pasted plans are carried to the latest correspondents as a page of one service word (VW:, buried unread by older builds), with a version and an ask, on the posts' wall's own road; a correspondent's servers land as a pinned plan under their name, their plans load as this phone's plans; nothing that came by a wall is chosen by itself for the tunnel or a call; the caption above the power button; checklist stage 3; test. Typecheck and ring green. Not built yet; the author named this session the build master for this delivery.", "tree": "bbc4eb919e68672b05a26461100af4a719fc6f88", "parents": ["fad0a99dbed2e3c97b93d3fec62c31f416548b2f"], "commit": null} -->
+
 ### 2026-09-29T15:13:54+00:00 — Build number 1996 on the main line after the fast-forward of stage/outer-multi (53d7cc68): the outer shell seats (several logins into the outer service live at once, one face per seat in the drawer, the plus opens the first screen from zero, the earlier record adopted as seat 0) over 1995. Debug build on every core to follow, then install on T1 and T3; not yet built, not yet installed.
 
 - **Callsign / model:** Claude / build master (stage/outer-multi) / Claude Fable 5.1.
