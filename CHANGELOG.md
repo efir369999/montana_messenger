@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
 - **Build / OS:** 2021 (Debug, bump; artifact not built yet); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `be65cb4388a4b0c2c045731ce93df4fda1d13e5a`. Commit: pending.
-<!-- montana-change {"id": "451582b9-7940-409a-944e-396fc2af08bb", "utc": "2026-09-29T23:20:50+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2021 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2021 bump: my own face drawn by one view everywhere -- the Saved Messages face changes the moment my avatar changes", "tree": "be65cb4388a4b0c2c045731ce93df4fda1d13e5a", "parents": ["33c124d0513b03e204c22337b92a88a84b2264f2"], "commit": null} -->
+- **Staged source tree:** `be65cb4388a4b0c2c045731ce93df4fda1d13e5a`. Commit: `62e9d0df3321ee80ea46f057340f80ff736ac89b`.
+<!-- montana-change {"id": "451582b9-7940-409a-944e-396fc2af08bb", "utc": "2026-09-29T23:20:50+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2021 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2021 bump: my own face drawn by one view everywhere -- the Saved Messages face changes the moment my avatar changes", "tree": "be65cb4388a4b0c2c045731ce93df4fda1d13e5a", "parents": ["33c124d0513b03e204c22337b92a88a84b2264f2"], "commit": "62e9d0df3321ee80ea46f057340f80ff736ac89b"} -->
 
 ### 2026-09-29T23:19:42+00:00 — Merge rollback-898 aa91a596 (build 2020) into fix/favorites-avatar-owner (the one own-face view MTSelfFace), a clean merge commit before the master fast-forward: ring 1 green, app module typecheck green under the shared heavy lock
 
