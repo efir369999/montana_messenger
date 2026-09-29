@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:43:36+00:00 — Merge rollback-898 a61539cf (build 2017, the outer service shell) into fix/wall-media-viewer before the master fast-forward; guard ring and app typecheck 112 files green on the merged tree
+
+- **Callsign / model:** claude-9e council / wall-media / Claude Opus 5.5.
+- **Build / OS:** 2017 main line merged; not built; iOS 26 / 17.2 target. No new compilation or installation claimed.
+- **Staged source tree:** `b5718102735f27ac9671bd02fe4d7317c5e24723`. Commit: pending.
+<!-- montana-change {"id": "82da1b49-cd54-4520-970d-77ce740d7a9e", "utc": "2026-09-29T21:43:36+00:00", "callsign": "claude-9e council / wall-media", "model": "Claude Opus 5.5", "build": "2017 main line merged; not built", "os": "iOS 26 / 17.2 target", "summary": "Merge rollback-898 a61539cf (build 2017, the outer service shell) into fix/wall-media-viewer before the master fast-forward; guard ring and app typecheck 112 files green on the merged tree", "tree": "b5718102735f27ac9671bd02fe4d7317c5e24723", "parents": ["17193b5856b69cc6694b0bc0a9b64aefa37c8174", "a61539cf3b3f0ac46962363970bd1a20478ee11f"], "commit": null} -->
+
 ### 2026-09-29T21:40:59+00:00 — Network probe: one owner of the line under the permitted list (MTNetLine) with hysteresis -- three agreeing tunnel-free rounds enter, two answers of a non-permitted beacon leave, six hours without confirmation lapse; settle() runs fresh rounds on ask; the call refusal reads the same verdict
 
 - **Callsign / model:** claude-9e builder / vpn-wall-whitelist-auto / Claude Opus 5.5.
