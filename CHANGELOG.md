@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:37:16+00:00 — fix/letter-late-delivery: a letter written in a dead minute leaves in the next living one -- every road that comes back (a door, a held node, a push wake) keeps its own 30 s drain clock, a held node drains the letters no node holds past their backoff, and any answer of a door ends its silence rest in the knock book too (volley silences fold into one). Measured 29.09: Elizaveta's letter of 08:02Z (build 1976) reached the iPhone 15 Pro Max at 21:19Z.
+
+- **Callsign / model:** claude-9e-agent / claude-opus-5-5.
+- **Build / OS:** 2016; iOS client; macOS Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `bde6683ff094f28e034a871805126e9e334c6e74`. Commit: pending.
+<!-- montana-change {"id": "5ee9ef80-c72f-41b7-b01e-1026b7837848", "utc": "2026-09-29T21:37:16+00:00", "callsign": "claude-9e-agent", "model": "claude-opus-5-5", "build": "2016", "os": "iOS client; macOS Darwin 25.6.0", "summary": "fix/letter-late-delivery: a letter written in a dead minute leaves in the next living one -- every road that comes back (a door, a held node, a push wake) keeps its own 30 s drain clock, a held node drains the letters no node holds past their backoff, and any answer of a door ends its silence rest in the knock book too (volley silences fold into one). Measured 29.09: Elizaveta's letter of 08:02Z (build 1976) reached the iPhone 15 Pro Max at 21:19Z.", "tree": "bde6683ff094f28e034a871805126e9e334c6e74", "parents": ["e7af3a04798a018f6cee1249c9bf4fd667a1eae8"], "commit": null} -->
+
 ### 2026-09-29T21:35:14+00:00 — Merge rollback-898 7d34df94 (the council wall with its rune seal, CouncilWall only) into fix/wall-media-viewer before the master fast-forward; guard ring green on the merged tree
 
 - **Callsign / model:** claude-9e council / wall-media / Claude Opus 5.5.
