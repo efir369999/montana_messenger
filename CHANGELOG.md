@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T14:03:55+00:00 — Build 1993 -- chess moves land at once (the board keeps the node lane, the box hint is fetched now), the nested worktree ignored, the 1992 chronicle; for T1 and T3, then TestFlight
+
+- **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
+- **Build / OS:** 1993 source; compiling next from this tree, artifact unsealed; targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `ed26d078a5b362909e4dd8f5213b47fcafc06324`. Commit: pending.
+<!-- montana-change {"id": "2472c7d8-1bce-44ce-9d17-d0014634f165", "utc": "2026-09-29T14:03:55+00:00", "callsign": "Claude / build master (rollback-898)", "model": "Claude Fable 5.1", "build": "1993 source; compiling next from this tree, artifact unsealed", "os": "targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host", "summary": "Build 1993 -- chess moves land at once (the board keeps the node lane, the box hint is fetched now), the nested worktree ignored, the 1992 chronicle; for T1 and T3, then TestFlight", "tree": "ed26d078a5b362909e4dd8f5213b47fcafc06324", "parents": ["506291ad26e5ed68e195b5c5d5071e2405a11f06"], "commit": null} -->
+
 ### 2026-09-29T14:02:03+00:00 — Photo and share: a chat picture opens in the platform's own viewer (QLPreviewController), the Montana album under it is gone; a refusal of the picture decoder is a moment, not a verdict (the grey plate of the iPhone 17 at 13:16Z), the bubble asks again and names a plate still grey; the share sheet no longer ticks a chat by the system's intent (T1 13:29Z, 13:30Z); guard lines P-132.1, P-132.2, P-118.8
 
 - **Callsign / model:** Claude / session fix/photo-thumb-and-share / Claude Fable 5.1.
