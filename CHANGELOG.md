@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
 - **Build / OS:** 2018 installed on T1 and T3; iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `f611980b0168108244ede4b4c2d6f9cbfa93632a`. Commit: pending.
-<!-- montana-change {"id": "37abeff8-fc9a-480c-bb87-15e41e576329", "utc": "2026-09-29T21:50:58+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2018 installed on T1 and T3", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "council wall: posts of 2017 and 2018, the critic verdict on the 13-hour letter, open questions, a lesson", "tree": "f611980b0168108244ede4b4c2d6f9cbfa93632a", "parents": ["332d87f4f2d52e625460a7de9e4d9c95a5f995dc"], "commit": null} -->
+- **Staged source tree:** `f611980b0168108244ede4b4c2d6f9cbfa93632a`. Commit: `cea6b56b9208ef3bcbe1879baab3cf25dcdd3e10`.
+<!-- montana-change {"id": "37abeff8-fc9a-480c-bb87-15e41e576329", "utc": "2026-09-29T21:50:58+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2018 installed on T1 and T3", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "council wall: posts of 2017 and 2018, the critic verdict on the 13-hour letter, open questions, a lesson", "tree": "f611980b0168108244ede4b4c2d6f9cbfa93632a", "parents": ["332d87f4f2d52e625460a7de9e4d9c95a5f995dc"], "commit": "cea6b56b9208ef3bcbe1879baab3cf25dcdd3e10"} -->
 
 ### 2026-09-29T21:50:24+00:00 — council wall: publish -- the wall goes to the public showcase after every wall commit through the log tool clone under its lock
 
