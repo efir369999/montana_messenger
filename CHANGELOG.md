@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:20:51+00:00 — merge rollback-898 (86a932a4, the build 2003 bump) into fix/vpn-import-menu: the project's build number alone; the previous merge a55e4715 took 103e2bec, not 3424c731 as its record's words say (its tree and parents are exact)
+
+- **Callsign / model:** Claude / fix/vpn-import-menu (builder) / Claude Opus 5.5.
+- **Build / OS:** source: the main line 86a932a4 (build 2003 bump) merged into fix/vpn-import-menu a55e4715; not built, the master claude-10 builds; iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `75737d6fb73f58387ce21481ab26d74c494a5c24`. Commit: pending.
+<!-- montana-change {"id": "f76e4d52-e2ea-4dbf-b561-47d6696473e8", "utc": "2026-09-29T18:20:51+00:00", "callsign": "Claude / fix/vpn-import-menu (builder)", "model": "Claude Opus 5.5", "build": "source: the main line 86a932a4 (build 2003 bump) merged into fix/vpn-import-menu a55e4715; not built, the master claude-10 builds", "os": "iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed", "summary": "merge rollback-898 (86a932a4, the build 2003 bump) into fix/vpn-import-menu: the project's build number alone; the previous merge a55e4715 took 103e2bec, not 3424c731 as its record's words say (its tree and parents are exact)", "tree": "75737d6fb73f58387ce21481ab26d74c494a5c24", "parents": ["a55e471548934832404b3ba6edca79a57b63aafb", "86a932a47fd612daf6e0c304a28d0768e57fecee"], "commit": null} -->
+
 ### 2026-09-29T18:18:33+00:00 — the chronicle of 2003: the feed and the wall are the playlist for the mini player's track buttons; the typecheck tool reuses one folder; installed on T1, T3 pending; device checks listed, none run yet.
 
 - **Callsign / model:** Claude / build-master (claude-10) / Claude Opus 5.5.
