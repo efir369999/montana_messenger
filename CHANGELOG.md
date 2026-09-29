@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T00:31:31+00:00 — The presence farewell waits a breath (96 posts per app switch on T1), the feed's video healing backs off and gives up (106 MB through the tunnel in three minutes), the typecheck reads the package modules from a build home, TestFlight publishing adds both groups
+
+- **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
+- **Build / OS:** 1989 on T1 and T3 as the source baseline; 1990 to be claimed after the merge into rollback-898; T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `3960a2c6eb678bb65c3cf1dcda5e4b35338e7459`. Commit: pending.
+<!-- montana-change {"id": "1b28a4cb-e7a6-4dc4-9eec-15a36b54e06c", "utc": "2026-09-29T00:31:31+00:00", "callsign": "Claude / signal-lane", "model": "Claude Fable 5.1", "build": "1989 on T1 and T3 as the source baseline; 1990 to be claimed after the merge into rollback-898", "os": "T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7", "summary": "The presence farewell waits a breath (96 posts per app switch on T1), the feed's video healing backs off and gives up (106 MB through the tunnel in three minutes), the typecheck reads the package modules from a build home, TestFlight publishing adds both groups", "tree": "3960a2c6eb678bb65c3cf1dcda5e4b35338e7459", "parents": ["67378c0c96823e6fe3d45a0615b4ed0dedc0bd3d"], "commit": null} -->
+
 ### 2026-09-29T00:16:19+00:00 — The chronicle of 1989: the signal storm of 1988 and its closure, the 1949 drawer and the chess steps -- installed on T1 and T3
 
 - **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
