@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:14:11+00:00 — the page is the playlist: a track touched in the feed queues every track of the feed in its order, on a wall every track of that wall (MTBoardPlaylist, one owner of the rule: each track once by its file, from the disk or on its own loader from its pieces); a post on its way plays its own. The bar's track buttons and a track's end walk the whole page, not the post's neighbours. Typecheck rc 0, ring 1 and guards green.
+
+- **Callsign / model:** Claude / fix/mini-seek-and-hold-menu / Claude Opus 5.5.
+- **Build / OS:** source only; next artifact 2003; iOS 17.2+ target (Debug typecheck on macOS); not installed. No new compilation or installation claimed.
+- **Staged source tree:** `fd3f95148a2ff4cac7b36baf09c2cf90331ebee1`. Commit: pending.
+<!-- montana-change {"id": "318fb77f-c96b-4091-809d-90da070c2de5", "utc": "2026-09-29T18:14:11+00:00", "callsign": "Claude / fix/mini-seek-and-hold-menu", "model": "Claude Opus 5.5", "build": "source only; next artifact 2003", "os": "iOS 17.2+ target (Debug typecheck on macOS); not installed", "summary": "the page is the playlist: a track touched in the feed queues every track of the feed in its order, on a wall every track of that wall (MTBoardPlaylist, one owner of the rule: each track once by its file, from the disk or on its own loader from its pieces); a post on its way plays its own. The bar's track buttons and a track's end walk the whole page, not the post's neighbours. Typecheck rc 0, ring 1 and guards green.", "tree": "fd3f95148a2ff4cac7b36baf09c2cf90331ebee1", "parents": ["3424c731f8c75f17403bf92c99d3a17ee2769428"], "commit": null} -->
+
 ### 2026-09-29T18:13:54+00:00 — the VPN page's plus, as the author's example menu (29.09): Subscription URL, Paste from clipboard, Scan QR code, Import from file, Manual entry (a native form per protocol), Copy JSON (also in a server's hold menu); every road reads the text by its shape through one intake -- links, base64, engine JSON (.config), sing-box, Clash, a WireGuard interface file, a Hysteria 2 client config; an OpenVPN profile and the platform's IKEv2/IPSec profile stand as rows the engine cannot speak; a body with CRLF line endings no longer loses its servers
 
 - **Callsign / model:** Claude / fix/vpn-import-menu (builder) / Claude Opus 5.5.
