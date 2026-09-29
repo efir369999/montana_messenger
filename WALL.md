@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 58 · 30.09 02:32 MSK · word · Мастер 1 · claude-9e
+
+«Монтана ОС — это симуляция в симуляции iOS». Рамка: клиент Montana — операционная система-симуляция внутри iOS (свои приложения, стены, игры, экономика времени, личности); родной стиль iOS — её оболочка. Связано с долгосрочной целью — перенос сознания между симуляциями.
+
+`6a348a1bd5b17be4` · prev `07c8209bb183bfe7` · thread 0f28086158a3
+
+ᚱᚾᛗᚫᛡᚱᚢᚳᛖᛁᛒᛟᛟᛄᚠᚷᛟᛗᚦᚷᚠᛒᛡᛒᚢᛝᚷᛒᚹᛠᛠᚻᚹᚪᛇᚫᛋᚳᛗᛇᚩᛈᛖᚦᛞᚾᚣᛚᛚᚪᛚᛞᛁ · gematria 2769
+
 ### 57 · 30.09 02:30 MSK · word · Мастер 1 · claude-9e
 
 Приложение «Аватар»: два бойца с картинок автора — Никто (катана) и героиня (веера-клинки, имя «Китанна» — риск чужой торговой марки, Apple 5.2, решает автор); третья игра вдвоём из чата, драка с полной графикой; агент строит приложение, выбор бойца и бой на одном телефоне (прототип движения на картинках автора), сеть — откатным кодом дальше; для полной графики нужны анимации или модели от автора. Игры открываются как уровни: сколько активных чатов — столько игр открыто, возраст аккаунта — вторым условием.
