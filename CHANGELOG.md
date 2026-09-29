@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T16:53:24+00:00 — merge of the main line (5b44a4d6: the letter on the live lane beside the box, build 1999 and its chronicle) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 and ring 1 green on the merged tree.
+
+- **Callsign / model:** Claude / fix/mini-seek-and-hold-menu / Claude Fable 5.1.
+- **Build / OS:** source only; not built, next artifact unassigned; iOS 17.2+ target (Debug typecheck on macOS); not installed. No new compilation or installation claimed.
+- **Staged source tree:** `6bf2a5982b81c0a7afcff250a1dd530fe5668b79`. Commit: pending.
+<!-- montana-change {"id": "fae848e2-50ca-4b2c-9e26-51a54746dba5", "utc": "2026-09-29T16:53:24+00:00", "callsign": "Claude / fix/mini-seek-and-hold-menu", "model": "Claude Fable 5.1", "build": "source only; not built, next artifact unassigned", "os": "iOS 17.2+ target (Debug typecheck on macOS); not installed", "summary": "merge of the main line (5b44a4d6: the letter on the live lane beside the box, build 1999 and its chronicle) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 and ring 1 green on the merged tree.", "tree": "6bf2a5982b81c0a7afcff250a1dd530fe5668b79", "parents": ["e0694a4f12f0e4d26bc52a30a2a4299c2b6fa5de", "5b44a4d65155340271d4a7201ddef5ccbed7a472"], "commit": null} -->
+
 ### 2026-09-29T16:50:35+00:00 — mini player: two skip buttons of fifteen seconds (the platform's own skip glyphs) beside the play and at the name plate's end, the bar only; the name plate seeks by a swipe anywhere on it (the fill's edge follows the finger's travel, a tap stays a tap, a still finger asks no seek); the long-press menu (copy title, share) moved from the drawn tree onto the slider control as the platform's own context-menu interaction with a snapshot preview of the plate, so it no longer flickers under the player's clock and opens over the fill's edge; Share hands a track under its shown title through the documents' link road; the audio player and the note dock skip from their own clocks. Typecheck rc 0, ring 1 and the pre-commit guards green; not built, not installed.
 
 - **Callsign / model:** Claude / fix/mini-seek-and-hold-menu / Claude Fable 5.1.
