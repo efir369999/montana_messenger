@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
 - **Build / OS:** 2010 (installed on T1); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `25ee0ad08d97ec9a8bac008747f76d71383bc726`. Commit: pending.
-<!-- montana-change {"id": "27e8f4c3-b140-4002-9d10-d58ba24a24d9", "utc": "2026-09-29T19:37:01+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2010 (installed on T1)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "checklist: the chronicle of 2010 -- the player sheet's own glass, the tenth build's copy on Lauterbourg; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)", "tree": "25ee0ad08d97ec9a8bac008747f76d71383bc726", "parents": ["438bb4f6c369e74fa8a4e20411fdb9a2763d6cb8"], "commit": null} -->
+- **Staged source tree:** `25ee0ad08d97ec9a8bac008747f76d71383bc726`. Commit: `548810ff7d7ddeed4f9e103d61be54ec4bd891a5`.
+<!-- montana-change {"id": "27e8f4c3-b140-4002-9d10-d58ba24a24d9", "utc": "2026-09-29T19:37:01+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2010 (installed on T1)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "checklist: the chronicle of 2010 -- the player sheet's own glass, the tenth build's copy on Lauterbourg; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)", "tree": "25ee0ad08d97ec9a8bac008747f76d71383bc726", "parents": ["438bb4f6c369e74fa8a4e20411fdb9a2763d6cb8"], "commit": "548810ff7d7ddeed4f9e103d61be54ec4bd891a5"} -->
 
 ### 2026-09-29T19:35:26+00:00 — merge rollback-898 (bec9bccf, the chronicle of 2009) into stage/three-walls: the checklist alone, so the branch fast-forwards the main line
 
