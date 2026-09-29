@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
 - **Build / OS:** 2018 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
-- **Staged source tree:** `9bb56d1cba593dec91c072de87c7bc1abbb9e64b`. Commit: pending.
-<!-- montana-change {"id": "5d2a7cba-5a3a-4762-beca-fcb06fbf58c0", "utc": "2026-09-29T22:22:52+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Merge rollback-898 (333dab4c) into fix/feeds-scroll-top: the main line under the lists' arrow to the top, the number on the platform's thumb and the big player's placeholder, filter and cover", "tree": "9bb56d1cba593dec91c072de87c7bc1abbb9e64b", "parents": ["65d87c6f3b9d5b1a1cea49dc836f76e9d11ff788", "333dab4ce53c96449fe0a735bfbd394348048d6d"], "commit": null} -->
+- **Staged source tree:** `9bb56d1cba593dec91c072de87c7bc1abbb9e64b`. Commit: `37421d78698b5c4f14e2317059512c2d3847d41a`.
+<!-- montana-change {"id": "5d2a7cba-5a3a-4762-beca-fcb06fbf58c0", "utc": "2026-09-29T22:22:52+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Merge rollback-898 (333dab4c) into fix/feeds-scroll-top: the main line under the lists' arrow to the top, the number on the platform's thumb and the big player's placeholder, filter and cover", "tree": "9bb56d1cba593dec91c072de87c7bc1abbb9e64b", "parents": ["65d87c6f3b9d5b1a1cea49dc836f76e9d11ff788", "333dab4ce53c96449fe0a735bfbd394348048d6d"], "commit": "37421d78698b5c4f14e2317059512c2d3847d41a"} -->
 
 ### 2026-09-29T22:19:00+00:00 — build 2019 bump: the cover -- the lock screen gets the full-size cover (no side bands), a track without its own shows the app icon pixels as on the home screen, without the black field
 
