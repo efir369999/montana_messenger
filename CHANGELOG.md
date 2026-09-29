@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T17:32:50+00:00 — mini player, the author's correction on 2000: the two buttons switch to the track before and the track after (the queue's own prev/next, backward.fill/forward.fill), for a track alone, the fifteen-second skips removed; every button of the bar wears the system blue ring as the play and the plate do; the name plate keeps seeking by a swipe and no longer fights the pages' swipe -- the slider is a horizontal owner (MTHorizontalOwning, a protocol shared with the call pill's MTHorizontalOwner) so the tabs' pan gives way at the touch over it. Typecheck rc 0, ring 1 and guards green; not built.
+
+- **Callsign / model:** Claude / fix/mini-seek-and-hold-menu / Claude Fable 5.1.
+- **Build / OS:** source only; not built, next artifact 2001 unassigned; iOS 17.2+ target (Debug typecheck on macOS); not installed. No new compilation or installation claimed.
+- **Staged source tree:** `78cec5b616a90d25bf6a30306a1d48456f66639a`. Commit: pending.
+<!-- montana-change {"id": "0ecd68f1-b189-4701-b7e5-b497c36eae9b", "utc": "2026-09-29T17:32:50+00:00", "callsign": "Claude / fix/mini-seek-and-hold-menu", "model": "Claude Fable 5.1", "build": "source only; not built, next artifact 2001 unassigned", "os": "iOS 17.2+ target (Debug typecheck on macOS); not installed", "summary": "mini player, the author's correction on 2000: the two buttons switch to the track before and the track after (the queue's own prev/next, backward.fill/forward.fill), for a track alone, the fifteen-second skips removed; every button of the bar wears the system blue ring as the play and the plate do; the name plate keeps seeking by a swipe and no longer fights the pages' swipe -- the slider is a horizontal owner (MTHorizontalOwning, a protocol shared with the call pill's MTHorizontalOwner) so the tabs' pan gives way at the touch over it. Typecheck rc 0, ring 1 and guards green; not built.", "tree": "78cec5b616a90d25bf6a30306a1d48456f66639a", "parents": ["2fefcf4e8cfeda94b465f31cc836cae2a31c6dd6"], "commit": null} -->
+
 ### 2026-09-29T17:28:56+00:00 — One rule for the fold of any call (the author's word 29.09): the call's window over other apps is armed for a voice call as well as a video call -- a video call shows the peer's picture in it, a voice call the peer's cover (the same MTCallGround the dialing screen draws); the fold button and the app's leaving raise it the same way; an incoming ring has none. Checklist entry extended. Unverified on devices.
 
 - **Callsign / model:** Claude / fix/call-fold-pip (claude-60, builder) / Claude Fable 5.1.
