@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:04:07+00:00 — council wall: the post of 2015, the author word to publish the wall, two lessons (the main tree is untouched during a build; the public showcase is written only through the log tool clone under its lock)
+
+- **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
+- **Build / OS:** 2015 (Debug, installed on T1; T3 not reachable); iOS 26 (T1). No new compilation or installation claimed.
+- **Staged source tree:** `a0e8eb86a327c2d53da2af1c3fab3c539129098d`. Commit: pending.
+<!-- montana-change {"id": "cb914a83-56d8-496d-9475-1b8b72c0966a", "utc": "2026-09-29T21:04:07+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2015 (Debug, installed on T1; T3 not reachable)", "os": "iOS 26 (T1)", "summary": "council wall: the post of 2015, the author word to publish the wall, two lessons (the main tree is untouched during a build; the public showcase is written only through the log tool clone under its lock)", "tree": "a0e8eb86a327c2d53da2af1c3fab3c539129098d", "parents": ["d22e16afb564c0a4926ad44dc67e8bddc06f069c"], "commit": null} -->
+
 ### 2026-09-29T21:03:05+00:00 — council wall: the public projection, published next to the public changelog as WALL.md and WALL.jsonl
 
 - **Callsign / model:** Claude claude-9e / Master 1 / council/public / Claude Opus 5.5.
