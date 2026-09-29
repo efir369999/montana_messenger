@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:22:10+00:00 — Merge rollback-898 (08930981) into fix/player-cover-keys-copy before the master fast-forward
+
+- **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/player-cover-keys-copy over build 2012; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
+- **Staged source tree:** `b759610f98fd1d93ed2c6d7c5ad85320e9573081`. Commit: pending.
+<!-- montana-change {"id": "972f4218-0d8d-4156-9bf1-f435d314cce5", "utc": "2026-09-29T21:22:10+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "Merge rollback-898 (08930981) into fix/player-cover-keys-copy before the master fast-forward", "tree": "b759610f98fd1d93ed2c6d7c5ad85320e9573081", "parents": ["e4ef2c4936e6c91528168f057a64c1dd74befe0c", "08930981e4c9fc7df5e98f05c218708fcee3637a"], "commit": null} -->
+
 ### 2026-09-29T21:19:52+00:00 — Merge rollback-898 (be64bf79) into fix/player-cover-keys-copy before the master fast-forward
 
 - **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
