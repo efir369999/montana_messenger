@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:12:31+00:00 — the big player's glass, the author's word on 2006 (no liquid glass at all): the SwiftUI sheet with the glass as its presentation background never showed the glass. The player and its playlist now rise by MTGlassPage -- the road the new post's page proved on 25.09: the platform's page sheet hosted by itself through MTTop, the host's view clear, the dark look, the grabber, the glass under the page by MTGlassSheet (now with a clear variant: the ground transparent glass, the buttons the one-tone plates); the page leaves by its own close or the pull; the playlist's Done leaves by its close. MTClearGlassPlate folded into MTGlassSheet. Typecheck rc 0; ring 1 (one door of every modal), owner, the 44-point target and language guards green.
+
+- **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
+- **Build / OS:** source only; not built (the master builds); iOS 17.2+ target (Debug typecheck on macOS); not installed. No new compilation or installation claimed.
+- **Staged source tree:** `a3fbb0fb063d3302b7dd732b07079e26009faa38`. Commit: pending.
+<!-- montana-change {"id": "8c86aa0e-6a29-4a32-85be-2d5a756c132f", "utc": "2026-09-29T19:12:31+00:00", "callsign": "Claude / fix/mini-seek-and-hold-menu (builder for claude-83)", "model": "Claude Opus 5.5", "build": "source only; not built (the master builds)", "os": "iOS 17.2+ target (Debug typecheck on macOS); not installed", "summary": "the big player's glass, the author's word on 2006 (no liquid glass at all): the SwiftUI sheet with the glass as its presentation background never showed the glass. The player and its playlist now rise by MTGlassPage -- the road the new post's page proved on 25.09: the platform's page sheet hosted by itself through MTTop, the host's view clear, the dark look, the grabber, the glass under the page by MTGlassSheet (now with a clear variant: the ground transparent glass, the buttons the one-tone plates); the page leaves by its own close or the pull; the playlist's Done leaves by its close. MTClearGlassPlate folded into MTGlassSheet. Typecheck rc 0; ring 1 (one door of every modal), owner, the 44-point target and language guards green.", "tree": "a3fbb0fb063d3302b7dd732b07079e26009faa38", "parents": ["585455f7ab663deeda138c32c720991a499d7065"], "commit": null} -->
+
 ### 2026-09-29T19:12:23+00:00 — build: 2007 -- the Network page becomes three apps (the VPN wall under the globe, the Mesh wall and the P2P wall from the apps' drawer, each with its own head), over 2006; for T1 and T3
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
