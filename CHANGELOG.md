@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:41:35+00:00 — Share sheet: a person chosen among the system's sharing suggestions receives the share at once -- the compact sheet shows the face, the name and the road and sends without a grid or a second tap; a suggestion the mirror does not know still opens the picker with nobody chosen; guard P-118.8 holds the direct send
+
+- **Callsign / model:** Claude / fix/share-siri-direct / Claude Fable 5.1.
+- **Build / OS:** 1997 source; not built, next artifact unassigned; iOS 17.2 deployment target; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `40c57457557ef3d2e91540b8abc791ad46651316`. Commit: pending.
+<!-- montana-change {"id": "192570e5-618f-411b-8edc-c4b836cdee6f", "utc": "2026-09-29T15:41:35+00:00", "callsign": "Claude / fix/share-siri-direct", "model": "Claude Fable 5.1", "build": "1997 source; not built, next artifact unassigned", "os": "iOS 17.2 deployment target; not installed", "summary": "Share sheet: a person chosen among the system's sharing suggestions receives the share at once -- the compact sheet shows the face, the name and the road and sends without a grid or a second tap; a suggestion the mirror does not know still opens the picker with nobody chosen; guard P-118.8 holds the direct send", "tree": "40c57457557ef3d2e91540b8abc791ad46651316", "parents": ["c5d341086c09a2fde33fb6d98b6a088397c06526"], "commit": null} -->
+
 ### 2026-09-29T15:33:10+00:00 — Build 1997 built on every core from the main tree (0 errors, artifact sealed and verified) and installed on T1 and T3 (devicectl reads 1997 on both). Composition since 1996: the VPN wall (21f31863), the 1996 chronicle, the bump. The chronicle entry in the VPN nodes checklist. Not verified on devices: the wall's stage 3.2 (T1 to T3 and back).
 
 - **Callsign / model:** Claude / build master (fix/vpn-ping-grpc-ams) / Claude Fable 5.1.
