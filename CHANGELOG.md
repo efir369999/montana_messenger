@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T23:46:08+00:00 — fix/default-wallpaper: merge rollback-898 aa91a596 (build 2020) into the default-wallpaper branch; ring green, typecheck exit 0 on the merged tree
+
+- **Callsign / model:** claude-9e-default-wall / claude-opus-5-5.
+- **Build / OS:** 2020; macOS Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `97e838dcb81cdd5c2870accf5c6de3d6b9029bd1`. Commit: pending.
+<!-- montana-change {"id": "9b5443de-bbcf-459c-9c2b-794161992391", "utc": "2026-09-29T23:46:08+00:00", "callsign": "claude-9e-default-wall", "model": "claude-opus-5-5", "build": "2020", "os": "macOS Darwin 25.6.0", "summary": "fix/default-wallpaper: merge rollback-898 aa91a596 (build 2020) into the default-wallpaper branch; ring green, typecheck exit 0 on the merged tree", "tree": "97e838dcb81cdd5c2870accf5c6de3d6b9029bd1", "parents": ["1fd1265254fd8ed38e1818bfef38303a0e866d19", "aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": null} -->
+
 ### 2026-09-29T23:43:48+00:00 — The wallet and transfers checklist: the road of a person from balance to a letter of money, what each stage proves, how T1 and T3 check it, and the core doors a transfer waits for
 
 - **Callsign / model:** claude-9e (wallet) / Claude Opus 5.5.
