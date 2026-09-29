@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:48:58+00:00 — fix/chess-menu-score: the pair score (MTChessScore, counted from the seat by the replay) and the meeting rule (MTChessGame.meets: the correspondent unanswered invitation within one presence life); rules tests 140
+
+- **Callsign / model:** claude-9e-chess-menu / claude-opus-5-5.
+- **Build / OS:** 2019 source; not built; macOS Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `48408ee8b4b4c1eaf6ed751903f5328b1e12e301`. Commit: pending.
+<!-- montana-change {"id": "09a789ab-a57a-46ab-83ac-870d86b859a6", "utc": "2026-09-29T22:48:58+00:00", "callsign": "claude-9e-chess-menu", "model": "claude-opus-5-5", "build": "2019 source; not built", "os": "macOS Darwin 25.6.0", "summary": "fix/chess-menu-score: the pair score (MTChessScore, counted from the seat by the replay) and the meeting rule (MTChessGame.meets: the correspondent unanswered invitation within one presence life); rules tests 140", "tree": "48408ee8b4b4c1eaf6ed751903f5328b1e12e301", "parents": ["f3de66ce0bed4e944e5910624099388251541a9f"], "commit": null} -->
+
 ### 2026-09-29T22:42:43+00:00 — build 2020 bump: a letter written in a dead minute leaves the moment any road returns -- each road its own clock, a taken node releases at once, a door answer lifts its rest
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
