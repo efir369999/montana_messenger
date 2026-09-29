@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:57:15+00:00 — the VPN wall carried as the posts' wall (the author's word 29.09): only to correspondents whose build speaks it, a page confirmed by the new «got» word is never carried again, one on its way waits half an hour, the rule «Who can see my VPN wall» beside the wall's two rules (a refused person gets the empty page), no carry at a return when presence is hidden, a WireGuard row never rides; T1 29.09 carried one unchanged page to 21 correspondents 36 times
+
+- **Callsign / model:** Claude / stage/vpn-wall-as-posts (builder claude-bb) / Claude Opus 5.5.
+- **Build / OS:** source on 974dfb77 (build 2005); not built, the master claude-83 builds; iOS 17.2 or later target; typecheck of the app module on macOS (111 files, exit 0), the guard ring clean; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `4e2d5db93949aa02b258f5c7648e5f7343a0489f`. Commit: pending.
+<!-- montana-change {"id": "ce40fd7b-9e9c-4de2-b6f4-350c8d35b421", "utc": "2026-09-29T18:57:15+00:00", "callsign": "Claude / stage/vpn-wall-as-posts (builder claude-bb)", "model": "Claude Opus 5.5", "build": "source on 974dfb77 (build 2005); not built, the master claude-83 builds", "os": "iOS 17.2 or later target; typecheck of the app module on macOS (111 files, exit 0), the guard ring clean; not installed", "summary": "the VPN wall carried as the posts' wall (the author's word 29.09): only to correspondents whose build speaks it, a page confirmed by the new «got» word is never carried again, one on its way waits half an hour, the rule «Who can see my VPN wall» beside the wall's two rules (a refused person gets the empty page), no carry at a return when presence is hidden, a WireGuard row never rides; T1 29.09 carried one unchanged page to 21 correspondents 36 times", "tree": "4e2d5db93949aa02b258f5c7648e5f7343a0489f", "parents": ["974dfb773c78d02d78b14bc899e732b0cac3dc69"], "commit": null} -->
+
 ### 2026-09-29T18:48:44+00:00 — checklist: the chronicle of 2005 -- the VPN rises after an install over 2004's pair's one game; installed on T1, T3 pending (not visible to the Mac, a waiter stands)
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
