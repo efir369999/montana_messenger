@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / onboarding-os / Claude Opus 5.5.
 - **Build / OS:** 2012 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `c30f135bbef368b334702ee8c728c9d92d1762d4`. Commit: pending.
-<!-- montana-change {"id": "f3e28bbf-f9d6-4597-b960-0f0bd6c8fc41", "utc": "2026-09-29T20:34:52+00:00", "callsign": "claude-9e council / onboarding-os", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "The path from the first page to the chats in the platform's style: every act of the path stands on the one door plate (MTLoginDoorStyle, glass capsule, 52 pt, blue glass for the main act, clear glass for the second), one back chevron on glass for the whole path, the Apple Account door moves from the first page to the page Open identity", "tree": "c30f135bbef368b334702ee8c728c9d92d1762d4", "parents": ["31c249d2d7763036c58f35f62f02570cdb9f506a"], "commit": null} -->
+- **Staged source tree:** `c30f135bbef368b334702ee8c728c9d92d1762d4`. Commit: `0546dc3871d52de576f08d0134ff744bbb932641`.
+<!-- montana-change {"id": "f3e28bbf-f9d6-4597-b960-0f0bd6c8fc41", "utc": "2026-09-29T20:34:52+00:00", "callsign": "claude-9e council / onboarding-os", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "The path from the first page to the chats in the platform's style: every act of the path stands on the one door plate (MTLoginDoorStyle, glass capsule, 52 pt, blue glass for the main act, clear glass for the second), one back chevron on glass for the whole path, the Apple Account door moves from the first page to the page Open identity", "tree": "c30f135bbef368b334702ee8c728c9d92d1762d4", "parents": ["31c249d2d7763036c58f35f62f02570cdb9f506a"], "commit": "0546dc3871d52de576f08d0134ff744bbb932641"} -->
 
 ### 2026-09-29T20:33:59+00:00 — Seed scope: the person on this phone is its own class, named at birth and held by the copy guard
 
