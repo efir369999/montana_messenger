@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:29:52+00:00 — Big player and its playlist: on iOS 26.1 and later the platform sheet's own background effect is the system's clear Liquid Glass (the notification panel's), set on the presentation and on its full-height detent, and the page draws no ground of its own; where the platform lacks it, the system's Liquid Glass under the page; before iOS 26, the system material. The author's word 29.09 on 2008: the player's ground stood opaque grey at full height. App module typecheck rc 0, no diagnostics on the changed lines.
+
+- **Callsign / model:** Claude claude-13 / fix/player-sheet-glass / Claude Opus 5.5.
+- **Build / OS:** 2008 source; not built, next artifact unassigned; target iOS 26.7.1 (T1) and iOS 18.3 (T3); not yet run on a device. No new compilation or installation claimed.
+- **Staged source tree:** `59e52074d44a9778c3e283d15ba7c9b99c820f29`. Commit: pending.
+<!-- montana-change {"id": "64d47163-a82c-44b7-8d00-40e91fdcf3bb", "utc": "2026-09-29T19:29:52+00:00", "callsign": "Claude claude-13 / fix/player-sheet-glass", "model": "Claude Opus 5.5", "build": "2008 source; not built, next artifact unassigned", "os": "target iOS 26.7.1 (T1) and iOS 18.3 (T3); not yet run on a device", "summary": "Big player and its playlist: on iOS 26.1 and later the platform sheet's own background effect is the system's clear Liquid Glass (the notification panel's), set on the presentation and on its full-height detent, and the page draws no ground of its own; where the platform lacks it, the system's Liquid Glass under the page; before iOS 26, the system material. The author's word 29.09 on 2008: the player's ground stood opaque grey at full height. App module typecheck rc 0, no diagnostics on the changed lines.", "tree": "59e52074d44a9778c3e283d15ba7c9b99c820f29", "parents": ["2f63ea51ef17a75fed4c720da918eceda3ee562b"], "commit": null} -->
+
 ### 2026-09-29T19:29:28+00:00 — checklist: the chronicle of 2009 -- My wall in the share sheet; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
