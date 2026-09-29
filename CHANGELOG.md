@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
 - **Build / OS:** 2014 (Debug, bump; artifact not built yet); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `53661ebfaabdb06b642a5834dd251dde6a4df04a`. Commit: pending.
-<!-- montana-change {"id": "e46ac294-c1cc-4e86-b56f-cb0118199aea", "utc": "2026-09-29T20:55:39+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2014 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2014 bump: the path from the first page to the chats in one glass style (design/onboarding-os-style), the Apple Account opening moved to the Open identity page", "tree": "53661ebfaabdb06b642a5834dd251dde6a4df04a", "parents": ["4cce0aafb65c1ee8b972323548ce64007e99f2c9"], "commit": null} -->
+- **Staged source tree:** `53661ebfaabdb06b642a5834dd251dde6a4df04a`. Commit: `47878d591a3ce8d99108b5805263c787dfa38746`.
+<!-- montana-change {"id": "e46ac294-c1cc-4e86-b56f-cb0118199aea", "utc": "2026-09-29T20:55:39+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2014 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2014 bump: the path from the first page to the chats in one glass style (design/onboarding-os-style), the Apple Account opening moved to the Open identity page", "tree": "53661ebfaabdb06b642a5834dd251dde6a4df04a", "parents": ["4cce0aafb65c1ee8b972323548ce64007e99f2c9"], "commit": "47878d591a3ce8d99108b5805263c787dfa38746"} -->
 
 ### 2026-09-29T20:53:55+00:00 — Merge rollback-898 (3b0a1b5f, the council wall post of 2013) into design/onboarding-os-style before the master's fast-forward: no conflicts, no code in the merge; the guard ring green, the Swift tree the one typechecked green a step before
 
