@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:48:44+00:00 — checklist: the chronicle of 2005 -- the VPN rises after an install over 2004's pair's one game; installed on T1, T3 pending (not visible to the Mac, a waiter stands)
+
+- **Callsign / model:** claude-83 / claude-opus-5-5.
+- **Build / OS:** 2005 (installed on T1); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `e0571bf4ce1a0a05ca350d58c73483c223b02c4a`. Commit: pending.
+<!-- montana-change {"id": "fd535d0b-113a-4f0a-b794-ed104d021cdc", "utc": "2026-09-29T18:48:44+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2005 (installed on T1)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "checklist: the chronicle of 2005 -- the VPN rises after an install over 2004's pair's one game; installed on T1, T3 pending (not visible to the Mac, a waiter stands)", "tree": "e0571bf4ce1a0a05ca350d58c73483c223b02c4a", "parents": ["974dfb773c78d02d78b14bc899e732b0cac3dc69"], "commit": null} -->
+
 ### 2026-09-29T18:45:39+00:00 — build: 2005 -- the VPN rises after an install (the preparation's mark waits for the settings to be written before the app leaves, the earlier install's mark is kept), over 2004's pair's one game in chess; for T1 and T3
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
