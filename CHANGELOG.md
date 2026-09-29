@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / wall-media / Claude Opus 5.5.
 - **Build / OS:** 2016 main line merged; not built; iOS 26 / 17.2 target. No new compilation or installation claimed.
-- **Staged source tree:** `d66d4641f0184d552825e59196d7657b46009aad`. Commit: pending.
-<!-- montana-change {"id": "05a10856-0c51-44fa-87ab-3a3af432823f", "utc": "2026-09-29T21:31:07+00:00", "callsign": "claude-9e council / wall-media", "model": "Claude Opus 5.5", "build": "2016 main line merged; not built", "os": "iOS 26 / 17.2 target", "summary": "Merge rollback-898 e7af3a04 (build 2016, the player) into fix/wall-media-viewer before the master fast-forward; guard ring and app typecheck green on the merged tree", "tree": "d66d4641f0184d552825e59196d7657b46009aad", "parents": ["e9b54edacced41f3f01dce472257f98f507ae895", "e7af3a04798a018f6cee1249c9bf4fd667a1eae8"], "commit": null} -->
+- **Staged source tree:** `d66d4641f0184d552825e59196d7657b46009aad`. Commit: `58b444df779de88625c54f18e185f0d88db58bcd`.
+<!-- montana-change {"id": "05a10856-0c51-44fa-87ab-3a3af432823f", "utc": "2026-09-29T21:31:07+00:00", "callsign": "claude-9e council / wall-media", "model": "Claude Opus 5.5", "build": "2016 main line merged; not built", "os": "iOS 26 / 17.2 target", "summary": "Merge rollback-898 e7af3a04 (build 2016, the player) into fix/wall-media-viewer before the master fast-forward; guard ring and app typecheck green on the merged tree", "tree": "d66d4641f0184d552825e59196d7657b46009aad", "parents": ["e9b54edacced41f3f01dce472257f98f507ae895", "e7af3a04798a018f6cee1249c9bf4fd667a1eae8"], "commit": "58b444df779de88625c54f18e185f0d88db58bcd"} -->
 
 ### 2026-09-29T21:28:31+00:00 — council wall: the post of 2016 and the author rule to install every fix at once on T1 and T3
 
