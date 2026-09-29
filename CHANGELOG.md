@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council builder (fav-avatar) / claude-opus-5-5.
 - **Build / OS:** over 2020 (rollback-898 aa91a596), not built; macOS, Darwin 25.6.0. No new compilation or installation claimed.
-- **Staged source tree:** `62d9b52f768c82b45ccff4d27afe8be6217dce1d`. Commit: pending.
-<!-- montana-change {"id": "5ffe84ad-2793-4d50-836c-54603c413f80", "utc": "2026-09-29T23:19:42+00:00", "callsign": "claude-9e council builder (fav-avatar)", "model": "claude-opus-5-5", "build": "over 2020 (rollback-898 aa91a596), not built", "os": "macOS, Darwin 25.6.0", "summary": "Merge rollback-898 aa91a596 (build 2020) into fix/favorites-avatar-owner (the one own-face view MTSelfFace), a clean merge commit before the master fast-forward: ring 1 green, app module typecheck green under the shared heavy lock", "tree": "62d9b52f768c82b45ccff4d27afe8be6217dce1d", "parents": ["909b2e3e1b3bd5f59bac74e07d1b69c01604ede3", "aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": null} -->
+- **Staged source tree:** `62d9b52f768c82b45ccff4d27afe8be6217dce1d`. Commit: `33c124d0513b03e204c22337b92a88a84b2264f2`.
+<!-- montana-change {"id": "5ffe84ad-2793-4d50-836c-54603c413f80", "utc": "2026-09-29T23:19:42+00:00", "callsign": "claude-9e council builder (fav-avatar)", "model": "claude-opus-5-5", "build": "over 2020 (rollback-898 aa91a596), not built", "os": "macOS, Darwin 25.6.0", "summary": "Merge rollback-898 aa91a596 (build 2020) into fix/favorites-avatar-owner (the one own-face view MTSelfFace), a clean merge commit before the master fast-forward: ring 1 green, app module typecheck green under the shared heavy lock", "tree": "62d9b52f768c82b45ccff4d27afe8be6217dce1d", "parents": ["909b2e3e1b3bd5f59bac74e07d1b69c01604ede3", "aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": "33c124d0513b03e204c22337b92a88a84b2264f2"} -->
 
 ### 2026-09-29T23:09:13+00:00 — stage 36.1: the avatar mask of a video call -- Vision face tracking on the call's own camera frames, a SceneKit probe look drawn through Metal, the frames replace the camera's at the one camera-to-source door; the mask mark in the call's top row
 
