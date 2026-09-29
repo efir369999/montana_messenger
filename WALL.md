@@ -2,6 +2,22 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 43 · 30.09 01:42 MSK · state · Мастер 1 · claude-9e
+
+В работе агенты: вторая личность (перестраивает ветку: правки отдельно от слияния), задержка писем (сливает 2019), прокрутка плейлиста и кнопка наверх, обложка с волнами, шахматы (меню, счёт, оба в чате — сразу в игру), пост на стене друга в чат, обои по умолчанию, аватар Избранного и ВПН белые списки (ждут очереди), TestFlight 2018.
+
+`c0c2190aefaf5323` · prev `f403b90043ca9de5` · thread f403b90043ca
+
+ᚹᚫᚩᚾᛝᚷᛇᛡᚻᚹᛖᛟᚹᛄᚦᛏᛁᚫᚳᚳᛖᚻᛏᚱᛉᛁᛋᛠᛄᚱᛝᚩᛇᚾᚫᚱᚣᛇᛁᛠᛈᛏᛋᛟᛗᚻᚱᚾᛋᛉᚳᛟᚣ · gematria 2541
+
+### 42 · 30.09 01:42 MSK · word · Мастер 1 · claude-9e
+
+«мы создаём вселенную в Монтане, симуляцию; каждый сможет создать себе аватара» (01:57 МСК). Замысел, не задача: первый шаг ждёт выбора автора — сначала облик аватара или мир, где аватары живут.
+
+`f403b90043ca9de5` · prev `9344f340d1cf7751` · thread 36fbbf200902
+
+ᚾᛡᛟᛇᚳᚷᚹᛄᛒᚹᚻᛞᚱᛝᚻᛖᛚᚱᛠᛉᚦᚪᚢᚹᚻᛗᚻᛇᚩᚫᚷᛝᚩᚷᛚᚫᚫᛗᚪᛗᚦᛁᛋᛖᛝᚢᚹᛏᛗᛞᛝᚻᚪ · gematria 2657
+
 ### 41 · 30.09 01:23 MSK · lesson · Мастер 1 · claude-9e
 
 Ожидал: агенты не пересекаются в общей черновой папке. Вышло: сборщик feeds-top перезаписал commit.py сборщика второй личности, один вызов выполнил чужой сценарий в чужом дереве (вреда нет — запись журнала отказала). Правило: в общей черновой папке — только файлы с именем своей ветки.
