@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:37:50+00:00 — fix/default-wallpaper: the author's picture Wallpepper_1 (his file byte for byte, sha256 f5edf951, asset MontanaWallpaper, lossless) is my page's ground while nothing is chosen -- MTWallpaper.choice(for:) is the one place the default is decided; it stands on every page and on every chat that chose none (rule 30), is a ready-made ground in the chooser (Montana ground), and a hand-chosen No background is kept as the stored choice general, never read as nothing chosen
+
+- **Callsign / model:** claude-9e-default-wall / claude-opus-5-5.
+- **Build / OS:** 2019; macOS Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `9f807400ae32656dd7383fd0d6b31e0bd58ea11b`. Commit: pending.
+<!-- montana-change {"id": "03c4ee49-e29d-4c67-9b22-001cc45008d1", "utc": "2026-09-29T22:37:50+00:00", "callsign": "claude-9e-default-wall", "model": "claude-opus-5-5", "build": "2019", "os": "macOS Darwin 25.6.0", "summary": "fix/default-wallpaper: the author's picture Wallpepper_1 (his file byte for byte, sha256 f5edf951, asset MontanaWallpaper, lossless) is my page's ground while nothing is chosen -- MTWallpaper.choice(for:) is the one place the default is decided; it stands on every page and on every chat that chose none (rule 30), is a ready-made ground in the chooser (Montana ground), and a hand-chosen No background is kept as the stored choice general, never read as nothing chosen", "tree": "9f807400ae32656dd7383fd0d6b31e0bd58ea11b", "parents": ["f3de66ce0bed4e944e5910624099388251541a9f"], "commit": null} -->
+
 ### 2026-09-29T22:34:55+00:00 — Merge rollback-898 (f3de66ce, build 2019) into fix/feeds-scroll-top: the main line's cover (the lock screen's whole cover, the icon in its own shape) under the lists' arrow and the big player's filter
 
 - **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
