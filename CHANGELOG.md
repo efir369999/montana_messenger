@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
 - **Build / OS:** 2018 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
-- **Staged source tree:** `15d2848e3958146a6aa8af1beee95b0ea08b321b`. Commit: pending.
-<!-- montana-change {"id": "a4873523-46fb-4edf-b193-ef17c7405d43", "utc": "2026-09-29T23:40:46+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Merge rollback-898 (aa91a596, build 2020) into fix/feeds-scroll-top: the main line under the lists' arrow to the top, the number on the platform's thumb, the playlist's placeholder and the source filter", "tree": "15d2848e3958146a6aa8af1beee95b0ea08b321b", "parents": ["5adea5cab029da5cb8aa050beedec53ba690c020", "aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": null} -->
+- **Staged source tree:** `15d2848e3958146a6aa8af1beee95b0ea08b321b`. Commit: `63a59515745e5d682bbdfe151c008e79b3f15fdf`.
+<!-- montana-change {"id": "a4873523-46fb-4edf-b193-ef17c7405d43", "utc": "2026-09-29T23:40:46+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Merge rollback-898 (aa91a596, build 2020) into fix/feeds-scroll-top: the main line under the lists' arrow to the top, the number on the platform's thumb, the playlist's placeholder and the source filter", "tree": "15d2848e3958146a6aa8af1beee95b0ea08b321b", "parents": ["5adea5cab029da5cb8aa050beedec53ba690c020", "aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": "63a59515745e5d682bbdfe151c008e79b3f15fdf"} -->
 
 ### 2026-09-29T23:38:53+00:00 — Merge rollback-898 (62e9d0df, build 2021) into stage/36-avatar-mask: the main line under the avatar mask, a clean merge
 
