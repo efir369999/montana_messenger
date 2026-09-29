@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
 - **Build / OS:** 2007 (Debug, every core, next); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `60fa99ce648a012de357b3252916303ba66c15ef`. Commit: pending.
-<!-- montana-change {"id": "ef79278b-5ed8-4c1f-8757-11d3e7c1ef2f", "utc": "2026-09-29T19:12:23+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2007 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2007 -- the Network page becomes three apps (the VPN wall under the globe, the Mesh wall and the P2P wall from the apps' drawer, each with its own head), over 2006; for T1 and T3", "tree": "60fa99ce648a012de357b3252916303ba66c15ef", "parents": ["5d067dcc1d3ab1e22718be24ab114634e4d3d78a"], "commit": null} -->
+- **Staged source tree:** `60fa99ce648a012de357b3252916303ba66c15ef`. Commit: `df6ef826b37efcb64511353b8529250b441ac5c9`.
+<!-- montana-change {"id": "ef79278b-5ed8-4c1f-8757-11d3e7c1ef2f", "utc": "2026-09-29T19:12:23+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2007 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2007 -- the Network page becomes three apps (the VPN wall under the globe, the Mesh wall and the P2P wall from the apps' drawer, each with its own head), over 2006; for T1 and T3", "tree": "60fa99ce648a012de357b3252916303ba66c15ef", "parents": ["5d067dcc1d3ab1e22718be24ab114634e4d3d78a"], "commit": "df6ef826b37efcb64511353b8529250b441ac5c9"} -->
 
 ### 2026-09-29T19:11:29+00:00 — merge rollback-898 (f137b5a6: the 2006 bump and its chronicle) into stage/three-walls before the master's fast-forward
 
