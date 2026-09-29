@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:45:39+00:00 — build: 2005 -- the VPN rises after an install (the preparation's mark waits for the settings to be written before the app leaves, the earlier install's mark is kept), over 2004's pair's one game in chess; for T1 and T3
+
+- **Callsign / model:** claude-83 / claude-opus-5-5.
+- **Build / OS:** 2005 (Debug, every core, next); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `ccc37f947412ca348a7b8e40c58a7c40b692ca32`. Commit: pending.
+<!-- montana-change {"id": "a566d1c9-a443-44d7-940e-33ea7c3933d1", "utc": "2026-09-29T18:45:39+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2005 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2005 -- the VPN rises after an install (the preparation's mark waits for the settings to be written before the app leaves, the earlier install's mark is kept), over 2004's pair's one game in chess; for T1 and T3", "tree": "ccc37f947412ca348a7b8e40c58a7c40b692ca32", "parents": ["415720070f671f1da7de2ddadbfd00a2ae90efeb"], "commit": null} -->
+
 ### 2026-09-29T18:44:46+00:00 — merge rollback-898 (c58fa4f7, the chronicle of 2004) into fix/vpn-raise-after-install: the checklist alone, so the branch fast-forwards the main line
 
 - **Callsign / model:** Claude / fix/vpn-raise-after-install (builder claude-bb) / Claude Opus 5.5.
