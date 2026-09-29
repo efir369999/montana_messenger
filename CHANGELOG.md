@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T14:02:03+00:00 — Photo and share: a chat picture opens in the platform's own viewer (QLPreviewController), the Montana album under it is gone; a refusal of the picture decoder is a moment, not a verdict (the grey plate of the iPhone 17 at 13:16Z), the bubble asks again and names a plate still grey; the share sheet no longer ticks a chat by the system's intent (T1 13:29Z, 13:30Z); guard lines P-132.1, P-132.2, P-118.8
+
+- **Callsign / model:** Claude / session fix/photo-thumb-and-share / Claude Fable 5.1.
+- **Build / OS:** no build; ring 1 and swiftc -typecheck (Montana, MontanaShare) green on the session tree; iOS 26.6.2 (iPhone 17 Pro Max diary), iOS 26.7.1 (T1 diary); macOS 26 host. No new compilation or installation claimed.
+- **Staged source tree:** `dc6b3f7e9d40810176d3e0da3189b3038e14e35c`. Commit: pending.
+<!-- montana-change {"id": "3820f4fb-afe8-477a-9fee-9969071177fa", "utc": "2026-09-29T14:02:03+00:00", "callsign": "Claude / session fix/photo-thumb-and-share", "model": "Claude Fable 5.1", "build": "no build; ring 1 and swiftc -typecheck (Montana, MontanaShare) green on the session tree", "os": "iOS 26.6.2 (iPhone 17 Pro Max diary), iOS 26.7.1 (T1 diary); macOS 26 host", "summary": "Photo and share: a chat picture opens in the platform's own viewer (QLPreviewController), the Montana album under it is gone; a refusal of the picture decoder is a moment, not a verdict (the grey plate of the iPhone 17 at 13:16Z), the bubble asks again and names a plate still grey; the share sheet no longer ticks a chat by the system's intent (T1 13:29Z, 13:30Z); guard lines P-132.1, P-132.2, P-118.8", "tree": "dc6b3f7e9d40810176d3e0da3189b3038e14e35c", "parents": ["5d404c862a6a9b4a289f999417c9f4850d56c9bd"], "commit": null} -->
+
 ### 2026-09-29T14:01:23+00:00 — Chess moves at once: the board keeps the node signal lane of its correspondent (a move rode a silent push that the system carried 8-14 s late, T3 13:44:33.9 to T1 13:44:47.9), and the node box hint on the lane is fetched now instead of booked behind the 8 s pickup gate (P-139 rewritten); a worktree inside the client tree is ignored by git and the whole-tree guards; the 1992 chronicle rides this branch
 
 - **Callsign / model:** Claude / fix/chess-lane (critic pass, then the fix) / Claude Fable 5.1.
