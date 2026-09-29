@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:31:39+00:00 — Merge rollback-898 (82a5ffc0, the council wall timechain; no Swift) into fix/time-logo-no-send-badge before the master's fast-forward; ring green on the merged tree
+
+- **Callsign / model:** claude-9e council builder (logo-no-send) / claude-opus-5-5.
+- **Build / OS:** not built; merge of the main line 82a5ffc0 into fix/time-logo-no-send-badge; macOS (Darwin 25.6.0); client iOS source. No new compilation or installation claimed.
+- **Staged source tree:** `92841e8f7dc1e02dd24b7698fa486233b97c93f8`. Commit: pending.
+<!-- montana-change {"id": "cd67e58e-80ae-49e9-a01b-d42bd8085446", "utc": "2026-09-29T20:31:39+00:00", "callsign": "claude-9e council builder (logo-no-send)", "model": "claude-opus-5-5", "build": "not built; merge of the main line 82a5ffc0 into fix/time-logo-no-send-badge", "os": "macOS (Darwin 25.6.0); client iOS source", "summary": "Merge rollback-898 (82a5ffc0, the council wall timechain; no Swift) into fix/time-logo-no-send-badge before the master's fast-forward; ring green on the merged tree", "tree": "92841e8f7dc1e02dd24b7698fa486233b97c93f8", "parents": ["bb5f94dabd7944100e8f348aa2b8d30453aaa363", "82a5ffc0531260882eab33be8dc1380fa4d785de"], "commit": null} -->
+
 ### 2026-09-29T20:31:23+00:00 — The outer door of the drawer's plus page ends in the outer shell
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
