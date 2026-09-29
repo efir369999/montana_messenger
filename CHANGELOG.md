@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
 - **Build / OS:** 2018 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
-- **Staged source tree:** `58e7457e2781337dadf227d7987c45d147e66ceb`. Commit: pending.
-<!-- montana-change {"id": "be78bd45-6b83-4684-b70d-dbcc3686cad7", "utc": "2026-09-29T22:13:00+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Big player: the cover placeholder drawn down once; the music page under the sheet applies nothing; the source filter; the tappable cover", "tree": "58e7457e2781337dadf227d7987c45d147e66ceb", "parents": ["bc5a3842e4a13db0a55110f9d229f39ee5c23d3c"], "commit": null} -->
+- **Staged source tree:** `58e7457e2781337dadf227d7987c45d147e66ceb`. Commit: `65d87c6f3b9d5b1a1cea49dc836f76e9d11ff788`.
+<!-- montana-change {"id": "be78bd45-6b83-4684-b70d-dbcc3686cad7", "utc": "2026-09-29T22:13:00+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Big player: the cover placeholder drawn down once; the music page under the sheet applies nothing; the source filter; the tappable cover", "tree": "58e7457e2781337dadf227d7987c45d147e66ceb", "parents": ["bc5a3842e4a13db0a55110f9d229f39ee5c23d3c"], "commit": "65d87c6f3b9d5b1a1cea49dc836f76e9d11ff788"} -->
 
 ### 2026-09-29T22:09:23+00:00 — Merge rollback-898 (333dab4c) into fix/player-cover-no-inset before the master fast-forward
 
