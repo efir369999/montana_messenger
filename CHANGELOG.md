@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:08:22+00:00 — the network page disbanded into three applications (the author's word 29.09): the VPN wall under the globe, the mesh wall and the P2P wall opened from the drawer, each a page under the bar with its own head; the three tab buttons are gone; the drawer names the three walls beside the feed
+
+- **Callsign / model:** Claude / stage/three-walls (builder claude-bb) / Claude Opus 5.5.
+- **Build / OS:** source on stage/vpn-wall-as-posts 74294bac; not built, the master claude-83 builds; iOS 17.2 or later target; typecheck of the app module on macOS (111 files, exit 0), the guard ring clean; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `4b578c35d6322951c54671cbc25c4741bc2bb6d2`. Commit: pending.
+<!-- montana-change {"id": "ad9e133b-2586-448b-9d1c-23f9f4cc1ac3", "utc": "2026-09-29T19:08:22+00:00", "callsign": "Claude / stage/three-walls (builder claude-bb)", "model": "Claude Opus 5.5", "build": "source on stage/vpn-wall-as-posts 74294bac; not built, the master claude-83 builds", "os": "iOS 17.2 or later target; typecheck of the app module on macOS (111 files, exit 0), the guard ring clean; not installed", "summary": "the network page disbanded into three applications (the author's word 29.09): the VPN wall under the globe, the mesh wall and the P2P wall opened from the drawer, each a page under the bar with its own head; the three tab buttons are gone; the drawer names the three walls beside the feed", "tree": "4b578c35d6322951c54671cbc25c4741bc2bb6d2", "parents": ["74294bacce9f32f3d04160dfa598c8578bfad768"], "commit": null} -->
+
 ### 2026-09-29T19:06:00+00:00 — merge of the main line 224db9fd (the build 2006 bump) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 (111 files) and ring 1 green on the merged tree.
 
 - **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
