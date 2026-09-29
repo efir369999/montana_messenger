@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T23:54:06+00:00 — Clean merge of the main line 62e9d0df (build 2021, one own-face view) into fix/feed-wall-of-thoughts (the Wall of Thoughts name) before the master's fast-forward; no conflicts, ring green on the merged tree
+
+- **Callsign / model:** claude-9e builder / wall-thoughts / claude-opus-5-5.
+- **Build / OS:** 2021 source; not built; macOS Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `3adf4c6a066835fd047125ccbb876d3a5c0309e2`. Commit: pending.
+<!-- montana-change {"id": "c0ee7942-a4ad-49c5-a91f-7f6f5cc0fb0b", "utc": "2026-09-29T23:54:06+00:00", "callsign": "claude-9e builder / wall-thoughts", "model": "claude-opus-5-5", "build": "2021 source; not built", "os": "macOS Darwin 25.6.0", "summary": "Clean merge of the main line 62e9d0df (build 2021, one own-face view) into fix/feed-wall-of-thoughts (the Wall of Thoughts name) before the master's fast-forward; no conflicts, ring green on the merged tree", "tree": "3adf4c6a066835fd047125ccbb876d3a5c0309e2", "parents": ["83ab0688d295d5c61a20d4333647c610a9c8ba93", "62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": null} -->
+
 ### 2026-09-29T23:51:39+00:00 — music: a tap on the plate cover opens it whole by the platform zoom; with no album cover the app icon sends out colourless glass waves to the music level (file player meter, audio tap under the stream); at rest the waves fade, Reduce Motion keeps the icon still
 
 - **Callsign / model:** claude-9e/cover-waves / claude-opus-5-5.
