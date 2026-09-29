@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:32:41+00:00 — chess: the pair's one game -- the chess mark enters the game of the newest invitation, active or finished, the same game on both phones; an earlier game is over by that invitation alone; the state stands on a plate at the board's centre; a game that ends on the screen goes back to the chat; a finished game's plate invites the next
+
+- **Callsign / model:** claude-83 / claude-opus-5-5.
+- **Build / OS:** none (source only; the master builds it next, base 2003); T1 iOS 26.7.1, T3 iOS 18.3, iPhone 15 Pro Max iOS 26.6.2. No new compilation or installation claimed.
+- **Staged source tree:** `15f2f74640dc8ceacb484b54dfbf713fa9d3d39c`. Commit: pending.
+<!-- montana-change {"id": "06d907e0-91bd-4295-8707-76a4db96beb4", "utc": "2026-09-29T18:32:41+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "none (source only; the master builds it next, base 2003)", "os": "T1 iOS 26.7.1, T3 iOS 18.3, iPhone 15 Pro Max iOS 26.6.2", "summary": "chess: the pair's one game -- the chess mark enters the game of the newest invitation, active or finished, the same game on both phones; an earlier game is over by that invitation alone; the state stands on a plate at the board's centre; a game that ends on the screen goes back to the chat; a finished game's plate invites the next", "tree": "15f2f74640dc8ceacb484b54dfbf713fa9d3d39c", "parents": ["fda1ab87a077f1a14418b88648f7187e32e14992"], "commit": null} -->
+
 ### 2026-09-29T18:32:05+00:00 — merge of the main line fda1ab87 (the VPN import menu, claude-bb) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 (111 files), ring 1, the 44-point target and language guards green on the merged tree.
 
 - **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
