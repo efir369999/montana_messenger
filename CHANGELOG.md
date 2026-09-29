@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T00:10:36+00:00 — Build 1989: the project number for the signal lane, the music page's floating player, the chess steps and the 1949 drawer, for T1 and T3
+
+- **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
+- **Build / OS:** 1989 prepared on f257322e; compilation pending; T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `7c8981b3820d0db8cd5e332cfe762cb2c950f1ef`. Commit: pending.
+<!-- montana-change {"id": "51dd593d-c256-4667-8fde-8aae2d2feb6d", "utc": "2026-09-29T00:10:36+00:00", "callsign": "Claude / signal-lane", "model": "Claude Fable 5.1", "build": "1989 prepared on f257322e; compilation pending", "os": "T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7", "summary": "Build 1989: the project number for the signal lane, the music page's floating player, the chess steps and the 1949 drawer, for T1 and T3", "tree": "7c8981b3820d0db8cd5e332cfe762cb2c950f1ef", "parents": ["f257322eaaf7a366c280c58fc20ccdb035923a0c"], "commit": null} -->
+
 ### 2026-09-29T00:08:35+00:00 — One signal lane per door and the doors knocked on a satisfied path (the tunnel's 912-goroutine death on 1988); the floating player on the music page with the blue ring and a hold menu; chess steps out of the chat; the drawer as the 1949 list
 
 - **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
