@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T14:51:24+00:00 — Build 1995 -- the chess mark beside the handset (one tap: the live game or a new one, the platform blue ring), White icons in one style (the network and the outer service white); for T1 and T3, no TestFlight until the author word
+
+- **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
+- **Build / OS:** 1995 source; compiling next from this tree, artifact unsealed; targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `cb929668abf9a0d1c2ef648b39b19e2f18e5a18e`. Commit: pending.
+<!-- montana-change {"id": "c77db0b8-5e24-4db1-8829-8c744c38a652", "utc": "2026-09-29T14:51:24+00:00", "callsign": "Claude / build master (rollback-898)", "model": "Claude Fable 5.1", "build": "1995 source; compiling next from this tree, artifact unsealed", "os": "targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host", "summary": "Build 1995 -- the chess mark beside the handset (one tap: the live game or a new one, the platform blue ring), White icons in one style (the network and the outer service white); for T1 and T3, no TestFlight until the author word", "tree": "cb929668abf9a0d1c2ef648b39b19e2f18e5a18e", "parents": ["58de8bccf8757f7cb309a822b811d2677168d740"], "commit": null} -->
+
 ### 2026-09-29T14:45:45+00:00 — Chess mark in the chat bar, left of the handset: one tap opens the chat live game or invites this correspondent under the chat clock (10:00), the icon ringed in the platform blue as the music mini player; White icons in one style -- the network globe and the outer service plane are white outlined glyphs
 
 - **Callsign / model:** Claude / ui/chess-mark-white-icons / Claude Fable 5.1.
