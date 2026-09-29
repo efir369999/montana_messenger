@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e-chess-menu / claude-opus-5-5.
 - **Build / OS:** 2019 source; not built; macOS Darwin 25.6.0. No new compilation or installation claimed.
-- **Staged source tree:** `45aba6381397c450c8bf19d859c3f28bdb19af2f`. Commit: pending.
-<!-- montana-change {"id": "a9e05a33-c0b7-47d4-a972-6d5b8d398c63", "utc": "2026-09-29T22:54:05+00:00", "callsign": "claude-9e-chess-menu", "model": "claude-opus-5-5", "build": "2019 source; not built", "os": "macOS Darwin 25.6.0", "summary": "fix/chess-menu-score: the board menu gets New game (the plate own again, one rule nextGame) under the pair score header; both in the chat -- a fresh invitation from the correspondent raises its board at once (chat) or moves a finished board onto it; no new wire word", "tree": "45aba6381397c450c8bf19d859c3f28bdb19af2f", "parents": ["740b55ebd24af13911422c521709e4c6d870bb4d"], "commit": null} -->
+- **Staged source tree:** `45aba6381397c450c8bf19d859c3f28bdb19af2f`. Commit: `81bcbba3d0fe4c81724732ed51f2ba70588c2bc0`.
+<!-- montana-change {"id": "a9e05a33-c0b7-47d4-a972-6d5b8d398c63", "utc": "2026-09-29T22:54:05+00:00", "callsign": "claude-9e-chess-menu", "model": "claude-opus-5-5", "build": "2019 source; not built", "os": "macOS Darwin 25.6.0", "summary": "fix/chess-menu-score: the board menu gets New game (the plate own again, one rule nextGame) under the pair score header; both in the chat -- a fresh invitation from the correspondent raises its board at once (chat) or moves a finished board onto it; no new wire word", "tree": "45aba6381397c450c8bf19d859c3f28bdb19af2f", "parents": ["740b55ebd24af13911422c521709e4c6d870bb4d"], "commit": "81bcbba3d0fe4c81724732ed51f2ba70588c2bc0"} -->
 
 ### 2026-09-29T22:51:39+00:00 — checklist 36: the universe -- avatar mask in a video call, own avatar, avatar in profile, world questions, graphics on order
 
