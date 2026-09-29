@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T11:55:04+00:00 — Merge into the main line for build 1991: fix/call-setup-verdicts (319c1ca9 call setup answers a failed path, the diary names candidates and pairs, the wake carries the relay pass, the recovery's stop keeps the reconnect; 00283f17 the Montana room tells of a new TestFlight build with the crown, what changed and the update button) and codex/app-library (d96380f1, 8b7f5ec6: the library kept across the chess integration; -lz -lc++ beside libmt_boundary.a in the iphoneos link flags). Checked before the merge with git merge-tree: no conflicts. On the merged tree: mt-precommit.sh and mt-build-checks.sh clean, mt-typecheck.py exit 0.
+
+- **Callsign / model:** Claude / build master, rollback-898 / Claude Fable 5.1.
+- **Build / OS:** 1991 source; merge before the bump, not built yet; iOS 17.2 floor, Debug; guard ring and typecheck on the merged tree. No new compilation or installation claimed.
+- **Staged source tree:** `fd025c4a309afbb5128b73f794cd55236dce3a53`. Commit: pending.
+<!-- montana-change {"id": "fb7c865b-4c92-4fc6-95a2-14cc192bc788", "utc": "2026-09-29T11:55:04+00:00", "callsign": "Claude / build master, rollback-898", "model": "Claude Fable 5.1", "build": "1991 source; merge before the bump, not built yet", "os": "iOS 17.2 floor, Debug; guard ring and typecheck on the merged tree", "summary": "Merge into the main line for build 1991: fix/call-setup-verdicts (319c1ca9 call setup answers a failed path, the diary names candidates and pairs, the wake carries the relay pass, the recovery's stop keeps the reconnect; 00283f17 the Montana room tells of a new TestFlight build with the crown, what changed and the update button) and codex/app-library (d96380f1, 8b7f5ec6: the library kept across the chess integration; -lz -lc++ beside libmt_boundary.a in the iphoneos link flags). Checked before the merge with git merge-tree: no conflicts. On the merged tree: mt-precommit.sh and mt-build-checks.sh clean, mt-typecheck.py exit 0.", "tree": "fd025c4a309afbb5128b73f794cd55236dce3a53", "parents": ["701e2731bee1f924f18063303263683ef2b42cef", "00283f176ef19d289768fa78864e5403b3fd8d84", "d96380f14e5152735dbc203acfd4fde8ef0ceb5f"], "commit": null} -->
+
 ### 2026-09-29T11:49:41+00:00 — Merge of the main line (chess, VPN dead session, drawer icons) into the captioned-video plate and cargo shelf branch; guard rings and the typecheck of the app and both extensions ran on the merged tree
 
 - **Callsign / model:** Claude / fix/cargo-shelf-emoji-caption / Claude Fable 5.1.
