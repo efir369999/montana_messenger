@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / onboarding-os / Claude Opus 5.5.
 - **Build / OS:** 2013 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `5cb3164d7b4c79da63a1be95abfd055ec68ce2ec`. Commit: pending.
-<!-- montana-change {"id": "9a77e743-011d-4229-9d5c-dbfdbfc0a6da", "utc": "2026-09-29T20:51:54+00:00", "callsign": "claude-9e council / onboarding-os", "model": "Claude Opus 5.5", "build": "2013 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge rollback-898 (ac01b6c4, build 2013) into design/onboarding-os-style before the master's fast-forward: no conflicts; the guard ring and the app module typecheck green on the merged tree", "tree": "5cb3164d7b4c79da63a1be95abfd055ec68ce2ec", "parents": ["19fd9c3fda156cbbba27e07c031a46cc12c45623", "ac01b6c48770911dd95623dea13c34c192d06134"], "commit": null} -->
+- **Staged source tree:** `5cb3164d7b4c79da63a1be95abfd055ec68ce2ec`. Commit: `175feb2f0f3d1a5b727245a216fe7f26cbb96995`.
+<!-- montana-change {"id": "9a77e743-011d-4229-9d5c-dbfdbfc0a6da", "utc": "2026-09-29T20:51:54+00:00", "callsign": "claude-9e council / onboarding-os", "model": "Claude Opus 5.5", "build": "2013 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge rollback-898 (ac01b6c4, build 2013) into design/onboarding-os-style before the master's fast-forward: no conflicts; the guard ring and the app module typecheck green on the merged tree", "tree": "5cb3164d7b4c79da63a1be95abfd055ec68ce2ec", "parents": ["19fd9c3fda156cbbba27e07c031a46cc12c45623", "ac01b6c48770911dd95623dea13c34c192d06134"], "commit": "175feb2f0f3d1a5b727245a216fe7f26cbb96995"} -->
 
 ### 2026-09-29T20:49:27+00:00 — music: the big player scrolls in the music page list -- its scroll bar and number, the keys never move it, a swipe takes a track out of the queue
 
