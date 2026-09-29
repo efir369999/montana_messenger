@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:31:23+00:00 — The outer door of the drawer's plus page ends in the outer shell
+
+- **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
+- **Build / OS:** 2012 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
+- **Staged source tree:** `49e1abfc347f77a651734f675d01fc3c02640dd9`. Commit: pending.
+<!-- montana-change {"id": "a09d8a35-dab6-4299-a67b-9f6715c366b6", "utc": "2026-09-29T20:31:23+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "The outer door of the drawer's plus page ends in the outer shell", "tree": "49e1abfc347f77a651734f675d01fc3c02640dd9", "parents": ["665d2aea3dc7e77e31a36ff389d988fe68d40f5c"], "commit": null} -->
+
 ### 2026-09-29T20:30:37+00:00 — music: the app icon stands where a track has no cover -- the plate, the playlist rows, the lock screen
 
 - **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
