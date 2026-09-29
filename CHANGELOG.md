@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
 - **Build / OS:** 2015 (Debug, bump; 2014 was refused unsealed by the delivery gate); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `80220953ce14660ce7239869a2bac29b2c5efd70`. Commit: pending.
-<!-- montana-change {"id": "1fce0d67-890f-4b8e-aac8-c03811e1501c", "utc": "2026-09-29T21:00:10+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2015 (Debug, bump; 2014 was refused unsealed by the delivery gate)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2015 bump: the composition planned for 2014 -- the path to the chats in one glass style; 2014 was refused before sealing because the master wrote the wall into the main tree during the build", "tree": "80220953ce14660ce7239869a2bac29b2c5efd70", "parents": ["77c4aeae31f0be39071f82232a665cd0a05418f5"], "commit": null} -->
+- **Staged source tree:** `80220953ce14660ce7239869a2bac29b2c5efd70`. Commit: `6137e8f35adeefbf32b43c3dcb2947bf1b77541d`.
+<!-- montana-change {"id": "1fce0d67-890f-4b8e-aac8-c03811e1501c", "utc": "2026-09-29T21:00:10+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2015 (Debug, bump; 2014 was refused unsealed by the delivery gate)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2015 bump: the composition planned for 2014 -- the path to the chats in one glass style; 2014 was refused before sealing because the master wrote the wall into the main tree during the build", "tree": "80220953ce14660ce7239869a2bac29b2c5efd70", "parents": ["77c4aeae31f0be39071f82232a665cd0a05418f5"], "commit": "6137e8f35adeefbf32b43c3dcb2947bf1b77541d"} -->
 
 ### 2026-09-29T20:58:43+00:00 — Merge rollback-898 (3b0a1b5f) into fix/player-cover-keys-copy before the master fast-forward
 
