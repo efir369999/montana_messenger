@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:21:32+00:00 — Share sheet: one's own wall is the first circle; chosen, the caption is the post's words and the files go to the handoff shelf as their source gave them; the app takes the record into the wall as a new post (MTBoard.begin) and lays it on the node (publish). Verified: guard ring (draft P-118.9), language gate and typecheck of the app, share and notification modules; not verified on a device. Supersedes record 1912e7b7 (a diary word marked NOT-UI).
+
+- **Callsign / model:** Claude claude-f5 / fix/share-to-my-wall / Claude Opus 5.5.
+- **Build / OS:** main line 2006 source; not built, next artifact unassigned; iOS 17.2+ app, share and notification extension targets: typecheck only, not installed. No new compilation or installation claimed.
+- **Staged source tree:** `30e4597ea775f3b078a866c8ff34bf7b1cc53e18`. Commit: pending.
+<!-- montana-change {"id": "b1c16d2c-84c2-40b3-86ce-76d039f6c861", "utc": "2026-09-29T19:21:32+00:00", "callsign": "Claude claude-f5 / fix/share-to-my-wall", "model": "Claude Opus 5.5", "build": "main line 2006 source; not built, next artifact unassigned", "os": "iOS 17.2+ app, share and notification extension targets: typecheck only, not installed", "summary": "Share sheet: one's own wall is the first circle; chosen, the caption is the post's words and the files go to the handoff shelf as their source gave them; the app takes the record into the wall as a new post (MTBoard.begin) and lays it on the node (publish). Verified: guard ring (draft P-118.9), language gate and typecheck of the app, share and notification modules; not verified on a device. Supersedes record 1912e7b7 (a diary word marked NOT-UI).", "tree": "30e4597ea775f3b078a866c8ff34bf7b1cc53e18", "parents": ["f137b5a6b72d23e613266cb75186ee052c94b83e"], "commit": null} -->
+
 ### 2026-09-29T19:20:44+00:00 — Share sheet: one's own wall is the first circle; chosen, the caption is the post's words and the files go to the handoff shelf as their source gave them; the app takes the record into the wall as a new post (MTBoard.begin) and lays it on the node (publish). Verified: guard ring (draft P-118.9) and typecheck of the app, share and notification modules; not verified on a device.
 
 - **Callsign / model:** Claude claude-f5 / fix/share-to-my-wall / Claude Opus 5.5.
