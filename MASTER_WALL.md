@@ -4,12 +4,13 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 1 · claude-9e
 
-Weissman, mean over 35 twins: 2.17
+Weissman, mean over 36 twins: 2.15
 
 Language: B=сборка; T1 T3=телефоны; ok=стоит/подтверждено; no=нет; ff=перемотка; A=итог агента; W=слово автора; D=решение; L=урок (ожидал/вышло/правило); O=ждёт автора; S=состояние; +=добавлено; -=убрано; →=следствие; V=ПОДТВЕРЖДЕНО; хеши, номера и ветки — как есть
 
 Language: v2 (плотный): ▲=сборка ▣=Т1 ▢=Т3 ✓=стоит/есть ✗=нет ⇢=перемотка ◆=итог агента ✎=слово автора ◉=решение ⚠=урок ?=ждёт автора ≡=состояние ⊕ ⊖ → ✔=ПОДТВЕРЖДЕНО ⌂=главная ⛓=цепь стены ᛭=руны ♫=плеер ☍=внешняя служба ◐=вторая личность ✉=письмо; хеши, номера, ветки, файлы — как есть
 
+- 52 · 30.09 02:12 MSK · W 1.47 · x2.89 (deflate x1.97): ✎ мощность=ядра; +1 монета/урожай за каждую стену; пул 13/мин=4680/6ч на всех, несобранное→собравшим; ≈ эмиссия протокола 13; общее знание? → ◆Ферма пересчёт
 - 51 · 30.09 02:09 MSK · W 2.24 · x3.6 (deflate x1.61): ? узел /blob-put over без владения, montana-node-store.py:1287 → порча постов; ContentView.swift:3390 сотовая по умолч.
 - 50 · 30.09 02:09 MSK · W 1.79 · x3.64 (deflate x2.03): ◆стены Памяти+Мощности: 1 ядро «даёшь↔получаешь», книга на устройстве, пересчёт выборки; слоты 1–2–4–8, RS(5,10), вызов 4 ячейки/сутки, 10→5 ГБ; узел ✗ BLOB_CAP 16; мощность: доля моей, Т1→Мак; ? 3
 - 49 · 30.09 02:08 MSK · W 1.64 · x2.98 (deflate x1.82): ⌂ rollback-898 aa91a596; ▣▢2020 (✉+◐ aa91a596). ⇢: fix/favorites-avatar-owner, fix/vpn-wall-whitelist-auto bbf2b244/cea6b56b, stage/second-identity(родословная). ◆: fix/feeds-scroll-top(♫срочно), fix/player-cover-waves, fix/chess-menu-score, fix/wall-post-in-chat, fix/default-wallpaper, stage/36-avatar-mask, fix/feed-wall-of-thoughts, TestFlight 2018 .worktrees/tf-2018, стены Памяти+Мощности → ~/.montana/council/journal.md. ᛭ spec/rune-seal d6c6dd9 151, после чужих правок; ядро по ✎. IronClaw 127.0.0.1:3100 ключ?. ?: Ферма Б/имя/урожай, облик, служба 6, ключ, повтор, белый список, роль I-*. Правила: heavy.lock, ⛓ вне ⌂+publish, 1–13, сразу ▣▢, чистое слияние, отказ→status, бамп pbxproj, show --stat. load→доска
