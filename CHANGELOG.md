@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
 - **Build / OS:** none (source only; the master builds it next as 2004); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `2f30844e1f7e3528426a069bba538e94c8bdec6e`. Commit: pending.
-<!-- montana-change {"id": "54741135-4de4-4ff6-86ca-990654dce5b2", "utc": "2026-09-29T18:34:57+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "none (source only; the master builds it next as 2004)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "Merge rollback-898 (b1bb441d: the big player in liquid glass, the playlist with each track's place; the VPN page's example menu) into fix/chess-one-game before the master's fast-forward", "tree": "2f30844e1f7e3528426a069bba538e94c8bdec6e", "parents": ["ee9d964d9df8dd642dc2a12d30be1f95eaec39d8", "b1bb441d2425797023ce8cf31813341801b56478"], "commit": null} -->
+- **Staged source tree:** `2f30844e1f7e3528426a069bba538e94c8bdec6e`. Commit: `25c8533bbe09127a2afe6dce7ab13657571e4b3b`.
+<!-- montana-change {"id": "54741135-4de4-4ff6-86ca-990654dce5b2", "utc": "2026-09-29T18:34:57+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "none (source only; the master builds it next as 2004)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "Merge rollback-898 (b1bb441d: the big player in liquid glass, the playlist with each track's place; the VPN page's example menu) into fix/chess-one-game before the master's fast-forward", "tree": "2f30844e1f7e3528426a069bba538e94c8bdec6e", "parents": ["ee9d964d9df8dd642dc2a12d30be1f95eaec39d8", "b1bb441d2425797023ce8cf31813341801b56478"], "commit": "25c8533bbe09127a2afe6dce7ab13657571e4b3b"} -->
 
 ### 2026-09-29T18:33:09+00:00 — the VPN rises after an install (the author's word 29.09): the install prepare's mark waits for the defaults database before exit(0) -- on T1 29.09 seven prepares found the tunnel up and not one raise followed; a mark an earlier install left is kept; the prepare's own load never raises; a dropped mark names why in the diary; the VPN wiring guard rejects the old code
 
