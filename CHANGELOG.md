@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:03:59+00:00 — Merge the main line cea6b56b into stage/second-identity; the replace question is gone, a seated person is parked
+
+- **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
+- **Build / OS:** 2018 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
+- **Staged source tree:** `578a24dba67b120f85e6a366b26088cd5d35c563`. Commit: pending.
+<!-- montana-change {"id": "093977d2-edc7-4361-aff4-54f5f8a10c79", "utc": "2026-09-29T22:03:59+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge the main line cea6b56b into stage/second-identity; the replace question is gone, a seated person is parked", "tree": "578a24dba67b120f85e6a366b26088cd5d35c563", "parents": ["9fb5dd952704b304c5a45c0aaf649e7f66d1200b", "cea6b56b9208ef3bcbe1879baab3cf25dcdd3e10"], "commit": null} -->
+
 ### 2026-09-29T22:03:26+00:00 — Merge rollback-898 (333dab4c) into fix/letter-late-delivery: the council wall leaves the main line (CouncilWall/ and .gitignore only); clean merge, ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LAYOUT clean); no Swift changed, typecheck of 8ecb56a8 stands.
 
 - **Callsign / model:** claude-9e-agent / claude-opus-5-5.
