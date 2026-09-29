@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:19:00+00:00 — build 2019 bump: the cover -- the lock screen gets the full-size cover (no side bands), a track without its own shows the app icon pixels as on the home screen, without the black field
+
+- **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
+- **Build / OS:** 2019 (Debug, bump; artifact not built yet); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `5db6a0824ffdd4ec524bceb63f403e105e689706`. Commit: pending.
+<!-- montana-change {"id": "9d226776-c6d9-4284-b6e8-9851806c8e4c", "utc": "2026-09-29T22:19:00+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2019 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2019 bump: the cover -- the lock screen gets the full-size cover (no side bands), a track without its own shows the app icon pixels as on the home screen, without the black field", "tree": "5db6a0824ffdd4ec524bceb63f403e105e689706", "parents": ["fcc5b860db34fa4723e18e66df0687b752107eda"], "commit": null} -->
+
 ### 2026-09-29T22:13:00+00:00 — Big player: the cover placeholder drawn down once; the music page under the sheet applies nothing; the source filter; the tappable cover
 
 - **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
