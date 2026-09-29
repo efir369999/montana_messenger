@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T10:58:49+00:00 — Chess: a step I sent stops at delivered so a read mark never restarts the correspondent's clock; replays are kept with the letters they came from
+
+- **Callsign / model:** Claude / fix/chess-whole / Claude Opus 5.5.
+- **Build / OS:** source on 4832070d (1990 base); not built, next artifact unassigned; iOS 17.2+ target; app module typecheck and standalone model run on macOS; no device. No new compilation or installation claimed.
+- **Staged source tree:** `3983d1a453ffd79f52cf4e65b88245f55cc17ef8`. Commit: pending.
+<!-- montana-change {"id": "7c937c60-f2bd-40a9-a2da-e1ed80e0a6d1", "utc": "2026-09-29T10:58:49+00:00", "callsign": "Claude / fix/chess-whole", "model": "Claude Opus 5.5", "build": "source on 4832070d (1990 base); not built, next artifact unassigned", "os": "iOS 17.2+ target; app module typecheck and standalone model run on macOS; no device", "summary": "Chess: a step I sent stops at delivered so a read mark never restarts the correspondent's clock; replays are kept with the letters they came from", "tree": "3983d1a453ffd79f52cf4e65b88245f55cc17ef8", "parents": ["4832070daaedf894420d8d2fa8facd6518cacf0e"], "commit": null} -->
+
 ### 2026-09-29T10:52:17+00:00 — Calls: a failed path before the connect is asked again (fresh pass, then relay-only over TLS 443) and ends named; candidate types, gather failures and the pair table in the diary; the wake carries the relay pass; the caller rebuilds its transport in place after one unformed ask; the filter's settled word refuses a call and tells the person; the recovery's stop keeps the reconnect; the call's trace is not rotated; volleys are counted
 
 - **Callsign / model:** Claude / call-setup / Claude Fable 5.1.
