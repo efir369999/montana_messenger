@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
 - **Build / OS:** 2018 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `be65cb4388a4b0c2c045731ce93df4fda1d13e5a`. Commit: pending.
-<!-- montana-change {"id": "4093506f-a09d-4f4c-aa32-4e87f3c7ec07", "utc": "2026-09-29T23:35:57+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Clean merge of the main line 62e9d0df into stage/second-identity-2: the tree equals the main line, the lineage only", "tree": "be65cb4388a4b0c2c045731ce93df4fda1d13e5a", "parents": ["c635ec3ee7c85967a6b498d2d760c44ff4234fb0", "62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": null} -->
+- **Staged source tree:** `be65cb4388a4b0c2c045731ce93df4fda1d13e5a`. Commit: `2049b25a24cfad05131479bab4950100be4611bd`.
+<!-- montana-change {"id": "4093506f-a09d-4f4c-aa32-4e87f3c7ec07", "utc": "2026-09-29T23:35:57+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Clean merge of the main line 62e9d0df into stage/second-identity-2: the tree equals the main line, the lineage only", "tree": "be65cb4388a4b0c2c045731ce93df4fda1d13e5a", "parents": ["c635ec3ee7c85967a6b498d2d760c44ff4234fb0", "62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": "2049b25a24cfad05131479bab4950100be4611bd"} -->
 
 ### 2026-09-29T23:33:39+00:00 — Clean merge of the main line aa91a596 into stage/second-identity-2: the tree equals the main line, the lineage only
 
