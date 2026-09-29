@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / wall-media / Claude Opus 5.5.
 - **Build / OS:** 2013 source; not built; iOS 26 / 17.2 target. No new compilation or installation claimed.
-- **Staged source tree:** `92d633a76ddebe100e81d519bb60332b118b0508`. Commit: pending.
-<!-- montana-change {"id": "c359caba-c746-483a-b0e9-ea50bdf1b8c5", "utc": "2026-09-29T21:22:58+00:00", "callsign": "claude-9e council / wall-media", "model": "Claude Opus 5.5", "build": "2013 source; not built", "os": "iOS 26 / 17.2 target", "summary": "Wall media viewer: a post picture or video opens a page of the stack with the platform paging scroll up and down, the way out the system back to the side; poster at once, sharp from the file, video from its first pieces", "tree": "92d633a76ddebe100e81d519bb60332b118b0508", "parents": ["3b0a1b5f395e3da5aa2040be7c371b886d84390d"], "commit": null} -->
+- **Staged source tree:** `92d633a76ddebe100e81d519bb60332b118b0508`. Commit: `e9b54edacced41f3f01dce472257f98f507ae895`.
+<!-- montana-change {"id": "c359caba-c746-483a-b0e9-ea50bdf1b8c5", "utc": "2026-09-29T21:22:58+00:00", "callsign": "claude-9e council / wall-media", "model": "Claude Opus 5.5", "build": "2013 source; not built", "os": "iOS 26 / 17.2 target", "summary": "Wall media viewer: a post picture or video opens a page of the stack with the platform paging scroll up and down, the way out the system back to the side; poster at once, sharp from the file, video from its first pieces", "tree": "92d633a76ddebe100e81d519bb60332b118b0508", "parents": ["3b0a1b5f395e3da5aa2040be7c371b886d84390d"], "commit": "e9b54edacced41f3f01dce472257f98f507ae895"} -->
 
 ### 2026-09-29T21:22:10+00:00 — Merge rollback-898 (08930981) into fix/player-cover-keys-copy before the master fast-forward
 
