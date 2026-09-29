@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:20:44+00:00 — Share sheet: one's own wall is the first circle; chosen, the caption is the post's words and the files go to the handoff shelf as their source gave them; the app takes the record into the wall as a new post (MTBoard.begin) and lays it on the node (publish). Verified: guard ring (draft P-118.9) and typecheck of the app, share and notification modules; not verified on a device.
+
+- **Callsign / model:** Claude claude-f5 / fix/share-to-my-wall / Claude Opus 5.5.
+- **Build / OS:** main line 2006 source; not built, next artifact unassigned; iOS 17.2+ app, share and notification extension targets: typecheck only, not installed. No new compilation or installation claimed.
+- **Staged source tree:** `b3b52d8fc9dacf2a3994554c5f7215188aa04d2f`. Commit: pending.
+<!-- montana-change {"id": "1912e7b7-38e9-42ee-b3d8-82ce4030be1a", "utc": "2026-09-29T19:20:44+00:00", "callsign": "Claude claude-f5 / fix/share-to-my-wall", "model": "Claude Opus 5.5", "build": "main line 2006 source; not built, next artifact unassigned", "os": "iOS 17.2+ app, share and notification extension targets: typecheck only, not installed", "summary": "Share sheet: one's own wall is the first circle; chosen, the caption is the post's words and the files go to the handoff shelf as their source gave them; the app takes the record into the wall as a new post (MTBoard.begin) and lays it on the node (publish). Verified: guard ring (draft P-118.9) and typecheck of the app, share and notification modules; not verified on a device.", "tree": "b3b52d8fc9dacf2a3994554c5f7215188aa04d2f", "parents": ["f137b5a6b72d23e613266cb75186ee052c94b83e"], "commit": null} -->
+
 ### 2026-09-29T19:20:35+00:00 — checklist: the chronicle of 2007 and 2008 -- the three walls, the big player on the new post's sheet road; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
