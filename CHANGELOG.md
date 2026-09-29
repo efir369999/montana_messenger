@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:58:43+00:00 — Merge rollback-898 (3b0a1b5f) into fix/player-cover-keys-copy before the master fast-forward
+
+- **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/player-cover-keys-copy over build 2012; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
+- **Staged source tree:** `5f4a441d2a39fd61c36e0e577e0ca0a7d0884e13`. Commit: pending.
+<!-- montana-change {"id": "03aba1bf-409c-4ad1-9b16-e3616d2f3f2e", "utc": "2026-09-29T20:58:43+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "Merge rollback-898 (3b0a1b5f) into fix/player-cover-keys-copy before the master fast-forward", "tree": "5f4a441d2a39fd61c36e0e577e0ca0a7d0884e13", "parents": ["69b68d1499e74eed9f88f15b474a8c0f2f808648", "3b0a1b5f395e3da5aa2040be7c371b886d84390d"], "commit": null} -->
+
 ### 2026-09-29T20:58:34+00:00 — council wall: the author word on IronClaw at Lauterbourg, the onboarding agent verdict, the new tasks, and the lesson that the wall is written at the moment of the event
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
