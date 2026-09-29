@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T23:38:53+00:00 — Merge rollback-898 (62e9d0df, build 2021) into stage/36-avatar-mask: the main line under the avatar mask, a clean merge
+
+- **Callsign / model:** claude-9e / claude-opus-5-5.
+- **Build / OS:** none -- branch stage/36-avatar-mask, not built; macOS 26 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `7f8264018140eabcf64c95a0fcf97be16214fa5f`. Commit: pending.
+<!-- montana-change {"id": "a1627527-6b62-4864-b489-fafca6857a61", "utc": "2026-09-29T23:38:53+00:00", "callsign": "claude-9e", "model": "claude-opus-5-5", "build": "none -- branch stage/36-avatar-mask, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "Merge rollback-898 (62e9d0df, build 2021) into stage/36-avatar-mask: the main line under the avatar mask, a clean merge", "tree": "7f8264018140eabcf64c95a0fcf97be16214fa5f", "parents": ["c98a92d589e3d9ddd12057ed7f9fef654293c2fd", "62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": null} -->
+
 ### 2026-09-29T23:35:57+00:00 — Clean merge of the main line 62e9d0df into stage/second-identity-2: the tree equals the main line, the lineage only
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
