@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T14:20:03+00:00 — Merge of the main line (build 1993, the chess lane, the platform photo viewer and share sheet, the nested worktree ignored) into the first-screen doors branch, before its fast-forward into the main line. No conflicts; guard ring, PROVEN ring 1 and SETTINGS green on the merged tree; the app module typechecks (111 files). Not built, not installed.
+
+- **Callsign / model:** Claude / design/login-page / Claude Fable 5.1.
+- **Build / OS:** 1993 source; not built, next artifact unassigned; iOS 17.2 floor; source only, no device run. No new compilation or installation claimed.
+- **Staged source tree:** `59a7efdd72cd6d94206db316cc9114425f2e6319`. Commit: pending.
+<!-- montana-change {"id": "5946d081-0667-4210-a7bf-2b63a60ae7f7", "utc": "2026-09-29T14:20:03+00:00", "callsign": "Claude / design/login-page", "model": "Claude Fable 5.1", "build": "1993 source; not built, next artifact unassigned", "os": "iOS 17.2 floor; source only, no device run", "summary": "Merge of the main line (build 1993, the chess lane, the platform photo viewer and share sheet, the nested worktree ignored) into the first-screen doors branch, before its fast-forward into the main line. No conflicts; guard ring, PROVEN ring 1 and SETTINGS green on the merged tree; the app module typechecks (111 files). Not built, not installed.", "tree": "59a7efdd72cd6d94206db316cc9114425f2e6319", "parents": ["02a44839019ba5a8f26fa2f2885d3e7480f17230", "0af3a69d6ba5bf0c56bbd8b8328ab92a164e856e"], "commit": null} -->
+
 ### 2026-09-29T14:13:05+00:00 — First screen redesigned to the author mockup: his background picture placed byte for byte, the glass icon, two capsule doors pressed to the foot of the screen (Montana and the outer service), terms and privacy policy in the footer; the Montana road (Apple Account, Create, Open identity) unchanged behind the first door. Guard ring and PROVEN ring 1 green on the session tree; the app module typechecks (111 files). Not built, not installed.
 
 - **Callsign / model:** Claude / design/login-page / Claude Fable 5.1.
