@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T14:06:39+00:00 — Merge rollback-898 (1993: chess moves land at once, the nested worktree ignored, the 1992 chronicle) into fix/photo-thumb-and-share, before the fast-forward of the main line: no conflicts, the guard file auto-merged
+
+- **Callsign / model:** Claude / session fix/photo-thumb-and-share / Claude Fable 5.1.
+- **Build / OS:** no build; ring 1 and swiftc -typecheck (Montana, MontanaShare) green on the merged tree; iOS 26.6.2 (iPhone 17 Pro Max diary), iOS 26.7.1 (T1 diary); macOS 26 host. No new compilation or installation claimed.
+- **Staged source tree:** `06b11885ffbb08195fa605da516f2ced94a5a29f`. Commit: pending.
+<!-- montana-change {"id": "32d3bf04-d868-4e25-97d4-9623bba66c08", "utc": "2026-09-29T14:06:39+00:00", "callsign": "Claude / session fix/photo-thumb-and-share", "model": "Claude Fable 5.1", "build": "no build; ring 1 and swiftc -typecheck (Montana, MontanaShare) green on the merged tree", "os": "iOS 26.6.2 (iPhone 17 Pro Max diary), iOS 26.7.1 (T1 diary); macOS 26 host", "summary": "Merge rollback-898 (1993: chess moves land at once, the nested worktree ignored, the 1992 chronicle) into fix/photo-thumb-and-share, before the fast-forward of the main line: no conflicts, the guard file auto-merged", "tree": "06b11885ffbb08195fa605da516f2ced94a5a29f", "parents": ["0d43528c345cd7ee697773faf16af8af578979b2", "1c06230a9617589a848722525cc6227d88f0bdce"], "commit": null} -->
+
 ### 2026-09-29T14:03:55+00:00 — Build 1993 -- chess moves land at once (the board keeps the node lane, the box hint is fetched now), the nested worktree ignored, the 1992 chronicle; for T1 and T3, then TestFlight
 
 - **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
