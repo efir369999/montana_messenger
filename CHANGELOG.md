@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / fix/cargo-shelf-emoji-caption / Claude Fable 5.1.
 - **Build / OS:** 1990 source; not built, next artifact unassigned; iOS 26.7 and iOS 26.6.2 targets; not installed. No new compilation or installation claimed.
-- **Staged source tree:** `5afe8e4c66fb45f1b1a6e02f4b6a3b6e95c3d459`. Commit: pending.
-<!-- montana-change {"id": "52e2c6d3-f568-40a9-b7ac-01c2ec4ad78c", "utc": "2026-09-29T11:49:41+00:00", "callsign": "Claude / fix/cargo-shelf-emoji-caption", "model": "Claude Fable 5.1", "build": "1990 source; not built, next artifact unassigned", "os": "iOS 26.7 and iOS 26.6.2 targets; not installed", "summary": "Merge of the main line (chess, VPN dead session, drawer icons) into the captioned-video plate and cargo shelf branch; guard rings and the typecheck of the app and both extensions ran on the merged tree", "tree": "5afe8e4c66fb45f1b1a6e02f4b6a3b6e95c3d459", "parents": ["3f6b89a16c1d3a416bb634658852fd762a9de4fb", "0db2b1058fcd0c770da07c854875042c62cb3ef7"], "commit": null} -->
+- **Staged source tree:** `5afe8e4c66fb45f1b1a6e02f4b6a3b6e95c3d459`. Commit: `701e2731bee1f924f18063303263683ef2b42cef`.
+<!-- montana-change {"id": "52e2c6d3-f568-40a9-b7ac-01c2ec4ad78c", "utc": "2026-09-29T11:49:41+00:00", "callsign": "Claude / fix/cargo-shelf-emoji-caption", "model": "Claude Fable 5.1", "build": "1990 source; not built, next artifact unassigned", "os": "iOS 26.7 and iOS 26.6.2 targets; not installed", "summary": "Merge of the main line (chess, VPN dead session, drawer icons) into the captioned-video plate and cargo shelf branch; guard rings and the typecheck of the app and both extensions ran on the merged tree", "tree": "5afe8e4c66fb45f1b1a6e02f4b6a3b6e95c3d459", "parents": ["3f6b89a16c1d3a416bb634658852fd762a9de4fb", "0db2b1058fcd0c770da07c854875042c62cb3ef7"], "commit": "701e2731bee1f924f18063303263683ef2b42cef"} -->
 
 ### 2026-09-29T11:43:09+00:00 — Captioned video draws its plate (an emoji caption no longer hides the media); the notification extension lays small cargo onto the shared shelf; the diary names landed and waiting media; a cargo lane wait has a term
 
