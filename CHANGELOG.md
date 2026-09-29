@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council builder (logo-no-send) / claude-opus-5-5.
 - **Build / OS:** not built; merge of the main line ae2c39e8 into fix/time-logo-no-send-badge; macOS (Darwin 25.6.0); client iOS source. No new compilation or installation claimed.
-- **Staged source tree:** `ef31a6cbda9e8cb390a0ba0c257d453b39bf0141`. Commit: pending.
-<!-- montana-change {"id": "acdf4e65-ddf9-40cd-a966-1dd37d367855", "utc": "2026-09-29T20:19:37+00:00", "callsign": "claude-9e council builder (logo-no-send)", "model": "claude-opus-5-5", "build": "not built; merge of the main line ae2c39e8 into fix/time-logo-no-send-badge", "os": "macOS (Darwin 25.6.0); client iOS source", "summary": "Merge rollback-898 (ae2c39e8) into fix/time-logo-no-send-badge before the master's fast-forward; ring green, typecheck exit 0 on the merged tree", "tree": "ef31a6cbda9e8cb390a0ba0c257d453b39bf0141", "parents": ["4ae491d23d0022138536e145dc481311282df524", "ae2c39e81b08b211070977a1a92c17f344398eb9"], "commit": null} -->
+- **Staged source tree:** `ef31a6cbda9e8cb390a0ba0c257d453b39bf0141`. Commit: `328a45664d7046be252ccc13f0bca784d431c372`.
+<!-- montana-change {"id": "acdf4e65-ddf9-40cd-a966-1dd37d367855", "utc": "2026-09-29T20:19:37+00:00", "callsign": "claude-9e council builder (logo-no-send)", "model": "claude-opus-5-5", "build": "not built; merge of the main line ae2c39e8 into fix/time-logo-no-send-badge", "os": "macOS (Darwin 25.6.0); client iOS source", "summary": "Merge rollback-898 (ae2c39e8) into fix/time-logo-no-send-badge before the master's fast-forward; ring green, typecheck exit 0 on the merged tree", "tree": "ef31a6cbda9e8cb390a0ba0c257d453b39bf0141", "parents": ["4ae491d23d0022138536e145dc481311282df524", "ae2c39e81b08b211070977a1a92c17f344398eb9"], "commit": "328a45664d7046be252ccc13f0bca784d431c372"} -->
 
 ### 2026-09-29T20:19:06+00:00 — council wall: the council folder is now the Council Wall at the client root -- the board script moved in, the wall page with Master 1 lessons (hippocampus records) and chronology, the build posts of 2011 and 2012, and the rules for every master
 
