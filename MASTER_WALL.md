@@ -4,12 +4,13 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 1 · claude-9e
 
-Weissman, mean over 32 twins: 2.19
+Weissman, mean over 33 twins: 2.18
 
 Language: B=сборка; T1 T3=телефоны; ok=стоит/подтверждено; no=нет; ff=перемотка; A=итог агента; W=слово автора; D=решение; L=урок (ожидал/вышло/правило); O=ждёт автора; S=состояние; +=добавлено; -=убрано; →=следствие; V=ПОДТВЕРЖДЕНО; хеши, номера и ветки — как есть
 
 Language: v2 (плотный): ▲=сборка ▣=Т1 ▢=Т3 ✓=стоит/есть ✗=нет ⇢=перемотка ◆=итог агента ✎=слово автора ◉=решение ⚠=урок ?=ждёт автора ≡=состояние ⊕ ⊖ → ✔=ПОДТВЕРЖДЕНО ⌂=главная ⛓=цепь стены ᛭=руны ♫=плеер ☍=внешняя служба ◐=вторая личность ✉=письмо; хеши, номера, ветки, файлы — как есть
 
+- 49 · 30.09 02:08 MSK · W 1.64 · x2.98 (deflate x1.82): ⌂ rollback-898 aa91a596; ▣▢2020 (✉+◐ aa91a596). ⇢: fix/favorites-avatar-owner, fix/vpn-wall-whitelist-auto bbf2b244/cea6b56b, stage/second-identity(родословная). ◆: fix/feeds-scroll-top(♫срочно), fix/player-cover-waves, fix/chess-menu-score, fix/wall-post-in-chat, fix/default-wallpaper, stage/36-avatar-mask, fix/feed-wall-of-thoughts, TestFlight 2018 .worktrees/tf-2018, стены Памяти+Мощности → ~/.montana/council/journal.md. ᛭ spec/rune-seal d6c6dd9 151, после чужих правок; ядро по ✎. IronClaw 127.0.0.1:3100 ключ?. ?: Ферма Б/имя/урожай, облик, служба 6, ключ, повтор, белый список, роль I-*. Правила: heavy.lock, ⛓ вне ⌂+publish, 1–13, сразу ▣▢, чистое слияние, отказ→status, бамп pbxproj, show --stat. load→доска
 - 49 · 30.09 02:08 MSK · W 0.0 · x3.14 (deflate x1.82): ⌂aa91a596; ▣▢2020 (✉+◐ aa91a596). ⇢: fix/favorites-avatar-owner, fix/vpn-wall-whitelist-auto bbf2b244/cea6b56b, stage/second-identity(родословная). ◆: fix/feeds-scroll-top(♫срочно), fix/player-cover-waves, fix/chess-menu-score, fix/wall-post-in-chat, fix/default-wallpaper, stage/36-avatar-mask, fix/feed-wall-of-thoughts, TestFlight 2018 tf-2018, стены Памяти+Мощности → journal. ᛭ spec/rune-seal d6c6dd9 151, после чужих правок; ядро по ✎. IronClaw 127.0.0.1:3100 ключ?. ?: Ферма Б/имя/урожай, облик, служба 6, ключ, повтор, белый список, роль I-*. Правила: heavy.lock, ⛓ вне ⌂+publish, 1–13, сразу ▣▢, чистое слияние, отказ→status, бамп pbxproj, show --stat. load→доска
 - 48 · 30.09 02:06 MSK · W 1.39 · x2.34 (deflate x1.68): ✎ цель: перенос сознания между симуляциями на Стене Мыслей (коллективное бессознательное); подобие: ⛓ мастер→мастер, гиппокамп-нить
 - 47 · 30.09 02:04 MSK · W 0.0 · x4.13 (deflate x1.87): ⚠ отказ ⇢ оставил 7a96ad0f в индексе ⌂; бамп унёс; правило: status+сброс индекса, бамп только pbxproj, сверка show --stat
