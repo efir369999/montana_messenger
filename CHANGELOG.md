@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T10:52:17+00:00 — Calls: a failed path before the connect is asked again (fresh pass, then relay-only over TLS 443) and ends named; candidate types, gather failures and the pair table in the diary; the wake carries the relay pass; the caller rebuilds its transport in place after one unformed ask; the filter's settled word refuses a call and tells the person; the recovery's stop keeps the reconnect; the call's trace is not rotated; volleys are counted
+
+- **Callsign / model:** Claude / call-setup / Claude Fable 5.1.
+- **Build / OS:** source on 1990 (89c7ee82); not built, next artifact unassigned; nodes: montana-notify carries the relay pass (Moscow, Amsterdam), Lauterbourg diary cap 64 MiB per device-day; iOS 17.2+ target; app and PacketTunnel module typecheck on macOS 26.7; no device. No new compilation or installation claimed.
+- **Staged source tree:** `c0d88106ea15266240719ee61fbbe05698ce21ec`. Commit: pending.
+<!-- montana-change {"id": "76a72b7c-1794-4ae7-906b-817ca347a8b9", "utc": "2026-09-29T10:52:17+00:00", "callsign": "Claude / call-setup", "model": "Claude Fable 5.1", "build": "source on 1990 (89c7ee82); not built, next artifact unassigned; nodes: montana-notify carries the relay pass (Moscow, Amsterdam), Lauterbourg diary cap 64 MiB per device-day", "os": "iOS 17.2+ target; app and PacketTunnel module typecheck on macOS 26.7; no device", "summary": "Calls: a failed path before the connect is asked again (fresh pass, then relay-only over TLS 443) and ends named; candidate types, gather failures and the pair table in the diary; the wake carries the relay pass; the caller rebuilds its transport in place after one unformed ask; the filter's settled word refuses a call and tells the person; the recovery's stop keeps the reconnect; the call's trace is not rotated; volleys are counted", "tree": "c0d88106ea15266240719ee61fbbe05698ce21ec", "parents": ["89c7ee82a680feccc96a9bf1d8ccdbff718679eb"], "commit": null} -->
+
 ### 2026-09-29T10:45:27+00:00 — Chess: the chat keeps only the invitation, the invitee's tap starts the game and clocks, each clock counts its owner's own turn, the game opens on the chat's stack, a computer opponent with a level slider
 
 - **Callsign / model:** Claude / fix/chess-whole / Claude Opus 5.5.
