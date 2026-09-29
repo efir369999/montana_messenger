@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e-agent / claude-opus-5-5.
 - **Build / OS:** 2017; iOS client; macOS Darwin 25.6.0. No new compilation or installation claimed.
-- **Staged source tree:** `dc89f2b684d3265fe72adc0be5ed55c7480af625`. Commit: pending.
-<!-- montana-change {"id": "e2d6aa40-f8db-4591-953b-447ec4c8b186", "utc": "2026-09-29T21:45:59+00:00", "callsign": "claude-9e-agent", "model": "claude-opus-5-5", "build": "2017", "os": "iOS client; macOS Darwin 25.6.0", "summary": "Merge rollback-898 (a61539cf, build 2017) into fix/letter-late-delivery: the main line into the roads-back drain fix; clean merge, ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LOCK none new), typecheck 112 files exit 0.", "tree": "dc89f2b684d3265fe72adc0be5ed55c7480af625", "parents": ["854c1a3168d9400287f7dcdba4394ecc40f0447c", "a61539cf3b3f0ac46962363970bd1a20478ee11f"], "commit": null} -->
+- **Staged source tree:** `dc89f2b684d3265fe72adc0be5ed55c7480af625`. Commit: `f5b8b0a8e4710ad9ae1f7bfc2ae1558cd60bdd0b`.
+<!-- montana-change {"id": "e2d6aa40-f8db-4591-953b-447ec4c8b186", "utc": "2026-09-29T21:45:59+00:00", "callsign": "claude-9e-agent", "model": "claude-opus-5-5", "build": "2017", "os": "iOS client; macOS Darwin 25.6.0", "summary": "Merge rollback-898 (a61539cf, build 2017) into fix/letter-late-delivery: the main line into the roads-back drain fix; clean merge, ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LOCK none new), typecheck 112 files exit 0.", "tree": "dc89f2b684d3265fe72adc0be5ed55c7480af625", "parents": ["854c1a3168d9400287f7dcdba4394ecc40f0447c", "a61539cf3b3f0ac46962363970bd1a20478ee11f"], "commit": "f5b8b0a8e4710ad9ae1f7bfc2ae1558cd60bdd0b"} -->
 
 ### 2026-09-29T21:44:59+00:00 — Saved Messages wears the new own face at once: one view MTSelfFace draws one own face and watches the bytes itself (MTChatFace, the row, the drawer, the code page, the profile, chess, the wall, the bubble); the decoded picture is kept with its bytes; a change of face re-mirrors the share sheet; the owner guard names MTSelfFace
 
