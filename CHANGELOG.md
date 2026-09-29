@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
 - **Build / OS:** 2020 (Debug, bump; artifact not built yet); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `44182527e2f8ff5c6e17bbac2ceb75d26506c547`. Commit: pending.
-<!-- montana-change {"id": "7e68c640-ea13-4177-aa1d-86ff74a1a5f1", "utc": "2026-09-29T22:42:43+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2020 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2020 bump: a letter written in a dead minute leaves the moment any road returns -- each road its own clock, a taken node releases at once, a door answer lifts its rest", "tree": "44182527e2f8ff5c6e17bbac2ceb75d26506c547", "parents": ["28b2f8044bea47b4c0f111ad4d4d23911293863d"], "commit": null} -->
+- **Staged source tree:** `44182527e2f8ff5c6e17bbac2ceb75d26506c547`. Commit: `aa91a5962849b989d12e3731b50ad9b0c29897a3`.
+<!-- montana-change {"id": "7e68c640-ea13-4177-aa1d-86ff74a1a5f1", "utc": "2026-09-29T22:42:43+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2020 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2020 bump: a letter written in a dead minute leaves the moment any road returns -- each road its own clock, a taken node releases at once, a door answer lifts its rest", "tree": "44182527e2f8ff5c6e17bbac2ceb75d26506c547", "parents": ["28b2f8044bea47b4c0f111ad4d4d23911293863d"], "commit": "aa91a5962849b989d12e3731b50ad9b0c29897a3"} -->
 
 ### 2026-09-29T22:41:41+00:00 — Merge rollback-898 (f3de66ce, build 2019) into fix/letter-late-delivery: the main line's cover change into the roads-back drain fix; a clean merge with no edits of its own; ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LAYOUT clean, LOCK none new), typecheck 112 files exit 0.
 
