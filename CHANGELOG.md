@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:44:59+00:00 — Saved Messages wears the new own face at once: one view MTSelfFace draws one own face and watches the bytes itself (MTChatFace, the row, the drawer, the code page, the profile, chess, the wall, the bubble); the decoded picture is kept with its bytes; a change of face re-mirrors the share sheet; the owner guard names MTSelfFace
+
+- **Callsign / model:** claude-9e council builder (fav-avatar) / claude-opus-5-5.
+- **Build / OS:** over 2016 (rollback-898 e7af3a04), not built; macOS, Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `d1c5e65f145dcca98598138945d68e37979941cb`. Commit: pending.
+<!-- montana-change {"id": "caf131bc-c505-4e3b-88cb-481d0f92e128", "utc": "2026-09-29T21:44:59+00:00", "callsign": "claude-9e council builder (fav-avatar)", "model": "claude-opus-5-5", "build": "over 2016 (rollback-898 e7af3a04), not built", "os": "macOS, Darwin 25.6.0", "summary": "Saved Messages wears the new own face at once: one view MTSelfFace draws one own face and watches the bytes itself (MTChatFace, the row, the drawer, the code page, the profile, chess, the wall, the bubble); the decoded picture is kept with its bytes; a change of face re-mirrors the share sheet; the owner guard names MTSelfFace", "tree": "d1c5e65f145dcca98598138945d68e37979941cb", "parents": ["e7af3a04798a018f6cee1249c9bf4fd667a1eae8"], "commit": null} -->
+
 ### 2026-09-29T21:44:27+00:00 — build 2018 bump: the wall media page -- posts media open at once as a page, paged up and down through the page media, back by the system swipe; video in the system player from the first chunks
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
