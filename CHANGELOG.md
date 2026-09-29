@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
 - **Build / OS:** not built; branch fix/player-cover-keys-copy over build 2012; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
-- **Staged source tree:** `880e3bf8858c08af447ea2aa2c03aaca3e5d3c6b`. Commit: pending.
-<!-- montana-change {"id": "9a40920a-84d8-4689-99f5-2339ddbc0abf", "utc": "2026-09-29T20:34:58+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "music: a hold on the name copies it at the chat bubble threshold -- the mini player at once, the big player", "tree": "880e3bf8858c08af447ea2aa2c03aaca3e5d3c6b", "parents": ["92852ea5fc72c730994d6b4f0b728a47989853b7"], "commit": null} -->
+- **Staged source tree:** `880e3bf8858c08af447ea2aa2c03aaca3e5d3c6b`. Commit: `817b6f1f1813bc23821689d60e37cb28098fcf3d`.
+<!-- montana-change {"id": "9a40920a-84d8-4689-99f5-2339ddbc0abf", "utc": "2026-09-29T20:34:58+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "music: a hold on the name copies it at the chat bubble threshold -- the mini player at once, the big player", "tree": "880e3bf8858c08af447ea2aa2c03aaca3e5d3c6b", "parents": ["92852ea5fc72c730994d6b4f0b728a47989853b7"], "commit": "817b6f1f1813bc23821689d60e37cb28098fcf3d"} -->
 
 ### 2026-09-29T20:34:52+00:00 — The path from the first page to the chats in the platform's style: every act of the path stands on the one door plate (MTLoginDoorStyle, glass capsule, 52 pt, blue glass for the main act, clear glass for the second), one back chevron on glass for the whole path, the Apple Account door moves from the first page to the page Open identity
 
