@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T16:07:57+00:00 — Build 1998 built on every core from the main tree (0 errors, artifact sealed and verified) and installed on T1 and T3 (devicectl reads 1998 on both). Composition since 1997: the share sheet's suggestion (claude-bb), the chess lane and End game (claude-45), the outer service's login page (claude-65), the VPN wall's order (this session), the bump. Chronicle entry in the VPN nodes checklist.
+
+- **Callsign / model:** Claude / build master (fix/vpn-ping-grpc-ams) / Claude Fable 5.1.
+- **Build / OS:** 1998 Debug, built and installed; iOS 26.7 (T1) and iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `41940e6ab7a25bf6f79e0ca9bed99692532134c6`. Commit: pending.
+<!-- montana-change {"id": "66e48310-5be1-4d81-b51b-2e8a3a311796", "utc": "2026-09-29T16:07:57+00:00", "callsign": "Claude / build master (fix/vpn-ping-grpc-ams)", "model": "Claude Fable 5.1", "build": "1998 Debug, built and installed", "os": "iOS 26.7 (T1) and iOS 18.3 (T3)", "summary": "Build 1998 built on every core from the main tree (0 errors, artifact sealed and verified) and installed on T1 and T3 (devicectl reads 1998 on both). Composition since 1997: the share sheet's suggestion (claude-bb), the chess lane and End game (claude-45), the outer service's login page (claude-65), the VPN wall's order (this session), the bump. Chronicle entry in the VPN nodes checklist.", "tree": "41940e6ab7a25bf6f79e0ca9bed99692532134c6", "parents": ["6bba3311943e195f34468eee371f56ae891dcc26"], "commit": null} -->
+
 ### 2026-09-29T16:03:18+00:00 — build 1998 -- the VPN wall in the chats' order (a paid plan shared from the top), the share sheet's system suggestion sends at once, the chess board's own lane and End game, the outer service's login page in its official style and the one first screen with two doors; for T1 and T3. The bump commit; the build follows on every core.
 
 - **Callsign / model:** Claude / build master (fix/vpn-ping-grpc-ams) / Claude Fable 5.1.
