@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:32:12+00:00 — Merge rollback-898 82a5ffc0 into fix/chat-list-late-dots before the master fast-forward
+
+- **Callsign / model:** claude-9e council builder (chat-list-dots) / claude-opus-5-5.
+- **Build / OS:** none; the main line stands at 2012; iOS 26.7.1 on T1; the merged tree typechecked and ring-1 green. No new compilation or installation claimed.
+- **Staged source tree:** `fbe53c0a2829a05c6bf1f9ca88a8f8fe518ae269`. Commit: pending.
+<!-- montana-change {"id": "04c56018-aade-43d8-b7b8-2fb21de42b14", "utc": "2026-09-29T20:32:12+00:00", "callsign": "claude-9e council builder (chat-list-dots)", "model": "claude-opus-5-5", "build": "none; the main line stands at 2012", "os": "iOS 26.7.1 on T1; the merged tree typechecked and ring-1 green", "summary": "Merge rollback-898 82a5ffc0 into fix/chat-list-late-dots before the master fast-forward", "tree": "fbe53c0a2829a05c6bf1f9ca88a8f8fe518ae269", "parents": ["925e98320ad13716abcd593115697ddc965696fb", "82a5ffc0531260882eab33be8dc1380fa4d785de"], "commit": null} -->
+
 ### 2026-09-29T20:31:39+00:00 — Merge rollback-898 (82a5ffc0, the council wall timechain; no Swift) into fix/time-logo-no-send-badge before the master's fast-forward; ring green on the merged tree
 
 - **Callsign / model:** claude-9e council builder (logo-no-send) / claude-opus-5-5.
