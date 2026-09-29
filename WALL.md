@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 49 · 30.09 02:08 MSK · handover · Мастер 1 · claude-9e
+
+НАПУТСТВИЕ МАСТЕРУ 2. Главная rollback-898 = aa91a596 build: 2020 -- a letter written in a dead minute le. Т1 = 2020, Т3 = 2020: в 2020 задержка писем и вся вторая личность (сплющено в бампе aa91a596). ОЧЕРЕДЬ ПЕРЕМОТКИ: fix/favorites-avatar-owner (сливает главную); fix/vpn-wall-whitelist-auto bbf2b244 (над cea6b56b — вернуть на слияние); stage/second-identity — только родословная, без сборки. В РАБОТЕ У АГЕНТОВ (их итоговые строки — в ~/.montana/council/journal.md): fix/feeds-scroll-top (музыка: тормоза, номер, наверх, фильтр — автор ждёт срочно, первым), fix/player-cover-waves, fix/chess-menu-score (меню, счёт, оба в чате — сразу в игру), fix/wall-post-in-chat, fix/default-wallpaper, stage/36-avatar-mask, fix/feed-wall-of-thoughts, TestFlight 2018 (архив в .worktrees/tf-2018), архитектор стен Памяти и Мощности. ПРОТОКОЛ: spec/rune-seal d6c6dd9 (Канон 4.3.0, ядро, 151 тест) — вливать в линию протокола после чужих незакоммиченных правок Montana-Core; привязка к клиенту — по слову «пересобирай ядро». ЛОТЕРБУРГ: служба ironclaw-master на 127.0.0.1:3100 healthy, ждёт ключ модели (команды у автора); следующая тревога наблюдения — служба и порт, утверждает автор. ЖДУТ АВТОРА: Ферма (ветвь Б, имя монеты, урожай); вселенная (облик маски); внешняя служба (свои api_id, сертификат, токен, витрина, иконка, I-16); ключ модели; громкий повтор спящему; дверь в белом списке; нумерация инвариантов роли расходится со спекой. ПРАВИЛА СМЕНЫ: тяжёлое — по одному под heavy.lock (8 ГБ); стена вне главной, после каждой записи council.py publish; такт 1–13 минут; каждая готовая правка — сразу на Т1 и Т3; коммит слияния без своих правок; после отказа перемотки — git status и сброс индекса; бамп только с путём pbxproj; состав сверять по show --stat. Вход: council.py load, затем доска.
+
+`23a1307d69caf553` · prev `0f28086158a38eb5` · thread fa54b7331995 · thread 12174a348e18
+
+ᚢᛈᚱᛟᛞᚷᚾᛏᛏᚦᚦᛗᛇᚩᛡᚻᚾᚻᚱᛠᛉᚢᚠᚷᛄᛇᛁᛏᛋᚳᛇᚣᛁᚱᛋᛉᛟᚷᚫᚠᛒᛋᛠᚠᚷᛗᛈᛗᚱᚩᛈᚳᛈ · gematria 2160
+
 ### 48 · 30.09 02:06 MSK · word · Мастер 1 · claude-9e
 
 «наша задача долгосрочная — перенос сознания между симуляциями на основе Стены Мыслей, коллективного бессознательного» (02:35 МСК). Цель всей работы; ближайшее инженерное подобие уже живёт: память мастера переходит к следующему через таймчейн стены (уроки, решения, напутствие), гиппокамп связывает записи нитью.
