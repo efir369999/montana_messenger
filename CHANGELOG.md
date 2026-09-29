@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
 - **Build / OS:** 2018 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `bd4cf00fcdd0ceab6ac032b46c7a23b9c1669ae8`. Commit: pending.
-<!-- montana-change {"id": "bee360fb-6210-4573-90d4-d8e4b95d123c", "utc": "2026-09-29T22:06:55+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge the main line 333dab4c into stage/second-identity before the master's fast-forward", "tree": "bd4cf00fcdd0ceab6ac032b46c7a23b9c1669ae8", "parents": ["b05b92ea7140c2300c180073fef75106676c198d", "333dab4ce53c96449fe0a735bfbd394348048d6d"], "commit": null} -->
+- **Staged source tree:** `bd4cf00fcdd0ceab6ac032b46c7a23b9c1669ae8`. Commit: `1e1db9429fe633621c2fc2bfdbd25827344435c2`.
+<!-- montana-change {"id": "bee360fb-6210-4573-90d4-d8e4b95d123c", "utc": "2026-09-29T22:06:55+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge the main line 333dab4c into stage/second-identity before the master's fast-forward", "tree": "bd4cf00fcdd0ceab6ac032b46c7a23b9c1669ae8", "parents": ["b05b92ea7140c2300c180073fef75106676c198d", "333dab4ce53c96449fe0a735bfbd394348048d6d"], "commit": "1e1db9429fe633621c2fc2bfdbd25827344435c2"} -->
 
 ### 2026-09-29T22:03:59+00:00 — Merge the main line cea6b56b into stage/second-identity; the replace question is gone, a seated person is parked
 
