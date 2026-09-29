@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e/cover-waves / claude-opus-5-5.
 - **Build / OS:** 2019; iOS 17.2+ (T1, T3). No new compilation or installation claimed.
-- **Staged source tree:** `eafb8056269515f113175dbfe431a41807524bc7`. Commit: pending.
-<!-- montana-change {"id": "0b050f04-9cb8-4894-b4bb-35b6658643e4", "utc": "2026-09-29T23:51:39+00:00", "callsign": "claude-9e/cover-waves", "model": "claude-opus-5-5", "build": "2019", "os": "iOS 17.2+ (T1, T3)", "summary": "music: a tap on the plate cover opens it whole by the platform zoom; with no album cover the app icon sends out colourless glass waves to the music level (file player meter, audio tap under the stream); at rest the waves fade, Reduce Motion keeps the icon still", "tree": "eafb8056269515f113175dbfe431a41807524bc7", "parents": ["f3de66ce0bed4e944e5910624099388251541a9f"], "commit": null} -->
+- **Staged source tree:** `eafb8056269515f113175dbfe431a41807524bc7`. Commit: `f2699d7c105d1b8d1c1210885410fa3e791c3521`.
+<!-- montana-change {"id": "0b050f04-9cb8-4894-b4bb-35b6658643e4", "utc": "2026-09-29T23:51:39+00:00", "callsign": "claude-9e/cover-waves", "model": "claude-opus-5-5", "build": "2019", "os": "iOS 17.2+ (T1, T3)", "summary": "music: a tap on the plate cover opens it whole by the platform zoom; with no album cover the app icon sends out colourless glass waves to the music level (file player meter, audio tap under the stream); at rest the waves fade, Reduce Motion keeps the icon still", "tree": "eafb8056269515f113175dbfe431a41807524bc7", "parents": ["f3de66ce0bed4e944e5910624099388251541a9f"], "commit": "f2699d7c105d1b8d1c1210885410fa3e791c3521"} -->
 
 ### 2026-09-29T23:46:08+00:00 — fix/default-wallpaper: merge rollback-898 aa91a596 (build 2020) into the default-wallpaper branch; ring green, typecheck exit 0 on the merged tree
 
