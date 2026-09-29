@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
 - **Build / OS:** 2006 (installed on T1); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `3900a639f02d7077f337cf26bf7e8a6b98ab069f`. Commit: pending.
-<!-- montana-change {"id": "87c8f017-6a39-4ff2-9004-77936f6cd483", "utc": "2026-09-29T19:05:29+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2006 (installed on T1)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "checklist: the chronicle of 2006 -- the VPN wall as the posts' wall; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)", "tree": "3900a639f02d7077f337cf26bf7e8a6b98ab069f", "parents": ["224db9fde4b613b12aee167ebdb09c821fe043be"], "commit": null} -->
+- **Staged source tree:** `3900a639f02d7077f337cf26bf7e8a6b98ab069f`. Commit: `f137b5a6b72d23e613266cb75186ee052c94b83e`.
+<!-- montana-change {"id": "87c8f017-6a39-4ff2-9004-77936f6cd483", "utc": "2026-09-29T19:05:29+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2006 (installed on T1)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "checklist: the chronicle of 2006 -- the VPN wall as the posts' wall; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)", "tree": "3900a639f02d7077f337cf26bf7e8a6b98ab069f", "parents": ["224db9fde4b613b12aee167ebdb09c821fe043be"], "commit": "f137b5a6b72d23e613266cb75186ee052c94b83e"} -->
 
 ### 2026-09-29T19:03:37+00:00 — merge of the main line 74294bac (the VPN wall carried as the posts' wall) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge (MontanaBoardViews.swift merged by git without conflict); typecheck rc 0 (111 files), ring 1, the 44-point target, owner and language guards green on the merged tree.
 
