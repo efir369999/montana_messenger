@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
 - **Build / OS:** 2010 (Debug, every core, next); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `e78d978fb51c2d3668f813c7ea8dc4e1696c1295`. Commit: pending.
-<!-- montana-change {"id": "6f5ac787-c252-4487-b49b-859c2d8cc12c", "utc": "2026-09-29T19:33:30+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2010 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2010 -- the big player's ground is the sheet's own clear glass (backgroundEffect, iOS 26.1 and later), over 2009; for T1 and T3", "tree": "e78d978fb51c2d3668f813c7ea8dc4e1696c1295", "parents": ["86102aef4c6d2b22bf428b8d94e45d4064cbe54d"], "commit": null} -->
+- **Staged source tree:** `e78d978fb51c2d3668f813c7ea8dc4e1696c1295`. Commit: `438bb4f6c369e74fa8a4e20411fdb9a2763d6cb8`.
+<!-- montana-change {"id": "6f5ac787-c252-4487-b49b-859c2d8cc12c", "utc": "2026-09-29T19:33:30+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2010 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2010 -- the big player's ground is the sheet's own clear glass (backgroundEffect, iOS 26.1 and later), over 2009; for T1 and T3", "tree": "e78d978fb51c2d3668f813c7ea8dc4e1696c1295", "parents": ["86102aef4c6d2b22bf428b8d94e45d4064cbe54d"], "commit": "438bb4f6c369e74fa8a4e20411fdb9a2763d6cb8"} -->
 
 ### 2026-09-29T19:32:04+00:00 — merge rollback-898 (13243c58, the build 2009 bump) into stage/three-walls: the project's build number alone, so the branch fast-forwards the main line
 
