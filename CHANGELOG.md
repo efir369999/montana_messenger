@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:32:30+00:00 — Onboarding: nobody is replaced, a seated person is parked; the one door refuses to write a seed over another
+
+- **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
+- **Build / OS:** 2018 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
+- **Staged source tree:** `d7c410e1fc542979d78c59c77bfcfc9a2186fd07`. Commit: pending.
+<!-- montana-change {"id": "36af5d32-a1ce-45fb-8c37-b1dadc18d5bc", "utc": "2026-09-29T22:32:30+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Onboarding: nobody is replaced, a seated person is parked; the one door refuses to write a seed over another", "tree": "d7c410e1fc542979d78c59c77bfcfc9a2186fd07", "parents": ["9fb5dd952704b304c5a45c0aaf649e7f66d1200b"], "commit": null} -->
+
 ### 2026-09-29T22:30:40+00:00 — Merge the main line f3de66ce into stage/second-identity before the master's fast-forward
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
