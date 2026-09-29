@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:23:43+00:00 — chat: a plate stands where its slowest letter stands -- the line under the plate, its stamp, the menu line and the chat row read one rung (fix/chat-list-late-dots)
+
+- **Callsign / model:** claude-9e council builder (chat-list-dots) / claude-opus-5-5.
+- **Build / OS:** none; the main line stands at 2012; iOS 26.7.1 on T1, measured also on the iPhone 15 (TestFlight 1990). No new compilation or installation claimed.
+- **Staged source tree:** `557f16e2c4b1ce549d352913f5ca5a48906fcaa1`. Commit: pending.
+<!-- montana-change {"id": "a3f2e31f-9774-4310-9254-10fb6b718aac", "utc": "2026-09-29T20:23:43+00:00", "callsign": "claude-9e council builder (chat-list-dots)", "model": "claude-opus-5-5", "build": "none; the main line stands at 2012", "os": "iOS 26.7.1 on T1, measured also on the iPhone 15 (TestFlight 1990)", "summary": "chat: a plate stands where its slowest letter stands -- the line under the plate, its stamp, the menu line and the chat row read one rung (fix/chat-list-late-dots)", "tree": "557f16e2c4b1ce549d352913f5ca5a48906fcaa1", "parents": ["218cbe740103fce90b2730eea24b02cf73eb5f84"], "commit": null} -->
+
 ### 2026-09-29T20:19:37+00:00 — Merge rollback-898 (ae2c39e8) into fix/time-logo-no-send-badge before the master's fast-forward; ring green, typecheck exit 0 on the merged tree
 
 - **Callsign / model:** claude-9e council builder (logo-no-send) / claude-opus-5-5.
