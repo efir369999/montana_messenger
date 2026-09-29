@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:40:43+00:00 — checklist: the chronicle of 2004 -- the pair's one game in chess, the big player in liquid glass, the VPN page's example menu; installed on T1, T3 pending (not visible to the Mac, a waiter stands)
+
+- **Callsign / model:** claude-83 / claude-opus-5-5.
+- **Build / OS:** 2004 (installed on T1); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `2eb26f41c557809206c9d34834e186d5e4151e09`. Commit: pending.
+<!-- montana-change {"id": "fb76637f-58a7-4ce9-b396-7e0af3e7fc1e", "utc": "2026-09-29T18:40:43+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2004 (installed on T1)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "checklist: the chronicle of 2004 -- the pair's one game in chess, the big player in liquid glass, the VPN page's example menu; installed on T1, T3 pending (not visible to the Mac, a waiter stands)", "tree": "2eb26f41c557809206c9d34834e186d5e4151e09", "parents": ["298a891499bbb21367d3d9fd93a4ac7629a45819"], "commit": null} -->
+
 ### 2026-09-29T18:38:35+00:00 — merge rollback-898 (25c8533b: the mini player and the chess screens) into fix/vpn-raise-after-install before the master's fast-forward; no conflicts
 
 - **Callsign / model:** Claude / fix/vpn-raise-after-install (builder claude-bb) / Claude Opus 5.5.
