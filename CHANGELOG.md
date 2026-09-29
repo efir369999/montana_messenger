@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
 - **Build / OS:** 2016 installed on T1 and T3; macOS (notes). No new compilation or installation claimed.
-- **Staged source tree:** `f6ad9beea52ba5ee5783b0bc340464ad29fcd625`. Commit: pending.
-<!-- montana-change {"id": "a8a25561-6259-4402-80cc-43f9e686c264", "utc": "2026-09-29T21:31:52+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2016 installed on T1 and T3", "os": "macOS (notes)", "summary": "council wall: redrawn with the rune seals", "tree": "f6ad9beea52ba5ee5783b0bc340464ad29fcd625", "parents": ["072b499fead8dbc2644e0e233da39bbae29c3d81"], "commit": null} -->
+- **Staged source tree:** `f6ad9beea52ba5ee5783b0bc340464ad29fcd625`. Commit: `7d34df94cd5ffee541e44ff5067412970d40ecb7`.
+<!-- montana-change {"id": "a8a25561-6259-4402-80cc-43f9e686c264", "utc": "2026-09-29T21:31:52+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2016 installed on T1 and T3", "os": "macOS (notes)", "summary": "council wall: redrawn with the rune seals", "tree": "f6ad9beea52ba5ee5783b0bc340464ad29fcd625", "parents": ["072b499fead8dbc2644e0e233da39bbae29c3d81"], "commit": "7d34df94cd5ffee541e44ff5067412970d40ecb7"} -->
 
 ### 2026-09-29T21:31:13+00:00 — council wall: the rune seal -- each record SHA-256 written in base 29 in the Gematria Primus runes of Liber Primus with its gematria sum as the check number
 
