@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T11:21:16+00:00 — Merge the main line (Montana OS drawer icons, 3e5149ac) into the chess and VPN work before it enters main
+
+- **Callsign / model:** Claude / fix/vpn-live-rule / Claude Opus 5.5.
+- **Build / OS:** source on main 3e5149ac + b7ad99ba (chess and VPN); not built, next artifact unassigned; iOS 17.2+ target; merged app typecheck (111 files, 0 errors), guards and PROVEN on macOS; no device. No new compilation or installation claimed.
+- **Staged source tree:** `061fe9f1b8c14efacc142f09662335d57c25131c`. Commit: pending.
+<!-- montana-change {"id": "6bd24fac-88e6-4ad2-afe5-bb6c2537d471", "utc": "2026-09-29T11:21:16+00:00", "callsign": "Claude / fix/vpn-live-rule", "model": "Claude Opus 5.5", "build": "source on main 3e5149ac + b7ad99ba (chess and VPN); not built, next artifact unassigned", "os": "iOS 17.2+ target; merged app typecheck (111 files, 0 errors), guards and PROVEN on macOS; no device", "summary": "Merge the main line (Montana OS drawer icons, 3e5149ac) into the chess and VPN work before it enters main", "tree": "061fe9f1b8c14efacc142f09662335d57c25131c", "parents": ["b7ad99ba64394bbb5e857d055f0f6ce650243cc8", "3e5149ac7e43251242abe127d289c2b09ac5c6a2"], "commit": null} -->
+
 ### 2026-09-29T11:19:22+00:00 — Merge: whole chess (invitation-only chat, tap starts the game, own-turn clocks, computer opponent) and VPN (kernel rule restart, a dead session releases the phone) for the main line
 
 - **Callsign / model:** Claude / fix/vpn-live-rule / Claude Opus 5.5.
