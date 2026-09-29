@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T13:37:03+00:00 — Merge the main line (99647323: the VPN gRPC verdict and power button, the sharp feed pictures, the call-screen fold, the white icons) into fix/chess-notices before it is fast-forwarded into the main line; no conflicts, the guard ring and the app typecheck green on the merged tree
+
+- **Callsign / model:** Claude / fix/chess-notices / Claude Fable 5.1.
+- **Build / OS:** 1992 planned from this source; not built yet, next artifact unassigned; targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `41dcd35b946ebf6c5171222ad6be812bb0ea8539`. Commit: pending.
+<!-- montana-change {"id": "cdfd8032-b70a-4f71-8fe6-0d495668e645", "utc": "2026-09-29T13:37:03+00:00", "callsign": "Claude / fix/chess-notices", "model": "Claude Fable 5.1", "build": "1992 planned from this source; not built yet, next artifact unassigned", "os": "targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host", "summary": "Merge the main line (99647323: the VPN gRPC verdict and power button, the sharp feed pictures, the call-screen fold, the white icons) into fix/chess-notices before it is fast-forwarded into the main line; no conflicts, the guard ring and the app typecheck green on the merged tree", "tree": "41dcd35b946ebf6c5171222ad6be812bb0ea8539", "parents": ["e914b6c03c490817a5f67482f408db62b146111b", "99647323cabc3242a9c5ad6c5e09c0e016e9752d"], "commit": null} -->
+
 ### 2026-09-29T13:27:37+00:00 — Chess: two notices only -- the invitation and the game over with the result; the closing letter rides loud and names its end; entering the board accepts the invitation on every road; the game chat opens by the app one road over the board instead of a sheet; the chess page stands under an open chat; Check! as the chess word
 
 - **Callsign / model:** Claude / fix/chess-notices / Claude Fable 5.1.
