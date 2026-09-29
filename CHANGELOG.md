@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T12:34:57+00:00 — Second merge of the main line (ac10e7da: the white application icons) into fix/vpn-protocols-and-ping after the first fast-forward was overtaken: no conflicts, the catalogue auto-merged. Guard ring green, swiftc -typecheck green for the Montana target on the merged tree. Ready to fast-forward the main line. Not built, not installed.
+
+- **Callsign / model:** Claude / fix/vpn-protocols-and-ping / Claude Fable 5.1.
+- **Build / OS:** source only; not built, next artifact unassigned; iOS 26.7 (T1) and iOS 18.3 (T3) targets; nothing installed. No new compilation or installation claimed.
+- **Staged source tree:** `a41c0f93eaa0f0eef71de1e3b0e13dee5ad8dbc4`. Commit: pending.
+<!-- montana-change {"id": "270fa77f-03ae-4a0c-b652-bc9489a133f2", "utc": "2026-09-29T12:34:57+00:00", "callsign": "Claude / fix/vpn-protocols-and-ping", "model": "Claude Fable 5.1", "build": "source only; not built, next artifact unassigned", "os": "iOS 26.7 (T1) and iOS 18.3 (T3) targets; nothing installed", "summary": "Second merge of the main line (ac10e7da: the white application icons) into fix/vpn-protocols-and-ping after the first fast-forward was overtaken: no conflicts, the catalogue auto-merged. Guard ring green, swiftc -typecheck green for the Montana target on the merged tree. Ready to fast-forward the main line. Not built, not installed.", "tree": "a41c0f93eaa0f0eef71de1e3b0e13dee5ad8dbc4", "parents": ["bc840985ffdb4870add5eb995a0d86ed75731fba", "ac10e7dae1b037ffd203da00bc9683ae3363f5b6"], "commit": null} -->
+
 ### 2026-09-29T12:29:44+00:00 — White icons: a third style in Appearance, Application icons, drawn as the 1990 drawer drew its rows (the bar's white glyphs, the logo in its ring for the feed, the globe, the chess icon, the glass symbol of the outer service), and the default; the feed's mark follows the chosen style. MTLibraryIconStyle.white and .initial, MTFeedMark beside the renderer, the catalogue in en, ru, zh-Hans, SETTINGS.md and Checklist/APP-LIBRARY.md.
 
 - **Callsign / model:** Claude / ui/white-icons / Claude Fable 5.1.
