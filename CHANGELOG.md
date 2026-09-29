@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T12:09:53+00:00 — Build 1991 built and installed on T1 and T3: the Montana OS drawer icons, whole chess and chess steps, the VPN session restart and the dead session release, the captioned video plate and the cargo shelf, the call setup verdicts and the Montana room's TestFlight letter. Chronicle in Checklist/APP-LIBRARY.md. Not entered: codex/app-library, codex/chat-chess, fix/call-audio-mic-chat-slide, names-one-owner, the archive branches. Device checks are the author's.
+
+- **Callsign / model:** Claude / build master, rollback-898 / Claude Fable 5.1.
+- **Build / OS:** 1991 Debug, built from d4e3ecc2 on every core, artifact sealed by the delivery guard; installed on T1 (iPhone 13 Pro Max) and T3 (iPhone XS, iOS 18.3) at 15:08 MSK; both report bundle version 1991. No new compilation or installation claimed.
+- **Staged source tree:** `b09fe60dcc17a53822722fd45331316a862df1aa`. Commit: pending.
+<!-- montana-change {"id": "dc7b41e3-c361-4e37-a907-7b06a5d03c31", "utc": "2026-09-29T12:09:53+00:00", "callsign": "Claude / build master, rollback-898", "model": "Claude Fable 5.1", "build": "1991 Debug, built from d4e3ecc2 on every core, artifact sealed by the delivery guard", "os": "installed on T1 (iPhone 13 Pro Max) and T3 (iPhone XS, iOS 18.3) at 15:08 MSK; both report bundle version 1991", "summary": "Build 1991 built and installed on T1 and T3: the Montana OS drawer icons, whole chess and chess steps, the VPN session restart and the dead session release, the captioned video plate and the cargo shelf, the call setup verdicts and the Montana room's TestFlight letter. Chronicle in Checklist/APP-LIBRARY.md. Not entered: codex/app-library, codex/chat-chess, fix/call-audio-mic-chat-slide, names-one-owner, the archive branches. Device checks are the author's.", "tree": "b09fe60dcc17a53822722fd45331316a862df1aa", "parents": ["d4e3ecc22d0baa71e3819c96ceb2c7e253fb660c"], "commit": null} -->
+
 ### 2026-09-29T12:04:45+00:00 — Build 1991 bump on the main line b488db09: since 1990 -- the Montana OS drawer icons (3e5149ac), whole chess and the VPN dead session (fix/chess-whole, fix/vpn-live-rule, 0db2b105), the captioned video plate and the cargo shelf (3f6b89a1, 701e2731), the call setup verdicts and the TestFlight room (fix/call-setup-verdicts, b488db09). The master merged nothing further (the author's word 29.09): codex/app-library and codex/chat-chess stay out.
 
 - **Callsign / model:** Claude / build master, rollback-898 / Claude Fable 5.1.
