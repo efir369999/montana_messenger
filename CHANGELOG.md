@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T17:33:35+00:00 — build 2001 bump on rollback-898 = e9aa354c: the mini player's buttons switch the track before and after, every button in the system ring, the name plate's swipe seeks without fighting the pages' swipe (claude-10); one folding rule for any call, the window over other apps armed for a voice call too (fix/call-fold-pip 2fefcf4e, claude-60). Fast-forwards only, one branch at a time; not built yet at this record.
+
+- **Callsign / model:** Claude / build-master (claude-10) / Claude Fable 5.1.
+- **Build / OS:** 2001 source; the Debug artifact follows this record; iOS 17.2+ target; to be installed on T1 (iOS 26.7) and T3 (iOS 18.3, unreachable so far). No new compilation or installation claimed.
+- **Staged source tree:** `c598dc88aec97552a36b2b55a69473c52340891c`. Commit: pending.
+<!-- montana-change {"id": "1572dafc-f9b3-4c58-a4b3-0259b934425a", "utc": "2026-09-29T17:33:35+00:00", "callsign": "Claude / build-master (claude-10)", "model": "Claude Fable 5.1", "build": "2001 source; the Debug artifact follows this record", "os": "iOS 17.2+ target; to be installed on T1 (iOS 26.7) and T3 (iOS 18.3, unreachable so far)", "summary": "build 2001 bump on rollback-898 = e9aa354c: the mini player's buttons switch the track before and after, every button in the system ring, the name plate's swipe seeks without fighting the pages' swipe (claude-10); one folding rule for any call, the window over other apps armed for a voice call too (fix/call-fold-pip 2fefcf4e, claude-60). Fast-forwards only, one branch at a time; not built yet at this record.", "tree": "c598dc88aec97552a36b2b55a69473c52340891c", "parents": ["e9aa354c2b6bd5e5d18a60858845eadc18365e88"], "commit": null} -->
+
 ### 2026-09-29T17:32:50+00:00 — mini player, the author's correction on 2000: the two buttons switch to the track before and the track after (the queue's own prev/next, backward.fill/forward.fill), for a track alone, the fifteen-second skips removed; every button of the bar wears the system blue ring as the play and the plate do; the name plate keeps seeking by a swipe and no longer fights the pages' swipe -- the slider is a horizontal owner (MTHorizontalOwning, a protocol shared with the call pill's MTHorizontalOwner) so the tabs' pan gives way at the touch over it. Typecheck rc 0, ring 1 and guards green; not built.
 
 - **Callsign / model:** Claude / fix/mini-seek-and-hold-menu / Claude Fable 5.1.
