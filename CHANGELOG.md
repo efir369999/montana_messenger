@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T12:44:21+00:00 — Merge: the main line (the VPN protocols and batch ping work, 59d247c9) into the call-screen branch (c433dedf: the tap switch as its own layer, the picture refusing touches, the six-second fold owned by the call model). No conflicts; no file shared between the sides. Verified on the merged tree: guard ring 13 of 13 green, app-module typecheck 111 files exit 0. Not built, not run on a device.
+
+- **Callsign / model:** Claude / fix/call-chrome-ios17-autofold / Claude Fable 5.1.
+- **Build / OS:** 1991 source; not built, next artifact unassigned; iOS 17.2 floor; app-module typecheck on macOS only, no device run. No new compilation or installation claimed.
+- **Staged source tree:** `3f89fbf2a293ed6104c0dd267387c395434ecffc`. Commit: pending.
+<!-- montana-change {"id": "4e837b74-4d64-4c87-867c-4088bd3b41f5", "utc": "2026-09-29T12:44:21+00:00", "callsign": "Claude / fix/call-chrome-ios17-autofold", "model": "Claude Fable 5.1", "build": "1991 source; not built, next artifact unassigned", "os": "iOS 17.2 floor; app-module typecheck on macOS only, no device run", "summary": "Merge: the main line (the VPN protocols and batch ping work, 59d247c9) into the call-screen branch (c433dedf: the tap switch as its own layer, the picture refusing touches, the six-second fold owned by the call model). No conflicts; no file shared between the sides. Verified on the merged tree: guard ring 13 of 13 green, app-module typecheck 111 files exit 0. Not built, not run on a device.", "tree": "3f89fbf2a293ed6104c0dd267387c395434ecffc", "parents": ["c433dedf89f34483000ad2d647492fa42dd7b24e", "59d247c981e300aafaeb582b1b5bdfa92e219d18"], "commit": null} -->
+
 ### 2026-09-29T12:40:08+00:00 — Video call buttons: the tap switch over the picture is a layer of its own in the stack and the picture view refuses touches (on iOS 17 a tap hung as an overlay on the platform video view never fired: the tablet on 17.7.11 wrote zero switch lines over nine video calls while every phone on 18 and later wrote hundreds); the buttons fold by themselves six seconds after they were last shown while the call is connected and the pictures flow, owned by the call model alone (one main-queue work item, dropped on fold, screen share, a standing question or the app leaving; the app's return starts a new one). Verified: guard ring 13 of 13 green, app-module typecheck exit 0 on the tree merged with main ac10e7da; not built, not run on a device.
 
 - **Callsign / model:** Claude / fix/call-chrome-ios17-autofold / Claude Fable 5.1.
