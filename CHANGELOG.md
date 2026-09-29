@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T23:33:39+00:00 — Clean merge of the main line aa91a596 into stage/second-identity-2: the tree equals the main line, the lineage only
+
+- **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
+- **Build / OS:** 2018 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
+- **Staged source tree:** `44182527e2f8ff5c6e17bbac2ceb75d26506c547`. Commit: pending.
+<!-- montana-change {"id": "cd777fa4-710c-4ea2-b736-cba652e85ab9", "utc": "2026-09-29T23:33:39+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Clean merge of the main line aa91a596 into stage/second-identity-2: the tree equals the main line, the lineage only", "tree": "44182527e2f8ff5c6e17bbac2ceb75d26506c547", "parents": ["01a5eb7981c8ff0d4a6970750a75724fd8a4f40a", "aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": null} -->
+
 ### 2026-09-29T23:24:46+00:00 — wall: a post written on a friend's wall stands as a card in the pair's chat on both phones; one birth, keyed by the post id, no new wire word
 
 - **Callsign / model:** claude-9e/wall-post-chat / Claude Opus 5.5.
