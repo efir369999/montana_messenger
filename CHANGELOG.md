@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
 - **Build / OS:** not built; branch fix/player-cover-keys-copy over build 2012; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
-- **Staged source tree:** `64259ed4dd0424a59ea2b07a65a08fb18bec23d8`. Commit: pending.
-<!-- montana-change {"id": "84b63f74-9d5c-4dd4-b1dd-a97f5184a79b", "utc": "2026-09-29T21:19:52+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "Merge rollback-898 (be64bf79) into fix/player-cover-keys-copy before the master fast-forward", "tree": "64259ed4dd0424a59ea2b07a65a08fb18bec23d8", "parents": ["8f331fe88f316f8276c9181addd2c216ec9b2664", "be64bf79c242e8d6bf06176396fa2939b3d766dc"], "commit": null} -->
+- **Staged source tree:** `64259ed4dd0424a59ea2b07a65a08fb18bec23d8`. Commit: `e4ef2c4936e6c91528168f057a64c1dd74befe0c`.
+<!-- montana-change {"id": "84b63f74-9d5c-4dd4-b1dd-a97f5184a79b", "utc": "2026-09-29T21:19:52+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "Merge rollback-898 (be64bf79) into fix/player-cover-keys-copy before the master fast-forward", "tree": "64259ed4dd0424a59ea2b07a65a08fb18bec23d8", "parents": ["8f331fe88f316f8276c9181addd2c216ec9b2664", "be64bf79c242e8d6bf06176396fa2939b3d766dc"], "commit": "e4ef2c4936e6c91528168f057a64c1dd74befe0c"} -->
 
 ### 2026-09-29T21:19:27+00:00 — Merge rollback-898 08930981 into fix/outer-shell-native before the master fast-forward; no conflicts, no code in the merge
 
