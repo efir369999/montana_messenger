@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:32:36+00:00 — music: where a track lies is never said -- the line under its name is the artist its own tags name, or nothing
+
+- **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/player-cover-keys-copy over build 2012; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
+- **Staged source tree:** `e8e4e46fabd0f81a291b36eef32f6f11350976af`. Commit: pending.
+<!-- montana-change {"id": "76b1454a-ef31-44ad-b763-d8660afd1826", "utc": "2026-09-29T20:32:36+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "music: where a track lies is never said -- the line under its name is the artist its own tags name, or nothing", "tree": "e8e4e46fabd0f81a291b36eef32f6f11350976af", "parents": ["a524027e5928f987996e2c4b7451425fa23ad25f"], "commit": null} -->
+
 ### 2026-09-29T20:32:12+00:00 — Merge rollback-898 82a5ffc0 into fix/chat-list-late-dots before the master fast-forward
 
 - **Callsign / model:** claude-9e council builder (chat-list-dots) / claude-opus-5-5.
