@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:00:09+00:00 — Merge rollback-898 cea6b56b into fix/favorites-avatar-owner (the one own-face view MTSelfFace) before the master fast-forward: ring 1 green, app module typecheck green
+
+- **Callsign / model:** claude-9e council builder (fav-avatar) / claude-opus-5-5.
+- **Build / OS:** over 2018 (rollback-898 cea6b56b), not built; macOS, Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `1b0dcd258e300374ebbb6f2586de958b1a89595c`. Commit: pending.
+<!-- montana-change {"id": "28c40f11-d594-4d68-8216-bd106c0b4946", "utc": "2026-09-29T22:00:09+00:00", "callsign": "claude-9e council builder (fav-avatar)", "model": "claude-opus-5-5", "build": "over 2018 (rollback-898 cea6b56b), not built", "os": "macOS, Darwin 25.6.0", "summary": "Merge rollback-898 cea6b56b into fix/favorites-avatar-owner (the one own-face view MTSelfFace) before the master fast-forward: ring 1 green, app module typecheck green", "tree": "1b0dcd258e300374ebbb6f2586de958b1a89595c", "parents": ["e7f03a376afc7433383eb3df1c358662cc69bab5", "cea6b56b9208ef3bcbe1879baab3cf25dcdd3e10"], "commit": null} -->
+
 ### 2026-09-29T21:59:48+00:00 — VPN wall road: on the tunnel dead mark with the VPN off, the line is measured afresh; under the permitted list the wall rows race six at a time on the phone own engine and the fastest of the first live batch rises by the ordinary start; the person hand stands ten minutes; the page says what happened in the person language
 
 - **Callsign / model:** claude-9e builder / vpn-wall-whitelist-auto / Claude Opus 5.5.
