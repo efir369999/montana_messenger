@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:49:28+00:00 — Merge of the main line (28bd552b: the share sheet's system suggestion sends at once) into fix/chess-instant-and-end (01460def: the board holds its own lane to the node so a correspondent's move lands at once; End game in the board's menu), before the master's fast-forward of the main line. No conflicts (tools/mt-proven-check.sh auto-merged). On the merged tree: build checks ring, pre-commit gate and lock guard green; swiftc typecheck of Montana and MontanaNSE rc 0. Not built, not installed.
+
+- **Callsign / model:** Claude / fix/chess-instant-and-end / Claude Fable 5.1.
+- **Build / OS:** 1997 source; not built, next artifact 1998; iOS 26.7 and 18.3 targets (T1, T3); not installed. No new compilation or installation claimed.
+- **Staged source tree:** `992f914dfbc4d25bcebdb033f34f1ea14d269b38`. Commit: pending.
+<!-- montana-change {"id": "840cb75e-a8d5-4d3b-8e36-12cc5e5b54ad", "utc": "2026-09-29T15:49:28+00:00", "callsign": "Claude / fix/chess-instant-and-end", "model": "Claude Fable 5.1", "build": "1997 source; not built, next artifact 1998", "os": "iOS 26.7 and 18.3 targets (T1, T3); not installed", "summary": "Merge of the main line (28bd552b: the share sheet's system suggestion sends at once) into fix/chess-instant-and-end (01460def: the board holds its own lane to the node so a correspondent's move lands at once; End game in the board's menu), before the master's fast-forward of the main line. No conflicts (tools/mt-proven-check.sh auto-merged). On the merged tree: build checks ring, pre-commit gate and lock guard green; swiftc typecheck of Montana and MontanaNSE rc 0. Not built, not installed.", "tree": "992f914dfbc4d25bcebdb033f34f1ea14d269b38", "parents": ["01460defde63476711e2acd2db2e5d0079740a02", "28bd552bcdb0c98c1886e0de59227cad932789f3"], "commit": null} -->
+
 ### 2026-09-29T15:45:40+00:00 — Merge of the main line (c5d34108: build 1997 and its chronicle) into fix/vpn-ping-grpc-ams (79a44dcf: the wall order), no conflicts; ring and typecheck green on the merged tree. The master waits for the three sessions named by the author before build 1998.
 
 - **Callsign / model:** Claude / fix/vpn-ping-grpc-ams / Claude Fable 5.1.
