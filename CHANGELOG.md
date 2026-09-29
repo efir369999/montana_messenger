@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:55:08+00:00 — Big player: the row placeholder onto build 2019's cover -- the icon in its own shape drawn down once to a row's pixels; the cover tap handed to its own branch
+
+- **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
+- **Build / OS:** 2018 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
+- **Staged source tree:** `204bd97a70f7411d04c34ac580aeeed4e6b9d401`. Commit: pending.
+<!-- montana-change {"id": "d64944a8-eb91-486e-8bcc-d1a35921f667", "utc": "2026-09-29T22:55:08+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Big player: the row placeholder onto build 2019's cover -- the icon in its own shape drawn down once to a row's pixels; the cover tap handed to its own branch", "tree": "204bd97a70f7411d04c34ac580aeeed4e6b9d401", "parents": ["f09d292500f04f52fd43f371e82928ec97594ad1"], "commit": null} -->
+
 ### 2026-09-29T22:54:05+00:00 — fix/chess-menu-score: the board menu gets New game (the plate own again, one rule nextGame) under the pair score header; both in the chat -- a fresh invitation from the correspondent raises its board at once (chat) or moves a finished board onto it; no new wire word
 
 - **Callsign / model:** claude-9e-chess-menu / claude-opus-5-5.
