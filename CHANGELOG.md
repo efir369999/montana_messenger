@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e / claude-opus-5-5.
 - **Build / OS:** none -- branch stage/36-avatar-mask, not built; macOS 26 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `8168e0640ed0d59d8cf8643e3fa686c8d0fdea08`. Commit: pending.
-<!-- montana-change {"id": "f9dbcdce-b75f-4460-ab85-120dc0261570", "utc": "2026-09-29T23:09:13+00:00", "callsign": "claude-9e", "model": "claude-opus-5-5", "build": "none -- branch stage/36-avatar-mask, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "stage 36.1: the avatar mask of a video call -- Vision face tracking on the call's own camera frames, a SceneKit probe look drawn through Metal, the frames replace the camera's at the one camera-to-source door; the mask mark in the call's top row", "tree": "8168e0640ed0d59d8cf8643e3fa686c8d0fdea08", "parents": ["be86e887818f2e0e98608e6b485da411a0a8bfb6"], "commit": null} -->
+- **Staged source tree:** `8168e0640ed0d59d8cf8643e3fa686c8d0fdea08`. Commit: `c98a92d589e3d9ddd12057ed7f9fef654293c2fd`.
+<!-- montana-change {"id": "f9dbcdce-b75f-4460-ab85-120dc0261570", "utc": "2026-09-29T23:09:13+00:00", "callsign": "claude-9e", "model": "claude-opus-5-5", "build": "none -- branch stage/36-avatar-mask, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "stage 36.1: the avatar mask of a video call -- Vision face tracking on the call's own camera frames, a SceneKit probe look drawn through Metal, the frames replace the camera's at the one camera-to-source door; the mask mark in the call's top row", "tree": "8168e0640ed0d59d8cf8643e3fa686c8d0fdea08", "parents": ["be86e887818f2e0e98608e6b485da411a0a8bfb6"], "commit": "c98a92d589e3d9ddd12057ed7f9fef654293c2fd"} -->
 
 ### 2026-09-29T23:07:24+00:00 — fix/feed-wall-of-thoughts: the common feed of the posts on the walls is named the Wall of Thoughts (the author's word 30.09) -- the application title key Feed becomes Wall of Thoughts: ru Стена Мыслей, zh-Hans 思想之墙; a person's own wall and the VPN, mesh and P2P walls keep their names; identifiers and wire words untouched
 
