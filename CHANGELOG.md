@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:41:37+00:00 — build 2013 bump: the time logo carries no sending mark (fix/time-logo-no-send-badge) and a media batch has one status by its most lagging letter in the chat, its mark, the menu and the chats list (fix/chat-list-late-dots)
+
+- **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
+- **Build / OS:** 2013 (Debug, bump; artifact not built yet); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `19bc862f037d7332356115790b3ed22ceeedcc28`. Commit: pending.
+<!-- montana-change {"id": "950e2a9f-1025-44aa-8bc9-a045448ddb7d", "utc": "2026-09-29T20:41:37+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2013 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2013 bump: the time logo carries no sending mark (fix/time-logo-no-send-badge) and a media batch has one status by its most lagging letter in the chat, its mark, the menu and the chats list (fix/chat-list-late-dots)", "tree": "19bc862f037d7332356115790b3ed22ceeedcc28", "parents": ["5a61e7a919b37a9a00b6617cc469e0c953e07422"], "commit": null} -->
+
 ### 2026-09-29T20:39:59+00:00 — Merge rollback-898 b542c701 into fix/chat-list-late-dots before the master fast-forward
 
 - **Callsign / model:** claude-9e council builder (chat-list-dots) / claude-opus-5-5.
