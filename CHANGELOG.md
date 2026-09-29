@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:34:55+00:00 — Merge rollback-898 (f3de66ce, build 2019) into fix/feeds-scroll-top: the main line's cover (the lock screen's whole cover, the icon in its own shape) under the lists' arrow and the big player's filter
+
+- **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
+- **Build / OS:** 2018 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
+- **Staged source tree:** `b0d8f8ff740548088e03d5cbfd7ee1a877416e1b`. Commit: pending.
+<!-- montana-change {"id": "eced1876-cf39-40aa-a8ee-b93793faf318", "utc": "2026-09-29T22:34:55+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Merge rollback-898 (f3de66ce, build 2019) into fix/feeds-scroll-top: the main line's cover (the lock screen's whole cover, the icon in its own shape) under the lists' arrow and the big player's filter", "tree": "b0d8f8ff740548088e03d5cbfd7ee1a877416e1b", "parents": ["37421d78698b5c4f14e2317059512c2d3847d41a", "f3de66ce0bed4e944e5910624099388251541a9f"], "commit": null} -->
+
 ### 2026-09-29T22:32:30+00:00 — Onboarding: nobody is replaced, a seated person is parked; the one door refuses to write a seed over another
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
