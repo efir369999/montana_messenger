@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:24:01+00:00 — Merge of the main line (build 2008, 6158f9ec) into fix/share-to-my-wall before the master's fast-forward: no conflict; guard ring green and typecheck of the app, share and notification modules exit 0 on the merged tree. Not built, not installed.
+
+- **Callsign / model:** Claude claude-f5 / fix/share-to-my-wall / Claude Opus 5.5.
+- **Build / OS:** main line 2008 merged in; not built, next artifact unassigned; iOS 17.2+ app, share and notification extension targets: typecheck only, not installed. No new compilation or installation claimed.
+- **Staged source tree:** `901fc7d046348a06cff427e9692b43ebd97c1369`. Commit: pending.
+<!-- montana-change {"id": "7b258a1c-91f6-406c-9070-bcc46121c651", "utc": "2026-09-29T19:24:01+00:00", "callsign": "Claude claude-f5 / fix/share-to-my-wall", "model": "Claude Opus 5.5", "build": "main line 2008 merged in; not built, next artifact unassigned", "os": "iOS 17.2+ app, share and notification extension targets: typecheck only, not installed", "summary": "Merge of the main line (build 2008, 6158f9ec) into fix/share-to-my-wall before the master's fast-forward: no conflict; guard ring green and typecheck of the app, share and notification modules exit 0 on the merged tree. Not built, not installed.", "tree": "901fc7d046348a06cff427e9692b43ebd97c1369", "parents": ["2183eafbeab200507c10519c80fec1e35ed04cbe", "2f63ea51ef17a75fed4c720da918eceda3ee562b"], "commit": null} -->
+
 ### 2026-09-29T19:21:32+00:00 — Share sheet: one's own wall is the first circle; chosen, the caption is the post's words and the files go to the handoff shelf as their source gave them; the app takes the record into the wall as a new post (MTBoard.begin) and lays it on the node (publish). Verified: guard ring (draft P-118.9), language gate and typecheck of the app, share and notification modules; not verified on a device. Supersedes record 1912e7b7 (a diary word marked NOT-UI).
 
 - **Callsign / model:** Claude claude-f5 / fix/share-to-my-wall / Claude Opus 5.5.
