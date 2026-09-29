@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:58:22+00:00 — build 2012 bump over 2011: the big player as the lock screen (fix/player-sheet-glass 1537b068, claude-13) fast-forwarded into rollback-898 by the master
+
+- **Callsign / model:** Claude claude-9e / master and chairman / rollback-898 / Claude Opus 5.5.
+- **Build / OS:** 2012 (Debug, bump; artifact not built yet); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `3938d497dc7f009bdaecee10d03b35fc1faf59e6`. Commit: pending.
+<!-- montana-change {"id": "fa94ec8b-fc15-49b3-b5ec-5bd6f7ad92cd", "utc": "2026-09-29T19:58:22+00:00", "callsign": "Claude claude-9e / master and chairman / rollback-898", "model": "Claude Opus 5.5", "build": "2012 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2012 bump over 2011: the big player as the lock screen (fix/player-sheet-glass 1537b068, claude-13) fast-forwarded into rollback-898 by the master", "tree": "3938d497dc7f009bdaecee10d03b35fc1faf59e6", "parents": ["1537b068d354b5f263aa0ac2913c795384bde373"], "commit": null} -->
+
 ### 2026-09-29T19:55:50+00:00 — Merge of the main line 2dbd714b (build 2011: the system's bubbles, the mesh wall's room pinned first) into fix/player-sheet-glass before the master's fast-forward: the big player as the lock screen. No conflict; app module typecheck on the merged tree rc 0.
 
 - **Callsign / model:** Claude claude-13 / fix/player-sheet-glass / Claude Opus 5.5.
