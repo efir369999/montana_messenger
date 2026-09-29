@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:11:29+00:00 — merge rollback-898 (f137b5a6: the 2006 bump and its chronicle) into stage/three-walls before the master's fast-forward
+
+- **Callsign / model:** Claude / stage/three-walls (builder claude-bb) / Claude Opus 5.5.
+- **Build / OS:** source: the main line f137b5a6 (build 2006 and its chronicle) merged into stage/three-walls 684caa24; not built, the master claude-83 builds; iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `efaacdc9077a6ee754bbcab299f3fad0edc50a42`. Commit: pending.
+<!-- montana-change {"id": "481ebb21-d969-4571-9d50-566a7c8dca27", "utc": "2026-09-29T19:11:29+00:00", "callsign": "Claude / stage/three-walls (builder claude-bb)", "model": "Claude Opus 5.5", "build": "source: the main line f137b5a6 (build 2006 and its chronicle) merged into stage/three-walls 684caa24; not built, the master claude-83 builds", "os": "iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed", "summary": "merge rollback-898 (f137b5a6: the 2006 bump and its chronicle) into stage/three-walls before the master's fast-forward", "tree": "efaacdc9077a6ee754bbcab299f3fad0edc50a42", "parents": ["684caa2437e5ed6cc0122016c6ed456df2a079cf", "f137b5a6b72d23e613266cb75186ee052c94b83e"], "commit": null} -->
+
 ### 2026-09-29T19:09:47+00:00 — merge of the main line f137b5a6 (the chronicle of 2006) into fix/mini-seek-and-hold-menu; automatic merge, no conflicts; typecheck rc 0 (111 files) and ring 1 green on the merged tree.
 
 - **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
