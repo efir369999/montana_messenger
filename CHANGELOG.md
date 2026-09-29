@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:17:28+00:00 — council wall: IronClaw stage 1 verified, the watch lock and its lesson, the wall media decision, the outer service hand list
+
+- **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
+- **Build / OS:** 2015 installed on T1; next unassigned; macOS (notes). No new compilation or installation claimed.
+- **Staged source tree:** `2da954d2fc5697e16833a0e3cd9f8d8e5c14dbdb`. Commit: pending.
+<!-- montana-change {"id": "9a19c016-aa38-4f22-8132-b1b83240ad72", "utc": "2026-09-29T21:17:28+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2015 installed on T1; next unassigned", "os": "macOS (notes)", "summary": "council wall: IronClaw stage 1 verified, the watch lock and its lesson, the wall media decision, the outer service hand list", "tree": "2da954d2fc5697e16833a0e3cd9f8d8e5c14dbdb", "parents": ["be64bf79c242e8d6bf06176396fa2939b3d766dc"], "commit": null} -->
+
 ### 2026-09-29T21:17:23+00:00 — Seats: a parked person's wall drafts park with the seat; the wall rereads on a lift only
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
