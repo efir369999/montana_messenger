@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:00:43+00:00 — outer shell checklist, section 11: the measurement 'function, before, after' with file and line, the named deviations, the author's hand (own API credentials, the APNs certificate in the service's application settings, the store description, the door icon), what to check on the device; the chronicle of the pass
+
+- **Callsign / model:** claude-9e council / outer-native / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/outer-shell-native over build 2012; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
+- **Staged source tree:** `8d71b2ce436641e3363dd91f6815cfcc13c795f7`. Commit: pending.
+<!-- montana-change {"id": "549fa9ab-d1bc-4d16-a289-33d6b134bc8a", "utc": "2026-09-29T21:00:43+00:00", "callsign": "claude-9e council / outer-native", "model": "Claude Opus 5.5", "build": "not built; branch fix/outer-shell-native over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "outer shell checklist, section 11: the measurement 'function, before, after' with file and line, the named deviations, the author's hand (own API credentials, the APNs certificate in the service's application settings, the store description, the door icon), what to check on the device; the chronicle of the pass", "tree": "8d71b2ce436641e3363dd91f6815cfcc13c795f7", "parents": ["002ba31ce2402c2345777e06a06146f8204400ae"], "commit": null} -->
+
 ### 2026-09-29T21:00:10+00:00 — build 2015 bump: the composition planned for 2014 -- the path to the chats in one glass style; 2014 was refused before sealing because the master wrote the wall into the main tree during the build
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
