@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:32:13+00:00 — Merge rollback-898 e7af3a04 (build 2016, the player) into fix/outer-shell-native before the master fast-forward; no conflicts, no code in the merge
+
+- **Callsign / model:** claude-9e council / outer-native / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/outer-shell-native over the main line e7af3a04 (2016); macOS (Darwin 25.6.0); the merged tree typechecked and ring-1 green; no device. No new compilation or installation claimed.
+- **Staged source tree:** `485a3d692ae7dacc577ea6632893695c9ff4b70a`. Commit: pending.
+<!-- montana-change {"id": "19bc6df6-7d5f-4fd7-9900-38322d0359f3", "utc": "2026-09-29T21:32:13+00:00", "callsign": "claude-9e council / outer-native", "model": "Claude Opus 5.5", "build": "not built; branch fix/outer-shell-native over the main line e7af3a04 (2016)", "os": "macOS (Darwin 25.6.0); the merged tree typechecked and ring-1 green; no device", "summary": "Merge rollback-898 e7af3a04 (build 2016, the player) into fix/outer-shell-native before the master fast-forward; no conflicts, no code in the merge", "tree": "485a3d692ae7dacc577ea6632893695c9ff4b70a", "parents": ["e73f98a3cb3027cd84c54c0963ff79b8698a9419", "e7af3a04798a018f6cee1249c9bf4fd667a1eae8"], "commit": null} -->
+
 ### 2026-09-29T21:31:52+00:00 — council wall: redrawn with the rune seals
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
