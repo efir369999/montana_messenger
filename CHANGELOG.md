@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T13:27:37+00:00 — Chess: two notices only -- the invitation and the game over with the result; the closing letter rides loud and names its end; entering the board accepts the invitation on every road; the game chat opens by the app one road over the board instead of a sheet; the chess page stands under an open chat; Check! as the chess word
+
+- **Callsign / model:** Claude / fix/chess-notices / Claude Fable 5.1.
+- **Build / OS:** 1992 planned from this source; not built yet, next artifact unassigned; targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `57235e378876c5b3ff43a561e9c372dbb8652a9a`. Commit: pending.
+<!-- montana-change {"id": "9b84dee3-b386-4685-abfd-bf4f9bfa57f1", "utc": "2026-09-29T13:27:37+00:00", "callsign": "Claude / fix/chess-notices", "model": "Claude Fable 5.1", "build": "1992 planned from this source; not built yet, next artifact unassigned", "os": "targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host", "summary": "Chess: two notices only -- the invitation and the game over with the result; the closing letter rides loud and names its end; entering the board accepts the invitation on every road; the game chat opens by the app one road over the board instead of a sheet; the chess page stands under an open chat; Check! as the chess word", "tree": "57235e378876c5b3ff43a561e9c372dbb8652a9a", "parents": ["c80efc7d473a5326cd2443260effc5a421377fc0"], "commit": null} -->
+
 ### 2026-09-29T13:09:49+00:00 — The critic's two notes on the feed's pictures, fixed on the author's word: a piece every door called gone is believed gone for an hour (MontanaWakePush.goneTerm), not for the whole run -- a poster stood for good until a relaunch; a look at a picture the phone keeps moves its file date to now off the main thread (MTBoardLook.touched), so the folder lets go the least looked at, not the earliest brought, and the node carries a picture again only past the folder's bound. Chronicle in the transport checklist.
 
 - **Callsign / model:** Claude / fix/gone-term-and-look-touch / Claude Fable 5.1.
