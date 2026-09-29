@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:49:29+00:00 — bubbles: the system's own -- mine the platform's flat blue, theirs the platform's grey, white words on both, no gradient, no glass, no rim (the author's word 29.09)
+
+- **Callsign / model:** claude-83 / claude-opus-5-5.
+- **Build / OS:** none (source only; the master builds it next as 2011); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `b82896a3ce4c804340256747e337548a20d19bd4`. Commit: pending.
+<!-- montana-change {"id": "ce96d573-465d-4e69-828a-25035d7402e4", "utc": "2026-09-29T19:49:29+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "none (source only; the master builds it next as 2011)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "bubbles: the system's own -- mine the platform's flat blue, theirs the platform's grey, white words on both, no gradient, no glass, no rim (the author's word 29.09)", "tree": "b82896a3ce4c804340256747e337548a20d19bd4", "parents": ["548810ff7d7ddeed4f9e103d61be54ec4bd891a5"], "commit": null} -->
+
 ### 2026-09-29T19:47:55+00:00 — the mesh wall's cell by the mesh's own rule (the critic's pass 29.09, before the room's first build): a cell nobody passed on ends with a seal count of zero, or a long word ending in a full stop lost its tail; a word is named by its content, so a replay under a new cell id lays nothing twice; the phone passes on at most 120 words of the room a minute whatever marks they wear
 
 - **Callsign / model:** Claude / stage/three-walls (builder claude-bb) / Claude Opus 5.5.
