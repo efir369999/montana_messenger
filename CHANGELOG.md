@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:29:28+00:00 — checklist: the chronicle of 2009 -- My wall in the share sheet; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)
+
+- **Callsign / model:** claude-83 / claude-opus-5-5.
+- **Build / OS:** 2009 (installed on T1); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `3e142e490de6414cf5300a4276b98d0028fe5399`. Commit: pending.
+<!-- montana-change {"id": "ca1f938a-dd7d-40ef-9351-e317ff740ffe", "utc": "2026-09-29T19:29:28+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2009 (installed on T1)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "checklist: the chronicle of 2009 -- My wall in the share sheet; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)", "tree": "3e142e490de6414cf5300a4276b98d0028fe5399", "parents": ["13243c58830bd41ecdfb45bf54592e761feb754f"], "commit": null} -->
+
 ### 2026-09-29T19:28:56+00:00 — merge rollback-898 (24471468) into stage/three-walls, the mesh wall's step 1, before the master's fast-forward; no conflicts
 
 - **Callsign / model:** Claude / stage/three-walls (builder claude-bb) / Claude Opus 5.5.
