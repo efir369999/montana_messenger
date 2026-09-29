@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:35:14+00:00 — Merge rollback-898 7d34df94 (the council wall with its rune seal, CouncilWall only) into fix/wall-media-viewer before the master fast-forward; guard ring green on the merged tree
+
+- **Callsign / model:** claude-9e council / wall-media / Claude Opus 5.5.
+- **Build / OS:** 2016 main line merged; not built; iOS 26 / 17.2 target. No new compilation or installation claimed.
+- **Staged source tree:** `f8e0ef9925ce70588a5ab16d139f28a898310c4a`. Commit: pending.
+<!-- montana-change {"id": "4b2a5f77-81e3-45c5-af4c-162be64be338", "utc": "2026-09-29T21:35:14+00:00", "callsign": "claude-9e council / wall-media", "model": "Claude Opus 5.5", "build": "2016 main line merged; not built", "os": "iOS 26 / 17.2 target", "summary": "Merge rollback-898 7d34df94 (the council wall with its rune seal, CouncilWall only) into fix/wall-media-viewer before the master fast-forward; guard ring green on the merged tree", "tree": "f8e0ef9925ce70588a5ab16d139f28a898310c4a", "parents": ["58b444df779de88625c54f18e185f0d88db58bcd", "7d34df94cd5ffee541e44ff5067412970d40ecb7"], "commit": null} -->
+
 ### 2026-09-29T21:35:08+00:00 — build 2017 bump: the outer service shell -- media in the conversation, sending albums, files and voices, history paging, chats search, channels, presence and typing, new message and sign out
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
