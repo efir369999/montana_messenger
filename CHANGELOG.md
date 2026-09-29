@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:14:47+00:00 — merge of the main line df6ef826 (the three walls and the build 2007 bump) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 (111 files), ring 1, the 44-point target and language guards green on the merged tree.
+
+- **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
+- **Build / OS:** source only; not built (the master builds); iOS 17.2+ target (Debug typecheck on macOS); not installed. No new compilation or installation claimed.
+- **Staged source tree:** `2f881257cb2b3355b340d62456951da1a36c8164`. Commit: pending.
+<!-- montana-change {"id": "b3a8cda1-93aa-49c2-8ba5-8370e5b8a068", "utc": "2026-09-29T19:14:47+00:00", "callsign": "Claude / fix/mini-seek-and-hold-menu (builder for claude-83)", "model": "Claude Opus 5.5", "build": "source only; not built (the master builds)", "os": "iOS 17.2+ target (Debug typecheck on macOS); not installed", "summary": "merge of the main line df6ef826 (the three walls and the build 2007 bump) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 (111 files), ring 1, the 44-point target and language guards green on the merged tree.", "tree": "2f881257cb2b3355b340d62456951da1a36c8164", "parents": ["c13bed26db1f27481f6916b7dd7b5f8bcdfa8721", "df6ef826b37efcb64511353b8529250b441ac5c9"], "commit": null} -->
+
 ### 2026-09-29T19:12:31+00:00 — the big player's glass, the author's word on 2006 (no liquid glass at all): the SwiftUI sheet with the glass as its presentation background never showed the glass. The player and its playlist now rise by MTGlassPage -- the road the new post's page proved on 25.09: the platform's page sheet hosted by itself through MTTop, the host's view clear, the dark look, the grabber, the glass under the page by MTGlassSheet (now with a clear variant: the ground transparent glass, the buttons the one-tone plates); the page leaves by its own close or the pull; the playlist's Done leaves by its close. MTClearGlassPlate folded into MTGlassSheet. Typecheck rc 0; ring 1 (one door of every modal), owner, the 44-point target and language guards green.
 
 - **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
