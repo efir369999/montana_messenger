@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:08:06+00:00 — merge rollback-898 (218cbe74, the chronicle of 2011 and 2012) into stage/mesh-room-media: the checklist alone, so the branch fast-forwards the main line
+
+- **Callsign / model:** Claude / stage/mesh-room-media (builder claude-bb) / Claude Opus 5.5.
+- **Build / OS:** source: the main line 218cbe74 (the chronicle of 2011 and 2012) merged into stage/mesh-room-media 18212127; not built, the master claude-9e builds; iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `ed7a7138a254eb19f311b7ffb526657dac0bb1e8`. Commit: pending.
+<!-- montana-change {"id": "521651fc-4336-491c-bc2d-0f84549ea7f4", "utc": "2026-09-29T20:08:06+00:00", "callsign": "Claude / stage/mesh-room-media (builder claude-bb)", "model": "Claude Opus 5.5", "build": "source: the main line 218cbe74 (the chronicle of 2011 and 2012) merged into stage/mesh-room-media 18212127; not built, the master claude-9e builds", "os": "iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed", "summary": "merge rollback-898 (218cbe74, the chronicle of 2011 and 2012) into stage/mesh-room-media: the checklist alone, so the branch fast-forwards the main line", "tree": "ed7a7138a254eb19f311b7ffb526657dac0bb1e8", "parents": ["1821212758200bd340b4a3d64217b39afa1bbd02", "218cbe740103fce90b2730eea24b02cf73eb5f84"], "commit": null} -->
+
 ### 2026-09-29T20:04:20+00:00 — merge rollback-898 (fa8c3916, build 2012: the big player as the lock screen) into stage/mesh-room-media before the master's fast-forward; no conflicts
 
 - **Callsign / model:** Claude / stage/mesh-room-media (builder claude-bb) / Claude Opus 5.5.
