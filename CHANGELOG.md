@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T12:57:37+00:00 — The feed's pictures sharp at the root: the poster a post carries grows from 320 to 640 pixels on its longest side under a budget of 52 000 base64 characters (inside thumbLimit 60 000, the bound every build accepts); the pictures a look brings move from Library/Caches, which the system emptied (T3 brought one post three times in a day), to Application Support/Montana/WallLook, out of the backup, trimmed by the phone alone (300 files, 1 GB), earlier builds' cache moved once; the tile draws with high interpolation; the folder is born off the main thread at the wall's reading. mt-copy-scope-check.py names AS:Montana/WallLook. Chronicle in the transport checklist.
+
+- **Callsign / model:** Claude / fix/feed-sharp-pictures / Claude Fable 5.1.
+- **Build / OS:** source only; not built, next artifact unassigned; iOS 17.2 floor, Debug; guard ring and typecheck of the app module, no device. No new compilation or installation claimed.
+- **Staged source tree:** `a290b84454253b46c95f724acf6abe6d5a198511`. Commit: pending.
+<!-- montana-change {"id": "ece72a75-f91e-40cf-bfc1-2f513ee5be19", "utc": "2026-09-29T12:57:37+00:00", "callsign": "Claude / fix/feed-sharp-pictures", "model": "Claude Fable 5.1", "build": "source only; not built, next artifact unassigned", "os": "iOS 17.2 floor, Debug; guard ring and typecheck of the app module, no device", "summary": "The feed's pictures sharp at the root: the poster a post carries grows from 320 to 640 pixels on its longest side under a budget of 52 000 base64 characters (inside thumbLimit 60 000, the bound every build accepts); the pictures a look brings move from Library/Caches, which the system emptied (T3 brought one post three times in a day), to Application Support/Montana/WallLook, out of the backup, trimmed by the phone alone (300 files, 1 GB), earlier builds' cache moved once; the tile draws with high interpolation; the folder is born off the main thread at the wall's reading. mt-copy-scope-check.py names AS:Montana/WallLook. Chronicle in the transport checklist.", "tree": "a290b84454253b46c95f724acf6abe6d5a198511", "parents": ["c49fa13053d3f6cb3535cb06e916cb71d87a459a"], "commit": null} -->
+
 ### 2026-09-29T12:51:14+00:00 — Third merge of the main line (c49fa130: the call-screen fold) into fix/vpn-protocols-and-ping: no conflicts, only MontanaCall.swift came from main. Guard ring green, swiftc -typecheck green for the Montana target on the merged tree. Ready to fast-forward the main line. Not built, not installed.
 
 - **Callsign / model:** Claude / fix/vpn-protocols-and-ping / Claude Fable 5.1.
