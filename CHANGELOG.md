@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:20:13+00:00 — VPN wall: a person's hand-added servers and pasted plans are carried to the latest correspondents as a page of one service word (VW:, buried unread by older builds), with a version and an ask, on the posts' wall's own road; a correspondent's servers land as a pinned plan under their name, their plans load as this phone's plans; nothing that came by a wall is chosen by itself for the tunnel or a call; the caption above the power button; checklist stage 3; test. Typecheck and ring green. Not built yet; the author named this session the build master for this delivery.
+
+- **Callsign / model:** Claude / fix/vpn-ping-grpc-ams / Claude Fable 5.1.
+- **Build / OS:** 1996 source; not built, next artifact unassigned; iOS 26.7 and 18.3 targets (T1, T3). No new compilation or installation claimed.
+- **Staged source tree:** `2bba2426609fd39ba874011b52befc552f4eed8a`. Commit: pending.
+<!-- montana-change {"id": "2499eaa3-2e29-433a-8f26-6989966e8e4b", "utc": "2026-09-29T15:20:13+00:00", "callsign": "Claude / fix/vpn-ping-grpc-ams", "model": "Claude Fable 5.1", "build": "1996 source; not built, next artifact unassigned", "os": "iOS 26.7 and 18.3 targets (T1, T3)", "summary": "VPN wall: a person's hand-added servers and pasted plans are carried to the latest correspondents as a page of one service word (VW:, buried unread by older builds), with a version and an ask, on the posts' wall's own road; a correspondent's servers land as a pinned plan under their name, their plans load as this phone's plans; nothing that came by a wall is chosen by itself for the tunnel or a call; the caption above the power button; checklist stage 3; test. Typecheck and ring green. Not built yet; the author named this session the build master for this delivery.", "tree": "2bba2426609fd39ba874011b52befc552f4eed8a", "parents": ["fad0a99dbed2e3c97b93d3fec62c31f416548b2f"], "commit": null} -->
+
 ### 2026-09-29T15:19:22+00:00 — Chronicle of build 1996 in the multi-login checklist: the outer shell seats (several logins into the outer service live at once, one face per seat, the plus opens the first screen from zero, the earlier record adopted as seat 0) and the doors of the first screen; Debug build on every core with zero errors, artifact sealed, installed on T1 and T3 at 18:18 MSK and verified by devicectl. Device checks of the checklist section 3 not yet run.
 
 - **Callsign / model:** Claude / build master (stage/outer-multi) / Claude Fable 5.1.
