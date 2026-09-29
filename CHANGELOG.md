@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:37:23+00:00 — Merge the main line 112d993c into stage/second-identity before the master's fast-forward
+
+- **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
+- **Build / OS:** 2012 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
+- **Staged source tree:** `e1d4eb5beb01d9b1e05c84ec681967f818bee65d`. Commit: pending.
+<!-- montana-change {"id": "2310afce-adda-40e4-a1b6-5f4f4e60b53f", "utc": "2026-09-29T21:37:23+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge the main line 112d993c into stage/second-identity before the master's fast-forward", "tree": "e1d4eb5beb01d9b1e05c84ec681967f818bee65d", "parents": ["fc5625a88a531b46cc47bbafa5cccd01147cffa0", "112d993c9f05744c625ed8ee55b0279442aa296f"], "commit": null} -->
+
 ### 2026-09-29T21:37:16+00:00 — fix/letter-late-delivery: a letter written in a dead minute leaves in the next living one -- every road that comes back (a door, a held node, a push wake) keeps its own 30 s drain clock, a held node drains the letters no node holds past their backoff, and any answer of a door ends its silence rest in the knock book too (volley silences fold into one). Measured 29.09: Elizaveta's letter of 08:02Z (build 1976) reached the iPhone 15 Pro Max at 21:19Z.
 
 - **Callsign / model:** claude-9e-agent / claude-opus-5-5.
