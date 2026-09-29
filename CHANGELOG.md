@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / council/publish / Claude Opus 5.5.
 - **Build / OS:** 2018 source; tooling; macOS (tooling). No new compilation or installation claimed.
-- **Staged source tree:** `a2a178065e83fb9e278fc28d3c390b4d22524202`. Commit: pending.
-<!-- montana-change {"id": "46d91bf3-d61e-4967-b1b3-1439ccd32c74", "utc": "2026-09-29T21:50:24+00:00", "callsign": "Claude claude-9e / Master 1 / council/publish", "model": "Claude Opus 5.5", "build": "2018 source; tooling", "os": "macOS (tooling)", "summary": "council wall: publish -- the wall goes to the public showcase after every wall commit through the log tool clone under its lock", "tree": "a2a178065e83fb9e278fc28d3c390b4d22524202", "parents": ["e36aab6819678f2316d0bc0c566f08e95703b619"], "commit": null} -->
+- **Staged source tree:** `a2a178065e83fb9e278fc28d3c390b4d22524202`. Commit: `332d87f4f2d52e625460a7de9e4d9c95a5f995dc`.
+<!-- montana-change {"id": "46d91bf3-d61e-4967-b1b3-1439ccd32c74", "utc": "2026-09-29T21:50:24+00:00", "callsign": "Claude claude-9e / Master 1 / council/publish", "model": "Claude Opus 5.5", "build": "2018 source; tooling", "os": "macOS (tooling)", "summary": "council wall: publish -- the wall goes to the public showcase after every wall commit through the log tool clone under its lock", "tree": "a2a178065e83fb9e278fc28d3c390b4d22524202", "parents": ["e36aab6819678f2316d0bc0c566f08e95703b619"], "commit": "332d87f4f2d52e625460a7de9e4d9c95a5f995dc"} -->
 
 ### 2026-09-29T21:45:59+00:00 — Merge rollback-898 (a61539cf, build 2017) into fix/letter-late-delivery: the main line into the roads-back drain fix; clean merge, ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LOCK none new), typecheck 112 files exit 0.
 
