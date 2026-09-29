@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / fix/cargo-shelf-emoji-caption / Claude Fable 5.1.
 - **Build / OS:** 1990 source; not built, next artifact unassigned; iOS 26.7 and iOS 26.6.2 targets; not installed. No new compilation or installation claimed.
-- **Staged source tree:** `5de60b16027103e12bc70ba7e44d947ef2453314`. Commit: pending.
-<!-- montana-change {"id": "37bff5a2-6658-4d05-9444-e9b316444cce", "utc": "2026-09-29T11:43:09+00:00", "callsign": "Claude / fix/cargo-shelf-emoji-caption", "model": "Claude Fable 5.1", "build": "1990 source; not built, next artifact unassigned", "os": "iOS 26.7 and iOS 26.6.2 targets; not installed", "summary": "Captioned video draws its plate (an emoji caption no longer hides the media); the notification extension lays small cargo onto the shared shelf; the diary names landed and waiting media; a cargo lane wait has a term", "tree": "5de60b16027103e12bc70ba7e44d947ef2453314", "parents": ["3e5149ac7e43251242abe127d289c2b09ac5c6a2"], "commit": null} -->
+- **Staged source tree:** `5de60b16027103e12bc70ba7e44d947ef2453314`. Commit: `3f6b89a16c1d3a416bb634658852fd762a9de4fb`.
+<!-- montana-change {"id": "37bff5a2-6658-4d05-9444-e9b316444cce", "utc": "2026-09-29T11:43:09+00:00", "callsign": "Claude / fix/cargo-shelf-emoji-caption", "model": "Claude Fable 5.1", "build": "1990 source; not built, next artifact unassigned", "os": "iOS 26.7 and iOS 26.6.2 targets; not installed", "summary": "Captioned video draws its plate (an emoji caption no longer hides the media); the notification extension lays small cargo onto the shared shelf; the diary names landed and waiting media; a cargo lane wait has a term", "tree": "5de60b16027103e12bc70ba7e44d947ef2453314", "parents": ["3e5149ac7e43251242abe127d289c2b09ac5c6a2"], "commit": "3f6b89a16c1d3a416bb634658852fd762a9de4fb"} -->
 
 ### 2026-09-29T11:32:27+00:00 — Captioned video draws its plate (an emoji caption no longer hides the media); the notification extension lays small cargo onto the shared shelf; the diary names landed and waiting media; a cargo lane wait has a term
 
