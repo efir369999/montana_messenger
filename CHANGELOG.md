@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
 - **Build / OS:** 2012 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `c51f2220e6e099d1db7eee66d0bd091843aa6da0`. Commit: pending.
-<!-- montana-change {"id": "7f83ccfc-5190-4996-957f-75603fcf1d47", "utc": "2026-09-29T20:33:59+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Seed scope: the person on this phone is its own class, named at birth and held by the copy guard", "tree": "c51f2220e6e099d1db7eee66d0bd091843aa6da0", "parents": ["22b8b85c00023e1bc5a878b943548782b466f60d"], "commit": null} -->
+- **Staged source tree:** `c51f2220e6e099d1db7eee66d0bd091843aa6da0`. Commit: `1f24ca515cca3fdaa6f2b94e95f6d3c0903b2fc9`.
+<!-- montana-change {"id": "7f83ccfc-5190-4996-957f-75603fcf1d47", "utc": "2026-09-29T20:33:59+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Seed scope: the person on this phone is its own class, named at birth and held by the copy guard", "tree": "c51f2220e6e099d1db7eee66d0bd091843aa6da0", "parents": ["22b8b85c00023e1bc5a878b943548782b466f60d"], "commit": "1f24ca515cca3fdaa6f2b94e95f6d3c0903b2fc9"} -->
 
 ### 2026-09-29T20:32:36+00:00 — music: where a track lies is never said -- the line under its name is the artist its own tags name, or nothing
 
