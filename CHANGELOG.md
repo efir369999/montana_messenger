@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:40:59+00:00 — Network probe: one owner of the line under the permitted list (MTNetLine) with hysteresis -- three agreeing tunnel-free rounds enter, two answers of a non-permitted beacon leave, six hours without confirmation lapse; settle() runs fresh rounds on ask; the call refusal reads the same verdict
+
+- **Callsign / model:** claude-9e builder / vpn-wall-whitelist-auto / Claude Opus 5.5.
+- **Build / OS:** 2016 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
+- **Staged source tree:** `b8102dbd18d8b84204cd1408b91b958adfc661cb`. Commit: pending.
+<!-- montana-change {"id": "d230daa4-4d1d-4680-8795-27db19a95b57", "utc": "2026-09-29T21:40:59+00:00", "callsign": "claude-9e builder / vpn-wall-whitelist-auto", "model": "Claude Opus 5.5", "build": "2016 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Network probe: one owner of the line under the permitted list (MTNetLine) with hysteresis -- three agreeing tunnel-free rounds enter, two answers of a non-permitted beacon leave, six hours without confirmation lapse; settle() runs fresh rounds on ask; the call refusal reads the same verdict", "tree": "b8102dbd18d8b84204cd1408b91b958adfc661cb", "parents": ["a7a87fe857ec98d0434e627c14eeffcbd95d16e4"], "commit": null} -->
+
 ### 2026-09-29T21:38:23+00:00 — VPN tunnel: a released dead session leaves its moment in its own profile (deadAt) in the save that lifts the reconnect; the next session arm takes it away; the supervisor signature ignores it; the recovery guard holds both
 
 - **Callsign / model:** claude-9e builder / vpn-wall-whitelist-auto / Claude Opus 5.5.
