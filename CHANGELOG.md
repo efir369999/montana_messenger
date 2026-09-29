@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:25:18+00:00 — build: 2009 -- My wall is the first circle of the share sheet (chosen and written, the post stands on the person's own wall), over 2008; for T1 and T3
+
+- **Callsign / model:** claude-83 / claude-opus-5-5.
+- **Build / OS:** 2009 (Debug, every core, next); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `843648f01aa06f591d8c6cea814c13ab9c24a0a0`. Commit: pending.
+<!-- montana-change {"id": "51752bcc-c379-45b1-83c5-4625d188d70b", "utc": "2026-09-29T19:25:18+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2009 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2009 -- My wall is the first circle of the share sheet (chosen and written, the post stands on the person's own wall), over 2008; for T1 and T3", "tree": "843648f01aa06f591d8c6cea814c13ab9c24a0a0", "parents": ["24471468997c876c76a59702e88ee3febea1df79"], "commit": null} -->
+
 ### 2026-09-29T19:24:35+00:00 — the mesh wall, step 1 of 3 (the author's word 29.09): the common room of everyone on the mesh, pinned first in the chats while «Findable on the mesh» is on, named «МЭШ стена» in Russian; its words ride the Bluetooth mesh as a cell addressed to nobody (name, a mark of this run, the moment, the words), passed on once by each neighbour while fresh; words only until step 2 carries pictures, voices and files and step 3 the group call
 
 - **Callsign / model:** Claude / stage/three-walls (builder claude-bb) / Claude Opus 5.5.
