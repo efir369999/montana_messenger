@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:39:59+00:00 — Merge rollback-898 b542c701 into fix/chat-list-late-dots before the master fast-forward
+
+- **Callsign / model:** claude-9e council builder (chat-list-dots) / claude-opus-5-5.
+- **Build / OS:** none; the main line stands at 2012; iOS 26.7.1 on T1; the merged tree typechecked and ring-1 green. No new compilation or installation claimed.
+- **Staged source tree:** `3793d1e618b72822b3c13c3df77bd8a24570dc14`. Commit: pending.
+<!-- montana-change {"id": "238a9319-5954-4cab-91a4-09de33bacd74", "utc": "2026-09-29T20:39:59+00:00", "callsign": "claude-9e council builder (chat-list-dots)", "model": "claude-opus-5-5", "build": "none; the main line stands at 2012", "os": "iOS 26.7.1 on T1; the merged tree typechecked and ring-1 green", "summary": "Merge rollback-898 b542c701 into fix/chat-list-late-dots before the master fast-forward", "tree": "3793d1e618b72822b3c13c3df77bd8a24570dc14", "parents": ["940034db3055bbaf939f84d4c634c19c3e12ea39", "b542c70105333ca3ab124375068a91e47eaf524e"], "commit": null} -->
+
 ### 2026-09-29T20:34:58+00:00 — music: a hold on the name copies it at the chat bubble threshold -- the mini player at once, the big player
 
 - **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
