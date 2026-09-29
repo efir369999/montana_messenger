@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:10:06+00:00 — mt-typecheck.py reuses one folder in the temporary directory with a shared warm module cache, its log named by the run's pid, logs older than a day let go: a fresh folder per run had left 104 folders of 85 MB each, and with the core's target the disk ran full under build 2001. Proven: rc 0, 111 files.
+
+- **Callsign / model:** Claude / fix/mini-seek-and-hold-menu / Claude Opus 5.5.
+- **Build / OS:** tool only; no artifact; macOS (the typecheck tool). No new compilation or installation claimed.
+- **Staged source tree:** `24e26e63a8dde868d696d1b149dcb17278efa44f`. Commit: pending.
+<!-- montana-change {"id": "1e109543-8a9c-48d4-9f9c-b044c3187b59", "utc": "2026-09-29T18:10:06+00:00", "callsign": "Claude / fix/mini-seek-and-hold-menu", "model": "Claude Opus 5.5", "build": "tool only; no artifact", "os": "macOS (the typecheck tool)", "summary": "mt-typecheck.py reuses one folder in the temporary directory with a shared warm module cache, its log named by the run's pid, logs older than a day let go: a fresh folder per run had left 104 folders of 85 MB each, and with the core's target the disk ran full under build 2001. Proven: rc 0, 111 files.", "tree": "24e26e63a8dde868d696d1b149dcb17278efa44f", "parents": ["2f3adbd5871d8bcd6b4adaf6ba417161214acea6"], "commit": null} -->
+
 ### 2026-09-29T18:09:22+00:00 — the chronicle of 2002 in the transport checklist: the mini player's track buttons, the system ring on every button, swipe seeking without fighting the pages' swipe (claude-10); one folding rule for any call (claude-60); 2001 burnt on a full disk, space freed by cargo clean of the core's target.
 
 - **Callsign / model:** Claude / build-master (claude-10) / Claude Opus 5.5.
