@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:12:49+00:00 — Merge of the main line (build 1995: the chess mark beside the handset, the white icons in one style) into the outer shell seats branch, before its fast-forward into the main line. No conflicts; guard ring, PROVEN ring 1 and SETTINGS green on the merged tree; the app module typechecks (111 files). Not built, not installed.
+
+- **Callsign / model:** Claude / stage/outer-multi / Claude Fable 5.1.
+- **Build / OS:** 1995 source; not built, next artifact 1996 planned; iOS 17.2 floor; source only, no device run. No new compilation or installation claimed.
+- **Staged source tree:** `4e4e5b40d799737cee00bb5df5a218bcb71de9dc`. Commit: pending.
+<!-- montana-change {"id": "745ac68f-2c9a-4587-b8f0-f298125c3f03", "utc": "2026-09-29T15:12:49+00:00", "callsign": "Claude / stage/outer-multi", "model": "Claude Fable 5.1", "build": "1995 source; not built, next artifact 1996 planned", "os": "iOS 17.2 floor; source only, no device run", "summary": "Merge of the main line (build 1995: the chess mark beside the handset, the white icons in one style) into the outer shell seats branch, before its fast-forward into the main line. No conflicts; guard ring, PROVEN ring 1 and SETTINGS green on the merged tree; the app module typechecks (111 files). Not built, not installed.", "tree": "4e4e5b40d799737cee00bb5df5a218bcb71de9dc", "parents": ["2c61c4f23d03e570eeb703b3532ccccbd7b25cff", "7ca52cb7b60fee4ee387d39fc340afb074b5bcf0"], "commit": null} -->
+
 ### 2026-09-29T15:06:26+00:00 — Outer shell multi-login: a seat per login into the outer service with its own library client, record folder and key; the sealed book of seats in the one device keychain item (JSON v2, the earlier 32-byte key adopted as seat 0 with its folders); the bridge routes updates by client id; the drawer shows one face per seat with name, picture and unread, the plus opens the first screen from zero; a face tap activates its seat; the login of one more seat through the book; the Montana door hidden on the first screen while a seed is held. Library upstream HEAD equals the pinned 42e6a525, no rebuild. Guard ring, PROVEN ring 1, SETTINGS green; app module typechecks (111 files). Not built, not installed.
 
 - **Callsign / model:** Claude / stage/outer-multi / Claude Fable 5.1.
