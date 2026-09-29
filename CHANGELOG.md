@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:59:26+00:00 — Second merge of the main line (1a149d8e: the chess board own lane and the End game item) into the outer login page branch, so the master can fast-forward. No conflicts; guard ring, PROVEN ring 1 and SETTINGS green on the merged tree; the app module typechecks (111 files). Not built, not installed.
+
+- **Callsign / model:** Claude / stage/outer-multi / Claude Fable 5.1.
+- **Build / OS:** 1997 source; not built, next artifact by the build master; iOS 17.2 floor; source only, no device run. No new compilation or installation claimed.
+- **Staged source tree:** `15d2022dc8717f84ae913df8641741bd2c8d4234`. Commit: pending.
+<!-- montana-change {"id": "a1fc2884-d20a-4b82-9efd-2b2bfc29b4fd", "utc": "2026-09-29T15:59:26+00:00", "callsign": "Claude / stage/outer-multi", "model": "Claude Fable 5.1", "build": "1997 source; not built, next artifact by the build master", "os": "iOS 17.2 floor; source only, no device run", "summary": "Second merge of the main line (1a149d8e: the chess board own lane and the End game item) into the outer login page branch, so the master can fast-forward. No conflicts; guard ring, PROVEN ring 1 and SETTINGS green on the merged tree; the app module typechecks (111 files). Not built, not installed.", "tree": "15d2022dc8717f84ae913df8641741bd2c8d4234", "parents": ["c253a4ece0bf00874c64efe46165e3ced155f295", "1a149d8ead658cc42028d7a9d15c2081be5d3eaa"], "commit": null} -->
+
 ### 2026-09-29T15:51:33+00:00 — Merge of the main line (build 1997: the VPN wall and ping gauge, the share suggestion) into the outer login page branch, before the build master fast-forward. No conflicts; guard ring, PROVEN ring 1 and SETTINGS green on the merged tree; the app module typechecks (111 files). Not built, not installed.
 
 - **Callsign / model:** Claude / stage/outer-multi / Claude Fable 5.1.
