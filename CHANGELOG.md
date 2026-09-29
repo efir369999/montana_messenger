@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / council/master-wall / Claude Opus 5.5.
 - **Build / OS:** 2018 source; tooling; macOS (tooling). No new compilation or installation claimed.
-- **Staged source tree:** `5fe6457552ebc74c79c60f1ff5f324bd9fbcc6c3`. Commit: pending.
-<!-- montana-change {"id": "4592574f-84f8-42ca-b6d5-4689b2c0c9f9", "utc": "2026-09-29T22:00:18+00:00", "callsign": "Claude claude-9e / Master 1 / council/master-wall", "model": "Claude Opus 5.5", "build": "2018 source; tooling", "os": "macOS (tooling)", "summary": "council wall: the wall data leaves the main line (on disk and the public showcase), the master wall of squeezed twins with the adapted Weissman score", "tree": "5fe6457552ebc74c79c60f1ff5f324bd9fbcc6c3", "parents": ["cea6b56b9208ef3bcbe1879baab3cf25dcdd3e10"], "commit": null} -->
+- **Staged source tree:** `5fe6457552ebc74c79c60f1ff5f324bd9fbcc6c3`. Commit: `333dab4ce53c96449fe0a735bfbd394348048d6d`.
+<!-- montana-change {"id": "4592574f-84f8-42ca-b6d5-4689b2c0c9f9", "utc": "2026-09-29T22:00:18+00:00", "callsign": "Claude claude-9e / Master 1 / council/master-wall", "model": "Claude Opus 5.5", "build": "2018 source; tooling", "os": "macOS (tooling)", "summary": "council wall: the wall data leaves the main line (on disk and the public showcase), the master wall of squeezed twins with the adapted Weissman score", "tree": "5fe6457552ebc74c79c60f1ff5f324bd9fbcc6c3", "parents": ["cea6b56b9208ef3bcbe1879baab3cf25dcdd3e10"], "commit": "333dab4ce53c96449fe0a735bfbd394348048d6d"} -->
 
 ### 2026-09-29T22:00:09+00:00 — Merge rollback-898 cea6b56b into fix/favorites-avatar-owner (the one own-face view MTSelfFace) before the master fast-forward: ring 1 green, app module typecheck green
 
