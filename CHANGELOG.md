@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T14:29:24+00:00 — Build 1994 -- the chess lane (moves at once), the VPN ping scale and JSON rows, the platform photo viewer and the share sheet choice, the first screen doors, the nested worktree ignored; the 1992 TestFlight pin; for T1 and T3, no TestFlight until the author word
+
+- **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
+- **Build / OS:** 1994 source; compiling next from this tree, artifact unsealed; targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `0492b25eddd9df7bcc387dfb94a1a0237e753c13`. Commit: pending.
+<!-- montana-change {"id": "740596fb-4972-488a-928e-fba8a91f285e", "utc": "2026-09-29T14:29:24+00:00", "callsign": "Claude / build master (rollback-898)", "model": "Claude Fable 5.1", "build": "1994 source; compiling next from this tree, artifact unsealed", "os": "targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host", "summary": "Build 1994 -- the chess lane (moves at once), the VPN ping scale and JSON rows, the platform photo viewer and the share sheet choice, the first screen doors, the nested worktree ignored; the 1992 TestFlight pin; for T1 and T3, no TestFlight until the author word", "tree": "0492b25eddd9df7bcc387dfb94a1a0237e753c13", "parents": ["fad0a99dbed2e3c97b93d3fec62c31f416548b2f"], "commit": null} -->
+
 ### 2026-09-29T14:27:32+00:00 — Merge of the main line (9051f4c1: the 1993 build number, the chess lane, the photo viewer and the share sheet, the login page doors) into fix/vpn-ping-grpc-ams (fd42e97a: the ping gauge on every plan and the hand-added section, a JSON plan's server served whole, the gRPC verdict), no conflicts; the guard ring and swiftc typecheck (111 files) green on the merged tree. Not built, not installed.
 
 - **Callsign / model:** Claude / fix/vpn-ping-grpc-ams / Claude Fable 5.1.
