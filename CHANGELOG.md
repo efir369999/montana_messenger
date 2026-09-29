@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:49:27+00:00 — music: the big player scrolls in the music page list -- its scroll bar and number, the keys never move it, a swipe takes a track out of the queue
+
+- **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/player-cover-keys-copy over build 2012; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
+- **Staged source tree:** `b34b25fa9c59329f9f4afa0a50afe32e666a41e0`. Commit: pending.
+<!-- montana-change {"id": "059f67a9-ca39-44eb-9852-942ab9848e4c", "utc": "2026-09-29T20:49:27+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "music: the big player scrolls in the music page list -- its scroll bar and number, the keys never move it, a swipe takes a track out of the queue", "tree": "b34b25fa9c59329f9f4afa0a50afe32e666a41e0", "parents": ["817b6f1f1813bc23821689d60e37cb28098fcf3d"], "commit": null} -->
+
 ### 2026-09-29T20:45:47+00:00 — council wall: the post of build 2013 on the masters timechain
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
