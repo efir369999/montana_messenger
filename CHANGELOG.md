@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T00:32:07+00:00 — Build 1990: the project number for the presence grace, the feed video back-off and the tool fixes, for T1, T3 and TestFlight
+
+- **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
+- **Build / OS:** 1990 prepared on ad54e236; compilation pending; T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `b08b85037fa27e0079a03847a89f08707b227083`. Commit: pending.
+<!-- montana-change {"id": "5cec7f83-8d8d-4cdf-9848-363b84b1f675", "utc": "2026-09-29T00:32:07+00:00", "callsign": "Claude / signal-lane", "model": "Claude Fable 5.1", "build": "1990 prepared on ad54e236; compilation pending", "os": "T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7", "summary": "Build 1990: the project number for the presence grace, the feed video back-off and the tool fixes, for T1, T3 and TestFlight", "tree": "b08b85037fa27e0079a03847a89f08707b227083", "parents": ["ad54e2363d85b13902b425a9e92320f6ba575f7f"], "commit": null} -->
+
 ### 2026-09-29T00:31:31+00:00 — The presence farewell waits a breath (96 posts per app switch on T1), the feed's video healing backs off and gives up (106 MB through the tunnel in three minutes), the typecheck reads the package modules from a build home, TestFlight publishing adds both groups
 
 - **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
