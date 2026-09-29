@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:06:00+00:00 — merge of the main line 224db9fd (the build 2006 bump) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 (111 files) and ring 1 green on the merged tree.
+
+- **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
+- **Build / OS:** source only; not built (the master builds); iOS 17.2+ target (Debug typecheck on macOS); not installed. No new compilation or installation claimed.
+- **Staged source tree:** `7e40d67dc02b857c06a2c96da98c4d22077aa3aa`. Commit: pending.
+<!-- montana-change {"id": "a3abea17-2ca7-4c0e-9a4e-4cb218a51424", "utc": "2026-09-29T19:06:00+00:00", "callsign": "Claude / fix/mini-seek-and-hold-menu (builder for claude-83)", "model": "Claude Opus 5.5", "build": "source only; not built (the master builds)", "os": "iOS 17.2+ target (Debug typecheck on macOS); not installed", "summary": "merge of the main line 224db9fd (the build 2006 bump) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 (111 files) and ring 1 green on the merged tree.", "tree": "7e40d67dc02b857c06a2c96da98c4d22077aa3aa", "parents": ["adcfd00e3242168e37f776cae710fa3fdee27522", "224db9fde4b613b12aee167ebdb09c821fe043be"], "commit": null} -->
+
 ### 2026-09-29T19:05:29+00:00 — checklist: the chronicle of 2006 -- the VPN wall as the posts' wall; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
