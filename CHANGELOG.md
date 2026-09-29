@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:51:18+00:00 — Merge rollback-898 (22995ba6: the mesh wall step 1, the room pinned first in the chats) into ui/system-bubbles before the master's fast-forward
+
+- **Callsign / model:** claude-83 / claude-opus-5-5.
+- **Build / OS:** none (source only; the master builds it next as 2011); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `25e0c27eea6d9a121c84e3579bc8dd4a26e934b2`. Commit: pending.
+<!-- montana-change {"id": "709bcb6f-41cc-4135-9f76-354b9ae6bc98", "utc": "2026-09-29T19:51:18+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "none (source only; the master builds it next as 2011)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "Merge rollback-898 (22995ba6: the mesh wall step 1, the room pinned first in the chats) into ui/system-bubbles before the master's fast-forward", "tree": "25e0c27eea6d9a121c84e3579bc8dd4a26e934b2", "parents": ["73e972200004d7fad46b022b40baa77069044e1f", "22995ba694c69c1ff555d1f00e8b51da3c9bd4df"], "commit": null} -->
+
 ### 2026-09-29T19:49:29+00:00 — bubbles: the system's own -- mine the platform's flat blue, theirs the platform's grey, white words on both, no gradient, no glass, no rim (the author's word 29.09)
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
