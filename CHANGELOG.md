@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T17:50:45+00:00 — build 2002 bump on rollback-898 = b20b9b41 (the same source as the burnt 2001): the mini player's buttons switch the track before and after, every button in the system ring, the name plate's swipe seeks without fighting the pages' swipe (claude-10); one folding rule for any call (claude-60). Disk freed by cargo clean of the core's target (27 GiB); not built yet at this record.
+
+- **Callsign / model:** Claude / build-master (claude-10) / Claude Fable 5.1.
+- **Build / OS:** 2002 source; the Debug artifact follows this record (2001 burnt: its build failed on a full disk -- the compiler could not write an intermediate; the delivery guard refuses a reused number); iOS 17.2+ target; to be installed on T1 (iOS 26.7) and T3 (iOS 18.3, unreachable so far). No new compilation or installation claimed.
+- **Staged source tree:** `e0ef40bc8736e160f7fede935dbc9d1037ce8e9a`. Commit: pending.
+<!-- montana-change {"id": "0b1e1622-4e55-47e5-ba47-94df84b939d0", "utc": "2026-09-29T17:50:45+00:00", "callsign": "Claude / build-master (claude-10)", "model": "Claude Fable 5.1", "build": "2002 source; the Debug artifact follows this record (2001 burnt: its build failed on a full disk -- the compiler could not write an intermediate; the delivery guard refuses a reused number)", "os": "iOS 17.2+ target; to be installed on T1 (iOS 26.7) and T3 (iOS 18.3, unreachable so far)", "summary": "build 2002 bump on rollback-898 = b20b9b41 (the same source as the burnt 2001): the mini player's buttons switch the track before and after, every button in the system ring, the name plate's swipe seeks without fighting the pages' swipe (claude-10); one folding rule for any call (claude-60). Disk freed by cargo clean of the core's target (27 GiB); not built yet at this record.", "tree": "e0ef40bc8736e160f7fede935dbc9d1037ce8e9a", "parents": ["b20b9b41b3b65986f02d35a3f25ebd91e501c7f3"], "commit": null} -->
+
 ### 2026-09-29T17:33:35+00:00 — build 2001 bump on rollback-898 = e9aa354c: the mini player's buttons switch the track before and after, every button in the system ring, the name plate's swipe seeks without fighting the pages' swipe (claude-10); one folding rule for any call, the window over other apps armed for a voice call too (fix/call-fold-pip 2fefcf4e, claude-60). Fast-forwards only, one branch at a time; not built yet at this record.
 
 - **Callsign / model:** Claude / build-master (claude-10) / Claude Fable 5.1.
