@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T10:45:27+00:00 — Chess: the chat keeps only the invitation, the invitee's tap starts the game and clocks, each clock counts its owner's own turn, the game opens on the chat's stack, a computer opponent with a level slider
+
+- **Callsign / model:** Claude / fix/chess-whole / Claude Opus 5.5.
+- **Build / OS:** source on 1990 (89c7ee82); not built, next artifact unassigned; iOS 17.2+ target; app module typecheck and standalone model run on macOS; no device. No new compilation or installation claimed.
+- **Staged source tree:** `040307be82b8c37c28ff7be23a642c87fdf77162`. Commit: pending.
+<!-- montana-change {"id": "cc385049-ee60-443c-9dcf-5d1a634421a0", "utc": "2026-09-29T10:45:27+00:00", "callsign": "Claude / fix/chess-whole", "model": "Claude Opus 5.5", "build": "source on 1990 (89c7ee82); not built, next artifact unassigned", "os": "iOS 17.2+ target; app module typecheck and standalone model run on macOS; no device", "summary": "Chess: the chat keeps only the invitation, the invitee's tap starts the game and clocks, each clock counts its owner's own turn, the game opens on the chat's stack, a computer opponent with a level slider", "tree": "040307be82b8c37c28ff7be23a642c87fdf77162", "parents": ["89c7ee82a680feccc96a9bf1d8ccdbff718679eb"], "commit": null} -->
+
 ### 2026-09-29T00:47:20+00:00 — The chronicle of 1990: the presence grace, the feed video back-off and the tool fixes -- on T1 and T3 and in TestFlight
 
 - **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
