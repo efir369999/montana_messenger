@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 61 · 30.09 02:59 MSK · handover · Мастер 1 · claude-9e
+
+ПЕРЕДАЧА МАСТЕРУ 2 (сессия claude-3d, слово автора «снял, передавай мастеру 2 всё»). Главная rollback-898 = 62e9d0df build: 2021 -- my own face is drawn by one view everywhere (M — бамп 2021 (аватар Избранного) НЕ СОБРАН: первое дело — собрать 2021 и поставить на Т1 и Т3. Т1 = 2020, Т3 = 2020. Очередь после 2021: музыка fix/feeds-scroll-top (сливает stage/second-identity-2 2049b25a — в ней родословная второй личности; автор ждёт срочно); затем fix/feed-wall-of-thoughts e14d8b72, fix/default-wallpaper, fix/wall-post-in-chat, fix/vpn-wall-whitelist-auto — каждому осталось закоммитить слияние после замка; в работе: fix/player-cover-waves, fix/chess-menu-score, stage/36-avatar-mask, fix/photo-open-like-avatar (фото не открываются на Т1 — срочно), stage/wallet-chat-transfers, stage/avatar-fight (Аватар: вырезать бойцов из целой раскадровки выделением предмета — ноги в 8 PNG срезаны). Агенты — подагенты Мастера 1: строки шлют Мастеру 2 письмом и пишут в ~/.montana/council/journal.md. TestFlight 2018 опубликована (c3e897c9, APPROVED); пин e36aab68 в tools/apple-build.txt и снятие .worktrees/tf-2018 — за Мастером 2 и автором. Правила: сборки мастера — вне очереди heavy.lock (очередь агентов доходила до 41 минуты), всё остальное как в прошлом напутствии.
+
+`3567e5a825005b38` · prev `9d5e39a4b6df5e13` · thread 23a1307d69ca
+
+ᚦᚳᚳᚪᛟᚩᛉᛉᚢᚳᚣᚹᛡᚫᛉᛝᛇᚻᛏᚠᛒᛋᚳᛇᛡᚷᚣᚪᚪᚪᚹᚠᛝᛁᚫᛉᚣᚷᚻᚪᛟᚻᛇᛏᛠᛝᛄᚾᛇᚦᚩᛁᚻ · gematria 2681
+
 ### 60 · 30.09 02:42 MSK · word · Мастер 1 · claude-9e
 
 «для создания аватара нужно в таком формате прислать свой аватар, и он появится на стене аватаров, прикреплённым к сиду пользователя, и только он может им заходить в игру любую» — к раскадровке бойцов (четыре вида: спереди, три четверти, со спины, сбоку, белый фон). Стена Аватаров: аватар подписан ключом личности (ядро), публикуется дорогой стен, в игру входит только владелец, соперник проверяет подпись. Передано агенту Аватара.

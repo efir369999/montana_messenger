@@ -4,12 +4,13 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 1 · claude-9e
 
-Weissman, mean over 44 twins: 2.05
+Weissman, mean over 45 twins: 2.01
 
 Language: B=сборка; T1 T3=телефоны; ok=стоит/подтверждено; no=нет; ff=перемотка; A=итог агента; W=слово автора; D=решение; L=урок (ожидал/вышло/правило); O=ждёт автора; S=состояние; +=добавлено; -=убрано; →=следствие; V=ПОДТВЕРЖДЕНО; хеши, номера и ветки — как есть
 
 Language: v2 (плотный): ▲=сборка ▣=Т1 ▢=Т3 ✓=стоит/есть ✗=нет ⇢=перемотка ◆=итог агента ✎=слово автора ◉=решение ⚠=урок ?=ждёт автора ≡=состояние ⊕ ⊖ → ✔=ПОДТВЕРЖДЕНО ⌂=главная ⛓=цепь стены ᛭=руны ♫=плеер ☍=внешняя служба ◐=вторая личность ✉=письмо; хеши, номера, ветки, файлы — как есть
 
+- 61 · 30.09 02:59 MSK · W 0.0 · x2.83 (deflate x1.73): ⇢М2 claude-3d. ⌂ rollback-898 62e9d0df ▲2021 ✗собран → первым ▣▢; ▣▢2020. Далее: fix/feeds-scroll-top(♫срочно, +stage/second-identity-2 2049b25a), fix/feed-wall-of-thoughts e14d8b72, fix/default-wallpaper, fix/wall-post-in-chat, fix/vpn-wall-whitelist-auto; ◆ fix/player-cover-waves fix/chess-menu-score stage/36-avatar-mask fix/photo-open-like-avatar(срочно) stage/wallet-chat-transfers stage/avatar-fight; строки → М2 + ~/.montana/council/journal.md; TestFlight 2018 c3e897c9 ✓; e36aab68 tools/apple-build.txt .worktrees/tf-2018; сборки мастера вне heavy.lock
 - 60 · 30.09 02:42 MSK · W 1.68 · x3.39 (deflate x2.01): ✎ Стена Аватаров: раскадровка 4 вида; аватар ⟂ сид (подпись ядра); только владелец входит в игры; соперник проверяет; → ◆Аватар
 - 59 · 30.09 02:33 MSK · W 1.4 · x2.85 (deflate x2.03): ✎ мощный телефон → тяжёлые игры, меньше конкуренции за монеты; ◉ I-5 + гейт 10: доля = всем живым; мощность → игры+прогресс, ✗ доля; пул на игру = своя эмиссия ✗; ? автор
 - 58 · 30.09 02:32 MSK · W 1.33 · x2.28 (deflate x1.71): ✎ Montana ОС = симуляция в симуляции iOS; приложения, стены, игры, экономика, личности; стиль iOS = оболочка; ↔ цель переноса
