@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T14:01:23+00:00 — Chess moves at once: the board keeps the node signal lane of its correspondent (a move rode a silent push that the system carried 8-14 s late, T3 13:44:33.9 to T1 13:44:47.9), and the node box hint on the lane is fetched now instead of booked behind the 8 s pickup gate (P-139 rewritten); a worktree inside the client tree is ignored by git and the whole-tree guards; the 1992 chronicle rides this branch
+
+- **Callsign / model:** Claude / fix/chess-lane (critic pass, then the fix) / Claude Fable 5.1.
+- **Build / OS:** 1993 planned from this source; not built yet, next artifact unassigned; targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `28608139ad3926b9aedb40a3daaffe2522440fa8`. Commit: pending.
+<!-- montana-change {"id": "e1b3a2ca-bc1a-4b28-9023-6705f78ade3a", "utc": "2026-09-29T14:01:23+00:00", "callsign": "Claude / fix/chess-lane (critic pass, then the fix)", "model": "Claude Fable 5.1", "build": "1993 planned from this source; not built yet, next artifact unassigned", "os": "targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host", "summary": "Chess moves at once: the board keeps the node signal lane of its correspondent (a move rode a silent push that the system carried 8-14 s late, T3 13:44:33.9 to T1 13:44:47.9), and the node box hint on the lane is fetched now instead of booked behind the 8 s pickup gate (P-139 rewritten); a worktree inside the client tree is ignored by git and the whole-tree guards; the 1992 chronicle rides this branch", "tree": "28608139ad3926b9aedb40a3daaffe2522440fa8", "parents": ["e329a4177982967b32e995e7bd5ac05795a3222f"], "commit": null} -->
+
 ### 2026-09-29T13:55:29+00:00 — Checklist: the chronicle of 1992 -- the chess notices (the 15:21 finding, the two letters that ring, entering accepts, the chat over the board), installed on T1 and T3 at 16:42 and 16:43 MSK, artifact proof by strings; what entered since 1991 and what stayed out
 
 - **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
