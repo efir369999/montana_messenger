@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
 - **Build / OS:** 1988 on T1 and T3 as the source baseline; 1989 to be claimed after the merge into rollback-898; T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7. No new compilation or installation claimed.
-- **Staged source tree:** `e06b82fe511bb59594e2d44cc047a5df77acd38e`. Commit: pending.
-<!-- montana-change {"id": "fa2a6734-81c9-4b05-9c4e-36405a2c6a5e", "utc": "2026-09-29T00:08:35+00:00", "callsign": "Claude / signal-lane", "model": "Claude Fable 5.1", "build": "1988 on T1 and T3 as the source baseline; 1989 to be claimed after the merge into rollback-898", "os": "T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7", "summary": "One signal lane per door and the doors knocked on a satisfied path (the tunnel's 912-goroutine death on 1988); the floating player on the music page with the blue ring and a hold menu; chess steps out of the chat; the drawer as the 1949 list", "tree": "e06b82fe511bb59594e2d44cc047a5df77acd38e", "parents": ["e11be87efc45bcfab20eb01e95cb5a723a6f6467"], "commit": null} -->
+- **Staged source tree:** `e06b82fe511bb59594e2d44cc047a5df77acd38e`. Commit: `f257322eaaf7a366c280c58fc20ccdb035923a0c`.
+<!-- montana-change {"id": "fa2a6734-81c9-4b05-9c4e-36405a2c6a5e", "utc": "2026-09-29T00:08:35+00:00", "callsign": "Claude / signal-lane", "model": "Claude Fable 5.1", "build": "1988 on T1 and T3 as the source baseline; 1989 to be claimed after the merge into rollback-898", "os": "T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7", "summary": "One signal lane per door and the doors knocked on a satisfied path (the tunnel's 912-goroutine death on 1988); the floating player on the music page with the blue ring and a hold menu; chess steps out of the chat; the drawer as the 1949 list", "tree": "e06b82fe511bb59594e2d44cc047a5df77acd38e", "parents": ["e11be87efc45bcfab20eb01e95cb5a723a6f6467"], "commit": "f257322eaaf7a366c280c58fc20ccdb035923a0c"} -->
 
 ### 2026-09-28T23:36:51+00:00 — Build 1988 delivered to devices and TestFlight
 
