@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
 - **Build / OS:** 2008 (installed on T1); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `5bf8e06115500c888857ac6af3bfb46c49330c6c`. Commit: pending.
-<!-- montana-change {"id": "3f3a1c03-1bf9-4e44-93c4-fa7dcaae19a9", "utc": "2026-09-29T19:20:35+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2008 (installed on T1)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "checklist: the chronicle of 2007 and 2008 -- the three walls, the big player on the new post's sheet road; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)", "tree": "5bf8e06115500c888857ac6af3bfb46c49330c6c", "parents": ["6158f9ecb7c614dd79eface3a2fb286bb1ecdc47"], "commit": null} -->
+- **Staged source tree:** `5bf8e06115500c888857ac6af3bfb46c49330c6c`. Commit: `2f63ea51ef17a75fed4c720da918eceda3ee562b`.
+<!-- montana-change {"id": "3f3a1c03-1bf9-4e44-93c4-fa7dcaae19a9", "utc": "2026-09-29T19:20:35+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2008 (installed on T1)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "checklist: the chronicle of 2007 and 2008 -- the three walls, the big player on the new post's sheet road; installed on T1, T3 pending (not visible to the Mac since 2003, a waiter stands)", "tree": "5bf8e06115500c888857ac6af3bfb46c49330c6c", "parents": ["6158f9ecb7c614dd79eface3a2fb286bb1ecdc47"], "commit": "2f63ea51ef17a75fed4c720da918eceda3ee562b"} -->
 
 ### 2026-09-29T19:16:08+00:00 — build: 2008 -- the big player and the playlist rise by the new post's sheet road (clear glass, one-tone plates with the system ring, no logo on a black square, the name alone and a long press copies it), over 2007; for T1 and T3
 
