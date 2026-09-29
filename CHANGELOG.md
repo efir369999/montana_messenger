@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T14:45:45+00:00 — Chess mark in the chat bar, left of the handset: one tap opens the chat live game or invites this correspondent under the chat clock (10:00), the icon ringed in the platform blue as the music mini player; White icons in one style -- the network globe and the outer service plane are white outlined glyphs
+
+- **Callsign / model:** Claude / ui/chess-mark-white-icons / Claude Fable 5.1.
+- **Build / OS:** 1995 planned from this source; not built yet, next artifact unassigned; targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `59e2cbf00dad8a5cf9d9112c6838c4495e5ab93c`. Commit: pending.
+<!-- montana-change {"id": "0591c335-a837-4763-8692-d33717fb54ff", "utc": "2026-09-29T14:45:45+00:00", "callsign": "Claude / ui/chess-mark-white-icons", "model": "Claude Fable 5.1", "build": "1995 planned from this source; not built yet, next artifact unassigned", "os": "targets iOS 26.7.1 (T1) and iOS 18.3 (T3); macOS 26 build host", "summary": "Chess mark in the chat bar, left of the handset: one tap opens the chat live game or invites this correspondent under the chat clock (10:00), the icon ringed in the platform blue as the music mini player; White icons in one style -- the network globe and the outer service plane are white outlined glyphs", "tree": "59e2cbf00dad8a5cf9d9112c6838c4495e5ab93c", "parents": ["719a265f640b94a1636d92474a79406090437788"], "commit": null} -->
+
 ### 2026-09-29T14:34:44+00:00 — Checklist: the chronicle of 1993 (held back) and 1994 -- the chess lane finding on the 16:44 game and its closure, the master-only fast-forward rule, installed on T1 and T3, artifact proof, what entered since 1992 and what stayed out; 1994 not uploaded to TestFlight
 
 - **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
