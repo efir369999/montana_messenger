@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e-agent / claude-opus-5-5.
 - **Build / OS:** 2018; iOS client; macOS Darwin 25.6.0. No new compilation or installation claimed.
-- **Staged source tree:** `31f6a22600fcb6c67564f4f77a2b32a0f522d88c`. Commit: pending.
-<!-- montana-change {"id": "42d3e2e3-536e-47a4-99d7-c974288df93f", "utc": "2026-09-29T21:57:41+00:00", "callsign": "claude-9e-agent", "model": "claude-opus-5-5", "build": "2018", "os": "iOS client; macOS Darwin 25.6.0", "summary": "Merge rollback-898 (e36aab68, build 2018) into fix/letter-late-delivery: the main line into the roads-back drain fix; clean merge, ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LAYOUT clean, LOCK none new), typecheck 112 files exit 0.", "tree": "31f6a22600fcb6c67564f4f77a2b32a0f522d88c", "parents": ["f5b8b0a8e4710ad9ae1f7bfc2ae1558cd60bdd0b", "e36aab6819678f2316d0bc0c566f08e95703b619"], "commit": null} -->
+- **Staged source tree:** `31f6a22600fcb6c67564f4f77a2b32a0f522d88c`. Commit: `8ecb56a81d0a753f49fa76f755406ba2ba1149d0`.
+<!-- montana-change {"id": "42d3e2e3-536e-47a4-99d7-c974288df93f", "utc": "2026-09-29T21:57:41+00:00", "callsign": "claude-9e-agent", "model": "claude-opus-5-5", "build": "2018", "os": "iOS client; macOS Darwin 25.6.0", "summary": "Merge rollback-898 (e36aab68, build 2018) into fix/letter-late-delivery: the main line into the roads-back drain fix; clean merge, ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LAYOUT clean, LOCK none new), typecheck 112 files exit 0.", "tree": "31f6a22600fcb6c67564f4f77a2b32a0f522d88c", "parents": ["f5b8b0a8e4710ad9ae1f7bfc2ae1558cd60bdd0b", "e36aab6819678f2316d0bc0c566f08e95703b619"], "commit": "8ecb56a81d0a753f49fa76f755406ba2ba1149d0"} -->
 
 ### 2026-09-29T21:50:58+00:00 — council wall: posts of 2017 and 2018, the critic verdict on the 13-hour letter, open questions, a lesson
 
