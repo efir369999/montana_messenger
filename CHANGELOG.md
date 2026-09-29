@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:02:13+00:00 — Checklist: the chronicle of 1995 -- the chess mark beside the handset and the White icons in one style, installed on T1 and T3 at 18:00 and 18:01 MSK, artifact proof; not uploaded to TestFlight
+
+- **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
+- **Build / OS:** 1995 built, sealed, installed on T1 and T3; not uploaded to TestFlight (the author word); iOS 26.7.1 (T1), iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `1ccb796008a84fc62fe4ce197c21ff1f5a5788ff`. Commit: pending.
+<!-- montana-change {"id": "99f19bc1-375a-4260-b482-44e60bddb43c", "utc": "2026-09-29T15:02:13+00:00", "callsign": "Claude / build master (rollback-898)", "model": "Claude Fable 5.1", "build": "1995 built, sealed, installed on T1 and T3; not uploaded to TestFlight (the author word)", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3); macOS 26 build host", "summary": "Checklist: the chronicle of 1995 -- the chess mark beside the handset and the White icons in one style, installed on T1 and T3 at 18:00 and 18:01 MSK, artifact proof; not uploaded to TestFlight", "tree": "1ccb796008a84fc62fe4ce197c21ff1f5a5788ff", "parents": ["c74bbc70e10d7b61ab4741dca6b3cae3fde0714c"], "commit": null} -->
+
 ### 2026-09-29T14:56:02+00:00 — Build 1995 -- the chess mark beside the handset (one tap: the live game or a new one, the platform blue ring), White icons in one style (the network and the outer service white); for T1 and T3, no TestFlight until the author word
 
 - **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
