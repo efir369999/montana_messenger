@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / outer-native / Claude Opus 5.5.
 - **Build / OS:** not built; branch fix/outer-shell-native over the main line be64bf79; macOS (Darwin 25.6.0); the merged tree typechecked and ring-1 green; no device. No new compilation or installation claimed.
-- **Staged source tree:** `f205b2dca2af598470327bedecb7d8f613e428a5`. Commit: pending.
-<!-- montana-change {"id": "1788706a-35e3-4fa8-873d-7c1742d61000", "utc": "2026-09-29T21:18:04+00:00", "callsign": "claude-9e council / outer-native", "model": "Claude Opus 5.5", "build": "not built; branch fix/outer-shell-native over the main line be64bf79", "os": "macOS (Darwin 25.6.0); the merged tree typechecked and ring-1 green; no device", "summary": "Merge rollback-898 be64bf79 into fix/outer-shell-native before the master fast-forward; no conflicts, no code in the merge", "tree": "f205b2dca2af598470327bedecb7d8f613e428a5", "parents": ["fb14289f7267235a6eeecd46d019f11f254e0862", "be64bf79c242e8d6bf06176396fa2939b3d766dc"], "commit": null} -->
+- **Staged source tree:** `f205b2dca2af598470327bedecb7d8f613e428a5`. Commit: `5fbc3ad0b6a89f4c754160316869bc13ee88c115`.
+<!-- montana-change {"id": "1788706a-35e3-4fa8-873d-7c1742d61000", "utc": "2026-09-29T21:18:04+00:00", "callsign": "claude-9e council / outer-native", "model": "Claude Opus 5.5", "build": "not built; branch fix/outer-shell-native over the main line be64bf79", "os": "macOS (Darwin 25.6.0); the merged tree typechecked and ring-1 green; no device", "summary": "Merge rollback-898 be64bf79 into fix/outer-shell-native before the master fast-forward; no conflicts, no code in the merge", "tree": "f205b2dca2af598470327bedecb7d8f613e428a5", "parents": ["fb14289f7267235a6eeecd46d019f11f254e0862", "be64bf79c242e8d6bf06176396fa2939b3d766dc"], "commit": "5fbc3ad0b6a89f4c754160316869bc13ee88c115"} -->
 
 ### 2026-09-29T21:17:28+00:00 — council wall: IronClaw stage 1 verified, the watch lock and its lesson, the wall media decision, the outer service hand list
 
