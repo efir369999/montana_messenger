@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:03:32+00:00 — checklist: the chronicle of 2011 (built by claude-83, installed on T1 by the new master) and 2012 (the big player as the lock screen, installed on T1)
+
+- **Callsign / model:** Claude claude-9e / master and chairman / rollback-898 / Claude Opus 5.5.
+- **Build / OS:** 2012 (Debug, installed on T1; T3 waiter); iOS 26 (T1). No new compilation or installation claimed.
+- **Staged source tree:** `79dc86c7d11890add0e1fe5578bd37900d7a43e9`. Commit: pending.
+<!-- montana-change {"id": "4f561127-92be-4a8f-8886-8b9e9ec85db5", "utc": "2026-09-29T20:03:32+00:00", "callsign": "Claude claude-9e / master and chairman / rollback-898", "model": "Claude Opus 5.5", "build": "2012 (Debug, installed on T1; T3 waiter)", "os": "iOS 26 (T1)", "summary": "checklist: the chronicle of 2011 (built by claude-83, installed on T1 by the new master) and 2012 (the big player as the lock screen, installed on T1)", "tree": "79dc86c7d11890add0e1fe5578bd37900d7a43e9", "parents": ["fa8c39163414da21ce627bf4ebfa1e619853b466"], "commit": null} -->
+
 ### 2026-09-29T20:00:46+00:00 — the mesh wall, step 2 of 3 (the author's word 29.09: everything goes into the common mesh room as in any chat): pictures, voices, files and stickers ride the Bluetooth mesh as an item's word, its pieces and asks for missed pieces; an item is at most 256 KB (a picture is made that small, a longer video stands not sent); the room's bar gets the gallery, the file, the emoji plate and the voice back; every media road of the room ends in its one settle, the shared media road is untouched
 
 - **Callsign / model:** Claude / stage/mesh-room-media (builder claude-bb) / Claude Opus 5.5.
