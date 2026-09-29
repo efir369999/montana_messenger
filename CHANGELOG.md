@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e builder / wall-thoughts / claude-opus-5-5.
 - **Build / OS:** 2020 source; not built; macOS Darwin 25.6.0. No new compilation or installation claimed.
-- **Staged source tree:** `f00ff0f8670db67d2246a59a0391805b0a571c7c`. Commit: pending.
-<!-- montana-change {"id": "d485bcf3-2e9c-4fec-a002-e4bbd800d0ab", "utc": "2026-09-29T23:07:24+00:00", "callsign": "claude-9e builder / wall-thoughts", "model": "claude-opus-5-5", "build": "2020 source; not built", "os": "macOS Darwin 25.6.0", "summary": "fix/feed-wall-of-thoughts: the common feed of the posts on the walls is named the Wall of Thoughts (the author's word 30.09) -- the application title key Feed becomes Wall of Thoughts: ru Стена Мыслей, zh-Hans 思想之墙; a person's own wall and the VPN, mesh and P2P walls keep their names; identifiers and wire words untouched", "tree": "f00ff0f8670db67d2246a59a0391805b0a571c7c", "parents": ["aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": null} -->
+- **Staged source tree:** `f00ff0f8670db67d2246a59a0391805b0a571c7c`. Commit: `83ab0688d295d5c61a20d4333647c610a9c8ba93`.
+<!-- montana-change {"id": "d485bcf3-2e9c-4fec-a002-e4bbd800d0ab", "utc": "2026-09-29T23:07:24+00:00", "callsign": "claude-9e builder / wall-thoughts", "model": "claude-opus-5-5", "build": "2020 source; not built", "os": "macOS Darwin 25.6.0", "summary": "fix/feed-wall-of-thoughts: the common feed of the posts on the walls is named the Wall of Thoughts (the author's word 30.09) -- the application title key Feed becomes Wall of Thoughts: ru Стена Мыслей, zh-Hans 思想之墙; a person's own wall and the VPN, mesh and P2P walls keep their names; identifiers and wire words untouched", "tree": "f00ff0f8670db67d2246a59a0391805b0a571c7c", "parents": ["aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": "83ab0688d295d5c61a20d4333647c610a9c8ba93"} -->
 
 ### 2026-09-29T23:00:05+00:00 — Clean merge of the main line f3de66ce into stage/second-identity-2 before the master's fast-forward
 
