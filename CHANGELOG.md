@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:44:27+00:00 — build 2018 bump: the wall media page -- posts media open at once as a page, paged up and down through the page media, back by the system swipe; video in the system player from the first chunks
+
+- **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
+- **Build / OS:** 2018 (Debug, bump; artifact not built yet); iOS 26 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `7a8a1e6dee3d89d33ac5a01c7063c138e9ea1a99`. Commit: pending.
+<!-- montana-change {"id": "1b2fde39-4a08-4b71-a5e6-58375a742d8b", "utc": "2026-09-29T21:44:27+00:00", "callsign": "Claude claude-9e / Master 1 / rollback-898", "model": "Claude Opus 5.5", "build": "2018 (Debug, bump; artifact not built yet)", "os": "iOS 26 (T1), iOS 18.3 (T3)", "summary": "build 2018 bump: the wall media page -- posts media open at once as a page, paged up and down through the page media, back by the system swipe; video in the system player from the first chunks", "tree": "7a8a1e6dee3d89d33ac5a01c7063c138e9ea1a99", "parents": ["6fd61f11f616522f8864b4a90244e9474d67106b"], "commit": null} -->
+
 ### 2026-09-29T21:43:36+00:00 — Merge rollback-898 a61539cf (build 2017, the outer service shell) into fix/wall-media-viewer before the master fast-forward; guard ring and app typecheck 112 files green on the merged tree
 
 - **Callsign / model:** claude-9e council / wall-media / Claude Opus 5.5.
