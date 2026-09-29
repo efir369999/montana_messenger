@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:30:37+00:00 — music: the app icon stands where a track has no cover -- the plate, the playlist rows, the lock screen
+
+- **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/player-cover-keys-copy over build 2012; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
+- **Staged source tree:** `35ff422918681006c600d8c3b597822ec9a1e76a`. Commit: pending.
+<!-- montana-change {"id": "e55abc13-b8e5-435a-b5b6-4e562e6b3287", "utc": "2026-09-29T20:30:37+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "music: the app icon stands where a track has no cover -- the plate, the playlist rows, the lock screen", "tree": "35ff422918681006c600d8c3b597822ec9a1e76a", "parents": ["218cbe740103fce90b2730eea24b02cf73eb5f84"], "commit": null} -->
+
 ### 2026-09-29T20:30:18+00:00 — Checklist of the second Montana identity: two doors from the drawer, a seat per identity, switching by faces
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
