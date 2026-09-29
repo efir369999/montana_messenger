@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:03:26+00:00 — Merge rollback-898 (333dab4c) into fix/letter-late-delivery: the council wall leaves the main line (CouncilWall/ and .gitignore only); clean merge, ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LAYOUT clean); no Swift changed, typecheck of 8ecb56a8 stands.
+
+- **Callsign / model:** claude-9e-agent / claude-opus-5-5.
+- **Build / OS:** 2018; iOS client; macOS Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `7286a7d37a4a93f49b32314355635a3e35c6c62f`. Commit: pending.
+<!-- montana-change {"id": "20820269-79a6-423a-96be-e98556f5cb19", "utc": "2026-09-29T22:03:26+00:00", "callsign": "claude-9e-agent", "model": "claude-opus-5-5", "build": "2018", "os": "iOS client; macOS Darwin 25.6.0", "summary": "Merge rollback-898 (333dab4c) into fix/letter-late-delivery: the council wall leaves the main line (CouncilWall/ and .gitignore only); clean merge, ring green (PROVEN all ring-1 invariants hold, COMPAT clean, LAYOUT clean); no Swift changed, typecheck of 8ecb56a8 stands.", "tree": "7286a7d37a4a93f49b32314355635a3e35c6c62f", "parents": ["8ecb56a81d0a753f49fa76f755406ba2ba1149d0", "333dab4ce53c96449fe0a735bfbd394348048d6d"], "commit": null} -->
+
 ### 2026-09-29T22:02:43+00:00 — Pages' corner: the feed's write and the gallery's plus stand by MTPageCorner, the one measure the list's arrow reads
 
 - **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
