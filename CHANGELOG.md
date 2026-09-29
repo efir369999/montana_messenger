@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / onboarding-os / Claude Opus 5.5.
 - **Build / OS:** 2013 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `b4709fd31c1ad6c555c2c440644a46026d6298c7`. Commit: pending.
-<!-- montana-change {"id": "b751f16a-8a5d-46cb-bf4d-751780e051d6", "utc": "2026-09-29T20:53:55+00:00", "callsign": "claude-9e council / onboarding-os", "model": "Claude Opus 5.5", "build": "2013 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge rollback-898 (3b0a1b5f, the council wall post of 2013) into design/onboarding-os-style before the master's fast-forward: no conflicts, no code in the merge; the guard ring green, the Swift tree the one typechecked green a step before", "tree": "b4709fd31c1ad6c555c2c440644a46026d6298c7", "parents": ["175feb2f0f3d1a5b727245a216fe7f26cbb96995", "3b0a1b5f395e3da5aa2040be7c371b886d84390d"], "commit": null} -->
+- **Staged source tree:** `b4709fd31c1ad6c555c2c440644a46026d6298c7`. Commit: `4cce0aafb65c1ee8b972323548ce64007e99f2c9`.
+<!-- montana-change {"id": "b751f16a-8a5d-46cb-bf4d-751780e051d6", "utc": "2026-09-29T20:53:55+00:00", "callsign": "claude-9e council / onboarding-os", "model": "Claude Opus 5.5", "build": "2013 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge rollback-898 (3b0a1b5f, the council wall post of 2013) into design/onboarding-os-style before the master's fast-forward: no conflicts, no code in the merge; the guard ring green, the Swift tree the one typechecked green a step before", "tree": "b4709fd31c1ad6c555c2c440644a46026d6298c7", "parents": ["175feb2f0f3d1a5b727245a216fe7f26cbb96995", "3b0a1b5f395e3da5aa2040be7c371b886d84390d"], "commit": "4cce0aafb65c1ee8b972323548ce64007e99f2c9"} -->
 
 ### 2026-09-29T20:51:54+00:00 — Merge rollback-898 (ac01b6c4, build 2013) into design/onboarding-os-style before the master's fast-forward: no conflicts; the guard ring and the app module typecheck green on the merged tree
 
