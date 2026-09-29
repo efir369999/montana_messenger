@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:01:30+00:00 — Seats: a second Montana person on one phone, parked and lifted by one road, faces in the drawer
+
+- **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
+- **Build / OS:** 2012 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
+- **Staged source tree:** `7d7019e0569c812e20dabbe2342026ce47e6882e`. Commit: pending.
+<!-- montana-change {"id": "6e25b7eb-b068-48ee-a17d-4f92e70ef46f", "utc": "2026-09-29T21:01:30+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Seats: a second Montana person on one phone, parked and lifted by one road, faces in the drawer", "tree": "7d7019e0569c812e20dabbe2342026ce47e6882e", "parents": ["1f24ca515cca3fdaa6f2b94e95f6d3c0903b2fc9"], "commit": null} -->
+
 ### 2026-09-29T21:00:43+00:00 — outer shell checklist, section 11: the measurement 'function, before, after' with file and line, the named deviations, the author's hand (own API credentials, the APNs certificate in the service's application settings, the store description, the door icon), what to check on the device; the chronicle of the pass
 
 - **Callsign / model:** claude-9e council / outer-native / Claude Opus 5.5.
