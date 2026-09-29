@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:17:12+00:00 — Merge rollback-898 (77c4aeae, build 2014) into fix/player-cover-keys-copy before the master fast-forward
+
+- **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/player-cover-keys-copy over build 2012; macOS (Darwin 25.6.0); no device. No new compilation or installation claimed.
+- **Staged source tree:** `28cb6384815c2eaa7298272ce0e07e0e6d026097`. Commit: pending.
+<!-- montana-change {"id": "ab061cab-4d10-4c97-8255-f8029542c6cf", "utc": "2026-09-29T21:17:12+00:00", "callsign": "player-cover (agent of claude-9e)", "model": "Claude Opus 5.5", "build": "not built; branch fix/player-cover-keys-copy over build 2012", "os": "macOS (Darwin 25.6.0); no device", "summary": "Merge rollback-898 (77c4aeae, build 2014) into fix/player-cover-keys-copy before the master fast-forward", "tree": "28cb6384815c2eaa7298272ce0e07e0e6d026097", "parents": ["0c4daca88b434e7edc81aa6c2c3f91a089a544f6", "77c4aeae31f0be39071f82232a665cd0a05418f5"], "commit": null} -->
+
 ### 2026-09-29T21:04:07+00:00 — council wall: the post of 2015, the author word to publish the wall, two lessons (the main tree is untouched during a build; the public showcase is written only through the log tool clone under its lock)
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
