@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T13:55:29+00:00 — Checklist: the chronicle of 1992 -- the chess notices (the 15:21 finding, the two letters that ring, entering accepts, the chat over the board), installed on T1 and T3 at 16:42 and 16:43 MSK, artifact proof by strings; what entered since 1991 and what stayed out
+
+- **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
+- **Build / OS:** 1992 built, sealed, installed on T1 and T3; Release archive uploaded to TestFlight (processing); iOS 26.7.1 (T1), iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `83e2b6a795f544be21d845a711bd2f16df8372b8`. Commit: pending.
+<!-- montana-change {"id": "8d7eb6f6-896d-416f-b2f3-803f424eb423", "utc": "2026-09-29T13:55:29+00:00", "callsign": "Claude / build master (rollback-898)", "model": "Claude Fable 5.1", "build": "1992 built, sealed, installed on T1 and T3; Release archive uploaded to TestFlight (processing)", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3); macOS 26 build host", "summary": "Checklist: the chronicle of 1992 -- the chess notices (the 15:21 finding, the two letters that ring, entering accepts, the chat over the board), installed on T1 and T3 at 16:42 and 16:43 MSK, artifact proof by strings; what entered since 1991 and what stayed out", "tree": "83e2b6a795f544be21d845a711bd2f16df8372b8", "parents": ["e329a4177982967b32e995e7bd5ac05795a3222f"], "commit": null} -->
+
 ### 2026-09-29T13:54:43+00:00 — Checklist: the chronicle of 1992 -- the chess notices (the 15:21 finding, the two letters that ring, entering accepts, the chat over the board), installed on T1 and T3 at 16:42 and 16:43 MSK, artifact proof by strings; what entered since 1991 and what stayed out
 
 - **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
