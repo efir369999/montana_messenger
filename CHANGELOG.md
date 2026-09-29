@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T23:24:46+00:00 — wall: a post written on a friend's wall stands as a card in the pair's chat on both phones; one birth, keyed by the post id, no new wire word
+
+- **Callsign / model:** claude-9e/wall-post-chat / Claude Opus 5.5.
+- **Build / OS:** none (source only, typecheck app and NSE green); macOS 26 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `064238afae3eb62a4e8a1a480adcb494c3ae0eb9`. Commit: pending.
+<!-- montana-change {"id": "ea079e07-d89d-401f-8d78-216e8593feff", "utc": "2026-09-29T23:24:46+00:00", "callsign": "claude-9e/wall-post-chat", "model": "Claude Opus 5.5", "build": "none (source only, typecheck app and NSE green)", "os": "macOS 26 (Darwin 25.6.0)", "summary": "wall: a post written on a friend's wall stands as a card in the pair's chat on both phones; one birth, keyed by the post id, no new wire word", "tree": "064238afae3eb62a4e8a1a480adcb494c3ae0eb9", "parents": ["f3de66ce0bed4e944e5910624099388251541a9f"], "commit": null} -->
+
 ### 2026-09-29T23:20:50+00:00 — build 2021 bump: my own face drawn by one view everywhere -- the Saved Messages face changes the moment my avatar changes
 
 - **Callsign / model:** Claude claude-9e / Master 1 / rollback-898 / Claude Opus 5.5.
