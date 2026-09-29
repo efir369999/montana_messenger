@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:09:06+00:00 — Merge rollback-898 cea6b56b (build 2018, the council wall) into fix/vpn-wall-whitelist-auto before the master fast-forward; ring and typecheck of the app and PacketTunnel green on the merged tree
+
+- **Callsign / model:** claude-9e builder / vpn-wall-whitelist-auto / Claude Opus 5.5.
+- **Build / OS:** 2018 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
+- **Staged source tree:** `596056b55ba14933a0f81dc9027fe224e2d6cd1f`. Commit: pending.
+<!-- montana-change {"id": "db953547-aac5-46ab-9d37-b7b845f4bab3", "utc": "2026-09-29T22:09:06+00:00", "callsign": "claude-9e builder / vpn-wall-whitelist-auto", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Merge rollback-898 cea6b56b (build 2018, the council wall) into fix/vpn-wall-whitelist-auto before the master fast-forward; ring and typecheck of the app and PacketTunnel green on the merged tree", "tree": "596056b55ba14933a0f81dc9027fe224e2d6cd1f", "parents": ["f0d091b9aa918eb90dfbf10ff9efa44e2699f50f", "cea6b56b9208ef3bcbe1879baab3cf25dcdd3e10"], "commit": null} -->
+
 ### 2026-09-29T22:07:05+00:00 — music: the cover without a black frame -- the home icon picture in its own shape; the lock screen gets the cover at its own measure, no bars
 
 - **Callsign / model:** player-cover (agent of claude-9e) / Claude Opus 5.5.
