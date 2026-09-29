@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T13:02:03+00:00 — Merge the main line (c80efc7d: the VPN power button and the VPN rising after an install, the call-screen fold) into fix/feed-sharp-pictures before its fast-forward into main; no conflicts; mt-precommit.sh, mt-build-checks.sh and mt-typecheck.py clean on the merged tree.
+
+- **Callsign / model:** Claude / fix/feed-sharp-pictures / Claude Fable 5.1.
+- **Build / OS:** source only; not built, next artifact unassigned; iOS 17.2 floor, Debug; guard ring and typecheck on the merged tree, no device. No new compilation or installation claimed.
+- **Staged source tree:** `9c216c313952b78cb5d965c7e0ac59442eb28066`. Commit: pending.
+<!-- montana-change {"id": "7943c386-8154-4d2a-a680-1a16fde0aeb4", "utc": "2026-09-29T13:02:03+00:00", "callsign": "Claude / fix/feed-sharp-pictures", "model": "Claude Fable 5.1", "build": "source only; not built, next artifact unassigned", "os": "iOS 17.2 floor, Debug; guard ring and typecheck on the merged tree, no device", "summary": "Merge the main line (c80efc7d: the VPN power button and the VPN rising after an install, the call-screen fold) into fix/feed-sharp-pictures before its fast-forward into main; no conflicts; mt-precommit.sh, mt-build-checks.sh and mt-typecheck.py clean on the merged tree.", "tree": "9c216c313952b78cb5d965c7e0ac59442eb28066", "parents": ["cf4e10b861a387c919204c0885500ecfb7a82258", "c80efc7d473a5326cd2443260effc5a421377fc0"], "commit": null} -->
+
 ### 2026-09-29T13:00:47+00:00 — The finger and the platform view, whole tree: a new guard (tools/mt-platform-touch-check.py, in the PROVEN ring as P-153 and in the pre-commit gate) demands that every platform view either refuses the finger or is named in a registry with its reason, and that nothing tappable hangs on the chain of a platform view or of a wrapper whose body is one; proven to reject the 1991 call screen. Fixed by it: five picture views now refuse the finger (the voice orb, the link card's words, the feed clip, the dock player layer, the video note preview), and three controls that hung as overlays on a list or a zoom picture stand beside them in the stack (the gallery's plus, the network page's plus, the album's play). Verified: guard ring 13 of 13 green including the new guard, app-module typecheck 111 files exit 0. Not built, not run on a device.
 
 - **Callsign / model:** Claude / fix/platform-view-touch-guard / Claude Fable 5.1.
