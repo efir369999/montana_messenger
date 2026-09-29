@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T18:23:47+00:00 — merge rollback-898 (16cf451b, the chronicle of 2003) into fix/vpn-import-menu: the checklist alone, so the branch fast-forwards the main line
+
+- **Callsign / model:** Claude / fix/vpn-import-menu (builder) / Claude Opus 5.5.
+- **Build / OS:** source: the main line 16cf451b (the chronicle of 2003) merged into fix/vpn-import-menu 92b2e709; not built, the master claude-10 builds; iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `0dda344905d8dcf6778d054b0a6d80a27b2f573d`. Commit: pending.
+<!-- montana-change {"id": "4ce4ad84-f8f4-4dc0-964c-210b3160e22d", "utc": "2026-09-29T18:23:47+00:00", "callsign": "Claude / fix/vpn-import-menu (builder)", "model": "Claude Opus 5.5", "build": "source: the main line 16cf451b (the chronicle of 2003) merged into fix/vpn-import-menu 92b2e709; not built, the master claude-10 builds", "os": "iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed", "summary": "merge rollback-898 (16cf451b, the chronicle of 2003) into fix/vpn-import-menu: the checklist alone, so the branch fast-forwards the main line", "tree": "0dda344905d8dcf6778d054b0a6d80a27b2f573d", "parents": ["92b2e709d0109564b3f2182f02d8c0521fe9041b", "16cf451b6c06bd1d9734a285dcac8435ea7f4046"], "commit": null} -->
+
 ### 2026-09-29T18:20:51+00:00 — merge rollback-898 (86a932a4, the build 2003 bump) into fix/vpn-import-menu: the project's build number alone; the previous merge a55e4715 took 103e2bec, not 3424c731 as its record's words say (its tree and parents are exact)
 
 - **Callsign / model:** Claude / fix/vpn-import-menu (builder) / Claude Opus 5.5.
