@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:03:37+00:00 — merge of the main line 74294bac (the VPN wall carried as the posts' wall) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge (MontanaBoardViews.swift merged by git without conflict); typecheck rc 0 (111 files), ring 1, the 44-point target, owner and language guards green on the merged tree.
+
+- **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
+- **Build / OS:** source only; not built (the master builds); iOS 17.2+ target (Debug typecheck on macOS); not installed. No new compilation or installation claimed.
+- **Staged source tree:** `728bd01510f66517235552ab17abaf5e77ba4067`. Commit: pending.
+<!-- montana-change {"id": "c868008f-2a91-45fe-a7a7-b646d7b5ae4c", "utc": "2026-09-29T19:03:37+00:00", "callsign": "Claude / fix/mini-seek-and-hold-menu (builder for claude-83)", "model": "Claude Opus 5.5", "build": "source only; not built (the master builds)", "os": "iOS 17.2+ target (Debug typecheck on macOS); not installed", "summary": "merge of the main line 74294bac (the VPN wall carried as the posts' wall) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge (MontanaBoardViews.swift merged by git without conflict); typecheck rc 0 (111 files), ring 1, the 44-point target, owner and language guards green on the merged tree.", "tree": "728bd01510f66517235552ab17abaf5e77ba4067", "parents": ["6ee0e898f82e119be604c7c30cc28baa9d967f99", "74294bacce9f32f3d04160dfa598c8578bfad768"], "commit": null} -->
+
 ### 2026-09-29T19:01:45+00:00 — build: 2006 -- the VPN wall as the posts' wall (only to builds that know it, a page answered by got is never sent again, who sees my VPN wall as a rule of its own, WireGuard never spreads), over 2005; for T1 and T3
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
