@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T17:05:09+00:00 — The fold button of a video call raises the platform's own picture in picture (the author's word 29.09): MTCallFloat.foldAway asks the standing controller to start, the call screen folds under the window when the system takes the ask (willStart), a refusal or a voice call takes the old road (the pill); a rising or standing window is never rebuilt by a change of its source view. Checklist entry in the transport checklist. Unverified on devices.
+
+- **Callsign / model:** Claude / fix/call-fold-pip (claude-60, builder) / Claude Fable 5.1.
+- **Build / OS:** source on 79af8e96; not built, next artifact unassigned (the master claude-10 builds); iOS 17.2 or later target; typecheck of the app module on macOS (111 files, exit 0), PROVEN ring green on the session tree; no device run yet. No new compilation or installation claimed.
+- **Staged source tree:** `d2a45506ca4c9d5403bc8769898e42461fe3756d`. Commit: pending.
+<!-- montana-change {"id": "f2469858-c0aa-4446-9c7a-f8edc9902b51", "utc": "2026-09-29T17:05:09+00:00", "callsign": "Claude / fix/call-fold-pip (claude-60, builder)", "model": "Claude Fable 5.1", "build": "source on 79af8e96; not built, next artifact unassigned (the master claude-10 builds)", "os": "iOS 17.2 or later target; typecheck of the app module on macOS (111 files, exit 0), PROVEN ring green on the session tree; no device run yet", "summary": "The fold button of a video call raises the platform's own picture in picture (the author's word 29.09): MTCallFloat.foldAway asks the standing controller to start, the call screen folds under the window when the system takes the ask (willStart), a refusal or a voice call takes the old road (the pill); a rising or standing window is never rebuilt by a change of its source view. Checklist entry in the transport checklist. Unverified on devices.", "tree": "d2a45506ca4c9d5403bc8769898e42461fe3756d", "parents": ["79af8e9623808bdff5604fa91e1eb80fd0a55e57"], "commit": null} -->
+
 ### 2026-09-29T16:53:24+00:00 — merge of the main line (5b44a4d6: the letter on the live lane beside the box, build 1999 and its chronicle) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 and ring 1 green on the merged tree.
 
 - **Callsign / model:** Claude / fix/mini-seek-and-hold-menu / Claude Fable 5.1.
