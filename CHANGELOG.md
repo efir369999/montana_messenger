@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-83 / claude-opus-5-5.
 - **Build / OS:** 2004 (Debug, every core, next); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `129f6b7941a0f713eeedfc3ab42db845f1edb6e0`. Commit: pending.
-<!-- montana-change {"id": "741295ad-8482-42c7-bd07-eb7bc237eb1f", "utc": "2026-09-29T18:36:00+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2004 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2004 -- the pair's one game in chess (the mark enters the game both phones see, active or finished; the state on a plate at the board's centre; a game that ends goes back to the chat; the finished board invites the next), the big player in liquid glass with the playlist's places, the VPN page's example menu; for T1 and T3", "tree": "129f6b7941a0f713eeedfc3ab42db845f1edb6e0", "parents": ["25c8533bbe09127a2afe6dce7ab13657571e4b3b"], "commit": null} -->
+- **Staged source tree:** `129f6b7941a0f713eeedfc3ab42db845f1edb6e0`. Commit: `298a891499bbb21367d3d9fd93a4ac7629a45819`.
+<!-- montana-change {"id": "741295ad-8482-42c7-bd07-eb7bc237eb1f", "utc": "2026-09-29T18:36:00+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2004 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2004 -- the pair's one game in chess (the mark enters the game both phones see, active or finished; the state on a plate at the board's centre; a game that ends goes back to the chat; the finished board invites the next), the big player in liquid glass with the playlist's places, the VPN page's example menu; for T1 and T3", "tree": "129f6b7941a0f713eeedfc3ab42db845f1edb6e0", "parents": ["25c8533bbe09127a2afe6dce7ab13657571e4b3b"], "commit": "298a891499bbb21367d3d9fd93a4ac7629a45819"} -->
 
 ### 2026-09-29T18:34:57+00:00 — Merge rollback-898 (b1bb441d: the big player in liquid glass, the playlist with each track's place; the VPN page's example menu) into fix/chess-one-game before the master's fast-forward
 
