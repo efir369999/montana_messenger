@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T15:22:57+00:00 — Merge of the main line (40dd412e: the 1995 and 1996 build numbers, the chess mark beside the handset, the white icons, the outer shell's seats, the first screen's doors) into fix/vpn-ping-grpc-ams (21f31863: the VPN wall), no conflicts; ring and typecheck (111 files) green on the merged tree. Next: the master's fast-forward and build 1997 by this session (the author's word).
+
+- **Callsign / model:** Claude / fix/vpn-ping-grpc-ams / Claude Fable 5.1.
+- **Build / OS:** 1996 source; not built, next artifact 1997; iOS 26.7 and 18.3 targets (T1, T3). No new compilation or installation claimed.
+- **Staged source tree:** `5ef2ba024e8f6f9c054bb465d2144e693f3e5688`. Commit: pending.
+<!-- montana-change {"id": "9a52f7aa-cd97-45f5-a7cc-912dbca32fc8", "utc": "2026-09-29T15:22:57+00:00", "callsign": "Claude / fix/vpn-ping-grpc-ams", "model": "Claude Fable 5.1", "build": "1996 source; not built, next artifact 1997", "os": "iOS 26.7 and 18.3 targets (T1, T3)", "summary": "Merge of the main line (40dd412e: the 1995 and 1996 build numbers, the chess mark beside the handset, the white icons, the outer shell's seats, the first screen's doors) into fix/vpn-ping-grpc-ams (21f31863: the VPN wall), no conflicts; ring and typecheck (111 files) green on the merged tree. Next: the master's fast-forward and build 1997 by this session (the author's word).", "tree": "5ef2ba024e8f6f9c054bb465d2144e693f3e5688", "parents": ["21f31863f966af5e54e374c45b43ee30ef081407", "40dd412eed5c45d768e908840f6e97b2dd53ad05"], "commit": null} -->
+
 ### 2026-09-29T15:20:13+00:00 — VPN wall: a person's hand-added servers and pasted plans are carried to the latest correspondents as a page of one service word (VW:, buried unread by older builds), with a version and an ask, on the posts' wall's own road; a correspondent's servers land as a pinned plan under their name, their plans load as this phone's plans; nothing that came by a wall is chosen by itself for the tunnel or a call; the caption above the power button; checklist stage 3; test. Typecheck and ring green. Not built yet; the author named this session the build master for this delivery.
 
 - **Callsign / model:** Claude / fix/vpn-ping-grpc-ams / Claude Fable 5.1.
