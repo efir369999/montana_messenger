@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:02:43+00:00 — Pages' corner: the feed's write and the gallery's plus stand by MTPageCorner, the one measure the list's arrow reads
+
+- **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
+- **Build / OS:** 2018 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
+- **Staged source tree:** `1170f2d70206e85cee865656c693aecc8e83d393`. Commit: pending.
+<!-- montana-change {"id": "1197cf94-c10b-48d5-90c4-d33b96fbee2e", "utc": "2026-09-29T22:02:43+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2018 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Pages' corner: the feed's write and the gallery's plus stand by MTPageCorner, the one measure the list's arrow reads", "tree": "1170f2d70206e85cee865656c693aecc8e83d393", "parents": ["cc6b39be7456eac8b8d5acc839d54b46893a0ab5"], "commit": null} -->
+
 ### 2026-09-29T22:01:55+00:00 — Lists: the arrow back to the top, one owner in the container; the row number rides the platform's own thumb
 
 - **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
