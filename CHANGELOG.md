@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude / signal-lane / Claude Fable 5.1.
 - **Build / OS:** 1990 (ee7a0e64) built with zero errors, installed on T1 and T3, uploaded to TestFlight (VALID, both groups, beta review submitted); T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7. No new compilation or installation claimed.
-- **Staged source tree:** `1d0f6c070eaa580d6cc0cf4687a365450be4424a`. Commit: pending.
-<!-- montana-change {"id": "4368ec7b-c033-4009-8d70-47d37ff0b6bf", "utc": "2026-09-29T00:47:20+00:00", "callsign": "Claude / signal-lane", "model": "Claude Fable 5.1", "build": "1990 (ee7a0e64) built with zero errors, installed on T1 and T3, uploaded to TestFlight (VALID, both groups, beta review submitted)", "os": "T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7", "summary": "The chronicle of 1990: the presence grace, the feed video back-off and the tool fixes -- on T1 and T3 and in TestFlight", "tree": "1d0f6c070eaa580d6cc0cf4687a365450be4424a", "parents": ["ee7a0e6438963057960970ec9bae4ee5809aeb38"], "commit": null} -->
+- **Staged source tree:** `1d0f6c070eaa580d6cc0cf4687a365450be4424a`. Commit: `89c7ee82a680feccc96a9bf1d8ccdbff718679eb`.
+<!-- montana-change {"id": "4368ec7b-c033-4009-8d70-47d37ff0b6bf", "utc": "2026-09-29T00:47:20+00:00", "callsign": "Claude / signal-lane", "model": "Claude Fable 5.1", "build": "1990 (ee7a0e64) built with zero errors, installed on T1 and T3, uploaded to TestFlight (VALID, both groups, beta review submitted)", "os": "T1 iOS 26.7.1; T3 iOS 18.3; macOS 26.7", "summary": "The chronicle of 1990: the presence grace, the feed video back-off and the tool fixes -- on T1 and T3 and in TestFlight", "tree": "1d0f6c070eaa580d6cc0cf4687a365450be4424a", "parents": ["ee7a0e6438963057960970ec9bae4ee5809aeb38"], "commit": "89c7ee82a680feccc96a9bf1d8ccdbff718679eb"} -->
 
 ### 2026-09-29T00:32:07+00:00 — Build 1990: the project number for the presence grace, the feed video back-off and the tool fixes, for T1, T3 and TestFlight
 
