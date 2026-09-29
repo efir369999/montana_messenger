@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:43:56+00:00 — merge rollback-898 (548810ff, the chronicle of 2010) into stage/three-walls on the master's word: the checklist alone
+
+- **Callsign / model:** Claude / stage/three-walls (builder claude-bb) / Claude Opus 5.5.
+- **Build / OS:** source: the main line 548810ff (the chronicle of 2010) merged into stage/three-walls 4c776ef3; not built, the master claude-83 builds; iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `8189f81ac0a496ac90413372d816f6fc87bed4a3`. Commit: pending.
+<!-- montana-change {"id": "7b2a34e4-8b37-4e1f-8577-f3b266aa00b9", "utc": "2026-09-29T19:43:56+00:00", "callsign": "Claude / stage/three-walls (builder claude-bb)", "model": "Claude Opus 5.5", "build": "source: the main line 548810ff (the chronicle of 2010) merged into stage/three-walls 4c776ef3; not built, the master claude-83 builds", "os": "iOS 17.2 or later target; typecheck of the merged app module on macOS (111 files, exit 0), the guard ring clean; not installed", "summary": "merge rollback-898 (548810ff, the chronicle of 2010) into stage/three-walls on the master's word: the checklist alone", "tree": "8189f81ac0a496ac90413372d816f6fc87bed4a3", "parents": ["4c776ef30f16fd3dfa9fa75183ed7e001f72fc38", "548810ff7d7ddeed4f9e103d61be54ec4bd891a5"], "commit": null} -->
+
 ### 2026-09-29T19:39:00+00:00 — merge rollback-898 (438bb4f6, build 2010: the board views, the music player) into stage/three-walls, the mesh wall's step 1, on the master's word; no conflicts
 
 - **Callsign / model:** Claude / stage/three-walls (builder claude-bb) / Claude Opus 5.5.
