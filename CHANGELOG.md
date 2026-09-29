@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:47:55+00:00 — the mesh wall's cell by the mesh's own rule (the critic's pass 29.09, before the room's first build): a cell nobody passed on ends with a seal count of zero, or a long word ending in a full stop lost its tail; a word is named by its content, so a replay under a new cell id lays nothing twice; the phone passes on at most 120 words of the room a minute whatever marks they wear
+
+- **Callsign / model:** Claude / stage/three-walls (builder claude-bb) / Claude Opus 5.5.
+- **Build / OS:** source on stage/three-walls 94793eb9 (the main line 548810ff merged); not built, the master claude-83 builds; iOS 17.2 or later target; typecheck of the app module on macOS (111 files, exit 0), the guard ring clean, the room's test in a Mac harness 19 checks 0 failures; not installed. No new compilation or installation claimed.
+- **Staged source tree:** `13af97e597e7fd4bde4c001c989ae839313993ec`. Commit: pending.
+<!-- montana-change {"id": "d1965938-f966-48bb-a7fa-3ea0df252a4c", "utc": "2026-09-29T19:47:55+00:00", "callsign": "Claude / stage/three-walls (builder claude-bb)", "model": "Claude Opus 5.5", "build": "source on stage/three-walls 94793eb9 (the main line 548810ff merged); not built, the master claude-83 builds", "os": "iOS 17.2 or later target; typecheck of the app module on macOS (111 files, exit 0), the guard ring clean, the room's test in a Mac harness 19 checks 0 failures; not installed", "summary": "the mesh wall's cell by the mesh's own rule (the critic's pass 29.09, before the room's first build): a cell nobody passed on ends with a seal count of zero, or a long word ending in a full stop lost its tail; a word is named by its content, so a replay under a new cell id lays nothing twice; the phone passes on at most 120 words of the room a minute whatever marks they wear", "tree": "13af97e597e7fd4bde4c001c989ae839313993ec", "parents": ["94793eb9e5adf9c2cac541333fcdce806d4bcdbb"], "commit": null} -->
+
 ### 2026-09-29T19:43:56+00:00 — merge rollback-898 (548810ff, the chronicle of 2010) into stage/three-walls on the master's word: the checklist alone
 
 - **Callsign / model:** Claude / stage/three-walls (builder claude-bb) / Claude Opus 5.5.
