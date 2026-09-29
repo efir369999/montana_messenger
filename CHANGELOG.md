@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T11:01:48+00:00 — VPN: a save that changes the kernel rule of the profile restarts the live session instead of hot-swapping the plan (three phones lost all network after the first profile upgrade)
+
+- **Callsign / model:** Claude / fix/vpn-live-rule / Claude Opus 5.5.
+- **Build / OS:** source on 1990 (89c7ee82); not built, next artifact unassigned; iOS 17.2+ target; app module typecheck and VPN recovery executable checks on macOS; no device. No new compilation or installation claimed.
+- **Staged source tree:** `315cb6ffe405a188a6a6aa3e9db379c2051f1f1f`. Commit: pending.
+<!-- montana-change {"id": "41b2e3e5-fe13-47f6-b296-dfb635c79ea2", "utc": "2026-09-29T11:01:48+00:00", "callsign": "Claude / fix/vpn-live-rule", "model": "Claude Opus 5.5", "build": "source on 1990 (89c7ee82); not built, next artifact unassigned", "os": "iOS 17.2+ target; app module typecheck and VPN recovery executable checks on macOS; no device", "summary": "VPN: a save that changes the kernel rule of the profile restarts the live session instead of hot-swapping the plan (three phones lost all network after the first profile upgrade)", "tree": "315cb6ffe405a188a6a6aa3e9db379c2051f1f1f", "parents": ["89c7ee82a680feccc96a9bf1d8ccdbff718679eb"], "commit": null} -->
+
 ### 2026-09-29T10:58:49+00:00 — Chess: a step I sent stops at delivered so a read mark never restarts the correspondent's clock; replays are kept with the letters they came from
 
 - **Callsign / model:** Claude / fix/chess-whole / Claude Opus 5.5.
