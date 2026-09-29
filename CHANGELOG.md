@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T21:34:14+00:00 — Merge rollback-898 7d34df94 (the council wall) into fix/outer-shell-native before the master fast-forward; no conflicts, no code in the merge
+
+- **Callsign / model:** claude-9e council / outer-native / Claude Opus 5.5.
+- **Build / OS:** not built; branch fix/outer-shell-native over the main line 7d34df94 (2016); macOS (Darwin 25.6.0); ring-1 green on the merged tree, Swift unchanged since the typechecked merge of e7af3a04; no device. No new compilation or installation claimed.
+- **Staged source tree:** `b8a69595871bbcf3f91b03d1e8afcc2d6af43bb0`. Commit: pending.
+<!-- montana-change {"id": "f3528ad7-90ee-4bd1-b55c-d99740074d93", "utc": "2026-09-29T21:34:14+00:00", "callsign": "claude-9e council / outer-native", "model": "Claude Opus 5.5", "build": "not built; branch fix/outer-shell-native over the main line 7d34df94 (2016)", "os": "macOS (Darwin 25.6.0); ring-1 green on the merged tree, Swift unchanged since the typechecked merge of e7af3a04; no device", "summary": "Merge rollback-898 7d34df94 (the council wall) into fix/outer-shell-native before the master fast-forward; no conflicts, no code in the merge", "tree": "b8a69595871bbcf3f91b03d1e8afcc2d6af43bb0", "parents": ["348f5e8efd465f4beb5a4ee62eaebeb8bce6625a", "7d34df94cd5ffee541e44ff5067412970d40ecb7"], "commit": null} -->
+
 ### 2026-09-29T21:32:13+00:00 — Merge rollback-898 e7af3a04 (build 2016, the player) into fix/outer-shell-native before the master fast-forward; no conflicts, no code in the merge
 
 - **Callsign / model:** claude-9e council / outer-native / Claude Opus 5.5.
