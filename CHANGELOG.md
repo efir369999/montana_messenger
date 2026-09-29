@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / onboarding-os / Claude Opus 5.5.
 - **Build / OS:** 2012 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `2748de51e75f3cdd11012699ac36489bf8788dc5`. Commit: pending.
-<!-- montana-change {"id": "6f69039b-8ee9-461c-8109-2b30b7dc5e89", "utc": "2026-09-29T20:43:14+00:00", "callsign": "claude-9e council / onboarding-os", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge rollback-898 (b542c701) into design/onboarding-os-style before the master's fast-forward: no conflicts; the guard ring and the app module typecheck green on the merged tree", "tree": "2748de51e75f3cdd11012699ac36489bf8788dc5", "parents": ["0546dc3871d52de576f08d0134ff744bbb932641", "b542c70105333ca3ab124375068a91e47eaf524e"], "commit": null} -->
+- **Staged source tree:** `2748de51e75f3cdd11012699ac36489bf8788dc5`. Commit: `19fd9c3fda156cbbba27e07c031a46cc12c45623`.
+<!-- montana-change {"id": "6f69039b-8ee9-461c-8109-2b30b7dc5e89", "utc": "2026-09-29T20:43:14+00:00", "callsign": "claude-9e council / onboarding-os", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge rollback-898 (b542c701) into design/onboarding-os-style before the master's fast-forward: no conflicts; the guard ring and the app module typecheck green on the merged tree", "tree": "2748de51e75f3cdd11012699ac36489bf8788dc5", "parents": ["0546dc3871d52de576f08d0134ff744bbb932641", "b542c70105333ca3ab124375068a91e47eaf524e"], "commit": "19fd9c3fda156cbbba27e07c031a46cc12c45623"} -->
 
 ### 2026-09-29T20:41:37+00:00 — build 2013 bump: the time logo carries no sending mark (fix/time-logo-no-send-badge) and a media batch has one status by its most lagging letter in the chat, its mark, the menu and the chats list (fix/chat-list-late-dots)
 
