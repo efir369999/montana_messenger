@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T22:30:40+00:00 — Merge the main line f3de66ce into stage/second-identity before the master's fast-forward
+
+- **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
+- **Build / OS:** 2018 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
+- **Staged source tree:** `cf6b21d6ed5106ff981e979b1953d2d9d7d11e9a`. Commit: pending.
+<!-- montana-change {"id": "4b4a3940-1aef-4d97-a371-06180c0c13bc", "utc": "2026-09-29T22:30:40+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2018 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Merge the main line f3de66ce into stage/second-identity before the master's fast-forward", "tree": "cf6b21d6ed5106ff981e979b1953d2d9d7d11e9a", "parents": ["1e1db9429fe633621c2fc2bfdbd25827344435c2", "f3de66ce0bed4e944e5910624099388251541a9f"], "commit": null} -->
+
 ### 2026-09-29T22:22:52+00:00 — Merge rollback-898 (333dab4c) into fix/feeds-scroll-top: the main line under the lists' arrow to the top, the number on the platform's thumb and the big player's placeholder, filter and cover
 
 - **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
