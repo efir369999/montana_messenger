@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / second-identity / Claude Opus 5.5.
 - **Build / OS:** 2012 source only; next artifact unassigned; iOS 26.7 / 18.3 targets. No new compilation or installation claimed.
-- **Staged source tree:** `af87099762c9df5f7cf7f2c4233f1e1182e5530c`. Commit: pending.
-<!-- montana-change {"id": "2f3bd629-676c-4a7a-a5c9-90ef0254f58e", "utc": "2026-09-29T20:30:18+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Checklist of the second Montana identity: two doors from the drawer, a seat per identity, switching by faces", "tree": "af87099762c9df5f7cf7f2c4233f1e1182e5530c", "parents": ["ae2c39e81b08b211070977a1a92c17f344398eb9"], "commit": null} -->
+- **Staged source tree:** `af87099762c9df5f7cf7f2c4233f1e1182e5530c`. Commit: `665d2aea3dc7e77e31a36ff389d988fe68d40f5c`.
+<!-- montana-change {"id": "2f3bd629-676c-4a7a-a5c9-90ef0254f58e", "utc": "2026-09-29T20:30:18+00:00", "callsign": "claude-9e council / second-identity", "model": "Claude Opus 5.5", "build": "2012 source only; next artifact unassigned", "os": "iOS 26.7 / 18.3 targets", "summary": "Checklist of the second Montana identity: two doors from the drawer, a seat per identity, switching by faces", "tree": "af87099762c9df5f7cf7f2c4233f1e1182e5530c", "parents": ["ae2c39e81b08b211070977a1a92c17f344398eb9"], "commit": "665d2aea3dc7e77e31a36ff389d988fe68d40f5c"} -->
 
 ### 2026-09-29T20:28:57+00:00 — council wall: Latin names (CouncilWall), the masters timechain -- one record per line, SHA-256 over the canonical body, prev hash, hippocampus thread, time never runs back; the wall page is drawn from it; load gives the next master only lessons, open questions and the last parting word
 
