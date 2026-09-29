@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T20:14:41+00:00 — council: the council board in Code/Council -- a read-only page any session runs to see the main line, waiting branches, every session and agent with its measured spend and conversation size, devices and the journal; private data stays outside git
+
+- **Callsign / model:** Claude claude-9e / chairman / council/board / Claude Opus 5.5.
+- **Build / OS:** 2012 source; not built, next artifact unassigned; macOS (tooling only, not in the app target). No new compilation or installation claimed.
+- **Staged source tree:** `51fdded369ca8c92a85290e82454608dab9e5a3a`. Commit: pending.
+<!-- montana-change {"id": "a3b9411a-6d2a-436e-ab65-b0512ad60176", "utc": "2026-09-29T20:14:41+00:00", "callsign": "Claude claude-9e / chairman / council/board", "model": "Claude Opus 5.5", "build": "2012 source; not built, next artifact unassigned", "os": "macOS (tooling only, not in the app target)", "summary": "council: the council board in Code/Council -- a read-only page any session runs to see the main line, waiting branches, every session and agent with its measured spend and conversation size, devices and the journal; private data stays outside git", "tree": "51fdded369ca8c92a85290e82454608dab9e5a3a", "parents": ["ae2c39e81b08b211070977a1a92c17f344398eb9"], "commit": null} -->
+
 ### 2026-09-29T20:10:48+00:00 — time panel: no send mark on the logo -- the author's word 29.09; the queue's sending projection (isSending) and its only viewer MTSendingFlight removed at birth; a letter on its way shows its state on its own bubble
 
 - **Callsign / model:** claude-9e council builder (logo-no-send) / claude-opus-5-5.
