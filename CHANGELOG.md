@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T11:19:22+00:00 — Merge: whole chess (invitation-only chat, tap starts the game, own-turn clocks, computer opponent) and VPN (kernel rule restart, a dead session releases the phone) for the main line
+
+- **Callsign / model:** Claude / fix/vpn-live-rule / Claude Opus 5.5.
+- **Build / OS:** source on 1990 (89c7ee82) + fix/chess-whole 27e6e671 + fix/vpn-live-rule 28adf59e; not built, next artifact unassigned; iOS 17.2+ target; merged app (111 files) and tunnel typecheck, chess and VPN executable checks on macOS; no device. No new compilation or installation claimed.
+- **Staged source tree:** `76d41291f1e6ce36334762a83f03eaeb3e06e553`. Commit: pending.
+<!-- montana-change {"id": "bdfdbe81-8f80-415d-9c45-64ef25aa9219", "utc": "2026-09-29T11:19:22+00:00", "callsign": "Claude / fix/vpn-live-rule", "model": "Claude Opus 5.5", "build": "source on 1990 (89c7ee82) + fix/chess-whole 27e6e671 + fix/vpn-live-rule 28adf59e; not built, next artifact unassigned", "os": "iOS 17.2+ target; merged app (111 files) and tunnel typecheck, chess and VPN executable checks on macOS; no device", "summary": "Merge: whole chess (invitation-only chat, tap starts the game, own-turn clocks, computer opponent) and VPN (kernel rule restart, a dead session releases the phone) for the main line", "tree": "76d41291f1e6ce36334762a83f03eaeb3e06e553", "parents": ["28adf59e81941d3981199e231b3fddc86ad03259", "27e6e6716a9075d970fec7684a527caa0e41e453"], "commit": null} -->
+
 ### 2026-09-29T11:17:29+00:00 — VPN: a dead session releases the phone -- a silent upstream after 90 s, a system block witnessed by the app restarts once then releases; zero packets alone is never a verdict
 
 - **Callsign / model:** Claude / fix/vpn-live-rule / Claude Opus 5.5.
