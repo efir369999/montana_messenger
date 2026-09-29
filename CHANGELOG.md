@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e / claude-opus-5-5.
 - **Build / OS:** none -- branch stage/36-avatar-mask, not built; macOS 26 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `6a8976e2cb38091a37d21b85476529c2961de13e`. Commit: pending.
-<!-- montana-change {"id": "21d8cd06-08ac-41ac-b932-3d96f9ecbd3b", "utc": "2026-09-29T22:51:39+00:00", "callsign": "claude-9e", "model": "claude-opus-5-5", "build": "none -- branch stage/36-avatar-mask, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "checklist 36: the universe -- avatar mask in a video call, own avatar, avatar in profile, world questions, graphics on order", "tree": "6a8976e2cb38091a37d21b85476529c2961de13e", "parents": ["aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": null} -->
+- **Staged source tree:** `6a8976e2cb38091a37d21b85476529c2961de13e`. Commit: `be86e887818f2e0e98608e6b485da411a0a8bfb6`.
+<!-- montana-change {"id": "21d8cd06-08ac-41ac-b932-3d96f9ecbd3b", "utc": "2026-09-29T22:51:39+00:00", "callsign": "claude-9e", "model": "claude-opus-5-5", "build": "none -- branch stage/36-avatar-mask, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "checklist 36: the universe -- avatar mask in a video call, own avatar, avatar in profile, world questions, graphics on order", "tree": "6a8976e2cb38091a37d21b85476529c2961de13e", "parents": ["aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": "be86e887818f2e0e98608e6b485da411a0a8bfb6"} -->
 
 ### 2026-09-29T22:48:58+00:00 — fix/chess-menu-score: the pair score (MTChessScore, counted from the seat by the replay) and the meeting rule (MTChessGame.meets: the correspondent unanswered invitation within one presence life); rules tests 140
 
