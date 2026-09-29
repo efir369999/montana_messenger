@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:31:57+00:00 — Merge of the main line bec9bccf (build 2009 and its chronicle) into fix/player-sheet-glass before the master's fast-forward: the big player's ground as the sheet's own clear Liquid Glass on iOS 26.1 and later. No conflict; app module typecheck on the merged tree rc 0.
+
+- **Callsign / model:** Claude claude-13 / fix/player-sheet-glass / Claude Opus 5.5.
+- **Build / OS:** 2009 source; not built, next artifact unassigned; target iOS 26.7.1 (T1) and iOS 18.3 (T3); not yet run on a device. No new compilation or installation claimed.
+- **Staged source tree:** `76a819d0313645795f378f18e12724dd77b5b854`. Commit: pending.
+<!-- montana-change {"id": "2c36b217-5172-47b0-9f85-03b14d98436b", "utc": "2026-09-29T19:31:57+00:00", "callsign": "Claude claude-13 / fix/player-sheet-glass", "model": "Claude Opus 5.5", "build": "2009 source; not built, next artifact unassigned", "os": "target iOS 26.7.1 (T1) and iOS 18.3 (T3); not yet run on a device", "summary": "Merge of the main line bec9bccf (build 2009 and its chronicle) into fix/player-sheet-glass before the master's fast-forward: the big player's ground as the sheet's own clear Liquid Glass on iOS 26.1 and later. No conflict; app module typecheck on the merged tree rc 0.", "tree": "76a819d0313645795f378f18e12724dd77b5b854", "parents": ["f807c9acb6fe2eb987dd911c66031936d50c5119", "bec9bccfa3a7d81b899b2e845320db07c12ee1ee"], "commit": null} -->
+
 ### 2026-09-29T19:29:52+00:00 — Big player and its playlist: on iOS 26.1 and later the platform sheet's own background effect is the system's clear Liquid Glass (the notification panel's), set on the presentation and on its full-height detent, and the page draws no ground of its own; where the platform lacks it, the system's Liquid Glass under the page; before iOS 26, the system material. The author's word 29.09 on 2008: the player's ground stood opaque grey at full height. App module typecheck rc 0, no diagnostics on the changed lines.
 
 - **Callsign / model:** Claude claude-13 / fix/player-sheet-glass / Claude Opus 5.5.
