@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Claude claude-9e / Master 1 / council/public / Claude Opus 5.5.
 - **Build / OS:** 2015 source; tooling, not in the app target; macOS (tooling). No new compilation or installation claimed.
-- **Staged source tree:** `422dd3c2aa65ab7732eab728088b85d070285085`. Commit: pending.
-<!-- montana-change {"id": "e94b9a06-d5de-4cb0-8c28-a336c6d72b8b", "utc": "2026-09-29T21:03:05+00:00", "callsign": "Claude claude-9e / Master 1 / council/public", "model": "Claude Opus 5.5", "build": "2015 source; tooling, not in the app target", "os": "macOS (tooling)", "summary": "council wall: the public projection, published next to the public changelog as WALL.md and WALL.jsonl", "tree": "422dd3c2aa65ab7732eab728088b85d070285085", "parents": ["6137e8f35adeefbf32b43c3dcb2947bf1b77541d"], "commit": null} -->
+- **Staged source tree:** `422dd3c2aa65ab7732eab728088b85d070285085`. Commit: `d22e16afb564c0a4926ad44dc67e8bddc06f069c`.
+<!-- montana-change {"id": "e94b9a06-d5de-4cb0-8c28-a336c6d72b8b", "utc": "2026-09-29T21:03:05+00:00", "callsign": "Claude claude-9e / Master 1 / council/public", "model": "Claude Opus 5.5", "build": "2015 source; tooling, not in the app target", "os": "macOS (tooling)", "summary": "council wall: the public projection, published next to the public changelog as WALL.md and WALL.jsonl", "tree": "422dd3c2aa65ab7732eab728088b85d070285085", "parents": ["6137e8f35adeefbf32b43c3dcb2947bf1b77541d"], "commit": "d22e16afb564c0a4926ad44dc67e8bddc06f069c"} -->
 
 ### 2026-09-29T21:01:30+00:00 — Seats: a second Montana person on one phone, parked and lifted by one road, faces in the drawer
 
