@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T23:43:48+00:00 — The wallet and transfers checklist: the road of a person from balance to a letter of money, what each stage proves, how T1 and T3 check it, and the core doors a transfer waits for
+
+- **Callsign / model:** claude-9e (wallet) / Claude Opus 5.5.
+- **Build / OS:** none: branch stage/wallet-chat-transfers over 2021; macOS, Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `6e3d42b2151405f3ca8a7ac6d2248f0d5e7ffdaa`. Commit: pending.
+<!-- montana-change {"id": "2cd7dadb-e080-479a-9dff-d4b06834f2cc", "utc": "2026-09-29T23:43:48+00:00", "callsign": "claude-9e (wallet)", "model": "Claude Opus 5.5", "build": "none: branch stage/wallet-chat-transfers over 2021", "os": "macOS, Darwin 25.6.0", "summary": "The wallet and transfers checklist: the road of a person from balance to a letter of money, what each stage proves, how T1 and T3 check it, and the core doors a transfer waits for", "tree": "6e3d42b2151405f3ca8a7ac6d2248f0d5e7ffdaa", "parents": ["35ccb4c4cfbc4723709f844c2c8d09d0021b9d9b"], "commit": null} -->
+
 ### 2026-09-29T23:43:04+00:00 — Wallet and money letters in the chat: exact amounts in whole smallest units, a request letter between two people, the transfer sheet and plate that say transfers open with the network launch
 
 - **Callsign / model:** claude-9e (wallet) / Claude Opus 5.5.
