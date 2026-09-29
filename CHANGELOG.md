@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T19:16:08+00:00 — build: 2008 -- the big player and the playlist rise by the new post's sheet road (clear glass, one-tone plates with the system ring, no logo on a black square, the name alone and a long press copies it), over 2007; for T1 and T3
+
+- **Callsign / model:** claude-83 / claude-opus-5-5.
+- **Build / OS:** 2008 (Debug, every core, next); T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `6939bf965e3015e3207c6e6ed2d5eef8a9a4c5c4`. Commit: pending.
+<!-- montana-change {"id": "a39a808d-b3bd-4515-9dd9-25aae6a174e6", "utc": "2026-09-29T19:16:08+00:00", "callsign": "claude-83", "model": "claude-opus-5-5", "build": "2008 (Debug, every core, next)", "os": "T1 iOS 26.7.1, T3 iOS 18.3", "summary": "build: 2008 -- the big player and the playlist rise by the new post's sheet road (clear glass, one-tone plates with the system ring, no logo on a black square, the name alone and a long press copies it), over 2007; for T1 and T3", "tree": "6939bf965e3015e3207c6e6ed2d5eef8a9a4c5c4", "parents": ["e1fcd02211c8768e02f025b1726fe9c8678eeb94"], "commit": null} -->
+
 ### 2026-09-29T19:14:47+00:00 — merge of the main line df6ef826 (the three walls and the build 2007 bump) into fix/mini-seek-and-hold-menu before the master's fast-forward; automatic merge, no conflicts; typecheck rc 0 (111 files), ring 1, the 44-point target and language guards green on the merged tree.
 
 - **Callsign / model:** Claude / fix/mini-seek-and-hold-menu (builder for claude-83) / Claude Opus 5.5.
