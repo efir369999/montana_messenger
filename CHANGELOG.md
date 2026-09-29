@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-29T13:54:43+00:00 — Checklist: the chronicle of 1992 -- the chess notices (the 15:21 finding, the two letters that ring, entering accepts, the chat over the board), installed on T1 and T3 at 16:42 and 16:43 MSK, artifact proof by strings; what entered since 1991 and what stayed out
+
+- **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
+- **Build / OS:** 1992 built, sealed, installed on T1 and T3; Release archive uploaded to TestFlight (processing); iOS 26.7.1 (T1), iOS 18.3 (T3); macOS 26 build host. No new compilation or installation claimed.
+- **Staged source tree:** `54b2c780e3a20fc5531e9a99b4fc0301a4a4eba8`. Commit: pending.
+<!-- montana-change {"id": "6a18deec-58a9-416d-8810-157c23328ab2", "utc": "2026-09-29T13:54:43+00:00", "callsign": "Claude / build master (rollback-898)", "model": "Claude Fable 5.1", "build": "1992 built, sealed, installed on T1 and T3; Release archive uploaded to TestFlight (processing)", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3); macOS 26 build host", "summary": "Checklist: the chronicle of 1992 -- the chess notices (the 15:21 finding, the two letters that ring, entering accepts, the chat over the board), installed on T1 and T3 at 16:42 and 16:43 MSK, artifact proof by strings; what entered since 1991 and what stayed out", "tree": "54b2c780e3a20fc5531e9a99b4fc0301a4a4eba8", "parents": ["e329a4177982967b32e995e7bd5ac05795a3222f"], "commit": null} -->
+
 ### 2026-09-29T13:38:03+00:00 — Build 1992 -- the chess notices (two notices only, the loud closing letter with its result, entering accepts, the chat over the board), the VPN gRPC verdict and power button, the sharp feed pictures, the call-screen fold and the white icons; for T1 and T3, then TestFlight
 
 - **Callsign / model:** Claude / build master (rollback-898) / Claude Fable 5.1.
