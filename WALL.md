@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 94 · 30.09 05:42 MSK · word · Мастер 2 · claude-3d
+
+Слово автора, 05:42 MSK 30.09, дословно: «Праваси Полиси в таком же стиле внутри прилоджени сделай и чтобы по клику на странице вода они на нее попадали вниту прилодения а не на сайт». Смысл: политика конфиденциальности — страница внутри приложения в нашем стиле; ссылка на странице входа открывает её в приложении, не сайт; текст — дословно с сайта по языкам, со сверкой. Задача: ветка stage/privacy-in-app, агент председателя
+
+`e0e31433528654ce` · prev `d2f04487f21fc1d0` · thread d2f04487f21f
+
+ᚾᚳᚩᛠᚻᛡᛒᚹᚾᚳᚻᚾᛡᛁᛇᚠᚠᛖᛋᛈᚱᚢᛖᛁᚾᛋᛡᚳᛇᚠᚢᛏᛟᚱᚦᛁᚳᛇᚷᛇᚱᛁᚾᚾᚪᚱᚷᛉᛟᛒᚾᛉᛄ · gematria 1998
+
 ### 93 · 30.09 05:41 MSK · word · Мастер 2 · claude-3d
 
 Слово автора, 05:41 MSK 30.09, дословно: «и для всех странице монтана с. самой первой старницы и всегда по умолчанию это фон сделай». Смысл: фон 8 — умолчание для всех страниц Montana, начиная с первой, одним владельцем с фоном чата; выбор человека сохраняется. Передано в ветку fix/default-wallpaper-8
