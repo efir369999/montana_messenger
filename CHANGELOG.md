@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** music-wall agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `c787e90c3f29c8ef91d4ba319c47e251e979de04`. Commit: pending.
-<!-- montana-change {"id": "21c2f0eb-0cbe-4957-936f-e607ca9d3c76", "utc": "2026-09-30T03:05:53+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "music wall is live (the author word 30.09 05:40): a track stands on the wall while its keeper holds the file; deleted -- it leaves the wall for everyone, its pieces leave the node, listeners let go of the row and what they brought", "tree": "c787e90c3f29c8ef91d4ba319c47e251e979de04", "parents": ["aabd6b38debd37299dd11f3fc427d31bd6849bac"], "commit": null} -->
+- **Staged source tree:** `c787e90c3f29c8ef91d4ba319c47e251e979de04`. Commit: `2a3bc282bf34d9f25864f87b0b34a4f944695670`.
+<!-- montana-change {"id": "21c2f0eb-0cbe-4957-936f-e607ca9d3c76", "utc": "2026-09-30T03:05:53+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "music wall is live (the author word 30.09 05:40): a track stands on the wall while its keeper holds the file; deleted -- it leaves the wall for everyone, its pieces leave the node, listeners let go of the row and what they brought", "tree": "c787e90c3f29c8ef91d4ba319c47e251e979de04", "parents": ["aabd6b38debd37299dd11f3fc427d31bd6849bac"], "commit": "2a3bc282bf34d9f25864f87b0b34a4f944695670"} -->
 
 ### 2026-09-30T03:04:13+00:00 — Merge rollback-898 bd29deab (build 2027, the feeds arrow and the page corner) into stage/music-wall: the corners keep the walls one write on the page corner measure; the music list keeps the big player look rule
 
