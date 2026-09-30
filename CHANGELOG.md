@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** music-wall agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `de813ec26b067aa313861ae5cf070300c2f341eb`. Commit: pending.
-<!-- montana-change {"id": "c07a6b9d-5867-4c17-9e6a-e7f815360edb", "utc": "2026-09-30T03:35:12+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 09b24f0f (build 2028, the Wall of Thoughts) into stage/music-wall: no conflicts, no own edits", "tree": "de813ec26b067aa313861ae5cf070300c2f341eb", "parents": ["510f7fe03386e0f135b5137eea5935c0b2165fa1", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": null} -->
+- **Staged source tree:** `de813ec26b067aa313861ae5cf070300c2f341eb`. Commit: `fdbf85980f28b8b6ec5123e5901d4cd367bab8e8`.
+<!-- montana-change {"id": "c07a6b9d-5867-4c17-9e6a-e7f815360edb", "utc": "2026-09-30T03:35:12+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 09b24f0f (build 2028, the Wall of Thoughts) into stage/music-wall: no conflicts, no own edits", "tree": "de813ec26b067aa313861ae5cf070300c2f341eb", "parents": ["510f7fe03386e0f135b5137eea5935c0b2165fa1", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": "fdbf85980f28b8b6ec5123e5901d4cd367bab8e8"} -->
 
 ### 2026-09-30T03:34:26+00:00 — music wall and the walls write: the added comments cut to the short why (the author word on elegant code); names carry the rest; favourites named favorites as the screen says
 
