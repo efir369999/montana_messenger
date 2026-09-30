@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** music-wall agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `5f5f0b537b5981cb6a5a082f3ef39afc7747d49e`. Commit: pending.
-<!-- montana-change {"id": "cae45b8e-8d79-4d6a-9e1c-3ec9beea9d8a", "utc": "2026-09-30T03:34:26+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "music wall and the walls write: the added comments cut to the short why (the author word on elegant code); names carry the rest; favourites named favorites as the screen says", "tree": "5f5f0b537b5981cb6a5a082f3ef39afc7747d49e", "parents": ["7b225a3f6d8646da6bd95456c606f421ed67ef1d"], "commit": null} -->
+- **Staged source tree:** `5f5f0b537b5981cb6a5a082f3ef39afc7747d49e`. Commit: `510f7fe03386e0f135b5137eea5935c0b2165fa1`.
+<!-- montana-change {"id": "cae45b8e-8d79-4d6a-9e1c-3ec9beea9d8a", "utc": "2026-09-30T03:34:26+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "music wall and the walls write: the added comments cut to the short why (the author word on elegant code); names carry the rest; favourites named favorites as the screen says", "tree": "5f5f0b537b5981cb6a5a082f3ef39afc7747d49e", "parents": ["7b225a3f6d8646da6bd95456c606f421ed67ef1d"], "commit": "510f7fe03386e0f135b5137eea5935c0b2165fa1"} -->
 
 ### 2026-09-30T03:32:48+00:00 — pictures: the branch's comments cut to a short why, openInGallery named openPicture (no behaviour change)
 
