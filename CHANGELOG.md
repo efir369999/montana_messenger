@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** none (merge, over 2022); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `2bc24c97aa6ab28aa3928c464232f5d1638b728e`. Commit: pending.
-<!-- montana-change {"id": "c1b31227-6045-496e-b09b-5fe184af0ba4", "utc": "2026-09-30T00:28:21+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (merge, over 2022)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge rollback-898 43066d74 (the chess menu over build 2022) into fix/master-wall-upward, no own edits, before the master's fast-forward", "tree": "2bc24c97aa6ab28aa3928c464232f5d1638b728e", "parents": ["8ed04e7085b00977e89776115338ad56d1a68cfe", "43066d742ee85963d923f972064e1db98dc257b8"], "commit": null} -->
+- **Staged source tree:** `2bc24c97aa6ab28aa3928c464232f5d1638b728e`. Commit: `24858d45949d64281863f8bdcc61aa95760b7ab1`.
+<!-- montana-change {"id": "c1b31227-6045-496e-b09b-5fe184af0ba4", "utc": "2026-09-30T00:28:21+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (merge, over 2022)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge rollback-898 43066d74 (the chess menu over build 2022) into fix/master-wall-upward, no own edits, before the master's fast-forward", "tree": "2bc24c97aa6ab28aa3928c464232f5d1638b728e", "parents": ["8ed04e7085b00977e89776115338ad56d1a68cfe", "43066d742ee85963d923f972064e1db98dc257b8"], "commit": "24858d45949d64281863f8bdcc61aa95760b7ab1"} -->
 
 ### 2026-09-30T00:26:08+00:00 — A picture opens and closes as the face does: MontanaPhotoViewer at once over the screen, one picture, a pull or flick in any direction lets it go; chat, tabs, outer shell and wall; the vertical wall viewer of 2018 reverted; guard P-132.1 rewritten
 
