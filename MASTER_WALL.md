@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 72 · 30.09 03:37 MSK · Мастер 2 · claude-3d · W 0.0 · x3.15 (deflate x1.79): ✎ стиль карточки магазина: иконка, имя, время, капсула «Обновить», текст+«ещё»; тезисы всех сборок новее установленной → stage/update-page, scripts/asc-publish.py
 - 71 · 30.09 03:36 MSK · Мастер 2 · claude-3d · W 2.21 · x4.44 (deflate x2.02): ✎ вход: TestFlight новее → страница в нашем стиле, наша иконка, системная кнопка «Обновить» → stage/update-page
 - 70 · 30.09 03:36 MSK · Мастер 2 · claude-3d · W 1.99 · x3.46 (deflate x1.74): ✎ ▢ «Unable to Verify App» K3QATZ577Q; подпись 2018 2019 2020 2022 2023 одна, S8JCA5MBVD → не сборка; iOS проверяет доверие по сети, ▢ рвал связь 03:17; ⚠ гипотеза: ВПН по требованию держит трафик → замер
 - 69 · 30.09 03:36 MSK · Мастер 2 · claude-3d · W 2.12 · x2.61 (deflate x1.23): ▲2023 4cd66091 = fix/chess-menu-score 43066d74 + fix/master-wall-upward dab82d48; код 0; ▣▢2023 ✔ 03:36
@@ -63,7 +64,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 10 twins: 1.76
+Weissman, mean over 11 twins: 1.6
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 

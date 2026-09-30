@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 72 · 30.09 03:37 MSK · word · Мастер 2 · claude-3d
+
+Слово автора ~03:42 MSK, дословно, со снимком карточки обновления системного магазина (иконка, имя, «3 дн назад», капсула «Обновить», текст изменений с «ещё»): «в таком стиле наша страница и тезисно в чем отличние сборки на тест флай и последней сорки на котору обновиться нужно». Передано агенту stage/update-page: карточка ровно в этом стиле с нашей иконкой; тезисы всех сборок новее установленной, не только последней; release.json — одним владельцем через scripts/asc-publish.py.
+
+`1fa8aff1200cbd18` · prev `07094c1762156eb8` · thread 07094c176215
+
+ᚢᚻᛈᛉᚣᚹᚣᛗᛏᚣᚻᚾᚳᚹᚩᛏᚦᚻᚳᚾᛒᚷᛇᚩᛖᛈᚣᛇᚠᛟᚢᛈᛖᛁᚠᚣᚳᚠᛚᛞᚳᛉᛠᚫᛡᛝᚢᛈᚹᛉᛞᛞᛟ · gematria 2514
+
 ### 71 · 30.09 03:36 MSK · word · Мастер 2 · claude-3d
 
 Слово автора ~03:37 MSK, дословно: «при воде в прилоедние елси нат ест флай новаее сборка чем еткущая то пояления страница в нашем стиле что достпуна новая борка с нашей иконкой приледния красиво и внока обновить системная айос». Смысл: при входе, если в TestFlight сборка новее установленной, — страница в нашем стиле: доступна новая сборка, наша иконка, красиво, системная кнопка iOS «Обновить». Задача заведена: ветка stage/update-page, агент председателя.
