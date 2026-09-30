@@ -14,8 +14,10 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl; each re
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 168 records from genesis, every link holds, 5 closed
+Chain: 169 records from genesis, every link holds, 5 closed
 
+- 168 · 30.09 11:15 MSK · hash `c83688c92c7d0e29d1730545f1be399874802ea7b660f75ef9573b486c542b32` · prev `4d1372e5b6241c1dd2f64740c16eee795711cf92ccdb8f6645937f3865bd2f10` · Мастер 3 · 1277fde6 · state: Тихий ход, восьмая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
+  - seal ᚻᚱᛡᚳᚷᛟᚣᚻᛚᛚᛏᚦᛞᚻᚫᚢᛏᛉᚾᚹᚫᛗᚾᛚᛝᛖᚱᛖᚢᚣᚦᛉᚳᚳᚷᛉᚣᛖᛖᛟᚷᛡᚠᚾᚷᚠᛟᛞᛚᛈᚩᚱᛡ · gematria 2613
 - 167 · 30.09 11:05 MSK · hash `4d1372e5b6241c1dd2f64740c16eee795711cf92ccdb8f6645937f3865bd2f10` · prev `d8515921cf7c161b39bea8093c246e9e13b2ac2164a0e451928c6a2d6fbdb47b` · Мастер 3 · 1277fde6 · state: Тихий ход, седьмая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче. Замечено мастером: час тишины автора при готовой смене — время, которое следующий мастер потратил бы на работу; цепочка держится метками, но работа стоит
   - seal ᚩᚱᚷᚳᛚᛟᚾᛞᚻᚹᚪᛏᛈᚠᛟᚠᛉᚠᚢᛒᛇᛉᛁᚩᛈᛟᛚᛒᛈᛋᛞᛞᛞᚱᚫᛞᛏᚫᛄᛁᛟᛗᛉᛠᚫᛈᛖᚷᚦᛠᚪᚠᛒ · gematria 2753
 - 166 · 30.09 10:55 MSK · hash `d8515921cf7c161b39bea8093c246e9e13b2ac2164a0e451928c6a2d6fbdb47b` · prev `b57aeaad35d09e1b08acebb61e161ff885e42f8d3c05686ef697c0f5be044bc4` · Мастер 3 · 1277fde6 · state: Тихий ход, шестая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет. Мастер сказал автору 'готов передать' и ждёт его слова; до него метка ставится по окну и цепочка не рвётся
