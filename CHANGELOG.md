@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2053; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `22cd517241543e16fff005afa920c838afee1351`. Commit: pending.
-<!-- montana-change {"id": "9aa341c0-54c6-4345-b1d1-64e2b7303c02", "utc": "2026-09-30T21:52:54+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2053", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Advance build number to 2053", "tree": "22cd517241543e16fff005afa920c838afee1351", "parents": ["6b3cf5abeb79a5e5af543b8b199f4fb0aa3372f5"], "commit": null} -->
+- **Staged source tree:** `22cd517241543e16fff005afa920c838afee1351`. Commit: `eed5b26c1f3e30aada3382b5750c8d3a41b91a6d`.
+<!-- montana-change {"id": "9aa341c0-54c6-4345-b1d1-64e2b7303c02", "utc": "2026-09-30T21:52:54+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2053", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Advance build number to 2053", "tree": "22cd517241543e16fff005afa920c838afee1351", "parents": ["6b3cf5abeb79a5e5af543b8b199f4fb0aa3372f5"], "commit": "eed5b26c1f3e30aada3382b5750c8d3a41b91a6d"} -->
 
 ### 2026-09-30T21:52:12+00:00 — Merge the main line (build number 2052) into fix/player-cover-inline before build 2053; no own edits
 
