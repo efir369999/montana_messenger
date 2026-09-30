@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
 - **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `2282791f27e9c3ebb71611165f6ac1d0331f307e`. Commit: pending.
-<!-- montana-change {"id": "34ed789d-4601-4000-9a0b-953d6e4e8ae1", "utc": "2026-09-30T05:11:07+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "install prepare: the app never leaves under the person's hands, and never by the plain exit that tears the outer service down", "tree": "2282791f27e9c3ebb71611165f6ac1d0331f307e", "parents": ["23b7439fa5702216ed46183b1decbe178f30b357"], "commit": null} -->
+- **Staged source tree:** `2282791f27e9c3ebb71611165f6ac1d0331f307e`. Commit: `ed689b0cfb39f076d1bdce55d50a88838ec71e6a`.
+<!-- montana-change {"id": "34ed789d-4601-4000-9a0b-953d6e4e8ae1", "utc": "2026-09-30T05:11:07+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "install prepare: the app never leaves under the person's hands, and never by the plain exit that tears the outer service down", "tree": "2282791f27e9c3ebb71611165f6ac1d0331f307e", "parents": ["23b7439fa5702216ed46183b1decbe178f30b357"], "commit": "ed689b0cfb39f076d1bdce55d50a88838ec71e6a"} -->
 
 ### 2026-09-30T05:05:23+00:00 — Merge rollback-898 23b7439f into stage/36-avatar-mask over 9a1b6095: one base 884a8268, clean; brings only CouncilWall/council.py and CouncilWall/heads.json (the wall hashes)
 
