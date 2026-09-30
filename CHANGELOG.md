@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T01:11:07+00:00 — Big player: the connected output device's own glyph (AirPods, headphones, car, speaker, AirPlay) at the plate's bottom right from MontanaAudioRoute.Way, the system route picker clear over it
+
+- **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `eed8b17e2ca976ff8f11a29119de043a81045494`. Commit: pending.
+<!-- montana-change {"id": "5b1411e9-c30c-4097-8239-e626b7fe9a26", "utc": "2026-09-30T01:11:07+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Big player: the connected output device's own glyph (AirPods, headphones, car, speaker, AirPlay) at the plate's bottom right from MontanaAudioRoute.Way, the system route picker clear over it", "tree": "eed8b17e2ca976ff8f11a29119de043a81045494", "parents": ["beaa9e779b8d734300a47ca5e462c56d6d564bf2"], "commit": null} -->
+
 ### 2026-09-30T01:10:04+00:00 — Big player: a whole page in the one sliding container (MontanaSlideController over the full screen through MTTop), the cross at the top right and the edge swipe as one close; the rise timed (page_rise first_ms, settled_ms)
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
