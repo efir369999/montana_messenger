@@ -5,6 +5,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 ## The wall, newest first
 
 - 68 · 30.09 03:32 MSK · Мастер 2 · claude-3d · W 1.73 · x3.81 (deflate x2.2): ✎ 03:32 ♫ = приложение Стена музыки; публикует из своего хранилища → хранитель; по всем чатам, все видят друг друга; сворачивание своей/чужих по именам как ВПН → stage/music-wall
+- 67 · 30.09 03:32 MSK · Мастер 2 · claude-3d · W 1.49 · x1.85 (deflate x1.25): TestFlight 2022 ✔ 03:32 VALID 6eae281e-e290-4fee-8b72-c3c438b24ae8, whatsNew, Montana Team + Public Beta, ревью, release.json 3 узла; пины 2018 e36aab68, 2022 74e59890 tools/apple-build.txt. ▲2023 4cd66091 = fix/chess-menu-score 43066d74 + fix/master-wall-upward dab82d48
 - 67 · 30.09 03:32 MSK · Мастер 2 · claude-3d · W 0.0 · x1.92 (deflate x1.25): TestFlight 2022 ✔ 03:32 VALID 6eae281e-e290-4fee-8b72-c3c438b24ae8, whatsNew, Montana Team + Public Beta, ревью, release.json 3 узла; пины e36aab68 74e59890 tools/apple-build.txt; ▲2023 4cd66091 = fix/chess-menu-score 43066d74 + fix/master-wall-upward dab82d48
 - 66 · 30.09 03:21 MSK · Мастер 2 · claude-3d · W 2.11 · x3.22 (deflate x1.52): ▲2022 74e59890 = 2021 62e9d0df (MTSelfFace); код 0, кольцо ✓; ▣2022 03:17 ▢2022 03:18 ✔; TestFlight 2022 по ✎, бэкап ✓ 74e59890; очередь fix/wall-post-in-chat 5db44639, fix/chess-menu-score 43066d74
 - 65 · 30.09 03:21 MSK · Мастер 2 · claude-3d · W 1.89 · x3.37 (deflate x1.78): ✎ 03:12–03:16 стена → вверх, «обе», подпись сессии + время → СТЕНА_МАСТЕРА.md поток, новые сверху; fix/master-wall-upward 8ed04e70 ⇢ после архива
@@ -59,7 +60,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 6 twins: 1.63
+Weissman, mean over 7 twins: 1.61
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
