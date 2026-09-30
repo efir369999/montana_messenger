@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2042 (merge; council tooling); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `fce8d5dae5d6eb84cc0b947d910c924b02d0463a`. Commit: pending.
-<!-- montana-change {"id": "0ff1e3f8-8d18-43be-a243-c09cd7d0ff30", "utc": "2026-09-30T17:59:02+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2042 (merge; council tooling)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Merge the main line 199bec37 (build 2042) into fix/showcase-newest-first -- no own edits", "tree": "fce8d5dae5d6eb84cc0b947d910c924b02d0463a", "parents": ["bea9df461eeca3428149ff289c2475ad9aba9c86", "199bec375639957963e29741df3662c5b297e3db"], "commit": null} -->
+- **Staged source tree:** `fce8d5dae5d6eb84cc0b947d910c924b02d0463a`. Commit: `30d702632e27f4410238f0f846e1e0c15e83c4af`.
+<!-- montana-change {"id": "0ff1e3f8-8d18-43be-a243-c09cd7d0ff30", "utc": "2026-09-30T17:59:02+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2042 (merge; council tooling)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Merge the main line 199bec37 (build 2042) into fix/showcase-newest-first -- no own edits", "tree": "fce8d5dae5d6eb84cc0b947d910c924b02d0463a", "parents": ["bea9df461eeca3428149ff289c2475ad9aba9c86", "199bec375639957963e29741df3662c5b297e3db"], "commit": "30d702632e27f4410238f0f846e1e0c15e83c4af"} -->
 
 ### 2026-09-30T17:43:38+00:00 — Advance build number to 2042 (the mesh ban follows the profile's rule)
 
