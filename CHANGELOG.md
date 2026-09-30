@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
 - **Build / OS:** 2030; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `90a09bac0d9aeb17a931b51d640ebc7e8b816fcf`. Commit: pending.
-<!-- montana-change {"id": "7af27d97-fb04-4745-8990-8615b5469173", "utc": "2026-09-30T05:16:50+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "2030", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "the wall's archive is drawn beside the pages, so it stays out of the tree's count", "tree": "90a09bac0d9aeb17a931b51d640ebc7e8b816fcf", "parents": ["1ad6ca4d0b5b8ed15caf5f6718c61ad599cae64b"], "commit": null} -->
+- **Staged source tree:** `90a09bac0d9aeb17a931b51d640ebc7e8b816fcf`. Commit: `5a26738d21186b07019d14ac550a9f6af2b26623`.
+<!-- montana-change {"id": "7af27d97-fb04-4745-8990-8615b5469173", "utc": "2026-09-30T05:16:50+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "2030", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "the wall's archive is drawn beside the pages, so it stays out of the tree's count", "tree": "90a09bac0d9aeb17a931b51d640ebc7e8b816fcf", "parents": ["1ad6ca4d0b5b8ed15caf5f6718c61ad599cae64b"], "commit": "5a26738d21186b07019d14ac550a9f6af2b26623"} -->
 
 ### 2026-09-30T05:15:29+00:00 — build: 2030 -- the install prepare never leaves under the person's hands; the VPN wall raises a live node under a whitelist
 
