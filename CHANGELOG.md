@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** install-fail-closed agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none: tools only, over 2023; macOS 26.6 (Darwin 25.6.0); dry run of the install step on T1. No new compilation or installation claimed.
-- **Staged source tree:** `9b30a7d0de47d4e3e04f6542ca9828452976ca11`. Commit: pending.
-<!-- montana-change {"id": "8133104c-59a6-4f01-8457-33081f959ea7", "utc": "2026-09-30T00:56:18+00:00", "callsign": "install-fail-closed agent of Master 2", "model": "claude-opus-5-5", "build": "none: tools only, over 2023", "os": "macOS 26.6 (Darwin 25.6.0); dry run of the install step on T1", "summary": "install road closed by default: an install from the Mac goes on only on the phone's own line of a lifted reconnect or on a phone without the app; T3 30.09 stood 24 min without the tunnel of 2022 behind an armed reconnect", "tree": "9b30a7d0de47d4e3e04f6542ca9828452976ca11", "parents": ["4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": null} -->
+- **Staged source tree:** `9b30a7d0de47d4e3e04f6542ca9828452976ca11`. Commit: `67829dd1fbc9efbc1cd735707ad123c29043b358`.
+<!-- montana-change {"id": "8133104c-59a6-4f01-8457-33081f959ea7", "utc": "2026-09-30T00:56:18+00:00", "callsign": "install-fail-closed agent of Master 2", "model": "claude-opus-5-5", "build": "none: tools only, over 2023", "os": "macOS 26.6 (Darwin 25.6.0); dry run of the install step on T1", "summary": "install road closed by default: an install from the Mac goes on only on the phone's own line of a lifted reconnect or on a phone without the app; T3 30.09 stood 24 min without the tunnel of 2022 behind an armed reconnect", "tree": "9b30a7d0de47d4e3e04f6542ca9828452976ca11", "parents": ["4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": "67829dd1fbc9efbc1cd735707ad123c29043b358"} -->
 
 ### 2026-09-30T00:55:55+00:00 — merge rollback-898 687fbced into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 65fedaa8, no own edits
 
