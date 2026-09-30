@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e builder / vpn-wall-whitelist-auto / Claude Opus 5.5.
 - **Build / OS:** 2020 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
-- **Staged source tree:** `09f47caa155aa3e831f9c52b95b9fbe5f536623f`. Commit: pending.
-<!-- montana-change {"id": "19df311d-25b8-44a2-9a35-2bd4e3a360f5", "utc": "2026-09-30T00:00:30+00:00", "callsign": "claude-9e builder / vpn-wall-whitelist-auto", "model": "Claude Opus 5.5", "build": "2020 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Merge rollback-898 aa91a596 (builds 2019-2020) into fix/vpn-wall-whitelist-auto; ring green and typecheck of the app and PacketTunnel green under the council heavy lock on the merged tree", "tree": "09f47caa155aa3e831f9c52b95b9fbe5f536623f", "parents": ["bbf2b244673b2846ac19f89b91a84884d6a9fc56", "aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": null} -->
+- **Staged source tree:** `09f47caa155aa3e831f9c52b95b9fbe5f536623f`. Commit: `20403535439010f4d671fdeafa2070f78766a43a`.
+<!-- montana-change {"id": "19df311d-25b8-44a2-9a35-2bd4e3a360f5", "utc": "2026-09-30T00:00:30+00:00", "callsign": "claude-9e builder / vpn-wall-whitelist-auto", "model": "Claude Opus 5.5", "build": "2020 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Merge rollback-898 aa91a596 (builds 2019-2020) into fix/vpn-wall-whitelist-auto; ring green and typecheck of the app and PacketTunnel green under the council heavy lock on the merged tree", "tree": "09f47caa155aa3e831f9c52b95b9fbe5f536623f", "parents": ["bbf2b244673b2846ac19f89b91a84884d6a9fc56", "aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": "20403535439010f4d671fdeafa2070f78766a43a"} -->
 
 ### 2026-09-29T23:54:06+00:00 — Clean merge of the main line 62e9d0df (build 2021, one own-face view) into fix/feed-wall-of-thoughts (the Wall of Thoughts name) before the master's fast-forward; no conflicts, ring green on the merged tree
 
