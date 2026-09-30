@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e (avatar-fight) / Claude Opus 5.5.
 - **Build / OS:** none -- branch stage/avatar-fight, not built; macOS 26 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `3599da5e0818d3e35bac9c17a0878ab0586f3a90`. Commit: pending.
-<!-- montana-change {"id": "ce5c427f-d7c1-477b-880b-d9f6f91114b9", "utc": "2026-09-30T00:17:37+00:00", "callsign": "claude-9e (avatar-fight)", "model": "Claude Opus 5.5", "build": "none -- branch stage/avatar-fight, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "Avatar: the application, the fighters' choice and the arena of four-view figures; the games open as levels by active chats", "tree": "3599da5e0818d3e35bac9c17a0878ab0586f3a90", "parents": ["49f0de98cf30ba3f96e06865e518b0d0ddf8a9a1"], "commit": null} -->
+- **Staged source tree:** `3599da5e0818d3e35bac9c17a0878ab0586f3a90`. Commit: `c5c5a9f14b66a9153e6a4f3de91f96a702cc772a`.
+<!-- montana-change {"id": "ce5c427f-d7c1-477b-880b-d9f6f91114b9", "utc": "2026-09-30T00:17:37+00:00", "callsign": "claude-9e (avatar-fight)", "model": "Claude Opus 5.5", "build": "none -- branch stage/avatar-fight, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "Avatar: the application, the fighters' choice and the arena of four-view figures; the games open as levels by active chats", "tree": "3599da5e0818d3e35bac9c17a0878ab0586f3a90", "parents": ["49f0de98cf30ba3f96e06865e518b0d0ddf8a9a1"], "commit": "c5c5a9f14b66a9153e6a4f3de91f96a702cc772a"} -->
 
 ### 2026-09-30T00:16:34+00:00 — Avatar: the fight as whole numbers at a fixed sixtieth-second step, the phone's own hand, the seats of a duel
 
