@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T06:33:22+00:00 — install prepare: a sleep in the background tells the person's hands from the road that launches this app in the foreground
+
+- **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
+- **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `4ad3ef56f640f3cef9d506a33d988d0d5ee22fce`. Commit: pending.
+<!-- montana-change {"id": "7b0d68ca-ecca-4c94-aee9-2f9010b77926", "utc": "2026-09-30T06:33:22+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "install prepare: a sleep in the background tells the person's hands from the road that launches this app in the foreground", "tree": "4ad3ef56f640f3cef9d506a33d988d0d5ee22fce", "parents": ["371e35ad540b96f2c254eaa17042e69b8023f196"], "commit": null} -->
+
 ### 2026-09-30T06:14:16+00:00 — build: 2031 -- a photo opens by the finger, the share sheet sends only by the finger and its first circle writes on the wall, the two grounds of Montana, the cover's glass waves, the avatar mask of a video call; over 2030
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
