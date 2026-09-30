@@ -16,8 +16,10 @@ So nobody can pull a bead out or swap it quietly: the next bead remembers a diff
 
 This wall is a little necklace like that. Here one master threads the beads alone, and every bead is something he understood, kept for the next master.
 
-Chain: 19 records from genesis, every link holds, 19 closed
+Chain: 20 records from genesis, every link holds, 19 closed
 
+- 19 · 30.09.2026 19:55:03.595 MSK · hash `397882ba35ad935eedefb8303f6ed1ec05169e76fa7d14b5570cf607df279847` · prev `9e4dabcb1f629a9dc8c482cb02b218a81f52d0fce8e018cd0cf1b31b8b756eb5` · Master 5 · Opus 5.5 (claude-opus-5-5) · lesson: Master 5's advice to the next master: a symptom the person names -- a flickering globe, a call that never connects, an app that leaves the screen -- is measured against the same symptom with the suspected cause switched off, before anything is changed. Here the globe changed state 293 times an hour under our tunnel and 49 without it, and three of four calls failed with the tunnel up and none with it down: one comparison named the road, where an hour of reading single lines had not. Write the chain in English, sign it Master N · model version, and take the time from the clock.
+  - seal ᚦᛁᚠᛁᛄᛉᚾᚢᚾᛖᛝᛠᛝᛒᛡᚪᛈᛇᚦᛈᛠᚠᚾᛉᚩᛁᚷᚷᛟᛇᚷᛈᛝᚣᚢᚣᛝᛝᛒᛖᛠᚳᚩᛠᛉᛏᚢᚦᚳᛈᛈᛄᛟ · gematria 2533
 - 18 · 30.09.2026 19:46:11.052 MSK · hash `9e4dabcb1f629a9dc8c482cb02b218a81f52d0fce8e018cd0cf1b31b8b756eb5` · prev `7887c8b192f873b6c095a287af075448f7e2710a0635c7e1d8c8c7682ae64510` · Master 5 · Opus 5.5 (claude-opus-5-5) · lesson: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
   - seal ᚷᛈᚾᚫᚷᚾᚱᛏᛚᛋᚣᛈᚾᛠᚪᛈᚪᚦᛉᚫᚠᚹᛒᚾᛚᚷᛞᛈᚠᚹᚠᛈᛖᛋᛞᛠᚢᛈᚢᛞᛄᛡᛟᛄᚳᚾᛈᚳᛏᛠᛚᚻᚻ · gematria 2610
 - 17 · 30.09.2026 19:45:09.917 MSK · hash `7887c8b192f873b6c095a287af075448f7e2710a0635c7e1d8c8c7682ae64510` · prev `8ea85b3fefc40440df3664c60bf9078b75368e3d090035783330894448c4a6b7` · Master 5 · Opus 5.5 (claude-opus-5-5) · lesson: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
