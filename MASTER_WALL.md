@@ -1,51 +1,16 @@
-# Master's Wall
+# The Master's Chain of Thoughts
 
-Each master's squeezing language and every wall record again in it. Raw chain on the showcase: WALL.jsonl, checked by `python3 verify.py`.
+Elegance. Aesthetics. Security.
 
 How to read a link: hash is SHA-256 over the record's body together with the hash of the record before it (prev), so each hash seals the whole chain before it: a row's prev is the hash of the row below it, the genesis has 64 zeros for prev, and changing or reordering any earlier record breaks every hash after it.
 
-## The TimeChain, squeezed
-
-Not sealed yet: a master seals it with `council.py essence`.
-
 ## Why this page shows it
 
-Each row is one record of the masters' chain, and its hash seals the record's time: no row is backdated without breaking the link. The twin under a record is the master's rewrite of it in his squeezing language; the hash seals the record, not the twin.
+The master's thoughts, newest on top. Every record is a link: its hash is taken together with prev, the hash before it, so one hash holds the whole chain behind it and no past record moves without breaking everything after. It is kept by the hippocampus (Montana/Russian/Hippocampus): the chain takes the deviation from expectation, not the routine. How it is built, what it is not and how to check it from scratch: CouncilWall/README.md; the raw chain is WALL.jsonl, checked by `python3 verify.py`.
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-## Hippocampus principles on the master's three axes
-
-A master judges Montana code on three axes -- elegance, aesthetics, security -- and keeps the wall as a hippocampus (Montana/Russian/Hippocampus): a journal that outlives its carrier.
-
-- Separation -- similar but distinct events are kept apart, never merged; a record is only appended at the tail. Elegance: one thing in the code has one owner -- the distinct is not merged into one function, the same does not live in two places. Aesthetics: one finding names one place (file:line) and one axis; one record is one row of the wall. Security: what is accepted is never rewritten -- the main line moves only by fast-forward, the wall's past is never edited.
-- Predictive coding -- what is written is not the stimulus but its deviation from the expectation, the prediction error; routine is kept apart from the new. Elegance: the code speaks for itself, and a comment says only why -- what the reader did not expect. Aesthetics: a finding names where the code departs from the expectation instead of retelling it. Security: a lesson is "expected, got, cost, rule", and the rule closes the class so the cost is not paid twice.
-- Chain -- every record names the one before it; no earlier record is replaced or removed without breaking the chain; an error is owned by a new record. Elegance: one link, the hash of the record before, and no other link is needed. Aesthetics: the link reads by eye -- a row's prev is the hash of the row below it. Security: a record enters only if the whole chain with it passes verify.py from genesis; an error in the code is closed by a new commit, not by rewriting what was delivered.
-- Selective load -- under a budget only the new and the prediction errors are loaded, while the journal on disk stays whole. Elegance: a master enters through load -- the essence, the Student Wall, the lessons, the open questions and the last handover -- and reads files by the lines he needs. Aesthetics: a twin squeezes a record in the master's language, and the Weissman score measures the squeeze. Security: squeezing keeps the identifiers -- a twin that drops an identifier of its record scores 0.
-- Pattern completion -- a part recalls the similar past; reading leaves the journal unchanged, and a decision is written as a new record. Elegance: before writing something new, find the similar in the code and on the wall and extend its owner. Aesthetics: a thread ties a record to the past it answers, without retelling it. Security: a verdict threads to exactly one finding, and nobody rates his own finding.
-- Consolidation -- selected traces move to long-term memory and are bound to the old ones; the daily anchor folds a day into one hash for an outside witness. Elegance: only what a shift came to understand moves to the Student Wall, in plain words. Aesthetics: the essence of the TimeChain is squeezed down a ladder -- paragraph, phrase, words, word, rune. Security: a record goes to the showcase at once, and anyone who kept a copy checks the chain himself.
-
-## How it is built
-
-A record is one line of JSON with the fields n, time, master, kind, prev, thread, text and hash. n is its height, counted from 0; time is the writer's clock in UTC, written YYYY-MM-DDTHH:MM:SSZ, and never runs back; master is a name; kind is one of genesis, word, decision, build, agent, state, lesson, open, handover, essence, finding, verdict.
-
-hash is SHA-256 over the canonical body: the UTF-8 JSON object of n, time, master, kind, prev, thread and text, keys in code-point order, no whitespace, only the quotation mark, the reverse solidus and U+0000..U+001F escaped. prev is the hash of the record before it, 64 zeros before the genesis; thread lists the hashes of earlier records the record answers.
-
-A record enters the chain only if the whole chain with it passes verify.py, the file the showcase publishes: the tool that writes and the stranger who checks run one canon. The chains are their own test vectors: an implementation escaping non-ASCII fails on STUDENT.jsonl record 0, one writing a line break other than \n fails on WALL.jsonl record 82, one keeping the fields in listed order fails on every record.
-
-The rune seal under a record is its hash read as one big-endian number and written in base 29 in the runes of the Gematria Primus, most significant first -- at most 53 runes; its gematria is the sum of the runes' primes, 2 to 109. The seal is drawn from the hash and never stored.
-
-The essence is the newest essence record: five lines -- a paragraph, a phrase, a few words, one word, one rune -- each fewer UTF-8 bytes than the line above; a master squeezes it again with a new essence record threaded to the one before.
-
-A twin is a master's rewrite of a record in his own squeezing language, kept beside the chain in masterwall.jsonl: scored, not sealed. Adapted Weissman score = (record bytes / twin bytes) / (record bytes / deflate-9 bytes); a twin that drops an identifier of its record -- three digits or more, seven hex digits or more, a branch with a slash -- scores 0, and a master's mean counts the latest twin of each record once.
-
-A finding opens with its axis -- elegance, aesthetics or security -- and names file:line of an earlier master's code; a verdict threads to one finding and opens with + or -. The chain refuses a rating of one's own finding and a second rating by one master, so a master's points are the plain sum of his findings' ratings; the next master owes a rating to every finding of the one before him.
-
-A closed record keeps its place and its hash without its text: the record after it binds that hash, and nothing binds its time, kind or master.
-
 ## Findings on earlier masters' code
-
-A master writes each finding on an earlier master's code on the wall (`--kind finding`, opening with elegance, aesthetics or security, then file:line); every other master may rate it once (`--kind verdict --thread HASH`, opening with + or -), and the next master must rate every finding of the one before him. Points are the sum of the ratings; nobody rates his own finding. A master is a name, signed by no key.
 
 End of a shift: a master puts the line "Эффективность: N/10" (N from 1 to 10; the chain is written in Russian) with one phrase of why into his handover record (`--kind handover`), and writes his advice to the student as a record on the Student Wall (`council.py student add`). The effectiveness column of the table reads N from the master's latest handover: the chain is the one place of truth.
 
@@ -55,10 +20,10 @@ End of a shift: a master puts the line "Эффективность: N/10" (N fro
 
 Мастер 3 · 1277fde6 must rate 0 findings of Мастер 2 · claude-3d
 
-Adapted Weissman score = (bytes of the record / bytes of the twin) / (bytes of the record / bytes through deflate-9); a twin that drops an identifier scores 0.
-
 ## The wall, newest first
 
+- 158 · 30.09 09:19 MSK · hash `7f62ede1463526a817e1a8b9b08f75bb6de453229e74464a4ab008135f3fb1b2` · prev `f82864700f94afce9f5e2e9ef7c8fffe46d0f180fcc484a883648d5ce99a9ab1` · Мастер 3 · 1277fde6 · state: Сборка 2031 над 371e35ad (бамп) поверх 97b6bc49: пять веток, слитые и проверенные мастером своими руками после остановки всех агентов автором — фото открывается пальцем (MontanaMedia.swift: касание гасло, пока закрывался системный просмотрщик) и вернулась страница медиа стены; лист Поделиться шлёт только по касанию, первый кружок открывает окно публикации на стене, слова поста правятся, панель в стекле; два фона Montana (Индиго и Бургунди) выбираются миниатюрами до создания личности и стоят на всех страницах, картинка дверей убрана; обложка отвечает стеклянными волнами; маска аватара в видеозвонке (задача 36). Конфликт каталога строк в двух ветках сведён объединением ключей обеих сторон; на каждом слитом дереве кольцо и проверки типов rc 0; все ядра, ошибок 0, печать artifact matches build, commit and tree. НЕ ПОСТАВЛЕНА: Т1, Т2 и Т3 заблокированы — дорога установки закрыта по умолчанию и вслепую не ставит; ждёт слова автора после разблокировки. TestFlight 2030 ждёт бета-ревью, 2031 не выгружена. Агентов нет: все остановлены автором, мастер ведёт ветки сам
+  - seal ᚳᚳᛝᛞᛟᚾᛏᚦᚾᚪᚾᛝᛈᚠᚪᚩᚠᛁᛈᛝᛚᚷᚹᛗᛚᚾᚩᛗᚫᛈᚪᛈᚳᚻᚻᚻᚫᛟᛖᚪᛝᛡᛞᚦᛖᛖᛡᛈᛡᚠᛠᛈᛞ · gematria 2896
 - 157 · 30.09 08:55 MSK · hash `f82864700f94afce9f5e2e9ef7c8fffe46d0f180fcc484a883648d5ce99a9ab1` · prev `2285488419d5f6e0eade714e1450da00bff1ec13b31f08612c34979feb79c664` · Мастер 3 · 1277fde6 · state: Состояние: главная 5a26738d (метка копии Лотербурга поверх 1ad6ca4d), 2030 стоит на Т1 и Т3, Т2 заблокирован; TestFlight 2030 ждёт бета-ревью. Ветки: fix/master-chain-of-thoughts e5fb4c44 зелена (цепочка мыслей: имя, короткая шапка Троицы, новое слово против повтора) — вливаю следующей; fix/default-wallpaper-8 fe5d60e1, fix/share-menu-order d3ad74fa, fix/photo-open-like-avatar 56969efc, fix/player-cover-waves 980dd765, stage/36-avatar-mask f4d07cf8 — у агентов, строк зелено пока нет; fix/kem-key-per-link и fix/core-parity-guard стоят на 884a8268 — агенты только начали. Замечено мастером: ветки фона, Поделиться и фото не прислали строк дольше часа; следующий шаг мастера — спросить каждого агента одной строкой и вливать по мере готовности
   - seal ᛁᚩᛗᛒᛟᛞᚾᚦᛝᚷᛟᚩᚱᛡᚻᛋᛁᚱᚻᛉᛗᛏᚷᛋᚠᛡᛝᛁᚣᛈᛞᚷᚦᛒᚫᛉᛒᛁᛏᛒᚾᚦᚻᚻᛈᚩᛡᚦᛒᛇᛝᛗᛝ · gematria 2538
 - 156 · 30.09 08:45 MSK · hash `2285488419d5f6e0eade714e1450da00bff1ec13b31f08612c34979feb79c664` · prev `753ff130a9810f930950bb582ae7c38faa1f451a20287c6f4a86eb3576a7743d` · Мастер 3 · 1277fde6 · state: Состояние: главная rollback-898 = 1ad6ca4d, сборка 2030 на Т1 и Т3 (сверено devicectl), Т2 заблокирован и ждёт слова автора; TestFlight 2030 (41b38b88) в обеих группах, бета-ревью ждёт проверки, release на трёх узлах. Зелено и ждёт вливания: fix/master-chain-of-thoughts (цепочка мыслей — имя, короткая шапка Троицы, гиппокамп отличает новое слово от повтора). В работе агенты: share-order (утечка листа Поделиться), default-wall-8 (Индиго и Бургунди, окно фона при создании личности), photo-avatar (фото по касанию, проверки на слитом дереве), merge-queue (ветки Мастера 1: волны обложки, маска аватара), kem-per-link (ключ KEM на одно соединение), core-parity (страж зрелости), memory-wall (проект Стены Памяти). Ждут автора: разблокировать Т2; пять вопросов метки времени и чеканки (часы из записи, цепь окон на узлах, имя и ключ канала, два места в спеке, чеканка по правилу протокола); три вопроса зрелости (ключ в приветствии — Canon против Network, незакоммиченная правка в дереве протокола, время окна в клиенте). Следующим беру бэкап цепочки мыслей и стен архивом на все узлы
