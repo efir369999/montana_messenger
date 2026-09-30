@@ -146,8 +146,10 @@ def check(recs, closed_ok=True):
     return None, shut
 
 
+# The showcase writes a chain newest first (the author's word 30.09); the chain is checked from its genesis either way.
 def read(path):
-    return [json.loads(row) for row in open(path, encoding="utf-8") if row.strip()]
+    recs = [json.loads(row) for row in open(path, encoding="utf-8") if row.strip()]
+    return list(reversed(recs)) if 1 < len(recs) and recs[-1].get("n") == 0 else recs
 
 
 def main(paths):
