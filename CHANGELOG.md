@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5-5.
 - **Build / OS:** 2029; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `0e18416ac04154e85fa2429fc8bf4f16514a418b`. Commit: pending.
-<!-- montana-change {"id": "d2db1a4e-4a38-4f74-a2af-d8dd0dbfe453", "utc": "2026-09-30T04:25:32+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5-5", "build": "2029", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "build: 2029 -- the big player's speed: the playlist frame drops closed at the root, the full-page player, the row number by the thumb, the output device glyph, the track's place; over 2028; for T1 and T3", "tree": "0e18416ac04154e85fa2429fc8bf4f16514a418b", "parents": ["f20b96b3cd9f7a2c4ba06ad88e7027284350b4dd"], "commit": null} -->
+- **Staged source tree:** `0e18416ac04154e85fa2429fc8bf4f16514a418b`. Commit: `884a8268267fb4639ef8e18e7794a529bdc470c9`.
+<!-- montana-change {"id": "d2db1a4e-4a38-4f74-a2af-d8dd0dbfe453", "utc": "2026-09-30T04:25:32+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5-5", "build": "2029", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "build: 2029 -- the big player's speed: the playlist frame drops closed at the root, the full-page player, the row number by the thumb, the output device glyph, the track's place; over 2028; for T1 and T3", "tree": "0e18416ac04154e85fa2429fc8bf4f16514a418b", "parents": ["f20b96b3cd9f7a2c4ba06ad88e7027284350b4dd"], "commit": "884a8268267fb4639ef8e18e7794a529bdc470c9"} -->
 
 ### 2026-09-30T04:24:09+00:00 — Merge rollback-898 b253e28a (build 2025, the closed install road) into fix/vpn-wall-whitelist-auto: the merge begun by the previous queue agent; tools/mt-vpn-recovery-check.py keeps both sides -- the VPN wall road asserts of the branch, then the install road checks of the main line
 
