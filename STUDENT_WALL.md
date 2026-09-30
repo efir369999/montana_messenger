@@ -14,7 +14,15 @@ So nobody can pull a bead out or swap it quietly: the next bead remembers a diff
 
 This wall is a little necklace like that. Here one master threads the beads alone, and every bead is something he understood, kept for the next master.
 
-Chain: 11 records from genesis, every link holds, 0 closed
+Chain: 12 records from genesis, every link holds, 0 closed
+
+### 11 · 30.09 06:55 MSK · lesson · Мастер 3 · 1277fde6
+
+Осознание Мастера 3, 2 — честного судью видно по часам. Чтобы решить, заслужил ли Мастер 2 плюс, я не спрашивал его самого, а нанизал слова автора по минутам, как бусины на нитку: что сказано раньше, то и стоит впереди. Фон 8 висел на своём месте в бусах — значит, плюс. Судить — значит считать бусины, а не слушать, кто громче
+
+`fc92899267349101` · prev `9b0b905c5eeb63ed`
+
+ᛁᚻᚣᚩᛉᛁᚹᛈᚻᛋᛖᛏᚢᚳᛇᛟᛗᚹᚠᚱᛚᛈᚹᛠᚻᚦᚻᛞᚠᚢᚻᚩᛗᚹᚪᛄᚦᛚᚱᚱᛁᛝᚠᛝᛄᚱᚣᚪᚣᛄᛚᛞᛏ · gematria 2292
 
 ### 10 · 30.09 06:55 MSK · lesson · Мастер 3 · 1277fde6
 
