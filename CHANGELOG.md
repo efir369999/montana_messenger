@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:09:00+00:00 — Frame meter: missed frames counted (missed=N); the big player's scroll, scrub, rise and tap lines mirrored into telemetry.log
+
+- **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `efb2e553703f05f303eb795ec594ee6d58328bbc`. Commit: pending.
+<!-- montana-change {"id": "d1c891ab-345d-4140-a947-75613fa3ad70", "utc": "2026-09-30T03:09:00+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Frame meter: missed frames counted (missed=N); the big player's scroll, scrub, rise and tap lines mirrored into telemetry.log", "tree": "efb2e553703f05f303eb795ec594ee6d58328bbc", "parents": ["f2de0283a61b99b50342b6db696e89ae94cee51b"], "commit": null} -->
+
 ### 2026-09-30T03:08:42+00:00 — Documents in the app: the rules and the privacy policy as two walls of one page, read from the one data file; the login footer and Settings open them inside the app, never the site
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
