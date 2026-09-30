@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T11:54:46+00:00 — Build 2033: VPN Wall stays manual and lists only live paid servers; identity switches rebuild the chat store; Saved Messages remains local and writable; avatar rows retain their source file.
+
+- **Callsign / model:** Мастер 4 · Codex / Codex GPT-5.
+- **Build / OS:** 2033; macOS 26.0.1; T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `e8c037455ab4a210f4d9d740ef255449f252a9a7`. Commit: pending.
+<!-- montana-change {"id": "2e58d1f2-af2d-45b1-bec4-7f6f7258042a", "utc": "2026-09-30T11:54:46+00:00", "callsign": "Мастер 4 · Codex", "model": "Codex GPT-5", "build": "2033", "os": "macOS 26.0.1; T1 iOS 26.7.1, T3 iOS 18.3", "summary": "Build 2033: VPN Wall stays manual and lists only live paid servers; identity switches rebuild the chat store; Saved Messages remains local and writable; avatar rows retain their source file.", "tree": "e8c037455ab4a210f4d9d740ef255449f252a9a7", "parents": ["e5e6512b8526d35c0b62aa969ad788f0489c00a1"], "commit": null} -->
+
 ### 2026-09-30T11:32:46+00:00 — VPN wall: manual server choice, live subscription publication, stable ping and avatars
 
 - **Callsign / model:** Мастер 4 / Codex GPT-5.
