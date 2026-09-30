@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** music-wall agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `5fa56e9b4534fe8039159d6cbed3d94d2e5eefff`. Commit: pending.
-<!-- montana-change {"id": "b20817a4-3918-435f-953c-b2aad64bd2ca", "utc": "2026-09-30T03:09:06+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "music wall favorites (the author word 30.09 05:40): a hold on a track of my people walls stars it; the starred stand in my Favorites section with the system filled star; stars live on this phone alone and leave with a track its keeper took off", "tree": "5fa56e9b4534fe8039159d6cbed3d94d2e5eefff", "parents": ["2a3bc282bf34d9f25864f87b0b34a4f944695670"], "commit": null} -->
+- **Staged source tree:** `5fa56e9b4534fe8039159d6cbed3d94d2e5eefff`. Commit: `7b225a3f6d8646da6bd95456c606f421ed67ef1d`.
+<!-- montana-change {"id": "b20817a4-3918-435f-953c-b2aad64bd2ca", "utc": "2026-09-30T03:09:06+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "music wall favorites (the author word 30.09 05:40): a hold on a track of my people walls stars it; the starred stand in my Favorites section with the system filled star; stars live on this phone alone and leave with a track its keeper took off", "tree": "5fa56e9b4534fe8039159d6cbed3d94d2e5eefff", "parents": ["2a3bc282bf34d9f25864f87b0b34a4f944695670"], "commit": "7b225a3f6d8646da6bd95456c606f421ed67ef1d"} -->
 
 ### 2026-09-30T03:09:00+00:00 — Frame meter: missed frames counted (missed=N); the big player's scroll, scrub, rise and tap lines mirrored into telemetry.log
 
