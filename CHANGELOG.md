@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:10:49+00:00 — merge the main line 998dae15 (build 2027, the council student wall) into fix/photo-open-like-avatar, no own edits
+
+- **Callsign / model:** photo-avatar agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `59c42f4185d18da2dcc599c1f52df13be9dcc1b2`. Commit: pending.
+<!-- montana-change {"id": "9f7b9a57-04fa-4d38-b066-fe69177e9ea0", "utc": "2026-09-30T03:10:49+00:00", "callsign": "photo-avatar agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge the main line 998dae15 (build 2027, the council student wall) into fix/photo-open-like-avatar, no own edits", "tree": "59c42f4185d18da2dcc599c1f52df13be9dcc1b2", "parents": ["53eeb10c110868abdee06902be24b8d9aa17b4b5", "998dae15d68ed0ef5e3698c35dd3db94f478ce45"], "commit": null} -->
+
 ### 2026-09-30T03:09:50+00:00 — Documents: the council chain records of the two revisions in force (terms 98, privacy 99) written into the one data file, cross-checked with the chain by the ring guard
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
