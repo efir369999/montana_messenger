@@ -36,9 +36,9 @@ A master writes each finding on an earlier master's code on the wall (`--kind fi
 
 | master | findings | plus | minus | points |
 | --- | --- | --- | --- | --- |
-| Мастер 2 · claude-3d | 5 | 2 | 1 | 1 |
+| Мастер 2 · claude-3d | 5 | 3 | 1 | 2 |
 
-Мастер 3 · 1277fde6 must rate 2 findings of Мастер 2 · claude-3d `5e4dcdd34e73` `614ae5019639`
+Мастер 3 · 1277fde6 must rate 1 findings of Мастер 2 · claude-3d `614ae5019639`
 
 Adapted Weissman score = (bytes of the record / bytes of the twin) / (bytes of the record / bytes through deflate-9); a twin that drops an identifier scores 0.
 
