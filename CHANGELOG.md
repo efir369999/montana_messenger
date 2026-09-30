@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `53b40821d318326056331eba27175ce61dc95b2b`. Commit: pending.
-<!-- montana-change {"id": "906523a0-0986-469d-a969-0da3d672460c", "utc": "2026-09-30T01:12:56+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Big player: the playing track's place in the playlist at the plate's bottom left; a tap stands its row in the middle of the screen (MTChatListView.focus)", "tree": "53b40821d318326056331eba27175ce61dc95b2b", "parents": ["423a6191981f4ce2c285b86c6bb747b58b566bac"], "commit": null} -->
+- **Staged source tree:** `53b40821d318326056331eba27175ce61dc95b2b`. Commit: `c43c47e54644279548237941ef750d2b58f1bb17`.
+<!-- montana-change {"id": "906523a0-0986-469d-a969-0da3d672460c", "utc": "2026-09-30T01:12:56+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Big player: the playing track's place in the playlist at the plate's bottom left; a tap stands its row in the middle of the screen (MTChatListView.focus)", "tree": "53b40821d318326056331eba27175ce61dc95b2b", "parents": ["423a6191981f4ce2c285b86c6bb747b58b566bac"], "commit": "c43c47e54644279548237941ef750d2b58f1bb17"} -->
 
 ### 2026-09-30T01:11:41+00:00 — build 2025: the same app as the burned 2024 (a post on a friend's wall as a card in the pair's chat); 2024 was reserved and never sealed; the install road is closed by default (the phone witnesses the lifted reconnect)
 
