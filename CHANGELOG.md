@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** 2026; macOS 26.6 (Darwin 25.6.0); for T1 and T3. No new compilation or installation claimed.
-- **Staged source tree:** `9eb475d81e0c84984a57c606fcfc6398a8ba9759`. Commit: pending.
-<!-- montana-change {"id": "fde81e01-38cc-47f9-b743-3f579755f179", "utc": "2026-09-30T01:24:14+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2026", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2026: the default chat wallpaper from the author's file; over 2025", "tree": "9eb475d81e0c84984a57c606fcfc6398a8ba9759", "parents": ["4c97d9ecab9a8e4ab2ac6d578a45b04c04f757c6"], "commit": null} -->
+- **Staged source tree:** `9eb475d81e0c84984a57c606fcfc6398a8ba9759`. Commit: `fe5864b293d344ebb4bbbaae05476d17de74c33d`.
+<!-- montana-change {"id": "fde81e01-38cc-47f9-b743-3f579755f179", "utc": "2026-09-30T01:24:14+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2026", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2026: the default chat wallpaper from the author's file; over 2025", "tree": "9eb475d81e0c84984a57c606fcfc6398a8ba9759", "parents": ["4c97d9ecab9a8e4ab2ac6d578a45b04c04f757c6"], "commit": "fe5864b293d344ebb4bbbaae05476d17de74c33d"} -->
 
 ### 2026-09-30T01:22:50+00:00 — Merge rollback-898 b253e28a into fix/default-wallpaper: the default chat wallpaper; clean merge, ring and Montana typecheck green on the merged tree (the last main step is its build number only)
 
