@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `f81b5fb3a10eebd32d22db05d19b9f7bc192791c`. Commit: pending.
-<!-- montana-change {"id": "de71cf1e-809d-4506-b9cb-310338459ac9", "utc": "2026-09-30T02:46:46+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "wallpaper: Aurora, the eighth ground of the chooser as the author saw it (build 2025), is the default where nothing is chosen (the author's word 30.09 05:40); his picture stays a ground of the chooser under its name montana", "tree": "f81b5fb3a10eebd32d22db05d19b9f7bc192791c", "parents": ["bd29deabeb35463ee6b43d334f552be9c9f6c0be"], "commit": null} -->
+- **Staged source tree:** `f81b5fb3a10eebd32d22db05d19b9f7bc192791c`. Commit: `401f6855f99e0c20512271a85540f9982925efdb`.
+<!-- montana-change {"id": "de71cf1e-809d-4506-b9cb-310338459ac9", "utc": "2026-09-30T02:46:46+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "wallpaper: Aurora, the eighth ground of the chooser as the author saw it (build 2025), is the default where nothing is chosen (the author's word 30.09 05:40); his picture stays a ground of the chooser under its name montana", "tree": "f81b5fb3a10eebd32d22db05d19b9f7bc192791c", "parents": ["bd29deabeb35463ee6b43d334f552be9c9f6c0be"], "commit": "401f6855f99e0c20512271a85540f9982925efdb"} -->
 
 ### 2026-09-30T02:41:14+00:00 — merge the main line bd29deab (build 2027) into fix/photo-open-like-avatar, no own edits
 
