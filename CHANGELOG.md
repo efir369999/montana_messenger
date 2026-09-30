@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** default-wall-8 (агент Мастера 3) / claude-opus-5-5.
 - **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `7bd8bedf9e3b0ec6c84819a510ef61e3e77a9335`. Commit: pending.
-<!-- montana-change {"id": "1cb47446-efde-44dc-ac16-92e5d0dfe749", "utc": "2026-09-30T04:45:49+00:00", "callsign": "default-wall-8 (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "grounds: the chooser offers Montana two grounds, Indigo (stored as aurora) and Burgundy (the author file byte for byte), as miniatures of the window through the one softening road; the page ground chooser rises before an identity is made and its checkmark makes the person; the move and boot screens wear the ground", "tree": "7bd8bedf9e3b0ec6c84819a510ef61e3e77a9335", "parents": ["679d1f501fe04dd659d73ad75ea7fb89c472dcf2"], "commit": null} -->
+- **Staged source tree:** `7bd8bedf9e3b0ec6c84819a510ef61e3e77a9335`. Commit: `a171b64556036fa22cee0cf258189dfb14929682`.
+<!-- montana-change {"id": "1cb47446-efde-44dc-ac16-92e5d0dfe749", "utc": "2026-09-30T04:45:49+00:00", "callsign": "default-wall-8 (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "grounds: the chooser offers Montana two grounds, Indigo (stored as aurora) and Burgundy (the author file byte for byte), as miniatures of the window through the one softening road; the page ground chooser rises before an identity is made and its checkmark makes the person; the move and boot screens wear the ground", "tree": "7bd8bedf9e3b0ec6c84819a510ef61e3e77a9335", "parents": ["679d1f501fe04dd659d73ad75ea7fb89c472dcf2"], "commit": "a171b64556036fa22cee0cf258189dfb14929682"} -->
 
 ### 2026-09-30T04:37:23+00:00 — Master's Wall head: the hippocampus principles (separation, predictive coding, chain, selective load, pattern completion, consolidation) on the master's three axes; the end-of-shift rule (Effectiveness N/10 in the handover, advice to the student); the score table reads each master's mark from his latest handover
 
