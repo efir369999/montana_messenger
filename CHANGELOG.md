@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2051 base, 2052 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `c6b34f0c652ea4e674d53b601c3be68212ebd03d`. Commit: pending.
-<!-- montana-change {"id": "2ea4fd63-3112-4985-9319-6befa68c122d", "utc": "2026-09-30T21:17:53+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2051 base, 2052 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "The mini player unfolds where it stands into the lock screen's plate and the playlist's head, on every page, and a tap on the name folds it back; the separate big player's page is gone", "tree": "c6b34f0c652ea4e674d53b601c3be68212ebd03d", "parents": ["943e2c9b3aab136285bdb4a1f1f4452af797db9a"], "commit": null} -->
+- **Staged source tree:** `c6b34f0c652ea4e674d53b601c3be68212ebd03d`. Commit: `a83d36c4244a9142d9b3a10c07cf5ae87f2ab0ff`.
+<!-- montana-change {"id": "2ea4fd63-3112-4985-9319-6befa68c122d", "utc": "2026-09-30T21:17:53+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2051 base, 2052 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "The mini player unfolds where it stands into the lock screen's plate and the playlist's head, on every page, and a tap on the name folds it back; the separate big player's page is gone", "tree": "c6b34f0c652ea4e674d53b601c3be68212ebd03d", "parents": ["943e2c9b3aab136285bdb4a1f1f4452af797db9a"], "commit": "a83d36c4244a9142d9b3a10c07cf5ae87f2ab0ff"} -->
 
 ### 2026-09-30T21:09:41+00:00 — Merge the main line (build number 2051) into fix/player-cover-inline before build 2052; no own edits
 
