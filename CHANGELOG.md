@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `6e936426c355b47fe581879714bce8ae3a0b3f4c`. Commit: pending.
-<!-- montana-change {"id": "20b505de-49bd-413f-b227-dec94ccaa347", "utc": "2026-09-30T02:51:59+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Documents: a verbatim copy of the site privacy policy and terms of use in the tree, the one data file the app reads derived from it, and a ring guard that the two agree word for word in every language", "tree": "6e936426c355b47fe581879714bce8ae3a0b3f4c", "parents": ["bd29deabeb35463ee6b43d334f552be9c9f6c0be"], "commit": null} -->
+- **Staged source tree:** `6e936426c355b47fe581879714bce8ae3a0b3f4c`. Commit: `b3676a54cc6915b23ad881e79cdbcf108662ef83`.
+<!-- montana-change {"id": "20b505de-49bd-413f-b227-dec94ccaa347", "utc": "2026-09-30T02:51:59+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Documents: a verbatim copy of the site privacy policy and terms of use in the tree, the one data file the app reads derived from it, and a ring guard that the two agree word for word in every language", "tree": "6e936426c355b47fe581879714bce8ae3a0b3f4c", "parents": ["bd29deabeb35463ee6b43d334f552be9c9f6c0be"], "commit": "b3676a54cc6915b23ad881e79cdbcf108662ef83"} -->
 
 ### 2026-09-30T02:48:10+00:00 — grounds: every page of Montana from the first reads the one default (the author's word 30.09 05:41): the splash after the first screens stands on my page's ground instead of black; the door screens keep the author's LoginBackground (his word 29.09)
 
