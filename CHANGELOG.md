@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:15:18+00:00 — Merge rollback-898 ff6095ab into fix/feed-wall-of-thoughts: the feed names the wall of thoughts; clean merge, ring and Montana typecheck green on the merged tree (main steps after bd29deab touch only the council wall files)
+
+- **Callsign / model:** merge-queue agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `66915a770966a2fe506422f34c1f3c0943f07c70`. Commit: pending.
+<!-- montana-change {"id": "c573cc6d-f8db-4240-a413-aa89e3af67cd", "utc": "2026-09-30T03:15:18+00:00", "callsign": "merge-queue agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 ff6095ab into fix/feed-wall-of-thoughts: the feed names the wall of thoughts; clean merge, ring and Montana typecheck green on the merged tree (main steps after bd29deab touch only the council wall files)", "tree": "66915a770966a2fe506422f34c1f3c0943f07c70", "parents": ["e14d8b72d180fd609f45dc1294aa0ce9aaa2febf", "ff6095abe1c2e2910e22f9671dd4010323db1329"], "commit": null} -->
+
 ### 2026-09-30T03:15:04+00:00 — Documents: one entry, the People's Wall of Rules and Policy; edits the master decided shown under the revision with was and became, their decision only where the council chain record names them
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
