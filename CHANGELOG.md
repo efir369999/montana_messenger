@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2038 (source change; build 2039 pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `c4cf13d5bcab4e2dbd0b2b6f3a6fd5fac1f7a57b`. Commit: pending.
-<!-- montana-change {"id": "c9124a3c-0957-4ea2-a18b-7dce01be9b80", "utc": "2026-09-30T16:50:27+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2038 (source change; build 2039 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN page: plans update at a press of the hand or once an hour -- the first six of the page, one at a time, thirteen seconds apart; the page opening loads and asks nothing", "tree": "c4cf13d5bcab4e2dbd0b2b6f3a6fd5fac1f7a57b", "parents": ["e5ad7599a41babefe78acb486edc8484a76458ac"], "commit": null} -->
+- **Staged source tree:** `c4cf13d5bcab4e2dbd0b2b6f3a6fd5fac1f7a57b`. Commit: `a82d9dcd62d93c76edb72e587dce9008907bd358`.
+<!-- montana-change {"id": "c9124a3c-0957-4ea2-a18b-7dce01be9b80", "utc": "2026-09-30T16:50:27+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2038 (source change; build 2039 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN page: plans update at a press of the hand or once an hour -- the first six of the page, one at a time, thirteen seconds apart; the page opening loads and asks nothing", "tree": "c4cf13d5bcab4e2dbd0b2b6f3a6fd5fac1f7a57b", "parents": ["e5ad7599a41babefe78acb486edc8484a76458ac"], "commit": "a82d9dcd62d93c76edb72e587dce9008907bd358"} -->
 
 ### 2026-09-30T16:42:46+00:00 — Council: the showcase shows only the masters' and the student's TimeChain (TimeChain_Master and TimeChain_Student, page and raw chain) and verify.py; the older wall files leave it
 
