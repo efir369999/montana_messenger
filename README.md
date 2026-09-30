@@ -142,7 +142,7 @@ Its output at this publication:
 
 ```
 TimeChain_Master.jsonl: holds -- 207 records from genesis, 5 closed, head d59431f23415c626d72268e7e71df37891a373fadc764435b03e2a07d2b1e5a6
-TimeChain_Student.jsonl: holds -- 17 records from genesis, 0 closed, head 8ea85b3fefc40440df3664c60bf9078b75368e3d090035783330894448c4a6b7
+TimeChain_Student.jsonl: holds -- 18 records from genesis, 0 closed, head 7887c8b192f873b6c095a287af075448f7e2710a0635c7e1d8c8c7682ae64510
 ```
 <!-- council walls end -->
 
