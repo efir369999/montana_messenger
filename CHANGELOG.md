@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** 2028; macOS 26.6 (Darwin 25.6.0); for T1 and T3. No new compilation or installation claimed.
-- **Staged source tree:** `48694c8391171cd85f947452f00a24202cd4c0d3`. Commit: pending.
-<!-- montana-change {"id": "faa6acc1-d242-471b-994c-b0061a89535f", "utc": "2026-09-30T03:16:17+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2028", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2028: the Feed is named the Wall of Thoughts; over 2027", "tree": "48694c8391171cd85f947452f00a24202cd4c0d3", "parents": ["8cd3cb4ec04c19d3cf8a3439f3e17196cf884c1c"], "commit": null} -->
+- **Staged source tree:** `48694c8391171cd85f947452f00a24202cd4c0d3`. Commit: `752786f2d82f5666ee92bd1bb41577e43396dfa1`.
+<!-- montana-change {"id": "faa6acc1-d242-471b-994c-b0061a89535f", "utc": "2026-09-30T03:16:17+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2028", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2028: the Feed is named the Wall of Thoughts; over 2027", "tree": "48694c8391171cd85f947452f00a24202cd4c0d3", "parents": ["8cd3cb4ec04c19d3cf8a3439f3e17196cf884c1c"], "commit": "752786f2d82f5666ee92bd1bb41577e43396dfa1"} -->
 
 ### 2026-09-30T03:15:18+00:00 — Merge rollback-898 ff6095ab into fix/feed-wall-of-thoughts: the feed names the wall of thoughts; clean merge, ring and Montana typecheck green on the merged tree (main steps after bd29deab touch only the council wall files)
 
