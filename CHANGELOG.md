@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T18:28:10+00:00 — Advance build number to 2044
+
+- **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2044; macOS 26.6 (Darwin 25.6.0), iOS client. No new compilation or installation claimed.
+- **Staged source tree:** `ed9036aee727c45936942e178b6119aaf635b643`. Commit: pending.
+<!-- montana-change {"id": "768c65b7-21ca-4e99-8063-3726f636ee72", "utc": "2026-09-30T18:28:10+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2044", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "Advance build number to 2044", "tree": "ed9036aee727c45936942e178b6119aaf635b643", "parents": ["fb0e6277d2339e15765fbc652edf2c189155f2bb"], "commit": null} -->
+
 ### 2026-09-30T18:26:15+00:00 — mesh: a node channel keeps its nature on every dial road, and only the addressee's ack is awaited -- relayed letters no longer cut both node channels six seconds later
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
