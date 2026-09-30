@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:09:50+00:00 — Documents: the council chain records of the two revisions in force (terms 98, privacy 99) written into the one data file, cross-checked with the chain by the ring guard
+
+- **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `22df01ed35759a9b19531857ae810341f8fc8833`. Commit: pending.
+<!-- montana-change {"id": "324e582e-834e-4849-b7c9-54a8ebaf972e", "utc": "2026-09-30T03:09:50+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Documents: the council chain records of the two revisions in force (terms 98, privacy 99) written into the one data file, cross-checked with the chain by the ring guard", "tree": "22df01ed35759a9b19531857ae810341f8fc8833", "parents": ["28a5770cae13a83ec91a51396774bfc25268b853"], "commit": null} -->
+
 ### 2026-09-30T03:09:26+00:00 — council: the Master's Student Wall -- its own chain beside the masters' one, the same readable form, written only by a master, read first by the next master
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
