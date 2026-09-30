@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `8d9a6cede362d1933756e1945f53992785e22d76`. Commit: pending.
-<!-- montana-change {"id": "7a354ce3-51ba-4af4-a19f-35e1330e2c96", "utc": "2026-09-30T03:29:30+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 09b24f0f (build 2028, council) into stage/player-speed, no own edits", "tree": "8d9a6cede362d1933756e1945f53992785e22d76", "parents": ["1b4fe867885e8194bf106f5ff723760d694b3c90", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": null} -->
+- **Staged source tree:** `8d9a6cede362d1933756e1945f53992785e22d76`. Commit: `424b665ba9c79dae295d2311ee17de063b5c3567`.
+<!-- montana-change {"id": "7a354ce3-51ba-4af4-a19f-35e1330e2c96", "utc": "2026-09-30T03:29:30+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 09b24f0f (build 2028, council) into stage/player-speed, no own edits", "tree": "8d9a6cede362d1933756e1945f53992785e22d76", "parents": ["1b4fe867885e8194bf106f5ff723760d694b3c90", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": "424b665ba9c79dae295d2311ee17de063b5c3567"} -->
 
 ### 2026-09-30T03:28:36+00:00 — council: the comments of council.py say only why -- history and quotes live in git log; not one line of logic changed (AST, token stream and code lines equal before and after)
 
