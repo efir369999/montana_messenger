@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
 - **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `8f44b118280148f12b584f58a1682286074e1331`. Commit: pending.
-<!-- montana-change {"id": "b3ac1722-f1e4-444f-8d0f-6a7d0e215a6d", "utc": "2026-09-30T06:02:55+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge the main line (build 2030, the chain of thoughts, the photo) under the share sheet; the catalogue keeps the keys of both sides", "tree": "8f44b118280148f12b584f58a1682286074e1331", "parents": ["d3ad74fa11da6b0838389e08902278fa05344bf1", "e8f01546c7557c69f33849dce9d634fc7fc8ce2b"], "commit": null} -->
+- **Staged source tree:** `8f44b118280148f12b584f58a1682286074e1331`. Commit: `0b804dd915b27d56aff38b873d49d53bf6be0b6d`.
+<!-- montana-change {"id": "b3ac1722-f1e4-444f-8d0f-6a7d0e215a6d", "utc": "2026-09-30T06:02:55+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge the main line (build 2030, the chain of thoughts, the photo) under the share sheet; the catalogue keeps the keys of both sides", "tree": "8f44b118280148f12b584f58a1682286074e1331", "parents": ["d3ad74fa11da6b0838389e08902278fa05344bf1", "e8f01546c7557c69f33849dce9d634fc7fc8ce2b"], "commit": "0b804dd915b27d56aff38b873d49d53bf6be0b6d"} -->
 
 ### 2026-09-30T05:56:40+00:00 — merge the main line (build 2030 and the chain of thoughts) under the photo that opens like the avatar
 
