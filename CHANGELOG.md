@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2037 (merge; build 2038 pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `9b3a8e902c6c6946e71b1680f728616eb8e56476`. Commit: pending.
-<!-- montana-change {"id": "bc343703-d934-4b6a-9d6b-3258819e11e6", "utc": "2026-09-30T16:37:22+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2037 (merge; build 2038 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Merge the main line 1301d699 (the call rides the tunnel) into fix/vpn-one-profile -- no own edits", "tree": "9b3a8e902c6c6946e71b1680f728616eb8e56476", "parents": ["859e0b633ba5de49d09b994725141d196b51f010", "1301d69956da06ae2eddf3bba346034e865f9d7d"], "commit": null} -->
+- **Staged source tree:** `9b3a8e902c6c6946e71b1680f728616eb8e56476`. Commit: `316a59ca6bb52b5c59a86450c176433822d48ccc`.
+<!-- montana-change {"id": "bc343703-d934-4b6a-9d6b-3258819e11e6", "utc": "2026-09-30T16:37:22+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2037 (merge; build 2038 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Merge the main line 1301d699 (the call rides the tunnel) into fix/vpn-one-profile -- no own edits", "tree": "9b3a8e902c6c6946e71b1680f728616eb8e56476", "parents": ["859e0b633ba5de49d09b994725141d196b51f010", "1301d69956da06ae2eddf3bba346034e865f9d7d"], "commit": "316a59ca6bb52b5c59a86450c176433822d48ccc"} -->
 
 ### 2026-09-30T16:36:13+00:00 — VPN wall: no server is measured by itself -- the hourly beat, the return and the pull only reload plans; a ping only by the section's gauge under the finger
 
