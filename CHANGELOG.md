@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T17:32:42+00:00 — VPN nodes removed entirely for now: the switch, the exit door instrument, the tunnel carrier, the direct road, the calls' server choice and their UDP verdicts; the old door word is buried unread
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2040 (source change; build 2041 pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `6e242d164605d7b5c94772f2a1d411ec5545407b`. Commit: pending.
+<!-- montana-change {"id": "4cf47cb8-851c-425a-a9fe-459eeff71fd2", "utc": "2026-09-30T17:32:42+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2040 (source change; build 2041 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN nodes removed entirely for now: the switch, the exit door instrument, the tunnel carrier, the direct road, the calls' server choice and their UDP verdicts; the old door word is buried unread", "tree": "6e242d164605d7b5c94772f2a1d411ec5545407b", "parents": ["68f878ddaadb2b8f31773c472a9ef2b514eaa325"], "commit": null} -->
+
 ### 2026-09-30T17:18:12+00:00 — Advance build number to 2040 (the mesh owes the tunnel nothing)
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
