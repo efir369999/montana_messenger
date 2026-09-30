@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T06:34:06+00:00 — build: 2032 -- the install road works again: a sleep tells the person from the road; over 2031
+
+- **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
+- **Build / OS:** 2032; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `3887b5db4834d9db72969c05f20cdce3ae67d248`. Commit: pending.
+<!-- montana-change {"id": "689fac81-970a-4c19-85db-8a727c687de4", "utc": "2026-09-30T06:34:06+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "2032", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "build: 2032 -- the install road works again: a sleep tells the person from the road; over 2031", "tree": "3887b5db4834d9db72969c05f20cdce3ae67d248", "parents": ["1658573a8ddf0b5fd6bac063cdd789dd1716ce33"], "commit": null} -->
+
 ### 2026-09-30T06:33:22+00:00 — install prepare: a sleep in the background tells the person's hands from the road that launches this app in the foreground
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
