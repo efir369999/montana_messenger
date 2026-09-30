@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T16:32:47+00:00 — VPN: one Montana profile on the device -- a failed reading is not an absence, a second profile leaves, a profile is born only by the person switching the VPN on
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2037 (source change; build 2038 pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `4f683bc4e6951d87cbfe3525c2c6c4fba59b4d25`. Commit: pending.
+<!-- montana-change {"id": "57d30090-3ab3-4291-92d2-82bdf46f7897", "utc": "2026-09-30T16:32:47+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2037 (source change; build 2038 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN: one Montana profile on the device -- a failed reading is not an absence, a second profile leaves, a profile is born only by the person switching the VPN on", "tree": "4f683bc4e6951d87cbfe3525c2c6c4fba59b4d25", "parents": ["2752dee9be5431e1254e40a2f7ee3c19dafb056d"], "commit": null} -->
+
 ### 2026-09-30T16:32:10+00:00 — Call: while our VPN tunnel is up the call gathers on every adapter and rides the tunnel; the relay and the signalling stay our nodes
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
