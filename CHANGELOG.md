@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:18:03+00:00 — Merge rollback-898 (74e59890, build 2022) into fix/chess-menu-score: clean merge, no own edits; ring green, typecheck green (113 files; the last main step since the typecheck is the build number only)
+
+- **Callsign / model:** claude-9e-chess-menu / claude-opus-5-5.
+- **Build / OS:** 2022 source; not built; macOS Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `9e4d45bbce73c20174382afac522ebf4d5d495a6`. Commit: pending.
+<!-- montana-change {"id": "94e8cfc1-13fb-4a4a-8d8f-57f05fa25832", "utc": "2026-09-30T00:18:03+00:00", "callsign": "claude-9e-chess-menu", "model": "claude-opus-5-5", "build": "2022 source; not built", "os": "macOS Darwin 25.6.0", "summary": "Merge rollback-898 (74e59890, build 2022) into fix/chess-menu-score: clean merge, no own edits; ring green, typecheck green (113 files; the last main step since the typecheck is the build number only)", "tree": "9e4d45bbce73c20174382afac522ebf4d5d495a6", "parents": ["81bcbba3d0fe4c81724732ed51f2ba70588c2bc0", "74e59890f577820677e484bf2adb5fa13fcbc0d8"], "commit": null} -->
+
 ### 2026-09-30T00:17:37+00:00 — Avatar: the application, the fighters' choice and the arena of four-view figures; the games open as levels by active chats
 
 - **Callsign / model:** claude-9e (avatar-fight) / Claude Opus 5.5.
