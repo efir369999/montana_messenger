@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `3ccb5bc0dd67dedbb4ec2c6bb576ff3f36ee5e84`. Commit: pending.
-<!-- montana-change {"id": "79827234-b7d0-4a21-a5a0-cc5dfe9789d1", "utc": "2026-09-30T03:24:50+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "The People's Wall road: the holder's own wall carries everyone's posts, comments and proposed edits by the one wall road; guests read only; a moderator the master's council chain record appoints may hide a post", "tree": "3ccb5bc0dd67dedbb4ec2c6bb576ff3f36ee5e84", "parents": ["25aaeca3cbfbe4962c48af07f7ce77abb4fd20f6"], "commit": null} -->
+- **Staged source tree:** `3ccb5bc0dd67dedbb4ec2c6bb576ff3f36ee5e84`. Commit: `e7dfa5b5d6f30b83f7b6b0bd801339919a70cb28`.
+<!-- montana-change {"id": "79827234-b7d0-4a21-a5a0-cc5dfe9789d1", "utc": "2026-09-30T03:24:50+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "The People's Wall road: the holder's own wall carries everyone's posts, comments and proposed edits by the one wall road; guests read only; a moderator the master's council chain record appoints may hide a post", "tree": "3ccb5bc0dd67dedbb4ec2c6bb576ff3f36ee5e84", "parents": ["25aaeca3cbfbe4962c48af07f7ce77abb4fd20f6"], "commit": "e7dfa5b5d6f30b83f7b6b0bd801339919a70cb28"} -->
 
 ### 2026-09-30T03:19:40+00:00 — merge rollback-898 09b24f0f (build 2028, the Wall of Thoughts) into fix/default-wallpaper-8: a clean automatic merge, no own edits
 
