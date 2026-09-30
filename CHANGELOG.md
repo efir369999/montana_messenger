@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T20:47:12+00:00 — Debug builds optimised like the system's own (-O, no debug dylib); the share sheet in the platform's blue and in the chats' order between the app's runs; the chat's chess mark its own button, ringed only while a game is played, asking before a new game; the name's bubble one centred shape
+
+- **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2050 base, 2051 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `eae0b2d28cfe57ec7ca0064ae8a43d6d62204415`. Commit: pending.
+<!-- montana-change {"id": "0fd7b93f-7c25-428d-bcaa-0958c130c1f7", "utc": "2026-09-30T20:47:12+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2050 base, 2051 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Debug builds optimised like the system's own (-O, no debug dylib); the share sheet in the platform's blue and in the chats' order between the app's runs; the chat's chess mark its own button, ringed only while a game is played, asking before a new game; the name's bubble one centred shape", "tree": "eae0b2d28cfe57ec7ca0064ae8a43d6d62204415", "parents": ["7d1637138dc2fd22dad1c7f930852d45309a3445"], "commit": null} -->
+
 ### 2026-09-30T20:37:22+00:00 — Advance build number to 2050
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
