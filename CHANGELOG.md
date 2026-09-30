@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T20:48:02+00:00 — Merge the main line (build number 2050) into fix/player-cover-inline before build 2051; no own edits
+
+- **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2050 base, 2051 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `08ed296e46383a32f16813b47031d6bf5be6d3a4`. Commit: pending.
+<!-- montana-change {"id": "8d9ef88a-4a3e-4724-9891-aabff4f2eb37", "utc": "2026-09-30T20:48:02+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2050 base, 2051 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Merge the main line (build number 2050) into fix/player-cover-inline before build 2051; no own edits", "tree": "08ed296e46383a32f16813b47031d6bf5be6d3a4", "parents": ["78a2d8ed05694e3b9a5c9de0364d35f3ea074c92", "57fe5961e4d34681a318542442a61e1602558bb0"], "commit": null} -->
+
 ### 2026-09-30T20:47:12+00:00 — Debug builds optimised like the system's own (-O, no debug dylib); the share sheet in the platform's blue and in the chats' order between the app's runs; the chat's chess mark its own button, ringed only while a game is played, asking before a new game; the name's bubble one centred shape
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
