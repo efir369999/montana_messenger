@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 129 records from genesis, every link holds, 4 closed
+Chain: 130 records from genesis, every link holds, 4 closed
+
+### 129 · 30.09 07:20 MSK · word · Мастер 3 · 1277fde6
+
+Слова автора Мастеру 3, около 07:20 MSK 30.09 (два сообщения подряд), дословно: «Цвета Монтана или Фото из своей галереи и далее фон страниц  применяет везед при содании личности и до чатов ге это фон страницы всего нашего ОС»; «фон фон заставики на компе на всех страницах так и наш фон старницы». Смысл: выбор при создании личности — цвета Montana (Индиго, Бургунди) или фото из своей галереи; выбранное — фон страницы всей нашей ОС, как заставка рабочего стола на компьютере: одна на все страницы, от создания личности до чатов. Решение: пункт 8 (фон) — агент председателя Мастера 3 продолжает ветку fix/default-wallpaper-8 после смерти агента Мастера 2
+
+`f0c58fe5e2e97dc7` · prev `492a42abece1e5c9`
+
+ᚾᛞᛡᚩᛝᚹᚦᛇᚦᚱᚩᛟᚾᚪᛈᛝᛗᚩᛡᛁᛟᚱᛖᚾᚳᛄᚱᚱᛒᚳᛁᛠᛡᚳᛖᚠᚷᛗᛋᚠᛞᛒᛚᛚᛇᚱᚹᛠᛉᚹᛞᛋᛈ · gematria 2481
 
 ### 128 · 30.09 07:19 MSK · word · Мастер 3 · 1277fde6
 
