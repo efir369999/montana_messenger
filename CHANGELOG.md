@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:55:14+00:00 — login grounds: every login page up to the chats wears my page's ground, Aurora by default (the author's word 30.09 ~06:50): the first screens instead of LoginBackground, the outer service's login instead of black; the asset LoginBackground stays in the catalogue
+
+- **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `56114ca42492c23722ad073b013a4d1bb97bd9f1`. Commit: pending.
+<!-- montana-change {"id": "58dfa1f6-9ff2-4f2f-a96f-c12797053d91", "utc": "2026-09-30T03:55:14+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "login grounds: every login page up to the chats wears my page's ground, Aurora by default (the author's word 30.09 ~06:50): the first screens instead of LoginBackground, the outer service's login instead of black; the asset LoginBackground stays in the catalogue", "tree": "56114ca42492c23722ad073b013a4d1bb97bd9f1", "parents": ["d78ddf5b85eb16c9e7bb48472ab49ebed65225d5"], "commit": null} -->
+
 ### 2026-09-30T03:53:08+00:00 — merge rollback-898 ef53ed90 (the council walls' TimeChain check) into fix/default-wallpaper-8: a clean automatic merge, CouncilWall only, no own edits
 
 - **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
