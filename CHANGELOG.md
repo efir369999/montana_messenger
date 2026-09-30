@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** 2023; macOS 26.6 (Darwin 25.6.0); for T1 and T3. No new compilation or installation claimed.
-- **Staged source tree:** `88dee98113dc2dcee3943cf7cba26d5ca4e7618b`. Commit: pending.
-<!-- montana-change {"id": "b961482d-3a43-40aa-836a-7ec6338a4913", "utc": "2026-09-30T00:30:44+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2023", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2023: the chess menu -- a new game and the pair's score (wins, losses, draws), a fresh invitation raises the board at once; over 2022", "tree": "88dee98113dc2dcee3943cf7cba26d5ca4e7618b", "parents": ["dab82d48f5a93e9d5463674acffa221363be136b"], "commit": null} -->
+- **Staged source tree:** `88dee98113dc2dcee3943cf7cba26d5ca4e7618b`. Commit: `4cd66091def375fc56db3bb2b294a47d3c95055b`.
+<!-- montana-change {"id": "b961482d-3a43-40aa-836a-7ec6338a4913", "utc": "2026-09-30T00:30:44+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2023", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2023: the chess menu -- a new game and the pair's score (wins, losses, draws), a fresh invitation raises the board at once; over 2022", "tree": "88dee98113dc2dcee3943cf7cba26d5ca4e7618b", "parents": ["dab82d48f5a93e9d5463674acffa221363be136b"], "commit": "4cd66091def375fc56db3bb2b294a47d3c95055b"} -->
 
 ### 2026-09-30T00:29:54+00:00 — the builds that live at Apple: TestFlight 2018 (e36aab68) and TestFlight 2022 (74e59890) join the list the compatibility guard reads
 
