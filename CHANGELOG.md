@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** 2018 and 2022 at Apple; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `4b1a1e79f3492d19beb0f1e21544377925d52d80`. Commit: pending.
-<!-- montana-change {"id": "c75a824d-b741-492f-a761-cf3b6827b457", "utc": "2026-09-30T00:29:54+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2018 and 2022 at Apple", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "the builds that live at Apple: TestFlight 2018 (e36aab68) and TestFlight 2022 (74e59890) join the list the compatibility guard reads", "tree": "4b1a1e79f3492d19beb0f1e21544377925d52d80", "parents": ["24858d45949d64281863f8bdcc61aa95760b7ab1"], "commit": null} -->
+- **Staged source tree:** `4b1a1e79f3492d19beb0f1e21544377925d52d80`. Commit: `dab82d48f5a93e9d5463674acffa221363be136b`.
+<!-- montana-change {"id": "c75a824d-b741-492f-a761-cf3b6827b457", "utc": "2026-09-30T00:29:54+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2018 and 2022 at Apple", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "the builds that live at Apple: TestFlight 2018 (e36aab68) and TestFlight 2022 (74e59890) join the list the compatibility guard reads", "tree": "4b1a1e79f3492d19beb0f1e21544377925d52d80", "parents": ["24858d45949d64281863f8bdcc61aa95760b7ab1"], "commit": "dab82d48f5a93e9d5463674acffa221363be136b"} -->
 
 ### 2026-09-30T00:28:21+00:00 — merge rollback-898 43066d74 (the chess menu over build 2022) into fix/master-wall-upward, no own edits, before the master's fast-forward
 
