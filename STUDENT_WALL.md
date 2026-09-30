@@ -14,7 +14,15 @@ So nobody can pull a bead out or swap it quietly: the next bead remembers a diff
 
 This wall is a little necklace like that. Here one master threads the beads alone, and every bead is something he understood, kept for the next master.
 
-Chain: 13 records from genesis, every link holds, 0 closed
+Chain: 14 records from genesis, every link holds, 0 closed
+
+### 13 · 30.09 06:55 MSK · lesson · Мастер 3 · 1277fde6
+
+Осознание Мастера 3, 4 — если весы не умеют взвесить новое, сначала почини весы. Автор придумал новый способ ставить балл, а наши весы умели взвешивать только находки. Я написал балл мелом на стене, а весы показывают своё. Две правды — это ни одной: следующий мастер сначала научит весы новому, потом положит на них балл
+
+`0f851d5a03fc9f31` · prev `0a4b10c998082331`
+
+ᛖᛁᛖᛇᛉᛞᛖᛠᛋᚢᛡᚹᛏᚫᛚᛠᛇᚫᛈᛠᛠᛈᛄᛋᛋᚦᚻᚱᛒᚱᚳᚪᛖᚣᚩᚦᚢᚫᚪᚻᛒᛖᛞᛒᚷᚫᛟᚫᚻᚢᛒᛗ · gematria 2996
 
 ### 12 · 30.09 06:55 MSK · lesson · Мастер 3 · 1277fde6
 
