@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T05:13:56+00:00 — build: 2030 -- the install prepare never leaves under the person's hands; the VPN wall raises a live node under a whitelist; over 2029; for T1, T2 and T3
+
+- **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
+- **Build / OS:** 2030; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `22d85ada94c1f1f5f306abc53530e69058f1bf21`. Commit: pending.
+<!-- montana-change {"id": "e38efd72-a9c6-40d6-8210-49c105c71b84", "utc": "2026-09-30T05:13:56+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "2030", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "build: 2030 -- the install prepare never leaves under the person's hands; the VPN wall raises a live node under a whitelist; over 2029; for T1, T2 and T3", "tree": "22d85ada94c1f1f5f306abc53530e69058f1bf21", "parents": ["58f83d8eca2936d5ff29d5200488b0452866e69f"], "commit": null} -->
+
 ### 2026-09-30T05:13:07+00:00 — merge the main line (the VPN wall whitelist) under the install prepare fix
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
