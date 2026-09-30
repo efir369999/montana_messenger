@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T10:45:56+00:00 — the outer door waits for the library's word instead of opening a login for a new account; the chain refuses a repeated thought
+
+- **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
+- **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `0e0fec4eb91253cfb49bc6725b14eed7bce9bb1f`. Commit: pending.
+<!-- montana-change {"id": "11b2bc9d-d41b-4079-824f-0791cd008c9c", "utc": "2026-09-30T10:45:56+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "the outer door waits for the library's word instead of opening a login for a new account; the chain refuses a repeated thought", "tree": "0e0fec4eb91253cfb49bc6725b14eed7bce9bb1f", "parents": ["e5e6512b8526d35c0b62aa969ad788f0489c00a1"], "commit": null} -->
+
 ### 2026-09-30T06:34:06+00:00 — build: 2032 -- the install road works again: a sleep tells the person from the road; over 2031
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
