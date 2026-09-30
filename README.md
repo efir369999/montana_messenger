@@ -150,7 +150,7 @@ STUDENT.jsonl: holds -- 17 records from genesis, 0 closed, head 8ea85b3fefc40440
 
 See [CHANGELOG.md](CHANGELOG.md) for published builds and the timestamped development event log.
 
-Development log updated: **2026-09-30T16:40:04+00:00**. Current development-device queries report
+Development log updated: **2026-09-30T16:40:23+00:00**. Current development-device queries report
 **1.0 (1968), iOS 26.7 and iOS 18.3**. Follow-up source changes are committed but have not
 been compiled or installed. See the log for the correction to the earlier device-version
 record and the outstanding checks. The public TestFlight build listed above is unchanged.
