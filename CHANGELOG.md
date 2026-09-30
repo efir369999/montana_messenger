@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** wallet agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `c5d889cbe6071b84dd3d54d23c50d872e17049dc`. Commit: pending.
-<!-- montana-change {"id": "907ca32b-077b-412c-9372-3d7791886e17", "utc": "2026-09-30T00:57:04+00:00", "callsign": "wallet agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 af4bce7c (build 2024, the wall post card in the pair chat) into stage/wallet-chat-transfers: the money letter and the wall card stand side by side in the bubble, its tap and the edit rule; no own edits beyond the two conflicts", "tree": "c5d889cbe6071b84dd3d54d23c50d872e17049dc", "parents": ["29bf7bd77dc4068784f18dc5ebfae7f2205c47d7", "af4bce7c9b4090c7d3dbd0f45d6fae60a844bde2"], "commit": null} -->
+- **Staged source tree:** `c5d889cbe6071b84dd3d54d23c50d872e17049dc`. Commit: `0aaa59deb14417e39ec1816f3d9bbf92d9d767ee`.
+<!-- montana-change {"id": "907ca32b-077b-412c-9372-3d7791886e17", "utc": "2026-09-30T00:57:04+00:00", "callsign": "wallet agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 af4bce7c (build 2024, the wall post card in the pair chat) into stage/wallet-chat-transfers: the money letter and the wall card stand side by side in the bubble, its tap and the edit rule; no own edits beyond the two conflicts", "tree": "c5d889cbe6071b84dd3d54d23c50d872e17049dc", "parents": ["29bf7bd77dc4068784f18dc5ebfae7f2205c47d7", "af4bce7c9b4090c7d3dbd0f45d6fae60a844bde2"], "commit": "0aaa59deb14417e39ec1816f3d9bbf92d9d767ee"} -->
 
 ### 2026-09-30T00:56:18+00:00 — install road closed by default: an install from the Mac goes on only on the phone's own line of a lifted reconnect or on a phone without the app; T3 30.09 stood 24 min without the tunnel of 2022 behind an armed reconnect
 
