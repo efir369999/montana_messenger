@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T01:18:03+00:00 — Merge rollback-898 b253e28a (build 2024) into stage/music-wall: the main line under the walls one write
+
+- **Callsign / model:** music-wall agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `cfb944f0dafa4d4ee3ed71a90d32b3748aeaa2bc`. Commit: pending.
+<!-- montana-change {"id": "0681adff-d402-4347-bdbe-dc372d729539", "utc": "2026-09-30T01:18:03+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 b253e28a (build 2024) into stage/music-wall: the main line under the walls one write", "tree": "cfb944f0dafa4d4ee3ed71a90d32b3748aeaa2bc", "parents": ["6aebe76c47e846262d1a31396816c68806c94853", "b253e28aa16b09a6aa9e32ca35b030f66d983fc5"], "commit": null} -->
+
 ### 2026-09-30T01:17:13+00:00 — walls: one write for every wall (the author word 30.09 04:05) -- MTBoardWriteButton, the write glyph in the mini player dress on its square bar plate; the feed corner, a page wall row, a draft plate, the post page publish, the page preview and the VPN wall corner refer to it; the owner guard names it
 
 - **Callsign / model:** music-wall agent of Master 2 / claude-opus-5-5.
