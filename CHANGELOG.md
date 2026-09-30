@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e (wallet) / Claude Opus 5.5.
 - **Build / OS:** none: branch stage/wallet-chat-transfers over 2023; macOS, Darwin 25.6.0. No new compilation or installation claimed.
-- **Staged source tree:** `a9d87f3876c98707564278737b38f280e5be8a8e`. Commit: pending.
-<!-- montana-change {"id": "2ae555d9-4ffc-4209-b6b7-66ea096abc6b", "utc": "2026-09-30T00:36:19+00:00", "callsign": "claude-9e (wallet)", "model": "Claude Opus 5.5", "build": "none: branch stage/wallet-chat-transfers over 2023", "os": "macOS, Darwin 25.6.0", "summary": "Merge the main line 4cd66091 (build 2023, the chess menu and score) into the wallet and money letters branch, no own edits, before the master fast-forward", "tree": "a9d87f3876c98707564278737b38f280e5be8a8e", "parents": ["7329e5c473633f57c5fe4c293764ba59b5214eb1", "4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": null} -->
+- **Staged source tree:** `a9d87f3876c98707564278737b38f280e5be8a8e`. Commit: `b985125e211d8b86fdd1a237122a00e85767952e`.
+<!-- montana-change {"id": "2ae555d9-4ffc-4209-b6b7-66ea096abc6b", "utc": "2026-09-30T00:36:19+00:00", "callsign": "claude-9e (wallet)", "model": "Claude Opus 5.5", "build": "none: branch stage/wallet-chat-transfers over 2023", "os": "macOS, Darwin 25.6.0", "summary": "Merge the main line 4cd66091 (build 2023, the chess menu and score) into the wallet and money letters branch, no own edits, before the master fast-forward", "tree": "a9d87f3876c98707564278737b38f280e5be8a8e", "parents": ["7329e5c473633f57c5fe4c293764ba59b5214eb1", "4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": "b985125e211d8b86fdd1a237122a00e85767952e"} -->
 
 ### 2026-09-30T00:33:26+00:00 — Merge stage/second-identity-2 (2049b25a: the main line 62e9d0df, build 2021, with the second identity's lineage) into fix/feeds-scroll-top: under the lists' arrow to the top, the number on the platform's thumb, the playlist's placeholder and the source filter
 
