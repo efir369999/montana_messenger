@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T02:11:25+00:00 — merge the main line fe5864b2 (build 2026) into fix/photo-open-like-avatar, no own edits
+
+- **Callsign / model:** photo-avatar agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `e2bd61c1af1719576fb516bca79df7dc4a3e23a8`. Commit: pending.
+<!-- montana-change {"id": "0e78845a-b636-433c-b511-3129227bb0b6", "utc": "2026-09-30T02:11:25+00:00", "callsign": "photo-avatar agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge the main line fe5864b2 (build 2026) into fix/photo-open-like-avatar, no own edits", "tree": "e2bd61c1af1719576fb516bca79df7dc4a3e23a8", "parents": ["53eeb10c110868abdee06902be24b8d9aa17b4b5", "fe5864b293d344ebb4bbbaae05476d17de74c33d"], "commit": null} -->
+
 ### 2026-09-30T02:04:17+00:00 — Merge rollback-898 fe5864b2 (build 2026) into stage/player-speed: the main line under the big player's work, no own edits
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
