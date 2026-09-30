@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e/wall-post-chat / Claude Opus 5.5.
 - **Build / OS:** none (source only, ring and typecheck app and NSE green on the merged tree); macOS 26 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `f90e4139c72b99ce7ee3b887d915f29c557425bc`. Commit: pending.
-<!-- montana-change {"id": "8b87b667-f308-4516-9b12-f8aa45aa2c9d", "utc": "2026-09-30T00:10:43+00:00", "callsign": "claude-9e/wall-post-chat", "model": "Claude Opus 5.5", "build": "none (source only, ring and typecheck app and NSE green on the merged tree)", "os": "macOS 26 (Darwin 25.6.0)", "summary": "Merge rollback-898 (62e9d0df) into fix/wall-post-in-chat: the main line into the wall post card, before the master's fast-forward", "tree": "f90e4139c72b99ce7ee3b887d915f29c557425bc", "parents": ["a1a6f169e892958c281fa9cb6476af3129867429", "62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": null} -->
+- **Staged source tree:** `f90e4139c72b99ce7ee3b887d915f29c557425bc`. Commit: `5db44639a1151030dd07196369ca73da79a3b061`.
+<!-- montana-change {"id": "8b87b667-f308-4516-9b12-f8aa45aa2c9d", "utc": "2026-09-30T00:10:43+00:00", "callsign": "claude-9e/wall-post-chat", "model": "Claude Opus 5.5", "build": "none (source only, ring and typecheck app and NSE green on the merged tree)", "os": "macOS 26 (Darwin 25.6.0)", "summary": "Merge rollback-898 (62e9d0df) into fix/wall-post-in-chat: the main line into the wall post card, before the master's fast-forward", "tree": "f90e4139c72b99ce7ee3b887d915f29c557425bc", "parents": ["a1a6f169e892958c281fa9cb6476af3129867429", "62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": "5db44639a1151030dd07196369ca73da79a3b061"} -->
 
 ### 2026-09-30T00:00:30+00:00 — Merge rollback-898 aa91a596 (builds 2019-2020) into fix/vpn-wall-whitelist-auto; ring green and typecheck of the app and PacketTunnel green under the council heavy lock on the merged tree
 
