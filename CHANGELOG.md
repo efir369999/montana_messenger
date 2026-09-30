@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T18:59:55+00:00 — faces: a queued face is known by its tag like every other state -- a new face replaces an old one in flight instead of waiting behind it
+
+- **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2046; macOS 26.6 (Darwin 25.6.0), iOS client. No new compilation or installation claimed.
+- **Staged source tree:** `cfd33336104893807b62fb2f0424761aef5199cb`. Commit: pending.
+<!-- montana-change {"id": "f2b38884-55b5-426d-91ae-5a102d82179e", "utc": "2026-09-30T18:59:55+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2046", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "faces: a queued face is known by its tag like every other state -- a new face replaces an old one in flight instead of waiting behind it", "tree": "cfd33336104893807b62fb2f0424761aef5199cb", "parents": ["81b0af4243c4d7c5d1e167539ca93d9376d83802"], "commit": null} -->
+
 ### 2026-09-30T18:48:14+00:00 — Advance build number to 2045
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
