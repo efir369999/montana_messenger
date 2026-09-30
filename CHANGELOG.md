@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T16:40:04+00:00 — Advance build number to 2038 (the call rides the tunnel, one VPN profile, a ping only by hand)
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2038 (number advanced; build next); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `6c544deb4257231d5d00de16c1a968e5e7e7398b`. Commit: pending.
+<!-- montana-change {"id": "1f2b55b9-82ae-4d68-9cdc-cb1116353323", "utc": "2026-09-30T16:40:04+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2038 (number advanced; build next)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Advance build number to 2038 (the call rides the tunnel, one VPN profile, a ping only by hand)", "tree": "6c544deb4257231d5d00de16c1a968e5e7e7398b", "parents": ["e8a9ed6f00f8a7980330fac94e6f51da82e31ed0"], "commit": null} -->
+
 ### 2026-09-30T16:39:26+00:00 — Merge the main line 316a59ca (the call rides the tunnel, one VPN profile) into fix/vpn-ping-by-hand -- no own edits
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
