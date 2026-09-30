@@ -2,6 +2,22 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 63 · 30.09 03:12 MSK · word · Мастер 2 · claude-3d
+
+Слово автора, 03:12 MSK 30.09, дословно: «Ферма и шахматы против конституции (записи 55–57) /// сейчас так релизуем там контситуция черновая сразу тауд нужно убдет парвки делать по логи игра как мы будем экономику времени выстраивать». Смысл: открытый вопрос 55–57 закрыт решением автора: Ферму и шахматы строим по правилам автора; конституция черновая, её правки идут следом по логике игры, по мере построения экономики времени.
+
+`97f21925428d5e84` · prev `51558f27dbf57348` · thread 9cf297f2241d · thread 9b86c102bdd2 · thread 07c8209bb183
+
+ᚷᚳᛞᛗᛖᛏᚳᛁᛒᚳᛟᚻᚠᚹᛡᛉᚠᚹᚻᛁᛒᛋᛇᚻᛡᛞᚫᛋᚣᚹᛞᚾᛡᛒᚠᛋᛄᛈᛉᚻᚳᚢᚢᚷᚳᛉᛋᛏᛗᛗᚢᚠᚣ · gematria 2389
+
+### 62 · 30.09 03:12 MSK · state · Мастер 2 · claude-3d
+
+Мастер 2 (claude-3d) вошёл в роль мастера и председателя совета, роль CLAUDE.md 6.2.5, в 03:00 MSK 30.09 (первый date сессии 03:00:05), по слову автора «ты следующий мастер готовься к передаче дел». Вход задержал замок наблюдения (ironclaw-master на Лотербурге), снял автор. Передачу 61 принял и сверил по дереву: главная rollback-898 = 62e9d0df, бамп 2021 трогает только pbxproj, Т1 = 2020, Т3 = 2020. Номер 2021 занят в 02:57 под 62e9d0df без печати; страж поставки отказал повтору номера, 2021 сожжён, собираю 2022 над тем же составом. Метка входа ставится по слову автора 03:12 MSK: «ты жолжен быт метку вреени сделать как вошел в рол на стена матсреа».
+
+`51558f27dbf57348` · prev `3567e5a825005b38` · thread 3567e5a82500
+
+ᚩᚾᚹᚾᛟᛖᛄᛇᚩᚢᛟᚦᚫᛋᚪᛖᛋᚪᛏᛟᚾᚱᚷᛗᛚᛟᚢᚠᚻᚣᚣᚢᛖᛝᚷᛈᚩᛞᚣᛉᚢᛈᛞᛞᛝᛠᚫᛉᛚᚩᚳᚾᛋ · gematria 2728
+
 ### 61 · 30.09 02:59 MSK · handover · Мастер 1 · claude-9e
 
 ПЕРЕДАЧА МАСТЕРУ 2 (сессия claude-3d, слово автора «снял, передавай мастеру 2 всё»). Главная rollback-898 = 62e9d0df build: 2021 -- my own face is drawn by one view everywhere (M — бамп 2021 (аватар Избранного) НЕ СОБРАН: первое дело — собрать 2021 и поставить на Т1 и Т3. Т1 = 2020, Т3 = 2020. Очередь после 2021: музыка fix/feeds-scroll-top (сливает stage/second-identity-2 2049b25a — в ней родословная второй личности; автор ждёт срочно); затем fix/feed-wall-of-thoughts e14d8b72, fix/default-wallpaper, fix/wall-post-in-chat, fix/vpn-wall-whitelist-auto — каждому осталось закоммитить слияние после замка; в работе: fix/player-cover-waves, fix/chess-menu-score, stage/36-avatar-mask, fix/photo-open-like-avatar (фото не открываются на Т1 — срочно), stage/wallet-chat-transfers, stage/avatar-fight (Аватар: вырезать бойцов из целой раскадровки выделением предмета — ноги в 8 PNG срезаны). Агенты — подагенты Мастера 1: строки шлют Мастеру 2 письмом и пишут в ~/.montana/council/journal.md. TestFlight 2018 опубликована (c3e897c9, APPROVED); пин e36aab68 в tools/apple-build.txt и снятие .worktrees/tf-2018 — за Мастером 2 и автором. Правила: сборки мастера — вне очереди heavy.lock (очередь агентов доходила до 41 минуты), всё остальное как в прошлом напутствии.
