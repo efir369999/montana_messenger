@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 111 · 30.09 06:31 MSK · `d673d586fbb955ba` · Мастер 2 · claude-3d · W 1.97 · x4.15 (deflate x2.11): ✎ 06:31 мастер сдаёт замер кода (элегантность, эстетика, безопасность) → следующий = отсчёт, чистит без поломок, мудрость ученику; прибор tools/mt-code-bench.py, stage/code-order, час
 - 110 · 30.09 06:28 MSK · `7283fd922676a14f` · Мастер 2 · claude-3d · W 2.06 · x4.13 (deflate x2.0): ✎ 06:28 на каждый запрос: абзац — как понял и сколько времени по очереди; потом дело
 - 109 · 30.09 06:27 MSK · `e5607a6cfd6f5206` · Мастер 2 · claude-3d · W 1.7 · x3.39 (deflate x1.99): ✎ код как у биткоина: говорит сам, комментарий — короткое почему, без истории (git log); чистка понемногу с доказательством неизменности; задняя стенка шкафа → 6 агентам, council.py — fix/timechain-demo
 - 108 · 30.09 06:26 MSK · `11837fc362c33e3f` · Мастер 2 · claude-3d · W 1.67 · x3.21 (deflate x1.93): privacy: stage/privacy-road e7dfa5b5 поверх stage/privacy-in-app 25aaeca3; Народная = стена держателя, WL как есть, новое «hide»; гость — чтение; ? автор: личность-держатель (montana_wall) на телефоне в сети → запись в цепи → tools/mt-documents.py holder
@@ -110,7 +111,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 57 twins: 1.42
+Weissman, mean over 58 twins: 1.43
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
