@@ -36,7 +36,7 @@ A master writes each finding on an earlier master's code on the wall (`--kind fi
 
 | master | findings | plus | minus | points |
 | --- | --- | --- | --- | --- |
-| Мастер 2 · claude-3d | 2 | 0 | 0 | 0 |
+| Мастер 2 · claude-3d | 3 | 0 | 0 | 0 |
 
 Мастер 2 · claude-3d must rate 0 findings of Мастер 1 · claude-9e
 
