@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:55:38+00:00 — build 2024: a post on a friend's wall stands as a card in the pair's chat on both phones, born in one place (ChatStore.appendWallPost), keyed by the post id; over 2023
+
+- **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
+- **Build / OS:** 2024; macOS 26.6 (Darwin 25.6.0); for T1 and T3. No new compilation or installation claimed.
+- **Staged source tree:** `61e077ac2b23d686decb69b72ba278ec69a7f132`. Commit: pending.
+<!-- montana-change {"id": "139f06b5-8cc5-411e-b804-c81d64c4cae7", "utc": "2026-09-30T00:55:38+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2024", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2024: a post on a friend's wall stands as a card in the pair's chat on both phones, born in one place (ChatStore.appendWallPost), keyed by the post id; over 2023", "tree": "61e077ac2b23d686decb69b72ba278ec69a7f132", "parents": ["1de4abd34f2cdfdfd00fb85559fed4c117613605"], "commit": null} -->
+
 ### 2026-09-30T00:55:25+00:00 — wallet: the first page promises no wallet address -- Montana travels as a letter in a chat, only the two of them see the amount (Constitution I-17: a record needs no published identifier to send, to receive or to be paid); the old two catalogue keys retired, ru and zh-Hans for the new words; the diary-kind comment of chess back on its line
 
 - **Callsign / model:** wallet agent of Master 2 / claude-opus-5-5.
