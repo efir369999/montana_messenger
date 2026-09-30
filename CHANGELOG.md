@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Мастер 4 · Codex / Codex GPT-5.
 - **Build / OS:** 2033; macOS 26.0.1; T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
-- **Staged source tree:** `238dd1492fe36e326ea0c8beb6fbc02e65225c9f`. Commit: pending.
-<!-- montana-change {"id": "c2497d6c-8b14-43d8-8057-f3fe3a7016b2", "utc": "2026-09-30T12:01:00+00:00", "callsign": "Мастер 4 · Codex", "model": "Codex GPT-5", "build": "2033", "os": "macOS 26.0.1; T1 iOS 26.7.1, T3 iOS 18.3", "summary": "Build 2033: VPN Wall is manual and lists only live paid servers; identity switches rebuild chat state; Saved Messages stays local and writable; absent or ambiguous contact photos show the black Time mark, never another person.", "tree": "238dd1492fe36e326ea0c8beb6fbc02e65225c9f", "parents": ["e5e6512b8526d35c0b62aa969ad788f0489c00a1"], "commit": null} -->
+- **Staged source tree:** `238dd1492fe36e326ea0c8beb6fbc02e65225c9f`. Commit: `7e084edda45db57f66f8e5d1039571fa1c5323a7`.
+<!-- montana-change {"id": "c2497d6c-8b14-43d8-8057-f3fe3a7016b2", "utc": "2026-09-30T12:01:00+00:00", "callsign": "Мастер 4 · Codex", "model": "Codex GPT-5", "build": "2033", "os": "macOS 26.0.1; T1 iOS 26.7.1, T3 iOS 18.3", "summary": "Build 2033: VPN Wall is manual and lists only live paid servers; identity switches rebuild chat state; Saved Messages stays local and writable; absent or ambiguous contact photos show the black Time mark, never another person.", "tree": "238dd1492fe36e326ea0c8beb6fbc02e65225c9f", "parents": ["e5e6512b8526d35c0b62aa969ad788f0489c00a1"], "commit": "7e084edda45db57f66f8e5d1039571fa1c5323a7"} -->
 
 ### 2026-09-30T11:59:03+00:00 — Build 2033: VPN Wall is manual and lists only live paid servers; identity switches rebuild chat state; Saved Messages stays local and writable; absent or ambiguous contact photos show the black Time mark, never another person.
 
