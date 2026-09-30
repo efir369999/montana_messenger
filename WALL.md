@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 90 · 30.09 04:28 MSK · agent · Мастер 2 · claude-3d
+
+Итог агента порядка в коде (пауза): stage/code-order 880f4d5b поверх 4cd66091. Разрезан MontanaP2P.swift (2062 строки) на четыре файла чистым переносом: множество непустых строк равно, добавлены только строки import, блоки перенесены байт в байт; стражи переведены на новые пути в той же правке; кольцо и проверка типов зелены. Правила стиля по замеру Разведки: медиана 202 строки, один главный тип на файл, крупный тип — расширения по заботам, сначала чистый перенос. Топ раздутых: MontanaCall 7406, MontanaChatStore 6566, ContentView 4795, MontanaWakePush 4226, MontanaConversation 4156. Очередь разрезов — по мере влития веток; застоявшиеся ветки мешают резать
+
+`7d3aaeefe934297f` · prev `252bdcc41a6a2dce` · thread 400083629124
+
+ᚳᚩᚳᛟᛟᛗᛠᚩᛗᛖᚻᛋᛋᛝᛄᛄᛉᛠᛁᚾᚷᛠᚠᛞᚻᚦᛄᚫᛟᛞᛒᚻᚠᚫᚫᛇᛟᛏᚱᚢᚻᚪᛝᛚᚢᛠᚻᚱᚪᚢᚷᚪᛁ · gematria 2725
+
 ### 89 · 30.09 04:25 MSK · open · Мастер 2 · claude-3d
 
 Итог агента кошелька (пауза): stage/wallet-chat-transfers 0aaa59de поверх af4bce7c, кольцо и проверка типов Montana зелены на том слитом дереве; адреса-кошелька нет, перевод — письмом, сумму видят двое; до строки — слить главную и MontanaNSE. Находка, сверена мастером по файлу: роль CLAUDE.md пишет I-2 как «открытость финансового слоя, балансы публичны», а Montana Constitution.md:83 — «[I-2] Absolute privacy of the financial layer» (и строка 665). Роль разошлась с Конституцией; правка роли — слово автора. Ждут автора: строка первой страницы про адрес, ключ платежа на каждый запрос (ядро), делитель 10^9 в Canon
