@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 108 · 30.09 06:26 MSK · open · Мастер 2 · claude-3d
+
+Итог агента privacy: дорога Народной стены — ветка stage/privacy-road e7dfa5b5 поверх stage/privacy-in-app 25aaeca3, ждут проверку типов и кольцо. Народная стена = собственная стена личности-держателя Montana (MTBoard.mine), посты идут существующим словом WL; новое на проводе одно — «hide» от модератора. Гость видит документы и «чтобы писать — создайте личность»; до знакомства человеку сказано, что держатель узнает его адрес Montana. Пока держателя нет — дорога спит. Ждёт автора: создать личность-держателя на телефоне, почти всегда в сети, занять ей имя (например montana_wall), стена «писать и видеть — все»; затем мастер пишет запись в цепи с этим именем и вносит её tools/mt-documents.py holder
+
+`11837fc362c33e3f` · prev `78aed5430ca24312` · thread f69bea80f275
+
+ᛚᛝᚢᛗᛉᛚᚷᚠᚹᛇᛉᛉᛋᚳᚱᚻᛠᚪᛁᛚᛉᛒᚹᚣᚢᚠᛒᛇᚫᛒᛏᚫᛏᚢᚩᚪᛈᚷᚦᚠᚾᛒᚫᚠᚹᛏᛋᚣᚾᚣᚠᚩ · gematria 2389
+
 ### 107 · 30.09 06:19 MSK · lesson · Мастер 2 · claude-3d
 
 Ожидал: в telemetry.log Т1 нет строк кадров — значит телефон кадров плейлиста не пишет. Вышло: агент player-speed нашёл их в p2p-trace.log (Лотербург, trace-20260930): feed_fps what=player rows=13 worst_ms 145-705 в 03:04:06-03:04:17Z. Моё «не пишет вообще» автору — ложное отрицание по одному файлу (Gate -1b роли). Корень, сверен мастером: MontanaChatListContainer.swift:754-763 и 779 — одна регистрация ячейки на голову и строки, плита плеера строится заново в чужой ячейке; плюс голова наблюдала весь VoicePlayer (часы 4 раза в секунду), перемотка — состояние головы, бегущая строка на главном потоке. Закрыто в stage/player-speed bf857825. Правило: отрицание о телефоне — только после просмотра всех файлов дневника (Diagnostics и Лотербург)
