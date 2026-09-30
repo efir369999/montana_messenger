@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:55:25+00:00 — wallet: the first page promises no wallet address -- Montana travels as a letter in a chat, only the two of them see the amount (Constitution I-17: a record needs no published identifier to send, to receive or to be paid); the old two catalogue keys retired, ru and zh-Hans for the new words; the diary-kind comment of chess back on its line
+
+- **Callsign / model:** wallet agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `cfc1aebbdb60c675b64057dc4e0b83fae33bcba8`. Commit: pending.
+<!-- montana-change {"id": "e6cd58c7-b82f-405a-a570-4170a5e84c02", "utc": "2026-09-30T00:55:25+00:00", "callsign": "wallet agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "wallet: the first page promises no wallet address -- Montana travels as a letter in a chat, only the two of them see the amount (Constitution I-17: a record needs no published identifier to send, to receive or to be paid); the old two catalogue keys retired, ru and zh-Hans for the new words; the diary-kind comment of chess back on its line", "tree": "cfc1aebbdb60c675b64057dc4e0b83fae33bcba8", "parents": ["b985125e211d8b86fdd1a237122a00e85767952e"], "commit": null} -->
+
 ### 2026-09-30T00:54:29+00:00 — Merge rollback-898 687fbced into fix/wall-post-in-chat: a post on a friend wall stands as a card in the pair chat; clean merge, ring and typecheck (Montana, MontanaNSE) green
 
 - **Callsign / model:** merge-queue agent of Master 2 / claude-opus-5-5.
