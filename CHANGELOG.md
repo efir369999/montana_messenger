@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** 2027; macOS 26.6 (Darwin 25.6.0); for T1 and T3. No new compilation or installation claimed.
-- **Staged source tree:** `eb40e5854466b9ce9533fd46502ff141bed7dfcc`. Commit: pending.
-<!-- montana-change {"id": "9debb0ee-c532-4e4d-8ba0-ef34a0133cd8", "utc": "2026-09-30T02:31:29+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2027", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2027: music -- the playlist cover placeholder scaled once (the lag), the number by the platform scroll thumb, the top button in every feed, the source filter in the big player; with the lineage of the second identity; over 2026", "tree": "eb40e5854466b9ce9533fd46502ff141bed7dfcc", "parents": ["ce75de3ab82b5785bb940c3ef51f53b8691b832b"], "commit": null} -->
+- **Staged source tree:** `eb40e5854466b9ce9533fd46502ff141bed7dfcc`. Commit: `bd29deabeb35463ee6b43d334f552be9c9f6c0be`.
+<!-- montana-change {"id": "9debb0ee-c532-4e4d-8ba0-ef34a0133cd8", "utc": "2026-09-30T02:31:29+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2027", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2027: music -- the playlist cover placeholder scaled once (the lag), the number by the platform scroll thumb, the top button in every feed, the source filter in the big player; with the lineage of the second identity; over 2026", "tree": "eb40e5854466b9ce9533fd46502ff141bed7dfcc", "parents": ["ce75de3ab82b5785bb940c3ef51f53b8691b832b"], "commit": "bd29deabeb35463ee6b43d334f552be9c9f6c0be"} -->
 
 ### 2026-09-30T02:11:25+00:00 — merge the main line fe5864b2 (build 2026) into fix/photo-open-like-avatar, no own edits
 
