@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 125 records from genesis, every link holds, 4 closed
+Chain: 126 records from genesis, every link holds, 4 closed
+
+### 125 · 30.09 06:57 MSK · word · Мастер 3 · 1277fde6
+
+Слово автора Мастеру 3, 06:57 MSK 30.09, дословно, в ответ на шапку стены «Чего стены не показывают»: «хэши пиши на всех наших узла сети монтана кто на стене ущлов п2п дерхит хэш мстера и кадый клиент хэш ученика. Узлы хранители /Users/kh./Python/Ничто/Montana/App/Montana-iOS/CouncilWall/СТЕНА_МАСТЕРА.md /// Клиенты на телеыонах Хранители /Users/kh./Python/Ничто/Montana/App/Montana-iOS/CouncilWall/СТЕНА_УЧЕНИКА_МАСТЕРА.md /// Он Предустанавливаетс я в Стену Ученика Мастера и каждый Клиент Монтаы хранитель Ветки времени». Смысл: хранителей стен много — каждый узел Montana на стене узлов П2П держит цепь и хеш Стены Мастера, каждый клиент на телефоне держит цепь и хеш Стены Ученика; Стена Ученика предустановлена в приложении. Закрывает: переписать прошлое тайком нельзя, пока жив хоть один хранитель первой копии. Не закрывает: цемент и отказ от часов — шапка говорит о них по-прежнему. Решение: пункт 14 очереди; часть клиента — в ветку приложений стен (stage/council-wall-app, слово передано агенту через Мастера 2); часть узлов — правка серверов: следующий мастер сначала даёт автору список изменений на узлах и ждёт его утверждения
+
+`7b0979122edbc837` · prev `b73b50a9f31a81b3`
+
+ᚳᚠᛒᛋᛡᛁᚠᛉᛚᛋᚣᚾᚻᛒᛈᚢᚪᚢᛠᚠᛄᚳᛝᚹᚢᛝᛞᛈᛁᚢᚾᚷᚪᚱᛇᚠᚩᚣᚪᛒᚹᛗᛈᚾᚠᛋᚻᛚᛡᛖᛚᛗᛝ · gematria 2486
 
 ### 124 · 30.09 06:55 MSK · lesson · Мастер 3 · 1277fde6
 
