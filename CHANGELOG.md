@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** code-order agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `42640b818766a14ffb7408f83ca1385d49d2dbbd`. Commit: pending.
-<!-- montana-change {"id": "8839f2df-78aa-470f-a589-4b51bcc6e03b", "utc": "2026-09-30T04:17:56+00:00", "callsign": "code-order agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 09b24f0f into stage/code-order: the main line under the code order work, no own edits; ring and typecheck green on the merged tree", "tree": "42640b818766a14ffb7408f83ca1385d49d2dbbd", "parents": ["880f4d5bd64884f6660ceaf6c6238f5f81e0d801", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": null} -->
+- **Staged source tree:** `42640b818766a14ffb7408f83ca1385d49d2dbbd`. Commit: `fe5cb16da871cc2fc59db31bba84a8f81581851e`.
+<!-- montana-change {"id": "8839f2df-78aa-470f-a589-4b51bcc6e03b", "utc": "2026-09-30T04:17:56+00:00", "callsign": "code-order agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 09b24f0f into stage/code-order: the main line under the code order work, no own edits; ring and typecheck green on the merged tree", "tree": "42640b818766a14ffb7408f83ca1385d49d2dbbd", "parents": ["880f4d5bd64884f6660ceaf6c6238f5f81e0d801", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": "fe5cb16da871cc2fc59db31bba84a8f81581851e"} -->
 
 ### 2026-09-30T04:09:16+00:00 — stage/player-speed-flat: the tree of stage/player-speed 4718c1e8 as one commit over the main line ef53ed90 -- the playlist frame drops closed at the root, the frame meter, the full-page player, the output device glyph, the track number
 
