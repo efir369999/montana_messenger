@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T19:50:06+00:00 — faces: the presence dot at the face's lower right, the Time sign of a missing face at half its size
+
+- **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2048; macOS 26.6 (Darwin 25.6.0), iOS client. No new compilation or installation claimed.
+- **Staged source tree:** `a80727e6a528206b308160e4208d57b8b61e21d7`. Commit: pending.
+<!-- montana-change {"id": "da0050f1-53a5-4097-a917-fd782e1ae22e", "utc": "2026-09-30T19:50:06+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2048", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "faces: the presence dot at the face's lower right, the Time sign of a missing face at half its size", "tree": "a80727e6a528206b308160e4208d57b8b61e21d7", "parents": ["3e54c4b787dd7d5e62d490546883dd8d99b11e3b"], "commit": null} -->
+
 ### 2026-09-30T19:14:42+00:00 — Advance build number to 2047
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
