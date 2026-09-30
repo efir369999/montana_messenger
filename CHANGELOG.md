@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
 - **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `a46bbfa28d431e57c95fb090f2bf32c26df47615`. Commit: pending.
-<!-- montana-change {"id": "77532111-d703-4b2c-82f8-4db485d121a2", "utc": "2026-09-30T06:09:35+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge the main line under the cover's glass waves", "tree": "a46bbfa28d431e57c95fb090f2bf32c26df47615", "parents": ["980dd765d08d91fbfb6f60411732747322487991", "ab8811afb8968cf6f87a7536d96b30f0fc55d080"], "commit": null} -->
+- **Staged source tree:** `a46bbfa28d431e57c95fb090f2bf32c26df47615`. Commit: `1ddae9cb79a22947a678bd7a058fe50c7a7d40a8`.
+<!-- montana-change {"id": "77532111-d703-4b2c-82f8-4db485d121a2", "utc": "2026-09-30T06:09:35+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge the main line under the cover's glass waves", "tree": "a46bbfa28d431e57c95fb090f2bf32c26df47615", "parents": ["980dd765d08d91fbfb6f60411732747322487991", "ab8811afb8968cf6f87a7536d96b30f0fc55d080"], "commit": "1ddae9cb79a22947a678bd7a058fe50c7a7d40a8"} -->
 
 ### 2026-09-30T06:06:20+00:00 — merge the main line (build 2030, the chain of thoughts, the photo, the share sheet) under Montana's two grounds
 
