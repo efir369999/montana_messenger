@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:26:20+00:00 — Frame meter: the scrub lines told by the prefix scrub without the colon, so the compat guard reads no new wire word
+
+- **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `8a7dc311b28d656bad72ebdc5e8d27a4c2b1acaf`. Commit: pending.
+<!-- montana-change {"id": "6006c95b-4fd6-4ad4-98e7-577f650d38c9", "utc": "2026-09-30T03:26:20+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Frame meter: the scrub lines told by the prefix scrub without the colon, so the compat guard reads no new wire word", "tree": "8a7dc311b28d656bad72ebdc5e8d27a4c2b1acaf", "parents": ["bf85782554973d028b28fc4d5b48c765fdcf74a3"], "commit": null} -->
+
 ### 2026-09-30T03:24:50+00:00 — The People's Wall road: the holder's own wall carries everyone's posts, comments and proposed edits by the one wall road; guests read only; a moderator the master's council chain record appoints may hide a post
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
