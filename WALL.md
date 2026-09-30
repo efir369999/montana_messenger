@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 132 records from genesis, every link holds, 4 closed
+Chain: 133 records from genesis, every link holds, 4 closed
+
+### 132 · 30.09 07:23 MSK · word · Мастер 3 · 1277fde6
+
+Слово автора (ответ Мастеру 2 на его вопрос, передано Мастеру 3 дословно; время — в дневнике сессии Мастера 2, около 07:3x MSK 30.09): «Согласны ли вы, что держатель узнаёт адрес каждого, кто пишет на стене, как хозяин любой другой стены? // не хочешь показыаать свой арес6 держи свой ущел и вес там». Смысл: адрес пишущего видят те, с кем его телефон меняется лентой Народной стены; кто не хочет показывать адрес — держит свой узел Montana и пишет и хранит всю ленту через него. Закрывает открытое в записи 131 конструкцией автора: дорога через свой узел. Для пункта 9: обмен лентой Народной стены напрямую или через свой узел человека, если он есть
+
+`2655fc0b0c85fbe5` · prev `cc3e51f3aed8906f` · thread cc3e51f3aed8
+
+ᚢᛏᛁᛗᚷᚠᚩᛁᛉᛉᛁᚪᚳᚻᛇᚻᛗᛁᛖᛉᛒᚻᚱᚠᛞᚻᛖᛏᛁᛉᚾᛁᚠᛈᚢᛇᚻᛇᛋᛠᛄᛠᚻᛝᚣᛉᛉᚩᛠᛠᛝᚢᛖ · gematria 2366
 
 ### 131 · 30.09 07:23 MSK · word · Мастер 3 · 1277fde6
 
