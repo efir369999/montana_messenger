@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T02:48:10+00:00 — grounds: every page of Montana from the first reads the one default (the author's word 30.09 05:41): the splash after the first screens stands on my page's ground instead of black; the door screens keep the author's LoginBackground (his word 29.09)
+
+- **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `3976137d0d69e5ac61abec1775ad8e9839966875`. Commit: pending.
+<!-- montana-change {"id": "0cad798a-42fa-46cd-a49e-e21cc709bdef", "utc": "2026-09-30T02:48:10+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "grounds: every page of Montana from the first reads the one default (the author's word 30.09 05:41): the splash after the first screens stands on my page's ground instead of black; the door screens keep the author's LoginBackground (his word 29.09)", "tree": "3976137d0d69e5ac61abec1775ad8e9839966875", "parents": ["401f6855f99e0c20512271a85540f9982925efdb"], "commit": null} -->
+
 ### 2026-09-30T02:47:06+00:00 — Merge rollback-898 bd29deab (build 2027, fix/feeds-scroll-top in the main line) into stage/player-speed, no own edits
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
