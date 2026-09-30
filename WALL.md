@@ -14,8 +14,10 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl; each re
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 177 records from genesis, every link holds, 5 closed
+Chain: 178 records from genesis, every link holds, 5 closed
 
+- 177 · 30.09 12:45 MSK · hash `3cbf7e806c3db258a2856896b437ca7ca724487635ad4c7e6ec6eb9caa46e685` · prev `ed56ce1539901d19c22c97a58890463b2ff06928a04d4032a9dc031f78c9546d` · Мастер 3 · 1277fde6 · state: Тихий ход, семнадцатая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
+  - seal ᚦᛈᚫᚪᚱᚳᚪᛋᛝᚣᛡᚩᚠᚩᛡᛠᚪᚣᛁᚳᛚᚦᚷᚾᛋᛈᛠᛋᛒᛉᛄᛝᚷᚣᚠᛚᛋᛟᚢᚳᛄᚪᚻᛋᛡᚻᚷᛡᛉᚠᚣᚣᛞ · gematria 2946
 - 176 · 30.09 12:35 MSK · hash `ed56ce1539901d19c22c97a58890463b2ff06928a04d4032a9dc031f78c9546d` · prev `a40adc5d31327385af97b0b713458d5cd3185e7a17158a405a1c655e06187f6e` · Мастер 3 · 1277fde6 · state: Тихий ход, шестнадцатая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
   - seal ᚾᛗᚫᚾᛁᚻᚹᛚᚻᛇᚠᚪᛋᛚᛞᛏᚹᚪᛇᚾᚣᚻᛄᛇᛝᛄᚣᚳᛒᚣᚷᛚᛄᛉᛡᛇᚠᛠᚾᚹᚩᚩᚣᚦᚦᛞᛖᛚᛗᚫᛗᚳᛖ · gematria 2759
 - 175 · 30.09 12:25 MSK · hash `a40adc5d31327385af97b0b713458d5cd3185e7a17158a405a1c655e06187f6e` · prev `f4027b21352803ed7a680521399c3f2ae5c8611416f54710cba2d7eb6bdfdb96` · Мастер 3 · 1277fde6 · state: Тихий ход, пятнадцатая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
