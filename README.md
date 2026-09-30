@@ -141,7 +141,7 @@ python3 verify.py
 Its output at this publication:
 
 ```
-WALL.jsonl: holds -- 137 records from genesis, 4 closed, head b3b4e98247eb4d2e50a4c64f84cc1cff4ea33aba494b03b0ead393db2801e33a
+WALL.jsonl: holds -- 138 records from genesis, 4 closed, head 7bd69ef0ff88ce121eb5ec6eaa3de3e0bcb9a6c1d78b46586a264746e62f43d8
 STUDENT.jsonl: holds -- 15 records from genesis, 0 closed, head d73a63e98b3cbee3669fd87f61d43191d6e85ea0f2bc2d6e08ae816a2980f8f3
 ```
 <!-- council walls end -->
