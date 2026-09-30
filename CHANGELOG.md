@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** code-order agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `9c5e9010b6aef70d12a8e32d71ec315fda973ad1`. Commit: pending.
-<!-- montana-change {"id": "80ca9112-a6a2-4327-82b7-7ce07d123bdf", "utc": "2026-09-30T01:16:18+00:00", "callsign": "code-order agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "code order 1: MontanaP2P.swift cut by type as a pure move into MontanaBonjour.swift, MontanaP2PDirect.swift and MTWire.swift; the set of non-blank lines unchanged, only import lines copied; the files join the app target; mt-proven-check.sh reads the new paths; CODEMAP.md names the owners", "tree": "9c5e9010b6aef70d12a8e32d71ec315fda973ad1", "parents": ["4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": null} -->
+- **Staged source tree:** `9c5e9010b6aef70d12a8e32d71ec315fda973ad1`. Commit: `a67842648398ca3281de10416bc720862439e3ce`.
+<!-- montana-change {"id": "80ca9112-a6a2-4327-82b7-7ce07d123bdf", "utc": "2026-09-30T01:16:18+00:00", "callsign": "code-order agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "code order 1: MontanaP2P.swift cut by type as a pure move into MontanaBonjour.swift, MontanaP2PDirect.swift and MTWire.swift; the set of non-blank lines unchanged, only import lines copied; the files join the app target; mt-proven-check.sh reads the new paths; CODEMAP.md names the owners", "tree": "9c5e9010b6aef70d12a8e32d71ec315fda973ad1", "parents": ["4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": "a67842648398ca3281de10416bc720862439e3ce"} -->
 
 ### 2026-09-30T01:13:56+00:00 — Merge rollback-898 b253e28a (build 2025) into stage/player-speed: the main line under the big player's work, no own edits
 
