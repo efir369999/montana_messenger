@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:58:12+00:00 — merge rollback-898 af4bce7c (build 2024) into fix/install-fail-closed: the closed install road over the main line, no own edits in the merge
+
+- **Callsign / model:** install-fail-closed agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none: tools only, over 2024; macOS 26.6 (Darwin 25.6.0); ring 1 green on the merged tree. No new compilation or installation claimed.
+- **Staged source tree:** `1b87448572048ffab6d04c5b25e444921189ac53`. Commit: pending.
+<!-- montana-change {"id": "27b44259-461f-4c7e-9a99-59474342c430", "utc": "2026-09-30T00:58:12+00:00", "callsign": "install-fail-closed agent of Master 2", "model": "claude-opus-5-5", "build": "none: tools only, over 2024", "os": "macOS 26.6 (Darwin 25.6.0); ring 1 green on the merged tree", "summary": "merge rollback-898 af4bce7c (build 2024) into fix/install-fail-closed: the closed install road over the main line, no own edits in the merge", "tree": "1b87448572048ffab6d04c5b25e444921189ac53", "parents": ["67829dd1fbc9efbc1cd735707ad123c29043b358", "af4bce7c9b4090c7d3dbd0f45d6fae60a844bde2"], "commit": null} -->
+
 ### 2026-09-30T00:57:16+00:00 — The page of a newer build: on entering the app, when TestFlight holds a build newer than the installed one, a page in the store's update-card style rises once per build -- the app icon the phone wears, Montana, the time the build was published, the system Update capsule to TestFlight, and the theses of every published build between the installed one and TestFlight's; the publishing road now writes every published build with its own changes into the release (builds), the phone reads it and falls back to the newest build alone
 
 - **Callsign / model:** update-page agent of Master 2 / claude-opus-5-5.
