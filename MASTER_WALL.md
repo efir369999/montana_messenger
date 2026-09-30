@@ -5,7 +5,9 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 ## The wall, newest first
 
 - 100 · 30.09 05:58 MSK · Мастер 2 · claude-3d · W 1.53 · x3.28 (deflate x2.14): ✎ 05:58 музыка на Т1 всё ещё кривая, правки М1 не дошли; очередь — по времени слова, смежные ветки сливать, ставить по одной по порядку, приоритет мастера; видео на весь экран чётко без кнопок и размытия; бот скачивания музыки по ссылке в плейлист стены музыки
+- 99 · 30.09 05:58 MSK · Мастер 2 · claude-3d · W 1.28 · x1.79 (deflate x1.41): Политика Privacy Policy 2026-09-06 действует, SHA-256: en 92ad1eb282e56f69aa8e2431017578e7eb6cff481bb62451031555dbf8711d8a ru 6d2639d56ffcdb6c03e99490c6bd98ad69a4b8d3d975ac546c92e051a4334987 zh 8e1bb7f8668dfbc80f6c965afb5fdb41fc54cf1d13f9d70442492b060b153621; stage/privacy-in-app
 - 99 · 30.09 05:58 MSK · Мастер 2 · claude-3d · W 0.0 · x1.85 (deflate x1.41): Политика Privacy Policy 2026-09-06 действует: en 92ad1eb282e56f69aa8e2431017578e7eb6cff481bb62451031555dbf8711d8a ru 6d2639d56ffcdb6c03e99490c6bd98ad69a4b8d3d975ac546c92e051a4334987 zh 8e1bb7f8668dfbc80f6c965afb5fdb41fc54cf1d13f9d70442492b060b153621; stage/privacy-in-app
+- 98 · 30.09 05:58 MSK · Мастер 2 · claude-3d · W 1.52 · x2.09 (deflate x1.38): Правила Terms of Use 2026-09-15 действует, SHA-256: en 3bc2fb34c3e2beaa8cf2184b18b14a807c8d3a47645380eea6b5523051e8de43 ru 1337ff650fb29aa2781a5c4c0c50089f82cf0cf05f019f0f01a5d3bc6beeeaa2 zh f9410c0f6f267f9e80e626df92daf68b93aa8643f0273b0e90ab83613de22747; stage/privacy-in-app
 - 98 · 30.09 05:58 MSK · Мастер 2 · claude-3d · W 0.0 · x2.15 (deflate x1.38): Правила Terms of Use 2026-09-15 действует: en 3bc2fb34c3e2beaa8cf2184b18b14a807c8d3a47645380eea6b5523051e8de43 ru 1337ff650fb29aa2781a5c4c0c50089f82cf0cf05f019f0f01a5d3bc6beeeaa2 zh f9410c0f6f267f9e80e626df92daf68b93aa8643f0273b0e90ab83613de22747; stage/privacy-in-app
 - 97 · 30.09 05:46 MSK · Мастер 2 · claude-3d · W 1.47 · x3.15 (deflate x2.14): ✎ 05:46 1) правка как в Википедии на стенах Приватности и Правил, мастер решает, принятая → новая запись в цепи → stage/privacy-in-app; 2) Документ ученика: мастер передаёт знание, «нет ученика — нет и мастера»
 - 96 · 30.09 05:45 MSK · Мастер 2 · claude-3d · W 1.59 · x2.73 (deflate x1.72): ✎ 05:45 пишут все, действуют только наши: SHA-256 редакции в цепи мастера → метка «Действует, запись N», прочее — обсуждение → stage/privacy-in-app
@@ -96,7 +98,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 43 twins: 1.43
+Weissman, mean over 45 twins: 1.43
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
