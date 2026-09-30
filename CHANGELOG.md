@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
 - **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `9a128e3893df2004c53fdaab1b483eac7a747e61`. Commit: pending.
-<!-- montana-change {"id": "bdb83e14-2da0-4bb0-a46e-4b176a787832", "utc": "2026-09-30T05:29:28+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "the master's wall becomes the Chain of Thoughts: a short head of the three axes, and a word already in the chain is never written twice", "tree": "9a128e3893df2004c53fdaab1b483eac7a747e61", "parents": ["5a26738d21186b07019d14ac550a9f6af2b26623"], "commit": null} -->
+- **Staged source tree:** `9a128e3893df2004c53fdaab1b483eac7a747e61`. Commit: `e5fb4c4459bb4bb2408edf16e6875248ab465750`.
+<!-- montana-change {"id": "bdb83e14-2da0-4bb0-a46e-4b176a787832", "utc": "2026-09-30T05:29:28+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "the master's wall becomes the Chain of Thoughts: a short head of the three axes, and a word already in the chain is never written twice", "tree": "9a128e3893df2004c53fdaab1b483eac7a747e61", "parents": ["5a26738d21186b07019d14ac550a9f6af2b26623"], "commit": "e5fb4c4459bb4bb2408edf16e6875248ab465750"} -->
 
 ### 2026-09-30T05:28:11+00:00 — the master's wall becomes the Chain of Thoughts: a short head of the three axes, and a word already in the chain is never written twice
 
