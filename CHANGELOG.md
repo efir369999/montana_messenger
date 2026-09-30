@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2039 (council tooling only); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `c6de65278538353941be5712e626567bf40eacac`. Commit: pending.
-<!-- montana-change {"id": "5530c35e-01c5-4fb5-813d-fb620be0245f", "utc": "2026-09-30T16:53:50+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2039 (council tooling only)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Council showcase in English only: a record whose words or master mark are in another script is published closed; the master mark shows as Master N", "tree": "c6de65278538353941be5712e626567bf40eacac", "parents": ["f282adab7725369ee3b3f9c6f5e77f2fb5f73c39"], "commit": null} -->
+- **Staged source tree:** `c6de65278538353941be5712e626567bf40eacac`. Commit: `65f37c91330f02d219d0b6ebf596f57727c9d256`.
+<!-- montana-change {"id": "5530c35e-01c5-4fb5-813d-fb620be0245f", "utc": "2026-09-30T16:53:50+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2039 (council tooling only)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Council showcase in English only: a record whose words or master mark are in another script is published closed; the master mark shows as Master N", "tree": "c6de65278538353941be5712e626567bf40eacac", "parents": ["f282adab7725369ee3b3f9c6f5e77f2fb5f73c39"], "commit": "65f37c91330f02d219d0b6ebf596f57727c9d256"} -->
 
 ### 2026-09-30T16:50:58+00:00 — Advance build number to 2039 (the VPN page updates at the hand or hourly, six plans thirteen seconds apart)
 
