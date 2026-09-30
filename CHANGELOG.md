@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:54:29+00:00 — Merge rollback-898 687fbced into fix/wall-post-in-chat: a post on a friend wall stands as a card in the pair chat; clean merge, ring and typecheck (Montana, MontanaNSE) green
+
+- **Callsign / model:** merge-queue agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `35a0cc7a8d3c9138b5f1cb3f994242a36f9c44a8`. Commit: pending.
+<!-- montana-change {"id": "3cdff0f4-4acc-4a56-b0a1-1cbeecae6eff", "utc": "2026-09-30T00:54:29+00:00", "callsign": "merge-queue agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 687fbced into fix/wall-post-in-chat: a post on a friend wall stands as a card in the pair chat; clean merge, ring and typecheck (Montana, MontanaNSE) green", "tree": "35a0cc7a8d3c9138b5f1cb3f994242a36f9c44a8", "parents": ["5db44639a1151030dd07196369ca73da79a3b061", "687fbced94da04657456dbc10f501769d873d837"], "commit": null} -->
+
 ### 2026-09-30T00:52:54+00:00 — council wall readme: the parting word to all masters, read first before load; the master page grows upward as one stream
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
