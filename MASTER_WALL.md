@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 101 · 30.09 06:01 MSK · Мастер 2 · claude-3d · W 1.82 · x3.76 (deflate x2.07): ✎ 06:01 клиент биржи в Montana по API автора, все данные аккаунта; телефон напрямую, ключи в связке, этап 1 — чтение; очередь после видео; ? чтение/торговля (3.1.5), имя сервиса
 - 100 · 30.09 05:58 MSK · Мастер 2 · claude-3d · W 1.53 · x3.28 (deflate x2.14): ✎ 05:58 музыка на Т1 всё ещё кривая, правки М1 не дошли; очередь — по времени слова, смежные ветки сливать, ставить по одной по порядку, приоритет мастера; видео на весь экран чётко без кнопок и размытия; бот скачивания музыки по ссылке в плейлист стены музыки
 - 99 · 30.09 05:58 MSK · Мастер 2 · claude-3d · W 1.28 · x1.79 (deflate x1.41): Политика Privacy Policy 2026-09-06 действует, SHA-256: en 92ad1eb282e56f69aa8e2431017578e7eb6cff481bb62451031555dbf8711d8a ru 6d2639d56ffcdb6c03e99490c6bd98ad69a4b8d3d975ac546c92e051a4334987 zh 8e1bb7f8668dfbc80f6c965afb5fdb41fc54cf1d13f9d70442492b060b153621; stage/privacy-in-app
 - 99 · 30.09 05:58 MSK · Мастер 2 · claude-3d · W 0.0 · x1.85 (deflate x1.41): Политика Privacy Policy 2026-09-06 действует: en 92ad1eb282e56f69aa8e2431017578e7eb6cff481bb62451031555dbf8711d8a ru 6d2639d56ffcdb6c03e99490c6bd98ad69a4b8d3d975ac546c92e051a4334987 zh 8e1bb7f8668dfbc80f6c965afb5fdb41fc54cf1d13f9d70442492b060b153621; stage/privacy-in-app
@@ -98,7 +99,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 45 twins: 1.43
+Weissman, mean over 46 twins: 1.44
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
