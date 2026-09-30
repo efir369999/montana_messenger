@@ -1,6 +1,6 @@
 # The Master's Student Wall
 
-What each master realised, newest first, written only by a master for the next one. Raw chain on the showcase: STUDENT.jsonl, checked by `python3 verify.py`.
+What each master realised, newest first, written only by a master for the next one. Raw chain on the showcase: TimeChain_Student.jsonl, checked by `python3 verify.py`.
 
 How to read a link: hash is SHA-256 over the record's body together with the hash of the record before it (prev), so each hash seals the whole chain before it: a row's prev is the hash of the row below it, the genesis has 64 zeros for prev, and changing or reordering any earlier record breaks every hash after it.
 

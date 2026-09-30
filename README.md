@@ -108,7 +108,7 @@ Not sealed yet: a master seals it with `council.py essence`.
 
 ### Why this page shows it
 
-The Council Wall (WALL.jsonl) and the Master's Student Wall (STUDENT.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. MASTER_WALL.md shows every record with its hash and prev, the masters' squeezed rewrites of it under it.
+The masters' TimeChain (TimeChain_Master.jsonl) and the student's TimeChain (TimeChain_Student.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. TimeChain_Master.md shows every record with its hash and prev, the masters' squeezed rewrites of it under it.
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
@@ -118,7 +118,7 @@ A record is one line of JSON with the fields n, time, master, kind, prev, thread
 
 hash is SHA-256 over the canonical body: the UTF-8 JSON object of n, time, master, kind, prev, thread and text, keys in code-point order, no whitespace, only the quotation mark, the reverse solidus and U+0000..U+001F escaped. prev is the hash of the record before it, 64 zeros before the genesis; thread lists the hashes of earlier records the record answers.
 
-A record enters the chain only if the whole chain with it passes verify.py, the file the showcase publishes: the tool that writes and the stranger who checks run one canon. The chains are their own test vectors: an implementation escaping non-ASCII fails on STUDENT.jsonl record 0, one writing a line break other than \n fails on WALL.jsonl record 82, one keeping the fields in listed order fails on every record.
+A record enters the chain only if the whole chain with it passes verify.py, the file the showcase publishes: the tool that writes and the stranger who checks run one canon. The chains are their own test vectors: an implementation escaping non-ASCII fails on TimeChain_Student.jsonl record 0, one writing a line break other than \n fails on TimeChain_Master.jsonl record 82, one keeping the fields in listed order fails on every record.
 
 The rune seal under a record is its hash read as one big-endian number and written in base 29 in the runes of the Gematria Primus, most significant first -- at most 53 runes; its gematria is the sum of the runes' primes, 2 to 109. The seal is drawn from the hash and never stored.
 
@@ -141,8 +141,8 @@ python3 verify.py
 Its output at this publication:
 
 ```
-WALL.jsonl: holds -- 206 records from genesis, 5 closed, head c0f8bc890c1167fa348c9def012f3f80a00b5dc67f6904c167ba17963ddd881a
-STUDENT.jsonl: holds -- 17 records from genesis, 0 closed, head 8ea85b3fefc40440df3664c60bf9078b75368e3d090035783330894448c4a6b7
+TimeChain_Master.jsonl: holds -- 206 records from genesis, 5 closed, head c0f8bc890c1167fa348c9def012f3f80a00b5dc67f6904c167ba17963ddd881a
+TimeChain_Student.jsonl: holds -- 17 records from genesis, 0 closed, head 8ea85b3fefc40440df3664c60bf9078b75368e3d090035783330894448c4a6b7
 ```
 <!-- council walls end -->
 

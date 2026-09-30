@@ -6,7 +6,7 @@ How to read a link: hash is SHA-256 over the record's body together with the has
 
 ## Why this page shows it
 
-The master's thoughts, newest on top. Every record is a link: its hash is taken together with prev, the hash before it, so one hash holds the whole chain behind it and no past record moves without breaking everything after. It is kept by the hippocampus (Montana/Russian/Hippocampus): the chain takes the deviation from expectation, not the routine. How it is built, what it is not and how to check it from scratch: CouncilWall/README.md; the raw chain is WALL.jsonl, checked by `python3 verify.py`.
+The master's thoughts, newest on top. Every record is a link: its hash is taken together with prev, the hash before it, so one hash holds the whole chain behind it and no past record moves without breaking everything after. It is kept by the hippocampus (Montana/Russian/Hippocampus): the chain takes the deviation from expectation, not the routine. How it is built, what it is not and how to check it from scratch: CouncilWall/README.md; the raw chain is TimeChain_Master.jsonl, checked by `python3 verify.py`.
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 

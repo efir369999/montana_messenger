@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Re-checks the council walls' chains, WALL.jsonl and STUDENT.jsonl, link by link from genesis with the standard library
+# Re-checks the two TimeChains, TimeChain_Master.jsonl and TimeChain_Student.jsonl, link by link from genesis with the standard library
 # alone. council.py imports these rules, so a stranger checks the very canon the master writes. A pass proves one unbroken
 # chain whose open records re-hash from their bodies; a record's time and master stay its writer's word.
 import datetime, hashlib, json, os, re, sys
@@ -152,9 +152,9 @@ def read(path):
 
 def main(paths):
     here = os.path.dirname(os.path.abspath(__file__))
-    paths = paths or [os.path.join(here, f) for f in ("WALL.jsonl", "STUDENT.jsonl") if os.path.exists(os.path.join(here, f))]
+    paths = paths or [os.path.join(here, f) for f in ("TimeChain_Master.jsonl", "TimeChain_Student.jsonl") if os.path.exists(os.path.join(here, f))]
     if not paths:
-        print("usage: python3 verify.py [WALL.jsonl] [STUDENT.jsonl]")
+        print("usage: python3 verify.py [TimeChain_Master.jsonl] [TimeChain_Student.jsonl]")
         return 2
     broken = 0
     for path in paths:
