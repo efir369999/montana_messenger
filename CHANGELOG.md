@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:04:13+00:00 — Merge rollback-898 bd29deab (build 2027, the feeds arrow and the page corner) into stage/music-wall: the corners keep the walls one write on the page corner measure; the music list keeps the big player look rule
+
+- **Callsign / model:** music-wall agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `e8710198a7676ab00f3faecde8e361294c6f360f`. Commit: pending.
+<!-- montana-change {"id": "129b9c0b-393b-4247-91bf-6c37f2b97ba7", "utc": "2026-09-30T03:04:13+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 bd29deab (build 2027, the feeds arrow and the page corner) into stage/music-wall: the corners keep the walls one write on the page corner measure; the music list keeps the big player look rule", "tree": "e8710198a7676ab00f3faecde8e361294c6f360f", "parents": ["73c79ec106edec722e85df353d8c7aca16c2cef9", "bd29deabeb35463ee6b43d334f552be9c9f6c0be"], "commit": null} -->
+
 ### 2026-09-30T02:51:59+00:00 — Documents: a verbatim copy of the site privacy policy and terms of use in the tree, the one data file the app reads derived from it, and a ring guard that the two agree word for word in every language
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
