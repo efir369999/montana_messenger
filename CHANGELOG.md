@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** 2022; macOS 26.6 (Darwin 25.6.0); for T1, T3 and TestFlight. No new compilation or installation claimed.
-- **Staged source tree:** `a66b2b2f8d2214f711c461bc0e73ef54832439b4`. Commit: pending.
-<!-- montana-change {"id": "72f50ffd-bbc2-4c76-9ae6-b558cdadf043", "utc": "2026-09-30T00:14:08+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2022", "os": "macOS 26.6 (Darwin 25.6.0); for T1, T3 and TestFlight", "summary": "build 2022: the same composition as 2021 (MTSelfFace, my own face drawn by one view everywhere); 2021 was reserved at 62e9d0df and never sealed, a repeat number is refused", "tree": "a66b2b2f8d2214f711c461bc0e73ef54832439b4", "parents": ["62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": null} -->
+- **Staged source tree:** `a66b2b2f8d2214f711c461bc0e73ef54832439b4`. Commit: `74e59890f577820677e484bf2adb5fa13fcbc0d8`.
+<!-- montana-change {"id": "72f50ffd-bbc2-4c76-9ae6-b558cdadf043", "utc": "2026-09-30T00:14:08+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2022", "os": "macOS 26.6 (Darwin 25.6.0); for T1, T3 and TestFlight", "summary": "build 2022: the same composition as 2021 (MTSelfFace, my own face drawn by one view everywhere); 2021 was reserved at 62e9d0df and never sealed, a repeat number is refused", "tree": "a66b2b2f8d2214f711c461bc0e73ef54832439b4", "parents": ["62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": "74e59890f577820677e484bf2adb5fa13fcbc0d8"} -->
 
 ### 2026-09-30T00:10:43+00:00 — Merge rollback-898 (62e9d0df) into fix/wall-post-in-chat: the main line into the wall post card, before the master's fast-forward
 
