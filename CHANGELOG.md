@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T01:40:52+00:00 — merge rollback-898 fe5864b2 (build 2026) into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 5dbf4d82, catalogue valid JSON, no own edits
+
+- **Callsign / model:** feeds-top agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `5dbf4d829b35a55572c239864b9420bda394f8ef`. Commit: pending.
+<!-- montana-change {"id": "b775efb5-daf5-424a-95dd-6b6c9df536e9", "utc": "2026-09-30T01:40:52+00:00", "callsign": "feeds-top agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge rollback-898 fe5864b2 (build 2026) into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 5dbf4d82, catalogue valid JSON, no own edits", "tree": "5dbf4d829b35a55572c239864b9420bda394f8ef", "parents": ["baa048112a904c8f9f26405abe59d3c5379e5a21", "fe5864b293d344ebb4bbbaae05476d17de74c33d"], "commit": null} -->
+
 ### 2026-09-30T01:24:14+00:00 — build 2026: the default chat wallpaper from the author's file; over 2025
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
