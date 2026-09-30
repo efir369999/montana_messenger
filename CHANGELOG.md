@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T17:18:12+00:00 — Advance build number to 2040 (the mesh owes the tunnel nothing)
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2040 (number advanced; build next); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `6fe772ed93698cf013deb0dbac2db27ae50fa5d8`. Commit: pending.
+<!-- montana-change {"id": "a4464faf-07d0-4a33-8e67-b4054bfeddea", "utc": "2026-09-30T17:18:12+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2040 (number advanced; build next)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Advance build number to 2040 (the mesh owes the tunnel nothing)", "tree": "6fe772ed93698cf013deb0dbac2db27ae50fa5d8", "parents": ["d407f5ff668c74ea62a3ba40c2cf3f9be92ea49f"], "commit": null} -->
+
 ### 2026-09-30T17:17:42+00:00 — VPN: the mesh owes the tunnel nothing -- our tunnel no longer holds every route, and mesh dials bar the tunnel's interface while our own tunnel stands (as in the archive, 25.07)
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
