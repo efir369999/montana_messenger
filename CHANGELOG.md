@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:59:23+00:00 — merge rollback-898 af4bce7c (build 2024) into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 2276587c, catalogue valid JSON, no own edits
+
+- **Callsign / model:** feeds-top agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `2276587cd8d0a11804fa3b3a43042f345c314985`. Commit: pending.
+<!-- montana-change {"id": "d5e70cc8-dc9e-4022-b410-af4a5a616b24", "utc": "2026-09-30T00:59:23+00:00", "callsign": "feeds-top agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge rollback-898 af4bce7c (build 2024) into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 2276587c, catalogue valid JSON, no own edits", "tree": "2276587cd8d0a11804fa3b3a43042f345c314985", "parents": ["4a8d490bcdfedae6c79fc365af80f3fc2289cfda", "af4bce7c9b4090c7d3dbd0f45d6fae60a844bde2"], "commit": null} -->
+
 ### 2026-09-30T00:59:16+00:00 — avatar: the fighters cut again from the author's whole sheet without the white ground -- the platform's mask held the sheet's white between the cape's tatters, between the strands of hair and in a rim around each figure; a pixel within the ground's own noise (16 of 255, measured on the sheet) is ground wherever the mask stands; the first fighter whole to the soles, the heroine to the sheet's edge
 
 - **Callsign / model:** avatar-fight agent of Master 2 / claude-opus-5-5.
