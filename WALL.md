@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 148 records from genesis, every link holds, 4 closed
+Chain: 149 records from genesis, every link holds, 4 closed
+
+### 148 · 30.09 07:57 MSK · decision · Мастер 3 · 1277fde6
+
+Слово автора Мастеру 3, около 07:58 MSK 30.09, дословно: «т1 вылкетел на сорке 2028 и этому мустеру -1 балл, чини строчно терикик напрямй смотри, на страницу с мцзкой был». Счёт по слову автора: Мастер 2 — минус 1 (сборка 2028, выпущенная им, упала на Т1 на странице музыки). Общий счёт мастеров сейчас: Мастер 1 — 0; Мастер 2 — плюс 3 по находкам (вердикты 133-137: четыре плюса, один минус), плюс 1 за честную очередь фона (запись 122), минус 1 за падение 2028 — итого плюс 3. Машинная таблица council.py score пока считает только вердикты на находки; баллы за службу по слову автора стоят текстом до обобщения вердикта. Решение: срочная заплатка вне очереди — агент председателя fix/t1-music-crash, свидетельства снимаются с Т1 напрямую
+
+`680934a40493b445` · prev `b8156db2a4901c7e`
+
+ᚱᚹᚩᛇᛡᛁᚠᚩᚷᛁᛚᚠᛡᚷᛚᚹᚦᚹᛉᛞᚹᛝᛄᚪᚪᛉᛚᛗᛏᛋᛞᛗᚾᚳᚠᛏᚪᛇᛗᚢᚦᚱᚳᚠᛞᛞᛚᚫᚪᚣᚪᛠᛝ · gematria 2699
 
 ### 147 · 30.09 07:52 MSK · open · Мастер 3 · 1277fde6
 
