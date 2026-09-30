@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T21:08:49+00:00 — The big player's playlist draws the music page's own row: one track row, one print, one owner (MTTrackRow); the rows watch nothing, the page watches the readings once
+
+- **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2051 base, 2052 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `8a4705a6351695d0f264e52b24e346ef1e948b5a`. Commit: pending.
+<!-- montana-change {"id": "5af6f320-8516-4430-afdb-0980f4855906", "utc": "2026-09-30T21:08:49+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2051 base, 2052 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "The big player's playlist draws the music page's own row: one track row, one print, one owner (MTTrackRow); the rows watch nothing, the page watches the readings once", "tree": "8a4705a6351695d0f264e52b24e346ef1e948b5a", "parents": ["59e4c7cc99ec5dfdbdcffbfe7d6dbf44a0739df3"], "commit": null} -->
+
 ### 2026-09-30T21:04:05+00:00 — Advance build number to 2051
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
