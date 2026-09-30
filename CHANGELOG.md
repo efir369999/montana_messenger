@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T18:02:45+00:00 — Advance build number to 2043 (no mesh interface ban)
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2043 (number advanced; build next); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `c97a444d43ea8149709c140ba0bb2289634a691f`. Commit: pending.
+<!-- montana-change {"id": "cd158c7c-f23d-4b7c-86da-fc267482f9e4", "utc": "2026-09-30T18:02:45+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2043 (number advanced; build next)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Advance build number to 2043 (no mesh interface ban)", "tree": "c97a444d43ea8149709c140ba0bb2289634a691f", "parents": ["132965d0396fcf17d5c5f6bea0e1bec3d0834c9e"], "commit": null} -->
+
 ### 2026-09-30T18:02:15+00:00 — VPN: no mesh dial bars an interface -- the ban left every node dial without a path under our tunnel; the mesh rides what the system routes
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
