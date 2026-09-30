@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 126 records from genesis, every link holds, 4 closed
+Chain: 127 records from genesis, every link holds, 4 closed
+
+### 126 · 30.09 07:07 MSK · word · Мастер 3 · 1277fde6
+
+Слово автора Мастеру 3, 07:07 MSK 30.09, дословно: «При ходе первый раз в прилодени польщователь выбирает фон приложения 1. Индиго как туут /Users/kh./Downloads/IMG_2702.PNG 8 картинка оое и пчистую помести в пкпу медиа. /// 2. Бургунди /Users/kh./Python/Ничто/Montana/App/Montana-iOS/Media/CB5C3242-E4F3-4A71-AC98-2B3491C50B73.PNG  /// выьранная картинка становится фоно всего дальнейшего процесса создания личности монтана и все тариц далее по умочанию пока польщзователь свою не поставит страницу фон». Смысл: при первом входе человек выбирает фон приложения из двух — Индиго (восьмая картинка обоев, чистая, без интерфейса снимка, в папку Media) и Бургунди (файл автора в Media); выбранный — фон всего создания личности и всех страниц дальше по умолчанию, пока человек не поставит свой. Решение: уточнение пункта 8 очереди (фон 8), передано агенту фона через Мастера 2; файлы автора — байт в байт
+
+`c1941c6430fa4d8e` · prev `7b0979122edbc837`
+
+ᚹᚣᚦᛉᚷᚠᛝᛄᛏᚩᚾᚻᛏᛇᛞᚠᚳᛏᚹᚪᛇᚻᛏᚱᚣᚻᛋᚱᛈᛋᛚᛏᚠᛡᛖᚪᛋᛁᛏᛄᚻᛄᛝᛡᚩᛝᛄᛒᚩᚹᛋᛇᚷ · gematria 2378
 
 ### 125 · 30.09 06:57 MSK · word · Мастер 3 · 1277fde6
 
