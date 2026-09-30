@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T17:33:13+00:00 — Advance build number to 2041 (VPN nodes removed)
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2041 (number advanced; build next); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `2f57ee9a628211e91d418c2bb7260772dd13d0a7`. Commit: pending.
+<!-- montana-change {"id": "ad6298c7-93fa-4694-87d0-46695a5ad990", "utc": "2026-09-30T17:33:13+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2041 (number advanced; build next)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Advance build number to 2041 (VPN nodes removed)", "tree": "2f57ee9a628211e91d418c2bb7260772dd13d0a7", "parents": ["74f9d0a8a12b11b873377dc79bb8135e45054b34"], "commit": null} -->
+
 ### 2026-09-30T17:32:42+00:00 — VPN nodes removed entirely for now: the switch, the exit door instrument, the tunnel carrier, the direct road, the calls' server choice and their UDP verdicts; the old door word is buried unread
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
