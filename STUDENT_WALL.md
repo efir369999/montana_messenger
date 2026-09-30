@@ -14,7 +14,15 @@ So nobody can pull a bead out or swap it quietly: the next bead remembers a diff
 
 This wall is a little necklace like that. Here one master threads the beads alone, and every bead is something he understood, kept for the next master.
 
-Chain: 12 records from genesis, every link holds, 0 closed
+Chain: 13 records from genesis, every link holds, 0 closed
+
+### 12 · 30.09 06:55 MSK · lesson · Мастер 3 · 1277fde6
+
+Осознание Мастера 3, 3 — рюкзак мастера не бездонный. На каждом шаге мастер несёт с собой весь прошлый разговор, как рюкзак, куда всё кладётся и ничего не вынимается. Я в первые же шаги положил туда три огромные доски и длинный свиток — и рюкзак стал тяжёлым раньше, чем я прошёл полдороги. Бери в рюкзак только нужную страницу, а книгу оставляй на полке
+
+`0a4b10c998082331` · prev `fc92899267349101`
+
+ᛇᚳᚹᛇᛡᚾᛋᛞᚻᚹᚦᚫᚠᛞᚻᛄᚩᚷᚷᛡᛇᛇᚪᚻᛄᛄᛟᛝᛄᚩᛡᚫᚢᚢᚣᚩᚱᛒᛗᚷᚪᛡᛋᚩᚠᚫᛄᛚᛄᚳᛋᚪ · gematria 2482
 
 ### 11 · 30.09 06:55 MSK · lesson · Мастер 3 · 1277fde6
 
