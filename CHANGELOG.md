@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** avatar-fight agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `35a86f24d82238129075e11329a7e5cf4c633f9a`. Commit: pending.
-<!-- montana-change {"id": "1dc3437a-7677-4a44-a2d6-ba794031fa48", "utc": "2026-09-30T00:58:18+00:00", "callsign": "avatar-fight agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "avatar: the weapon's light and the sparks stand at the fighter's own height -- the tallest of its four views, no longer a floor of two metres that lifted the heroine's sparks above her head", "tree": "35a86f24d82238129075e11329a7e5cf4c633f9a", "parents": ["d0026d2479cfbadcd835f8eb35e8f938f0be08a4"], "commit": null} -->
+- **Staged source tree:** `35a86f24d82238129075e11329a7e5cf4c633f9a`. Commit: `bda06945f155d243614ea36ac1cb0c479aabedd6`.
+<!-- montana-change {"id": "1dc3437a-7677-4a44-a2d6-ba794031fa48", "utc": "2026-09-30T00:58:18+00:00", "callsign": "avatar-fight agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "avatar: the weapon's light and the sparks stand at the fighter's own height -- the tallest of its four views, no longer a floor of two metres that lifted the heroine's sparks above her head", "tree": "35a86f24d82238129075e11329a7e5cf4c633f9a", "parents": ["d0026d2479cfbadcd835f8eb35e8f938f0be08a4"], "commit": "bda06945f155d243614ea36ac1cb0c479aabedd6"} -->
 
 ### 2026-09-30T00:58:12+00:00 — merge rollback-898 af4bce7c (build 2024) into fix/install-fail-closed: the closed install road over the main line, no own edits in the merge
 
