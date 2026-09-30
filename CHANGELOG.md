@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `58243cadb40feae7b058637fd5128524422112e0`. Commit: pending.
-<!-- montana-change {"id": "f71802e6-435a-4a61-af9a-6ed857d72f03", "utc": "2026-09-30T01:46:31+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Big player: the page close typed once (typecheck fix), the running line at the tree's locked type step, the scrub meter on real drags only; mt-typecheck.py --jobs for the council's two-thread rule", "tree": "58243cadb40feae7b058637fd5128524422112e0", "parents": ["3a96ccef3c55604c9a619028c7540fab2d10a443"], "commit": null} -->
+- **Staged source tree:** `58243cadb40feae7b058637fd5128524422112e0`. Commit: `0dcec1fe43d2e59207a9d9772f270bc4fc21d4c9`.
+<!-- montana-change {"id": "f71802e6-435a-4a61-af9a-6ed857d72f03", "utc": "2026-09-30T01:46:31+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Big player: the page close typed once (typecheck fix), the running line at the tree's locked type step, the scrub meter on real drags only; mt-typecheck.py --jobs for the council's two-thread rule", "tree": "58243cadb40feae7b058637fd5128524422112e0", "parents": ["3a96ccef3c55604c9a619028c7540fab2d10a443"], "commit": "0dcec1fe43d2e59207a9d9772f270bc4fc21d4c9"} -->
 
 ### 2026-09-30T01:40:52+00:00 — merge rollback-898 fe5864b2 (build 2026) into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 5dbf4d82, catalogue valid JSON, no own edits
 
