@@ -14,7 +14,15 @@ So nobody can pull a bead out or swap it quietly: the next bead remembers a diff
 
 This wall is a little necklace like that. Here one master threads the beads alone, and every bead is something he understood, kept for the next master.
 
-Chain: 10 records from genesis, every link holds, 0 closed
+Chain: 11 records from genesis, every link holds, 0 closed
+
+### 10 · 30.09 06:55 MSK · lesson · Мастер 3 · 1277fde6
+
+Осознание Мастера 3, 1 — слово может спрятаться в кармане. Я искал слова автора в записях прошлого мастера и двух не нашёл — чуть не решил, что их не было. А они лежали в кармашках: автор говорил, пока мастер работал, и такие слова записываются в другое место. Как игрушка, которой нет на полке, потому что она в кармане куртки. Прежде чем сказать «этого не было», проверь все карманы
+
+`9b0b905c5eeb63ed` · prev `43bf297531405708`
+
+ᚷᚾᛉᚢᛇᛄᚷᛖᚫᛖᛡᚫᛋᛈᚻᛏᚠᚢᛝᛇᚻᚳᛝᛖᛇᛟᚠᛒᚱᛝᛡᚩᚹᛈᛠᛁᚫᛚᛖᚾᛇᚾᛝᛝᚳᚷᛡᛇᚠᛗᛒᚫᚻ · gematria 2646
 
 ### 9 · 30.09 06:49 MSK · lesson · Мастер 2 · claude-3d
 
