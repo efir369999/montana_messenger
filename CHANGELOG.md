@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2047; macOS 26.6 (Darwin 25.6.0), iOS client. No new compilation or installation claimed.
-- **Staged source tree:** `ee175fd6fb2c2ad1abcb5ad2406deaed7fabb2dd`. Commit: pending.
-<!-- montana-change {"id": "51d2deee-6d8d-4e4f-937d-0d90efd29cb4", "utc": "2026-09-30T19:14:42+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2047", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "Advance build number to 2047", "tree": "ee175fd6fb2c2ad1abcb5ad2406deaed7fabb2dd", "parents": ["e135ac1d6ea201bbab349d73acd6a8905d0b10ff"], "commit": null} -->
+- **Staged source tree:** `ee175fd6fb2c2ad1abcb5ad2406deaed7fabb2dd`. Commit: `3e54c4b787dd7d5e62d490546883dd8d99b11e3b`.
+<!-- montana-change {"id": "51d2deee-6d8d-4e4f-937d-0d90efd29cb4", "utc": "2026-09-30T19:14:42+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2047", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "Advance build number to 2047", "tree": "ee175fd6fb2c2ad1abcb5ad2406deaed7fabb2dd", "parents": ["e135ac1d6ea201bbab349d73acd6a8905d0b10ff"], "commit": "3e54c4b787dd7d5e62d490546883dd8d99b11e3b"} -->
 
 ### 2026-09-30T19:13:43+00:00 — call window: it stands on the controller that said so and dies with it -- a call that ended with its window up no longer refuses the window of every later call
 
