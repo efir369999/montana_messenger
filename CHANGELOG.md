@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2051 base, 2052 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `c9b990aaceafe874769303888590833b37554b3f`. Commit: pending.
-<!-- montana-change {"id": "999a6b6b-1a10-4e38-b035-735ecfb91eb4", "utc": "2026-09-30T21:09:41+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2051 base, 2052 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Merge the main line (build number 2051) into fix/player-cover-inline before build 2052; no own edits", "tree": "c9b990aaceafe874769303888590833b37554b3f", "parents": ["fcb5dc4f0591b50aab7b6ad71c29dd4b5c943d05", "40f22201b8f573a293d60e129a2e0fd081904f7c"], "commit": null} -->
+- **Staged source tree:** `c9b990aaceafe874769303888590833b37554b3f`. Commit: `943e2c9b3aab136285bdb4a1f1f4452af797db9a`.
+<!-- montana-change {"id": "999a6b6b-1a10-4e38-b035-735ecfb91eb4", "utc": "2026-09-30T21:09:41+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2051 base, 2052 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Merge the main line (build number 2051) into fix/player-cover-inline before build 2052; no own edits", "tree": "c9b990aaceafe874769303888590833b37554b3f", "parents": ["fcb5dc4f0591b50aab7b6ad71c29dd4b5c943d05", "40f22201b8f573a293d60e129a2e0fd081904f7c"], "commit": "943e2c9b3aab136285bdb4a1f1f4452af797db9a"} -->
 
 ### 2026-09-30T21:08:49+00:00 — The big player's playlist draws the music page's own row: one track row, one print, one owner (MTTrackRow); the rows watch nothing, the page watches the readings once
 
