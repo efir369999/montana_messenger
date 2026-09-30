@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2037 (source change; build 2038 pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `fa72483797cd86407a5c710ef6da745787893c45`. Commit: pending.
-<!-- montana-change {"id": "5f30946f-dac6-4b8c-8fe4-c1182bee0f72", "utc": "2026-09-30T16:32:10+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2037 (source change; build 2038 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Call: while our VPN tunnel is up the call gathers on every adapter and rides the tunnel; the relay and the signalling stay our nodes", "tree": "fa72483797cd86407a5c710ef6da745787893c45", "parents": ["2752dee9be5431e1254e40a2f7ee3c19dafb056d"], "commit": null} -->
+- **Staged source tree:** `fa72483797cd86407a5c710ef6da745787893c45`. Commit: `1301d69956da06ae2eddf3bba346034e865f9d7d`.
+<!-- montana-change {"id": "5f30946f-dac6-4b8c-8fe4-c1182bee0f72", "utc": "2026-09-30T16:32:10+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2037 (source change; build 2038 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Call: while our VPN tunnel is up the call gathers on every adapter and rides the tunnel; the relay and the signalling stay our nodes", "tree": "fa72483797cd86407a5c710ef6da745787893c45", "parents": ["2752dee9be5431e1254e40a2f7ee3c19dafb056d"], "commit": "1301d69956da06ae2eddf3bba346034e865f9d7d"} -->
 
 ### 2026-09-30T16:02:16+00:00 — Advance build number to 2037 (the VPN wall with the person's own on top)
 
