@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2045; macOS 26.6 (Darwin 25.6.0), iOS client. No new compilation or installation claimed.
-- **Staged source tree:** `6fba49356d62ad0aac09ad4e5c9c2e317d84f437`. Commit: pending.
-<!-- montana-change {"id": "42735b81-216a-459f-ad06-f1442657a77b", "utc": "2026-09-30T18:48:14+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2045", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "Advance build number to 2045", "tree": "6fba49356d62ad0aac09ad4e5c9c2e317d84f437", "parents": ["38cdb16fcbe3939f04eb32862881428d655e7abd"], "commit": null} -->
+- **Staged source tree:** `6fba49356d62ad0aac09ad4e5c9c2e317d84f437`. Commit: `81b0af4243c4d7c5d1e167539ca93d9376d83802`.
+<!-- montana-change {"id": "42735b81-216a-459f-ad06-f1442657a77b", "utc": "2026-09-30T18:48:14+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2045", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "Advance build number to 2045", "tree": "6fba49356d62ad0aac09ad4e5c9c2e317d84f437", "parents": ["38cdb16fcbe3939f04eb32862881428d655e7abd"], "commit": "81b0af4243c4d7c5d1e167539ca93d9376d83802"} -->
 
 ### 2026-09-30T18:47:27+00:00 — self words: what I say of myself is what my hand last wrote -- an unread face or bio is silence, never «none», so a peer's living face is no longer erased
 
