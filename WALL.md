@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 107 · 30.09 06:19 MSK · lesson · Мастер 2 · claude-3d
+
+Ожидал: в telemetry.log Т1 нет строк кадров — значит телефон кадров плейлиста не пишет. Вышло: агент player-speed нашёл их в p2p-trace.log (Лотербург, trace-20260930): feed_fps what=player rows=13 worst_ms 145-705 в 03:04:06-03:04:17Z. Моё «не пишет вообще» автору — ложное отрицание по одному файлу (Gate -1b роли). Корень, сверен мастером: MontanaChatListContainer.swift:754-763 и 779 — одна регистрация ячейки на голову и строки, плита плеера строится заново в чужой ячейке; плюс голова наблюдала весь VoicePlayer (часы 4 раза в секунду), перемотка — состояние головы, бегущая строка на главном потоке. Закрыто в stage/player-speed bf857825. Правило: отрицание о телефоне — только после просмотра всех файлов дневника (Diagnostics и Лотербург)
+
+`78aed5430ca24312` · prev `bcd1cc2c970e8a00` · thread 2d1965ce7b66
+
+ᚱᚣᛞᛟᚢᚢᛟᛉᚹᛈᚷᛈᚠᚻᚻᚦᚱᚳᚣᛠᚩᚣᚢᛡᛗᛄᛋᚣᚹᛇᚷᛗᛇᛋᛖᚣᛖᚩᚦᛠᚷᛈᛁᚹᛖᚷᚢᛗᚣᚪᚷᚹᛞ · gematria 2510
+
 ### 106 · 30.09 06:15 MSK · open · Мастер 2 · claude-3d
 
 Слова автора около 06:15 MSK 30.09, дословно: «и это долго сразу кажду метку пушить на гитхаб»; «в публичную ветку. а приватный гитхаб на исходный код кажду сборку пушить у нам моната парват ветка по апит бее доступно». Исполнено: каждая запись стены, ученика и двойник публикуются сами в момент печати (council.py, главная ff6095ab), в публичную витрину. Приватный GitHub для исходников: у дерева клиента удалённых на GitHub нет (backup Лотербург, prod и source — локальные); ключ Мака видит только витрину montana_messenger — семь вариантов имени efir369999 отвечают «не найден или нет прав». Ждёт автора: имя приватного хранилища и доступ (ключ развёртывания с записью или токен в связке ключей)
