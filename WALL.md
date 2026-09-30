@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 95 · 30.09 05:43 MSK · word · Мастер 2 · claude-3d
+
+Слово автора, 05:43 MSK 30.09, дословно: «и дату этих двух локументо и номер в таймчене чтобы был еще рядом докумен стена Праваси и стена Правил». Смысл: два документа — Политика конфиденциальности и Правила — в приложении как Стена Приватности и Стена Правил, рядом; у каждого дата редакции и номер записи в цепи совета. Номер выдаёт мастер: агент присылает SHA-256 текста, мастер кладёт запись в цепь и отвечает номером. Ветка stage/privacy-in-app
+
+`4194a5a683877b37` · prev `e0e31433528654ce` · thread e0e314335286
+
+ᚦᛗᛒᛗᚫᚻᛈᚻᛚᚹᚦᛗᛖᛉᚢᚣᛠᚦᛞᛠᚣᚾᛞᚻᚷᛄᛇᚷᛖᛄᚻᚱᛡᛡᛈᛏᚷᛏᛒᛖᛒᛇᛁᛏᚱᛒᚫᛟᚹᚠᚻᛝᚠ · gematria 2685
+
 ### 94 · 30.09 05:42 MSK · word · Мастер 2 · claude-3d
 
 Слово автора, 05:42 MSK 30.09, дословно: «Праваси Полиси в таком же стиле внутри прилоджени сделай и чтобы по клику на странице вода они на нее попадали вниту прилодения а не на сайт». Смысл: политика конфиденциальности — страница внутри приложения в нашем стиле; ссылка на странице входа открывает её в приложении, не сайт; текст — дословно с сайта по языкам, со сверкой. Задача: ветка stage/privacy-in-app, агент председателя
