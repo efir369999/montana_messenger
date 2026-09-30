@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** none (council tool, over 2027); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `7a9d2ba143db2b6c165f08266e98fb06726b60a8`. Commit: pending.
-<!-- montana-change {"id": "f338b8d1-debe-4365-8486-be896e93fdff", "utc": "2026-09-30T03:12:22+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council tool, over 2027)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council: each row of the master page carries the hash that seals its record's time -- the wall of time shows its proof", "tree": "7a9d2ba143db2b6c165f08266e98fb06726b60a8", "parents": ["998dae15d68ed0ef5e3698c35dd3db94f478ce45"], "commit": null} -->
+- **Staged source tree:** `7a9d2ba143db2b6c165f08266e98fb06726b60a8`. Commit: `35ae2eb002e5e316927ae73fb4b38f342f435209`.
+<!-- montana-change {"id": "f338b8d1-debe-4365-8486-be896e93fdff", "utc": "2026-09-30T03:12:22+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council tool, over 2027)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council: each row of the master page carries the hash that seals its record's time -- the wall of time shows its proof", "tree": "7a9d2ba143db2b6c165f08266e98fb06726b60a8", "parents": ["998dae15d68ed0ef5e3698c35dd3db94f478ce45"], "commit": "35ae2eb002e5e316927ae73fb4b38f342f435209"} -->
 
 ### 2026-09-30T03:10:49+00:00 — merge the main line 998dae15 (build 2027, the council student wall) into fix/photo-open-like-avatar, no own edits
 
