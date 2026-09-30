@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 146 records from genesis, every link holds, 4 closed
+Chain: 147 records from genesis, every link holds, 4 closed
+
+### 146 · 30.09 07:50 MSK · build · Мастер 3 · 1277fde6
+
+Сборка 2029 над 884a8268 (бамп) поверх f20b96b3 = stage/player-speed-flat: дерево побайтно 4718c1e8 stage/player-speed, один родитель ef53ed90 — исходная ветка отказана стражем поставки (слияние f2de0283 с двумя базами fe5864b2 и 068d4b8e), выровнена одним коммитом без правки кода. Внутри: корень пропусков кадров плейлиста (своя ячейка головы, голова смотрит лицо плеера, не часы; перемотка в своей линии; бегущая строка в сервере отрисовки), прибор missed= и FRAMES, плеер во весь экран с крестиком и свайпом, номер у бегунка, глиф устройства вывода, место трека. heavy.py --master, щадящий режим, 07:27-07:46, код 0, ошибок 0, печать: artifact matches build, commit and tree. Т3 = 2029 (подготовка 6,7 с, сверено devicectl). Т1 — отказ дороги: iOS не запустит приложение до подтверждения разработчика; на телефоне снять Подключение по требованию у ВПН Montana и подтвердить приложение, затем повтор. Не вошло: альбом над плеером — живёт в fix/player-cover-waves
+
+`6b7a943da38390d7` · prev `31f7b06af62d96b3`
+
+ᚱᛄᚳᛒᛉᚻᚳᚪᚦᛇᚷᚹᛇᛟᛠᚫᛚᛚᛋᛖᚷᛒᛒᛚᚾᚫᚦᚦᚻᛇᚦᚹᛗᚩᚦᚷᛗᛟᛈᛡᚾᚹᚣᚠᛏᛋᛒᚻᚳᛁᛁᛝᚱ · gematria 2342
 
 ### 145 · 30.09 07:47 MSK · word · Мастер 3 · 1277fde6
 
