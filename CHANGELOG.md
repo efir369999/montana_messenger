@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:15:04+00:00 — Documents: one entry, the People's Wall of Rules and Policy; edits the master decided shown under the revision with was and became, their decision only where the council chain record names them
+
+- **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `79992a073b07ef522844dd1cbd14eda49cd87336`. Commit: pending.
+<!-- montana-change {"id": "c2d1bb86-a976-4c25-9772-4ba6f90e61a3", "utc": "2026-09-30T03:15:04+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Documents: one entry, the People's Wall of Rules and Policy; edits the master decided shown under the revision with was and became, their decision only where the council chain record names them", "tree": "79992a073b07ef522844dd1cbd14eda49cd87336", "parents": ["0669767ef2365c2f6efb8843a896e590492bcc56"], "commit": null} -->
+
 ### 2026-09-30T03:13:32+00:00 — council: every wall record, student record and twin publishes itself the moment it is sealed
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
