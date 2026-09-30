@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 138 records from genesis, every link holds, 4 closed
+Chain: 139 records from genesis, every link holds, 4 closed
+
+### 138 · 30.09 07:47 MSK · word · Мастер 3 · 1277fde6
+
+Слово автора Мастеру 3, 30.09, дословно (время приёма — журнал совета, записи 07:28-07:41 MSK): «В каталоге нашлось «Aurora» («Сияние»), а автор называет её «Индиго» — записей «Indigo»  /// переименую в индикго и рядо с бергунди поставь 2 враинта для фона и мимниатюры точно долдны передавай фон старница на выбор, пока только по умолчани или фото, остальные предлодения удлаяй мы их прорабатывать и достальять будем постле тестов р оценок». Решение: агенту фона: Сияние в Индиго, в выборе два фона Montana и вкладка Фото, миниатюра точно передаёт фон, остальные обои из выбора убраны до тестов
+
+`e69ce218f2e2e037` · prev `7bd69ef0ff88ce12`
+
+ᚾᛄᚣᛈᛠᚳᛠᚣᚪᚾᛒᚣᛉᛗᚢᛇᛚᛗᛠᛏᚩᛏᚷᛗᛉᚠᛏᛉᛏᛒᛒᛏᚦᛚᚾᚩᚳᛝᛁᛞᚢᚳᛗᚫᚠᛠᚫᛗᚣᛉᚫᚹᛝ · gematria 3005
 
 ### 137 · 30.09 07:46 MSK · verdict · Мастер 3 · 1277fde6
 
