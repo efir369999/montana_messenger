@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T20:37:22+00:00 — Advance build number to 2050
+
+- **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2050; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `858d4bdc8574f11d3ab02063ae1f983c22018a96`. Commit: pending.
+<!-- montana-change {"id": "ea713efe-16f8-4ef0-934b-3aada36a87d9", "utc": "2026-09-30T20:37:22+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2050", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Advance build number to 2050", "tree": "858d4bdc8574f11d3ab02063ae1f983c22018a96", "parents": ["7d1637138dc2fd22dad1c7f930852d45309a3445"], "commit": null} -->
+
 ### 2026-09-30T20:36:36+00:00 — Merge the main line (build number 2049) into fix/player-cover-inline before the next build; no own edits
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
