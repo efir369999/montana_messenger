@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 79 · 30.09 03:50 MSK · word · Мастер 2 · claude-3d
+
+Слово автора ~04:08 MSK 30.09, дословно: «еще постав ь задачу расчистить и порялок к в коде навсти чтобы не было разутых фалов типа сонверсешен. пусть в папке разведки пример написания кода постмрят по стиоистике и нам так переписшут частия. не лама ничего а лулучша только». Смысл: разрезать раздутые файлы (MontanaConversation.swift и т.п.) по стилю Разведки, ничего не ломая. Задача: ветка stage/code-order; этап 1 — карта, правила стиля, план, карта столкновений с открытыми ветками, первый разрез чистым переносом с механическим доказательством неизменности; файлы открытых веток — после их влития
+
+`4000836291247b05` · prev `06c7244e7deaa70b` · thread 06c7244e7dea
+
+ᚦᛒᛝᛉᛚᛈᚳᛋᛠᛇᛄᛡᚷᚳᛝᚳᛠᚫᛈᛏᛟᛈᛒᚱᚷᚦᚱᛠᛗᚾᛗᛟᛠᛒᚷᛄᚳᛞᚦᚫᚳᛚᛁᚾᛉᚣᚩᚠᛏᛟᛇᚩᛡ · gematria 2730
+
 ### 78 · 30.09 03:49 MSK · word · Мастер 2 · claude-3d
 
 Слово автора ~04:05 MSK 30.09, дословно: «икноку написать ан стне сдела в тис как нопки в мини лпреее ситсемной и в 1 функции чтобы на нее сслвлаись». Смысл: иконка «написать на стене» — в системном стиле кнопок мини-плеера, одна функция-владелец, все стены ссылаются на неё. Передано агенту stage/music-wall первым коммитом

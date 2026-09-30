@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 79 · 30.09 03:50 MSK · Мастер 2 · claude-3d · W 1.54 · x2.92 (deflate x1.9): ✎ порядок в коде: резать раздутые (MontanaConversation.swift) по стилю Разведки, не ломая → stage/code-order: карта, стиль, план, столкновения, 1-й разрез переносом + доказательство; файлы открытых веток — после влития
 - 78 · 30.09 03:49 MSK · Мастер 2 · claude-3d · W 1.88 · x3.15 (deflate x1.68): ✎ иконка «написать» на стене = стиль кнопок мини-плеера, 1 функция, все стены ссылаются → stage/music-wall
 - 77 · 30.09 03:46 MSK · Мастер 2 · claude-3d · W 1.41 · x2.67 (deflate x1.89): ⚠ ▢ «Unable to Verify App» = круг: туннель держит всё (MontanaVPNTunnel.swift:494, 506-507), установка убила его, неподтверждённая сборка не стартует; tools/mt-install-prepare.py:7-8 21-31 «install goes on» → правило: ставить только по подтверждению телефона или без приложения; вывод не резать → fix/install-fail-closed
 - 76 · 30.09 03:45 MSK · Мастер 2 · claude-3d · W 2.14 · x3.72 (deflate x1.74): ✎ ♫ плеер = полная страница; выход xmark справа вверху или свайп слева, одна дорога → stage/player-speed
@@ -72,7 +73,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 19 twins: 1.59
+Weissman, mean over 20 twins: 1.59
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
