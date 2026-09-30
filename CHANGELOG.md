@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `32d89826e5d7055b9b7f77b829706909749d8011`. Commit: pending.
-<!-- montana-change {"id": "8adfc29a-6fc8-4eb8-8a09-d629669a6b1c", "utc": "2026-09-30T03:38:47+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "wallpaper comments: the branch's own comments cut to a short why (the author's rule 30.09: the code speaks for itself); the older comment of MTUnderBarGround back as it stood; no code changed", "tree": "32d89826e5d7055b9b7f77b829706909749d8011", "parents": ["8417f129cf807fd70c1ed5cc1ac39ac9bd056aba"], "commit": null} -->
+- **Staged source tree:** `32d89826e5d7055b9b7f77b829706909749d8011`. Commit: `d58ed1be2aefbfd64c608afbec35c4337d80171c`.
+<!-- montana-change {"id": "8adfc29a-6fc8-4eb8-8a09-d629669a6b1c", "utc": "2026-09-30T03:38:47+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "wallpaper comments: the branch's own comments cut to a short why (the author's rule 30.09: the code speaks for itself); the older comment of MTUnderBarGround back as it stood; no code changed", "tree": "32d89826e5d7055b9b7f77b829706909749d8011", "parents": ["8417f129cf807fd70c1ed5cc1ac39ac9bd056aba"], "commit": "d58ed1be2aefbfd64c608afbec35c4337d80171c"} -->
 
 ### 2026-09-30T03:35:12+00:00 — Merge rollback-898 09b24f0f (build 2028, the Wall of Thoughts) into stage/music-wall: no conflicts, no own edits
 
