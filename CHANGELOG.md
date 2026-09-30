@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2043 (base, next build carries it); macOS 26.6 (Darwin 25.6.0), iOS client. No new compilation or installation claimed.
-- **Staged source tree:** `ee91d38ebc5b99e139cd303446b5ed45fb7f0717`. Commit: pending.
-<!-- montana-change {"id": "603d7d5b-358b-479c-9c53-d944155a20bb", "utc": "2026-09-30T18:26:15+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2043 (base, next build carries it)", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "mesh: a node channel keeps its nature on every dial road, and only the addressee's ack is awaited -- relayed letters no longer cut both node channels six seconds later", "tree": "ee91d38ebc5b99e139cd303446b5ed45fb7f0717", "parents": ["b0bce2ffa4ef95c9ef90f1e2a200ac83e142f105"], "commit": null} -->
+- **Staged source tree:** `ee91d38ebc5b99e139cd303446b5ed45fb7f0717`. Commit: `fb0e6277d2339e15765fbc652edf2c189155f2bb`.
+<!-- montana-change {"id": "603d7d5b-358b-479c-9c53-d944155a20bb", "utc": "2026-09-30T18:26:15+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2043 (base, next build carries it)", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "mesh: a node channel keeps its nature on every dial road, and only the addressee's ack is awaited -- relayed letters no longer cut both node channels six seconds later", "tree": "ee91d38ebc5b99e139cd303446b5ed45fb7f0717", "parents": ["b0bce2ffa4ef95c9ef90f1e2a200ac83e142f105"], "commit": "fb0e6277d2339e15765fbc652edf2c189155f2bb"} -->
 
 ### 2026-09-30T18:02:45+00:00 — Advance build number to 2043 (no mesh interface ban)
 
