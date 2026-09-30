@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** code-order agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `a0ffae8887166158762ad07d3776fe5d929978c3`. Commit: pending.
-<!-- montana-change {"id": "e1ecc993-54a0-4135-af0e-fcd118050066", "utc": "2026-09-30T01:17:01+00:00", "callsign": "code-order agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "code order: the plan in docs/CODE-ORDER.md -- the measured style of the reference, nine rules, the map of every file over 1500 lines, the cut of each, the guards that read each by path, the open branches that hold each, and the queue", "tree": "a0ffae8887166158762ad07d3776fe5d929978c3", "parents": ["a67842648398ca3281de10416bc720862439e3ce"], "commit": null} -->
+- **Staged source tree:** `a0ffae8887166158762ad07d3776fe5d929978c3`. Commit: `880f4d5bd64884f6660ceaf6c6238f5f81e0d801`.
+<!-- montana-change {"id": "e1ecc993-54a0-4135-af0e-fcd118050066", "utc": "2026-09-30T01:17:01+00:00", "callsign": "code-order agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "code order: the plan in docs/CODE-ORDER.md -- the measured style of the reference, nine rules, the map of every file over 1500 lines, the cut of each, the guards that read each by path, the open branches that hold each, and the queue", "tree": "a0ffae8887166158762ad07d3776fe5d929978c3", "parents": ["a67842648398ca3281de10416bc720862439e3ce"], "commit": "880f4d5bd64884f6660ceaf6c6238f5f81e0d801"} -->
 
 ### 2026-09-30T01:16:18+00:00 — code order 1: MontanaP2P.swift cut by type as a pure move into MontanaBonjour.swift, MontanaP2PDirect.swift and MTWire.swift; the set of non-blank lines unchanged, only import lines copied; the files join the app target; mt-proven-check.sh reads the new paths; CODEMAP.md names the owners
 
