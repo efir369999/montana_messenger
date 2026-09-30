@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T05:28:11+00:00 — the master's wall becomes the Chain of Thoughts: a short head of the three axes, and a word already in the chain is never written twice
+
+- **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
+- **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `d7a765511b665e4e17edcbb4ca5849ee706dc54b`. Commit: pending.
+<!-- montana-change {"id": "923c3a1f-c470-4b0a-88dc-eac8e1f918d4", "utc": "2026-09-30T05:28:11+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "the master's wall becomes the Chain of Thoughts: a short head of the three axes, and a word already in the chain is never written twice", "tree": "d7a765511b665e4e17edcbb4ca5849ee706dc54b", "parents": ["23b7439fa5702216ed46183b1decbe178f30b357"], "commit": null} -->
+
 ### 2026-09-30T05:16:50+00:00 — the wall's archive is drawn beside the pages, so it stays out of the tree's count
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
