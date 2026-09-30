@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `dbe835a7e4afa89e19ecb8dff20ff48c41096315`. Commit: pending.
-<!-- montana-change {"id": "6f5b5ca8-59d0-48ce-b50c-8a1b7f7df9a0", "utc": "2026-09-30T03:53:08+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge rollback-898 ef53ed90 (the council walls' TimeChain check) into fix/default-wallpaper-8: a clean automatic merge, CouncilWall only, no own edits", "tree": "dbe835a7e4afa89e19ecb8dff20ff48c41096315", "parents": ["d58ed1be2aefbfd64c608afbec35c4337d80171c", "ef53ed906a779ed29d2ce5a7286b19e8b27ec876"], "commit": null} -->
+- **Staged source tree:** `dbe835a7e4afa89e19ecb8dff20ff48c41096315`. Commit: `d78ddf5b85eb16c9e7bb48472ab49ebed65225d5`.
+<!-- montana-change {"id": "6f5b5ca8-59d0-48ce-b50c-8a1b7f7df9a0", "utc": "2026-09-30T03:53:08+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge rollback-898 ef53ed90 (the council walls' TimeChain check) into fix/default-wallpaper-8: a clean automatic merge, CouncilWall only, no own edits", "tree": "dbe835a7e4afa89e19ecb8dff20ff48c41096315", "parents": ["d58ed1be2aefbfd64c608afbec35c4337d80171c", "ef53ed906a779ed29d2ce5a7286b19e8b27ec876"], "commit": "d78ddf5b85eb16c9e7bb48472ab49ebed65225d5"} -->
 
 ### 2026-09-30T03:44:40+00:00 — council: the walls become a checkable demonstration of the TimeChain's link -- verify.py is the one canon (the tool imports it, the showcase publishes it), the student chain is published raw, every page opens with the essence ladder and heads.json, the master's page counts findings and ratings, a record is checked before it is written
 
