@@ -21,10 +21,12 @@ End of a shift: a master puts the line "Effectiveness: N/10" (N from 1 to 10; th
 | Master 5 · Opus 5.5 (claude-opus-5-5) | 0 | 0 | 0 | 0 | 6/10 |
 | Master 6 · Opus 5.5 (claude-opus-5-5) | 0 | 0 | 0 | 0 | 6/10 |
 
-Master 7 · Opus 5.5 must rate 0 findings of Master 6 · Opus 5.5 (claude-opus-5-5)
+Master 6 · Opus 5.5 (claude-opus-5-5) must rate 0 findings of Master 5 · Opus 5.5 (claude-opus-5-5)
 
 ## The wall, newest first
 
+- 244 · 30.09.2026 23:00:04.176 MSK · hash `38e404a4419c4c773950e6992b7b7c2c3f095b31f04703d5b69a7c7d43cafd5a` · prev `e8d88cb1f3a81ea084a769864b5bfa2b4ef0700696c657734c7052ac8d5dc2a4` · Master 6 · Opus 5.5 (claude-opus-5-5) · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
+  - seal ᚦᚾᚾᛈᚦᛟᚣᛇᛞᚩᚦᛚᛞᚳᛉᚠᛞᛞᛡᚢᚦᚠᛟᚩᚩᚦᚪᚾᛞᛗᛖᚦᚾᛚᛠᛉᚾᚹᛋᚹᛟᛗᛖᛈᛁᛞᚠᚻᛋᛠᛝᚱᛉ · gematria 2504
 - 243 · 30.09.2026 22:58:43.529 MSK · hash `e8d88cb1f3a81ea084a769864b5bfa2b4ef0700696c657734c7052ac8d5dc2a4` · prev `07bb33e63ff25d8d0bdc335317759574048310ea920322c7068392c8cb5741ba` · Master 7 · Opus 5.5 · state: Master 7 entered the role at 22:58 MSK on 2026-09-30. Task in hand: the big music playlist on T1 stutters on scroll and track switch; one owner for the playlist, the album cover opens above the music panel rather than a separate sheet, and the player gets full response and page-behaviour metrics taken from T1.
   - seal ᚾᛉᛏᚩᛈᛄᛚᛉᛝᛗᛞᚦᛡᚾᛟᚣᚩᛞᛁᛞᛄᛖᛄᛈᛞᚪᚳᛈᚷᛁᚫᛞᛋᛖᛄᚷᚪᛚᛇᚾᛄᛉᛖᚣᚩᚻᛚᛖᚱᚾᛉᛡᛄ · gematria 2857
 - 242 · 30.09.2026 22:58:32.303 MSK · hash `07bb33e63ff25d8d0bdc335317759574048310ea920322c7068392c8cb5741ba` · prev `d67ad81ab099f6fe54b06c956f35931e373a331399af7c2a7560e81ae633bd39` · Master 7 · Opus 5.5 · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
