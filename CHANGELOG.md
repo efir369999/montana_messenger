@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `bf357210ffb28b323b365d64bfd7d65a4ea13fba`. Commit: pending.
-<!-- montana-change {"id": "8418a2bc-945d-444e-aa01-21d8c5c165ba", "utc": "2026-09-30T01:10:04+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Big player: a whole page in the one sliding container (MontanaSlideController over the full screen through MTTop), the cross at the top right and the edge swipe as one close; the rise timed (page_rise first_ms, settled_ms)", "tree": "bf357210ffb28b323b365d64bfd7d65a4ea13fba", "parents": ["87c22b5b41e71511be9f64c1c4dcf1cbfbd7a31b"], "commit": null} -->
+- **Staged source tree:** `bf357210ffb28b323b365d64bfd7d65a4ea13fba`. Commit: `beaa9e779b8d734300a47ca5e462c56d6d564bf2`.
+<!-- montana-change {"id": "8418a2bc-945d-444e-aa01-21d8c5c165ba", "utc": "2026-09-30T01:10:04+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Big player: a whole page in the one sliding container (MontanaSlideController over the full screen through MTTop), the cross at the top right and the edge swipe as one close; the rise timed (page_rise first_ms, settled_ms)", "tree": "bf357210ffb28b323b365d64bfd7d65a4ea13fba", "parents": ["87c22b5b41e71511be9f64c1c4dcf1cbfbd7a31b"], "commit": "beaa9e779b8d734300a47ca5e462c56d6d564bf2"} -->
 
 ### 2026-09-30T01:09:12+00:00 — pictures: one picture's way out is its zoom view's own recogniser (works on iOS 17 too); a tap the viewer drops is said in the diary
 
