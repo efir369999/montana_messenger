@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2037 (source change; build 2038 pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `338c111dacd8d5d41c51d0255a95cc3c8e14fe4a`. Commit: pending.
-<!-- montana-change {"id": "7403bfb5-3237-47df-b118-35772ebbd2b1", "utc": "2026-09-30T16:36:13+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2037 (source change; build 2038 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN wall: no server is measured by itself -- the hourly beat, the return and the pull only reload plans; a ping only by the section's gauge under the finger", "tree": "338c111dacd8d5d41c51d0255a95cc3c8e14fe4a", "parents": ["2752dee9be5431e1254e40a2f7ee3c19dafb056d"], "commit": null} -->
+- **Staged source tree:** `338c111dacd8d5d41c51d0255a95cc3c8e14fe4a`. Commit: `df848961d74bebd90db76431755407c6bfc4d412`.
+<!-- montana-change {"id": "7403bfb5-3237-47df-b118-35772ebbd2b1", "utc": "2026-09-30T16:36:13+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2037 (source change; build 2038 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN wall: no server is measured by itself -- the hourly beat, the return and the pull only reload plans; a ping only by the section's gauge under the finger", "tree": "338c111dacd8d5d41c51d0255a95cc3c8e14fe4a", "parents": ["2752dee9be5431e1254e40a2f7ee3c19dafb056d"], "commit": "df848961d74bebd90db76431755407c6bfc4d412"} -->
 
 ### 2026-09-30T16:32:47+00:00 — VPN: one Montana profile on the device -- a failed reading is not an absence, a second profile leaves, a profile is born only by the person switching the VPN on
 
