@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `072867e7da249d07eb79cce0c32d4ff1365cf0e8`. Commit: pending.
-<!-- montana-change {"id": "e5d52075-99c1-4d27-9e43-b6427e18c88c", "utc": "2026-09-30T03:16:43+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge the main line 8cd3cb4e into stage/privacy-in-app, no edits of its own", "tree": "072867e7da249d07eb79cce0c32d4ff1365cf0e8", "parents": ["bacd36d5fce979c2ec32b8dcf47c3d540107ab30", "8cd3cb4ec04c19d3cf8a3439f3e17196cf884c1c"], "commit": null} -->
+- **Staged source tree:** `072867e7da249d07eb79cce0c32d4ff1365cf0e8`. Commit: `25aaeca3cbfbe4962c48af07f7ce77abb4fd20f6`.
+<!-- montana-change {"id": "e5d52075-99c1-4d27-9e43-b6427e18c88c", "utc": "2026-09-30T03:16:43+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge the main line 8cd3cb4e into stage/privacy-in-app, no edits of its own", "tree": "072867e7da249d07eb79cce0c32d4ff1365cf0e8", "parents": ["bacd36d5fce979c2ec32b8dcf47c3d540107ab30", "8cd3cb4ec04c19d3cf8a3439f3e17196cf884c1c"], "commit": "25aaeca3cbfbe4962c48af07f7ce77abb4fd20f6"} -->
 
 ### 2026-09-30T03:16:17+00:00 — build 2028: the Feed is named the Wall of Thoughts; over 2027
 
