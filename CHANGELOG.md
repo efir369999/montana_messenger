@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T18:02:15+00:00 — VPN: no mesh dial bars an interface -- the ban left every node dial without a path under our tunnel; the mesh rides what the system routes
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2042 (source change; build 2043 pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `322f6f07cb7532226b46660fa07a2a2e0a3b079b`. Commit: pending.
+<!-- montana-change {"id": "980e0e45-07e1-426c-91a7-34bc3f87c51d", "utc": "2026-09-30T18:02:15+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2042 (source change; build 2043 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN: no mesh dial bars an interface -- the ban left every node dial without a path under our tunnel; the mesh rides what the system routes", "tree": "322f6f07cb7532226b46660fa07a2a2e0a3b079b", "parents": ["30d702632e27f4410238f0f846e1e0c15e83c4af"], "commit": null} -->
+
 ### 2026-09-30T17:59:02+00:00 — Merge the main line 199bec37 (build 2042) into fix/showcase-newest-first -- no own edits
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
