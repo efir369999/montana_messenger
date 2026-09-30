@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** merge-queue (агент Мастера 3) / claude-opus-5-5.
 - **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `09f47caa155aa3e831f9c52b95b9fbe5f536623f`. Commit: pending.
-<!-- montana-change {"id": "82df9bec-a85f-4e52-8b74-bc7d0bc754d4", "utc": "2026-09-30T04:24:09+00:00", "callsign": "merge-queue (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Merge rollback-898 b253e28a (build 2025, the closed install road) into fix/vpn-wall-whitelist-auto: the merge begun by the previous queue agent; tools/mt-vpn-recovery-check.py keeps both sides -- the VPN wall road asserts of the branch, then the install road checks of the main line", "tree": "09f47caa155aa3e831f9c52b95b9fbe5f536623f", "parents": ["20403535439010f4d671fdeafa2070f78766a43a", "b253e28aa16b09a6aa9e32ca35b030f66d983fc5"], "commit": null} -->
+- **Staged source tree:** `09f47caa155aa3e831f9c52b95b9fbe5f536623f`. Commit: `e085ab564a32c0a2a911a8497ee8cf3a12e597fb`.
+<!-- montana-change {"id": "82df9bec-a85f-4e52-8b74-bc7d0bc754d4", "utc": "2026-09-30T04:24:09+00:00", "callsign": "merge-queue (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Merge rollback-898 b253e28a (build 2025, the closed install road) into fix/vpn-wall-whitelist-auto: the merge begun by the previous queue agent; tools/mt-vpn-recovery-check.py keeps both sides -- the VPN wall road asserts of the branch, then the install road checks of the main line", "tree": "09f47caa155aa3e831f9c52b95b9fbe5f536623f", "parents": ["20403535439010f4d671fdeafa2070f78766a43a", "b253e28aa16b09a6aa9e32ca35b030f66d983fc5"], "commit": "e085ab564a32c0a2a911a8497ee8cf3a12e597fb"} -->
 
 ### 2026-09-30T04:21:11+00:00 — code bench: tools/mt-code-bench.py lists the places on three axes (elegance, aesthetics, safety) for a tree, a commit or two commits, as evidence for findings, not a score; the transport guard lines read one file list and lose a dated comment
 
