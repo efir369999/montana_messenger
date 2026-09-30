@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `ea5bcd2fbd17896b8bfdd4d98dc66bb7d7f0622d`. Commit: pending.
-<!-- montana-change {"id": "0676221a-576a-4fdb-aab4-b790b1e75fa9", "utc": "2026-09-30T03:19:40+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge rollback-898 09b24f0f (build 2028, the Wall of Thoughts) into fix/default-wallpaper-8: a clean automatic merge, no own edits", "tree": "ea5bcd2fbd17896b8bfdd4d98dc66bb7d7f0622d", "parents": ["292f369c60f91ddb8bb899e4d65e329802cc2958", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": null} -->
+- **Staged source tree:** `ea5bcd2fbd17896b8bfdd4d98dc66bb7d7f0622d`. Commit: `8417f129cf807fd70c1ed5cc1ac39ac9bd056aba`.
+<!-- montana-change {"id": "0676221a-576a-4fdb-aab4-b790b1e75fa9", "utc": "2026-09-30T03:19:40+00:00", "callsign": "default-wall-8 agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge rollback-898 09b24f0f (build 2028, the Wall of Thoughts) into fix/default-wallpaper-8: a clean automatic merge, no own edits", "tree": "ea5bcd2fbd17896b8bfdd4d98dc66bb7d7f0622d", "parents": ["292f369c60f91ddb8bb899e4d65e329802cc2958", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": "8417f129cf807fd70c1ed5cc1ac39ac9bd056aba"} -->
 
 ### 2026-09-30T03:17:17+00:00 — council: a wall record no longer redraws the local WALL.md, which the author removed
 
