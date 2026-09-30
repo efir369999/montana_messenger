@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:33:26+00:00 — Merge stage/second-identity-2 (2049b25a: the main line 62e9d0df, build 2021, with the second identity's lineage) into fix/feeds-scroll-top: under the lists' arrow to the top, the number on the platform's thumb, the playlist's placeholder and the source filter
+
+- **Callsign / model:** claude-9e builder / feeds-scroll-top / Claude Opus 5.5.
+- **Build / OS:** 2021 source; not built; iOS 26.6 / 17 targets. No new compilation or installation claimed.
+- **Staged source tree:** `715d7ef28f87b8837bc3bf8451bdd51366f2e3b0`. Commit: pending.
+<!-- montana-change {"id": "33f40bdc-9f91-43a2-b443-2bbf20210cb0", "utc": "2026-09-30T00:33:26+00:00", "callsign": "claude-9e builder / feeds-scroll-top", "model": "Claude Opus 5.5", "build": "2021 source; not built", "os": "iOS 26.6 / 17 targets", "summary": "Merge stage/second-identity-2 (2049b25a: the main line 62e9d0df, build 2021, with the second identity's lineage) into fix/feeds-scroll-top: under the lists' arrow to the top, the number on the platform's thumb, the playlist's placeholder and the source filter", "tree": "715d7ef28f87b8837bc3bf8451bdd51366f2e3b0", "parents": ["63a59515745e5d682bbdfe151c008e79b3f15fdf", "2049b25a24cfad05131479bab4950100be4611bd"], "commit": null} -->
+
 ### 2026-09-30T00:30:44+00:00 — build 2023: the chess menu -- a new game and the pair's score (wins, losses, draws), a fresh invitation raises the board at once; over 2022
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
