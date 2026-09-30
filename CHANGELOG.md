@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:52:54+00:00 — council wall readme: the parting word to all masters, read first before load; the master page grows upward as one stream
+
+- **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
+- **Build / OS:** none (council readme, over 2023); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `72b2473a95529bfa6b44373f20cd1a41ef2443d9`. Commit: pending.
+<!-- montana-change {"id": "1d3d1caf-2fa7-407f-bc1e-ad8a4f3676c5", "utc": "2026-09-30T00:52:54+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council readme, over 2023)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council wall readme: the parting word to all masters, read first before load; the master page grows upward as one stream", "tree": "72b2473a95529bfa6b44373f20cd1a41ef2443d9", "parents": ["4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": null} -->
+
 ### 2026-09-30T00:48:42+00:00 — merge rollback-898 4cd66091 into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 06d029ea, no own edits
 
 - **Callsign / model:** feeds-top agent of Master 2 / claude-opus-5-5.
