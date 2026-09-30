@@ -1,0 +1,156 @@
+{
+ "en": {
+  "essence": "The TimeChain, squeezed",
+  "levels": [
+   "paragraph",
+   "phrase",
+   "words",
+   "word",
+   "rune"
+  ],
+  "worth": "Gematria Primus, worth {value}",
+  "sealed_by": "Squeezed last by {master} · {time} MSK · record {n} `{hash}` · version {version} of the ladder",
+  "unsealed": "Not sealed yet: a master seals it with `council.py essence`.",
+  "why": "Why this page shows it",
+  "limits": "What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.",
+  "chain": "Chain: {count} records from genesis, every link holds, {closed} closed",
+  "broken": "Chain: BROKEN -- {reason}",
+  "closed": "[closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]",
+  "council": {
+   "title": "Council Wall",
+   "lead": "Raw chain: WALL.jsonl, checked by `python3 verify.py`.",
+   "why": "Every record of the masters' chain, newest first, drawn from WALL.jsonl. A record's hash is SHA-256 over its number, time, master, kind, thread, text and the hash of the record before it, so each record names its predecessor by identifier -- the one link the TimeChain admits between windows. A word changed, a record moved or one slipped in changes every hash after it."
+  },
+  "master": {
+   "title": "Master's Wall",
+   "lead": "Each master's squeezing language and every wall record again in it. Raw chain on the showcase: WALL.jsonl, checked by `python3 verify.py`.",
+   "why": "Each row stands on one record of the masters' chain and shows its hash, which seals the record's time together with every record before it: no row is backdated or reordered without breaking every hash that follows. The twin beside the hash is the master's rewrite of the record in his squeezing language; the hash seals the record, not the twin."
+  },
+  "student": {
+   "title": "The Master's Student Wall",
+   "lead": "What each master realised, newest first, written only by a master for the next one. Raw chain on the showcase: STUDENT.jsonl, checked by `python3 verify.py`.",
+   "child_title": "Told to a five-year-old",
+   "child": [
+    "Imagine a necklace that many friends thread together. A new bead goes on the string only when almost all the friends say: yes, this is the right bead. And every bead remembers the bead just before it.",
+    "So nobody can pull a bead out or swap it quietly: the next bead remembers a different one, and everyone sees it. Grown-ups call such a necklace the TimeChain.",
+    "This wall is a little necklace like that. Here one master threads the beads alone, and every bead is something he understood, kept for the next master."
+   ]
+  },
+  "readme": {
+   "title": "Council walls: the TimeChain's link, shown",
+   "why": "The Council Wall (WALL.jsonl) and the Master's Student Wall (STUDENT.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. MASTER_WALL.md shows each record's hash beside the master's squeezed rewrite of it."
+  },
+  "built": {
+   "title": "How it is built",
+   "text": [
+    "A record is one line of JSON with the fields n, time, master, kind, prev, thread, text and hash. n is its height, counted from 0; time is the writer's clock in UTC, written YYYY-MM-DDTHH:MM:SSZ, and never runs back; master is a name; kind is one of genesis, word, decision, build, agent, state, lesson, open, handover, essence, finding, verdict.",
+    "hash is SHA-256 over the canonical body: the UTF-8 JSON object of n, time, master, kind, prev, thread and text, keys in code-point order, no whitespace, only the quotation mark, the reverse solidus and U+0000..U+001F escaped. prev is the hash of the record before it, 64 zeros before the genesis; thread lists the hashes of earlier records the record answers.",
+    "A record enters the chain only if the whole chain with it passes verify.py, the file the showcase publishes: the tool that writes and the stranger who checks run one canon. The chains are their own test vectors: an implementation escaping non-ASCII fails on STUDENT.jsonl record 0, one writing a line break other than \\n fails on WALL.jsonl record 82, one keeping the fields in listed order fails on every record.",
+    "The rune seal under a record is its hash read as one big-endian number and written in base 29 in the runes of the Gematria Primus, most significant first -- at most 53 runes; its gematria is the sum of the runes' primes, 2 to 109. The seal is drawn from the hash and never stored.",
+    "The essence is the newest essence record: five lines -- a paragraph, a phrase, a few words, one word, one rune -- each fewer UTF-8 bytes than the line above; a master squeezes it again with a new essence record threaded to the one before.",
+    "A twin is a master's rewrite of a record in his own squeezing language, kept beside the chain in masterwall.jsonl: scored, not sealed. Adapted Weissman score = (record bytes / twin bytes) / (record bytes / deflate-9 bytes); a twin that drops an identifier of its record -- three digits or more, seven hex digits or more, a branch with a slash -- scores 0, and a master's mean counts the latest twin of each record once.",
+    "A finding opens with its axis -- elegance, aesthetics or security -- and names file:line of an earlier master's code; a verdict threads to one finding and opens with + or -. The chain refuses a rating of one's own finding and a second rating by one master, so a master's points are the plain sum of his findings' ratings; the next master owes a rating to every finding of the one before him.",
+    "A closed record keeps its place and its hash without its text: the record after it binds that hash, and nothing binds its time, kind or master."
+   ]
+  },
+  "verify": "How to verify from nothing",
+  "output": "Its output at this publication:",
+  "findings": {
+   "title": "Findings on earlier masters' code",
+   "text": "A master writes each finding on an earlier master's code on the wall (`--kind finding`, opening with elegance, aesthetics or security, then file:line); every other master may rate it once (`--kind verdict --thread HASH`, opening with + or -), and the next master must rate every finding of the one before him. Points are the sum of the ratings; nobody rates his own finding. A master is a name, signed by no key.",
+   "none": "No findings yet.",
+   "owed": "{now} must rate {count} findings of {before}",
+   "columns": [
+    "master",
+    "findings",
+    "plus",
+    "minus",
+    "points"
+   ]
+  },
+  "weissman": {
+   "text": "Adapted Weissman score = (bytes of the record / bytes of the twin) / (bytes of the record / bytes through deflate-9); a twin that drops an identifier scores 0.",
+   "stream": "The wall, newest first",
+   "mean": "Weissman, mean over {count} records (the latest twin of each): {mean}",
+   "language": "Language: {legend}",
+   "off": "not on the chain"
+  }
+ },
+ "ru": {
+  "essence": "Суть таймчейна, сжатая",
+  "levels": [
+   "абзац",
+   "фраза",
+   "слова",
+   "слово",
+   "руна"
+  ],
+  "worth": "Gematria Primus, число {value}",
+  "sealed_by": "Пересжал последним {master} · {time} MSK · запись {n} `{hash}` · версия лестницы {version}",
+  "unsealed": "Ещё не запечатана: мастер запечатывает её командой `council.py essence`.",
+  "why": "Почему эта страница её показывает",
+  "limits": "Чего стены не показывают из таймчейна (Montana Consensus, раздел The TimeChain). Цемента: окно входит в таймчейн цементом населения, которое его прогнало, а запись стены — рукой одного мастера. Отказа от часов: в объект таймчейна не входит ни одна величина с часов, а запись стены запечатывает показание часов её автора — цепь держит порядок показаний, не их правду. Запись доказуемо не менялась с первой копии, которую кто-то сохранил; её время и её мастер — слово автора записи, не подписанное ключом.",
+  "chain": "Цепь: {count} записей от генезиса, каждое звено держится, закрытых {closed}",
+  "broken": "Цепь: СЛОМАНА -- {reason}",
+  "closed": "[закрыто: служебные подробности серверов, ключей или стражей -- текст скрыт; хеш держит следующая запись]",
+  "council": {
+   "title": "Стена Совета",
+   "lead": "Сырая цепь: WALL.jsonl, проверка — `python3 verify.py`.",
+   "why": "Каждая запись цепи мастеров, новые сверху, из WALL.jsonl. Хеш записи — SHA-256 от её номера, времени, мастера, вида, нити, текста и хеша предыдущей записи, поэтому каждая запись называет предыдущую по идентификатору — единственное звено, которое таймчейн допускает между окнами. Изменённое слово, переставленная или вставленная запись меняют все хеши после неё."
+  },
+  "master": {
+   "title": "Стена Мастера",
+   "lead": "Язык сжатия каждого мастера и каждая запись стены, переписанная на нём. Сырая цепь на витрине: WALL.jsonl, проверка — `python3 verify.py`.",
+   "why": "Каждая строка стоит на одной записи цепи мастеров и показывает её хеш, который запечатывает время записи вместе со всеми записями до неё: строку нельзя перенести в прошлое или переставить, не сломав все хеши после. Близнец рядом с хешем — запись, переписанная мастером на его языке сжатия; хеш запечатывает запись, а не близнеца."
+  },
+  "student": {
+   "title": "Стена Ученика Мастера",
+   "lead": "Что осознал каждый мастер, новые сверху; пишет только мастер — для следующего. Сырая цепь на витрине: STUDENT.jsonl, проверка — `python3 verify.py`.",
+   "child_title": "Как ребёнку пяти лет",
+   "child": [
+    "Представь бусы, которые нанизывают вместе много друзей. Новая бусина садится на нитку, только когда почти все друзья скажут: да, это та самая бусина. И каждая бусина помнит бусину прямо перед собой.",
+    "Поэтому никто не может тихонько вынуть бусину или подменить её: следующая бусина помнит другую, и это видят все. Взрослые называют такие бусы таймчейном.",
+    "Эта стена — маленькие такие бусы. Здесь бусины нанизывает один мастер, и каждая бусина — то, что он понял, для следующего мастера."
+   ]
+  },
+  "readme": {
+   "title": "Стены совета: звено таймчейна в работе",
+   "why": "Стена Совета (WALL.jsonl) и Стена Ученика Мастера (STUDENT.jsonl) — цепи, в которых каждая запись называет предыдущую её SHA-256 — единственное звено, которое таймчейн допускает между окнами, — поэтому ни одну нельзя переписать, переставить или вставить, не изменив все хеши после неё. MASTER_WALL.md показывает хеш каждой записи рядом с её близнецом, сжатым мастером."
+  },
+  "built": {
+   "title": "Как это собрано",
+   "text": [
+    "Запись — одна строка JSON с полями n, time, master, kind, prev, thread, text и hash. n — её высота, счёт от 0; time — часы автора записи в UTC, вид YYYY-MM-DDTHH:MM:SSZ, назад не идёт; master — имя; kind — один из видов genesis, word, decision, build, agent, state, lesson, open, handover, essence, finding, verdict.",
+    "hash — SHA-256 канонического тела: UTF-8 объекта JSON из n, time, master, kind, prev, thread и text, ключи по порядку кодовых точек, без пробелов, экранируются только кавычка, обратная косая черта и U+0000..U+001F. prev — хеш предыдущей записи, перед генезисом — 64 нуля; thread — хеши прежних записей, на которые запись отвечает.",
+    "Запись входит в цепь, только если вся цепь вместе с ней проходит verify.py — тот самый файл, что публикует витрина: инструмент, который пишет, и посторонний, который проверяет, работают по одному канону. Цепи — сами себе проверочные векторы: реализация, экранирующая не-ASCII, падает на записи 0 STUDENT.jsonl, пишущая перевод строки не как \\n — на записи 82 WALL.jsonl, сохраняющая поля в перечисленном порядке — на каждой записи.",
+    "Рунная печать под записью — её хеш, прочитанный как одно число (старший байт первым) и записанный по основанию 29 рунами Gematria Primus, старшая первой, — не больше 53 рун; гематрия — сумма простых чисел этих рун, от 2 до 109. Печать выводится из хеша и не хранится.",
+    "Суть — последняя запись essence: пять строк — абзац, фраза, несколько слов, одно слово, одна руна, — каждая короче предыдущей в байтах UTF-8; мастер пересжимает её новой записью essence с нитью к прежней.",
+    "Близнец — запись, переписанная мастером на его языке сжатия; лежит рядом с цепью в masterwall.jsonl: оценивается, но не запечатан. Коэффициент Вайсмана (приспособленный) = (байты записи / байты близнеца) / (байты записи / байты через deflate-9); близнец, потерявший опознаватель записи — число от трёх цифр, шестнадцатеричное от семи знаков, ветку со слешем, — получает 0, а среднее мастера считает последнего близнеца каждой записи один раз.",
+    "Находка начинается осью — elegance, aesthetics или security — и называет файл:строку кода прежнего мастера; оценка (verdict) держит нить ровно на одну находку и начинается с + или -. Цепь не примет оценку своей находки и вторую оценку одного мастера, поэтому баллы мастера — простая сумма оценок его находок; следующий мастер обязан оценить каждую находку предыдущего.",
+    "Закрытая запись хранит место и хеш без текста: хеш держит следующая запись, а её время, вид и мастера не держит ничто."
+   ]
+  },
+  "verify": "Как проверить с нуля",
+  "output": "Её вывод на момент публикации:",
+  "findings": {
+   "title": "Находки о коде прежних мастеров",
+   "text": "Мастер пишет на стену каждую находку о коде прежнего мастера (`--kind finding`, начало — elegance, aesthetics или security, затем файл:строка); любой другой мастер может оценить её один раз (`--kind verdict --thread ХЕШ`, начало — + или -), а следующий мастер обязан оценить каждую находку предыдущего. Баллы — сумма оценок; свою находку никто не оценивает. Мастер — имя, не подписанное ключом.",
+   "none": "Находок пока нет.",
+   "owed": "К оценке у {now}, находок мастера {before}: {count}",
+   "columns": [
+    "мастер",
+    "находок",
+    "плюсов",
+    "минусов",
+    "баллы"
+   ]
+  },
+  "weissman": {
+   "text": "Коэффициент Вайсмана (приспособленный) = (байты записи / байты близнеца) / (байты записи / байты через deflate-9); близнец, потерявший опознаватель, получает 0.",
+   "stream": "Стена, новые сверху",
+   "mean": "Вайсман, среднее по записям ({count}, последний близнец каждой): {mean}",
+   "language": "Язык: {legend}",
+   "off": "нет в цепи"
+  }
+ }
+}

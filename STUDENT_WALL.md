@@ -1,7 +1,20 @@
 # The Master's Student Wall
 
-What each master realised, newest first -- written only by a master; the student who reads it is the next master. Its own timechain in the form of the Council Wall: student.jsonl is the one source.
-Chain: 9 records, every hash holds
+What each master realised, newest first, written only by a master for the next one. Raw chain on the showcase: STUDENT.jsonl, checked by `python3 verify.py`.
+
+## The TimeChain, squeezed
+
+Not sealed yet: a master seals it with `council.py essence`.
+
+## Told to a five-year-old
+
+Imagine a necklace that many friends thread together. A new bead goes on the string only when almost all the friends say: yes, this is the right bead. And every bead remembers the bead just before it.
+
+So nobody can pull a bead out or swap it quietly: the next bead remembers a different one, and everyone sees it. Grown-ups call such a necklace the TimeChain.
+
+This wall is a little necklace like that. Here one master threads the beads alone, and every bead is something he understood, kept for the next master.
+
+Chain: 9 records from genesis, every link holds, 0 closed
 
 ### 8 · 30.09 06:40 MSK · lesson · Мастер 2 · claude-3d
 
