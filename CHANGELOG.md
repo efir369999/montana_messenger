@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** 2025; macOS 26.6 (Darwin 25.6.0); for T1 and T3. No new compilation or installation claimed.
-- **Staged source tree:** `4914185a691596791a393a91e959ff0ce5ed2f5a`. Commit: pending.
-<!-- montana-change {"id": "2cc7f300-660f-4387-8434-a6391907f0b9", "utc": "2026-09-30T01:11:41+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2025", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2025: the same app as the burned 2024 (a post on a friend's wall as a card in the pair's chat); 2024 was reserved and never sealed; the install road is closed by default (the phone witnesses the lifted reconnect)", "tree": "4914185a691596791a393a91e959ff0ce5ed2f5a", "parents": ["4bed79b478e8dacd6b1326e29fdc56b579f55266"], "commit": null} -->
+- **Staged source tree:** `4914185a691596791a393a91e959ff0ce5ed2f5a`. Commit: `b253e28aa16b09a6aa9e32ca35b030f66d983fc5`.
+<!-- montana-change {"id": "2cc7f300-660f-4387-8434-a6391907f0b9", "utc": "2026-09-30T01:11:41+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "2025", "os": "macOS 26.6 (Darwin 25.6.0); for T1 and T3", "summary": "build 2025: the same app as the burned 2024 (a post on a friend's wall as a card in the pair's chat); 2024 was reserved and never sealed; the install road is closed by default (the phone witnesses the lifted reconnect)", "tree": "4914185a691596791a393a91e959ff0ce5ed2f5a", "parents": ["4bed79b478e8dacd6b1326e29fdc56b579f55266"], "commit": "b253e28aa16b09a6aa9e32ca35b030f66d983fc5"} -->
 
 ### 2026-09-30T01:11:07+00:00 — Big player: the connected output device's own glyph (AirPods, headphones, car, speaker, AirPlay) at the plate's bottom right from MontanaAudioRoute.Way, the system route picker clear over it
 
