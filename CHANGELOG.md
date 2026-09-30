@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T18:30:07+00:00 — council walls: the showcase commit names each chain's head record number, as the wall shows it, instead of a count from genesis
+
+- **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2044 (base; wall tooling, not in the app); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `ce33de7735265a7608aadbe8ccb4ce86f4308c8f`. Commit: pending.
+<!-- montana-change {"id": "8c98128a-0942-4fbc-892f-2560b5ddfd09", "utc": "2026-09-30T18:30:07+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2044 (base; wall tooling, not in the app)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council walls: the showcase commit names each chain's head record number, as the wall shows it, instead of a count from genesis", "tree": "ce33de7735265a7608aadbe8ccb4ce86f4308c8f", "parents": ["ec15f104a862582c224287059e4af28ffad0c642"], "commit": null} -->
+
 ### 2026-09-30T18:28:10+00:00 — Advance build number to 2044
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
