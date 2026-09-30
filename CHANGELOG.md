@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** T1 / iPhone 13 Pro Max.
 - **Build / OS:** 2036; iOS 26.7.1. No new compilation or installation claimed.
-- **Staged source tree:** `335113b5b16778248066f9bb53b93df57cf7138d`. Commit: pending.
-<!-- montana-change {"id": "be82ebe6-5998-4f84-8737-f3f2b874f99f", "utc": "2026-09-30T12:29:17+00:00", "callsign": "T1", "model": "iPhone 13 Pro Max", "build": "2036", "os": "iOS 26.7.1", "summary": "Categories for Montana and system wallpapers; peer avatar display accepts only an unambiguous image owned by the active person.", "tree": "335113b5b16778248066f9bb53b93df57cf7138d", "parents": ["58b3191ddbdfc97a27433e852ee1ba5bbff25af9"], "commit": null} -->
+- **Staged source tree:** `335113b5b16778248066f9bb53b93df57cf7138d`. Commit: `3ffea992747e703f2ef4210c8f9608580a3fe698`.
+<!-- montana-change {"id": "be82ebe6-5998-4f84-8737-f3f2b874f99f", "utc": "2026-09-30T12:29:17+00:00", "callsign": "T1", "model": "iPhone 13 Pro Max", "build": "2036", "os": "iOS 26.7.1", "summary": "Categories for Montana and system wallpapers; peer avatar display accepts only an unambiguous image owned by the active person.", "tree": "335113b5b16778248066f9bb53b93df57cf7138d", "parents": ["58b3191ddbdfc97a27433e852ee1ba5bbff25af9"], "commit": "3ffea992747e703f2ef4210c8f9608580a3fe698"} -->
 
 ### 2026-09-30T12:10:41+00:00 — Build 2035: same verified VPN Wall, identity, Saved Messages, and avatar-ownership fixes; number advanced because 2033 and 2034 were reserved before compilation and delivery policy forbids reusing reservations.
 
