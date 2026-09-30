@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:32:48+00:00 — pictures: the branch's comments cut to a short why, openInGallery named openPicture (no behaviour change)
+
+- **Callsign / model:** photo-avatar agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `1e15e528706ffc1f56a934b0880a4db20eeb5628`. Commit: pending.
+<!-- montana-change {"id": "acac0900-f830-4963-a0ef-de8c635f5216", "utc": "2026-09-30T03:32:48+00:00", "callsign": "photo-avatar agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "pictures: the branch's comments cut to a short why, openInGallery named openPicture (no behaviour change)", "tree": "1e15e528706ffc1f56a934b0880a4db20eeb5628", "parents": ["53eeb10c110868abdee06902be24b8d9aa17b4b5"], "commit": null} -->
+
 ### 2026-09-30T03:29:30+00:00 — Merge rollback-898 09b24f0f (build 2028, council) into stage/player-speed, no own edits
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
