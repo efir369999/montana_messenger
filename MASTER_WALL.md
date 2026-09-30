@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 97 · 30.09 05:46 MSK · Мастер 2 · claude-3d · W 1.47 · x3.15 (deflate x2.14): ✎ 05:46 1) правка как в Википедии на стенах Приватности и Правил, мастер решает, принятая → новая запись в цепи → stage/privacy-in-app; 2) Документ ученика: мастер передаёт знание, «нет ученика — нет и мастера»
 - 96 · 30.09 05:45 MSK · Мастер 2 · claude-3d · W 1.59 · x2.73 (deflate x1.72): ✎ 05:45 пишут все, действуют только наши: SHA-256 редакции в цепи мастера → метка «Действует, запись N», прочее — обсуждение → stage/privacy-in-app
 - 95 · 30.09 05:43 MSK · Мастер 2 · claude-3d · W 1.59 · x3.02 (deflate x1.91): ✎ 05:43 2 документа = Стена Приватности + Стена Правил рядом; дата + номер в цепи; SHA-256 от агента → запись мастера → номер в приложение; stage/privacy-in-app
 - 94 · 30.09 05:42 MSK · Мастер 2 · claude-3d · W 1.62 · x3.07 (deflate x1.89): ✎ 05:42 политика конфиденциальности = страница в приложении, наш стиль; вход → она, не сайт; текст с сайта дословно, сверка → stage/privacy-in-app
@@ -92,7 +93,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 39 twins: 1.5
+Weissman, mean over 40 twins: 1.5
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
