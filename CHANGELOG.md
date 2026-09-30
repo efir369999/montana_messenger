@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T12:04:44+00:00 — Build 2034: same verified VPN Wall, identity, Saved Messages, and avatar-ownership fixes as 2033; number advanced because 2033 was reserved before compilation and policy forbids reusing reservations.
+
+- **Callsign / model:** Мастер 4 · Codex / Codex GPT-5.
+- **Build / OS:** 2034; macOS 26.0.1; T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `c3753408f5c74564eec3f49964ec5f1bd8639eeb`. Commit: pending.
+<!-- montana-change {"id": "43e7f324-3aef-44a6-a443-ae71dd7b61a6", "utc": "2026-09-30T12:04:44+00:00", "callsign": "Мастер 4 · Codex", "model": "Codex GPT-5", "build": "2034", "os": "macOS 26.0.1; T1 iOS 26.7.1, T3 iOS 18.3", "summary": "Build 2034: same verified VPN Wall, identity, Saved Messages, and avatar-ownership fixes as 2033; number advanced because 2033 was reserved before compilation and policy forbids reusing reservations.", "tree": "c3753408f5c74564eec3f49964ec5f1bd8639eeb", "parents": ["7e084edda45db57f66f8e5d1039571fa1c5323a7"], "commit": null} -->
+
 ### 2026-09-30T12:01:00+00:00 — Build 2033: VPN Wall is manual and lists only live paid servers; identity switches rebuild chat state; Saved Messages stays local and writable; absent or ambiguous contact photos show the black Time mark, never another person.
 
 - **Callsign / model:** Мастер 4 · Codex / Codex GPT-5.
