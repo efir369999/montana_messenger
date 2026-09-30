@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T21:52:12+00:00 — Merge the main line (build number 2052) into fix/player-cover-inline before build 2053; no own edits
+
+- **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2052 base, 2053 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `c3c38a9f2e1a63876da7be358811aee0a7d71c4d`. Commit: pending.
+<!-- montana-change {"id": "817d0e42-885d-4ce9-b9b4-c8230fab365e", "utc": "2026-09-30T21:52:12+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2052 base, 2053 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Merge the main line (build number 2052) into fix/player-cover-inline before build 2053; no own edits", "tree": "c3c38a9f2e1a63876da7be358811aee0a7d71c4d", "parents": ["d631393eaae36d1b485f25b0b3fedfdfa8f6f1bc", "87c40557c7825af962b9c5204d73546191e658c8"], "commit": null} -->
+
 ### 2026-09-30T21:51:32+00:00 — One place for every page's action button and the arrow up on its line; the unfolded plate's five buttons even, the native share, the repeat's round with its state said under the name, the source's glyph in the system's blue; the cover's waves on the beats to the screen's edges; the track's number centres its row
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
