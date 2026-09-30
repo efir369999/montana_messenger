@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2049 base, next build pending; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `4c257968835909354be916eb52d03fcf928a30a3`. Commit: pending.
-<!-- montana-change {"id": "65f64b62-aaa6-4cb1-a2dc-7c27fabb8057", "utc": "2026-09-30T20:34:14+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2049 base, next build pending", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Page swipes at the root: the UI state is observed by the fields a view reads (Observation), the stroke's neighbour and offset are read by the row of pages alone, pages are built only when their own box is drawn, and the roles swap after the spring", "tree": "4c257968835909354be916eb52d03fcf928a30a3", "parents": ["31c304dfbab9d9b246d987c182cdc5eb1d901600"], "commit": null} -->
+- **Staged source tree:** `4c257968835909354be916eb52d03fcf928a30a3`. Commit: `5768d244cd2a2de8f713139495d2c0f8300aa38c`.
+<!-- montana-change {"id": "65f64b62-aaa6-4cb1-a2dc-7c27fabb8057", "utc": "2026-09-30T20:34:14+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2049 base, next build pending", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Page swipes at the root: the UI state is observed by the fields a view reads (Observation), the stroke's neighbour and offset are read by the row of pages alone, pages are built only when their own box is drawn, and the roles swap after the spring", "tree": "4c257968835909354be916eb52d03fcf928a30a3", "parents": ["31c304dfbab9d9b246d987c182cdc5eb1d901600"], "commit": "5768d244cd2a2de8f713139495d2c0f8300aa38c"} -->
 
 ### 2026-09-30T20:23:43+00:00 — Advance build number to 2049
 
