@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T06:13:31+00:00 — merge the main line under the avatar mask of a video call
+
+- **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
+- **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `80dcf417395909bb13cda5b02c2a7e548fa8987d`. Commit: pending.
+<!-- montana-change {"id": "35e9a817-6943-4ea1-b04c-14ed5e55505f", "utc": "2026-09-30T06:13:31+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge the main line under the avatar mask of a video call", "tree": "80dcf417395909bb13cda5b02c2a7e548fa8987d", "parents": ["f4d07cf8e3fb5ca7b5f97658b979d2a4c4db5ca7", "1ddae9cb79a22947a678bd7a058fe50c7a7d40a8"], "commit": null} -->
+
 ### 2026-09-30T06:09:35+00:00 — merge the main line under the cover's glass waves
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
