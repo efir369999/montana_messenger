@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T12:10:41+00:00 — Build 2035: same verified VPN Wall, identity, Saved Messages, and avatar-ownership fixes; number advanced because 2033 and 2034 were reserved before compilation and delivery policy forbids reusing reservations.
+
+- **Callsign / model:** Мастер 4 · Codex / Codex GPT-5.
+- **Build / OS:** 2035; macOS 26.0.1; T1 iOS 26.7.1, T3 iOS 18.3. No new compilation or installation claimed.
+- **Staged source tree:** `b58272cb29d4d0146cc7b7831e0cb0bd9f1728bc`. Commit: pending.
+<!-- montana-change {"id": "d68a130a-b8d9-41ac-8f72-e7f85f377a6d", "utc": "2026-09-30T12:10:41+00:00", "callsign": "Мастер 4 · Codex", "model": "Codex GPT-5", "build": "2035", "os": "macOS 26.0.1; T1 iOS 26.7.1, T3 iOS 18.3", "summary": "Build 2035: same verified VPN Wall, identity, Saved Messages, and avatar-ownership fixes; number advanced because 2033 and 2034 were reserved before compilation and delivery policy forbids reusing reservations.", "tree": "b58272cb29d4d0146cc7b7831e0cb0bd9f1728bc", "parents": ["70ea8b821082b4e2a528ae628ad921cf04d4b630"], "commit": null} -->
+
 ### 2026-09-30T12:04:44+00:00 — Build 2034: same verified VPN Wall, identity, Saved Messages, and avatar-ownership fixes as 2033; number advanced because 2033 was reserved before compilation and policy forbids reusing reservations.
 
 - **Callsign / model:** Мастер 4 · Codex / Codex GPT-5.
