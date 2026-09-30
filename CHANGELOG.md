@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e / claude-opus-5-5.
 - **Build / OS:** none -- branch stage/36-avatar-mask, not built; macOS 26 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `85031b1e85e7c7cacb806809c8811bc88e9f94d3`. Commit: pending.
-<!-- montana-change {"id": "62755266-26d6-462a-9222-919dacd99d8a", "utc": "2026-09-30T00:24:07+00:00", "callsign": "claude-9e", "model": "claude-opus-5-5", "build": "none -- branch stage/36-avatar-mask, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "checklist 36: the chronicle of stage 1.1 -- built, the main line merged (2021, 2022), ring green, typecheck exit 0", "tree": "85031b1e85e7c7cacb806809c8811bc88e9f94d3", "parents": ["a5e76459f4ae8a14ab2a32c179feca2253249ade"], "commit": null} -->
+- **Staged source tree:** `85031b1e85e7c7cacb806809c8811bc88e9f94d3`. Commit: `9e8e2a6cbe9129305d87c957a7bcfdc19dcbe382`.
+<!-- montana-change {"id": "62755266-26d6-462a-9222-919dacd99d8a", "utc": "2026-09-30T00:24:07+00:00", "callsign": "claude-9e", "model": "claude-opus-5-5", "build": "none -- branch stage/36-avatar-mask, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "checklist 36: the chronicle of stage 1.1 -- built, the main line merged (2021, 2022), ring green, typecheck exit 0", "tree": "85031b1e85e7c7cacb806809c8811bc88e9f94d3", "parents": ["a5e76459f4ae8a14ab2a32c179feca2253249ade"], "commit": "9e8e2a6cbe9129305d87c957a7bcfdc19dcbe382"} -->
 
 ### 2026-09-30T00:23:31+00:00 — Merge rollback-898 (74e59890, build 2022) into stage/36-avatar-mask: the version lines of 2022 under the avatar mask, a clean merge
 
