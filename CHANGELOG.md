@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T12:31:23+00:00 — Advance the project build number to 2036 for the verified wallpaper and avatar ownership change.
+
+- **Callsign / model:** T1 / iPhone 13 Pro Max.
+- **Build / OS:** 2036; iOS 26.7.1. No new compilation or installation claimed.
+- **Staged source tree:** `35b862e0472ebe1d4bd66bf5fb0e653b4b287b24`. Commit: pending.
+<!-- montana-change {"id": "25c84253-37d5-4c4a-9926-dd5b0347469c", "utc": "2026-09-30T12:31:23+00:00", "callsign": "T1", "model": "iPhone 13 Pro Max", "build": "2036", "os": "iOS 26.7.1", "summary": "Advance the project build number to 2036 for the verified wallpaper and avatar ownership change.", "tree": "35b862e0472ebe1d4bd66bf5fb0e653b4b287b24", "parents": ["3ffea992747e703f2ef4210c8f9608580a3fe698"], "commit": null} -->
+
 ### 2026-09-30T12:29:17+00:00 — Categories for Montana and system wallpapers; peer avatar display accepts only an unambiguous image owned by the active person.
 
 - **Callsign / model:** T1 / iPhone 13 Pro Max.
