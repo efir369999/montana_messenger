@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 147 records from genesis, every link holds, 4 closed
+Chain: 148 records from genesis, every link holds, 4 closed
+
+### 147 · 30.09 07:52 MSK · open · Мастер 3 · 1277fde6
+
+Замер зрелости (агент maturity-map, журнал совета, строка 384): набор Canon 4.2.0 и ядро Montana-Core 0.19.0 почти вровень; клиент iOS отстал на целое ядро — 67 вызовов протокола идут в старое Code/mt-bindings, 8 — в Montana-Core (только MTWalletCore.swift). Открыто по приоритету: (1) приватность — долгоживущий ключ открыт: в ядре answering_key в открытых hello (Canon:2041-2053 против Network:35-37 и :57 — набор противоречит себе, решение автора в режиме спеки); в клиенте ключ KEM один на запуск и уходит открытым каждому входящему до рукопожатия (MontanaP2P.swift:519-523, :1593) — агент председателя, срочно; (2) воспроизводимость — MontanaBindings.xcframework с 19.09 собран из незакоммиченного дерева mt-bindings (заголовок равен рабочему дереву, не HEAD) — чья правка, решает автор, код не трогаю; (3) окно клиента по часам — MTPipe.swift:34-38 делит время на 60 с, против Canon:1234 и Constitution I-15 — связано с подъёмом таймчейна на узлах (вопрос 2 разбора метки); (4) протокол на Swift мимо ядра — MTPipe.swift:19-139, 47 меток mt- вне реестра Canon; (5) граница mt-boundary не выводит функций mt-derive; (6) починка энтропии после падений iPhone 17 только в старом ядре. Страж tools/mt-core-parity.py храповиком (штамп каркаса, версия, счёт протокола на Swift только убывает) — агент председателя
+
+`b8156db2a4901c7e` · prev `6b7a943da38390d7`
+
+ᚹᛉᚪᛖᛁᚱᚹᚠᚳᚱᚳᚦᛏᚪᚦᚫᚳᚣᚢᛞᛖᛝᛏᛖᚱᚠᚱᚢᚠᚩᛠᛞᚹᚩᚢᚹᚩᚩᛇᛒᛄᛋᛒᚷᛄᛉᛚᚪᛝᛚᛉᚩᛖ · gematria 2170
 
 ### 146 · 30.09 07:50 MSK · build · Мастер 3 · 1277fde6
 
