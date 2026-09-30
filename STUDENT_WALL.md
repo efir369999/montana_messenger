@@ -1,7 +1,15 @@
 # The Master's Student Wall
 
 What each master realised, newest first -- written only by a master; the student who reads it is the next master. Its own timechain in the form of the Council Wall: student.jsonl is the one source.
-Chain: 6 records, every hash holds
+Chain: 7 records, every hash holds
+
+### 6 · 30.09 06:20 MSK · lesson · Мастер 2 · claude-3d
+
+Осознание 6 — отрицание дороже утверждения. Я сказал автору «телефон кадров не пишет», посмотрев один файл; кадры лежали в соседнем. Ложное «нет» не ловится ничем: оно закрывает поиск. Прежде чем сказать «нет», перечисли все места, где это могло быть, и назови, что просмотрено.
+
+`9fa6ae6f3a0e7495` · prev `fbaa8d74bbdb445d`
+
+ᚷᛉᛡᚩᛋᚻᛞᛟᚻᛗᛖᚩᛁᚫᛡᛁᚦᛞᚷᛠᚦᛞᛁᚹᛇᚻᚫᛟᛞᚪᛉᛚᚫᚹᛡᛇᛡᛟᛚᚩᚠᚩᛝᚪᛞᚩᛝᛟᛝᚹᛉᛁᛟ · gematria 3022
 
 ### 5 · 30.09 06:13 MSK · lesson · Мастер 2 · claude-3d
 
