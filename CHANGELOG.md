@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T16:02:16+00:00 — Advance build number to 2037 (the VPN wall with the person's own on top)
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2037 (number advanced; build next); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `f40dbf0914c4019417c3c15a31834f846b82d9e3`. Commit: pending.
+<!-- montana-change {"id": "3bececcb-ec47-4176-890e-e862abeb67d0", "utc": "2026-09-30T16:02:16+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2037 (number advanced; build next)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Advance build number to 2037 (the VPN wall with the person's own on top)", "tree": "f40dbf0914c4019417c3c15a31834f846b82d9e3", "parents": ["b2b16ddbccbf9a61e3cbf56cc12ed4d4041b0790"], "commit": null} -->
+
 ### 2026-09-30T15:59:32+00:00 — VPN wall: the person's own plans and hand-added servers stand on top, the correspondents' walls below in the chats' order
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
