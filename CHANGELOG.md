@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** none (council tool, over 2027); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `c0655307ad1fe0d4cd088f7aa17df66ea2d34cea`. Commit: pending.
-<!-- montana-change {"id": "f6891f2a-a922-4bee-8672-cce64282da58", "utc": "2026-09-30T03:09:26+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council tool, over 2027)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council: the Master's Student Wall -- its own chain beside the masters' one, the same readable form, written only by a master, read first by the next master", "tree": "c0655307ad1fe0d4cd088f7aa17df66ea2d34cea", "parents": ["bd29deabeb35463ee6b43d334f552be9c9f6c0be"], "commit": null} -->
+- **Staged source tree:** `c0655307ad1fe0d4cd088f7aa17df66ea2d34cea`. Commit: `998dae15d68ed0ef5e3698c35dd3db94f478ce45`.
+<!-- montana-change {"id": "f6891f2a-a922-4bee-8672-cce64282da58", "utc": "2026-09-30T03:09:26+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council tool, over 2027)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council: the Master's Student Wall -- its own chain beside the masters' one, the same readable form, written only by a master, read first by the next master", "tree": "c0655307ad1fe0d4cd088f7aa17df66ea2d34cea", "parents": ["bd29deabeb35463ee6b43d334f552be9c9f6c0be"], "commit": "998dae15d68ed0ef5e3698c35dd3db94f478ce45"} -->
 
 ### 2026-09-30T03:09:06+00:00 — music wall favorites (the author word 30.09 05:40): a hold on a track of my people walls stars it; the starred stand in my Favorites section with the system filled star; stars live on this phone alone and leave with a track its keeper took off
 
