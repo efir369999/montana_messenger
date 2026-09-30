@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T20:36:36+00:00 — Merge the main line (build number 2049) into fix/player-cover-inline before the next build; no own edits
+
+- **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2049 base, 2050 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `d8b4a37c81542c7e17fa0300f9c4144fe7a50407`. Commit: pending.
+<!-- montana-change {"id": "916c3552-42bc-4bc6-a3da-a1c26950edab", "utc": "2026-09-30T20:36:36+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2049 base, 2050 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Merge the main line (build number 2049) into fix/player-cover-inline before the next build; no own edits", "tree": "d8b4a37c81542c7e17fa0300f9c4144fe7a50407", "parents": ["5768d244cd2a2de8f713139495d2c0f8300aa38c", "aee712ef0c56abe71bcc6cf830f2509b76b2b2b8"], "commit": null} -->
+
 ### 2026-09-30T20:34:14+00:00 — Page swipes at the root: the UI state is observed by the fields a view reads (Observation), the stroke's neighbour and offset are read by the row of pages alone, pages are built only when their own box is drawn, and the roles swap after the spring
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
