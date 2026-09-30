@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T01:22:50+00:00 — Merge rollback-898 b253e28a into fix/default-wallpaper: the default chat wallpaper; clean merge, ring and Montana typecheck green on the merged tree (the last main step is its build number only)
+
+- **Callsign / model:** merge-queue agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `bf9e5691935a0c1cc7a1c3199c81dd361c6add63`. Commit: pending.
+<!-- montana-change {"id": "872591d6-60c3-44f0-a6a2-2177d3d173c6", "utc": "2026-09-30T01:22:50+00:00", "callsign": "merge-queue agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 b253e28a into fix/default-wallpaper: the default chat wallpaper; clean merge, ring and Montana typecheck green on the merged tree (the last main step is its build number only)", "tree": "bf9e5691935a0c1cc7a1c3199c81dd361c6add63", "parents": ["6cc852e53042cd5d7d563219d0699e9aafcafdb1", "b253e28aa16b09a6aa9e32ca35b030f66d983fc5"], "commit": null} -->
+
 ### 2026-09-30T01:21:15+00:00 — merge rollback-898 b253e28a (build 2025) into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 67d38608, no own edits
 
 - **Callsign / model:** feeds-top agent of Master 2 / claude-opus-5-5.
