@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T04:06:02+00:00 — Merge rollback-898 ef53ed90 (council walls, CouncilWall only) into stage/player-speed, no own edits
+
+- **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `937e569a4f970530a7a12ae4ba55531a3f218040`. Commit: pending.
+<!-- montana-change {"id": "528acb86-2557-4e79-80e1-193864aa2458", "utc": "2026-09-30T04:06:02+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 ef53ed90 (council walls, CouncilWall only) into stage/player-speed, no own edits", "tree": "937e569a4f970530a7a12ae4ba55531a3f218040", "parents": ["424b665ba9c79dae295d2311ee17de063b5c3567", "ef53ed906a779ed29d2ce5a7286b19e8b27ec876"], "commit": null} -->
+
 ### 2026-09-30T03:55:14+00:00 — login grounds: every login page up to the chats wears my page's ground, Aurora by default (the author's word 30.09 ~06:50): the first screens instead of LoginBackground, the outer service's login instead of black; the asset LoginBackground stays in the catalogue
 
 - **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
