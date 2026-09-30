@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T05:56:40+00:00 — merge the main line (build 2030 and the chain of thoughts) under the photo that opens like the avatar
+
+- **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
+- **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `ecfb0f9805ad388ae2991b661d440436aed0a558`. Commit: pending.
+<!-- montana-change {"id": "1fdbacf8-49bf-4449-870c-c266c357df92", "utc": "2026-09-30T05:56:40+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge the main line (build 2030 and the chain of thoughts) under the photo that opens like the avatar", "tree": "ecfb0f9805ad388ae2991b661d440436aed0a558", "parents": ["56969efcf7ed3b789442e25196fe32180b110596", "e5fb4c4459bb4bb2408edf16e6875248ab465750"], "commit": null} -->
+
 ### 2026-09-30T05:29:28+00:00 — the master's wall becomes the Chain of Thoughts: a short head of the three axes, and a word already in the chain is never written twice
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
