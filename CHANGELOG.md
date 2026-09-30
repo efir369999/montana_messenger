@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T18:47:27+00:00 — self words: what I say of myself is what my hand last wrote -- an unread face or bio is silence, never «none», so a peer's living face is no longer erased
+
+- **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2045; macOS 26.6 (Darwin 25.6.0), iOS client. No new compilation or installation claimed.
+- **Staged source tree:** `b97b390a71739882a5f1faa7e4851cc1177c9346`. Commit: pending.
+<!-- montana-change {"id": "f28019b7-6e4e-45b6-a8bc-baf588fa09c5", "utc": "2026-09-30T18:47:27+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2045", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "self words: what I say of myself is what my hand last wrote -- an unread face or bio is silence, never «none», so a peer's living face is no longer erased", "tree": "b97b390a71739882a5f1faa7e4851cc1177c9346", "parents": ["4c6be05db6821a3c1e69c0077c18081de38cded8"], "commit": null} -->
+
 ### 2026-09-30T18:30:07+00:00 — council walls: the showcase commit names each chain's head record number, as the wall shows it, instead of a count from genesis
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
