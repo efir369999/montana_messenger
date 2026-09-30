@@ -10,6 +10,9 @@ KINDS = ("genesis", "word", "decision", "build", "agent", "state", "lesson", "op
 ZERO = "0".zfill(64)
 HEX = re.compile("[0-9a-f]{64}")
 STAMP = "%Y-%m-%dT%H:%M:%SZ"
+# a record written from 30.09.2026 on carries its milliseconds, exactly three digits; an older one keeps the seconds it was
+# sealed with, because its hash holds them
+STAMP_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
 KEYS = frozenset(FIELDS + ("hash",))
 # the Gematria Primus in its order: F U TH O R C G W H N I J EO P X S T B E M L NG OE D A AE Y IA EA
 RUNES = (0x16A0, 0x16A2, 0x16A6, 0x16A9, 0x16B1, 0x16B3, 0x16B7, 0x16B9, 0x16BB, 0x16BE, 0x16C1, 0x16C4, 0x16C7, 0x16C8,
@@ -31,11 +34,24 @@ def digest(rec):
     return hashlib.sha256(canonical(rec)).hexdigest()
 
 
+def stamp_of(d, ms):
+    return d.strftime(STAMP) if not ms else d.strftime("%Y-%m-%dT%H:%M:%S.") + "%03dZ" % (d.microsecond // 1000)
+
+
+# the one reading of a stamp: a moment only in its canonical spelling, so one instant has one text and one hash
+def instant(stamp):
+    for form, ms in ((STAMP, False), (STAMP_MS, True)):
+        try:
+            d = datetime.datetime.strptime(stamp, form)
+        except (TypeError, ValueError):
+            continue
+        if stamp_of(d, ms) == stamp:
+            return d
+    return None
+
+
 def moment(stamp):
-    try:
-        return datetime.datetime.strptime(stamp, STAMP).strftime(STAMP) == stamp
-    except (TypeError, ValueError):
-        return False
+    return instant(stamp) is not None
 
 
 def ladder(text):
@@ -62,7 +78,7 @@ def shape(r, closed_ok):
     if type(r["n"]) is not int:
         return "n is not an integer"
     if not moment(r["time"]):
-        return "time is not a moment written YYYY-MM-DDTHH:MM:SSZ"
+        return "time is not a moment written YYYY-MM-DDTHH:MM:SSZ or YYYY-MM-DDTHH:MM:SS.mmmZ"
     if not all(isinstance(r[k], str) and r[k].strip() for k in ("master", "kind")) or not isinstance(r["text"], str):
         return "master and kind are named, text is a string"
     if r["kind"] not in KINDS:
@@ -80,7 +96,8 @@ def shape(r, closed_ok):
 def link(r, i, prev, last, past):
     if r["n"] != i:
         return f"numbered {r['n']}"
-    if max(r["time"], last) != r["time"]:
+    # instants, not texts: "…05Z" sorts after "…05.120Z" as text, though it is the earlier moment
+    if last and instant(r["time"]) < instant(last):
         return f"its time runs back before record {i - 1}"
     if r["prev"] != prev:
         return "prev does not name the record before it"
