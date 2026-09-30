@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
 - **Build / OS:** не собрано; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `7251af5749359582b3b89509ff237bf286085ded`. Commit: pending.
-<!-- montana-change {"id": "83909c26-cd4b-481c-b182-a0ffa6ae3627", "utc": "2026-09-30T05:13:07+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge the main line (the VPN wall whitelist) under the install prepare fix", "tree": "7251af5749359582b3b89509ff237bf286085ded", "parents": ["ed689b0cfb39f076d1bdce55d50a88838ec71e6a", "4155529592002b194b99891a78008eb04593d277"], "commit": null} -->
+- **Staged source tree:** `7251af5749359582b3b89509ff237bf286085ded`. Commit: `58f83d8eca2936d5ff29d5200488b0452866e69f`.
+<!-- montana-change {"id": "83909c26-cd4b-481c-b182-a0ffa6ae3627", "utc": "2026-09-30T05:13:07+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "не собрано", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "merge the main line (the VPN wall whitelist) under the install prepare fix", "tree": "7251af5749359582b3b89509ff237bf286085ded", "parents": ["ed689b0cfb39f076d1bdce55d50a88838ec71e6a", "4155529592002b194b99891a78008eb04593d277"], "commit": "58f83d8eca2936d5ff29d5200488b0452866e69f"} -->
 
 ### 2026-09-30T05:11:07+00:00 — install prepare: the app never leaves under the person's hands, and never by the plain exit that tears the outer service down
 
