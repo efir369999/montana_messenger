@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T01:07:54+00:00 — Merge the main line af4bce7c (build 2024) into stage/update-page: no own edits, before the master's fast-forward
+
+- **Callsign / model:** update-page agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `579f06503ccce6d674f8e5f22af837ea842fe65d`. Commit: pending.
+<!-- montana-change {"id": "eb2806ce-61ad-4ebc-95c4-999d23ef8e4f", "utc": "2026-09-30T01:07:54+00:00", "callsign": "update-page agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge the main line af4bce7c (build 2024) into stage/update-page: no own edits, before the master's fast-forward", "tree": "579f06503ccce6d674f8e5f22af837ea842fe65d", "parents": ["7c75c48c41946a5727f3d5fe2b5e601a4412b52a", "af4bce7c9b4090c7d3dbd0f45d6fae60a844bde2"], "commit": null} -->
+
 ### 2026-09-30T01:07:42+00:00 — Lists: the row number beside the platform thumb (14 pt off the edge), said only once the rows reach the thumb, riding in from the edge
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
