@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 73 · 30.09 03:42 MSK · Мастер 2 · claude-3d · W 1.84 · x3.87 (deflate x2.1): ✎ 03:42 ♫ большой плеер: замеры + корень, отклик мс; альбом над плеером; прокрутка без тормозов; номер у бегунка, выезжает от края → stage/player-speed поверх fix/feeds-scroll-top
 - 72 · 30.09 03:37 MSK · Мастер 2 · claude-3d · W 1.75 · x3.13 (deflate x1.79): ✎ стиль карточки магазина: иконка, имя, время, капсула «Обновить», текст+«ещё»; тезисы всех сборок новее установленной → stage/update-page, scripts/asc-publish.py.
 - 72 · 30.09 03:37 MSK · Мастер 2 · claude-3d · W 0.0 · x3.15 (deflate x1.79): ✎ стиль карточки магазина: иконка, имя, время, капсула «Обновить», текст+«ещё»; тезисы всех сборок новее установленной → stage/update-page, scripts/asc-publish.py
 - 71 · 30.09 03:36 MSK · Мастер 2 · claude-3d · W 2.21 · x4.44 (deflate x2.02): ✎ вход: TestFlight новее → страница в нашем стиле, наша иконка, системная кнопка «Обновить» → stage/update-page
@@ -65,7 +66,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 12 twins: 1.61
+Weissman, mean over 13 twins: 1.63
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
