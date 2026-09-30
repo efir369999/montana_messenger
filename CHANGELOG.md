@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T04:37:23+00:00 — Master's Wall head: the hippocampus principles (separation, predictive coding, chain, selective load, pattern completion, consolidation) on the master's three axes; the end-of-shift rule (Effectiveness N/10 in the handover, advice to the student); the score table reads each master's mark from his latest handover
+
+- **Callsign / model:** wall-hash-chain (агент Мастера 3) / claude-opus-5-5.
+- **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `5310a89f34a36b35037d64cea85b4399173c1642`. Commit: pending.
+<!-- montana-change {"id": "e896a687-c089-4cb0-ad74-b285ed547cce", "utc": "2026-09-30T04:37:23+00:00", "callsign": "wall-hash-chain (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Master's Wall head: the hippocampus principles (separation, predictive coding, chain, selective load, pattern completion, consolidation) on the master's three axes; the end-of-shift rule (Effectiveness N/10 in the handover, advice to the student); the score table reads each master's mark from his latest handover", "tree": "5310a89f34a36b35037d64cea85b4399173c1642", "parents": ["f866e9ded328ab5e640df00e3ccd35f6cef674e1"], "commit": null} -->
+
 ### 2026-09-30T04:33:25+00:00 — Merge rollback-898 884a8268 (build 2029) into stage/36-avatar-mask over 9e8e2a6c: one base 74e59890, clean; the mask of a video call stays at the one door camera to source in MontanaCall.swift beside the main line changes; one build number 2029 in every target
 
 - **Callsign / model:** merge-queue (агент Мастера 3) / claude-opus-5-5.
