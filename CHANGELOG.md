@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:39:27+00:00 — Documents and the People's Wall: names and structure carry the code; the added comments cut to a short why, one canonical block list, one edit naming rule
+
+- **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `7a1d7e57fd6ba4be7df067067038e4abe30456e4`. Commit: pending.
+<!-- montana-change {"id": "63102a51-c22c-4420-9f0c-0b087a423349", "utc": "2026-09-30T03:39:27+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Documents and the People's Wall: names and structure carry the code; the added comments cut to a short why, one canonical block list, one edit naming rule", "tree": "7a1d7e57fd6ba4be7df067067038e4abe30456e4", "parents": ["e7dfa5b5d6f30b83f7b6b0bd801339919a70cb28"], "commit": null} -->
+
 ### 2026-09-30T03:38:47+00:00 — wallpaper comments: the branch's own comments cut to a short why (the author's rule 30.09: the code speaks for itself); the older comment of MTUnderBarGround back as it stood; no code changed
 
 - **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
