@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:17:17+00:00 — council: a wall record no longer redraws the local WALL.md, which the author removed
+
+- **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
+- **Build / OS:** none (council tool, before 2028); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `c8ae58bb6ced1c850a2c3c4f61be33bf3c23e381`. Commit: pending.
+<!-- montana-change {"id": "e34d3c8a-98f9-4a62-a2d5-a46244daebd5", "utc": "2026-09-30T03:17:17+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council tool, before 2028)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council: a wall record no longer redraws the local WALL.md, which the author removed", "tree": "c8ae58bb6ced1c850a2c3c4f61be33bf3c23e381", "parents": ["752786f2d82f5666ee92bd1bb41577e43396dfa1"], "commit": null} -->
+
 ### 2026-09-30T03:16:43+00:00 — Merge the main line 8cd3cb4e into stage/privacy-in-app, no edits of its own
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
