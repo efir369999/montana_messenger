@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:40:43+00:00 — fix/default-wallpaper: merge rollback-898 62e9d0df (build 2021) into the default-wallpaper branch; ring green, typecheck exit 0 on the merged tree
+
+- **Callsign / model:** claude-9e-default-wall / claude-opus-5-5.
+- **Build / OS:** 2021; macOS Darwin 25.6.0. No new compilation or installation claimed.
+- **Staged source tree:** `c3c7be008300ca549c1e846cf706cfcc8e83ec07`. Commit: pending.
+<!-- montana-change {"id": "6d033a92-328b-4a14-b675-557dbe1a3f8b", "utc": "2026-09-30T00:40:43+00:00", "callsign": "claude-9e-default-wall", "model": "claude-opus-5-5", "build": "2021", "os": "macOS Darwin 25.6.0", "summary": "fix/default-wallpaper: merge rollback-898 62e9d0df (build 2021) into the default-wallpaper branch; ring green, typecheck exit 0 on the merged tree", "tree": "c3c7be008300ca549c1e846cf706cfcc8e83ec07", "parents": ["d9e681a0ee2960d731b6926a7a867d70799668a8", "62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": null} -->
+
 ### 2026-09-30T00:36:19+00:00 — Merge the main line 4cd66091 (build 2023, the chess menu and score) into the wallet and money letters branch, no own edits, before the master fast-forward
 
 - **Callsign / model:** claude-9e (wallet) / Claude Opus 5.5.
