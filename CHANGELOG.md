@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** share-order (agent of Master 3) / claude-opus-5-5.
 - **Build / OS:** not built; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `2713986926b5bf1611c2b80c543fecd258eae49b`. Commit: pending.
-<!-- montana-change {"id": "61bf67e0-4d36-4ff8-8bff-070431080cb8", "utc": "2026-09-30T04:58:21+00:00", "callsign": "share-order (agent of Master 3)", "model": "claude-opus-5-5", "build": "not built", "os": "macOS 26.6", "summary": "Merge rollback-898 884a8268 (build 2029) into fix/share-menu-order: the main line under the finger-only share sheet, no own edits in the merge", "tree": "2713986926b5bf1611c2b80c543fecd258eae49b", "parents": ["8bf2e50c1cdbf106c898aab79eb94d311c4556cc", "884a8268267fb4639ef8e18e7794a529bdc470c9"], "commit": null} -->
+- **Staged source tree:** `2713986926b5bf1611c2b80c543fecd258eae49b`. Commit: `d3ad74fa11da6b0838389e08902278fa05344bf1`.
+<!-- montana-change {"id": "61bf67e0-4d36-4ff8-8bff-070431080cb8", "utc": "2026-09-30T04:58:21+00:00", "callsign": "share-order (agent of Master 3)", "model": "claude-opus-5-5", "build": "not built", "os": "macOS 26.6", "summary": "Merge rollback-898 884a8268 (build 2029) into fix/share-menu-order: the main line under the finger-only share sheet, no own edits in the merge", "tree": "2713986926b5bf1611c2b80c543fecd258eae49b", "parents": ["8bf2e50c1cdbf106c898aab79eb94d311c4556cc", "884a8268267fb4639ef8e18e7794a529bdc470c9"], "commit": "d3ad74fa11da6b0838389e08902278fa05344bf1"} -->
 
 ### 2026-09-30T04:56:46+00:00 — share sheet: only the finger chooses and only the finger sends -- the system suggestion no longer sends at once (T1 30.09 04:15:44Z a file went to a chat nobody chose); the first circle opens the post page with every shared item previewed and removable; the sheet stands on the platform glass as the big player; the words of my own post on my own wall are editable (the version moves, no new wire word); guards P-118.8, P-118.9 rewritten, P-118.18 draft
 
