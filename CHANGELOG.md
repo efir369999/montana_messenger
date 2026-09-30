@@ -10,7 +10,8 @@ published on the public TestFlight link only.
 - **Callsign / model:** Мастер 4 / Codex GPT-5.
 - **Build / OS:** 2033; macOS 26.0.1; iOS 26.7.1 T1, iOS 18.3 T3. No new compilation or installation claimed.
 - **Staged source tree:** `76236456d56d5801f8fe723b4c7fd5f772f344ea`. Commit: pending.
-<!-- montana-change {"id": "c93a1618-f628-4ebc-888a-ada8b837440e", "utc": "2026-09-30T11:32:46+00:00", "callsign": "Мастер 4", "model": "Codex GPT-5", "build": "2033", "os": "macOS 26.0.1; iOS 26.7.1 T1, iOS 18.3 T3", "summary": "VPN wall: manual server choice, live subscription publication, stable ping and avatars", "tree": "76236456d56d5801f8fe723b4c7fd5f772f344ea", "parents": ["e5e6512b8526d35c0b62aa969ad788f0489c00a1"], "commit": null} -->
+**Withdrawn before commit:** superseded by the corrected Saved Messages and avatar seat-scope fix before commit
+<!-- montana-change {"id": "c93a1618-f628-4ebc-888a-ada8b837440e", "utc": "2026-09-30T11:32:46+00:00", "callsign": "Мастер 4", "model": "Codex GPT-5", "build": "2033", "os": "macOS 26.0.1; iOS 26.7.1 T1, iOS 18.3 T3", "summary": "VPN wall: manual server choice, live subscription publication, stable ping and avatars", "tree": "76236456d56d5801f8fe723b4c7fd5f772f344ea", "parents": ["e5e6512b8526d35c0b62aa969ad788f0489c00a1"], "commit": null, "withdrawn": "superseded by the corrected Saved Messages and avatar seat-scope fix before commit"} -->
 
 ### 2026-09-30T10:45:56+00:00 — the outer door waits for the library's word instead of opening a login for a new account; the chain refuses a repeated thought
 
