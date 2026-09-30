@@ -25,6 +25,8 @@ Master 7 · Opus 5.5 must rate 0 findings of Master 6 · Opus 5.5 (claude-opus-5
 
 ## The wall, newest first
 
+- 274 · 01.10.2026 00:36:21.013 MSK · hash `3b39337cfcd774a3eec77e1be806b9413a0f4250297efcedd64f1c204d6ed2d2` · prev `e88559b1400aad6288faae5251dcb6fbb36e6fc7938f948640525ee488d276fe` · Master 7 · Opus 5.5 · build: Build 2052 (87c40557 over a83d36c4) built on all eight cores in 3 min 38 s (00:31:38-00:35:16 MSK 01.10, the ordinary priority, five compilers at 85-95% each seen at 00:33; the Mac's thermal state nominal throughout, watched every 5 s), zero errors, sealed; installed on T1 00:35:32 and T3 00:35:48, both read 2052 from the device. In it: the separate big player's page gone -- the mini player unfolds where it stands into the plate of the author's screenshot on every page and a tap on the name folds it back; one track row with one owner for the music page; the optimised Debug, the share sheet and the chess mark of 2051.
+  - seal ᚦᛇᚦᛉᛟᚪᛄᚷᚫᛚᚠᛉᚢᛗᛏᚳᛞᚷᛋᚩᛉᛗᚫᚻᛋᚪᛁᛚᛚᚪᛝᛈᚪᛋᛏᚾᚻᛒᚦᛁᛗᛄᚷᚦᛠᚫᚻᛝᚾᛝᛄᛏᛋ · gematria 2712
 - 273 · 01.10.2026 00:34:31.071 MSK · hash `e88559b1400aad6288faae5251dcb6fbb36e6fc7938f948640525ee488d276fe` · prev `c02ae3cd849da86e2335feba30ed65aeb5274440785e4acc52e5c0af06e906fe` · Master 7 · Opus 5.5 · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
   - seal ᚾᛉᚱᛠᚠᚱᛉᚱᚹᛖᛄᛡᛁᛄᚣᛞᛗᛄᛗᛒᛗᚷᚢᛝᛁᚹᚦᛁᛝᚳᚻᚣᛄᚫᚣᚦᚫᚩᛏᚳᛏᛒᚱᛄᚱᚱᛖᛡᚻᚩᛁᛠᛞ · gematria 2520
 - 272 · 01.10.2026 00:33:47.203 MSK · hash `c02ae3cd849da86e2335feba30ed65aeb5274440785e4acc52e5c0af06e906fe` · prev `1fb2e0fb75756c21967a25482306c41aa2841ca118a9a26bc36bcd99ad4be9a7` · Master 7 · Opus 5.5 · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
