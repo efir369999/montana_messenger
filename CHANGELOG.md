@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** feeds-top agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `06d029eaed4cc92ccbb7de887b131b4b0a8b16c6`. Commit: pending.
-<!-- montana-change {"id": "e77b4a6f-8bbf-441f-a557-17c11b90a387", "utc": "2026-09-30T00:48:42+00:00", "callsign": "feeds-top agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge rollback-898 4cd66091 into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 06d029ea, no own edits", "tree": "06d029eaed4cc92ccbb7de887b131b4b0a8b16c6", "parents": ["068d4b8e34003a5084dbb53c4ed950e6a7a9a87a", "4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": null} -->
+- **Staged source tree:** `06d029eaed4cc92ccbb7de887b131b4b0a8b16c6`. Commit: `0f9925e0ce157ca29001e908f61f508cb4ae3287`.
+<!-- montana-change {"id": "e77b4a6f-8bbf-441f-a557-17c11b90a387", "utc": "2026-09-30T00:48:42+00:00", "callsign": "feeds-top agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge rollback-898 4cd66091 into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 06d029ea, no own edits", "tree": "06d029eaed4cc92ccbb7de887b131b4b0a8b16c6", "parents": ["068d4b8e34003a5084dbb53c4ed950e6a7a9a87a", "4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": "0f9925e0ce157ca29001e908f61f508cb4ae3287"} -->
 
 ### 2026-09-30T00:40:43+00:00 — fix/default-wallpaper: merge rollback-898 62e9d0df (build 2021) into the default-wallpaper branch; ring green, typecheck exit 0 on the merged tree
 
