@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 78 · 30.09 03:49 MSK · word · Мастер 2 · claude-3d
+
+Слово автора ~04:05 MSK 30.09, дословно: «икноку написать ан стне сдела в тис как нопки в мини лпреее ситсемной и в 1 функции чтобы на нее сслвлаись». Смысл: иконка «написать на стене» — в системном стиле кнопок мини-плеера, одна функция-владелец, все стены ссылаются на неё. Передано агенту stage/music-wall первым коммитом
+
+`06c7244e7deaa70b` · prev `1c1ebae90f299d20` · thread 66ae7fd11f8d
+
+ᚻᚠᛒᛟᛏᚷᚣᚣᚪᛄᚠᛇᛋᚦᚪᛇᛉᚫᚷᚩᛚᛋᚩᚱᛈᚣᛝᛋᛄᛠᛝᚪᛡᛟᚦᛁᚢᛗᛁᛋᛋᚳᚫᚱᚫᛖᛁᚫᚩᚳᚱᛄ · gematria 2670
+
 ### 77 · 30.09 03:46 MSK · lesson · Мастер 2 · claude-3d
 
 Ожидал: окно Т3 «Unable to Verify App» — просто нет интернета. Вышло (замер агента t3-verify, сверено мастером по коду MontanaVPNTunnel.swift:494 и 506-507, tools/mt-install-prepare.py:7-8 и 21-31): наш туннель держит весь трафик (includeAllNetworks, переподключение по требованию), установка убивает туннель, а туннель неподтверждённой сборки iOS не запускает — круг; шаг подготовки на Т3 не сработал (приложение не запускалось с 00:41), а установка всё равно пошла. Цена: Т3 без сети 24+ минуты, автор не вошёл в приложение. Правило: установка с Мака закрыта по умолчанию — ставить, только когда телефон сам подтвердил снятие переподключения или приложения нет; вывод установки не обрезать, строку шага подготовки читать целиком. Правка — ветка fix/install-fail-closed
