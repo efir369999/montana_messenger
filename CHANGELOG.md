@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `f4ea9c3bebc336c51644fa62be2f0629a8514e76`. Commit: pending.
-<!-- montana-change {"id": "52352560-03c6-46c9-a987-c3a547e17532", "utc": "2026-09-30T01:07:42+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Lists: the row number beside the platform thumb (14 pt off the edge), said only once the rows reach the thumb, riding in from the edge", "tree": "f4ea9c3bebc336c51644fa62be2f0629a8514e76", "parents": ["8b9ee4994be832470fd9970e61711f95273e975e"], "commit": null} -->
+- **Staged source tree:** `f4ea9c3bebc336c51644fa62be2f0629a8514e76`. Commit: `87c22b5b41e71511be9f64c1c4dcf1cbfbd7a31b`.
+<!-- montana-change {"id": "52352560-03c6-46c9-a987-c3a547e17532", "utc": "2026-09-30T01:07:42+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Lists: the row number beside the platform thumb (14 pt off the edge), said only once the rows reach the thumb, riding in from the edge", "tree": "f4ea9c3bebc336c51644fa62be2f0629a8514e76", "parents": ["8b9ee4994be832470fd9970e61711f95273e975e"], "commit": "87c22b5b41e71511be9f64c1c4dcf1cbfbd7a31b"} -->
 
 ### 2026-09-30T01:06:45+00:00 — Big player speed: the head watches the player's face, not its clock; the time's line owns the scrub; the running name plays in the render server; the list head keeps its own cell; the frame meter names head/row cells, sizing, publishers, taps, scrubs and the seek's cost
 
