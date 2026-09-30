@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:59:16+00:00 — avatar: the fighters cut again from the author's whole sheet without the white ground -- the platform's mask held the sheet's white between the cape's tatters, between the strands of hair and in a rim around each figure; a pixel within the ground's own noise (16 of 255, measured on the sheet) is ground wherever the mask stands; the first fighter whole to the soles, the heroine to the sheet's edge
+
+- **Callsign / model:** avatar-fight agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `e3def70cd9b557037b13a707bbf556b987e98c71`. Commit: pending.
+<!-- montana-change {"id": "59202cb6-0bb4-4ce9-b718-8a5c2952bf39", "utc": "2026-09-30T00:59:16+00:00", "callsign": "avatar-fight agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "avatar: the fighters cut again from the author's whole sheet without the white ground -- the platform's mask held the sheet's white between the cape's tatters, between the strands of hair and in a rim around each figure; a pixel within the ground's own noise (16 of 255, measured on the sheet) is ground wherever the mask stands; the first fighter whole to the soles, the heroine to the sheet's edge", "tree": "e3def70cd9b557037b13a707bbf556b987e98c71", "parents": ["bda06945f155d243614ea36ac1cb0c479aabedd6"], "commit": null} -->
+
 ### 2026-09-30T00:58:18+00:00 — avatar: the weapon's light and the sparks stand at the fighter's own height -- the tallest of its four views, no longer a floor of two metres that lifted the heroine's sparks above her head
 
 - **Callsign / model:** avatar-fight agent of Master 2 / claude-opus-5-5.
