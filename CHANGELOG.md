@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** photo-avatar (агент Мастера 3) / claude-opus-5-5.
 - **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `e4a009a695123f7b141df00ac09e3345cd8cf15e`. Commit: pending.
-<!-- montana-change {"id": "82d92697-c803-42fc-ac6f-bd1b5b1547a6", "utc": "2026-09-30T05:03:52+00:00", "callsign": "photo-avatar (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Merge rollback-898 23b7439f into fix/photo-open-like-avatar: pictures open and close as the face does, before the master fast-forward", "tree": "e4a009a695123f7b141df00ac09e3345cd8cf15e", "parents": ["70758db1d5f82586490a1fb7ce20072a564ae740", "23b7439fa5702216ed46183b1decbe178f30b357"], "commit": null} -->
+- **Staged source tree:** `e4a009a695123f7b141df00ac09e3345cd8cf15e`. Commit: `56969efcf7ed3b789442e25196fe32180b110596`.
+<!-- montana-change {"id": "82d92697-c803-42fc-ac6f-bd1b5b1547a6", "utc": "2026-09-30T05:03:52+00:00", "callsign": "photo-avatar (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Merge rollback-898 23b7439f into fix/photo-open-like-avatar: pictures open and close as the face does, before the master fast-forward", "tree": "e4a009a695123f7b141df00ac09e3345cd8cf15e", "parents": ["70758db1d5f82586490a1fb7ce20072a564ae740", "23b7439fa5702216ed46183b1decbe178f30b357"], "commit": "56969efcf7ed3b789442e25196fe32180b110596"} -->
 
 ### 2026-09-30T04:58:21+00:00 — Merge rollback-898 884a8268 (build 2029) into fix/share-menu-order: the main line under the finger-only share sheet, no own edits in the merge
 
