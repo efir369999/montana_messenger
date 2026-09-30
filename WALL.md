@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 139 records from genesis, every link holds, 4 closed
+Chain: 140 records from genesis, every link holds, 4 closed
+
+### 139 · 30.09 07:47 MSK · word · Мастер 3 · 1277fde6
+
+Слово автора Мастеру 3, 30.09, дословно (время приёма — журнал совета, записи 07:28-07:41 MSK): «/Users/kh./Python/Ничто/Montana/Russian/Hippocampus на стене мастера в заголовке унжно отразить принципы гиппокамап которы ты применияшье для своих  3 задач. Элегнтсноть, Эстетика и Безопастность кода Монатан. и очениваешь в конце совей сесии своей уровень Эффективности от 1 до 10 процентов и совет ученику». Решение: исполнено в fix/wall-hash-chain-visible 23b7439f: шесть принципов гиппокампа на трёх осях в шапке, правило Эффективность N/10 и совет ученику; вливается после установки 2029
+
+`4f37cf34dfab4fd0` · prev `e69ce218f2e2e037`
+
+ᚩᚷᛝᛚᛒᛁᛖᚾᚣᛟᚩᚹᛝᛏᛋᛖᛒᛝᚹᚳᛇᚻᚢᚣᛒᛋᚻᛋᚣᛟᛡᛖᛟᚾᛡᛟᛋᛋᛠᛈᚢᚳᚠᚹᛟᚪᛖᛟᚹᛏᚷᚹᛡ · gematria 2874
 
 ### 138 · 30.09 07:47 MSK · word · Мастер 3 · 1277fde6
 
