@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2036 (source change; build pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `1473a3ec1bfae4d681a779428b49791ca6085ccb`. Commit: pending.
-<!-- montana-change {"id": "7962c62f-dc78-40bb-ad45-3966f775a173", "utc": "2026-09-30T15:59:32+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2036 (source change; build pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN wall: the person's own plans and hand-added servers stand on top, the correspondents' walls below in the chats' order", "tree": "1473a3ec1bfae4d681a779428b49791ca6085ccb", "parents": ["98d131bc712cbff45de1d917899359bb0734e5e7"], "commit": null} -->
+- **Staged source tree:** `1473a3ec1bfae4d681a779428b49791ca6085ccb`. Commit: `b2b16ddbccbf9a61e3cbf56cc12ed4d4041b0790`.
+<!-- montana-change {"id": "7962c62f-dc78-40bb-ad45-3966f775a173", "utc": "2026-09-30T15:59:32+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2036 (source change; build pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN wall: the person's own plans and hand-added servers stand on top, the correspondents' walls below in the chats' order", "tree": "1473a3ec1bfae4d681a779428b49791ca6085ccb", "parents": ["98d131bc712cbff45de1d917899359bb0734e5e7"], "commit": "b2b16ddbccbf9a61e3cbf56cc12ed4d4041b0790"} -->
 
 ### 2026-09-30T15:54:28+00:00 — Council wall: the master page is TimeChain_Master.md; each record stamps milliseconds and the page shows the full date with year and time to the millisecond
 
