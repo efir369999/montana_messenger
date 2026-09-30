@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2041 (council tooling only); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `0aa7ac7d00aa72078569360c06062d49d0845246`. Commit: pending.
-<!-- montana-change {"id": "0aef7d19-3bd7-4350-b40a-fbd1b99ef482", "utc": "2026-09-30T17:34:34+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2041 (council tooling only)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Council showcase: the published chains carry the newest record on top; verify.py reads either order from the genesis", "tree": "0aa7ac7d00aa72078569360c06062d49d0845246", "parents": ["b2200325c7d3e1e0d2efbd41032c3cbb0fba3dbf"], "commit": null} -->
+- **Staged source tree:** `0aa7ac7d00aa72078569360c06062d49d0845246`. Commit: `bea9df461eeca3428149ff289c2475ad9aba9c86`.
+<!-- montana-change {"id": "0aef7d19-3bd7-4350-b40a-fbd1b99ef482", "utc": "2026-09-30T17:34:34+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2041 (council tooling only)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Council showcase: the published chains carry the newest record on top; verify.py reads either order from the genesis", "tree": "0aa7ac7d00aa72078569360c06062d49d0845246", "parents": ["b2200325c7d3e1e0d2efbd41032c3cbb0fba3dbf"], "commit": "bea9df461eeca3428149ff289c2475ad9aba9c86"} -->
 
 ### 2026-09-30T17:33:13+00:00 — Advance build number to 2041 (VPN nodes removed)
 
