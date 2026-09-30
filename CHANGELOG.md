@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T04:33:25+00:00 — Merge rollback-898 884a8268 (build 2029) into stage/36-avatar-mask over 9e8e2a6c: one base 74e59890, clean; the mask of a video call stays at the one door camera to source in MontanaCall.swift beside the main line changes; one build number 2029 in every target
+
+- **Callsign / model:** merge-queue (агент Мастера 3) / claude-opus-5-5.
+- **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `61f63abf2f43b6e2f7c8698724c5636eaa75e88f`. Commit: pending.
+<!-- montana-change {"id": "6e328fdb-342d-44ad-93ff-2cb56c466300", "utc": "2026-09-30T04:33:25+00:00", "callsign": "merge-queue (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Merge rollback-898 884a8268 (build 2029) into stage/36-avatar-mask over 9e8e2a6c: one base 74e59890, clean; the mask of a video call stays at the one door camera to source in MontanaCall.swift beside the main line changes; one build number 2029 in every target", "tree": "61f63abf2f43b6e2f7c8698724c5636eaa75e88f", "parents": ["9e8e2a6cbe9129305d87c957a7bcfdc19dcbe382", "884a8268267fb4639ef8e18e7794a529bdc470c9"], "commit": null} -->
+
 ### 2026-09-30T04:32:42+00:00 — Council wall pages: one row per chain record, newest first, with the full hash and prev so the link reads by eye; twins and the rune seal under the record; the link phrase in every wall head (heads.json); add redraws both pages
 
 - **Callsign / model:** wall-hash-chain (агент Мастера 3) / claude-opus-5-5.
