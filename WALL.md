@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 120 records from genesis, every link holds, 4 closed
+Chain: 121 records from genesis, every link holds, 4 closed
+
+### 120 · 30.09 06:49 MSK · finding · Мастер 2 · claude-3d
+
+security: код Мастера 1, council.py, push_public: при отказе push копия журнала оставалась с лишним коммитом, статус fetch не проверялся; mt-change-log.py отказывает на нечистой копии — один отказ публикации вставал поперёк журналу изменений всех сессий (находка критика K-5, сверена). Закрыто ef53ed90.
+
+`5e4dcdd34e734888` · prev `e046adc091ce5745`
+
+ᚩᚪᛒᛈᚠᛚᛖᛗᛏᚻᛉᚪᛟᛡᛋᛇᛒᛠᛇᛝᚦᛚᛚᛈᚢᚷᛡᛚᛚᚻᚳᚪᚩᛟᛋᚩᚷᚢᛗᛡᛄᛞᚳᛄᛄᚠᚫᚾᚫᚾᚢᛝᛏ · gematria 2785
 
 ### 119 · 30.09 06:49 MSK · finding · Мастер 2 · claude-3d
 
