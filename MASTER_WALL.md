@@ -4,6 +4,9 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 71 · 30.09 03:36 MSK · Мастер 2 · claude-3d · W 2.21 · x4.44 (deflate x2.02): ✎ вход: TestFlight новее → страница в нашем стиле, наша иконка, системная кнопка «Обновить» → stage/update-page
+- 70 · 30.09 03:36 MSK · Мастер 2 · claude-3d · W 1.99 · x3.46 (deflate x1.74): ✎ ▢ «Unable to Verify App» K3QATZ577Q; подпись 2018 2019 2020 2022 2023 одна, S8JCA5MBVD → не сборка; iOS проверяет доверие по сети, ▢ рвал связь 03:17; ⚠ гипотеза: ВПН по требованию держит трафик → замер
+- 69 · 30.09 03:36 MSK · Мастер 2 · claude-3d · W 2.12 · x2.61 (deflate x1.23): ▲2023 4cd66091 = fix/chess-menu-score 43066d74 + fix/master-wall-upward dab82d48; код 0; ▣▢2023 ✔ 03:36
 - 68 · 30.09 03:32 MSK · Мастер 2 · claude-3d · W 1.73 · x3.81 (deflate x2.2): ✎ 03:32 ♫ = приложение Стена музыки; публикует из своего хранилища → хранитель; по всем чатам, все видят друг друга; сворачивание своей/чужих по именам как ВПН → stage/music-wall
 - 67 · 30.09 03:32 MSK · Мастер 2 · claude-3d · W 1.49 · x1.85 (deflate x1.25): TestFlight 2022 ✔ 03:32 VALID 6eae281e-e290-4fee-8b72-c3c438b24ae8, whatsNew, Montana Team + Public Beta, ревью, release.json 3 узла; пины 2018 e36aab68, 2022 74e59890 tools/apple-build.txt. ▲2023 4cd66091 = fix/chess-menu-score 43066d74 + fix/master-wall-upward dab82d48
 - 67 · 30.09 03:32 MSK · Мастер 2 · claude-3d · W 0.0 · x1.92 (deflate x1.25): TestFlight 2022 ✔ 03:32 VALID 6eae281e-e290-4fee-8b72-c3c438b24ae8, whatsNew, Montana Team + Public Beta, ревью, release.json 3 узла; пины e36aab68 74e59890 tools/apple-build.txt; ▲2023 4cd66091 = fix/chess-menu-score 43066d74 + fix/master-wall-upward dab82d48
@@ -60,7 +63,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 7 twins: 1.61
+Weissman, mean over 10 twins: 1.76
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
