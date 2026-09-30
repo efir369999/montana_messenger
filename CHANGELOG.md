@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** photo-avatar (агент Мастера 3) / claude-opus-5-5.
 - **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `23854624bfd487f4548947ce704d9110c0412c60`. Commit: pending.
-<!-- montana-change {"id": "7df69d6b-fec1-4b9f-b985-8d2207bddb5d", "utc": "2026-09-30T04:49:11+00:00", "callsign": "photo-avatar (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "pictures: the wall's page of pictures stays (the author paged it after his word); a closed viewer lets the next tap in at once (the host rises in its own step, the sharp picture's wait no longer holds it)", "tree": "23854624bfd487f4548947ce704d9110c0412c60", "parents": ["57277e2079c7fab48ce4ce929bcd4a456691be71"], "commit": null} -->
+- **Staged source tree:** `23854624bfd487f4548947ce704d9110c0412c60`. Commit: `70758db1d5f82586490a1fb7ce20072a564ae740`.
+<!-- montana-change {"id": "7df69d6b-fec1-4b9f-b985-8d2207bddb5d", "utc": "2026-09-30T04:49:11+00:00", "callsign": "photo-avatar (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "pictures: the wall's page of pictures stays (the author paged it after his word); a closed viewer lets the next tap in at once (the host rises in its own step, the sharp picture's wait no longer holds it)", "tree": "23854624bfd487f4548947ce704d9110c0412c60", "parents": ["57277e2079c7fab48ce4ce929bcd4a456691be71"], "commit": "70758db1d5f82586490a1fb7ce20072a564ae740"} -->
 
 ### 2026-09-30T04:48:40+00:00 — merge rollback-898 884a8268 (build 2029) into fix/default-wallpaper-8: a clean automerge, the index equals git merge-tree of both heads, no edits of its own
 
