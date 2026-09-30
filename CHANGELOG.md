@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** avatar-fight agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `a28ee098a5d2c185d1ec52127a6dd56c969737b2`. Commit: pending.
-<!-- montana-change {"id": "a9844358-f514-4bf3-ac37-fe1e0810d1d5", "utc": "2026-09-30T01:02:01+00:00", "callsign": "avatar-fight agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 af4bce7c (build 2024: the wall post card in the pair's chat; 2023: the chess menu and the pair's score) into stage/avatar-fight: both sides kept in the chat's state and destinations and in the owner registry, no own edits, before the master's fast-forward", "tree": "a28ee098a5d2c185d1ec52127a6dd56c969737b2", "parents": ["f8a9fe155c3feba64eaf6ec6e8fd1f2544cd23d6", "af4bce7c9b4090c7d3dbd0f45d6fae60a844bde2"], "commit": null} -->
+- **Staged source tree:** `a28ee098a5d2c185d1ec52127a6dd56c969737b2`. Commit: `24ed637bc6db689566efb36dd4c0b7d4b70c8bda`.
+<!-- montana-change {"id": "a9844358-f514-4bf3-ac37-fe1e0810d1d5", "utc": "2026-09-30T01:02:01+00:00", "callsign": "avatar-fight agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 af4bce7c (build 2024: the wall post card in the pair's chat; 2023: the chess menu and the pair's score) into stage/avatar-fight: both sides kept in the chat's state and destinations and in the owner registry, no own edits, before the master's fast-forward", "tree": "a28ee098a5d2c185d1ec52127a6dd56c969737b2", "parents": ["f8a9fe155c3feba64eaf6ec6e8fd1f2544cd23d6", "af4bce7c9b4090c7d3dbd0f45d6fae60a844bde2"], "commit": "24ed637bc6db689566efb36dd4c0b7d4b70c8bda"} -->
 
 ### 2026-09-30T01:00:39+00:00 — avatar: the heroine's name stays neutral until the author decides (Heroine / Героиня / 女英雄; the proposed name risks App Store 5.2), and the levels' gate is the one door into a game -- entering counts the levels afresh itself, the library's row and the chat's mark no longer count before asking
 
