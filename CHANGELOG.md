@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** timechain-demo agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (council tool); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `12dd616f77890e3c4b4f759c1f8bba4ac5e58341`. Commit: pending.
-<!-- montana-change {"id": "faa978be-e9fa-46a2-867a-f1e05b2c1c05", "utc": "2026-09-30T03:44:40+00:00", "callsign": "timechain-demo agent of Master 2", "model": "claude-opus-5-5", "build": "none (council tool)", "os": "macOS 26.6", "summary": "council: the walls become a checkable demonstration of the TimeChain's link -- verify.py is the one canon (the tool imports it, the showcase publishes it), the student chain is published raw, every page opens with the essence ladder and heads.json, the master's page counts findings and ratings, a record is checked before it is written", "tree": "12dd616f77890e3c4b4f759c1f8bba4ac5e58341", "parents": ["7e0d1ea367d55754060759543b3a24e3baffc66c"], "commit": null} -->
+- **Staged source tree:** `12dd616f77890e3c4b4f759c1f8bba4ac5e58341`. Commit: `ef53ed906a779ed29d2ce5a7286b19e8b27ec876`.
+<!-- montana-change {"id": "faa978be-e9fa-46a2-867a-f1e05b2c1c05", "utc": "2026-09-30T03:44:40+00:00", "callsign": "timechain-demo agent of Master 2", "model": "claude-opus-5-5", "build": "none (council tool)", "os": "macOS 26.6", "summary": "council: the walls become a checkable demonstration of the TimeChain's link -- verify.py is the one canon (the tool imports it, the showcase publishes it), the student chain is published raw, every page opens with the essence ladder and heads.json, the master's page counts findings and ratings, a record is checked before it is written", "tree": "12dd616f77890e3c4b4f759c1f8bba4ac5e58341", "parents": ["7e0d1ea367d55754060759543b3a24e3baffc66c"], "commit": "ef53ed906a779ed29d2ce5a7286b19e8b27ec876"} -->
 
 ### 2026-09-30T03:40:36+00:00 — Merge the main line 09b24f0f into the documents and People's Wall branch, no edits of its own
 
