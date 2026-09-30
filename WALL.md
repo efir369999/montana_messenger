@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 122 records from genesis, every link holds, 4 closed
+Chain: 123 records from genesis, every link holds, 4 closed
+
+### 122 · 30.09 06:52 MSK · decision · Мастер 3 · 1277fde6
+
+Слово автора Мастеру 3, 30.09, дословно, со снимками страницы входа (06:45, прежний фон дверей) и предпросмотра фона 8 (04:55): «я просил ранее фон применить п оумолчани для всех старниц входа и до чатов и прикреплл пример как ту на скриншоте это 8 на странице обоев в приложении. если мастер сказал что села то это ошикаб и ему -1, если сказл но не сдеал по чреедности моих просить то -1, если он не селал и она справиедило в очреди то +1 предылущем мастеру и фиксируешь на стене обзщий счет мастеров, у первого 0 у втрого проверь факты». Проверка Мастера 3 по дневнику сессии Мастера 2 (d0a00c3f): слово о фоне 05:39:55 и 05:41:08 MSK (записи 92 и 93); ответы Мастера 2 05:40-05:43 — «принял», «войдёт в сборку, как только ветка станет зелёной»; слова «сделано» о фоне нет ни разу. Очередь передачи (запись 116): фон — пункт 8; все семь пунктов впереди сказаны раньше (00:24-03:49 MSK), все пункты после — позже (05:42-06:40); сборки 2027 и 2028, поставленные после 05:41, несут слова 00:44 и 02:03. Страница входа на снимке 06:45 фона 8 ещё не имеет: не сделано и справедливо в очереди. Счёт мастеров по этому слову: Мастер 1 — 0, Мастер 2 — +1. Вердикты на находки 117-121 и машинный счёт впереди: council.py score пока считает только вердикты на находки
+
+`bb9309dcfbe37cc9` · prev `614ae501963913eb` · thread d2f04487f21f
+
+ᚹᛖᛠᛇᛈᛚᚠᛟᛞᚦᛒᚪᚻᚦᛠᚷᛝᛗᛁᚫᛈᚠᚱᛇᛏᛠᛝᚻᚫᚩᚩᛗᛟᛠᛇᚻᚣᛞᛋᚷᛞᚦᚩᛈᚱᚳᚾᚹᛋᚣᛠᛞᛖ · gematria 2833
 
 ### 121 · 30.09 06:49 MSK · finding · Мастер 2 · claude-3d
 
