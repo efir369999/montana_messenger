@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 7 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2048 base, next build pending; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `f82658237b8045c28287448c37d68d2145bdbd1d`. Commit: pending.
-<!-- montana-change {"id": "98ed459b-7f1f-444b-a1b5-bffc0685db24", "utc": "2026-09-30T20:21:58+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2048 base, next build pending", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Big player: the album cover opens over the player's plate in the same page instead of a separate full-screen window, its waves drawn in one layer; the frame meter reads the main thread's stack in every stall past 48 ms and counts the page bodies run during a motion", "tree": "f82658237b8045c28287448c37d68d2145bdbd1d", "parents": ["d607148278c2970cf0b28236f8b52a5e6e1b501d"], "commit": null} -->
+- **Staged source tree:** `f82658237b8045c28287448c37d68d2145bdbd1d`. Commit: `31c304dfbab9d9b246d987c182cdc5eb1d901600`.
+<!-- montana-change {"id": "98ed459b-7f1f-444b-a1b5-bffc0685db24", "utc": "2026-09-30T20:21:58+00:00", "callsign": "Master 7", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2048 base, next build pending", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Big player: the album cover opens over the player's plate in the same page instead of a separate full-screen window, its waves drawn in one layer; the frame meter reads the main thread's stack in every stall past 48 ms and counts the page bodies run during a motion", "tree": "f82658237b8045c28287448c37d68d2145bdbd1d", "parents": ["d607148278c2970cf0b28236f8b52a5e6e1b501d"], "commit": "31c304dfbab9d9b246d987c182cdc5eb1d901600"} -->
 
 ### 2026-09-30T19:51:13+00:00 — Advance build number to 2048
 
