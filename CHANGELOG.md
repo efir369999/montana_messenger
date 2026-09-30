@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:55:55+00:00 — merge rollback-898 687fbced into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 65fedaa8, no own edits
+
+- **Callsign / model:** feeds-top agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `65fedaa876210d5ab06a92694921107553630dfc`. Commit: pending.
+<!-- montana-change {"id": "5fdc7ff6-fdbd-4886-b0da-561cc0e139d6", "utc": "2026-09-30T00:55:55+00:00", "callsign": "feeds-top agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge rollback-898 687fbced into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 65fedaa8, no own edits", "tree": "65fedaa876210d5ab06a92694921107553630dfc", "parents": ["0f9925e0ce157ca29001e908f61f508cb4ae3287", "687fbced94da04657456dbc10f501769d873d837"], "commit": null} -->
+
 ### 2026-09-30T00:55:38+00:00 — build 2024: a post on a friend's wall stands as a card in the pair's chat on both phones, born in one place (ChatStore.appendWallPost), keyed by the post id; over 2023
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
