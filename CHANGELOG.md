@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T02:47:06+00:00 — Merge rollback-898 bd29deab (build 2027, fix/feeds-scroll-top in the main line) into stage/player-speed, no own edits
+
+- **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `d415c7c373a9a5c8f07560f435d4d02795ed7ac3`. Commit: pending.
+<!-- montana-change {"id": "bc09bf9d-812f-40b7-bcc8-00b57fa9a7d5", "utc": "2026-09-30T02:47:06+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 bd29deab (build 2027, fix/feeds-scroll-top in the main line) into stage/player-speed, no own edits", "tree": "d415c7c373a9a5c8f07560f435d4d02795ed7ac3", "parents": ["86fd0160a26cf63265cdde450136d3c3c991f9ca", "bd29deabeb35463ee6b43d334f552be9c9f6c0be"], "commit": null} -->
+
 ### 2026-09-30T02:46:46+00:00 — wallpaper: Aurora, the eighth ground of the chooser as the author saw it (build 2025), is the default where nothing is chosen (the author's word 30.09 05:40); his picture stays a ground of the chooser under its name montana
 
 - **Callsign / model:** default-wall-8 agent of Master 2 / claude-opus-5-5.
