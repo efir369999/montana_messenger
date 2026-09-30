@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T03:28:36+00:00 — council: the comments of council.py say only why -- history and quotes live in git log; not one line of logic changed (AST, token stream and code lines equal before and after)
+
+- **Callsign / model:** timechain-demo agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (council tool); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `a8b976f711be5242b2a0a9c9bdde5bb58ff7167d`. Commit: pending.
+<!-- montana-change {"id": "ff282269-043e-4058-9d94-0e83633fc541", "utc": "2026-09-30T03:28:36+00:00", "callsign": "timechain-demo agent of Master 2", "model": "claude-opus-5-5", "build": "none (council tool)", "os": "macOS 26.6", "summary": "council: the comments of council.py say only why -- history and quotes live in git log; not one line of logic changed (AST, token stream and code lines equal before and after)", "tree": "a8b976f711be5242b2a0a9c9bdde5bb58ff7167d", "parents": ["09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": null} -->
+
 ### 2026-09-30T03:28:29+00:00 — Big player branch: the comments this branch added cut to the short why (no history, dates or quotes); no code change
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
