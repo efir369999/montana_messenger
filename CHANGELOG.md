@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** music-wall agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `05c3197be9bc8e8d683df1e5c47e82a3b4775a53`. Commit: pending.
-<!-- montana-change {"id": "c1403b3d-a924-4ba0-871c-41382d7cf599", "utc": "2026-09-30T01:17:13+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "walls: one write for every wall (the author word 30.09 04:05) -- MTBoardWriteButton, the write glyph in the mini player dress on its square bar plate; the feed corner, a page wall row, a draft plate, the post page publish, the page preview and the VPN wall corner refer to it; the owner guard names it", "tree": "05c3197be9bc8e8d683df1e5c47e82a3b4775a53", "parents": ["4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": null} -->
+- **Staged source tree:** `05c3197be9bc8e8d683df1e5c47e82a3b4775a53`. Commit: `6aebe76c47e846262d1a31396816c68806c94853`.
+<!-- montana-change {"id": "c1403b3d-a924-4ba0-871c-41382d7cf599", "utc": "2026-09-30T01:17:13+00:00", "callsign": "music-wall agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "walls: one write for every wall (the author word 30.09 04:05) -- MTBoardWriteButton, the write glyph in the mini player dress on its square bar plate; the feed corner, a page wall row, a draft plate, the post page publish, the page preview and the VPN wall corner refer to it; the owner guard names it", "tree": "05c3197be9bc8e8d683df1e5c47e82a3b4775a53", "parents": ["4cd66091def375fc56db3bb2b294a47d3c95055b"], "commit": "6aebe76c47e846262d1a31396816c68806c94853"} -->
 
 ### 2026-09-30T01:17:01+00:00 — code order: the plan in docs/CODE-ORDER.md -- the measured style of the reference, nine rules, the map of every file over 1500 lines, the cut of each, the guards that read each by path, the open branches that hold each, and the queue
 
