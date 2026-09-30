@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `b09dad0dfc291171c7e0d1c87c05c7f515b65a30`. Commit: pending.
-<!-- montana-change {"id": "3246d211-be1b-4abf-a171-569d29745127", "utc": "2026-09-30T01:13:56+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 b253e28a (build 2025) into stage/player-speed: the main line under the big player's work, no own edits", "tree": "b09dad0dfc291171c7e0d1c87c05c7f515b65a30", "parents": ["c43c47e54644279548237941ef750d2b58f1bb17", "b253e28aa16b09a6aa9e32ca35b030f66d983fc5"], "commit": null} -->
+- **Staged source tree:** `b09dad0dfc291171c7e0d1c87c05c7f515b65a30`. Commit: `3a96ccef3c55604c9a619028c7540fab2d10a443`.
+<!-- montana-change {"id": "3246d211-be1b-4abf-a171-569d29745127", "utc": "2026-09-30T01:13:56+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 b253e28a (build 2025) into stage/player-speed: the main line under the big player's work, no own edits", "tree": "b09dad0dfc291171c7e0d1c87c05c7f515b65a30", "parents": ["c43c47e54644279548237941ef750d2b58f1bb17", "b253e28aa16b09a6aa9e32ca35b030f66d983fc5"], "commit": "3a96ccef3c55604c9a619028c7540fab2d10a443"} -->
 
 ### 2026-09-30T01:12:56+00:00 — Big player: the playing track's place in the playlist at the plate's bottom left; a tap stands its row in the middle of the screen (MTChatListView.focus)
 
