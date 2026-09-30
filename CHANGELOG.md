@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T19:13:43+00:00 — call window: it stands on the controller that said so and dies with it -- a call that ended with its window up no longer refuses the window of every later call
+
+- **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2047; macOS 26.6 (Darwin 25.6.0), iOS client. No new compilation or installation claimed.
+- **Staged source tree:** `3f20dc85a86e665264c584549e447813e0805a39`. Commit: pending.
+<!-- montana-change {"id": "a55d6fea-8be2-48fa-abdf-90eeef57a464", "utc": "2026-09-30T19:13:43+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2047", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "call window: it stands on the controller that said so and dies with it -- a call that ended with its window up no longer refuses the window of every later call", "tree": "3f20dc85a86e665264c584549e447813e0805a39", "parents": ["6a8380e4093360c2c8787bd13aaea2801f97c3c5"], "commit": null} -->
+
 ### 2026-09-30T19:00:47+00:00 — Advance build number to 2046
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
