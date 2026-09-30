@@ -30,8 +30,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d (relay for Master 3) / claude-opus-5-5.
 - **Build / OS:** none (branch for 2029); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `937e569a4f970530a7a12ae4ba55531a3f218040`. Commit: pending.
-<!-- montana-change {"id": "71c71fbf-2ec8-4259-bcf4-29633ef4bb57", "utc": "2026-09-30T04:09:16+00:00", "callsign": "Master 2 claude-3d (relay for Master 3)", "model": "claude-opus-5-5", "build": "none (branch for 2029)", "os": "macOS 26.6", "summary": "stage/player-speed-flat: the tree of stage/player-speed 4718c1e8 as one commit over the main line ef53ed90 -- the playlist frame drops closed at the root, the frame meter, the full-page player, the output device glyph, the track number", "tree": "937e569a4f970530a7a12ae4ba55531a3f218040", "parents": ["ef53ed906a779ed29d2ce5a7286b19e8b27ec876"], "commit": null} -->
+- **Staged source tree:** `937e569a4f970530a7a12ae4ba55531a3f218040`. Commit: `f20b96b3cd9f7a2c4ba06ad88e7027284350b4dd`.
+<!-- montana-change {"id": "71c71fbf-2ec8-4259-bcf4-29633ef4bb57", "utc": "2026-09-30T04:09:16+00:00", "callsign": "Master 2 claude-3d (relay for Master 3)", "model": "claude-opus-5-5", "build": "none (branch for 2029)", "os": "macOS 26.6", "summary": "stage/player-speed-flat: the tree of stage/player-speed 4718c1e8 as one commit over the main line ef53ed90 -- the playlist frame drops closed at the root, the frame meter, the full-page player, the output device glyph, the track number", "tree": "937e569a4f970530a7a12ae4ba55531a3f218040", "parents": ["ef53ed906a779ed29d2ce5a7286b19e8b27ec876"], "commit": "f20b96b3cd9f7a2c4ba06ad88e7027284350b4dd"} -->
 
 ### 2026-09-30T04:06:02+00:00 — Merge rollback-898 ef53ed90 (council walls, CouncilWall only) into stage/player-speed, no own edits
 
