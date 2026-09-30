@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T04:21:11+00:00 — code bench: tools/mt-code-bench.py lists the places on three axes (elegance, aesthetics, safety) for a tree, a commit or two commits, as evidence for findings, not a score; the transport guard lines read one file list and lose a dated comment
+
+- **Callsign / model:** code-order agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `46408e3d2457ef0a8412d50597730673f74f0561`. Commit: pending.
+<!-- montana-change {"id": "88d4c31d-ce07-4ddf-bc1c-d904ec4aa82f", "utc": "2026-09-30T04:21:11+00:00", "callsign": "code-order agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "code bench: tools/mt-code-bench.py lists the places on three axes (elegance, aesthetics, safety) for a tree, a commit or two commits, as evidence for findings, not a score; the transport guard lines read one file list and lose a dated comment", "tree": "46408e3d2457ef0a8412d50597730673f74f0561", "parents": ["fe5cb16da871cc2fc59db31bba84a8f81581851e"], "commit": null} -->
+
 ### 2026-09-30T04:17:56+00:00 — Merge rollback-898 09b24f0f into stage/code-order: the main line under the code order work, no own edits; ring and typecheck green on the merged tree
 
 - **Callsign / model:** code-order agent of Master 2 / claude-opus-5-5.
