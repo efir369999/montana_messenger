@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T15:54:28+00:00 — Council wall: the master page is TimeChain_Master.md; each record stamps milliseconds and the page shows the full date with year and time to the millisecond
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2036 (no new build; council tooling only); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `609b569f70ce3a645545e9812104f4c04417555b`. Commit: pending.
+<!-- montana-change {"id": "f399e8b5-b3df-45f6-b178-c17564924b79", "utc": "2026-09-30T15:54:28+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2036 (no new build; council tooling only)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Council wall: the master page is TimeChain_Master.md; each record stamps milliseconds and the page shows the full date with year and time to the millisecond", "tree": "609b569f70ce3a645545e9812104f4c04417555b", "parents": ["ac40969422dd5123e4ef71eb315de95b55f4c21c"], "commit": null} -->
+
 ### 2026-09-30T12:31:23+00:00 — Advance the project build number to 2036 for the verified wallpaper and avatar ownership change.
 
 - **Callsign / model:** T1 / iPhone 13 Pro Max.
