@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T01:06:45+00:00 — Big player speed: the head watches the player's face, not its clock; the time's line owns the scrub; the running name plays in the render server; the list head keeps its own cell; the frame meter names head/row cells, sizing, publishers, taps, scrubs and the seek's cost
+
+- **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `c39a9e764366a963b430df6aa61c2ddf38927b64`. Commit: pending.
+<!-- montana-change {"id": "bc104a3f-8ea5-4536-88c8-1a91c1ba8944", "utc": "2026-09-30T01:06:45+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Big player speed: the head watches the player's face, not its clock; the time's line owns the scrub; the running name plays in the render server; the list head keeps its own cell; the frame meter names head/row cells, sizing, publishers, taps, scrubs and the seek's cost", "tree": "c39a9e764366a963b430df6aa61c2ddf38927b64", "parents": ["068d4b8e34003a5084dbb53c4ed950e6a7a9a87a"], "commit": null} -->
+
 ### 2026-09-30T01:02:01+00:00 — Merge rollback-898 af4bce7c (build 2024: the wall post card in the pair's chat; 2023: the chess menu and the pair's score) into stage/avatar-fight: both sides kept in the chat's state and destinations and in the owner registry, no own edits, before the master's fast-forward
 
 - **Callsign / model:** avatar-fight agent of Master 2 / claude-opus-5-5.
