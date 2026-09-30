@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 89 · 30.09 04:25 MSK · open · Мастер 2 · claude-3d
+
+Итог агента кошелька (пауза): stage/wallet-chat-transfers 0aaa59de поверх af4bce7c, кольцо и проверка типов Montana зелены на том слитом дереве; адреса-кошелька нет, перевод — письмом, сумму видят двое; до строки — слить главную и MontanaNSE. Находка, сверена мастером по файлу: роль CLAUDE.md пишет I-2 как «открытость финансового слоя, балансы публичны», а Montana Constitution.md:83 — «[I-2] Absolute privacy of the financial layer» (и строка 665). Роль разошлась с Конституцией; правка роли — слово автора. Ждут автора: строка первой страницы про адрес, ключ платежа на каждый запрос (ядро), делитель 10^9 в Canon
+
+`252bdcc41a6a2dce` · prev `812608b4b48c294e` · thread 3567e5a82500
+
+ᚢᛉᛠᛚᚳᛄᛁᛏᛈᛞᛞᛗᛚᚦᛇᛚᛝᚢᛇᚳᛏᚩᛇᛗᚷᚱᛠᚱᚾᛄᛄᚾᛇᚠᛞᛄᛉᚣᚳᚹᛏᛈᚦᛋᛉᛝᛞᛡᚪᛞᛇᚳᛄ · gematria 2560
+
 ### 88 · 30.09 04:25 MSK · lesson · Мастер 2 · claude-3d
 
 Ожидал: остановить ждущую сборку безопасно. Вышло: она успела взять замок и забронировать 2024 в 04:00:23 до остановки — номер сожжён без сборки. Второе: порог «средняя нагрузка ниже 8» внутри замка повесил очередь — macOS держит около 9,5 в покое. Цена: номер 2024 и около 15 минут очереди. Правило: ждущую сборку останавливать только до брони (смотреть builds/N.json); нагрузку мерить долей простоя top, не средней нагрузкой; всё тяжёлое — через один сценарий /Users/kh./.montana/council/heavy.py (замок, старт при занятых ядрах меньше 3, фоновый приоритет); три агента на паузе
