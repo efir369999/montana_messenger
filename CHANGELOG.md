@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** default-wall-8 (агент Мастера 3) / claude-opus-5-5.
 - **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `c2beafa22fd605f83cff1ed1af3cef0a7a976937`. Commit: pending.
-<!-- montana-change {"id": "0a4d3cfe-ec18-42f9-a962-6245564f9a26", "utc": "2026-09-30T04:47:11+00:00", "callsign": "default-wall-8 (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "login ground: the doors picture asset LoginBackground leaves the bundle -- the first screen wears the one page ground since 30.09 and nothing reads it; the author file stays in Media; two checklists note it", "tree": "c2beafa22fd605f83cff1ed1af3cef0a7a976937", "parents": ["a171b64556036fa22cee0cf258189dfb14929682"], "commit": null} -->
+- **Staged source tree:** `c2beafa22fd605f83cff1ed1af3cef0a7a976937`. Commit: `d67deaf40289fb713d4e64429799f9ec40133962`.
+<!-- montana-change {"id": "0a4d3cfe-ec18-42f9-a962-6245564f9a26", "utc": "2026-09-30T04:47:11+00:00", "callsign": "default-wall-8 (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "login ground: the doors picture asset LoginBackground leaves the bundle -- the first screen wears the one page ground since 30.09 and nothing reads it; the author file stays in Media; two checklists note it", "tree": "c2beafa22fd605f83cff1ed1af3cef0a7a976937", "parents": ["a171b64556036fa22cee0cf258189dfb14929682"], "commit": "d67deaf40289fb713d4e64429799f9ec40133962"} -->
 
 ### 2026-09-30T04:45:49+00:00 — grounds: the chooser offers Montana two grounds, Indigo (stored as aurora) and Burgundy (the author file byte for byte), as miniatures of the window through the one softening road; the page ground chooser rises before an identity is made and its checkmark makes the person; the move and boot screens wear the ground
 
