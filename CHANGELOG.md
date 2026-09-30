@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e council / photo-avatar / Claude Opus 5.5.
 - **Build / OS:** 2020 source; not built; iOS 26 / 17.2 target. No new compilation or installation claimed.
-- **Staged source tree:** `524ea5a10f27e3f49ff6b008f7fb3995cec0e518`. Commit: pending.
-<!-- montana-change {"id": "25d853fb-e2cc-4320-b895-e5259871de54", "utc": "2026-09-30T00:26:08+00:00", "callsign": "claude-9e council / photo-avatar", "model": "Claude Opus 5.5", "build": "2020 source; not built", "os": "iOS 26 / 17.2 target", "summary": "A picture opens and closes as the face does: MontanaPhotoViewer at once over the screen, one picture, a pull or flick in any direction lets it go; chat, tabs, outer shell and wall; the vertical wall viewer of 2018 reverted; guard P-132.1 rewritten", "tree": "524ea5a10f27e3f49ff6b008f7fb3995cec0e518", "parents": ["aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": null} -->
+- **Staged source tree:** `524ea5a10f27e3f49ff6b008f7fb3995cec0e518`. Commit: `53879aad1d9eed1d870370f485ca4cab026cd811`.
+<!-- montana-change {"id": "25d853fb-e2cc-4320-b895-e5259871de54", "utc": "2026-09-30T00:26:08+00:00", "callsign": "claude-9e council / photo-avatar", "model": "Claude Opus 5.5", "build": "2020 source; not built", "os": "iOS 26 / 17.2 target", "summary": "A picture opens and closes as the face does: MontanaPhotoViewer at once over the screen, one picture, a pull or flick in any direction lets it go; chat, tabs, outer shell and wall; the vertical wall viewer of 2018 reverted; guard P-132.1 rewritten", "tree": "524ea5a10f27e3f49ff6b008f7fb3995cec0e518", "parents": ["aa91a5962849b989d12e3731b50ad9b0c29897a3"], "commit": "53879aad1d9eed1d870370f485ca4cab026cd811"} -->
 
 ### 2026-09-30T00:24:07+00:00 — checklist 36: the chronicle of stage 1.1 -- built, the main line merged (2021, 2022), ring green, typecheck exit 0
 
