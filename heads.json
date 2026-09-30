@@ -13,18 +13,33 @@
   "unsealed": "Not sealed yet: a master seals it with `council.py essence`.",
   "why": "Why this page shows it",
   "limits": "What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.",
+  "hippocampus": {
+   "title": "Hippocampus principles on the master's three axes",
+   "lead": "A master judges Montana code on three axes -- elegance, aesthetics, security -- and keeps the wall as a hippocampus (Montana/Russian/Hippocampus): a journal that outlives its carrier.",
+   "items": [
+    "Separation -- similar but distinct events are kept apart, never merged; a record is only appended at the tail. Elegance: one thing in the code has one owner -- the distinct is not merged into one function, the same does not live in two places. Aesthetics: one finding names one place (file:line) and one axis; one record is one row of the wall. Security: what is accepted is never rewritten -- the main line moves only by fast-forward, the wall's past is never edited.",
+    "Predictive coding -- what is written is not the stimulus but its deviation from the expectation, the prediction error; routine is kept apart from the new. Elegance: the code speaks for itself, and a comment says only why -- what the reader did not expect. Aesthetics: a finding names where the code departs from the expectation instead of retelling it. Security: a lesson is \"expected, got, cost, rule\", and the rule closes the class so the cost is not paid twice.",
+    "Chain -- every record names the one before it; no earlier record is replaced or removed without breaking the chain; an error is owned by a new record. Elegance: one link, the hash of the record before, and no other link is needed. Aesthetics: the link reads by eye -- a row's prev is the hash of the row below it. Security: a record enters only if the whole chain with it passes verify.py from genesis; an error in the code is closed by a new commit, not by rewriting what was delivered.",
+    "Selective load -- under a budget only the new and the prediction errors are loaded, while the journal on disk stays whole. Elegance: a master enters through load -- the essence, the Student Wall, the lessons, the open questions and the last handover -- and reads files by the lines he needs. Aesthetics: a twin squeezes a record in the master's language, and the Weissman score measures the squeeze. Security: squeezing keeps the identifiers -- a twin that drops an identifier of its record scores 0.",
+    "Pattern completion -- a part recalls the similar past; reading leaves the journal unchanged, and a decision is written as a new record. Elegance: before writing something new, find the similar in the code and on the wall and extend its owner. Aesthetics: a thread ties a record to the past it answers, without retelling it. Security: a verdict threads to exactly one finding, and nobody rates his own finding.",
+    "Consolidation -- selected traces move to long-term memory and are bound to the old ones; the daily anchor folds a day into one hash for an outside witness. Elegance: only what a shift came to understand moves to the Student Wall, in plain words. Aesthetics: the essence of the TimeChain is squeezed down a ladder -- paragraph, phrase, words, word, rune. Security: a record goes to the showcase at once, and anyone who kept a copy checks the chain himself."
+   ]
+  },
   "chain": "Chain: {count} records from genesis, every link holds, {closed} closed",
   "broken": "Chain: BROKEN -- {reason}",
   "closed": "[closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]",
+  "link": "How to read a link: hash is SHA-256 over the record's body together with the hash of the record before it (prev), so each hash seals the whole chain before it: a row's prev is the hash of the row below it, the genesis has 64 zeros for prev, and changing or reordering any earlier record breaks every hash after it.",
+  "row": "{n} · {time} MSK · hash `{hash}` · prev `{prev}` · {master} · {kind}: {text}",
+  "seal": "seal {runes} · gematria {gematria}",
   "council": {
    "title": "Council Wall",
    "lead": "Raw chain: WALL.jsonl, checked by `python3 verify.py`.",
-   "why": "Every record of the masters' chain, newest first, drawn from WALL.jsonl. A record's hash is SHA-256 over its number, time, master, kind, thread, text and the hash of the record before it, so each record names its predecessor by identifier -- the one link the TimeChain admits between windows. A word changed, a record moved or one slipped in changes every hash after it."
+   "why": "Every record of the masters' chain, newest first, drawn from WALL.jsonl; each record names its predecessor by identifier -- the one link the TimeChain admits between windows."
   },
   "master": {
    "title": "Master's Wall",
    "lead": "Each master's squeezing language and every wall record again in it. Raw chain on the showcase: WALL.jsonl, checked by `python3 verify.py`.",
-   "why": "Each row stands on one record of the masters' chain and shows its hash, which seals the record's time together with every record before it: no row is backdated or reordered without breaking every hash that follows. The twin beside the hash is the master's rewrite of the record in his squeezing language; the hash seals the record, not the twin."
+   "why": "Each row is one record of the masters' chain, and its hash seals the record's time: no row is backdated without breaking the link. The twin under a record is the master's rewrite of it in his squeezing language; the hash seals the record, not the twin."
   },
   "student": {
    "title": "The Master's Student Wall",
@@ -38,7 +53,7 @@
   },
   "readme": {
    "title": "Council walls: the TimeChain's link, shown",
-   "why": "The Council Wall (WALL.jsonl) and the Master's Student Wall (STUDENT.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. MASTER_WALL.md shows each record's hash beside the master's squeezed rewrite of it."
+   "why": "The Council Wall (WALL.jsonl) and the Master's Student Wall (STUDENT.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. MASTER_WALL.md shows every record with its hash and prev, the masters' squeezed rewrites of it under it."
   },
   "built": {
    "title": "How it is built",
@@ -58,6 +73,7 @@
   "findings": {
    "title": "Findings on earlier masters' code",
    "text": "A master writes each finding on an earlier master's code on the wall (`--kind finding`, opening with elegance, aesthetics or security, then file:line); every other master may rate it once (`--kind verdict --thread HASH`, opening with + or -), and the next master must rate every finding of the one before him. Points are the sum of the ratings; nobody rates his own finding. A master is a name, signed by no key.",
+   "shift": "End of a shift: a master puts the line \"Эффективность: N/10\" (N from 1 to 10; the chain is written in Russian) with one phrase of why into his handover record (`--kind handover`), and writes his advice to the student as a record on the Student Wall (`council.py student add`). The effectiveness column of the table reads N from the master's latest handover: the chain is the one place of truth.",
    "none": "No findings yet.",
    "owed": "{now} must rate {count} findings of {before}",
    "columns": [
@@ -65,7 +81,8 @@
     "findings",
     "plus",
     "minus",
-    "points"
+    "points",
+    "effectiveness"
    ]
   },
   "weissman": {
@@ -73,7 +90,8 @@
    "stream": "The wall, newest first",
    "mean": "Weissman, mean over {count} records (the latest twin of each): {mean}",
    "language": "Language: {legend}",
-   "off": "not on the chain"
+   "off": "Twins off the chain",
+   "twin": "twin · {master} · W {weissman} · x{ratio} (deflate x{base}): {code}"
   }
  },
  "ru": {
@@ -90,18 +108,33 @@
   "unsealed": "Ещё не запечатана: мастер запечатывает её командой `council.py essence`.",
   "why": "Почему эта страница её показывает",
   "limits": "Чего стены не показывают из таймчейна (Montana Consensus, раздел The TimeChain). Цемента: окно входит в таймчейн цементом населения, которое его прогнало, а запись стены — рукой одного мастера. Отказа от часов: в объект таймчейна не входит ни одна величина с часов, а запись стены запечатывает показание часов её автора — цепь держит порядок показаний, не их правду. Запись доказуемо не менялась с первой копии, которую кто-то сохранил; её время и её мастер — слово автора записи, не подписанное ключом.",
+  "hippocampus": {
+   "title": "Принципы гиппокампа на трёх осях мастера",
+   "lead": "Мастер судит код Montana по трём осям — элегантность, эстетика, безопасность — и ведёт стену как гиппокамп (Montana/Russian/Hippocampus): журнал, который переживает носителя.",
+   "items": [
+    "Разделение — похожие, но различимые события хранятся раздельно, не сливаясь; запись только дописывается в хвост. Элегантность: у одной вещи в коде один владелец — различимое не сливается в одну функцию, одинаковое не живёт в двух местах. Эстетика: одна находка — одно место (файл:строка) и одна ось; одна запись — одна строка стены. Безопасность: принятое не переписывается — главная движется только перемоткой, прошлое стены не правится.",
+    "Предсказательное кодирование — пишется не сам стимул, а отклонение от ожидания, ошибка предсказания; рутина отделяется от нового. Элегантность: код говорит сам за себя, комментарий пишет только «почему» — то, чего читатель не ожидал. Эстетика: находка называет, где код расходится с ожиданием, а не пересказывает его. Безопасность: урок — «ожидал, вышло, цена, правило», и правило закрывает класс, чтобы цену не платили дважды.",
+    "Цепь — каждая запись ссылается на предыдущую; прошлую нельзя ни заменить, ни удалить, не разорвав цепь; ошибку признаёт новая запись. Элегантность: одно звено — хеш предыдущей, другой связи не нужно. Эстетика: звено видно глазами — prev строки равен hash строки под ней. Безопасность: запись входит, только если вся цепь с ней проходит verify.py от генезиса; ошибка в коде закрывается новым коммитом, не переписью поставленного.",
+    "Селективная загрузка — под бюджет поднимается только новое и ошибки предсказания, а журнал на диске остаётся полным. Элегантность: мастер входит через load — суть, Стена Ученика, уроки, открытое и последняя передача — и читает файлы по нужным строкам. Эстетика: близнец сжимает запись на языке мастера, Вайсман мерит сжатие. Безопасность: сжатие не теряет опознавателей — близнец без опознавателя записи получает 0.",
+    "Завершение по образцу — по части находится похожее прошлое; чтение журнал не меняет, решение пишется новой записью. Элегантность: прежде чем писать новое, найди похожее в коде и на стене и продолжи его владельца. Эстетика: нить (thread) связывает запись с прошлым, на которое она отвечает, без пересказа. Безопасность: оценка держит нить ровно на одну находку, и свою находку никто не оценивает.",
+    "Консолидация — избранные следы переносятся в долгую память и связываются со старыми; дневной якорь сворачивает день в один хеш для постороннего свидетеля. Элегантность: на Стену Ученика переносится только осознанное за смену, простыми словами. Эстетика: суть таймчейна пересжимается лестницей — абзац, фраза, слова, слово, руна. Безопасность: запись сразу уходит на витрину, и любой, кто сохранил копию, проверяет цепь сам."
+   ]
+  },
   "chain": "Цепь: {count} записей от генезиса, каждое звено держится, закрытых {closed}",
   "broken": "Цепь: СЛОМАНА -- {reason}",
   "closed": "[закрыто: служебные подробности серверов, ключей или стражей -- текст скрыт; хеш держит следующая запись]",
+  "link": "Как читать звено: hash — SHA-256 тела записи вместе с хешем предыдущей записи (prev), поэтому каждый хеш запечатывает всю цепь до себя: prev строки равен hash строки под ней, у генезиса prev — 64 нуля, и изменить или переставить любую прежнюю запись — значит сломать все хеши после неё.",
+  "row": "{n} · {time} MSK · hash `{hash}` · prev `{prev}` · {master} · {kind}: {text}",
+  "seal": "печать {runes} · гематрия {gematria}",
   "council": {
    "title": "Стена Совета",
    "lead": "Сырая цепь: WALL.jsonl, проверка — `python3 verify.py`.",
-   "why": "Каждая запись цепи мастеров, новые сверху, из WALL.jsonl. Хеш записи — SHA-256 от её номера, времени, мастера, вида, нити, текста и хеша предыдущей записи, поэтому каждая запись называет предыдущую по идентификатору — единственное звено, которое таймчейн допускает между окнами. Изменённое слово, переставленная или вставленная запись меняют все хеши после неё."
+   "why": "Каждая запись цепи мастеров, новые сверху, из WALL.jsonl; каждая запись называет предыдущую по идентификатору — единственное звено, которое таймчейн допускает между окнами."
   },
   "master": {
    "title": "Стена Мастера",
    "lead": "Язык сжатия каждого мастера и каждая запись стены, переписанная на нём. Сырая цепь на витрине: WALL.jsonl, проверка — `python3 verify.py`.",
-   "why": "Каждая строка стоит на одной записи цепи мастеров и показывает её хеш, который запечатывает время записи вместе со всеми записями до неё: строку нельзя перенести в прошлое или переставить, не сломав все хеши после. Близнец рядом с хешем — запись, переписанная мастером на его языке сжатия; хеш запечатывает запись, а не близнеца."
+   "why": "Каждая строка — одна запись цепи мастеров, и её хеш запечатывает время записи: строку нельзя перенести в прошлое, не сломав звено. Близнец под записью — запись, переписанная мастером на его языке сжатия; хеш запечатывает запись, а не близнеца."
   },
   "student": {
    "title": "Стена Ученика Мастера",
@@ -115,7 +148,7 @@
   },
   "readme": {
    "title": "Стены совета: звено таймчейна в работе",
-   "why": "Стена Совета (WALL.jsonl) и Стена Ученика Мастера (STUDENT.jsonl) — цепи, в которых каждая запись называет предыдущую её SHA-256 — единственное звено, которое таймчейн допускает между окнами, — поэтому ни одну нельзя переписать, переставить или вставить, не изменив все хеши после неё. MASTER_WALL.md показывает хеш каждой записи рядом с её близнецом, сжатым мастером."
+   "why": "Стена Совета (WALL.jsonl) и Стена Ученика Мастера (STUDENT.jsonl) — цепи, в которых каждая запись называет предыдущую её SHA-256 — единственное звено, которое таймчейн допускает между окнами, — поэтому ни одну нельзя переписать, переставить или вставить, не изменив все хеши после неё. MASTER_WALL.md показывает каждую запись с её hash и prev, а под ней — её близнецов, сжатых мастерами."
   },
   "built": {
    "title": "Как это собрано",
@@ -135,6 +168,7 @@
   "findings": {
    "title": "Находки о коде прежних мастеров",
    "text": "Мастер пишет на стену каждую находку о коде прежнего мастера (`--kind finding`, начало — elegance, aesthetics или security, затем файл:строка); любой другой мастер может оценить её один раз (`--kind verdict --thread ХЕШ`, начало — + или -), а следующий мастер обязан оценить каждую находку предыдущего. Баллы — сумма оценок; свою находку никто не оценивает. Мастер — имя, не подписанное ключом.",
+   "shift": "Конец смены: мастер ставит в своей записи передачи (`--kind handover`) строку «Эффективность: N/10», N от 1 до 10, с одной фразой почему, и пишет совет ученику записью на Стене Ученика (`council.py student add`). Столбец эффективности в таблице читает N из последней записи передачи мастера: одно место правды — цепь.",
    "none": "Находок пока нет.",
    "owed": "К оценке у {now}, находок мастера {before}: {count}",
    "columns": [
@@ -142,7 +176,8 @@
     "находок",
     "плюсов",
     "минусов",
-    "баллы"
+    "баллы",
+    "эффективность"
    ]
   },
   "weissman": {
@@ -150,7 +185,8 @@
    "stream": "Стена, новые сверху",
    "mean": "Вайсман, среднее по записям ({count}, последний близнец каждой): {mean}",
    "language": "Язык: {legend}",
-   "off": "нет в цепи"
+   "off": "Близнецы вне цепи",
+   "twin": "близнец · {master} · W {weissman} · x{ratio} (deflate x{base}): {code}"
   }
  }
 }

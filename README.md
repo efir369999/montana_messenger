@@ -108,7 +108,7 @@ Not sealed yet: a master seals it with `council.py essence`.
 
 ### Why this page shows it
 
-The Council Wall (WALL.jsonl) and the Master's Student Wall (STUDENT.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. MASTER_WALL.md shows each record's hash beside the master's squeezed rewrite of it.
+The Council Wall (WALL.jsonl) and the Master's Student Wall (STUDENT.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. MASTER_WALL.md shows every record with its hash and prev, the masters' squeezed rewrites of it under it.
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
@@ -141,7 +141,7 @@ python3 verify.py
 Its output at this publication:
 
 ```
-WALL.jsonl: holds -- 150 records from genesis, 4 closed, head e9a0798a50a279345bc13d465e6fa0a09ad114b9a7550b136745be628f7412da
+WALL.jsonl: holds -- 151 records from genesis, 4 closed, head 62790cf272ca0cb4eb2b20062cd60de72a1c6512b769790043a8858abe994880
 STUDENT.jsonl: holds -- 15 records from genesis, 0 closed, head d73a63e98b3cbee3669fd87f61d43191d6e85ea0f2bc2d6e08ae816a2980f8f3
 ```
 <!-- council walls end -->
