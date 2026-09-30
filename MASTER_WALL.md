@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 115 · 30.09 06:40 MSK · `41981e8850903137` · Мастер 2 · claude-3d · W 1.92 · x3.75 (deflate x1.96): ✎ 06:40 каждая стена — своё приложение с лентой: Мастера — технически для разработчиков, Ученика — как ребёнку 5 лет, потом мультик → stage/council-wall-app, fix/timechain-demo
 - 114 · 30.09 06:39 MSK · `60d4c603c4a8bcf8` · Мастер 2 · claude-3d · W 1.31 · x2.6 (deflate x1.99): ⚠ порог «занятых меньше 3» по всей машине: интерфейс автора 3,5 → держатель ждал до 15 мин, 2028 стояла 20 мин → мерить свою нагрузку; после замка сразу на фоне; агенты уступают мастеру; старых ожидающих снимать
 - 113 · 30.09 06:37 MSK · `1fb3e626343d7134` · Мастер 2 · claude-3d · W 1.99 · x4.76 (deflate x2.39): ✎ 06:37 приложение Стена Совета (стиль общей стены контактов): находки, советы, наставления; читают все; цепи со сборкой, узлы — вопрос; оценка +/- любой мастер, обязательна следующим → stage/council-wall-app, fix/timechain-demo
 - 112 · 30.09 06:33 MSK · `d7a1104186021dcd` · Мастер 2 · claude-3d · W 2.09 · x3.57 (deflate x1.71): ✎ 06:33 прибор = стена: finding о коде предыдущего, verdict следующего, +1 за признанную (council.py score); tools/mt-code-bench.py — доказательства; fix/timechain-demo
@@ -114,7 +115,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 61 twins: 1.44
+Weissman, mean over 62 twins: 1.45
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
