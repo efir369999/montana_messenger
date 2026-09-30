@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** wall-hash-chain (агент Мастера 3) / claude-opus-5-5.
 - **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `966cb4cf6ebc655d120dd3c659234cf0d3a82ab4`. Commit: pending.
-<!-- montana-change {"id": "f3ba38e6-5133-4713-9542-748a104b0e14", "utc": "2026-09-30T04:32:42+00:00", "callsign": "wall-hash-chain (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Council wall pages: one row per chain record, newest first, with the full hash and prev so the link reads by eye; twins and the rune seal under the record; the link phrase in every wall head (heads.json); add redraws both pages", "tree": "966cb4cf6ebc655d120dd3c659234cf0d3a82ab4", "parents": ["884a8268267fb4639ef8e18e7794a529bdc470c9"], "commit": null} -->
+- **Staged source tree:** `966cb4cf6ebc655d120dd3c659234cf0d3a82ab4`. Commit: `f866e9ded328ab5e640df00e3ccd35f6cef674e1`.
+<!-- montana-change {"id": "f3ba38e6-5133-4713-9542-748a104b0e14", "utc": "2026-09-30T04:32:42+00:00", "callsign": "wall-hash-chain (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Council wall pages: one row per chain record, newest first, with the full hash and prev so the link reads by eye; twins and the rune seal under the record; the link phrase in every wall head (heads.json); add redraws both pages", "tree": "966cb4cf6ebc655d120dd3c659234cf0d3a82ab4", "parents": ["884a8268267fb4639ef8e18e7794a529bdc470c9"], "commit": "f866e9ded328ab5e640df00e3ccd35f6cef674e1"} -->
 
 ### 2026-09-30T04:32:07+00:00 — Merge rollback-898 884a8268 (build 2029) into fix/player-cover-waves over f2699d7c: one base f3de66ce, clean; the cover tap stays the branch one (the main line handed it over), the main line icon placeholder made once stands beside the icon waves
 
