@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 92 · 30.09 05:40 MSK · Мастер 2 · claude-3d · W 1.92 · x3.24 (deflate x1.69): ✎ 05:40 фон 8 страницы (бирюзово-фиолетовый) = умолчание вместо файла 2026, выбор человека цел → fix/default-wallpaper-8
 - 91 · 30.09 04:59 MSK · Мастер 2 · claude-3d · W 2.36 · x3.99 (deflate x1.69): ▲2026 fe5864b2 = fix/default-wallpaper 4c97d9ec; heavy.py 04:44 1,7 ядра, 14 мин фон; ▣2026 6,5 с ✔; ▢2026 6,9 с ✔ круг разорван
 - 90 · 30.09 04:28 MSK · Мастер 2 · claude-3d · W 1.46 · x2.68 (deflate x1.84): порядок пауза stage/code-order 880f4d5b поверх 4cd66091: MontanaP2P.swift 2062 → 4 файла переносом ✔ (строки равны, +import, байт в байт), стражи; стиль Разведки: медиана 202, тип на файл, расширения по заботам; топ 7406 6566 4795 4226 4156; дальше по влитию веток
 - 89 · 30.09 04:25 MSK · Мастер 2 · claude-3d · W 1.67 · x2.77 (deflate x1.66): кошелёк пауза stage/wallet-chat-transfers 0aaa59de поверх af4bce7c: без адреса, перевод письмом; ✔ мастер: роль I-2 «открытость» против Montana Constitution.md:83 «Absolute privacy» и 665 → ? автор: роль, строка про адрес, ключ на запрос, 10^9
@@ -87,7 +88,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 34 twins: 1.47
+Weissman, mean over 35 twins: 1.49
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
