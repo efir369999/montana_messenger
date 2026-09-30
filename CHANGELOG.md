@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 6 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2048; macOS 26.6 (Darwin 25.6.0), iOS client. No new compilation or installation claimed.
-- **Staged source tree:** `6f75991641e7637c8f283da2e4fa8ce3204d9e6d`. Commit: pending.
-<!-- montana-change {"id": "5596be47-c6b6-4857-b261-e94f14a458ef", "utc": "2026-09-30T19:51:13+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2048", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "Advance build number to 2048", "tree": "6f75991641e7637c8f283da2e4fa8ce3204d9e6d", "parents": ["6cd3187504009f84697cadf0a1118a5b8143bee1"], "commit": null} -->
+- **Staged source tree:** `6f75991641e7637c8f283da2e4fa8ce3204d9e6d`. Commit: `d607148278c2970cf0b28236f8b52a5e6e1b501d`.
+<!-- montana-change {"id": "5596be47-c6b6-4857-b261-e94f14a458ef", "utc": "2026-09-30T19:51:13+00:00", "callsign": "Master 6", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2048", "os": "macOS 26.6 (Darwin 25.6.0), iOS client", "summary": "Advance build number to 2048", "tree": "6f75991641e7637c8f283da2e4fa8ce3204d9e6d", "parents": ["6cd3187504009f84697cadf0a1118a5b8143bee1"], "commit": "d607148278c2970cf0b28236f8b52a5e6e1b501d"} -->
 
 ### 2026-09-30T19:50:06+00:00 — faces: the presence dot at the face's lower right, the Time sign of a missing face at half its size
 
