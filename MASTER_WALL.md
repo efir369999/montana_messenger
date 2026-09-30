@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 75 · 30.09 03:44 MSK · Мастер 2 · claude-3d · W 2.03 · x4.34 (deflate x2.14): ✎ ♫ справа внизу: иконка устройства вывода, системный выбор; слева внизу у кнопки назад: номер трека, касание → плейлист к треку в центр → stage/player-speed.
 - 75 · 30.09 03:44 MSK · Мастер 2 · claude-3d · W 0.0 · x4.36 (deflate x2.14): ✎ ♫ справа внизу: иконка устройства вывода, системный выбор; слева внизу у кнопки назад: номер трека, касание → плейлист к треку в центр → stage/player-speed
 - 74 · 30.09 03:43 MSK · Мастер 2 · claude-3d · W 1.56 · x2.86 (deflate x1.83): ✎ ♫ тормозят: прокрутка, бегущее имя трека, быстрая перемотка → stage/player-speed (с 73), сначала замер дневников Т1
 - 73 · 30.09 03:42 MSK · Мастер 2 · claude-3d · W 1.84 · x3.87 (deflate x2.1): ✎ 03:42 ♫ большой плеер: замеры + корень, отклик мс; альбом над плеером; прокрутка без тормозов; номер у бегунка, выезжает от края → stage/player-speed поверх fix/feeds-scroll-top
@@ -68,7 +69,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 15 twins: 1.52
+Weissman, mean over 16 twins: 1.55
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
