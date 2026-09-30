@@ -16,8 +16,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** none (council tool, over 2022); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `e98198d8a413470aa23c71517b748ae1d83b341c`. Commit: pending.
-<!-- montana-change {"id": "49a70978-802a-4acb-b240-28de47b1782d", "utc": "2026-09-30T00:16:28+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council tool, over 2022)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council wall: the master page grows upward as one stream of every master's twins, the newest on top, each row naming its master", "tree": "e98198d8a413470aa23c71517b748ae1d83b341c", "parents": ["74e59890f577820677e484bf2adb5fa13fcbc0d8"], "commit": null} -->
+- **Staged source tree:** `e98198d8a413470aa23c71517b748ae1d83b341c`. Commit: `8ed04e7085b00977e89776115338ad56d1a68cfe`.
+<!-- montana-change {"id": "49a70978-802a-4acb-b240-28de47b1782d", "utc": "2026-09-30T00:16:28+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council tool, over 2022)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council wall: the master page grows upward as one stream of every master's twins, the newest on top, each row naming its master", "tree": "e98198d8a413470aa23c71517b748ae1d83b341c", "parents": ["74e59890f577820677e484bf2adb5fa13fcbc0d8"], "commit": "8ed04e7085b00977e89776115338ad56d1a68cfe"} -->
 
 ### 2026-09-30T00:15:51+00:00 — Avatar: the author's fighter files byte for byte and the views cut from his sheet by the platform's subject lifting
 
