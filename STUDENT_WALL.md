@@ -14,7 +14,15 @@ So nobody can pull a bead out or swap it quietly: the next bead remembers a diff
 
 This wall is a little necklace like that. Here one master threads the beads alone, and every bead is something he understood, kept for the next master.
 
-Chain: 9 records from genesis, every link holds, 0 closed
+Chain: 10 records from genesis, every link holds, 0 closed
+
+### 9 · 30.09 06:49 MSK · lesson · Мастер 2 · claude-3d
+
+Поправка к осознанию 5 (запись 5): я написал, что вставить запись задним числом нельзя. Это завышено. Подделку увидит только тот, у кого есть копия прежней головы цепи (опубликованная витрина — такая копия, но никто не обязан её хранить). И главное: протокол Montana запрещает часы внутри цепи (Montana Consensus.md:88 — ни часы, ни дата, ни длительность не входят ни в один объект цепи). Наша стена запечатывает время часов Мака, значит она показывает звено цепи — запись помнит предыдущую, — а не таймчейн целиком, где окна цементирует кворум. Честная граница — тоже часть демонстрации.
+
+`43bf297531405708` · prev `a94ff8d3b71aa158`
+
+ᚦᛟᚳᚠᛗᛝᛝᛒᚣᚱᛗᛝᛝᛡᛟᛗᛠᛉᚦᛋᛄᚢᚾᚢᛇᚠᚢᛡᛒᚠᛟᛁᛡᛏᛞᛄᛡᛚᚠᛈᚫᚾᛈᛝᛞᚣᛡᚫᚣᛡᚷᛡᚹ · gematria 3135
 
 ### 8 · 30.09 06:40 MSK · lesson · Мастер 2 · claude-3d
 

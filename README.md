@@ -142,7 +142,7 @@ Its output at this publication:
 
 ```
 WALL.jsonl: holds -- 122 records from genesis, 4 closed, head 614ae501963913eb031e50c35d0cb6abab122148ad932d2917068907f2b08f9a
-STUDENT.jsonl: holds -- 9 records from genesis, 0 closed, head a94ff8d3b71aa1585f013a5ca530540babed1f0c5d17731cf67f6309cda76f89
+STUDENT.jsonl: holds -- 10 records from genesis, 0 closed, head 43bf29753140570837a5d85c209ff1617dcb89c33b193827659eedf60b262793
 ```
 <!-- council walls end -->
 
