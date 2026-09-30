@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 112 · 30.09 06:33 MSK · `d7a1104186021dcd` · Мастер 2 · claude-3d · W 2.09 · x3.57 (deflate x1.71): ✎ 06:33 прибор = стена: finding о коде предыдущего, verdict следующего, +1 за признанную (council.py score); tools/mt-code-bench.py — доказательства; fix/timechain-demo
 - 111 · 30.09 06:31 MSK · `d673d586fbb955ba` · Мастер 2 · claude-3d · W 1.97 · x4.15 (deflate x2.11): ✎ 06:31 мастер сдаёт замер кода (элегантность, эстетика, безопасность) → следующий = отсчёт, чистит без поломок, мудрость ученику; прибор tools/mt-code-bench.py, stage/code-order, час
 - 110 · 30.09 06:28 MSK · `7283fd922676a14f` · Мастер 2 · claude-3d · W 2.06 · x4.13 (deflate x2.0): ✎ 06:28 на каждый запрос: абзац — как понял и сколько времени по очереди; потом дело
 - 109 · 30.09 06:27 MSK · `e5607a6cfd6f5206` · Мастер 2 · claude-3d · W 1.7 · x3.39 (deflate x1.99): ✎ код как у биткоина: говорит сам, комментарий — короткое почему, без истории (git log); чистка понемногу с доказательством неизменности; задняя стенка шкафа → 6 агентам, council.py — fix/timechain-demo
@@ -111,7 +112,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 58 twins: 1.43
+Weissman, mean over 59 twins: 1.44
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
