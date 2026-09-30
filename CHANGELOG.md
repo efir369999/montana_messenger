@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** claude-9e (avatar-fight) / Claude Opus 5.5.
 - **Build / OS:** none -- branch stage/avatar-fight, not built; macOS 26 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `d1d105a1ebd5b487949a1e085568f42c43730fdb`. Commit: pending.
-<!-- montana-change {"id": "81b62f18-dcbd-4e05-9f1b-a3733027c83d", "utc": "2026-09-30T00:15:51+00:00", "callsign": "claude-9e (avatar-fight)", "model": "Claude Opus 5.5", "build": "none -- branch stage/avatar-fight, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "Avatar: the author's fighter files byte for byte and the views cut from his sheet by the platform's subject lifting", "tree": "d1d105a1ebd5b487949a1e085568f42c43730fdb", "parents": ["62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": null} -->
+- **Staged source tree:** `d1d105a1ebd5b487949a1e085568f42c43730fdb`. Commit: `5484ae7199641ea7315787cba07f24a73cb2e7e2`.
+<!-- montana-change {"id": "81b62f18-dcbd-4e05-9f1b-a3733027c83d", "utc": "2026-09-30T00:15:51+00:00", "callsign": "claude-9e (avatar-fight)", "model": "Claude Opus 5.5", "build": "none -- branch stage/avatar-fight, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "Avatar: the author's fighter files byte for byte and the views cut from his sheet by the platform's subject lifting", "tree": "d1d105a1ebd5b487949a1e085568f42c43730fdb", "parents": ["62e9d0df3321ee80ea46f057340f80ff736ac89b"], "commit": "5484ae7199641ea7315787cba07f24a73cb2e7e2"} -->
 
 ### 2026-09-30T00:14:08+00:00 — build 2022: the same composition as 2021 (MTSelfFace, my own face drawn by one view everywhere); 2021 was reserved at 62e9d0df and never sealed, a repeat number is refused
 
