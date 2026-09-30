@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T01:09:12+00:00 — pictures: one picture's way out is its zoom view's own recogniser (works on iOS 17 too); a tap the viewer drops is said in the diary
+
+- **Callsign / model:** photo-avatar agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `985be3b9cc9f4afdd3837cf6096f45605e0019eb`. Commit: pending.
+<!-- montana-change {"id": "a61e0e18-a34f-4782-9e0c-e6f9faa74c8c", "utc": "2026-09-30T01:09:12+00:00", "callsign": "photo-avatar agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "pictures: one picture's way out is its zoom view's own recogniser (works on iOS 17 too); a tap the viewer drops is said in the diary", "tree": "985be3b9cc9f4afdd3837cf6096f45605e0019eb", "parents": ["53879aad1d9eed1d870370f485ca4cab026cd811"], "commit": null} -->
+
 ### 2026-09-30T01:07:54+00:00 — Merge the main line af4bce7c (build 2024) into stage/update-page: no own edits, before the master's fast-forward
 
 - **Callsign / model:** update-page agent of Master 2 / claude-opus-5-5.
