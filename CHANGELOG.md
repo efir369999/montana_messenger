@@ -23,8 +23,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `e38bf479e209e8607b08e645417560690c873ff1`. Commit: pending.
-<!-- montana-change {"id": "6212e83a-f15a-4a3c-8907-296c593272bc", "utc": "2026-09-30T03:08:42+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Documents in the app: the rules and the privacy policy as two walls of one page, read from the one data file; the login footer and Settings open them inside the app, never the site", "tree": "e38bf479e209e8607b08e645417560690c873ff1", "parents": ["b3676a54cc6915b23ad881e79cdbcf108662ef83"], "commit": null} -->
+- **Staged source tree:** `e38bf479e209e8607b08e645417560690c873ff1`. Commit: `28a5770cae13a83ec91a51396774bfc25268b853`.
+<!-- montana-change {"id": "6212e83a-f15a-4a3c-8907-296c593272bc", "utc": "2026-09-30T03:08:42+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Documents in the app: the rules and the privacy policy as two walls of one page, read from the one data file; the login footer and Settings open them inside the app, never the site", "tree": "e38bf479e209e8607b08e645417560690c873ff1", "parents": ["b3676a54cc6915b23ad881e79cdbcf108662ef83"], "commit": "28a5770cae13a83ec91a51396774bfc25268b853"} -->
 
 ### 2026-09-30T03:05:53+00:00 — music wall is live (the author word 30.09 05:40): a track stands on the wall while its keeper holds the file; deleted -- it leaves the wall for everyone, its pieces leave the node, listeners let go of the row and what they brought
 
