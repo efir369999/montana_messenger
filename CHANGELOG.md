@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** merge-queue (агент Мастера 3) / claude-opus-5-5.
 - **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `601762bf8b8de3e02b25c47cd31914a5d5b61175`. Commit: pending.
-<!-- montana-change {"id": "18b02c03-507c-414c-8898-8fd1cef3473c", "utc": "2026-09-30T05:04:28+00:00", "callsign": "merge-queue (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Merge rollback-898 23b7439f into fix/vpn-wall-whitelist-auto over d6103e4e: one base 884a8268, clean; brings only CouncilWall/council.py and CouncilWall/heads.json (the wall hashes), the app tree is unchanged since the green ring and typecheck on d6103e4e", "tree": "601762bf8b8de3e02b25c47cd31914a5d5b61175", "parents": ["d6103e4e3a48b699e8bf722dd6f30f271654852b", "23b7439fa5702216ed46183b1decbe178f30b357"], "commit": null} -->
+- **Staged source tree:** `601762bf8b8de3e02b25c47cd31914a5d5b61175`. Commit: `4155529592002b194b99891a78008eb04593d277`.
+<!-- montana-change {"id": "18b02c03-507c-414c-8898-8fd1cef3473c", "utc": "2026-09-30T05:04:28+00:00", "callsign": "merge-queue (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Merge rollback-898 23b7439f into fix/vpn-wall-whitelist-auto over d6103e4e: one base 884a8268, clean; brings only CouncilWall/council.py and CouncilWall/heads.json (the wall hashes), the app tree is unchanged since the green ring and typecheck on d6103e4e", "tree": "601762bf8b8de3e02b25c47cd31914a5d5b61175", "parents": ["d6103e4e3a48b699e8bf722dd6f30f271654852b", "23b7439fa5702216ed46183b1decbe178f30b357"], "commit": "4155529592002b194b99891a78008eb04593d277"} -->
 
 ### 2026-09-30T05:03:52+00:00 — Merge rollback-898 23b7439f into fix/photo-open-like-avatar: pictures open and close as the face does, before the master fast-forward
 
