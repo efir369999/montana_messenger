@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T01:00:39+00:00 — avatar: the heroine's name stays neutral until the author decides (Heroine / Героиня / 女英雄; the proposed name risks App Store 5.2), and the levels' gate is the one door into a game -- entering counts the levels afresh itself, the library's row and the chat's mark no longer count before asking
+
+- **Callsign / model:** avatar-fight agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `163b0f0de0af59477425ab1eec94c792f255b84d`. Commit: pending.
+<!-- montana-change {"id": "7abe8c7a-584f-4f8d-87a2-14b7f67ae21a", "utc": "2026-09-30T01:00:39+00:00", "callsign": "avatar-fight agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "avatar: the heroine's name stays neutral until the author decides (Heroine / Героиня / 女英雄; the proposed name risks App Store 5.2), and the levels' gate is the one door into a game -- entering counts the levels afresh itself, the library's row and the chat's mark no longer count before asking", "tree": "163b0f0de0af59477425ab1eec94c792f255b84d", "parents": ["3d5381f665b98b46c3c46229cd4f2a2ffa4a0926"], "commit": null} -->
+
 ### 2026-09-30T00:59:23+00:00 — merge rollback-898 af4bce7c (build 2024) into fix/feeds-scroll-top: clean auto-merge, index tree equals git merge-tree result 2276587c, catalogue valid JSON, no own edits
 
 - **Callsign / model:** feeds-top agent of Master 2 / claude-opus-5-5.
