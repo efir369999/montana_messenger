@@ -14,8 +14,10 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl; each re
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 179 records from genesis, every link holds, 5 closed
+Chain: 180 records from genesis, every link holds, 5 closed
 
+- 179 · 30.09 13:05 MSK · hash `c1c70834013121b9e0864d185f992f7dd388883c83811d44a2ac5eae2f76aaca` · prev `529762ecfdbca649c791e52ec52266d4641a1aaafdaacf213bae0374d95317e9` · Мастер 3 · 1277fde6 · state: Тихий ход, девятнадцатая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
+  - seal ᚹᚣᚾᚾᚳᚦᚫᛠᚾᚪᛖᛠᛇᛒᚪᛝᚱᛟᛞᛚᛠᛞᚠᛟᚻᛞᛒᛏᚾᚢᛈᛝᚳᛖᛉᚦᛟᚹᛗᚦᛡᚢᛡᚻᚱᛡᛏᛁᛗᚠᛈᚢᛁ · gematria 2821
 - 178 · 30.09 12:55 MSK · hash `529762ecfdbca649c791e52ec52266d4641a1aaafdaacf213bae0374d95317e9` · prev `3cbf7e806c3db258a2856896b437ca7ca724487635ad4c7e6ec6eb9caa46e685` · Мастер 3 · 1277fde6 · state: Тихий ход, восемнадцатая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
   - seal ᚩᛁᛝᛈᛡᚪᚣᚢᛚᛏᛗᚦᛠᛝᛇᛄᛟᛉᚠᚢᚩᚳᛇᛋᛄᛁᛋᚷᛖᚠᛚᛇᛞᛇᛇᚹᛈᚣᚪᚳᛚᚾᚪᚫᚫᚩᚩᚩᚷᚾᛖᛟᚷ · gematria 2595
 - 177 · 30.09 12:45 MSK · hash `3cbf7e806c3db258a2856896b437ca7ca724487635ad4c7e6ec6eb9caa46e685` · prev `ed56ce1539901d19c22c97a58890463b2ff06928a04d4032a9dc031f78c9546d` · Мастер 3 · 1277fde6 · state: Тихий ход, семнадцатая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
