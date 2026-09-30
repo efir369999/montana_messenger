@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 128 records from genesis, every link holds, 4 closed
+Chain: 129 records from genesis, every link holds, 4 closed
+
+### 128 · 30.09 07:19 MSK · word · Мастер 3 · 1277fde6
+
+Слово автора Мастеру 3, 07:19 MSK 30.09, дословно: «я только что нажал подеиться и вырал монтаан 6 а там рандомно ушло комту то - прведи в порядок менб поделитьсы в монтаак так чтобы я по первому крудочку написать на стене пубиквал как поелиться в ленкту и открывалось окно публикации и сделай чтобы редактирова тьмжно было пуликации и предпросмот постав кпокааал сркзу все и стиль панели поделитьс обнов под то каук на сснас теклчнный в тиле музкального плеера нашего нативного /// сейчас сделай ходуч заути на второй акунт и выбрать при создании цвет фона страницы по молчани или из фото. При создании акаунт он долден показать окно Измения фона чтобы польщоватле выбрал из Индиго Бургунли или свое фото». Решение: (1) отправка через лист Поделиться ушла человеку без выбора автора — утечка, срочная заплатка вне очереди: новый агент председателя, ветка fix/share-menu-order — корень по дневнику телефона, отправка только по касанию человека, первый кружок — публикация на стене с окном публикации, предпросмотром всего и правкой, панель стеклом как большой плеер; (2) окно выбора фона при создании любой личности, и второй тоже — Индиго, Бургунди или своё фото: уточнение пункта 8, агенту фона через Мастера 2
+
+`492a42abece1e5c9` · prev `ac6738e03fdc183c`
+
+ᚦᛠᛏᛠᛁᛁᛒᛟᛝᛝᚫᛡᚫᛇᚱᛋᚢᛠᛠᚫᛚᚻᛇᚣᚾᛞᚦᛉᚫᚱᛈᚩᛚᛋᚦᚢᚻᚻᚹᚹᚢᚠᛋᛏᛟᛁᛒᚢᚷᛁᚣᚢᚪ · gematria 2718
 
 ### 127 · 30.09 07:15 MSK · lesson · Мастер 3 · 1277fde6
 
