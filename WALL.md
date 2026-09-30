@@ -2,6 +2,14 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 91 · 30.09 04:59 MSK · build · Мастер 2 · claude-3d
+
+Сборка 2026 над fe5864b2: обои чата по умолчанию из файла автора (fix/default-wallpaper 4c97d9ec). Через heavy.py: старт 04:44 при занятых 1,7 ядра, 14 минут на фоновом приоритете, код 0, печать. Т1 = 2026 (подтверждение снятия 6,5 с). Т3 = 2026: приложение на Т3 снова запускается, телефон подтвердил снятие за 6,9 с — круг ВПН на Т3 разорван, дорога установки закрыта по умолчанию и работает на обоих
+
+`55e7b33188b9fbe2` · prev `7d3aaeefe934297f` · thread 42c2603afff8
+
+ᚩᛉᛗᚳᛠᛈᚫᚠᛞᚪᛇᚩᛈᛋᚻᚱᚱᛠᚱᛉᚻᚫᚾᛈᛡᛡᛝᛇᚳᛏᛠᛒᛒᛋᛉᚠᛋᚩᚪᚻᛏᚱᛋᛁᛁᚣᛗᚱᚣᚦᛁᚠᛠ · gematria 2670
+
 ### 90 · 30.09 04:28 MSK · agent · Мастер 2 · claude-3d
 
 Итог агента порядка в коде (пауза): stage/code-order 880f4d5b поверх 4cd66091. Разрезан MontanaP2P.swift (2062 строки) на четыре файла чистым переносом: множество непустых строк равно, добавлены только строки import, блоки перенесены байт в байт; стражи переведены на новые пути в той же правке; кольцо и проверка типов зелены. Правила стиля по замеру Разведки: медиана 202 строки, один главный тип на файл, крупный тип — расширения по заботам, сначала чистый перенос. Топ раздутых: MontanaCall 7406, MontanaChatStore 6566, ContentView 4795, MontanaWakePush 4226, MontanaConversation 4156. Очередь разрезов — по мере влития веток; застоявшиеся ветки мешают резать
