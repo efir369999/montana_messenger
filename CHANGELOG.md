@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** privacy agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `ca80e42443bed5cd3e72cc0bbe12c3f8832396c0`. Commit: pending.
-<!-- montana-change {"id": "fcd12b93-c8f4-4dd5-9027-c1ba0101a89c", "utc": "2026-09-30T03:40:36+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge the main line 09b24f0f into the documents and People's Wall branch, no edits of its own", "tree": "ca80e42443bed5cd3e72cc0bbe12c3f8832396c0", "parents": ["b9a48ba69ce8a8cd5862d82de7f652ebae131d73", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": null} -->
+- **Staged source tree:** `ca80e42443bed5cd3e72cc0bbe12c3f8832396c0`. Commit: `e0c427b5f101beaa45609ec26d16292d48e859f8`.
+<!-- montana-change {"id": "fcd12b93-c8f4-4dd5-9027-c1ba0101a89c", "utc": "2026-09-30T03:40:36+00:00", "callsign": "privacy agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge the main line 09b24f0f into the documents and People's Wall branch, no edits of its own", "tree": "ca80e42443bed5cd3e72cc0bbe12c3f8832396c0", "parents": ["b9a48ba69ce8a8cd5862d82de7f652ebae131d73", "09b24f0f442d2a95bf4373b61de4bc81ecdd633f"], "commit": "e0c427b5f101beaa45609ec26d16292d48e859f8"} -->
 
 ### 2026-09-30T03:39:27+00:00 — Documents and the People's Wall: names and structure carry the code; the added comments cut to a short why, one canonical block list, one edit naming rule
 
