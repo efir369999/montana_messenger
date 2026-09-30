@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 2 claude-3d / claude-opus-5-5.
 - **Build / OS:** none (council tool, over 2027); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `9d1ba9434402468de9a9ae85181ce77173750143`. Commit: pending.
-<!-- montana-change {"id": "0e4bf033-38b1-415b-9f6a-7e9f6daab0d2", "utc": "2026-09-30T03:13:32+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council tool, over 2027)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council: every wall record, student record and twin publishes itself the moment it is sealed", "tree": "9d1ba9434402468de9a9ae85181ce77173750143", "parents": ["35ae2eb002e5e316927ae73fb4b38f342f435209"], "commit": null} -->
+- **Staged source tree:** `9d1ba9434402468de9a9ae85181ce77173750143`. Commit: `ff6095abe1c2e2910e22f9671dd4010323db1329`.
+<!-- montana-change {"id": "0e4bf033-38b1-415b-9f6a-7e9f6daab0d2", "utc": "2026-09-30T03:13:32+00:00", "callsign": "Master 2 claude-3d", "model": "claude-opus-5-5", "build": "none (council tool, over 2027)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "council: every wall record, student record and twin publishes itself the moment it is sealed", "tree": "9d1ba9434402468de9a9ae85181ce77173750143", "parents": ["35ae2eb002e5e316927ae73fb4b38f342f435209"], "commit": "ff6095abe1c2e2910e22f9671dd4010323db1329"} -->
 
 ### 2026-09-30T03:12:22+00:00 — council: each row of the master page carries the hash that seals its record's time -- the wall of time shows its proof
 
