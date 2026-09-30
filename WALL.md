@@ -2,6 +2,22 @@
 
 The masters' timechain of the Montana council, newest first. Each record is sealed by SHA-256 over the canonical JSON of n, time, master, kind, prev, thread and text; prev is the previous record's hash; thread links the earlier records it answers. WALL.jsonl carries the records: an open record re-hashes from its body, a closed one keeps its hash and its place in the chain.
 
+### 68 · 30.09 03:32 MSK · word · Мастер 2 · claude-3d
+
+Слово автора, 03:32 MSK 30.09, дословно: «Музыку превращаешь в прилодение стена мущзки. кто из локльного своего занилищу пуликует тот и хранитель этой мызки и публикации как и все стены на всех чаты распространяется и все висяд музыкудург дурга так же сворачиванием свою и чужую по именам как впн разврачивает на стене совей». Смысл: музыка становится приложением Стена музыки; кто публикует трек из своего хранилища, тот его хранитель; стена расходится по всем чатам, как все стены, и каждый видит музыку друг друга; своя и чужие стены сворачиваются и разворачиваются по именам, как стена ВПН. Задача заведена: ветка stage/music-wall, агент председателя.
+
+`66ae7fd11f8d8812` · prev `739df57e18273113` · thread 97f21925428d
+
+ᚱᚳᛉᛠᚢᚱᚠᛠᛉᚻᛚᛝᛁᚣᛄᚦᛝᛖᛝᛖᛖᛚᛁᚪᚢᛠᛋᚳᚹᛄᚾᚪᚻᚣᚻᚱᛝᛉᛟᚫᛏᚱᛖᛟᛖᛡᚻᛈᚩᛝᚪᛡᚢ · gematria 2846
+
+### 67 · 30.09 03:32 MSK · build · Мастер 2 · claude-3d
+
+TestFlight 2022 опубликован в 03:32 MSK: Apple VALID 03:31 (6eae281e-e290-4fee-8b72-c3c438b24ae8), whatsNew en-US, группы Montana Team и Public Beta, бета-ревью WAITING_FOR_REVIEW, release.json на moscow, amsterdam, lauterbourg. Пины Apple 2018 (e36aab68) и 2022 (74e59890) в tools/apple-build.txt. Главная 4cd66091 = сборка 2023 (шахматное меню fix/chess-menu-score 43066d74 + стена мастера вверх fix/master-wall-upward dab82d48), сборка идёт.
+
+`739df57e18273113` · prev `70ccd7793d921864` · thread 70ccd7793d92
+
+ᚱᛚᛞᚣᚩᛝᛉᛠᛚᛇᚢᛁᛈᚳᚩᛖᚾᛚᛟᛋᛝᛠᛝᚷᛚᛚᛞᚠᛄᚻᛈᚦᚩᛁᛁᛉᚾᛒᛡᚷᚹᛠᛖᛏᚾᛖᛖᛋᚪᛖᚫᛞᚾ · gematria 2846
+
 ### 66 · 30.09 03:21 MSK · build · Мастер 2 · claude-3d
 
 Сборка 2022 над 74e59890: тот же состав, что бронь 2021 (62e9d0df, MTSelfFace — своё лицо одним видом везде). Debug на всех ядрах, код 0, ноль ошибок, кольцо цело, печать стража поставки. Т1 = 2022 (03:17), Т3 = 2022 (03:18; сверка devicectl после двух обрывов связи). TestFlight 2022 по слову автора «ставь послендюю сборку сразу и заливай ее на тест флай»: бэкап Лотербурга зелёный (74e59890), архив Release идёт. Очередь: fix/wall-post-in-chat 5db44639, fix/chess-menu-score 43066d74 зелены поверх 74e59890.
