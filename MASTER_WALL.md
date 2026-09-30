@@ -4,6 +4,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 106 · 30.09 06:15 MSK · `bcd1cc2c970e8a00` · Мастер 2 · claude-3d · W 2.0 · x3.83 (deflate x1.91): ✎ метки сразу на GitHub (витрина) — council.py сам публикует, ff6095ab; приватный GitHub исходников каждую сборку ? имя и доступ: ключ Мака видит только montana_messenger, efir369999 прочие — нет прав
 - 106 · 30.09 06:15 MSK · `bcd1cc2c970e8a00` · Мастер 2 · claude-3d · W 0.0 · x4.38 (deflate x1.91): ✎ 06:15 метки сразу на GitHub (витрина) — council.py сам публикует, ff6095ab; приватный GitHub исходников каждую сборку ? имя и доступ: ключ Мака видит только montana_messenger
 - 105 · 30.09 06:13 MSK · `c7f6c355030ea1f8` · Мастер 2 · claude-3d · W 1.37 · x2.49 (deflate x1.82): ✎ 06:13 стена времени = лента стройки протокола времени; хеш записи в каждой строке СТЕНА_МАСТЕРА.md запечатывает метку времени и цепь до неё → fix/master-page-time-hash
 - 104 · 30.09 06:11 MSK · `f69bea80f2754948` · Мастер 2 · claude-3d · W 1.64 · x3.74 (deflate x2.28): ✎ 06:11 народная стена правил и политики: встроена, пишут владельцы аккаунта, гость — чтение; держит личность Montana, модератор мастер, назначает модераторов записью в цепи; Стена Ученика Мастера открыта student.jsonl, 5 записей, 998dae15
@@ -104,7 +105,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 51 twins: 1.41
+Weissman, mean over 52 twins: 1.42
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
