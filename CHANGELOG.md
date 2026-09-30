@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T02:41:14+00:00 — merge the main line bd29deab (build 2027) into fix/photo-open-like-avatar, no own edits
+
+- **Callsign / model:** photo-avatar agent of Master 2 / claude-opus-5-5.
+- **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `af4274e5b65b850ee4489652a159a74936ce7521`. Commit: pending.
+<!-- montana-change {"id": "cd7dab52-64bc-4e98-834b-be2b12dfa42d", "utc": "2026-09-30T02:41:14+00:00", "callsign": "photo-avatar agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "merge the main line bd29deab (build 2027) into fix/photo-open-like-avatar, no own edits", "tree": "af4274e5b65b850ee4489652a159a74936ce7521", "parents": ["53eeb10c110868abdee06902be24b8d9aa17b4b5", "bd29deabeb35463ee6b43d334f552be9c9f6c0be"], "commit": null} -->
+
 ### 2026-09-30T02:38:14+00:00 — music wall (the author word 30.09 03:34): the music page becomes the Music wall -- my wall under my name, my people walls under theirs, this phone music under its word, each folded by its arrow; a hold publishes a track of this phone music (its keeper) or takes it off; the page rides the walls service word MW: as the VPN wall page; the bytes ride the walls file road
 
 - **Callsign / model:** music-wall agent of Master 2 / claude-opus-5-5.
