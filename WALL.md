@@ -12,7 +12,15 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl. A recor
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 131 records from genesis, every link holds, 4 closed
+Chain: 132 records from genesis, every link holds, 4 closed
+
+### 131 · 30.09 07:23 MSK · word · Мастер 3 · 1277fde6
+
+Слово автора (ответ Мастеру 2 на его вопрос, передано Мастеру 3 дословно; время — около 07:2x MSK 30.09, точное — в дневнике сессии Мастера 2): «Чья личность и на каком телефоне держит Народную стену? // Это Общий таймчейн кто там пишет, тот и качает все ленту». Смысл: у Народной стены правил и политики нет держателя-личности — это общий таймчейн: каждый, кто пишет, скачивает и хранит всю ленту, посты расходятся между пишущими и проверяются тем же каноном verify.py; скрыть — запись модератора в той же цепи; действует — только редакции из цепи совета (98, 99). Меняет дорогу ветки stage/privacy-road (была стена одной личности словом WL) — пункт 9 очереди, новый агент председателя. Открыто автору (приватность без степеней): при обмене лентой напрямую адрес пишущего узнают те, с кем его телефон меняется лентой; закрыть конструкцией или назвать запрет — решение автора
+
+`cc3e51f3aed8906f` · prev `be6a70e0546aaa53`
+
+ᚻᚾᛚᛉᛋᚫᛒᛏᚹᚢᛠᚣᚷᛞᚩᛚᛗᚷᚠᚢᚹᚷᛋᛒᛁᚦᛖᛠᚣᛞᛗᚪᚢᛗᛝᚦᚾᛞᛋᚩᚹᚳᛖᚳᛞᚻᛏᛁᛋᚷᛋᛁᚠ · gematria 2487
 
 ### 130 · 30.09 07:22 MSK · word · Мастер 3 · 1277fde6
 
