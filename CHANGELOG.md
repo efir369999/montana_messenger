@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T00:18:35+00:00 — Merge rollback-898 (build 2022) into stage/avatar-fight before the master's fast-forward
+
+- **Callsign / model:** claude-9e (avatar-fight) / Claude Opus 5.5.
+- **Build / OS:** none -- branch stage/avatar-fight, not built; macOS 26 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `11fcae357ccf2bbd9700b6389a6a504a2c7acf30`. Commit: pending.
+<!-- montana-change {"id": "31ce01ef-10a3-44cf-b08b-d4e43da67d34", "utc": "2026-09-30T00:18:35+00:00", "callsign": "claude-9e (avatar-fight)", "model": "Claude Opus 5.5", "build": "none -- branch stage/avatar-fight, not built", "os": "macOS 26 (Darwin 25.6.0)", "summary": "Merge rollback-898 (build 2022) into stage/avatar-fight before the master's fast-forward", "tree": "11fcae357ccf2bbd9700b6389a6a504a2c7acf30", "parents": ["c5c5a9f14b66a9153e6a4f3de91f96a702cc772a", "74e59890f577820677e484bf2adb5fa13fcbc0d8"], "commit": null} -->
+
 ### 2026-09-30T00:18:03+00:00 — Merge rollback-898 (74e59890, build 2022) into fix/chess-menu-score: clean merge, no own edits; ring green, typecheck green (113 files; the last main step since the typecheck is the build number only)
 
 - **Callsign / model:** claude-9e-chess-menu / claude-opus-5-5.
