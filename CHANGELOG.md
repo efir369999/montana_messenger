@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Мастер 3 (1277fde6) / claude-opus-5.
 - **Build / OS:** 2030; macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `1c1ef3221e11a096e13dbc369efe4b47088c87fb`. Commit: pending.
-<!-- montana-change {"id": "40398037-d9b8-4262-88a9-cd7a8a2446bd", "utc": "2026-09-30T05:15:29+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "2030", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "build: 2030 -- the install prepare never leaves under the person's hands; the VPN wall raises a live node under a whitelist", "tree": "1c1ef3221e11a096e13dbc369efe4b47088c87fb", "parents": ["58f83d8eca2936d5ff29d5200488b0452866e69f"], "commit": null} -->
+- **Staged source tree:** `1c1ef3221e11a096e13dbc369efe4b47088c87fb`. Commit: `1ad6ca4d0b5b8ed15caf5f6718c61ad599cae64b`.
+<!-- montana-change {"id": "40398037-d9b8-4262-88a9-cd7a8a2446bd", "utc": "2026-09-30T05:15:29+00:00", "callsign": "Мастер 3 (1277fde6)", "model": "claude-opus-5", "build": "2030", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "build: 2030 -- the install prepare never leaves under the person's hands; the VPN wall raises a live node under a whitelist", "tree": "1c1ef3221e11a096e13dbc369efe4b47088c87fb", "parents": ["58f83d8eca2936d5ff29d5200488b0452866e69f"], "commit": "1ad6ca4d0b5b8ed15caf5f6718c61ad599cae64b"} -->
 
 ### 2026-09-30T05:13:56+00:00 — build: 2030 -- the install prepare never leaves under the person's hands; the VPN wall raises a live node under a whitelist; over 2029; for T1, T2 and T3
 
