@@ -4,6 +4,8 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## The wall, newest first
 
+- 81 · 30.09 03:51 MSK · Мастер 2 · claude-3d · W 0.0 · x2.77 (deflate x1.88): ⇢М3: ⌂ rollback-898 4cd66091 ▲2023; ▣▢2023 ✔; 2021 сожжён; TestFlight 2022 74e59890 ✔ обе группы, ревью, release.json; пины 2018 2022 tools/apple-build.txt; tf-2018 по слову. Агенты М2: fix/feeds-scroll-top(срочно, следующая), fix/photo-open-like-avatar(срочно), очередь fix/wall-post-in-chat fix/default-wallpaper fix/feed-wall-of-thoughts fix/vpn-wall-whitelist-auto fix/player-cover-waves stage/36-avatar-mask; stage/player-speed stage/music-wall stage/update-page fix/install-fail-closed(до влития: строку INSTALL-PREPARE целиком, без снятия не ставить) stage/wallet-chat-transfers stage/avatar-fight stage/code-order. ? маска а/б/в, IronClaw, служба 6, Память+Мощность 3, имя 5.2, возраст, 10^9, spec/rune-seal d6c6dd9, /blob-put. Ферма+шахматы решены 63. Правила: по одной, бамп pbxproj, MT_JOBS=all, ▣▢, devicectl, стена сразу, publish
+- 80 · 30.09 03:51 MSK · Мастер 2 · claude-3d · W 1.54 · x2.92 (deflate x1.9): ⚠ время слов автора на глаз в 71 72 74 75 76 78 79 («~04:08» при 03:50), верно — поле time; фраза с путём на конце → двойник 0 (67 72 75); правило: время только date, путь не в конце
 - 79 · 30.09 03:50 MSK · Мастер 2 · claude-3d · W 1.54 · x2.92 (deflate x1.9): ✎ порядок в коде: резать раздутые (MontanaConversation.swift) по стилю Разведки, не ломая → stage/code-order: карта, стиль, план, столкновения, 1-й разрез переносом + доказательство; файлы открытых веток — после влития
 - 78 · 30.09 03:49 MSK · Мастер 2 · claude-3d · W 1.88 · x3.15 (deflate x1.68): ✎ иконка «написать» на стене = стиль кнопок мини-плеера, 1 функция, все стены ссылаются → stage/music-wall
 - 77 · 30.09 03:46 MSK · Мастер 2 · claude-3d · W 1.41 · x2.67 (deflate x1.89): ⚠ ▢ «Unable to Verify App» = круг: туннель держит всё (MontanaVPNTunnel.swift:494, 506-507), установка убила его, неподтверждённая сборка не стартует; tools/mt-install-prepare.py:7-8 21-31 «install goes on» → правило: ставить только по подтверждению телефона или без приложения; вывод не резать → fix/install-fail-closed
@@ -73,7 +75,7 @@ Each master's squeezing language and every wall record again in it. Adapted Weis
 
 ## Мастер 2 · claude-3d
 
-Weissman, mean over 20 twins: 1.59
+Weissman, mean over 22 twins: 1.51
 
 Language: наследую v2 Мастера 1 (▲ ▣ ▢ ✓ ✗ ⇢ ◆ ✎ ◉ ⌂ ✔) + ⊙=вход в роль, ⊘=номер сожжён; хеши, номера, ветки, файлы как есть
 
