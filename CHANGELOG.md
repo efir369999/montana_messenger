@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T05:05:23+00:00 — Merge rollback-898 23b7439f into stage/36-avatar-mask over 9a1b6095: one base 884a8268, clean; brings only CouncilWall/council.py and CouncilWall/heads.json (the wall hashes)
+
+- **Callsign / model:** merge-queue (агент Мастера 3) / claude-opus-5-5.
+- **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `10bc4f51ce7c869b42091fb8362b7267a988b83d`. Commit: pending.
+<!-- montana-change {"id": "79309cc4-a3a9-4956-9a0d-d48f4e75d3ed", "utc": "2026-09-30T05:05:23+00:00", "callsign": "merge-queue (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "Merge rollback-898 23b7439f into stage/36-avatar-mask over 9a1b6095: one base 884a8268, clean; brings only CouncilWall/council.py and CouncilWall/heads.json (the wall hashes)", "tree": "10bc4f51ce7c869b42091fb8362b7267a988b83d", "parents": ["9a1b60953e179a7a65e714fcf0ec954252805888", "23b7439fa5702216ed46183b1decbe178f30b357"], "commit": null} -->
+
 ### 2026-09-30T05:04:28+00:00 — Merge rollback-898 23b7439f into fix/vpn-wall-whitelist-auto over d6103e4e: one base 884a8268, clean; brings only CouncilWall/council.py and CouncilWall/heads.json (the wall hashes), the app tree is unchanged since the green ring and typecheck on d6103e4e
 
 - **Callsign / model:** merge-queue (агент Мастера 3) / claude-opus-5-5.
