@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T16:42:46+00:00 — Council: the showcase shows only the masters' and the student's TimeChain (TimeChain_Master and TimeChain_Student, page and raw chain) and verify.py; the older wall files leave it
+
+- **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
+- **Build / OS:** 2038 (council tooling only); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
+- **Staged source tree:** `d7d260aab324b2ced36c8ba9428cb38fcbfafca5`. Commit: pending.
+<!-- montana-change {"id": "8e3da69a-5d71-45b5-bd8b-e0b43b3da11e", "utc": "2026-09-30T16:42:46+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2038 (council tooling only)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Council: the showcase shows only the masters' and the student's TimeChain (TimeChain_Master and TimeChain_Student, page and raw chain) and verify.py; the older wall files leave it", "tree": "d7d260aab324b2ced36c8ba9428cb38fcbfafca5", "parents": ["718c4405b8342b91191a8df7ef7d19a1b721d8ef"], "commit": null} -->
+
 ### 2026-09-30T16:40:04+00:00 — Advance build number to 2038 (the call rides the tunnel, one VPN profile, a ping only by hand)
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
