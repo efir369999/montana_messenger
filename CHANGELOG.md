@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2042 (number advanced; build next); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `4b4ef0169a91fbc44a276ee4e937aecafb586dc5`. Commit: pending.
-<!-- montana-change {"id": "2a104953-94a9-43cc-8bef-156c2a91b4d5", "utc": "2026-09-30T17:43:38+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2042 (number advanced; build next)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Advance build number to 2042 (the mesh ban follows the profile's rule)", "tree": "4b4ef0169a91fbc44a276ee4e937aecafb586dc5", "parents": ["42bf12bdc47bb2bf47abdb3f9a3c5899eae1dcc8"], "commit": null} -->
+- **Staged source tree:** `4b4ef0169a91fbc44a276ee4e937aecafb586dc5`. Commit: `199bec375639957963e29741df3662c5b297e3db`.
+<!-- montana-change {"id": "2a104953-94a9-43cc-8bef-156c2a91b4d5", "utc": "2026-09-30T17:43:38+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2042 (number advanced; build next)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "Advance build number to 2042 (the mesh ban follows the profile's rule)", "tree": "4b4ef0169a91fbc44a276ee4e937aecafb586dc5", "parents": ["42bf12bdc47bb2bf47abdb3f9a3c5899eae1dcc8"], "commit": "199bec375639957963e29741df3662c5b297e3db"} -->
 
 ### 2026-09-30T17:43:07+00:00 — VPN: the mesh bars our tunnel only under a profile that lets the other routes stand; a profile saved under the old rule is re-saved at the next open
 
