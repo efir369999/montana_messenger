@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2039 (source change; build 2040 pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `0b41bdcb53118772c307999f173e45124c809864`. Commit: pending.
-<!-- montana-change {"id": "b2231b22-8729-4ebc-980e-3884a36b1045", "utc": "2026-09-30T17:17:42+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2039 (source change; build 2040 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN: the mesh owes the tunnel nothing -- our tunnel no longer holds every route, and mesh dials bar the tunnel's interface while our own tunnel stands (as in the archive, 25.07)", "tree": "0b41bdcb53118772c307999f173e45124c809864", "parents": ["65f37c91330f02d219d0b6ebf596f57727c9d256"], "commit": null} -->
+- **Staged source tree:** `0b41bdcb53118772c307999f173e45124c809864`. Commit: `d407f5ff668c74ea62a3ba40c2cf3f9be92ea49f`.
+<!-- montana-change {"id": "b2231b22-8729-4ebc-980e-3884a36b1045", "utc": "2026-09-30T17:17:42+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2039 (source change; build 2040 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN: the mesh owes the tunnel nothing -- our tunnel no longer holds every route, and mesh dials bar the tunnel's interface while our own tunnel stands (as in the archive, 25.07)", "tree": "0b41bdcb53118772c307999f173e45124c809864", "parents": ["65f37c91330f02d219d0b6ebf596f57727c9d256"], "commit": "d407f5ff668c74ea62a3ba40c2cf3f9be92ea49f"} -->
 
 ### 2026-09-30T16:53:50+00:00 — Council showcase in English only: a record whose words or master mark are in another script is published closed; the master mark shows as Master N
 
