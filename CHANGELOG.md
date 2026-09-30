@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** player-speed agent of Master 2 / claude-opus-5-5.
 - **Build / OS:** none (branch); macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `3bede91c6dedf9236505418ae8f3435f1d70cf76`. Commit: pending.
-<!-- montana-change {"id": "a9f297c3-177d-40ac-8055-c7e8034ca1dd", "utc": "2026-09-30T02:04:17+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 fe5864b2 (build 2026) into stage/player-speed: the main line under the big player's work, no own edits", "tree": "3bede91c6dedf9236505418ae8f3435f1d70cf76", "parents": ["0dcec1fe43d2e59207a9d9772f270bc4fc21d4c9", "fe5864b293d344ebb4bbbaae05476d17de74c33d"], "commit": null} -->
+- **Staged source tree:** `3bede91c6dedf9236505418ae8f3435f1d70cf76`. Commit: `86fd0160a26cf63265cdde450136d3c3c991f9ca`.
+<!-- montana-change {"id": "a9f297c3-177d-40ac-8055-c7e8034ca1dd", "utc": "2026-09-30T02:04:17+00:00", "callsign": "player-speed agent of Master 2", "model": "claude-opus-5-5", "build": "none (branch)", "os": "macOS 26.6", "summary": "Merge rollback-898 fe5864b2 (build 2026) into stage/player-speed: the main line under the big player's work, no own edits", "tree": "3bede91c6dedf9236505418ae8f3435f1d70cf76", "parents": ["0dcec1fe43d2e59207a9d9772f270bc4fc21d4c9", "fe5864b293d344ebb4bbbaae05476d17de74c33d"], "commit": "86fd0160a26cf63265cdde450136d3c3c991f9ca"} -->
 
 ### 2026-09-30T01:46:31+00:00 — Big player: the page close typed once (typecheck fix), the running line at the tree's locked type step, the scrub meter on real drags only; mt-typecheck.py --jobs for the council's two-thread rule
 
