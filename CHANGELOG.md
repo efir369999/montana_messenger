@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-09-30T04:48:40+00:00 — merge rollback-898 884a8268 (build 2029) into fix/default-wallpaper-8: a clean automerge, the index equals git merge-tree of both heads, no edits of its own
+
+- **Callsign / model:** default-wall-8 (агент Мастера 3) / claude-opus-5-5.
+- **Build / OS:** не собрано; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `5fbf215564bfcb2e7c9fc237734e82c160a3b40b`. Commit: pending.
+<!-- montana-change {"id": "d1de73b4-8077-4173-aa5d-dbba03f33891", "utc": "2026-09-30T04:48:40+00:00", "callsign": "default-wall-8 (агент Мастера 3)", "model": "claude-opus-5-5", "build": "не собрано", "os": "macOS 26.6", "summary": "merge rollback-898 884a8268 (build 2029) into fix/default-wallpaper-8: a clean automerge, the index equals git merge-tree of both heads, no edits of its own", "tree": "5fbf215564bfcb2e7c9fc237734e82c160a3b40b", "parents": ["d67deaf40289fb713d4e64429799f9ec40133962", "884a8268267fb4639ef8e18e7794a529bdc470c9"], "commit": null} -->
+
 ### 2026-09-30T04:47:11+00:00 — login ground: the doors picture asset LoginBackground leaves the bundle -- the first screen wears the one page ground since 30.09 and nothing reads it; the author file stays in Media; two checklists note it
 
 - **Callsign / model:** default-wall-8 (агент Мастера 3) / claude-opus-5-5.
