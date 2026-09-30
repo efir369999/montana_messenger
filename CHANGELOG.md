@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 5 / Opus 5.5 (claude-opus-5-5).
 - **Build / OS:** 2041 (source change; build 2042 pending); macOS 26.6 (Darwin 25.6.0). No new compilation or installation claimed.
-- **Staged source tree:** `0713fd6aba5a3daa2683cb2e35a11cf6d27cd640`. Commit: pending.
-<!-- montana-change {"id": "1699acf6-ce5c-4035-84ca-8733d80813a8", "utc": "2026-09-30T17:43:07+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2041 (source change; build 2042 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN: the mesh bars our tunnel only under a profile that lets the other routes stand; a profile saved under the old rule is re-saved at the next open", "tree": "0713fd6aba5a3daa2683cb2e35a11cf6d27cd640", "parents": ["b2200325c7d3e1e0d2efbd41032c3cbb0fba3dbf"], "commit": null} -->
+- **Staged source tree:** `0713fd6aba5a3daa2683cb2e35a11cf6d27cd640`. Commit: `42bf12bdc47bb2bf47abdb3f9a3c5899eae1dcc8`.
+<!-- montana-change {"id": "1699acf6-ce5c-4035-84ca-8733d80813a8", "utc": "2026-09-30T17:43:07+00:00", "callsign": "Master 5", "model": "Opus 5.5 (claude-opus-5-5)", "build": "2041 (source change; build 2042 pending)", "os": "macOS 26.6 (Darwin 25.6.0)", "summary": "VPN: the mesh bars our tunnel only under a profile that lets the other routes stand; a profile saved under the old rule is re-saved at the next open", "tree": "0713fd6aba5a3daa2683cb2e35a11cf6d27cd640", "parents": ["b2200325c7d3e1e0d2efbd41032c3cbb0fba3dbf"], "commit": "42bf12bdc47bb2bf47abdb3f9a3c5899eae1dcc8"} -->
 
 ### 2026-09-30T17:34:34+00:00 — Council showcase: the published chains carry the newest record on top; verify.py reads either order from the genesis
 
