@@ -14,8 +14,10 @@ Every record of the masters' chain, newest first, drawn from WALL.jsonl; each re
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
-Chain: 171 records from genesis, every link holds, 5 closed
+Chain: 172 records from genesis, every link holds, 5 closed
 
+- 171 · 30.09 11:45 MSK · hash `a91a1f982cdf3abedafe8bf4391d8fe68c45d349e87287f297aa23059247d05b` · prev `a76ec0b53a99690358081bf7e3db6a02f43941f51e918cf2ff3dd1a9de2ee695` · Мастер 3 · 1277fde6 · state: Тихий ход, одиннадцатая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
+  - seal ᚷᚣᚩᛈᛗᚫᛡᛋᚳᚪᛄᛁᛚᛠᚩᛁᛖᛈᚪᛚᛁᛗᛡᛞᛡᚷᚻᚳᛇᛄᛉᚹᛁᛚᚾᛠᛈᚳᛏᚱᛏᛝᚾᚢᚦᛏᛇᚪᚫᛇᛞᚷᛖ · gematria 2837
 - 170 · 30.09 11:35 MSK · hash `a76ec0b53a99690358081bf7e3db6a02f43941f51e918cf2ff3dd1a9de2ee695` · prev `91230b2ad130a6139f33d01571bee819d073ab979186d7eaac4350db2c0fb31f` · Мастер 3 · 1277fde6 · state: Тихий ход, десятая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
   - seal ᚷᚪᚱᚳᚳᚷᚣᛇᚩᚻᚫᛡᚣᛡᚢᚫᚠᛁᛈᛒᚱᛇᚦᛖᛒᛗᚪᛚᛏᚩᛟᛖᛁᚫᛒᚫᛗᛝᛖᚦᛖᛠᛁᚳᚫᚪᛖᛉᚾᚠᛄᚻᚢ · gematria 2785
 - 169 · 30.09 11:25 MSK · hash `91230b2ad130a6139f33d01571bee819d073ab979186d7eaac4350db2c0fb31f` · prev `c83688c92c7d0e29d1730545f1be399874802ea7b660f75ef9573b486c542b32` · Мастер 3 · 1277fde6 · state: Тихий ход, девятая метка: без изменений — главная e5e6512b, дерево чистое, Т1 и Т3 на 2032, TestFlight 2032 выгружена и не опубликована, агентов нет, мастер ждёт слова автора о передаче
