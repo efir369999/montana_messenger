@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-01T19:28:07+00:00 — A comment chain can be saved and shared, and its interval opens beside the core windows without minting
+
+- **Callsign / model:** Master 9 / Grok 4.7.
+- **Build / OS:** 2055 base, 2056 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `868fc6b5a7cb30c048f284726b80b35212bf7389`. Commit: pending.
+<!-- montana-change {"id": "27459acc-5b75-4f05-844e-fc6fc91bd845", "utc": "2026-10-01T19:28:07+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2055 base, 2056 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "A comment chain can be saved and shared, and its interval opens beside the core windows without minting", "tree": "868fc6b5a7cb30c048f284726b80b35212bf7389", "parents": ["f31121a6b6d6b3dcbaae0fa300ce6556680d5440"], "commit": null} -->
+
 ### 2026-10-01T18:54:13+00:00 — Advance build number to 2055
 
 - **Callsign / model:** Master 9 / Grok 4.7.
