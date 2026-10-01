@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 9 / Grok 4.7.
 - **Build / OS:** 2055; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `93194fd981577224d05e85dc1e7897f084c1c8cc`. Commit: pending.
-<!-- montana-change {"id": "d88bb640-97f2-4823-983c-96bd4440421e", "utc": "2026-10-01T18:54:13+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2055", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Advance build number to 2055", "tree": "93194fd981577224d05e85dc1e7897f084c1c8cc", "parents": ["08f0fa96c6fcc158ed380ee0cd7fed3bdcb456db"], "commit": null} -->
+- **Staged source tree:** `93194fd981577224d05e85dc1e7897f084c1c8cc`. Commit: `f31121a6b6d6b3dcbaae0fa300ce6556680d5440`.
+<!-- montana-change {"id": "d88bb640-97f2-4823-983c-96bd4440421e", "utc": "2026-10-01T18:54:13+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2055", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Advance build number to 2055", "tree": "93194fd981577224d05e85dc1e7897f084c1c8cc", "parents": ["08f0fa96c6fcc158ed380ee0cd7fed3bdcb456db"], "commit": "f31121a6b6d6b3dcbaae0fa300ce6556680d5440"} -->
 
 ### 2026-10-01T18:52:23+00:00 — A wall comment keeps the time, the hash and the gematria, and only the wall author can hide the words
 
