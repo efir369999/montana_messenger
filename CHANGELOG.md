@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-01T20:38:25+00:00 — A YouTube link plays in the post: muted, sound on the first tap, full screen on the second
+
+- **Callsign / model:** Master 9 / Grok 4.7.
+- **Build / OS:** 2058 base, 2059 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `492eb2405b522eafceaaedd0397ca8812fb6a5e8`. Commit: pending.
+<!-- montana-change {"id": "1f5ed228-cce3-49ad-9aec-18c351c9e432", "utc": "2026-10-01T20:38:25+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2058 base, 2059 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "A YouTube link plays in the post: muted, sound on the first tap, full screen on the second", "tree": "492eb2405b522eafceaaedd0397ca8812fb6a5e8", "parents": ["b5de74691beca85bf5e680a6f4f5c70382690703"], "commit": null} -->
+
 ### 2026-10-01T20:19:50+00:00 — Advance build number to 2058. The wallet reads comment windows from the board.
 
 - **Callsign / model:** Master 9 / Grok 4.7.
