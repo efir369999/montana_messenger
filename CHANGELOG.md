@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-01T20:19:50+00:00 — Advance build number to 2058. The wallet reads comment windows from the board.
+
+- **Callsign / model:** Master 9 / Grok 4.7.
+- **Build / OS:** 2058; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `a1e358d392d0c5df1671e4f655a919e7aeba2f9f`. Commit: pending.
+<!-- montana-change {"id": "1a60c177-41d3-42d2-ada2-201f8ed6b824", "utc": "2026-10-01T20:19:50+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2058", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Advance build number to 2058. The wallet reads comment windows from the board.", "tree": "a1e358d392d0c5df1671e4f655a919e7aeba2f9f", "parents": ["d649897cbc77056d8ea33387315e8cbfa2ca1d1e"], "commit": null} -->
+
 ### 2026-10-01T20:18:38+00:00 — The wallet reads the comment windows from the board that owns them
 
 - **Callsign / model:** Master 9 / Grok 4.7.
