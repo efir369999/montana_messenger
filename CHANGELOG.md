@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 9 / Grok 4.7.
 - **Build / OS:** 2057 base, 2058 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `d16c798bafde3b22407b25fa377a82eeecb50680`. Commit: pending.
-<!-- montana-change {"id": "ce8cbadf-9cc2-4e63-adad-5a6ed743917c", "utc": "2026-10-01T20:18:38+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2057 base, 2058 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "The wallet reads the comment windows from the board that owns them", "tree": "d16c798bafde3b22407b25fa377a82eeecb50680", "parents": ["490aecaf34d94f61dcd771a2b2e90d37e75278f9"], "commit": null} -->
+- **Staged source tree:** `d16c798bafde3b22407b25fa377a82eeecb50680`. Commit: `edc8bb7908236d8e53ebb8a1764aad034b46231d`.
+<!-- montana-change {"id": "ce8cbadf-9cc2-4e63-adad-5a6ed743917c", "utc": "2026-10-01T20:18:38+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2057 base, 2058 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "The wallet reads the comment windows from the board that owns them", "tree": "d16c798bafde3b22407b25fa377a82eeecb50680", "parents": ["490aecaf34d94f61dcd771a2b2e90d37e75278f9"], "commit": "edc8bb7908236d8e53ebb8a1764aad034b46231d"} -->
 
 ### 2026-10-01T20:14:21+00:00 — Advance build number to 2057
 
