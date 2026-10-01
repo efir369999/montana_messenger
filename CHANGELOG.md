@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 9 / Grok 4.7.
 - **Build / OS:** 2056 base, 2057 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `9898f904bc02ca1a7db25814caf00572fffd3736`. Commit: pending.
-<!-- montana-change {"id": "d9d5152e-2196-431c-8a64-ea8ba594b6d3", "utc": "2026-10-01T20:13:30+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2056 base, 2057 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "A post opens a comment window in the master chain shape, and a minute of silence voids its mint", "tree": "9898f904bc02ca1a7db25814caf00572fffd3736", "parents": ["02f2ee9190fc593f2c204561c1f109496269fc7f"], "commit": null} -->
+- **Staged source tree:** `9898f904bc02ca1a7db25814caf00572fffd3736`. Commit: `490aecaf34d94f61dcd771a2b2e90d37e75278f9`.
+<!-- montana-change {"id": "d9d5152e-2196-431c-8a64-ea8ba594b6d3", "utc": "2026-10-01T20:13:30+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2056 base, 2057 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "A post opens a comment window in the master chain shape, and a minute of silence voids its mint", "tree": "9898f904bc02ca1a7db25814caf00572fffd3736", "parents": ["02f2ee9190fc593f2c204561c1f109496269fc7f"], "commit": "490aecaf34d94f61dcd771a2b2e90d37e75278f9"} -->
 
 ### 2026-10-01T20:12:49+00:00 — A post opens a comment window in the master chain shape, and a minute of silence voids its mint
 
