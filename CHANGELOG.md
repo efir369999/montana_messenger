@@ -10,7 +10,8 @@ published on the public TestFlight link only.
 - **Callsign / model:** Master 8 / Grok 4.7.
 - **Build / OS:** 2053 base, 2054 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
 - **Staged source tree:** `9e6e61ff5c3397dbf98eaaaf04d08847bb7a9918`. Commit: pending.
-<!-- montana-change {"id": "85afdc9a-d572-4232-b423-d4172fe43d80", "utc": "2026-10-01T17:04:42+00:00", "callsign": "Master 8", "model": "Grok 4.7", "build": "2053 base, 2054 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "A post on the Wall of Thoughts carries the link card its writer read, so a YouTube address shows its picture at once and a tap opens the video or the track", "tree": "9e6e61ff5c3397dbf98eaaaf04d08847bb7a9918", "parents": ["eed5b26c1f3e30aada3382b5750c8d3a41b91a6d"], "commit": null} -->
+**Withdrawn before commit:** language gate refused the commit before any bind
+<!-- montana-change {"id": "85afdc9a-d572-4232-b423-d4172fe43d80", "utc": "2026-10-01T17:04:42+00:00", "callsign": "Master 8", "model": "Grok 4.7", "build": "2053 base, 2054 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "A post on the Wall of Thoughts carries the link card its writer read, so a YouTube address shows its picture at once and a tap opens the video or the track", "tree": "9e6e61ff5c3397dbf98eaaaf04d08847bb7a9918", "parents": ["eed5b26c1f3e30aada3382b5750c8d3a41b91a6d"], "commit": null, "withdrawn": "language gate refused the commit before any bind"} -->
 
 ### 2026-09-30T21:52:54+00:00 — Advance build number to 2053
 
