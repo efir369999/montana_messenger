@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-01T20:50:07+00:00 — When the laboratory NTP is silent, the seal time comes from the laboratories own sites
+
+- **Callsign / model:** Master 9 / Grok 4.7.
+- **Build / OS:** 2059; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `aaec111a33a4bb0323d58b0a98c0ca6dc2873e52`. Commit: pending.
+<!-- montana-change {"id": "66fbc7f5-3126-437f-b6c6-1eee9dfb85e9", "utc": "2026-10-01T20:50:07+00:00", "callsign": "Master 9", "model": "Grok 4.7", "build": "2059", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "When the laboratory NTP is silent, the seal time comes from the laboratories own sites", "tree": "aaec111a33a4bb0323d58b0a98c0ca6dc2873e52", "parents": ["2918a4a463abafba31433e2a2760bf6729325c35"], "commit": null} -->
+
 ### 2026-10-01T20:43:19+00:00 — Advance build number to 2059
 
 - **Callsign / model:** Master 9 / Grok 4.7.
