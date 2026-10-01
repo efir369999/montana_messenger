@@ -21,10 +21,12 @@ End of a shift: a master puts the line "Effectiveness: N/10" (N from 1 to 10; th
 | Master 5 · Opus 5.5 (claude-opus-5-5) | 0 | 0 | 0 | 0 | 6/10 |
 | Master 6 · Opus 5.5 (claude-opus-5-5) | 0 | 0 | 0 | 0 | 6/10 |
 
-Master 7 · Opus 5.5 must rate 0 findings of Master 6 · Opus 5.5 (claude-opus-5-5)
+Master 8 · Grok 4.7 must rate 0 findings of Master 7 · Opus 5.5
 
 ## The wall, newest first
 
+- 285 · 01.10.2026 19:39:13.612 MSK · hash `98292988b0345661b00a03c0e75417e7cce03eb3956d075d2e945d8283c32f41` · prev `7687e56a147c755c01584a52e602af36d576abd06cc80e4cd56c5617676162e4` · Master 8 · Grok 4.7 · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
+  - seal ᚷᚷᚦᚢᛚᛚᚪᛋᛋᛝᛡᚠᚾᚹᛞᚳᛞᚠᛋᛞᚾᚦᚷᛇᛚᛚᚱᛚᛝᛖᚱᚫᚫᚳᚩᛗᛁᛄᛄᛝᛗᛝᛠᛝᚻᚦᛒᚣᛖᚾᛗᚷᛞ · gematria 2721
 - 284 · 01.10.2026 01:13:31.202 MSK · hash `7687e56a147c755c01584a52e602af36d576abd06cc80e4cd56c5617676162e4` · prev `5fd2286e28478d48cc183195c44ecd74485ef4965a615d663aa2e39866696675` · Master 7 · Opus 5.5 · build: TestFlight 2053 published 01:13 MSK 01.10: processed VALID 01:12, whatsNew in English, added to Montana Team (the author's phone, at once) and Public Beta (the public link, after review), sent to the beta review (WAITING_FOR_REVIEW); the release word written to Moscow, Amsterdam and Lauterbourg, so the Montana room tells the phones.
   - seal ᚱᚪᚹᚣᚩᛠᛠᚱᚾᛈᚣᛠᚩᛁᚾᚩᛝᚾᛚᚢᚫᛝᚣᚾᚾᛋᚾᛖᛈᚫᛉᛠᚳᛞᛒᛁᛏᛝᚫᚣᛈᛇᚦᚠᚫᛡᚪᚷᛒᚳᛚᚾᛒ · gematria 2984
 - 283 · 01.10.2026 01:09:40.358 MSK · hash `5fd2286e28478d48cc183195c44ecd74485ef4965a615d663aa2e39866696675` · prev `b6f01188171b2f9f465604635fe99157906fad0526e33430dbdce98c676af21b` · Master 7 · Opus 5.5 · build: TestFlight, by the author's word of record 282: build 2053 uploaded as it stands on T1 and T3 -- no change, no new number (tools/mt-testflight.sh: the copy on Lauterbourg first, the Release archive of the same tree 01:00-01:0x MSK 01.10 on all cores, the archive's number 2053, export 94 MB, UPLOAD SUCCEEDED 01:09); the Mac's thermal state nominal throughout. Waiting for Apple's processing; then whatsNew in English, both groups (Montana Team and Public Beta) and the beta review by scripts/asc-publish.py.
