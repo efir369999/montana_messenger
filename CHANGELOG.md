@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 8 / Grok 4.7.
 - **Build / OS:** 2053 base, 2054 next; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
-- **Staged source tree:** `9d40e4ffad81386f8ccbd21ba298c9fa83377d7e`. Commit: pending.
-<!-- montana-change {"id": "af11f162-b6db-419b-8bcb-aff6a7c273aa", "utc": "2026-10-01T17:05:46+00:00", "callsign": "Master 8", "model": "Grok 4.7", "build": "2053 base, 2054 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "A post on the Wall of Thoughts carries the link card its writer read, so a YouTube address shows its picture at once and a tap opens the video or the track", "tree": "9d40e4ffad81386f8ccbd21ba298c9fa83377d7e", "parents": ["eed5b26c1f3e30aada3382b5750c8d3a41b91a6d"], "commit": null} -->
+- **Staged source tree:** `9d40e4ffad81386f8ccbd21ba298c9fa83377d7e`. Commit: `5a84afb1f68fa86583dcb21ac9ab2c5141ed96bb`.
+<!-- montana-change {"id": "af11f162-b6db-419b-8bcb-aff6a7c273aa", "utc": "2026-10-01T17:05:46+00:00", "callsign": "Master 8", "model": "Grok 4.7", "build": "2053 base, 2054 next", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "A post on the Wall of Thoughts carries the link card its writer read, so a YouTube address shows its picture at once and a tap opens the video or the track", "tree": "9d40e4ffad81386f8ccbd21ba298c9fa83377d7e", "parents": ["eed5b26c1f3e30aada3382b5750c8d3a41b91a6d"], "commit": "5a84afb1f68fa86583dcb21ac9ab2c5141ed96bb"} -->
 
 ### 2026-10-01T17:04:42+00:00 — A post on the Wall of Thoughts carries the link card its writer read, so a YouTube address shows its picture at once and a tap opens the video or the track
 
