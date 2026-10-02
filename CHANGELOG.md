@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 12 / Opus 5.5.
 - **Build / OS:** 2060; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `98b9bba624cd3e41e98e44ab2e5f50a4d8ba3908`. Commit: pending.
-<!-- montana-change {"id": "62889fc5-a169-48e3-8990-0f955d6d6f11", "utc": "2026-10-02T11:22:27+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2060", "os": "macOS 26.6", "summary": "Advance build number to 2060", "tree": "98b9bba624cd3e41e98e44ab2e5f50a4d8ba3908", "parents": ["7314febbe779110eef70d536d9bd7b9f5c2838dd"], "commit": null} -->
+- **Staged source tree:** `98b9bba624cd3e41e98e44ab2e5f50a4d8ba3908`. Commit: `7cd6e94402dff5f030c99a18af60610a2fb2f656`.
+<!-- montana-change {"id": "62889fc5-a169-48e3-8990-0f955d6d6f11", "utc": "2026-10-02T11:22:27+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2060", "os": "macOS 26.6", "summary": "Advance build number to 2060", "tree": "98b9bba624cd3e41e98e44ab2e5f50a4d8ba3908", "parents": ["7314febbe779110eef70d536d9bd7b9f5c2838dd"], "commit": "7cd6e94402dff5f030c99a18af60610a2fb2f656"} -->
 
 ### 2026-10-02T11:19:52+00:00 — Integrate the main line (the notification fix) into the wall, newest first
 
