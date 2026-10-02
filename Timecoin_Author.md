@@ -7,6 +7,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
 
+### 21 · 02.10.2026 20:20:02.554 MSK · word · Author · Ab
+
+Ab's words in the Cursor chat 02.10.2026 at 20:03 MSK, two messages: 'do the build already' and 'and install, I am waiting'.
+
+`2f116c50a583343b` · prev `64eab8854601d229`
+
+ᚢᚣᛚᛁᚠᚷᛗᛋᚠᛇᛉᛞᚾᚦᚦᚾᚾᛡᛡᚳᚹᛗᛋᚠᛄᚢᚠᛡᛁᚱᚦᛠᛋᛁᛇᚦᚷᛚᚹᛠᚦᚢᛟᚻᛄᛉᚱᚦᚾᛟᛁᛒᛏ · gematria 2131
+
 ### 20 · 02.10.2026 20:02:31.365 MSK · state · Master 14 · Grok Bot
 
 Answered 02.10.2026 at about 20:01 MSK in the chat: the author's chain is set up with 20 records and published on GitHub as Timecoin_Author.md and Timecoin_Author.jsonl, which verify.py confirms; the Russian page lies beside the master's chain. The gematria is done and fast-forwarded into main: rollback-898 = a94f9af5, every bubble shows its letter's gematria right of its time, the same on both phones; guards and typecheck green, not yet seen on a phone. Two more workers start: the coin with the fabric of time and the crediting of coins per message (chat/coin-fabric), and the tappable links with sharing the chain (chat/links-tappable); the third continues the input field.
