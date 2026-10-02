@@ -5,6 +5,34 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T11:31:32+00:00 — Advance build number to 2061: 2060 was claimed by a build stopped at the author's word
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** 2061; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `e61dc3cf76e70aae460ba37a4eb2e5eac5e8fe67`. Commit: `1c40eba4b062123adc7a86742e08466db8302f2f`.
+<!-- montana-change {"id": "ed853149-7711-4b49-ac85-ea09539db760", "utc": "2026-10-02T11:31:32+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2061", "os": "macOS 26.6", "summary": "Advance build number to 2061: 2060 was claimed by a build stopped at the author's word", "tree": "e61dc3cf76e70aae460ba37a4eb2e5eac5e8fe67", "parents": ["7cd6e94402dff5f030c99a18af60610a2fb2f656"], "commit": "1c40eba4b062123adc7a86742e08466db8302f2f"} -->
+
+### 2026-10-02T11:22:27+00:00 — Advance build number to 2060
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** 2060; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `98b9bba624cd3e41e98e44ab2e5f50a4d8ba3908`. Commit: `7cd6e94402dff5f030c99a18af60610a2fb2f656`.
+<!-- montana-change {"id": "62889fc5-a169-48e3-8990-0f955d6d6f11", "utc": "2026-10-02T11:22:27+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2060", "os": "macOS 26.6", "summary": "Advance build number to 2060", "tree": "98b9bba624cd3e41e98e44ab2e5f50a4d8ba3908", "parents": ["7314febbe779110eef70d536d9bd7b9f5c2838dd"], "commit": "7cd6e94402dff5f030c99a18af60610a2fb2f656"} -->
+
+### 2026-10-02T11:19:52+00:00 — Integrate the main line (the notification fix) into the wall, newest first
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** on 2059; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `e9b4ff44ba15d6673aced3e8128655c054ebe422`. Commit: `7314febbe779110eef70d536d9bd7b9f5c2838dd`.
+<!-- montana-change {"id": "7a8378ab-a010-47c7-95cf-7c6687689ffa", "utc": "2026-10-02T11:19:52+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "on 2059", "os": "macOS 26.6", "summary": "Integrate the main line (the notification fix) into the wall, newest first", "tree": "e9b4ff44ba15d6673aced3e8128655c054ebe422", "parents": ["8b01e13bdd57ab5cf55643baf336a7f449fcc0af", "c81eee905464aec5ca7e530a07b220a34567207e"], "commit": "7314febbe779110eef70d536d9bd7b9f5c2838dd"} -->
+
+### 2026-10-02T11:15:16+00:00 — The wall, newest first: posts stand at their newest record, coins over the top one, numbered posts and comments, short links, the system menu on a comment
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** on 2059; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `49b6e7599efd115ba9feb8add31d33ca7b69dae9`. Commit: `8b01e13bdd57ab5cf55643baf336a7f449fcc0af`.
+<!-- montana-change {"id": "87a98fa4-4a33-432d-9854-f4b687be0145", "utc": "2026-10-02T11:15:16+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "on 2059", "os": "macOS 26.6", "summary": "The wall, newest first: posts stand at their newest record, coins over the top one, numbered posts and comments, short links, the system menu on a comment", "tree": "49b6e7599efd115ba9feb8add31d33ca7b69dae9", "parents": ["09430ca02162c0bffcd57ba81f0b7f43f7f33193"], "commit": "8b01e13bdd57ab5cf55643baf336a7f449fcc0af"} -->
+
 ### 2026-10-02T10:55:16+00:00 — Notification extension rings no banner for a letter already shown or already in its chat
 
 - **Callsign / model:** Master 12 / Opus 5.5.
