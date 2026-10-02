@@ -7,6 +7,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
 
+### 25 · 02.10.2026 20:41:31.599 MSK · word · Author · Ab
+
+Ab's words in the Cursor chat 02.10.2026 at 20:25 MSK: two more icons - Juno as the coin's face and the pyramid as its reverse, each separate, in the style of the last one with the radiance.
+
+`d0c8c563ae14d6f1` · prev `3ed8d54093192c20`
+
+ᚻᛋᚦᚾᚪᛝᛈᚠᚷᛗᛏᛉᛇᚣᚫᛋᛠᛞᚫᛝᛝᚢᛞᚩᛠᛏᛇᚢᛚᚩᚳᚳᛠᛖᚣᛚᚪᛡᛞᚱᛇᛄᛋᚱᚫᚢᚹᚳᛞᛁᛏᛚᛇ · gematria 2924
+
 ### 24 · 02.10.2026 20:41:15.571 MSK · word · Author · Ab
 
 Ab's words in the Cursor chat 02.10.2026 at 20:23 MSK: a new icon style - the current default icon with sunlight shining from the centre as on the coin; each new icon's number is fixed in the timechain like an NFT; icons will be sold and masters may upload them into the chain of time.
