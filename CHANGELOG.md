@@ -5,6 +5,21 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T10:55:16+00:00 — Notification extension rings no banner for a letter already shown or already in its chat
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** on 2059; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `c437018c777ef7eba8fc60e55c002defa49f2143`. Commit: `c81eee905464aec5ca7e530a07b220a34567207e`.
+<!-- montana-change {"id": "7e4588c8-ad03-4417-9579-fe4475204a36", "utc": "2026-10-02T10:55:16+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "on 2059", "os": "macOS 26.6", "summary": "Notification extension rings no banner for a letter already shown or already in its chat", "tree": "c437018c777ef7eba8fc60e55c002defa49f2143", "parents": ["09430ca02162c0bffcd57ba81f0b7f43f7f33193"], "commit": "c81eee905464aec5ca7e530a07b220a34567207e"} -->
+
+### 2026-10-02T10:54:02+00:00 — Notification extension rings no banner for a letter already shown or already in its chat
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** on 2059; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `fd589eba7d2650e625b88e2be77bc3668748412e`. Commit: pending.
+**Withdrawn before commit:** the copy-scope guard asked to name heldMids; the tree changed before commit
+<!-- montana-change {"id": "b83a901d-b734-47d8-86bb-2e7c897b3215", "utc": "2026-10-02T10:54:02+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "on 2059", "os": "macOS 26.6", "summary": "Notification extension rings no banner for a letter already shown or already in its chat", "tree": "fd589eba7d2650e625b88e2be77bc3668748412e", "parents": ["09430ca02162c0bffcd57ba81f0b7f43f7f33193"], "commit": null, "withdrawn": "the copy-scope guard asked to name heldMids; the tree changed before commit"} -->
+
 ### 2026-10-01T20:50:07+00:00 — When the laboratory NTP is silent, the seal time comes from the laboratories own sites
 
 - **Callsign / model:** Master 9 / Grok 4.7.

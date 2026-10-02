@@ -141,8 +141,8 @@ python3 verify.py
 Its output at this publication:
 
 ```
-TimeChain_Master.jsonl: holds -- 321 records from genesis, 259 closed, head cf0ffd059c3f61e6fe8ceb218f128c62253e34452edf821b6fd10d0ea858dd7a
-TimeChain_Student.jsonl: holds -- 32 records from genesis, 19 closed, head 3d7f70183d527613ebb7246e07735ff8645d1cccdc03aee823dd146675ae9c9e
+TimeChain_Master.jsonl: holds -- 324 records from genesis, 259 closed, head 64bb82e6ae68ee2e1146a6668db8fe65d80260ab2727f46e89dc22480bbe6771
+TimeChain_Student.jsonl: holds -- 34 records from genesis, 19 closed, head 39d4634c341c4f9ea3fa45b32183296b7dcf6414db053962eec7505d146fdc95
 ```
 <!-- council walls end -->
 
@@ -150,7 +150,7 @@ TimeChain_Student.jsonl: holds -- 32 records from genesis, 19 closed, head 3d7f7
 
 See [CHANGELOG.md](CHANGELOG.md) for published builds and the timestamped development event log.
 
-Development log updated: **2026-10-01T20:50:32+00:00**. Current development-device queries report
+Development log updated: **2026-10-02T10:55:41+00:00**. Current development-device queries report
 **1.0 (1968), iOS 26.7 and iOS 18.3**. Follow-up source changes are committed but have not
 been compiled or installed. See the log for the correction to the earlier device-version
 record and the outstanding checks. The public TestFlight build listed above is unchanged.
