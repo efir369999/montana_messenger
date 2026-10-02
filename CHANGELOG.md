@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T11:47:02+00:00 — A tap on a post opens it whole with its comments under it; a comment's line ends with its gematria
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** on 2061; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `8236051f6363861924df2fd7524429546058fa13`. Commit: pending.
+<!-- montana-change {"id": "5bb7059e-04f9-427a-9790-dcf36cbf25c5", "utc": "2026-10-02T11:47:02+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "on 2061", "os": "macOS 26.6", "summary": "A tap on a post opens it whole with its comments under it; a comment's line ends with its gematria", "tree": "8236051f6363861924df2fd7524429546058fa13", "parents": ["1c40eba4b062123adc7a86742e08466db8302f2f"], "commit": null} -->
+
 ### 2026-10-02T11:31:32+00:00 — Advance build number to 2061: 2060 was claimed by a build stopped at the author's word
 
 - **Callsign / model:** Master 12 / Opus 5.5.
