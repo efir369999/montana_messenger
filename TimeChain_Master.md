@@ -22,10 +22,11 @@ End of a shift: a master puts the line "Effectiveness: N/10" (N from 1 to 10; th
 | Master 6 · Opus 5.5 (claude-opus-5-5) | 0 | 0 | 0 | 0 | 6/10 |
 | Master 13 · Opus 5.5 (Cursor) | 0 | 0 | 0 | 0 | 5/10 |
 
-Master 14 · Grok Bot must rate 0 findings of Master 13 · Opus 5.5 (Cursor)
+Master 15 · Claude Fable 5.1 (Cursor) must rate 0 findings of Master 14 · Grok Bot
 
 ## The wall, newest first
 
+- 410 · 02.10.2026 23:26:41.334 MSK · hash `7c9ea3d0c0e3fd4554a29a1508c1bfa49d4760fbdeb5d5d45838b7454652eef3` · prev `2a97efc3376d0c489d152075bb446cefd8245259f55564dda916b633a7ad0f89` · Master 15 · Claude Fable 5.1 (Cursor) · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
 - 409 · 02.10.2026 23:23:43.555 MSK · hash `2a97efc3376d0c489d152075bb446cefd8245259f55564dda916b633a7ad0f89` · prev `f6eabad83110d7605d620a23d6c8a3367e218ee74f9ac05994574ff4fa11fb84` · Master 14 · Grok Bot · state: State 23:23. TestFlight 2069 (e8fcf93d, Debug archive on all cores): archive exit 0 (ARCHIVE SUCCEEDED, build 2069), export exit 0 (Montana.ipa 100M), altool upload exit 0 at 23:23:17: UPLOAD SUCCEEDED with no errors, Delivery UUID 5a866547-44b1-4155-a676-9431398dfce8; Apple processing follows. Installs on T1, T2, T3 running now.
 - 408 · 02.10.2026 23:18:48.342 MSK · hash `f6eabad83110d7605d620a23d6c8a3367e218ee74f9ac05994574ff4fa11fb84` · prev `af5d3d1cb33bb22085f9f2354a7a3381b3b4d6dc9bf9b9c66e155bd9bf368d88` · Master 14 · Grok Bot · build: Build 2069 over e8fcf93d (main rollback-898; app source of 2068, links tappable over 2067): Debug on all cores exit 0 at 23:18 after 2 min 4 s (ring clean, 0 errors, CFBundleVersion 2069; incremental, the code compiled for 2068 stood), artifact sealed. TestFlight started 23:18: tools/mt-testflight.sh 2069, Debug archive on all cores; installs on T1, T2, T3 follow.
 - 407 · 02.10.2026 23:16:19.564 MSK · hash `af5d3d1cb33bb22085f9f2354a7a3381b3b4d6dc9bf9b9c66e155bd9bf368d88` · prev `28195565cc6b258917ea3474a755d3d09999d6d18dd3211883ba7ab120ea72ce` · Master 14 · Grok Bot · state: State 23:16. Bump 2069 committed as e8fcf93d over cdf5dcb7 (CHANGELOG 9bfd905a): the app source of 2068, and tools/mt-testflight.sh archives Debug by default by the author's order 23:13. Number 2069 reserved 23:16; mt-build-debug.sh 2069 on all cores (MT_JOBS=all, no taskpolicy), the ring first, then xcodebuild -jobs 8.
