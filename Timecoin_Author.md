@@ -7,6 +7,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
 
+### 32 · 02.10.2026 22:32:24.163 MSK · word · Author · Ab
+
+Ab's words by voice 02.10.2026 at 22:30 MSK: build 2068 - now upload it to TestFlight; earlier it was without TestFlight, only T1, T2 and T3, at most 5 cores; the 5-core limit stays; when the build is up, send what was deployed to TestFlight and which versions are on which phones.
+
+`8667fd9ed95954fc` · prev `e600a6ca00f5d7c8`
+
+ᚳᛉᚢᛝᚹᛠᛒᚹᛠᛁᛡᚦᚷᚪᛞᚱᛉᚪᚱᚢᛝᚷᛇᛝᛁᚷᛠᛞᛖᚫᚱᛖᛋᚳᚪᚪᛡᚢᚢᛟᛁᚫᛁᛝᛖᚦᚾᛗᚢᛠᛈᛗᚱ · gematria 2789
+
 ### 31 · 02.10.2026 22:03:17.538 MSK · state · Master 14 · Grok Bot
 
 Answer at 22:03 MSK: tappable links are in main rollback-898 = 20c5cef6, ring and typecheck green: links open at a tap in bubbles, letters, comments, posts and bio; share-chain sends the post link, not a file path. All code tasks are in main. Final build 2068 starts now by the 19:31 word: at most 5 cores, no TestFlight, onto T1, T2, T3. Open gap: montana:// links are not tappable inside Telegram or iMessage until the montana.quest server's association file covers /wall/.
