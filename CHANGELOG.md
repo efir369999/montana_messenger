@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T17:22:20+00:00 — Merge rollback-898 (68a1fe16, main's build number 2066) into chat/input-top: project.pbxproj is taken exactly as main has it; no bump and no change of its own.
+
+- **Callsign / model:** Grok Bot / chat/input-top / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2065 source; not built, next artifact unassigned; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `5181a92083ef0af4f2dc4d19e7effcb8be4bb15b`. Commit: pending.
+<!-- montana-change {"id": "76f429dc-beeb-452f-8e2f-3fc546b8586a", "utc": "2026-10-02T17:22:20+00:00", "callsign": "Grok Bot / chat/input-top", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2065 source; not built, next artifact unassigned", "os": "macOS on the author's Mac; iOS target not run", "summary": "Merge rollback-898 (68a1fe16, main's build number 2066) into chat/input-top: project.pbxproj is taken exactly as main has it; no bump and no change of its own.", "tree": "5181a92083ef0af4f2dc4d19e7effcb8be4bb15b", "parents": ["c5b4402e8669655818c96402d9e38101c0c1e747", "68a1fe164438e55b369dcb4cfacb721efe119605"], "commit": null} -->
+
 ### 2026-10-02T17:18:57+00:00 — The feed-turn button is the wall's mint coin (MTMintCoin, spinning while on, still under Reduce Motion); on, the chat is the ribbon of time (stamps wear the seal head beside the gematria) and every pair letter born while on earns one coin (1e-9 Montana) in MTChatMint, a LOCAL TALLY kept by wire name on this phone, shown live on the wallet beside the confirmed balance and never added into it, with one seam for the real mint; the copy scope names its key and file.
 
 - **Callsign / model:** Grok Bot / chat/coin-fabric / Grok Bot (exact model variant not reported by the environment).
