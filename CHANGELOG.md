@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T15:26:31+00:00 — Advance build number to 2065
+
+- **Callsign / model:** Master 13 / Opus 5.5 (Cursor).
+- **Build / OS:** 2065; iOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `2ae90aad9f393a3c48d7ce94af68a8ee80095d1b`. Commit: pending.
+<!-- montana-change {"id": "dc4544d1-2e5c-440a-b3e6-faa2d95a2d3c", "utc": "2026-10-02T15:26:31+00:00", "callsign": "Master 13", "model": "Opus 5.5 (Cursor)", "build": "2065", "os": "iOS 26.7", "summary": "Advance build number to 2065", "tree": "2ae90aad9f393a3c48d7ce94af68a8ee80095d1b", "parents": ["8831dcf05b813b95788fd898f575683087f5f63d"], "commit": null} -->
+
 ### 2026-10-02T15:25:18+00:00 — Merge the main line (the stale voip push fix) into the turned-feed branch
 
 - **Callsign / model:** Master 13 / Opus 5.5 (Cursor).
