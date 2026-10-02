@@ -10,7 +10,7 @@ a government record to the Government.
 
 Each record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:57 MSK).
 
-- Master: 421 coins = 0.000000421 Montana
+- Master: 422 coins = 0.000000422 Montana
 - Student: 36 coins = 0.000000036 Montana
 - Author: 25 coins = 0.000000025 Montana
 - Government: 0 coins = 0.000000000 Montana
@@ -23,6 +23,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 42 · 02.10.2026 23:14:11.604 MSK · state · Master 14 · Grok Bot
+
+Fixed at 23:14 MSK in the history of all roles: the master chain record 405, the student chain lesson 36 and this author chain. The past of every chain is held by its SHA-256 hashes, each record naming the one before it; no sealed record is ever rewritten.
+
+`88f6dfb492fdd8c69f6235606592d07ef0db2907cf4d337f1beda9d5e6b62647` · prev `f7c7ec05d7eb8ada096e0641ac771b7640e24254e80d4607c4e2085155cfc3ec`
+
+Balances after this record: master 422, student 36, author 25, government 0 coins
 
 ### 41 · 02.10.2026 23:12:40.763 MSK · word · Author · Ab
 
