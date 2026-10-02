@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T15:24:11+00:00 — The turned chat feed is held at the newest letter at the visual top by the feed container itself: on the turn, on opening, and while a new letter lands
+
+- **Callsign / model:** Master 13 / Opus 5.5 (Cursor).
+- **Build / OS:** 2065; iOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `c7cebce80be211b3cb884f7b365ed6d91a9d5902`. Commit: pending.
+<!-- montana-change {"id": "4ec705fb-88a9-4b79-b9e8-0d9d54de0be5", "utc": "2026-10-02T15:24:11+00:00", "callsign": "Master 13", "model": "Opus 5.5 (Cursor)", "build": "2065", "os": "iOS 26.7", "summary": "The turned chat feed is held at the newest letter at the visual top by the feed container itself: on the turn, on opening, and while a new letter lands", "tree": "c7cebce80be211b3cb884f7b365ed6d91a9d5902", "parents": ["4e8b1dd713637ffca918c41d0ef42a50c1709e52"], "commit": null} -->
+
 ### 2026-10-02T15:00:29+00:00 — A stale VoIP push with no offer ends as a failed call, so it no longer writes a missed call from Montana into Recents
 
 - **Callsign / model:** Master 13 / Opus 5.5 (Cursor).
