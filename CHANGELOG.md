@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T17:11:40+00:00 — The feed-turn button is the wall's mint coin (MTMintCoin, spinning while on, still under Reduce Motion); on, the chat is the ribbon of time (stamps wear the seal head beside the gematria) and every pair letter born while on earns one coin (1e-9 Montana) in MTChatMint, a LOCAL TALLY kept by wire name on disk, shown live on the wallet beside the confirmed balance and never added into it, with one seam for the real mint.
+
+- **Callsign / model:** Grok Bot / chat/coin-fabric / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2065 source; not built, next artifact unassigned; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `0c5078d1a1bc3ed8f082d62bb563b411cfe72986`. Commit: pending.
+<!-- montana-change {"id": "71ed9d0d-b3a4-4b3b-8f6b-95398d1c32da", "utc": "2026-10-02T17:11:40+00:00", "callsign": "Grok Bot / chat/coin-fabric", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2065 source; not built, next artifact unassigned", "os": "macOS on the author's Mac; iOS target not run", "summary": "The feed-turn button is the wall's mint coin (MTMintCoin, spinning while on, still under Reduce Motion); on, the chat is the ribbon of time (stamps wear the seal head beside the gematria) and every pair letter born while on earns one coin (1e-9 Montana) in MTChatMint, a LOCAL TALLY kept by wire name on disk, shown live on the wallet beside the confirmed balance and never added into it, with one seam for the real mint.", "tree": "0c5078d1a1bc3ed8f082d62bb563b411cfe72986", "parents": ["a94f9af5eb45b5a71f4b5d709062017a5684fcff"], "commit": null} -->
+
 ### 2026-10-02T17:07:38+00:00 — Advance build number to 2066 on main rollback-898 a94f9af5 (feed-newest-top and bubble-gematria in), by the author word 20:03 MSK: build now and install on T1 and T3.
 
 - **Callsign / model:** Master 15 / rollback-898 / Claude Fable 5.1 (Cursor).
