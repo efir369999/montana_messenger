@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 13 / Opus 5.5 (Cursor).
 - **Build / OS:** 2065; iOS 26.7. No new compilation or installation claimed.
-- **Staged source tree:** `f03de478e8302ee5f226c66ddb14e7724c225ec1`. Commit: pending.
-<!-- montana-change {"id": "9dbd751b-dc48-4c5a-9e4e-d9bc233f4759", "utc": "2026-10-02T15:25:18+00:00", "callsign": "Master 13", "model": "Opus 5.5 (Cursor)", "build": "2065", "os": "iOS 26.7", "summary": "Merge the main line (the stale voip push fix) into the turned-feed branch", "tree": "f03de478e8302ee5f226c66ddb14e7724c225ec1", "parents": ["149603631abc35101af3af1ca84bd12412d38b34", "3fd9afd6194283abf31c616bba43ddf4a7795121"], "commit": null} -->
+- **Staged source tree:** `f03de478e8302ee5f226c66ddb14e7724c225ec1`. Commit: `8831dcf05b813b95788fd898f575683087f5f63d`.
+<!-- montana-change {"id": "9dbd751b-dc48-4c5a-9e4e-d9bc233f4759", "utc": "2026-10-02T15:25:18+00:00", "callsign": "Master 13", "model": "Opus 5.5 (Cursor)", "build": "2065", "os": "iOS 26.7", "summary": "Merge the main line (the stale voip push fix) into the turned-feed branch", "tree": "f03de478e8302ee5f226c66ddb14e7724c225ec1", "parents": ["149603631abc35101af3af1ca84bd12412d38b34", "3fd9afd6194283abf31c616bba43ddf4a7795121"], "commit": "8831dcf05b813b95788fd898f575683087f5f63d"} -->
 
 ### 2026-10-02T15:24:11+00:00 — The turned chat feed is held at the newest letter at the visual top by the feed container itself: on the turn, on opening, and while a new letter lands
 
