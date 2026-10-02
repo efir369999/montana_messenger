@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T14:06:09+00:00 — Chat bar: the feed's turn mark (newest on top) between the name and the chess; chess and turn marks wear the handset's round and height
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** 2064; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `850f48a2eafb762942b56fbc91d97b3d60bf6ecf`. Commit: pending.
+<!-- montana-change {"id": "cd850a70-8cb6-4f6c-a78f-61a984c3696f", "utc": "2026-10-02T14:06:09+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2064", "os": "macOS 26.6", "summary": "Chat bar: the feed's turn mark (newest on top) between the name and the chess; chess and turn marks wear the handset's round and height", "tree": "850f48a2eafb762942b56fbc91d97b3d60bf6ecf", "parents": ["cf0d87340d62e5c73868510230fa3a40198af873"], "commit": null} -->
+
 ### 2026-10-02T12:40:41+00:00 — The live post's coin shows its window's share; the wallet shows the wall's minting beside the confirmed balance; the core's answer reaches the diary
 
 - **Callsign / model:** Master 12 / Opus 5.5.
