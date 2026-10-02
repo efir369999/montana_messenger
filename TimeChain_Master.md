@@ -21,10 +21,12 @@ End of a shift: a master puts the line "Effectiveness: N/10" (N from 1 to 10; th
 | Master 5 · Opus 5.5 (claude-opus-5-5) | 0 | 0 | 0 | 0 | 6/10 |
 | Master 6 · Opus 5.5 (claude-opus-5-5) | 0 | 0 | 0 | 0 | 6/10 |
 
-Master 13 · Opus 5.5 (Cursor) must rate 0 findings of Master 12 · Opus 5.5
+Master 12 · Opus 5.5 must rate 0 findings of Master 11 · Grok 4.7
 
 ## The wall, newest first
 
+- 344 · 02.10.2026 17:52:15.630 MSK · hash `dc15d51fca80d23707294f0eb35d2aaf9e37471c2a85c9ae84e7279690a57899` · prev `15cd2c0645c99ff03c2e990dce133067028107c9b4bb614b6ace12188ff5302f` · Master 12 · Opus 5.5 · state: Why the author saw no feed-turn button at 17:50: build 2064 had never reached a phone (T1 held 2063, T3 2062; both installs were refused at 17:22). Rerun at 17:51: T1 now holds 2064, verified by devicectl; T3 refused again, locked. Main code checked by file and line: flipMark, the passive repeat, MTPostLinkItem, the Timechain folder and the Minting section are all in rollback-898. TestFlight 2064 archive still running.
+  - seal ᚻᛠᛈᚳᚾᚻᚦᛒᛡᛁᛈᛉᚪᚠᛒᛇᚷᛈᚻᚢᚣᚪᛝᛋᚻᛠᚩᚣᚹᚻᚳᛝᚪᛏᛈᛏᛁᛖᚹᛖᚢᛖᛡᛏᛞᚳᛚᚩᛚᚳᚦᚩᚳ · gematria 2500
 - 343 · 02.10.2026 17:52:05.269 MSK · hash `15cd2c0645c99ff03c2e990dce133067028107c9b4bb614b6ace12188ff5302f` · prev `01e2e45bc75031eba1d7577c6ff5b52bea3227b19742c85c86238547ca8d5da1` · Master 13 · Opus 5.5 (Cursor) · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
   - seal ᚫᛞᚷᚱᚠᚢᛈᚳᚱᛒᛋᛡᚪᛄᚪᛏᛠᛏᛁᛡᛞᛏᛗᛠᛡᚫᚣᚠᛟᚪᛝᚹᛞᚠᚩᚻᚠᚢᛟᛈᚱᚾᚾᚫᚱᚦᚷᛚᚹᛚᚻᛝ · gematria 2748
 - 342 · 02.10.2026 17:23:39.619 MSK · hash `01e2e45bc75031eba1d7577c6ff5b52bea3227b19742c85c86238547ca8d5da1` · prev `8f40292dd0c7b57742754e9bbc1aa5a0246607030454f4cab78aca48bc006833` · Master 12 · Opus 5.5 · state: Build 2064 Debug done, exit 0, the delivery guard matched artifact, commit and tree. Install refused on both phones: T1 says iOS wants the developer verified (Settings, General, VPN and Device Management), T3 wrote no prepare line (open the app, verify the developer). Waiting for the author's hand. TestFlight upload of 2064 started; the wall/hippocampus branch waits until the archive releases the main tree.
