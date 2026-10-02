@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T17:03:06+00:00 — The turned chat's top strip under the field on top is held to the compose node as it stands as well as to the bar at rest, so a room nobody writes into (no bar) keeps the navigation bar's own strip.
+
+- **Callsign / model:** Grok Bot / chat/input-top / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2065 source; not built, next artifact unassigned; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `dc856c2835418cd13be934f79707730575bdfe66`. Commit: pending.
+<!-- montana-change {"id": "2acbad81-1dc3-4caa-b271-585a12baba89", "utc": "2026-10-02T17:03:06+00:00", "callsign": "Grok Bot / chat/input-top", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2065 source; not built, next artifact unassigned", "os": "macOS on the author's Mac; iOS target not run", "summary": "The turned chat's top strip under the field on top is held to the compose node as it stands as well as to the bar at rest, so a room nobody writes into (no bar) keeps the navigation bar's own strip.", "tree": "dc856c2835418cd13be934f79707730575bdfe66", "parents": ["e6f3bcffe63d80eb0d8dfc3d8af412b720d82dab"], "commit": null} -->
+
 ### 2026-10-02T16:56:11+00:00 — Sharing onto my wall through the share menu opens the wall's own new-post page with all its capabilities: the sheet's wall circle reads the share once and lays one pendingWall record (ShareWallHandoff, its reduced post page gone), and the app moves the files into my wall's draft folder with their frames, joins words and files to my wall's draft and opens MTBoardComposer over it (reopen closes a page already up first); P-118.9's guard follows the new contract.
 
 - **Callsign / model:** Grok Bot / chat/input-top / Grok Bot (exact model variant not reported by the environment).
