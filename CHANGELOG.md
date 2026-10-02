@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T20:14:24+00:00 — Advance build number to 2069 over cdf5dcb7: build 2068 was sealed on e2ae6f55 and main then took the timechain tooling commit, so the same app source ships as 2069 to TestFlight and the phones; app code is that of 2068 (links tappable over 2067).
+
+- **Callsign / model:** Grok Bot / Master 14 build / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2069 Debug, Master 14 by the master decision 23:14 (2068 sealed on e2ae6f55 before main moved); macOS on the author's Mac; iOS devices T1, T2, T3 to install. No new compilation or installation claimed.
+- **Staged source tree:** `233a02bbf12191087f0f6bb0dffaee0315747865`. Commit: pending.
+<!-- montana-change {"id": "e3e9ce55-08df-4d00-93f4-b5c0aba3d126", "utc": "2026-10-02T20:14:24+00:00", "callsign": "Grok Bot / Master 14 build", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2069 Debug, Master 14 by the master decision 23:14 (2068 sealed on e2ae6f55 before main moved)", "os": "macOS on the author's Mac; iOS devices T1, T2, T3 to install", "summary": "Advance build number to 2069 over cdf5dcb7: build 2068 was sealed on e2ae6f55 and main then took the timechain tooling commit, so the same app source ships as 2069 to TestFlight and the phones; app code is that of 2068 (links tappable over 2067).", "tree": "233a02bbf12191087f0f6bb0dffaee0315747865", "parents": ["cdf5dcb7c893811d7bcba624fa17247a5015b9b0"], "commit": null} -->
+
 ### 2026-10-02T20:05:54+00:00 — Timechains name each record by its SHA-256 alone: the rune seal and gematria leave council.py, verify.py, heads.json and the pages (sealed records untouched; an essence sealed before 02.10.2026 22:57 MSK keeps its fifth step); a Government chain built like the student's opens, with a government add command and its page
 
 - **Callsign / model:** Master 14 · Grok Bot / chain/no-runes / Grok Bot (exact model variant not reported by the environment).
