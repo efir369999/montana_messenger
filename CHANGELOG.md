@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T16:54:47+00:00 — Merge rollback-898 (7992b885, the unturned feed's bottom hold) into chat/bubble-gematria; guard ring and one-job typecheck green on the merged tree.
+
+- **Callsign / model:** Grok Bot / chat/bubble-gematria / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2065 source; not built, next artifact unassigned; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `895a14e370072023ee63dcce04a6152bc49bf619`. Commit: pending.
+<!-- montana-change {"id": "dfd44027-509a-4bb3-8e66-37f69e734992", "utc": "2026-10-02T16:54:47+00:00", "callsign": "Grok Bot / chat/bubble-gematria", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2065 source; not built, next artifact unassigned", "os": "macOS on the author's Mac; iOS target not run", "summary": "Merge rollback-898 (7992b885, the unturned feed's bottom hold) into chat/bubble-gematria; guard ring and one-job typecheck green on the merged tree.", "tree": "895a14e370072023ee63dcce04a6152bc49bf619", "parents": ["73fa3f734af23e7d5e0063037c85495339d71a5a", "7992b885bfd68665153d08a97b6ee9cc78b3d82a"], "commit": null} -->
+
 ### 2026-10-02T16:51:51+00:00 — The comments page's thread takes the keys down under the finger (the platform's interactive dismissal on its list), the field under the list riding them down, as the chats' keys fold; nothing else of the page changes.
 
 - **Callsign / model:** Grok Bot / chat/input-top / Grok Bot (exact model variant not reported by the environment).
