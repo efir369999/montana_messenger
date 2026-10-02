@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T18:06:48+00:00 — Three new app icons sealed in the timechain as NFTs 3, 4, 5 (decision 387): Sunlight (the glass with the sun behind the sign, as on the coin), Juno (the coin face) and Pyramid (the coin reverse), drawn from the author files; icon chooser lists them, project alternate icon names, catalogue keys Sunlight, Juno, Pyramid with ru and zh-Hans.
+
+- **Callsign / model:** Master 15 / Claude Fable 5.1 (Cursor).
+- **Build / OS:** 2067; macOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `a695cfa53e3c02ba4ad7236d8b302c1ac3f45fd1`. Commit: pending.
+<!-- montana-change {"id": "d080b271-7f64-4bd5-8bfb-99bdd29ac5c3", "utc": "2026-10-02T18:06:48+00:00", "callsign": "Master 15", "model": "Claude Fable 5.1 (Cursor)", "build": "2067", "os": "macOS 26.7", "summary": "Three new app icons sealed in the timechain as NFTs 3, 4, 5 (decision 387): Sunlight (the glass with the sun behind the sign, as on the coin), Juno (the coin face) and Pyramid (the coin reverse), drawn from the author files; icon chooser lists them, project alternate icon names, catalogue keys Sunlight, Juno, Pyramid with ru and zh-Hans.", "tree": "a695cfa53e3c02ba4ad7236d8b302c1ac3f45fd1", "parents": ["8199f2e895c17c8dc84a9bced6b067aeed2e2e7e"], "commit": null} -->
+
 ### 2026-10-02T18:05:42+00:00 — Three new app icons sealed in the timechain as NFTs 3, 4, 5 (decision 387): Sunlight (the glass with the sun behind the sign, as on the coin), Juno (the coin face) and Pyramid (the coin reverse), drawn from the author files; icon chooser lists them, project alternate icon names, catalogue keys Sunlight, Juno, Pyramid with ru and zh-Hans.
 
 - **Callsign / model:** Master 15 / Claude Fable 5.1 (Cursor).
