@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T14:18:04+00:00 — CouncilWall/Hippocampus: the hippocampus canon (agent_hippocampus.py, 22 tests passing, whitepaper, README, license) beside the wall, code comments in English
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** 2065; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `a34f24f3a9713cebd4e223c2851ebff6c5903fd4`. Commit: pending.
+<!-- montana-change {"id": "59d9a46e-d133-487b-93a8-62cd5941270e", "utc": "2026-10-02T14:18:04+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2065", "os": "macOS 26.6", "summary": "CouncilWall/Hippocampus: the hippocampus canon (agent_hippocampus.py, 22 tests passing, whitepaper, README, license) beside the wall, code comments in English", "tree": "a34f24f3a9713cebd4e223c2851ebff6c5903fd4", "parents": ["4e8b1dd713637ffca918c41d0ef42a50c1709e52"], "commit": null} -->
+
 ### 2026-10-02T14:07:36+00:00 — Advance build number to 2064
 
 - **Callsign / model:** Master 12 / Opus 5.5.
