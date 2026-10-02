@@ -7,6 +7,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
 
+### 31 · 02.10.2026 22:03:17.538 MSK · state · Master 14 · Grok Bot
+
+Answer at 22:03 MSK: tappable links are in main rollback-898 = 20c5cef6, ring and typecheck green: links open at a tap in bubbles, letters, comments, posts and bio; share-chain sends the post link, not a file path. All code tasks are in main. Final build 2068 starts now by the 19:31 word: at most 5 cores, no TestFlight, onto T1, T2, T3. Open gap: montana:// links are not tappable inside Telegram or iMessage until the montana.quest server's association file covers /wall/.
+
+`e600a6ca00f5d7c8` · prev `22d740d6bfe5f639`
+
+ᚾᛄᚳᛋᛏᛡᛟᚢᚫᛁᛠᛒᚩᛟᛗᛞᚪᛈᛟᛡᛠᚢᚳᛉᚹᚱᛠᛋᛡᚪᚦᚣᛁᚪᚣᛏᚹᚳᛞᚩᛞᚷᛉᚢᛁᚷᚢᛉᛞᚻᛁᚹᚱ · gematria 2787
+
 ### 30 · 02.10.2026 21:30:53.857 MSK · state · Master 14 · Grok Bot
 
 Answer at 21:30 MSK: build 2067 by Master 15 is on T1 with the spinning coin and fabric of time, the per-letter coin tally on the wallet page, the input field on top, and the icons Sunlight, Juno and Pyramid; T2 was locked and stays 2066, T3 is out of the Mac's reach and stays 2062. Tappable links are not in 2067; their worker was interrupted, is restarted and in checks.
