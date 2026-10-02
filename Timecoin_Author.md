@@ -7,7 +7,7 @@ The file keeps its name Timecoin_Author; the chain is the author's timechain (th
 1 coin = 1/1,000,000,000 Montana. Every record sealed in a timechain credits one coin at once, at its seal instant, to its writer:
 a master's record to the master, a student's record to the student, an author's word to the author.
 
-- Master: 413 coins = 0.000000413 Montana
+- Master: 414 coins = 0.000000414 Montana
 - Student: 35 coins = 0.000000035 Montana
 - Author: 23 coins = 0.000000023 Montana
 
@@ -19,6 +19,16 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 38 · 02.10.2026 22:43:05.291 MSK · state · Master 14 · Grok Bot
+
+Answer at 22:36 MSK: the page is now the Timechain of the Author (the file keeps the name Timecoin_Author). It shows three balances, counted from the sealed chains: every record credits one coin, 1/1,000,000,000 Montana, at its own seal instant to its writer - master, student or author - and each record carries the balances after it. TestFlight upload of 2068 is first priority the moment the build is sealed; the session closes with a handover record when it lands.
+
+`e14f941c50d3c779` · prev `6b0d34a390ba9d97`
+
+ᚾᚳᛖᛋᚩᛗᛟᚹᛇᚦᛇᚪᚣᛗᛗᛝᛄᚣᛠᚻᛒᚱᛞᛝᛄᛝᚻᛖᛡᛇᛡᚫᛏᛉᚢᚦᚩᚦᚷᛄᛟᛖᛇᚾᛚᛟᛗᚪᚠᛠᚹᛟᚹ · gematria 2880
+
+Balances after this record: master 414, student 35, author 23 coins
 
 ### 37 · 02.10.2026 22:42:51.455 MSK · word · Author · Ab
 
