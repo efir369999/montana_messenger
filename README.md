@@ -104,7 +104,12 @@ an issue.
 
 ### The TimeChain, squeezed
 
-Not sealed yet: a master seals it with `council.py essence`.
+- paragraph: Every record names the record before it by its SHA-256 hash, so one hash holds the whole chain behind it and no past record moves without breaking every hash after it.
+- phrase: Each hash holds the whole chain before it.
+- words: Hash holds chain
+- word: Hash
+
+Squeezed last by Master 14 · Grok Bot · 02.10.2026 23:09:52.479 MSK · record 403 `c85f61ed857f5481` · version 1 of the ladder
 
 ### Why this page shows it
 
@@ -141,7 +146,7 @@ python3 verify.py
 Its output at this publication:
 
 ```
-TimeChain_Master.jsonl: holds -- 403 records from genesis, 281 closed, head 4555b00f5e97a53104ab8de67dedf20e455600b3a0f8a0c4a33b6f8f327f3376
+TimeChain_Master.jsonl: holds -- 404 records from genesis, 281 closed, head c85f61ed857f54819c5fa2c41ef72903e3c7946dcee1e02a3393547716bb0323
 TimeChain_Student.jsonl: holds -- 36 records from genesis, 20 closed, head fde5a86778385b5e8530679c3bd5e1e391e12cc651bb734f7a327fefb93a0210
 TimeChain_Government.jsonl: holds -- 0 records from genesis, 0 closed, head 0000000000000000000000000000000000000000000000000000000000000000
 ```

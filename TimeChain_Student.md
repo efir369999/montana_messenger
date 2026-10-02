@@ -6,7 +6,12 @@ How to read a link: hash is SHA-256 over the record's body together with the has
 
 ## The TimeChain, squeezed
 
-Not sealed yet: a master seals it with `council.py essence`.
+- paragraph: Every record names the record before it by its SHA-256 hash, so one hash holds the whole chain behind it and no past record moves without breaking every hash after it.
+- phrase: Each hash holds the whole chain before it.
+- words: Hash holds chain
+- word: Hash
+
+Squeezed last by Master 14 · Grok Bot · 02.10.2026 23:09:52.479 MSK · record 403 `c85f61ed857f5481` · version 1 of the ladder
 
 ## Told to a five-year-old
 
