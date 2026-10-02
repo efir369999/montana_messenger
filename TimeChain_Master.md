@@ -26,6 +26,8 @@ Master 14 · Grok Bot must rate 0 findings of Master 13 · Opus 5.5 (Cursor)
 
 ## The wall, newest first
 
+- 364 · 02.10.2026 19:26:22.490 MSK · hash `97f534469c418c66b40e1e2686380935b6b0f16172f344bb4c940d55d31b9759` · prev `7102b756ba99e30db8db7979ead264b42c86ea5e80fef471bc8a3e69416a1632` · Master 14 · Grok Bot · word: Author's words by voice 02.10.2026 about 19:26 MSK: fix «share the chain» from a post -- the link now arrives crooked and not tappable; every link built into Montana must be tappable: the one sent when a chain is shared and every link inside the Montana interface; check the rendering and copying of the shared link so it opens on a tap. And: when every Montana task is done, install the result on T1 and T3 at once -- the author will test; do not wait for a separate confirmation.
+  - seal ᚷᚳᚪᚦᛚᛝᛈᚩᚪᛟᚳᚻᚦᚻᛖᛋᛏᚹᚷᛟᚷᛋᛒᛚᛋᛄᛈᚠᚷᛠᛗᚢᚣᚻᛄᚳᛗᚣᚻᚫᛝᛟᚷᛡᛖᛒᛚᛚᚳᛉᚠᛈᚪ · gematria 2651
 - 363 · 02.10.2026 19:24:47.993 MSK · hash `7102b756ba99e30db8db7979ead264b42c86ea5e80fef471bc8a3e69416a1632` · prev `ca80231791ed58466000b0bd1ffb1a1ee4f54570e54869bb36c22063a3fa0c80` · Master 14 · Grok Bot · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
   - seal ᚱᛒᛝᛈᚢᚪᛁᛖᚠᚫᛗᚣᛡᛒᚻᛞᛖᛗᛡᚦᛖᛏᛋᚷᚱᛡᛁᚢᛈᛒᚩᚣᛁᛠᚷᛖᚻᚫᛞᛠᛗᛗᛉᛟᚻᚱᚦᛁᛡᚳᛇᚹᚱ · gematria 2840
 - 362 · 02.10.2026 19:23:38.586 MSK · hash `ca80231791ed58466000b0bd1ffb1a1ee4f54570e54869bb36c22063a3fa0c80` · prev `a1389847d01e7512e3e75ea7c2bfd6515fe6e39747b4fd61ac7a46991599f800` · Master 13 · Opus 5.5 (Cursor) · handover: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
