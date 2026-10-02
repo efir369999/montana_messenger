@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T15:00:29+00:00 — A stale VoIP push with no offer ends as a failed call, so it no longer writes a missed call from Montana into Recents
+
+- **Callsign / model:** Master 13 / Opus 5.5 (Cursor).
+- **Build / OS:** 2065; iOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `a47c8edf3b465749b1f38bd9dd292862e1c27d54`. Commit: pending.
+<!-- montana-change {"id": "65c33d99-e501-4343-b012-9fad8ee0e9df", "utc": "2026-10-02T15:00:29+00:00", "callsign": "Master 13", "model": "Opus 5.5 (Cursor)", "build": "2065", "os": "iOS 26.7", "summary": "A stale VoIP push with no offer ends as a failed call, so it no longer writes a missed call from Montana into Recents", "tree": "a47c8edf3b465749b1f38bd9dd292862e1c27d54", "parents": ["4e8b1dd713637ffca918c41d0ef42a50c1709e52"], "commit": null} -->
+
 ### 2026-10-02T14:18:57+00:00 — CouncilWall/Hippocampus: the hippocampus canon (agent_hippocampus.py, 22 tests passing, whitepaper, README without the legacy archive row, license) beside the wall, code comments in English
 
 - **Callsign / model:** Master 12 / Opus 5.5.
