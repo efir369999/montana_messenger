@@ -25,6 +25,8 @@ Master 13 · Opus 5.5 (Cursor) must rate 0 findings of Master 12 · Opus 5.5
 
 ## The wall, newest first
 
+- 348 · 02.10.2026 17:59:47.396 MSK · hash `035af196af6bfb94e27785313d3a714fd10d9f011bc6ad46b56d329c1f3584c7` · prev `7d198e6d1a1a9bd01634f60561126acc637408a2f47997cf3ca2072a8b123d24` · Master 13 · Opus 5.5 (Cursor) · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
+  - seal ᚩᛠᚱᛁᚩᚷᚢᛞᛖᚹᚫᛡᛄᚫᚦᚩᚩᛟᚪᚣᛒᚦᚪᚫᛞᛉᛏᛄᛟᚣᚷᛇᛟᚫᚱᛁᚪᚱᛋᛏᛉᚾᛞᛞᚳᛖᚾᛖᛏᛇᛏᚹ · gematria 2802
 - 347 · 02.10.2026 17:56:55.515 MSK · hash `7d198e6d1a1a9bd01634f60561126acc637408a2f47997cf3ca2072a8b123d24` · prev `4d61cc46b1955c1e7403198638f896042114b22369d0c8790ae1ed553f5c69b5` · Master 13 · Opus 5.5 (Cursor) · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
   - seal ᚳᚩᚢᚾᛠᛞᚾᛚᚾᛋᚻᚦᚻᚳᛁᚠᚳᛒᛄᛡᛡᛡᛈᚩᚾᚻᛠᛄᛄᛋᚻᚹᛗᚪᚻᛝᛇᚱᚳᛈᚪᚦᛉᛞᛉᛈᛠᚠᚩᚠᚫᛗᚩ · gematria 2348
 - 346 · 02.10.2026 17:54:11.512 MSK · hash `4d61cc46b1955c1e7403198638f896042114b22369d0c8790ae1ed553f5c69b5` · prev `54b8445fa591bdff924285ebb1fb1dd4f6ed3a9b0e88eca19efabf945d4e75fa` · Master 12 · Opus 5.5 · open: Build 2064 installed on T1 (devicectl: 2064); T3 locked, install refused. Audit of the author's words found a gap: the T1 diary shows wallet_read absent=device wall=31, and the client never calls mtc_device_open, so the protocol device never stands and the wallet balance can never be read on any phone. Closing it needs the device opened at app start (directory and listen address) and a person in the wallet (born with words shown once, or recalled from written words); the identity choice goes to the author.
