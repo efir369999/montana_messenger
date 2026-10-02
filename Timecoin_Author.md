@@ -9,7 +9,7 @@ a master's record to the master, a student's record to the student, an author's 
 
 - Master: 413 coins = 0.000000413 Montana
 - Student: 35 coins = 0.000000035 Montana
-- Author: 22 coins = 0.000000022 Montana
+- Author: 23 coins = 0.000000023 Montana
 
 ## Records
 
@@ -19,6 +19,16 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 37 · 02.10.2026 22:42:51.455 MSK · word · Author · Ab
+
+Ab's words by voice 02.10.2026 about 22:33 MSK, leaving home: upload build 2068 to TestFlight right now with the highest priority; close the master's session fully - all open tasks, the final state of the author's timechain, the balances of master, student and author, the versions on T1, T2, T3 and what went to TestFlight; then end the work.
+
+`6b0d34a390ba9d97` · prev `90bef66e01ace272`
+
+ᚱᛁᛗᛡᚻᚢᚦᚷᚢᚻᚹᛈᛄᛝᛞᚷᛗᚾᚻᚣᛠᚢᛇᛋᚳᚾᚱᛞᚩᛋᛠᛒᛡᚠᚷᚳᛝᛄᚷᚱᚫᚢᛚᚳᚣᚫᚠᛚᚩᚳᛈᚾᛠ · gematria 2335
+
+Balances after this record: master 413, student 35, author 23 coins
 
 ### 36 · 02.10.2026 22:42:36.852 MSK · word · Author · Ab
 
