@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T15:55:11+00:00 — A reader at the bottom of an unturned feed stays at the bottom; the turned feed is still held at the newest letter
+
+- **Callsign / model:** Master 13 / Opus 5.5 (Cursor).
+- **Build / OS:** 2065; iOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `1274425c75f0546e702dcedce5b0e4c40e28365e`. Commit: pending.
+<!-- montana-change {"id": "4c6fa344-fa6a-476e-bf59-0c336800bb20", "utc": "2026-10-02T15:55:11+00:00", "callsign": "Master 13", "model": "Opus 5.5 (Cursor)", "build": "2065", "os": "iOS 26.7", "summary": "A reader at the bottom of an unturned feed stays at the bottom; the turned feed is still held at the newest letter", "tree": "1274425c75f0546e702dcedce5b0e4c40e28365e", "parents": ["bbef56dc8104961f2b7b97aa7f47974eab01c5bc"], "commit": null} -->
+
 ### 2026-10-02T15:26:31+00:00 — Advance build number to 2065
 
 - **Callsign / model:** Master 13 / Opus 5.5 (Cursor).
