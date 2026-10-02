@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 12 / Opus 5.5.
 - **Build / OS:** on 2059; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `e9b4ff44ba15d6673aced3e8128655c054ebe422`. Commit: pending.
-<!-- montana-change {"id": "7a8378ab-a010-47c7-95cf-7c6687689ffa", "utc": "2026-10-02T11:19:52+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "on 2059", "os": "macOS 26.6", "summary": "Integrate the main line (the notification fix) into the wall, newest first", "tree": "e9b4ff44ba15d6673aced3e8128655c054ebe422", "parents": ["8b01e13bdd57ab5cf55643baf336a7f449fcc0af", "c81eee905464aec5ca7e530a07b220a34567207e"], "commit": null} -->
+- **Staged source tree:** `e9b4ff44ba15d6673aced3e8128655c054ebe422`. Commit: `7314febbe779110eef70d536d9bd7b9f5c2838dd`.
+<!-- montana-change {"id": "7a8378ab-a010-47c7-95cf-7c6687689ffa", "utc": "2026-10-02T11:19:52+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "on 2059", "os": "macOS 26.6", "summary": "Integrate the main line (the notification fix) into the wall, newest first", "tree": "e9b4ff44ba15d6673aced3e8128655c054ebe422", "parents": ["8b01e13bdd57ab5cf55643baf336a7f449fcc0af", "c81eee905464aec5ca7e530a07b220a34567207e"], "commit": "7314febbe779110eef70d536d9bd7b9f5c2838dd"} -->
 
 ### 2026-10-02T11:15:16+00:00 — The wall, newest first: posts stand at their newest record, coins over the top one, numbered posts and comments, short links, the system menu on a comment
 
