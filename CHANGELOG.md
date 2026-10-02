@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Grok Bot / chat/coin-fabric / Grok Bot (exact model variant not reported by the environment).
 - **Build / OS:** 2066 source; not built; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
-- **Staged source tree:** `5fc97b190762434e6e48220053d75fd3d36b8365`. Commit: pending.
-<!-- montana-change {"id": "e39ff086-3670-46ff-befb-afc8ed29c53e", "utc": "2026-10-02T17:40:35+00:00", "callsign": "Grok Bot / chat/coin-fabric", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2066 source; not built", "os": "macOS on the author's Mac; iOS target not run", "summary": "Merge rollback-898 (68a1fe16, build number 2066) into chat/coin-fabric; one-job typecheck of this merged tree: 0 errors.", "tree": "5fc97b190762434e6e48220053d75fd3d36b8365", "parents": ["3897353bc121fe0503ba3d9e04300ace6d786dbc", "68a1fe164438e55b369dcb4cfacb721efe119605"], "commit": null} -->
+- **Staged source tree:** `5fc97b190762434e6e48220053d75fd3d36b8365`. Commit: `a8dc9138c8b7d208c9978aaa21d149d89cffeedd`.
+<!-- montana-change {"id": "e39ff086-3670-46ff-befb-afc8ed29c53e", "utc": "2026-10-02T17:40:35+00:00", "callsign": "Grok Bot / chat/coin-fabric", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2066 source; not built", "os": "macOS on the author's Mac; iOS target not run", "summary": "Merge rollback-898 (68a1fe16, build number 2066) into chat/coin-fabric; one-job typecheck of this merged tree: 0 errors.", "tree": "5fc97b190762434e6e48220053d75fd3d36b8365", "parents": ["3897353bc121fe0503ba3d9e04300ace6d786dbc", "68a1fe164438e55b369dcb4cfacb721efe119605"], "commit": "a8dc9138c8b7d208c9978aaa21d149d89cffeedd"} -->
 
 ### 2026-10-02T17:22:20+00:00 — Merge rollback-898 (68a1fe16, main's build number 2066) into chat/input-top: project.pbxproj is taken exactly as main has it; no bump and no change of its own.
 
