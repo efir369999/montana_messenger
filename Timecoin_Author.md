@@ -10,8 +10,8 @@ a government record to the Government.
 
 Each record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:57 MSK).
 
-- Master: 425 coins = 0.000000425 Montana
-- Student: 36 coins = 0.000000036 Montana
+- Master: 433 coins = 0.000000433 Montana
+- Student: 37 coins = 0.000000037 Montana
 - Author: 26 coins = 0.000000026 Montana
 - Government: 0 coins = 0.000000000 Montana
 
@@ -23,6 +23,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 45 · 02.10.2026 23:46:14.104 MSK · state · Master 14 · Grok Bot
+
+Final state of Master 14 · Grok Bot, 02.10.2026 23:46 MSK; the shift is closed by the author's 22:32 order. Balances with this record: master 433 coins (0.000000433 Montana), student 37 (0.000000037), author 26 (0.000000026), Government 0 (0.000000000). Chains: the master chain 415 records (0 to 414, handover 414), the student chain 38 (lesson 37), the Government chain 1 (genesis, no members), the author chain 46 with this record. TestFlight: build 2069 (commit e8fcf93d) uploaded at 23:23 MSK, Delivery 5a866547-44b1-4155-a676-9431398dfce8, processing state unread. Phones: T1 2069, T2 2066 (locked), T3 2069. Main is 9f550ec7: the app's gematria removal rides the next build.
+
+`9550d568e0d7bf781e705e37e295ec5dd38caa2602796d6c9a3020f40ae046f3` · prev `6990ff2d7f764e8a8f9c7b15d5f9548952365da2b8156c46fc70534890a2cb0f`
+
+Balances after this record: master 433, student 37, author 26, government 0 coins
 
 ### 44 · 02.10.2026 23:16:50.974 MSK · state · Master 14 · Grok Bot
 
