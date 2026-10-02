@@ -1,0 +1,14 @@
+[package]
+name = "mt-genesis"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mt-codec = { path = "../mt-codec" }
+mt-crypto = { path = "../mt-crypto" }
+# Genesis manifest сериализация (M8 cross-machine peer discovery).
+serde = { version = "=1.0.219", features = ["derive"] }
+serde_json = { version = "=1.0.140", default-features = false, features = ["std"] }

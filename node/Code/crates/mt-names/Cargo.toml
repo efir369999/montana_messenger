@@ -1,0 +1,15 @@
+[package]
+name = "mt-names"
+version = "0.1.0"
+edition = "2021"
+
+# Слой имён: чистые функции без сети и без состояния (Montana Names, раздел XV, этап A).
+# unicode-normalization и caseless — не криптография: они дают ДЕТЕРМИНИРОВАННОЕ отображение
+# любого ввода на разрешённый набор [a-z0-9_-]. Без них «straße» и «strasse» стали бы разными
+# именами на разных платформах, а это раскол слоя.
+[dependencies]
+sha2 = { workspace = true }
+mt-mnemonic = { path = "../mt-mnemonic" }
+mt-merkle = { path = "../mt-merkle" }
+unicode-normalization = "=0.1.24"
+caseless = "=0.2.1"

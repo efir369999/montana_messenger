@@ -1,0 +1,13 @@
+{
+  "network_name": "montana",
+  "peers": [
+    {
+      "label": "peer-1",
+      "multiaddr": "/ip4/<address of the peer>/tcp/8444",
+      "peer_id": "<network_peer_id printed by montana-node init on that peer>",
+      "account_id_hex": "<account_id of that peer: 64 lowercase hex characters>",
+      "node_id_hex": "<node_id of that peer: 64 lowercase hex characters>",
+      "bootstrap": true
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+[package]
+name = "mt-net-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.7"
+mt-net = { path = ".." }
+
+[[bin]]
+name = "fuzz_decode_envelope"
+path = "fuzz_targets/fuzz_decode_envelope.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_decode_frame"
+path = "fuzz_targets/fuzz_decode_frame.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_decode_mesh_frame"
+path = "fuzz_targets/fuzz_decode_mesh_frame.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_decode_sf_envelope"
+path = "fuzz_targets/fuzz_decode_sf_envelope.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_decode_payloads"
+path = "fuzz_targets/fuzz_decode_payloads.rs"
+test = false
+doc = false

@@ -1,0 +1,22 @@
+[package]
+name = "mt-sync"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# mt-sync — snapshot-based fast sync (M7 milestone).
+# Server side serves a snapshot of the consensus state at a given window;
+# client side receives the snapshot, verifies the state_root against the
+# anchor proposal_W, and applies it locally. Skips the per-window
+# apply_proposal replay of a long history when a new operator joins a
+# long-running mesh.
+
+[dependencies]
+mt-codec = { path = "../mt-codec" }
+mt-crypto = { path = "../mt-crypto" }
+mt-state = { path = "../mt-state" }
+mt-merkle = { path = "../mt-merkle" }
+
+[dev-dependencies]
