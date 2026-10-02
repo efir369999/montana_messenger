@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct GenesisPeer {
-    /// Человекочитаемая метка («moscow», «frankfurt», «vilnius»).
+    /// Человекочитаемая метка («peer-a», «peer-b», «peer-c»).
     pub label: String,
     /// libp2p multiaddr вида `/ip4/<addr>/tcp/<port>`. Без `/p2p/<peer_id>`
     /// suffix — peer_id хранится отдельно в поле `peer_id` для явности.
@@ -143,17 +143,17 @@ mod tests {
               "network_name": "montana",
               "peers": [
                 {{
-                  "label": "moscow",
-                  "multiaddr": "/ip4/<front>/tcp/8444",
-                  "peer_id": "12D3KooWMoscowExamplePeerId",
+                  "label": "peer-a",
+                  "multiaddr": "/ip4/<peer-a-address>/tcp/8444",
+                  "peer_id": "12D3KooWExamplePeerIdA",
                   "account_id_hex": "{a}",
                   "node_id_hex": "{n}",
                   "bootstrap": true
                 }},
                 {{
-                  "label": "frankfurt",
-                  "multiaddr": "/ip4/<exit-de>/tcp/8444",
-                  "peer_id": "12D3KooWFrankfurtExamplePeerId",
+                  "label": "peer-b",
+                  "multiaddr": "/ip4/<peer-b-address>/tcp/8444",
+                  "peer_id": "12D3KooWExamplePeerIdB",
                   "account_id_hex": "{b}",
                   "node_id_hex": "{m}",
                   "bootstrap": false
@@ -169,15 +169,15 @@ mod tests {
 
     #[test]
     fn parse_three_peer_manifest() {
-        // helsinki removed from fixture 2026-05-30 → 2 peers
+        // a third peer removed from fixture 2026-05-30 → 2 peers
         let toml_text = three_peer_manifest_json();
         let m = GenesisManifest::parse(&toml_text).expect("valid manifest");
         assert_eq!(m.network_name, "montana");
         assert_eq!(m.peers.len(), 2);
-        assert_eq!(m.peers[0].label, "moscow");
+        assert_eq!(m.peers[0].label, "peer-a");
         assert!(m.peers[0].bootstrap);
         assert!(!m.peers[1].bootstrap);
-        assert_eq!(m.bootstrap_peer().unwrap().label, "moscow");
+        assert_eq!(m.bootstrap_peer().unwrap().label, "peer-a");
     }
 
     #[test]
