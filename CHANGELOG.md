@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T16:43:24+00:00 — The chat bar's three right marks (feed turn, chess, handset) stand on one 44-point circle of the platform's glass each, the shared plate hidden, and the blue ring is drawn inside that same circle; before iOS 26 the ring stands on the mark's own tier-sized plate, not on the 44-point target.
+
+- **Callsign / model:** Grok Bot / chat/input-top / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2065 source; not built, next artifact unassigned; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `38abe7b5eaeb5bcbc8453f3bdfb2b5f6ef4b1e78`. Commit: pending.
+<!-- montana-change {"id": "f0fc11bc-0fc8-4b79-b525-5eb2d9ba6f6d", "utc": "2026-10-02T16:43:24+00:00", "callsign": "Grok Bot / chat/input-top", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2065 source; not built, next artifact unassigned", "os": "macOS on the author's Mac; iOS target not run", "summary": "The chat bar's three right marks (feed turn, chess, handset) stand on one 44-point circle of the platform's glass each, the shared plate hidden, and the blue ring is drawn inside that same circle; before iOS 26 the ring stands on the mark's own tier-sized plate, not on the 44-point target.", "tree": "38abe7b5eaeb5bcbc8453f3bdfb2b5f6ef4b1e78", "parents": ["bbef56dc8104961f2b7b97aa7f47974eab01c5bc"], "commit": null} -->
+
 ### 2026-10-02T16:32:33+00:00 — Every chat bubble shows its letter's gematria right of its time: the seal is SHA-256 over the letter's one wire name (mid, which carries the birth millisecond), counted by the wall's MTBoard.gematria, cached per name; the owner guard registers the seal and the gematria as single owners.
 
 - **Callsign / model:** Grok Bot / chat/bubble-gematria / Grok Bot (exact model variant not reported by the environment).
