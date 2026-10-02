@@ -1,0 +1,11 @@
+[Unit]
+Description=Clamp TCP MSS to 1100 (safe under LTE and tunnelled paths with a small MTU)
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/sbin/iptables -t mangle -A OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1100
+ExecStart=/sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1100
+[Install]
+WantedBy=multi-user.target
