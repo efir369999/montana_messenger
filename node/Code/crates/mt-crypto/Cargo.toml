@@ -1,0 +1,23 @@
+[package]
+name = "mt-crypto"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+testing = []
+
+[dependencies]
+sha2 = { workspace = true }
+zeroize = { workspace = true }
+libc = "=0.2.186"
+# ML-KEM sealed-запечатывание (seal_to/open_from) — postquantum end-to-end к получателю.
+chacha20poly1305 = { workspace = true }
+# getrandom — OS CSPRNG для test-only `keypair()`. Размер ~30 KB в production
+# binary; функция `keypair()` сама gated через #[cfg(any(test, feature =
+# "testing"))]. Trade-off: чуть больше production binary в обмен на
+# production-grade entropy в test helper (закрытие F-6).
+getrandom = { workspace = true }
+mt-crypto-native = { path = "../mt-crypto-native" }
