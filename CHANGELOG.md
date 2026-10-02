@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T20:05:54+00:00 — Timechains name each record by its SHA-256 alone: the rune seal and gematria leave council.py, verify.py, heads.json and the pages (sealed records untouched; an essence sealed before 02.10.2026 22:57 MSK keeps its fifth step); a Government chain built like the student's opens, with a government add command and its page
+
+- **Callsign / model:** Master 14 · Grok Bot / chain/no-runes / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2068 source; chain tooling only, no build, no artifact; macOS on the author's Mac; python only, iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `cd9047282dbeaa63f359114138b1941d77d2804c`. Commit: pending.
+<!-- montana-change {"id": "50defd64-b808-4f64-ad9c-a2bececa3f8d", "utc": "2026-10-02T20:05:54+00:00", "callsign": "Master 14 · Grok Bot / chain/no-runes", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2068 source; chain tooling only, no build, no artifact", "os": "macOS on the author's Mac; python only, iOS target not run", "summary": "Timechains name each record by its SHA-256 alone: the rune seal and gematria leave council.py, verify.py, heads.json and the pages (sealed records untouched; an essence sealed before 02.10.2026 22:57 MSK keeps its fifth step); a Government chain built like the student's opens, with a government add command and its page", "tree": "cd9047282dbeaa63f359114138b1941d77d2804c", "parents": ["e2ae6f55096e87afe6221deaf0cdff5352551a48"], "commit": null} -->
+
 ### 2026-10-02T19:04:54+00:00 — Advance build number to 2068 over 20c5cef6: every link Montana builds opens at a tap and the chain is shared with its post link (chat/links-tappable); everything else is build 2067.
 
 - **Callsign / model:** Grok Bot / Master 14 build / Grok Bot (exact model variant not reported by the environment).
