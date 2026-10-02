@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T12:23:40+00:00 — Advance build number to 2063
+
+- **Callsign / model:** Master 12 / Opus 5.5.
+- **Build / OS:** 2063; macOS 26.6. No new compilation or installation claimed.
+- **Staged source tree:** `9c329507ff1c55f51e111729ac84e7bf93f11256`. Commit: pending.
+<!-- montana-change {"id": "4ef9fb0b-1939-4516-8620-b9ad7f04a0e5", "utc": "2026-10-02T12:23:40+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2063", "os": "macOS 26.6", "summary": "Advance build number to 2063", "tree": "9c329507ff1c55f51e111729ac84e7bf93f11256", "parents": ["53fe2529b1a14e9f95f632c3e8be1aac21c3ead7"], "commit": null} -->
+
 ### 2026-10-02T12:22:01+00:00 — Repeated letter keeps its banner face quietly; post share is its short link with a system preview; the commenter keeps the chain in Montana/Timechain
 
 - **Callsign / model:** Master 12 / Opus 5.5.
