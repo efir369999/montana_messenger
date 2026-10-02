@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T16:50:43+00:00 — With the newest letters on top the chat's compose node stands at the feed's top edge under the navigation bar: it rides no keys (MTChatKeyboardGeometry.barOnKeys, written by MTKeyboardRider), the keys' accessory holds no room so the interactive drag begins at the keys, the keys cover the feed's visual bottom as its inset, the previews stand under the field, the top strip runs under the bar at rest, the pinned plate and the way-to-newest button stand under the field, the peer's live words stand at the newest end; the flip resigns the field first. The unturned chat is unchanged.
+
+- **Callsign / model:** Grok Bot / chat/input-top / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2065 source; not built, next artifact unassigned; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `0f683a86a54935953f6bd4e0fbd098e7a04d2184`. Commit: pending.
+<!-- montana-change {"id": "3c9cdd7c-c516-4b6d-85e7-0c5226fbf6e0", "utc": "2026-10-02T16:50:43+00:00", "callsign": "Grok Bot / chat/input-top", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2065 source; not built, next artifact unassigned", "os": "macOS on the author's Mac; iOS target not run", "summary": "With the newest letters on top the chat's compose node stands at the feed's top edge under the navigation bar: it rides no keys (MTChatKeyboardGeometry.barOnKeys, written by MTKeyboardRider), the keys' accessory holds no room so the interactive drag begins at the keys, the keys cover the feed's visual bottom as its inset, the previews stand under the field, the top strip runs under the bar at rest, the pinned plate and the way-to-newest button stand under the field, the peer's live words stand at the newest end; the flip resigns the field first. The unturned chat is unchanged.", "tree": "0f683a86a54935953f6bd4e0fbd098e7a04d2184", "parents": ["08a69c83f62f3060ab40a567c5d0f500fb314e8a"], "commit": null} -->
+
 ### 2026-10-02T16:44:34+00:00 — Merge rollback-898 (7992b885, the unturned feed's held bottom) into chat/input-top before the input-on-top work; no change of its own.
 
 - **Callsign / model:** Grok Bot / chat/input-top / Grok Bot (exact model variant not reported by the environment).
