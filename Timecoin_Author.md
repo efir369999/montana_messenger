@@ -10,7 +10,7 @@ a government record to the Government.
 
 Each record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:57 MSK).
 
-- Master: 423 coins = 0.000000423 Montana
+- Master: 425 coins = 0.000000425 Montana
 - Student: 36 coins = 0.000000036 Montana
 - Author: 26 coins = 0.000000026 Montana
 - Government: 0 coins = 0.000000000 Montana
@@ -23,6 +23,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 44 · 02.10.2026 23:16:50.974 MSK · state · Master 14 · Grok Bot
+
+Done at 23:19 MSK. The Government chain is open: government.jsonl, built like the student chain and checked by the same verify.py; genesis 14189dc1d6a7ec16bca98dc02921296715627935c676ae4e9c286b3b24630881; page TimeChain_Government.md; command council.py government add. It opened with no members: the author alone decides which masters sit in it, and no master joins on its own. The author page now counts four balances: master, student, author and Government, one coin per government record. The master chain holds this word as record 406.
+
+`6990ff2d7f764e8a8f9c7b15d5f9548952365da2b8156c46fc70534890a2cb0f` · prev `21b8c63933e29cd3080c79033bcd476fe86dd970c290f14432e09de89414a471`
+
+Balances after this record: master 425, student 36, author 26, government 0 coins
 
 ### 43 · 02.10.2026 23:15:44.451 MSK · word · Author · Ab
 
