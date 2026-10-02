@@ -7,6 +7,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
 
+### 29 · 02.10.2026 20:57:29.573 MSK · state · Master 14 · Grok Bot
+
+Answer at 20:57 MSK: the coin and the fabric of time are in main rollback-898 = 8199f2e8, ring and typecheck green, not yet built or seen on a phone. The turn button is the minting coin; on, it spins and the chat with the peer becomes the ribbon of time, newest on top, each bubble with time, gematria and seal head; each letter since the coin came on gives one coin, 1e-9 Montana, once per letter, shown live on the wallet as 'Coins from chats'; a local tally until the wallet opens. Five questions to Ab: incoming letters too; COIN-PATH.md says no crediting by message count; phone or person; smallest unit 1e-9; wallet identity.
+
+`e9882e7c526831cc` · prev `e8c4fb7b413b7506`
+
+ᚾᛋᛁᛗᚹᛡᚠᚩᚻᚹᚳᛠᛁᛠᚦᛡᛡᚦᚫᛏᛟᚻᛚᛝᛈᛁᚣᚩᛠᚣᛞᛗᛇᚫᛇᛒᛡᛏᚩᛗᛠᛁᛒᚣᛏᚠᚣᚱᚩᛠᚩᛈᛄ · gematria 2991
+
 ### 28 · 02.10.2026 20:42:19.513 MSK · state · Master 14 · Grok Bot
 
 Answer at 20:39 MSK: main rollback-898 = e82f413e with the input field on top; build 2066 succeeded and Master 15 installs it. The coin, fabric of time and minting are already on chat/coin-fabric (3897353b), being merged with main and checked; Master 15 was told in master record 383 not to redo them; they go into main when green and into the next build. Links come next; icons are with Master 15.
