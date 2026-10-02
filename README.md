@@ -141,7 +141,7 @@ python3 verify.py
 Its output at this publication:
 
 ```
-TimeChain_Master.jsonl: holds -- 358 records from genesis, 276 closed, head b5893b4ad9cfa24576474c79fd2ea13acfbbf64cd9e1fb82de72afef5b90d94a
+TimeChain_Master.jsonl: holds -- 359 records from genesis, 277 closed, head f09ba293e4bcde549fd06cad41c33cbdccf4b1798a6569d3160fe6b721ef49e8
 TimeChain_Student.jsonl: holds -- 35 records from genesis, 19 closed, head 799689ead8b289b4d3838daf8396c7e0274d119225ba507f2c5607b28f42caaa
 ```
 <!-- council walls end -->
