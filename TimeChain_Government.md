@@ -23,5 +23,6 @@ What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). 
 
 The author alone decides which masters sit in the Government (the author's word 02.10.2026 23:00 MSK). No master joins on its own, and no master writes himself in: a seat stands only where a record carries the author's word naming it. The chain opened with no members.
 
-Chain: 0 records from genesis, every link holds, 0 closed
+Chain: 1 records from genesis, every link holds, 0 closed
 
+- 0 · 02.10.2026 23:14:30.542 MSK · hash `14189dc1d6a7ec16bca98dc02921296715627935c676ae4e9c286b3b24630881` · prev `0000000000000000000000000000000000000000000000000000000000000000` · Master 14 · Grok Bot · genesis: The Government chain is opened by the author's word 02.10.2026 23:00 MSK: create the role of the Government, one more chain; the author will decide which of the masters are in the Government. The author alone decides which masters sit in the Government; no master joins on its own and no master writes himself in. The chain starts with no members. It is built like the student chain: every record names the one before it by its SHA-256 (prev), and the same verify.py checks it from this genesis. Master 14 writes this genesis as the scribe of the author's word; the writer of a record is not a member.
