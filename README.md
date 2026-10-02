@@ -108,7 +108,7 @@ Not sealed yet: a master seals it with `council.py essence`.
 
 ### Why this page shows it
 
-The masters' TimeChain (TimeChain_Master.jsonl) and the student's TimeChain (TimeChain_Student.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. TimeChain_Master.md shows every record with its hash and prev, the masters' squeezed rewrites of it under it.
+The masters' TimeChain (TimeChain_Master.jsonl), the student's TimeChain (TimeChain_Student.jsonl) and the Government's TimeChain (TimeChain_Government.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. TimeChain_Master.md shows every record with its hash and prev, the masters' squeezed rewrites of it under it.
 
 What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
 
@@ -120,9 +120,9 @@ hash is SHA-256 over the canonical body: the UTF-8 JSON object of n, time, maste
 
 A record enters the chain only if the whole chain with it passes verify.py, the file the showcase publishes: the tool that writes and the stranger who checks run one canon. The chains are their own test vectors: an implementation escaping non-ASCII fails on TimeChain_Student.jsonl record 0, one writing a line break other than \n fails on TimeChain_Master.jsonl record 82, one keeping the fields in listed order fails on every record.
 
-The rune seal under a record is its hash read as one big-endian number and written in base 29 in the runes of the Gematria Primus, most significant first -- at most 53 runes; its gematria is the sum of the runes' primes, 2 to 109. The seal is drawn from the hash and never stored.
+A record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:57 MSK): no other seal or number is drawn from the hash or shown beside it. The records sealed before that word are not rewritten: their texts and hashes hold the chain.
 
-The essence is the newest essence record: five lines -- a paragraph, a phrase, a few words, one word, one rune -- each fewer UTF-8 bytes than the line above; a master squeezes it again with a new essence record threaded to the one before.
+The essence is the newest essence record: four lines -- a paragraph, a phrase, a few words, one word -- each fewer UTF-8 bytes than the line above; a master squeezes it again with a new essence record threaded to the one before. An essence sealed before 02.10.2026 22:57 MSK keeps the fifth step it was sealed with, because its hash holds it; the pages show the four steps.
 
 A twin is a master's rewrite of a record in his own squeezing language, kept beside the chain in masterwall.jsonl: scored, not sealed. Adapted Weissman score = (record bytes / twin bytes) / (record bytes / deflate-9 bytes); a twin that drops an identifier of its record -- three digits or more, seven hex digits or more, a branch with a slash -- scores 0, and a master's mean counts the latest twin of each record once.
 
@@ -141,8 +141,9 @@ python3 verify.py
 Its output at this publication:
 
 ```
-TimeChain_Master.jsonl: holds -- 402 records from genesis, 281 closed, head a43a60e9e678525aa8ecd841e2ac1668e49a3b3bf033686391efa00c3689cbb2
+TimeChain_Master.jsonl: holds -- 403 records from genesis, 281 closed, head 4555b00f5e97a53104ab8de67dedf20e455600b3a0f8a0c4a33b6f8f327f3376
 TimeChain_Student.jsonl: holds -- 36 records from genesis, 20 closed, head fde5a86778385b5e8530679c3bd5e1e391e12cc651bb734f7a327fefb93a0210
+TimeChain_Government.jsonl: holds -- 0 records from genesis, 0 closed, head 0000000000000000000000000000000000000000000000000000000000000000
 ```
 <!-- council walls end -->
 

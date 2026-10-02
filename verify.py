@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Re-checks the two TimeChains, TimeChain_Master.jsonl and TimeChain_Student.jsonl, link by link from genesis with the standard library
-# alone. council.py imports these rules, so a stranger checks the very canon the master writes. A pass proves one unbroken
+# Re-checks the TimeChains, TimeChain_Master.jsonl, TimeChain_Student.jsonl and TimeChain_Government.jsonl, link by link from
+# genesis with the standard library alone. A record is named by its SHA-256 alone (the author's word 02.10.2026 22:57 MSK). council.py imports these rules, so a stranger checks the very canon the master writes. A pass proves one unbroken
 # chain whose open records re-hash from their bodies; a record's time and master stay its writer's word.
 import datetime, hashlib, json, os, re, sys
 
@@ -14,12 +14,11 @@ STAMP = "%Y-%m-%dT%H:%M:%SZ"
 # sealed with, because its hash holds them
 STAMP_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
 KEYS = frozenset(FIELDS + ("hash",))
-# the Gematria Primus in its order: F U TH O R C G W H N I J EO P X S T B E M L NG OE D A AE Y IA EA
-RUNES = (0x16A0, 0x16A2, 0x16A6, 0x16A9, 0x16B1, 0x16B3, 0x16B7, 0x16B9, 0x16BB, 0x16BE, 0x16C1, 0x16C4, 0x16C7, 0x16C8,
-         0x16C9, 0x16CB, 0x16CF, 0x16D2, 0x16D6, 0x16D7, 0x16DA, 0x16DD, 0x16DF, 0x16DE, 0x16AA, 0x16AB, 0x16A3, 0x16E1,
-         0x16E0)
 # the essence of the TimeChain squeezed step by step: a step no shorter than the one above is no squeeze
-LEVELS = ("paragraph", "phrase", "words", "word", "rune")
+LEVELS = ("paragraph", "phrase", "words", "word")
+# an essence sealed before the author's word of 02.10.2026 22:57 MSK keeps the fifth step it was sealed with, one character
+# shorter than the word: its hash holds it, so it is checked as sealed and never rewritten
+SEALED_FIFTH = "2026-10-02T19:57:00Z"
 # a finding on an earlier master's code opens with its axis; another master rates it once, opening with + or -
 AXES = ("elegance", "aesthetics", "security")
 MARKS = ("+", "-")
@@ -54,18 +53,20 @@ def moment(stamp):
     return instant(stamp) is not None
 
 
-def ladder(text):
+def ladder(text, stamp=None):
     steps = text.split("\n")
-    if len(steps) != len(LEVELS) or not all(s and s == s.strip() for s in steps):
-        return "an essence is five lines, one per step: " + ", ".join(LEVELS)
+    sealed = stamp is not None and instant(stamp) < instant(SEALED_FIFTH) and len(steps) == len(LEVELS) + 1
+    levels = LEVELS + (("sealed fifth",) if sealed else ())
+    if len(steps) != len(levels) or not all(s and s == s.strip() for s in steps):
+        return "an essence is four lines, one per step: " + ", ".join(LEVELS)
     sizes = [len(s.encode("utf-8")) for s in steps]
-    for level, above, size in zip(LEVELS[1:], sizes, sizes[1:]):
+    for level, above, size in zip(levels[1:], sizes, sizes[1:]):
         if size not in range(above):
             return f"the {level} step is not shorter than the step above it"
     if len(steps[2].split()) == 1 or len(steps[3].split()) != 1:
         return "the words step holds a few words, the word step one"
-    if len(steps[4]) != 1 or ord(steps[4]) not in RUNES:
-        return "the rune step is one rune of the Gematria Primus"
+    if sealed and len(steps[4]) != 1:
+        return "the sealed fifth step is one character"
     return None
 
 
@@ -116,7 +117,7 @@ def rule(r, past):
     shut = r.get("closed")
     if r["kind"] == "essence":
         before = [h for h, q in past.items() if q["kind"] == "essence"][-1:]
-        why = None if shut else ladder(r["text"])
+        why = None if shut else ladder(r["text"], r["time"])
         if why or not set(before).issubset(r["thread"]):
             return why or "a re-squeezed essence threads to the essence before it"
     if r["kind"] == "finding" and not shut and opening(r) not in AXES:
@@ -154,9 +155,10 @@ def read(path):
 
 def main(paths):
     here = os.path.dirname(os.path.abspath(__file__))
-    paths = paths or [os.path.join(here, f) for f in ("TimeChain_Master.jsonl", "TimeChain_Student.jsonl") if os.path.exists(os.path.join(here, f))]
+    paths = paths or [os.path.join(here, f) for f in ("TimeChain_Master.jsonl", "TimeChain_Student.jsonl", "TimeChain_Government.jsonl")
+                      if os.path.exists(os.path.join(here, f))]
     if not paths:
-        print("usage: python3 verify.py [TimeChain_Master.jsonl] [TimeChain_Student.jsonl]")
+        print("usage: python3 verify.py [TimeChain_Master.jsonl] [TimeChain_Student.jsonl] [TimeChain_Government.jsonl]")
         return 2
     broken = 0
     for path in paths:
