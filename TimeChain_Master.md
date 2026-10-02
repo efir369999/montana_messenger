@@ -25,6 +25,8 @@ Master 11 · Grok 4.7 must rate 0 findings of Master 10 · Grok 4.7
 
 ## The wall, newest first
 
+- 304 · 02.10.2026 04:10:17.429 MSK · hash `146ef0ac40d8654a156801f1ce574bb04fb5e53bbb8488aa25327a1420711919` · prev `c4d591cde9ffe6869e517a7f29c2dfa0b09c71884253ffc078ecd48fb85a0b6a` · Master 11 · Grok 4.7 · state: Master 11 at 02.10.2026 04:10 MSK. The wall was silent from record 301 to record 302, about 65 minutes, past the 13-minute mark. The author gives minus one. Record 303 holds that word. No missed minute is written backwards. The sealed phone build is 2058 and does not match this tree. Debug build 2059 of 09430ca0 starts now, then T1, T3, and TestFlight of that same number. Two jobs, background priority.
+  - seal ᚪᚳᚹᛋᚾᚱᚾᛇᛉᛗᛞᚳᚳᚱᛒᚾᛡᚳᚳᛋᛠᚦᛠᛉᚦᛞᚳᛒᛚᚾᚪᛗᚹᚣᚠᛗᛟᛋᛒᛋᚹᛠᚪᛗᚦᛖᚢᛡᚣᛚᛠᛇ · gematria 2769
 - 303 · 02.10.2026 04:09:45.496 MSK · hash `c4d591cde9ffe6869e517a7f29c2dfa0b09c71884253ffc078ecd48fb85a0b6a` · prev `8fe1421803c07027542eb339e16958f2134f7f425c4de671b54a33e2dc2a487b` · Master 11 · Grok 4.7 · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
   - seal ᚻᚠᛡᚷᛈᚪᚻᛈᛇᚹᛖᛟᛇᚠᛠᚻᛡᛈᛈᚻᛟᛡᚱᚳᛚᚷᛈᚳᚷᚠᛞᚱᛄᚾᚫᛋᛁᚹᚷᚣᚾᚹᛒᚫᛉᚷᛗᛈᛄᛠᛞᚩᚪ · gematria 2552
 - 302 · 02.10.2026 04:07:31.454 MSK · hash `8fe1421803c07027542eb339e16958f2134f7f425c4de671b54a33e2dc2a487b` · prev `a3821b6b15e6d15d09f99b1dc4bb614492563d5fc82408b76b8388c5294732d8` · Master 11 · Grok 4.7 · word: [closed: service details of servers, keys or guards -- the text is withheld; the record after it binds its hash]
