@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T16:56:11+00:00 — Sharing onto my wall through the share menu opens the wall's own new-post page with all its capabilities: the sheet's wall circle reads the share once and lays one pendingWall record (ShareWallHandoff, its reduced post page gone), and the app moves the files into my wall's draft folder with their frames, joins words and files to my wall's draft and opens MTBoardComposer over it (reopen closes a page already up first); P-118.9's guard follows the new contract.
+
+- **Callsign / model:** Grok Bot / chat/input-top / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2065 source; not built, next artifact unassigned; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `a60c7a85f6f23e06f8668dafa9991c0c0caa7f5e`. Commit: pending.
+<!-- montana-change {"id": "786ce16e-76af-4760-b6cd-a21450813af7", "utc": "2026-10-02T16:56:11+00:00", "callsign": "Grok Bot / chat/input-top", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2065 source; not built, next artifact unassigned", "os": "macOS on the author's Mac; iOS target not run", "summary": "Sharing onto my wall through the share menu opens the wall's own new-post page with all its capabilities: the sheet's wall circle reads the share once and lays one pendingWall record (ShareWallHandoff, its reduced post page gone), and the app moves the files into my wall's draft folder with their frames, joins words and files to my wall's draft and opens MTBoardComposer over it (reopen closes a page already up first); P-118.9's guard follows the new contract.", "tree": "a60c7a85f6f23e06f8668dafa9991c0c0caa7f5e", "parents": ["560214ea21be66894c739e9e245a2fe0b4e54d89"], "commit": null} -->
+
 ### 2026-10-02T16:54:47+00:00 — Merge rollback-898 (7992b885, the unturned feed's bottom hold) into chat/bubble-gematria; guard ring and one-job typecheck green on the merged tree.
 
 - **Callsign / model:** Grok Bot / chat/bubble-gematria / Grok Bot (exact model variant not reported by the environment).
