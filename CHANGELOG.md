@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 12 / Opus 5.5.
 - **Build / OS:** 2064; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `acec2fae2e2a5d8446e3dbe228ba73f2b818815b`. Commit: pending.
-<!-- montana-change {"id": "74902078-4f51-4aa5-aae2-ee7bfa901c38", "utc": "2026-10-02T14:07:36+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2064", "os": "macOS 26.6", "summary": "Advance build number to 2064", "tree": "acec2fae2e2a5d8446e3dbe228ba73f2b818815b", "parents": ["f7fe268a4a438595be07fad3bb883d5ba80c57b4"], "commit": null} -->
+- **Staged source tree:** `acec2fae2e2a5d8446e3dbe228ba73f2b818815b`. Commit: `4e8b1dd713637ffca918c41d0ef42a50c1709e52`.
+<!-- montana-change {"id": "74902078-4f51-4aa5-aae2-ee7bfa901c38", "utc": "2026-10-02T14:07:36+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2064", "os": "macOS 26.6", "summary": "Advance build number to 2064", "tree": "acec2fae2e2a5d8446e3dbe228ba73f2b818815b", "parents": ["f7fe268a4a438595be07fad3bb883d5ba80c57b4"], "commit": "4e8b1dd713637ffca918c41d0ef42a50c1709e52"} -->
 
 ### 2026-10-02T14:06:09+00:00 — Chat bar: the feed's turn mark (newest on top) between the name and the chess; chess and turn marks wear the handset's round and height
 
