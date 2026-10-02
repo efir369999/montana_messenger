@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T18:08:47+00:00 — Advance build number to 2067 over a6546c57: the coin turn of the feed spins and unfolds the fabric of time, one coin per letter tallied live on the wallet page (Master 14, 3897353b), the field on top in the turned feed (chat/input-top), three icons Sunlight, Juno, Pyramid sealed as NFTs 3, 4, 5 (timechain decision 387).
+
+- **Callsign / model:** Master 15 / Claude Fable 5.1 (Cursor).
+- **Build / OS:** 2067; macOS 26.7. No new compilation or installation claimed.
+- **Staged source tree:** `793b24d62668d802ca30962356f3b4f9ae5632c8`. Commit: pending.
+<!-- montana-change {"id": "c85e49e2-079b-41a5-844d-6ac0a38a9e85", "utc": "2026-10-02T18:08:47+00:00", "callsign": "Master 15", "model": "Claude Fable 5.1 (Cursor)", "build": "2067", "os": "macOS 26.7", "summary": "Advance build number to 2067 over a6546c57: the coin turn of the feed spins and unfolds the fabric of time, one coin per letter tallied live on the wallet page (Master 14, 3897353b), the field on top in the turned feed (chat/input-top), three icons Sunlight, Juno, Pyramid sealed as NFTs 3, 4, 5 (timechain decision 387).", "tree": "793b24d62668d802ca30962356f3b4f9ae5632c8", "parents": ["a6546c57e86050a5c98481fa291ae074d1758f86"], "commit": null} -->
+
 ### 2026-10-02T18:06:48+00:00 — Three new app icons sealed in the timechain as NFTs 3, 4, 5 (decision 387): Sunlight (the glass with the sun behind the sign, as on the coin), Juno (the coin face) and Pyramid (the coin reverse), drawn from the author files; icon chooser lists them, project alternate icon names, catalogue keys Sunlight, Juno, Pyramid with ru and zh-Hans.
 
 - **Callsign / model:** Master 15 / Claude Fable 5.1 (Cursor).
