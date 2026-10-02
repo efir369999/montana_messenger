@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 15 / rollback-898 / Claude Fable 5.1 (Cursor).
 - **Build / OS:** 2066 source on a94f9af5; Debug build and install on T1 and T3 follow; macOS 26.7 on the author Mac; iOS target not yet run. No new compilation or installation claimed.
-- **Staged source tree:** `6e84bed345fc30e1d1f28c7f69d60514c1b85f71`. Commit: pending.
-<!-- montana-change {"id": "aaeec10f-f86a-4649-88f1-e85093ae9244", "utc": "2026-10-02T17:07:38+00:00", "callsign": "Master 15 / rollback-898", "model": "Claude Fable 5.1 (Cursor)", "build": "2066 source on a94f9af5; Debug build and install on T1 and T3 follow", "os": "macOS 26.7 on the author Mac; iOS target not yet run", "summary": "Advance build number to 2066 on main rollback-898 a94f9af5 (feed-newest-top and bubble-gematria in), by the author word 20:03 MSK: build now and install on T1 and T3.", "tree": "6e84bed345fc30e1d1f28c7f69d60514c1b85f71", "parents": ["a94f9af5eb45b5a71f4b5d709062017a5684fcff"], "commit": null} -->
+- **Staged source tree:** `6e84bed345fc30e1d1f28c7f69d60514c1b85f71`. Commit: `68a1fe164438e55b369dcb4cfacb721efe119605`.
+<!-- montana-change {"id": "aaeec10f-f86a-4649-88f1-e85093ae9244", "utc": "2026-10-02T17:07:38+00:00", "callsign": "Master 15 / rollback-898", "model": "Claude Fable 5.1 (Cursor)", "build": "2066 source on a94f9af5; Debug build and install on T1 and T3 follow", "os": "macOS 26.7 on the author Mac; iOS target not yet run", "summary": "Advance build number to 2066 on main rollback-898 a94f9af5 (feed-newest-top and bubble-gematria in), by the author word 20:03 MSK: build now and install on T1 and T3.", "tree": "6e84bed345fc30e1d1f28c7f69d60514c1b85f71", "parents": ["a94f9af5eb45b5a71f4b5d709062017a5684fcff"], "commit": "68a1fe164438e55b369dcb4cfacb721efe119605"} -->
 
 ### 2026-10-02T17:03:06+00:00 — The turned chat's top strip under the field on top is held to the compose node as it stands as well as to the bar at rest, so a room nobody writes into (no bar) keeps the navigation bar's own strip.
 
