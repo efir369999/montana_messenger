@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T17:55:23+00:00 — Merge rollback-898 (e82f413e, chat/input-top) into chat/coin-fabric; the turn's coin now stands on main's MTBarRoundMark (the one conflict, resolved); guard ring and two-job typecheck green on the merged tree.
+
+- **Callsign / model:** Grok Bot / chat/coin-fabric / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2066 source; not built; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `03a1d9470c1b014cb237d2c0e08278d669c210a9`. Commit: pending.
+<!-- montana-change {"id": "614e8163-88b9-4df5-883d-5e9d15b47dc2", "utc": "2026-10-02T17:55:23+00:00", "callsign": "Grok Bot / chat/coin-fabric", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2066 source; not built", "os": "macOS on the author's Mac; iOS target not run", "summary": "Merge rollback-898 (e82f413e, chat/input-top) into chat/coin-fabric; the turn's coin now stands on main's MTBarRoundMark (the one conflict, resolved); guard ring and two-job typecheck green on the merged tree.", "tree": "03a1d9470c1b014cb237d2c0e08278d669c210a9", "parents": ["a8dc9138c8b7d208c9978aaa21d149d89cffeedd", "e82f413e50360824db323f7b977fdf65d540212f"], "commit": null} -->
+
 ### 2026-10-02T17:54:29+00:00 — The feed turn mark is the minting coin: still face while the chat reads oldest-first, the wall spinning coin (MTMintCoin) while the newest letters are on top, the ring with the spin; while it spins every letter that lands in the chat mints one coin, a billionth of a Montana (MTChatMint, one owner in MTWalletScreen.swift: one count key read live by the wallet page, a per-chat mark of the last minted letter so a turn never mints old letters), shown on the wallet beside the confirmed balance as coins and in Montana to nine places; three alternate app icons -- Sunlight (the glass with the sun behind the sign), Juno (the coin face) and Pyramid (the coin reverse), each with its preview, in the appearance chooser and the project.
 
 - **Callsign / model:** Master 15 / chat/fabric-mint-icons / Claude Fable 5.1 (Cursor).
