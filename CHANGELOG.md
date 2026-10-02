@@ -9,8 +9,8 @@ published on the public TestFlight link only.
 
 - **Callsign / model:** Master 12 / Opus 5.5.
 - **Build / OS:** 2063; macOS 26.6. No new compilation or installation claimed.
-- **Staged source tree:** `f39989c43e062773b7db35100b5e617b2f43ea94`. Commit: pending.
-<!-- montana-change {"id": "be6b4946-1b11-4ea5-99e2-752037a974e6", "utc": "2026-10-02T12:40:41+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2063", "os": "macOS 26.6", "summary": "The live post's coin shows its window's share; the wallet shows the wall's minting beside the confirmed balance; the core's answer reaches the diary", "tree": "f39989c43e062773b7db35100b5e617b2f43ea94", "parents": ["11bf59e9188ca96a9d70bd261a218841e01a4903"], "commit": null} -->
+- **Staged source tree:** `f39989c43e062773b7db35100b5e617b2f43ea94`. Commit: `cf0d87340d62e5c73868510230fa3a40198af873`.
+<!-- montana-change {"id": "be6b4946-1b11-4ea5-99e2-752037a974e6", "utc": "2026-10-02T12:40:41+00:00", "callsign": "Master 12", "model": "Opus 5.5", "build": "2063", "os": "macOS 26.6", "summary": "The live post's coin shows its window's share; the wallet shows the wall's minting beside the confirmed balance; the core's answer reaches the diary", "tree": "f39989c43e062773b7db35100b5e617b2f43ea94", "parents": ["11bf59e9188ca96a9d70bd261a218841e01a4903"], "commit": "cf0d87340d62e5c73868510230fa3a40198af873"} -->
 
 ### 2026-10-02T12:23:40+00:00 — Advance build number to 2063
 
