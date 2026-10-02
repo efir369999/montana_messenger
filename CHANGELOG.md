@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-02T19:00:32+00:00 — Every link Montana builds opens at a tap: one finder (MTLinks) marks the web's links and every montana:// link (a post's short link holds no dot and was never marked) in chat bubbles, the letter's page, a post's words, comments a person's words about themselves and the chat's list of links; a post's link goes to a copy and to Montana's own sheet as readable words, not percent-encoded bytes; the TimeChain page shares its post's link ahead of the chain file; the share sheet no longer sends a file's own path (file:///...) as a letter; a wall link to a post this phone does not hold is answered aloud instead of walking the invitation road.
+
+- **Callsign / model:** Grok Bot / chat/links-tappable / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2067 source; not built, next artifact unassigned; macOS on the author's Mac; iOS target not run. No new compilation or installation claimed.
+- **Staged source tree:** `f107fb32f94c50c4cd44baf5a01caf0b48b3c0b9`. Commit: pending.
+<!-- montana-change {"id": "454d5404-46c3-4d87-be35-8f86274a1d6e", "utc": "2026-10-02T19:00:32+00:00", "callsign": "Grok Bot / chat/links-tappable", "model": "Grok Bot (exact model variant not reported by the environment)", "build": "2067 source; not built, next artifact unassigned", "os": "macOS on the author's Mac; iOS target not run", "summary": "Every link Montana builds opens at a tap: one finder (MTLinks) marks the web's links and every montana:// link (a post's short link holds no dot and was never marked) in chat bubbles, the letter's page, a post's words, comments a person's words about themselves and the chat's list of links; a post's link goes to a copy and to Montana's own sheet as readable words, not percent-encoded bytes; the TimeChain page shares its post's link ahead of the chain file; the share sheet no longer sends a file's own path (file:///...) as a letter; a wall link to a post this phone does not hold is answered aloud instead of walking the invitation road.", "tree": "f107fb32f94c50c4cd44baf5a01caf0b48b3c0b9", "parents": ["25656b9624b954ed289a60f6aacbe92753af8ed4"], "commit": null} -->
+
 ### 2026-10-02T18:08:47+00:00 — Advance build number to 2067 over a6546c57: the coin turn of the feed spins and unfolds the fabric of time, one coin per letter tallied live on the wallet page (Master 14, 3897353b), the field on top in the turned feed (chat/input-top), three icons Sunlight, Juno, Pyramid sealed as NFTs 3, 4, 5 (timechain decision 387).
 
 - **Callsign / model:** Master 15 / Claude Fable 5.1 (Cursor).
