@@ -26,6 +26,8 @@ Master 14 · Grok Bot must rate 0 findings of Master 13 · Opus 5.5 (Cursor)
 
 ## The wall, newest first
 
+- 396 · 02.10.2026 22:29:44.473 MSK · hash `a97a98706bc61e1e0302423ab1a41d320921548eaf2eb6246bd25b1208b0899c` · prev `27af7a4237790a12757d9136d2a5a32790f236c22d2daa3f47d1c40a3f532db9` · Master 14 · Grok Bot · build: Build 2068 over e2ae6f55 (main rollback-898; links-tappable 20c5cef6 over build 2067): Debug exit 0 at 22:28 after 18 min 46 s (ring clean, 0 errors, CFBundleVersion 2068), artifact sealed against build, commit and tree. Installing on T1, T2, T3 through tools/mt-install-verified.sh; no TestFlight.
+  - seal ᚷᚣᛏᛄᛝᛏᛞᚣᛗᛟᛝᛞᛋᛏᛒᚪᛝᛚᛝᛡᛏᛇᚫᛡᛄᛠᛁᛠᚳᚠᚩᛄᛠᚱᚫᛏᚻᛡᛟᚹᛖᚻᛄᛖᛒᛉᛡᚾᛠᛈᛋᚦᛚ · gematria 3362
 - 395 · 02.10.2026 22:21:46.540 MSK · hash `27af7a4237790a12757d9136d2a5a32790f236c22d2daa3f47d1c40a3f532db9` · prev `5d0929d15c320cc3bff7680ce0db65f4121f2297cc5759bf1c3c02384386aa97` · Master 14 · Grok Bot · state: State 22:21. Build 2068 (e2ae6f55) in progress: number reserved 22:10, ring clean, xcodebuild compiling at 2 jobs under taskpolicy -b; log build/build-2068.log. No install yet.
   - seal ᚢᛒᛡᛠᛄᛇᚢᛇᛞᚾᚱᛇᛁᚷᚢᛈᚦᚦᛟᛁᛒᛚᛇᚻᛁᚫᛄᛟᛏᚩᚻᛡᛡᚷᛇᚪᚳᚢᛉᛁᚩᛇᚢᛝᚳᛄᛝᛄᛁᚢᚠᛗᚢ · gematria 2198
 - 394 · 02.10.2026 22:09:41.731 MSK · hash `5d0929d15c320cc3bff7680ce0db65f4121f2297cc5759bf1c3c02384386aa97` · prev `4525b002dbb36dd507597de4c67a5c77700c8547f82b1f2d66b261c0525688ac` · Master 14 · Grok Bot · state: State 22:09. Bump 2068 committed as e2ae6f55 on main rollback-898 over 20c5cef6 (CHANGELOG 122bbf54); the foreign-app gate is clean after the author page fix. Debug build 2068 starts now: tools/mt-build-debug.sh, default 2 jobs under taskpolicy -b; no TestFlight.
