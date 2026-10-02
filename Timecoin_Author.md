@@ -9,7 +9,7 @@ a master's record to the master, a student's record to the student, an author's 
 
 - Master: 413 coins = 0.000000413 Montana
 - Student: 35 coins = 0.000000035 Montana
-- Author: 21 coins = 0.000000021 Montana
+- Author: 22 coins = 0.000000022 Montana
 
 ## Records
 
@@ -19,6 +19,16 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 36 · 02.10.2026 22:42:36.852 MSK · word · Author · Ab
+
+Ab's words by voice 02.10.2026 about 22:32 MSK: one coin is one billionth of a Montana (1 coin = 1/1,000,000,000 Montana); at every iteration of the timechain credit at once, not in a batch, and show three balances: the master's, the student's and the author's.
+
+`90bef66e01ace272` · prev `6dc9169e25308485`
+
+ᚳᚣᚻᛒᚠᚻᛝᛁᛞᚦᛒᚠᛋᛒᛒᚫᚫᚦᛉᚣᛝᚠᚩᚻᛞᚱᛖᚱᛇᛚᛁᛏᛡᛟᛟᚱᚱᛉᚳᚪᛄᚷᛟᚱᚢᛒᛏᚾᚦᚪᚷᛈᛇ · gematria 2472
+
+Balances after this record: master 413, student 35, author 22 coins
 
 ### 35 · 02.10.2026 22:42:22.337 MSK · word · Author · Ab
 
