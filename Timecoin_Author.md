@@ -12,7 +12,7 @@ Each record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:
 
 - Master: 434 coins = 0.000000434 Montana
 - Student: 37 coins = 0.000000037 Montana
-- Author: 28 coins = 0.000000028 Montana
+- Author: 29 coins = 0.000000029 Montana
 - Government: 0 coins = 0.000000000 Montana
 
 ## Records
@@ -23,6 +23,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 48 · 03.10.2026 13:52:35.308 MSK · word · Author · Ab
+
+Author's word 03.10.2026 13:52 MSK: "yes, do it fully now as an in-game mode -- without the crypto core, an in-game coin core with full function: balance, spending, sending and receiving in chat /// we will fit the core later."
+
+`d6e09bbbe55a2b2547a42e0e31ca0855240d5c1ac8b2b6ffdebd37bc20314cd8` · prev `a022ce4354f60e3d52d54679e64193882aec9ffa6520601de99495f9eecbc495`
+
+Balances after this record: master 434, student 37, author 29, government 0 coins
 
 ### 47 · 03.10.2026 13:51:52.188 MSK · word · Author · Ab
 
