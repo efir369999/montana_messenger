@@ -12,7 +12,7 @@ Each record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:
 
 - Master: 438 coins = 0.000000438 Montana
 - Student: 37 coins = 0.000000037 Montana
-- Author: 31 coins = 0.000000031 Montana
+- Author: 32 coins = 0.000000032 Montana
 - Government: 0 coins = 0.000000000 Montana
 
 ## Records
@@ -23,6 +23,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 51 · 03.10.2026 14:31:57.489 MSK · word · Author · Ab
+
+Author order 14:31 MSK (voice): all our metrics must be uploaded to Lauterbourg (transcribed as LogRocket) with a seven-day time window. Check.
+
+`9e5f469ae680200768f1a1639b71a42373e925da494f0d79ee27be2742875ad7` · prev `7a91229ff30e076d808f952e1a0a240dc1d2111f59229fcf25e3d23929c277bf`
+
+Balances after this record: master 438, student 37, author 32, government 0 coins
 
 ### 50 · 03.10.2026 14:24:11.426 MSK · word · Author · Ab
 
