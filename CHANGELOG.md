@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-03T12:20:22+00:00 — The masters', the student's and the Government's TimeChain pages stay on this Mac: council.py no longer copies, commits or pushes the six TimeChain files to the public repository (the author's word of 03.10.2026 15:17 MSK); the showcase folder still receives them and verify.py still checks them.
+
+- **Callsign / model:** Master 14 · Grok Bot / fix/timechain-local / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** no build; CouncilWall tool only; macOS (the author's Mac). No new compilation or installation claimed.
+- **Staged source tree:** `8b2e464b707eecc97bca3d6979bdcdf69c5b459f`. Commit: pending.
+<!-- montana-change {"id": "e2fd601f-6c78-4560-971c-fa6675d78f6f", "utc": "2026-10-03T12:20:22+00:00", "callsign": "Master 14 · Grok Bot", "model": "fix/timechain-local / Grok Bot (exact model variant not reported by the environment)", "build": "no build; CouncilWall tool only", "os": "macOS (the author's Mac)", "summary": "The masters', the student's and the Government's TimeChain pages stay on this Mac: council.py no longer copies, commits or pushes the six TimeChain files to the public repository (the author's word of 03.10.2026 15:17 MSK); the showcase folder still receives them and verify.py still checks them.", "tree": "8b2e464b707eecc97bca3d6979bdcdf69c5b459f", "parents": ["81c5071679cb6de699565d94415706d488eb40dc"], "commit": null} -->
+
 ### 2026-10-03T11:51:46+00:00 — Build number 2070: the Debug build that carries the crash witness on its own stack, the metallib without shader source, the notification that is never blank, the ribbon mirrored, the coin book with the wallet's mint coin, and the green guards.
 
 - **Callsign / model:** Master 14 · Grok Bot / chore/build-2070 / Grok Bot (exact model variant not reported by the environment).
