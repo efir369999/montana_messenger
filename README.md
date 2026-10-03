@@ -1,0 +1,162 @@
+# Montana Messenger
+
+Montana Messenger is an end-to-end encrypted messenger for iOS built on post-quantum
+cryptography. There is no phone number and no e-mail account: a person signs in with a
+24-word recovery phrase, and a contact is added by their Montana address.
+
+This repository is the public face of the release programme: the release history, how to
+join the test track, what to test, and where to report what you find. Release 1.0 is build
+1344; it goes to the App Store in the United States and stays on TestFlight for testers. The application is one implementation of the Montana
+protocol; the reference client is developed at [montana.quest](https://montana.quest).
+
+## Join the beta
+
+| | |
+|---|---|
+| Platform | iPhone, iOS 17.2 or later |
+| Distribution | TestFlight, public link |
+| Link | https://testflight.apple.com/join/BHaSYWkz |
+| Current release | 1.0 (build 1666) — App Store, resubmitted for review; TestFlight 1.0 (build 1992), uploaded 2026-09-29 |
+| Feedback | GitHub Issues in this repository, or contact@montana.quest |
+| Privacy policy | https://montana.quest/privacy/ |
+
+1. Install TestFlight from the App Store.
+2. Open the link above on the iPhone and accept the invitation.
+3. Install Montana and create an identity. Write the 24 words down: they are the only way
+   back into the account, and nobody can restore them for you.
+4. To talk to someone, exchange Montana addresses (Settings → your address) and add the
+   contact by address.
+
+A build appears on the public link after it has passed Apple's Beta App Review, which takes
+from a few hours to a day after upload.
+
+## What the application does
+
+- Text, photos, video, files and voice messages.
+- Voice and video calls, including screen sharing.
+- Live typing: the other side sees the text as it is typed.
+- Delivery and read receipts, replies, reactions, editing, forwarding, deletion for everyone.
+- Groups (local on the device in this beta; see *Known limits*).
+- Direct delivery between two phones on one local network, over IPv6, or through a port
+  the router forwards; otherwise through the Montana nodes.
+
+## What protects a conversation
+
+| Layer | Primitive |
+|---|---|
+| Identity and signatures | ML-DSA-65 |
+| Session between two phones | ML-KEM-768 sealed box (Noise_PQ XX to the holding node) |
+| Message content | ChaCha20-Poly1305 under the session key |
+| Hashing | SHA-256 |
+| Call media | SFrame with a key derived from a call seed carried inside the encrypted envelope; DTLS-SRTP is transport admission only |
+
+The nodes forward sealed envelopes and never hold a key that opens them. The cryptographic
+core is a single Rust library shared by every Montana target; the client carries no
+cryptography of its own.
+
+## What to test
+
+Please exercise the everyday paths and report anything that deviates from the expected
+observation:
+
+1. **Delivery.** A message sent while the other phone is online arrives within seconds
+   and shows two ticks on the sender's side. A message sent while the other phone is offline
+   arrives when it comes back.
+2. **Network changes.** Switch Wi-Fi off and on, move to cellular, turn a VPN on and off.
+   Messages keep flowing and the typing indicator keeps working without a restart.
+3. **Media.** Photos, videos (including long ones), voice messages and documents arrive
+   whole and open. A forwarded photo or video arrives at the new recipient.
+4. **Calls.** A voice call stays a voice call (the chat records it as voice, not video);
+   a minimised call shows a green and a red handset beside the contact's name and never
+   covers the name.
+5. **Presence.** "Online", "last seen" and "on a call" reflect what the other person is
+   actually doing.
+6. **Recovery.** Delete the application, reinstall, enter the 24 words: the identity and
+   the address are the same.
+
+## How to report
+
+Open an issue with the *Bug report* template. The report is most useful when it names:
+
+- the build number (Settings → About), the iPhone model and iOS version;
+- the network on each side (Wi-Fi, cellular, VPN on or off);
+- the exact time of the event and what was expected instead;
+- whether the message, file or call was affected on one side or on both.
+
+Do not paste recovery phrases, Montana addresses of other people, or message content into
+an issue.
+
+## Known limits of this beta
+
+- History lives on the device only and is never sent to a server or a platform backup.
+  Deleting the application erases the history on that device. From build 1348, "Forget this
+  device" keeps the sealed archive and the same 24 words bring the conversations back; a
+  conversation whose key was lost before that build returns as readable history only.
+- Groups exist on the device only; a group message is not yet carried to the other members.
+- Two phones that are both behind carrier NAT, without IPv6 and without a forwarded port,
+  cannot reach each other directly and talk through the nodes.
+- Inside the application, tapping the system's green call indicator on the status bar does
+  nothing; the green handset beside the contact's name returns to the call. From another
+  application the indicator opens Montana as usual.
+
+<!-- council walls -->
+## Council walls: the TimeChain's link, shown
+
+### The TimeChain, squeezed
+
+- paragraph: Every record names the record before it by its SHA-256 hash, so one hash holds the whole chain behind it and no past record moves without breaking every hash after it.
+- phrase: Each hash holds the whole chain before it.
+- words: Hash holds chain
+- word: Hash
+
+Squeezed last by Master 14 · Grok Bot · 02.10.2026 23:09:52.479 MSK · record 403 `c85f61ed857f5481` · version 1 of the ladder
+
+### Why this page shows it
+
+The masters' TimeChain (TimeChain_Master.jsonl), the student's TimeChain (TimeChain_Student.jsonl) and the Government's TimeChain (TimeChain_Government.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. TimeChain_Master.md shows every record with its hash and prev, the masters' squeezed rewrites of it under it.
+
+What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
+
+### How it is built
+
+A record is one line of JSON with the fields n, time, master, kind, prev, thread, text and hash. n is its height, counted from 0; time is the writer's clock in UTC, written YYYY-MM-DDTHH:MM:SSZ, and never runs back; master is a name; kind is one of genesis, word, decision, build, agent, state, lesson, open, handover, essence, finding, verdict.
+
+hash is SHA-256 over the canonical body: the UTF-8 JSON object of n, time, master, kind, prev, thread and text, keys in code-point order, no whitespace, only the quotation mark, the reverse solidus and U+0000..U+001F escaped. prev is the hash of the record before it, 64 zeros before the genesis; thread lists the hashes of earlier records the record answers.
+
+A record enters the chain only if the whole chain with it passes verify.py, the file the showcase publishes: the tool that writes and the stranger who checks run one canon. The chains are their own test vectors: an implementation escaping non-ASCII fails on TimeChain_Student.jsonl record 0, one writing a line break other than \n fails on TimeChain_Master.jsonl record 82, one keeping the fields in listed order fails on every record.
+
+A record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:57 MSK): no other seal or number is drawn from the hash or shown beside it. The records sealed before that word are not rewritten: their texts and hashes hold the chain.
+
+The essence is the newest essence record: four lines -- a paragraph, a phrase, a few words, one word -- each fewer UTF-8 bytes than the line above; a master squeezes it again with a new essence record threaded to the one before. An essence sealed before 02.10.2026 22:57 MSK keeps the fifth step it was sealed with, because its hash holds it; the pages show the four steps.
+
+A twin is a master's rewrite of a record in his own squeezing language, kept beside the chain in masterwall.jsonl: scored, not sealed. Adapted Weissman score = (record bytes / twin bytes) / (record bytes / deflate-9 bytes); a twin that drops an identifier of its record -- three digits or more, seven hex digits or more, a branch with a slash -- scores 0, and a master's mean counts the latest twin of each record once.
+
+A finding opens with its axis -- elegance, aesthetics or security -- and names file:line of an earlier master's code; a verdict threads to one finding and opens with + or -. The chain refuses a rating of one's own finding and a second rating by one master, so a master's points are the plain sum of his findings' ratings; the next master owes a rating to every finding of the one before him.
+
+A closed record keeps its place and its hash without its text: the record after it binds that hash, and nothing binds its time, kind or master.
+
+### How to verify from nothing
+
+```
+git clone https://github.com/efir369999/montana_messenger
+cd montana_messenger
+python3 verify.py
+```
+
+Its output at this publication:
+
+```
+TimeChain_Master.jsonl: holds -- 425 records from genesis, 282 closed, head 79a943b162c17eef48d4f5fa66517b12a0be247190daeb34523dc20033857a57
+TimeChain_Student.jsonl: holds -- 38 records from genesis, 20 closed, head 4e92c1aee39b1a114f1a4b288a5ce7db20d7162a029cda766e2c84b704daae8f
+TimeChain_Government.jsonl: holds -- 1 records from genesis, 0 closed, head 14189dc1d6a7ec16bca98dc02921296715627935c676ae4e9c286b3b24630881
+```
+<!-- council walls end -->
+
+## Release history
+
+See [CHANGELOG.md](CHANGELOG.md) for published builds and the timestamped development event log.
+
+Development log updated: **2026-10-03T12:20:22+00:00**. Current development-device queries report
+**1.0 (1968), iOS 26.7 and iOS 18.3**. Follow-up source changes are committed but have not
+been compiled or installed. See the log for the correction to the earlier device-version
+record and the outstanding checks. The public TestFlight build listed above is unchanged.
