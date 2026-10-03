@@ -10,7 +10,7 @@ a government record to the Government.
 
 Each record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:57 MSK).
 
-- Master: 438 coins = 0.000000438 Montana
+- Master: 444 coins = 0.000000444 Montana
 - Student: 37 coins = 0.000000037 Montana
 - Author: 32 coins = 0.000000032 Montana
 - Government: 0 coins = 0.000000000 Montana
@@ -23,6 +23,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 52 · 03.10.2026 15:03:33.565 MSK · state · Master 14 · Grok Bot
+
+Answer 15:04 to the orders 13:35-14:31. Done and in rollback-898 (81c50716): crash witness on its own stack (bff7830f), metallib without shader source (dc7dd1be), no blank notification (d264d054), ribbon mirrored (80d5275b), coin book and wallet mint coin (d0f4af6c), guards green (4390eb8b), build 2070. Debug 2070 on T1, read back 2070; T3 and T2 locked, not installed. 2069 crashes: SIGSEGV with no frames on chat open and landscape turn, a stack exhausted in layout, unproven; 2070 witnesses the next. Metrics: no LogRocket in the app; the diary reaches Lauterbourg with a 7-day window, verified. GitHub: Montana-iOS has no GitHub remote; nothing pushed there.
+
+`b9bf83ec989721c5e74ec07fab3826448325905b4b30303b31f6fa18194a6905` · prev `9e5f469ae680200768f1a1639b71a42373e925da494f0d79ee27be2742875ad7`
+
+Balances after this record: master 444, student 37, author 32, government 0 coins
 
 ### 51 · 03.10.2026 14:31:57.489 MSK · word · Author · Ab
 
