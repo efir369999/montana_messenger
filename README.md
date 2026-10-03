@@ -1,34 +1,49 @@
 # Montana Messenger
 
-Montana Messenger is an end-to-end encrypted messenger for iOS built on post-quantum
-cryptography. There is no phone number and no e-mail account: a person signs in with a
-24-word recovery phrase, and a contact is added by their Montana address.
+Montana Messenger is an end-to-end encrypted messenger built on post-quantum cryptography. It runs
+on iPhone, iPad and Apple silicon Macs. There is no phone number and no e-mail account: a person
+signs in with a 24-word recovery phrase, and a contact is added by their Montana address.
 
-This repository is the public face of the release programme: the release history, how to
-join the test track, what to test, and where to report what you find. Release 1.0 is build
-1344; it goes to the App Store in the United States and stays on TestFlight for testers. The application is one implementation of the Montana
-protocol; the reference client is developed at [montana.quest](https://montana.quest).
+This repository is the public face of the release programme: the release history, how to join the
+test track, what to test, how to report what you find, the security policy, and the source of the
+Montana full node. The application is one implementation of the Montana protocol; the reference
+client is developed at [montana.quest](https://montana.quest).
+
+## What is in this repository
+
+| Path | What it is |
+|---|---|
+| [CHANGELOG.md](CHANGELOG.md) | Published builds and the timestamped development event log |
+| [SECURITY.md](SECURITY.md) | How to report a weakness, and what is in scope |
+| [node/](node/README.md) | The Montana full node in Docker, with its Rust source, including the post-quantum primitives and their NIST test vectors |
+| [verify.py](verify.py) | Checks a TimeChain file link by link from genesis, with the Python standard library alone |
+| [tools/readme-sync.py](tools/readme-sync.py) | Regenerates the *Latest changes* section below from CHANGELOG.md |
+| [.github/](.github/ISSUE_TEMPLATE/bug_report.md) | The bug report template |
+
+The source of the iOS application is not published here.
 
 ## Join the beta
 
 | | |
 |---|---|
-| Platform | iPhone, iOS 17.2 or later |
-| Distribution | TestFlight, public link |
+| Platform | iPhone and iPad with iOS 17.2 or later; Apple silicon Mac |
+| Distribution | TestFlight, public link; App Store (United States) |
 | Link | https://testflight.apple.com/join/BHaSYWkz |
-| Current release | 1.0 (build 1666) — App Store, resubmitted for review; TestFlight 1.0 (build 1992), uploaded 2026-09-29 |
+| App Store | 1.0; the most recent build submitted for review is 1666 (2026-09-17) |
+| TestFlight | 1.0; the newest build uploaded is 2022 (recorded 2026-09-30) |
 | Feedback | GitHub Issues in this repository, or contact@montana.quest |
 | Privacy policy | https://montana.quest/privacy/ |
 
 1. Install TestFlight from the App Store.
-2. Open the link above on the iPhone and accept the invitation.
+2. Open the link above on the device and accept the invitation.
 3. Install Montana and create an identity. Write the 24 words down: they are the only way
    back into the account, and nobody can restore them for you.
 4. To talk to someone, exchange Montana addresses (Settings → your address) and add the
    contact by address.
 
 A build appears on the public link after it has passed Apple's Beta App Review, which takes
-from a few hours to a day after upload.
+from a few hours to a day after upload. Development builds newer than the TestFlight build
+run on the project's own test devices only; see *Latest changes*.
 
 ## What the application does
 
@@ -45,14 +60,21 @@ from a few hours to a day after upload.
 | Layer | Primitive |
 |---|---|
 | Identity and signatures | ML-DSA-65 |
-| Session between two phones | ML-KEM-768 sealed box (Noise_PQ XX to the holding node) |
+| Key agreement | ML-KEM-768 |
 | Message content | ChaCha20-Poly1305 under the session key |
 | Hashing | SHA-256 |
 | Call media | SFrame with a key derived from a call seed carried inside the encrypted envelope; DTLS-SRTP is transport admission only |
 
-The nodes forward sealed envelopes and never hold a key that opens them. The cryptographic
-core is a single Rust library shared by every Montana target; the client carries no
-cryptography of its own.
+ML-DSA-65 and ML-KEM-768 come from the Montana core, a Rust library; their source and the NIST
+test vectors they are checked against are in [node/Code/crates/mt-crypto-native](node/Code/crates/mt-crypto-native).
+The nodes forward sealed envelopes and never hold a key that opens them.
+
+## Diagnostics
+
+The application sends its diagnostic journals (event records, timings, error codes, crash and
+hang reports, the device model, the iOS version and the application build) to the Montana
+diagnostics node, where they are kept for seven days and then deleted. [SECURITY.md](SECURITY.md)
+is the place for the details.
 
 ## What to test
 
@@ -78,20 +100,20 @@ observation:
 
 Open an issue with the *Bug report* template. The report is most useful when it names:
 
-- the build number (Settings → About), the iPhone model and iOS version;
+- the build number (Settings → About), the device model and iOS version;
 - the network on each side (Wi-Fi, cellular, VPN on or off);
 - the exact time of the event and what was expected instead;
 - whether the message, file or call was affected on one side or on both.
 
 Do not paste recovery phrases, Montana addresses of other people, or message content into
-an issue.
+an issue. Weaknesses go by e-mail, not into an issue: see [SECURITY.md](SECURITY.md).
 
 ## Known limits of this beta
 
-- History lives on the device only and is never sent to a server or a platform backup.
-  Deleting the application erases the history on that device. From build 1348, "Forget this
-  device" keeps the sealed archive and the same 24 words bring the conversations back; a
-  conversation whose key was lost before that build returns as readable history only.
+- History lives on the device; the Montana nodes never hold it. Deleting the application
+  erases the history on that device. Two copies can be turned on in the application, and both
+  are off until you turn them on: a copy in the application's own iCloud container, and a copy
+  on a node you run yourself. Both are sealed under a key that only your 24 words open.
 - Groups exist on the device only; a group message is not yet carried to the other members.
 - Two phones that are both behind carrier NAT, without IPv6 and without a forwarded port,
   cannot reach each other directly and talk through the nodes.
@@ -99,64 +121,34 @@ an issue.
   nothing; the green handset beside the contact's name returns to the call. From another
   application the indicator opens Montana as usual.
 
-<!-- council walls -->
-## Council walls: the TimeChain's link, shown
+## The TimeChain verifier
 
-### The TimeChain, squeezed
-
-- paragraph: Every record names the record before it by its SHA-256 hash, so one hash holds the whole chain behind it and no past record moves without breaking every hash after it.
-- phrase: Each hash holds the whole chain before it.
-- words: Hash holds chain
-- word: Hash
-
-Squeezed last by Master 14 · Grok Bot · 02.10.2026 23:09:52.479 MSK · record 403 `c85f61ed857f5481` · version 1 of the ladder
-
-### Why this page shows it
-
-The masters' TimeChain (TimeChain_Master.jsonl), the student's TimeChain (TimeChain_Student.jsonl) and the Government's TimeChain (TimeChain_Government.jsonl) are chains in which every record names its predecessor by its SHA-256 -- the one link the TimeChain admits between windows -- so none is reworded, moved or slipped in without changing every hash after it. TimeChain_Master.md shows every record with its hash and prev, the masters' squeezed rewrites of it under it.
-
-What the walls do not show of the TimeChain (Montana Consensus, The TimeChain). The cement: a window enters the TimeChain by the cement of the population that ran it, a wall record by the hand of one master. The clock: no quantity from a clock enters any object of the TimeChain, while a wall record seals its writer's clock reading -- the chain fixes the order of the readings, not their truth. A record is proven unchanged since the first copy anyone kept; its time and its master are its writer's word, signed by no key.
-
-### How it is built
-
-A record is one line of JSON with the fields n, time, master, kind, prev, thread, text and hash. n is its height, counted from 0; time is the writer's clock in UTC, written YYYY-MM-DDTHH:MM:SSZ, and never runs back; master is a name; kind is one of genesis, word, decision, build, agent, state, lesson, open, handover, essence, finding, verdict.
-
-hash is SHA-256 over the canonical body: the UTF-8 JSON object of n, time, master, kind, prev, thread and text, keys in code-point order, no whitespace, only the quotation mark, the reverse solidus and U+0000..U+001F escaped. prev is the hash of the record before it, 64 zeros before the genesis; thread lists the hashes of earlier records the record answers.
-
-A record enters the chain only if the whole chain with it passes verify.py, the file the showcase publishes: the tool that writes and the stranger who checks run one canon. The chains are their own test vectors: an implementation escaping non-ASCII fails on TimeChain_Student.jsonl record 0, one writing a line break other than \n fails on TimeChain_Master.jsonl record 82, one keeping the fields in listed order fails on every record.
-
-A record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:57 MSK): no other seal or number is drawn from the hash or shown beside it. The records sealed before that word are not rewritten: their texts and hashes hold the chain.
-
-The essence is the newest essence record: four lines -- a paragraph, a phrase, a few words, one word -- each fewer UTF-8 bytes than the line above; a master squeezes it again with a new essence record threaded to the one before. An essence sealed before 02.10.2026 22:57 MSK keeps the fifth step it was sealed with, because its hash holds it; the pages show the four steps.
-
-A twin is a master's rewrite of a record in his own squeezing language, kept beside the chain in masterwall.jsonl: scored, not sealed. Adapted Weissman score = (record bytes / twin bytes) / (record bytes / deflate-9 bytes); a twin that drops an identifier of its record -- three digits or more, seven hex digits or more, a branch with a slash -- scores 0, and a master's mean counts the latest twin of each record once.
-
-A finding opens with its axis -- elegance, aesthetics or security -- and names file:line of an earlier master's code; a verdict threads to one finding and opens with + or -. The chain refuses a rating of one's own finding and a second rating by one master, so a master's points are the plain sum of his findings' ratings; the next master owes a rating to every finding of the one before him.
-
-A closed record keeps its place and its hash without its text: the record after it binds that hash, and nothing binds its time, kind or master.
-
-### How to verify from nothing
+`verify.py` re-checks a TimeChain file record by record from genesis: every record names the one
+before it by its SHA-256 hash, so a reworded, moved or inserted record breaks every hash after it.
 
 ```
-git clone https://github.com/efir369999/montana_messenger
-cd montana_messenger
-python3 verify.py
+python3 verify.py TimeChain_Master.jsonl
 ```
 
-Its output at this publication:
+The TimeChain files themselves are no longer published in this repository (the author's decision
+of 3 October 2026); run without a file, the script prints its usage.
 
-```
-TimeChain_Master.jsonl: holds -- 425 records from genesis, 282 closed, head 79a943b162c17eef48d4f5fa66517b12a0be247190daeb34523dc20033857a57
-TimeChain_Student.jsonl: holds -- 38 records from genesis, 20 closed, head 4e92c1aee39b1a114f1a4b288a5ce7db20d7162a029cda766e2c84b704daae8f
-TimeChain_Government.jsonl: holds -- 1 records from genesis, 0 closed, head 14189dc1d6a7ec16bca98dc02921296715627935c676ae4e9c286b3b24630881
-```
-<!-- council walls end -->
+<!-- latest changes: generated by tools/readme-sync.py from CHANGELOG.md, do not edit by hand -->
+## Latest changes
 
-## Release history
+Generated from [CHANGELOG.md](CHANGELOG.md) by `tools/readme-sync.py`, in the same commit as the log.
 
-See [CHANGELOG.md](CHANGELOG.md) for published builds and the timestamped development event log.
+| | |
+|---|---|
+| Log updated | 2026-10-03 12:20 UTC |
+| Newest build in the log | Debug 2070, 2026-10-03 11:51 UTC |
+| Latest build in the published list | 1.0 (1963), 2026-09-26, TestFlight |
 
-Development log updated: **2026-10-03T12:20:22+00:00**. Current development-device queries report
-**1.0 (1968), iOS 26.7 and iOS 18.3**. Follow-up source changes are committed but have not
-been compiled or installed. See the log for the correction to the earlier device-version
-record and the outstanding checks. The public TestFlight build listed above is unchanged.
+- **2026-10-03 12:20 UTC** — The masters', the student's and the Government's TimeChain pages stay on this Mac (commit pending)
+- **2026-10-03 11:51 UTC** — Build number 2070 (commit `81c5071679cb`)
+- **2026-10-03 11:50 UTC** — The build's ring-1 guards stand green again (commit `4390eb8b6bac`)
+- **2026-10-03 11:46 UTC** — One coin book behind MTCoinLedger (commit `d0f4af6cf685`)
+- **2026-10-03 11:14 UTC** — The turned ribbon is the normal chat mirrored (commit `80d5275bece7`)
+
+The full record of every change, with its build, system and source tree, is in the log.
+<!-- latest changes end -->
