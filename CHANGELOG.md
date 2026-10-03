@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-03T11:50:39+00:00 — The build's ring-1 guards stand green again: the system's crash report reads its frames from the report's own tree in the guarded words (P-121), and the chat bar is measured under its name compose-bar, the row on the keys as compose-bar-row (layout 13).
+
+- **Callsign / model:** Master 14 · Grok Bot / fix/guards-green / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2069 tree, typecheck clean, mt-build-checks green; ships in Debug 2070; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `19359aeceb305c7cb376ef13afd5ff817bbe7252`. Commit: pending.
+<!-- montana-change {"id": "843706b4-c126-449a-89a3-69e587efaa97", "utc": "2026-10-03T11:50:39+00:00", "callsign": "Master 14 · Grok Bot", "model": "fix/guards-green / Grok Bot (exact model variant not reported by the environment)", "build": "2069 tree, typecheck clean, mt-build-checks green; ships in Debug 2070", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "The build's ring-1 guards stand green again: the system's crash report reads its frames from the report's own tree in the guarded words (P-121), and the chat bar is measured under its name compose-bar, the row on the keys as compose-bar-row (layout 13).", "tree": "19359aeceb305c7cb376ef13afd5ff817bbe7252", "parents": ["d0f4af6cf685846ffee12b4672c962fd2fabf816"], "commit": null} -->
+
 ### 2026-10-03T11:46:08+00:00 — One coin book behind MTCoinLedger: a persistent local ledger (1 coin = 1e-9 Montana) with earn, spend, send and receive once by name, history and refusal on a short balance; its file stays on this phone (copy scope). Minting earns into it (MTChatMint.mint is the seam). Coins go to a person as a coin letter in their chat (a bubble with our coin), and on another's letter or wall post as paid reactions of 1/5/10 riding the reaction and wall roads; the total stands on the letter and the post. The wallet head is the mint coin, spinning while minting anywhere, with the book's balance in large type and Send; the minting rows, history and the core's confirmed balance in TimeChain read the book. A local tally, not core notes.
 
 - **Callsign / model:** Master 14 · Grok Bot / feat/coin-ledger / Grok Bot (exact model variant not reported by the environment).
