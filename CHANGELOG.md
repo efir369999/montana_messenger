@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-03T11:51:46+00:00 — Build number 2070: the Debug build that carries the crash witness on its own stack, the metallib without shader source, the notification that is never blank, the ribbon mirrored, the coin book with the wallet's mint coin, and the green guards.
+
+- **Callsign / model:** Master 14 · Grok Bot / chore/build-2070 / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** Debug 2070; iOS 26.7.1 (T1), iOS 18.3 (T3). No new compilation or installation claimed.
+- **Staged source tree:** `0771a93cfebcf71eca5431f067dec65eda65b6ac`. Commit: pending.
+<!-- montana-change {"id": "90390f00-2a08-4f43-8aba-e70625ce1848", "utc": "2026-10-03T11:51:46+00:00", "callsign": "Master 14 · Grok Bot", "model": "chore/build-2070 / Grok Bot (exact model variant not reported by the environment)", "build": "Debug 2070", "os": "iOS 26.7.1 (T1), iOS 18.3 (T3)", "summary": "Build number 2070: the Debug build that carries the crash witness on its own stack, the metallib without shader source, the notification that is never blank, the ribbon mirrored, the coin book with the wallet's mint coin, and the green guards.", "tree": "0771a93cfebcf71eca5431f067dec65eda65b6ac", "parents": ["4390eb8b6bacb488cc2b45ff3377af263189d1c7"], "commit": null} -->
+
 ### 2026-10-03T11:50:39+00:00 — The build's ring-1 guards stand green again: the system's crash report reads its frames from the report's own tree in the guarded words (P-121), and the chat bar is measured under its name compose-bar, the row on the keys as compose-bar-row (layout 13).
 
 - **Callsign / model:** Master 14 · Grok Bot / fix/guards-green / Grok Bot (exact model variant not reported by the environment).
