@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-03T10:58:38+00:00 — The crash handler stands on a stack of its own: T1 2069 fell eleven times with SIGSEGV KERN_PROTECTION_FAILURE (01:18 and 13:18 MSK among them) and no death left the handler's line, because a handler installed by signal() runs on the fallen thread's own stack and an exhausted stack has no room for it; now sigaltstack + sigaction(SA_ONSTACK|SA_SIGINFO) write the fault address, the stack bounds, an overflow verdict and the fallen thread's raw frames with the image base, and a MetricKit crash report with no frame keeps its whole tree in Diagnostics
+
+- **Callsign / model:** Master 14 · Grok Bot / fix/crash-witness / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2070 source; swift typecheck of the iOS target passed (tools/mt-typecheck.py), not yet built; macOS on the author's Mac; iOS 26.7.1 on T1 to install. No new compilation or installation claimed.
+- **Staged source tree:** `fc68b5663d04ed852319c3c9fee577f2dfc40bb4`. Commit: pending.
+<!-- montana-change {"id": "6cee1b07-31f4-408b-9034-b512c980719b", "utc": "2026-10-03T10:58:38+00:00", "callsign": "Master 14 · Grok Bot", "model": "fix/crash-witness / Grok Bot (exact model variant not reported by the environment)", "build": "2070 source; swift typecheck of the iOS target passed (tools/mt-typecheck.py), not yet built", "os": "macOS on the author's Mac; iOS 26.7.1 on T1 to install", "summary": "The crash handler stands on a stack of its own: T1 2069 fell eleven times with SIGSEGV KERN_PROTECTION_FAILURE (01:18 and 13:18 MSK among them) and no death left the handler's line, because a handler installed by signal() runs on the fallen thread's own stack and an exhausted stack has no room for it; now sigaltstack + sigaction(SA_ONSTACK|SA_SIGINFO) write the fault address, the stack bounds, an overflow verdict and the fallen thread's raw frames with the image base, and a MetricKit crash report with no frame keeps its whole tree in Diagnostics", "tree": "fc68b5663d04ed852319c3c9fee577f2dfc40bb4", "parents": ["9f550ec701d4a5e17841e7d042e4e4809d350737"], "commit": null} -->
+
 ### 2026-10-02T20:28:38+00:00 — The app names a letter and a comment by SHA-256 alone: the gematria leaves every bubble stamp and every comment line, a stamp is the time and the head of the letter's seal, the ribbon no longer changes a stamp; the owner registry, COIN-PATH and HANDOVER-9 follow
 
 - **Callsign / model:** Master 14 · Grok Bot / app/no-gematria / Grok Bot (exact model variant not reported by the environment).
