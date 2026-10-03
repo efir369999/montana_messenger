@@ -10,9 +10,9 @@ a government record to the Government.
 
 Each record is named by its SHA-256 hash alone (the author's word 02.10.2026 22:57 MSK).
 
-- Master: 434 coins = 0.000000434 Montana
+- Master: 438 coins = 0.000000438 Montana
 - Student: 37 coins = 0.000000037 Montana
-- Author: 30 coins = 0.000000030 Montana
+- Author: 31 coins = 0.000000031 Montana
 - Government: 0 coins = 0.000000000 Montana
 
 ## Records
@@ -23,6 +23,14 @@ the record before it. Check it: `python3 verify.py Timecoin_Author.jsonl`.
 
 Newest first. Times are the seal instant from thirteen national laboratories; the moment a word was said
 stands in its text.
+
+### 50 · 03.10.2026 14:24:11.426 MSK · word · Author · Ab
+
+Author order 14:23 MSK: build everything together into one build and keep the time branches current on GitHub and locally
+
+`7a91229ff30e076d808f952e1a0a240dc1d2111f59229fcf25e3d23929c277bf` · prev `586cde4c6ae262a7367fe4f81ee066fd9b460fb6a4fc8d247c9edceabf2a9e43`
+
+Balances after this record: master 438, student 37, author 31, government 0 coins
 
 ### 49 · 03.10.2026 13:53:46.860 MSK · word · Author · Ab
 
