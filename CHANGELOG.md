@@ -5,6 +5,13 @@ published on the public TestFlight link only.
 
 ## Development event log
 
+### 2026-10-03T11:03:27+00:00 — The TestFlight archive carries no shader source (Apple's ITMS-91306 on 2069): the archive line passes MTL_ENABLE_DEBUG_INFO=NO, so Code/Montana/MTVoiceOrb.metal (the voice orb's and the ribbon's vertex and fragment functions) is compiled into default.metallib without its text, while the fast local Debug builds keep INCLUDE_SOURCE; the archived library is read after the archive and refused if it still carries the source
+
+- **Callsign / model:** Master 14 · Grok Bot / fix/metal-no-source / Grok Bot (exact model variant not reported by the environment).
+- **Build / OS:** 2070 source; tools/mt-testflight.sh only, bash -n passed, no archive run; macOS on the author's Mac. No new compilation or installation claimed.
+- **Staged source tree:** `5cb12a53214f09d8d4edf6532ae2cdca0fb39f16`. Commit: pending.
+<!-- montana-change {"id": "ca56bf15-e717-4e07-aaaa-ca3ec6e92789", "utc": "2026-10-03T11:03:27+00:00", "callsign": "Master 14 · Grok Bot", "model": "fix/metal-no-source / Grok Bot (exact model variant not reported by the environment)", "build": "2070 source; tools/mt-testflight.sh only, bash -n passed, no archive run", "os": "macOS on the author's Mac", "summary": "The TestFlight archive carries no shader source (Apple's ITMS-91306 on 2069): the archive line passes MTL_ENABLE_DEBUG_INFO=NO, so Code/Montana/MTVoiceOrb.metal (the voice orb's and the ribbon's vertex and fragment functions) is compiled into default.metallib without its text, while the fast local Debug builds keep INCLUDE_SOURCE; the archived library is read after the archive and refused if it still carries the source", "tree": "5cb12a53214f09d8d4edf6532ae2cdca0fb39f16", "parents": ["bff7830f911aa494ac52a31e5ceed13a469b18eb"], "commit": null} -->
+
 ### 2026-10-03T11:00:51+00:00 — The crash handler stands on a stack of its own: T1 2069 fell eleven times with SIGSEGV KERN_PROTECTION_FAILURE (01:18 and 13:18 MSK among them) and no death left the handler's line, because a handler installed by signal() runs on the fallen thread's own stack and an exhausted stack has no room for it; now sigaltstack + sigaction(SA_ONSTACK|SA_SIGINFO) write the fault address, the stack bounds, an overflow verdict and the fallen thread's raw frames with the image base, and a MetricKit crash report with no frame keeps its whole tree in Diagnostics; the vocabulary check names the system field si_addr among the platform's names
 
 - **Callsign / model:** Master 14 · Grok Bot / fix/crash-witness / Grok Bot (exact model variant not reported by the environment).
