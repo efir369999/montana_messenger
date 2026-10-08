@@ -1,0 +1,24 @@
+/* The sentence a person reads when the system asks for a permission. The system localises
+   its own half — the title and the buttons — and shows THIS half exactly as written, so a
+   phrase without a translation reaches every language unchanged. The source is English
+   (Info.plist); this file is one language of it. */
+
+"NSBluetoothAlwaysUsageDescription" = "Montana uses Bluetooth to form a direct device-to-device mesh, so your phones can exchange messages nearby.";
+"NSCameraUsageDescription" = "Montana uses the camera to take photos and videos for your chats.";
+"NSContactsUsageDescription" = "Montana uses your contacts so you can share one in a chat.";
+"NSFaceIDUsageDescription" = "Montana uses Face ID to lock the app.";
+"NSLocalNetworkUsageDescription" = "Montana connects your device and your correspondent's directly over Wi-Fi. The permission is needed only so the phones can find each other on the same network.";
+"NSLocationWhenInUseUsageDescription" = "Montana uses your location so you can send it in a chat.";
+"NSMicrophoneUsageDescription" = "Montana uses the microphone to record voice messages, videos and calls.";
+"NSPhotoLibraryAddUsageDescription" = "Montana saves photos from your chats to your library.";
+"NSPhotoLibraryUsageDescription" = "Montana shows your recent photos and videos so you can send one quickly.";
+
+/* The name iCloud gives this app's storage (NSUbiquitousContainers in Info.plist). The iCloud
+   daemon keeps that name per language and takes each language's name from THIS file only (read
+   in its own code, 23.09): without this line the container carried a name in no language at all,
+   while Apple's storage page called it "app", the tail of the container's identifier. The
+   product's name is one word in every language. */
+"NSUbiquitousContainerName" = "Montana VPN";
+
+/* The name under the icon (CFBundleDisplayName in Info.plist): the short name, MT VPN, as MT Business (the author's word 08.10.2026). */
+"CFBundleDisplayName" = "MT VPN";

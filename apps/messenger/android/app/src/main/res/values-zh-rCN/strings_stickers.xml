@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stickers">贴纸</string>
+    <string name="stickers_empty">你的贴纸会显示在这里。点 + 用照片制作贴纸</string>
+    <string name="sticker_make">制作贴纸</string>
+    <string name="sticker_delete_q">删除这个贴纸？</string>
+</resources>

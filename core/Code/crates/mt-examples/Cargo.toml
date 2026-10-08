@@ -1,0 +1,17 @@
+[package]
+name = "mt-examples"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mt-codec = { path = "../mt-codec" }
+mt-crypto = { path = "../mt-crypto", features = ["testing"] }
+mt-merkle = { path = "../mt-merkle" }
+mt-mnemonic = { path = "../mt-mnemonic", features = ["vectors"] }
+mt-genesis = { path = "../mt-genesis" }
+mt-state = { path = "../mt-state" }
+mt-timechain = { path = "../mt-timechain" }
+mt-account = { path = "../mt-account" }

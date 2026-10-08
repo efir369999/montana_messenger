@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS xmark.bin: the bin, a cross on its face -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.8" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M3.5,6.5h17M9,6.5V4.5h6v2M5.5,6.5l1,13c0.1,0.8 0.7,1.5 1.6,1.5h7.8c0.9,0 1.5,-0.7 1.6,-1.5l1,-13M9.6,10.6l4.8,4.8M14.4,10.6l-4.8,4.8"/>
+</vector>

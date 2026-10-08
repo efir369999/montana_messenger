@@ -1,0 +1,49 @@
+# Montana node — one-command bring-up from a clean GitHub clone.
+#
+#   git clone https://github.com/efir369999/montana_messenger.git
+#   cd montana_messenger/core/Code/docker/runtime
+#   docker compose up -d --build
+#
+# Watch consensus advance (current_window climbs every ~30-60s):
+#   docker compose logs -f
+#   docker exec montana-node /usr/local/bin/montana-node status --data-dir /var/lib/montana
+#
+# Default = singleton bootstrap. This works out of the box with ZERO external
+# dependencies: the container runs its own genesis TimeChain and cements a
+# Proposal every window. To JOIN an existing mesh instead, mount a
+# genesis-manifest.json that lists REAL dialable peers (the manifest checked
+# into the repo carries <placeholder> addresses and is a schema example only):
+# uncomment the manifest volume + MONTANA_GENESIS_MANIFEST below and recreate.
+
+services:
+  montana-node:
+    build:
+      context: ../../..                                # the core/ folder (the wordlist lives at its top)
+      dockerfile: Code/docker/runtime/Dockerfile.node
+    image: montana-node:local
+    container_name: montana-node
+    # Linux VPS: host networking is best for libp2p P2P / NAT advertisement.
+    # On Docker Desktop (macOS/Windows) delete `network_mode: host` and instead
+    # uncomment the `ports:` block below.
+    network_mode: host
+    # ports:
+    #   - "8444:8444"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    volumes:
+      - montana-data:/var/lib/montana
+      # Join an existing mesh — point at a manifest with REAL peers:
+      # - ./my-genesis-manifest.json:/etc/montana/genesis-manifest.json:ro
+    environment:
+      MONTANA_LISTEN: /ip4/0.0.0.0/tcp/8444
+      # MONTANA_GENESIS_MANIFEST: /etc/montana/genesis-manifest.json
+      # MONTANA_MANIFEST_SHA256: ""   # set to refuse start on manifest drift
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/montana-node", "status", "--data-dir", "/var/lib/montana"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 90s
+
+volumes:
+  montana-data:

@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = ["crates/mt-names", "crates/mt-account", "crates/mt-codec", "crates/mt-conformance", "crates/mt-consensus", "crates/mt-crypto", "crates/mt-crypto-native", "crates/mt-entry", "crates/mt-examples", "crates/mt-genesis", "crates/montana-node", "crates/mt-lottery", "crates/mt-merkle", "crates/mt-mnemonic", "crates/mt-net", "crates/mt-net-transport", "crates/mt-noise-pq", "crates/mt-timechain", "crates/mt-state",
+    "crates/mt-sync", "crates/mt-store", "crates/mt-bindings", "crates/mt-messenger-e2e", "crates/mt-overlay", "crates/mt-postman", "crates/mt-rendezvous", "crates/mt-bootstrap", "crates/mt-wake"]
+
+[workspace.package]
+version = "1.2.0"
+edition = "2021"
+rust-version = "1.70"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/montana-protocol/montana"
+
+[workspace.dependencies]
+sha2 = { version = "=0.10.9", default-features = false }
+zeroize = { version = "=1.8.1", default-features = false }
+getrandom = { version = "=0.2.15", default-features = false }
+chacha20poly1305 = "=0.10.1"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+overflow-checks = true
+
+[profile.dev]
+overflow-checks = true

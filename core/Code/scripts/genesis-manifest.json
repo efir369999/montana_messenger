@@ -1,0 +1,41 @@
+{
+  "network_name": "montana",
+  "peers": [
+    {
+      "label": "moscow",
+      "multiaddr": "/ip4/<front>/tcp/8445",
+      "peer_id": "QmSDUqLkLcenkkNw6PUKYXjesEmaDksnrEaCzbs3a5nVzj",
+      "account_id_hex": "4c290c3d5d63e84b99c30c83fb4d172e04102af4492b4d56d0642711b09e2072",
+      "node_id_hex": "75bfaf9026405c12ef36437f08cc63c040cfe1924773dedcba0abadf8c6928a1",
+      "bootstrap": true
+    },
+    {
+      "label": "frankfurt",
+      "multiaddr": "/ip4/<exit-de>/tcp/8444",
+      "peer_id": "QmPFm5L3WiA47J66zVJvio23QBgBqr4nAqCP626vgEnHNP",
+      "account_id_hex": "53560626aff44b5f0a88d7b235ef2028a3cf0517fd6fd2aa20b5566345a91e29",
+      "node_id_hex": "5509211b179d69698913e47605d2b0ed24a91702fb6e9d0fbcd3c3c626270aab"
+    },
+    {
+      "label": "armenia",
+      "multiaddr": "/ip4/<exit-am>/tcp/8444",
+      "peer_id": "QmXy2ExdrXc26hVbLSgvuFj1FyyfNkiVHhNENmFNpFybJe",
+      "account_id_hex": "23a85ca3c7adc292e06156f10b4b6ec5a58e7e7a3d74a00c435e20384fc48361",
+      "node_id_hex": "abee38950a567610d97a2081f0ce2be0b46222bb44736332ff3270e9af48e361"
+    },
+    {
+      "label": "vilnius",
+      "multiaddr": "/ip4/<exit-lt>/tcp/8444",
+      "peer_id": "Qmf4gxnvjkz7hA7i3FxpmZvd6aqHUWDqyzMHppuXBtK26J",
+      "account_id_hex": "09d93b0fbe2065bafdb6dfd9d713f6ac530787a7587cf4c7de42e42947b969ac",
+      "node_id_hex": "0326c9fb920bfdfadb1909b7c5ee2aa129c8cc7d2feb7577fbc071b6b00237f7"
+    },
+    {
+      "label": "nicosia",
+      "multiaddr": "/ip4/<exit-cy>/tcp/8444",
+      "peer_id": "QmcaJp34THSk6CWymEhMtG5BDn63whPRfqSbEgWFhdGYdQ",
+      "account_id_hex": "8742d5a295baaa21c19018c557ad7e0d7a887cbb59e10ef61ebd6417b6be266c",
+      "node_id_hex": "9a2ba5e3b4d8806634a6123e8ed217a8426606500bb296ffd12755c123bc1a0f"
+    }
+  ]
+}

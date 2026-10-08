@@ -1,0 +1,49 @@
+import Foundation
+#if canImport(MontanaXray)
+import MontanaXray
+#endif
+import os.log
+
+// tun <-> local SOCKS bridge. Finds the packet-tunnel's utun file descriptor and hands it to the
+// gVisor tun2socks engine (in MontanaXray), which pumps device IP packets through Xray's local SOCKS
+// inbound. The Xray outbound (VLESS/Reality) then egresses the traffic.
+final class MontanaTun2Socks {
+    static let shared = MontanaTun2Socks()
+    private let log = OSLog(subsystem: "quest.montana.app.p2p.PacketTunnel", category: "tun2socks")
+    private var running = false
+
+    func start(socksHost: String, socksPort: Int) {
+        running = true
+        guard let fd = Self.tunFileDescriptor() else {
+            ExtLog.write("tun2socks: utun fd NOT FOUND"); os_log("tun2socks: utun fd not found", log: log, type: .error); return
+        }
+        ExtLog.write("tun2socks start fd=\(fd) -> \(socksHost):\(socksPort)")
+        os_log("tun2socks start fd=%d -> %{public}@:%d", log: log, type: .info, fd, socksHost, socksPort)
+        #if canImport(MontanaXray)
+        MontanaxrayStartTun2Socks(Int(fd), "socks5://\(socksHost):\(socksPort)")
+        #endif
+    }
+
+    func stop() {
+        running = false
+        #if canImport(MontanaXray)
+        MontanaxrayStopTun2Socks()
+        #endif
+        os_log("tun2socks stop", log: log, type: .info)
+    }
+
+    // Locate the packet-tunnel's utun interface fd (standard NEPacketTunnelProvider technique:
+    // scan fds, read UTUN_OPT_IFNAME via getsockopt, match "utun").
+    private static func tunFileDescriptor() -> Int32? {
+        let SYSPROTO_CONTROL: Int32 = 2
+        let UTUN_OPT_IFNAME: Int32 = 2
+        for fd in Int32(0)..<Int32(1024) {
+            var buf = [CChar](repeating: 0, count: 256)
+            var len = socklen_t(buf.count)
+            if getsockopt(fd, SYSPROTO_CONTROL, UTUN_OPT_IFNAME, &buf, &len) == 0 {
+                if String(cString: buf).hasPrefix("utun") { return fd }
+            }
+        }
+        return nil
+    }
+}

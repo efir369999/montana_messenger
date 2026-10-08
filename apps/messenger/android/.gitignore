@@ -1,0 +1,10 @@
+# build output (scripts/build.py; build/lauterbourg holds the shared builds brought here)
+build/
+# the core's build output (scripts/build.py)
+native/montana-jni/target/
+# local tool state
+.claude/
+.idea/
+.DS_Store
+# the scripts’ own bytecode
+__pycache__/

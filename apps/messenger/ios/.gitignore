@@ -1,0 +1,61 @@
+# Xcode / build
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+.DS_Store
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# temporary
+build-sim/
+*.bak-pre-*
+build-test/
+build-device/
+build-rel/
+Code/Frameworks/WebRTC.xcframework/
+mtrelay-go/build/
+mtrelay-go/pkg-headers/
+mtrelay-go/pkg-headers-nomod/
+build-boevoe/
+build-p2p/
+
+# every versioned build folder (build-p2p-v*, build-merge*, and the like)
+build-*/
+*.sdkstatcache
+
+# Core/relay binaries — built LOCALLY only, never committed (see Code/Frameworks/CORE-BACKUP.md)
+Code/Frameworks/MontanaBindings.xcframework/
+Code/Frameworks/MontanaRelay.xcframework/
+Code/Frameworks/WebRTC.xcframework
+
+# the built core and the transport libraries: built locally by script only
+Code/Frameworks/*.xcframework/
+Code/Frameworks/.*/
+Code/Frameworks/*.old*/
+Code/Frameworks/*.prev/
+Code/Frameworks/*.prev-*/
+Code/Frameworks/*.broken-*/
+build/
+Code/Frameworks/*.badname/
+Code/Frameworks/*.v[0-9]*/
+
+scripts/*/.build-fw/
+**/.build-fw/
+
+scripts/*/*.xcframework/
+**/*.xcframework/
+__pycache__/
+
+# A framework LINK is as untracked as the framework itself: a session worktree links the built
+# cores from the main tree, and such a link, once committed, replaced the real directories in
+# the main tree at the next merge (22.09). The old patterns matched directories only.
+Code/Frameworks/*.xcframework
+Code/Frameworks/*.xcframework.*
+# A session worktree checked out inside the client tree is not the tree (29.09: fix/vpn-ping-grpc-ams stood in .worktrees/ and
+# blocked the delivery guard and the language gate of the main tree).
+.worktrees/

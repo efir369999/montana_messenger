@@ -1,0 +1,11 @@
+[package]
+name = "mt-genesis"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+mt-conformance = { path = "../mt-conformance" }

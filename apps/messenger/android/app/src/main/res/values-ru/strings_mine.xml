@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sg_confirm">Подтвердите кодом или биометрией устройства, чтобы увидеть секретную фразу.</string>
+    <string name="sg_no_lock">Задайте код на этом устройстве — без него фразу нечем защитить.</string>
+    <string name="sg_failed">Подтверждение не пройдено.</string>
+    <string name="sg_unlock">Разблокировать</string>
+    <string name="sg_reason">Показать секретную фразу</string>
+    <string name="sg_for_you">Информация только для вас!</string>
+    <string name="sg_wallet">Эта сид-фраза разблокирует доступ к вашему кошельку</string>
+    <string name="sg_no_access">У Montana нет доступа к этому ключу.</string>
+    <string name="sg_on_paper">Не сохраняйте информацию в цифровом формате, запишите на бумаге и сохраните в надежном месте.</string>
+    <string name="sg_write_down">Запишите эти 24 слова по порядку и храните офлайн. По ним восстанавливается история, если вы потеряете все устройства. Никому не показывайте.</string>
+    <string name="sg_no_seed">Активный сид не найден.</string>
+    <!-- the chats list's own marks (iOS MTPersonMenu, swipe tiles, selection bar, ArchivedChatsView) -->
+    <string name="cl_pin">Закрепить</string>
+    <string name="cl_unpin">Открепить</string>
+    <string name="cl_mute">Выкл. звук</string>
+    <string name="cl_unmute">Вкл. звук</string>
+    <string name="cl_select">Выбрать</string>
+    <string name="cl_mark_read">Прочитано</string>
+    <string name="cl_mark_unread">Непрочитано</string>
+    <string name="cl_archive">Архив</string>
+    <string name="cl_unarchive">Из архива</string>
+    <string name="cl_delete">Удалить</string>
+    <string name="cl_read_all">Прочитать все</string>
+    <string name="cl_archive_empty">Архив пуст</string>
+    <string name="cl_selected">Выделено: %1$d</string>
+    <!-- a letter's own deeds: pin, forward, select (iOS MontanaMessageMenu, ForwardPickerView, the pinned plate) -->
+    <string name="ld_pin_q">Закрепить это сообщение?</string>
+    <string name="ld_pin_both">Закрепить у обоих</string>
+    <string name="ld_pin_me">Закрепить у меня</string>
+    <string name="ld_pinned">Закреплённое сообщение</string>
+    <string name="ld_pin">Закрепить</string>
+    <string name="ld_unpin">Открепить</string>
+    <string name="ld_forward">Переслать</string>
+    <string name="ld_forward_to">Переслать в…</string>
+    <string name="ld_forwarded">↪︎ Пересланное сообщение</string>
+    <string name="ld_select">Выбрать</string>
+    <!-- the contacts page (iOS ContactsTabView: the menu about a person) -->
+    <string name="ct_write">Написать</string>
+    <string name="ct_profile">Профиль</string>
+    <!-- the deletion of a chat, for both or for me (iOS MontanaDeleteChatSheet) -->
+    <string name="dl_q">Удалить переписку с %1$s навсегда?</string>
+    <string name="dl_both">Удалить у обоих</string>
+    <string name="dl_mine">Удалить только у себя</string>
+    <!-- the document page (iOS DocPreview) -->
+    <string name="dv_missing">Файла нет на этом устройстве. Попросите отправить его заново.</string>
+    <!-- my page's ground (iOS MTWallpaperPicker task .page) -->
+    <string name="pg_change">Изменить фон страницы</string>
+    <string name="pg_title">Фон страницы</string>
+    <string name="pg_none">Без фона</string>
+    <!-- the camera beside the photos (iOS MTGalleryPick: the camera's tile, «All photos») -->
+    <string name="cm_photo">Камера · Фото</string>
+    <string name="cm_video">Камера · Видео</string>
+    <string name="cm_all">Все фотографии</string>
+    <!-- the fingerprint read by the camera (iOS SafetyNumberView's scan) -->
+    <string name="sn_scan">Сканировать QR собеседника</string>
+    <string name="sn_mismatch">Коды не совпадают</string>
+    <string name="sn_mismatch_note">Это код другого чата — или между вами кто-то стоит. Сверьте цифры голосом.</string>
+    <!-- a letter sent later (iOS «Send later», the send key's hold) -->
+    <string name="sl_later">Отправить позже</string>
+</resources>

@@ -1,0 +1,28 @@
+[package]
+name = "mt-conformance"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# M9 conformance suite — standalone test vectors from the spec for cross-impl
+# verification. Used by any second implementation of Montana (Go, Swift,
+# Python) to assert byte-exact against the Rust reference.
+
+[features]
+default = []
+
+[dependencies]
+mt-net = { path = "../mt-net" }
+mt-account = { path = "../mt-account" }
+mt-state = { path = "../mt-state" }
+mt-codec = { path = "../mt-codec" }
+mt-crypto = { path = "../mt-crypto" }
+mt-mnemonic = { path = "../mt-mnemonic", features = ["vectors"] }
+mt-genesis = { path = "../mt-genesis" }
+sha2 = { workspace = true }
+
+[[bin]]
+name = "conformance-gate"
+path = "src/main.rs"

@@ -1,0 +1,50 @@
+# Montana node — node-only Docker image.
+#
+# Differs from the legacy all-in-one image on two points that caused the
+# cross-node genesis drift and crash loops:
+#   1. No genesis manifest is baked into the image. The manifest is mounted
+#      from the host at /etc/montana/genesis-manifest.json so a node's genesis
+#      is decoupled from the binary and can never silently drift out of sync.
+#   2. This image runs ONLY the consensus node on :8444.
+#
+# Build context = repository ROOT (parent of Code/) because mt-mnemonic uses
+# include_str!("../../../../Montana wordlist.txt") checked in at the repo top.
+#
+# Build:
+#   docker build -t montana-node:local -f Code/docker/runtime/Dockerfile.node .
+# Run (standalone bootstrap genesis):
+#   docker run -d --name montana-node --network host --restart unless-stopped \
+#     -v montana-data:/var/lib/montana montana-node:local
+# Run (join canonical network — manifest mounted from host):
+#   docker run -d --name montana-node --network host --restart unless-stopped \
+#     -v montana-data:/var/lib/montana \
+#     -v /etc/montana/genesis-manifest.json:/etc/montana/genesis-manifest.json:ro \
+#     montana-node:local
+
+FROM rust:1.95-bookworm AS builder
+WORKDIR /build
+COPY . /build/
+ENV CARGO_NET_RETRY=10 \
+    CARGO_HTTP_MULTIPLEXING=false
+WORKDIR /build/Code
+RUN cargo build --release -j 1 -p montana-node && \
+    strip target/release/montana-node && \
+    ls -lh target/release/montana-node
+
+FROM debian:trixie-slim
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates tini util-linux iproute2 openssl coreutils curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd -r -m -d /var/lib/montana -s /usr/sbin/nologin montana && \
+    mkdir -p /etc/montana && \
+    chmod 0755 /etc/montana
+
+COPY --from=builder /build/Code/target/release/montana-node /usr/local/bin/montana-node
+COPY Code/docker/runtime/node-entrypoint.sh /usr/local/bin/montana-entrypoint
+RUN chmod +x /usr/local/bin/montana-entrypoint
+
+WORKDIR /var/lib/montana
+VOLUME ["/var/lib/montana"]
+EXPOSE 8444
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/montana-entrypoint"]

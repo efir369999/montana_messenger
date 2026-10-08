@@ -1,0 +1,33 @@
+[package]
+name = "montana-node"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "montana_node"
+path = "src/lib.rs"
+
+[[bin]]
+name = "montana-node"
+path = "src/main.rs"
+
+[dependencies]
+mt-codec = { workspace = true }
+sha2 = { workspace = true }
+mt-genesis = { workspace = true }
+mt-seed = { workspace = true }
+mt-derive = { workspace = true }
+mt-pulse = { workspace = true }
+mt-proof = { workspace = true }
+montana-wallet = { workspace = true }
+mt-state = { workspace = true }
+mt-store = { workspace = true }
+mt-net = { workspace = true }
+mt-wire = { workspace = true }
+mt-suite = { workspace = true }
+zeroize = { workspace = true }
+
+[dev-dependencies]
+mt-conformance = { path = "../mt-conformance" }

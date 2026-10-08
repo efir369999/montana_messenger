@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A separate app beside the old Montana on the phone (quest.montana.app): its data and seed stay untouched.
+     The code's package stays quest.montana.app — the core's JNI names it. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="quest.montana.app.dev">
+
+    <!-- The one question after the identity (iOS MontanaNotifyGate): the system's own. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- the gallery of the compose row (iOS MTGalleryPick over PHPhotoLibrary): the phone's own latest photos and films, read with the person's yes -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- THIS SPOT FOR A PLACE LETTER (iOS MTLocationAccess): asked only when the person opens the location page -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- the phone's own lock asked before the 24 words are shown (OwnerCheck); a normal permission, never asked of the person -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- The person's own node: the copy of the history comes back from it (iOS MontanaHomeNode). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The daily copy rides Wi-Fi alone: the app asks the system which network it stands on. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- The music plays on with the app closed and the screen dark (MusicService, iOS audio background mode). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- The box read with the app closed outlives a reboot (BoxJob, persisted by the system's scheduler). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- An incoming call stands on the screen as the system's call (Calls, iOS CallKit's incoming screen). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- The call speaks on with the screen dark or the app left (CallService), and its sound is routed (CallLine). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- A video call's picture goes on with the app left (CallService, the camera's foreground while the call carries video). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <!-- A shared screen rides the call (CallLine.startShare): the projection stands in the call's foreground. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- The ear with the app closed (EarService): the platform's own foreground kind for a messenger's link, and the system's
+         own question whether the line may stay while the phone dozes. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- A newer Montana from the site installs from inside the app (Update.kt): the system's own installer, which asks the person once. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <!-- The active seed lives device-only (iOS AfterFirstUnlockThisDeviceOnly): no file of the app is copied —
+         no Auto Backup (fullBackupContent=false, every domain excluded). The ONE thing the system backup carries
+         is SeedBackupAgent's record of the words, and only sealed end to end (iOS MontanaAppleID). -->
+    <application
+        android:name="quest.montana.app.MontanaApp"
+        android:allowBackup="true"
+        android:backupAgent="quest.montana.app.SeedBackupAgent"
+        android:restoreAnyVersion="true"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher_glass"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Montana">
+        <activity
+            android:name="quest.montana.app.MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode"
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask">
+            <!-- AN INVITATION OPENS THE APP (iOS handleLink): the card's web link on both sites (montana.quest; montana.xxx, where the Business writes, iOS MontanaCard.linkHosts) and its scheme form, as the system camera reads them. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="montana.quest" android:pathPrefix="/perp/" />
+                <data android:scheme="https" android:host="montana.quest" android:pathPrefix="/temp/" />
+                <data android:scheme="https" android:host="montana.quest" android:pathPrefix="/r/" />
+                <data android:scheme="https" android:host="montana.xxx" android:pathPrefix="/perp/" />
+                <data android:scheme="https" android:host="montana.xxx" android:pathPrefix="/temp/" />
+                <data android:scheme="https" android:host="montana.xxx" android:pathPrefix="/r/" />
+                <data android:scheme="https" android:host="www.montana.xxx" android:pathPrefix="/perp/" />
+                <data android:scheme="https" android:host="www.montana.xxx" android:pathPrefix="/temp/" />
+                <data android:scheme="https" android:host="www.montana.xxx" android:pathPrefix="/r/" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="montana" />
+            </intent-filter>
+            <!-- «SHARE → MONTANA» FROM ANOTHER APP (iOS MontanaShare): words, a link, pictures, films and files (ShareIn.kt) -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+        </activity>
+        <!-- A FILM WHOLE (FilmActivity.kt, iOS VideoPresenter): its own task, so its picture-in-picture window floats over the chat. -->
+        <activity
+            android:name="quest.montana.app.FilmActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Montana"
+            android:launchMode="singleTask"
+            android:taskAffinity="quest.montana.app.film"
+            android:excludeFromRecents="true"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden" />
+        <!-- THE APP'S ICON, CHOSEN IN «APPEARANCE» (iOS MTAppIconChooser, setAlternateIconName): the launcher entry is one of two
+             aliases of the one activity, and exactly one of them is enabled — the liquid glass (iOS primary, AppIcon.icon)
+             by default, the gold on black (iOS AppIconGold) when chosen. -->
+        <activity-alias
+            android:name="quest.montana.app.IconGlass"
+            android:targetActivity="quest.montana.app.MainActivity"
+            android:icon="@mipmap/ic_launcher_glass"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name="quest.montana.app.IconGold"
+            android:targetActivity="quest.montana.app.MainActivity"
+            android:icon="@mipmap/ic_launcher"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <!-- The app's own door to its received files (Media.kt): read-only, granted address by address. -->
+        <provider
+            android:name="quest.montana.app.MediaProvider"
+            android:authorities="quest.montana.app.dev.media"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+        <!-- The camera's own door (Capture.kt): the system camera writes one shot into the app's cache, granted address by address. -->
+        <provider
+            android:name="quest.montana.app.CaptureProvider"
+            android:authorities="quest.montana.app.dev.capture"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+        <!-- The track on the bar, known to the system: the shade, the lock screen, the headphones (Music.kt, MusicService.kt). -->
+        <service
+            android:name="quest.montana.app.MusicService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+        <!-- The ring's «Decline» (Calls.kt): pressed on the call's notification, handed back to the app alone. -->
+        <receiver
+            android:name="quest.montana.app.CallDecline"
+            android:exported="false" />
+        <!-- The call in hand as the system's ongoing call, holding the microphone, on a video call the camera, and a shared screen (CallService.kt). -->
+        <service
+            android:name="quest.montana.app.CallService"
+            android:exported="false"
+            android:foregroundServiceType="microphone|camera|mediaProjection" />
+        <!-- The ear with the app closed (EarService.kt): every conversation's lane held, so a call rings at once. -->
+        <service
+            android:name="quest.montana.app.EarService"
+            android:exported="false"
+            android:foregroundServiceType="remoteMessaging" />
+        <!-- The ear comes back after a reboot and after an update (EarService.kt). -->
+        <receiver
+            android:name="quest.montana.app.EarStart"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <!-- The box read with the app closed (BoxJob.kt): only the system's scheduler may start it. -->
+        <service
+            android:name="quest.montana.app.BoxJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <!-- The system installer's answer to an update handed to it (Update.kt): handed back to the app alone. -->
+        <receiver
+            android:name="quest.montana.app.UpdateDone"
+            android:exported="false" />
+    </application>
+</manifest>

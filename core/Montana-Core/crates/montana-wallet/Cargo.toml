@@ -1,0 +1,27 @@
+[package]
+name = "montana-wallet"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "montana_wallet"
+path = "src/lib.rs"
+
+[[bin]]
+name = "montana-wallet"
+path = "src/main.rs"
+
+[dependencies]
+mt-codec = { workspace = true }
+mt-genesis = { workspace = true }
+mt-seed = { workspace = true }
+mt-derive = { workspace = true }
+mt-proof = { workspace = true }
+mt-state = { workspace = true }
+mt-store = { workspace = true }
+zeroize = { workspace = true }
+
+[dev-dependencies]
+mt-conformance = { path = "../mt-conformance" }

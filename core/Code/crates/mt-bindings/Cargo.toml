@@ -1,0 +1,56 @@
+[package]
+name = "mt-bindings"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+description = "Montana single source of truth for iOS / Android / Web. Native (iOS/Android/desktop) re-exports mt-mnemonic/mt-crypto/mt-state/mt-account over a C ABI (cdylib+staticlib); Web (wasm32) derives on mt-mnemonic + pure-Rust ml-dsa/ml-kem."
+
+[lib]
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+mt-mnemonic   = { path = "../mt-mnemonic" }
+mt-names      = { path = "../mt-names" }
+mt-codec      = { path = "../mt-codec" }
+zeroize       = { workspace = true }
+sha2          = { workspace = true }
+mt-messenger-e2e = { path = "../mt-messenger-e2e" }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+mt-crypto     = { path = "../mt-crypto" }
+mt-noise-pq   = { path = "../mt-noise-pq" }
+mt-state      = { path = "../mt-state" }
+mt-account    = { path = "../mt-account" }
+mt-wake       = { path = "../mt-wake" }
+mt-postman    = { path = "../mt-postman", optional = true }
+mt-rendezvous = { path = "../mt-rendezvous", optional = true }
+mt-bootstrap  = { path = "../mt-bootstrap", optional = true }
+mt-overlay    = { path = "../mt-overlay", optional = true }
+tokio         = { version = "=1.44.2", features = ["rt-multi-thread"], optional = true }
+getrandom     = { workspace = true, optional = true }
+mdns-sd       = { version = "=0.20.1", optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", optional = true }
+getrandom    = { version = "0.4", features = ["wasm_js"] }
+ml-dsa       = "0.1"
+ml-kem       = { version = "0.2", features = ["deterministic"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = { version = "0.21", default-features = false }
+
+[features]
+default = []
+network = ["dep:mt-postman", "dep:mt-rendezvous", "dep:mt-bootstrap", "dep:mt-overlay", "dep:tokio", "dep:mdns-sd", "dep:getrandom"]
+wasm = ["dep:wasm-bindgen"]
+
+[dev-dependencies]
+hex = "0.4"
+mt-mnemonic = { path = "../mt-mnemonic", features = ["vectors"] }
+mt-overlay = { path = "../mt-overlay" }
+ml-dsa = "0.1"
+ml-kem = { version = "0.2", features = ["deterministic"] }
+chacha20poly1305 = { workspace = true }
+sha2 = { workspace = true }

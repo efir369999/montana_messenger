@@ -1,0 +1,24 @@
+[package]
+name = "mt-rendezvous"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# DHT rendezvous (Montana P2P Network, Stage 4). Byte-exact core: dht_key (ed25519 admission
+# A-2 [I-16]), target/salt (BEP44), RendezvousRecord. The Mainline DHT transport is a separate layer.
+# ed25519/SHA1 are ONLY the BEP44 admission ticket ([P2P-5]); overlay/content/identity are PQ (Stage 1).
+
+[dependencies]
+mt-codec = { path = "../mt-codec" }
+mt-crypto = { path = "../mt-crypto" }
+mt-mnemonic = { path = "../mt-mnemonic" }
+mt-overlay = { path = "../mt-overlay" }
+ed25519-dalek = "=3.0.0"
+sha1 = "=0.10.6"
+thiserror = "=1.0.69"
+mainline = "=6.0.1"
+
+[dev-dependencies]
+hex = "0.4"

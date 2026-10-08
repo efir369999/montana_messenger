@@ -1,0 +1,48 @@
+# Montana Protocol — machine-readable spec contract (single source of truth)
+# Authoritative: "Montana Protocol v35.27.0.md", Genesis Decree -> protocol_params
+# Parsed by mt-conformance harness; checked byte-exact against code.
+# Lines: `spec_version`, `network_version`, `field <name> <size_bytes> <value|->`,
+#        `kat <name> <value>`. Order of `field` = canonical encode order.
+
+spec_version = 35.26.2
+network_version = 1.4.0
+
+# protocol_params canonical layout (little-endian, fixed-length fields)
+field d0 8 325000000
+field reserved_m0 8 -
+field tau2_windows 8 20160
+field emission_moneta 16 13000000000
+field target_zero 32 -
+field confirmation_quorum_num 1 67
+field confirmation_quorum_den 1 100
+field participation_dead_zone_low 2 85
+field participation_dead_zone_high 2 95
+field d_adjustment_rate_num 2 3
+field d_adjustment_rate_den 2 100
+field ssha_entry_windows 8 20160
+field selection_interval 8 336
+field admission_divisor 8 130
+field candidate_expiry_windows 8 60480
+field adaptive_ssha_threshold 2 1
+field adaptive_ssha_multiplier 2 100
+field pruning_idle_windows 8 80640
+field max_protocol_payload_bytes 4 1048576
+field max_sf_ciphertext_bytes 4 65536
+field genesis_content_app_id 32 -
+field genesis_content_data_hash 32 -
+
+# Derived KAT: canonical_encode(protocol_params) length for the empty-window-0 genesis
+kat params_encoded_size 198
+
+# Identity root — the birth of a Montana account, asserted the same way as the
+# parameters of the Decree. Reference input: entropy = 32 zero bytes; every row
+# below is SHA-256 over the value a second implementation must reproduce.
+hash wordlist_fingerprint 2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda
+hash mnemonic_zero_entropy 69be79ef3c28f55d7cb84db2dd3c18dfff45eeefebd09b8c5f7f3489b8ba09ac
+hash master_seed_zero_entropy f1818e1a354e6020ddf11ed9da140c93f42fdc530c498734e732e6db6e607536
+hash account_seed_zero_entropy 095c344ee139b874f0c54ea93603fc06cef984546d0c12b9cbd4ddd281940113
+hash account_id_zero_entropy 9f199584ed120b987b617ba5bff829e176f23e5465dd70cfac5c141dfb131a21
+# Mixing of sources: fixed addends give a fixed root. A foreign build
+# compares bytes, not intentions — and the machine's own sources cannot enter the vector.
+hash mix_zero_zero 31eb5ed4dedb03ab22a8cb9b95ea15a66fa388c9f2b7d45e24f31e1728e513ab
+hash mix_ascending_descending 8f4ec6cf24a1b94301e4c27c5004bb1eb4a33681d91e6064d11da51aa404b808

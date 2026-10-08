@@ -1,0 +1,16 @@
+[package]
+name = "mt-consensus"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mt-codec = { path = "../mt-codec" }
+mt-crypto = { path = "../mt-crypto" }
+mt-state = { path = "../mt-state" }
+mt-lottery = { path = "../mt-lottery" }
+
+[dev-dependencies]
+mt-crypto = { path = "../mt-crypto", features = ["testing"] }

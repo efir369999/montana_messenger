@@ -1,0 +1,60 @@
+{
+  "why": "One toolchain for every computer that builds Montana for Android: scripts/setup.py installs exactly this, scripts/build.py builds with exactly this. The core's Rust compiler is the core's own pin (Montana Protocol/Code/rust-toolchain.toml), not repeated here.",
+  "jdk": {
+    "release": "jdk-17.0.20.1+1",
+    "macos-aarch64": {
+      "url": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_aarch64_mac_hotspot_17.0.20.1_1.tar.gz",
+      "sha256": "196d13ba5f10414bef7f6a05a9b3f00edacb18ebacef2b99485db9e2ee18f0e8"
+    },
+    "linux-x86_64": {
+      "url": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_x64_linux_hotspot_17.0.20.1_1.tar.gz",
+      "sha256": "3808d1d15e3ec6bd5b84057fb5d84c33d8a1536a258146bcea2e603fc726e08e"
+    }
+  },
+  "cmdline_tools": {
+    "revision": "22.0",
+    "why": "the last revision whose sdkmanager is the SDK's own: 23.0 hands every call to the Android CLI, downloaded at run time unpinned and reporting usage by default",
+    "macos-aarch64": {
+      "url": "https://dl.google.com/android/repository/commandlinetools-mac_arm64-15859902_latest.zip",
+      "sha1": "c4e0dbc53f1a4ce04fc2b11d4e2c4675001a95af"
+    },
+    "linux-x86_64": {
+      "url": "https://dl.google.com/android/repository/commandlinetools-linux-15859902_latest.zip",
+      "sha1": "040d3996a65543d22ec4bf73e4c37aa37a8d4af4"
+    }
+  },
+  "build_tools": "35.0.0",
+  "platform": "android-35",
+  "ndk": "27.2.12479018",
+  "kotlin": {
+    "version": "2.0.21",
+    "url": "https://github.com/JetBrains/kotlin/releases/download/v2.0.21/kotlin-compiler-2.0.21.zip",
+    "sha256": "0352c0a45bd22f80f6b26e485cd04da8047baa5de54865281fb9f89a4a7bcf2a",
+    "why": "the Kotlin whose metadata the D8 of build-tools 35.0.0 both reads and writes (it writes up to 2.0.0: Kotlin 2.1.21 still drew 1190 warnings, 2.4.20 more)"
+  },
+  "webrtc": {
+    "version": "144.7559.15",
+    "url": "https://repo1.maven.org/maven2/io/github/webrtc-sdk/android/144.7559.15/android-144.7559.15.aar",
+    "sha256": "fc7c8d027eb33860ccbb7847988f7f942d44a92d1f575348bba6c0250cde4071",
+    "why": "the call engine iOS rings with (webrtc-sdk; Montana-iOS fetch-webrtc.sh takes 144.7559.10, which is not published for Android, and .15 is the newest of the same line). The one library of the build (the decision of 06.10.2026: variant A), taken byte for byte by this digest; only its classes and the phone's arm64 library go into the APK"
+  },
+  "cargo_ndk": "4.1.2",
+  "protocol": {
+    "dir": "../Montana Protocol",
+    "commit": "ae36d1f927a7ff1a6d9fbf6d4a09c2ff37a0630e"
+  },
+  "hosts": {
+    "macos-aarch64": {
+      "tools": "~/Library/Montana-tools",
+      "sdk": "~/Library/Android/sdk",
+      "rustup_home": "~/.rustup",
+      "cargo_home": "~/.cargo"
+    },
+    "linux-x86_64": {
+      "tools": "/opt/montana-tools",
+      "sdk": "/opt/montana-tools/android-sdk",
+      "rustup_home": "/opt/montana-tools/rustup",
+      "cargo_home": "/opt/montana-tools/cargo"
+    }
+  }
+}

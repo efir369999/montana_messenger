@@ -1,0 +1,20 @@
+# Acknowledged advisories — deep critic audit of the stack. None is exploitable
+# in our builds; the rationale for each is given below.
+[advisories]
+ignore = [
+    # hickory-proto DoS (name-compression O(n²) + NSEC3 loop): NOT in the real build
+    # (cargo tree for our targets prints nothing; lock-residual, not compiled).
+    "RUSTSEC-2026-0119",
+    "RUSTSEC-2026-0118",
+    # instant unmaintained: transitive via reed-solomon 6.0.0→parking_lot 0.11.2 (latest reed-solomon);
+    # time-crate, unmaintained != vulnerable.
+    "RUSTSEC-2024-0384",
+    # anyhow downcast_mut unsound: downcast_mut is not used, not in the runtime tree.
+    "RUSTSEC-2026-0190",
+    # paste unmaintained: transitive (proc-macro helper), unmaintained != vulnerable.
+    "RUSTSEC-2024-0436",
+    # time DoS (stack exhaustion in parsing): time is pulled in by rcgen (self-signed
+    # cert generation for the Stage 1 QUIC testbed) — our own dates, no attacker input is parsed, no exploit path
+    # exists. Upgrading to time 0.3.45+ pulls in a serde_derive conflict (breaks the stack).
+    "RUSTSEC-2026-0009",
+]

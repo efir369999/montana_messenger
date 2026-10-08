@@ -1,0 +1,19 @@
+/* The sentence a person reads when the system asks for a permission. The system localises
+   its own half — the title and the buttons — and shows THIS half exactly as written, so a
+   phrase without a translation reaches every language unchanged. The source is English
+   (Info.plist); this file is one language of it. */
+
+"NSCameraUsageDescription" = "Montana использует камеру, чтобы снимать фото и видео для чатов.";
+"NSContactsUsageDescription" = "Montana использует контакты, чтобы вы могли поделиться ими в чате, и сохраняет людей, добавленных в Montana, в ваши контакты по их @имени. Это выключается в Настройках: Приватность, Синхронизировать контакты.";
+"NSFaceIDUsageDescription" = "Montana использует Face ID, чтобы показать 24 слова восстановления.";
+"NSLocationWhenInUseUsageDescription" = "Montana использует геопозицию, чтобы вы могли отправить своё местоположение в чат.";
+"NSMicrophoneUsageDescription" = "Montana использует микрофон для записи голосовых сообщений, видео и звонков.";
+"NSPhotoLibraryAddUsageDescription" = "Montana сохраняет фото из чатов в вашу галерею.";
+"NSPhotoLibraryUsageDescription" = "Montana показывает последние фото и видео, чтобы быстро отправить их в чат.";
+
+/* The name iCloud gives this app's storage (NSUbiquitousContainers in Info.plist). The iCloud
+   daemon keeps that name per language and takes each language's name from THIS file only (read
+   in its own code, 23.09): without this line the container carried a name in no language at all,
+   while Apple's storage page called it "app", the tail of the container's identifier. The
+   product's name is one word in every language. */
+"NSUbiquitousContainerName" = "Montana";

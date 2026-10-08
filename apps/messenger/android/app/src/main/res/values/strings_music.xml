@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The track in the shade and on the lock screen (MusicService) -->
+    <string name="music_play">Play</string>
+    <string name="music_pause">Pause</string>
+    <string name="music_next">Next</string>
+    <string name="music_prev">Previous</string>
+    <string name="music_close">Close</string>
+</resources>

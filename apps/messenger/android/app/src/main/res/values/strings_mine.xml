@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- montana-android-00's strings (kept apart from strings.xml so two sessions never meet in one file) -->
+<resources>
+    <!-- the seed phrase behind the owner's word (iOS SeedShowView) -->
+    <string name="sg_confirm">Confirm with your device passcode or biometrics to reveal the secret phrase.</string>
+    <string name="sg_no_lock">Set a passcode on this device — without it the phrase cannot be protected.</string>
+    <string name="sg_failed">Verification failed.</string>
+    <string name="sg_unlock">Unlock</string>
+    <string name="sg_reason">Show secret phrase</string>
+    <string name="sg_for_you">This information is for you only!</string>
+    <string name="sg_wallet">This seed phrase unlocks access to your wallet</string>
+    <string name="sg_no_access">Montana has no access to this key.</string>
+    <string name="sg_on_paper">Don\'t store this information digitally — write it on paper and keep it in a safe place.</string>
+    <string name="sg_write_down">Write down these 24 words in order and keep them offline. They restore your history if you lose all your devices. Don\'t show them to anyone.</string>
+    <string name="sg_no_seed">No active seed found.</string>
+    <!-- the chats list's own marks (iOS MTPersonMenu, swipe tiles, selection bar, ArchivedChatsView) -->
+    <string name="cl_pin">Pin</string>
+    <string name="cl_unpin">Unpin</string>
+    <string name="cl_mute">Mute</string>
+    <string name="cl_unmute">Unmute</string>
+    <string name="cl_select">Select</string>
+    <string name="cl_mark_read">Mark as read</string>
+    <string name="cl_mark_unread">Mark as unread</string>
+    <string name="cl_archive">Archive</string>
+    <string name="cl_unarchive">Unarchive</string>
+    <string name="cl_delete">Delete</string>
+    <string name="cl_read_all">Read all</string>
+    <string name="cl_archive_empty">Archive is empty</string>
+    <string name="cl_selected">Selected: %1$d</string>
+    <!-- a letter's own deeds: pin, forward, select (iOS MontanaMessageMenu, ForwardPickerView, the pinned plate) -->
+    <string name="ld_pin_q">Pin this message?</string>
+    <string name="ld_pin_both">Pin for both</string>
+    <string name="ld_pin_me">Pin for me</string>
+    <string name="ld_pinned">Pinned message</string>
+    <string name="ld_pin">Pin</string>
+    <string name="ld_unpin">Unpin</string>
+    <string name="ld_forward">Forward</string>
+    <string name="ld_forward_to">Forward to…</string>
+    <string name="ld_forwarded">↪︎ Forwarded message</string>
+    <string name="ld_select">Select</string>
+    <!-- the contacts page (iOS ContactsTabView: the menu about a person) -->
+    <string name="ct_write">Write</string>
+    <string name="ct_profile">Profile</string>
+    <!-- the deletion of a chat, for both or for me (iOS MontanaDeleteChatSheet) -->
+    <string name="dl_q">Permanently delete the chat with %1$s?</string>
+    <string name="dl_both">Delete for me and them</string>
+    <string name="dl_mine">Delete for me only</string>
+    <!-- the document page (iOS DocPreview) -->
+    <string name="dv_missing">The file is not on this device. Ask the sender to send it again.</string>
+    <!-- my page's ground (iOS MTWallpaperPicker task .page) -->
+    <string name="pg_change">Change page background</string>
+    <string name="pg_title">Page background</string>
+    <string name="pg_none">No background</string>
+    <!-- the camera beside the photos (iOS MTGalleryPick: the camera's tile, «All photos») -->
+    <string name="cm_photo">Camera · Photo</string>
+    <string name="cm_video">Camera · Video</string>
+    <string name="cm_all">All photos</string>
+    <!-- the fingerprint read by the camera (iOS SafetyNumberView's scan) -->
+    <string name="sn_scan">Scan the other person\'s QR</string>
+    <string name="sn_mismatch">The codes do not match</string>
+    <string name="sn_mismatch_note">This is the code of another chat, or someone stands between you. Compare the digits by voice.</string>
+    <!-- a letter sent later (iOS «Send later», the send key's hold) -->
+    <string name="sl_later">Send later</string>
+</resources>

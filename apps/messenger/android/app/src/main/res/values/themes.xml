@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The whole theme is dark (iOS: .preferredColorScheme(.dark)); black from the first frame. -->
+    <style name="Theme.Montana" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Montana gold for everything the system draws itself: the cursor, a switch, a dialog's buttons -->
+        <item name="android:colorAccent">#FFD99E38</item>
+        <item name="android:colorControlActivated">#FFD99E38</item>
+        <item name="android:alertDialogTheme">@style/Theme.Montana.Dialog</item>
+    </style>
+    <style name="Theme.Montana.Dialog" parent="android:Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">#FFD99E38</item>
+        <item name="android:windowBackground">@drawable/dialog_plate</item>
+    </style>
+</resources>

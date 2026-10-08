@@ -1,0 +1,163 @@
+{
+ "_": "Frozen vectors of the names layer. Computed by an independent implementation (python hashlib/hmac), not taken from mt-names. The canon section holds values recorded in the set itself: a divergence from them means a divergence from the set, not from our implementation.",
+ "normalize": [
+  {
+   "in": "Alice",
+   "out": "alice"
+  },
+  {
+   "in": "@ALICE",
+   "out": "alice"
+  },
+  {
+   "in": "ａｌｉｃｅ",
+   "out": "alice"
+  },
+  {
+   "in": "straße",
+   "out": "strasse"
+  },
+  {
+   "in": "a1_b2-c3",
+   "out": "a1_b2-c3"
+  },
+  {
+   "in": "abc",
+   "err": "TooShort"
+  },
+  {
+   "in": "1alice",
+   "err": "NotStartingWithLetter"
+  },
+  {
+   "in": "alice_",
+   "err": "EndsWithSign"
+  },
+  {
+   "in": "al__ice",
+   "err": "DoubleSign"
+  },
+  {
+   "in": "ALIÇE",
+   "err": "Charset"
+  },
+  {
+   "in": "  alice  ",
+   "err": "Charset"
+  }
+ ],
+ "slot": [
+  {
+   "name": "alice",
+   "slot": "b5793a0d4f7f0737ebffb1374d24d3eed05efef5bd63eb1e4b03d81652c2575e"
+  },
+  {
+   "name": "alicemontana",
+   "slot": "0d09230abe3641df7434050a5b99329b05c1f4c387dd9cd738843d4ac4672547"
+  },
+  {
+   "name": "a1_b2-c3",
+   "slot": "37bfee292d7a237a2c9d0f58448ca7df8a36476280ff91bd9f4ce5da32e7b406"
+  }
+ ],
+ "chain": {
+  "seed": "07070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707",
+  "name": "alicemontana",
+  "len": 129,
+  "anchor": "3307c9b33c08891d3d1cd105abacf217cb17104532adab84c9098d7d3306195f",
+  "link_1": "8295db5d3ca3d937ca8279c2d062d4eef70340088dbc352d395ef00facd9e91d",
+  "link_128": "1a24d5d58edad4873165418f41f8c962885c5e36e1346b5457318fa2193b7f3e"
+ },
+ "commit": [
+  {
+   "slot": "0d09230abe3641df7434050a5b99329b05c1f4c387dd9cd738843d4ac4672547",
+   "blind": "0909090909090909090909090909090909090909090909090909090909090909",
+   "tip": "3307c9b33c08891d3d1cd105abacf217cb17104532adab84c9098d7d3306195f",
+   "commit": "0954073595a088acc94d5ecf9ac359006ba0639d1db5eda1480be9c3cdd32d9b"
+  }
+ ],
+ "req_key": [
+  {
+   "name": "alice",
+   "eph": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+   "iter": 1024,
+   "key": "e6374321d120fb63999005f1d4651eb7ce9399c7d1796c1ec1d2c47dddd0385b"
+  },
+  {
+   "name": "alice",
+   "eph": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+   "iter": 1048576,
+   "key": "bb4b9c5906f55733826cf47381cfa3907aa1c510b677dcff6a85095c7fd427a6"
+  }
+ ],
+ "puzzle": [
+  {
+   "slot": "b5793a0d4f7f0737ebffb1374d24d3eed05efef5bd63eb1e4b03d81652c2575e",
+   "eph": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+   "nonce": "0100000000000000",
+   "hash": "5546e727ff196dedaf40acf982b72286d42ccfa514fa441ef79cdd66bba1fd7e"
+  }
+ ],
+ "bucket_bits": [
+  {
+   "occupied": 0,
+   "bits": 0
+  },
+  {
+   "occupied": 255,
+   "bits": 0
+  },
+  {
+   "occupied": 256,
+   "bits": 0
+  },
+  {
+   "occupied": 511,
+   "bits": 0
+  },
+  {
+   "occupied": 512,
+   "bits": 1
+  },
+  {
+   "occupied": 1024,
+   "bits": 2
+  },
+  {
+   "occupied": 10000,
+   "bits": 5
+  },
+  {
+   "occupied": 1000000,
+   "bits": 11
+  }
+ ],
+ "name_own": [
+  {
+   "seed": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+   "name": "alicemontana",
+   "slot": "0d09230abe3641df7434050a5b99329b05c1f4c387dd9cd738843d4ac4672547",
+   "own": "5fb0d57f205793cfce5517939cf30ed0562aba86f5d5adc81f2bd7ddb5b12ba4"
+  },
+  {
+   "seed": "07070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707070707",
+   "name": "alicemontana",
+   "slot": "0d09230abe3641df7434050a5b99329b05c1f4c387dd9cd738843d4ac4672547",
+   "own": "1a24d5d58edad4873165418f41f8c962885c5e36e1346b5457318fa2193b7f3e"
+  }
+ ],
+ "canon": {
+  "name": "alice",
+  "name_own": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "blind": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "slot": "b5793a0d4f7f0737ebffb1374d24d3eed05efef5bd63eb1e4b03d81652c2575e",
+  "link_127": "83be15d760052903e3b1a2d304f56861ad92b8fed97a0b08452c6eb029fe1b5a",
+  "anchor": "b49373b194e6358022b8fbcbecb5beccdd4f0b275d1ccd53be130f76a1367a8e",
+  "commit": "929fccf5c511d3d1123707db473cf21732a9349bcb578ddea91ca08b2d9dae41"
+ },
+ "canon_first_contact": {
+  "contact_root": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "first_tag_1000": "45468cdd9bcdebe6f622c46257c27fe3",
+  "first_tag_1001": "2751a149c51e219b73fadc85ca8b107b"
+ }
+}

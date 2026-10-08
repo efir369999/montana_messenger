@@ -1,0 +1,19 @@
+[package]
+name = "mt-overlay"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+description = "Montana P2P Network — overlay addressing and postman transport. Montana P2P Network spec, Stage 1. Clients link it, they do not reimplement it."
+
+[dependencies]
+mt-codec = { path = "../mt-codec" }
+mt-crypto = { path = "../mt-crypto" }
+mt-state = { path = "../mt-state" }
+reed-solomon-erasure = "=6.0.0"
+getrandom = { workspace = true }
+
+[dev-dependencies]
+hex = "0.4"

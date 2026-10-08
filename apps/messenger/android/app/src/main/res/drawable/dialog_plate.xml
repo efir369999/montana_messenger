@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A dialog's plate: the page's dark glass (iOS Color(white: 0.12)), rounded, inset from the screen's edges. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:inset="16dp">
+    <shape android:shape="rectangle">
+        <solid android:color="#FF1F1F1F" />
+        <corners android:radius="14dp" />
+    </shape>
+</inset>

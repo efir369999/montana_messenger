@@ -1,0 +1,84 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mt-genesis",
+    "crates/mt-codec",
+    "crates/mt-merkle",
+    "crates/mt-seed",
+    "crates/mt-derive",
+    "crates/mt-state",
+    "crates/mt-suite",
+    "crates/mt-wire",
+    "crates/mt-pulse",
+    "crates/mt-proof",
+    "crates/mt-store",
+    "crates/mt-net",
+    "crates/montana-node",
+    "crates/montana-wallet",
+    "crates/mt-conformance",
+    "crates/mt-boundary",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.90"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+# The engine that absorbs a secret wipes itself: what the tree allocates for a secret is held in a
+# wiping wrapper, and what the library holds of that secret is wiped by the feature it carries.
+sha2 = { version = "=0.11.0", features = ["zeroize"] }
+sha3 = { version = "=0.11.0", features = ["zeroize"] }
+libcrux-ml-dsa = { version = "=0.0.10", default-features = false, features = ["mldsa65"] }
+libcrux-ml-kem = { version = "=0.0.10", default-features = false, features = ["mlkem768"] }
+chacha20poly1305 = { version = "=0.10.1", default-features = false, features = ["alloc"] }
+zeroize = { version = "=1.8.1", default-features = false, features = ["alloc"] }
+getrandom = { version = "=0.2.15", default-features = false }
+mt-genesis = { path = "crates/mt-genesis" }
+montana-wallet = { path = "crates/montana-wallet" }
+montana-node = { path = "crates/montana-node" }
+mt-codec = { path = "crates/mt-codec" }
+mt-merkle = { path = "crates/mt-merkle" }
+mt-seed = { path = "crates/mt-seed" }
+mt-derive = { path = "crates/mt-derive" }
+mt-state = { path = "crates/mt-state" }
+mt-suite = { path = "crates/mt-suite" }
+mt-wire = { path = "crates/mt-wire" }
+mt-pulse = { path = "crates/mt-pulse" }
+mt-proof = { path = "crates/mt-proof" }
+mt-store = { path = "crates/mt-store" }
+mt-net = { path = "crates/mt-net" }
+
+[profile.release]
+overflow-checks = true
+
+# The stretch of a master seed is a million compressions of SHA-256, and every test of the gate
+# pays for one. Unoptimized, that turns a second into minutes and a test run into a wait nobody
+# repeats, so the hash and the layer that drives it are built optimized even in a debug build.
+# Overflow checks and debug assertions stand as the profile sets them; nothing about what these
+# crates compute changes.
+[profile.dev.package.sha2]
+opt-level = 3
+
+[profile.dev.package.mt-codec]
+opt-level = 3
+
+[profile.dev.package.mt-seed]
+opt-level = 3
+
+# The lattice of the commitment and the signature scheme are the same case: a window of a simulated
+# population runs thousands of them, and unoptimized that turns a test into a wait nobody repeats.
+[profile.dev.package.mt-suite]
+opt-level = 3
+
+# The circuit of a frame is a trace of 2^16 rows extended eightfold, and proving one is millions of
+# field operations. Unoptimized that is half an hour where it is seconds, and a test nobody runs is
+# a test that says nothing — the same reason the hash and the suite stand here.
+[profile.dev.package.mt-proof]
+opt-level = 3
+
+[profile.dev.package.libcrux-ml-dsa]
+opt-level = 3
+
+[profile.dev.package.sha3]
+opt-level = 3

@@ -1,0 +1,24 @@
+# Rust build artifacts
+target/
+**/target/
+Cargo.lock.bak
+
+# macOS and editors
+.DS_Store
+**/.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Secrets never belong in the tree
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.p8
+*.mobileprovision
+id_rsa*
+credentials.json
+secrets.toml

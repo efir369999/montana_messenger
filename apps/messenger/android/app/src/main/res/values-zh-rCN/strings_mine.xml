@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sg_confirm">请使用设备密码或生物识别确认以查看助记词。</string>
+    <string name="sg_no_lock">请在此设备上设置密码——否则无法保护助记词。</string>
+    <string name="sg_failed">验证失败。</string>
+    <string name="sg_unlock">解锁</string>
+    <string name="sg_reason">显示助记词</string>
+    <string name="sg_for_you">此信息仅供您本人查看！</string>
+    <string name="sg_wallet">此助记词可解锁对您钱包的访问权限</string>
+    <string name="sg_no_access">Montana 无法访问此密钥。</string>
+    <string name="sg_on_paper">请勿以数字形式保存此信息，请写在纸上并保存在安全的地方。</string>
+    <string name="sg_write_down">按顺序写下这 24 个单词并离线保存。如果您丢失所有设备，可用它们恢复聊天记录。请勿向任何人展示。</string>
+    <string name="sg_no_seed">未找到活跃种子。</string>
+    <!-- the chats list's own marks (iOS MTPersonMenu, swipe tiles, selection bar, ArchivedChatsView) -->
+    <string name="cl_pin">置顶</string>
+    <string name="cl_unpin">取消置顶</string>
+    <string name="cl_mute">静音</string>
+    <string name="cl_unmute">取消静音</string>
+    <string name="cl_select">选择</string>
+    <string name="cl_mark_read">标为已读</string>
+    <string name="cl_mark_unread">标为未读</string>
+    <string name="cl_archive">归档</string>
+    <string name="cl_unarchive">取消归档</string>
+    <string name="cl_delete">删除</string>
+    <string name="cl_read_all">全部已读</string>
+    <string name="cl_archive_empty">归档为空</string>
+    <string name="cl_selected">已选择：%1$d</string>
+    <!-- a letter's own deeds: pin, forward, select (iOS MontanaMessageMenu, ForwardPickerView, the pinned plate) -->
+    <string name="ld_pin_q">置顶这条消息？</string>
+    <string name="ld_pin_both">为双方置顶</string>
+    <string name="ld_pin_me">为我置顶</string>
+    <string name="ld_pinned">置顶消息</string>
+    <string name="ld_pin">置顶</string>
+    <string name="ld_unpin">取消置顶</string>
+    <string name="ld_forward">转发</string>
+    <string name="ld_forward_to">转发到…</string>
+    <string name="ld_forwarded">↪︎ 转发的消息</string>
+    <string name="ld_select">选择</string>
+    <!-- the contacts page (iOS ContactsTabView: the menu about a person) -->
+    <string name="ct_write">发消息</string>
+    <string name="ct_profile">个人资料</string>
+    <!-- the deletion of a chat, for both or for me (iOS MontanaDeleteChatSheet) -->
+    <string name="dl_q">永久删除与 %1$s 的聊天？</string>
+    <string name="dl_both">为双方删除</string>
+    <string name="dl_mine">仅删除我这边</string>
+    <!-- the document page (iOS DocPreview) -->
+    <string name="dv_missing">此设备上没有该文件。请让对方重新发送。</string>
+    <!-- my page's ground (iOS MTWallpaperPicker task .page) -->
+    <string name="pg_change">更改主页背景</string>
+    <string name="pg_title">主页背景</string>
+    <string name="pg_none">无背景</string>
+    <!-- the camera beside the photos (iOS MTGalleryPick: the camera's tile, «All photos») -->
+    <string name="cm_photo">相机 · 照片</string>
+    <string name="cm_video">相机 · 视频</string>
+    <string name="cm_all">所有照片</string>
+    <!-- the fingerprint read by the camera (iOS SafetyNumberView's scan) -->
+    <string name="sn_scan">扫描对方的 QR</string>
+    <string name="sn_mismatch">代码不一致</string>
+    <string name="sn_mismatch_note">这是另一个聊天的代码，或者有人介于你们之间。请口头核对这些数字。</string>
+    <!-- a letter sent later (iOS «Send later», the send key's hold) -->
+    <string name="sl_later">稍后发送</string>
+</resources>

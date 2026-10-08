@@ -1,0 +1,23 @@
+[package]
+name = "mt-crypto"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+testing = []
+
+[dependencies]
+sha2 = { workspace = true }
+zeroize = { workspace = true }
+libc = "=0.2.186"
+# ML-KEM sealing (seal_to/open_from) -- postquantum end-to-end to the recipient.
+chacha20poly1305 = { workspace = true }
+# getrandom -- OS CSPRNG for the test-only `keypair()`. Size ~30 KB in the production
+# binary; `keypair()` itself is gated via #[cfg(any(test, feature =
+# "testing"))]. Trade-off: a slightly larger production binary in exchange for
+# production-grade entropy in the test helper (closes F-6).
+getrandom = { workspace = true }
+mt-crypto-native = { path = "../mt-crypto-native" }

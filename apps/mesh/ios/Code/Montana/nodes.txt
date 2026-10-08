@@ -1,0 +1,26 @@
+# Doors — machines of the mesh whose addresses arrive from the world, not from the network.
+# One per line: host or host:port (default port 8447). Lines starting with # are ignored.
+# A door yields one handshake and never a map; a device operator may replace this list
+# entirely under the key mt.doors, without a rebuild.
+# THE DOOR'S NAME DELIBERATELY DIFFERS FROM THE SITE'S NAME. Every client-side tunnel MUST let its own
+# entry name go direct, around itself, or it loops -- and a node standing on that same name escapes the
+# tunnel into the very network the person used the tunnel to shut out.
+# Measured 23.08 (a phone behind a third-party proxy): HTTPS to api.montana.quest went through twenty-four
+# times in a row, while the channel to montana.quest did not open once in eight tries.
+api.montana.quest:443
+# THE SECOND DOOR -- ANOTHER COUNTRY AND ANOTHER DOMAIN. One door is one switch that turns the network off
+# entirely: the measurement of 23.08 showed a phone that could open no montana.quest address while a
+# third-party tunnel held the name in its list. Domain and jurisdiction are kept apart on purpose, so that
+# one ban does not close both.
+montana.xxx:443
+
+# THE THIRD DOOR -- BEHIND A CONTENT DELIVERY NETWORK, AND IT ANSWERS AN ADDRESS, NOT A SIGNBOARD. Measured
+# 24.08 on a phone behind a third-party tunnel: not one packet reached one node's address -- our wire died
+# (63 dial timeouts) and so did the plainest request to the site (wake and box, no answer at all) -- while in
+# the minute the tunnel let it through, the same request got an honest refusal from the server. To another
+# node the same tunnel carried both the protection and the whole post-quantum handshake. So we are not
+# recognised: we are not reached, and disguising the wire is pointless. Such tunnels must carry
+# delivery-network addresses: cutting them costs more than letting us through, since millions of ordinary
+# sites live behind them. The wire's clothing is different here (an upgrade to a web socket, since the edge
+# speaks only web); everything above the wire is byte for byte the same.
+wss://door.montana.quest/ws

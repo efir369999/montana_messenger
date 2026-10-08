@@ -2,173 +2,152 @@
   <img src="https://montana.quest/download/icon.png" width="132" alt="Montana">
 </p>
 <h1 align="center">Montana</h1>
-<p align="center">Letters, calls, chess and coins of time, sealed end to end. No phone number, no e-mail: 24 words are your account.</p>
+<p align="center">The Montana Time ecosystem: letters, calls, coins of time, a mesh, direct delivery and a VPN, on one post-quantum core. No phone number, no e-mail: 24 words are your account.</p>
 <p align="center">
   <a href="https://testflight.apple.com/join/BHaSYWkz"><img alt="iPhone and iPad on TestFlight" src="https://img.shields.io/badge/iPhone%20·%20iPad-TestFlight-D4AF37?style=for-the-badge&logo=apple&logoColor=white"></a>
-  <a href="https://testflight.apple.com/join/BHaSYWkz"><img alt="Mac with Apple silicon on TestFlight" src="https://img.shields.io/badge/Mac-Apple%20silicon-C9A227?style=for-the-badge&logo=apple&logoColor=white"></a>
+  <a href="https://github.com/efir369999/montana_messenger/releases/latest"><img alt="Releases" src="https://img.shields.io/badge/IPA%20·%20APK-Releases-C9A227?style=for-the-badge&logo=github&logoColor=white"></a>
 </p>
-<p align="center"><a href="https://montana.quest">montana.quest</a> is the main site · mirrors <a href="https://montana.xxx">montana.xxx</a> and <a href="https://efir.org">efir.org</a></p>
+<p align="center"><a href="https://montana.quest">montana.quest</a> · <a href="https://montana.xxx">montana.xxx</a> · <a href="WHITEPAPER.md">Whitepaper</a> · <a href="core/">Core</a></p>
 
-## Download
+## What this repository is
 
-| Where | How |
-|---|---|
-| iPhone, iPad (iOS 17.2 or later) | [TestFlight public link](https://testflight.apple.com/join/BHaSYWkz): the recommended way |
-| Mac with Apple silicon | The same [TestFlight link](https://testflight.apple.com/join/BHaSYWkz), opened on the Mac |
-
-## About
-
-Montana is an end-to-end encrypted messenger built on post-quantum cryptography. It runs on iPhone, iPad and Apple
-silicon Macs. There is no phone number and no e-mail account: a person signs in with a 24-word recovery phrase, and a
-contact is added by their Montana address.
-
-This repository is the public face of the release programme: the downloads, the release history, how to join the test
-track, what to test, how to report what you find, the security policy. The
-application is one implementation of the Montana protocol; the reference client is developed at
-[montana.quest](https://montana.quest).
-
-## What is in this repository
+The whole source of the Montana Time ecosystem: the protocol core with its specification and its cryptography, and
+the client of every application, each in its own folder. The business application lives in its own repository,
+[montana_business](https://github.com/efir369999/montana_business). Every folder is the tree of one commit of the
+project's private history, published as it builds, under the publication notes below.
 
 | Path | What it is |
 |---|---|
-| [RELEASES.md](RELEASES.md) | Every build published on TestFlight |
-| [CHANGELOG.md](CHANGELOG.md) | Published builds and the timestamped development event log |
-| [SECURITY.md](SECURITY.md) | How to report a weakness, and what is in scope |
-| [.github/](.github/ISSUE_TEMPLATE/bug_report.md) | The bug report template |
+| [`core/`](core/) | The protocol: the normative specification, the reference implementation and the client core in Rust; ML-DSA-65, ML-KEM-768, ChaCha20-Poly1305, SHA-256. See [`core/README.md`](core/README.md) |
+| [`apps/messenger/ios/`](apps/messenger/ios/) | **Montana** (Messenger) for iPhone, iPad and Mac, build 2165 |
+| [`apps/messenger/android/`](apps/messenger/android/) | **Montana** (Messenger) for Android, build 246 |
+| [`apps/wallet/ios/`](apps/wallet/ios/) | **MT Wallet**, the coins of time, build 5 |
+| [`apps/mesh/ios/`](apps/mesh/ios/) | **MT Mesh**, rooms over Bluetooth between phones that are near, build 2 |
+| [`apps/p2p/ios/`](apps/p2p/ios/) | **MT P2P**, delivery straight from phone to phone, build 1 |
+| [`apps/vpn/ios/`](apps/vpn/ios/) | **MT VPN**, a VPN client and the wall where a person shares their own VPN, build 2 |
+| [`WHITEPAPER.md`](WHITEPAPER.md) | The ecosystem in one paper, with the specification it rests on |
+| [`RELEASES.md`](RELEASES.md), [`CHANGELOG.md`](CHANGELOG.md) | Every published build; the timestamped log of every change |
+| [`SECURITY.md`](SECURITY.md) | How to report a weakness |
 
-Montana's source code is not published; this repository carries the public record of its releases and changes.
+## Download
 
-## Join the beta
+| Application | Install | Files |
+|---|---|---|
+| Montana (Messenger) | [TestFlight](https://testflight.apple.com/join/BHaSYWkz) on iPhone, iPad and Mac; [APK](https://github.com/efir369999/montana_messenger/releases/latest/download/Montana-Messenger.apk) on Android | [IPA](https://github.com/efir369999/montana_messenger/releases/latest/download/Montana-Messenger.ipa), [APK](https://github.com/efir369999/montana_messenger/releases/latest/download/Montana-Messenger.apk) |
+| MT Wallet | [TestFlight](https://testflight.apple.com/join/n9UqzRDp) on iPhone, iPad and Mac | [IPA](https://github.com/efir369999/montana_messenger/releases/latest/download/Montana-Wallet.ipa) |
+| MT Business | [TestFlight](https://testflight.apple.com/join/MSMfey6f) on iPhone, iPad and Mac | [montana_business releases](https://github.com/efir369999/montana_business/releases/latest) |
 
-| | |
+MT Mesh, MT P2P and MT VPN are built from their folders in this repository.
+
+The IPA files are the exports uploaded to the App Store: they are published to be read, compared with the source or
+re-signed, and the way to install on iPhone, iPad and Mac is TestFlight. The APK installs directly on Android 8 or later.
+Android carries one application, the Messenger.
+
+## The ecosystem
+
+**One person, one key, every application.** Each application creates or opens a person from the same 24 words. The
+words produce the seed; from the seed come the ML-DSA-65 signing key that is the person's identity and address, and the
+ML-KEM-768 key that others encrypt to. Nothing about a person is stored on a server: the history lives on the device.
+
+- **Montana (Messenger).** Text, photos, video, files and voice messages; voice and video calls with screen sharing; typing
+  seen live; delivery and read receipts, replies, reactions, editing, forwarding and deletion for everyone. A letter is sealed
+  end to end and travels directly between two phones when they can reach each other (one local network, IPv6, or a port the
+  router forwards), otherwise through Montana nodes that forward sealed envelopes and hold no key that opens them.
+- **MT Wallet.** The coins of time. Every source of coins keeps its own time chain: one link per move of coins, numbered,
+  stamped and sealed by SHA-256 over the link and the seal before it, so a changed or moved link breaks every seal after it.
+  The wallet shows every chain, its length, its head and whether every seal holds. One second is one coin.
+- **MT Mesh.** Rooms that live on Bluetooth Low Energy between phones that are near one another: a word hops from phone to
+  phone without the internet.
+- **MT P2P.** Delivery straight from phone to phone: the phone is its own node, learns its outward address and keeps its own
+  door open, so two people talk without any machine between them.
+- **MT VPN.** A VPN client with a packet tunnel on iPhone, iPad and Mac. It reads the common subscription and link formats, and a
+  person can put their own VPN on their wall for the people they write to.
+- **MT Business** ([its repository](https://github.com/efir369999/montana_business)). The messenger built for a company:
+  departments, offices, channels with discussion, administration, shifts and supply, and sign-in by phone number, e-mail or the
+  24 words.
+
+## The sites
+
+| Site | What it is for |
 |---|---|
-| Platform | iPhone and iPad with iOS 17.2 or later; Apple silicon Mac |
-| Distribution | TestFlight, public link; App Store (United States) |
-| Link | https://testflight.apple.com/join/BHaSYWkz |
-| App Store | 1.0; the most recent build submitted for review is 1666 (2026-09-17) |
-| TestFlight | 1.0; the newest build is 2090 (2026-10-03) |
-| Feedback | GitHub Issues in this repository, or contact@montana.quest |
-| Privacy policy | https://montana.quest/privacy/ |
+| [montana.quest](https://montana.quest) | The Messenger's home: download, privacy policy, and the links a person hands out: a card (`/r/`, `/perp/`, `/temp/`) and a name (`/n/name`), which open the app through the associated domain |
+| [montana.xxx](https://montana.xxx) | The store of Montana applications, one page per application with its download doors and its source; the home of MT Business with its privacy policy, terms and support |
+| [efir.org](https://efir.org) | A mirror of the Montana site |
+| [pronoia.my](https://pronoia.my) | The home of MT VPN, with its privacy policy, terms and support |
+| pzr.me | The earlier form of a name link; the applications still read it, new links are written on montana.quest |
 
-1. Install TestFlight from the App Store.
-2. Open the link above on the device and accept the invitation.
-3. Install Montana and create an identity. Write the 24 words down: they are the only way
-   back into the account, and nobody can restore them for you.
-4. To talk to someone, exchange Montana addresses (Settings → your address) and add the
-   contact by address.
-
-A build appears on the public link after it has passed Apple's Beta App Review, which takes
-from a few hours to a day after upload. Development builds newer than the TestFlight build
-run on the project's own test devices only; see *Latest changes*.
-
-## What the application does
-
-- Text, photos, video, files and voice messages.
-- Voice and video calls, including screen sharing.
-- Live typing: the other side sees the text as it is typed.
-- Delivery and read receipts, replies, reactions, editing, forwarding, deletion for everyone.
-- Groups (local on the device in this beta; see *Known limits*).
-- Direct delivery between two phones on one local network, over IPv6, or through a port
-  the router forwards; otherwise through the Montana nodes.
+The applications reach the network through public names of the Montana nodes; no node address is written in this
+repository.
 
 ## What protects a conversation
 
 | Layer | Primitive |
 |---|---|
-| Identity and signatures | ML-DSA-65 |
-| Key agreement | ML-KEM-768 |
+| Identity and signatures | ML-DSA-65 (FIPS 204) |
+| Key agreement | ML-KEM-768 (FIPS 203) |
 | Message content | ChaCha20-Poly1305 under the session key |
 | Hashing | SHA-256 |
-| Call media | SFrame with a key derived from a call seed carried inside the encrypted envelope; DTLS-SRTP is transport admission only |
+| Link between two machines | Noise XX with ML-KEM-768 and ML-DSA-65 in place of classical Diffie-Hellman |
+| Call media | SFrame with a key derived from a call seed carried inside the sealed envelope; DTLS-SRTP is transport admission only |
 
-ML-DSA-65 and ML-KEM-768 come from the Montana core, a Rust library checked against the NIST test vectors.
-The nodes forward sealed envelopes and never hold a key that opens them.
+ML-DSA-65 and ML-KEM-768 come from the Montana core, checked against the NIST known-answer tests. Read
+[`core/README.md`](core/README.md) for the implementations and versions, and [`WHITEPAPER.md`](WHITEPAPER.md) for the design.
 
-## Coins and the Economy of Time
+## Build from source
 
-Montana counts coins of time on the phone. Every source of coins keeps its own time chain: one link per move of coins,
-numbered, stamped in milliseconds and sealed by SHA-256 over the link and the seal before it, so a changed or moved link
-breaks every seal after it. The wallet shows every chain, its length, its head and whether every seal holds, and every
-move in the history says where it came from and where it went.
+**Core.** Rust 1.92.0 (pinned in each workspace):
 
-| Source | How it mints or burns |
+```
+cd core/Montana-Core
+cargo test --workspace --release
+cd ../Code
+cargo test --workspace --release
+```
+
+**iPhone, iPad and Mac applications.** Xcode 26.2 on macOS 15.7 or later; the applications run on iOS 17.2 or later. In the folder of an application: build the
+core frameworks from `core/`, fetch the call engine, then open `Montana.xcodeproj` and choose your own team for signing.
+
+```
+cd apps/messenger/ios
+MONTANA_CORE_SRC="$PWD/../../../core/Code/crates/mt-bindings" bash scripts/build-core.sh
+MONTANA_PROTOCOL_CORE="$PWD/../../../core/Montana-Core" bash scripts/build-protocol-core.sh
+bash fetch-webrtc.sh
+```
+
+**Android.** `apps/messenger/android/scripts/setup.py` installs the pinned toolchain of `scripts/toolchain.json`
+(JDK 17, Android SDK 35, NDK, Kotlin, the call engine, each by digest); `scripts/build.py` builds the APK.
+
+## Publication notes
+
+Node endpoints in this tree are documentation addresses (RFC 5737) and the VPN test credential is a made-up one; the
+released binaries carry the live endpoints. The trees hold the code, its build files and its tests; signing material,
+process documents and deployment scripts stay with the project. Comments and documents are in English. Apart from those
+endpoints and that credential, the code is the code of the commit named for each folder in [`RELEASES.md`](RELEASES.md).
+
+## Beta, testing and reports
+
+| Item | State |
 |---|---|
-| Pantheon on Fire | Every touch and every swipe over the wallet's coin mints one coin, up to thirteen a second |
-| Chess | Every move pays one coin to each player; the winner takes the whole sum of the game |
-| Timer | Chess at one board on one phone: the player who waits mints a coin a second |
-| VPN Wall | While your own VPN stands on your wall, every second mints a coin |
-| Chats | With the coin on, every letter of the pair mints a coin |
-| Calls and letters | A call burns a coin a second and a letter a coin while it rides Montana's nodes, never more than the balance holds |
-| Levels of π | The balance reveals π digit by digit; every new level joins its own chain |
+| Platform | iPhone and iPad with iOS 17.2 or later; Apple silicon Mac; Android 8 or later for the Messenger |
+| TestFlight | Messenger 1.0 (2165), Wallet 1.0 (5), Business 1.0 (68) |
+| App Store | Messenger 1.0, submitted for review |
+| Feedback | GitHub Issues in this repository, or contact@montana.quest |
+| Privacy policy | https://montana.quest/privacy/ |
 
-In this beta the coins are a local tally on the phone, not a note of the Montana core's wallet.
+Open an issue with the *Bug report* template and name the build (Settings → About), the device and system version, the
+network on each side, the exact time and what was expected instead. Do not paste recovery phrases, other people's addresses
+or message content into an issue. Weaknesses go by e-mail, not into an issue: see [SECURITY.md](SECURITY.md).
 
 ## Diagnostics
 
-The application sends its diagnostic journals (event records, timings, error codes, crash and
-hang reports, the device model, the iOS version and the application build) to the Montana
-diagnostics node, where they are kept for seven days and then deleted. [SECURITY.md](SECURITY.md)
-is the place for the details.
+The applications send their diagnostic journals (event records, timings, error codes, crash and hang reports, the device
+model, the system version and the build) to a Montana diagnostics node, where they are kept for seven days and then deleted.
+They never hold message content, names, phrases or network addresses.
 
-## What to test
+## Known limits
 
-Please exercise the everyday paths and report anything that deviates from the expected
-observation:
-
-1. **Delivery.** A message sent while the other phone is online arrives within seconds
-   and shows two ticks on the sender's side. A message sent while the other phone is offline
-   arrives when it comes back.
-2. **Network changes.** Switch Wi-Fi off and on, move to cellular, turn a VPN on and off.
-   Messages keep flowing and the typing indicator keeps working without a restart.
-3. **Media.** Photos, videos (including long ones), voice messages and documents arrive
-   whole and open. A forwarded photo or video arrives at the new recipient.
-4. **Calls.** A voice call stays a voice call (the chat records it as voice, not video);
-   a minimised call shows a green and a red handset beside the contact's name and never
-   covers the name.
-5. **Presence.** "Online", "last seen" and "on a call" reflect what the other person is
-   actually doing.
-6. **Recovery.** Delete the application, reinstall, enter the 24 words: the identity and
-   the address are the same.
-
-## How to report
-
-Open an issue with the *Bug report* template. The report is most useful when it names:
-
-- the build number (Settings → About), the device model and iOS version;
-- the network on each side (Wi-Fi, cellular, VPN on or off);
-- the exact time of the event and what was expected instead;
-- whether the message, file or call was affected on one side or on both.
-
-Do not paste recovery phrases, Montana addresses of other people, or message content into
-an issue. Weaknesses go by e-mail, not into an issue: see [SECURITY.md](SECURITY.md).
-
-## Known limits of this beta
-
-- History lives on the device; the Montana nodes never hold it. Deleting the application
-  erases the history on that device. Two copies can be turned on in the application, and both
-  are off until you turn them on: a copy in the application's own iCloud container, and a copy
-  on a node you run yourself. Both are sealed under a key that only your 24 words open.
-- Groups exist on the device only; a group message is not yet carried to the other members.
-- Two phones that are both behind carrier NAT, without IPv6 and without a forwarded port,
-  cannot reach each other directly and talk through the nodes.
-- Inside the application, tapping the system's green call indicator on the status bar does
-  nothing; the green handset beside the contact's name returns to the call. From another
-  application the indicator opens Montana as usual.
-
-## Latest changes
-
-From [CHANGELOG.md](CHANGELOG.md).
-
-| | |
-|---|---|
-| Log updated | 2026-10-03 12:20 UTC |
-| Newest build in the log | Debug 2070, 2026-10-03 11:51 UTC |
-| Latest build in the published list | 1.0 (2090), 2026-10-03, TestFlight |
-
-- **2026-10-03 12:20 UTC** — The masters', the student's and the Government's TimeChain pages stay on this Mac (commit pending)
-- **2026-10-03 11:51 UTC** — Build number 2070 (commit `81c5071679cb`)
-- **2026-10-03 11:50 UTC** — The build's ring-1 guards stand green again (commit `4390eb8b6bac`)
-- **2026-10-03 11:46 UTC** — One coin book behind MTCoinLedger (commit `d0f4af6cf685`)
-- **2026-10-03 11:14 UTC** — The turned ribbon is the normal chat mirrored (commit `80d5275bece7`)
-
-The full record of every change, with its build, system and source tree, is in the log.
+- History lives on the device; deleting the application erases it there. Two copies can be turned on, both off by default: one
+  in the application's own iCloud container and one on a node you run yourself, both sealed under a key only your 24 words open.
+- Two phones that are both behind carrier NAT, without IPv6 and without a forwarded port, cannot reach each other directly and
+  talk through the nodes.
+- The coins of time are a tally kept on the phone in its own time chains, separate from the notes of the core's wallet.

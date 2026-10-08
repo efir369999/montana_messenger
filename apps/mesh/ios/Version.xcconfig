@@ -1,0 +1,4 @@
+// The version of Montana, and the only place it is written ([I-10]/[C-1]).
+// Every target and every configuration reads it from here; nothing else states it.
+MARKETING_VERSION = 0.231.0
+CURRENT_PROJECT_VERSION = 747
