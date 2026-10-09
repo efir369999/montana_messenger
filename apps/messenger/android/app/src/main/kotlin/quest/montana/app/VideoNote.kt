@@ -198,7 +198,7 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
         fun format(high: MediaCodecInfo.CodecProfileLevel?) = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, SQUARE, SQUARE).apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
             setInteger(MediaFormat.KEY_BIT_RATE, bitRate())
-            setInteger(MediaFormat.KEY_FRAME_RATE, 30)
+            setInteger(MediaFormat.KEY_FRAME_RATE, 24)   // the note's calm rate (calm below); the frames' own times rule the file
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
             if (high != null) { setInteger(MediaFormat.KEY_PROFILE, high.profile); setInteger(MediaFormat.KEY_LEVEL, high.level) }
         }
@@ -374,6 +374,7 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
                                 if (back) set(CaptureRequest.FLASH_MODE, if (flash) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
                                 // the light's turn keeps the zoom: iOS applyFlash touches the torch alone (2228-2241)
                                 cropFor(cm, id, zoomOf[id] ?: 1f)?.let { set(CaptureRequest.SCALER_CROP_REGION, it) }
+                                calm(cm, id)?.let { set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, it) }
                             }.build(), null, h)
                         }
                         issue()
@@ -432,6 +433,14 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
     /** The gesture's end commits the zoom it leaves (iOS pinchEnded, MontanaFeeds.swift:2219-2223 at 2155: reads the
      *  device's own clamped factor back, so the next pinch starts from what the hardware actually holds). */
     fun pinchEnded() = h.post { val d = (if (dual && swapped) cam2 else cam) ?: return@post; zoomBase = zoomOf[d.id] ?: 1f }
+    /** THE NOTE'S CALM 24 FRAMES (iOS holds24, wireCamera and pickPairFormat, MontanaFeeds.swift:2089-2138 at 2155: the
+     *  reference's lower frame rate): asked only of a camera whose own ranges hold them -- exactly 24, else a range that ends at
+     *  24 -- and a camera that holds neither runs at its own rate; the note is drawn on the big camera's frames, so its rate is
+     *  the camera's. */
+    private fun calm(cm: CameraManager, id: String): android.util.Range<Int>? {
+        val all = runCatching { cm.getCameraCharacteristics(id).get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES) }.getOrNull() ?: return null
+        return all.firstOrNull { it.lower == 24 && it.upper == 24 } ?: all.filter { it.upper == 24 }.maxByOrNull { it.lower }
+    }
     private fun ceiling(cm: CameraManager, id: String): Float =
         minOf(runCatching { cm.getCameraCharacteristics(id).get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) }.getOrNull() ?: 1f, 8f)
     private fun applyZoom(d: CameraDevice?, s: CameraCaptureSession?, out: Surface?, zoom: Float) {
@@ -444,6 +453,7 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
                 addTarget(out); set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
                 if (back) set(CaptureRequest.FLASH_MODE, if (flash) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
                 if (crop != null) set(CaptureRequest.SCALER_CROP_REGION, crop)
+                calm(cm, d.id)?.let { set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, it) }
             }.build(), null, h)
         }
     }
