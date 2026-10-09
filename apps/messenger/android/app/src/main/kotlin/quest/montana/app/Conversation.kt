@@ -1255,7 +1255,7 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
             keepScreenOn = true   // the screen stays awake while a note records (iOS 1687)
             addView(controls, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM).apply { bottomMargin = c.dp(60) })
             addView(ring, FrameLayout.LayoutParams(side + c.dp(16), side + c.dp(16), Gravity.CENTER))
-            addView(tv.round().apply {
+            addView(NoteWindow(c, live = { note?.badgeNow }).holding(tv.apply {
                 setOnClickListener { note?.flip() }
                 // THE BADGE UNDER THE FINGER (iOS MontanaVideoNoteHold 1658-1672): a finger on the badge drags it, and the badge
                 // eases to the nearest corner when let go; a tap anywhere else turns the camera, as before
@@ -1289,7 +1289,7 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
                         return dragging
                     }
                 })
-            }, FrameLayout.LayoutParams(side, side, Gravity.CENTER))
+            }), FrameLayout.LayoutParams(side, side, Gravity.CENTER))
         }
         // THE SCREEN AS THE FRONT CAMERA'S LIGHT (iOS MTNoteChrome, MontanaShapes.swift:1037-1039, and applyFlash 2232-2233): the
         // page behind the circle turns white and the screen goes to full brightness; both come back as the light goes or the page leaves
@@ -1322,10 +1322,11 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
     }
     bar.onNoteEnd = { dropped ->
         val r = note; note = null
+        val badge = r?.badgeTag   // the corner the badge rests in as the note ends (iOS usedDual, finalCorner)
         Thread {
             val got = r?.stop(keep = !dropped)
             MainThread.post { noteClose?.invoke(); noteClose = null }
-            got?.let { (f, secs) -> Media.send(c, ref, Media.Picked(f.readBytes(), "vid", "mp4", null, secs, round = true), ""); f.delete(); MainThread.post { toBottom() } }
+            got?.let { (f, secs) -> Media.send(c, ref, Media.Picked(f.readBytes(), "vid", "mp4", null, secs, round = true, badge = badge), ""); f.delete(); MainThread.post { toBottom() } }
         }.start()
     }
     bar.onVoiceEnd = { dropped ->
@@ -2561,12 +2562,13 @@ private fun noteBody(c: Context, m: Msg, f: java.io.File?, man: JSONObject?, int
     val full = f?.let { BubblePicture.kept(it, "vid", 600) }
     val pic = full?.pic ?: Media.thumbOf(man)
     into.addView(FrameLayout(c).apply {
-        addView(ImageView(c).apply {
+        // the poster in the note's window: the circle filled, the badge at the corner the manifest names (iOS MontanaNoteFrame)
+        addView(NoteWindow(c, NoteWindow.cornerOf(man?.optString("rb"))).holding(ImageView(c).apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
             if (pic != null) setImageBitmap(pic) else setBackgroundColor(Color.argb(60, 255, 255, 255))
             if (full == null && f != null) BubblePicture.load(c, f, "vid", 600) { s -> background = null
                 setImageBitmap(s.pic) }
-        }.round(), FrameLayout.LayoutParams(side, side))
+        }), FrameLayout.LayoutParams(side, side))
         if (f == null && Media.waiting(c, m)) {
             addView(c.icon(R.drawable.ic_arrow_circle_down, Color.WHITE), FrameLayout.LayoutParams(c.dp(36), c.dp(36), Gravity.CENTER))
             setOnClickListener { Media.tapped(c, m) }   // automatic download off: the round note waits for a tap
@@ -2701,8 +2703,10 @@ private fun playNote(act: MainActivity, m: Msg, f: java.io.File, chat: Chat?, or
     val tv = TextureView(c)
     val glyph = c.icon(R.drawable.ic_play_fill, Color.argb(230, 255, 255, 255)).apply { visibility = View.GONE }
     var player: android.media.MediaPlayer? = null
+    val man = m.meta?.let { runCatching { JSONObject(it) }.getOrNull() } ?: Media.inline(m.text)
+    val window = NoteWindow(c, NoteWindow.cornerOf(man?.optString("rb"))).holding(tv)   // the open note's window, its badge whole (iOS MontanaNoteFrame)
     val circle = FrameLayout(c).apply {
-        addView(tv.round(), FrameLayout.LayoutParams(side, side, Gravity.CENTER))
+        addView(window, FrameLayout.LayoutParams(side, side, Gravity.CENTER))
         addView(glyph, FrameLayout.LayoutParams(c.dp(54), c.dp(54), Gravity.CENTER))
         setOnClickListener { NoteOpen.toggle?.invoke() }
         visibility = View.INVISIBLE   // the flight sets its first frame (the bubble's own place) before it is ever shown
@@ -2718,7 +2722,7 @@ private fun playNote(act: MainActivity, m: Msg, f: java.io.File, chat: Chat?, or
     var scale0 = 1f; var dx0 = 0f; var dy0 = 0f; var leaving = false
     circle.post {
         // The flight scales the picture's own circle onto the bubble's: the stage's frame stands 16 dp wider than the picture.
-        val inner = tv.width
+        val inner = window.width   // the circle's footprint, as the bubble's origin is
         if (inner == 0 || origin.width() == 0) { circle.visibility = View.VISIBLE; dim.alpha = 1f; return@post }
         val loc = IntArray(2); circle.getLocationOnScreen(loc)
         val fcx = loc[0] + circle.width / 2f; val fcy = loc[1] + circle.height / 2f

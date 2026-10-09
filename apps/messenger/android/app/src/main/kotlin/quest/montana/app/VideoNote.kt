@@ -60,6 +60,8 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
          *  the source, not only the encoder's rate (sizeCamera below). */
         fun minHeight() = when (Prefs.str("noteQuality", "medium")) { "low" -> 480; "high" -> 1080; else -> 720 }
         const val INNER = 144        // iOS inner: the badge on the big circle's rim, in file pixels
+        /** The badge's corners as a note's name and manifest say them (iOS cornerTags, MontanaFeeds.swift:1766): 0 TL, 1 TR, 2 BL, 3 BR. */
+        val CORNER_TAGS = listOf("tl", "tr", "bl", "br")
         /** The badge's centre from the canvas's middle (iOS reach: (side/2 + inner/6)/√2), bottom-right (iOS corner 3). */
         val REACH = ((CIRCLE / 2f + INNER / 6f) / Math.sqrt(2.0)).toFloat()
         /**
@@ -132,6 +134,11 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
     private fun cornerX(k: Int) = (if (k % 2 == 0) -1 else 1) * REACH
     private fun cornerY(k: Int) = (if (k < 2) -1 else 1) * REACH
 
+    /** The badge where it stands now, from the canvas's middle in file pixels; null -- one camera, no badge. */
+    val badgeNow: Pair<Float, Float>? get() = if (dual) bx to by else null
+    /** A NOTE THAT ENDS WITH THE BADGE SAYS SO, AND WHERE (iOS usedDual and noteName(badgeCorner:), MontanaFeeds.swift:2424, 2450 at
+     *  2155): the corner it rests in, as its manifest carries it («rb»); null -- the note ends with one camera. */
+    val badgeTag: String? get() = if (dual) CORNER_TAGS[corner] else null
     /** A point of the canvas (from its middle, in file pixels) stands on the badge. */
     fun onBadge(x: Float, y: Float): Boolean = dual && (x - bx) * (x - bx) + (y - by) * (y - by) <= (INNER / 2f) * (INNER / 2f)
     fun grabBadge() { grabX = bx; grabY = by; target = null }
@@ -621,6 +628,54 @@ class NoteRing(c: Context, private val glass: Boolean = false) : View(c) {
         val r = RectF(m, m, width - m, height - m)
         canvas.drawOval(r, track)
         canvas.drawArc(r, -90f, 360f * progress.coerceIn(0f, 1f), false, bar)
+    }
+}
+
+/**
+ * THE NOTE'S WINDOW (iOS MontanaNoteWindow and MontanaNoteFrame, MontanaFeeds.swift:1239-1334 at 2155): the file's canvas (480) is
+ * wider than its circle (400) -- the badge's room around it -- so the picture stands 480/400 of the window and the circle fills it;
+ * the window is the circle and, on a dual note, the badge's own circle past the rim -- at the corner its manifest names, or under the
+ * finger while it records (live) -- so no square cuts the badge. The layout keeps the circle's footprint; the badge stands past it.
+ */
+class NoteWindow(c: Context, private val corner: Int? = null, private val live: (() -> Pair<Float, Float>?)? = null) : android.widget.FrameLayout(c) {
+    companion object {
+        /** The corner a manifest's «rb» names (iOS badgeTag: a dual note without a known tag rests bottom right); null -- no badge. */
+        fun cornerOf(tag: String?): Int? = if (tag.isNullOrEmpty()) null else NoteRecorder.CORNER_TAGS.indexOf(tag).takeIf { 0 <= it } ?: 3
+        private val REACH = ((0.5 + 72.0 / 400.0 / 3) / Math.sqrt(2.0)).toFloat()   // iOS badgeReach, in the circle's sides
+        private const val RADIUS = 72f / 400f                                     // iOS badgeRadius
+    }
+    private val shape = android.graphics.Path()
+    private val tick = object : Runnable { override fun run() { invalidate(); if (isAttachedToWindow) postOnAnimation(this) } }
+    init { clipChildren = false; clipToPadding = false }
+    fun holding(v: View): NoteWindow { addView(v); return this }
+    override fun onMeasure(w: Int, h: Int) {
+        super.onMeasure(w, h)
+        val k = (measuredWidth * NoteRecorder.SQUARE / NoteRecorder.CIRCLE.toFloat()).toInt()
+        val spec = MeasureSpec.makeMeasureSpec(k, MeasureSpec.EXACTLY)
+        for (i in 0 until childCount) getChildAt(i).measure(spec, spec)
+    }
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        for (i in 0 until childCount) {
+            val v = getChildAt(i)
+            val ox = (width - v.measuredWidth) / 2; val oy = (height - v.measuredHeight) / 2
+            v.layout(ox, oy, ox + v.measuredWidth, oy + v.measuredHeight)
+        }
+    }
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        // the badge stands past the circle's footprint, over its neighbours: nothing between the window and the page cuts it
+        var p = parent
+        repeat(3) { (p as? android.view.ViewGroup)?.let { it.clipChildren = false; it.clipToPadding = false }; p = p?.parent }
+        if (live != null) postOnAnimation(tick)   // the badge under the finger: the window follows it every frame
+    }
+    override fun dispatchDraw(canvas: Canvas) {
+        val s = width.toFloat()
+        shape.reset()
+        shape.addCircle(s / 2, height / 2f, s / 2, android.graphics.Path.Direction.CW)
+        val at = live?.invoke()?.let { (x, y) -> x / NoteRecorder.CIRCLE * s to y / NoteRecorder.CIRCLE * s }
+            ?: corner?.let { k -> (if (k % 2 == 0) -1 else 1) * REACH * s to (if (k < 2) -1 else 1) * REACH * s }
+        if (at != null) shape.addCircle(s / 2 + at.first, height / 2f + at.second, RADIUS * s, android.graphics.Path.Direction.CW)
+        canvas.save(); canvas.clipPath(shape); super.dispatchDraw(canvas); canvas.restore()
     }
 }
 
