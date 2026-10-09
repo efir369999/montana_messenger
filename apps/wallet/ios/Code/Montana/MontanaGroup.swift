@@ -1093,17 +1093,7 @@ final class MTGroup {
                           replyToId: store.localId(forMid: w.qm, chat: key))
         let landed = store.append(key, row)   // a channel's post lands on its wall, never as a row (MTBoard.handle)
         MontanaP2PTrace.mark("group_rx", mid: id, "letter landed=\(landed ? 1 : 0) owner=\(g.mine ? 1 : 0) post=\(post ? 1 : 0)")
-        if post {
-            MontanaNotify.presentGroup(title: g.title, body: String(localized: "New message", bundle: MTLanguage.bundle), chat: key, copy: copy)
-            return .held
-        }
-        if landed {
-            // The banner a running app owes its person: the group's title over who wrote and what (a channel speaks as itself).
-            let shown = MontanaNotify.body(for: words) ?? String(localized: "New message", bundle: MTLanguage.bundle)
-            let who = g.kind == .group ? speakerName(Self.speaker(g.id, seat)) : ""
-            MontanaNotify.presentGroup(title: g.title, body: who.isEmpty ? shown : who + ": " + shown, chat: key, copy: copy,
-                                       mentioned: g.kind == .group && Self.mentionsMe(words))   // a mention rings through the mute
-        }
+        if post { return .held }   // the wallet rings no group's word (the author's words 09.10.2026 18:0x-18:1x MSK)
         if landed, g.mine {
             let on = MTGroupWord(t: "say", g: g.id, k: g.kind.rawValue, ti: g.title, n: name.isEmpty ? nil : name, id: id, s: seat,
                                  tx: words, qt: quote, qm: w.qm)

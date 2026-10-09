@@ -478,8 +478,6 @@ struct RootView: View {
                 }
                 MontanaKeychain.delete("nseUnread") // legacy second badge ledger: gone for good ([C-1])
                 E2E.shared.remirrorShareStore()
-                // The share sheet offers the chats at once after an update, not only after the next letter (23.09).
-                DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3) { MontanaNotify.seedSuggestions() }
                 MontanaHousekeeping.run()   // disk cleanup — one call, and not only on return from background
                 if !UserDefaults.standard.bool(forKey: "profilePurge805") {
                     // The four retired profile fields leave the device, and the nick book drops
@@ -2266,8 +2264,6 @@ struct MainTabView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { E2E.shared.broadcastAbout() }
             // The coin book too: read off the main thread from here, so the wallet opens on the frame of the touch (04.10 13:04).
             MTLocalCoinLedger.warm()
-            scheduleShareIngest()
-            MontanaP2PTrace.mark("shares_done")
             askWhatIsUnasked()
         }
         .onChange(of: scenePhase) { _, p in
@@ -2276,7 +2272,7 @@ struct MainTabView: View {
             if p == .active { Task { await MTTimeChainTip.shared.gather(why: "active") } }   // their tips first, in one round trip (04.10 16:34)
         }
         .onChange(of: scenePhase) { _, p in if p == .active {
-            scheduleShareIngest(); store.retryPendingMedia(); MontanaDeliveryEngine.shared.drainAll()
+            store.retryPendingMedia(); MontanaDeliveryEngine.shared.drainAll()
             MontanaWakePush.fetchBoxKick()   // showed up at the node — collect everything waiting (delivery on appearance)
             store.markStaleSendsFailed(coldStart: false)   // return from background: only the provenly dead
             // Avatar: resend the unsent. Half-downloaded INCOMING faces live in the shared
@@ -2346,31 +2342,6 @@ struct MainTabView: View {
         // The copy with contacts is asked after the system's own question, never beside it (two windows explain each other away).
         guard !MTKeeping.told else { return }
         MontanaNotifyGate.systemStatus { st in if st != .notDetermined { keepAsk = true } }
-    }
-
-    // pick up attachments from the «Share» menu after warming up the E2E session
-    private func scheduleShareIngest() {
-        // No delay: the message must be in the correspondence at once. The old 1.5 seconds
-        // were a guess-wait — exactly that long the user stared at an empty chat.
-        store.ingestPendingShares()
-        MTBoard.shared.takeFromSheet()   // a post the sheet wrote for my own wall (the author's word 29.09)
-        // The sheet rings a RUNNING app through a Darwin note the moment it saves the
-        // sender's record — without this the bubble waited for the next activation while
-        // the receiver already held the letter (the inverted order, the author's word 29.08).
-        Self.armShareRing(store)
-    }
-    private static var shareRingArmed = false
-    private static weak var shareRingStore: ChatStore?
-    private static func armShareRing(_ store: ChatStore) {
-        Self.shareRingStore = store
-        guard !shareRingArmed else { return }
-        shareRingArmed = true
-        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
-            DispatchQueue.main.async {
-                MainTabView.shareRingStore?.ingestPendingShares()
-                MTBoard.shared.takeFromSheet()
-            }
-        }, MontanaContour.sharePending as CFString, nil, .deliverImmediately)
     }
 
 }

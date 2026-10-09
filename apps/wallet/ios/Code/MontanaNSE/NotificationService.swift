@@ -20,6 +20,11 @@ final class NotificationService: UNNotificationServiceExtension {
     private var best: UNMutableNotificationContent?
     /// The banner in the chat's own face, made once the banner is composed (nativeFace): the expiry hands it over (06.10).
     private var ready: UNNotificationContent?
+    /// THE WALLET RINGS ONLY ITS COINS (the author's words 09.10.2026 18:0x-18:1x MSK: «in the wallet there must be no notifications
+    /// about chats and so on»; «the calls and the chats do not touch the wallet»): true once this wake opened a coin letter. Every
+    /// other wake -- words, a card, a game, a group, a call, the machine's word, an envelope that did not open -- hands over the
+    /// quiet plate, at its end and at the system's expiry alike.
+    private var coin = false
 
     override func didReceive(_ request: UNNotificationRequest,
                              withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
@@ -48,7 +53,6 @@ final class NotificationService: UNNotificationServiceExtension {
         var convKey = (info["from"] as? String) ?? ""
         var senderGlyph = ""
         var openedMid = ""
-        var openedQuiet = false
         var cargoLetter: (mid: String, text: String)? = nil   // the media letter whose small cargo this process brings (29.09)
         // A FIRST-MEETING letter: the envelope under the card key carries the encapsulation,
         // the text and the name. FIRST the letter into the box — the app will beget the pipe
@@ -61,6 +65,13 @@ final class NotificationService: UNNotificationServiceExtension {
             Self.stashRdv(mid: rdv.mid, text: text, name: rdv.name, glyph: rdv.glyph, ct64: rdv.ct64,
                           invite: rdv.invite, conf: rdv.conf)
             _ = Self.firstTimeShown(rdv.mid)
+            // A first meeting is the app's to land (the pipe and the person come from it); it rings only with coins in it.
+            guard MTRowLetter.coinCount(text) != nil else {
+                Self.diagLine("rdv-letter: stored quietly mid=\(rdv.mid.prefix(8))")
+                contentHandler(Self.quietFace())
+                return
+            }
+            coin = true
             var t = rdv.name
             if t.hasPrefix("@") { t.removeFirst() }
             var glyph = rdv.glyph
@@ -113,66 +124,42 @@ final class NotificationService: UNNotificationServiceExtension {
             Self.stashLetter(conv: conv, mid: mid, text: text, name: envName, glyph: envGlyph,
                              qt: envQt, qm: envQm, lp: envLp)
             openedMid = mid
-            openedQuiet = Self.isQuietText(rawText)
             cargoLetter = (mid, text)
-            // A RING LETTER IS STASHED SILENTLY (the author's word 09.10.2026 16:00 MSK: the wallet holds no calls): no bell, no banner.
-            if rawText.hasPrefix("\u{200B}\u{200B}RG:") {
-                Self.diagLine("ring letter stashed silently mid=\(mid.prefix(8))")
-                contentHandler(Self.quietFace())
-                return
+            // A ring, a missed call, a game, a group's word, plain words: stashed for the app, no face. A coin letter alone is shown --
+            // MY record of the person (the mirror) as the title, the letter's word only for a stranger (title(conv:envName:)); a
+            // leading emoji is a face, not text: it goes to the circle, the title stays clean.
+            if MTRowLetter.coinCount(text) != nil {
+                coin = true
+                senderGlyph = envGlyph
+                if senderGlyph.isEmpty, let f = Self.cleanEnvName(envName).first, MontanaAvatar.isEmoji(f) { senderGlyph = String(f) }
+                content.title = Self.title(conv: conv, envName: envName)
+                content.body = Self.bannerBody(text)
+                content.userInfo["mid"] = mid     // the foreground judge suppresses a double by this
+                convKey = conv
+                content.threadIdentifier = convKey
+                content.userInfo["chat"] = convKey
+                Self.applySettings(content, conv: convKey)
+                Self.diagLine("banner shown mid=\(mid.prefix(8))")
+                ready = Self.nativeFace(content, from: convKey, glyph: senderGlyph)
+            } else {
+                Self.diagLine("not a coin letter, stashed quietly mid=\(mid.prefix(8))")
             }
-            if Self.serveMissedLetter(rawText, mid: mid, conv: conv, name: envName, handler: contentHandler) { return }
-            // TWO LETTERS OF A GAME RING (29.09, MTChessLetter.rings): the invitation and the letter that ends the game wear
-            // the chess words and name their game for the tap; a step an older build sent loud is stashed for the board
-            // and swallowed here.
-            if let chess = MTChessLetter.parse(text) {
-                guard chess.rings else {
-                    Self.diagLine("chess step stashed silently mid=\(mid.prefix(8))")
-                    contentHandler(Self.quietFace())
-                    return
-                }
-                content.userInfo["game"] = chess.game
-                if chess.end != nil { content.userInfo["game_end"] = 1 }
-            }
-            // A GROUP'S WORD (MTGroup in the app, 05.10): a letter and an invitation wear the group's own face, the tap opens the
-            // group; an answer to a letter is stashed for the app without a face.
-            let group = Self.groupFace(rawText)
-            if rawText.hasPrefix("\u{200B}\u{200B}GR:"), group == nil {
-                Self.diagLine("group word stashed silently mid=\(mid.prefix(8))")
-                contentHandler(Self.quietFace())
-                return
-            }
-            // The title is MY record of the person (the mirror), the letter's word only for a
-            // stranger — see title(conv:envName:). A leading emoji is a face, not text: it goes
-            // to the circle, the title stays clean.
-            senderGlyph = envGlyph
-            if senderGlyph.isEmpty, let f = Self.cleanEnvName(envName).first, MontanaAvatar.isEmoji(f) { senderGlyph = String(f) }
-            content.title = group?.title ?? Self.title(conv: conv, envName: envName)
-            content.body = group?.body ?? Self.bannerBody(text)
-            if let group { openedQuiet = false; senderGlyph = ""; content.userInfo["mid"] = group.mid.isEmpty ? mid : group.mid }
-            else { content.userInfo["mid"] = mid }     // the foreground judge suppresses a double by this
-            if let room = Self.invitedRoom(rawText) { content.userInfo["room"] = room }   // the tap goes into the room (MTGroupRoom)
-            convKey = group?.chat ?? conv
-            content.threadIdentifier = convKey
-            content.userInfo["chat"] = convKey   // the tap opens the EXISTING chat by conv, not a twin by from
-            Self.applySettings(content, conv: convKey)
-            Self.diagLine("banner shown mid=\(mid.prefix(8)) quiet=\(openedQuiet)")
             // The node box (7.2c): the push is the one surviving ring, so waiting envelopes
             // are collected on it too — time-boxed: the banner above is already composed and
             // must not become hostage to a broken box road (precedent 26.08 19:03: the scoop
             // stood FIRST, its chunk waits burned the ~30s budget, iOS killed the extension,
             // Apple's bare fallback showed, the letter inside the push went unprocessed).
-            ready = Self.nativeFace(content, from: convKey, glyph: senderGlyph)
             _ = Self.fetchBoxSync(deadline: Self.within(6, of: began))
         } else if let envB64 = info["env"] as? String, let sealed = Data(base64Encoded: envB64), let sh = Self.openForShelf(sealed) {
             // A LETTER TO A PERSON ON THE SHELF (07.10, MTShelfPost): the sender's name, and under it whose the letter is; the tap
             // seats that person. Nothing is stashed in the inbox of the person seated: the letter stays on the node for the
             // shelf's own pickup. A service word rings nobody.
-            if sh.text.hasPrefix("\u{200B}") || sh.text.hasPrefix("\u{2063}") {
-                Self.diagLine("shelf word quiet seat=\(sh.seat) mid=\(sh.mid.prefix(8))")
+            guard MTRowLetter.coinCount(sh.text) != nil else {
+                Self.diagLine("shelf letter quiet seat=\(sh.seat) mid=\(sh.mid.prefix(8))")
                 contentHandler(Self.quietFace())
                 return
             }
+            coin = true
             var t = sh.name
             if t.hasPrefix("@") { t.removeFirst() }
             content.title = t.isEmpty ? "Montana" : MontanaAvatar.spokenName(t)
@@ -186,47 +173,28 @@ final class NotificationService: UNNotificationServiceExtension {
             return
         } else if let sc = Self.fetchBoxSync(deadline: Self.within(8, of: began)) {
             // The push's own envelope did not open (or is absent), but the box yielded
-            // letters — the banner carries the LAST one collected: the class «notification
-            // exists — no letter» is closed here too.
-            var glyph = sc.glyph
-            if glyph.isEmpty, let f0 = Self.cleanEnvName(sc.name).first, MontanaAvatar.isEmoji(f0) { glyph = String(f0) }
-            let group = Self.groupFace(sc.text)   // a group's word wears the group's face here too (MTGroup in the app)
-            if sc.text.hasPrefix("\u{200B}\u{200B}GR:"), group == nil {
-                Self.diagLine("group word from the box stashed silently mid=\(sc.mid.prefix(8))")
-                contentHandler(Self.quietFace())
-                return
-            }
-            if group != nil { glyph = "" }
-            if let room = Self.invitedRoom(sc.text) { content.userInfo["room"] = room }   // the tap goes into the room (MTGroupRoom)
-            content.title = group?.title ?? Self.title(conv: sc.conv, envName: sc.name)
-            content.body = group?.body ?? Self.bannerBody(sc.text)
-            if let chat = group?.chat ?? (sc.conv.isEmpty ? nil : sc.conv) {
-                content.threadIdentifier = chat
-                content.userInfo["chat"] = chat
-                convKey = chat
-                Self.applySettings(content, conv: chat)
-            }
-            senderGlyph = glyph
+            // letters — the banner carries the LAST one collected when it is a coin letter: the
+            // class «notification exists — no letter» is closed here too.
             openedMid = sc.mid
-            openedQuiet = group == nil && Self.isQuietText(sc.text)
             cargoLetter = (sc.mid, sc.text)
-            if sc.text.hasPrefix("\u{200B}\u{200B}RG:") {
-                Self.diagLine("ring letter from the box stashed silently mid=\(sc.mid.prefix(8))")
-                contentHandler(Self.quietFace())
-                return
-            }
-            if Self.serveMissedLetter(sc.text, mid: sc.mid, conv: sc.conv, name: sc.name, handler: contentHandler) { return }
-            if let chess = MTChessLetter.parse(sc.text) {
-                guard chess.rings else {
-                    Self.diagLine("chess step from the box stashed silently mid=\(sc.mid.prefix(8))")
-                    contentHandler(Self.quietFace())
-                    return
+            if MTRowLetter.coinCount(sc.text) != nil {
+                coin = true
+                var glyph = sc.glyph
+                if glyph.isEmpty, let f0 = Self.cleanEnvName(sc.name).first, MontanaAvatar.isEmoji(f0) { glyph = String(f0) }
+                content.title = Self.title(conv: sc.conv, envName: sc.name)
+                content.body = Self.bannerBody(sc.text)
+                if !sc.conv.isEmpty {
+                    content.threadIdentifier = sc.conv
+                    content.userInfo["chat"] = sc.conv
+                    convKey = sc.conv
+                    Self.applySettings(content, conv: sc.conv)
                 }
-                content.userInfo["game"] = chess.game
-                if chess.end != nil { content.userInfo["game_end"] = 1 }
+                senderGlyph = glyph
+                Self.diagLine("banner from the box: mid=\(sc.mid.prefix(8))")
+                ready = Self.nativeFace(content, from: convKey, glyph: senderGlyph)
+            } else {
+                Self.diagLine("not a coin letter from the box, stashed quietly mid=\(sc.mid.prefix(8))")
             }
-            Self.diagLine("banner from the box: mid=\(sc.mid.prefix(8))")
-            ready = Self.nativeFace(content, from: convKey, glyph: senderGlyph)
         } else {
             // THIS BRANCH WAS SILENT, AND THE SILENCE COST A LETTER. Envelope unopened -> the
             // letter is NOT stored, yet the notification still shows with generic text: the
@@ -241,14 +209,6 @@ final class NotificationService: UNNotificationServiceExtension {
             else { why = "no pipe secret matched: secrets=\(Self.pipeSecretCount()) envelope=\(Data(base64Encoded: envB64)?.count ?? 0)B" }
             Self.diagLine("LETTER NOT STORED: \(why)")
         }
-        // The badge with the app closed: the extension keeps the count (a carry-over of the
-        // production mechanics), the app resets it on opening. A muted conversation does not
-        // turn the badge. The badge is honest per mid: a repeated envelope of the same letter
-        // (sender retry, push double) does not turn the count — the server model kept a
-        // shown-ledger, so do we. The dictionary is ONE for app and extension ([C-1], server
-        // model): the app is the authoritative writer (rewrites whole on every recount), the
-        // NSE only adds. A second dictionary hoarded the count forever — the icon showed the
-        // sum of all time.
         // ANY LETTER TO YOU IS A WINDOW TO SEND YOURS (18.09, the author's word). This process holds
         // the network for these seconds even when the app is gone: the loud letters waiting in the
         // shared queue knock now, by the sheet's proven road — time-boxed, after the banner is composed.
@@ -256,6 +216,11 @@ final class NotificationService: UNNotificationServiceExtension {
         // THE SMALL CARGO COMES WITH THE BANNER (29.09): the letter's pieces are laid onto the contour's shelf in this process's own
         // budget, so the app assembles the file at its next breath and asks no door. Big cargo, and a manifest on the node, are the app's.
         if let c = cargoLetter { Self.bringSmallCargoSync(mid: c.mid, text: c.text, began: began, deadline: Self.within(8, of: began)) }
+        guard coin else {
+            Self.diagLine("no coin in this wake mid=\(openedMid.prefix(8)) — quiet")
+            contentHandler(Self.quietFace())
+            return
+        }
         if !convKey.isEmpty, Self.isBlocked(convKey) {
             Self.diagLine("blocked conv=\(convKey.prefix(10)) — no banner")
             contentHandler(Self.quietFace())
@@ -289,17 +254,8 @@ final class NotificationService: UNNotificationServiceExtension {
             Self.deliverWithAvatar(content, from: convKey, glyph: senderGlyph, handler: contentHandler)
             return
         }
-        // THE SHARE SHEET'S ORDER FOLLOWS THE LETTER (MTShareOrder): the chat goes up in the sheet's mirror as it goes up in the list.
-        if !convKey.isEmpty, !openedQuiet { MTShareOrder.raise(convKey) }
-        if !convKey.isEmpty, !openedQuiet {
-            var counts: [String: Int] = [:]
-            if let d = MontanaKeychain.get("unreadCounts"),
-               let m = try? JSONDecoder().decode([String: Int].self, from: d) { counts = m }
-            counts[convKey, default: 0] += 1
-            if let d = try? JSONEncoder().encode(counts) { MontanaKeychain.set("unreadCounts", d) }
-            content.badge = NSNumber(value: counts.values.reduce(0, +))
-            Self.diagLine("badge conv=\(convKey.prefix(10)) total=\(counts.values.reduce(0, +)) src=nse")
-        }
+        // THE WALLET COUNTS NOTHING UNREAD: a coin's banner leaves the icon's number as the app set it -- none.
+        content.badge = nil
         Self.deliverWithAvatar(content, from: convKey, glyph: senderGlyph, handler: contentHandler)
     }
 
@@ -336,15 +292,6 @@ final class NotificationService: UNNotificationServiceExtension {
     // The person's notification settings (mirrored from the keychain: notifSound/notifPreview/
     // notifSender + mutedChats). The extension lives in the background — it reads the same
     // values the user sees on the Notifications screen.
-    /// A MISSED-CALL LETTER IS SILENT (the author's word 09.10.2026 16:00 MSK: the wallet holds no calls). True when the letter is one.
-    private static func serveMissedLetter(_ text: String, mid: String, conv: String, name: String,
-                                          handler: @escaping (UNNotificationContent) -> Void) -> Bool {
-        guard text.hasPrefix("\u{200B}\u{200B}MC:") else { return false }
-        diagLine("missed letter silent mid=\(mid.prefix(8))")
-        handler(quietFace())
-        return true
-    }
-
     private static func prefOn(_ key: String) -> Bool {
         guard let d = MontanaKeychain.get(key), let b = d.first else { return true }  // no key = on by default
         return b != 0
@@ -361,7 +308,7 @@ final class NotificationService: UNNotificationServiceExtension {
         // The person's own language, here too (13.09): the preview-off body stood as an English
         // literal while every other «New message» in this file goes through the catalog — a Russian
         // phone with previews hidden read English on every letter.
-        if !prefOn("notifPreview") { content.body = String(localized: "New message", bundle: MTLanguage.bundle) }
+        if !prefOn("notifPreview") { content.body = MTRowLetter.hiddenCoinWords }
         // The fold reaches the banner (Guideline 1.2): the app's filter switch is mirrored here.
         else if prefOn("objectionableFilterOn"), MontanaContentFilter.flags(content.body) { content.body = String(localized: "Hidden by the filter", bundle: MTLanguage.bundle) }
         if MTQuietChats.holds(conv) || !prefOn("notifSound") { content.sound = nil } // no sound
@@ -484,7 +431,8 @@ final class NotificationService: UNNotificationServiceExtension {
     }
 
     override func serviceExtensionTimeWillExpire() {
-        if let h = handler, let c = ready ?? best { h(Self.worded(c)) }
+        guard let h = handler else { return }
+        if coin, let c = ready ?? best { h(Self.worded(c)) } else { h(Self.quietFace()) }
     }
 
     // THE NOTIFICATION THAT SAYS NOTHING IS NEVER HANDED OVER (03.10, the author's word: empty notifications
@@ -790,7 +738,9 @@ final class NotificationService: UNNotificationServiceExtension {
                         let text = f[1].hasPrefix("\u{2063}LB:") ? (resolveLongLetterSync(f[1]) ?? f[1]) : f[1]
                         stashRdv(mid: f[0], text: text, name: f[2], glyph: f[3],
                                  ct64: Data(ct).base64EncodedString(), invite: invOf[cw] ?? "", conf: f[4])
-                        last = ("", f[0], text, f[2], f[3]); got += 1
+                        // A COIN LETTER IS THE BANNER'S (the wallet rings only its coins): a later word never takes its place.
+                        if MTRowLetter.coinCount(text) != nil || last.map({ MTRowLetter.coinCount($0.2) == nil }) ?? true { last = ("", f[0], text, f[2], f[3]) }
+                        got += 1
                     } else if let chat = chatOf[cw] {
                         let f = parseFields(pl)
                         guard !f[0].isEmpty, !f[1].isEmpty else { continue }
@@ -798,9 +748,8 @@ final class NotificationService: UNNotificationServiceExtension {
                         let ck = chatKey(for: chat)
                         stashLetter(conv: ck, mid: f[0], text: text, name: f[2], glyph: f[3],
                                     qt: f[4], qm: f[5], lp: f[6], sentAt: Double(Int(atS) - opened.back * 60))
-                        // A STEP OF A GAME IS NOT THE BANNER'S LETTER (29.09): stashed for the board, it never titles the banner.
-                        if MTChessLetter.isStep(text), MTChessLetter.parse(text)?.rings != true { got += 1; continue }
-                        last = (ck, f[0], text, f[2], f[3]); got += 1
+                        if MTRowLetter.coinCount(text) != nil || last.map({ MTRowLetter.coinCount($0.2) == nil }) ?? true { last = (ck, f[0], text, f[2], f[3]) }
+                        got += 1
                     }
                 }
                 if letters.count < 128 { break }
@@ -888,8 +837,7 @@ final class NotificationService: UNNotificationServiceExtension {
         let glyph = MontanaKeychain.get("wakeMyGlyph").flatMap { String(data: $0, encoding: .utf8) } ?? ""
         let doors = Array(MTNodeWire.electedFirst(MTNodeWire.mirroredDoors()).prefix(2))
         let loud = items.filter {
-            $0.kind == .letter && !$0.silent && !isQuietText($0.text)
-                && !$0.text.hasPrefix("\u{200B}\u{200B}RG:") && !$0.text.hasPrefix("\u{200B}\u{200B}MC:")
+            $0.kind == .letter && !$0.silent && MTRowLetter.coinCount($0.text) != nil   // the wallet's one loud letter
                 && !isBlocked($0.chat)
         }.sorted { $0.since < $1.since }
         guard !loud.isEmpty, !doors.isEmpty else { return }
@@ -1060,86 +1008,6 @@ final class NotificationService: UNNotificationServiceExtension {
     /// circle draws exactly it), the title stays a clean word.
     private static func stripLeadingEmoji(_ t: String) -> String { MontanaAvatar.spokenName(t) }   // client SSOT [C-1]
 
-    /// A quiet service letter (receipt, typing, draft, profile, deletion): the badge must not
-    /// grow on it. New senders do not ring these at all; this guards against older builds.
-    private static func isQuietText(_ t: String) -> Bool {
-        if MTChessLetter.isStep(t) { return true }   // a step of a game turns no badge: the board is its reader (29.09)
-        if t.hasPrefix("\u{200B}\u{200B}VC:") || t.hasPrefix("\u{200B}\u{200B}MD:")
-            || t.hasPrefix("\u{200B}\u{200B}RG:") || t.hasPrefix("\u{200B}\u{200B}MC:") { return false }   // voice, media, call, missed call — loud
-        return t.hasPrefix("\u{2063}") || t.hasPrefix("\u{2064}") || t.hasPrefix("\u{200B}")
-    }
-
-    /// A GROUP'S WORD (MTGroup in the app, 05.10): a letter's face is its group's title over its speaker's name and words -- a
-    /// channel's post speaks as the channel -- and an invitation's face names the group it opens. Nil for an answer to a letter
-    /// and for anything unreadable: those are stashed without a face.
-    private static func groupFace(_ raw: String) -> (title: String, body: String, chat: String, mid: String)? {
-        let mark = "\u{200B}\u{200B}GR:"
-        guard raw.hasPrefix(mark), let d = String(raw.dropFirst(mark.count)).data(using: .utf8),
-              let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
-              let t = o["t"] as? String, let g = o["g"] as? String, !g.isEmpty else { return nil }
-        let title = ((o["ti"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty else { return nil }
-        let chat = "grp:" + g   // COMPAT-LOCAL: the group's feed key on this phone (MTGroup.keyHead), never a word on the wire
-        let channel = (o["k"] as? String) == "c"
-        switch t {
-        case "say":
-            guard let tx = o["tx"] as? String, !tx.isEmpty else { return nil }
-            let words = bannerBody(tx)
-            let who = ((o["n"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            return (title, channel || who.isEmpty ? words : who + ": " + words, chat, (o["id"] as? String) ?? "")
-        case "inv":
-            let body = channel ? String(localized: "You were added to the channel", bundle: MTLanguage.bundle)
-                               : String(localized: "You were added to the group", bundle: MTLanguage.bundle)
-            return (title, body, chat, "")
-        case "room":
-            // A ROOM'S INVITATION (MTGroupRoom, 07.10): it is carried to the seats it names alone (ts), so this phone is one of
-            // them; the tap opens the group, where the bar over the chat is the way in. Every other room word stays silent.
-            guard o["ts"] is [Any], let tx = o["tx"] as? String, let td = tx.data(using: .utf8),
-                  let e = try? JSONSerialization.jsonObject(with: td) as? [String: Any], (e["e"] as? String) == "ask" else { return nil }
-            guard roomMayRing(chat) else { return nil }   // [I-15] one group's invitations ring once in two minutes
-            let who = ((o["n"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let shown = who.isEmpty ? String(localized: "Correspondent", bundle: MTLanguage.bundle) : who
-            let body: String
-            if (e["m"] as? String) == "live" {
-                body = String(localized: "\(shown) invites you to a live stream", bundle: MTLanguage.bundle)
-            } else if (e["v"] as? Int) == 1 {
-                body = String(localized: "\(shown) invites you to a video chat", bundle: MTLanguage.bundle)
-            } else {
-                body = String(localized: "\(shown) invites you to a voice chat", bundle: MTLanguage.bundle)
-            }
-            return (title, body, chat, (o["id"] as? String) ?? "")
-        default:
-            return nil
-        }
-    }
-
-    /// The room a group's invitation names (its id), so the banner's tap goes straight into it; nil for every other word.
-    private static func invitedRoom(_ raw: String) -> String? {
-        let mark = "\u{200B}\u{200B}GR:"
-        guard raw.hasPrefix(mark), let d = String(raw.dropFirst(mark.count)).data(using: .utf8),
-              let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any], (o["t"] as? String) == "room",
-              let tx = o["tx"] as? String, let td = tx.data(using: .utf8),
-              let e = try? JSONSerialization.jsonObject(with: td) as? [String: Any], (e["e"] as? String) == "ask",
-              let r = e["r"] as? String, r.count == 32 else { return nil }
-        return r
-    }
-
-    /// [I-15] A GROUP'S ROOM INVITATIONS RING ONCE IN TWO MINUTES (MTGroupRoom.askerPause, the app's own measure): however many
-    /// rooms a member of the group opens and invites this phone to, the banners do not follow one another; the bar over the chat
-    /// still shows the room. The ledger is this person's (nseRoomRang), ten minutes deep.
-    private static func roomMayRing(_ chat: String) -> Bool {
-        var rang: [String: Double] = [:]
-        if let d = MontanaKeychain.get("nseRoomRang"), let m = try? JSONDecoder().decode([String: Double].self, from: d) { rang = m }
-        let now = Date().timeIntervalSince1970
-        rang = rang.filter { now - $0.value < 600 }
-        if let at = rang[chat], now - at < 120 { return false }
-        rang[chat] = now
-        if let d = try? JSONEncoder().encode(rang) { MontanaKeychain.set("nseRoomRang", d) }
-        return true
-    }
-
-    // The banner's words: the one function the app's banner door reads too (MTRowLetter.bannerWords, 06.10).
-    private static func bannerBody(_ t: String) -> String {
-        MTRowLetter.bannerWords(t, revealCaption: false) ?? String(localized: "New message", bundle: MTLanguage.bundle)
-    }
+    // The banner's words: the one function the app's banner door reads too (MTRowLetter.bannerWords) -- a coin letter's coins.
+    private static func bannerBody(_ t: String) -> String { MTRowLetter.bannerWords(t) ?? "" }
 }

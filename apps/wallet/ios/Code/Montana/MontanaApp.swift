@@ -534,7 +534,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         completionHandler(opts)
     }
 
-    // tap on the notification or a reply from it
+    // a tap on the notification: the wallet's banners carry no answer (one category, no action)
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
@@ -553,30 +553,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         MontanaWakePush.drainInbox()   // a banner tap: the letter is in the chat before it opens
         MontanaWakePush.fetchBoxKick()   // and everything waiting in the node mailbox, by the same movement
         let chat = (info["chat"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? (info["from"] as? String) ?? ""
-        if let textResp = response as? UNTextInputNotificationResponse, !chat.isEmpty {
-            let text = textResp.userText
-            // Inline reply launches the app in the BACKGROUND with the E2E core not started:
-            // sessions are not loaded, so sendText would fall into a slow X3DH refetch (network +
-            // PBKDF2) and the reply spinner hangs. Start the core first — loadSessions runs on the
-            // ingest queue, ordered before the send's session read on that same serial queue, so the
-            // reply seals over the established ratchet. Extend background time so the send completes
-            // (a short background-time extension before the send).
-            let bg = UIApplication.shared.beginBackgroundTask(withName: "notif-reply")
-            Task {
-                // An answer from a banner is a PERSON'S LETTER, not a signal: it goes by the same queue
-                // as sending from a chat. Through an instant throw it vanished silently if the peer was
-                // asleep. The feed will get it when the store is alive; the letter arrives either way.
-                let mid = UUID().uuidString
-                if let st = MontanaDeliveryEngine.shared.store {
-                    await MainActor.run { _ = st.send(text: text, chat: chat, convRef: chat) }
-                } else {
-                    MontanaDeliveryEngine.shared.enqueue(to: chat, chat: chat, mid: mid, text: text, silent: false, headless: true)
-                }
-                completionHandler()
-                if bg != .invalid { UIApplication.shared.endBackgroundTask(bg) }
-            }
-            return
-        }
         if let game = info["game"] as? String, !game.isEmpty, !chat.isEmpty { MontanaOutsideOpen.pendingGame = (chat, game) }
         if !chat.isEmpty { MontanaOutsideOpen.chat(chat) }
         completionHandler()

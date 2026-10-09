@@ -1268,17 +1268,11 @@ enum MontanaNotifyGate {
     /// «Montana» where the extension had already written the person's name (18.09).
     static func registerCategories() {
         let opts: UNNotificationCategoryOptions = nameOnLockScreen ? [.hiddenPreviewsShowTitle] : []
-        // quick reply directly from the notification
-        let reply = UNTextInputNotificationAction(identifier: "REPLY", title: "Reply",
-                        options: [], textInputButtonTitle: "Send", textInputPlaceholder: "Message")
-        let cat = UNNotificationCategory(identifier: "MESSAGE", actions: [reply], intentIdentifiers: [],
-                        hiddenPreviewsBodyPlaceholder: String(localized: "New message", bundle: MTLanguage.bundle), options: opts)
-        // Missed call: the lock screen names the fact even with previews off; long-press offers Call back.
-        let callBack = UNNotificationAction(identifier: "CALLBACK", title: String(localized: "Call back", bundle: MTLanguage.bundle),
-                        options: [.foreground])
-        let missed = UNNotificationCategory(identifier: "MISSED_CALL", actions: [callBack], intentIdentifiers: [],
-                        hiddenPreviewsBodyPlaceholder: String(localized: "Missed call", bundle: MTLanguage.bundle), options: opts)
-        UNUserNotificationCenter.current().setNotificationCategories([cat, missed])
+        // THE COIN'S BANNER HAS NO ANSWER AND NO CALL BACK (the author's words 09.10.2026 18:0x-18:1x MSK: «the calls and the chats do
+        // not touch the wallet»): one category, no action -- a tap opens the wallet.
+        let cat = UNNotificationCategory(identifier: "MESSAGE", actions: [], intentIdentifiers: [],
+                        hiddenPreviewsBodyPlaceholder: MTRowLetter.hiddenCoinWords, options: opts)
+        UNUserNotificationCenter.current().setNotificationCategories([cat])
     }
     /// THE EXTENSION READS THE NOTIFICATION SETTINGS FROM THE SHARED KEYCHAIN, never from this app's store,
     /// so they are mirrored whenever they may have changed under it: the page's appearance, and a copy laid

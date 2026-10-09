@@ -795,7 +795,6 @@ final class MontanaDeliveryEngine {
                 MontanaP2PTrace.markFolded("enqueue_service", "queued=\(a.count)", window: 30)
             } else {
                 MontanaLog.event("DELIVERY +mid=\(mid.prefix(8)) queued=\(a.count)")
-                MontanaNotify.suggest(chat)   // the chat a person writes to is offered in the share sheet (once a day)
                 MTBoard.introduce(to: to)     // behind a letter of the person's own, the wall says it is read here (N2)
             }
             attempt(mid)   // attempt = sending as an envelope through the node, at t=0

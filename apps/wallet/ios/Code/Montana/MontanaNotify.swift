@@ -27,9 +27,8 @@ enum MontanaNotify {
         return f.value == 0x200B || f.value == 0x2063 || f.value == 0x2064
     }
 
-    // ONE FUNCTION OF THE BANNER'S WORDS (MTRowLetter.bannerWords, 06.10): the extension says the same -- a game's invitation and
-    // end, a coin letter's coins, a voice, a media letter; a call row never rings by this road (the missed-call banner has one
-    // birth, MontanaMissedCall).
+    // ONE FUNCTION OF THE BANNER'S WORDS (MTRowLetter.bannerWords): the extension says the same -- a coin letter's coins, and
+    // nothing else of the wallet rings (the author's words 09.10.2026 18:0x-18:1x MSK).
     static func body(for text: String) -> String? { MTRowLetter.bannerWords(text) }
 
 
@@ -87,13 +86,6 @@ enum MontanaNotify {
     /// One vocabulary for a media letter (MTRowLetter): the row, the banner and this say the same.
     static func mediaBody(_ text: String) -> String { MTRowLetter.mediaWords(letter: text) }
 
-    // Content type without revealing the text (used when "show message text" is off).
-    static func typeOnlyBody(_ t: String) -> String {
-        if t.hasPrefix("\u{200B}\u{200B}VC:") { return "🎤 " + String(localized: "Voice message", bundle: MTLanguage.bundle) }
-        if t.hasPrefix("\u{200B}\u{200B}MD:") { return MTRowLetter.mediaWords(letter: t, revealCaption: false) }
-        if MTChessLetter.parse(t) != nil { return "♟ " + String(localized: "Chess", bundle: MTLanguage.bundle) }
-        return String(localized: "New message", bundle: MTLanguage.bundle)
-    }
 
     // ── who it is from ────────────────────────────────────────────────────────
     static func displayName(for ref: String, fallback: String = "") -> String {
@@ -174,7 +166,7 @@ enum MontanaNotify {
     // it must not add on top (double counting).
     static func decorate(_ content: UNMutableNotificationContent, from: String, chat: String,
                          body bodyText: String, countUnread: Bool) {
-        content.categoryIdentifier = "MESSAGE"          // inline "Reply" action
+        content.categoryIdentifier = "MESSAGE"          // the one category: no answer, no call back
         content.title = displayName(for: from, fallback: content.title)
         content.body = bodyText
         content.threadIdentifier = chat                 // grouping + targeted dismissal by the app
@@ -217,62 +209,18 @@ enum MontanaNotify {
         return (try? content.updating(from: intent))
     }
 
-    // ── the share sheet's suggestions ─────────────────────────────────────────
-    /// A PERSON'S CHATS IN THE SYSTEM'S SHARE SHEET (the author's word 23.09: «when Siri's suggestions for sharing are
-    /// on, Montana's contacts and chats are offered»). The system offers the conversations an app donates as sent
-    /// messages, and shows them only while the person's own switch stands (Settings › Siri › Suggestions › When
-    /// Sharing). A donation carries the chat's local name, the person's name and face — never a word of a letter — and
-    /// is made at most once a day per chat, so the system learns whom and which day, not every letter's moment. A chat
-    /// deleted takes its donations with it; a person who leaves the device takes them all.
-    private static let suggestLock = NSLock()
-    private static var suggestedDay: [String: Int] = [:]
-    static func suggest(_ ref: String) {
-        guard !ref.isEmpty else { return }
-        let day = Int(Date().timeIntervalSince1970 / 86400)
-        let due = suggestLock.withLock { () -> Bool in
-            if suggestedDay[ref] == day { return false }
-            suggestedDay[ref] = day
-            return true
-        }
-        guard due else { return }
-        let display = displayName(for: ref)
-        let image = avatarData(for: ref, display: display).map { INImage(imageData: $0) }
-        let person = INPerson(personHandle: INPersonHandle(value: ref, type: .unknown), nameComponents: nil,
-                              displayName: display, image: image, contactIdentifier: nil, customIdentifier: ref)
-        let intent = INSendMessageIntent(recipients: [person], outgoingMessageType: .outgoingMessageText, content: nil,
-                                         speakableGroupName: INSpeakableString(spokenPhrase: display),
-                                         conversationIdentifier: ref, serviceName: nil, sender: nil, attachments: nil)
-        if let image { intent.setImage(image, forParameterNamed: \.speakableGroupName) }
-        let interaction = INInteraction(intent: intent, response: nil)
-        interaction.direction = .outgoing
-        interaction.groupIdentifier = ref
-        interaction.donate { error in
-            MontanaP2PTrace.mark("share_suggest", error == nil ? "given to=\(String(ref.prefix(10)))" : "refused code=\((error as NSError?)?.code ?? 0)")
-        }
-    }
-    /// The chats the share sheet shows at once after an update: the top of the person's own list, as the share mirror
-    /// orders it (pinned, then the freshest) — once a process, each still at most once a day.
-    private static var seeded = false
-    static func seedSuggestions() {
-        let first = suggestLock.withLock { () -> Bool in
-            if seeded { return false }
-            seeded = true
-            return true
-        }
-        guard first, let d = MontanaKeychain.get("shareChats"),
-              let rows = (try? JSONSerialization.jsonObject(with: d)) as? [[String: String]] else { return }
-        for ref in rows.compactMap({ $0["name"] }).filter({ !$0.isEmpty }).prefix(8) { suggest(ref) }
-    }
+    // ── the system's memory of the people ─────────────────────────────────────
+    /// THE WALLET OFFERS NOBODY IN THE SHARE SHEET (the author's words 09.10.2026 18:0x-18:1x MSK: «the calls and the chats do not
+    /// touch the wallet»): it has no share sheet and donates no conversation; a coin's banner alone names its sender. What older
+    /// builds donated is taken back with the person it names.
     /// A deleted chat leaves the system's suggestions and its notification donations.
     static func forgetSuggestions(_ ref: String) {
         guard !ref.isEmpty else { return }
         INInteraction.delete(with: ref) { _ in }
-        suggestLock.withLock { suggestedDay[ref] = nil }
     }
     /// The person left the device: every donation of theirs goes.
     static func forgetAllSuggestions() {
         INInteraction.deleteAll { _ in }
-        suggestLock.withLock { suggestedDay.removeAll() }
     }
 
     // ── app side: raise the banner for a message that just arrived over ANY layer ──
@@ -283,115 +231,6 @@ enum MontanaNotify {
     /// The step is the resolver's own answer, never a second reading beside it.
     static func titleSource(for ref: String) -> String { resolvedName(for: ref).source }
 
-    /// Somebody started writing. This raises ONE banner per conversation and replaces it rather
-    /// than adding a second: a person needs to know that words are coming, not to watch them being
-    /// typed. The window closes when a letter actually arrives, so the next round of typing is
-    /// announced once again.
-    private static let typingLock = NSLock()
-    private static var typingShownAt: [String: Date] = [:]
-    private static let typingWindow: TimeInterval = 90
-
-    /// A reminder from Saved Messages (15.52): the system rings at the chosen moment.
-    static func scheduleReminder(id: UUID, text: String, at: Double) {
-        let c = UNMutableNotificationContent()
-        c.title = String(localized: "Reminder", bundle: MTLanguage.bundle)
-        c.body = text
-        c.sound = .default
-        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second],
-                                                    from: Date(timeIntervalSince1970: at))
-        let trig = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "remind-" + id.uuidString, content: c, trigger: trig))
-        MontanaP2PTrace.mark("remind_set", "in=\(Int(at - Date().timeIntervalSince1970))s")
-    }
-
-    static func presentTyping(from: String, chat: String) {
-        let ud = UserDefaults.standard
-        guard ud.object(forKey: "notifEnabled") as? Bool ?? true else {
-            MontanaP2PTrace.mark("notify_skip", mid: nil, "why=disabled kind=typing")
-            return
-        }
-        typingLock.lock()
-        let last = typingShownAt[chat] ?? .distantPast
-        let fresh = Date().timeIntervalSince(last) > typingWindow
-        if fresh { typingShownAt[chat] = Date() }
-        typingLock.unlock()
-        guard fresh else {
-            MontanaP2PTrace.mark("notify_skip", mid: nil, "why=typing-already-announced")
-            return
-        }
-        let content = UNMutableNotificationContent()
-        decorate(content, from: from, chat: chat, body: String(localized: "is typing…", bundle: MTLanguage.bundle), countUnread: false)
-        let final = withCommunication(content, from: from) ?? content
-        MontanaP2PTrace.mark("notify", mid: nil, "kind=typing from=\(String(from.prefix(10)))")
-        UNUserNotificationCenter.current().add(
-            UNNotificationRequest(identifier: "typing-\(chat)", content: final, trigger: nil)) { err in
-            if let err { MontanaP2PTrace.mark("notify_failed", mid: nil, "err=\(err.localizedDescription)") }
-        }
-    }
-
-    /// THE PEER PINNED A LETTER (the author's word 22.09: both are told): the app's own banner — the
-    /// person's name, the pin and the letter's words (or the plain fact when previews are off); one
-    /// banner per letter, named by the letter, so a repeat of the word rings nothing twice.
-    static func presentPinned(from: String, chat: String, words: String, sid: String) {
-        let ud = UserDefaults.standard
-        guard ud.object(forKey: "notifEnabled") as? Bool ?? true else {
-            MontanaP2PTrace.mark("notify_skip", mid: nil, "why=disabled kind=pin")
-            return
-        }
-        let preview = ud.object(forKey: "notifPreview") as? Bool ?? true
-        let body = "📌 " + (preview && !words.isEmpty ? words : String(localized: "Pinned a message", bundle: MTLanguage.bundle))
-        let content = UNMutableNotificationContent()
-        decorate(content, from: from, chat: chat, body: body, countUnread: false)
-        let final = withCommunication(content, from: from) ?? content
-        MontanaP2PTrace.mark("notify", mid: nil, "kind=pin from=\(String(from.prefix(10)))")
-        UNUserNotificationCenter.current().add(
-            UNNotificationRequest(identifier: "pin-\(chat)-\(sid)", content: final, trigger: nil)) { err in
-            if let err { MontanaP2PTrace.mark("notify_failed", mid: nil, "err=\(err.localizedDescription)") }
-        }
-    }
-
-    /// A GROUP'S LETTER LANDED WHILE THE APP RUNS (MTGroup, 05.10): the group's title over its speaker's words, the face the
-    /// extension gives the same letter while the app sleeps. The one notebook of shown letters answers by the copy's own name --
-    /// the name the extension wrote when it showed this copy -- so one copy rings once, by whichever process.
-    static func presentGroup(title: String, body: String, chat: String, copy: String, mentioned: Bool = false) {
-        let ud = UserDefaults.standard
-        guard ud.object(forKey: "notifEnabled") as? Bool ?? true else {
-            MontanaP2PTrace.mark("notify_skip", mid: nil, "why=disabled kind=group")
-            return
-        }
-        let key = copy.hasPrefix("mid:") ? String(copy.dropFirst(4)) : copy
-        if !key.isEmpty {
-            var rang: [String] = []
-            if let d = MontanaKeychain.get("nseShownMids"), let a = try? JSONDecoder().decode([String].self, from: d) { rang = a }
-            guard !rang.contains(key) else {
-                MontanaP2PTrace.mark("notify_skip", mid: key, "why=already-rang kind=group")
-                return
-            }
-            rang.append(key)
-            if 300 < rang.count { rang.removeFirst(rang.count - 300) }
-            if let d = try? JSONEncoder().encode(rang) { MontanaKeychain.set("nseShownMids", d) }
-        }
-        let preview = ud.object(forKey: "notifPreview") as? Bool ?? true
-        let content = UNMutableNotificationContent()
-        decorate(content, from: chat, chat: chat, body: preview ? body : String(localized: "New message", bundle: MTLanguage.bundle), countUnread: false)
-        content.title = title
-        if mentioned {   // A MENTION RINGS THROUGH THE MUTE (stage R, as the reference rings one): the person was named
-            content.interruptionLevel = .active
-            content.sound = (MontanaKeychain.get("notifSound")?.first ?? 1) == 1 ? .default : nil
-        }
-        MontanaP2PTrace.mark("notify", mid: key.isEmpty ? nil : key, "kind=group body_len=\(content.body.count) preview=\(preview ? 1 : 0)")
-        UNUserNotificationCenter.current().add(
-            UNNotificationRequest(identifier: key.isEmpty ? UUID().uuidString : "group-" + key, content: content, trigger: nil)) { err in
-            if let err { MontanaP2PTrace.mark("notify_failed", mid: nil, "err=\(err.localizedDescription)") }
-        }
-    }
-
-    /// A letter arrived — the typing announcement has done its work and the next one is due again.
-    static func typingEnded(_ chat: String) {
-        typingLock.lock(); typingShownAt[chat] = nil; typingLock.unlock()
-        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["typing-\(chat)"])
-    }
-
     static func present(from: String, chat: String, text: String, mid: String) {
         // ONE notebook of shown letters for BOTH processes ([C-1]): the push extension
         // writes nseShownMids on every banner it shows; the app consults and writes THE
@@ -401,9 +240,6 @@ enum MontanaNotify {
         let kind = kind(for: text)
         let enabled = ud.object(forKey: "notifEnabled") as? Bool ?? true
         let raw = body(for: text)
-        // Live chat raises no banner at all — not as a stream, not as one «started typing».
-        // A person learns of a letter when the letter is sent, and not a moment sooner.
-        if enabled, raw != nil { typingEnded(chat) }
         if !enabled || raw == nil {
             // [P2P-COMPAT] the service check stands FIRST: a control letter must not touch the
             // shown-mids notebook below — the presence heartbeat used to write the keychain
@@ -434,14 +270,8 @@ enum MontanaNotify {
         let showSender = ud.object(forKey: "notifSender") as? Bool ?? true
         let content = UNMutableNotificationContent()
         decorate(content, from: from, chat: chat,
-                 body: preview ? (raw ?? "") : typeOnlyBody(text), countUnread: false)
+                 body: preview ? (raw ?? "") : MTRowLetter.hiddenCoinWords, countUnread: false)
         if !showSender { content.title = "Montana" }
-        // A GAME'S BANNER NAMES ITS GAME (29.09): the tap enters the game itself (MontanaOutsideOpen.pendingGame), and the
-        // foreground judge tells a game's end -- which has no bubble in the chat -- from a letter the open chat shows.
-        if let chess = MTChessLetter.parse(text) {
-            content.userInfo["game"] = chess.game
-            if chess.end != nil { content.userInfo["game_end"] = 1 }
-        }
         let comm = showSender ? withCommunication(content, from: from) : nil
         let final = comm ?? content
         let id = mid.isEmpty ? UUID().uuidString : mid

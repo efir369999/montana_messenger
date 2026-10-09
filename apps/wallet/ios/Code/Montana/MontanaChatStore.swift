@@ -624,37 +624,18 @@ class ChatStore: ObservableObject {
     func togglePinContact(_ ref: String) { if pinnedContacts.contains(ref) { pinnedContacts.remove(ref) } else { pinnedContacts.insert(ref) } }
     func toggleArchiveContact(_ ref: String) { if archivedContacts.contains(ref) { archivedContacts.remove(ref) } else { archivedContacts.insert(ref) } }
 
-    // SINGLE SOURCE OF THE BADGE: dictionary chat -> number of unread MESSAGES. The app —
-    // is the authoritative writer (overwrites entirely); NSE only increments the chat counter.
-    /// WHAT HAS NOT CHANGED IS NOT WRITTEN (the critic 22.09). Every call sealed a fresh blob into the
-    /// keychain twice and asked the system to set the icon's number again -- and the keychain is not a
-    /// dictionary, it is a round trip to another process. Measured on the fleet in thirty hours:
-    /// 11 042 calls, of which 10 645 (96 %) carried BYTE FOR BYTE what the previous one had already
-    /// stored; one device alone made 1 870 of them in a day. The ledger is the same ledger, so the
-    /// writes are the same writes: the count is compared first and the road is walked only when the
-    /// number the person sees would differ.
-    private static var badgeWritten: (counts: [String: Int], missed: Int)?
-    /// THE MEMORY IS THE SESSION'S, NOT THE LEDGER'S. While the app sleeps the push extension adds to
-    /// the shared mirror by itself, so what this process wrote last is no longer what the icon shows:
-    /// the memory is dropped every time the app comes back to the front, and the first recount after
-    /// that re-asserts the app's truth in full ([P2P-COMPAT]: the extension only ever adds).
-    private static var badgeWatch: NSObjectProtocol?
+    /// THE WALLET'S ICON CARRIES NO NUMBER (the author's words 09.10.2026 18:0x-18:1x MSK: «in the wallet there must be no
+    /// notifications about chats and so on»; «the wallet lives in its own TimeChain»): there is no chat in it to read, so nothing in
+    /// it is unread. The mirror the extension reads stays empty and the icon's number is taken off once a process; the extension
+    /// adds nothing (a coin's banner leaves the badge alone).
+    private static var badgeCleared = false
     static func updateBadge(_ counts: [String: Int], missed: Int) {
-        if badgeWatch == nil {
-            badgeWatch = NotificationCenter.default.addObserver(
-                forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
-            ) { _ in ChatStore.badgeWritten = nil }
-        }
-        if let w = badgeWritten, w.counts == counts, w.missed == missed { return }   // SILENT-OK: the icon already says this
-        badgeWritten = (counts, missed)
-        let total = counts.values.reduce(0, +) + missed
-        MontanaP2PTrace.mark("badge_set", "total=\(total) chats=\(counts.count) missed=\(missed) src=app")
-        MontanaKeychain.set("unreadCounts", (try? JSONEncoder().encode(counts)) ?? Data())
-        // THE ICON BADGE COUNTS THE MISSED CALLS TOO (the author's word 18.09): the app is the
-        // authoritative writer of the shared mirror, the extension only adds to it while the app
-        // is dead — the same law as the unread ledger.
-        MontanaKeychain.set("missedUnseen", Data(String(missed).utf8))
-        DispatchQueue.main.async { UNUserNotificationCenter.current().setBadgeCount(total) }
+        guard !badgeCleared else { return }   // SILENT-OK: the icon already says nothing
+        badgeCleared = true
+        MontanaP2PTrace.mark("badge_set", "total=0 src=app why=wallet")
+        MontanaKeychain.set("unreadCounts", Data())
+        MontanaKeychain.set("missedUnseen", Data(String(0).utf8))
+        DispatchQueue.main.async { UNUserNotificationCenter.current().setBadgeCount(0) }
     }
     // lastSeen: chat name is not stored in the UserDefaults key (graph leak) — a sealed map under device_key.
     // Clamp the untrusted peer sent_at (spec Stage 9 §Ordering): clamp into
@@ -2141,7 +2122,6 @@ class ChatStore: ObservableObject {
             // The feed goes in AFTER the tombstones stand (the merge above laid them), and BEFORE the archive's
             // rebuild asks which conversations are occupied: a second later, on the ingest's own debounce.
             if let feed { self.takeRestoredFeed(feed) }
-            self.remindAgain()
             self.syncPeerAvatarsToShared()
             // The list's rows came back by the card as a union even where no row of the feed did: the list reads them.
             NotificationCenter.default.post(name: .montanaChatsRestored, object: nil)
@@ -2204,14 +2184,6 @@ class ChatStore: ObservableObject {
         reconcileListWithFeed(merged, keepDoorRecords: false)
         MontanaP2PTrace.mark("feed_restored", "chats=\(chats) rows=\(added) read_word=\(ownWord ? "the letters'" : "the old rule's")")
         auditListAgainstFeed(stage: "restore")
-    }
-    /// A note to oneself at a chosen moment rings by the system's own alarm, and the system's alarms do not
-    /// travel with a copy: every restored reminder still ahead is set again (23.09).
-    private func remindAgain() {
-        let now = Date().timeIntervalSince1970
-        for s in scheduled where s.convRef == nil && s.fireAt > now {
-            MontanaNotify.scheduleReminder(id: s.id, text: s.text, at: s.fireAt)
-        }
     }
     /// THE CHANNELS STOOD UP FROM THE ARCHIVE'S HEADS. What new channels need is done here, because a restore happens
     /// with the screen open (the return to the person has its own road, AppDelegate.appBecameActive): the copy's letters join the queue (only now — before
@@ -3240,9 +3212,6 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
     func schedule(chat: String, convRef: String?, text: String, at fireAt: Double) {
         let s = ScheduledMsg(id: UUID(), chat: chat, convRef: convRef, text: text, fireAt: fireAt)
         scheduled.append(s)
-        // A note to oneself at a chosen moment is a REMINDER (15.52): the system rings it even
-        // with the app closed; the note lands in Saved Messages when the app next runs its clock.
-        if convRef == nil { MontanaNotify.scheduleReminder(id: s.id, text: text, at: fireAt) }
     }
     // send all scheduled ones whose time has come
     @MainActor func fireDueScheduled() {
@@ -5863,7 +5832,6 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         MontanaP2PTrace.mark("pin_rx", "\(op) by=\(sid.isEmpty ? "words" : "name")")
         if op == "pin" {
             pin(chat, m.id)
-            if openConv != chat { MontanaNotify.presentPinned(from: chat, chat: chat, words: MTRowLetter.words(m.text), sid: sid) }
         } else {
             unpin(chat, m.id)
         }

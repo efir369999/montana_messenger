@@ -69,17 +69,15 @@ enum MTRowLetter {
     /// that rings nothing (MTChessLetter.rings). Read by the app's banner door (MontanaNotify) and by the extension, which
     /// holds one letter and no board -- the same words at both.
     /// THE BANNER'S WORDS, ONE FUNCTION (the author's word 06.10.2026 23:5x MSK: «natively, as in the chat -- any word, a transfer,
-    /// a game -- one function»): what the banner of a letter says, for the app's banner door (MontanaNotify) and the extension alike
-    /// -- a game's invitation and end, a coin letter's coins, a voice, a media letter, the words; nil -- a word of the machine, or a
-    /// step of a game, that rings nothing.
-    static func bannerWords(_ text: String, revealCaption: Bool = true) -> String? {
-        if let chess = MTChessLetter.parse(text) { return chessBanner(chess) }
-        if coinCount(text) != nil { return preview(text) }
-        if text.hasPrefix("\u{200B}\u{200B}VC:") { return "🎤 " + String(localized: "Voice message", bundle: MTLanguage.bundle) }
-        if text.hasPrefix("\u{200B}\u{200B}MD:") { return mediaWords(letter: text, revealCaption: revealCaption) }
-        if let f = text.unicodeScalars.first, f.value == 0x200B || f.value == 0x2063 || f.value == 0x2064 { return nil }
-        return text.isEmpty ? String(localized: "New message", bundle: MTLanguage.bundle) : text
+    /// a game -- one function»): what the banner of a letter says, for the app's banner door (MontanaNotify) and the extension alike.
+    /// THE WALLET RINGS ONLY ITS COINS (the author's words 09.10.2026 18:0x-18:1x MSK: «in the wallet there must be no notifications
+    /// about chats and so on»; «the calls and the chats do not touch the wallet -- the wallet lives in its own TimeChain»): a coin
+    /// letter's coins; nil -- words, a voice, media, a game, a group's or the machine's word ring nothing.
+    static func bannerWords(_ text: String) -> String? {
+        coinCount(text) != nil ? preview(text) : nil
     }
+    /// The coin's banner when the person hides what a letter says: that coins came, never how many.
+    static var hiddenCoinWords: String { "🪙 " + String(localized: "coins", bundle: MTLanguage.bundle) }
     static func chessBanner(_ letter: MTChessLetter) -> String? {
         let mark = "♟ "
         if letter.kind == .invite {
