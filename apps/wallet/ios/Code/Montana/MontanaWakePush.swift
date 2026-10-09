@@ -129,11 +129,6 @@ enum MontanaWakePush {
         }
         good.sort()
         MontanaP2PTrace.mark("accel_paths", "ok=\(good.joined(separator: ",")) of=\(candidates().count)")
-        // THE RELAY PASS IS FETCHED BY THE DOORS' PROBE, NOT BY THE CALL (12.09): a call that
-        // found no remembered pass raced a 1.5 s fetch on cellular, lost, and went host-only —
-        // no relay, no call across carrier NAT. The probe already stands at the doors; the pass
-        // is taken here and remembered, so the call finds it waiting.
-        if rememberedTurnPass() == nil { _ = await fetchTurnCred() }
         // The network names its own doors: the list rides down from a verified accelerator
         // and lands in MontanaNodes — a new node door reaches every install without a
         // rebuild (the same law the TURN uris live by).
@@ -490,13 +485,6 @@ enum MontanaWakePush {
         let provenAlive = alive.filter { isProven($0) }
         return provenAlive + alive.filter { !isProven($0) } + all.filter { !alive.contains($0) }
     }
-    /// THE WALK'S OWN BOUND: doors × the one post deadline, plus a breath. The caller waits
-    /// this long for a knock's answer and not a number of its own (13.09: a three-second
-    /// guillotine cut the walk on a dead door, threw the real «200» away and told the person
-    /// «not reachable»).
-    static func knockBudgetS(for cap: String) -> TimeInterval {
-        Double(max(1, orderedBases(for: cap).count)) * MTNodeWire.postTimeoutS + 2
-    }
     /// The doors alive for me, in the network's order — what I NAME to the peer with every word.
     static func signalDoors() -> [String] {
         orderedBases(for: "signal").filter { doorAlive($0) }.compactMap { URL(string: $0)?.host }
@@ -546,7 +534,7 @@ enum MontanaWakePush {
             for s in sigSessions.values { s.invalidateAndCancel() }
             sigSessions.removeAll(); sigInFlight.removeAll(); sigLaneDirty = false
             MontanaP2PTrace.mark("sig_lane", "\(why) — asking again now")
-            for c in sigConvs.union(chatConvs).union(boardConvs).union(roomConvs) { fetchSignals(c) }
+            for c in chatConvs.union(boardConvs) { fetchSignals(c) }
         }
     }
     private static func currentPostLane() -> URLSession { baseLock.lock(); defer { baseLock.unlock() }; return postLane }
@@ -606,7 +594,8 @@ enum MontanaWakePush {
 
     /// Frozen vectors: V1 catches a conv-addr swap and a hash without the domain separator,
     /// V2 — concatenation without the second separator, CW — reading the window from the
-    /// other end (BE) and a daily tag without its domain.
+    /// other end (BE), a daily tag without its domain and a tag that lost the wallet's own door
+    /// (the shared tag of 0..31 at 29737 is 43eaf281…), RW — an invite's tag without the wallet's door.
     static func agreesWithCanon() -> Bool {
         subId("mt-conv-Q7", ref: "mtAddrZ93kLmNoPq") ==
             "e5438bfedc8b1fdcdadfb9f4d3995fac7722c0074f3a20ccd3e911ce5beb35de"
@@ -615,9 +604,11 @@ enum MontanaWakePush {
         && subId("a", ref: "bc") ==
             "c04b7d58e4c7aaca35800d119fd6fde021f95f7d3c9438e3ca46cd855afe6a8a"
         && convW(Data(0..<32), window: 29737) ==
-            "43eaf2811da7947166d4e851e52c4ab89e09c8c92247370d3c734ef08ca1e6ea"
+            "3b57785e0fc8baf676910675a388b689d43cc1ad8336fce7964b86fc36e066d6"
         && convW(Data(0..<32), window: 29738) ==
-            "f5f2941435d76c0a80dd229722ef42382695e88fdd1fabf89d71f317bef05430"
+            "6a815526013720264b7927dfd3186d9fbbf449b449db94ac253d96d3708e4de6"
+        && rdvConvW(Data(0..<32), window: 29737) ==
+            "185ad69b003ef6c42355819d3aab207e929f6f0abbc6e0733897c6bd96d891c4"
     }
 
     // ── registering our token under our conversations ──────────────────────────
@@ -653,6 +644,8 @@ enum MontanaWakePush {
         for inv in MontanaCard.outstandingInvites() {
             m["rdv:" + inv.base64urlNoPad] = rdvLetterSecret(inv)
         }
+        // The pipes of the slots this phone keeps (MTKeeping): the extension opens a loud call in them and shows whose copy it is.
+        for (name, secret) in MTKeeping.listening() { m[name] = secret }
         if let d = try? JSONEncoder().encode(m) { MontanaKeychain.set("nsePipeSecrets", d) }
         if let d = try? JSONEncoder().encode(alias) { MontanaKeychain.set("nsePipeAlias", d) }
         // The share extension sends letters itself; the sender identity rides sealed inside
@@ -729,10 +722,6 @@ enum MontanaWakePush {
     }
     private static func registerRound(refusing refused: Set<String>) {
         mirrorSecrets()   // pipe secrets into the shared keychain — the extension decrypts the envelope
-        registerVoip(refusing: refused)    // voip subscriptions march WITH the letter ones: a new pipe after a
-                          // re-introduction entered the letter table (noteIncoming →
-                          // registerConvs) but never voip (only on token issue, and the token
-                          // does not change) → the call hit 404 (precedent T1↔T2)
         guard let hex = MontanaKeychain.get(ownTokenKey).flatMap({ String(data: $0, encoding: .utf8) }), !hex.isEmpty else { return }
         let ref = twinRef; guard !ref.isEmpty else { return }
         guard agreesWithCanon() else { MontanaP2PTrace.mark("wakepush_canon", "FAIL"); return }
@@ -770,6 +759,14 @@ enum MontanaWakePush {
             // (measured 26.08: one token at exactly 8192 rows, a receipt's wake answered 404).
             let ahead: UInt64 = MTPipeBook.first(for: pipe) == nil ? windowsAhead : 1
             for w in (w0 - 1)...(w0 + ahead) {
+                let cw = convW(secret, window: w)
+                subs.append(["conv": cw, "sid": mySubId(cw)])
+            }
+        }
+        // THE SLOTS THIS PHONE KEEPS RING IT (MTKeeping, the author's word 08.10.2026 22:4x MSK: the restore by silent pushes): a
+        // call in the pipe of a slot wakes this phone by a background push, and its answer leaves within the wake.
+        for (_, secret) in MTKeeping.listening() {
+            for w in (w0 - 1)...(w0 + 1) {
                 let cw = convW(secret, window: w)
                 subs.append(["conv": cw, "sid": mySubId(cw)])
             }
@@ -833,18 +830,9 @@ enum MontanaWakePush {
             // A door that does not know the question (404, an unpatched node) is not asked again
             // for six hours: the stale pairs stay in the map, and every registration round used
             // to carry a 21KB body to it for nothing (the critic's pass on 1574).
-            // The removal names BOTH tokens (measured 15.09 14:51): the letter table holds the
-            // letter token, the call table the call token; a removal under one left the other's
-            // row standing, and the blocked caller still woke the phone.
-            let vtoken = MontanaKeychain.get(voipTokenKey).flatMap { String(data: $0, encoding: .utf8) } ?? ""
             if !stale.isEmpty, (unregisterUnknown[host] ?? 0) < now - 6 * 3600 {
                 sendChunks(stale, url: gone, token: hex, topic: topic, digestKey: regDigestKey, tag: "wakepush_unreg",
-                           recorded: { chunk in
-                               noteGone(host, chunk, at: now, token: hex)
-                               // the removal named the call token too: the call map mirrors the same answer
-                               if !vtoken.isEmpty { noteGone(host, chunk, at: now, token: vtoken) }
-                           },
-                           extra: vtoken.isEmpty ? [:] : ["vtoken": vtoken],
+                           recorded: { chunk in noteGone(host, chunk, at: now, token: hex) },
                            refused: { code in if code == 404 { unregisterUnknown[host] = now } })
             }
             guard !due.isEmpty else {
@@ -1427,85 +1415,6 @@ enum MontanaWakePush {
                 }
                 fire(env)
             }
-        }
-    }
-
-    /// Temporary TURN credentials from the node (TURN-REST, self-expiring): without a relay a
-    /// cellular (CGNAT) call physically cannot assemble — the server version worked exactly so.
-    /// THE RELAY PASS IS REMEMBERED. It lives six hours by construction, and a call that is
-    /// born without it is born blind: no relay candidate, no reflexive address, and on a
-    /// cellular network behind carrier NAT that is a call which can never connect. The pass
-    /// used to live only in memory, so every app relaunch started bare (measured 29.08: the
-    /// caller relaunched, the fetch timed out on a dead door, the call gathered host
-    /// candidates alone and stood in ICE checking until the minute cut-off).
-    private static let turnPassKey = "turnPass"
-    /// THE PASS NAMES ITS OWN END (13.09): the relay's username IS the moment of expiry (TURN-REST,
-    /// six hours from the node). A pass within ten minutes of it is not taken on a call — the
-    /// in-memory copy used to be taken at any age, and the first call after a quiet day went to
-    /// the relay with a dead pass: no relay candidate, no call behind carrier NAT.
-    static func turnPassLive(_ t: (uris: [String], name: String, credential: String, stun: [String])) -> Bool {
-        guard let exp = Double(t.name) else { return true }   // a pass without a moment is judged by nobody
-        return exp - Date().timeIntervalSince1970 > 600
-    }
-    static func rememberedTurnPass() -> (uris: [String], name: String, credential: String, stun: [String])? {
-        guard let d = MontanaKeychain.get(turnPassKey),
-              let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
-              let u = o["u"] as? String, let c = o["c"] as? String,
-              let uris = o["uris"] as? [String], !uris.isEmpty else { return nil }
-        let t = (uris, u, c, (o["stun"] as? [String]) ?? [])
-        return turnPassLive(t) ? t : nil
-    }
-    private static func rememberTurnPass(_ t: (uris: [String], name: String, credential: String, stun: [String])) {
-        let o: [String: Any] = ["u": t.name, "c": t.credential, "uris": t.uris,
-                                "stun": t.stun, "at": Date().timeIntervalSince1970]
-        if let d = try? JSONSerialization.data(withJSONObject: o) { MontanaKeychain.set(turnPassKey, d) }
-    }
-
-    /// THE PASS RIDES THE WAKE (29.09): the node that wakes a phone for a call mints the relay pass into the same push --
-    /// it holds the secret, and the phone it wakes needs the pass within the second. A phone whose remembered pass had died
-    /// (six hours; the app lay thirteen) used to fetch one first, 3.4 s on flapping doors, and only then build its answer.
-    /// Adopted before the ring is posted: the connection built under the ringtone finds it in hand.
-    static func adoptTurnPass(_ o: [String: Any]) -> Bool {
-        guard let u = o["username"] as? String, let c = o["credential"] as? String,
-              let uris = o["uris"] as? [String], !uris.isEmpty else { return false }
-        let t = (uris: uris, name: u, credential: c, stun: (o["stun"] as? [String]) ?? [])
-        guard turnPassLive(t) else { return false }
-        rememberTurnPass(t)
-        MontanaCall.adoptTurnPass(t)
-        return true
-    }
-
-    /// EVERY DOOR AT ONCE, the first answer wins. One chosen door was the whole defect: on a
-    /// fresh launch no door is verified yet, so the choice degenerates into list order — and
-    /// list order put a node that was switched off first. The pass fetch then spent its whole
-    /// budget on a dead address while a living door stood beside it.
-    static func fetchTurnCred() async -> (uris: [String], name: String, credential: String, stun: [String])? {
-        let all = bases(for: "turn")
-        guard !all.isEmpty else { return nil }
-        return await withTaskGroup(of: (uris: [String], name: String, credential: String, stun: [String])?.self) { group in
-            for b in all {
-                group.addTask {
-                    guard let url = URL(string: b + "/turn-cred") else { return nil }   // SERVER-DEBT-ACK: the accelerator node (rung 4)
-                    var req = URLRequest(url: url); req.httpMethod = "POST"   // SERVER-DEBT-ACK: the accelerator node (rung 4)
-                    req.setValue("application/json", forHTTPHeaderField: "content-type")
-                    req.timeoutInterval = 6
-                    req.httpBody = Data("{}".utf8)
-                    guard let (d, resp) = try? await URLSession.shared.data(for: req),   // SERVER-DEBT-ACK: the accelerator node (rung 4)
-                          (resp as? HTTPURLResponse)?.statusCode == 200,
-                          let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
-                          let u = o["username"] as? String, let c = o["credential"] as? String,
-                          let uris = o["uris"] as? [String], !uris.isEmpty else { return nil }
-                    return (uris, u, c, (o["stun"] as? [String]) ?? [])
-                }
-            }
-            for await r in group {
-                if let r {
-                    group.cancelAll()
-                    rememberTurnPass(r)
-                    return r
-                }
-            }
-            return nil
         }
     }
 
@@ -2165,6 +2074,7 @@ enum MontanaWakePush {
         for conv in MTPipeBook.all() {   // a blocked person's letters are read too — and buried below, not left to wait
             if let secret = MTPipeBook.secret(for: conv) { pipes[conv] = secret }
         }
+        for (name, secret) in MTKeeping.listening() { pipes[name] = secret }   // the pipes of the slots this phone keeps (MTKeeping)
         let ear = BoxEar(invites: MontanaCard.outstandingInvites(), pipes: pipes, owner: ref)
         guard !ear.subs.isEmpty else { MontanaP2PTrace.mark("box_fetch", "subs=0 — the book/invites are empty (vault busy?)"); return }
         MontanaP2PTrace.mark("box_fetch", "subs=\(ear.subs.count) invites=\(ear.rdvLabels.count / 10) pipes=\(ear.chatOf.count / 10)")
@@ -2542,76 +2452,38 @@ enum MontanaWakePush {
         return (lostFlag.value || someAlreadyGone) ? .lost : .unreachable
     }
 
-    // ── a call on a sleeping node (stage 5) ────────────────────────────────────
-    // A separate PushKit token, the same daily tags. The call envelope carries the caller's
-    // address under E2E — the receiver raises the call screen at once, the offer arrives by mesh.
+    // ── the calls leave the wallet (the author's word 09.10.2026 16:00 MSK) ─────────────────
+    // An earlier build of the wallet registered a PushKit token under the pairs' windows. The node keeps ONE call row per window and
+    // label -- PRIMARY KEY(conv, sub_id), the last to register takes it (montana-notify, read on both nodes 09.10.2026, sha256
+    // 8a36288e) -- so a seed held in two apps rang whichever registered last. The wallet's rows leave the nodes by the call token
+    // itself: the node's /unregister deletes only the rows that stand under the token it is named, and a row another app of the
+    // seed took stays. A door that answered keeps its pairs as gone; the token leaves the keychain once no door holds a pair.
     private static let voipTokenKey  = "wakeVoipToken"
     private static let voipDigestKey = "wakeVoipDigest"
-
-    static func onVoipToken(_ token: Data) {
-        let hex = token.map { String(format: "%02x", $0) }.joined()
-        MontanaKeychain.set(voipTokenKey, Data(hex.utf8))
-        MontanaP2PTrace.mark("wakepush_vtoken", "len=\(hex.count)")
-        registerVoip()
-    }
-
-    /// Registering the voip token under all conversations' windows — mirrors registerConvs, its own debounce.
-    static func registerVoip(refusing refused: Set<String>? = nil) {
-        guard let hex = MontanaKeychain.get(voipTokenKey).flatMap({ String(data: $0, encoding: .utf8) }), !hex.isEmpty else {
-            MontanaP2PTrace.mark("wakepush_vreg", "skip no-token"); return   // no PushKit token yet; onVoipToken brings it
-        }
-        let ref = twinRef; guard !ref.isEmpty else { MontanaP2PTrace.mark("wakepush_vreg", "skip no-addr"); return }
-        guard agreesWithCanon() else { MontanaP2PTrace.mark("wakepush_canon", "FAIL"); return }
-        let refs = MTPipeBook.registrable(refusing: refused ?? ChatStore.refusedNow()); guard !refs.isEmpty else { return }
-        let topic = Bundle.main.bundleIdentifier ?? ""
-        let w0 = dayWindow()
-        var subs: [[String: String]] = []
-        for pipe in refs {
-            guard let secret = MTPipeBook.secret(for: pipe) else { continue }
-            // The S-2 sign of life gates the fan-out: a pipe nobody ever answered has nobody
-            // to wake us, and its first letter lives seven days in the node box anyway — the
-            // box fetch is the road, the wake is a rung-4 accelerator. Full 31-day fan-out is
-            // for ANSWERED correspondences only: hundreds of dead introductions at 32 rows
-            // each hit the node's per-token cap (8192), and eviction cut LIVE pairs blind
-            // (measured 26.08: one token at exactly 8192 rows, a receipt's wake answered 404).
-            let ahead: UInt64 = MTPipeBook.first(for: pipe) == nil ? windowsAhead : 1
-            for w in (w0 - 1)...(w0 + ahead) {
-                let cw = convW(secret, window: w)
-                subs.append(["conv": cw, "sid": mySubId(cw)])
+    static func retireCalls() {
+        guard let hex = MontanaKeychain.get(voipTokenKey).flatMap({ String(data: $0, encoding: .utf8) }), !hex.isEmpty else { return }
+        regQ.async {
+            let topic = Bundle.main.bundleIdentifier ?? ""
+            let now = Date().timeIntervalSince1970
+            var asked = 0
+            for b in oneDoorPerNode(notBusy(orderedBases(for: "notify"))) {
+                guard let url = URL(string: b + "/unregister") else { continue }   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
+                let host = URL(string: b)?.host ?? b
+                let held: [[String: String]] = registeredPairs(host, token: hex).filter { pair in 0 < pair.value }.keys.compactMap { k in
+                    let parts = k.split(separator: "|", maxSplits: 1).map(String.init)
+                    return parts.count == 2 ? ["conv": parts[0], "sid": parts[1]] : nil
+                }
+                guard !held.isEmpty else { continue }
+                asked += held.count
+                sendChunks(held, url: url, token: hex, topic: topic, digestKey: voipDigestKey, tag: "wakepush_vretire",
+                           recorded: { chunk in noteGone(host, chunk, at: now, token: hex) })
             }
-        }
-        guard !subs.isEmpty else { return }
-        let answered = refs.filter { MTPipeBook.first(for: $0) == nil }.count
-        // ONLY WHAT A DOOR LACKS LEAVES, DOOR BY DOOR (23.09) -- the law the letter registration keeps since 21.1.
-        // The call set used to be gated by ONE digest for all doors: any door that failed wiped it, the pause was
-        // reset by the doors that answered, and the whole set went to every door again -- measured 23.09 on T1:
-        // 837 posts in a day, 736 pairs a round, rounds twelve to twenty-five seconds apart while a door behind
-        // Cloudflare flickered. Now each door keeps its own map under the call token; a door that does not answer
-        // rests (notBusy), and a door that holds the set is asked nothing. The node adds pairs row by row
-        // (montana-notify /register-voip), so a part of the set never erases the rest.
-        // One door per machine and one chain per door at a time (24.09): the law and the measurement stand at registerConvs.
-        let now = Date().timeIntervalSince1970
-        var told = false
-        for b in oneDoorPerNode(notBusy(orderedBases(for: "notify"))) {
-            guard let url = URL(string: b + "/register-voip") else { continue }   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
-            // THE TOKEN NAMES ITS LIFE (13.09): the node keeps a call wake alive at Apple exactly as
-            // long as THIS build accepts a delivered one (callLifeS) — a token without the word
-            // gets the old builds' 25 s, and a longer life on the node cannot hand an old build
-            // a push it would answer with a dummy missed call ([P2P-COMPAT]).
-            let host = URL(string: b)?.host ?? b
-            let standing = registeredPairs(host, token: hex)
-            let due = subs.filter { p in (standing[pairKey(p)] ?? 0) < now - regRefresh }
-            guard !due.isEmpty else {
-                MontanaP2PTrace.markFolded("wakepush_vreg", "standing=\(subs.count) door=\(host) -- nothing new", window: 600)
-                continue
+            if asked == 0 {
+                MontanaKeychain.delete(voipTokenKey)
+                MontanaP2PTrace.mark("wakepush_vretire", "no door holds a call row -- the call token is let go")
+            } else {
+                MontanaP2PTrace.mark("wakepush_vretire", "pairs=\(asked) asked to leave")
             }
-            if !told {
-                told = true
-                MontanaP2PTrace.mark("wakepush_vreg", "pipes=\(refs.count) answered=\(answered) subs=\(subs.count)")   // what the phone offers the node to ring it by
-            }
-            sendChunks(due, url: url, token: hex, topic: topic, digestKey: voipDigestKey, tag: "wakepush_vreg",
-                       recorded: { chunk in noteRegistered(host, chunk, at: now, token: hex) },
-                       extra: ["life": Int(MontanaCall.callLifeS)])
         }
     }
 
@@ -2629,6 +2501,7 @@ enum MontanaWakePush {
     }
 
     private static func restash(_ row: [String: String]) {
+        if MTKeeping.takes(row) { return }   // a call in the pipe of a slot this phone keeps: answered there, never a letter of the feed
         var arr: [[String: String]] = []
         if let d = MontanaKeychain.get("nseInbox"),
            let a = try? JSONDecoder().decode([[String: String]].self, from: d) { arr = a }
@@ -3011,17 +2884,12 @@ enum MontanaWakePush {
         // not talk to each other; the consumers are idempotent).
         var doors = peerDoors(conv) != nil ? [signalDoor(for: conv)]
                   : orderedBases(for: "signal").filter { doorAlive($0) }
-        // A CALL KNOCKS EVERY DOOR (15.13). The dead-door memory spares the network four chat words
-        // a second; a call has a dozen words in all, and a door dead sixty seconds ago is the very
-        // door the phone's path may carry again now. Measured 07.09 07:24: the callee's two doors
-        // died in one second, the answer's eight resends met an empty door list and left the phone
-        // without a single line — and the caller heard nothing at all.
-        if MontanaCall.stateSnapshot != "idle" || doors.isEmpty {
+        // NO LIVE DOOR, EVERY DOOR (15.13): a door dead sixty seconds ago is the very door the phone's path may carry again now.
+        if doors.isEmpty {
             for b in callDoors(for: "signal") where !doors.contains(b) { doors.append(b) }
         }
         guard !doors.isEmpty else { MontanaP2PTrace.mark("sig_tx", "SKIP no-door"); return }
         let chatWord = epoch == "chat"
-        let failLock = NSLock(); var failed = 0
         for b in doors {
             guard let url = URL(string: b + "/signal") else { continue }   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
             var req = URLRequest(url: url); req.httpMethod = "POST"   // SERVER-DEBT-ACK: the accelerator node (rung 4)
@@ -3030,8 +2898,8 @@ enum MontanaWakePush {
             let host = URL(string: b)?.host ?? "-"
             // ONE LANE PER DOOR (29.09): the word waits its turn; a chat word of this conversation replaces the one still waiting.
             onSignalLane(b, coalesce: chatWord ? conv : nil) {
-                // A chat word that waited past its door's death does not dial it; a call's word knocks every door (15.13).
-                if chatWord, !doorAlive(b), MontanaCall.stateSnapshot == "idle" {
+                // A chat word that waited past its door's death does not dial it.
+                if chatWord, !doorAlive(b) {
                     MontanaP2PTrace.markFolded("sig_tx", "SKIP dead door=\(host)", window: 10, key: "dead:" + host)
                     leaveSignalLane(b); return
                 }
@@ -3040,15 +2908,6 @@ enum MontanaWakePush {
                     MontanaP2PTrace.mark("sig_tx", "code=\(code) door=\(host)")
                     if code == 200 { signalDoorAnswered(b); return }
                     signalDoorFailed(b, code: code)
-                    failLock.lock(); failed += 1; let every = failed == doors.count; failLock.unlock()
-                    // EVERY DOOR REFUSED A CALL WORD: the diary says so (call_noroute) and the call
-                    // machine judges the road by its own state. NO LINE UNDER THE NAME (the author's
-                    // word 13.09): this line stood on the screen at 15:27 while the two were talking —
-                    // the doors were dead for a call WORD, the media path was alive — and said «the call
-                    // cannot connect» over a connected call. A post's failure is not the call's state.
-                    if every, MontanaCall.stateSnapshot != "idle" {
-                        MontanaP2PTrace.mark("call_noroute", "doors=\(doors.count)")
-                    }
                 }
             }
         }
@@ -3063,15 +2922,6 @@ enum MontanaWakePush {
     /// the loop's mode nor on what the screen draws.
     private static var sigTimer: DispatchSourceTimer?
     private static let sigQ = DispatchQueue(label: "montana.sigpoll")
-    private static var sigIdle = 0
-    /// The polled conversations are a SET, not the first one that came.
-    ///
-    /// A conversation used to be captured into the handler forever: the second call in a row
-    /// (to another person, or the same one under another key) was left without a signalling
-    /// channel — its answer, candidates and call end lay on the node and were NEVER
-    /// collected, while the person stared at «Connecting…» until the minute cut-off. The set
-    /// also closes «two calls at once».
-    private static var sigConvs = Set<String>()
     /// Conversations whose chat is OPEN on this screen: the signal lane stays up for them —
     /// the live-chat road (presence, typing, drafts) on any network, however the mesh feels.
     private static var chatConvs = Set<String>()
@@ -3080,33 +2930,8 @@ enum MontanaWakePush {
     /// the correspondent's move then rode the silent push, eight to fourteen seconds. Each holder owns its own set; the lane
     /// dies only when every set is empty.
     private static var boardConvs = Set<String>()
-    /// A GROUP ROOM'S PAIR LANES (MTGroupRoom, the author's word 07.10.2026 00:2x MSK: calls of up to 13 in a group). Two people of
-    /// a group carried by its owner hold no pipe between them, so their lane is sealed by a key the two derive from the room's key
-    /// and their two seats; it is named here by the room, never written into the book of pipes, and asked only while the room lives.
-    private static var roomConvs = Set<String>()
-    private static let roomLock = NSLock()
-    private static var roomSecrets: [String: Data] = [:]
-    static func openRoomLane(_ conv: String, secret: Data) {
-        roomLock.lock(); roomSecrets[conv] = secret; roomLock.unlock()
-        sigQ.async { roomConvs.insert(conv); ensureSigTimer("room") }
-    }
-    static func closeRoomLane(_ conv: String) {
-        roomLock.lock(); roomSecrets.removeValue(forKey: conv); roomLock.unlock()
-        sigQ.async { roomConvs.remove(conv) }
-    }
-    /// The key a lane is sealed by: a pipe's own, or a room pair's.
-    private static func laneSecret(_ conv: String) -> Data? {
-        if let s = MTPipeBook.secret(for: conv) { return s }
-        roomLock.lock(); defer { roomLock.unlock() }
-        return roomSecrets[conv]
-    }
-    static func startSignalPolling(_ conv: String) {
-        sigQ.async {
-            sigIdle = 0
-            sigConvs.insert(conv)
-            ensureSigTimer("call to=\(String(conv.prefix(10)))")
-        }
-    }
+    /// The key a lane is sealed by: the pipe's own.
+    private static func laneSecret(_ conv: String) -> Data? { MTPipeBook.secret(for: conv) }
     static func startChatPolling(_ conv: String) {
         sigQ.async {
             chatConvs.insert(conv)
@@ -3136,20 +2961,12 @@ enum MontanaWakePush {
     private static func ensureSigTimer(_ why: String) {
         // SILENT-OK: polling already runs — the conversation is added, no second timer needed.
         guard sigTimer == nil else { return }
-        MontanaP2PTrace.mark("wakepush_sigpoll", "start \(why) n=\(sigConvs.count + chatConvs.count + boardConvs.count)")
+        MontanaP2PTrace.mark("wakepush_sigpoll", "start \(why) n=\(chatConvs.count + boardConvs.count)")
         let tm = DispatchSource.makeTimerSource(queue: sigQ)
         tm.schedule(deadline: .now(), repeating: .milliseconds(300), leeway: .milliseconds(50))
         tm.setEventHandler {
-            for c in sigConvs.union(chatConvs).union(boardConvs).union(roomConvs) { fetchSignals(c) }
-            // THE LANE LIVES WHILE THE PHONE RINGS (13.09). The counter read the machine's state
-            // alone, and a ring raised by the push road stands with the machine still «idle»: nine
-            // seconds later the lane retired, the caller's hang-up lay uncollected on the node, and
-            // the phone rang on with nothing left to stop it. A standing ring is a call as much as
-            // a machine is.
-            let idle = MontanaCall.stateSnapshot == "idle" && !MontanaCall.ringPosted   // K-1: snapshots, not the machine's fields
-            sigIdle = idle ? sigIdle + 1 : 0
-            if sigIdle > 30 { sigConvs.removeAll() }        // the call lane retires on idle alone
-            if sigConvs.isEmpty && chatConvs.isEmpty && boardConvs.isEmpty && roomConvs.isEmpty {      // the lane dies only when NOBODY needs it
+            for c in chatConvs.union(boardConvs) { fetchSignals(c) }
+            if chatConvs.isEmpty && boardConvs.isEmpty {      // the lane dies only when NOBODY needs it
                 sigTimer?.cancel(); sigTimer = nil
                 MontanaP2PTrace.mark("wakepush_sigpoll", "stop")
             }
@@ -3282,12 +3099,6 @@ enum MontanaWakePush {
         // polling cost two troubles at once: a signal waited a whole polling step, and the
         // shared per-conversation counter muted both sides of the call with «too often» — the
         // node refused forty-four of three hundred thirty-three requests, each refusal delaying the call.
-        // The long question is economy — but a dead tunnel eats the answer SILENTLY and the
-        // lane stands the full timeout (measured under VPN 22:15:31: the peer's candidates
-        // reached the phone on second 30, the call failed at 45). While a call is being
-        // BUILT the questions are short: a silently dead one costs six seconds, not thirty.
-        let st = MontanaCall.stateSnapshot   // K-1: a snapshot, not the machine's field
-        let building = st == "outgoing" || st == "incoming" || st == "connecting" || st == "reconnecting" || st == "active"
         // TWELVE SECONDS, NOT TWENTY. The doors' nginx holds a request fifteen seconds; the
         // question used to ask for twenty, so on the fifteenth second nginx cut the pipe while
         // the store had ALREADY taken the words out of the queue — and wrote them into a dead
@@ -3295,7 +3106,7 @@ enum MontanaWakePush {
         // pipes in half an hour in the store's journal). Every word that landed between the
         // fifteenth and the twentieth second was lost by construction. The question now ends
         // before any door can cut it.
-        let wait = building ? 3 : (st == "connected" ? 10 : 12)
+        let wait = 12
         req.timeoutInterval = TimeInterval(wait + 3)
         req.httpBody = try? JSONSerialization.data(withJSONObject: ["conv": cw, "from_id": mySubId(cw), "wait": wait])
         let session = sigLane(for: door)
@@ -3319,31 +3130,12 @@ enum MontanaWakePush {
                 if code != 200 { sigLaneDirty = true; return }
                 // BACK TO BACK. The next question leaves the moment the answer arrives — the
                 // lane to the door stands without a gap; the 300ms tick is only the watchdog.
-                if sigConvs.contains(conv) || chatConvs.contains(conv) || boardConvs.contains(conv) || roomConvs.contains(conv) { fetchSignals(conv) }
+                if chatConvs.contains(conv) || boardConvs.contains(conv) { fetchSignals(conv) }
             }
             guard let d, let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
                   let envs = obj["envs"] as? [String], !envs.isEmpty else { return }
             MontanaP2PTrace.mark("sig_rx", "n=\(envs.count)")
-            let knownEpochs = MontanaCall.epochSnapshot   // K-1: the living epochs, snapshotted under a lock
-            // HANG-UPS FIRST. A post-sleep batch carries both offers and one call's hang-up;
-            // applying in arrival order raised the screen with the offer and killed it with
-            // the hang-up half a second later — a phantom ring (precedent 22.08 01:44:38, a
-            // 13ms race). First the whole end, then the rest: the seed graveyard fills BEFORE
-            // the screen rises.
-            func isEnd(_ e64: String) -> Bool {
-                guard let sealed = Data(base64Encoded: e64),
-                      let plain = MTPipe.openBody(sealed, sharedSecret: secret),
-                      let sep = plain.firstIndex(of: 0) else { return false }
-                let afterPeer = plain[plain.index(after: sep)...]
-                guard let sep2 = afterPeer.firstIndex(of: 0),
-                      let j = try? (Data(afterPeer[afterPeer.index(after: sep2)...]) as NSData)
-                          .decompressed(using: .zlib) as Data,
-                      let t = String(data: j, encoding: .utf8) else { return false }
-                return t.contains("\"ctrl\":\"call-end\"")
-            }
-            let marked = envs.map { ($0, isEnd($0)) }
-            let ordered = marked.filter { $0.1 }.map { $0.0 } + marked.filter { !$0.1 }.map { $0.0 }
-            for e in ordered {
+            for e in envs {
                 // THE STORE'S HINT (08.09): a bare «box» on the lane says the box holds a letter of
                 // ours — it is fetched this second, no bell needed while both are in the chat.
                 if e == "box" {
@@ -3356,22 +3148,12 @@ enum MontanaWakePush {
                 guard let sealed = Data(base64Encoded: e),
                       let plain = MTPipe.openBody(sealed, sharedSecret: secret),
                       let sep = plain.firstIndex(of: 0) else { continue }
-                let peer = String(data: plain[..<sep], encoding: .utf8) ?? ""
                 let afterPeer = plain[plain.index(after: sep)...]
                 guard let sep2 = afterPeer.firstIndex(of: 0) else { MontanaP2PTrace.mark("sig_rx", "STALE old-format"); continue }
                 let epoch = String(data: afterPeer[..<sep2], encoding: .utf8) ?? ""
                 // The live-chat lane: the payload is a control-marked text (presence, typing,
                 // draft) and it enters the app through THE ONE incoming door — the same
                 // notification the mesh wire and the radio post. No second handler exists.
-                // A GROUP ROOM'S PAIR WORD (MTGroupRoom, 07.10): sealed by the pair's own key, read by the room alone.
-                if epoch == "room" {
-                    let gz = Data(afterPeer[afterPeer.index(after: sep2)...])
-                    guard let j = try? (gz as NSData).decompressed(using: .zlib) as Data else {
-                        MontanaP2PTrace.mark("sig_rx", "OPEN-FAIL lane=room"); continue
-                    }
-                    DispatchQueue.main.async { MTGroupRoom.shared.laneWord(conv: conv, payload: j) }
-                    continue
-                }
                 if epoch == "chat" {
                     let gz = Data(afterPeer[afterPeer.index(after: sep2)...])
                     guard let j = try? (gz as NSData).decompressed(using: .zlib) as Data,
@@ -3404,196 +3186,13 @@ enum MontanaWakePush {
                     DispatchQueue.main.async { drainInbox() }
                     continue
                 }
-                // Only signals of a call this machine is LIVING (current, second line or
-                // parked): another's/an old one is a past call's corpse; applying it =
-                // killing the fresh one (precedent: a queued call-end closed ICE in 84ms).
-                // BY CONSTRUCTION an idle receiver has no epoch, so a call can NEVER be BORN
-                // through this lane — the birth roads are the voip wake and the ring letter,
-                // both carrying the seed. This lane only serves a call both sides already know.
-                guard knownEpochs.contains(epoch) else {
-                    MontanaP2PTrace.mark("sig_rx", "STALE epoch=\(String(epoch.prefix(8))) my=\(String((knownEpochs.first ?? "-").prefix(8)))")
-                    answerGone(conv: conv, epoch: epoch, gz: Data(afterPeer[afterPeer.index(after: sep2)...]))
-                    continue
-                }
-                let gz = Data(afterPeer[afterPeer.index(after: sep2)...])
-                guard !peer.isEmpty,
-                      let j = try? (gz as NSData).decompressed(using: .zlib) as Data else { MontanaP2PTrace.mark("sig_rx", "OPEN-FAIL"); continue }
-                MontanaP2PTrace.mark("sig_apply", "from=\(String(peer.prefix(10))) conv=\(String(conv.prefix(10))) bytes=\(j.count)")
-                // The call runs under the PIPE KEY that opened the envelope (rule 759) — the
-                // address inside is only a reference. Passing the address as the key switched
-                // the call machine onto a secretless address: answers went to SKIP no-secret,
-                // the call never assembled, the call record flew past the chat (precedent
-                // T2→T1 after QR). Unsealing and parsing happen here, on our thread; only the
-                // application reaches the main one, in one hop instead of the former two.
-                E2E.shared.handleMeshCallSignal(from: conv, payload: j.base64EncodedString())
+                // A CALL'S WORD IS BURIED UNREAD (the author's word 09.10.2026 16:00 MSK: the wallet holds no calls): a peer's app
+                // may still speak a call's epoch on the pair's lane; nothing here answers it.
+                MontanaP2PTrace.markFolded("sig_rx", "call word buried epoch=\(String(epoch.prefix(8)))", window: 60, key: "call-word")
             }
         }.resume()
     }
 
-    /// A CALL THIS PHONE DOES NOT HOLD IS SAID SO (24.09, iPhone 15 13:03 and 13:07). iOS ended the app when its person
-    /// changed a privacy switch in Settings; the phone came back with no call, and the far phone went on asking it for
-    /// fresh checks under the dead call's epoch — buried here as STALE, answered by nothing — and stood «reconnecting»
-    /// until its own deadline. Only an ask for fresh checks is answered: it is spoken by a call that stood connected and
-    /// never precedes a birth (a candidate may arrive before its call is born here, and must stay buried). Once per epoch.
-    private static var goneSaid = Set<String>()
-    private static func answerGone(conv: String, epoch: String, gz: Data) {
-        guard let j = try? (gz as NSData).decompressed(using: .zlib) as Data,
-              let msgs = try? JSONDecoder().decode([E2E.CallSigMsg].self, from: j) else { return }
-        answerGone(conv: conv, epoch: epoch, msgs: msgs)
-    }
-    /// The same answer for the pipe's words, which arrive already open (24.09: the pipe names every word's call).
-    static func answerGone(conv: String, epoch: String, msgs: [E2E.CallSigMsg]) {
-        guard !epoch.isEmpty, epoch != "chat", epoch == MontanaCall.lostEpoch,   // only the call THIS device held and lost
-              msgs.contains(where: { $0.ctrl == "call-restart" || $0.ctrl == "call-restart-answer" }) else { return }
-        DispatchQueue.main.async {
-            // The run is going back into this very call as soon as its person faces the screen: nothing is said yet --
-            // only a rejoin judged not to be tried leaves the call lost (24.09).
-            guard !MontanaCall.rejoinAwaits(epoch) else { return }
-            guard !goneSaid.contains(epoch) else { return }
-            goneSaid.insert(epoch)
-            MontanaP2PTrace.mark("call_gone", "tx epoch=\(String(epoch.prefix(8))) to=\(String(conv.prefix(10)))")
-            var gone = CallSignalOut(ctrl: "call-gone")
-            gone.callSeed = epoch
-            gone.epoch = epoch
-            E2E.shared.sendCallSignal(to: conv, gone)
-        }
-    }
-
-    struct RingPush { let conv: String; let ref: String; let offer: String?; let video: Bool
-                      let callSeed: String?; let name: String?; let glyph: String?
-                      /// The ANSWER of the far phone, when this wake carries one instead of a ring.
-                      let answer: String?
-                      /// The caller reads an answer off this road — declared in their ring.
-                      let readsVoipAnswer: Bool
-                      /// The caller goes back into this call when iOS ends its app — declared in their ring (24.09).
-                      let rebuilds: Bool
-                      /// What the ring declares of the caller's build, as the call machine reads any word's caps.
-                      var caps: CallCaps { CallCaps(tier: nil, ver: nil, opus_max: nil, hw_aec: nil, sframe: nil,
-                                                    av: readsVoipAnswer, rejoin: rebuilds) } }
-
-    /// The call wake: envelope "ring"‖0x00‖address‖0x00‖gzip(JSON{o,v,s}). The offer rides
-    /// INSIDE — on cellular without mesh it is the only channel (symmetric with letter text).
-    /// Without an offer (a bare early ring) — an empty tail. The pipe key; the accelerator
-    /// does not read. The call wake's outcome is a QUANTITY, not a guess: the caller decides by it whether to re-ring.
-    static func wakeVoip(_ conv: String, offer: String? = nil, video: Bool = false, callSeed: String? = nil,
-                         answer: String? = nil, completion: ((Int) -> Void)? = nil) {
-        // ONE EXIT (13.09): every path of the walk answers exactly once through this funnel —
-        // a path that returned in silence (the seal that failed) left the caller's wait to a
-        // guillotine, and the guillotine lied. Early exits answer with a refusal: the caller
-        // must learn the wake never even left — or they listen to ringing until the cut-off.
-        var done = false
-        func finish(_ code: Int) { guard !done else { return }; done = true; completion?(code) }
-        // «NOBODY» IS A VERDICT OF EVERY DOOR (13.09): the publishers keep separate books, and a
-        // phone registers where it could reach at the time — one door's 404 used to stop the
-        // ring and tell the caller «not set up» while the other door held the token.
-        var saw404 = false, sawOther = false, lastCode = -1
-        let ref = twinRef; guard !ref.isEmpty else { finish(-1); return }
-        guard agreesWithCanon() else { MontanaP2PTrace.mark("wakepush_canon", "FAIL"); finish(-1); return }
-        guard let secret = MTPipeBook.secret(for: conv) else { finish(-1); return }
-        // THE WORD OF THE ENVELOPE. «ring» is an invitation; «answ» is the far phone's answer taking
-        // the same road back. A build that does not know the second word cannot open the envelope at
-        // all and buries the wake — which is why an answer is sent ONLY to a caller that declared it
-        // reads one ([P2P-COMPAT]); nobody else is ever sent this envelope.
-        let tag = answer == nil ? "ring" : "answ"
-        var body = Data(tag.utf8); body.append(0); body.append(contentsOf: ref.utf8); body.append(0)
-        // The video flag rides IN EVERY envelope, the bare ring included: without it the
-        // callee raised the audio screen for a video call (the production push always carried video — hence it worked there).
-        // `av`: this phone reads an answer off the wake road — the callee learns it here, before any
-        // lane of its own exists, and that is the whole point of the flag riding in the ring.
-        let obj: [String: Any] = answer.map { ["a": $0, "s": callSeed ?? ""] }
-            ?? ["o": offer ?? "", "v": video, "s": callSeed ?? "",
-                "n": E2E.myDisplayName(), "g": E2E.myFaceGlyph(), "av": true, "rj": true]
-        if let j = try? JSONSerialization.data(withJSONObject: obj),
-           let gz = try? (j as NSData).compressed(using: .zlib) as Data {
-            body.append(gz)
-        }
-        // The APNs voip payload limit is 5KB; base64 inflates by a third. Does not fit — send
-        // the bare ring (the offer follows by mesh/next wake), but never drop the call.
-        var sealed = MTPipe.sealBody(body, sharedSecret: secret)
-        // An answer that does not fit the road simply does not take it: the lane copy already left,
-        // and a truncated answer is no answer.
-        if answer != nil, let s0 = sealed, s0.base64EncodedString().count > 4600 {
-            MontanaP2PTrace.mark("wakepush_vtx", "answer too big for the wake road — the lane carries it")
-            finish(-1); return
-        }
-        if let s0 = sealed, s0.base64EncodedString().count > 4600 {
-            var bare = Data("ring".utf8); bare.append(0); bare.append(contentsOf: ref.utf8); bare.append(0)
-            let bobj: [String: Any] = ["o": "", "v": video, "s": callSeed ?? "",
-                                       "n": E2E.myDisplayName(), "g": E2E.myFaceGlyph(), "rj": true]
-            if let j = try? JSONSerialization.data(withJSONObject: bobj),
-               let gz = try? (j as NSData).compressed(using: .zlib) as Data { bare.append(gz) }
-            sealed = MTPipe.sealBody(bare, sharedSecret: secret)
-        }
-        guard let sealedFinal = sealed else { MontanaP2PTrace.mark("wakepush_vtx", "FAIL seal"); finish(-1); return }
-        let cw = convW(secret, window: dayWindow())
-        let payload = try? JSONSerialization.data(withJSONObject:
-            ["conv": cw, "from_id": mySubId(cw), "env": sealedFinal.base64EncodedString()])
-        // The call ring walks the doors in the network's order and stops where a phone was
-        // ACTUALLY rung: a store that holds no subscription for this tag, or whose publisher
-        // is down, must hand the ring on rather than swallow it.
-        let doors = callDoors(for: "notify")
-        func ring(_ i: Int) {
-            guard i < doors.count, let url = URL(string: doors[i] + "/wake-voip") else { finish(-1); return }   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
-            var req = URLRequest(url: url); req.httpMethod = "POST"   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
-            req.setValue("application/json", forHTTPHeaderField: "content-type")
-            req.httpBody = payload
-            // ONE ATTEMPT PER DOOR: the walk itself is the retry — the next door stands beside.
-            callPost(req, attempts: 1, tag: "wakepush_vtx") { code, data in
-                // The wake service answers {"sent": n, "of": m, "apns": code} — never "woken":
-                // the walk read a field that was not there, saw «nobody rung» on every 200 and
-                // knocked on EVERY door, and every door fronts the same service — four VoIP
-                // pushes per dial, thirty stale reports in one burst on the callee (04.09 17:51,
-                // 06.09 08:28). A 404 is «no recipients»: the callee never registered — walking on
-                // cannot change that, and the caller must hear it instead of a minute of ringing.
-                let j = data.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
-                let woken = (j?["sent"] as? Int) ?? (j?["woken"] as? Int) ?? -1
-                MontanaP2PTrace.mark("wakepush_vtx", "code=\(code) woken=\(woken) door=\(i) carry=\(offer == nil ? 0 : 1) to=\(String(conv.prefix(10)))")
-                // The walk teaches the same dead-door memory the call words read: a door silent
-                // to a ring is silent to the answer that must come back through it.
-                if code == 200 { signalDoorAnswered(doors[i]) } else { signalDoorFailed(doors[i], code: code) }
-                if code == 200, woken > 0 { finish(200); return }   // rung — the caller stops here
-                if code == 404 { saw404 = true } else { sawOther = true; lastCode = code }
-                if i + 1 < doors.count { ring(i + 1) }
-                else { finish(saw404 && !sawOther ? 404 : lastCode) }   // every door said «nobody» — or the last real refusal
-            }
-        }
-        ring(0)
-    }
-
-    /// Open a call envelope: the pipe walk + windows. Returns the caller's address and (if present) the offer.
-    static func openRingEnvelope(_ sealed: Data) -> RingPush? {
-        for conv in MTPipeBook.all() {
-            guard let secret = MTPipeBook.secret(for: conv) else { continue }
-            guard let plain = MTPipe.openBody(sealed, sharedSecret: secret),
-                  let sep1 = plain.firstIndex(of: 0),
-                  let word = String(data: plain[..<sep1], encoding: .utf8),
-                  word == "ring" || word == "answ" else { continue }
-            let afterTag = plain[plain.index(after: sep1)...]
-            guard let sep2 = afterTag.firstIndex(of: 0) else { continue }
-            let ref = String(data: afterTag[..<sep2], encoding: .utf8) ?? ""
-            let gz = plain[plain.index(after: sep2)...]
-            var offer: String? = nil; var video = false; var seed: String? = nil
-            var name: String? = nil; var glyph: String? = nil
-            var answer: String? = nil; var readsAnswer = false; var rebuilds = false
-            if !gz.isEmpty, let j = try? (Data(gz) as NSData).decompressed(using: .zlib) as Data,
-               let obj = try? JSONSerialization.jsonObject(with: j) as? [String: Any] {
-                offer = (obj["o"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-                video = (obj["v"] as? Bool) ?? false
-                seed = (obj["s"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-                name = (obj["n"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-                glyph = (obj["g"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-                answer = (obj["a"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-                readsAnswer = (obj["av"] as? Bool) ?? false
-                rebuilds = (obj["rj"] as? Bool) ?? false
-            }
-            // conv is the key the pipe opened with: the callee runs the call under IT (their
-            // native conversation name); one secret, one daily tag — both sides in one queue.
-            return RingPush(conv: conv, ref: ref, offer: offer, video: video,
-                            callSeed: seed, name: name, glyph: glyph,
-                            answer: word == "answ" ? answer : nil, readsVoipAnswer: readsAnswer, rebuilds: rebuilds)
-        }
-        return nil
-    }
 }
 
 // A tiny thread-safe flag set: the expiry hook (main thread) raises a letter's flag, the
@@ -3992,10 +3591,6 @@ enum MontanaDiagShip {
         let cap = await allowance()
         var passes = 0
         while passes < cap {
-            if MontanaCall.isBusy {                 // the voice outranks the journal
-                MontanaP2PTrace.mark("diag_ship", "held=call passes=\(passes)")
-                return
-            }
             guard await shipOnce() else { break }
             passes += 1
             try? await Task.sleep(nanoseconds: breathNs)

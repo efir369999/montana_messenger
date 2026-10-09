@@ -4,7 +4,7 @@
    (Info.plist); this file is one language of it. */
 
 "NSBluetoothAlwaysUsageDescription" = "Montana uses Bluetooth to form a direct device-to-device mesh, so your phones can exchange messages nearby.";
-"NSCameraUsageDescription" = "Montana uses the camera to take photos and videos for your chats.";
+"NSCameraUsageDescription" = "Montana uses the camera to scan a contact's code.";
 "NSContactsUsageDescription" = "Montana uses your contacts so you can share one in a chat, and saves the people you add in Montana to your contacts by their @name. Turn this off in Settings, Privacy, Sync contacts.";
 "NSFaceIDUsageDescription" = "Montana uses Face ID to open your saved passwords and to show your 24-word recovery phrase.";
 "NSLocalNetworkUsageDescription" = "Montana connects your device and your correspondent's directly over Wi-Fi. The permission is needed only so the phones can find each other on the same network.";

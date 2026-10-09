@@ -33,15 +33,7 @@ final class MontanaDeliveryEngine {
             guard let a = note.userInfo?["address"] as? String, !a.isEmpty else { return }
             MontanaDeliveryEngine.shared.onPeerUp(a)
             MontanaWakePush.fetchBoxKick()   // showed up at the node — collect everything waiting (delivery on appearance)
-            // A CALL OUTRANKS AN INTRODUCTION. A peer appearance broadcasts the name and face to
-            // EVERY known correspondent on the main queue — eight letters in a row, each with
-            // its encryption. A measurement caught that volley in the very seconds a call was
-            // waiting to be answered: the node channel dropped and rose again, «peer appeared»
-            // fired for everyone, and the call went to the back of the line. While a call is
-            // being assembled, introductions wait: their move is next.
-            if !MontanaCall.isBusy {
-                Task { @MainActor in E2E.shared.resendProfileOnReconnect(to: a) }   // name and face catch up by the same move
-            }
+            Task { @MainActor in E2E.shared.resendProfileOnReconnect(to: a) }   // name and face catch up by the same move
         }
         // An incoming letter is part of DELIVERY, not of the screen, and the same queue listens
         // for it. It used to arrive, break the seal, find its pipe — and get posted as an event
@@ -188,37 +180,12 @@ final class MontanaDeliveryEngine {
             if let sn = senderName, !sn.isEmpty, sn.count <= 64 { store.setPeerName(ref: from, name: sn, at: ChatStore.birthMs(fromMid: mid) ?? sentAt ?? 0, source: "envelope") }
             // The envelope's glyph is buried unread: the face is derived from the name ([C-1], 20.09).
         }
-        // A missed-call marker letter is an ORDINARY feed row with call styling: the same
-        // sender mid, the same durable feed dedup, the same receipt as any letter (SSOT; the
-        // author's word 22.08: the two sides' chats may not diverge). The old side road
-        // (logCall past the feed) had neither mid dedup nor a receipt — the sender resent
-        // forever, and every relaunch begot a duplicate row.
-        var text = text
-        var missedSeed: String? = nil
-        var missedVideo = false
+        // A MISSED-CALL LETTER IS RECEIPTED AND BURIED (the author's word 09.10.2026 16:00 MSK: the wallet holds no calls): the
+        // sender's queue settles by the receipt, and no row and no banner is born.
         if text.hasPrefix(missedCallMark) {
-            let (seed, video) = MontanaMissedCall.letter(text)
-            // «Seen» means dead OR alive: the letter races the ring itself (measured 09.09
-            // 11:47: the caller gave up before the callee's ring even arrived, the letter
-            // landed mid-ring) — a call this device is showing needs no letter about it.
-            if !seed.isEmpty, MontanaCall.isDeadSeed(seed) || MontanaMissedCall.state(seed) == "alive" {
-                // The call was seen alive — the row already lies in the feed. The letter is
-                // dropped, but the RECEIPT goes out: without it the sender keeps the letter
-                // queued and resends forever.
-                MontanaP2PTrace.mark("missed_letter", mid: mid, "dup-seed — receipt without a row")
-                // The letter is one road too many for a call this phone has already served — and it
-                // may have left a banner behind it (an older sender still sends it loud, and the
-                // extension's silence shows the node's «New message»). The banner goes with the row.
-                MontanaCall.sweepCallBanners(mids: [mid, "mid:" + mid])
-                Task { await MainActor.run { store.sendDeliveryReceipt(from, msgId: sid, isFromMe: false, text: "call") } }
-                return
-            }
-            MontanaCall.burySeed(seed)
-            missedSeed = seed; missedVideo = video
-            let payload: [String: Any] = ["v": video, "inc": true, "dur": 0, "miss": true]
-            if let d = try? JSONSerialization.data(withJSONObject: payload),
-               let j = String(data: d, encoding: .utf8) { text = callMark + j }
-            MontanaP2PTrace.mark("missed_letter", mid: mid, "row from=\(String(from.prefix(10)))")
+            MontanaP2PTrace.mark("missed_letter", mid: mid, "buried -- the wallet holds no calls")
+            Task { await MainActor.run { store.sendDeliveryReceipt(from, msgId: sid, isFromMe: false, text: "call") } }
+            return
         }
         // Whether the letter landed in the feed is answered by the FEED itself, and its answer
         // is the only one ([C-1]). createdAt = the SENDER'S TIME from the letter name (ordered
@@ -277,12 +244,7 @@ final class MontanaDeliveryEngine {
         // loud one (replaced at Apple) and a repeat under the same name (node: one mid — one
         // ring) arrive in the background, the NSE is not invoked — and the letter stayed with
         // no ring AT ALL (precedent 24.08: the repeat arrived silently).
-        if let ms = missedSeed {
-            // A missed call has ONE banner road ([C-1]): the seed notebook, not the letter ledger —
-            // the extension, the letter and the ring itself all answer to the same seed.
-            MontanaP2PTrace.mark("notify_skip", mid: mid, "why=missed-call-one-banner seed=\(String(ms.prefix(8)))")
-            if landed { MontanaCallWiring.postMissedCallBanner(peer: from, video: missedVideo, seed: ms) }
-        } else if text.hasPrefix(mediaMark), text.contains("\"mref\"") {
+        if text.hasPrefix(mediaMark), text.contains("\"mref\"") {
             // The bubble comes FIRST (the author's invariant): a blob-manifest letter has
             // no bubble until its manifest is fetched — the banner rings when the bubble
             // lands (the media branch presents it), never before.
@@ -1327,6 +1289,12 @@ final class MontanaDeliveryEngine {
         if it.text.hasPrefix(sameAskMark), MTPipeBook.first(for: it.to) == nil, now - it.since > MTSamePair.askLifeS {
             a.remove(at: i); save(a)
             MontanaP2PTrace.mark("same_ask_expired", "to=\(String(it.to.prefix(10)))")
+            return
+        }
+        // A KEEPING WORD LIVES WHILE IT CAN STILL MEAN SOMETHING (MTKeeping.expired): a question an hour, every other word two days.
+        if MTKeeping.expired(it.text, age: now - it.since) {
+            a.remove(at: i); save(a)
+            MontanaP2PTrace.mark("keep_expired", "to=\(String(it.to.prefix(10)))")
             return
         }
         if it.text.hasPrefix(ringMark), now - it.since > 45 {

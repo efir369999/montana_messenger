@@ -28,8 +28,6 @@ struct MontanaPeerInfoScreen: View {
     @State private var removingSeat: String? = nil    // the owner takes a person out, asked first (MTGroup.remove)
     @State private var addingPeople = false           // the owner adds people from its correspondents (MTGroup.add)
     @State private var confirmDissolve = false        // the owner deletes the group for everyone, asked first (MTGroup.dissolve)
-    @State private var roomAsk: MTRoomKind?           // the group's call chosen on its page: whom to invite (MTGroupRoom, 07.10)
-    @State private var roomAskVideo = false
     @State private var originalNameShown = false     // the edit page: their own name revealed under the fields (20.09)
     @State private var aboutTick = 0                 // their bio or link arrived (24.09): the face's lines are asked again
     @State private var wallSheet: MTBoardSheet? = nil   // what the wall shows over the page (MTBoardPresenting, 25.09)
@@ -236,7 +234,6 @@ struct MontanaPeerInfoScreen: View {
         .modifier(MTBoardPresenting(sheet: $wallSheet, page: $wallPage))
         .modifier(MTGroupPageAsks(chat: chat, confirmLeave: $confirmLeave, removingSeat: $removingSeat, addingPeople: $addingPeople,
                                   confirmDissolve: $confirmDissolve, onGone: { dismiss(); ui.closeChat() }))
-        .sheet(item: $roomAsk) { k in MTRoomInviteSheet(chat: chat.name, kind: k, video: roomAskVideo, opening: true) }
     }
 
     private func openVideo(_ f: String, _ data: MTPeerInfoData) { VideoPresenter.present(f) }
@@ -502,9 +499,7 @@ struct MontanaPeerInfoScreen: View {
     /// The page's actions: a person's as they were; a group where calls are made (MTGroupRoom.kinds) adds its voice and video chat
     /// beside the message -- the same plates, the group's own room behind them.
     private func pageActions(_ data: MTPeerInfoData) -> [MTPeerAction] {
-        let base = MTPeerAction.available(for: data.kind, blocked: store.blockedChats.contains(chat.name))
-        guard data.kind == .group, MTGroupRoom.shared.kinds(for: chat.name).contains(.call) else { return base }
-        return [.message, .audioCall, .videoCall] + base.filter { $0 != .message }
+        MTPeerAction.available(for: data.kind, blocked: store.blockedChats.contains(chat.name)).filter { a in a != .audioCall && a != .videoCall }
     }
     /// THE PLATE IS THE SYSTEM'S ONE-TONE GLASS (the author's word 25.09: «the buttons message, calls, video, more -- all on the
     /// system's one-tone liquid glass»): the bar's own octagon plate, the touch target's height, the glyph the bar's.
@@ -525,15 +520,8 @@ struct MontanaPeerInfoScreen: View {
             let alreadyOpen = ui.overlayChat?.convId ?? "" == chat.convId ?? ""
             dismiss()
             if !alreadyOpen { DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { ui.openChat(chat) } }
-        case .audioCall where data.kind == .group, .videoCall where data.kind == .group:
-            // a group's call: its room, or whom to invite into a new one (MTGroupRoom.tapped -- the chat's top answers the same)
-            MTGroupRoom.shared.tapped(chat.name, kind: .call, video: action == .videoCall) { k, v in roomAskVideo = v; roomAsk = k }
-        case .audioCall:
-            MontanaCall.shared.startCall(peer: data.conv, device: "", video: false,
-                displayName: MTNameBook.display(conv: data.conv))
-        case .videoCall:
-            MontanaCall.shared.startCall(peer: data.conv, device: "", video: true,
-                displayName: MTNameBook.display(conv: data.conv))
+        case .audioCall, .videoCall:
+            break   // the wallet holds no calls (09.10.2026)
         case .more:
             break   // the menu answers itself
         }

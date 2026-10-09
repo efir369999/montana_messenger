@@ -778,7 +778,6 @@ final class MTGroup {
         var w = MTGroupWord(t: "out", g: g.id)
         w.dl = 1
         for m in g.members { _ = carry(w, to: m.pipe, letter: "", own: false) }
-        MTGroupRoom.shared.groupGone(g.id)
         g.left = true
         g.members = []
         groups[g.id] = g
@@ -882,7 +881,6 @@ final class MTGroup {
         groups[g.id] = g
         saveGroups()
         _ = carry(MTGroupWord(t: "bye", g: g.id), to: g.owner, letter: "", own: false)
-        MTGroupRoom.shared.groupGone(g.id)   // its room goes with the group
         MontanaP2PTrace.mark("group_left", "by this phone")
     }
 
@@ -1212,8 +1210,6 @@ final class MTGroup {
         guard paced(g, seat: seat) else { return .wait }
         answersHeard.append(id)
         if 512 < answersHeard.count { answersHeard.removeFirst(answersHeard.count - 512) }
-        MTGroupRoom.shared.heard(words, group: g.id, chat: Self.key(of: g.id), seat: seat, name: w.n.map { Self.clean($0, Self.nameLimit) },
-                                 copy: copy)
         if g.mine {
             var on = MTGroupWord(t: "room", g: g.id, k: g.kind.rawValue, ti: g.title, n: w.n, id: id, s: seat, tx: words)
             if let ts = w.ts, ts.count <= 32 {
@@ -1274,7 +1270,6 @@ final class MTGroup {
             groups[w.g] = g
             saveGroups()
             store.objectWillChange.send()   // the open chat trades its field for the button at once
-            MTGroupRoom.shared.groupGone(g.id)   // its room goes with the group
             if !ended { lay(MTGroupEvent(e: "removed", g: g.id, a: Self.ownerSeat, p: [g.me]), store: store) }
             MontanaP2PTrace.mark("group_rx", "taken out by the owner")
         }
@@ -1377,6 +1372,13 @@ final class MTMentionCompose: ObservableObject {
         let hit = q.isEmpty ? all : all.filter { p in p.name.lowercased().split(separator: " ").contains { $0.hasPrefix(q) } }
         return Array(hit.prefix(5))
     }
+}
+
+/// One person of a group a @ may name.
+struct MTRoomPerson: Identifiable, Equatable {
+    let seat: String
+    let name: String
+    var id: String { seat }
 }
 
 extension Array {

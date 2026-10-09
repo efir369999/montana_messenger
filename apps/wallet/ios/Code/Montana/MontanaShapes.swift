@@ -524,13 +524,35 @@ enum MontanaNativeBubble {
     static func link(mine: Bool) -> Color { mine ? .white : peerLink }
 }
 
-/// The Time mark used when a person has not chosen a picture.  It is deliberately not a fallback
-/// to somebody else's face: absence is a complete, stable visual answer of its own.
+/// THE WALLET'S ROUND FACE (the author's word 09.10.2026 17:5x MSK: «for the wallet too, update both icons» -- as for Business:
+/// the square and the round, the round one the avatars' placeholder). His file of 09.10 17:04 (Media/Montana_Wallet_round.png,
+/// cad7a156), byte for byte in AppIconRound, is a glass disc on a white field (the disc from x 39 to 1211 and y 29 to 1185 of 1254, its
+/// centre 2 px left and 20 px above the file's): drawn so the disc fills the round frame, its centre on the frame's, cut by a circle.
+struct MTAppRound: View {
+    static let asset = "AppIconRound"
+    static let scale: CGFloat = 1254.0 / 1156
+    static let shift = CGSize(width: 2.0 / 1254, height: 20.0 / 1254)
+    var body: some View {
+        GeometryReader { g in
+            let side = min(g.size.width, g.size.height)
+            Image(Self.asset).resizable().scaledToFit()
+                .frame(width: side * Self.scale, height: side * Self.scale)
+                .offset(x: side * Self.scale * Self.shift.width, y: side * Self.scale * Self.shift.height)
+                .frame(width: side, height: side)
+                .clipShape(Circle())
+                .frame(width: g.size.width, height: g.size.height)
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The face of a person who has not chosen a picture. It is deliberately not a fallback to somebody else's face: absence is a
+/// complete, stable visual answer of its own -- the wallet's own round face (MTAppRound), in the face's own figure.
 struct MTTimeMarkAvatar: View {
     let side: CGFloat
     var body: some View {
-        MontanaHexagon().fill(Color.black)
-            .overlay(Image("Logo").resizable().scaledToFit().padding(side * 0.36))   // the sign at 28% of the side (the author's word 30.09: half of 56%)
+        MTAppRound()
             .overlay(MontanaHexagon().stroke(Color.white.opacity(0.35), lineWidth: 1))
             .frame(width: side, height: side)
     }

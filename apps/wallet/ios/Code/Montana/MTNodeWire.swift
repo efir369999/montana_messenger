@@ -44,15 +44,22 @@ enum MTNodeWire {
         var w = window.littleEndian; withUnsafeBytes(of: &w) { m.append(contentsOf: $0) }
         return Array(SHA256.hash(data: m))   // LOCAL-HASH-OK: canon owner, held by the vectors
     }
+    /// THE WALLET'S OWN DOORS ON THE NODE (the author's word 09.10.2026 16:03 MSK: «the calls conflict in the phone if I am in
+    /// our different apps with one seed -- fix it at the root by construction»). The node keeps ONE row per label and seed tag,
+    /// PRIMARY KEY(conv, sub_id), and the last app of a seed to register takes it; the box gives a letter to whichever app of the
+    /// seed asks first and lets it go at that app's receipt (montana-notify and the store, read on both nodes 09.10.2026, sha256
+    /// 8a36288e). A coin letter rang, and was taken by, the Messenger of the same seed. The wallet's labels carry the wallet's own
+    /// domain: a wallet's letter goes to a wallet, and no other app of the seed hears it, rings for it or takes it from the box.
+    static let ownDoor = "-wallet"
     /// The conversation's daily tag: both sides derive it from the shared pipe secret.
     static func convW(_ secret: Data, window: UInt64) -> String {
-        var m = Data("mt-wake-conv".utf8); m.append(0); m.append(secret)   // LOCAL-HASH-OK: canon owner
+        var m = Data(("mt-wake-conv" + ownDoor).utf8); m.append(0); m.append(secret)   // LOCAL-HASH-OK: canon owner
         var w = window.littleEndian; withUnsafeBytes(of: &w) { m.append(contentsOf: $0) }
         return hexHash(m)
     }
     /// The daily tag of a handed-out invite (F-2: the first-letter wake).
     static func rdvConvW(_ invite: Data, window: UInt64) -> String {
-        var m = Data("mt-rdv-wake".utf8); m.append(0); m.append(invite)   // LOCAL-HASH-OK: canon owner
+        var m = Data(("mt-rdv-wake" + ownDoor).utf8); m.append(0); m.append(invite)   // LOCAL-HASH-OK: canon owner
         var w = window.littleEndian; withUnsafeBytes(of: &w) { m.append(contentsOf: $0) }
         return hexHash(m)
     }

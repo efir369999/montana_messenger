@@ -7,11 +7,8 @@
 import ServiceManagement   // the retired VPN supervisor leaves launchd (MTRetiredSupervisor)
 #endif
 import SwiftUI
-import PushKit
 import BackgroundTasks
 import UserNotifications
-import CallKit
-import Intents
 import UIKit
 import Darwin
 import MachO
@@ -253,15 +250,11 @@ enum MontanaOutsideOpen {
     }
 }
 
-final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, PKPushRegistryDelegate {
+/// THE WALLET RINGS NOTHING (the author's word 09.10.2026 16:00 MSK: «take everything else out, chats and calls among them»):
+/// no PushKit registry and no CallKit provider -- the system never wakes this app for a call.
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     static var launchedAt: TimeInterval = ProcessInfo.processInfo.systemUptime
     static var sceneSeen = false
-    private let voipRegistry = PKPushRegistry(queue: .main)
-    /// THE ORIENTATIONS THE APP ALLOWS NOW (24.09): the ones it declares, or upright while an audio call stands on a
-    /// phone -- MTCallUpright owns the answer.
-    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
-        MTCallUpright.mask
-    }
     // Stage 8.3: the system relaunched us because background chunk uploads finished (or need
     // attention). Reconnect the session so the delegate receives the events; the delegate's
     // didFinishEvents then drains the letter queue — the manifest goes without the person.
@@ -337,7 +330,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // yet seen a single screen of ours, and it lands beside the local-network prompt — two
         // system windows at once, neither explained. It is raised by MontanaNotifyGate, after the
         // person holds an identity and after the question of the direct link is settled.
-        MontanaCallWiring.setup()
         // The advertisement carries this device's writer tag so a sibling of the same seed is told apart
         // from this very device: their reference is identical, being derived from one seed.
         // Layer 1: secrets → AfterFirstUnlock (attribute rewrite). Layer 3: on unlock
@@ -366,12 +358,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             // Nothing of the application stands on the screen (the critic's pass: a window's word is never a farewell).
             if UIApplication.shared.applicationState == .background { AppDelegate.appLeft() }
         }
-        voipRegistry.delegate = self   // stage 5: a call to a sleeping node -- the PushKit voip token
-        voipRegistry.desiredPushTypes = [.voIP]
-        // The call machine is born HERE, on the main thread: its birth touches the audio subsystem,
-        // the call presentation and the badge. The first call signal arrives from a foreign thread,
-        // and birth on that call would crash under the person's hands.
-        _ = MontanaCall.shared
+        MontanaWakePush.retireCalls()   // the call token an earlier build registered leaves the nodes, once
         MontanaP2PTrace.mark("launch_end")
         MTMusicFolders.lay()   // the lent folders' last list stands before any page asks (the author's word 24.09)
         MontanaEntropy.warm()   // the seed is gathered before anyone draws, and the diary names what it stands on
@@ -382,6 +369,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         CopyInventory.tickSoon()   // after the feed is read: a plan that leaves something out needs the letters
         MontanaAppleID.publish()          // this device's seed reaches the Apple Account's keychain, when the switch stands (28.09)
         HomeNodeWatch.shared.tickSoon()   // the person's own node: the daily copy, when it is named and switched on (28.09)
+        MTKeeping.shared.tickSoon()       // the copy kept by the people one writes to: the daily renewal, when the person chose it (08.10)
         return true
     }
 
@@ -459,131 +447,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         MontanaP2PTrace.mark("wakepush_register_fail", "err=\(error.localizedDescription)")
     }
 
-    // -- stage 5: a call to a sleeping node (PushKit) --
-    func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
-        guard type == .voIP else { return }
-        MontanaWakePush.onVoipToken(pushCredentials.token)
-    }
-
-    func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload,
-                      for type: PKPushType, completion: @escaping () -> Void) {
-        guard type == .voIP else { completion(); return }
-        // A voip wake MUST raise the call screen immediately, or the system takes the app away.
-        // The envelope is opened by our own pipes; the call machine is ready for "call" without an
-        // offer -- the offer arrives by mesh and is accepted by the pendingOffer == nil branch.
-        let ring = (payload.dictionaryPayload["env"] as? String)
-            .flatMap { Data(base64Encoded: $0) }
-            .flatMap { MontanaWakePush.openRingEnvelope($0) }
-        // The relay pass the node minted for this very wake (29.09): in hand before any screen rises.
-        if let t = payload.dictionaryPayload["turn"] as? [String: Any] {
-            MontanaP2PTrace.mark("turn_cred", MontanaWakePush.adoptTurnPass(t) ? "carried by the wake" : "carried by the wake — refused")
-        }
-        MontanaP2PTrace.mark("wakepush_vrx", "peer=\(ring.map { String($0.ref.prefix(10)) } ?? "nil") offer=\(ring?.offer == nil ? 0 : 1) answer=\(ring?.answer == nil ? 0 : 1)")
-        // WHO WOKE US (15.12). A push that arrives within seconds of process start, before any
-        // scene was seen, is the system launching us for the call; one that arrives right after
-        // a foreground is the system handing over pushes it had HELD — the shape of a device
-        // iOS no longer wakes for VoIP (testers' phones, 04-06.09: bursts of stale rings at
-        // launch). The diary now tells the two apart; nothing else could.
-        let age = Int((ProcessInfo.processInfo.systemUptime - AppDelegate.launchedAt) * 1000)
-        MontanaP2PTrace.mark("voip_launch", "age_ms=\(age) scene_seen=\(AppDelegate.sceneSeen ? 1 : 0) held=\(AppDelegate.sceneSeen && age < 5000 ? 1 : 0)")
-        // A call is a value of real time: a push that travelled longer than the life of a call rings
-        // like a ghost in the back (APNs held a voip push for ~30 s despite expiration=0 -- precedent
-        // 22.08 01:44). The node stamps the moment of sending; a stale push gets the mandatory report
-        // and an instant end -- without sound and without a screen. The threshold is the one number
-        // of a call's life (MontanaCall.callLifeS), the same the node gives the wake.
-        // K-1: the call machine's owner is the MAIN thread — PushKit used to write its
-        // fields from this queue while the machine ran on main. The hop is SYNCHRONOUS so
-        // the 12.1 execution law still holds: CallKit is posted before completion returns.
-        let work: () -> Void = {
-        MontanaCallWiring.setup()
-        // A RING FROM THIS VERY SEED IS NO CALL (12.09): a node that holds the sender's own
-        // subscription under another id hands the ring back to its sender; such a ring wrote the
-        // caller's own name onto the callee (1480). Nothing of it is read — the mandatory report
-        // to the system, and the end.
-        if let ring, !ring.ref.isEmpty, ring.ref == (MontanaSeed.twin ?? "") {
-            MontanaP2PTrace.mark("wakepush_vrx", "own-echo — a ring from this seed is no call")
-            MontanaCall.shared.reportDummyAndEnd(from: ring.conv, reason: .failed)
-            return
-        }
-        // A BLOCKED PERSON'S RING IS NO CALL (Guideline 1.2, measured 15.09 13:10: the wake posted
-        // the ring past every gate): the report the system demands, and the end on top of it.
-        if let ring, !ring.conv.isEmpty, ChatStore.live?.refuses(ring.conv) ?? ChatStore.refusesCold(ring.conv) {
-            MontanaP2PTrace.mark("wakepush_vrx", "blocked — the mandatory report, no ring")
-            MontanaCall.shared.reportDummyAndEnd(from: ring.conv, blocked: true)
-            return
-        }
-        // The caller's name and face come from the call envelope, BEFORE ANY screen rises — the
-        // live call and the mandatory report of a stale push alike (measured 09.09 15:08 on an
-        // iPhone 15 Pro Max: two stale dummies rose as «Correspondent» because the gate below
-        // stood before the name). A preset into the call machine -- on a cold voip start there
-        // is no store yet (store == nil), and every path through the book gave the short key
-        // form, that is, digits (precedent 776).
-        if let ring, !ring.conv.isEmpty {
-            // The name and face ride INTO the call machine with the word (onCallerIdentity, one
-            // door): the machine names the caller only when it accepts the call.
-            MontanaP2PTrace.mark("wakepush_vrx2", "n=\(ring.name.map { String($0.prefix(10)) } ?? "-") g=\(ring.glyph ?? "-")")
-        }
-        if let at = payload.dictionaryPayload["at"] as? Int,
-           Date().timeIntervalSince1970 - TimeInterval(at) > MontanaCall.callLifeS {
-            // Only a late offer was a call from a person to miss. A stale push with no offer -- an answer, an
-            // end, or an envelope this install cannot open (02.10 14:51Z on T1, held 825 s across a
-            // reinstall) -- ends failed: «unanswered» wrote a missed call from «Montana» into Recents.
-            MontanaP2PTrace.mark("ring_dead", "stale-push age=\(Int(Date().timeIntervalSince1970) - at)s offer=\(ring?.offer == nil ? 0 : 1)")
-            MontanaCall.shared.reportDummyAndEnd(from: ring?.conv ?? "Montana", reason: ring?.offer == nil ? .failed : .unanswered)
-            return
-        }
-        MontanaWakeDoor.arrived("voip", at: payload.dictionaryPayload["at"] as? Int)   // the mesh rises, the node channels are reopened after sleep, the age of the push is read
-        if let ring, !ring.conv.isEmpty {
-            // A call is led under MY pipe key (the one the envelope opened with), not under the caller
-            // address: the sides share one secret and one daily label -- the signal queue is common,
-            // and a secret is always found by this key (the sig_tx SKIP no-secret gap is closed).
-            if MontanaCall.isDeadSeed(ring.callSeed) {
-                // A late envelope of a finished call: the report is mandatory (PushKit), the screen is
-                // not. Ringing in the back is closed by the seed graveyard. A wake that carried no offer --
-                // the far phone's answer or end for a call buried here (25.09) -- was no call to miss: it ends
-                // failed, and writes nothing into the phone's list.
-                MontanaP2PTrace.mark("ring_dead", "voip seed=\(String((ring.callSeed ?? "").prefix(8)))")
-                MontanaCall.shared.reportDummyAndEnd(from: ring.conv, reason: ring.offer == nil ? .failed : .unanswered)
-            } else if let a = ring.answer {
-                // THE ANSWER CAME BY THE WAKE ROAD (13.09). No screen rises: this is the far phone
-                // answering a call this phone is already making, and the standing call is what
-                // satisfies the system's law for this push — postForPush returns at once when the
-                // live call is with the same correspondent. An answer with no call behind it is a
-                // late echo: the mandatory report, and an end on top of it, as for any stale wake.
-                if MontanaCall.stateSnapshot == "idle" {
-                    MontanaP2PTrace.mark("wakepush_vrx", "answer with no call — buried")
-                    MontanaCall.shared.reportDummyAndEnd(from: ring.conv, reason: .failed)
-                } else {
-                    MontanaCall.shared.postForPush(from: ring.conv, video: MontanaCall.shared.isVideo)
-                    MontanaP2PTrace.mark("sdp_in", "answer by the wake road")
-                    MontanaCall.shared.handleSignal(from: ring.conv, device: "", ctrl: "call-answer",
-                                                    sdp: CallSDP(type: "answer", sdp: a),
-                                                    candidate: nil, video: nil, caps: nil,
-                                                    callSeed: ring.callSeed)
-                }
-            } else {
-                let sdp: CallSDP? = ring.offer.map { CallSDP(type: "offer", sdp: $0) }
-                // The execution law (12.1): post to CallKit SYNCHRONOUSLY, before completion —
-                // the machine adopts the posted call; a rejecting branch ends it on top.
-                MontanaWakeDoor.note("expect-call")   // this wake carries a call: the verdict demands ring, offer and ICE
-                MontanaCall.shared.postForPush(from: ring.conv, video: ring.video)
-                // The ring's own declarations ride in as the word's caps (24.09): a call born by the wake alone knew
-                // neither that its caller reads an answer off this road nor that it goes back into the call.
-                MontanaCall.shared.handleSignal(from: ring.conv, device: "", ctrl: "call", sdp: sdp,
-                                                candidate: nil, video: ring.video, caps: ring.caps,
-                                                callSeed: ring.callSeed, name: ring.name, glyph: ring.glyph)
-                MontanaWakePush.startSignalPolling(ring.conv)   // answer and ICE go through the node
-            }
-        } else {
-            MontanaCall.shared.reportDummyAndEnd(from: "Montana", reason: .failed)   // a report is mandatory for every voip push; no call rode in it
-        }
-        }
-        // MAIN-SAFE-SYNC: the opposite direction — a background PushKit callback hands work TO main
-        // and must not return before CallKit has the call; main never waits on anything here.
-        if Thread.isMainThread { work() } else { DispatchQueue.main.sync(execute: work) }
-        completion()
-    }
-
     // Callback from the native iPhone «Recents»: iOS opens the app with INStartCall/Audio/VideoCallIntent,
     // the peer address is in personHandle.value (we put it there as CXHandle on a call).
     func application(_ application: UIApplication, continue userActivity: NSUserActivity,
@@ -595,10 +458,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             MontanaMeeting.handleLink(url)
             return true
         }
-        MontanaCallWiring.setup()
-        let taken = MontanaCall.shared.handleCallIntent(userActivity, door: "app")   // SSOT of intent parsing — in MontanaCall
-        if !taken { MontanaP2PTrace.mark("activity_in", "type=\(userActivity.activityType) taken=0") }
-        return taken
+        MontanaP2PTrace.mark("activity_in", "type=\(userActivity.activityType) taken=0")   // the wallet places no call from Recents
+        return false
     }
 
     // The app's folder in «Files» → «On My iPhone» → Montana (app icon). iOS shows the Documents folder
@@ -691,11 +552,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         }
         MontanaWakePush.drainInbox()   // a banner tap: the letter is in the chat before it opens
         MontanaWakePush.fetchBoxKick()   // and everything waiting in the node mailbox, by the same movement
-        // A missed call carries a TOKEN, not a conversation link: the system keeps delivered
-        // notifications, and a link has no place there. The conversation is found by the token in the vault.
-        let chat = (info["call_token"] as? String).map { MontanaCallHandle.conv(for: $0) }
-                 ?? (info["chat"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-                 ?? (info["from"] as? String) ?? ""
+        let chat = (info["chat"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? (info["from"] as? String) ?? ""
         if let textResp = response as? UNTextInputNotificationResponse, !chat.isEmpty {
             let text = textResp.userText
             // Inline reply launches the app in the BACKGROUND with the E2E core not started:
@@ -720,21 +577,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             }
             return
         }
-        if (info["missed_call"] as? Bool) == true, !chat.isEmpty,
-           response.actionIdentifier == UNNotificationDefaultActionIdentifier
-           || response.actionIdentifier == "CALLBACK" {
-            // Tap on the missed-call banner = instant callback — same path as tapping a missed
-            // entry in the native Phone Recents (startCallWhenReady rings as soon as the session
-            // is up, cold start included).
-            let video = (info["video"] as? Bool) ?? false
-            MontanaCall.shared.startCallWhenReady(peer: chat, video: video)
-            completionHandler()
-            return
-        }
         if let game = info["game"] as? String, !game.isEmpty, !chat.isEmpty { MontanaOutsideOpen.pendingGame = (chat, game) }
-        // A ROOM'S INVITATION IS THE WAY IN (the author's word 07.10.2026: «the link opens the way into the room»): the tap goes
-        // into the room -- at once if its word has landed here, the moment it lands otherwise (MTGroupRoom.joinFromBanner).
-        if let room = info["room"] as? String, !room.isEmpty, !chat.isEmpty { MTGroupRoom.shared.joinFromBanner(chat, room: room) }
         if !chat.isEmpty { MontanaOutsideOpen.chat(chat) }
         completionHandler()
     }
@@ -1351,7 +1194,6 @@ final class MontanaTelemetry {
         // launch judges the previous run BEFORE its own launch line: died on screen — a finding;
         // reclaimed in background — the system's norm; died before the screen — a system start.
         judgePreviousRun(crash: lastCrash)
-        MTScreenShare.collectExtensionDiary()   // the broadcast extension's last lines, if it outlived the previous run
         aliveState = "launch"; writeAlive(force: true)
         // The screen moments come from the system's notifications: under the scene lifecycle
         // UIKit never calls applicationDidBecomeActive / applicationWillResignActive.
@@ -1664,6 +1506,8 @@ enum MontanaWakeDoor {
     /// offer arrive, did ICE start — and names the first link that did not. A verdict other than ok
     /// ships the diary at once (isFailure). A burst of wakes is one wake for the verdict.
     static let verdictAfterS: TimeInterval = 12
+    /// A wake that travelled longer than this is stale: the longest a wake's word lives at the node.
+    static let staleAfter: TimeInterval = 90
     private struct Pending { let why: String; let t0: Date; let age: Int?; var expectsCall = false
                              var node: Int?; var ring: Int?; var offer: Int?; var ice: Int? }
     private static var pending: Pending?
@@ -1709,7 +1553,7 @@ enum MontanaWakeDoor {
         lock.lock(); let p = pending; pending = nil; lock.unlock()
         guard let p else { return }
         let verdict: String
-        if let a = p.age, MontanaCall.callLifeS < Double(a) { verdict = "stale" }
+        if let a = p.age, Self.staleAfter < Double(a) { verdict = "stale" }
         else if p.node == nil { verdict = "no-node" }
         else if p.expectsCall, p.ring == nil { verdict = "no-ring" }
         else if p.expectsCall, p.offer == nil { verdict = "no-offer" }

@@ -34,7 +34,7 @@
 		<string>_mtmesh._udp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Montana uses the camera to take photos and videos for your chats.</string>
+	<string>Montana uses the camera to scan a contact's code.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Montana uses your contacts so you can share one in a chat, and saves the people you add in Montana to your contacts by their @name. Turn this off in Settings, Privacy, Sync contacts.</string>
 	<key>NSFaceIDUsageDescription</key>
@@ -66,9 +66,6 @@
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>INSendMessageIntent</string>
-		<string>INStartCallIntent</string>
-		<string>INStartAudioCallIntent</string>
-		<string>INStartVideoCallIntent</string>
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
@@ -77,8 +74,6 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
-		<string>voip</string>
-		<string>audio</string>
 		<string>bluetooth-central</string>
 		<string>bluetooth-peripheral</string>
 		<string>remote-notification</string>

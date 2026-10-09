@@ -768,9 +768,7 @@ struct MTChatListView: UIViewRepresentable {
         /// (UIScrollView.scrollsToTop); on the pages under the time panel this list is the page's own scroller. With a
         /// call folded the tap returns to the call and the list stays where it stands. Whether the platform handed the
         /// tap over is measured, not assumed: «call_clock tap by=list» in the diary, or its absence after a tap.
-        func scrollViewShouldScrollToTop(_ sv: UIScrollView) -> Bool {
-            !MTCallClockBubble.returnToCall(by: "list")
-        }
+        func scrollViewShouldScrollToTop(_ sv: UIScrollView) -> Bool { true }
         func scrollViewDidScroll(_ sv: UIScrollView) {
             host?.scrolled()
             guard let coin else { return }

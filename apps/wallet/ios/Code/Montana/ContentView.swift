@@ -185,7 +185,7 @@ final class MTTurnDrag: ObservableObject {
     /// settings and the profile are one open page at a time, risen over the tabs in the chat's own
     /// sliding container and closed by the cross or by the screen-edge swipe. The network left this slot
     /// for the finger's row (the author's word 25.09): it is a page under the bar, as the calls are.
-    enum Page: String, Identifiable { case settings, profile, card, birth, notifications; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus
+    enum Page: String, Identifiable { case settings, profile, card, birth, notifications, keeping; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus
     var overlayPage: Page?
     /// The document page over everything (the author's word 19.09): the whole screen, above the tabs and the open chat.
     var docPage: MTDocOpen?
@@ -382,7 +382,6 @@ struct RootView: View {
     @State private var showWelcome = false
     @State private var needPassword = false
     @AppStorage(MontanaSkin.key) private var skin = MontanaSkin.native.rawValue
-    @StateObject private var callUI = CallUIModel.shared
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -426,16 +425,10 @@ struct RootView: View {
             }
         }
         .preferredColorScheme(.dark)   // the whole theme is dark
-        .onAppear {
-            MontanaCallWiring.setup()
-        }
         .onReceive(NotificationCenter.default.publisher(for: .montanaSeedForgotten)) { _ in
             hasSeed = MontanaSeed.hasSeed   // the boundary that forgets a person tells the screen
         }
         .onChange(of: seats.moving) { _, m in if !m { hasSeed = MontanaSeed.hasSeed } }   // the move ended: whoever is seated now
-        .onContinueUserActivity("INStartCallIntent") { ua in MontanaCall.shared.handleCallIntent(ua) }
-        .onContinueUserActivity("INStartAudioCallIntent") { ua in MontanaCall.shared.handleCallIntent(ua) }
-        .onContinueUserActivity("INStartVideoCallIntent") { ua in MontanaCall.shared.handleCallIntent(ua) }
         .onChange(of: scenePhase) { _, phase in
             // 05.09 — every phase change is a line: «folded by itself» was invisible in the diary.
             MontanaP2PTrace.mark("scene_phase", phase == .background ? "background" : (phase == .active ? "active" : "inactive"))
@@ -500,19 +493,9 @@ struct RootView: View {
                 }
                 E2E.shared.recalcBadge()            // badge = the app's truth (remove NSE drift)
                 MTNameBook.purgeCopiedCardNames()   // once: the peer's old word copied into card names by the retired doors (18.09)
-                MontanaCall.shared.ensureCaptureRunning()   // video call from background: the camera starts here
-                // Tap on the system pill → full-screen call. While a screen share rides, the
-                // folded state IS the share's construction (SSOT: only the person unfolds it
-                // through our pill) — the broadcast picker's dismissal re-activates the scene
-                // and this line used to unfold the call by itself.
-                if CallUIModel.shared.state != "idle", !CallUIModel.shared.screenSharing {
-                    CallUIModel.shared.fold(false, why: "app-active")
-                }
-                // The call's window over other apps goes with the app's return (24.09: seen on two screens).
-                MTCallFloat.shared.appReturned()
             }
-            if phase == .background, CallUIModel.shared.state == "idle" {
-                E2E.shared.clearSecretCache()   // don't tear down secrets in the middle of a call
+            if phase == .background {
+                E2E.shared.clearSecretCache()
             }
         }
     }
@@ -1957,22 +1940,6 @@ private struct MTLibrarySearch: UIViewRepresentable {
     }
 }
 
-/// THE MINIMIZED CALL, DECIDED WHERE IT IS DRAWN (22.09): the pill floats only where no name lives
-/// -- not on the chats pane, not over an open chat -- and this layer reads that from the three objects
-/// it observes itself. Decided in the tab's body, the same three objects made that body an owner of the
-/// chat list, and the list was re-hosted on every one of their changes.
-struct MTMinimizedCallLayer: View {
-    @ObservedObject private var callUI = CallUIModel.shared
-    @Environment(UIState.self) private var ui
-    @EnvironmentObject private var store: ChatStore
-    var body: some View {
-        Group {
-            if callUI.state != "idle" && callUI.minimized && ui.pane != .chats && store.openConv == nil {
-                CallOverlayView(model: callUI).transition(.opacity)
-            }
-        }
-    }
-}
 
 /// THE DRAWER CONTAINER IS THE PLATFORM'S (the author's word 17.09: «natively, no hand-written
 /// physics»): the page and the drawer are two hosted screens; the system's screen-edge pan moves the
@@ -2232,6 +2199,9 @@ struct MTShellPage: View {
 }
 
 struct MainTabView: View {
+    /// THE QUESTION OF THE COPY WITH CONTACTS (the author's word 08.10.2026 23:2x MSK: «on by default, and a question at the
+    /// opening»): asked once, in the platform's own alert, after the system's question of the notifications is settled.
+    @State private var keepAsk = false
     // THE TABS DO NOT WATCH THE CALL (22.09): the minimized pill watches it where it is drawn
     // (MTMinimizedCallLayer). Watched from here, every second of a call ran this body -- and this body
     // carries the chat list, the drawer, the open chat and every page over them.
@@ -2248,39 +2218,11 @@ struct MainTabView: View {
 
     var body: some View {
         let _ = MTFrameMeter.shared.body("root")   // the page's passes while a motion is measured
-        // NO TAB BAR (the author's word 17.09): the tabs moved up into the chats top bar — contacts and
-        // chats at its left, the settings at its right; the calls tab is gone (the log lives in the
-        // settings). One page under one bar; the pane is the UI state's.
-        ZStack {
-            // The page over the drawer, hosted by the platform's container (the author's word 17.09).
-            // Hosted screens inherit no environment: the state objects ride in by hand.
-            MontanaDrawerHost(
-                open: ui.drawerOpen,
-                page: MTShellPage()
-                    // 15.8: the minimized call floats only where no name lives -- never on the chats
-                    // pane and never over an open chat; there the handsets stand beside the name.
-                    // THE CONDITION IS DECIDED INSIDE THE HOSTED TREE (22.09): decided here, it made this
-                    // body an owner of the chat list's content, and the host had to be handed a new tree on
-                    // every pass -- see MontanaDrawerHost.
-                    .overlay { MTMinimizedCallLayer() }
-                    .environment(ui).environmentObject(store),
-                drawer: MontanaSideDrawer().environment(ui).environmentObject(store))
-            .ignoresSafeArea()
-            // THE PAGES over the tabs and under an open chat (the author's word 19.09): the settings and the
-            // profile — the chat's own container, the chat's own way in and out.
-            .montanaPage(item: $ui.overlayPage) { p in overlayPageView(p) }
-            // THE CHESS PAGE UNDER AN OPEN CHAT (29.09): a game's chat slides in over the board by the app's one road
-            // (UIState.openChat) and the back swipe returns to the board; a banner's chat is never hidden under the page.
-            .montanaPage(item: $ui.chessPage) { open in MTChessPage(open: open).environment(ui).environmentObject(store) }
-            // CHAT — ON TOP OF TabView (the tab bar under the overlay; no .toolbar(.hidden) — see UIState)
-            if let c = ui.overlayChat {
-                ChatOverlay(chat: c, jump: ui.overlayJump)
-                    .id(c.id)
-                    .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .identity))
-                    .zIndex(10)
-            }
-        }
-        .montanaPage(item: $ui.walletPage) { _ in MTWalletPage().environment(ui) }
+        // THE WALLET IS THE ROOT (the author's word 09.10.2026 16:00 MSK: «in the wallet leave only the page of the time coins and
+        // the wallet's management; take everything else out, chats and calls among them»): no drawer, no chats, no tabs -- the
+        // coins' page, and over it the pages it opens: the settings and one more person.
+        MTWalletPage()
+        .montanaPage(item: $ui.overlayPage) { p in overlayPageView(p) }
         .montanaPage(item: $ui.passwordsPage) { _ in MTPasswordsPage() }
         .sheet(item: $vault.incoming) { secret in MTSecretSaveSheet(item: secret) }
         // THE DOCUMENT over everything — the whole screen; the edge swipe or the platform's close item.
@@ -2341,10 +2283,20 @@ struct MainTabView: View {
             // completion store and are retried by retryPendingMedia one line above — there is no second head ([C-1]).
             E2E.shared.broadcastAvatar()
         } }
-        .onReceive(NotificationCenter.default.publisher(for: .openChatRequest)) { _ in ui.pane = .chats }
-        .onReceive(NotificationCenter.default.publisher(for: .montanaOpenWallet)) { _ in ui.walletPage = MTPageFlag(id: "wallet") }
-        .onReceive(NotificationCenter.default.publisher(for: .montanaAddPerson)) { _ in ui.walletPage = nil; ui.overlayPage = .birth }
+        .onReceive(NotificationCenter.default.publisher(for: .montanaOpenWallet)) { _ in ui.overlayPage = nil }   // the root itself: a page over it steps aside
+        .onReceive(NotificationCenter.default.publisher(for: .montanaAddPerson)) { _ in ui.overlayPage = .birth }
         .onReceive(scheduleTick) { _ in store.fireDueScheduled() }
+        .onChange(of: scenePhase) { _, p in   // the system's question answered and the app back: the copy's question follows
+            if p == .active, MontanaSeed.hasSeed, !MTKeeping.told {
+                MontanaNotifyGate.systemStatus { st in if st != .notDetermined { keepAsk = true } }
+            }
+        }
+        .alert("Keep your copy with your contacts?", isPresented: $keepAsk) {
+            Button("Keep") { MTKeeping.shared.answer(keep: true) }
+            Button("Not now", role: .cancel) { MTKeeping.shared.answer(keep: false) }
+        } message: {
+            Text("Your copy is sealed with your 24 words and cut into parts. The people you write to keep the parts around a ring, each part with two of them: they see only its size and when it changes, and cannot open it. With your words on a new phone, the parts come back from them, and each of them gives back the conversation you share.")
+        }
     }
 
     /// The page the slot shows for each name. Hosted screens inherit no environment: the state
@@ -2366,6 +2318,12 @@ struct MainTabView: View {
                 NotificationsView()
                     .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
             }
+            // THE CROSSED GLYPH OF THE COPY'S PAGE (the author's word 08.10.2026 23:2x MSK): Data and Storage, where the copy with
+            // contacts is switched, its cross top left.
+            case .keeping: NavigationStack {
+                DataStorageView()
+                    .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
+            }
             }
         }
         .environment(ui).environmentObject(store)
@@ -2385,6 +2343,9 @@ struct MainTabView: View {
         // belongs to the mesh switch and rises only when a person turns it on.
         MontanaP2PNode.shared.autoStart()
         MTNotifyAllowed.shared.read("entry")   // asks again while the system holds no answer, not once for ever (06.10)
+        // The copy with contacts is asked after the system's own question, never beside it (two windows explain each other away).
+        guard !MTKeeping.told else { return }
+        MontanaNotifyGate.systemStatus { st in if st != .notDetermined { keepAsk = true } }
     }
 
     // pick up attachments from the «Share» menu after warming up the E2E session
@@ -2393,7 +2354,6 @@ struct MainTabView: View {
         // were a guess-wait — exactly that long the user stared at an empty chat.
         store.ingestPendingShares()
         MTBoard.shared.takeFromSheet()   // a post the sheet wrote for my own wall (the author's word 29.09)
-        MTScreenShelfTake.run()          // a screen recording the broadcast left on the shelf goes to Photos (05.10)
         // The sheet rings a RUNNING app through a Darwin note the moment it saves the
         // sender's record — without this the bubble waited for the next activation while
         // the receiver already held the letter (the inverted order, the author's word 29.08).
@@ -2670,8 +2630,6 @@ struct ContactsTabView: View {
     private func deeds(_ c: Chat) -> [MTPersonMenu.Deed] {
         [.init(title: "Write", icon: Self.writeGlyph) { write(c) },
          .init(title: "Profile", icon: "person.crop.circle") { personMenu = nil; openProfile = c },   // the page a tap used to open
-         .init(title: "Audio call", icon: "phone") { personMenu = nil; MontanaCall.shared.startCall(peer: c.convRef, device: "", video: false) },
-         .init(title: "Video call", icon: "video") { personMenu = nil; MontanaCall.shared.startCall(peer: c.convRef, device: "", video: true) },
          store.archivedContacts.contains(c.convRef)
             ? .init(title: "Unarchive", icon: "tray.and.arrow.up") { personMenu = nil; store.toggleArchiveContact(c.convRef) }
             : .init(title: "Archive", icon: "archivebox") { personMenu = nil; store.toggleArchiveContact(c.convRef) },   // this page's archive
@@ -2828,213 +2786,14 @@ private struct MTPushedMark: ViewModifier {
 
 // ── "Calls" tab — call log ──
 struct CallRecord: Identifiable {
-    let id: String; let peer: String; let video: Bool; let incoming: Bool
+    let mid: String; let peer: String; let video: Bool; let incoming: Bool
     let dur: Int; let missed: Bool; let time: String; let at: Double
+    /// A CALL'S NAME IS ITS CONVERSATION AND ITS LETTER (09.10): a letter's name is one within its conversation, not across
+    /// them -- the archive names a restored letter by its second, side and text, so a transcript and its live twin hold the
+    /// same «arc:» letter, and the list that took the letter's name alone met it twice and died (T1 07:49:41Z, Wallet 10:
+    /// «Duplicate identifiers: call:arc:baf0637d…, call:arc:234a31f6…» the moment the Calls page opened).
+    var id: String { peer + "/" + mid }
 }
-
-/// THE CALLS UNDER THE BAR (the author's word 17.09): the log's rows in the list's own dress on the
-/// one container, under the time panel like the chats and the contacts; the days parted as inside a
-/// chat; a tap dials the person back; a hold opens the menu — select, delete, block; selecting, the
-/// bar below carries the cross out, the bin for the chosen and the bin for all.
-struct CallsTabView: View {
-    @EnvironmentObject var store: ChatStore
-    @Environment(UIState.self) private var ui
-    let panel: MontanaTimePanel
-    @State private var selecting = false
-    @State private var selected: Set<String> = []
-    @State private var personMenu: Chat?       // the row held: its menu cloud
-    @State private var blockingChat: Chat?     // the one block sheet — the profile's ([C-1])
-    private static let dayMark = "day:"
-    private static let callMark = "call:"
-
-    private var records: [CallRecord] { store.callRecords() }
-    private func nameFor(_ ref: String) -> String { store.displayName(for: ref) }
-    private func avatarFor(_ ref: String) -> String? {
-        store.avatarFor(Chat(name: ref, lastMessage: "", time: "", unread: 0, convId: ref))
-    }
-    private func colorFor(_ ref: String) -> Color {
-        let palette: [Color] = [.blue, .green, .orange, .purple, .pink, .teal, .indigo]
-        let h = ref.unicodeScalars.reduce(0) { $0 &+ Int($1.value) }
-        return palette[h % palette.count]
-    }
-    /// The rows: a day row before the first call of each day, then the day's calls, newest first.
-    private var rows: [Chat] {
-        var out: [Chat] = []
-        var day = -1.0
-        let cal = Calendar.current
-        for r in records {
-            let start = cal.startOfDay(for: Date(timeIntervalSince1970: r.at)).timeIntervalSince1970
-            if start != day {
-                day = start
-                out.append(Chat(name: Self.dayMark, lastMessage: "", time: "", unread: 0, status: "", convId: Self.dayMark + String(Int(start))))
-            }
-            out.append(Chat(name: r.peer, lastMessage: "", time: "", unread: 0, status: "", convId: Self.callMark + r.id))
-        }
-        return out
-    }
-    private func record(_ c: Chat) -> CallRecord? {
-        guard let id = c.convId, id.hasPrefix(Self.callMark) else { return nil }
-        let rid = String(id.dropFirst(Self.callMark.count))
-        return records.first { $0.id == rid }
-    }
-    private func rowPrint(_ c: Chat) -> [Int] {
-        func p<T: Hashable>(_ v: T) -> Int { var h = Hasher(); h.combine(v); return h.finalize() }
-        return [p(c.id), p(nameFor(c.name)), p(String(describing: MTNameBook.displayedPhoto(c.name))), p(selecting), p(selected.contains(c.id))]
-    }
-    private func subtitle(_ r: CallRecord) -> String {
-        if r.missed { return String(localized: r.incoming ? "Missed" : "No answer", bundle: MTLanguage.bundle) }
-        if r.dur > 0 { return String(format: "%d:%02d", r.dur/60, r.dur%60) }
-        return String(localized: "Connection failed", bundle: MTLanguage.bundle)
-    }
-    /// The clock of the call — the day stands in its own row above.
-    private func clock(_ r: CallRecord) -> String {
-        Date(timeIntervalSince1970: r.at).formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: MTLanguage.locale))
-    }
-    /// The chat list's shared line: the face, the name, the direction and
-    /// the duration, the clock; a day row is the chat's own date pill at the centre.
-    @ViewBuilder private func cell(_ c: Chat) -> some View {
-        if c.name == Self.dayMark, let id = c.convId, let s = Double(id.dropFirst(Self.dayMark.count)) {
-            Text(LocalizedStringKey(MTDayLabel.of(s)))
-                .font(.caption2).foregroundColor(.gray)
-                .padding(.horizontal, 12).padding(.vertical, 5)
-                .background(Color(white: 0.15))
-                .clipShape(MontanaLongOctagon())
-                .padding(.vertical, 4)
-                .frame(maxWidth: .infinity)
-        } else if let r = record(c) {
-            HStack(spacing: MTLibraryRow.gap) {
-                if selecting {
-                    Image(systemName: selected.contains(c.id) ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 22)).foregroundColor(selected.contains(c.id) ? Color.accentColor : .gray)
-                }
-                AvatarCircle(photoURL: avatarFor(r.peer), color: colorFor(r.peer),
-                             initial: MTNameBook.face(r.peer, title: nameFor(r.peer)), size: MTLibraryRow.face,
-                             timeMarkWhenMissing: true)
-                    .overlay(MontanaHexagon().stroke(Color.white.opacity(0.45), lineWidth: 1))
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 5) {
-                        Text(MontanaAvatar.spokenName(nameFor(r.peer))).font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(r.missed ? .red : .white).lineLimit(1)
-                        Spacer()
-                        Text(verbatim: clock(r)).font(.system(size: 14)).foregroundColor(.gray)   // USER-DATA: a clock
-                    }
-                    .frame(height: 22)
-                    HStack(spacing: 5) {
-                        Image(systemName: r.incoming ? "arrow.down.left" : "arrow.up.right")
-                            .font(.system(size: 12, weight: .semibold)).foregroundColor(r.missed ? .red : .green)
-                        if r.video { Image(systemName: "video.fill").font(.system(size: 11)).foregroundColor(.gray) }
-                        Text(verbatim: subtitle(r)).font(.system(size: 16)).foregroundColor(.gray).lineLimit(1)   // USER-DATA: a duration or a localized word
-                        Spacer()
-                        Image(systemName: r.video ? "video.fill" : "phone.fill").font(.system(size: 18)).foregroundColor(Color.accentColor)
-                    }
-                    .frame(height: 20)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: MTLibraryRow.face)
-            }
-            .modifier(MTLibraryLine(place: "row:" + c.id))
-        }
-    }
-    private func toggle(_ c: Chat) { if selected.contains(c.id) { selected.remove(c.id) } else { selected.insert(c.id) } }
-    private func endSelecting() { withAnimation { selecting = false; selected.removeAll() } }
-    private func dial(_ r: CallRecord, video: Bool) { MontanaCall.shared.startCall(peer: r.peer, device: "", video: video) }
-    private func deleteSelected() {
-        for id in selected { store.deleteCallLog(id: String(id.dropFirst(Self.callMark.count))) }
-        endSelecting()
-    }
-    private func person(_ r: CallRecord) -> Chat {
-        Chat(name: r.peer, lastMessage: "", time: "", unread: 0, status: "Montana address", convId: r.peer)
-    }
-    /// Right to left — delete; a day row has none. The one glass. NO SWIPE FROM THE LEFT (the author's word 26.09: «remove the
-    /// swipe from the left for a call on the calls page»): a tap on the row dials back, and the list offers nothing on that side.
-    private func swipeTrailing(_ c: Chat) -> [SwipeTile] {
-        guard let r = record(c) else { return [] }
-        return [SwipeTile(icon: "trash.fill", color: SwipeTile.glass) { store.deleteCallLog(id: r.id) }]
-    }
-    /// The deeds of the menu about a call (a hold on the row): select, delete, block.
-    private func deeds(_ c: Chat) -> [MTPersonMenu.Deed] {
-        guard let r = record(c) else { return [] }
-        let p = person(r)
-        return [.init(title: "Select", icon: "checkmark.circle") { personMenu = nil; withAnimation { selecting = true; selected = [c.id] } },
-                .init(title: "Delete", icon: "trash", destructive: true) { personMenu = nil; store.deleteCallLog(id: r.id) },
-                store.isBlocked(r.peer)
-                    ? .init(title: "Unblock", icon: "hand.raised.fill") { personMenu = nil; store.toggleBlocked(r.peer) }
-                    : .init(title: "Block", icon: "hand.raised", destructive: true) { personMenu = nil; blockingChat = p }]
-    }
-    var body: some View {
-        let _ = MTFrameMeter.shared.body("calls")   // the page's passes while a motion is measured
-        VStack(spacing: 0) {
-            // THE ROWS RUN ON TO THE SCREEN'S EDGES, AS THE CHATS' (the author's word 23.09: «the same effect for the calls
-            // page, no border at the top or the bottom»): the one construction of the chats (MTChatListFrame), the time
-            // panel list's own law; the ground is the page's one crest — a crest of this tab's own, centred on the tab and
-            // not on the screen, would stand a seam at the bar's edge where the rows now run under it.
-            ZStack(alignment: .top) {
-                MontanaTimePanelList(panel: panel, rows: rows, fingerprint: rowPrint,
-                                     swipeLeading: { _ in [] }, swipeTrailing: swipeTrailing,   // no swipe from the left (26.09)
-                                     swipesEnabled: !selecting,
-                                     onOpen: { c in
-                                         guard let r = record(c) else { return }
-                                         if selecting { toggle(c) } else { dial(r, video: r.video) }   // a tap dials back
-                                     },
-                                     rowContent: { AnyView(cell($0).environmentObject(store).environment(ui)) },
-                                     onHold: { c in if !selecting, record(c) != nil { personMenu = c } },
-                                     // A hold begins on a call alone (25.09): a day's row and a row being selected have no deed for it,
-                                     // and a hold that begins there gave the haptic of a deed that never came.
-                                     holdsRow: { c in !selecting && record(c) != nil },
-                                     page: "calls",
-                                     // Only calls wear a separator; day headings stand alone.
-                                     separatorRow: { c in c.name != Self.dayMark })
-                if records.isEmpty {
-                    Text("Your audio and video calls\nwill appear here").foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            if selecting { selectionBar }
-        }
-        // THE CALLS' ACTION (the author's word 01.10 00:42: «on the calls create the button»): a new call is chosen among one's
-        // people -- the contacts' page, where a person's row dials; the pages' one corner (mtPageAction).
-        .mtPageAction(shown: !selecting) {
-            Button { withAnimation(.easeInOut(duration: 0.2)) { ui.pane = .contacts } } label: {
-                Image(systemName: "phone.badge.plus").font(.system(size: 25, weight: .medium)).foregroundColor(MontanaOctagon.barGlyph)
-            }
-            .buttonStyle(.montanaOctagon(square: true, bar: true))
-            .accessibilityLabel(Text("New Call"))
-        }
-        // THE BADGE CLEARS WHEN THE PAGE IS LOOKED AT (25.09): the page stands built in the row before it is looked at, so its
-        // appearance says nothing — the pane's choice does.
-        .onChange(of: ui.pane, initial: true) { _, p in if p == .calls { store.clearMissedCallsBadge() } }
-        .overlay {
-            if let c = personMenu, let r = record(c) {
-                MTPersonMenu(chat: person(r), anchor: MTBubbleFrames.shared.rect("row:" + c.id), deeds: deeds(c), onClose: { personMenu = nil })
-            }
-        }
-        .overlay {
-            if let c = blockingChat {
-                MontanaBlockSheet(chat: c, onBlock: { store.toggleBlocked(c.name); blockingChat = nil }, onCancel: { blockingChat = nil })
-            }
-        }
-    }
-    /// The bar of the selection (the author's word 17.09): the cross out of it on the left, the bin
-    /// for the chosen and the bin for all — glyphs only.
-    private var selectionBar: some View {
-        HStack(spacing: 10) {
-            barButton("xmark") { endSelecting() }
-            Spacer()
-            barButton("trash") { deleteSelected() }
-                .opacity(selected.isEmpty ? 0.5 : 1).disabled(selected.isEmpty)
-            barButton("xmark.bin") { store.clearAllCallLogs(); endSelecting() }
-        }
-        .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 6)
-    }
-    private func barButton(_ glyph: String, _ act: @escaping () -> Void) -> some View {
-        Button(action: act) {
-            Image(systemName: glyph).font(.system(size: 18, weight: .semibold)).foregroundColor(.white)
-        }
-        .buttonStyle(.montanaOctagon(square: true))
-    }
-}
-
 
 // ════════════════════════════════════════════════════════════
 // MESSAGE MODEL
@@ -3154,10 +2913,8 @@ enum MontanaAudioSession {
     @discardableResult
     static func record(_ what: String, keepMusic: Bool = false) -> Bool {
         precondition(!Thread.isMainThread, "Recording activation belongs to the recorder's worker queue")
-        guard !MontanaCall.isBusy else { MontanaP2PTrace.mark("audio_refused", "\(what) recording -- the call holds the sound"); return false }
         // MAIN-SAFE-SYNC: both recorders enter on their worker queues; the precondition rejects the main thread.
         return ledger.sync {
-        guard !MontanaCall.isBusy else { return false }
         holders[what] = true
         let s = AVAudioSession.sharedInstance()
         let opts: AVAudioSession.CategoryOptions = keepMusic ? [.mixWithOthers, .defaultToSpeaker, .allowBluetoothA2DP]
@@ -3176,13 +2933,8 @@ enum MontanaAudioSession {
         return v.playingFile != nil && !v.paused && !v.isVoice
     }
     static func activatePlayback() {
-        // The sign is a REALLY running call, not the session's category. After a conversation
-        // the app does not reset the session: the category stays playAndRecord with voiceChat
-        // mode, and the sound goes to the earpiece — which sounds like «no sound». Checking
-        // the category would freeze that state forever instead of fixing it.
-        if MontanaCall.isBusy || CallUIModel.shared.state != "idle" { return }
         ledger.async {
-            guard !MontanaCall.isBusy, !holders.values.contains(true) else { return }
+            guard !holders.values.contains(true) else { return }
             activatePlaybackLocked()
         }
     }
@@ -3194,28 +2946,10 @@ enum MontanaAudioSession {
         return mode && mtAudioTry("activating the audio session for video") { try s.setActive(true, options: []) }
     }
 
-    /// THE CALL HOLDS THE SOUND WHILE IT LASTS (24.09, T1 12:31:40): a track of our own began under a video call and
-    /// the call's sound broke -- the player set the phone's sound to playback and woke it anew, while the call's voice
-    /// lives in the voice-chat mode with the microphone. The phone's sound has two owners: the call while one stands,
-    /// this door otherwise. Every other road of sound passes here; under a call none of them touches the session, and
-    /// the person who asked for sound is told so in the platform's own alert. The machine's flag is read without
-    /// waking the machine.
-    static func refusedUnderCall(_ what: String) -> Bool {
-        guard MontanaCall.isBusy else { return false }
-        MontanaP2PTrace.mark("audio_refused", "\(what) -- the call holds the sound")
-        DispatchQueue.main.async {
-            let alert = UIAlertController(title: String(localized: "Unavailable during a call", bundle: MTLanguage.bundle),
-                                          message: String(localized: "While a call lasts, the sound belongs to it.", bundle: MTLanguage.bundle),
-                                          preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: String(localized: "OK", bundle: MTLanguage.bundle), style: .default))
-            MTTop.present(alert, kind: "alert")
-        }
-        return true
-    }
     /// A track of our own: the playback mode and the movie session.
     static func playMusic(then: @escaping (Bool) -> Void) {
         ledger.async {
-            guard !MontanaCall.isBusy, !holders.contains(where: { $0.key != "play" && $0.value }) else {
+            guard !holders.contains(where: { $0.key != "play" && $0.value }) else {
                 DispatchQueue.main.async { then(false) }; return
             }
             holders["play"] = false
@@ -3226,7 +2960,7 @@ enum MontanaAudioSession {
     /// A voice message: plain playback on a headset, a speaker or a car; the ear and the loudspeaker on the phone alone.
     static func playVoice(external: Bool, then: @escaping (Bool) -> Void) {
         ledger.async {
-        guard !MontanaCall.isBusy, !holders.contains(where: { $0.key != "play" && $0.value }) else {
+        guard !holders.contains(where: { $0.key != "play" && $0.value }) else {
             DispatchQueue.main.async { then(false) }; return
         }
         holders["play"] = !external
@@ -3245,9 +2979,9 @@ enum MontanaAudioSession {
     /// session mixes with every other app's — a person's own music goes on under a feed of playing videos. A call or a
     /// track of ours holds the session as it does; a silent clip under them changes nothing.
     static func playSilentClip() {
-        guard !MontanaCall.isBusy, VoicePlayer.shared.playingFile == nil else { return }
+        guard VoicePlayer.shared.playingFile == nil else { return }
         ledger.async {
-        guard !MontanaCall.isBusy, holders.isEmpty else { return }
+        guard holders.isEmpty else { return }
         let s = AVAudioSession.sharedInstance()
         mtAudioTry("a silent clip: mixing with the others") { try s.setCategory(.ambient, mode: .moviePlayback, options: [.mixWithOthers]) }
         }
@@ -3256,14 +2990,12 @@ enum MontanaAudioSession {
     /// the sound in their own mode -- the recording's, the ear's -- and waking the session as it stood played the music into a
     /// headset's call road; the door its kind first played through opens it again.
     static func wake(voice: Bool, external: Bool, then: @escaping (Bool) -> Void) {
-        guard !MontanaCall.isBusy else { then(false); return }
         if voice { playVoice(external: external, then: then) } else { playMusic(then: then) }
     }
     /// A playing voice at the ear or on the loudspeaker, as the proximity sensor says.
     static func routeVoice(near: Bool) {
-        guard !MontanaCall.isBusy else { return }
         ledger.async {
-        guard !MontanaCall.isBusy, holders["play"] == true,
+        guard holders["play"] == true,
               !holders.contains(where: { $0.key != "play" && $0.value }) else { return }
         mtAudioTry(near ? "routing the voice to the ear" : "routing the voice to the loudspeaker") {
             try AVAudioSession.sharedInstance().overrideOutputAudioPort(near ? .none : .speaker)
@@ -3298,17 +3030,7 @@ enum MontanaAudioSession {
             closeMicRoad(lower: holders.isEmpty && !stillSounds)
         }
     }
-    /// The call is over and the system did not take the sound back: the road closes here too, so the car's call
-    /// ends with the call itself and the next voice does not play into the earpiece of a conversation gone by.
-    static func callEnded() {
-        let stillSounds = !quiet
-        ledger.async {
-            guard !holders.values.contains(true) else { return }
-            closeMicRoad(lower: holders.isEmpty && !stillSounds)
-        }
-    }
     private static func closeMicRoad(lower wholly: Bool) {
-        guard !MontanaCall.isBusy else { return }   // a standing call owns the sound, as it always has
         let s = AVAudioSession.sharedInstance()
         // THE SESSION IS LOWERED FIRST, THE CATEGORY SET AFTER. A NOTE KEEPS THE MUSIC PLAYING (the author's word
         // 24.09), which the recording session does by mixing; a category change on a LIVE session that mixes would
@@ -3319,9 +3041,9 @@ enum MontanaAudioSession {
         mtAudioTry("letting the input go") { try s.setPreferredInput(nil) }
         if !wholly { MontanaP2PTrace.mark("audio_hold", "the road is closed; the session stays -- something of ours sounds") }
     }
-    /// Nothing of ours sounds -- asked of the owners: the player in hand, the video in the dock, a running call.
+    /// Nothing of ours sounds -- asked of the owners: the player in hand, the video in the dock.
     private static var quiet: Bool {
-        !MontanaCall.isBusy && (VoicePlayer.shared.playingFile == nil || VoicePlayer.shared.paused)
+        (VoicePlayer.shared.playingFile == nil || VoicePlayer.shared.paused)
             && MontanaVideoDock.shared.file == nil
     }
     private static func lowerSession(again: Bool) {
@@ -3332,7 +3054,7 @@ enum MontanaAudioSession {
         guard !ok, again else { return }
         // A session whose input is still winding down answers «busy»: the reference waits and asks once more.
         ledger.asyncAfter(deadline: .now() + 2) {
-            guard holders.isEmpty, !MontanaCall.isBusy else { return }
+            guard holders.isEmpty else { return }
             lowerSession(again: false)
         }
     }
@@ -3858,6 +3580,10 @@ let sameYesMark = "\u{200B}\u{200B}SY:"
 // the other side's history stays readable and its composer gives way to a note. An older build buries the word unread
 // ([P2P-COMPAT]) and the pipe dies by the word's term, as by a tombstone's.
 let pipeClosedMark = "\u{200B}\u{200B}PX:"
+// THE COPY KEPT BY THE PEOPLE ONE WRITES TO (the author's word 08.10.2026 20:3x, MTKeeping; Network «A copy kept by the people one
+// speaks with»): one word, JSON with «w» -- a question, a yes, a part, a keeper's «held», a release -- riding the correspondence,
+// and a call and its answer riding the pipe of a slot. Never a row; an older build buries it unread.
+let keepMark = "\u{200B}\u{200B}KP:"
 /// The words a pipe is buried with: the tombstone of «delete for both» and the orphan sweep's closing word. Each rides
 /// past the conversation's death, and its receipt — or its term — buries the pipe.
 func isBurialWord(_ text: String) -> Bool { text.hasPrefix(convDelMark) || text.hasPrefix(pipeClosedMark) }
@@ -3867,7 +3593,8 @@ func isBurialWord(_ text: String) -> Bool { text.hasPrefix(convDelMark) || text.
 let knownServiceTokens: Set<String> = ["VC:", "MD:", "RC:", "TY:", "WA:", "AP:", "AV:", "NM:",
                                        "RG:", "QC:", "DL:", "DF:", "CL:", "MC:", "WH:", "CG:", "PA:", "EX:",
                                        "ED:", "PN:", "SP:", "AB:", "WL:", "SM:", "SY:", "PX:", "PG:",
-                                       "GR:"]   // a group's invitation and letter (MTGroup, 05.10)
+                                       "GR:",   // a group's invitation and letter (MTGroup, 05.10)
+                                       "KP:"]   // the copy kept by the people one writes to (MTKeeping, 08.10)
 func mtUnknownServiceWord(_ text: String) -> Bool {
     if text.hasPrefix("\u{200B}\u{200B}") {
         return !knownServiceTokens.contains(String(text.dropFirst(2).prefix(3)))
@@ -3931,6 +3658,7 @@ func isControlMarker(_ text: String) -> Bool {
         || text.hasPrefix(MTBoard.mark)              // the wall's word (24.09): a post, a mark, a page — never a row
         || text.hasPrefix(sameAskMark) || text.hasPrefix(sameYesMark)   // one person, one conversation (24.09): never a row
         || text.hasPrefix(pipeClosedMark)            // the pipe closed at the other end (24.09): never a row
+        || text.hasPrefix(keepMark)                  // the keeping of a copy (08.10): never a row
 }
 // A service letter never rings: receipts, typing, drafts, profile (name/avatar/nick/card),
 // deletions, wake-handles ride SILENT pushes by construction — the server model sent them
@@ -3956,19 +3684,9 @@ func mtPushLook(for text: String) -> String {
 /// word that it was missed — and they are two faces of ONE fact in time: once the call is over the
 /// bell is a lie. Both ride under the call's own short name, so the second replaces the first and a
 /// phone can never hold two banners for one call, even when its extension never ran to sweep them.
-func mtPushSlot(for text: String) -> String {
-    if text.hasPrefix(missedCallMark) {
-        let tag = MontanaMissedCall.tag(MontanaMissedCall.letter(text).seed)
-        return tag.isEmpty ? "" : "call-" + tag
-    }
-    if text.hasPrefix(ringMark) {
-        let json = String(text.dropFirst(ringMark.count))
-        let o = json.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
-        let tag = MontanaMissedCall.tag((o?["s"] as? String) ?? "")
-        return tag.isEmpty ? "" : "call-" + tag
-    }
-    return ""
-}
+/// THE WALLET RINGS NOTHING (the author's word 09.10.2026 16:00 MSK): it sends neither a bell nor a missed call, so no letter of
+/// its own names a call's slot.
+func mtPushSlot(for text: String) -> String { "" }
 func isSilentLetter(_ text: String) -> Bool {
     (isControlMarker(text) || text.hasPrefix(draftSignalMark))
         && !text.hasPrefix(mediaMark) && !text.hasPrefix(voiceMark) && !text.hasPrefix(stickerMark)

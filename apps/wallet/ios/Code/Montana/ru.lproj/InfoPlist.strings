@@ -4,7 +4,7 @@
    (Info.plist); this file is one language of it. */
 
 "NSBluetoothAlwaysUsageDescription" = "Montana использует Bluetooth, чтобы телефоны соединялись напрямую и обменивались сообщениями рядом.";
-"NSCameraUsageDescription" = "Montana использует камеру, чтобы снимать фото и видео для чатов.";
+"NSCameraUsageDescription" = "Montana использует камеру, чтобы сканировать код контакта.";
 "NSContactsUsageDescription" = "Montana использует контакты, чтобы вы могли поделиться ими в чате, и сохраняет людей, добавленных в Montana, в ваши контакты по их @имени. Это выключается в Настройках: Приватность, Синхронизировать контакты.";
 "NSFaceIDUsageDescription" = "Montana использует Face ID, чтобы открыть ваши сохранённые пароли и показать 24 слова восстановления.";
 "NSLocalNetworkUsageDescription" = "Montana соединяет ваше устройство и устройство собеседника напрямую по Wi-Fi. Разрешение нужно только чтобы телефоны нашли друг друга в одной сети.";

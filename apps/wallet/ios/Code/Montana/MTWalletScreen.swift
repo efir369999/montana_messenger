@@ -1,12 +1,13 @@
 import SwiftUI
 
+/// THE WALLET IS THE APP (the author's word 09.10.2026 16:00 MSK: «in the wallet leave only the page of the time coins and the
+/// wallet's management; take everything else out, chats and calls among them -- the wallet is a wallet, and the contacts in it
+/// too»): this page stands as the root and is never closed; the contacts and the wallet's management are the bar's two marks.
 struct MTWalletPage: View {
-    @Environment(\.montanaClose) private var close
     @Environment(\.scenePhase) private var phase
     @Environment(UIState.self) private var ui
     @State private var state: Result<MTWalletCore.Snapshot, MTWalletCore.Absence>?
     @State private var loading = false
-    @State private var windows = MTBoard.MTWallWindowList()
     /// THE COIN BOOK (the author's word 03.10 13:52): the balance, the moves and the history all read the one ledger.
     @ObservedObject private var book = MTLocalCoinLedger.shared
     @ObservedObject private var pantheon = MTPantheon.shared
@@ -18,6 +19,7 @@ struct MTWalletPage: View {
     @State private var sending = false
     @State private var toppingUp = false
     @State private var levelsShown = false
+    @State private var contactsShown = false
     /// THE COIN TURNS ONCE (the author's word 03.10.2026 16:55 MSK: «the coin makes one turn at the opening and at a tap»).
     @State private var coinTurn = 0
     /// The touches of the coin that minted, each its rising +1 until it fades (MTRisingPlus).
@@ -28,6 +30,16 @@ struct MTWalletPage: View {
     @State private var pull: CGFloat = 0
     @State private var pullArmed = false
     @State private var pullReleased: (at: Date, angle: Double)?
+    /// The caption under the name (the author's word 09.10.2026): it comes with a finger on the coin and leaves three seconds after
+    /// the last finger lifts; a finger landing again keeps it.
+    @State private var hint = false
+    @State private var hintTurn = 0
+    private func showHint() { hintTurn += 1; hint = true }
+    private func hideHintSoon() {
+        hintTurn += 1
+        let turn = hintTurn
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { if turn == hintTurn { hint = false } }
+    }
     /// From where to where, as a person reads it: the game or the person the coins came from, and where they went.
     static func route(_ e: MTCoinEntry) -> String {
         let me = String(localized: "You", bundle: MTLanguage.bundle)
@@ -57,10 +69,8 @@ struct MTWalletPage: View {
                         // THE PAGE DOES NOT MOVE UNDER THE GAME (the author's word 04.10.2026 04:21 MSK, T2: «why does the wallet's page pull
                         // so; during the Pantheon on Fire the page must not move»): the name, the speed and the box's bar keep their places
                         // whether the game burns or not -- shown and hidden, never inserted, so the coin never moves under the finger.
-                        // THE GAME IS NAMED AND SAID BEFORE IT IS PLAYED (the author's words 08.10.2026 02:2x MSK: «the hidden options of the
-                        // minting -- make them explicit with a caption under the name Pantheon on Fire, everything explicit, crystal clear»;
-                        // App Review 2.3.1(a): no hidden or dormant feature): the name stands always and burns while the game burns, and the
-                        // caption under it says what a tap, a pull and a hold do -- the page keeps its places either way.
+                        // THE NAME STANDS ALWAYS AND BURNS WHILE THE GAME BURNS; THE WHOLE RULES STAND ON THE PAGE BELOW (MTCoinRules, the
+                        // author's words 08.10.2026 02:2x MSK, «crystal clear»; App Review 2.3.1(a)).
                         Label {
                             Text("Pantheon on Fire")
                         } icon: {
@@ -68,11 +78,16 @@ struct MTWalletPage: View {
                         }
                         .font(.title2.bold())
                         .shadow(color: .orange.opacity(pantheon.lit ? 0.8 : 0), radius: 8)
-                        VStack(spacing: 4) {
-                            Text("Tap the coin: every tap mints coins at your level, up to 13 taps a second, and all coins of one second stop at 13 (26 while music plays). The fire burns while you tap, a minute at most, then rests a minute; three seconds without a tap put it out.")
-                            Text("Pull this page down past the coin, or hold the coin: coins come by themselves every second at your level while this page stays open. Leaving the page or locking the screen stops it.")
-                        }
-                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                        // THE CAPTION COMES WITH THE FINGER (the author's word 09.10.2026 11:3x MSK: «remove this canvas under the name
+                        // Pantheon, and only at a press of the coin show under the name Pantheon on Fire: hold the coin 9 seconds for auto
+                        // minting, music doubles auto minting -- then the caption goes; show it only at the touch of the coin»): one line
+                        // while a finger is on the coin and three seconds after the last one lifts; hidden, it keeps its place, so the coin
+                        // never moves under the finger.
+                        Text("Hold the coin for 9 seconds for auto minting; music doubles auto minting.")
+                            .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                            .opacity(hint ? 1 : 0)
+                            .accessibilityHidden(!hint)
+                            .animation(.easeInOut(duration: 0.25), value: hint)
                         // THE APPS THAT MINT, ABOVE THE COIN (the author's word 04.10.2026 18:08 MSK): their icons, the row kept in its place.
                         MTMintingApps()
                         ZStack {
@@ -89,7 +104,8 @@ struct MTWalletPage: View {
                             // THE COIN AND A LITTLE PAST ITS RIM (the author's word 04.10.2026 03:13 MSK: «the tap area only on the coin and a
                             // little wider than its border»): the pad reaches past the coin's frame by its rim; the rising capsule stands
                             // where the finger touched, in the coin's own frame.
-                            MTCoinTapPad(locked: pantheon.lit, onDown: { pantheon.touched() }, onUp: { pantheon.released() }, onLongHold: { autoMint.fire() }) { point in
+                            MTCoinTapPad(locked: pantheon.lit, onDown: { pantheon.touched(); showHint() }, onUp: { pantheon.released(); hideHintSoon() },
+                                         onLongHold: { autoMint.fire() }) { point in
                                 let coins = pantheon.tap()
                                 let r = MTCoinTapPad.rim
                                 if 0 < coins {
@@ -182,9 +198,8 @@ struct MTWalletPage: View {
                         .buttonBorderShape(.capsule)
                         .tint(MontanaOctagon.platformBlue)
                         // ONE MORE PERSON FROM THE WALLET (the author's word 03.10: «in the wallet a + account button, as the side
-                        // panel's: signing in and creating»): the drawer's plus -- the wallet steps aside and the first screen rises.
+                        // panel's: signing in and creating»): the first screen rises over the wallet.
                         Button {
-                            close?()
                             NotificationCenter.default.post(name: .montanaAddPerson, object: nil)
                         } label: {
                             Label("Add account", systemImage: "person.crop.circle.badge.plus").font(.headline).frame(maxWidth: .infinity, minHeight: 44)
@@ -216,26 +231,25 @@ struct MTWalletPage: View {
                 Section { MTCoinRules() } header: { Text("How coins come and go") }
                 // THE TIMECHAINS (the author's word 04.10 00:25, MTTimeChain): each source's chain, its length, its head, its seal.
                 Section { MTTimeChainRows() } header: { Text("TimeChains") }
-                // THE WALL'S MINTING STANDS ON THE WALLET (the author's word 02.10 15:28): the rights the comment windows hold,
-                // beside the confirmed balance and never added into it -- only the core turns a right into a note.
+                // THE BOOK'S ROWS (the author's word 03.10 13:53: every row reads the coin ledger). The chats, the wall and chess left
+                // the wallet (the author's word 09.10.2026 16:00 MSK): their rows stand only on a book that already holds such coins.
                 Section {
-                    LabeledContent("Minting now", value: String(windows.filter(\.open).reduce(0) { $0 + $1.share }))
-                    LabeledContent("Rights from the wall", value: String(windows.reduce(0) { $0 + $1.share }))
-                    // THE CHATS' COINS (the author's word 02.10 19:37): one coin for every letter of a chat in the ribbon of time,
-                    // live. LOCAL TALLY, NOT MINTING -- counted on this phone, never added into the confirmed balance (MTChatMint).
-                    // ONE BOOK (the author's word 03.10 13:53): every row reads the coin ledger, the chats' coins included.
-                    LabeledContent {
-                        // USER-DATA: a number, the coins the chats earned
-                        Text(verbatim: MTCoinText.count(book.earned)).monospacedDigit()
-                    } label: { Text("Coins from chats") }
+                    if book.earned != 0 {
+                        LabeledContent {
+                            // USER-DATA: a number, the coins the chats earned in an earlier version
+                            Text(verbatim: MTCoinText.count(book.earned)).monospacedDigit()
+                        } label: { Text("Coins from chats") }
+                    }
                     LabeledContent {
                         // USER-DATA: a number, the coins the Pantheon on Fire's taps minted
                         Text(verbatim: MTCoinText.count(book.tapped)).monospacedDigit()
                     } label: { Text("Coins from the Pantheon") }
-                    LabeledContent {
-                        // USER-DATA: a number, the coins of chess: the moves, the sums won and given up (MTChessCoins)
-                        Text(verbatim: MTCoinText.count(book.played)).monospacedDigit()
-                    } label: { Text("Coins from chess") }
+                    if book.played != 0 {
+                        LabeledContent {
+                            // USER-DATA: a number, the coins of chess an earlier version played
+                            Text(verbatim: MTCoinText.count(book.played)).monospacedDigit()
+                        } label: { Text("Coins from chess") }
+                    }
                     // THE RETIRED WALL'S COINS (08.10.2026: the VPN left for its own app): shown only on a book that holds them.
                     if book.walled != 0 {
                         LabeledContent {
@@ -255,10 +269,12 @@ struct MTWalletPage: View {
                         // USER-DATA: a number, the coins sent to people
                         Text(verbatim: MTCoinText.count(book.sent)).monospacedDigit()
                     } label: { Text("Coins sent") }
-                    LabeledContent {
-                        // USER-DATA: a number, the coins given on letters and posts
-                        Text(verbatim: MTCoinText.count(book.spent)).monospacedDigit()
-                    } label: { Text("Coins on reactions") }
+                    if book.spent != 0 {
+                        LabeledContent {
+                            // USER-DATA: a number, the coins an earlier version gave on letters and posts
+                            Text(verbatim: MTCoinText.count(book.spent)).monospacedDigit()
+                        } label: { Text("Coins on reactions") }
+                    }
                     LabeledContent {
                         // USER-DATA: a number, the balance in Montana (one coin is 0.000000001)
                         Text(verbatim: MTChatMint.montana(book.balance)).monospacedDigit()
@@ -300,28 +316,6 @@ struct MTWalletPage: View {
                           footer: { Text("A right becomes a wallet note only after the core confirms its redemption.") }
                     }
                 }
-            Section {
-                if windows.isEmpty {
-                    Text("No comments yet").foregroundStyle(.secondary)
-                } else {
-                    ForEach(windows) { row in
-                        VStack(alignment: .leading, spacing: 6) {
-                            // USER-DATA: the post whose comments opened this window
-                            // USER-DATA: how many minutes this comment series minted
-                            Text(verbatim: String(row.share)).font(.largeTitle.bold().monospacedDigit())
-                            // USER-DATA: the window from its first comment to its last
-                            Text(verbatim: row.span).font(.caption).foregroundStyle(.secondary)
-                            // USER-DATA: every comment time in the series
-                            Text(verbatim: row.marks.joined(separator: " | ")).font(.caption2).foregroundStyle(.secondary).lineLimit(4)
-                            Text(verbatim: row.title).font(.subheadline).lineLimit(2)
-                            LabeledContent("Window", value: row.open ? String(localized: "Active", bundle: MTLanguage.bundle) : String(localized: "Not active", bundle: MTLanguage.bundle))
-                            LabeledContent("Right to a share", value: String(row.share))
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            } header: { Text("TimeChain") }
-              footer: { Text("A right becomes a wallet note only after the core confirms its redemption.") }
             }
             .scrollContentBackground(.hidden).montanaPageGround()
             .overlay { MTCoinSides() }   // the coins rise at the sides at every minting (MTCoinFlash, 04.10)
@@ -329,24 +323,16 @@ struct MTWalletPage: View {
             // wallet's scroll off»; «while it is on I do not want to see scrolling at all»): no scroll from the first tap until the fire
             // goes out after three quiet seconds (MTPantheon.quiet); the coin's own touch locks the page even before its first coin.
             .scrollDisabled(pantheon.lit)
-            // THE MINI PLAYER STANDS ON THE COINS PAGE TOO (the author's word 05.10.2026 00:50 MSK): the same bar as the chats' and a
-            // person's page, by reference; its taps leave the wallet for the music or the letter by the one road.
-            .safeAreaInset(edge: .bottom) {
-                MontanaPlayerBar(onPlace: { t in close?(); ui.askMusic(); MTMusicFocus.shared.show(t) },
-                                 onSearch: { close?(); ui.askMusic() },
-                                 onGoTo: { c, f in
-                    close?()
-                    NotificationCenter.default.post(name: .montanaGoToLetter, object: nil, userInfo: ["chat": c, "file": f])
-                })
-            }
             .navigationTitle("TimeCoin")
-            // THE TITLE AT THE LEFT, THE CROSS IN THE RIGHT CORNER (the author's word 04.10.2026 13:34 MSK: «align the word Wallet to
-            // the left, it goes past the borders; take the refresh button out of the right corner and put the closing cross there»):
-            // the platform's large title inline at the bar's leading edge, one mark on the bar -- the page reads itself again by its
-            // pull, the coin (pulled).
+            // THE TITLE AT THE LEFT (the author's word 04.10.2026 13:34 MSK: «align the word Wallet to the left, it goes past the
+            // borders»): the platform's large title inline at the bar's leading edge -- the page reads itself again by its pull, the
+            // coin (pulled). The root has no cross: the contacts and the wallet's management stand at the trailing edge.
             .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { MontanaBarMark(glyph: "xmark", label: "Close") { close?() } }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    MontanaBarMark(glyph: "person.2", label: "Contacts") { contactsShown = true }
+                    MontanaBarMark(glyph: "gearshape", label: "Settings") { ui.settingsShown = true }
+                }
             }
             .coordinateSpace(.named("walletList"))
             .onPreferenceChange(MTWalletPullKey.self) { y in pulled(y) }
@@ -359,6 +345,7 @@ struct MTWalletPage: View {
                 }
             }
             .sheet(isPresented: $sending) { MTCoinSendSheet() }
+            .sheet(isPresented: $contactsShown) { MTWalletContactsPage() }
             .sheet(isPresented: $toppingUp) { MTCoinTopUpSheet() }
             .sheet(isPresented: $levelsShown) { MTPiLevelsSheet() }
             .overlay { if loading && state == nil { ProgressView() } }
@@ -427,15 +414,14 @@ struct MTWalletPage: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + MontanaCoinSpinner.finish + 0.15) { pullReleased = nil }
     }
     @MainActor private func refresh() async {
-        windows = MTBoard.shared.wallWindows()
         guard !loading else { return }
         loading = true
         let result = await Task.detached(priority: .utility) { MTWalletCore.read() }.value
         loading = false
         guard !Task.isCancelled else { return }
         switch result {
-        case .success(let w): MontanaP2PTrace.mark("wallet_read", "balance=\(w.balance) notes=\(w.notes) windows=\(w.windows.count) pulse=\(w.pulseRunning ? 1 : 0) wall=\(windows.count)")
-        case .failure(let why): MontanaP2PTrace.mark("wallet_read", "absent=\(why) wall=\(windows.count)")
+        case .success(let w): MontanaP2PTrace.mark("wallet_read", "balance=\(w.balance) notes=\(w.notes) windows=\(w.windows.count) pulse=\(w.pulseRunning ? 1 : 0)")
+        case .failure(let why): MontanaP2PTrace.mark("wallet_read", "absent=\(why)")
         }
         state = result
     }
@@ -1161,20 +1147,15 @@ struct MTTimeChainPage: View {
 
 /// EVERY ROAD OF THE COINS, SAID WHERE THE COINS ARE (the author's words 08.10.2026 02:2x MSK: «everything explicit, crystal clear»;
 /// App Review 2.3.1(a)): how coins come and how they go, each rule as the code keeps it -- the Pantheon (MTPantheon), the auto
-/// minting (MTWalletPull), the Money Flow and the ordinary chat (MTChatMint, MTCoinSend.pay, MTCallMint), people, comments, chess --
-/// and what the coins are not. One list for the wallet's page and the Top up sheet.
+/// minting (MTWalletPull), the people of the contacts (MTCoinSend.transfer) -- and what the coins are not. THE WALLET'S OWN ROADS
+/// ALONE (the author's word 09.10.2026 16:00 MSK: the chats, the calls, the wall and chess left the wallet). One list for the
+/// wallet's page and the Top up sheet.
 struct MTCoinRules: View {
     var body: some View {
         Label("Tap the coin: every tap mints coins at your level, up to 13 taps a second, and all coins of one second stop at 13 (26 while music plays). The fire burns while you tap, a minute at most, then rests a minute; three seconds without a tap put it out.", systemImage: "flame")
         Label("Pull this page down past the coin, or hold the coin: coins come by themselves every second at your level while this page stays open. Leaving the page or locking the screen stops it.", systemImage: "arrow.down.circle")
         Label("Your level is how many of the amounts 3, 31, 314 … (the digits of π) your balance reaches, at least 1 and at most 13. While your music plays, every amount at your level doubles. All coins made in one second stop at 13 together, 26 while music plays; Money Flow letters and a chess game's pot are outside this limit.", systemImage: "chart.bar")
-        Label("Money Flow on in a chat: every letter in it, yours and your correspondent's, and every second of a call bring you coins at your level.", systemImage: "bubble.left.and.bubble.right")
-        Label("Ordinary chat: each of your messages and each second of a call burn one coin. With no coins, they go all the same.", systemImage: "bubble.left")
-        Label("A person sends you coins in your chat", systemImage: "person.2")
-        Label("Comments: a comment costs its writer one coin, which goes to the owner of the wall; a comment in a channel costs nothing. Of every five comment coins on a post, the owner's book burns four and gives the fifth to the post's writer, keeping it when the post is the owner's own.", systemImage: "text.bubble")
-        Label("Groups and channels: every letter longer than 13 characters brings you coins at your level.", systemImage: "person.3")
-        Label("Chess: each move puts its maker's level times a thousand coins into the game's pot, and the inviter may name a stake that both players put in; the winner takes the pot, a draw gives each their own back.", systemImage: "checkerboard.rectangle")
-        Label("Chess Timer: while your opponent thinks, your side mints coins at your level every second.", systemImage: "timer")
+        Label("A contact sends you coins, and you send yours to a contact.", systemImage: "person.2")
         Label("Coins cannot be bought or sold in the app, and the app exchanges them for no money. An amount shown in a currency is only your own estimate, from the earnings you entered.", systemImage: "info.circle")
     }
 }
@@ -1235,6 +1216,8 @@ extension View {
 /// as a coin letter in it (MTCoinSend.transfer), and what does not divide stays with the sender. A short balance refuses
 /// before anything leaves.
 struct MTCoinSendSheet: View {
+    /// The one person the contacts touched (MTWalletContactsPage): first in the list and picked; nil -- the whole list, none picked.
+    var to: String? = nil
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var book = MTLocalCoinLedger.shared
     @ObservedObject private var board = MTCoinBoard.shared
@@ -1286,7 +1269,7 @@ struct MTCoinSendSheet: View {
                 .listRowBackground(MTGlassRowPlate())
                 Section {
                     if chats.isEmpty {
-                        Text("No chats yet").foregroundStyle(.secondary).listRowBackground(MTGlassRowPlate())
+                        Text("No contacts yet").foregroundStyle(.secondary).listRowBackground(MTGlassRowPlate())
                     } else {
                         ForEach(chats, id: \.name) { c in
                             HStack(spacing: 12) {
@@ -1316,7 +1299,7 @@ struct MTCoinSendSheet: View {
                             .listRowBackground(MTGlassRowPlate())
                         }
                     }
-                } header: { Text("Choose chats") }
+                } header: { Text("Choose people") }
             }
             .scrollContentBackground(.hidden)
             .scrollDismissesKeyboard(.interactively)
@@ -1347,6 +1330,10 @@ struct MTCoinSendSheet: View {
         .onAppear {
             guard let store = ChatStore.live else { return }
             chats = store.listChats().filter { c in MTCoinSend.canPay(c, store: store) }
+            if let to, let i = chats.firstIndex(where: { c in c.name == to }) {
+                chats.insert(chats.remove(at: i), at: 0)
+                toggle(to)
+            }
         }
     }
     /// The coins typed beside a chat: digits alone; coins typed pick the chat, a field emptied lets it go.
@@ -1431,10 +1418,92 @@ struct MTCoinSendSheet: View {
             guard !went.isEmpty else { going = [:]; refused = true; return }
             // THE PAGE LEAVES BY ITSELF (the author's word 05.10.2026 18:2x MSK: «the send page must close and carry into our app to go
             // on; now it hangs on the send page and asks an extra action -- constitution 0»): the closed rings stand a breath, then
-            // one recipient's chat opens at once (the outside road closes the sheet and the wallet in one move), many close the page.
+            // the page closes onto the wallet -- the wallet holds no chat to open (the author's word 09.10.2026 16:00 MSK).
             try? await Task.sleep(nanoseconds: 450_000_000)
-            if went.count == 1, let ref = went.first?.name { MontanaOutsideOpen.chat(ref) } else { dismiss() }
+            dismiss()
         }
+    }
+}
+
+/// THE WALLET'S CONTACTS (the author's word 09.10.2026 16:00 MSK: «the wallet is a wallet, and the contacts in it too»): the
+/// people coins can go to, in the send sheet's own rows; a touch opens the send sheet for that one person, never a chat. A person
+/// comes in by a username or by a code (the author's choice 08.10.2026: transfers by name and by QR), by the one meeting road.
+struct MTWalletContactsPage: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var people: [Chat] = []
+    @State private var paying: MTPageFlag?
+    @State private var byName = false
+    @State private var byCode = false
+    /// The person a name or a code just brought: their send sheet rises once the asking sheet is down.
+    @State private var met: String?
+    var body: some View {
+        if let store = ChatStore.live { page.environmentObject(store) } else { page }
+    }
+    private var page: some View {
+        NavigationStack {
+            List {
+                Section {
+                    if people.isEmpty {
+                        Text("No contacts yet").foregroundStyle(.secondary)
+                    } else {
+                        ForEach(people, id: \.name) { c in
+                            Button { paying = MTPageFlag(id: c.name) } label: {
+                                HStack(spacing: 12) {
+                                    MontanaChatFace(chat: c)
+                                    Spacer(minLength: 0)
+                                }
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())   // the whole row is the target
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .listRowBackground(MTGlassRowPlate())
+            }
+            .scrollContentBackground(.hidden)
+            .montanaPageGround()
+            .navigationTitle("Contacts")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { MontanaBarMark(glyph: "xmark", label: "Close") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button { byName = true } label: { Label("By username", systemImage: "at") }
+                        Button { byCode = true } label: { Label("Scan code", systemImage: "qrcode.viewfinder") }
+                    } label: {
+                        MontanaBarGlyph(glyph: "person.badge.plus")
+                            .montanaOctagonFace(square: true, bar: true, height: MontanaOctagon.composeHeight, mark: true)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel(Text("Add contact"))
+                }
+            }
+            .sheet(item: $paying, onDismiss: read) { p in MTCoinSendSheet(to: p.id) }
+            .sheet(isPresented: $byName, onDismiss: payMet) {
+                StartByNameView { ref in met = ref; byName = false }
+            }
+            .sheet(isPresented: $byCode, onDismiss: payMet) {
+                NavigationStack {
+                    ScanMeetingView { ref in met = ref; byCode = false }
+                        .toolbar { ToolbarItem(placement: .cancellationAction) { MontanaCloseMark { byCode = false } } }
+                }
+                .preferredColorScheme(.dark)
+            }
+        }
+        .onAppear { read() }
+    }
+    private func read() {
+        guard let store = ChatStore.live else { return }
+        people = store.listChats().filter { c in MTCoinSend.canPay(c, store: store) }
+    }
+    /// The asking sheet is down: the person it brought gets their send sheet at once.
+    private func payMet() {
+        read()
+        guard let ref = met else { return }
+        met = nil
+        paying = MTPageFlag(id: ref)
     }
 }
 

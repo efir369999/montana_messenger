@@ -573,7 +573,7 @@ enum MTNameBook {
 // The cell keys are derived by BOTH sides from one invitation secret -- so the card need carry
 // neither the 4 KB write-permission key nor the 1184 bytes of the postman key.
 struct MontanaInviteShort: Codable {
-    var host: String        // the postman address, for example 192.0.2.1:8445
+    var host: String        // the postman address, for example 192.0.2.10:8445
     var secret: String      // 32 bytes in hexadecimal -- the cell keys are derived from it
     static let prefix = "mt:v:"
 

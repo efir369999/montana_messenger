@@ -369,7 +369,6 @@ final class VoicePlayer: NSObject, ObservableObject {
         }
         // THE CALL HOLDS THE SOUND (24.09, T1 12:31:40): under a call the player never touches the phone's sound -- the
         // person is told so and nothing starts (MontanaAudioSession, the one door).
-        guard !MontanaAudioSession.refusedUnderCall(voice ? "voice message" : "music") else { return }
         // THE TRACK THAT STEPPED ASIDE IS THE ONE ASKED FOR (26.09): the voice over it ends and the track goes on from its place.
         if !voice, let pk = parked, pk.file == file {
             release()
@@ -414,7 +413,7 @@ final class VoicePlayer: NSObject, ObservableObject {
         }
         MontanaAudioSession.wake(voice: voice, external: external) { [weak self] ready in
             guard let self, self.playRequest == ticket else { return }
-            guard ready, !MontanaCall.isBusy, self.player?.play() == true else {
+            guard ready, self.player?.play() == true else {
                 // A file that would not play is said, not swallowed (the critic 24.09).
                 MontanaP2PTrace.mark("play_refused", "voice=\(voice ? 1 : 0) lent=\(MTMusicFolders.isLent(file) ? 1 : 0) opened=\(self.player == nil ? 0 : 1)")
                 self.player?.stop(); self.player = nil   // the sound that would not play is let go before the ledger keeps a place under the track's file
@@ -479,14 +478,13 @@ final class VoicePlayer: NSObject, ObservableObject {
     }
 
     func resume() {
-        guard !MontanaAudioSession.refusedUnderCall(isVoice ? "voice message" : "music") else { return }
         // THROUGH THE KIND'S OWN DOOR (26.09): a tape or a voice between the pause and this resume left the sound in their own mode.
         let external = isVoice && MontanaAudioRoute.read("voice-resume").isExternal
         playRequest += 1
         let ticket = playRequest
         MontanaAudioSession.wake(voice: isVoice, external: external) { [weak self] ready in
             guard let self, self.playRequest == ticket else { return }
-            guard ready, !MontanaCall.isBusy, self.player?.play() == true else {
+            guard ready, self.player?.play() == true else {
                 MontanaAudioSession.release("play"); return
             }
             self.paused = false
@@ -1292,33 +1290,6 @@ enum MontanaSavedToPhotos {
         if ok { note(f) }
         MontanaP2PTrace.mark("save_photos", "ok=\(ok ? 1 : 0) video=\(video ? 1 : 0)")
         return ok
-    }
-}
-/// THE RECORDINGS ON THE SHELF GO TO PHOTOS (MontanaScreenShelf): at the launch and at every return the app lays each whole
-/// movie the broadcast left into Photos with its own right (the platform asks once), and lets the shelf's copy go only when
-/// Photos says it holds it.
-enum MTScreenShelfTake {
-    @MainActor private static var busy = false
-    @MainActor static func run() {
-        let movies = MontanaScreenShelf.movies()
-        guard !movies.isEmpty, !busy else { return }
-        busy = true
-        PHPhotoLibrary.requestAuthorization(for: .addOnly) { access in
-            guard access == .authorized || access == .limited else {
-                MontanaP2PTrace.mark("screen_shelf", "photos add access=\(access.rawValue) waiting=\(movies.count)")
-                Task { @MainActor in busy = false }
-                return
-            }
-            for movie in movies {
-                PHPhotoLibrary.shared().performChanges({
-                    PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: movie)   // the road MontanaSavedToPhotos takes
-                }) { held, _ in
-                    if held { try? FileManager.default.removeItem(at: movie) }
-                    MontanaP2PTrace.mark("screen_shelf", "laid=\(held ? 1 : 0) name=\(movie.lastPathComponent.prefix(24))")
-                }
-            }
-            Task { @MainActor in busy = false }
-        }
     }
 }
 // mtIsAudioName lives in MontanaMediaKit — one definition, both targets ([C-1]).
@@ -3246,5 +3217,154 @@ enum MontanaEarTone {
         player?.volume = 1
         let ok = player?.play() ?? false
         MontanaP2PTrace.mark("voice_ear_reply", "tone played=\(ok ? 1 : 0)")
+    }
+}
+
+/// THE AUDIO ROUTE, READ FROM THE SYSTEM — the one owner of «where the sound is» (the critic's
+/// word 15.09). Every wish of the app for the loudspeaker asks this first; every button shows this.
+enum MontanaAudioRoute {
+    enum Output: Equatable { case builtin, speaker, external }
+    struct Reading { let current: Output; let ports: String; var isExternal: Bool { current == .external } }
+    private static let lock = NSLock()
+    private static var last: Output = .builtin
+    static var current: Output { lock.lock(); defer { lock.unlock() }; return last }
+    static var isExternal: Bool { current == .external }
+    static var isBuiltin: Bool { current == .builtin }
+    /// Headphones, any Bluetooth, a car, AirPlay, a dock: the sound is not in the phone.
+    private static let externalPorts: Set<AVAudioSession.Port> = [.headphones, .bluetoothA2DP, .bluetoothHFP, .bluetoothLE, .carAudio, .airPlay, .lineOut, .usbAudio]
+    @discardableResult
+    static func read(_ why: String) -> Reading {
+        let outs = AVAudioSession.sharedInstance().currentRoute.outputs
+        let out: Output = outs.contains { externalPorts.contains($0.portType) } ? .external
+            : (outs.contains { $0.portType == .builtInSpeaker } ? .speaker : .builtin)
+        lock.lock(); last = out; lock.unlock()
+        let device = outs.first(where: { externalPorts.contains($0.portType) })
+        // THE SOURCE'S OWN GLYPH (the author's word 01.10 ~00:50: «the sound's source on the unfolded player determined natively,
+        // in the system's blue, with the source's icon»): the device the sound goes to, else the phone itself, as the system's
+        // own output menu names it.
+        let wayGlyph = device.map { glyph($0) } ?? "iphone"
+        DispatchQueue.main.async {   // the player's model is the main thread's; a route change is told on any thread
+            let w = Way.shared
+            if w.glyph != wayGlyph { w.glyph = wayGlyph }
+            if w.outside != (device != nil) { w.outside = device != nil }
+        }
+        return Reading(current: out, ports: outs.map { $0.portType.rawValue }.joined(separator: ","))
+    }
+
+    private static func glyph(_ p: AVAudioSessionPortDescription) -> String {
+        switch p.portType {
+        case .carAudio: return "car.fill"
+        case .airPlay: return "airplayaudio"
+        case .headphones: return "headphones"
+        case .bluetoothA2DP, .bluetoothHFP, .bluetoothLE:
+            let name = p.portName
+            if name.localizedCaseInsensitiveContains("airpods pro") { return "airpodspro" }
+            if name.localizedCaseInsensitiveContains("airpods max") { return "airpodsmax" }
+            return name.localizedCaseInsensitiveContains("airpods") ? "airpods" : "headphones"
+        default: return "hifispeaker.fill"
+        }
+    }
+    /// Where the music goes, as the system's output menu names it: the external device's glyph, else the phone. Written only by read().
+    final class Way: ObservableObject {
+        static let shared = Way()
+        @Published fileprivate(set) var glyph = "iphone"
+        @Published fileprivate(set) var outside = false
+    }
+    /// The phone's own microphone becomes the preferred input — used whenever the sound was put
+    /// on the phone (earpiece or loudspeaker) while a headset still held the voice link.
+    static func preferPhoneMicrophone() {
+        let session = AVAudioSession.sharedInstance()
+        guard let mic = session.availableInputs?.first(where: { $0.portType == .builtInMic }) else { return }
+        if session.currentRoute.inputs.contains(where: { $0.portType == .builtInMic }) { return }   // already the phone's
+        do { try session.setPreferredInput(mic); MontanaP2PTrace.mark("audio_route", "input=builtInMic (the phone's output takes the phone's microphone)") }
+        catch { MontanaP2PTrace.mark("audio_route", "input=builtInMic FAILED \(error.localizedDescription)") }
+    }
+    /// After a route change: the phone's output with a headset's input is an unfinished choice.
+    static func completePhoneChoice(_ r: Reading) {
+        guard r.current != .external else { return }
+        let ins = AVAudioSession.sharedInstance().currentRoute.inputs
+        let headsetIn = ins.contains { externalPorts.contains($0.portType) || $0.portType == .headsetMic }
+        if headsetIn { preferPhoneMicrophone() }
+    }
+}
+
+/// The system's own output picker (AirPods, a car, a speaker, the phone) — the platform's element.
+struct MontanaRoutePicker: UIViewRepresentable {
+    /// THE MENU TAP IS A MARK (20.09): the Audio button had no touch line, so «I pressed the
+    /// loudspeaker while it rang» could not be placed against the route the system then took.
+    /// The picker's own delegate names the opening and the closing of the sheet.
+    final class Coordinator: NSObject, AVRoutePickerViewDelegate {
+        func routePickerViewWillBeginPresentingRoutes(_ v: AVRoutePickerView) {
+            MontanaP2PTrace.mark("touch", "audio-menu open")
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()   // the press answers under the finger here too (24.09)
+        }
+        func routePickerViewDidEndPresentingRoutes(_ v: AVRoutePickerView) {
+            let outs = AVAudioSession.sharedInstance().currentRoute.outputs.map { $0.portType.rawValue }.joined(separator: ",")
+            MontanaP2PTrace.mark("touch", "audio-menu closed route=\(outs)")
+        }
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeUIView(context: Context) -> AVRoutePickerView {
+        let v = AVRoutePickerView()
+        v.delegate = context.coordinator
+        // The picker draws nothing of its own: it lies over our button as the touch target, and a
+        // tap opens the system's route list; the face beneath shows where the sound is.
+        v.tintColor = .clear
+        v.activeTintColor = .clear
+        v.backgroundColor = .clear
+        v.prioritizesVideoDevices = false
+        return v
+    }
+    func updateUIView(_ v: AVRoutePickerView, context: Context) {}
+}
+
+/// THE PROXIMITY SENSOR HAS ONE OWNER (the author's word 24.09: «check the proximity sensor so it works constantly and
+/// stably -- during a call I covered it with a finger and took the finger away, and the screen stayed off, black and
+/// dead, on T1»). The sensor's switch is one flag for the whole device, and three hands wrote it by themselves: the
+/// call, the voice player and the chat's reply at the ear. One turned it off under another: the player, yielding to a
+/// newborn call, turned the sensor off one turn after the call had turned it on. Every hand now holds and lets go of
+/// the sensor here by its name, and the sensor is on while any hand holds it.
+/// NEVER OFF WHILE «NEAR» (the reference's rule): a switch turned off while the sensor is covered leaves the screen dark,
+/// and the platform no longer hears the sensor that would light it again. With no hand left and the sensor covered, the
+/// switch waits for «far» and goes off then. Every change of the sensor and of the switch is a diary line (proximity):
+/// a dark screen now says who held the sensor and what the sensor said last.
+enum MTProximity {
+    private static var holders = Set([String]())
+    private static var listening: NSObjectProtocol?
+    /// A hand holds the sensor (true) or lets it go (false); from any thread.
+    static func hold(_ who: String, _ on: Bool) {
+        guard Thread.isMainThread else { DispatchQueue.main.async { MTProximity.hold(who, on) }; return }
+        if on == holders.contains(who) { return }   // SILENT-OK: this hand already stands so
+        if on { holders.insert(who) } else { holders.remove(who) }
+        listen()
+        let dev = UIDevice.current
+        if !holders.isEmpty {
+            if !dev.isProximityMonitoringEnabled {
+                dev.isProximityMonitoringEnabled = true
+                note(dev.isProximityMonitoringEnabled ? "on" : "absent", who)   // «absent»: the device has no sensor
+            }
+        } else if dev.isProximityMonitoringEnabled {
+            if dev.proximityState {
+                note("off-at-far", who)   // covered: the switch goes off when the sensor says «far»
+            } else {
+                dev.isProximityMonitoringEnabled = false
+                note("off", who)
+            }
+        }
+    }
+    private static func listen() {
+        guard listening == nil else { return }   // SILENT-OK: one listener for the process
+        listening = NotificationCenter.default.addObserver(forName: UIDevice.proximityStateDidChangeNotification,
+                                                           object: nil, queue: .main) { _ in
+            let dev = UIDevice.current
+            MTProximity.note(dev.proximityState ? "near" : "far", "sensor")
+            if !dev.proximityState, MTProximity.holders.isEmpty, dev.isProximityMonitoringEnabled {
+                dev.isProximityMonitoringEnabled = false
+                MTProximity.note("off", "far")
+            }
+        }
+    }
+    private static func note(_ what: String, _ why: String) {
+        MontanaP2PTrace.mark("proximity", "\(what) by=\(why) holders=\(holders.sorted().joined(separator: ","))")
     }
 }

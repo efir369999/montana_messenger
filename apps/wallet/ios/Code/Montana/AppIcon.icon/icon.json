@@ -10,10 +10,10 @@
           "image-name": "logo.png",
           "name": "author",
           "position": {
-            "scale": 0.8166,
+            "scale": 0.925,
             "translation-in-points": [
               0,
-              0
+              4.6
             ]
           }
         }

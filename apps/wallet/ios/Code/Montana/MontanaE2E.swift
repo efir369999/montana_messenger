@@ -369,6 +369,7 @@ final class E2E {
     // nothing to carry over or to steal; it dies with the identity, because the secret under it
     // leaves with the seed; and two identities on one phone never share it. The platform value
     // enters under the hash and never leaves it.
+    private static let appWriter = "quest.montana.wallet"   // NOT-UI: this app's own name under the device tag, never shown
     static func deviceTag() -> String {
         deviceTagLock.lock(); defer { deviceTagLock.unlock() }
         if let c = deviceTagCache { return c }
@@ -384,7 +385,13 @@ final class E2E {
         // the first archive write of a launch, on whichever thread got there first, it was the
         // freeze on opening the app — a stretch that exists to slow down a guesser has no
         // business standing between a person and their own screen.
-        var m = Data("mt-device-tag".utf8); m.append(0); m.append(secret); m.append(Data(idfv.utf8))
+        // ONE PHONE, TWO APPS, TWO WRITERS (09.10.2026): the platform's vendor value is one for every app of one maker on a phone,
+        // so this app and the messenger of the same words were one writer -- one writer_tag under one history_key, each counting
+        // its blocks from zero: the same nonce over two different blocks (the core's archive: nonce = block_seq and writer_tag),
+        // the second app's blocks dropped as already held, and the two apps' light copies one device's, the poorer standing in
+        // for the richer (T1 09.10: this app's restore laid one copy, without the name, the face or the page's ground the
+        // messenger holds). The spec's device_id is per install: this app's own name enters under the hash.
+        var m = Data("mt-device-tag".utf8); m.append(0); m.append(secret); m.append(Data(idfv.utf8)); m.append(0); m.append(Data(Self.appWriter.utf8))
         let id = "ios-" + Array(SHA256.hash(data: m)).prefix(6).map { String(format: "%02x", $0) }.joined()
         deviceTagCache = id
         return id
@@ -1089,172 +1096,6 @@ final class E2E {
         return (keystroke, !rm.isEmpty)
     }
 
-    func sendCallSignal(to peer: String, _ sig: CallSignalOut) {
-        let ts = Int(MontanaWakePush.nodeNow() * 1000)   // the node's clock: both ends agree on it (K-11)
-        // ONE NAME FOR BOTH ROADS: the envelope's epoch on the node's lane and «e» on the pipe are the same word.
-        let epoch = sig.epoch ?? MontanaCall.shared.callEpoch ?? ""
-        let named: String? = epoch.isEmpty ? nil : epoch
-        var msgs: [CallSigMsg] = []
-        if let batch = sig.candidates, !batch.isEmpty {
-            for c in batch { msgs.append(CallSigMsg(t: "cal", ctrl: sig.ctrl, sdp: nil, candidate: c, candidates: nil, video: nil, caps: nil, ts: ts, e: named)) }
-        } else {
-            msgs.append(CallSigMsg(t: "cal", ctrl: sig.ctrl, sdp: sig.sdp, candidate: sig.candidate, candidates: nil, video: sig.video, caps: sig.caps, ts: ts, rsn: sig.reason,
-                                   n: sig.ctrl == "call" ? E2E.myDisplayName() : nil,
-                                   s: (sig.ctrl == "call" || sig.ctrl == "call-gone") ? sig.callSeed : nil, e: named))
-        }
-        guard let data = try? JSONEncoder().encode(msgs) else {
-            NSLog("[call] signal not encoded — the peer will never hear this ring")
-            return
-        }
-        // Call signalling rides TWO roads at once, like a letter (6.9): the LIVE pipe first —
-        // the tunnel between the two phones already exists and carries presence sub-second —
-        // and the accelerator node's blind envelope as the guarantee leg for a peer whose app
-        // is not up. Measured 08:11/08:20: the store's long-poll through a VPN zombie pipe
-        // delayed the ANSWER 11-22s and the call died checking; the pipe copy makes the
-        // common case (both apps open) immediate. The receiver dedups by construction:
-        // answers by the one-claim gate, candidates by WebRTC, ends by epoch+state.
-        // mtcall: is ancient vocabulary — every live build parses and buries it ([P2P-COMPAT]).
-        let b64 = data.base64EncodedString()
-        if !sig.nodeOnly, MontanaP2PNode.shared.transport(to: peer) != nil {
-            _ = MontanaP2PNode.shared.sendP2P(to: peer, mid: UUID().uuidString, text: callSignalMark + b64)
-            MontanaP2PTrace.mark("sig_tx", "pipe ctrl=\(sig.ctrl)")
-        }
-        MontanaWakePush.postSignal(peer, epoch: epoch, payloadB64: b64)
-        MontanaWakePush.startSignalPolling(peer)
-    }
-    func handleMeshCallSignal(from peer: String, payload: String) {
-        // A blocked person's call is not assembled (measured 15.09 13:10: the lane built the call
-        // past the feed's gate and the phone rang).
-        if store?.refuses(peer) ?? ChatStore.refusesCold(peer) {
-            MontanaP2PTrace.markFolded("rx_blocked", "call peer=\(String(peer.prefix(10)))", window: 60, key: "call:" + peer)
-            return
-        }
-        guard let data = Data(base64Encoded: payload),
-              let msgs = try? JSONDecoder().decode([CallSigMsg].self, from: data) else {
-            NSLog("[call] incoming signal unreadable from \(peer) — dropped")
-            return
-        }
-        // The main-queue hop is removed: the signal goes to its own lane inside handleSignal.
-        // It used to pass the main queue TWICE — here and there — standing in the screen's
-        // work line twice.
-        for cs in msgs {
-            // A WORD OF ANOTHER CALL NEVER REACHES THE CALL IN HAND (24.09): an end, an ask for fresh checks, an answer of
-            // a finished call used to be taken by the living call with the same person, since the pipe named no call. While
-            // a call lives here, a named word of any other call is a corpse, as on the node's lane. With none living, the
-            // word goes on as before: the machine's own rules judge it (a ring the push raised before its call was known
-            // here still ends by the caller's hang-up). «call» is the birth word and its copies -- the seed rules judge it;
-            // a word without a name is an old build's.
-            if cs.ctrl != "call", let e = cs.e, !e.isEmpty {
-                let living = MontanaCall.epochSnapshot
-                if !living.contains(e) {
-                    MontanaWakePush.answerGone(conv: peer, epoch: e, msgs: [cs])   // speaks only for the call this phone lost
-                    if !living.isEmpty {
-                        MontanaP2PTrace.mark("sig_rx", "STALE pipe ctrl=\(cs.ctrl) epoch=\(String(e.prefix(8)))")
-                        continue
-                    }
-                }
-            }
-            // «call-gone» names the call it is about by its epoch in «s» (24.09) — its own door, beside the seed's.
-            if cs.ctrl == "call-gone" {
-                MontanaCall.shared.handleSignal(from: peer, device: "", ctrl: cs.ctrl, sdp: nil, candidate: nil,
-                                                video: nil, caps: nil, callSeed: cs.s, ts: cs.ts)
-                continue
-            }
-            // The name rides INTO the machine with the word (onCallerIdentity, one door).
-            MontanaCall.shared.handleSignal(from: peer, device: "", ctrl: cs.ctrl,
-                sdp: cs.sdp, candidate: cs.candidate, video: cs.video, caps: cs.caps,
-                callSeed: cs.ctrl == "call" ? cs.s : nil, ts: cs.ts, candidates: cs.candidates, reason: cs.rsn,
-                name: cs.ctrl == "call" ? cs.n : nil)
-        }
-    }
-    /// ONE RING LETTER PER CALL (13.09): the knock repeats every five seconds for the whole ring,
-    /// and every knock used to lay a fresh letter in the box and ring a fresh background push —
-    /// eighteen of each per call, and iOS pays back a spent background-push budget for hours.
-    /// The letter is the road for a pipe without a secret; one is enough, its mid is the call's name.
-    private var ringLetterSeed = ""
-    /// THE SECOND BELL. Apple may keep a voip push away from the app for reasons of its own
-    /// (13.09: seven wakes accepted, none delivered, a tester saw only «missed»). Ten seconds
-    /// after the first wake Apple accepted, with no word «ringing» back, the same ring letter
-    /// goes out LOUD: an ordinary alert push, which Apple delivers by the message road — the
-    /// extension shows «incoming call, tap to answer», the tap opens the app, the app rings
-    /// natively while the seed is alive. Old extensions swallow a ring letter silently — no harm.
-    func ringBell(to peer: String, video: Bool, callSeed: String?) {
-        guard let seed = callSeed, !seed.isEmpty else { return }
-        let tag = MontanaMissedCall.tag(seed)
-        guard let j = try? JSONSerialization.data(withJSONObject: ["v": video, "s": seed, "n": E2E.myDisplayName(),
-                                                                   "t": MontanaWakePush.nodeNow(), "b": 1]),
-              let js = String(data: j, encoding: .utf8) else { return }
-        MontanaP2PTrace.mark("ring_bell", "to=\(String(peer.prefix(10))) tag=\(tag)")
-        MontanaDeliveryEngine.shared.enqueue(to: peer, chat: peer, mid: "bell-" + tag, text: ringMark + js, silent: false)
-    }
-    func ringCall(to peer: String, video: Bool, offerSdp: String? = nil, callSeed: String? = nil) async -> (rung: Int, online: Bool, nobody: Bool) {
-        // The call rides wholly through the accelerator node (server model): the voip wake
-        // raises the screen at once; the offer rides INSIDE the wake envelope; answer/ICE —
-        // the /signal channel with the poller. The wake's outcome is REAL. The ring used to
-        // always answer «connected, callee online», and there was no re-ring at all: a failed
-        // first wake (no subscription, throttled, a break) sounded like ringing until the
-        // minute cut-off.
-        let code: Int = await withCheckedContinuation { cont in
-            let lock = NSLock()
-            var answered = false
-            let fire: (Int) -> Void = { c in
-                lock.lock()
-                let first = !answered
-                answered = true
-                lock.unlock()
-                if first { cont.resume(returning: c) }   // a second resume is a fatalError — one winner
-            }
-            MontanaWakePush.wakeVoip(peer, offer: offerSdp, video: video, callSeed: callSeed) { fire($0) }
-            // The safety net is the walk's own bound (doors × the one post deadline), not a
-            // number of its own: a three-second guillotine cut the walk while it still stood on
-            // a dead door, threw the real «200» away and told the person «not reachable»
-            // (13.09 09:08:03). The walk answers on every path; this line only guards a hang.
-            DispatchQueue.global().asyncAfter(deadline: .now() + MontanaWakePush.knockBudgetS(for: "notify")) { fire(-1) }
-        }
-        // AND AS A LETTER: for an unconfirmed pipe (a call right after QR) the voip wake does
-        // not exist by construction — the peer has no secret yet, nothing to listen on the
-        // tag with. The call letter rides with every guarantee letters have (first channel /
-        // 404→channel / node); the receiver raises the call and polling, puts nothing in the
-        // feed; the epoch cuts off the stale. AIR-CHECKED: the name is inside the E2E seal of
-        // a LETTER on an established channel (the node is blind) — not the air.
-        let seedKey = callSeed ?? ""
-        if !seedKey.isEmpty, ringLetterSeed == seedKey {
-            // the letter of this very call is already on its way — one per call
-        } else if let j = try? JSONSerialization.data(withJSONObject: ["v": video, "s": seedKey, "n": E2E.myDisplayName(),
-                                                                 "t": MontanaWakePush.nodeNow()]),
-           let js = String(data: j, encoding: .utf8) {
-            ringLetterSeed = seedKey
-            MontanaDeliveryEngine.shared.enqueue(to: peer, chat: peer, mid: seedKey.isEmpty ? UUID().uuidString : "ring-" + MontanaMissedCall.tag(seedKey),
-                                                 // The system call screen is the ONE face of an
-                                                 // incoming call (the author's word 28.08): the ring
-                                                 // LETTER delivers the signal silently — no banner
-                                                 // beside the ringing screen, none when busy.
-                                                 text: ringMark + js, silent: true)
-        }
-        MontanaWakePush.startSignalPolling(peer)
-        // 404 from the wake service is «no recipients»: the other phone has never registered for
-        // calls (it happens before its first launch) — the caller must hear that, not gudki.
-        return (code == 200 ? 1 : 0, code == 200, code == 404)
-    }
-    func callDebug(_ info: String) { E2ELog.write("[call] " + info) }
-
-    // Call log → into the chat (created if absent). Each side logs its own call locally.
-    /// 15.7 — the one funnel from the call machine into the presence stamp: a word or a call of the peer is proof of presence.
-    func notePeerSeen(_ peer: String) {
-        DispatchQueue.main.async { self.store?.noteSeen(peer, at: MontanaWakePush.nodeNow(), by: "call") }
-    }
-    func logCall(peer: String, video: Bool, incoming: Bool, durationSec: Int, missed: Bool) {
-        DispatchQueue.main.async { [weak self] in
-            self?.store?.appendCallLog(peer: peer, video: video, incoming: incoming, dur: durationSec, missed: missed)
-        }
-    }
-
-    // Full-size peer avatar file (for the call screen): the 128px keychain copy is too small.
-    func peerAvatarFileURL(_ peer: String) -> URL? {
-        guard let name = MTNameBook.avatarFile(for: peer) else { return nil }   // by hand, then published — the app's own resolver
-        return mtMediaFileURL(name)
-    }
-
     /// An INSTANT signal: one throw into the wire and no promises ([C-1] — the road for what
     /// must arrive is exactly one, and it is the delivery queue).
     ///
@@ -1279,36 +1120,6 @@ final class E2E {
     // re-establish the peer channel (e.g., when the app returns from background)
     // Seal one message for one device — shared logic for send and resend (SSOT).
     // Shared sealing finale: encrypts arbitrary plaintext over the session/handshake.
-    // Seal a call signal (Stage 13): E2EPlain with ctrl (body — an invisible marker, silent).
-    // Call signal (control markers over the peer channel):
-    // offer/answer/ICE/end travel as a plaintext envelope over the one delivery queue of the mesh
-    // (Stage 4: one queue, one engine, drained by reachability) — the ratchet is fragile for
-    // signalling: a single desync lost call-answer/call-end forever (ringback for the caller on an
-    // accepted call; an unkillable call on the peer).
-    // The media secret (call_seed → SFrame) does NOT travel as plaintext — only as a separate E2E
-    // signal call-key over the ratchet. While SFrame is off ([I-16] A-4 note in MontanaCall), the
-    // media itself rests on the classical layer of the transport, and that is stated in STAGE-9.13.
-    struct CallSigMsg: Codable {
-        var t: String; var ctrl: String; var sdp: CallSDP?; var candidate: CallICE?
-        var candidates: [CallICE]?   // batch of candidates (No. 5)
-        var video: Bool?; var caps: CallCaps?; var ts: Int?
-        var rsn: String?   // call-restart: "ice" | "media" — old builds skip unknown keys (K-6)
-        // The caller's name on the «call» signal: the third road of a call carries the same
-        // name the wake envelope and the ring letter carry ([C-1]); old builds skip the key.
-        var n: String?
-        // THE CALL'S SEED ON THE WIRE (13.09): a «call» word without it used to be born on the
-        // pipe as a seedless call — no epoch, no graveyard, the caller burying every queue word
-        // of the callee as STALE. Old builds skip the key; a seedless «call» word is an offer
-        // for a call already in hand, never a birth.
-        var s: String?
-        // THE CALL'S NAME ON EVERY WORD (24.09). The node's lane names the call by its envelope's epoch; the pipe named
-        // it on the «call» word alone, and a late word of a finished call -- an end, an ask for fresh checks, an answer --
-        // was taken by the call in hand with the same person: iPhone 15 10:03:24Z read the dead call's asks as a glare
-        // against its new one. Every word names its call here, and the receiver buries a word of a call it does not live.
-        // Old builds skip the key; a word without it is an old build's, judged as before.
-        var e: String?
-    }
-
     // The recipient could not decrypt (chain desync) → we ask the sender to recreate the session.
     // The sender received a rekey → reset the session and resend recent messages to this device.
     // ── device linking (Signal model) ──

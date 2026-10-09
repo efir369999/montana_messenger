@@ -86,7 +86,7 @@ final class MontanaRecording: ObservableObject {
     /// The finger landed: the tape of this kind is readied while the hold's threshold runs (the note's
     /// camera already wakes on its own queue; the voice's session and recorder are born here).
     func ready(_ k: Kind) {
-        guard phase == .idle, !MontanaCall.isBusy else { return }   // under a call nothing is readied: the call holds the sound
+        guard phase == .idle else { return }
         if k == .voice { voice.prewarm() }
     }
     /// The hold ended as a tap: nothing recorded, the readied tape goes.
@@ -95,9 +95,6 @@ final class MontanaRecording: ObservableObject {
     @discardableResult
     func begin(_ k: Kind, why: String) -> Int {
         guard phase == .idle else { return tapeId }   // one tape at a time: a second begin over a rolling one is nothing
-        // A CALL HOLDS THE SOUND (24.09): a tape under a call would take the phone's sound -- and a note the camera --
-        // from the conversation. The person is told so, and nothing starts.
-        if MontanaAudioSession.refusedUnderCall(k == .voice ? "voice tape" : "video note") { return tapeId }
         tapeId += 1
         move(.recording(k), why: why)
         if k == .voice { voice.start() }

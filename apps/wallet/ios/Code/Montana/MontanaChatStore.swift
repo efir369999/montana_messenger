@@ -1707,7 +1707,7 @@ class ChatStore: ObservableObject {
             || text.hasPrefix(groundMark) || text.hasPrefix(cardMark) || text.hasPrefix(wakeHandleMark) || text.hasPrefix(cargoLostMark)
             || text.hasPrefix(playedMark)
             || text.hasPrefix(punchEndpointMark) || text.hasPrefix(exitDoorMark) || text.hasPrefix(callSignalMark)
-            || text.hasPrefix(MTBoard.mark) || text.hasPrefix(sameAskMark) || text.hasPrefix(sameYesMark) || text.hasPrefix(pipeClosedMark) || text.hasPrefix(MTGroup.mark) || mtUnknownServiceWord(text)
+            || text.hasPrefix(MTBoard.mark) || text.hasPrefix(sameAskMark) || text.hasPrefix(sameYesMark) || text.hasPrefix(pipeClosedMark) || text.hasPrefix(MTGroup.mark) || text.hasPrefix(keepMark) || mtUnknownServiceWord(text)
     }
     /// «GONE» IS A STATE, NOT A STAMP (the author's word 15.09; measured 13:14–13:17: the lane
     /// forgot the word in sixty seconds, the sweep read it as a moment, and the next word of
@@ -1738,7 +1738,6 @@ class ChatStore: ObservableObject {
         if watchingChats.contains(key) && myTypingChats.contains(key) { return (String(localized: "watching", bundle: MTLanguage.bundle), 2, .green) }
         if watchingChats.contains(key) { return (String(localized: "in chat", bundle: MTLanguage.bundle), 1, .green) }
         // 15.7: a person on the line with me is present for as long as the call stands.
-        if MontanaCall.stateSnapshot == "connected", MontanaCall.peerSnapshot == key { return (String(localized: "on a call", bundle: MTLanguage.bundle), 1, .green) }
         if appOnlineChats.contains(key) { return (String(localized: "online", bundle: MTLanguage.bundle), 1, .green) }
         if let seen = peerGoneAt[key] != nil ? MontanaSeen.longAgo : peerSeenAt[key] {
             return ((seenExact(key) ? MontanaSeen.phrase(seen) : MontanaSeen.coarse(seen)), 0, .red)
@@ -2714,7 +2713,7 @@ class ChatStore: ObservableObject {
         for (peer, list) in messages {
             for m in list {
                 if let ci = callInfoOf(m.text) {
-                    out.append(CallRecord(id: m.id, peer: peer, video: ci.video, incoming: ci.incoming,
+                    out.append(CallRecord(mid: m.id, peer: peer, video: ci.video, incoming: ci.incoming,
                                           dur: ci.dur, missed: ci.missed, time: m.time, at: m.createdAt))
                 }
             }
@@ -2782,11 +2781,9 @@ class ChatStore: ObservableObject {
         MontanaP2PTrace.mark("gallery_lib", "moments=\(list.count) ms=\(Int(Date().timeIntervalSince(t0) * 1000))")
         return list
     }
-    // Delete a single call-log entry (by message id) from any dialog.
-    func deleteCallLog(id: String) {
-        for (peer, list) in messages where list.contains(where: { $0.id == id && callInfoOf($0.text) != nil }) {
-            dropRows(peer) { $0.id == id && callInfoOf($0.text) != nil }; break
-        }
+    // Delete a single call-log entry: its letter in its own conversation (a letter's name is one within a conversation, 09.10).
+    func deleteCallLog(_ r: CallRecord) {
+        dropRows(r.peer) { $0.id == r.mid && callInfoOf($0.text) != nil }
         save()
     }
     // Clear ALL call-log entries in all dialogs.
@@ -3048,7 +3045,7 @@ class ChatStore: ObservableObject {
                     seen.insert(sig)
                     // An identity of its own, so any later merge knows this row; read — the count reads
                     // this flag (T2, 06.09: a badge of 207 when it read a mark instead).
-                    let mid = "arc:" + MontanaQueueKeys.sha256(Data(sig.utf8)).prefix(12).map { String(format: "%02x", $0) }.joined()
+                    let mid = MTRestoredMid.archive + MontanaQueueKeys.sha256(Data(sig.utf8)).prefix(12).map { String(format: "%02x", $0) }.joined()
                     if it.text.hasPrefix(mediaMark) {
                         // A media row: the file by its name in the correspondence store (it outlives
                         // the seed), the caption as the text. A record without a file name is not
@@ -3952,10 +3949,8 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             } }
             return false
         }
-        if m.text.hasPrefix(callSignalMark) {
-            if !m.isFromMe { MontanaMainProbe.step("call-signal") { E2E.shared.handleMeshCallSignal(from: chat, payload: String(m.text.dropFirst(callSignalMark.count))) } }
-            return false
-        }
+        // A CALL'S WORD AND A CALL LETTER ARE BURIED UNREAD (the author's word 09.10.2026 16:00 MSK: the wallet holds no calls).
+        if m.text.hasPrefix(callSignalMark) || m.text.hasPrefix(ringMark) { return false }
         // The peer sent their external address — punch back AT ONCE and answer with ours if
         // we have not yet: a punch-through lives seconds, waiting for the next occasion is not an option.
         if m.text.hasPrefix(punchEndpointMark) {
@@ -3984,30 +3979,6 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             MontanaMainProbe.step("reach") { near = MontanaP2PNode.shared.canReach(chat) }
             if !near { MontanaMainProbe.step("nat") { MontanaNATService.shared.announce(to: chat) } }
         } }
-        // A call letter: raise the incoming call (the epoch cuts off the stale), put nothing in the feed.
-        if m.text.hasPrefix(ringMark) {
-            if !m.isFromMe,
-               let d = String(m.text.dropFirst(ringMark.count)).data(using: .utf8),
-               let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any] {
-                let video = (o["v"] as? Bool) ?? false
-                let seed = (o["s"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-                // A real-time signal: a late invitation is dead. The push used to arrive 9s
-                // after the hang-up and ring anew; age and the graveyard close both roads.
-                if let t = o["t"] as? Double, MontanaWakePush.nodeNow() - t > MontanaCall.callLifeS {
-                    MontanaP2PTrace.mark("ring_stale", "age=\(Int(MontanaWakePush.nodeNow() - t))s")
-                    return false
-                }
-                if !MontanaCall.shared.handleSignalGate("call", seed) { return false }
-                // The caller's name rides INTO the machine with the letter (onCallerIdentity, one
-                // door): an RG could arrive by the live channel, whose envelope carries no identity.
-                MontanaCallWiring.setup()
-                MontanaCall.shared.handleSignal(from: chat, device: "", ctrl: "call", sdp: nil,
-                                                candidate: nil, video: video, caps: nil, callSeed: seed,
-                                                name: o["n"] as? String)
-                MontanaWakePush.startSignalPolling(chat)
-            }
-            return false
-        }
         // THE SET'S OWN WORD (22.09): a passport behind a sticker, a request for a set, a page of
         // one. Service by construction -- it never becomes a row, never rings, and a build that
         // does not know the token buries it unread ([P2P-COMPAT]).
@@ -4172,6 +4143,15 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         }
         // [P2P-COMPAT] a service word THIS build does not know is buried unread with a trace:
         // a newer build's vocabulary must never render as a message here.
+        // THE KEEPING OF A COPY (MTKeeping, 08.10): a question, a yes, a part, a keeper's «held», a release -- answered there,
+        // receipted here, never a row.
+        if m.text.hasPrefix(keepMark) {
+            if !m.isFromMe { MontanaMainProbe.step("keep") {
+                sendDeliveryReceipt(chat, msgId: m.msgId, isFromMe: m.isFromMe, text: m.text)
+                MTKeeping.shared.heard(m.text, from: chat)
+            } }
+            return false
+        }
         if mtUnknownServiceWord(m.text) {
             MontanaP2PTrace.mark("unknown_mark_buried", "chat=\(String(chat.prefix(10))) len=\(m.text.count)")
             return false
@@ -6116,6 +6096,7 @@ protocol MessagingChannel {
 enum SeedScope {
     // Account content: conversations, profile, sync. Reset on account SWITCH.
     static let dataKeys = ["chatsJSON", "archivedJSON", "chatMessages", "pinnedMessages",
+                           "mt.keep.owner",   // the keepers of my copy and its generation (MTKeeping): the person's own
         "scheduledMsgs", "recentOrder", "orderSeq", "readChats", "pinnedChatsList", "forcedUnread",
         "mutedChats", "archivedNames", "deletedChats", "peerAvatars", "peerNames", "peerSeenAt", "peerGoneAt",
         "userName", "userLastName", "userUsername", "userBio", "userBirthday", "profileBio", "profileLink", "peerAbout",
@@ -6199,7 +6180,8 @@ enum SeedScope {
     /// keeps them, and a copy carries them — the language, the notifications, what is downloaded, privacy,
     /// the look of every bubble and ground, the voice and the note, the network page. The VPN's own settings left with the VPN
     /// for its own app (08.10.2026): a copy carries none of them.
-    static let settingKeys = ["appLibraryIcons", "appLibraryPins", MTLibraryIconStyle.key, MTChessComputer.levelKey, "AppLanguage", "AppleLanguages", MTLetterMotion.bounceKey, MTLetterMotion.durationKey,
+    static let settingKeys = [MTKeeping.mineKey, MTKeeping.othersKey, MTKeeping.budgetKey, MTKeeping.toldKey,   // the keeping of a copy (08.10)
+                              "appLibraryIcons", "appLibraryPins", MTLibraryIconStyle.key, MTChessComputer.levelKey, "AppLanguage", "AppleLanguages", MTLetterMotion.bounceKey, MTLetterMotion.durationKey,
         "notifEnabled", "notifSound", "notifPreview", "notifSender", "notifLockName",
         "autoDownloadCellular", "autoDownloadWiFi",
         "presenceSharing", "readReceiptsEnabled", "liveTypingEnabled", "syncContactsToPhone", "linkPreviewsEnabled",
@@ -6237,7 +6219,9 @@ enum SeedScope {
     /// · the peer's unsent words: they live under this device's key and nowhere else;
     /// · the dead calls' seeds, the tunnel's clock and the place its diary was carried to, the roads the tunnel judged
     ///   dead (a verdict of this network and this hour, not of the server), and the copy's own clock.
-    static let deviceKeys = ["diagId", "diagHideRule", "diagWmTele", "diagWmTrace", "diagWmVpn", "diagGenTele", "diagGenTrace", "diagGenVpn",
+    static let deviceKeys = ["mt.keep.held",   // the parts this phone keeps for others (MTKeeping): never in this person's copy
+                             MTKeeping.askedBackKey,   // the correspondences this phone asked to give back (MTKeeping): this device's own
+                             "diagId", "diagHideRule", "diagWmTele", "diagWmTrace", "diagWmVpn", "diagGenTele", "diagGenTrace", "diagGenVpn",
         "mt.probe.at", "mt.probe.conf", "mt.probe.mode", "mt.probe.rot",
         "mt.probe.line",   // the line under the permitted list, with its hysteresis (30.09): this network's word, never a copy's
         "mt.release.told",   // the build the Montana room already told this phone of (29.09): this device's own
@@ -6247,7 +6231,7 @@ enum SeedScope {
         MontanaDiagConsent.key,   // this device's yes to its diary leaving it (08.10.2026): each device answers for itself
         MTTopNet.unaskedKey,   // this device withdrew the top row of a person never asked (08.10.2026)
         MTTopNet.toldBeforeKey,   // whether an earlier build of this device had published the top row (08.10.2026)
-        MTGroupRoom.bookKey,   // the group rooms this phone knows and their people's room keys (07.10.2026): live minutes, never a copy's
+        "mt.rooms.seen",   // the group rooms this phone knew and their people's room keys (07.10.2026): live minutes, never a copy's
         "pagesWall", "pagesWallRecent", "pagesWallBlur", MontanaWakePush.skewKey]
     /// What each node holds for this device's token -- the node's own word about this phone, whoever is seated on it: a person
     /// lifted into the seat finds the registration of the one before and registers what differs.
@@ -6267,7 +6251,7 @@ enum SeedScope {
         MontanaDeliveryEngine.pendingKey, "orphanDelivered", "handoffTaken",
         "longLetterRefs", "nodeChunkLedger", "nodeChunkOrphanSince", "wakeUnsentDrops",
         "pendingOpenChat", "pendingPeerAvatars", "peerDraftsMap",
-        "callDeadSeeds", MontanaCall.heldKey, MTBoard.pagesKey, MTBoard.firstKey,
+        "callDeadSeeds", "mt.call.heldEpoch", MTBoard.pagesKey, MTBoard.firstKey,
         "mt.backup.icloud.at", "mt.backup.icloud.engine", "mt.home.node.at",
         "mt.apple.signin.id", "mt.restore.outbox", MTSamePair.mergedKey,
         MTGroup.copiesKey]   // the copies of the groups' words on their way (05.10): the person's own ledger of the queue
@@ -6622,6 +6606,16 @@ enum MontanaMainProbe {
 /// the journal was compacted on that word — and a relaunch read a history without twelve journaled rows
 /// (T1 05:46:12Z; the archive held them, the feed did not). A file write returns its error; an atomic
 /// replace leaves the old file or the new one, never a torn one.
+/// THE NAMES A RESTORE GIVES A LETTER (09.10): a letter laid back from the archive is named "arc:" and a hash of its second, side
+/// and words (restoreFromArchive), one given back by a correspondent "given:" and the name they hold (MTKeeping.takeGiven). Neither
+/// is the letter's wire name, the one name both phones hold: whatever the letter moved, it moved under that wire name, and a move
+/// under a restored name moves nothing (MTCoinEntry.restoredName).
+enum MTRestoredMid {
+    static let archive = "arc:"   // NOT-UI: a restored row's name on this phone, never on the wire
+    static let given = "given:"   // NOT-UI: a given-back row's name on this phone, never on the wire
+    static func holds(_ name: String) -> Bool { name.hasPrefix(archive) || name.hasPrefix(given) }
+}
+
 enum MTHistoryFile {
     static let aad = Data("chatMessages".utf8)   // the AAD the vault blob wore — one seal, one key
     private static let url: URL = {

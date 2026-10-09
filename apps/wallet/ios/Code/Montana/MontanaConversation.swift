@@ -1250,8 +1250,6 @@ struct ChatConversationView: View {
     @State private var chessPlayed: String?      // the pair's game while it is played (MTChessSend.playedGame): the mark's ring
     @State private var askChess = false          // the platform's question before a new game
     @State private var chessStake = ""           // the stake typed in that question (the author's word 06.10.2026 23:2x MSK)
-    @State private var roomAsk: MTRoomKind?      // a group's call chosen at the top: whom to invite (07.10)
-    @State private var roomAskVideo = false
     @State private var askEraseGroup = false     // out of a group: «Delete and Exit» asks first (stage R)
     @AppStorage("composeMediaMode") private var composeMediaMode = "mic"   // the bar's button mode: the coin's stands its balance plate
     @State private var wallPage: MTBoardRoute?   // the wall a post's card opens, on this chat's own stack (30.09)
@@ -1541,7 +1539,6 @@ struct ChatConversationView: View {
         .overlay(alignment: .top) {
             if !selectingMsgs {
                 VStack(spacing: 0) {
-                    if chat.isGroup { MTRoomBar(chat: chat.name) }
                     if !pinnedList.isEmpty { pinnedBar(pinnedList) }
                 }
                 .padding(.top, newestFirst ? topBarSize.height : 0)   // under the field on top
@@ -1844,12 +1841,10 @@ struct ChatConversationView: View {
     /// bar's 44 points; the marks yield their glass, never the name its place.
     private var chatTop: some View {
         HStack(spacing: 0) {
-            CallInlineHandset(side: .green, peer: nil)   // 15.8: return to the minimized call
             ViewThatFits(in: .horizontal) {
                 chatRow(round: 44, gap: 6, room: 120)
                 chatRow(round: 40, gap: 0, room: 96)
             }
-            CallInlineHandset(side: .red, peer: nil)   // 15.8: end it
         }
         .frame(maxWidth: .infinity)
     }
@@ -1867,9 +1862,6 @@ struct ChatConversationView: View {
                 walletMark(round)
                 flipMark(round)
                 chessMark(round)
-                handsetMark(round)
-            } else if chat.isGroup {
-                MTRoomMark(chat: chat.name, side: round) { kind, video in roomAskVideo = video; roomAsk = kind }   // the kind, then whom (07.10)
             }
         }
     }
@@ -1937,23 +1929,6 @@ struct ChatConversationView: View {
         }
     }
 
-    /// The handset as it was (the author's word 18.09): the calls' menu behind the one bar glyph, on the marks' one round.
-    private func handsetMark(_ side: CGFloat) -> some View {
-        Menu {
-            Button {
-                MontanaCall.shared.startCall(peer: chat.convId ?? chat.name, device: "", video: false,
-                    displayName: MTNameBook.display(conv: chat.convId ?? chat.name,
-                                                    localFirst: chat.displayName, localLast: chat.lastName))
-            } label: { Label("Voice Call", systemImage: "phone.fill") }
-            Button {
-                MontanaCall.shared.startCall(peer: chat.convId ?? chat.name, device: "", video: true,
-                    displayName: MTNameBook.display(conv: chat.convId ?? chat.name,
-                                                    localFirst: chat.displayName, localLast: chat.lastName))
-            } label: { Label("Video Call", systemImage: "video.fill") }
-        } label: {
-            MTBarRoundMark(ringed: false, side: side) { MontanaBarGlyph(glyph: "phone") }   // the one bar glyph (MontanaShapes) on the marks' one round
-        }
-    }
 
     /// THE WALLET BESIDE THE COIN (the author's word 03.10: «a wallet button next to the coin, on its left»): the platform's wallet
     /// glyph on the marks' one round; a tap lays the wallet page over the chat (montanaOpenWallet, the one road a coin's link takes).
@@ -2049,8 +2024,6 @@ struct ChatConversationView: View {
             if ribbon { MTChatMint.shared.credit(store.messages[chat.name] ?? [], oneEach: true) }   // one coin a bubble (MTMoneyFlow)
             else if groupMints { MTChatMint.shared.credit(store.messages[chat.name] ?? [], longerThan: MTChatMint.groupLetterFloor, in: chat.name) }
         }
-        // WHOM TO INVITE INTO THE GROUP'S CALL (MTRoomMark chose the kind): the sheet hangs on the chat, never inside the bar's item
-        .sheet(item: $roomAsk) { k in MTRoomInviteSheet(chat: chat.name, kind: k, video: roomAskVideo, opening: true) }
         // THE STAKE FROM THE CHAT TOO (the author's word 06.10.2026 23:2x MSK: «from the chat too, when a game is created, the
         // invitation must say at which stake»): the question takes the stake under the balance; a short balance refuses it.
         .alert("Start a new game?", isPresented: $askChess) {
@@ -2064,18 +2037,6 @@ struct ChatConversationView: View {
             Button("Cancel", role: .cancel) { chessStake = "" }
         } message: {
             Text("\(MTCoinText.count(MTCoinBook.ledger.balance)) coins")
-        }
-        .confirmationDialog("Call back?", isPresented: Binding(
-            get: { callBackVideo != nil }, set: { if !$0 { callBackVideo = nil } }),
-            titleVisibility: .visible) {
-            Button {
-                let v = callBackVideo ?? false; callBackVideo = nil
-                MontanaCall.shared.startCall(peer: chat.convId ?? chat.name, device: "", video: v,
-                    displayName: MTNameBook.display(conv: chat.convId ?? chat.name,
-                                                    localFirst: chat.displayName, localLast: chat.lastName))
-            } label: { Label(callBackVideo == true ? "Video Call" : "Voice Call",
-                             systemImage: callBackVideo == true ? "video.fill" : "phone.fill") }
-            Button("Cancel", role: .cancel) { callBackVideo = nil }
         }
         .onChange(of: ui.pendingForward) { _, mid in consumePendingForward(mid) }
         // «Show in chat» — the one road (UIState.showLetter): the record names this chat's letter.
@@ -3313,11 +3274,7 @@ struct ChatConversationView: View {
     func groupEventRow(_ m: Message) -> some View {
         let e = MTGroupEvent.of(m.text)
         return Button {
-            if e?.e == "call", let gid = MTGroup.id(of: chat.name), let b = MTRoomBook.shared.rooms[gid] {
-                if b.mine { MTGroupRoom.shared.show(true) } else { MTGroupRoom.shared.join(chat.name, video: false) }
-            } else {
-                hideKeyboard()
-            }
+            hideKeyboard()
         } label: {
             Text(verbatim: MTGroup.shared.eventWords(m.text) ?? "")   // USER-DATA: the people's names inside the catalogue's sentence
                 .font(.caption2).foregroundColor(.white).multilineTextAlignment(.center)

@@ -281,6 +281,7 @@ final class ConnectionStatus: ObservableObject {
 }
 
 struct ChatsListView: View {
+    @ObservedObject private var keep = MTKeeping.shared   // the crossed glyph of the copy with contacts (08.10)
     @ObservedObject private var playerGate = MontanaPlayerBar.Gate.shared   // the one bit; never the player's clock (the critic 22.09)
     private var musicPlayer: VoicePlayer { VoicePlayer.shared }              // the folded page over the list (15.35): called, not observed
     @State private var playerBarSize: CGSize = .zero   // the floating player's height — the rows' reserve
@@ -351,10 +352,14 @@ struct ChatsListView: View {
             // THE CROSSED SPEAKER UNDER THE CLOCK (the author's word 06.10 20:5x: on the left, in the menu's place while the
             // notifications are off): the system said no, so the first slot says it too and opens the notifications' page;
             // the drawer stays one stroke from the screen's left edge (MontanaDrawerHost).
-            barSlot(0) { if MTNotifyAllowed.shared.refused { openNotifications() } else { openDrawer() } } label: {
+            // THE CROSSED PEOPLE BESIDE IT (the author's word 08.10.2026 23:2x MSK: «when it is off, a crossed glyph like the muted
+            // sound, with the way to the settings of the copy with contacts»): the speaker first, then the copy, then the menu.
+            barSlot(0) {
+                if MTNotifyAllowed.shared.refused { openNotifications() } else if keep.offShown { ui.overlayPage = .keeping } else { openDrawer() }
+            } label: {
                 // No badge here (the author's word 18.09): unfolded, the unread stand on the chats glyph and the missed calls
                 // on the calls glyph — where the thing itself lives.
-                Image(systemName: MTNotifyAllowed.shared.refused ? "speaker.slash" : UIState.Glyph.drawer).font(.system(size: 22, weight: .semibold))
+                Image(systemName: MTNotifyAllowed.shared.refused ? "speaker.slash" : (keep.offShown ? "person.2.slash" : UIState.Glyph.drawer)).font(.system(size: 22, weight: .semibold))
                     .foregroundColor(MontanaOctagon.barGlyph)
             }
             // The contacts, left of the logo (the author's word 19.09).
@@ -769,11 +774,7 @@ struct ChatsListView: View {
     /// draws them as the platform's swipe actions (15.26).
     /// Left to right — the two calls; right to left — unread, pin, mute, archive, delete. Every tile
     /// on the same glass as the compose button (the author's word 17.09).
-    private func swipeLeading(_ chat: Chat) -> [SwipeTile] {
-        guard !chat.isGroup, chat.convId != nil, chat.name != Self.qrRow else { return [] }
-        return [SwipeTile(icon: "phone.fill", color: SwipeTile.glass) { MontanaCall.shared.startCall(peer: chat.convRef, device: "", video: false) },
-                SwipeTile(icon: "video.fill", color: SwipeTile.glass) { MontanaCall.shared.startCall(peer: chat.convRef, device: "", video: true) }]
-    }
+    private func swipeLeading(_ chat: Chat) -> [SwipeTile] { [] }   // the wallet holds no calls (09.10.2026)
     private func swipeTrailing(_ chat: Chat) -> [SwipeTile] {
         guard chat.name != Self.qrRow else { return [] }
         // THE MARK BOTH WAYS (the author's word 23.09): read where something is unread, the dot where nothing is.
@@ -923,7 +924,7 @@ struct ChatsListView: View {
         case .contacts:
             ContactsTabView(panel: timePanel(.contacts))
         case .calls:
-            CallsTabView(panel: timePanel(.calls))
+            EmptyView()   // the wallet holds no calls (09.10.2026)
         case .feed:
             // THE FEED SEARCHES ITSELF (the author's word 25.09), as the music does: the word at the head narrows its posts.
             // THE MINI PLAYER STANDS ON THE FEED (the author's word 26.09: «on the feed the mini player must appear if something
@@ -2138,14 +2139,11 @@ struct ChatRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 // top row: name on the left, time on the right
                 HStack(spacing: 5) {
-                    CallInlineHandset(side: .green, peer: model.ref)   // 15.8
                     Text(model.title)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.white)
                         .lineLimit(1)
                     if model.montana { MTMontanaCrownMark(height: 18) }
-                    if MTGroup.isKey(model.ref) { MTRoomRowMark(chat: model.ref) }   // a group's living room (07.10)
-                    CallInlineHandset(side: .red, peer: model.ref)
                     if model.muted {
                         Image(systemName: "bell.slash.fill")
                             .font(.system(size: 12)).foregroundColor(.gray)

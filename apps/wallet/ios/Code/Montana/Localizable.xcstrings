@@ -28279,6 +28279,425 @@
           }
         }
       }
+    },
+    "Keep my copy with my contacts": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранить мою копию у собеседников"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "让联系人保管我的副本"
+          }
+        }
+      }
+    },
+    "COPY WITH CONTACTS": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "КОПИЯ У СОБЕСЕДНИКОВ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "联系人保管的副本"
+          }
+        }
+      }
+    },
+    "Asking the people you write to…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спрашиваю ваших собеседников…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在询问与您通信的人…"
+          }
+        }
+      }
+    },
+    "None of your contacts can keep a part yet": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока никто из собеседников не может хранить часть"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前还没有联系人能保管部分"
+          }
+        }
+      }
+    },
+    "Not kept yet": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока не хранится"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未保管"
+          }
+        }
+      }
+    },
+    "Kept by %lld of %lld": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранят %lld из %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已由 %lld/%lld 人保管"
+          }
+        }
+      }
+    },
+    "Keep parts for my contacts": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранить части для собеседников"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为联系人保管部分"
+          }
+        }
+      }
+    },
+    "Take my copy back from my contacts": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вернуть мою копию от собеседников"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从联系人处取回我的副本"
+          }
+        }
+      }
+    },
+    "Parts in hand: %lld of %lld": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частей получено: %lld из %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已取回部分：%lld/%lld"
+          }
+        }
+      }
+    },
+    "The copy came back": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копия вернулась"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "副本已取回"
+          }
+        }
+      }
+    },
+    "No copy came back": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копия не вернулась"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "副本未能取回"
+          }
+        }
+      }
+    },
+    "Keeping a copy": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранение копии"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保管副本"
+          }
+        }
+      }
+    },
+    "%@ keeps a sealed part of their copy on this phone (%@). Nobody can open it here.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ хранит на этом телефоне запечатанную часть своей копии (%2$@). Открыть её здесь нельзя."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ 在此手机上保管其副本的一个加密部分（%2$@）。此处无人能打开它。"
+          }
+        }
+      }
+    },
+    "Your copy is sealed with your 24 words and cut into parts. The people you write to keep the parts around a ring, each part with two of them: they see only its size and when it changes, and cannot open it. With your words on a new phone, the parts come back from them, and each of them gives back the conversation you share.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копия запечатана вашими 24 словами и разрезана на части. Ваши собеседники хранят части по кругу, каждую — двое: они видят только её размер и когда она меняется, а открыть её не могут. С вашими словами на новом телефоне части возвращаются от них, и каждый отдаёт вашу общую переписку."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的副本用您的 24 个单词加密并切分成若干部分。与您通信的人按环形保管这些部分，每部分由两人保管：他们只能看到它的大小和更新时间，无法打开。在新手机上输入您的单词后，这些部分会从他们那里取回，每个人还会交还你们之间的对话。"
+          }
+        }
+      }
+    },
+    "Parts of other people's copies are sealed: this phone cannot open them, and each goes back only to its owner's words.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Части чужих копий запечатаны: этот телефон не может их открыть, и каждая возвращается только к словам своего владельца."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "他人副本的部分已加密：此手机无法打开，每一部分只会回到其主人的单词。"
+          }
+        }
+      }
+    },
+    "Stop keeping this part": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Больше не хранить эту часть"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不再保管此部分"
+          }
+        }
+      }
+    },
+    "Is restoring their account: open Montana to give back the part of their copy you keep": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстанавливает аккаунт: откройте Montana, чтобы вернуть часть копии, которую вы храните"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在恢复账户：打开 Montana，归还您保管的那部分副本"
+          }
+        }
+      }
+    },
+    "Keep your copy with your contacts?": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранить вашу копию у собеседников?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "让联系人保管您的副本？"
+          }
+        }
+      }
+    },
+    "Keep": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранить"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保管"
+          }
+        }
+      }
+    },
+    "Hold the coin for 9 seconds for auto minting; music doubles auto minting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зажмите на 9 секунд Монету для авточеканки, музыка удваивает авточеканку."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按住硬币 9 秒开启自动铸币；音乐使自动铸币翻倍。"
+          }
+        }
+      }
+    },
+    "About %@ left": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Осталось примерно %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大约还剩 %@"
+          }
+        }
+      }
+    },
+    "Your history keeps coming back in the background.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "История продолжит возвращаться в фоне."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的历史记录将在后台继续恢复。"
+          }
+        }
+      }
+    },
+    "Save 24 words": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить 24 слова"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存 24 个词"
+          }
+        }
+      }
+    },
+    "Write the 24 words down and keep them: on a new phone your identity and your coins open only from them.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запишите 24 слова и храните их: на новом телефоне ваша личность и ваши монеты открываются только из них."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请写下并保管好这 24 个词：在新手机上，你的身份和你的币只能凭它们打开。"
+          }
+        }
+      }
+    },
+    "Add contact": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить контакт"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加联系人"
+          }
+        }
+      }
+    },
+    "A contact sends you coins, and you send yours to a contact.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Контакт присылает вам монеты, а вы отправляете свои контакту."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "联系人给你发币，你也可以把自己的币发给联系人。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

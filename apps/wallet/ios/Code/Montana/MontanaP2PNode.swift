@@ -542,18 +542,10 @@ final class MontanaP2PNode: ObservableObject {
         }
         MontanaP2PTrace.markChanged("roads", "all")
         var attempts = 0
-        // A CALL OWNS THE RADIO (13.09, measured on a cellular call that took twenty-one seconds to
-        // find its path): while a call is being set up or held, this walk knocks the doors of EVERY
-        // known correspondent — eight dead addresses at a time, each holding a socket until it times
-        // out on the cellular radio (thirty such timeouts inside that one call). Not one of them
-        // serves the call, and the path the call is looking for is negotiated by its own checks over
-        // the same radio. During a call the walk touches ONE correspondent: the one being called.
-        let callPeer: String? = MontanaCall.stateSnapshot == "idle" ? nil : MontanaCall.peerSnapshot
         // An IPv6 door of theirs is dialled only from an IPv6 of our own: without one the dial
         // dies with «Network is down» before it leaves, and says so once a minute per address.
         let v6Here = MontanaSelfEndpoint.candidates().contains { $0.contains(":") }
         for e in MontanaOverlayBook.shared.allEntries() where !e.ref.isEmpty {
-            if let p = callPeer, e.ref != p { continue }   // a call stands: every other correspondent waits
             if let ov = e.overlay, MontanaP2PDirect.shared.hasLiveChannel(overlay: ov) {
                 for ep in e.endpoints { pathAt[ep.hostPort] = nil }      // it answered: forget the backoff
                 continue
@@ -1303,29 +1295,9 @@ enum MontanaNotifyGate {
 
 /// The one node to the system settings of this app. Named once so two screens cannot drift apart.
 enum MontanaSystemSettings {
-    /// iOS ENDS THE APP WHEN A PRIVACY SWITCH CHANGES (24.09, iPhone 15 13:02:39 and 13:05:5x: the person went from the
-    /// privacy page to Settings in the middle of a call with the screen shared, changed the photos' access, and iOS
-    /// ended Montana — the call froze on the far phone, the broadcast stopped with the system's own error). The platform
-    /// does not warn; this door does, while a call stands, and the person decides knowing it. A caller whose own words
-    /// already say it (the camera alert) passes `callWarned`.
-    static func open(callWarned: Bool = false) {
+    static func open() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        guard !callWarned, MontanaCall.isBusy else { UIApplication.shared.open(url); return }
-        // A call whose peer rebuilds in place goes on after the restart (24.09): the words say what will happen.
-        let goesOn = MontanaCall.shared.outlivesItsProcess
-        let alert = UIAlertController(title: goesOn ? String(localized: "The call will pause", bundle: MTLanguage.bundle)
-                                                    : String(localized: "The call will end", bundle: MTLanguage.bundle),
-                                      message: goesOn ? String(localized: "iOS restarts Montana when an access is changed in Settings. Come back to Montana within a minute, and the call goes on.", bundle: MTLanguage.bundle)
-                                                      : String(localized: "iOS restarts Montana when an access is changed in Settings, and the call ends.", bundle: MTLanguage.bundle),
-                                      preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: String(localized: "Cancel", bundle: MTLanguage.bundle), style: .cancel))
-        alert.addAction(UIAlertAction(title: String(localized: "Open Settings", bundle: MTLanguage.bundle), style: .default) { _ in
-            MontanaP2PTrace.mark("privacy_access", "settings opened under a call")
-            UIApplication.shared.open(url)
-        })
-        guard MTTop.controller != nil else { UIApplication.shared.open(url); return }
-        MontanaP2PTrace.mark("privacy_access", "call warned before settings goes_on=\(goesOn ? 1 : 0)")
-        MTTop.present(alert, kind: "alert")
+        UIApplication.shared.open(url)
     }
 }
 

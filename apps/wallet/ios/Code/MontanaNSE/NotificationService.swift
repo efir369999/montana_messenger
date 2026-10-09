@@ -74,6 +74,25 @@ final class NotificationService: UNNotificationServiceExtension {
         if let envB64 = info["env"] as? String, !envB64.isEmpty,
            let sealed = Data(base64Encoded: envB64),
            let (openedConv, mid, rawText, envName, envGlyph, envQt, envQm, envLp) = Self.openWithOwnPipes(sealed) {
+            // A CALL IN THE PIPE OF A SLOT THIS PHONE KEEPS (MTKeeping in the app, 08.10): never stashed -- the app answers it from
+            // the box. A loud call (the restoring phone heard nothing for minutes) wears one banner with the owner's name, and the
+            // tap opens the app, which answers; a quiet one rings nobody.
+            if openedConv.hasPrefix("keep:") {
+                let owner = String(openedConv.dropFirst("keep:".count).prefix(while: { $0 != "#" }))   // «conv#slot»: a keeper of the ring holds several
+                guard rawText.contains("\"loud\":1") else {
+                    Self.diagLine("keep call quiet mid=\(mid.prefix(8))")
+                    contentHandler(Self.quietFace())
+                    return
+                }
+                content.title = Self.mirroredName(for: owner) ?? "Montana"
+                content.body = String(localized: "Is restoring their account: open Montana to give back the part of their copy you keep", bundle: MTLanguage.bundle)
+                content.sound = .default
+                content.threadIdentifier = owner
+                content.userInfo["chat"] = owner
+                Self.diagLine("keep call banner mid=\(mid.prefix(8))")
+                contentHandler(content)
+                return
+            }
             let conv = Self.chatKey(for: openedConv)   // opening key -> CHAT key (the alias dictionary)
             Self.lastOpened = openedConv
             Self.diag(opened: openedConv, ui: conv, envName: envName, envGlyph: envGlyph)
@@ -96,28 +115,8 @@ final class NotificationService: UNNotificationServiceExtension {
             openedMid = mid
             openedQuiet = Self.isQuietText(rawText)
             cargoLetter = (mid, text)
-            // A ring letter never wears a banner: the system call screen (voip road, 12.1)
-            // is the one face of an incoming call. Old senders still send it loud — the
-            // letter is stashed above, the banner is swallowed whole.
+            // A RING LETTER IS STASHED SILENTLY (the author's word 09.10.2026 16:00 MSK: the wallet holds no calls): no bell, no banner.
             if rawText.hasPrefix("\u{200B}\u{200B}RG:") {
-                // THE SECOND BELL (13.09): a ring letter marked «b» is the caller's word that Apple
-                // kept the voip wake away — it wears the one banner of an incoming call; the tap
-                // opens the app, and the app rings natively while the seed is alive. The native
-                // ring, the missed letter and the call's end remove it by its name «bell-<tag>».
-                let json = String(rawText.dropFirst("\u{200B}\u{200B}RG:".count))
-                let o = json.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
-                if (o?["b"] as? Int) == 1, let seed = o?["s"] as? String, !seed.isEmpty, MontanaMissedCall.state(seed) == nil {
-                    content.title = Self.title(conv: conv, envName: envName)
-                    content.body = ((o?["v"] as? Bool) ?? false) ? "📹 " + String(localized: "Incoming video call. Tap to answer", bundle: MTLanguage.bundle)
-                                                                  : "📞 " + String(localized: "Incoming call. Tap to answer", bundle: MTLanguage.bundle)
-                    content.sound = .default
-                    content.threadIdentifier = conv
-                    content.userInfo["chat"] = conv
-                    content.userInfo["mid"] = mid
-                    Self.diagLine("bell banner mid=\(mid.prefix(8)) seed=\(seed.prefix(8))")
-                    Self.deliverWithAvatar(content, from: conv, glyph: envGlyph, handler: contentHandler)
-                    return
-                }
                 Self.diagLine("ring letter stashed silently mid=\(mid.prefix(8))")
                 contentHandler(Self.quietFace())
                 return
@@ -337,44 +336,12 @@ final class NotificationService: UNNotificationServiceExtension {
     // The person's notification settings (mirrored from the keychain: notifSound/notifPreview/
     // notifSender + mutedChats). The extension lives in the background — it reads the same
     // values the user sees on the Notifications screen.
-    /// The caller's «missed call» letter: ONE banner per call across both processes ([C-1],
-    /// the author's word 09.09). The seed notebook says whether this device saw the call ring
-    /// or already rang for it — then silence; otherwise the one missed-call look, composed by
-    /// MontanaMissedCall, the same the app's own ring serves. Returns true when the letter is handled.
+    /// A MISSED-CALL LETTER IS SILENT (the author's word 09.10.2026 16:00 MSK: the wallet holds no calls). True when the letter is one.
     private static func serveMissedLetter(_ text: String, mid: String, conv: String, name: String,
                                           handler: @escaping (UNNotificationContent) -> Void) -> Bool {
         guard text.hasPrefix("\u{200B}\u{200B}MC:") else { return false }
-        let (seed, video) = MontanaMissedCall.letter(text)
-        if !seed.isEmpty {   // the bell of this call, if it still hangs, yields to the missed word
-            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["bell-" + MontanaMissedCall.tag(seed)])
-        }
-        if let st = MontanaMissedCall.state(seed) {
-            diagLine("missed letter silent mid=\(mid.prefix(8)) seed=\(seed.prefix(8)) state=\(st)")
-            handler(quietFace())
-            return true
-        }
-        MontanaMissedCall.note(seed, "rang")
-        _ = firstTimeShown(mid)
-        let title = Self.title(conv: conv, envName: name)
-        diagLine("missed banner mid=\(mid.prefix(8)) seed=\(seed.prefix(8))")
-        let look = MontanaMissedCall.content(peer: conv, name: title, video: video)
-        // THE ICON BADGE COUNTS THIS MISSED CALL (the author's word 18.09): one added to the
-        // shared missed count (the app rewrites it with its own truth on waking), shown as the
-        // unread letters plus the missed calls — the app's own sum.
-        var missed = Int(String(data: MontanaKeychain.get("missedUnseen") ?? Data(), encoding: .utf8) ?? "") ?? 0
-        missed += 1
-        MontanaKeychain.set("missedUnseen", Data(String(missed).utf8))
-        var unread = 0
-        if let d = MontanaKeychain.get("unreadCounts"), let m = try? JSONDecoder().decode([String: Int].self, from: d) {
-            unread = m.values.reduce(0, +)
-        }
-        if let c = look.mutableCopy() as? UNMutableNotificationContent {
-            c.badge = NSNumber(value: unread + missed)
-            diagLine("badge missed=\(missed) total=\(unread + missed) src=nse")
-            handler(worded(c))
-        } else {
-            handler(worded(look))
-        }
+        diagLine("missed letter silent mid=\(mid.prefix(8))")
+        handler(quietFace())
         return true
     }
 
