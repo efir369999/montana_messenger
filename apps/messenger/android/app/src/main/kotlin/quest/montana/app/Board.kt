@@ -1941,13 +1941,12 @@ class FeedPane(private val act: MainActivity) : FrameLayout(act) {
             addView(c.vstack(Gravity.NO_GRAVITY) { addView(goingColumn, lp()); addView(column, lp()); addView(foot, lp(MATCH, dp(120))) })
         }, LayoutParams(MATCH, MATCH))
         addView(empty, LayoutParams(WRAP, WRAP, Gravity.CENTER))
-        addView(write, LayoutParams(dp(60), dp(60), Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, dp(16), dp(36)) })
+        addView(write, PageCorner.params(c))
     }
     /** The bar stands: the posts keep room under it and the write button steps above it, as the music's plus. */
     fun reserve(on: Boolean) {
         foot.layoutParams = lp(MATCH, dp(if (on) 180 else 120)); foot.requestLayout()
-        (write.layoutParams as LayoutParams).bottomMargin = dp(if (on) 96 else 36)
-        write.requestLayout()
+        write.layoutParams = PageCorner.params(c, reserve = on)
     }
     private fun draw() {
         val items = Board.feed()

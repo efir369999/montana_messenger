@@ -88,6 +88,22 @@ fun Context.icon(res: Int, tint: Int, sizeDp: Int = 24) = ImageView(this).apply 
     layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp))
 }
 
+/**
+ * THE PAGES' CORNER, ONE MEASURE (iOS MTPageCorner and mtPageAction, MontanaChatListContainer.swift:431-452 at 2155, the author's
+ * words 30.09 and 01.10: «the action button of the contacts, the calls, the chats aligned by the chats' reference, everywhere by one
+ * function»): every page's own button at the bottom right -- the bar's tier of 60, 16 from the right edge, lifted over the list's
+ * bottom as every page here has stood since it was measured against the iPhone, and higher by the floating player's room while the
+ * player stands (reserve).
+ */
+object PageCorner {
+    private const val SIDE = 60
+    private const val EDGE = 16
+    private const val LIFT = 36
+    private const val PLAYER = 60
+    fun params(c: Context, reserve: Boolean = false) = android.widget.FrameLayout.LayoutParams(c.dp(SIDE), c.dp(SIDE),
+        android.view.Gravity.BOTTOM or android.view.Gravity.END).apply { setMargins(0, 0, c.dp(EDGE), c.dp(LIFT + if (reserve) PLAYER else 0)) }
+}
+
 /** Dims while pressed (iOS: .opacity(isPressed ? 0.55 : 1)). */
 fun View.pressable(onClick: () -> Unit): View {
     isClickable = true

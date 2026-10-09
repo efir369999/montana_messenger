@@ -229,7 +229,7 @@ fun callsPane(act: MainActivity, onNewCall: () -> Unit = {}): View {
             addView(c.icon(R.drawable.ic_phone_plus, Color.rgb(204, 204, 204)), FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
             pressable { onNewCall() }
         }
-        addView(action, FrameLayout.LayoutParams(dp(60), dp(60), Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, dp(16), dp(36)) })
+        addView(action, PageCorner.params(c))
         foot.viewTreeObserver.addOnGlobalLayoutListener { action.visibility = if (foot.visibility == View.VISIBLE) View.GONE else View.VISIBLE }
         addView(foot, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM).apply { bottomMargin = c.dp(26) })
     }

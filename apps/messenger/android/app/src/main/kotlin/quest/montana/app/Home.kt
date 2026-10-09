@@ -982,7 +982,7 @@ private fun chatsPane(act: MainActivity): View {
             addView(c.icon(R.drawable.ic_compose, barGlyph), FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER))
             pressable { act.push { cardPage(act, it) } }
         }
-        addView(write, FrameLayout.LayoutParams(dp(60), dp(60), Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, dp(16), dp(36)) })
+        addView(write, PageCorner.params(c))
         addView(bar, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM).apply { bottomMargin = dp(26) })
     }
 }
@@ -1020,7 +1020,7 @@ private fun groupsPane(act: MainActivity, channel: Boolean): View {
             contentDescription = c.getString(R.string.app_groups)
             addView(c.icon(R.drawable.ic_plus, barGlyph), FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER))
             pressable { act.push { close -> groupPickPage(act, close, onCreated = { key -> act.push { back -> conversationPage(act, key, back) } }) } }
-        }, FrameLayout.LayoutParams(dp(60), dp(60), Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, dp(16), dp(36)) })
+        }, PageCorner.params(c))
     }
 }
 
@@ -1040,6 +1040,6 @@ private fun contactsPane(act: MainActivity): View {
             contentDescription = c.getString(R.string.share)
             addView(c.icon(R.drawable.ic_share, barGlyph), FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER))
             pressable { shareCard(act) }   // the one share of one's card (iOS MontanaCardShare)
-        }, FrameLayout.LayoutParams(dp(60), dp(60), Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, dp(16), dp(36)) })
+        }, PageCorner.params(c))
     }
 }
