@@ -365,6 +365,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         CopyInventory.tickSoon()   // after the feed is read: a plan that leaves something out needs the letters
         MontanaAppleID.publish()          // this device's seed reaches the Apple Account's keychain, when the switch stands (28.09)
         HomeNodeWatch.shared.tickSoon()   // the person's own node: the daily copy, when it is named and switched on (28.09)
+        MTKeeping.shared.tickSoon()       // the copy kept by the people one writes to: the daily renewal, when the person chose it (08.10)
         return true
     }
 

@@ -181,7 +181,7 @@ final class MTTurnDrag: ObservableObject {
     /// settings and the profile are one open page at a time, risen over the tabs in the chat's own
     /// sliding container and closed by the cross or by the screen-edge swipe. The network left this slot
     /// for the finger's row (the author's word 25.09): it is a page under the bar, as the calls are.
-    enum Page: String, Identifiable { case settings, profile, card, birth, notifications; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus
+    enum Page: String, Identifiable { case settings, profile, card, birth, notifications, keeping; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus
     var overlayPage: Page?
     /// The document page over everything (the author's word 19.09): the whole screen, above the tabs and the open chat.
     var docPage: MTDocOpen?
@@ -2213,6 +2213,9 @@ struct MTShellPage: View {
 }
 
 struct MainTabView: View {
+    /// THE QUESTION OF THE COPY WITH CONTACTS (the author's word 08.10.2026 23:2x MSK: «on by default, and a question at the
+    /// opening»): asked once, in the platform's own alert, after the system's question of the notifications is settled.
+    @State private var keepAsk = false
     // THE TABS DO NOT WATCH THE CALL (22.09): the minimized pill watches it where it is drawn
     // (MTMinimizedCallLayer). Watched from here, every second of a call ran this body -- and this body
     // carries the chat list, the drawer, the open chat and every page over them.
@@ -2316,6 +2319,17 @@ struct MainTabView: View {
         } }
         .onReceive(NotificationCenter.default.publisher(for: .openChatRequest)) { _ in ui.pane = .chats }
         .onReceive(scheduleTick) { _ in store.fireDueScheduled() }
+        .onChange(of: scenePhase) { _, p in   // the system's question answered and the app back: the copy's question follows
+            if p == .active, MontanaSeed.hasSeed, !MTKeeping.told {
+                MontanaNotifyGate.systemStatus { st in if st != .notDetermined { keepAsk = true } }
+            }
+        }
+        .alert("Keep your copy with your contacts?", isPresented: $keepAsk) {
+            Button("Keep") { MTKeeping.shared.answer(keep: true) }
+            Button("Not now", role: .cancel) { MTKeeping.shared.answer(keep: false) }
+        } message: {
+            Text("Your copy is sealed with your 24 words and cut into parts. The people you write to keep the parts around a ring, each part with two of them: they see only its size and when it changes, and cannot open it. With your words on a new phone, the parts come back from them, and each of them gives back the conversation you share.")
+        }
     }
 
     /// The page the slot shows for each name. Hosted screens inherit no environment: the state
@@ -2337,6 +2351,12 @@ struct MainTabView: View {
                 NotificationsView()
                     .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
             }
+            // THE CROSSED GLYPH OF THE COPY'S PAGE (the author's word 08.10.2026 23:2x MSK): Data and Storage, where the copy with
+            // contacts is switched, its cross top left.
+            case .keeping: NavigationStack {
+                DataStorageView()
+                    .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
+            }
             }
         }
         .environment(ui).environmentObject(store)
@@ -2354,6 +2374,9 @@ struct MainTabView: View {
         // it is the SYSTEM's own — notifications.
         MontanaPhoneNode.shared.autoStart()
         MTNotifyAllowed.shared.read("entry")   // asks again while the system holds no answer, not once for ever (06.10)
+        // The copy with contacts is asked after the system's own question, never beside it (two windows explain each other away).
+        guard !MTKeeping.told else { return }
+        MontanaNotifyGate.systemStatus { st in if st != .notDetermined { keepAsk = true } }
     }
 
     // pick up attachments from the «Share» menu after warming up the E2E session
@@ -2789,8 +2812,13 @@ private struct MTPushedMark: ViewModifier {
 
 // ── "Calls" tab — call log ──
 struct CallRecord: Identifiable {
-    let id: String; let peer: String; let video: Bool; let incoming: Bool
+    let mid: String; let peer: String; let video: Bool; let incoming: Bool
     let dur: Int; let missed: Bool; let time: String; let at: Double
+    /// A CALL'S NAME IS ITS CONVERSATION AND ITS LETTER (09.10): a letter's name is one within its conversation, not across
+    /// them -- the archive names a restored letter by its second, side and text, so a transcript and its live twin hold the
+    /// same «arc:» letter, and the list that took the letter's name alone met it twice and died (T1 09.10 07:49:41Z:
+    /// «Duplicate identifiers: call:arc:baf0637d…, call:arc:234a31f6…» the moment the Calls page opened).
+    var id: String { peer + "/" + mid }
 }
 
 /// THE CALLS UNDER THE BAR (the author's word 17.09): the log's rows in the list's own dress on the
@@ -2900,7 +2928,7 @@ struct CallsTabView: View {
     private func endSelecting() { withAnimation { selecting = false; selected.removeAll() } }
     private func dial(_ r: CallRecord, video: Bool) { MontanaCall.shared.startCall(peer: r.peer, device: "", video: video) }
     private func deleteSelected() {
-        for id in selected { store.deleteCallLog(id: String(id.dropFirst(Self.callMark.count))) }
+        for r in records where selected.contains(Self.callMark + r.id) { store.deleteCallLog(r) }
         endSelecting()
     }
     private func person(_ r: CallRecord) -> Chat {
@@ -2910,14 +2938,14 @@ struct CallsTabView: View {
     /// swipe from the left for a call on the calls page»): a tap on the row dials back, and the list offers nothing on that side.
     private func swipeTrailing(_ c: Chat) -> [SwipeTile] {
         guard let r = record(c) else { return [] }
-        return [SwipeTile(icon: "trash.fill", color: SwipeTile.glass) { store.deleteCallLog(id: r.id) }]
+        return [SwipeTile(icon: "trash.fill", color: SwipeTile.glass) { store.deleteCallLog(r) }]
     }
     /// The deeds of the menu about a call (a hold on the row): select, delete, block.
     private func deeds(_ c: Chat) -> [MTPersonMenu.Deed] {
         guard let r = record(c) else { return [] }
         let p = person(r)
         return [.init(title: "Select", icon: "checkmark.circle") { personMenu = nil; withAnimation { selecting = true; selected = [c.id] } },
-                .init(title: "Delete", icon: "trash", destructive: true) { personMenu = nil; store.deleteCallLog(id: r.id) },
+                .init(title: "Delete", icon: "trash", destructive: true) { personMenu = nil; store.deleteCallLog(r) },
                 store.isBlocked(r.peer)
                     ? .init(title: "Unblock", icon: "hand.raised.fill") { personMenu = nil; store.toggleBlocked(r.peer) }
                     : .init(title: "Block", icon: "hand.raised", destructive: true) { personMenu = nil; blockingChat = p }]
@@ -3803,6 +3831,10 @@ let sameYesMark = "\u{200B}\u{200B}SY:"
 // conversation here and no life for three days, and says so to the other side over that very pipe instead of vanishing:
 // the other side's history stays readable and its composer gives way to a note.
 let pipeClosedMark = "\u{200B}\u{200B}PX:"
+// THE COPY KEPT BY THE PEOPLE ONE WRITES TO (the author's word 08.10.2026 20:3x, MTKeeping; Network «A copy kept by the people one
+// speaks with»): one word, JSON with «w» -- a question, a yes, a part, a keeper's «held», a release -- riding the correspondence,
+// and a call and its answer riding the pipe of a slot. Never a row; an older build buries it unread.
+let keepMark = "\u{200B}\u{200B}KP:"
 /// The words a pipe is buried with: the tombstone of «delete for both» and the orphan sweep's closing word. Each rides
 /// past the conversation's death, and its receipt — or its term — buries the pipe.
 func isBurialWord(_ text: String) -> Bool { text.hasPrefix(convDelMark) || text.hasPrefix(pipeClosedMark) }
@@ -3811,7 +3843,8 @@ func isBurialWord(_ text: String) -> Bool { text.hasPrefix(convDelMark) || text.
 let knownServiceTokens: Set<String> = ["VC:", "MD:", "RC:", "TY:", "WA:", "AP:", "AV:", "NM:",
                                        "RG:", "QC:", "DL:", "DF:", "CL:", "MC:", "WH:", "CG:", "PA:", "EX:",
                                        "ED:", "PN:", "SP:", "AB:", "WL:", "SM:", "SY:", "PX:", "PG:",
-                                       "GR:"]   // a group's invitation and letter (MTGroup, 05.10)
+                                       "GR:",   // a group's invitation and letter (MTGroup, 05.10)
+                                       "KP:"]   // the copy kept by the people one writes to (MTKeeping, 08.10)
 /// A LETTER OF A RETIRED KIND is buried unread here, as a newer build's word is, and never drawn as a person's words: the one
 /// rule is MTRowLetter.retiredLetter, the extension's as well.
 func mtRetiredLetter(_ text: String) -> Bool { MTRowLetter.retiredLetter(text) }
@@ -3879,6 +3912,7 @@ func isControlMarker(_ text: String) -> Bool {
         || text.hasPrefix(MTBoard.mark)              // the wall's word (24.09): a post, a mark, a page — never a row
         || text.hasPrefix(sameAskMark) || text.hasPrefix(sameYesMark)   // one person, one conversation (24.09): never a row
         || text.hasPrefix(pipeClosedMark)            // the pipe closed at the other end (24.09): never a row
+        || text.hasPrefix(keepMark)                  // the keeping of a copy (08.10): never a row
 }
 // A service letter never rings: receipts, typing, drafts, profile (name/avatar/nick/card),
 // deletions, wake-handles ride SILENT pushes by construction — the server model sent them

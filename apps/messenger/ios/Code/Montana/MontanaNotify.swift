@@ -60,6 +60,7 @@ enum MontanaNotify {
         if text.hasPrefix("\u{200B}\u{200B}SP:") { return "sticker-set" }
         if text.hasPrefix("\u{200B}\u{200B}WL:") { return "wall" }
         if text.hasPrefix("\u{200B}\u{200B}GR:") { return "group" }   // a group's invitation, letter or answer (MTGroup, 05.10)
+        if text.hasPrefix("\u{200B}\u{200B}KP:") { return "keep" }    // the keeping of a copy (MTKeeping, 08.10): service, no banner
         if text.hasPrefix("\u{200B}\u{200B}SM:") { return "same-ask" }
         if text.hasPrefix("\u{200B}\u{200B}SY:") { return "same-yes" }
         if text.hasPrefix("\u{200B}\u{200B}PX:") { return "pipe-closed" }

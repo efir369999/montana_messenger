@@ -1396,6 +1396,7 @@ struct DataStorageView: View {
                 Text("A backup holds every conversation and attachment this device keeps, sealed with the key your 24 words open. Keep the words: without them nobody can read it, and neither can you.")
             }
             .listRowBackground(MTGlassRowPlate())
+            MTKeepingSection()   // the copy kept by the people one writes to (MTKeeping, 08.10)
         }
         .scrollContentBackground(.hidden)
         .montanaPageGround()   // my page's ground, as the drawer and my page wear it (25.09)
@@ -2111,6 +2112,8 @@ struct MontanaOnboardingView: View {
     @State private var taking: Double? = nil              // a copy coming back from iCloud: frames filed, this phone's count
     @State private var takingWord: LocalizedStringKey = "Opening your identity…"
     @ObservedObject private var homeNode = HomeNodeWatch.shared   // the node's copy on its way back, for the bar
+    @ObservedObject private var keep = MTKeeping.shared           // the parts coming back from the people one wrote to (08.10)
+    @State private var barSince = Date()                          // when the bar first stood on the page: the time left is measured from it
     @ObservedObject private var cloud = CloudWatch.shared         // iCloud's copy on its way back, in iCloud's count
     @ObservedObject private var seats = MTSeats.shared            // a person being added: the page stands on the Montana road (06.10)
     @State private var groundChosen = false                       // the new person chose a ground: the pages wear it from then on
@@ -2439,7 +2442,7 @@ struct MontanaOnboardingView: View {
     /// A refusal is spoken (the critic, 28.09), with «Try again» and the person's own way on without the copy.
     func takeFromNode() {
         let h = nodeHost.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !h.isEmpty else { return onDone() }
+        guard !h.isEmpty else { return takeFromKeepers() }
         MontanaHomeNode.setHost(h)
         MontanaHomeNode.setOn(true)
         takingWord = "Taking your history back"
@@ -2523,26 +2526,78 @@ struct MontanaOnboardingView: View {
         refusal = word
     }
     private var cloudShare: Double? { if case .coming(let f?) = cloud.fetching { return f } else { return nil } }
-    /// The person may walk on without the copy while nothing is being laid into this device: a copy half laid is not a state
-    /// to leave in, and the opening of the words (their stretch) is not one either.
+    /// The person may walk on while the opening of the words (their stretch) is not under way. The copy of the people one wrote to
+    /// goes on by itself behind them (the author's word 09.10.2026: «Continue -- the restore goes on in the background»): its one
+    /// owner is MTKeeping, not this page; a copy from the node or from iCloud is this page's and is waited for.
     private var canGoOn: Bool { !creating && homeNode.restoring == nil && taking == nil }
+    /// The copy the people one wrote to gave back, being laid: its share of frames, the engine's own count.
+    private var keepLaying: Double? { if case .laying(let f) = keep.taking { return f } else { return nil } }
+    /// THE ONE SHARE OF THE COPY'S ROAD (09.10.2026): the light copy coming down is the first half, its laying the second; the parts
+    /// the people one wrote to hold count the first half while no light copy comes.
+    private var keepShare: Double? {
+        switch keep.taking {
+        case .fetching(let f): return f / 2
+        case .calling(let have, let need) where 0 < need: return min(1, Double(have) / Double(need)) / 2
+        case .laying(let f): return 0.5 + f / 2
+        default: return nil
+        }
+    }
+    /// THE TIME LEFT, MEASURED: the time the share done so far took, stretched over the rest -- said once a twentieth is done and
+    /// five seconds have passed; before that nothing is measured, and nothing is said.
+    private func timeLeft(_ f: Double) -> String? {
+        let spent = Date().timeIntervalSince(barSince)
+        guard 0.05 <= f, f < 1, 5 <= spent else { return nil }
+        let left = Int((spent * (1 - f) / f).rounded())
+        return Duration.seconds(left).formatted(Duration.UnitsFormatStyle(allowedUnits: [.hours, .minutes, .seconds], width: .abbreviated,
+                                                                          maximumUnitCount: 2).locale(MTLanguage.locale))
+    }
+    /// THE COPY KEPT BY THE PEOPLE ONE WROTE TO (MTKeeping, 08.10): with no node named, the words call the pipe of every slot; the
+    /// page shows the parts in hand, and the person may walk on at any moment -- the copy is laid whenever it stands, merged.
+    func takeFromKeepers() {
+        takingWord = "Asking the people you write to…"
+        step = 5
+        keep.onboardingWaits = true
+        // THE LIGHT COPY LETS THE PERSON IN (App: «once the light copy is laid»): the full copy follows from the keepers.
+        keep.onLight = {
+            guard MTKeeping.shared.onboardingWaits else { return }
+            MTKeeping.shared.onboardingWaits = false
+            onDone()
+        }
+        keep.takeBack { r in
+            guard MTKeeping.shared.onboardingWaits else { return }
+            MTKeeping.shared.onboardingWaits = false
+            if case .success = r { onDone() } else { refuse("No copy came back") { takeFromKeepers() } }
+        }
+    }
     var takingBack: some View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "arrow.down.circle.fill").font(.system(size: 46)).foregroundColor(Color.accentColor)
             Text(takingWord).font(.title3.bold()).foregroundColor(.white).multilineTextAlignment(.center)
-            if let f = homeNode.fetching ?? homeNode.restoring ?? cloudShare ?? taking {
-                ProgressView(value: f).padding(.horizontal, 24)
-                Text(verbatim: String(Int(f * 100)) + "%").foregroundColor(.gray).font(.caption)   // USER-DATA: a share
-            } else {
-                ProgressView()
+            if case .calling(let have, let need) = keep.taking, need > 0, keepLaying == nil {
+                Text("Parts in hand: \(have) of \(need)").foregroundColor(.gray).font(.caption)
+            }
+            // THE BAR FROM THE FIRST FRAME (the author's word 09.10.2026 11:3x MSK: «the progress bar must show at once, now it spins
+            // long before it comes; under it the approximate time of the restore»): nothing measured yet is a bar at zero, never a
+            // spinner, and the time left is said once it can be measured.
+            let f = homeNode.fetching ?? homeNode.restoring ?? cloudShare ?? taking ?? keepShare ?? 0
+            ProgressView(value: f).padding(.horizontal, 24)
+            Text(verbatim: String(Int(f * 100)) + "%").foregroundColor(.gray).font(.caption)   // USER-DATA: a share
+            if let left = timeLeft(f) {
+                Text("About \(left) left").foregroundColor(.gray).font(.caption)
             }
             Spacer()
             if canGoOn {
-                Button { retry = nil; onDone() } label: { Text("Continue without the copy") }
-                    .buttonStyle(MTLoginDoorStyle())
+                Button { retry = nil; keep.onboardingWaits = false; onDone() } label: {
+                    if keep.isTaking { Text("Continue") } else { Text("Continue without the copy") }
+                }
+                .buttonStyle(MTLoginDoorStyle())
+                if keep.isTaking {
+                    Text("Your history keeps coming back in the background.").foregroundColor(.gray).font(.caption).multilineTextAlignment(.center)
+                }
             }
         }
+        .onAppear { barSince = Date() }
     }
 
     /// THE DOORS (the author's design 29.09, his picture in Media): the glass icon, the title, and the Montana door pressed to

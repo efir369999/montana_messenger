@@ -1667,7 +1667,7 @@ class ChatStore: ObservableObject {
             || text.hasPrefix(groundMark) || text.hasPrefix(cardMark) || text.hasPrefix(wakeHandleMark) || text.hasPrefix(cargoLostMark)
             || text.hasPrefix(playedMark)
             || text.hasPrefix(punchEndpointMark) || text.hasPrefix(exitDoorMark) || text.hasPrefix(callSignalMark)
-            || text.hasPrefix(MTBoard.mark) || text.hasPrefix(sameAskMark) || text.hasPrefix(sameYesMark) || text.hasPrefix(pipeClosedMark) || text.hasPrefix(MTGroup.mark) || mtUnknownServiceWord(text)
+            || text.hasPrefix(MTBoard.mark) || text.hasPrefix(sameAskMark) || text.hasPrefix(sameYesMark) || text.hasPrefix(pipeClosedMark) || text.hasPrefix(MTGroup.mark) || text.hasPrefix(keepMark) || mtUnknownServiceWord(text)
     }
     /// «GONE» IS A STATE, NOT A STAMP (the author's word 15.09; measured 13:14–13:17: the lane
     /// forgot the word in sixty seconds, the sweep read it as a moment, and the next word of
@@ -2647,7 +2647,7 @@ class ChatStore: ObservableObject {
         for (peer, list) in messages {
             for m in list {
                 if let ci = callInfoOf(m.text) {
-                    out.append(CallRecord(id: m.id, peer: peer, video: ci.video, incoming: ci.incoming,
+                    out.append(CallRecord(mid: m.id, peer: peer, video: ci.video, incoming: ci.incoming,
                                           dur: ci.dur, missed: ci.missed, time: m.time, at: m.createdAt))
                 }
             }
@@ -2715,11 +2715,9 @@ class ChatStore: ObservableObject {
         MontanaTrace.mark("gallery_lib", "moments=\(list.count) ms=\(Int(Date().timeIntervalSince(t0) * 1000))")
         return list
     }
-    // Delete a single call-log entry (by message id) from any dialog.
-    func deleteCallLog(id: String) {
-        for (peer, list) in messages where list.contains(where: { $0.id == id && callInfoOf($0.text) != nil }) {
-            dropRows(peer) { $0.id == id && callInfoOf($0.text) != nil }; break
-        }
+    // Delete a single call-log entry: its letter in its own conversation (a letter's name is one within a conversation, 09.10).
+    func deleteCallLog(_ r: CallRecord) {
+        dropRows(r.peer) { $0.id == r.mid && callInfoOf($0.text) != nil }
         save()
     }
     // Clear ALL call-log entries in all dialogs.
@@ -4094,6 +4092,15 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             if !m.isFromMe { MontanaMainProbe.step("closed") {
                 sendDeliveryReceipt(chat, msgId: m.msgId, isFromMe: m.isFromMe, text: m.text)
                 peerClosedPipe(chat)
+            } }
+            return false
+        }
+        // THE KEEPING OF A COPY (MTKeeping, 08.10): a question, a yes, a part, a keeper's «held», a release -- answered there,
+        // receipted here, never a row.
+        if m.text.hasPrefix(keepMark) {
+            if !m.isFromMe { MontanaMainProbe.step("keep") {
+                sendDeliveryReceipt(chat, msgId: m.msgId, isFromMe: m.isFromMe, text: m.text)
+                MTKeeping.shared.heard(m.text, from: chat)
             } }
             return false
         }
@@ -5968,6 +5975,7 @@ protocol MessagingChannel {
 enum SeedScope {
     // Account content: conversations, profile, sync. Reset on account SWITCH.
     static let dataKeys = ["chatsJSON", "archivedJSON", "chatMessages", "pinnedMessages",
+                           "mt.keep.owner",   // the keepers of my copy and its generation (MTKeeping): the person's own
         "scheduledMsgs", "recentOrder", "orderSeq", "readChats", "pinnedChatsList", "forcedUnread",
         "mutedChats", "archivedNames", "deletedChats", "peerAvatars", "peerNames", "peerSeenAt", "peerGoneAt",
         "userName", "userLastName", "userUsername", "userBio", "userBirthday", "profileBio", "profileLink", "peerAbout",
@@ -6045,7 +6053,8 @@ enum SeedScope {
     /// THE PERSON'S SETTINGS belong to whoever holds this phone rather than to one identity: a change of seed keeps them, and
     /// a copy carries them — the language, the notifications, what is downloaded, privacy, the look of every bubble and
     /// ground, the voice and the note, the network page.
-    static let settingKeys = ["appLibraryIcons", "appLibraryPins", MTLibraryIconStyle.key, MTChessComputer.levelKey, "AppLanguage", "AppleLanguages", MTLetterMotion.bounceKey, MTLetterMotion.durationKey,
+    static let settingKeys = [MTKeeping.mineKey, MTKeeping.othersKey, MTKeeping.budgetKey, MTKeeping.toldKey,   // the keeping of a copy (08.10)
+                              "appLibraryIcons", "appLibraryPins", MTLibraryIconStyle.key, MTChessComputer.levelKey, "AppLanguage", "AppleLanguages", MTLetterMotion.bounceKey, MTLetterMotion.durationKey,
         "notifEnabled", "notifSound", "notifPreview", "notifSender", "notifLockName",
         "autoDownloadCellular", "autoDownloadWiFi",
         "presenceSharing", "readReceiptsEnabled", "liveTypingEnabled", "syncContactsToPhone", "linkPreviewsEnabled",
@@ -6081,7 +6090,9 @@ enum SeedScope {
     /// · the peer's unsent words: they live under this device's key and nowhere else;
     /// · the dead calls' seeds, the place this device's diary was carried to, the roads judged dead (a verdict of this
     ///   network and this hour, not of the server), and the copy's own clock.
-    static let deviceKeys = ["diagId", "diagHideRule", "diagWmTele", "diagWmTrace", "diagGenTele", "diagGenTrace",
+    static let deviceKeys = ["mt.keep.held",   // the parts this phone keeps for others (MTKeeping): never in this person's copy
+                             MTKeeping.askedBackKey,   // the correspondences this phone asked to give back (MTKeeping): this device's own
+                             "diagId", "diagHideRule", "diagWmTele", "diagWmTrace", "diagGenTele", "diagGenTrace",
         "mt.probe.at", "mt.probe.conf", "mt.probe.mode", "mt.probe.rot",
         "mt.probe.line",   // the line under the permitted list, with its hysteresis (30.09): this network's word, never a copy's
         "mt.release.told",   // the build the Montana room already told this phone of (29.09): this device's own

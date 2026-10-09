@@ -70,6 +70,25 @@ final class NotificationService: UNNotificationServiceExtension {
         if let envB64 = info["env"] as? String, !envB64.isEmpty,
            let sealed = Data(base64Encoded: envB64),
            let (openedConv, mid, rawText, envName, envGlyph, envQt, envQm, envLp) = Self.openWithOwnPipes(sealed) {
+            // A CALL IN THE PIPE OF A SLOT THIS PHONE KEEPS (MTKeeping in the app, 08.10): never stashed -- the app answers it from
+            // the box. A loud call (the restoring phone heard nothing for minutes) wears one banner with the owner's name, and the
+            // tap opens the app, which answers; a quiet one rings nobody.
+            if openedConv.hasPrefix("keep:") {
+                let owner = String(openedConv.dropFirst("keep:".count).prefix(while: { $0 != "#" }))   // «conv#slot»: a keeper of the ring holds several
+                guard rawText.contains("\"loud\":1") else {
+                    Self.diagLine("keep call quiet mid=\(mid.prefix(8))")
+                    contentHandler(Self.quietFace())
+                    return
+                }
+                content.title = Self.mirroredName(for: owner) ?? "Montana"
+                content.body = String(localized: "Is restoring their account: open Montana to give back the part of their copy you keep", bundle: MTLanguage.bundle)
+                content.sound = .default
+                content.threadIdentifier = owner
+                content.userInfo["chat"] = owner
+                Self.diagLine("keep call banner mid=\(mid.prefix(8))")
+                contentHandler(content)
+                return
+            }
             let conv = Self.chatKey(for: openedConv)   // opening key -> CHAT key (the alias dictionary)
             Self.lastOpened = openedConv
             Self.diag(opened: openedConv, ui: conv, envName: envName, envGlyph: envGlyph)

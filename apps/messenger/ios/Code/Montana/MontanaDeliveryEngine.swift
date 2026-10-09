@@ -1318,6 +1318,12 @@ final class MontanaDeliveryEngine {
             MontanaTrace.mark("same_ask_expired", "to=\(String(it.to.prefix(10)))")
             return
         }
+        // A KEEPING WORD LIVES WHILE IT CAN STILL MEAN SOMETHING (MTKeeping.expired): a question an hour, every other word two days.
+        if MTKeeping.expired(it.text, age: now - it.since) {
+            a.remove(at: i); save(a)
+            MontanaTrace.mark("keep_expired", "to=\(String(it.to.prefix(10)))")
+            return
+        }
         if it.text.hasPrefix(ringMark), now - it.since > 45 {
             a.remove(at: i); save(a)
             MontanaTrace.mark("ring_expired", "age=\(Int(now - it.since))s to=\(String(it.to.prefix(10)))")

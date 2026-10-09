@@ -641,6 +641,8 @@ enum MontanaWakePush {
         for inv in MontanaCard.outstandingInvites() {
             m["rdv:" + inv.base64urlNoPad] = rdvLetterSecret(inv)
         }
+        // The pipes of the slots this phone keeps (MTKeeping): the extension opens a loud call in them and shows whose copy it is.
+        for (name, secret) in MTKeeping.listening() { m[name] = secret }
         if let d = try? JSONEncoder().encode(m) { MontanaKeychain.set("nsePipeSecrets", d) }
         if let d = try? JSONEncoder().encode(alias) { MontanaKeychain.set("nsePipeAlias", d) }
         // The share extension sends letters itself; the sender identity rides sealed inside
@@ -758,6 +760,14 @@ enum MontanaWakePush {
             // (measured 26.08: one token at exactly 8192 rows, a receipt's wake answered 404).
             let ahead: UInt64 = MTPipeBook.first(for: pipe) == nil ? windowsAhead : 1
             for w in (w0 - 1)...(w0 + ahead) {
+                let cw = convW(secret, window: w)
+                subs.append(["conv": cw, "sid": mySubId(cw)])
+            }
+        }
+        // THE SLOTS THIS PHONE KEEPS RING IT (MTKeeping, the author's word 08.10.2026 22:4x MSK: the restore by silent pushes): a
+        // call in the pipe of a slot wakes this phone by a background push, and its answer leaves within the wake.
+        for (_, secret) in MTKeeping.listening() {
+            for w in (w0 - 1)...(w0 + 1) {
                 let cw = convW(secret, window: w)
                 subs.append(["conv": cw, "sid": mySubId(cw)])
             }
@@ -2139,6 +2149,7 @@ enum MontanaWakePush {
         for conv in MTPipeBook.all() {   // a blocked person's letters are read too — and buried below, not left to wait
             if let secret = MTPipeBook.secret(for: conv) { pipes[conv] = secret }
         }
+        for (name, secret) in MTKeeping.listening() { pipes[name] = secret }   // the pipes of the slots this phone keeps (MTKeeping)
         let ear = BoxEar(invites: MontanaCard.outstandingInvites(), pipes: pipes, owner: ref)
         guard !ear.subs.isEmpty else { MontanaTrace.mark("box_fetch", "subs=0 — the book/invites are empty (vault busy?)"); return }
         MontanaTrace.mark("box_fetch", "subs=\(ear.subs.count) invites=\(ear.rdvLabels.count / 10) pipes=\(ear.chatOf.count / 10)")
@@ -2595,6 +2606,7 @@ enum MontanaWakePush {
     }
 
     private static func restash(_ row: [String: String]) {
+        if MTKeeping.takes(row) { return }   // a call in the pipe of a slot this phone keeps: answered there, never a letter of the feed
         var arr: [[String: String]] = []
         if let d = MontanaKeychain.get("nseInbox"),
            let a = try? JSONDecoder().decode([[String: String]].self, from: d) { arr = a }

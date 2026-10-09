@@ -274,6 +274,7 @@ final class ConnectionStatus: ObservableObject {
 }
 
 struct ChatsListView: View {
+    @ObservedObject private var keep = MTKeeping.shared   // the crossed glyph of the copy with contacts (08.10)
     @ObservedObject private var playerGate = MontanaPlayerBar.Gate.shared   // the one bit; never the player's clock (the critic 22.09)
     private var musicPlayer: VoicePlayer { VoicePlayer.shared }              // the folded page over the list (15.35): called, not observed
     @State private var playerBarSize: CGSize = .zero   // the floating player's height — the rows' reserve
@@ -344,10 +345,14 @@ struct ChatsListView: View {
             // THE CROSSED SPEAKER UNDER THE CLOCK (the author's word 06.10 20:5x: on the left, in the menu's place while the
             // notifications are off): the system said no, so the first slot says it too and opens the notifications' page;
             // the drawer stays one stroke from the screen's left edge (MontanaDrawerHost).
-            barSlot(0) { if MTNotifyAllowed.shared.refused { openNotifications() } else { openDrawer() } } label: {
+            // THE CROSSED PEOPLE BESIDE IT (the author's word 08.10.2026 23:2x MSK: «when it is off, a crossed glyph like the muted
+            // sound, with the way to the settings of the copy with contacts»): the speaker first, then the copy, then the menu.
+            barSlot(0) {
+                if MTNotifyAllowed.shared.refused { openNotifications() } else if keep.offShown { ui.overlayPage = .keeping } else { openDrawer() }
+            } label: {
                 // No badge here (the author's word 18.09): unfolded, the unread stand on the chats glyph and the missed calls
                 // on the calls glyph — where the thing itself lives.
-                Image(systemName: MTNotifyAllowed.shared.refused ? "speaker.slash" : UIState.Glyph.drawer).font(.system(size: 22, weight: .semibold))
+                Image(systemName: MTNotifyAllowed.shared.refused ? "speaker.slash" : (keep.offShown ? "person.2.slash" : UIState.Glyph.drawer)).font(.system(size: 22, weight: .semibold))
                     .foregroundColor(MontanaOctagon.barGlyph)
             }
             // The contacts, left of the logo (the author's word 19.09).
