@@ -1841,6 +1841,10 @@ object Proximity {
     private val holders = sortedSetOf<String>()
     private var lock: PowerManager.WakeLock? = null
     @Volatile private var near = false
+    /** The sensor's word now, as iOS reads UIDevice.proximityState; meaningful while a hand holds the sensor. */
+    val isNear: Boolean get() = near
+    /** Who hears the sensor change (iOS UIDevice.proximityStateDidChangeNotification): the reply at the ear, on the main thread. */
+    var onChange: ((Boolean) -> Unit)? = null
     private val ear = object : android.hardware.SensorEventListener {
         override fun onSensorChanged(e: android.hardware.SensorEvent) {
             val max = e.sensor?.maximumRange ?: 5f
@@ -1848,6 +1852,7 @@ object Proximity {
             if (now == near) return
             near = now
             note(if (now) "near" else "far", "sensor")
+            onChange?.invoke(now)
             if (!now && holders.isEmpty()) stopListening()
         }
         override fun onAccuracyChanged(s: android.hardware.Sensor?, a: Int) {}

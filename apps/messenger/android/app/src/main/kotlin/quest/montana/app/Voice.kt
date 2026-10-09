@@ -12,6 +12,7 @@ import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.util.Log
 import android.os.PowerManager
 import android.view.Gravity
 import android.view.View
@@ -40,6 +41,8 @@ object VoiceTape {
             MainThread.later(25, this)
         }
     }
+    /** A tape rolls (iOS VoiceRecorder.isRecording). */
+    val rolling: Boolean get() = rec != null
     val seconds: Double get() = if (rec == null) 0.0 else (System.currentTimeMillis() - began - pausedMs - (if (paused) System.currentTimeMillis() - pauseAt else 0)) / 1000.0
 
     /** THE PAUSE OF A LOCKED TAPE (iOS VoiceRecorder.pause/resume): the platform's recorder stands, the file skips the gap. */
@@ -146,6 +149,37 @@ object VoiceTape {
 }
 
 /**
+ * THE EAR TONE (iOS MontanaEarTone, MontanaMedia.swift:3217-3250 at 2155, the author's words 14.09 and 16.09): one dull low note,
+ * as a dictaphone marks the start of a tape -- 320 Hz for a seventh of a second, a soft rise and a long fall, an eighth of the
+ * amplitude -- played through the voice's own road, so it lands where the voice landed, the receiver at the ear. Built in memory.
+ */
+object EarTone {
+    fun play() {
+        val rate = 44_100
+        val count = (rate * 0.14).toInt()
+        val pcm = ShortArray(count) { i ->
+            val env = minOf(1.0, i / 900.0, (count - i) / 3000.0)   // no clicks, no edge at all
+            (Math.sin(2 * Math.PI * 320.0 * i / rate) * 0.12 * env * 32767).toInt().toShort()
+        }
+        val ok = runCatching {
+            val t = android.media.AudioTrack.Builder()
+                .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+                .setAudioFormat(android.media.AudioFormat.Builder().setEncoding(android.media.AudioFormat.ENCODING_PCM_16BIT)
+                    .setSampleRate(rate).setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO).build())
+                .setTransferMode(android.media.AudioTrack.MODE_STATIC).setBufferSizeInBytes(count * 2).build()
+            t.write(pcm, 0, count)
+            t.setNotificationMarkerPosition(count - 1)
+            t.setPlaybackPositionUpdateListener(object : android.media.AudioTrack.OnPlaybackPositionUpdateListener {
+                override fun onMarkerReached(track: android.media.AudioTrack) { runCatching { track.release() } }
+                override fun onPeriodicNotification(track: android.media.AudioTrack) {}
+            })
+            t.play()
+        }.isSuccess
+        Log.d("Montana", "voice_ear_reply tone played=" + (if (ok) 1 else 0))
+    }
+}
+
+/**
  * ONE VOICE PLAYS AT A TIME (iOS VoicePlayer, the chat's one player): a new voice stops the one before; a tap on the voice that
  * plays rests it and plays it on (iOS: pause, not stop); a queue's next follows the end (iOS auto-next). The voice plays at the
  * one speed of voices and notes (Playing.rate), says whose it is to the one bar (sender), and while it plays a track steps
@@ -159,11 +193,14 @@ object VoicePlayer {
     private var onStop: (() -> Unit)? = null
     private var progress: ((Int, Int) -> Unit)? = null
     private var musicAside = false
+    private var fromPeer = false   // the voice is the correspondent's: its end at the ear asks for a reply there
+    /** THE REPLY AT THE EAR (iOS montanaVoiceEndedAtEar, MontanaMedia.swift:623-631 at 2155): the open chat hears the peer's last voice end at the ear. */
+    var endedAtEar: (() -> Unit)? = null
 
     /** This voice sounds now — not only chosen: a rested voice is chosen and silent. */
     fun sounding(path: String?) = path != null && playing == path && !paused
 
-    fun toggle(path: String, onProgress: (Int, Int) -> Unit, stopped: () -> Unit, then: (() -> Unit)? = null, sender: String = "") {
+    fun toggle(path: String, onProgress: (Int, Int) -> Unit, stopped: () -> Unit, then: (() -> Unit)? = null, sender: String = "", fromPeer: Boolean = false) {
         if (playing == path) { if (paused) resume() else pause(); return }
         if (CallSound.refused("voice message")) return   // the call holds the sound (iOS MontanaMedia 372)
         stop()
@@ -175,8 +212,16 @@ object VoicePlayer {
             setDataSource(path); prepare()
         } }.getOrNull() ?: return
         if (MusicPlayer.playing) { MusicPlayer.pause(); musicAside = true }
-        player = p; playing = path; paused = false; onStop = stopped; progress = onProgress; this.sender = sender
-        p.setOnCompletionListener { stop(); then?.invoke() }
+        player = p; playing = path; paused = false; onStop = stopped; progress = onProgress; this.sender = sender; this.fromPeer = fromPeer
+        p.setOnCompletionListener {
+            // THE REPLY AT THE EAR FOLLOWS THE PEER'S VOICE ONLY (iOS VoicePlayer end, MontanaMedia.swift:623-631 at 2155, the
+            // author's word 14.09): the last voice of theirs ended while the phone was at the ear -- one's own, listened back, asks
+            // for no answer; a voice with a next one walks on to it
+            val atEar = then == null && this.fromPeer && proximityArmed && Proximity.isNear
+            Log.d("Montana", "voice_end ear=" + (if (atEar) 1 else 0) + " theirs=" + (if (this.fromPeer) 1 else 0))
+            stop(); then?.invoke()
+            if (atEar) endedAtEar?.invoke()
+        }
         // A LONG LISTEN GOES ON WHERE IT STOPPED (iOS VoicePlayer.toggle:411-414 at 2155, MTPlayPlaces.at, the author's word
         // 26.09): a voice of five minutes and more starts at its kept moment.
         PlayPlaces.at(path, p.duration / 1000.0, true)?.let { at -> runCatching { p.seekTo((at * 1000).toInt()) } }
@@ -321,7 +366,8 @@ fun voiceBody(c: Context, m: Msg, du: Double, into: LinearLayout, wave: FloatArr
         // USER-DATA: whose voice it is, as the one bar names it (iOS nowSender)
         val who = if (m.mine) Prefs.userName.trim() else chat?.shown.orEmpty()
         VoicePlayer.toggle(p, onProgress = { cur, dur -> bar.progress = cur.toFloat() / maxOf(1, dur); time.text = fmt(cur) },
-            stopped = { mark.setImageResource(R.drawable.ic_play_fill); bar.progress = 0f; bar.rest = MT.withAlpha(ink, 0.9f); time.text = fmt(total) }, sender = who)
+            stopped = { mark.setImageResource(R.drawable.ic_play_fill); bar.progress = 0f; bar.rest = MT.withAlpha(ink, 0.9f); time.text = fmt(total) }, sender = who,
+            fromPeer = !m.mine)
         bar.rest = MT.withAlpha(ink, 0.4f)
         mark.setImageResource(if (VoicePlayer.sounding(p)) R.drawable.ic_pause_fill else R.drawable.ic_play_fill)
         // their voice played here: its sender is told once, silently (iOS notePlayed) — the road to their «Listened»

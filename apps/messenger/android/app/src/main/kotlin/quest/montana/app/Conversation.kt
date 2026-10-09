@@ -1180,6 +1180,33 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
         }
         on
     }
+    // THE REPLY AT THE EAR (iOS beginEarReply/endEarReply, MontanaConversation.swift:1263-1286 and 3516-3519 at 2155, the author's
+    // word 14.09): the peer's last voice ended at the ear -- the ear tone, the sensor stays with the chat, and after 0.6 s, the phone
+    // still at the ear, the reply records there with no finger; the phone leaves the ear -- a rolling tape pauses and stands locked
+    // (the arrow sends it, the bin drops it, the pause resumes it), no tape -- nothing stays
+    var earReply = false
+    fun endEarReply() {
+        if (!earReply) return
+        earReply = false
+        Proximity.onChange = null
+        Proximity.hold("ear-reply", false)
+        android.util.Log.d("Montana", "voice_ear_reply " + if (VoiceTape.rolling) "paused len=" + VoiceTape.seconds.toInt() else "nothing")
+        if (!bar.earLock()) { bar.cancelRecording(); return }   // no tape rolled (permission, or the phone left before the start)
+        if (!VoiceTape.paused) VoiceTape.togglePause()
+        paint(voicePause, VoiceTape.paused)
+    }
+    fun beginEarReply() {
+        if (earReply || VoiceTape.rolling) return
+        earReply = true
+        Proximity.hold("ear-reply", true)
+        Proximity.onChange = { near -> if (!near) endEarReply() }
+        EarTone.play()
+        MainThread.later(600) {
+            if (!earReply) return@later   // the phone already left the ear
+            if (Proximity.isNear && bar.earStart()) android.util.Log.d("Montana", "voice_ear_reply record") else endEarReply()
+        }
+    }
+    val earHook: () -> Unit = { beginEarReply() }
     // THE ROUND NOTE UNDER THE FINGER (iOS MontanaVideoNoteHold): the window over the feed, the ring for the time; a tap turns
     // the camera; let go to send, slide left to drop. What the window shows is the file itself.
     var note: NoteRecorder? = null
@@ -1676,6 +1703,7 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
                 LinkCompose.listen(linkListener); drawLink()
                 Presence.sayChat(ref, true); MainThread.later(Presence.BEAT, chatBeat)
                 Signal.hold(ref, "chat")
+                VoicePlayer.endedAtEar = earHook   // the open chat answers its peer's voice at the ear
                 if (!group) LiveDraft.sayLink(ref)   // our daily link, to hand on (iOS sendLinkWord on a chat's opening)
                 if ((Book.chat(ref)?.unread ?: 0) > 0) Thread { Post.markRead(ref) }.start()
             }
@@ -1684,6 +1712,8 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
                 // MontanaConversation.swift:1666 at 2155: «if rec.isRecording { rec.cancel(why: "chat-left") }»): a note left rolling
                 // behind a closed chat rolled on and the next one was refused. The recorder's own page lies over the chat, so it
                 // never detaches it; with nothing held the cancel does nothing.
+                if (VoicePlayer.endedAtEar === earHook) VoicePlayer.endedAtEar = null
+                endEarReply()
                 bar.cancelRecording()
                 VoiceTape.standDown()   // a tape readied by a hold that never began goes with the chat (iOS MontanaConversation.swift:1667)
                 if (Book.openChat == ref) Book.openChat = null; Book.unlisten(listener)
