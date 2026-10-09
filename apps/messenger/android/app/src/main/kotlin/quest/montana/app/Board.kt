@@ -1041,6 +1041,13 @@ private class WallLinkClip(c: Context, private val url: String, private val show
     private var loud = false
     private var vw = 0
     private var vh = 0
+    private var wantPlaying = false
+    // THE HEALING BACKS OFF AND GIVES UP (iOS MontanaClipPlayer.heal, MontanaFeeds.swift:1128-1205 at 2155): a clip stalled or
+    // errored is restarted a beat later, each heal in a row waiting twice as long as the last (0.4 s to 10 s), the eighth the
+    // last until the clip plays again or the page asks anew (the author's word 29.09: 130 heals a minute, 36 MB in one).
+    private var healStreak = 0
+    private var healing = false
+    private val healHandler = android.os.Handler(android.os.Looper.getMainLooper())
     init { surfaceTextureListener = this }
     fun sound(on: Boolean) { loud = on; val v = if (on) 1f else 0f; player?.runCatching { setVolume(v, v) } }
     private fun fill() {
@@ -1048,21 +1055,45 @@ private class WallLinkClip(c: Context, private val url: String, private val show
         val sx = width.toFloat() / vw; val sy = height.toFloat() / vh; val k = maxOf(sx, sy)
         setTransform(android.graphics.Matrix().apply { setScale(k / sx, k / sy, width / 2f, height / 2f) })
     }
+    private fun heal(why: String) {
+        if (!wantPlaying || healing) return
+        if (healStreak >= HEAL_CAP) { Log.d("Montana", "post_link heal given up after " + HEAL_CAP + " -- " + why); return }
+        healing = true
+        val delay = minOf(10_000L, 400L shl healStreak)
+        healStreak++
+        healHandler.postDelayed({
+            healing = false
+            if (wantPlaying) runCatching { player?.start() }
+            Log.d("Montana", "post_link healed after " + why + " try=" + healStreak + " wait_ms=" + delay)
+        }, delay)
+    }
     override fun onSurfaceTextureAvailable(st: android.graphics.SurfaceTexture, w: Int, h: Int) {
+        wantPlaying = true
         player = runCatching { android.media.MediaPlayer().apply {
             setDataSource(context, android.net.Uri.parse(url))
             setSurface(android.view.Surface(st))
             isLooping = true
             setOnVideoSizeChangedListener { _, x, y -> vw = x; vh = y; fill() }
-            setOnInfoListener { _, what, _ -> if (what == android.media.MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) shown(); false }
+            setOnInfoListener { _, what, _ ->
+                when (what) {
+                    android.media.MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START -> { healStreak = 0; shown() }
+                    android.media.MediaPlayer.MEDIA_INFO_BUFFERING_END -> healStreak = 0
+                    android.media.MediaPlayer.MEDIA_INFO_BUFFERING_START -> heal("stalled")
+                }
+                false
+            }
             setOnPreparedListener { mp -> val v = if (loud) 1f else 0f; mp.setVolume(v, v); mp.start() }
-            setOnErrorListener { _, what, extra -> Log.d("Montana", "post_link failed what=" + what + " extra=" + extra); true }
+            setOnErrorListener { _, what, extra -> Log.d("Montana", "post_link failed what=" + what + " extra=" + extra); heal("error"); true }
             prepareAsync()
         } }.getOrNull()
     }
     override fun onSurfaceTextureSizeChanged(st: android.graphics.SurfaceTexture, w: Int, h: Int) { fill() }
-    override fun onSurfaceTextureDestroyed(st: android.graphics.SurfaceTexture): Boolean { player?.runCatching { release() }; player = null; return true }
+    override fun onSurfaceTextureDestroyed(st: android.graphics.SurfaceTexture): Boolean {
+        wantPlaying = false; healStreak = 0; healHandler.removeCallbacksAndMessages(null)
+        player?.runCatching { release() }; player = null; return true
+    }
     override fun onSurfaceTextureUpdated(st: android.graphics.SurfaceTexture) {}
+    private companion object { const val HEAL_CAP = 8 }
 }
 
 /** ONE POST OF THE FEED (iOS MTBoardCell in MTFeedTabView): whose wall, the writer, the words, the pictures, the counts. */

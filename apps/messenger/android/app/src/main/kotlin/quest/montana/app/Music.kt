@@ -297,6 +297,15 @@ class MiniFace(ctx: Context, private val bar: Boolean) : LinearLayout(ctx) {
     private var nextBtn: View? = null
     private var closeBtn: View? = null
     var onSeek: (Double) -> Unit = {}
+    // A HOLD ON THE MINI COPIES ITS NAME AT ONCE (iOS MTNameCopy, MontanaMusicPlayer.swift:1141-1159 and 1267-1309 at 2155, the
+    // author's word 29.09 ~23:10: «at a long press, at the speed our menu opens in the chat, the track's name is copied»): the
+    // bar's plate alone -- a still row of the list answers no touch of its own (still, below).
+    private var displayTitle = ""
+    private var copiedUntil = 0L
+    private var longPressed = false
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val longPressRunnable = Runnable { longPressed = true; copyTitle() }
+    private companion object { const val HOLD_MS = 220L }   // iOS montanaLongPress, MontanaNetFrames.swift:9 at 2155
 
     init {
         orientation = HORIZONTAL
@@ -333,22 +342,57 @@ class MiniFace(ctx: Context, private val bar: Boolean) : LinearLayout(ctx) {
             onSeek = { f -> when (Playing.kind) { Playing.Kind.NOTE -> NoteOpen.seek?.invoke(f); Playing.Kind.VOICE -> VoicePlayer.seekTo(f); else -> MusicPlayer.seek(f) } }
             // THE PLATE IS THE SCRUBBER: the finger holds the value while it moves, the player is asked once, at the release; a tap
             // on the side room is the side's — the timer's two faces for a track, the speed for a voice and a note (iOS onSide)
+            var downX = 0f; var downY = 0f
+            // A FINGER THAT NEVER MOVED MAY HOLD, AND ASKS FOR NO SEEK (iOS MontanaSliderView.slop/moved, MontanaMusicPlayer.swift:
+            // 1267-1309 at 2155): the first eight points are the tap's room -- standing in it, the plate's hold copies the name
+            // (copyTitle) instead of the platform's old context menu, which 2155 no longer carries; leaving it is a swipe.
             plate.setOnTouchListener { v, e ->
                 val f = (e.x / v.width).toDouble().coerceIn(0.0, 1.0)
                 when (e.actionMasked) {
-                    MotionEvent.ACTION_DOWN -> { v.parent.requestDisallowInterceptTouchEvent(true); scrub = null; true }
-                    MotionEvent.ACTION_MOVE -> { scrub = f; show(f); true }
+                    MotionEvent.ACTION_DOWN -> {
+                        v.parent.requestDisallowInterceptTouchEvent(true); scrub = null; longPressed = false
+                        downX = e.x; downY = e.y
+                        mainHandler.postDelayed(longPressRunnable, HOLD_MS)   // the chat bubble's own threshold (iOS montanaLongPress)
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        if (scrub == null && kotlin.math.abs(e.x - downX) < dp(8) && kotlin.math.abs(e.y - downY) < dp(8)) true
+                        else { mainHandler.removeCallbacks(longPressRunnable); scrub = f; show(f); true }
+                    }
                     MotionEvent.ACTION_UP -> {
+                        mainHandler.removeCallbacks(longPressRunnable)
                         val held = scrub; scrub = null
-                        if (held != null) onSeek(held)
+                        if (longPressed) longPressed = false
+                        else if (held != null) onSeek(held)
                         else if (e.x > v.width - dp(64)) { if (Playing.kind == Playing.Kind.TRACK) { remaining = !remaining; live() } else Playing.nextRate() }
                         true
                     }
-                    MotionEvent.ACTION_CANCEL -> { scrub = null; true }
+                    MotionEvent.ACTION_CANCEL -> { mainHandler.removeCallbacks(longPressRunnable); scrub = null; true }
                     else -> false
                 }
             }
         }
+    }
+
+    /** The title shown now, unless the copied word still stands in its room (iOS MTCopiedWord, 2 s, MTNameCopy.shown). */
+    private fun showTitle() {
+        if (System.currentTimeMillis() < copiedUntil) return
+        title.text = displayTitle
+    }
+    /** THE HOLD COPIES THE NAME (iOS MTNameCopy.copy, MontanaMusicPlayer.swift:1146-1158 at 2155): the name to the clipboard, the
+     * platform's success haptic, and for two seconds the name's room says the catalogue's «Copied» after the platform's check, in
+     * the name's own colour (MTCopiedWord, 1163-1167). */
+    private fun copyTitle() {
+        val name = displayTitle
+        if (name.isEmpty()) return
+        context.getSystemService(android.content.ClipboardManager::class.java)
+            ?.setPrimaryClip(android.content.ClipData.newPlainText("", name))
+        performHapticFeedback(if (android.os.Build.VERSION.SDK_INT >= 30) android.view.HapticFeedbackConstants.CONFIRM else android.view.HapticFeedbackConstants.LONG_PRESS)
+        val check = context.getDrawable(R.drawable.ic_check)?.mutate()?.apply { setTint(Color.WHITE); val k = title.textSize.toInt(); setBounds(0, 0, k, k) }
+        title.setCompoundDrawablesRelative(check, null, null, null); title.compoundDrawablePadding = dp(4)
+        title.text = context.getString(R.string.copied)
+        copiedUntil = System.currentTimeMillis() + 2000
+        mainHandler.postDelayed({ if (copiedUntil <= System.currentTimeMillis()) { title.setCompoundDrawablesRelative(null, null, null, null); showTitle() } }, 2000)
     }
 
     private fun square(res: Int, onTap: () -> Unit) = FrameLayout(context).apply {
@@ -359,7 +403,7 @@ class MiniFace(ctx: Context, private val bar: Boolean) : LinearLayout(ctx) {
 
     /** A still row of the list: the name, the length, the ring when it is the one that plays. */
     fun still(t: Track, isCurrent: Boolean, playingNow: Boolean) {
-        title.text = t.title   // USER-DATA: the track's own name
+        displayTitle = t.title; showTitle()   // USER-DATA: the track's own name
         side.text = if (t.length > 0) fmtDuration(t.length) else ""   // USER-DATA: a length, digits
         playGlyph.setImageResource(if (playingNow) R.drawable.ic_pause_fill else R.drawable.ic_play_fill)
         ring(isCurrent)
@@ -376,11 +420,12 @@ class MiniFace(ctx: Context, private val bar: Boolean) : LinearLayout(ctx) {
             Playing.Kind.VOICE -> !VoicePlayer.paused
             Playing.Kind.TRACK -> MusicPlayer.playing
         }
-        title.text = when (kind) {   // USER-DATA: the track's own name, or the speaker's name as the person sees it
+        displayTitle = when (kind) {   // USER-DATA: the track's own name, or the speaker's name as the person sees it
             Playing.Kind.NOTE -> NoteOpen.title
             Playing.Kind.VOICE -> VoicePlayer.sender
             Playing.Kind.TRACK -> MusicPlayer.current?.title.orEmpty()
         }
+        showTitle()
         playGlyph.setImageResource(if (sounding) R.drawable.ic_pause_fill else R.drawable.ic_play_fill)
         // THE THIN BLUE RING ON EVERY PAGE (iOS MTMiniFace.playingRing, the author's word 29.09): the bar wears it fixed,
         // wherever it floats -- never conditioned, as the still row's own ring is, on «is this the one that plays».
