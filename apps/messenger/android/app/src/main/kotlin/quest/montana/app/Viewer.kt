@@ -44,7 +44,7 @@ fun picturesBeside(f: File): List<File> {
  * go and closes. Under the pages the strip of covers: the centred cover is the page, a tap on a cover turns to it, and the
  * picture fits above the strip's band, never under it. No buttons: the platform's back closes it, as the pull does.
  */
-fun openPictures(act: MainActivity, start: File, among: List<File>? = null) {
+fun openPictures(act: MainActivity, start: File, among: List<File>? = null, films: Set<String> = emptySet(), titles: List<String>? = null) {
     val c: Context = act
     // A POST'S PICTURE OPENS AMONG ITS PAGE'S (iOS MTBoardMediaView.open, PhotoPresenter.present(_:among:), MontanaBoardViews.swift:
     // 773-774 at 2155): the caller's album when it holds the one touched, else the conversation's
@@ -54,16 +54,48 @@ fun openPictures(act: MainActivity, start: File, among: List<File>? = null) {
     lateinit var close: () -> Unit
     var chrome = true
     var foot = c.dp(34)
-    val strip = if (paged) CoverStrip(act, files, at) else null
-    val pager = PicturePager(act, files, at) { at = it; strip?.follow(it) }
+    val strip = if (paged) CoverStrip(act, files, at, films) else null
+    // THE MOMENTS' BAR (iOS DocPreviewQL in its navigation controller, MontanaFeeds.swift:2702-2716 at 2155, the gallery's viewer
+    // MTMomentsViewer 2758): the close on the left, the moment's conversation in the middle, the share on the right -- the
+    // gallery's album alone carries it (titles), and it hides and shows with the strip
+    val head = titles?.takeIf { it.size == files.size }
+    val name = head?.let { c.text(it[at], 17f, Color.WHITE, center = true).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END } }   // USER-DATA: the conversation's name
+    val pager = PicturePager(act, files, at, films) { at = it; strip?.follow(it); if (head != null) name?.text = head[it] }
     // the strip owns a band at the bottom and the photo fits above it (iOS stripBand: 120 + 10 + the safe inset)
+    var bar: View? = null
     fun lay() {
         pager.setPadding(0, 0, 0, if (strip != null && chrome) c.dp(130) + foot else 0)
         strip?.animate()?.alpha(if (chrome && !pager.zoomed) 1f else 0f)?.setDuration(220)?.start()
+        bar?.animate()?.alpha(if (chrome) 1f else 0f)?.setDuration(220)?.withEndAction { bar?.visibility = if (chrome) View.VISIBLE else View.INVISIBLE }?.start()
+        if (chrome) bar?.visibility = View.VISIBLE
+    }
+    if (name != null) {
+        fun mark(glyph: Int, label: Int, work: () -> Unit) = FrameLayout(c).apply {
+            background = c.glassPlate(oval = true)
+            contentDescription = c.getString(label)
+            addView(c.icon(glyph, Color.WHITE, 22), FrameLayout.LayoutParams(c.dp(22), c.dp(22), Gravity.CENTER))
+            pressable(work)
+        }
+        bar = FrameLayout(c).apply {
+            addView(mark(R.drawable.ic_close, R.string.film_close) { close() }, FrameLayout.LayoutParams(c.dp(44), c.dp(44), Gravity.START).apply { leftMargin = c.dp(16) })
+            addView(name, FrameLayout.LayoutParams(MATCH, c.dp(44), Gravity.CENTER).apply { setMargins(c.dp(72), 0, c.dp(72), 0) })
+            name.gravity = Gravity.CENTER
+            addView(mark(R.drawable.ic_share, R.string.share) {
+                // the viewer's share: the moment's own file through the app's door (iOS QLPreviewController's share item)
+                val f = files[at]
+                val uri = Media.uri(act, f)
+                val send = Intent(Intent.ACTION_SEND).setType(act.contentResolver.getType(uri) ?: if (f.path in films) "video/*" else "image/*")
+                    .putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                runCatching { act.startActivity(Intent.createChooser(send, null)) }
+            }, FrameLayout.LayoutParams(c.dp(44), c.dp(44), Gravity.END).apply { rightMargin = c.dp(16) })
+        }
     }
     pager.onTapAt = { x ->
         if (paged && !pager.zoomed && x < 0.15f) pager.turn(-1)
         else if (paged && !pager.zoomed && 0.85f < x) pager.turn(1)
+        // A FILM AMONG THE MOMENTS PLAYS IN THE SYSTEM'S PLAYER (iOS MTMomentsViewer over Quick Look, MontanaFeeds.swift:2705-2772
+        // at 2155: the swipe between moments, the system's player for a video): its page is its first frame and the play mark
+        else if (files[at].path in films) FilmActivity.open(act, files[at])
         else { chrome = !chrome; lay() }
     }
     pager.onPull = { f -> strip?.alpha = if (chrome && f < 0.01f) 1f else 0f }   // steps aside the moment the hands work
@@ -75,9 +107,11 @@ fun openPictures(act: MainActivity, start: File, among: List<File>? = null) {
         isClickable = true
         addView(pager, FrameLayout.LayoutParams(MATCH, MATCH))
         if (strip != null) addView(strip, FrameLayout.LayoutParams(MATCH, c.dp(120), Gravity.BOTTOM))
+        bar?.let { addView(it, FrameLayout.LayoutParams(MATCH, c.dp(44), Gravity.TOP)) }
         setOnApplyWindowInsetsListener { _, ins ->
             foot = max(ins.getInsets(android.view.WindowInsets.Type.systemBars()).bottom, c.dp(16))
             (strip?.layoutParams as? FrameLayout.LayoutParams)?.let { it.bottomMargin = foot; strip?.layoutParams = it }
+            (bar?.layoutParams as? FrameLayout.LayoutParams)?.let { it.topMargin = ins.getInsets(android.view.WindowInsets.Type.systemBars()).top + c.dp(8); bar?.layoutParams = it }
             lay(); ins
         }
     }
@@ -92,6 +126,18 @@ fun openPictures(act: MainActivity, start: File, among: List<File>? = null) {
  * a double tap goes to 2.5× at the finger and back; while enlarged a drag moves it within its edges.
  */
 class ZoomPicture(c: Context) : ImageView(c) {
+    /** A film's page: its first frame with the platform's play mark over it, and no enlarging. */
+    var film = false
+        set(v) { field = v; invalidate() }
+    private val playMark = c.getDrawable(R.drawable.ic_play_circle_fill)
+    override fun onDraw(canvas: android.graphics.Canvas) {
+        super.onDraw(canvas)
+        val m = playMark ?: return
+        if (!film) return
+        val k = (64 * resources.displayMetrics.density).toInt()
+        m.setBounds((width - k) / 2, (height - k) / 2, (width + k) / 2, (height + k) / 2)
+        m.draw(canvas)
+    }
     private val base = Matrix()
     private val m = Matrix()
     var scale = 1f; private set
@@ -153,7 +199,8 @@ class ZoomPicture(c: Context) : ImageView(c) {
  * a sideways stroke moves them together and settles on the next page past a third of the width or on a fling. A stroke down
  * on a picture at rest pulls it away: the ground fades, and past a quarter of the height the viewer closes.
  */
-class PicturePager(private val act: MainActivity, private val files: List<File>, start: Int, private val onPage: (Int) -> Unit) : FrameLayout(act) {
+class PicturePager(private val act: MainActivity, private val files: List<File>, start: Int, private val films: Set<String> = emptySet(),
+                   private val onPage: (Int) -> Unit) : FrameLayout(act) {
     var onTap: () -> Unit = {}
     var onTapAt: (Float) -> Unit = {}   // where across the page the tap landed, 0…1 (iOS MTAlbumPage onTap)
     var onZoomed: (Boolean) -> Unit = {}
@@ -175,7 +222,10 @@ class PicturePager(private val act: MainActivity, private val files: List<File>,
     })
     private val taps = GestureDetector(act, object : GestureDetector.SimpleOnGestureListener() {
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean { onTapAt(e.x / max(1, width)); onTap(); return true }
-        override fun onDoubleTap(e: MotionEvent): Boolean { views[1].toggleAt(e.x, e.y); postDelayed({ onZoomed(views[1].zoomed) }, 260); return true }
+        override fun onDoubleTap(e: MotionEvent): Boolean {
+            if (views[1].film) return false   // a film's page does not enlarge: its frame is a door to the player
+            views[1].toggleAt(e.x, e.y); postDelayed({ onZoomed(views[1].zoomed) }, 260); return true
+        }
     })
 
     init {
@@ -197,7 +247,7 @@ class PicturePager(private val act: MainActivity, private val files: List<File>,
         if (i !in files.indices) { done(null); return }
         if (cache.containsKey(i)) { done(cache[i]); return }
         act.background {
-            val b = Media.preview(act, files[i], "img", 2400)
+            val b = Media.preview(act, files[i], if (files[i].path in films) "vid" else "img", 2400)
             act.onMain { cache[i] = b; if (cache.size > 7) cache.keys.filter { abs(it - at) > 2 }.forEach { cache.remove(it) }; done(b) }
         }
     }
@@ -207,6 +257,7 @@ class PicturePager(private val act: MainActivity, private val files: List<File>,
             val i = at - 1 + k
             val v = views[k]
             v.show(null); v.visibility = if (i in files.indices) VISIBLE else INVISIBLE
+            v.film = i in files.indices && files[i].path in films
             bitmap(i) { b -> if (at - 1 + k == i) v.show(b) }
         }
         place(0f)
@@ -306,7 +357,7 @@ private val stripCovers = Caches.kept("strip_covers", object : android.util.LruC
  * cover large and flat, its neighbours turned in perspective and receding, overlapping by more than a quarter; the scroll snaps
  * to a cover, and the centred cover IS the page; a tap on a cover turns to it. 96 points a cover, 120 the strip.
  */
-class CoverStrip(private val act: MainActivity, private val files: List<File>, start: Int) : FrameLayout(act) {
+class CoverStrip(private val act: MainActivity, private val files: List<File>, start: Int, private val films: Set<String> = emptySet()) : FrameLayout(act) {
     var onPick: (Int) -> Unit = {}
     private val side = act.dp(96)
     private val step = side * 0.72f   // iOS HStack(spacing: -side * 0.28)
@@ -338,7 +389,7 @@ class CoverStrip(private val act: MainActivity, private val files: List<File>, s
             val kept = stripCovers.get(f.path)
             if (kept != null) setImageBitmap(kept)
             else act.background {
-                val b = Media.preview(act, f, "img", 256) ?: return@background
+                val b = Media.preview(act, f, if (f.path in films) "vid" else "img", 256) ?: return@background
                 stripCovers.put(f.path, b)
                 act.onMain { setImageBitmap(b) }
             }

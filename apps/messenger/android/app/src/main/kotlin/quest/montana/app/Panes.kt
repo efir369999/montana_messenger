@@ -75,11 +75,11 @@ fun galleryPane(act: MainActivity): View {
             tileCache.put(key, b)
             post { pic.setImageBitmap(b) }
         }
-        // THE SWIPE BETWEEN MOMENTS (iOS MTMomentsViewer over QLPreviewController, MontanaFeeds.swift:2706-2772 at 2155):
-        // a photo opens among every photo of the gallery, so the finger pages across conversations as the platform's own
-        // viewer does; a film still opens alone -- the system's own player here carries no such list of its own (gap: the
-        // iPhone's one viewer pages photos and films together, Android pages photos only).
-        pressable { if (m.photo) openPictures(act, m.file, all.filter { it.photo }.map { it.file }) else openMedia(act, m.file, "vid") }
+        // THE SWIPE BETWEEN MOMENTS (iOS MTMomentsViewer over QLPreviewController, MontanaFeeds.swift:2706-2772 at 2155): a tap opens
+        // the moment among every moment of the gallery, photos and films alike, so the finger pages across conversations as the
+        // platform's own viewer does; a film's page is its frame and plays in the system's player
+        pressable { openPictures(act, m.file, all.map { it.file }, all.filter { !it.photo }.map { it.file.path }.toSet(),
+            all.map { Book.chat(it.ref)?.name.orEmpty() }) }
         setOnLongClickListener {
             holdMenu(act, this, listOf(
                 Deed(R.string.gl_show_in_chat, R.drawable.ic_bar_chats) { act.push { close -> conversationPage(act, m.ref, close, jump = m.mid) } },
