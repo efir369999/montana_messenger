@@ -356,6 +356,10 @@ struct MTWalletPage: View {
         // the bottom edge waits for a second stroke here, as a game asks of it.
         .defersSystemGestures(on: .bottom)
         .task { await refresh() }
+        // THE AUTO MINTING IS ON BY DEFAULT (the author's word 09.10.2026 20:1x MSK: "in every app the auto minting automatically,
+        // by default"): the page standing open mints by the second without a pull or a hold; leaving the page or locking the
+        // screen still ends it (MTWalletPull), and the return to the page or to the app begins it again.
+        .onAppear { if !pantheon.lit { autoMint.fire() } }
         // THE TOP IS A LIVE SET FROM THE NODES (the author's words 04.10.2026 03:03 and 04:19 MSK: «a live set as by a web socket, the
         // update instant from the nodes»): while the wallet stands open the pairs' last words are asked of the nodes every three
         // seconds in one question -- their balances ride them (E2E.coinTail); a pair in the app hands its own over at once.
@@ -380,7 +384,7 @@ struct MTWalletPage: View {
         .onChange(of: phase) { _, new in
             // THE LOCK ENDS IT, NOT A GLANCE (the author's word 05.10.2026 00:53 MSK): the screen locked or the app left goes to the
             // background; a banner or the Control Center pulled down only makes the scene inactive, and the minting goes on.
-            if new == .active { Task { await refresh() } } else if new == .background { autoMint.stop(why: "background") }
+            if new == .active { Task { await refresh() }; if !pantheon.lit { autoMint.fire() } } else if new == .background { autoMint.stop(why: "background") }
         }
         .onDisappear { autoMint.stop(why: "page"); pantheon.released() }
     }
