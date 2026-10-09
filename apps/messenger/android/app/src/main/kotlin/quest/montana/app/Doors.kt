@@ -182,13 +182,20 @@ object Doors {
         }
         for (d in found.keys) Signal.proveDoor(d)   // the round's answer is proof for the call's walk (iOS 115)
         Log.d("Montana", "accel_paths ok=" + doors.filter { found[it] != null }.joinToString(",") { host(it) + "[" + found[it].orEmpty().sorted().joinToString("|") + "]" } + " of=" + doors.size)
+        // THE MODE OF THE NETWORK (iOS MontanaWakePush 172-181, atoms c0b52069608a, b3f67ba312fd): a silent door is a question --
+        // the mode is measured then, at most once a minute -- and the round runs once an hour on its own, so a verdict has open
+        // lines to stand against
+        val mute = doors.filter { found[it] == null }.map { host(it) }
+        val alive = doors.filter { found[it] != null }.map { host(it) }
+        if ((mute.isNotEmpty() && NetProbe.minutePassed()) || NetProbe.hourPassed()) runCatching { NetProbe.round(mute, alive) }
         val first = doors.firstOrNull { found[it] != null } ?: return
         val named = try {
             val conn = URL(first + "/doors").openConnection() as HttpURLConnection
             conn.connectTimeout = 8000; conn.readTimeout = 8000
             val t = if (conn.responseCode == 200) conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) } else null
             conn.disconnect()
-            t?.let { JSONObject(it).takeIf { j -> j.optJSONArray("doors") != null } }
+            // the answer counts when it names doors (iOS MontanaWakePush.swift:145: !doors.isEmpty): the machines and the barred ride it
+            t?.let { JSONObject(it).takeIf { j -> (j.optJSONArray("doors")?.length() ?: 0) > 0 } }
         } catch (_: Exception) { null }
         if (named != null) {
             val ds = named.getJSONArray("doors")
@@ -206,6 +213,9 @@ object Doors {
                 }
                 if (keep.toString() != Prefs.str(MACHINES, "")) { Prefs.setStr(MACHINES, keep.toString()); Log.d("Montana", "machines_learned n=" + keep.length()) }
             }
+            // THE BARRED (iOS MontanaWakePush.swift:155-158, Guideline 1.2): the addresses the network's operators barred after a
+            // report ride this same answer; every install refuses their letters on every road ([P2P-COMPAT]: an absent key changes nothing).
+            named.optJSONArray("barred")?.let { arr -> PeerSafety.setBarred((0 until arr.length()).map { arr.optString(it) }) }
         }
         if (pass == 0 && !before.containsAll(hosts())) verify(1)
     }

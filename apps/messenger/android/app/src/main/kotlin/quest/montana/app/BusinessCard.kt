@@ -40,7 +40,9 @@ class BusinessCard(var name: String, var phone: String, var email: String, var o
     val text: String get() = lines.joinToString("\n")
     val wire: String get() = MARK + text
     val isEmpty: Boolean get() = lines.all { it.isEmpty() }
-    fun keep() = DeviceVault.set(KEY, JSONObject().put("name", name).put("phone", phone).put("email", email).put("other", other).toString().toByteArray(Charsets.UTF_8))
+    /** The card's words as they are kept, and as a copy carries them (iOS MontanaBusinessCard's Codable form: name, phone, email, other). */
+    fun json(): JSONObject = JSONObject().put("name", name).put("phone", phone).put("email", email).put("other", other)
+    fun keep() = DeviceVault.set(KEY, json().toString().toByteArray(Charsets.UTF_8))
 
     companion object {
         const val MARK = "\uD83D\uDCC7 "   // iOS MontanaCardPlate.mark
@@ -48,6 +50,9 @@ class BusinessCard(var name: String, var phone: String, var email: String, var o
         private const val KEY = "businessCard"
         /** The person forgotten: their card leaves with them (Book.wipe). */
         fun forget() = DeviceVault.delete(KEY)
+        /** The card as it was kept, its words untouched — what a copy carries (iOS seedCard «businessCard»); null when none was kept. */
+        fun stored(): BusinessCard? = DeviceVault.get(KEY)?.let { runCatching { JSONObject(String(it, Charsets.UTF_8)) }.getOrNull() }
+            ?.let { BusinessCard(it.optString("name"), it.optString("phone"), it.optString("email"), it.optString("other")) }
         fun kept(): BusinessCard {
             val o = DeviceVault.get(KEY)?.let { runCatching { JSONObject(String(it, Charsets.UTF_8)) }.getOrNull() }
             val card = BusinessCard(o?.optString("name") ?: "", o?.optString("phone") ?: "", o?.optString("email") ?: "", o?.optString("other") ?: "")

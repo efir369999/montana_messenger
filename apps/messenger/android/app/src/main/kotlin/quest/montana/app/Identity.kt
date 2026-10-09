@@ -125,6 +125,8 @@ object MontanaSeed {
         NodeIdentity.forget()   // a machine's value outliving the person would join the two for anyone listening (iOS MontanaOverlayKey.forget)
         NodeKem.forget()
         Channels.forget()
+        Names.forget()   // the name's record and its blinding factor are the person's: they leave with the seed (iOS SeedScope)
+        Names.wipeBook()
     }
 
     /**
@@ -213,6 +215,8 @@ object Prefs {
     fun bool(key: String, def: Boolean): Boolean = p.getBoolean(key, def)
     fun setBool(key: String, v: Boolean) { p.edit().putBoolean(key, v).apply() }
     fun remove(vararg keys: String) { p.edit().apply { keys.forEach { remove(it) } }.apply() }
+    /** Every key of the store under one beginning: the marks kept per person, which a copy carries (Card.build). */
+    fun keys(prefix: String): List<String> = p.all.keys.filter { it.startsWith(prefix) }
 
     fun forgetPerson() { p.edit().clear().commit() }
 }

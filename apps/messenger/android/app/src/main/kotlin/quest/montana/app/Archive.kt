@@ -246,7 +246,7 @@ object Archive {
         val folders = only ?: chatsDir.listFiles()?.filter { it.isDirectory && !it.name.startsWith(".") }?.map { it.name } ?: return
         val book = HashMap<String, String>()
         for (r in Book.refs()) book[label(k, r)] = r
-        var chats = 0; var added = 0; var headed = 0; var hs = 0; var ha = 0; var hn = 0; var faces = 0
+        var chats = 0; var added = 0; var headed = 0; var hs = 0; var ha = 0; var hn = 0; var faces = 0; var gapChats = 0; var gapRows = 0
         for (folder in folders) {
             var ref: String? = null
             var name: String? = null
@@ -277,7 +277,23 @@ object Archive {
             if (items.isEmpty() && ref == null) continue
             if (ref != null) headed++
             val key = ref ?: ("arc:" + folder)
-            if (Book.chat(key)?.msgs?.isNotEmpty() == true) continue
+            val feed = Book.chat(key)?.msgs?.toList().orEmpty()
+            if (feed.isNotEmpty()) {
+                // THE ARCHIVE IS MEASURED AGAINST THE FEED (iOS restoreFromArchive 3008-3035, atom 2b8069c63096): a letter the archive
+                // holds and the feed does not is named with its count and its newest moment -- measured here, never inserted (the
+                // feed is the truth); a media letter is matched by its second and its side, its record and its row differing in form
+                fun sig(at: Long, mine: Boolean, text: String) = at.toString() + "|" + (if (mine) 1 else 0) + "|" + (if (text.startsWith(Marks.MEDIA)) "media" else text)
+                val have = feed.mapTo(HashSet()) { sig(it.at / 1000, it.mine, it.text) }
+                val seen = HashSet<String>()
+                val missing = items.filter { seen.add(sig(it.at, it.mine, it.text)) && sig(it.at, it.mine, it.text) !in have }
+                if (missing.isNotEmpty()) {
+                    gapChats++; gapRows += missing.size
+                    val newest = java.text.SimpleDateFormat("HH:mm", java.util.Locale.ROOT).format(java.util.Date(missing.maxOf { it.at } * 1000))
+                    Log.d("Montana", "archive_gap chat=" + key.take(10) + " feed=" + feed.size + " archive=" + items.size + " missing=" + missing.size +
+                        " media=" + missing.count { it.text.startsWith(Marks.MEDIA) } + " theirs=" + missing.count { !it.mine } + " newest=" + newest)
+                }
+                continue
+            }
             val built = rows(items)
             if (built.isEmpty()) continue
             val shown = name?.trim()?.takeIf { it.isNotEmpty() } ?: if (ref == null) Book.ctx.getString(R.string.recovered_history) else ""
@@ -293,6 +309,7 @@ object Archive {
             }
             chats++; added += built.size
         }
+        if (0 < gapRows) Log.d("Montana", "archive_gap total chats=" + gapChats + " rows=" + gapRows)
         Log.d("Montana", "archive_restore chats=" + chats + " rows=" + added + " headed=" + headed + " heads=s" + hs + "/a" + ha + "/n" + hn + " faces=" + faces)
     }
 

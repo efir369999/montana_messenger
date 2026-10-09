@@ -33,7 +33,8 @@ object LiveDraft {
     private val h = android.os.Handler(android.os.Looper.getMainLooper())
     private var lastStamp = 0L
     /** The moment a word was said, strictly growing (iOS draftStamp): two words in one millisecond keep their order. */
-    @Synchronized private fun stamp(): Long { lastStamp = maxOf(System.currentTimeMillis(), lastStamp + 1); return lastStamp }
+    // ONE COUNTER FOR EVERY WORD THIS PHONE SAYS, BY THE NODE'S CLOCK (iOS draftStamp, E2E 1013): the draft's «n» and the presence «T» in one row
+    private fun stamp(): Long = Presence.saidMs()
 
     // ── what I say ──
     /** «d» — the doors alive for me, in the one builder of the word (iOS sendDraftWord 474-475): the peer picks the first we share. */
@@ -82,6 +83,23 @@ object LiveDraft {
         val body = doors(JSONObject().put("t", said[ref] ?: "").put("c", -1).put("n", stamp()).put("rq", 1))
         Signal.post(ref, MARK + Base64.encodeToString(body.toString().toByteArray(), Base64.NO_WRAP))
     }
+    /**
+     * THE DAILY LINK, PRELOADED (iOS E2E.sendLinkIfNeeded, MontanaE2E.swift:1467-1478; the author's word 15.09: share contact
+     * must not wait): my current short link rides to a correspondent as a silent durable letter — the draft word's shape, by
+     * the queue, not the live lanes (iOS sendDraftWord durable, 478-482) — once per link per peer; the receiver keeps it a day.
+     */
+    fun sayLinkIfNeeded(ref: String) {
+        if (PeerSafety.isBlocked(ref) || Book.secret(ref) == null) return
+        val (link, born) = MontanaCard.currentShortWithBorn(Book.ctx) ?: return
+        val key = "linkSent." + ref
+        if (Prefs.str(key, "") == link) return
+        Prefs.setStr(key, link)
+        val body = doors(JSONObject().put("t", said[ref] ?: "").put("c", -1).put("n", stamp()).put("rl", link).put("rb", born))
+        Post.send(ref, Marks.mintMid(), MARK + Base64.encodeToString(body.toString().toByteArray(), Base64.NO_WRAP), quiet = true)
+        android.util.Log.d("Montana", "link_tx durable to=" + ref.take(10))
+    }
+    /** Every correspondent gets the current link — launch, foreground, rotation; nothing if they have it (iOS sendLinkToAll 1479-1482). */
+    fun sayLinkToAll() { for (ref in Book.refs()) sayLinkIfNeeded(ref) }
 
     // ── what I hear ──
     /** A draft word of theirs off the lane. true — a keystroke said now (it lights «typing…»). */
@@ -100,7 +118,7 @@ object LiveDraft {
         val landed = text.isNotEmpty() && Book.chat(SamePair.root(ref))?.msgs?.takeLast(5)?.any { !it.mine && it.text == text } == true
         if (text.isEmpty() || landed) shown.remove(ref) else shown[ref] = Draft(text, j.optInt("c", -1), j.optString("rm"))
         changed()
-        val fresh = n == 0L || System.currentTimeMillis() - n <= 7_000
+        val fresh = n == 0L || NodeClock.now() - n <= 7_000   // the draft's «n» is the node's already (iOS 1087: nodeNow - n <= typingWordLife)
         return text.isNotEmpty() && !landed && !j.has("ck") && !state && fresh
     }
     fun of(ref: String): Draft? = shown[ref]
@@ -120,7 +138,24 @@ object PeerLinks {
     /** The link, while its day runs. */
     fun fresh(ref: String): String? = all().optJSONObject(ref)
         ?.takeIf { System.currentTimeMillis() / 1000.0 - it.optDouble("b", 0.0) < 24 * 3600 }?.optString("l")?.ifEmpty { null }
+    /** The last link they handed, whatever its day: the face their card wears on the node outlives the card's day (iOS
+     * MTPeerLinks.any, MontanaE2E.swift:61, atom 796a76a34ae0). */
+    fun any(ref: String): String? = all().optJSONObject(ref)?.optString("l")?.ifEmpty { null }
     fun wipe() = DeviceVault.delete(KEY)
+    /** The links and the moments they were born, for a copy (iOS MTPeerLinks, MontanaE2E.swift 46-57: two sealed maps by conversation, «peerRdvLinks» and «.b»). */
+    fun carried(): Pair<Map<String, String>, Map<String, Double>> {
+        val o = all()
+        val links = HashMap<String, String>()
+        val born = HashMap<String, Double>()
+        for (r in o.keys()) o.optJSONObject(r)?.let { e -> e.optString("l").takeIf { it.isNotEmpty() }?.let { links[r] = it; born[r] = e.optDouble("b", 0.0) } }
+        return links to born
+    }
+    /** A copy laid (iOS SeedScope.unionKeys 6311): a correspondent's link held here stands, the copy adds the others. */
+    @Synchronized fun lay(links: Map<String, String>, born: Map<String, Double>) {
+        val o = all()
+        for ((r, l) in links) if (l.isNotEmpty() && !o.has(r)) o.put(r, JSONObject().put("l", l).put("b", born[r] ?: 0.0))
+        DeviceVault.set(KEY, o.toString().toByteArray(Charsets.UTF_8))
+    }
 }
 
 /**
@@ -134,7 +169,7 @@ fun Context.liveDraftBubble(d: LiveDraft.Draft, chat: Chat?): View = FrameLayout
         setPadding(dp(13), dp(8), dp(13), dp(8))
         if (d.replyMid.isNotEmpty()) chat?.msgs?.find { it.mid == d.replyMid }?.let { q ->
             addView(hstack {
-                addView(View(context).apply { setBackgroundColor(MT.gold) }, lp(dp(3), dp(16)).apply { marginEnd = dp(6) })
+                addView(View(context).apply { setBackgroundColor(Color.WHITE) }, lp(dp(3), dp(16)).apply { marginEnd = dp(6) })
                 addView(text(letterWords(context, q), 12f, Color.argb(180, 255, 255, 255)).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })   // USER-DATA
             }, lp().apply { bottomMargin = dp(2) })
         }

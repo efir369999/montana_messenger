@@ -63,7 +63,7 @@ class NodePage(private val act: MainActivity, private val onClose: () -> Unit) {
                 }
                 addView(c.hstack {
                     setPadding(dp(16), 0, 0, 0)
-                    addView(c.icon(R.drawable.ic_hub, MT.gold), lp(dp(24), dp(24)))
+                    addView(c.icon(R.drawable.ic_hub, Color.WHITE), lp(dp(24), dp(24)))
                     addView(host, lp(0, WRAP, 1f))
                 }, lp())
                 addView(stateRow.apply { setPadding(dp(16), 0, dp(16), 0) }, lp())
@@ -118,7 +118,7 @@ class NodePage(private val act: MainActivity, private val onClose: () -> Unit) {
             setPadding(0, dp(12), 0, dp(12))
             addView(c.text(word, 15f, color), lp(0, WRAP, 1f))
             if (detail != null) addView(c.text(detail, 13f, MT.gray))   // USER-DATA: a moment and a size, or a code
-            if (busy) addView(ProgressBar(c).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(MT.gold) }, lp(dp(20), dp(20)))
+            if (busy) addView(ProgressBar(c).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(MT.gray) }, lp(dp(20), dp(20)))
         }, lp())
         when (val s = HomeNodeWatch.state) {
             is HomeNodeWatch.State.Asking -> line(c.getString(R.string.node_asking), busy = true)
@@ -139,7 +139,7 @@ class NodePage(private val act: MainActivity, private val onClose: () -> Unit) {
             }, lp())
             addView(ProgressBar(c, null, android.R.attr.progressBarStyleHorizontal).apply {
                 max = 100; progress = (f * 100).toInt()
-                progressTintList = android.content.res.ColorStateList.valueOf(MT.gold)
+                progressTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
             }, lp())
         }, lp())
         HomeNodeWatch.sealing?.let { bar(R.string.node_sealing, it) }

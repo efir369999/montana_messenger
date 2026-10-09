@@ -23,11 +23,13 @@
     <string name="loading_file">Loading…</string>
     <string name="release_send">Release to send</string>   <!-- iOS «Release to send», over a held tape -->
     <string name="release_cancel">Release to cancel</string>
+    <string name="hold_to_record">Hold to record</string>   <!-- iOS «Hold to record», MontanaConversation.swift:911 at 2155, a press too short for a tape -->
     <string name="unread_messages">Unread messages</string>   <!-- iOS «Unread messages» -->
     <string name="to_newest">To the newest</string>   <!-- the chevron to the feed's newest end, for the reader -->
     <string name="invite_spent">Invitation expired. Ask for a new code.</string>
     <string name="invite_refused">The invitation could not be opened. Check the link or try again.</string>
-    <string name="invite_nameless">Names are not supported on Android yet — ask for a card link.</string>
+    <string name="invite_nameless">Nobody holds this name.</string>
+    <string name="invite_own_name">This is your own name.</string>
     <string name="invite_wait">Create your identity first — the invitation will open right after.</string>
     <string name="scan">Scan</string>
     <string name="paste_link">Paste a link</string>

@@ -67,13 +67,13 @@ object VoiceTape {
 
     fun granted(c: Context) = c.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
-    /** The tape starts; false when the microphone is not ours (the question is asked, the next hold records). */
-    fun start(act: MainActivity): Boolean {
-        if (!granted(act)) { act.requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 7); return false }
-        if (rec != null) return false   // one tape at a time: a second start over a rolling one is nothing (iOS VoiceRecorder.start guard, build 1519 / 2155 MontanaMedia.swift:112)
+    private var prepared: Pair<MediaRecorder, File>? = null
+    private var preparing = false
+    private var request = 0   // a readying overtaken by a start or a stand-down is thrown away on arrival (iOS request, MontanaMedia.swift:83)
+    private fun born(act: MainActivity): Pair<MediaRecorder, File>? {
         val f = File(act.cacheDir, "tape-${System.currentTimeMillis()}.m4a")
         return try {
-            rec = MediaRecorder(act).apply {
+            val r = MediaRecorder(act).apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
@@ -81,19 +81,61 @@ object VoiceTape {
                 setAudioChannels(1)
                 setAudioEncodingBitRate(64_000)
                 setOutputFile(f.path)
-                prepare(); start()
+                prepare()
             }
-            file = f; began = System.currentTimeMillis(); paused = false; pausedMs = 0
+            r to f
+        } catch (_: Exception) { f.delete(); null }
+    }
+    private fun discard(b: Pair<MediaRecorder, File>) { runCatching { b.first.release() }; b.second.delete() }
+    /** THE TAPE IS READIED UNDER THE FINGER (iOS VoiceRecorder.prewarm, MontanaMedia.swift:76-99 and 135-157 at 2155, atom
+     * 92fba2cb8154): born on its own thread the moment the finger lands, while the hold's mode timeout runs; the start that follows
+     * is one MediaRecorder.start(). Under a call nothing is readied -- the call holds the sound (iOS MontanaRecording.swift:89).
+     * Taken out in 370 on a wrong cause: «track is not started» is the second reset of a closed recorder; the lost tapes were
+     * the length read after the recorder was gone (371). */
+    fun prewarm(act: MainActivity) {
+        if (rec != null || prepared != null || preparing || Calls.busy() || !granted(act)) return
+        val ticket = ++request
+        preparing = true
+        Thread {
+            val b = born(act)
+            MainThread.post {
+                if (request != ticket) { b?.let(::discard); return@post }
+                preparing = false
+                if (b == null) return@post
+                if (rec == null) prepared = b else discard(b)
+            }
+        }.start()
+    }
+    /** The hold ended as a tap, or the chat closed: the readied tape is not wanted -- its empty file goes (iOS standDown, MontanaMedia.swift:101-109 at 2155). */
+    fun standDown() {
+        if (rec != null) return
+        request += 1
+        preparing = false
+        prepared?.let { prepared = null; discard(it) }
+    }
+    /** The tape starts; false when the microphone is not ours (the question is asked, the next hold records). */
+    fun start(act: MainActivity): Boolean {
+        if (CallSound.refused("voice tape")) return false   // the call holds the sound (iOS MontanaRecording 100)
+        if (!granted(act)) { act.requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 7); return false }
+        if (rec != null) return false   // one tape at a time: a second start over a rolling one is nothing (iOS VoiceRecorder.start guard, build 1519 / 2155 MontanaMedia.swift:112)
+        Playing.standDown()   // a tape holds what plays, the open note closes (iOS MontanaMedia.swift:111-113 at 2155)
+        request += 1; preparing = false   // a readying still on its thread is late now (iOS start, MontanaMedia.swift:115)
+        val (r, f) = prepared?.also { prepared = null } ?: (born(act) ?: return false)
+        return try {
+            r.start()
+            rec = r; file = f; began = System.currentTimeMillis(); paused = false; pausedMs = 0
             levels.clear(); MainThread.later(25, meter)
             true
-        } catch (_: Exception) { rec?.release(); rec = null; f.delete(); false }
+        } catch (_: Exception) { runCatching { r.release() }; f.delete(); false }
     }
 
     /** The tape ends: the file and its length in seconds, or null when it was dropped or too short to be a word. */
     fun stop(keep: Boolean): Pair<File, Double>? {
         val r = rec ?: return null
-        rec = null
+        // THE LENGTH IS READ WHILE THE TAPE STILL STANDS (measured on A1 09.10.2026 22:0x MSK): `seconds` answers 0 once `rec` is gone,
+        // and read after it every tape since d482f31 (30.09) measured 0 s, fell under the 0.6 s floor and was thrown away unsent
         val secs = seconds
+        rec = null
         paused = false
         val ok = runCatching { r.stop() }.isSuccess
         r.release()
@@ -123,6 +165,7 @@ object VoicePlayer {
 
     fun toggle(path: String, onProgress: (Int, Int) -> Unit, stopped: () -> Unit, then: (() -> Unit)? = null, sender: String = "") {
         if (playing == path) { if (paused) resume() else pause(); return }
+        if (CallSound.refused("voice message")) return   // the call holds the sound (iOS MontanaMedia 372)
         stop()
         NoteOpen.close?.invoke()   // one thing plays: a voice closes the open note (iOS MontanaVideoDock)
         // THE RECEIVER IS THE CATEGORY'S OWN DEFAULT (iOS: no .defaultToSpeaker on the voice's playAndRecord category,
@@ -134,6 +177,9 @@ object VoicePlayer {
         if (MusicPlayer.playing) { MusicPlayer.pause(); musicAside = true }
         player = p; playing = path; paused = false; onStop = stopped; progress = onProgress; this.sender = sender
         p.setOnCompletionListener { stop(); then?.invoke() }
+        // A LONG LISTEN GOES ON WHERE IT STOPPED (iOS VoicePlayer.toggle:411-414 at 2155, MTPlayPlaces.at, the author's word
+        // 26.09): a voice of five minutes and more starts at its kept moment.
+        PlayPlaces.at(path, p.duration / 1000.0, true)?.let { at -> runCatching { p.seekTo((at * 1000).toInt()) } }
         p.start(); speed(p)
         armProximity()
         tick(path)
@@ -155,9 +201,14 @@ object VoicePlayer {
         MainThread.later(0, t)
     }
     // a rested voice gives the ear's sensor back (iOS VoicePlayer.pause, MontanaMedia.swift:442)
-    fun pause() { val p = player ?: return; runCatching { p.pause() }; paused = true; disarmProximity(); Playing.changed() }
+    fun pause() {
+        val p = player ?: return
+        playing?.let { f -> PlayPlaces.keep(f, p.currentPosition / 1000.0, p.duration / 1000.0, true) }   // iOS MTPlayPlaces.keep, 26.09
+        runCatching { p.pause() }; paused = true; disarmProximity(); Playing.changed()
+    }
     fun resume() {
         val p = player ?: return
+        if (CallSound.refused("voice message")) return   // iOS MontanaMedia 482
         val path = playing ?: return
         runCatching { p.start(); speed(p) }; paused = false; armProximity(); tick(path); Playing.changed()
     }
@@ -166,6 +217,8 @@ object VoicePlayer {
     val fraction: Double get() = player?.let { p -> runCatching { p.currentPosition.toDouble() / maxOf(1, p.duration) }.getOrNull() } ?: 0.0
     fun stop() {
         val had = player != null
+        // iOS VoicePlayer.release:526 at 2155, MTPlayPlaces.keep, 26.09
+        player?.let { p -> playing?.let { f -> PlayPlaces.keep(f, p.currentPosition / 1000.0, p.duration / 1000.0, true) } }
         player?.runCatching { stop(); release() }
         player = null; playing = null; paused = false; progress = null
         disarmProximity()
@@ -182,7 +235,6 @@ object VoicePlayer {
     private fun am() = Book.ctx.getSystemService(AudioManager::class.java)
     private var sensorMgr: SensorManager? = null
     private var proximitySensor: Sensor? = null
-    private var earWake: PowerManager.WakeLock? = null
     private var proximityArmed = false
     private val outsidePorts = setOf(AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_WIRED_HEADPHONES, AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
         AudioDeviceInfo.TYPE_BLUETOOTH_A2DP, AudioDeviceInfo.TYPE_USB_HEADSET, AudioDeviceInfo.TYPE_USB_DEVICE, AudioDeviceInfo.TYPE_HEARING_AID,
@@ -206,9 +258,7 @@ object VoicePlayer {
         val sensor = sm.getDefaultSensor(Sensor.TYPE_PROXIMITY) ?: return
         sensorMgr = sm; proximitySensor = sensor
         sm.registerListener(proximityListener, sensor, SensorManager.SENSOR_DELAY_UI)
-        val pm = Book.ctx.getSystemService(PowerManager::class.java)
-        if (pm?.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK) == true)
-            earWake = pm.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "montana:voice-ear").apply { setReferenceCounted(false); acquire() }
+        Proximity.hold("voice", true)   // the sensor's one owner (iOS MontanaMedia.swift 459, 24.09)
     }
     @Suppress("DEPRECATION")
     private fun disarmProximity() {
@@ -216,7 +266,7 @@ object VoicePlayer {
         proximityArmed = false
         sensorMgr?.unregisterListener(proximityListener)
         sensorMgr = null; proximitySensor = null
-        earWake?.takeIf { it.isHeld }?.release(); earWake = null
+        Proximity.hold("voice", false)   // never off while the sensor says «near»: the owner waits for «far» (iOS 470)
         am()?.isSpeakerphoneOn = false
     }
 }
@@ -230,14 +280,24 @@ object VoicePlayer {
  * the finger on the wave takes the place. Under it the microphone with the length and the stamp stand on their quiet pills
  * (MTVoicePill, letterBubble).
  */
+/** A voice's length read off its own file once, while the file stands unchanged — not at every pass of the feed (BubblePicture's word). */
+object VoiceLength {
+    private val kept = HashMap<String, Int>()
+    fun of(p: String): Int? {
+        val key = p + "@" + File(p).lastModified()
+        synchronized(kept) { kept[key]?.let { return it } }
+        val ms = runCatching { android.media.MediaMetadataRetriever().use { r -> r.setDataSource(p); r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toInt() } }.getOrNull() ?: return null
+        synchronized(kept) { kept[key] = ms }
+        return ms
+    }
+}
+
 fun voiceBody(c: Context, m: Msg, du: Double, into: LinearLayout, wave: FloatArray? = null, chat: Chat? = null) {
     val tint = BubbleStyle.text(m.mine)
     val path = m.file?.takeIf { File(it).exists() }
     fun fmt(ms: Int) = "%d:%02d".format(ms / 60000, (ms / 1000) % 60)
     // The length is the sender's word; a letter without it is measured from the file itself.
-    val total = if (du > 0) (du * 1000).toInt() else path?.let { p ->
-        runCatching { android.media.MediaMetadataRetriever().use { r -> r.setDataSource(p); r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toInt() } }.getOrNull()
-    } ?: 0
+    val total = if (du > 0) (du * 1000).toInt() else path?.let { p -> VoiceLength.of(p) } ?: 0
     val d = c.resources.displayMetrics.density
     val window = c.resources.displayMetrics.widthPixels / d
     val waveDp = minOf(maxOf(76f, window * 0.8f - 111f), maxOf(76f, 60f + total / 1000f * 8f))

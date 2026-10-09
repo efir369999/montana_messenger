@@ -67,7 +67,7 @@ object Library {
     }
 
     /** The covers (iOS MTAssetImages: 360 px, one bounded cache, a tile holds its own picture). */
-    private val covers = object : LruCache<Long, Bitmap>(24 * 1024 * 1024) { override fun sizeOf(key: Long, value: Bitmap) = value.byteCount }
+    private val covers = Caches.kept("gallery_covers", object : LruCache<Long, Bitmap>(24 * 1024 * 1024) { override fun sizeOf(key: Long, value: Bitmap) = value.byteCount })
     private val work = Executors.newFixedThreadPool(3)
     @Suppress("DEPRECATION")
     fun cover(c: Context, item: LibraryItem, into: ImageView) {

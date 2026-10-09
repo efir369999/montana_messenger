@@ -25,6 +25,47 @@ object Scheduled {
     /** The person forgotten: the letters they set for later never leave for anyone (Book.wipe). */
     fun wipe() = synchronized(lock) { DeviceVault.delete(KEY) }
 
+    /**
+     * The letters waiting, in the iPhone's form for a copy (iOS ScheduledMsg 31-37, saveScheduled 3237-3241): one name each, the chat,
+     * the conversation, the words and the moment in seconds.
+     */
+    fun carried(): JSONArray = synchronized(lock) {
+        val a = all()
+        val out = JSONArray()
+        for (i in 0 until a.length()) a.optJSONObject(i)?.let { o ->
+            val ref = o.optString("ref")
+            out.put(JSONObject().put("id", nameOf(o)).put("chat", o.optString("chat").ifEmpty { ref }).put("convRef", ref)
+                .put("text", o.optString("t")).put("fireAt", o.optLong("at") / 1000.0))
+        }
+        out
+    }
+    /**
+     * A copy laid (iOS SeedScope.unionKeys 6305, known by «id» 6318): a letter waiting here stays and the copy adds the others; a note to
+     * oneself (no conversation) has no room here, and the card keeps it.
+     */
+    fun lay(a: JSONArray) {
+        synchronized(lock) {
+            val have = all()
+            val known = HashSet<String>()
+            for (i in 0 until have.length()) have.optJSONObject(i)?.let { known.add(nameOf(it)) }
+            var added = 0
+            for (i in 0 until a.length()) {
+                val o = a.optJSONObject(i) ?: continue
+                val ref = if (o.isNull("convRef")) "" else o.optString("convRef")
+                val id = o.optString("id")
+                val at = o.optDouble("fireAt", Double.NaN)
+                if (ref.isEmpty() || id.isEmpty() || at.isNaN() || !known.add(id)) continue
+                have.put(JSONObject().put("ref", ref).put("t", o.optString("text")).put("at", (at * 1000).toLong()).put("id", id).put("chat", o.optString("chat")))
+                added++
+            }
+            if (added > 0) save(have)
+        }
+    }
+    /** A letter's one name: the iPhone's, or one drawn from what the letter is — the same on every copy (a name-based UUID, the iPhone's form). */
+    private fun nameOf(o: JSONObject): String = o.optString("id").ifEmpty {
+        java.util.UUID.nameUUIDFromBytes((o.optString("ref") + "\n" + o.optLong("at") + "\n" + o.optString("t")).toByteArray()).toString().uppercase()
+    }
+
     fun add(ref: String, words: String, at: Long) = synchronized(lock) {
         save(all().put(JSONObject().put("ref", ref).put("t", words).put("at", at)))
     }

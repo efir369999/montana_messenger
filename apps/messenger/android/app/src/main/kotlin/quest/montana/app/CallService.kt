@@ -27,10 +27,24 @@ class CallService : Service() {
         private const val ID = 0x4d4c
         @Volatile private var running: CallService? = null
         @Volatile private var ref: String? = null
+        @Volatile private var onRefused: (() -> Unit)? = null
 
-        fun start(c: Context, who: String) {
+        /** iOS CXStartCallAction's refusal (MontanaCall.swift startCall 1817-1824) and providerDidReset (4707-4716,
+         * build 7492b6b28754): a call whose own foreground registration the platform will not stand ends here and
+         * now — never left standing as a phantom this phone alone believes in. */
+        fun start(c: Context, who: String, refused: () -> Unit) {
             ref = who
-            runCatching { c.startForegroundService(Intent(c, CallService::class.java)) }.onFailure { log("start: " + it.message) }
+            onRefused = refused
+            runCatching { c.startForegroundService(Intent(c, CallService::class.java)) }
+                .onFailure { log("start: " + it.message); refuse() }
+        }
+
+        /** The system would not stand this call as its own: told once, before the teardown (iOS providerDidReset
+         * "sends the end word to the far phone before the teardown", build 7492b6b28754). */
+        private fun refuse() {
+            val cb = onRefused
+            onRefused = null
+            cb?.let { MainThread.post(it) }
         }
 
         /** The voice joined: the clock starts on the call's notification. */
@@ -41,6 +55,7 @@ class CallService : Service() {
 
         fun stop() {
             ref = null
+            onRefused = null
             running?.let { s -> MainThread.post { s.end() } }
         }
 
@@ -104,7 +119,7 @@ class CallService : Service() {
         // the microphone's foreground needs the microphone granted: without it the call speaks only while the app stands in front;
         // a video call adds the camera's, so the picture goes on with the app left, and a shared screen its projection's —
         // a type refused, the next smaller set is asked, down to the voice alone
-        if (Build.VERSION.SDK_INT < 30) { runCatching { startForeground(ID, n) }.onFailure { log("foreground: " + it.message); end() }; return }
+        if (Build.VERSION.SDK_INT < 30) { runCatching { startForeground(ID, n) }.onFailure { log("foreground: " + it.message); refuse(); end() }; return }
         val voice = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
         val screen = if (CallLine.sharing) voice or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION else voice
         // the camera's type stays through a share: the camera comes back at its end, and with the app behind it opens only under it
@@ -112,6 +127,7 @@ class CallService : Service() {
         for (types in listOf(full, screen, voice).distinct()) {
             if (runCatching { startForeground(ID, n, types) }.onFailure { log("foreground " + types + ": " + it.message) }.isSuccess) return
         }
+        refuse()
         end()
     }
 }

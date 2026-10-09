@@ -66,8 +66,7 @@ fun scannerPage(act: MainActivity, onClose: () -> Unit, onCode: ((String) -> Boo
             background = c.rounded(Color.WHITE, 22)
             setPadding(c.dp(22), c.dp(12), c.dp(22), c.dp(12))
             pressable {
-                runCatching { act.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    android.net.Uri.parse("package:" + c.packageName))) }
+                SystemSettings.open(act)   // the one door, warning while a call stands
             }
         }, android.widget.LinearLayout.LayoutParams(WRAP, WRAP).apply { topMargin = c.dp(20) })
         blankState.visibility = View.VISIBLE

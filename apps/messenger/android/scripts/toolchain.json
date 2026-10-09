@@ -36,7 +36,7 @@
     "version": "144.7559.15",
     "url": "https://repo1.maven.org/maven2/io/github/webrtc-sdk/android/144.7559.15/android-144.7559.15.aar",
     "sha256": "fc7c8d027eb33860ccbb7847988f7f942d44a92d1f575348bba6c0250cde4071",
-    "why": "the call engine iOS rings with (webrtc-sdk; Montana-iOS fetch-webrtc.sh takes 144.7559.10, which is not published for Android, and .15 is the newest of the same line). The one library of the build (the decision of 06.10.2026: variant A), taken byte for byte by this digest; only its classes and the phone's arm64 library go into the APK"
+    "why": "the call engine iOS rings with (webrtc-sdk; Montana-iOS fetch-webrtc.sh takes 144.7559.10, which is not published for Android, and .15 is the newest of the same line). The one library of the build (the word of 06.10.2026: variant A), taken byte for byte by this digest; only its classes and the phone's arm64 library go into the APK"
   },
   "cargo_ndk": "4.1.2",
   "protocol": {

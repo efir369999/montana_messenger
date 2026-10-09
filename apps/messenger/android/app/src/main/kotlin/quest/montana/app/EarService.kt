@@ -45,7 +45,7 @@ class EarService : Service() {
         override fun run() {
             if (!live) return
             Signal.ear(true)   // a conversation born since is heard too
-            Thread { runCatching { Post.fetch() } }.start()
+            Thread { runCatching { Post.fetch() }; runCatching { Post.flush() } }.start()   // the wake drains the queue too (iOS 1673)
             MainThread.later(BOX_MS, this)
         }
     }

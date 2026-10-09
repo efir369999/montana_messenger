@@ -105,4 +105,31 @@ object ChatMarks {
     fun forget(ref: String) = change {
         pinned.remove(ref); muted.remove(ref); archived.remove(ref); forcedUnread.remove(ref); contactPins.remove(ref); contactArchive.remove(ref)
     }
+
+    /** The iPhone's names of the six sets (iOS SeedScope.dataKeys, MontanaChatStore.swift 6120-6121, 6131): a copy carries them by these. */
+    val NAMES = listOf("pinnedChatsList", "mutedChats", "archivedNames", "forcedUnread", "pinnedContacts", "archivedContacts")
+
+    /** Every set by the iPhone's name, as a copy carries it (iOS seedCard: sealed lists of words). */
+    fun carried(): Map<String, List<String>> = synchronized(lock) {
+        ensure()
+        mapOf("pinnedChatsList" to pinned.toList(), "mutedChats" to muted.toList(), "archivedNames" to archived.toList(),
+            "forcedUnread" to forcedUnread.toList(), "pinnedContacts" to contactPins.toList(), "archivedContacts" to contactArchive.toList())
+    }
+
+    /**
+     * A COPY LAID (iOS layCard 884-891 under SeedScope.unionKeys 6303-6306; readVaultLight and takeStored, MontanaChatStore.swift
+     * 2062-2065, 2134-2136): each set takes what it lacks and what stands here stays — a copy adds a pin, a mute or an archive and
+     * never lifts one. Laid off the screen's thread, so the screens are told on theirs.
+     */
+    fun lay(sets: Map<String, List<String>>) {
+        synchronized(lock) {
+            ensure()
+            fun add(into: MutableCollection<String>, name: String) { sets[name]?.forEach { if (it.isNotEmpty() && it !in into) into.add(it) } }
+            add(pinned, "pinnedChatsList"); add(muted, "mutedChats"); add(archived, "archivedNames"); add(forcedUnread, "forcedUnread")
+            add(contactPins, "pinnedContacts"); add(contactArchive, "archivedContacts")
+            save()
+        }
+        val ls = synchronized(listeners) { listeners.toList() }
+        MainThread.post { ls.forEach { it() } }
+    }
 }

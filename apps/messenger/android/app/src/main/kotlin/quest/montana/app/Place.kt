@@ -149,8 +149,8 @@ fun placePage(act: MainActivity, onClose: () -> Unit, onPick: (String) -> Unit):
         pressable {
             when {
                 // where it is changed: the phone's own switch while that is off, the app's page when the app was refused
-                refused() -> runCatching { act.startActivity(if (off()) Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                    else Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + c.packageName))) }
+                refused() -> if (off()) runCatching { act.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }
+                    else SystemSettings.open(act)   // the one door to the app's page, warning while a call stands
                 !allowed() -> { Prefs.setBool("locAsked", true); act.requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 7) }
                 else -> best?.let { b -> onPick(PlaceLetter.words(c, b.latitude, b.longitude, null, null)); onClose() }
             }

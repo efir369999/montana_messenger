@@ -30,6 +30,7 @@
     <string name="ld_pin_both">为双方置顶</string>
     <string name="ld_pin_me">为我置顶</string>
     <string name="ld_pinned">置顶消息</string>
+    <string name="ld_pinned_banner">置顶了一条消息</string>
     <string name="ld_pin">置顶</string>
     <string name="ld_unpin">取消置顶</string>
     <string name="ld_forward">转发</string>
@@ -39,6 +40,8 @@
     <!-- the contacts page (iOS ContactsTabView: the menu about a person) -->
     <string name="ct_write">发消息</string>
     <string name="ct_profile">个人资料</string>
+    <string name="ct_audio_call">语音通话</string>
+    <string name="ct_video_call">视频通话</string>
     <!-- the deletion of a chat, for both or for me (iOS MontanaDeleteChatSheet) -->
     <string name="dl_q">永久删除与 %1$s 的聊天？</string>
     <string name="dl_both">为双方删除</string>
@@ -59,4 +62,6 @@
     <string name="sn_mismatch_note">这是另一个聊天的代码，或者有人介于你们之间。请口头核对这些数字。</string>
     <!-- a letter sent later (iOS «Send later», the send key's hold) -->
     <string name="sl_later">稍后发送</string>
+    <string name="new_call">新通话</string>   <!-- iOS CallsTabView «New Call» -->
+    <string name="cl_draft">草稿：</string>   <!-- iOS ChatRow «Draft:» -->
 </resources>

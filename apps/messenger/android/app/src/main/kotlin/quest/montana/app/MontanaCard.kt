@@ -36,6 +36,23 @@ object MontanaCard {
 
     private val lock = Any()
 
+    /** The records a copy carries, under the iPhone's own names (iOS SeedScope.dataKeys 6133; MontanaCard.owned 646). */
+    val RECORDS = listOf(KEYS, PERM, DAILY, CURRENT, BORN)
+    fun record(name: String): ByteArray? = if (name in RECORDS) synchronized(lock) { DeviceVault.get(name) } else null
+    /**
+     * A RECORD A COPY LAID GOES IN BY THE CARD'S OWN DOOR, under its lock (iOS MontanaCard.lay, MontanaFirstContact.swift 665-674): the
+     * card keys and the day's cards as a union — what stands here stays, the copy adds what it lacks (SeedScope.unionKeys 6307) — the
+     * permanent card and the day's mark as the copy says them.
+     */
+    fun lay(name: String, d: ByteArray) {
+        if (name !in RECORDS) return
+        synchronized(lock) {
+            if (name != KEYS && name != DAILY) { DeviceVault.set(name, d); return }
+            val o = runCatching { JSONObject(String(d, Charsets.UTF_8)) }.getOrNull() ?: return
+            save(name, o.keys().asSequence().associateWith { Base64.decode(o.getString(it), Base64.NO_WRAP) } + map(name))
+        }
+    }
+
     // ── the bytes ──
     fun b64url(d: ByteArray): String = Base64.encodeToString(d, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     fun unb64url(s: String): ByteArray? = runCatching { Base64.decode(s, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP) }.getOrNull()
@@ -68,10 +85,19 @@ object MontanaCard {
         return if (n.isNotEmpty() && n.size <= NAME_LIMIT) root + n else root
     }
 
-    /** A new card: its key drawn by the core from a seed the core drew, the secret half kept here alone (iOS offer). */
-    private fun born(): Pair<ByteArray, ByteArray>? {
+    /**
+     * THE SEED AND THE INVITATION FOR A NEW CARD, drawn with no lock in hand (iOS cardSeed/inviteBytes,
+     * MontanaFirstContact.swift:95-107, atom bb4e037428e4/1740, 19.09): the first draw of a process may gather
+     * entropy from several sources, and a gather held under [lock] stalls acceptAt/acceptFirst, which share it
+     * to read a card's secret half.
+     */
+    private fun cardSeed(): Pair<ByteArray, ByteArray>? {
         val seed = MtBindings.nativeRandom(64) ?: return null
         val inv = MtBindings.nativeRandom(32) ?: return null
+        return seed to inv
+    }
+    /** The card minted from an already-drawn seed, its secret half kept under the lock (iOS offer(seed:), MontanaFirstContact.swift:108-121). */
+    private fun born(seed: ByteArray, inv: ByteArray): Pair<ByteArray, ByteArray>? {
         val kp = MtBindings.nativeMlkemKeypair(seed) ?: return null
         val pk = kp.copyOfRange(0, 1184); val sk = kp.copyOfRange(1184, 1184 + 2400)
         val keys = map(KEYS); keys[b64url(pk)] = sk
@@ -80,51 +106,78 @@ object MontanaCard {
     }
 
     /** THE PERMANENT LINK: born once, shown as long as the person keeps it, laid on the node again every two hours or at a rename. */
-    fun offerPermanent(c: Context): String? = synchronized(lock) {
-        val perm = map(PERM)
-        perm.entries.firstOrNull()?.let { (inv64, payload) ->
-            val inv = unb64url(inv64)
-            if (inv != null && keyHeld(payload)) {
-                val np = withName(payload)
-                val renamed = !np.contentEquals(payload)
-                if (renamed) save(PERM, mapOf(inv64 to np))
-                if (renamed || due("rdvPermUpAt")) { upload(c, inv, np, "rdvPermUpAt"); uploadPermMark(inv) }
-                return PERM_PREFIX + inv64
+    fun offerPermanent(c: Context): String? {
+        synchronized(lock) {
+            val perm = map(PERM)
+            perm.entries.firstOrNull()?.let { (inv64, payload) ->
+                val inv = unb64url(inv64)
+                if (inv != null && keyHeld(payload)) {
+                    val np = withName(payload)
+                    val renamed = !np.contentEquals(payload)
+                    if (renamed) save(PERM, mapOf(inv64 to np))
+                    if (renamed || due("rdvPermUpAt")) { upload(c, inv, np, "rdvPermUpAt"); uploadPermMark(inv) }
+                    return PERM_PREFIX + inv64
+                }
             }
         }
-        val (inv, payload) = born() ?: return null
-        save(PERM, mapOf(b64url(inv) to payload))
-        upload(c, inv, payload, "rdvPermUpAt"); uploadPermMark(inv)
-        PERM_PREFIX + b64url(inv)
+        val (seed, inv) = cardSeed() ?: return null
+        return synchronized(lock) {
+            val (i, payload) = born(seed, inv) ?: return null
+            save(PERM, mapOf(b64url(i) to payload))
+            upload(c, i, payload, "rdvPermUpAt"); uploadPermMark(i)
+            PERM_PREFIX + b64url(i)
+        }
     }
 
     /** THE LINK OF THE DAY: one per device, born exactly a day after the one before; the one before keeps receiving. */
-    fun offerShort(c: Context): String? = synchronized(lock) {
-        val daily = map(DAILY)
-        val cur = text(CURRENT)
-        val bornAt = text(BORN)?.toDoubleOrNull()
-        if (cur != null && bornAt != null && now() - bornAt < LIFETIME) {
-            val payload = daily[cur]; val inv = unb64url(cur)
-            if (payload != null && inv != null && keyHeld(payload)) {
-                if (due("rdvUpAt")) upload(c, inv, payload, "rdvUpAt")
-                return TEMP_PREFIX + cur
+    fun offerShort(c: Context): String? {
+        synchronized(lock) {
+            val daily = map(DAILY)
+            val cur = text(CURRENT)
+            val bornAt = text(BORN)?.toDoubleOrNull()
+            if (cur != null && bornAt != null && now() - bornAt < LIFETIME) {
+                val payload = daily[cur]; val inv = unb64url(cur)
+                if (payload != null && inv != null && keyHeld(payload)) {
+                    if (due("rdvUpAt")) upload(c, inv, payload, "rdvUpAt")
+                    return TEMP_PREFIX + cur
+                }
             }
         }
-        val (inv, payload) = born() ?: return null
-        val keep = mutableMapOf<String, ByteArray>()
-        if (cur != null) daily[cur]?.let { keep[cur] = it }          // the receiving generation: its secret stays
-        keep[b64url(inv)] = payload
-        if (!save(DAILY, keep) || !DeviceVault.set(CURRENT, b64url(inv).toByteArray()) ||
-            !DeviceVault.set(BORN, now().toString().toByteArray())) return null
-        // Yesterday's links answer «spent» at once; the generations older than the one before are buried whole.
-        val keys = map(KEYS)
-        for ((inv64, pl) in daily) {
-            unb64url(inv64)?.let { old -> seal(rdvKey(old), SPENT_MAGIC.toByteArray())?.let { tomb -> Thread { put(rdvBid(old), tomb) }.start() } }
-            if (inv64 != cur) keys.remove(b64url(pl.copyOf(1184)))
+        val (seed, inv) = cardSeed() ?: return null
+        return synchronized(lock) {
+            val daily = map(DAILY)
+            val cur = text(CURRENT)
+            // THE BIRTH LOOKS AGAIN UNDER ITS LOCK (iOS offerShort, MontanaFirstContact.swift:931-941, 24.09): the snapshot above was read
+            // before the randomness, and two askers of one activation both found the day over and both gave birth -- the second wiped
+            // the secret of yesterday's card while letters were still on their way to it. A card born meanwhile is the card.
+            val bornAt = text(BORN)?.toDoubleOrNull()
+            if (cur != null && bornAt != null && now() - bornAt < LIFETIME) {
+                val pl = daily[cur]
+                if (pl != null && keyHeld(pl)) return TEMP_PREFIX + cur
+            }
+            val (i, payload) = born(seed, inv) ?: return null
+            val keep = mutableMapOf<String, ByteArray>()
+            if (cur != null) daily[cur]?.let { keep[cur] = it }          // the receiving generation: its secret stays
+            keep[b64url(i)] = payload
+            if (!save(DAILY, keep) || !DeviceVault.set(CURRENT, b64url(i).toByteArray()) ||
+                !DeviceVault.set(BORN, now().toString().toByteArray())) {
+                // A CARD THAT DID NOT SETTLE IS NO CARD (iOS offerShort, MontanaFirstContact.swift:951-961, 2155, atom
+                // 66e4e7b28a0c): the birth counts once every record is written; until then the orphaned secret is taken back.
+                val orphan = map(KEYS)
+                if (orphan.remove(b64url(payload.copyOf(1184))) != null) save(KEYS, orphan)
+                android.util.Log.d("Montana", "rdv_born FAIL unsettled")
+                return null
+            }
+            // Yesterday's links answer «spent» at once; the generations older than the one before are buried whole.
+            val keys = map(KEYS)
+            for ((inv64, pl) in daily) {
+                unb64url(inv64)?.let { old -> seal(rdvKey(old), SPENT_MAGIC.toByteArray())?.let { tomb -> Thread { put(rdvBid(old), tomb) }.start() } }
+                if (inv64 != cur) keys.remove(b64url(pl.copyOf(1184)))
+            }
+            save(KEYS, keys)
+            upload(c, i, payload, "rdvUpAt")
+            TEMP_PREFIX + b64url(i)
         }
-        save(KEYS, keys)
-        upload(c, inv, payload, "rdvUpAt")
-        TEMP_PREFIX + b64url(inv)
     }
 
     /** Every live invitation — the daily generations and the permanent one (iOS outstandingInvites). */
@@ -184,6 +237,19 @@ object MontanaCard {
 
     /** When the day's link turns (born + one day), or null. */
     fun renewsAt(): Long? = text(BORN)?.toDoubleOrNull()?.let { ((it + LIFETIME) * 1000).toLong() }
+
+    /**
+     * THE LIVE CARDS STAY UP, BY TERM (iOS keepLiveCardsUp, MontanaFirstContact.swift:884-901, 2155, atoms
+     * 1011d167a187 and 66e4e7b28a0c): on every return to the person the daily card turns itself over when its day
+     * is done, and the permanent one -- if the person holds one, whole, its key in place -- tops up alongside it;
+     * no card is born here for someone with none.
+     */
+    fun keepLiveCardsUp(c: Context) {
+        if (!MontanaSeed.hasSeed) return   // SILENT-OK: the first screen -- no identity, no card
+        offerShort(c)
+        if (hasLivePermanent()) offerPermanent(c)
+    }
+    private fun hasLivePermanent(): Boolean = synchronized(lock) { map(PERM).values.firstOrNull()?.let { keyHeld(it) } ?: false }
 
     /** The person leaves: the card records leave with them (iOS MontanaCard.wipe). */
     fun forget() { listOf(KEYS, PERM, DAILY, CURRENT, BORN).forEach(DeviceVault::delete); Prefs.remove("rdvPermUpAt", "rdvUpAt") }

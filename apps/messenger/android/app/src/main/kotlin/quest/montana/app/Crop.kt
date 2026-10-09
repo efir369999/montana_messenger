@@ -125,6 +125,6 @@ fun cropPage(act: MainActivity, image: Bitmap, onDone: (ByteArray?) -> Unit): Vi
         setBackgroundColor(Color.BLACK)
         addView(crop, FrameLayout.LayoutParams(MATCH, MATCH))
         addView(mark(R.drawable.ic_close, Color.WHITE, Gravity.TOP or Gravity.START) { onDone(null) })
-        addView(mark(R.drawable.ic_check, MT.gold, Gravity.TOP or Gravity.END) { onDone(crop.render()) })
+        addView(mark(R.drawable.ic_check, Color.WHITE, Gravity.TOP or Gravity.END) { onDone(crop.render()) })
     }
 }

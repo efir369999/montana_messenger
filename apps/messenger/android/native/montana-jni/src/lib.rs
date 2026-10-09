@@ -199,6 +199,49 @@ pub fn first_tag(root: &[u8], window: u64) -> [u8; 16] {
     mt_names::first_tag(root, window)
 }
 
+// ─────────── the plane of names: the Canon's derivations, the core's own (mt-names) and never rewritten in Kotlin ───────────
+
+/// The normalized name, or None when it breaks a rule of the layer (mt_name_normalize). Nothing is trimmed here: the client trims.
+pub fn name_normalize(input: &str) -> Option<String> {
+    mt_names::normalize(input).ok()
+}
+
+/// The slot of an ALREADY normalized name (mt_name_slot): a name that does not normalize to itself is refused, so no slot
+/// is ever computed from what a person typed rather than from what is written.
+pub fn name_slot(normalized: &str) -> Option<[u8; 32]> {
+    (mt_names::normalize(normalized).as_deref() == Ok(normalized)).then(|| mt_names::slot(normalized))
+}
+
+/// The chain's far end, the seed's branch that takes the slot (mt_name_own).
+pub fn name_own(master_seed: &[u8], slot: &[u8; 32]) -> Zeroizing<[u8; 32]> {
+    Zeroizing::new(mt_names::name_own(master_seed, slot))
+}
+
+/// The whole chain of renewals, (NAME_CHAIN_LEN + 1) × 32 bytes, link 0 the anchor (mt_name_chain); every link past the
+/// last one published is a secret.
+pub fn name_chain(own: &[u8; 32]) -> Zeroizing<Vec<u8>> {
+    let mut out = Zeroizing::new(Vec::with_capacity((mt_names::NAME_CHAIN_LEN + 1) * 32));
+    for link in mt_names::chain(own) {
+        out.extend_from_slice(&link);
+    }
+    out
+}
+
+/// The commitment a taking publishes (mt_name_commit).
+pub fn name_commit(slot: &[u8; 32], blind: &[u8; 32], tip: &[u8; 32]) -> [u8; 32] {
+    mt_names::commit(slot, blind, tip)
+}
+
+/// One renewal's proof: the link hashes once to the link published before it (mt_name_verify_link).
+pub fn name_verify_link(prev: &[u8; 32], link: &[u8; 32]) -> bool {
+    mt_names::verify_link(prev, link)
+}
+
+/// The seed of a name's contact key; the ML-KEM-768 pair is drawn from it by the caller (mt_name_contact_seed).
+pub fn name_contact_seed(master_seed: &[u8], slot: &[u8; 32]) -> Zeroizing<[u8; 64]> {
+    Zeroizing::new(mt_names::contact_seed(master_seed, slot))
+}
+
 // ─────────── the channel's doors: a machine's answering identity, its signature, the Noise_PQ XX handshake ───────────
 
 /// seed[32] → a machine's answering identity, ML-DSA-65 pk[1952] ‖ sk[4032] (mt_mldsa_keypair_from_seed).
@@ -433,6 +476,79 @@ mod jni_doors {
         let Ok(r) = env.convert_byte_array(&root) else { return std::ptr::null_mut() };
         let Ok(w) = u64::try_from(window) else { return std::ptr::null_mut() };
         bytes(&mut env, &first_tag(&r, w))
+    }
+
+    #[no_mangle]
+    pub extern "system" fn Java_quest_montana_app_MtBindings_nativeNameNormalize<'l>(
+        mut env: JNIEnv<'l>, _c: JClass<'l>, raw: JString<'l>,
+    ) -> jstring {
+        let Some(w) = words(&mut env, &raw) else { return std::ptr::null_mut() };
+        match name_normalize(&w) {
+            Some(n) => env.new_string(n).map(|s| s.into_raw()).unwrap_or(std::ptr::null_mut()),
+            None => std::ptr::null_mut(),
+        }
+    }
+
+    #[no_mangle]
+    pub extern "system" fn Java_quest_montana_app_MtBindings_nativeNameSlot<'l>(
+        mut env: JNIEnv<'l>, _c: JClass<'l>, normalized: JString<'l>,
+    ) -> jbyteArray {
+        let Some(w) = words(&mut env, &normalized) else { return std::ptr::null_mut() };
+        match name_slot(&w) {
+            Some(sl) => bytes(&mut env, &sl),
+            None => std::ptr::null_mut(),
+        }
+    }
+
+    #[no_mangle]
+    pub extern "system" fn Java_quest_montana_app_MtBindings_nativeNameOwn<'l>(
+        mut env: JNIEnv<'l>, _c: JClass<'l>, master: JByteArray<'l>, slot: JByteArray<'l>,
+    ) -> jbyteArray {
+        let Ok(m) = env.convert_byte_array(&master) else { return std::ptr::null_mut() };
+        let m = Zeroizing::new(m);
+        let Some(sl) = key32(&mut env, &slot) else { return std::ptr::null_mut() };
+        let own = name_own(&m, &sl);
+        bytes(&mut env, &own[..])
+    }
+
+    #[no_mangle]
+    pub extern "system" fn Java_quest_montana_app_MtBindings_nativeNameChain<'l>(
+        mut env: JNIEnv<'l>, _c: JClass<'l>, own: JByteArray<'l>,
+    ) -> jbyteArray {
+        let Some(o) = key32(&mut env, &own) else { return std::ptr::null_mut() };
+        let ch = name_chain(&o);
+        bytes(&mut env, &ch)
+    }
+
+    #[no_mangle]
+    pub extern "system" fn Java_quest_montana_app_MtBindings_nativeNameCommit<'l>(
+        mut env: JNIEnv<'l>, _c: JClass<'l>, slot: JByteArray<'l>, blind: JByteArray<'l>, tip: JByteArray<'l>,
+    ) -> jbyteArray {
+        let (Some(s), Some(b), Some(t)) = (key32(&mut env, &slot), key32(&mut env, &blind), key32(&mut env, &tip)) else {
+            return std::ptr::null_mut();
+        };
+        bytes(&mut env, &name_commit(&s, &b, &t))
+    }
+
+    #[no_mangle]
+    pub extern "system" fn Java_quest_montana_app_MtBindings_nativeNameVerifyLink<'l>(
+        mut env: JNIEnv<'l>, _c: JClass<'l>, prev: JByteArray<'l>, link: JByteArray<'l>,
+    ) -> jboolean {
+        match (key32(&mut env, &prev), key32(&mut env, &link)) {
+            (Some(p), Some(l)) if name_verify_link(&p, &l) => JNI_TRUE,
+            _ => JNI_FALSE,
+        }
+    }
+
+    #[no_mangle]
+    pub extern "system" fn Java_quest_montana_app_MtBindings_nativeNameContactSeed<'l>(
+        mut env: JNIEnv<'l>, _c: JClass<'l>, master: JByteArray<'l>, slot: JByteArray<'l>,
+    ) -> jbyteArray {
+        let Ok(m) = env.convert_byte_array(&master) else { return std::ptr::null_mut() };
+        let m = Zeroizing::new(m);
+        let Some(sl) = key32(&mut env, &slot) else { return std::ptr::null_mut() };
+        let seed = name_contact_seed(&m, &sl);
+        bytes(&mut env, &seed[..])
     }
 
     #[no_mangle]
@@ -999,5 +1115,35 @@ mod tests {
         let ios_ok = unsafe { ffi_c::mt_mnemonic_to_master_seed(c.as_ptr(), ms.as_mut_ptr()) } == 0;
         assert_eq!(master_seed(&swapped).is_some(), ios_ok);
         assert!(master_seed("not a phrase").is_none());
+    }
+
+    #[test]
+    fn names_are_the_ios_derivations_and_the_canon() {
+        fn hex(b: &[u8]) -> String { b.iter().map(|x| format!("{:02x}", x)).collect() }
+        // The Canon's own values (MontanaNames.agreesWithCanon, MontanaFirstContact.agreesWithCanon at 2155): a chain hashed
+        // the other way, a commitment over another order of its three parts or a slot without its domain gives other bytes.
+        let sl = name_slot("alice").expect("alice is a lawful name");
+        assert_eq!(hex(&sl), "b5793a0d4f7f0737ebffb1374d24d3eed05efef5bd63eb1e4b03d81652c2575e");
+        let ch = name_chain(&[0xEEu8; 32]);
+        assert_eq!(ch.len(), (mt_names::NAME_CHAIN_LEN + 1) * 32);
+        let link = |k: usize| -> [u8; 32] { let mut l = [0u8; 32]; l.copy_from_slice(&ch[k * 32..(k + 1) * 32]); l };
+        assert_eq!(hex(&link(127)), "83be15d760052903e3b1a2d304f56861ad92b8fed97a0b08452c6eb029fe1b5a");
+        assert_eq!(hex(&link(0)), "b49373b194e6358022b8fbcbecb5beccdd4f0b275d1ccd53be130f76a1367a8e");
+        assert_eq!(hex(&name_commit(&sl, &[0xDDu8; 32], &link(0))), "929fccf5c511d3d1123707db473cf21732a9349bcb578ddea91ca08b2d9dae41");
+        assert!(name_verify_link(&link(0), &link(1)));
+        assert!(!name_verify_link(&link(1), &link(0)));   // the proof runs one way
+        assert_eq!(hex(&first_tag(&[0xCCu8; 1184], 1000)), "45468cdd9bcdebe6f622c46257c27fe3");
+        assert_eq!(hex(&first_tag(&[0xCCu8; 1184], 1001)), "2751a149c51e219b73fadc85ca8b107b");
+        // What a person typed is no slot; the sign before a name is no part of it.
+        assert!(name_slot("Alice").is_none());
+        assert_eq!(name_normalize("@Alice").as_deref(), Some("alice"));
+        // A seed of no pattern: this door and the iOS door give one branch and one contact seed.
+        let seed: Vec<u8> = (0..64).map(|i| ((i * 13 + 5) % 251) as u8).collect();
+        let mut own = [0u8; 32];
+        assert_eq!(unsafe { mt_bindings::ffi_names::mt_name_own(seed.as_ptr(), seed.len(), sl.as_ptr(), own.as_mut_ptr()) }, 0);
+        assert_eq!(&name_own(&seed, &sl)[..], &own[..]);
+        let mut cs = [0u8; 64];
+        assert_eq!(unsafe { mt_bindings::ffi_names::mt_name_contact_seed(seed.as_ptr(), seed.len(), sl.as_ptr(), cs.as_mut_ptr()) }, 0);
+        assert_eq!(&name_contact_seed(&seed, &sl)[..], &cs[..]);
     }
 }

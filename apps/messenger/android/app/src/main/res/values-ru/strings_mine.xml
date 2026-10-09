@@ -30,6 +30,7 @@
     <string name="ld_pin_both">Закрепить у обоих</string>
     <string name="ld_pin_me">Закрепить у меня</string>
     <string name="ld_pinned">Закреплённое сообщение</string>
+    <string name="ld_pinned_banner">Закрепил(а) сообщение</string>
     <string name="ld_pin">Закрепить</string>
     <string name="ld_unpin">Открепить</string>
     <string name="ld_forward">Переслать</string>
@@ -39,6 +40,8 @@
     <!-- the contacts page (iOS ContactsTabView: the menu about a person) -->
     <string name="ct_write">Написать</string>
     <string name="ct_profile">Профиль</string>
+    <string name="ct_audio_call">Аудиозвонок</string>
+    <string name="ct_video_call">Видеозвонок</string>
     <!-- the deletion of a chat, for both or for me (iOS MontanaDeleteChatSheet) -->
     <string name="dl_q">Удалить переписку с %1$s навсегда?</string>
     <string name="dl_both">Удалить у обоих</string>
@@ -59,4 +62,6 @@
     <string name="sn_mismatch_note">Это код другого чата — или между вами кто-то стоит. Сверьте цифры голосом.</string>
     <!-- a letter sent later (iOS «Send later», the send key's hold) -->
     <string name="sl_later">Отправить позже</string>
+    <string name="new_call">Новый звонок</string>   <!-- iOS CallsTabView «New Call» -->
+    <string name="cl_draft">Черновик:</string>   <!-- iOS ChatRow «Draft:» -->
 </resources>

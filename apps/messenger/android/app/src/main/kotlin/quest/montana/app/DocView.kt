@@ -105,7 +105,7 @@ fun openDocument(act: MainActivity, f: File) {
 }
 
 /** «Open»: the document handed to the phone's apps that can read it. */
-private fun openButton(c: Context, work: () -> Unit): View = c.text(c.getString(R.string.open_word), 17f, MT.gold, bold = true, center = true).apply {
+private fun openButton(c: Context, work: () -> Unit): View = c.text(c.getString(R.string.open_word), 17f, Color.WHITE, bold = true, center = true).apply {
     background = c.glassPlate()
     setPadding(c.dp(24), c.dp(12), c.dp(24), c.dp(12))
     pressable(work)

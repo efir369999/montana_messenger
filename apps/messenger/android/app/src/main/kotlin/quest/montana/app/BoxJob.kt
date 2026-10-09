@@ -45,6 +45,9 @@ class BoxJob : JobService() {
         stopped = false
         Thread {
             try { Post.fetch() } catch (e: Exception) { Log.w("Montana", "box job: ${e.javaClass.simpleName}") }
+            // A WAKE DRAINS THE OUTGOING QUEUE TOO (iOS 1673, atom e6cb9251482f): a wake that read the box and stopped left the letter
+            // of the hour before queued for eighteen more hours -- the drain lived in the screen, and there is no screen asleep
+            if (!stopped) runCatching { Post.flush() }
             if (!stopped) Update.look(applicationContext)   // a newer build on the site rings its notice with the app closed
             if (!stopped) jobFinished(params, false)
         }.start()

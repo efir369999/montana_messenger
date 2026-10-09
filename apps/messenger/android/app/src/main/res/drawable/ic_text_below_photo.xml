@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The twin of the SF symbol text.below.photo: a picture over two lines of words (a wall post's card in the chat, MontanaBubble.swift:908). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="M6,3h12a2,2 0,0 1,2 2v8a2,2 0,0 1,-2 2H6a2,2 0,0 1,-2 -2V5a2,2 0,0 1,2 -2zM6,5H18V12L14.5,8.5L12.5,10.5L9.5,7.5L6,11z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M4,17h16v1.8H4zM4,20.2h11v1.8H4z" />
+</vector>

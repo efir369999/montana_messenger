@@ -64,6 +64,18 @@ object Stickers {
         return name
     }
     fun forget(c: Context, name: String) { keep(names(c).filter { it != name }); file(c, name).delete() }
+    /**
+     * A COPY LAID (iOS MontanaStickerBook, MontanaSticker.swift 128, 171-173: «montana.stickers.mine», names over the media store, laid as
+     * a union — SeedScope.unionKeys 6308): the set here stays as it stands, and a sticker of the copy's it lacks joins after it, its
+     * picture taken from the copy's store.
+     */
+    fun lay(c: Context, names: List<String>, store: File) {
+        val have = names(c)
+        val add = names.distinct().filter { n ->
+            n !in have && MontanaBackup.plainName(n) && (file(c, n).isFile || runCatching { File(store, n).copyTo(file(c, n)) }.isSuccess)
+        }
+        if (add.isNotEmpty()) keep(have + add)
+    }
 
     // ── what a letter is ──
 

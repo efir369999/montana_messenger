@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS music.note.circle.fill: the circle edge to edge, the glyph cut out of it -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp" android:height="20dp" android:viewportWidth="20" android:viewportHeight="20">
+  <group android:translateX="-2" android:translateY="-2">
+    <path android:fillColor="@android:color/white" android:fillType="evenOdd" android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,6.6v6.33c-0.354,-0.204 -0.762,-0.33 -1.2,-0.33 -1.326,0 -2.4,1.074 -2.4,2.4s1.074,2.4 2.4,2.4 2.4,-1.074 2.4,-2.4V9h2.4V6.6h-3.6z"/>
+  </group>
+</vector>

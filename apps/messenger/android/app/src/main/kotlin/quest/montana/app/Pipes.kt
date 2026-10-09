@@ -150,9 +150,11 @@ object Wire {
 
     /**
      * One POST of JSON to a door: the code and the body (a door that does not answer is -1). `lane` — the signal lane's book of
-     * requests in flight: a path change or the lane door's death cuts every one of them at once (Signal.cut).
+     * requests in flight: a path change or the lane door's death cuts every one of them at once (Signal.cut). `whole` — the body of
+     * a refusal too: where the code alone does not say it (the plane of names: a 404 is «nobody holds it» only in the keeper's words).
      */
-    fun post(door: String, path: String, body: JSONObject, timeout: Int = 8000, lane: MutableSet<HttpURLConnection>? = null): Pair<Int, String?> {
+    fun post(door: String, path: String, body: JSONObject, timeout: Int = 8000, lane: MutableSet<HttpURLConnection>? = null,
+             whole: Boolean = false): Pair<Int, String?> {
         var held: HttpURLConnection? = null
         return try {
             val raw = body.toString().toByteArray(Charsets.UTF_8)
@@ -165,7 +167,10 @@ object Wire {
             conn.setFixedLengthStreamingMode(raw.size)
             conn.outputStream.use { it.write(raw) }
             val code = conn.responseCode
-            val text = if (code == 200) conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) } else null
+            // the node's clock, in passing: the lane's answer and the diary's ship, one owner (iOS learnSkew 3304, 3789)
+            if (path == "/signal-fetch" || path == "/diag-put") NodeClock.learn(conn)
+            val text = if (code == 200) conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
+                else if (whole) conn.errorStream?.use { it.readBytes().toString(Charsets.UTF_8) } else null
             conn.disconnect()
             code to text
         } catch (_: Exception) { -1 to null } finally { held?.let { c -> lane?.let { synchronized(it) { it.remove(c) } } } }
@@ -184,19 +189,43 @@ object Wire {
         return Signal.writeOrder("blob").any { door -> putBlobAt(door, bid, data, cargo, last) }   // the elected store first (iOS 2007)
     }
     /**
-     * What the node already holds of these chunks (iOS blobsPresent, askHave 1945-1985): only the chunks asked about count — a store
-     * naming others is a stale index and is not believed; null when no door answered.
+     * What the node already holds of these chunks (iOS blobsPresent, askHave 1941-1981): only the chunks asked about count — a store
+     * naming others is a stale index and is not believed, and the diary names it; null is «don't know».
+     * THE QUESTION COSTS ONE ROUND TRIP, NEVER A WALK (iOS 18.09): the stores are asked AT ONCE under the one post deadline of five
+     * seconds — one after another with ten seconds each, a fresh cargo walked the list until a dead door hung it. An upload's savings
+     * ask only the store the bytes are going to; `everyStore` is for a verdict of loss: one silent store makes it «don't know».
      */
-    fun blobsHave(bids: List<String>): Set<String>? {
+    fun blobsHave(bids: List<String>, everyStore: Boolean = false): Set<String>? {
+        if (bids.isEmpty()) return null
+        val doors = Signal.writeOrder("blob").let { if (everyStore) it else it.take(1) }
+        if (doors.isEmpty()) return null
+        val t0 = System.currentTimeMillis()
         val asked = bids.toSet()
-        for (door in Signal.writeOrder("blob")) {
-            val (code, text) = post(door, "/blob-have", JSONObject().put("bids", JSONArray(bids)), 10_000)
-            if (code != 200 || text == null) continue
-            val h = runCatching { JSONObject(text).getJSONArray("have") }.getOrNull() ?: continue
-            return (0 until h.length()).map { h.optString(it) }.filter { it in asked }.toSet()
+        val answers = arrayOfNulls<Set<String>>(doors.size)
+        doors.mapIndexed { i, door -> Thread { answers[i] = askHave(door, bids, asked) }.apply { start() } }
+            .forEach { it.join(POST_DEADLINE_MS + 1_000L) }
+        val have = HashSet<String>(); var silent = 0
+        for (a in answers) if (a != null) have.addAll(a) else silent++
+        val now = System.currentTimeMillis()
+        if (now - haveSaidAt >= 30_000L) {   // folded to a line per half minute (iOS markFolded window 30)
+            haveSaidAt = now
+            Log.d("Montana", "blob_have doors=${doors.size} silent=$silent have=${have.size}/${bids.size} ms=${now - t0}")
         }
-        return null
+        if (have.size == bids.size) return have
+        return if (silent > 0) null else have
     }
+    @Volatile private var haveSaidAt = 0L
+    private fun askHave(door: String, bids: List<String>, asked: Set<String>): Set<String>? {
+        val (code, text) = post(door, "/blob-have", JSONObject().put("bids", JSONArray(bids)), POST_DEADLINE_MS)
+        if (code != 200 || text == null) return null
+        val h = runCatching { JSONObject(text).getJSONArray("have") }.getOrNull() ?: return null
+        val named = (0 until h.length()).map { h.optString(it) }
+        val foreign = named.count { it !in asked }
+        if (foreign > 0) Log.d("Montana", "blob_have_foreign door=${android.net.Uri.parse(door).host ?: door} named=$foreign asked=${bids.size} — ignored")
+        return named.filter { it in asked }.toSet()
+    }
+    // the one deadline of a post to a node (iOS MTNodeWire.postTimeoutS 299)
+    private const val POST_DEADLINE_MS = 5_000
     /**
      * THE CARGO'S OWN DEADLINE (iOS MTNodeWire.cargoTimeoutS 301-306, 17.09): the knock's five seconds plus a second per sixteen
      * kilobytes — 64 KB waits 9 s, 512 KB waits 37 s; one rule for every road. A fixed minute held a dead door's piece a minute.
@@ -219,7 +248,8 @@ object Wire {
     private val goneChunks = HashSet<String>()
     fun forgetGone() = synchronized(goneChunks) { goneChunks.clear() }
     fun isGone(bid: String) = synchronized(goneChunks) { bid in goneChunks }
-    fun getChunk(bid: String): ByteArray? {
+    /** `busy` is raised when a door refused this moment (429 or 5xx: iOS BlobAnswer.busy, 1636-1691) -- a third answer, never «gone». */
+    fun getChunk(bid: String, busy: BooleanArray? = null): ByteArray? {
         if (isGone(bid)) return null
         val stores = Doors.ordered("blob")   // another phone's chunk: every store of the network's list (iOS 1638)
         var gone = stores.isNotEmpty()
@@ -227,9 +257,22 @@ object Wire {
             val (code, text) = post(door, "/blob-get", JSONObject().put("bid", bid))
             if (code == 200 && text != null) runCatching { JSONObject(text).optString("data").takeIf { it.isNotEmpty() }?.let { return Base64.decode(it, Base64.DEFAULT) } }
             if (code != 404) gone = false
+            if (code == 429 || code in 500..599) busy?.set(0, true)
         }
         if (gone) { synchronized(goneChunks) { goneChunks.add(bid) }; Log.d("Montana", "blob_dl gone at every door id=" + bid.take(8) + " — not asked again until a door revives") }
         return null
+    }
+
+    /** A long letter's blob and the stores' verdict (iOS askBlob): the bytes, or null with «gone» when every door answered 404. */
+    fun getBlobVerdict(bid: String): Pair<ByteArray?, Boolean> {
+        val stores = Doors.ordered("blob")
+        var gone = stores.isNotEmpty()
+        for (door in stores) {
+            val (code, text) = post(door, "/blob-get", JSONObject().put("bid", bid))
+            if (code == 200 && text != null) runCatching { JSONObject(text).optString("data").takeIf { it.isNotEmpty() }?.let { return Base64.decode(it, Base64.DEFAULT) to false } }
+            if (code != 404) gone = false
+        }
+        return null to gone
     }
 
     /** A blob of the node (iOS getBlob): POST /blob-get {bid} → {data}. */
@@ -338,6 +381,27 @@ class Msg(
             o.optString("mr").ifEmpty { null }, o.optString("f").ifEmpty { null }, o.optString("mm").ifEmpty { null },
             o.optLong("sa"), o.optBoolean("h"), o.optString("lp").ifEmpty { null }, o.optString("sr").ifEmpty { null }, o.optString("pr").ifEmpty { null })
     }
+}
+
+private val CROWN_MARKS = setOf(0x1F451, 0x2654, 0x2655, 0x265A, 0x265B)
+/**
+ * A CROWN IS GIVEN, NEVER TYPED (iOS MTCrown.plain, MontanaNameBook.swift:7-21, atom d4142dd38143; the author's word
+ * 03.10: «a system ban on crowns before a name -- only a Royal hands them out, as a verification»): no name a person
+ * types or a correspondent sends wears a crown or one of its look-alikes.
+ */
+fun stripCrown(s: String): String {
+    if (s.codePoints().noneMatch { it in CROWN_MARKS }) return s   // a name with no crown stands as typed, its spaces too (iOS plain 10)
+    val plain = StringBuilder()
+    var afterMark = false
+    var i = 0
+    while (i < s.length) {
+        val point = s.codePointAt(i); i += Character.charCount(point)
+        if (point in CROWN_MARKS) { afterMark = true; continue }
+        if (afterMark && (point == 0xFE0F || point == 0xFE0E)) continue
+        afterMark = false
+        plain.appendCodePoint(point)
+    }
+    return plain.toString().split(' ').filter { it.isNotEmpty() }.joinToString(" ")
 }
 
 /**
@@ -526,6 +590,57 @@ object Book {
     /** The one face of a person, resolved in one place: mine, then theirs (iOS MTNameBook avatar resolution). */
     fun shownFace(ref: String): File = myFace(ref).takeIf { it.exists() } ?: face(ref)
 
+    /** My hand's name on every row here, null where it set none (iOS MTNameBook.manual — a copy carries it as «manualNames»). */
+    fun pins(): Map<String, String?> = synchronized(lock) {
+        ensure(); chats.values.filter { !it.ref.startsWith("arc:") }.associate { it.ref to it.pin?.ifBlank { null } }
+    }
+
+    /**
+     * A COPY LAID (iOS layCard under SeedScope.unionKeys, MontanaChatStore.swift 6306; MTNameBook.setManual 44-54): a name my hand
+     * set here stands, a row with none takes the copy's — unless it is the person's own word, which is no pin. A person with no row
+     * here yet keeps it in the card this phone keeps (Card).
+     */
+    fun layPins(m: Map<String, String>) {
+        var any = false
+        synchronized(lock) {
+            ensure()
+            for ((ref, name) in m) {
+                val c = chats[ref] ?: continue
+                val n = name.trim()
+                if (n.isEmpty() || !c.pin.isNullOrBlank() || n == c.name) continue
+                c.pin = n; save(c); any = true
+            }
+        }
+        if (any) changed()
+    }
+
+    /** A COPY LAID (iOS layCard «manualPhotos», a union): the picture my hand set on a person, where this phone holds none. */
+    fun layMyFace(ref: String, src: File): Boolean {
+        val dst = myFace(ref)
+        if (dst.exists() || !src.isFile) return false
+        return runCatching { src.copyTo(dst) }.isSuccess.also { if (it) changed() }
+    }
+
+    private val faceHealed = mutableSetOf<String>()
+    /**
+     * A FACE IS FETCHED FROM THE NODE, NOT WAITED FOR (iOS healFacesFromCards, MontanaChatStore.swift:1916, atom
+     * 796a76a34ae0; the author's words 04.10.2026 03:54-03:57 MSK: «no avatars anywhere on T1 -- fix it at last»; «the
+     * ask reaches only the one whose chat is open -- an architectural hole»): a correspondent already met but still
+     * faceless is read at once from their card's face by their last daily link (PeerLinks.any), rather than wait for
+     * their phone to wake and announce it again -- once a life per pipe, not on every redraw.
+     */
+    fun healFacesFromCards() {
+        var asked = 0
+        for (ref in refs()) {
+            if (Groups.isKey(ref) || face(ref).exists() || myFace(ref).exists()) continue
+            val link = PeerLinks.any(ref) ?: continue
+            if (!synchronized(faceHealed) { faceHealed.add(ref) }) continue   // every return asks from its own thread: once a life, by one of them
+            asked++
+            Meeting.healFace(ref, link)
+        }
+        if (0 < asked) Log.d("Montana", "face_heal from_cards=" + asked)   // iOS MontanaChatStore 1926
+    }
+
     /**
      * THE EDIT PAGE'S «DONE» (iOS mtHandProfileEdit → MTNameBook.setManual/setManualPhoto): a name equal to their own word
      * clears the pin instead of setting it, an empty field restores their name; the photo — bytes set by hand, or null to
@@ -533,7 +648,8 @@ object Book {
      */
     fun saveCard(ref: String, first: String, last: String, note: String, photo: ByteArray?, photoCleared: Boolean) {
         edit(ref) { c ->
-            val full = (first.trim() + " " + last.trim()).trim()
+            // A TYPED NAME LOSES ITS CROWN TOO (iOS MTCrown.plain, atom d4142dd38143): the rename book's own field.
+            val full = stripCrown((first.trim() + " " + last.trim()).trim())
             c.pin = if (full.isEmpty() || full == c.name.trim()) null else full
             c.note = note.trim()
         }
@@ -582,31 +698,104 @@ object Post {
     private val fetchLock = Any()
     private var fetchAgain = false   // a hint that came while a pickup ran: one more round when it ends
     private var fetching = false
+    private const val CARRY_MS = 30L * 86_400_000L   // iOS MontanaDeliveryEngine.carryDays: at least thirty days (the author's word 07.10)
 
     // ── sending ──
+    /**
+     * A STATE LETTER'S KIND AND WHAT TWO OF ITS KIND ARE COMPARED BY (iOS MTOutbox.Kind.isState, MTNodeWire 341-348: the name, the
+     * face, «about», the page's ground; aboutTag(ofWord:) and groundTag(ofWord:), MontanaDeliveryEngine 370-390, compare «about» and
+     * the ground by their content, the moment they carry aside); null -- a person's word, which is never folded.
+     */
+    private fun stateOf(t: String): Pair<Int, String>? = when {
+        t.startsWith(Marks.NAME) -> 1 to t
+        t.startsWith(Marks.AVATAR) -> 2 to t
+        t.startsWith(Marks.ABOUT) -> 3 to (runCatching { JSONObject(t.removePrefix(Marks.ABOUT)).let { o -> o.optString("b") + "\n" + o.optString("l") } }.getOrNull() ?: t)
+        t.startsWith(PageGround.MARK) -> 4 to (runCatching { JSONObject(t.removePrefix(PageGround.MARK)).optString("g") }.getOrNull() ?: t)
+        else -> null
+    }
     /** Queue a letter and knock at once; a letter that no door took waits in the outbox and rides the next round. */
     /** `quiet` — a letter of the person's that asks no banner this once (iOS enqueue silent: a missed call the far phone already rang for). */
     fun send(to0: String, mid: String, text: String, qt: String? = null, qm: String? = null, lp: String? = null, quiet: Boolean = false) {
         if (Groups.isKey(to0)) return   // a group's feed has no pipe: nothing is ever queued to it (iOS: a group's key has no doors)
         val to = if (SamePair.speaksOfPipe(text)) to0 else SamePair.root(to0)   // a folded pipe's words go by its conversation's pipe
+        var refused = false
         synchronized(outLock) {
             val a = outbox()
             for (i in 0 until a.length()) if (a.getJSONObject(i).optString("m") == mid) {
                 // one letter, one place in the queue; its card, come later, joins the place it already holds (iOS attachPreview)
-                if (lp != null) { a.getJSONObject(i).put("lp", lp); DeviceVault.set(OUTBOX, a.toString().toByteArray()) }
+                if (lp != null) { a.getJSONObject(i).put("lp", lp); keepOutbox(a) }
                 return
             }
             // ONE STATE, ONE LETTER (iOS DeliveryEngine 799-802, 08.09: forty-three read marks waiting their turn burnt the pair's ring
             // budget, T3 to T1): a read mark says «read up to here», so a newer one makes the queued one meaningless — the last word stands
-            val q = if (!text.startsWith(Marks.READ)) a else JSONArray().also { keep ->
-                for (i in 0 until a.length()) a.getJSONObject(i).let { o -> if (!(o.optString("to") == to && o.optString("t").startsWith(Marks.READ))) keep.put(o) }
+            // and ONE PAGE OF MY WALL per person (iOS enqueue, the critic's N1): a newer page takes the queued one's place
+            fun kind(t: String) = if (t.startsWith(Marks.READ)) 1 else if (t.startsWith(Board.MARK) && t.contains("\"t\":\"page\"")) 2 else 0
+            val k = kind(text)
+            var q = if (k == 0) a else JSONArray().also { keep ->
+                for (i in 0 until a.length()) a.getJSONObject(i).let { o -> if (!(o.optString("to") == to && kind(o.optString("t")) == k)) keep.put(o) }
+            }
+            // THE SAME STATE ALREADY ON ITS WAY IS NOT QUEUED AGAIN, A NEWER ONE TAKES THE QUEUED ONE'S PLACE (iOS enqueue 807-821,
+            // sameStateWaits 559-570, foldingState 553-556; atom a441e549ec21): at one proof of a peer's build four «about» letters and
+            // three 1.6 MB ground letters left within 60 ms (T1, 25.09) -- the answer is given here, where the record is written
+            val st = stateOf(text)
+            if (st != null) {
+                val twin = (q.length() - 1 downTo 0).map { q.getJSONObject(it) }.firstOrNull { o -> o.optString("to") == to && stateOf(o.optString("t"))?.first == st.first }
+                if (twin != null && stateOf(twin.optString("t"))?.second == st.second) {
+                    Log.d("Montana", "state_twin kind=" + st.first + " — the same state already waits for this peer")
+                    return
+                }
+                if (twin != null) q = JSONArray().also { keep ->
+                    for (i in 0 until q.length()) q.getJSONObject(i).let { o -> if (!(o.optString("to") == to && stateOf(o.optString("t"))?.first == st.first)) keep.put(o) }
+                }
             }
             q.put(JSONObject().put("to", to).put("m", mid).put("t", text).put("qt", qt ?: "").put("qm", qm ?: "").put("lp", lp ?: "").apply { if (quiet) put("q", true) })
-            DeviceVault.set(OUTBOX, q.toString().toByteArray())
+            if (!keepOutbox(q)) refused = true
+        }
+        // THE REFUSAL IS SHOWN, NOT SWALLOWED (iOS enqueue 822-829): with the store unreadable the letter did not land in the queue and
+        // will not ride; its row goes red with a retry, as on any break
+        if (refused) {
+            Log.d("Montana", "enqueue_drop m=" + mid.take(8) + " store unreadable")
+            var red: Msg? = null
+            val chat = SamePair.root(to)
+            Book.edit(chat) { c -> c.msgs.find { it.mid == mid && it.mine }?.let { m -> if (m.advance(-1)) red = m } }
+            red?.let { CoinSend.hold(it, chat) }
+            return
         }
         Thread { flush() }.start()
     }
-    private fun outbox(): JSONArray = DeviceVault.get(OUTBOX)?.let { runCatching { JSONArray(String(it, Charsets.UTF_8)) }.getOrNull() } ?: JSONArray()
+    /** A letter taken off the road unsent: it leaves the queue (a coin letter whose day is over, CoinSend.expire). */
+    fun unqueue(mid: String) {
+        synchronized(outLock) {
+            val a = outbox()
+            val keep = JSONArray()
+            for (i in 0 until a.length()) a.getJSONObject(i).let { if (it.optString("m") != mid) keep.put(it) }
+            if (keep.length() != a.length()) keepOutbox(keep)
+        }
+    }
+    /**
+     * «CANNOT READ» IS NOT «EMPTY» (iOS storeUnreadable, MontanaDeliveryEngine 602-609, 662-700; atom e6cb9251482f): a stored queue
+     * that does not open -- a foreign seal after a device-key change, bytes a later build cannot decode -- read as an empty queue, and
+     * the next write saved that emptiness over it: every unsent letter gone, no red, no line in the diary. The store is judged on every
+     * read: bytes that exist and do not open raise the flag, the diary names it, and while it stands no write lands -- the bytes stay
+     * for a build that can open them. A read that opens lowers it.
+     */
+    @Volatile private var unreadable = false
+    @Volatile private var unreadableSaidAt = 0L
+    private fun outbox(): JSONArray {
+        val raw = DeviceVault.get(OUTBOX)
+        val a = raw?.let { runCatching { JSONArray(String(it, Charsets.UTF_8)) }.getOrNull() }
+        unreadable = a == null && DeviceVault.has(OUTBOX)
+        val now = System.currentTimeMillis()
+        if (unreadable && 300_000L <= now - unreadableSaidAt) {
+            unreadableSaidAt = now
+            Log.d("Montana", "queue_unreadable the stored queue does not open bytes=" + (raw?.size ?: 0) + " — not overwriting")
+        }
+        return a ?: JSONArray()
+    }
+    private fun keepOutbox(a: JSONArray): Boolean {
+        if (unreadable) { Log.d("Montana", "queue_save_refused the stored queue is unreadable — " + a.length() + " items not written over it"); return false }
+        return DeviceVault.set(OUTBOX, a.toString().toByteArray())
+    }
 
     /** Every waiting letter knocks once more; the ones a door boxed leave the queue. */
     fun flush() {
@@ -637,21 +826,34 @@ object Post {
                 else {
                     val words = if (text.toByteArray().size > 300) sealLong(mid, text) else text
                     // the live road beside the invitation's box: at the point the card names, under the new pipe's seal (iOS sendP2P 935-958)
-                    if (words != null) Meeting.root(to)?.let { root -> Channels.layFirst(secret, root, intro.first, mid, letterHead(mid, words)) }
-                    words != null && Meeting.knockFirst(secret, intro.first, intro.second, mid, words, Marks.isSilent(text) || o.optBoolean("q"))
+                    val laid = words != null && Meeting.root(to)?.let { root -> Channels.layFirst(secret, root, intro.first, mid, letterHead(mid, words)) } == true
+                    // a name has no invitation's box: its first letters ride the point of the name's root alone (iOS outgoingTag 502-510)
+                    if (intro.second.isEmpty()) laid
+                    else words != null && Meeting.knockFirst(secret, intro.first, intro.second, mid, words, Marks.isSilent(text) || o.optBoolean("q"))
                 }
             } else knock(secret, mid, text, o.optString("qt").ifEmpty { null }, o.optString("qm").ifEmpty { null }, o.optString("lp").ifEmpty { null }, o.optBoolean("q"))
             if (sent) {
                 done.add(mid)
                 Book.edit(SamePair.root(to)) { c -> c.msgs.find { it.mid == mid }?.advance(1) }   // a letter queued on a pipe since folded settles in the conversation
                 Groups.copyHeld(mid)   // a group's copy has no row of the pipe: the node holds it, and the group's row moves (iOS copyHeld)
+            } else if (Marks.birthMs(mid)?.let { CARRY_MS <= System.currentTimeMillis() - it } == true) {
+                // THE CARRIAGE IS THE ONE END, AND NEVER A CLOCK'S RED FOR A LETTER A NODE TOOK (iOS carryDays and neverLeft,
+                // MontanaDeliveryEngine 315-316, 1354-1366; atom 4d96053c1090): a letter a door boxed left this queue at once, still
+                // sent; one no node ever took in thirty days turns red by that word -- it never left this phone -- and leaves the queue.
+                // A coin letter never reaches here: its day ends first (CoinSend.expire, the author's word 09.10 11:3x).
+                done.add(mid); Groups.copyLost(mid)
+                Log.d("Montana", "send_failed m=" + mid.take(8) + " — no node ever took it in the carriage's thirty days")
+                var red: Msg? = null
+                val chat = SamePair.root(to)
+                Book.edit(chat) { c -> c.msgs.find { it.mid == mid && it.mine }?.let { m -> if (m.advance(-1)) red = m } }
+                red?.let { CoinSend.hold(it, chat) }
             }
         }
         if (done.isEmpty()) return
         synchronized(outLock) {
             val a = outbox(); val keep = JSONArray()
             for (i in 0 until a.length()) a.getJSONObject(i).let { if (it.getString("m") !in done) keep.put(it) }
-            DeviceVault.set(OUTBOX, keep.toString().toByteArray())
+            keepOutbox(keep)
         }
     }
 
@@ -707,13 +909,67 @@ object Post {
     }
 
     /** The words behind a long letter's reference: the words, null — later (no door answered), "" — gone for good. */
-    private fun fetchLong(text: String): String? {
-        val o = runCatching { JSONObject(text.removePrefix(Marks.LONG)) }.getOrNull() ?: return ""
-        val mk = runCatching { Base64.decode(o.getString("k"), Base64.DEFAULT) }.getOrNull() ?: return ""
-        val sealed = Wire.getBlob(o.optString("r")) ?: return null
-        val plain = Wire.open(mk, sealed) ?: return ""
-        val sep = plain.indexOf(0).takeIf { it >= 0 } ?: return ""
-        return String(plain, sep + 1, plain.size - sep - 1, Charsets.UTF_8)
+    private fun fetchLong(text: String): String? = fetchLongV(text).first
+
+    /** The words, and whether every store said the cargo is gone (iOS askBlob's verdict) when there are none yet. */
+    private fun fetchLongV(text: String): Pair<String?, Boolean> {
+        val o = runCatching { JSONObject(text.removePrefix(Marks.LONG)) }.getOrNull() ?: return "" to false
+        val mk = runCatching { Base64.decode(o.getString("k"), Base64.DEFAULT) }.getOrNull() ?: return "" to false
+        val (sealed, gone) = Wire.getBlobVerdict(o.optString("r"))
+        if (sealed == null) return null to gone
+        val plain = Wire.open(mk, sealed) ?: return "" to false
+        val sep = plain.indexOf(0).takeIf { it >= 0 } ?: return "" to false
+        return String(plain, sep + 1, plain.size - sep - 1, Charsets.UTF_8) to false
+    }
+
+    // A DEAD CARGO IS NOT ASKED FOR EVERY ROUND, AND THE LETTER'S AGE IS THE LETTER'S (iOS MontanaWakePush 2644-2737, atoms
+    // 85a73a5b7ca0, 3d14a47ac6c3): a long letter whose cargo no store answered for was asked at every pickup for ever. The record
+    // lies beside the box (the device's vault) so the burial arrives on the wall clock, whatever happens to the process: the retry
+    // doubles from fifteen seconds to an hour and the letter keeps its own hour; «no such cargo» from every door three times over
+    // ten minutes buries the reference, as does the box's own term, a day; the sender is told once, by the cargo-lost word.
+    private const val LB = "mt.longblob.wait"
+    private const val CARGO_LOST = "​​CG:"
+    private fun lbLoad(): JSONObject = DeviceVault.get(LB)?.let { runCatching { JSONObject(String(it, Charsets.UTF_8)) }.getOrNull() } ?: JSONObject()
+    private fun lbSave(o: JSONObject) { DeviceVault.set(LB, o.toString().toByteArray(Charsets.UTF_8)) }
+    @Synchronized private fun lbForget(mid: String) { val o = lbLoad(); if (o.has(mid)) { o.remove(mid); lbSave(o) } }
+    @Synchronized private fun lbDueNow(mid: String): Boolean = lbLoad().optJSONObject(mid)?.optDouble("next", 0.0)?.let { it <= System.currentTimeMillis() / 1000.0 } ?: true
+    /** True when the reference is buried: the box lets it go. */
+    @Synchronized private fun lbFailed(mid: String, conv: String, gone: Boolean, bornAt: Double?): Boolean {
+        val now = System.currentTimeMillis() / 1000.0
+        val all = lbLoad()
+        val rec = all.optJSONObject(mid) ?: JSONObject()
+        val born = minOf(rec.optDouble("born", now), bornAt ?: now)
+        val n = rec.optInt("tries", 0)
+        rec.put("born", born).put("tries", n + 1)
+        if (gone) { if (!rec.has("goneAt")) rec.put("goneAt", now); rec.put("goneN", rec.optInt("goneN", 0) + 1) }
+        val goneN = rec.optInt("goneN", 0)
+        val goneFor = now - rec.optDouble("goneAt", now)
+        if (3 <= goneN && 600 <= goneFor) {
+            all.remove(mid); lbSave(all)
+            Log.d("Montana", "lb_dead mid=" + mid.take(8) + " every door answered «no such cargo» " + goneN + " times over " + (goneFor / 60).toInt() + " min — the reference is buried")
+            return true
+        }
+        if (86_400 < now - born) {
+            all.remove(mid); lbSave(all)
+            Log.d("Montana", "lb_dead mid=" + mid.take(8) + " asked " + (n + 1) + " rounds over " + ((now - born) / 3600).toInt() + "h — the reference is buried")
+            return true
+        }
+        if (gone && !rec.has("told") && conv.isNotEmpty()) {
+            rec.put("told", now)
+            send(conv, Marks.mintMid(), CARGO_LOST + mid, quiet = true)   // the sender is told once, never on a mere «later»
+        }
+        val delay = minOf(15.0 * Math.pow(2.0, n.toDouble()), 3600.0)
+        rec.put("next", now + delay)
+        all.put(mid, rec); lbSave(all)
+        Log.d("Montana", "lb_wait mid=" + mid.take(8) + " retry in " + delay.toInt() + "s try=" + (n + 1) + " verdict=" + (if (gone) "gone" else "later"))
+        return false
+    }
+    /** A file whose cargo every store called gone: the row stands, and the sender is told once (iOS 4635-4649). */
+    fun cargoLost(conv: String, mid: String) {
+        if (Prefs.bool("cgTold.$mid", false)) return
+        Prefs.setBool("cgTold.$mid", true)
+        Log.d("Montana", "cargo_lost mid=" + mid.take(8) + " — the row stands, the sender is told")
+        send(conv, Marks.mintMid(), CARGO_LOST + mid, quiet = true)
     }
 
     /**
@@ -722,7 +978,7 @@ object Post {
      */
     fun announce(ref: String) {
         if (PeerSafety.isBlocked(ref)) return   // a blocked person keeps no face, no name, no words of mine (iOS silenced)
-        val name = Prefs.userName.trim()
+        val name = stripCrown(Prefs.userName.trim())   // my own name never carries a crown either (iOS MTCrown.plain, atom d4142dd38143)
         if (name.isNotEmpty() && Prefs.str("annName2." + ref, "") != name && !inFlight("N", ref, name)) {
             val mid = Marks.mintMid(); flight("N", ref, name, mid); send(ref, mid, Marks.NAME + name)
         }
@@ -741,9 +997,9 @@ object Post {
      * written at the send outlived a lost letter, and the face was never announced again until it changed. Until the
      * receipt the value is on its way — an hour, as the iPhone's queue holds an unanswered letter — and is not said twice.
      */
-    private fun flight(kind: String, ref: String, value: String, mid: String) =
+    fun flight(kind: String, ref: String, value: String, mid: String) =
         Prefs.setStr("annFly" + kind + "." + ref, value + "\n" + mid + "\n" + System.currentTimeMillis())
-    private fun inFlight(kind: String, ref: String, value: String): Boolean {
+    fun inFlight(kind: String, ref: String, value: String): Boolean {
         val f = Prefs.str("annFly" + kind + "." + ref, "").split("\n")
         return f.size == 3 && f[0] == value && System.currentTimeMillis() - (f[2].toLongOrNull() ?: 0L) < 3_600_000L
     }
@@ -771,7 +1027,8 @@ object Post {
         if (Presence.sharing) Thread { Signal.post(ref, Presence.APP + "1" + Presence.saidTail()) }.start()
     }
     private fun announcedDelivered(ref: String, mid: String) {
-        for ((kind, mark) in listOf("N" to "annName2.", "F" to "annFace2.")) {
+        MyWall.delivered(ref, mid)   // a page of my wall is «sent» at its receipt (iOS MTBoard.delivered)
+        for ((kind, mark) in listOf("N" to "annName2.", "F" to "annFace2.", "G" to "annGround.")) {
             val f = Prefs.str("annFly" + kind + "." + ref, "").split("\n")
             if (f.size == 3 && f[1] == mid) { Prefs.setStr(mark + ref, f[0]); Prefs.remove("annFly" + kind + "." + ref) }
         }
@@ -791,6 +1048,7 @@ object Post {
             } while (synchronized(fetchLock) { fetchAgain })
         } catch (e: Exception) { Log.w("Montana", "box fetch: ${e.javaClass.simpleName}") }
         finally { synchronized(fetchLock) { fetching = false } }
+        CoinSend.expire()   // after the pickup: a receipt it brought counts before a coin letter's day is judged
         SamePair.askUnasked()
         Book.refs().filter { SamePair.merged(it) == null }.forEach { announce(it) }   // a folded pipe only forwards
         Media.fetchPending(Book.ctx)
@@ -838,7 +1096,13 @@ object Post {
         }
         if (taken.isNotEmpty()) {
             val body = JSONObject().put("mids", JSONArray(taken))
-            for (door in Doors.ordered("box")) Wire.post(door, "/box-del", body, 5000)
+            // THE STORES ARE ASKED AT ONCE, AND ONLY THE LIVING ONES (iOS MontanaWakePush.swift:2381-2399, 2155, atom fea4e68ea0da,
+            // 21.09 measured 13:50:13→13:50:23 on the tablet: a walk door by door cost every burial ten seconds to two doors dead
+            // on that network, and the drain stood behind it). One deadline for all; a burial is a cleanup, never delivery, so it
+            // never waits in line behind a door that rests.
+            val doors = Doors.ordered("box")
+            val awake = doors.filter { Signal.doorAlive(it) }   // the one door book (Presence.kt, object Signal)
+            for (door in (awake.ifEmpty { doors })) Thread { Wire.post(door, "/box-del", body, 5000) }.start()
         }
     }
 
@@ -869,11 +1133,15 @@ object Post {
         var plain: ByteArray? = null
         var root: ByteArray? = null
         // a letter that named no point (a frame at my window's position) walks every card, each one presenting the seal (iOS 1212-1217)
+        val opens: (ByteArray) -> Boolean = { s ->
+            plain = listOf(w, w - 1, w + 1).firstNotNullOfOrNull { Wire.open(Wire.bodyKey(s, it), sealed) }
+            plain != null
+        }
         val secret = (point?.let { listOf(it) } ?: MontanaCard.outstandingRoots()).firstNotNullOfOrNull { r ->
-            MontanaCard.acceptAt(ct, r) { s ->
-                plain = listOf(w, w - 1, w + 1).firstNotNullOfOrNull { Wire.open(Wire.bodyKey(s, it), sealed) }
-                plain != null
-            }?.also { root = r }
+            MontanaCard.acceptAt(ct, r, opens)?.also { root = r }
+        } ?: Names.heldRoot()?.takeIf { mine -> point == null || point.contentEquals(mine) }?.let { mine ->
+            // a stranger who knocked at the name I hold (iOS openFirst 1206-1217): the name's own key, the same seal as the proof
+            Names.acceptFirst(ct, opens)?.also { root = mine }
         }
         val body = plain
         val card = root
@@ -889,6 +1157,30 @@ object Post {
     }
 
     /** The pipe a first letter gives birth to: the chat with the writer's name, the face beside the pipe read, the letter placed and answered. */
+    /**
+     * THE RECEIVER SAYS MY LETTER'S CARGO IS GONE (iOS cargoLostMark, MontanaChatStore 4083-4098; verifyCargoNow and checkCargo,
+     * MontanaDeliveryEngine 1198-1232; atom 7787c49622e5). The report may be stale -- about an old incarnation of the letter while a
+     * resend rides under the same name -- so it never retracts the letter: the stores pass the sentence, every proven store asked, one
+     * silent store is «don't know». Only a cargo truly absent turns a letter still riding red; a delivered letter keeps its row.
+     */
+    private fun cargoReported(ref: String, lost: String) {
+        val m = Book.chat(ref)?.msgs?.find { it.mid == lost && it.mine } ?: return
+        val o = runCatching { JSONObject(m.text.removePrefix(Marks.MEDIA)) }.getOrNull()?.takeIf { m.text.startsWith(Marks.MEDIA) } ?: return
+        val bids = if (o.has("mref")) listOf(o.optString("mref"))
+            else o.optJSONArray("chunks")?.let { a -> (0 until a.length()).map { a.getJSONObject(it).optString("bid") } }.orEmpty()
+        if (bids.none { it.isNotEmpty() }) return
+        Log.d("Montana", "cargo_lost m=" + lost.take(8) + " receiver reported: cargo gone — verifying against the node now")
+        Thread {
+            val have = Wire.blobsHave(bids.filter { it.isNotEmpty() }, everyStore = true) ?: return@Thread
+            val gone = bids.count { it.isNotEmpty() && it !in have }
+            if (gone == 0) return@Thread
+            Log.d("Montana", "cargo_lost m=" + lost.take(8) + " sender check: " + gone + "/" + bids.size + " chunks gone from the node — red if the letter still rides")
+            var red: Msg? = null
+            Book.edit(ref) { c -> c.msgs.find { it.mid == lost && it.mine }?.let { if (it.advance(-1)) red = it } }
+            red?.let { CoinSend.hold(it, ref) }
+        }.start()
+    }
+
     private fun land(secret: ByteArray, root: ByteArray, mid: String, text: String, name0: String): Boolean {
         val ref = Book.establish(secret) ?: return false
         val name = name0.takeIf { it.isNotBlank() && it.length <= 64 } ?: ""
@@ -911,11 +1203,21 @@ object Post {
         // THE ONE QUESTION EVERY INCOMING ROAD ASKS, WHERE THE BYTES ENTER (iOS ChatStore.refuses 874-879, 15.09): the feed's door
         // refused a blocked person's row while their name, face, deletions, edits, answers, pins, a call's ring and the erasure of
         // the chat still landed here. Taken from the box and said nothing — no receipt, no word of mine goes back.
-        if (PeerSafety.isBlocked(ref) || PeerSafety.isBlocked(SamePair.root(ref))) return true
+        // THE NETWORK'S BAR RIDES THE SAME GATE (iOS ChatStore.refuses, MontanaChatStore.swift:879): barred after a report, refused
+        // like a block, both here and at the root a folded pipe speaks for.
+        if (PeerSafety.isBlocked(ref) || PeerSafety.isBlocked(SamePair.root(ref)) ||
+            PeerSafety.isBarred(ref) || PeerSafety.isBarred(SamePair.root(ref))) return true
         Meeting.firstDone(ref)   // a word sealed under the pipe by the other side: the introduction is over
         Channels.heard(ref)   // the pipe lives: the moment to name my own address when no road of mine reaches them (iOS ChatStore 3976-3986)
         var text = f[1]
-        if (text.startsWith(Marks.LONG)) text = fetchLong(text)?.ifEmpty { text } ?: return false   // later: the letter waits in the box
+        if (text.startsWith(Marks.LONG)) {
+            // THE LETTER KEEPS ITS OWN HOUR (iOS lbDueNow 2672-2681): a pickup asks only a letter whose hour has come
+            if (!lbDueNow(f[0])) return false
+            val (words, gone) = fetchLongV(text)
+            if (words == null) return lbFailed(f[0], ref, gone, Marks.birthMs(f[0])?.let { it / 1000.0 })   // later: the letter waits in the box
+            lbForget(f[0])
+            text = words.ifEmpty { text }
+        }
         place(ref, f[0], text, f[2], f[4].ifEmpty { null }, f[5].ifEmpty { null }, f[6].ifEmpty { null })
         return true
     }
@@ -946,28 +1248,11 @@ object Post {
                 SamePair.settle(ref)
                 SamePair.proven(text.removePrefix(Marks.SAME_YES), ref)?.let { Book.join(ref, it) }
             }
-            text.startsWith(Marks.DELIVERED) -> {
-                val d = text.removePrefix(Marks.DELIVERED)
-                announcedDelivered(ref, d)   // a receipt of my name or my face writes the mark (iOS recordDelivered)
-                // a group's copy witnesses the group's row, never a row of the pipe (iOS markDelivered → MTGroup.copyDelivered)
-                if (Groups.copyDelivered(d)) return
-                // THE READ WORD MAY HAVE OUTRUN THIS RECEIPT (iOS markDelivered 4221-4226): a film is told «delivered» only once
-                // its file is whole there, while «read» leaves the moment the chat is open — the mark remembers, the letter catches up
-                val u = PeerRead.upTo(ref)
-                var row = false
-                Book.edit(ref) { c ->
-                    c.msgs.find { it.mid == d && it.mine }?.let { m ->
-                        row = true
-                        if (m.advance(2) && u != null && (Marks.birthMs(m.mid) ?: Long.MAX_VALUE) <= u) m.advance(3)
-                    }
-                }
-                // a coin letter whose row is gone: its coins that came back are taken again (iOS markDelivered 4266, MTCoinSend.arrived)
-                if (!row) CoinSend.arrived(d, ref)
-            }
+            text.startsWith(Marks.DELIVERED) -> markDelivered(ref, text.removePrefix(Marks.DELIVERED))
             text.startsWith(Marks.READ) -> {
                 val upTo = text.removePrefix(Marks.READ).toLongOrNull()
                 if (upTo != null) PeerRead.note(ref, upTo)
-                Presence.noteSeen(ref, System.currentTimeMillis())   // reading is being there (not a word a phone says by itself)
+                Presence.noteSeen(ref, System.currentTimeMillis(), "read")   // reading is being there (not a word a phone says by itself)
                 // the door lets «read» only onto what was delivered — the bulk word never paints a letter they do not have
                 Book.edit(ref) { c -> c.msgs.filter { it.mine && (upTo == null || (Marks.birthMs(it.mid) ?: 0) <= upTo) }.forEach { it.advance(3) } }
             }
@@ -982,6 +1267,17 @@ object Post {
                 Book.edit(ref) {}
                 receipt(ref, sid)
             }
+            // THE PEER'S PAGE GROUND AS STATE (iOS ChatStore 4062-4074): applied if it is the latest word, receipted either way — the
+            // receipt is the sender's one proof that my screen holds their ground; a build that speaks the word reads it
+            text.startsWith(PageGround.MARK) -> {
+                runCatching {
+                    val o = JSONObject(text.removePrefix(PageGround.MARK))
+                    PageGround.note(ref, o.optString("g"), o.optDouble("at", System.currentTimeMillis() / 1000.0))
+                }
+                PageGround.noteCapable(ref)
+                receipt(ref, sid)
+            }
+            text.startsWith(CARGO_LOST) -> cargoReported(ref, text.removePrefix(CARGO_LOST))
             text.startsWith(Marks.PLAYED) -> {
                 val d = text.removePrefix(Marks.PLAYED)
                 Prefs.setBool("plcap_$ref", true)
@@ -1024,7 +1320,8 @@ object Post {
             text.startsWith(CONVDEL_MARK) -> { receipt(ref, sid); Book.chat(ref)?.msgs?.toList()?.forEach { CoinSend.release(it, ref) }; buryChat(ref) }
             text.startsWith(Marks.NAME) -> {
                 val n = text.removePrefix(Marks.NAME).trim()
-                if (n.isNotEmpty() && n.length <= 64 && Book.admitState(ref, "name", Marks.birthMs(sid) ?: 0L)) Book.edit(ref) { it.name = n }
+                // A CORRESPONDENT'S SENT NAME LOSES ITS CROWN (iOS MTCrown.plain, atom d4142dd38143): only a Royal hands one out.
+                if (n.isNotEmpty() && n.length <= 64 && Book.admitState(ref, "name", Marks.birthMs(sid) ?: 0L)) Book.edit(ref) { it.name = stripCrown(n) }
                 receipt(ref, sid)
             }
             // the face as the name: a word older than the one that stands changes nothing (iOS stateIsCurrent)
@@ -1045,6 +1342,9 @@ object Post {
             text.startsWith(Marks.RING) -> Calls.ringLetter(ref, text.removePrefix(Marks.RING))
             // THE CALLER'S «MISSED» (iOS missedCallMark): the row of a call this phone never saw, receipted either way
             text.startsWith(Marks.MISSED) -> { Calls.missedLetter(ref, text.removePrefix(Marks.MISSED)); receipt(ref, sid) }
+            // A DRAFT WORD BY THE QUEUE (iOS ChatStore 3884-3898): the daily link, a checkpoint, an ask — read as the live lane reads
+            // it (Presence.hear), never a row; the durable link rode here and was dropped unread
+            text.startsWith(LiveDraft.MARK) -> Presence.hear(ref, text)
             Marks.isService(text) && !text.startsWith(Marks.VOICE) && !text.startsWith(Marks.MEDIA) && !text.startsWith(Marks.STICKER) && !text.startsWith(Marks.LONG) -> {}
             // A BLOCKED PERSON'S LETTERS DO NOT REACH THE FEED (iOS MontanaSafety: the block is enforced on every road).
             // A STEP OF A GAME (iOS MTChessLetter.isStep): the board reads it; no bubble, no unread, the closing letter alone rings
@@ -1053,11 +1353,29 @@ object Post {
             else -> {
                 var isNew = false
                 if (lp != null) Log.d("Montana", "link card: rides the letter mid=" + mid.take(8))
-                Presence.noteSeen(ref, Marks.birthMs(mid))   // a person's own word stamps the moment it was written (iOS append)
+                Presence.noteSeen(ref, Marks.birthMs(mid), "letter")   // a person's own word stamps the moment it was written (iOS append)
                 Book.edit(ref) { c ->
                     val had = c.msgs.find { it.mid == mid }
                     // THE SAME LETTER AGAIN, NOW WITH ITS CARD (iOS attachPreview's copy): the card joins the row, nothing else moves
-                    if (had != null && lp != null && LinkCard.parse(lp) != null && had.lp == null) { had.lp = lp; Log.d("Montana", "link card: landed on a standing row mid=" + mid.take(8)) }
+                    // THE PICTURE CATCHES UP TOO (iOS enrichLinkPreview, MontanaChatStore.swift at 2155, the critic 22.09): the
+                    // envelope leg rides without the picture, so a card that came by it carried no face until the mesh copy
+                    // behind it filled it in -- and only the picture moves; nothing else of a standing card does.
+                    if (had != null && lp != null) LinkCard.parse(lp)?.let { fresh ->
+                        val old = had.lp?.let { s -> LinkCard.parse(s) }
+                        if (old == null) { had.lp = lp; Log.d("Montana", "link card: landed on a standing row mid=" + mid.take(8)) }
+                        else if (old.i == null && fresh.i != null && fresh.u == old.u) {
+                            old.i = fresh.i; old.w = fresh.w; old.h = fresh.h; old.p = fresh.p ?: old.p
+                            had.lp = old.json()
+                            Log.d("Montana", "link card: the picture caught up mid=" + mid.take(8))
+                        }
+                    }
+                    // THE SAME LETTER WITH NEW CARGO REFILLS ITS ROW (iOS 1638, DeliveryEngine 159-169; the author's invariant: what stands
+                    // in the sender's chat stands in the receiver's): a media row without its file takes the copy's manifest -- the sender
+                    // re-uploaded under the same name -- and the assembly receipts when the file is whole; nothing erased, nothing doubled
+                    if (had != null && text.startsWith(Marks.MEDIA) && had.text != text && had.file?.let { File(it).exists() } != true) {
+                        had.text = text; had.meta = null
+                        Log.d("Montana", "rx_refill m=" + mid.take(8) + " the row stands without its file — the copy's cargo is taken")
+                    }
                     if (had == null) {
                         val at = Marks.birthMs(mid) ?: System.currentTimeMillis()
                         c.msgs.add(Msg(mid, text, false, at, qt = qt, qm = qm, lp = lp?.takeIf { LinkCard.parse(it) != null })); c.msgs.sortBy { it.at }
@@ -1130,8 +1448,29 @@ object Post {
     fun closed(ref: String) = ref.startsWith("arc:") || Prefs.bool("pipeClosed." + ref, false)   // a recovered history is read, never answered
 
     /** «Delivered» for a letter of theirs — under its own name, so the queue holds one per letter (iOS receiptMid). */
-    private fun receipt(ref: String, mid: String) = send(ref, "rcpt-$mid", Marks.DELIVERED + mid)
+    // THE ONE RECEIPT DOOR also says the letter stands whole here: its name rides every presence word after «K» (iOS HeldLetters.note)
+    private fun receipt(ref: String, mid: String) { HeldLetters.note(ref, mid); send(ref, "rcpt-$mid", Marks.DELIVERED + mid) }
     fun receiptFor(ref: String, mid: String) = receipt(ref, mid)
+
+    /** THE ONE DELIVERY DOOR (iOS markDelivered): a receipt, or a presence word naming the letter whole (HeldLetters, «by=word»). */
+    fun markDelivered(ref: String, d: String) {
+        announcedDelivered(ref, d)   // a receipt of my name or my face writes the mark (iOS recordDelivered)
+        // a group's copy witnesses the group's row, never a row of the pipe (iOS markDelivered → MTGroup.copyDelivered)
+        if (Groups.copyDelivered(d)) return
+        // THE READ WORD MAY HAVE OUTRUN THIS RECEIPT (iOS markDelivered 4221-4226): a film is told «delivered» only once
+        // its file is whole there, while «read» leaves the moment the chat is open — the mark remembers, the letter catches up
+        val u = PeerRead.upTo(ref)
+        var row: Msg? = null
+        Book.edit(ref) { c ->
+            c.msgs.find { it.mid == d && it.mine }?.let { m ->
+                row = m
+                if (m.advance(2) && u != null && (Marks.birthMs(m.mid) ?: Long.MAX_VALUE) <= u) m.advance(3)
+            }
+        }
+        // a coin letter whose row is gone: its coins that came back are taken again (iOS markDelivered 4266, MTCoinSend.arrived)
+        // a red one delivered after all, its coins home: they are taken again, every door of the ladder asks (iOS hold)
+        row?.let { CoinSend.hold(it, ref) } ?: CoinSend.arrived(d, ref)
+    }
 
     /**
      * A VOICE OF THEIRS WAS PLAYED HERE (iOS notePlayed): its sender is told once, silently. Opening the chat plays nothing
@@ -1154,6 +1493,16 @@ object Post {
         private fun map(): JSONObject = DeviceVault.get(KEY)?.toString(Charsets.UTF_8)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: JSONObject()
         fun wipe() = synchronized(lock) { DeviceVault.delete(KEY) }
         fun upTo(ref: String): Long? = synchronized(lock) { map().optLong(ref, 0L).takeIf { it > 0L } }
+        /** The marks as kept, for a copy (iOS «peerReadMap», notePeerRead 2872-2879: the same map of conversation to millisecond). */
+        fun carried(): ByteArray? = synchronized(lock) { DeviceVault.get(KEY) }
+        /** A copy laid (iOS SeedScope.unionKeys 6307): a conversation's mark held here stands, the copy adds the others. */
+        fun lay(m: Map<String, Long>) {
+            synchronized(lock) {
+                val have = map()
+                for ((r, ms) in m) if (!have.has(r) && ms > 0) have.put(r, ms)
+                DeviceVault.set(KEY, have.toString().toByteArray(Charsets.UTF_8))
+            }
+        }
         fun note(ref: String, ms: Long) = synchronized(lock) {
             val m = map()
             if (m.optLong(ref, 0L) < ms) { m.put(ref, ms); DeviceVault.set(KEY, m.toString().toByteArray(Charsets.UTF_8)) }

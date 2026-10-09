@@ -23,8 +23,15 @@ class MainActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadExecutor()
 
-    /** What the system back gesture does on the current page; null — leave the app. */
+    /** What the system back gesture does on the current page; null — the app's root, which the back never leaves. */
     var back: (() -> Unit)? = null
+    /** The home's drawer: at the app's root the system's back from the screen's left edge opens it (Home.kt's DrawerShell). */
+    var drawer: DrawerShell? = null
+    private var edgeOpens = false
+    /** The pushed page the platform's own predictive back drags one to one with the finger (iOS MontanaSlideHost's
+     *  screen-edge pan, ContentView.swift:817-910); null when the current back target has no page to slide — the
+     *  drawer's own close, a search field closing (Home.kt:320, Screens.kt:215). */
+    private var slidingPage: View? = null
 
     // The screen's state (iOS RootView @State)
     private var hasSeed = false
@@ -50,12 +57,27 @@ class MainActivity : Activity() {
             v.setPadding(b.left, b.top, b.right, b.bottom)
             WindowInsets.CONSUMED
         }
+        // THE KEYBOARD'S RISE AND FALL ARE MEASURED (iOS MTKeyboard will-show/will-hide to did-show/did-hide, atom b19d306a9d08): the
+        // platform's own animation of the keys begins and ends the one frame meter; nothing of the insets' own handling changes
+        if (30 <= Build.VERSION.SDK_INT) root.setWindowInsetsAnimationCallback(object : android.view.WindowInsetsAnimation.Callback(android.view.WindowInsetsAnimation.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+            private fun keys(a: android.view.WindowInsetsAnimation) = (a.typeMask and WindowInsets.Type.ime()) != 0
+            override fun onStart(a: android.view.WindowInsetsAnimation, bounds: android.view.WindowInsetsAnimation.Bounds): android.view.WindowInsetsAnimation.Bounds {
+                if (keys(a)) Motion.moveBegan(root)
+                return bounds
+            }
+            override fun onProgress(insets: WindowInsets, running: MutableList<android.view.WindowInsetsAnimation>): WindowInsets = insets
+            override fun onEnd(a: android.view.WindowInsetsAnimation) {
+                if (keys(a)) Motion.moveEnded("keyboard:" + (if (root.rootWindowInsets?.isVisible(WindowInsets.Type.ime()) == true) "rise" else "fall"))
+            }
+        })
         setContentView(surface)
+        registerBack()
         hasSeed = MontanaSeed.hasSeed
         termsAccepted = Prefs.termsAccepted
         render()
         Scheduled.run()   // the app's clock for letters sent later (Schedule.kt)
         Diary.start(this)   // the diary on disk and its shipper (iOS MontanaLog, MontanaDiagShip; 1340)
+        Thread { Names.agreesWithCanon }.start()   // the core's name derivations against the Canon's own values, said once in the diary (names_canon)
         Exits.witness(this)   // how the last run ended, said once (iOS run sentinel, 1336)
         CallEngine.warm(this)   // the call engine stands from launch, as iOS MontanaCall.shared
         // «Share → Montana» from another app, else an invitation's link
@@ -95,6 +117,7 @@ class MainActivity : Activity() {
     private fun callAsks(video: Boolean): Array<String> = listOfNotNull(
         android.Manifest.permission.RECORD_AUDIO.takeIf { !VoiceTape.granted(this) },
         android.Manifest.permission.CAMERA.takeIf { video && checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
+            ?.also { Prefs.setBool(CallLine.CAM_ASKED, true) }   // asked here, the capture road's gate tells a refusal, never asks twice
     ).toTypedArray()
 
     /** The new version's notice tapped (Update): the app brings it and hands it to the system's installer. */
@@ -120,6 +143,17 @@ class MainActivity : Activity() {
         if (!takeShared(intent, hasSeed && termsAccepted)) intent.data?.let { openLink(it.toString()) }
     }
     fun openLink(link: String) {
+        // A WALL'S LINK OPENS THE POST HELD HERE, CHECKED FIRST (iOS MontanaFirstContact.handleLink:1855, MontanaBoardViews.swift
+        // MTBoardComments.open/target:2414-2433): a long link to a post or comment this phone holds opens its comments page,
+        // scrolled to a comment's own link; a wall link to a post not held here is said so, never read as a spent invitation.
+        if (Board.isWallLink(link)) {
+            if (hasSeed && termsAccepted) {
+                val t = Board.linkTarget(link)
+                if (t != null) push { close -> wallCommentsPage(this, t.wall, t.post, close, t.comment) }
+                else sayVerdict(this, R.string.wall_link_not_held)
+            }
+            return
+        }
         // A COIN'S LINK OPENS THE WALLET (iOS handleLink 1871-1877, the author's word 03.10): the coin letter's machine line is no
         // invitation, and the invitation road answered it «could not be opened».
         if (Meeting.normalize(link).startsWith(CoinLetter.LINK.substringBefore("/1/"))) {
@@ -219,18 +253,122 @@ class MainActivity : Activity() {
         page.animate().alpha(1f).setDuration(220).start()
     }
 
-    /** A page over the current one, full screen; back or the returned close takes it away. */
+    /**
+     * A page over the current one, full screen: rides in from the trailing edge and leaves the same way — the
+     * platform's own predictive back drags it one to one with the finger on API 34 (registerBack below), a plain
+     * press settles it on older systems; the returned close does the same slide (iOS MontanaSlideHost's screen-edge
+     * pan, ContentView.swift:687-910). The screen's left edge stays the system gesture's, not a view's own pan — the
+     * drawer already made that choice (Home.kt's DrawerShell, line 266).
+     */
     fun overlay(page: View): () -> Unit {
         val keepBack = back
+        val keepSliding = slidingPage
         var open = true
-        val close = { if (open) { open = false; surface.removeView(page); back = keepBack } }
-        page.alpha = 0f
         // the page's marks stand inside the system bars, as every page's do
         page.setPadding(root.paddingLeft, root.paddingTop, root.paddingRight, root.paddingBottom)
         surface.addView(page, FrameLayout.LayoutParams(MATCH, MATCH))
-        page.animate().alpha(1f).setDuration(180).start()
+        val width = surface.width.takeIf { it > 0 }?.toFloat() ?: resources.displayMetrics.widthPixels.toFloat()
+        page.translationX = width
+        val close = {
+            if (open) {
+                open = false
+                back = keepBack; slidingPage = keepSliding
+                settle(page, width, out = true) { surface.removeView(page) }
+            }
+        }
+        settle(page, width, out = false)
         back = close
+        slidingPage = page
         return close
+    }
+
+    /**
+     * A CLOUD OVER THE SCREEN (iOS MTPersonMenu and MessageContextOverlay: the platform's ultra-thin material over everything, then
+     * the menu's own spring): the page stands at once, no slide, and all that lies under it is blurred while it stands. `onBack` is
+     * the cloud's own leave; the returned function takes the page away at once.
+     */
+    fun cloud(page: View, onBack: () -> Unit): () -> Unit {
+        val keepBack = back
+        val keepSliding = slidingPage
+        page.setPadding(root.paddingLeft, root.paddingTop, root.paddingRight, root.paddingBottom)
+        val under = (0 until surface.childCount).map { surface.getChildAt(it) }
+        if (31 <= Build.VERSION.SDK_INT) for (v in under) v.setRenderEffect(android.graphics.RenderEffect.createBlurEffect(dp(14).toFloat(), dp(14).toFloat(), android.graphics.Shader.TileMode.CLAMP))
+        surface.addView(page, FrameLayout.LayoutParams(MATCH, MATCH))
+        var open = true
+        back = onBack
+        slidingPage = null
+        return {
+            if (open) {
+                open = false
+                back = keepBack; slidingPage = keepSliding
+                if (31 <= Build.VERSION.SDK_INT) for (v in under) v.setRenderEffect(null)
+                surface.removeView(page)
+            }
+        }
+    }
+
+    /** The slide itself, scaled by how far the page already stands (the drawer's same spring, Home.kt's
+     *  DrawerShell.settle): a page the predictive back already dragged near its edge does not visibly restart. */
+    private fun settle(page: View, width: Float, out: Boolean, onDone: (() -> Unit)? = null) {
+        val to = if (out) width else 0f
+        val ms = (220 * kotlin.math.abs(to - page.translationX) / width.coerceAtLeast(1f)).toLong().coerceIn(90, 220)
+        // THE PAGE'S TRANSITION, MEASURED (iOS MTPageMeter, MontanaPeerHeader.swift:507-528; moveBegan/moveEnded named
+        // «motion», MontanaMessageFeed.swift:349-355): one diary line per push and back, to the slide's own end.
+        Motion.moveBegan(page)
+        page.animate().translationX(to).setDuration(ms).setInterpolator(android.view.animation.DecelerateInterpolator(1.6f))
+            .withEndAction { Motion.moveEnded("page:" + (if (out) "back" else "push")); onDone?.invoke() }.start()
+    }
+
+    /**
+     * THE PLATFORM'S OWN BACK (iOS MontanaSlideHost's screen-edge pan, ContentView.swift:817-910): the screen's left
+     * edge is the system gesture's, not a view's own pan (the drawer's same choice, Home.kt's DrawerShell, line 266)
+     * — a pushed page rides the predictive back the system already tracks one to one with the finger (BackEvent.touchX)
+     * on API 34; older systems and the three-button bar have no such preview, and still leave by the same slide, never
+     * a fade.
+     */
+    private fun registerBack() {
+        if (Build.VERSION.SDK_INT < 33) return   // no OnBackInvokedDispatcher below 33: the deprecated onBackPressed is the only road
+        val callback = if (Build.VERSION.SDK_INT >= 34) object : android.window.OnBackAnimationCallback {
+            override fun onBackStarted(e: android.window.BackEvent) {
+                keysDown()
+                slidingPage?.animate()?.cancel()
+                edgeOpens = back == null && slidingPage == null && e.swipeEdge == android.window.BackEvent.EDGE_LEFT && drawer != null
+                if (edgeOpens) drawer?.edgeBegin()
+            }
+            override fun onBackProgressed(e: android.window.BackEvent) {
+                if (edgeOpens) { drawer?.edgeMove(e.touchX); return }
+                // the left edge drags the page one to one with the finger; the right edge has no such finger on the page — its progress
+                slidingPage?.let { it.translationX = if (e.swipeEdge == android.window.BackEvent.EDGE_RIGHT) e.progress * surface.width else e.touchX.coerceAtLeast(0f) }
+            }
+            override fun onBackInvoked() = commitBack()
+            override fun onBackCancelled() {
+                if (edgeOpens) { edgeOpens = false; drawer?.edgeEnd(false); return }
+                slidingPage?.let { settle(it, surface.width.toFloat(), out = false) }
+            }
+        } else android.window.OnBackInvokedCallback { commitBack() }
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback)
+    }
+    /**
+     * THE BACK NEVER LEAVES THE APP (the author's word 09.10.2026 11:5x MSK: «take away the side swipe that leaves the app -- our swipe from
+     * the left opens the side panel»): a page goes back as before; at the root the left edge's stroke opens the drawer it was dragging
+     * (iOS MontanaDrawerHost: the drawer opens by a drag from the screen's left edge), and any other back there does nothing.
+     */
+    private fun commitBack() {
+        val b = back
+        when {
+            b != null -> b()
+            edgeOpens -> { edgeOpens = false; drawer?.edgeEnd(true) }
+            Build.VERSION.SDK_INT < 34 -> drawer?.open()   // no edge is told below 34: the root's back is the drawer's
+        }
+    }
+    /**
+     * THE KEYBOARD LEAVES WITH THE SCREEN (iOS MontanaSlideHost.pan .began, ContentView.swift:880-884, the author's word 18.09: it hung
+     * over the chats after the back swipe): the field that holds it lets go at the first movement of the back.
+     */
+    private fun keysDown() {
+        val f = window.decorView.findFocus() ?: return
+        getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(f.windowToken, 0)
+        f.clearFocus()
     }
 
     /** The terms over the current page (iOS: a sheet from the doors' footer); back or its mark closes it. */
@@ -241,7 +379,9 @@ class MainActivity : Activity() {
         sheet = termsGate(this, onAgree = null, onClose = close)
         sheet.translationY = root.height.toFloat()
         root.addView(sheet, FrameLayout.LayoutParams(MATCH, MATCH))
-        sheet.animate().translationY(0f).setDuration(280).setInterpolator(android.view.animation.DecelerateInterpolator()).start()
+        Motion.moveBegan(sheet)   // a sheet risen, measured to its end (iOS montanaMotionMeter on the sheets, atom 2f90be6bfda9)
+        sheet.animate().translationY(0f).setDuration(280).setInterpolator(android.view.animation.DecelerateInterpolator())
+            .withEndAction { Motion.moveEnded("sheet:rise") }.start()
         back = close
     }
 
@@ -254,12 +394,29 @@ class MainActivity : Activity() {
     }
     override fun onResume() {
         super.onResume(); CallScreen.front = this; main.removeCallbacks(boxRound); main.post(boxRound); EarService.start(this)
+        if (hasSeed && termsAccepted) Calls.rejoinHeldCall(this)   // the run goes back into the call its process held, once the app faces the person
         Thread { Update.look(applicationContext) }.start()   // a newer build on the site rings its notice (Update)
         if (hasSeed && termsAccepted) Thread { Signal.sweep() }.start()   // every peer's last word, one question (iOS ContentView 471)
-        Thread { CoinBook.warm(); CoinSend.settle(); ChessSend.settleAll() }.start()   // every coin letter the chats hold stands in the book (iOS MTCoinSend.settle)
+        if (hasSeed && termsAccepted) Thread { LiveDraft.sayLinkToAll() }.start()   // the daily link, preloaded to every correspondent (iOS ContentView.swift:472)
+        if (hasSeed && termsAccepted) Thread { Book.healFacesFromCards() }.start()   // a faceless correspondent is read from their card at once (iOS MontanaChatStore.swift:1916, atom 796a76a34ae0)
+        if (hasSeed && termsAccepted) Thread { MontanaCard.keepLiveCardsUp(applicationContext) }.start()   // the live cards turn and top up on every return (iOS MontanaApp.swift:297)
+        if (hasSeed && termsAccepted) Thread { NamePlane.keepInStep() }.start()   // the name renewed when due, its point listened at (iOS keepInStep)
+        Thread { CoinBook.warm(); CoinSend.settle(); ChessSend.settleAll() }.start()
+        // THE WALLS AT A RETURN (iOS ContentView.swift:474-477 at 2155): every wall never seen is asked (Board.sweep), and the owner carries
+        // my wall to whoever speaks it -- at a return only while the presence is shown (the critic's N6)
+        if (hasSeed && termsAccepted) Thread { Board.sweep(); if (Presence.sharing) MyWall.schedulePush() }.start()
+        if (hasSeed && termsAccepted) Thread { MyWall.roadBack("active") }.start()   // a post on its way goes on by itself (iOS roadBack 1922)   // every coin letter the chats hold stands in the book (iOS MTCoinSend.settle)
     }
     // the ear stays when the app leaves the screen: EarService holds it (the app closed is heard as the app open)
     override fun onPause() { super.onPause(); CoinBook.closeWindows(); if (CallScreen.front === this) CallScreen.front = null; main.removeCallbacks(boxRound) }
+
+    // THE CALL'S WINDOW OVER OTHER APPS (CallFloat): the person leaving on a system before the platform's auto-enter, and the
+    // platform's own word that the window stands or is gone
+    override fun onUserLeaveHint() { super.onUserLeaveHint(); CallFloat.leaving(this) }
+    override fun onPictureInPictureModeChanged(inPip: Boolean, cfg: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(inPip, cfg)
+        CallFloat.changed(this, inPip)
+    }
 
     /** A small view over every page and every overlay (the call's pill), at the foot above the system bar; the close takes it away. */
     fun floating(v: View, bottomDp: Int): () -> Unit {
@@ -275,10 +432,10 @@ class MainActivity : Activity() {
         if (asks.isEmpty()) takeTheCall(true) else requestPermissions(asks, ASK_CALL_MIC)
     }
 
-    @Deprecated("the platform's back for targetSdk 35 without predictive back")
+    @Deprecated("registerBack's OnBackInvokedCallback takes every system back from API 33; this is the road below it")
     override fun onBackPressed() {
         val b = back
-        if (b != null) b() else @Suppress("DEPRECATION") super.onBackPressed()
+        if (b != null) b() else drawer?.open()   // the root never leaves the app (commitBack)
     }
 
     // ── work off the main thread (the core's key derivation takes a moment) ──
@@ -314,6 +471,15 @@ class MainActivity : Activity() {
                      else Intent(Intent.ACTION_GET_CONTENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
                          .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         runCatching { @Suppress("DEPRECATION") startActivityForResult(intent, PICK_MANY) }.onFailure { manyDone = null; done(emptyList()) }
+    }
+
+    /** Tracks and files, any number, from the system's document picker (iOS fileImporter [.audio, .item], allowsMultipleSelection). */
+    fun openDocuments(done: (List<Uri>) -> Unit) {
+        manyDone = done
+        runCatching {
+            @Suppress("DEPRECATION") startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+                .setType("*/*").putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true), PICK_MANY)
+        }.onFailure { manyDone = null; done(emptyList()) }
     }
 
     /** The library's question (iOS PHPhotoLibrary.requestAuthorization): whole, a part the person chose, or no; answered once. */

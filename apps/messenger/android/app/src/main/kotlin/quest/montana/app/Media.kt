@@ -151,9 +151,20 @@ object Media {
         }
         Book.edit(ref) { it.msgs.add(Msg(mid, provisional, true, Marks.birthMs(mid) ?: System.currentTimeMillis(), qt = qt, file = local.path)) }
         Thread {
-            if (deliver(c, ref, mid, p, caption, local, qt, group)) return@Thread
+            // THE TRACK'S WAVE IS BORN WITH THE LETTER (iOS MTWaveform, MontanaMediaKit 53-103, 1101-1107, atom bdee948c8ba1): a track
+            // sent as a file is probed once -- sixty points -- and the manifest carries them, so the bars stand at the send and at the
+            // receipt before a byte of the file has arrived; the sender's own row wears the same points
+            val wave = p.wave ?: if (p.kind == "aud" || (p.kind == "doc" && Waveform.isAudio(p.name ?: ("x." + p.ext)))) Waveform.compute(local) else null
+            val pw = if (wave != null && p.wave == null) Picked(p.bytes, p.kind, p.ext, p.name, p.du, wave, p.round) else p
+            var told = provisional
+            if (pw !== p) {
+                told = Marks.MEDIA + JSONObject(provisional.removePrefix(Marks.MEDIA))
+                    .put("wv", Base64.encodeToString(ByteArray(wave!!.size) { (wave[it] * 255).toInt().coerceIn(0, 255).toByte() }, Base64.NO_WRAP))
+                Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid && it.file == local.path }?.let { it.text = told } }
+            }
+            if (deliver(c, ref, mid, pw, caption, local, qt, group)) return@Thread
             // THE INTENT SURVIVES ITS BROKEN UPLOAD (iOS 1675, 1677): the bubble stands at the clock and the upload waits for the drain
-            keepIntent(ref, mid, local, provisional.toString(), caption, qt)
+            keepIntent(ref, mid, local, told, caption, qt)
             Log.w("Montana", "media: the pieces did not reach the node — the intent waits for the drain mid=" + mid.take(8))
         }.start()
     }
@@ -262,6 +273,73 @@ object Media {
         return (Marks.MEDIA + JSONObject().put("mref", mbid).put("mk", Base64.encodeToString(mk, Base64.NO_WRAP)).put("sz", total)) to json
     }
 
+    // ── a file of a post on the node (iOS MTBoard.seal, MontanaBoard 2033-2052) ──
+    private const val BLOB_SEED = "blobKeySeed"
+    private val seedLock = Any()
+    /**
+     * THE LETTER'S KEY FROM ITS NAME (iOS letterBlobKey, MontanaMediaKit 146-161): SHA-256 of «mt-blob-key», the letter's name and this
+     * phone's own seed -- the same file under the same name gives the same pieces, so a try again goes on where the node left it; the
+     * node never sees the seed, so one file in two letters cannot be linked.
+     */
+    fun letterKey(letter: String): ByteArray? {
+        val seed = synchronized(seedLock) {
+            DeviceVault.get(BLOB_SEED)?.takeIf { it.size == 32 } ?: (MtBindings.nativeRandom(32) ?: return null).also { DeviceVault.set(BLOB_SEED, it) }
+        }
+        return Wire.sha("mt-blob-key".toByteArray(), letter.toByteArray(), seed)
+    }
+    /**
+     * ONE FILE ON THE NODE, PIECE BY PIECE (iOS sealAndUpload and uploadChunks, MontanaMediaKit 233-276, MontanaWakePush 1705-1800):
+     * sealed under its letter's key with the nonce drawn from the key, the piece's number and its bytes; the node asked what it holds
+     * already when the cargo is more than two pieces; the rest laid under the cargo mark, «last» on the final piece, each piece counted
+     * as the node confirms it. The key in base64 and the chunks a post's manifest carries; null -- a piece the node did not take.
+     * A KEEPER'S KEY (iOS sealAndUpload 238-240, MontanaMediaKit): a post's keeper lays the same file under the post's own key -- the
+     * same bytes, the same key, the same pieces give the same chunk names the post's manifest already carries.
+     */
+    fun layFile(f: File, letter: String, key: ByteArray? = null, confirmed: (Int) -> Unit): Pair<String, JSONArray>? {
+        val bk = key ?: letterKey(letter) ?: return null
+        val total = f.length()
+        if (total <= 0L || Int.MAX_VALUE.toLong() < total) return null
+        val count = ((total + CHUNK - 1) / CHUNK).toInt()
+        return java.io.RandomAccessFile(f, "r").use { raf ->
+            val bids = ArrayList<String>(count)
+            val chunks = JSONArray()
+            for (i in 0 until count) {
+                val bid = sealPiece(raf, bk, i, total)?.first ?: return null
+                bids.add(bid)
+                chunks.put(JSONObject().put("bid", bid).put("cs", minOf(CHUNK.toLong(), total - i.toLong() * CHUNK).toInt()))
+            }
+            val cargo = Wire.hex(Wire.sha(bids.joinToString("").toByteArray())).take(32)
+            // a cargo of a couple of pieces is put at once: the put is idempotent by name (iOS 1734-1736)
+            val known = if (2 < count) Wire.blobsHave(bids) ?: emptySet() else emptySet()
+            var done = known.size
+            confirmed(done)
+            for (i in 0 until count) {
+                if (bids[i] in known) continue
+                val sealed = sealPiece(raf, bk, i, total)?.second ?: return null
+                var ok = false
+                for (attempt in 0 until 4) {
+                    if (Wire.putBlob(bids[i], sealed, cargo, i == count - 1, assumeAbsent = true)) { ok = true; break }
+                    if (attempt < 3) Thread.sleep(1500L shl attempt)
+                }
+                if (!ok) return null
+                done++
+                confirmed(done)
+            }
+            Base64.encodeToString(bk, Base64.NO_WRAP) to chunks
+        }
+    }
+    private fun sealPiece(raf: java.io.RandomAccessFile, bk: ByteArray, i: Int, total: Long): Pair<String, ByteArray>? {
+        val off = i.toLong() * CHUNK
+        val len = minOf(CHUNK.toLong(), total - off).toInt()
+        val piece = ByteArray(len)
+        raf.seek(off)
+        raf.readFully(piece)
+        val padded = piece.copyOf(padLen(len))
+        val nonce = Wire.sha(bk, Wire.le8(i.toLong()), padded).copyOf(12)
+        val sealed = MtBindings.nativeSealBlob(bk, nonce, padded) ?: return null
+        return Wire.hex(Wire.sha(sealed)) to sealed
+    }
+
     // ── receiving ──
 
     /** Every media letter of theirs still without its file is asked for (once at a time), and «delivered» follows the file. */
@@ -321,7 +399,13 @@ object Media {
                 // THE MANIFEST LANDS BEFORE THE FILE: the row folds into its group and shows its small face while the pieces travel
                 keepManifest(ref, mid, man)
                 val dest = file(c, mid, man.optString("e"))
-                if (!download(man, dest)) return@Thread
+                if (!download(man, dest)) {
+                    // THE ROW STAYS, THE SENDER IS TOLD (iOS MontanaChatStore 4635-4649, atom aeabdc576605): a cargo every store called
+                    // gone is knowledge -- the bubble stands without its file and the sender hears it once; a silent store is no verdict
+                    val chunks = man.optJSONArray("chunks")
+                    if (!Groups.isKey(ref) && chunks != null && (0 until chunks.length()).any { Wire.isGone(chunks.getJSONObject(it).optString("bid")) }) Post.cargoLost(ref, mid)
+                    return@Thread
+                }
                 Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.let { it.file = dest.path; it.meta = man.toString() } }
                 // a group's copy was receipted by the group (Groups.handle), and its pieces serve every other member of it
                 if (!Groups.isKey(ref)) { Post.receiptFor(ref, mid); drop(man) }
@@ -339,16 +423,26 @@ object Media {
                 val ch = chunks.getJSONObject(i)
                 val bid = ch.getString("bid"); val cs = ch.getInt("cs")
                 var piece: ByteArray? = null
-                for (attempt in 0 until 3) {
+                // ONE PIECE WITH THE DOORS' OWN PATIENCE (iOS bringChunk, MontanaWakePush 2458-2487; atom aeabdc576605): a busy door is
+                // waited for on a growing pause (0.7 s doubling, six tries); a silent road gets three quick tries; neither is «gone»
+                var silentTries = 0; var busyTries = 0
+                while (silentTries < 3 && busyTries < 6) {
                     // a piece a neighbour brought ahead of its manifest is assembled from this phone's own store (iOS MontanaBlobStore)
                     val near = Blobs.get(bid)
                     if (near == null && Wire.isGone(bid)) break   // every door called it gone: asked once, not every opening of the chat (iOS 2438)
-                    val sealed = near ?: Wire.getChunk(bid)
+                    val busy = BooleanArray(1)
+                    val sealed = near ?: Wire.getChunk(bid, busy)
                     if (sealed != null && Wire.hex(Wire.sha(sealed)) == bid) {   // the name is the bytes: integrity
                         piece = Wire.open(bk, sealed)?.let { if (cs <= it.size) it.copyOf(cs) else it }
                         if (piece != null) break
                     }
-                    Thread.sleep(500L shl attempt)
+                    if (Wire.isGone(bid)) break
+                    if (busy[0]) {
+                        val pause = 700L shl busyTries
+                        busyTries++
+                        Log.d("Montana", "blob_dl BUSY id=" + bid.take(8) + " — the node refuses this moment, pause=" + pause / 1000 + "s")
+                        Thread.sleep(pause)
+                    } else if (++silentTries < 3) Thread.sleep(700L)
                 }
                 out.write(piece ?: return false)
             }
@@ -450,6 +544,10 @@ class MediaProvider : ContentProvider() {
         val c = context ?: return null
         val name = uri.lastPathSegment ?: return null
         if (name.contains('/') || name.startsWith(".")) return null
+        // A WALL'S FILE GOES BY THE SAME DOOR (iOS MTBoardDocPresenter, MontanaBoardViews.swift:1635-1650, and MTBoardMediaPage.share
+        // 3100-3104 at 2155: the post's own file): it lies in the wall's store or in the look's folder, never among the chats' media --
+        // «Open» and the share of a post's file found nothing here
+        if (name.startsWith("wall_")) return listOf(MyWall.storeDir(c), Board.lookIn(c)).map { File(it, name) }.firstOrNull { it.exists() }
         return File(Media.dir(c), name).takeIf { it.exists() }
     }
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? =
@@ -488,4 +586,62 @@ object MediaGroup {
     fun stamp(o: JSONObject, g: Slot?) { if (g != null) o.put("gk", g.key).put("gi", g.index).put("gn", g.count) }
     fun read(o: JSONObject?): Slot? = o?.optString("gk")?.takeIf { it.isNotEmpty() }?.let { Slot(it, o.optInt("gi"), o.optInt("gn")) }
     fun of(m: Msg): Slot? = read(Media.manifestOf(m))
+}
+
+/**
+ * THE TRACK'S WAVE (iOS MTWaveform.compute, MontanaMediaKit 78-102): sixty point probes across the file -- only the probes are
+ * decoded, never the whole file -- each the mean of every eighth sample of the first channel; scaled to a loud probe (the 92nd
+ * percentile, not the loudest one clap), lifted by a soft curve (0.7). One definition of «this name is music» (mtIsAudioName).
+ */
+object Waveform {
+    private const val BARS = 60
+    fun isAudio(name: String) = name.substringAfterLast('.', "").lowercase() in setOf("mp3", "m4a", "aac", "wav", "flac", "aif", "aiff", "caf")
+    fun compute(f: java.io.File): FloatArray? = runCatching {
+        val ex = android.media.MediaExtractor()
+        ex.setDataSource(f.path)
+        val track = (0 until ex.trackCount).firstOrNull { ex.getTrackFormat(it).getString(android.media.MediaFormat.KEY_MIME)?.startsWith("audio/") == true }
+            ?: return@runCatching null.also { ex.release() }
+        ex.selectTrack(track)
+        val fmt = ex.getTrackFormat(track)
+        val durUs = if (fmt.containsKey(android.media.MediaFormat.KEY_DURATION)) fmt.getLong(android.media.MediaFormat.KEY_DURATION) else 0L
+        if (durUs <= 0L) { ex.release(); return@runCatching null }
+        val channels = if (fmt.containsKey(android.media.MediaFormat.KEY_CHANNEL_COUNT)) maxOf(1, fmt.getInteger(android.media.MediaFormat.KEY_CHANNEL_COUNT)) else 1
+        val codec = android.media.MediaCodec.createDecoderByType(fmt.getString(android.media.MediaFormat.KEY_MIME)!!)
+        codec.configure(fmt, null, null, 0)
+        codec.start()
+        val raw = FloatArray(BARS)
+        val info = android.media.MediaCodec.BufferInfo()
+        for (i in 0 until BARS) {
+            ex.seekTo(durUs * i / BARS, android.media.MediaExtractor.SEEK_TO_CLOSEST_SYNC)
+            codec.flush()
+            var acc = 0.0; var cnt = 0; var frames = 0; var spins = 0
+            while (frames < 4096 && spins < 64) {
+                spins++
+                val inIx = codec.dequeueInputBuffer(5_000)
+                if (0 <= inIx) {
+                    val buf = codec.getInputBuffer(inIx)!!
+                    val n = ex.readSampleData(buf, 0)
+                    if (n < 0) codec.queueInputBuffer(inIx, 0, 0, 0, android.media.MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                    else { codec.queueInputBuffer(inIx, 0, n, ex.sampleTime, 0); ex.advance() }
+                }
+                val outIx = codec.dequeueOutputBuffer(info, 5_000)
+                if (0 <= outIx) {
+                    val out = codec.getOutputBuffer(outIx)!!.order(java.nio.ByteOrder.LITTLE_ENDIAN).asShortBuffer()
+                    val total = out.remaining() / channels
+                    var j = 0
+                    while (j < total && frames < 4096) {
+                        if (j % 8 == 0) { acc += Math.abs(out.get(j * channels) / 32768.0); cnt++ }
+                        j++; frames++
+                    }
+                    codec.releaseOutputBuffer(outIx, false)
+                    if (info.flags and android.media.MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) break
+                }
+            }
+            raw[i] = if (0 < cnt) (acc / cnt).toFloat() else 0f
+        }
+        codec.stop(); codec.release(); ex.release()
+        val sorted = raw.sorted()
+        val loud = maxOf(sorted[((sorted.size - 1) * 0.92).toInt()], 1e-6f)
+        FloatArray(BARS) { Math.pow(minOf(1f, raw[it] / loud).toDouble(), 0.7).toFloat() }
+    }.getOrNull()
 }

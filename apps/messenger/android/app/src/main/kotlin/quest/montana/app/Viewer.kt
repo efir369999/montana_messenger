@@ -44,9 +44,11 @@ fun picturesBeside(f: File): List<File> {
  * go and closes. Under the pages the strip of covers: the centred cover is the page, a tap on a cover turns to it, and the
  * picture fits above the strip's band, never under it. No buttons: the platform's back closes it, as the pull does.
  */
-fun openPictures(act: MainActivity, start: File) {
+fun openPictures(act: MainActivity, start: File, among: List<File>? = null) {
     val c: Context = act
-    val files = picturesBeside(start)
+    // A POST'S PICTURE OPENS AMONG ITS PAGE'S (iOS MTBoardMediaView.open, PhotoPresenter.present(_:among:), MontanaBoardViews.swift:
+    // 773-774 at 2155): the caller's album when it holds the one touched, else the conversation's
+    val files = among?.takeIf { l -> l.any { it.path == start.path } } ?: picturesBeside(start)
     val paged = 1 < files.size
     var at = files.indexOfFirst { it.path == start.path }.coerceAtLeast(0)
     lateinit var close: () -> Unit
@@ -297,7 +299,7 @@ class PicturePager(private val act: MainActivity, private val files: List<File>,
 }
 
 /** The strip's covers, small pictures born off the frame and kept for the album's life (iOS mtCoverCache, 256 px). */
-private val stripCovers = object : android.util.LruCache<String, Bitmap>(16 * 1024 * 1024) { override fun sizeOf(key: String, value: Bitmap) = value.byteCount }
+private val stripCovers = Caches.kept("strip_covers", object : android.util.LruCache<String, Bitmap>(16 * 1024 * 1024) { override fun sizeOf(key: String, value: Bitmap) = value.byteCount })
 
 /**
  * THE STRIP OF COVERS (iOS MontanaPhotoViewer.thumbStrip, MontanaProfile 1822-1873): the album covers' own scroll — the centred

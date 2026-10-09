@@ -61,8 +61,33 @@ object Diary {
         if (!d.isDirectory) d.mkdirs()   // «Forget this device» takes the folder with the person; the diary goes on in a new one
         val f = File(d, FILE)
         runCatching { f.appendText(iso.format(java.util.Date(ms)) + hide(" " + words) + "\n") }
-        if (f.length() >= ROTATE) rotate(d, f)
-        if (m.groupValues[3] == "E" || m.groupValues[4] == "AndroidRuntime") failure()
+        // THE TRACE OF A CALL IS NOT ROTATED UNDER THE CALL (iOS MontanaLog.holdRotation, atom 319c1ca96b0a): four rings at most
+        if (f.length() >= ROTATE && !(Calls.busy() && f.length() < 4 * ROTATE)) rotate(d, f)
+        if (m.groupValues[3] == "E" || m.groupValues[4] == "AndroidRuntime" || isFailure(m.groupValues[5])) failure()
+    }
+
+    /**
+     * WHAT COUNTS AS AN ERROR — A CLOSED LIST (iOS MontanaP2PTrace.isFailure 72-118, atom bdee948c8ba1): a letter refused, dead of age
+     * or red; a call that did not assemble or ring; a door that refused or went dead; a store that failed; any 5xx of a node and any
+     * code=-1; a retry demanded anywhere — the author's classes (16.09: «a send failure, a demanded retry, a call error, a network or
+     * connection error must fly to the diary at once»). Not an error: 404, and the shipment itself.
+     */
+    private val FAILURES = setOf("enqueue_drop", "send_refused", "send_failed", "send_red", "dial_failed", "sig_door", "handshake_timeout",
+        "node_shut", "path_down", "call_refused", "ring_dead", "ring_unreached", "ring_expired", "notify_failed", "media_store_fail",
+        "rx_media_dead", "of_relay_drop", "cam_denied", "cam_fail")
+    private fun isFailure(words: String): Boolean {
+        val w = words.removePrefix("call line: ").removePrefix("call: ")
+        val event = w.substringBefore(' ')
+        val kv = w.substringAfter(' ', "")
+        if (event.startsWith("diag")) return false
+        if (event in FAILURES) return true
+        return when (event) {
+            "call_ice", "ice" -> "failed" in kv.lowercase() || "disconnected" in kv.lowercase()
+            "sig_tx" -> "FAIL" in kv
+            "box_fetch" -> "refused" in kv
+            "blob_get" -> "unreachable" in kv
+            else -> "code=5" in kv || "code=-1" in kv || "retry" in event || "retry" in kv
+        }
     }
 
     /**
@@ -164,6 +189,26 @@ object Diary {
     @Synchronized private fun pass(c: Context) {
         if (!consented) return   // the one road out asks the person's yes first (iOS MontanaDiagShip.put)
         val d = dir ?: return
+        try { shipAll(c, d) } finally { tellTail(d) }
+    }
+    /**
+     * THE SHIPPER'S LEDGER GOES INTO THE TELEMETRY (iOS shipOnce 4097-4103, 25.09): what the diary could not say about its own hole --
+     * its words lay in the hole. The unsent tail in steps of 64 KB, with the standing refusal if any; said when it
+     * changes, so a day that never caught up is read the next morning.
+     */
+    private var lastTail: String? = null
+    private fun tellTail(d: File) {
+        val wm = Prefs.str("diagWm", "0").toLongOrNull() ?: 0L
+        val born = Prefs.str("diagGen", "")
+        var pending = 0L
+        val files = (KEEP downTo 0).map { gen(d, it) } + File(d, FILE)
+        for (f in files) if (f.exists()) pending += if (birth(f) == born) maxOf(0L, f.length() - wm) else f.length()
+        val words = FILE + "=" + pending / 65_536 * 64 + "KB" + (if (0 < refused) " refused=" + refused else "")
+        if (words == lastTail) return
+        lastTail = words
+        android.util.Log.d("Montana", "diag_tail " + words)
+    }
+    private fun shipAll(c: Context, d: File) {
         var wm = Prefs.str("diagWm", "0").toLongOrNull() ?: 0L
         var born = Prefs.str("diagGen", "")
         fun keep() { Prefs.setStr("diagWm", wm.toString()); Prefs.setStr("diagGen", born) }
@@ -215,11 +260,12 @@ object Diary {
         val version = runCatching { c.packageManager.getPackageInfo(c.packageName, 0).longVersionCode.toString() }.getOrDefault("?")
         val dev = JSONObject().put("model", Build.MANUFACTURER + " " + Build.MODEL).put("ios", "Android " + Build.VERSION.RELEASE)
             .put("build", version).put("tz", java.util.TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 1000)
-            .put("lang", java.util.Locale.getDefault().language.take(2)).put("skew_ms", 0)
+            .put("lang", java.util.Locale.getDefault().language.take(2)).put("skew_ms", NodeClock.skewMs)
         val body = JSONObject().put("dg", dg).put("file", "tele").put("dev", dev).put("lines", JSONArray(lines))
         val bytes = body.toString().length
         for (door in Signal.writeOrder("diag")) {   // the elected door first (iOS MontanaDiagShip.put over bases(for: "diag"))
-            val (code, _) = Wire.post(door, "/diag-put", body, 10_000 + bytes / 25)   // the deadline grows with the body
+            // THE DEADLINE GROWS WITH THE BODY BY THE CARGO ROAD'S ONE RULE (iOS MontanaWakePush 3772-3775, MTNodeWire.cargoTimeoutS 306)
+            val (code, _) = Wire.post(door, "/diag-put", body, Wire.cargoTimeoutMs(bytes))
             if (code == 200) { Signal.doorAnswered(door); refused = 0; return true }
             Signal.doorFailed(door, code)
         }

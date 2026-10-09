@@ -32,6 +32,7 @@
     <string name="ld_pin_both">Pin for both</string>
     <string name="ld_pin_me">Pin for me</string>
     <string name="ld_pinned">Pinned message</string>
+    <string name="ld_pinned_banner">Pinned a message</string>
     <string name="ld_pin">Pin</string>
     <string name="ld_unpin">Unpin</string>
     <string name="ld_forward">Forward</string>
@@ -41,6 +42,8 @@
     <!-- the contacts page (iOS ContactsTabView: the menu about a person) -->
     <string name="ct_write">Write</string>
     <string name="ct_profile">Profile</string>
+    <string name="ct_audio_call">Audio call</string>
+    <string name="ct_video_call">Video call</string>
     <!-- the deletion of a chat, for both or for me (iOS MontanaDeleteChatSheet) -->
     <string name="dl_q">Permanently delete the chat with %1$s?</string>
     <string name="dl_both">Delete for me and them</string>
@@ -61,4 +64,6 @@
     <string name="sn_mismatch_note">This is the code of another chat, or someone stands between you. Compare the digits by voice.</string>
     <!-- a letter sent later (iOS «Send later», the send key's hold) -->
     <string name="sl_later">Send later</string>
+    <string name="new_call">New Call</string>   <!-- iOS CallsTabView «New Call» -->
+    <string name="cl_draft">Draft:</string>   <!-- iOS ChatRow «Draft:» -->
 </resources>

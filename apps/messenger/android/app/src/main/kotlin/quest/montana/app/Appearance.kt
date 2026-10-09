@@ -44,7 +44,7 @@ object BT {
 }
 
 /** The classic style's own colour of my letters (iOS bubblePalette, chosen by bubbleColorIndex). */
-private val bubblePalette = intArrayOf(MT.gold, Color.rgb(51, 153, 255), Color.rgb(77, 199, 115), Color.rgb(217, 82, 140),
+private val bubblePalette = intArrayOf(SysColor.indigo, Color.rgb(51, 153, 255), Color.rgb(77, 199, 115), Color.rgb(217, 82, 140),
     Color.rgb(153, 115, 242), Color.rgb(242, 115, 64), Color.rgb(51, 179, 179))
 
 fun colorOf(hex: String): Int = try { Color.parseColor("#$hex") } catch (_: IllegalArgumentException) { Color.GRAY }
@@ -96,17 +96,13 @@ object BubbleStyle {
                     }
                 }
                 "montana" -> {
-                    // THE LETTER'S GLASS (iOS MTLetterGlass): the send artwork's gradient at 0.88, under a light rim.
-                    val colors = if (mine) intArrayOf(Color.rgb(80, 223, 253), Color.rgb(19, 178, 252), Color.rgb(5, 140, 254), Color.rgb(0, 88, 253))
-                                 else intArrayOf(Color.rgb(122, 122, 122), Color.rgb(92, 92, 92), Color.rgb(66, 66, 66), Color.rgb(46, 46, 46))
-                    fill.shader = LinearGradient(r.left, r.top, r.right, r.bottom, colors, null, Shader.TileMode.CLAMP)
-                    fill.alpha = (0.88f * 255).toInt()
+                    // THE PLATFORM'S OWN BUBBLES, FLAT (iOS MTLetterPlate, MontanaBubble.swift:121-128, the author's word 29.09:
+                    // «the chat's bubbles as the system's -- no gradient, the system blue with white words, and the system grey
+                    // with the same white»; the native skin is the only skin since 22.09, ContentView.swift:50-58): no gradient,
+                    // no rim -- systemGray5's dark shade for theirs, since the app is always dark.
+                    fill.shader = null
+                    fill.color = if (mine) MT.blue else Color.rgb(44, 44, 46)
                     canvas.drawRoundRect(r, radius, radius, fill)
-                    rim.strokeWidth = density
-                    rim.shader = LinearGradient(r.left, r.top, r.right, r.bottom,
-                        intArrayOf(MT.withAlpha(Color.WHITE, 0.65f), MT.withAlpha(Color.WHITE, 0.08f), MT.withAlpha(if (mine) Color.CYAN else Color.WHITE, 0.6f)),
-                        null, Shader.TileMode.CLAMP)
-                    val i = density / 2; canvas.drawRoundRect(RectF(r.left + i, r.top + i, r.right - i, r.bottom - i), radius, radius, rim)
                 }
                 else -> {
                     fill.shader = null
@@ -343,7 +339,7 @@ private fun swatch(c: Context, color: Int) = GradientDrawable().apply {
 
 /** A row that acts (iOS Button in a List: the accent's words). */
 private fun actionRow(c: Context, res: Int, onTap: () -> Unit) =
-    c.text(c.getString(res), 16f, MT.gold).apply { setPadding(c.dp(16), c.dp(13), c.dp(16), c.dp(13)); pressable(onTap) }
+    c.text(c.getString(res), 16f, Color.WHITE).apply { setPadding(c.dp(16), c.dp(13), c.dp(16), c.dp(13)); pressable(onTap) }
 
 /**
  * A slider over a stored number (iOS Slider): the caption above, the platform's SeekBar in gold. The number is kept in its
@@ -356,7 +352,7 @@ private fun slider(c: Context, word: Int, key: String, def: Double, lo: Double, 
         addView(SeekBar(c).apply {
             max = 1000
             progress = (((Prefs.dbl(key, def).coerceIn(lo, hi) - lo) / (hi - lo)) * 1000).toInt()
-            progressTintList = ColorStateList.valueOf(MT.gold); thumbTintList = ColorStateList.valueOf(MT.gold)
+            progressTintList = ColorStateList.valueOf(Color.WHITE); thumbTintList = ColorStateList.valueOf(Color.WHITE)
             contentDescription = c.getString(word)
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(s: SeekBar, p: Int, fromUser: Boolean) {
@@ -372,7 +368,7 @@ private fun slider(c: Context, word: Int, key: String, def: Double, lo: Double, 
  * THE SEGMENTED CHOICE (iOS .pickerStyle(.segmented)): the platform has no segmented control of its own, so it is the
  * capsule of equal segments with the chosen one lit — words and a stored value each.
  */
-private fun segmented(c: Context, items: List<Pair<Int, String>>, chosen: String, onPick: (String) -> Unit): View {
+fun segmented(c: Context, items: List<Pair<Int, String>>, chosen: String, onPick: (String) -> Unit): View {
     val row = c.hstack { background = c.rounded(Color.argb(40, 118, 118, 128), 9); setPadding(dp(2), dp(2), dp(2), dp(2)) }
     fun fill(now: String) {
         row.removeAllViews()
@@ -418,7 +414,7 @@ class ColorEditor(act: MainActivity, title: String, start: String, private val k
             addView(c.text(c.getString(word), 12f, MT.gray))
             addView(SeekBar(c).apply {
                 max = 1000; progress = (hsv[i] / top * 1000).toInt()
-                progressTintList = ColorStateList.valueOf(MT.gold); thumbTintList = ColorStateList.valueOf(MT.gold)
+                progressTintList = ColorStateList.valueOf(Color.WHITE); thumbTintList = ColorStateList.valueOf(Color.WHITE)
                 contentDescription = c.getString(word)
                 setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(s: SeekBar, p: Int, fromUser: Boolean) { if (fromUser) { hsv[i] = top * p / 1000f; show() } }

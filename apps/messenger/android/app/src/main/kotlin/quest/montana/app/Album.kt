@@ -222,9 +222,9 @@ private class CornerTile(c: Context, pos: Int, outer: Float, inner: Float) : Fra
 }
 
 /** The tiles' pictures, decoded off a redraw's way once and kept by their file (the feed redraws on every receipt). */
-private val albumCache = object : LruCache<String, Bitmap>(24 * 1024 * 1024) {
+private val albumCache = Caches.kept("album", object : LruCache<String, Bitmap>(24 * 1024 * 1024) {
     override fun sizeOf(key: String, value: Bitmap) = value.byteCount
-}
+})
 
 /** THE PLATE'S CEILING (iOS plateCeiling, at this app's picture width) and the ceiling of its height, four thirds of it. */
 private const val PLATE_DP = 240f

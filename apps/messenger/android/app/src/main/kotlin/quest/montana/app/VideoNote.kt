@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCaptureSession
@@ -54,6 +55,10 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
         const val CIRCLE = 400
         const val MAX_SECONDS = 399.0
         fun bitRate() = when (Prefs.str("noteQuality", "medium")) { "low" -> 900_000; "high" -> 2_500_000; else -> 1_500_000 }
+        /** THE SOURCE AT THE CHOSEN STEP (iOS MontanaNoteQuality.minHeight, MontanaFeeds.swift:1716-1722 at 2155): the
+         *  single camera's own format, at least this tall, before the 480 square is cut from it -- the step sharpens
+         *  the source, not only the encoder's rate (sizeCamera below). */
+        fun minHeight() = when (Prefs.str("noteQuality", "medium")) { "low" -> 480; "high" -> 1080; else -> 720 }
         const val INNER = 144        // iOS inner: the badge on the big circle's rim, in file pixels
         /** The badge's centre from the canvas's middle (iOS reach: (side/2 + inner/6)/√2), bottom-right (iOS corner 3). */
         val REACH = ((CIRCLE / 2f + INNER / 6f) / Math.sqrt(2.0)).toFloat()
@@ -99,6 +104,21 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
     /** Both cameras: the back fills the circle, the front sits in the badge; a flip swaps them (iOS toggleDual, 18.09). */
     @Volatile var dual = false; private set
     @Volatile private var swapped = false
+    // A PINCH ZOOMS THE BIG CIRCLE'S CAMERA (iOS pinch/pinchEnded/bigDevice/zoomBase, MontanaFeeds.swift:2207-2224 at 2155,
+    // the gesture at 1675): the camera that fills the main circle right now -- the single one, or whichever of the pair the
+    // flip or the swap left there -- scaled from where the last pinch left it, never past the sensor's own ceiling or 8x.
+    private var zoomBase = 1f
+    private val zoomOf = HashMap<String, Float>()   // each camera keeps its own factor, as each AVCaptureDevice keeps videoZoomFactor
+    private var mainSurface: Surface? = null
+    private var badgeSurface: Surface? = null
+    // THE FILL LIGHT (iOS flash / applyFlash, MontanaFeeds.swift:1730-1731 and 2225-2241 at 2155): the white screen at full
+    // brightness for the front camera, the torch for the back -- both while both cameras record; it follows every turn of side
+    @Volatile var flash = false; private set
+    val screenLit: Boolean get() = flash && (front || dual)
+    var onLight: ((Boolean) -> Unit)? = null   // the page's white and brightness, told on the main thread
+    private var relight: (() -> Unit)? = null    // the back camera's request issued again, with the torch as it now stands
+    private fun told() { val lit = screenLit; MainThread.post { onLight?.invoke(lit) } }
+    fun toggleFlash() = h.post { flash = !flash; relight?.invoke(); told() }
 
     // ── THE BADGE UNDER THE FINGER (iOS dragBadge / dragEnded / easeBadge, MontanaFeeds 1811-1831): dragged within its square,
     // it eases to the nearest corner on the rim when let go — a third of the way each frame — and the corner is remembered
@@ -161,7 +181,9 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
     }
 
     /** The tape starts: the camera, the encoders and the drawing; false when a piece refused. */
-    fun start(): Boolean = try {
+    fun start(): Boolean = if (CallSound.refused("video note")) false else try {   // the call holds the sound (iOS MontanaRecording 100)
+        // A NOTE KEEPS THE MUSIC (iOS MontanaFeeds.swift:1926-1928 at 2155): read before anything of ours stands down.
+        Playing.standDown(keepingMusic = MusicPlayer.playing)
         file = File(c.cacheDir, "vnote_${System.currentTimeMillis()}.mp4")
         setupCodecs()
         val ready = java.util.concurrent.CountDownLatch(1)
@@ -313,14 +335,31 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
         val cm = c.getSystemService(CameraManager::class.java)
         val want = if (front) CameraCharacteristics.LENS_FACING_FRONT else CameraCharacteristics.LENS_FACING_BACK
         val id = cm.cameraIdList.firstOrNull { cm.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) == want } ?: cm.cameraIdList.first()
-        openInto(id, camTexture!!, { cam = it }, { session = it })
+        // the pair streams at its fixed 1280x720, never at a step one camera alone may take (iOS applyQuality steps the pair down
+        // until the hardware carries it; a 1080 source kept from the single road would ask the pair for more)
+        if (dual) camTexture?.setDefaultBufferSize(1280, 720) else sizeCamera(cm, id)
+        openInto(id, camTexture!!, { cam = it }, { session = it }, { mainSurface = it })
+    }
+    /** THE TEXTURE ASKS FOR THE STEP'S SOURCE before the camera opens (iOS applyQuality, MontanaFeeds.swift:2047-2059 at
+     *  2155): the smallest 16:9 format this camera carries that is at least as tall as the chosen step, else the
+     *  largest 16:9 one -- the shader's own crop (uCrop below) assumes 16:9 and is not touched here. */
+    private fun sizeCamera(cm: CameraManager, id: String) {
+        val minH = minHeight()
+        val sizes = runCatching { cm.getCameraCharacteristics(id).get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+            ?.getOutputSizes(SurfaceTexture::class.java)?.toList() }.getOrNull().orEmpty()
+        val wide = sizes.filter { kotlin.math.abs(it.width.toFloat() / it.height - 16f / 9f) < 0.05f }
+        val size = wide.filter { it.height >= minH }.minByOrNull { it.width.toLong() * it.height } ?: wide.maxByOrNull { it.width.toLong() * it.height }
+        if (size != null) camTexture?.setDefaultBufferSize(size.width, size.height)
     }
 
     /** One camera streaming into one texture (the big one's, or the badge's). */
     @SuppressLint("MissingPermission")
-    private fun openInto(id: String, st: SurfaceTexture, keepCam: (CameraDevice) -> Unit, keepSession: (CameraCaptureSession) -> Unit) {
+    private fun openInto(id: String, st: SurfaceTexture, keepCam: (CameraDevice) -> Unit, keepSession: (CameraCaptureSession) -> Unit,
+                          keepSurface: (Surface) -> Unit = {}) {
         val cm = c.getSystemService(CameraManager::class.java)
         val out = Surface(st)
+        keepSurface(out)
+        val back = runCatching { cm.getCameraCharacteristics(id).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK }.getOrDefault(false)
         cm.openCamera(id, object : CameraDevice.StateCallback() {
             override fun onOpened(d: CameraDevice) {
                 if (closing) { d.close(); return }
@@ -329,11 +368,16 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
                 d.createCaptureSession(listOf(out), object : CameraCaptureSession.StateCallback() {
                     override fun onConfigured(s: CameraCaptureSession) {
                         keepSession(s)
-                        runCatching {
+                        fun issue() = runCatching {
                             s.setRepeatingRequest(d.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
                                 addTarget(out); set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                                if (back) set(CaptureRequest.FLASH_MODE, if (flash) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
+                                // the light's turn keeps the zoom: iOS applyFlash touches the torch alone (2228-2241)
+                                cropFor(cm, id, zoomOf[id] ?: 1f)?.let { set(CaptureRequest.SCALER_CROP_REGION, it) }
                             }.build(), null, h)
                         }
+                        issue()
+                        if (back) relight = { issue() } else if (!dual) relight = null   // a front camera alone carries no torch
                     }
                     override fun onConfigureFailed(s: CameraCaptureSession) {}
                 }, h)
@@ -349,6 +393,7 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
         runCatching { session?.close() }; runCatching { cam?.close() }
         front = !front
         openCamera()
+        told()
     }
 
     /**
@@ -360,14 +405,58 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
             dual = false; badgeReady = false
             runCatching { session2?.close() }; runCatching { cam2?.close() }; session2 = null; cam2 = null
             if (swapped) { swapped = false; front = true; runCatching { session?.close() }; runCatching { cam?.close() }; openCamera() }
+            told()
             return@post
         }
         val (back, frontId) = dualPair(c) ?: return@post
         runCatching { session?.close() }; runCatching { cam?.close() }
         front = false; swapped = false
-        openInto(back, camTexture!!, { cam = it }, { session = it })
-        openInto(frontId, camTexture2!!, { cam2 = it }, { session2 = it })
+        camTexture?.setDefaultBufferSize(1280, 720)   // the pair at its fixed size, never a step the single camera took
+        openInto(back, camTexture!!, { cam = it }, { session = it }, { mainSurface = it })
+        openInto(frontId, camTexture2!!, { cam2 = it }, { session2 = it }, { badgeSurface = it })
         dual = true
+        told()
+    }
+
+    /** THE BIG CIRCLE'S CAMERA ZOOMS, scaled from where the last pinch left it (iOS pinch, MontanaFeeds.swift:2207-2217 at
+     *  2155): the single camera, or whichever of the pair fills the main circle right now (iOS bigDevice). */
+    fun pinch(scale: Float) = h.post {
+        val big2 = dual && swapped
+        val d = (if (big2) cam2 else cam) ?: return@post
+        val cm = c.getSystemService(CameraManager::class.java)
+        // held between 1 and the sensor's own ceiling or 8x, whichever is lower (iOS 2215)
+        val z = (zoomBase * scale).coerceIn(1f, ceiling(cm, d.id))
+        zoomOf[d.id] = z
+        applyZoom(d, if (big2) session2 else session, if (big2) badgeSurface else mainSurface, z)
+    }
+    /** The gesture's end commits the zoom it leaves (iOS pinchEnded, MontanaFeeds.swift:2219-2223 at 2155: reads the
+     *  device's own clamped factor back, so the next pinch starts from what the hardware actually holds). */
+    fun pinchEnded() = h.post { val d = (if (dual && swapped) cam2 else cam) ?: return@post; zoomBase = zoomOf[d.id] ?: 1f }
+    private fun ceiling(cm: CameraManager, id: String): Float =
+        minOf(runCatching { cm.getCameraCharacteristics(id).get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) }.getOrNull() ?: 1f, 8f)
+    private fun applyZoom(d: CameraDevice?, s: CameraCaptureSession?, out: Surface?, zoom: Float) {
+        if (d == null || s == null || out == null) return
+        val cm = c.getSystemService(CameraManager::class.java)
+        val back = runCatching { cm.getCameraCharacteristics(d.id).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK }.getOrDefault(false)
+        val crop = cropFor(cm, d.id, zoom)
+        runCatching {
+            s.setRepeatingRequest(d.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
+                addTarget(out); set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                if (back) set(CaptureRequest.FLASH_MODE, if (flash) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
+                if (crop != null) set(CaptureRequest.SCALER_CROP_REGION, crop)
+            }.build(), null, h)
+        }
+    }
+    /** The sensor's own full frame, shrunk to the zoom step and centred -- the platform's digital zoom (iOS
+     *  dev.videoZoomFactor, capped at the same 8x, MontanaFeeds.swift:2215 at 2155). */
+    private fun cropFor(cm: CameraManager, id: String, zoom: Float): Rect? {
+        val chars = runCatching { cm.getCameraCharacteristics(id) }.getOrNull() ?: return null
+        val active = chars.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE) ?: return null
+        val z = zoom.coerceIn(1f, ceiling(cm, id))
+        if (z <= 1f) return null
+        val w = (active.width() / z).toInt(); val hh = (active.height() / z).toInt()
+        val x = active.left + (active.width() - w) / 2; val y = active.top + (active.height() - hh) / 2
+        return Rect(x, y, x + w, y + hh)
     }
 
     // ── the voice ──
@@ -495,9 +584,10 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
             float d = distance(vUv, vec2(0.5));
             float edge = smoothstep(uRadius, uRadius - 0.004, d);
             if (uBadge > 0.5) {
-                // the badge: its own circle over the big one, a light rim around it, nothing outside
-                float rim = smoothstep(uRadius - 0.05, uRadius - 0.04, d);
-                gl_FragColor = vec4(mix(col.rgb, vec3(1.0), rim * 0.85), edge);
+                // THE BADGE WEARS NO RIM (iOS atom 489451eb3bbc, 24.09: «take the black rim off the second circle --
+                // the same clean edge as the big one», MontanaFeeds.swift:2302-2305 at 2155): its own picture, the
+                // same anti-aliased edge as the big circle, nothing mixed in.
+                gl_FragColor = vec4(col.rgb, edge);
             } else {
                 gl_FragColor = mix(vec4(col.rgb * 0.28, 1.0), col, edge);
             }
@@ -505,14 +595,20 @@ class NoteRecorder(private val c: Context, private val preview: TextureView) {
     """.trimIndent()
 }
 
-/** THE NOTE'S RING (iOS MontanaNoteRing): the minute's progress around the window. */
-class NoteRing(c: Context) : View(c) {
+/** THE NOTE'S RING (iOS MontanaNoteRing, MontanaFeeds.swift:1282-1300 at 2155): the minute's progress around the window --
+ * grey glass while recording (atom c8beb390bd99: systemGray2 at 0.75, no gold, no timer under the circle -- the ring
+ * alone is the clock), the playback ring's own white otherwise. */
+class NoteRing(c: Context, private val glass: Boolean = false) : View(c) {
     var progress = 0f; set(v) { field = v; invalidate() }
     private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = Color.argb(70, 255, 255, 255) }
-    private val bar = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = Color.WHITE; strokeCap = Paint.Cap.ROUND }
+    private val bar = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
+        color = if (glass) Color.argb(191, 99, 99, 102) else Color.WHITE   // systemGray2 at 0.75, its dark shade: the app is always dark
+    }
     override fun onDraw(canvas: Canvas) {
-        val w = dp(4).toFloat(); track.strokeWidth = w; bar.strokeWidth = w
-        val r = RectF(w, w, width - w, height - w)
+        val tw = dp(4).toFloat(); val bw = dp(if (glass) 5 else 4).toFloat(); track.strokeWidth = tw; bar.strokeWidth = bw
+        val m = maxOf(tw, bw)
+        val r = RectF(m, m, width - m, height - m)
         canvas.drawOval(r, track)
         canvas.drawArc(r, -90f, 360f * progress.coerceIn(0f, 1f), false, bar)
     }

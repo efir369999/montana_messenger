@@ -14,10 +14,10 @@ object ContentFilter {
         "whore", "slut", "faggot", "fag", "nigger", "nigga", "retard", "kike", "spic", "chink", "tranny", "rape", "rapist",
         "pedo", "paedo", "pedophile",
         // Russian
-        "хуй", "хуя", "хуе", "хуи", "хую", "нахуй", "похуй", "пизда", "пизде", "пизду", "пиздец", "пиздато", "блядь", "блять",
-        "бля", "ебать", "ебал", "ебаный", "ебаная", "ебанный", "ёбаный", "заебал", "заебали", "выебу", "уебок", "уёбок", "ебло",
-        "сука", "суки", "сучка", "пидор", "пидорас", "пидар", "педик", "гандон", "мудак", "мудила", "шлюха",
-        "шалава", "чурка", "хач", "жид", "нигер", "дебил", "педофил",
+        "хуй", "хуя", "хуе", "хуи", "хую", "нахуй", "похуй", "пизда", "пизде", "пизду", "пиздец", "пиздато", "блядь", "блять",   // CYRILLIC-DATA-OK: the filter's own words
+        "бля", "ебать", "ебал", "ебаный", "ебаная", "ебанный", "ёбаный", "заебал", "заебали", "выебу", "уебок", "уёбок", "ебло",   // CYRILLIC-DATA-OK: the filter's own words
+        "сука", "суки", "сучка", "пидор", "пидорас", "пидар", "педик", "гандон", "мудак", "мудила", "шлюха",   // CYRILLIC-DATA-OK: the filter's own words
+        "шалава", "чурка", "хач", "жид", "нигер", "дебил", "педофил",   // CYRILLIC-DATA-OK: the filter's own words
     )
     val on: Boolean get() = Prefs.bool("objectionableFilterOn", true)
     // the same words have the same verdict: a bubble asks at every pass of its body (iOS «the verdict is kept by the words»)

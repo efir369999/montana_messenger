@@ -49,6 +49,11 @@ object PeerAbout {
         JSONObject(Prefs.str("about.$ref", "")).let { About(it.optString("b"), it.optString("l"), it.optDouble("at", 0.0)) }
     }.getOrNull()
 
+    /** Every correspondent's words held here, for a copy (iOS MTPeerAbout 75, 99-101: «peerAbout», one map of conversation to bio, link, moment). */
+    fun all(): Map<String, About> = Prefs.keys("about.").mapNotNull { k -> k.removePrefix("about.").let { r -> of(r)?.let { r to it } } }.toMap()
+    /** A copy laid (iOS SeedScope.unionKeys 6311): a correspondent whose words stand here keeps them, the copy adds the others. */
+    fun lay(m: Map<String, About>) { for ((r, a) in m) if (r.isNotEmpty() && of(r) == null) note(r, a.bio, a.link, a.at) }
+
     /** Their word arrived: an older word changes nothing. */
     fun note(ref: String, bio: String, link: String, at: Double) {
         val held = of(ref)
@@ -76,6 +81,17 @@ object PeerAbout {
 }
 
 /** THE BLOCK AND THE VERIFIED NUMBER (iOS MontanaSafety / SafetyStore): one owner each; every road asks here. */
+/**
+ * A LINK GOES AS A LINK (iOS MTShare.web, MontanaE2E.swift:267-274; the author's word 07.10.2026 00:1x MSK: «Share gives one link
+ * that opens in the browser, not a text that turned into a file»): a string that is a web address goes alone; null — it is none.
+ */
+fun webLink(s: String): String? {
+    val t = s.trim()
+    val u = runCatching { Uri.parse(t) }.getOrNull() ?: return null
+    val scheme = u.scheme?.lowercase()
+    return if ((scheme == "https" || scheme == "http") && !u.host.isNullOrEmpty()) t else null
+}
+
 object PeerSafety {
     fun isBlocked(ref: String) = Prefs.bool("block.$ref", false)
     /**
@@ -90,6 +106,32 @@ object PeerSafety {
     }
     fun isVerified(ref: String) = Prefs.bool("fpVerified.$ref", false)
     fun setVerified(ref: String, on: Boolean) = Prefs.setBool("fpVerified.$ref", on)
+
+    /** Every person blocked here: a copy carries them as the iPhone's «blockedChats» (iOS SeedScope.dataKeys, MontanaChatStore.swift 6132). */
+    fun blocked(): List<String> = Prefs.keys("block.").filter { Prefs.bool(it, false) }.map { it.removePrefix("block.") }
+    /**
+     * A COPY LAID (iOS layCard under SeedScope.unionKeys, MontanaChatStore.swift 6307; takeStored 2134): a block the copy carries
+     * stands here too, and none stands down. Said to nobody — the iPhone lays it as silently (blockedChats' didSet 861-866 only writes).
+     */
+    fun layBlocked(refs: List<String>) { for (r in refs) if (r.isNotEmpty() && !isBlocked(r)) Prefs.setBool("block.$r", true) }
+    /** The correspondences checked face to face (iOS SafetyStore, MontanaScreens.swift 184-195): carried, and laid as a union. */
+    fun verified(): List<String> = Prefs.keys("fpVerified.").filter { Prefs.bool(it, false) }.map { it.removePrefix("fpVerified.") }
+    fun layVerified(refs: List<String>) { for (r in refs) if (r.isNotEmpty()) setVerified(r, true) }
+
+    /**
+     * THE BARRED ADDRESSES (iOS MontanaSafety.barred/setBarred, MontanaSafety.swift:28-41; ChatStore.refuses, MontanaChatStore.swift:879;
+     * MontanaWakePush.swift:155-158): an address the network's operators barred after a report is refused like a blocked one — the
+     * node itself cannot bar anyone, it sees labels, never identities, so the bar rides the doors' answer down to the phones.
+     */
+    /** The barred addresses as kept (iOS MontanaSafety.barred, MontanaSafety.swift 33): a copy carries them, laid as a union. */
+    fun barred(): List<String> = Prefs.str("barredPeers", "").split('\n').filter { it.isNotEmpty() }
+    fun isBarred(ref: String) = ref in Prefs.str("barredPeers", "").split('\n').filter { it.isNotEmpty() }
+    fun setBarred(list: List<String>) {
+        val clean = list.map { it.trim() }.filter { it.isNotEmpty() }
+        if (clean.toSet() == Prefs.str("barredPeers", "").split('\n').filter { it.isNotEmpty() }.toSet()) return
+        Prefs.setStr("barredPeers", clean.joinToString("\n"))
+        android.util.Log.d("Montana", "barred n=" + clean.size)
+    }
 
     /**
      * THE CORRESPONDENCE'S NUMBER (iOS MTPipe.fingerprint): 5200 rounds of SHA-256("mt-safety" ‖ 0 ‖ h) over the pipe's secret,
@@ -116,6 +158,8 @@ object PeerSafety {
 object PeerContact {
     fun isKept(ref: String) = Prefs.bool("contact.$ref", false)
     fun keep(ref: String) = Prefs.setBool("contact.$ref", true)
+    /** Every person kept, for a copy (iOS «mtContacts», isInContacts MontanaPeerInfo.swift 395-399: kept when the list names them). */
+    fun all(): List<String> = Prefs.keys("contact.").filter { Prefs.bool(it, false) }.map { it.removePrefix("contact.") }
 }
 
 // ─────────────────────────── the panes (iOS MTMediaTab) ───────────────────────────
@@ -143,12 +187,47 @@ private fun itemOf(m: Msg): Item? {
 }
 private fun Item.isMusic() = kind == "doc" && (name ?: file?.name ?: "").substringAfterLast('.', "").lowercase() in AUDIO_EXT
 
-/** The links a letter carries: the platform's own finder, the web alone (iOS MTLinks). */
+/**
+ * A MONTANA LINK, FOUND BY ITS OWN SCHEME (iOS MTLinks.find, MontanaPeerInfo.swift:162-180, atom 20c5cef6f490): the trailing
+ * punctuation a sentence glues on stays outside it.
+ */
+fun montanaLinkMatches(text: String): List<Pair<IntRange, Uri>> {
+    val trail = ".,;:!?)]}>»›\"'’”…"
+    val out = mutableListOf<Pair<IntRange, Uri>>()
+    for (mm in Regex("montana://\\S+", RegexOption.IGNORE_CASE).findAll(text)) {
+        var end = mm.range.last
+        while (end >= mm.range.first && text[end] in trail) end--
+        if (end < mm.range.first) continue
+        val found = text.substring(mm.range.first, end + 1)
+        if (found.lowercase().startsWith(ChessLetter.LINK)) continue   // a game's letter is no link (iOS MTLinks.find 173)
+        out.add((mm.range.first..end) to Uri.parse(found))
+    }
+    return out
+}
+
+/**
+ * THE WORDS WEARING THEIR LINKS, OPEN AT A TOUCH (iOS MTLinks.marked/MTLinks.linked, MontanaPeerInfo.swift:185-203, atom
+ * 20c5cef6f490): the web's own finder and a Montana link by its own scheme alike; a Montana link opens on the app's own road,
+ * a web link on the platform's.
+ */
+fun linkedWords(text: String, openMontana: (Uri) -> Unit): android.text.SpannableString {
+    val s = android.text.SpannableString(text)
+    android.text.util.Linkify.addLinks(s, android.text.util.Linkify.WEB_URLS)
+    for ((range, uri) in montanaLinkMatches(text)) {
+        s.setSpan(object : android.text.style.ClickableSpan() {
+            override fun onClick(widget: View) { openMontana(uri) }
+        }, range.first, range.last + 1, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+    return s
+}
+
+/** The links a letter carries: the platform's own finder, and a Montana link by its own scheme (iOS MTLinks, atom 20c5cef6f490). */
 private fun linksIn(text: String): List<Uri> {
     if (Marks.isService(text) || text.length > 20_000) return emptyList()
     val out = mutableListOf<Uri>()
     val m = android.util.Patterns.WEB_URL.matcher(text)
     while (m.find()) PeerAbout.url(m.group())?.let { out.add(it) }
+    montanaLinkMatches(text).forEach { out.add(it.second) }
     return out
 }
 
@@ -248,23 +327,32 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
             tint = if (verified) MT.green else MT.gray) {
             act.push { close -> safetyPage(act, ref, name) { close(); redrawAll() } }
         })
-        // SHARE CONTACT (iOS shareContact): the correspondent's own daily link, handed to us to hand on; without a fresh one it is
-        // asked for, and a peer that does not answer within six seconds is asleep or older — said honestly
+        // SHARE CONTACT (iOS shareContact, MontanaPeerInfoScreen.swift:379-390): the correspondent's own daily link, handed to us to
+        // hand on. A LINK GOES AS A LINK (iOS MTShare.web, MontanaE2E.swift:267-274, the author's word 07.10 00:1x): a web address
+        // goes alone, so the receiving app opens it in the browser; anything else goes as «<name> is in Montana!» and the link
+        // (MontanaConv.contactMessage, MontanaPQ.swift:212-216). Without a fresh link it is asked for, «Asking for the contact
+        // link…» standing on the screen, and a peer that does not answer within six seconds is asleep or older — said honestly
         first.add(row(R.drawable.ic_share, c.getString(R.string.pi_share_contact)) {
             fun share(link: String) = runCatching {
+                val text = webLink(link) ?: (c.getString(R.string.pi_contact_share_msg, name) + "\n" + link)
                 act.startActivity(android.content.Intent.createChooser(android.content.Intent(android.content.Intent.ACTION_SEND)
-                    .setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, link), null))
+                    .setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, text), null))
             }
             PeerLinks.fresh(ref)?.let { share(it); return@row }
             LiveDraft.askLink(ref)
+            var cancelled = false
+            val asking = AlertDialog.Builder(c).setMessage(R.string.pi_asking_link)
+                .setNegativeButton(R.string.cancel) { d, _ -> cancelled = true; d.dismiss() }.show()
             val asked = System.currentTimeMillis()
             lateinit var wait: Runnable
             wait = Runnable {
-                val got = PeerLinks.fresh(ref)
-                when {
-                    got != null -> share(got)
-                    System.currentTimeMillis() - asked < 6000 -> MainThread.later(300, wait)
-                    else -> AlertDialog.Builder(c).setMessage(R.string.pi_link_unavailable).setPositiveButton(android.R.string.ok, null).show()
+                if (!cancelled) {
+                    val got = PeerLinks.fresh(ref)
+                    when {
+                        got != null -> { asking.dismiss(); share(got) }
+                        System.currentTimeMillis() - asked < 6000 -> MainThread.later(300, wait)
+                        else -> { asking.dismiss(); AlertDialog.Builder(c).setMessage(R.string.pi_link_unavailable).setPositiveButton(android.R.string.ok, null).show() }
+                    }
                 }
             }
             MainThread.later(300, wait)
@@ -448,11 +536,18 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
         val j = tab.ordinal + step
         if (j in Tab.values().indices) choose(Tab.values()[j])
     }
+    fun emptyPane(): View = c.vstack(Gravity.CENTER_HORIZONTAL) {
+        setPadding(0, dp(36), 0, dp(36))
+        addView(c.icon(tab.icon, MT.gray), lp(dp(42), dp(42)))
+        addView(c.text(c.getString(tab.empty), 15f, MT.gray, center = true), lp().apply { topMargin = dp(10) })
+    }
     drawPane = {
         pane.removeAllViews()
         val msgs = select(tab, Book.chat(ref)?.msgs ?: emptyList())
         if (tab == Tab.WALL) {
-            pane.addView(c.hstack {
+            // THE WRITE BUTTON WHILE THE OWNER LETS ME WRITE (iOS MTBoardRows, MontanaBoardViews.swift:156-161 at 2155): it opens the
+            // one new post's page over their wall (MTBoardComposer.present(on: owner)), and the post goes to them
+            if (Board.canWrite(ref)) pane.addView(c.hstack {
                 gravity = Gravity.CENTER_VERTICAL
                 background = c.glassPlate()
                 setPadding(dp(14), dp(10), dp(14), dp(10))
@@ -461,14 +556,17 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
                     addView(c.icon(R.drawable.ic_compose, Color.WHITE), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
                 }, lp(dp(44), dp(44)).apply { marginEnd = dp(14) })
                 addView(c.text(c.getString(R.string.pi_write_wall), 17f))
-                pressable { notYet() }
+                pressable { act.push { close -> newPostPage(act, close, wall = ref) } }
             }, lp().apply { topMargin = c.dp(12) })
-        }
-        if (msgs.isEmpty()) pane.addView(c.vstack(Gravity.CENTER_HORIZONTAL) {
-            setPadding(0, dp(36), 0, dp(36))
-            addView(c.icon(tab.icon, MT.gray), lp(dp(42), dp(42)))
-            addView(c.text(c.getString(tab.empty), 15f, MT.gray, center = true), lp().apply { topMargin = dp(10) })
-        }, lp())
+            // A POST ON ITS WAY TO THEIR WALL stands at once as it will be published, under the bar of its files (iOS MTBoardRows 167-172)
+            val onItsWay = MyWall.sending(ref)
+            onItsWay.forEach { o -> pane.addView(goingCell(act, o), lp().apply { topMargin = c.dp(10) }) }
+            // THE WALL'S OWN ROWS (iOS MTBoardRows, MontanaPeerInfoScreen.swift:646): a person's page shows their wall --
+            // the same cells the feed draws (Board.postCell), with no "on X's wall" line of its own (onItsWall).
+            val wallPosts = Board.posts(ref)
+            if (wallPosts.isEmpty() && onItsWay.isEmpty()) pane.addView(emptyPane(), lp())
+            else wallPosts.forEach { item -> pane.addView(postCell(act, item, onItsWall = true), lp().apply { topMargin = c.dp(10) }) }
+        } else if (msgs.isEmpty()) pane.addView(emptyPane(), lp())
         else paneRows(act, tab, msgs.reversed(), pane, law)   // newest on top
     }
 
@@ -479,6 +577,10 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
     body.addView(bar, lp(MATCH, c.dp(44)).apply { topMargin = c.dp(24); marginStart = c.dp(16); marginEnd = c.dp(16) })
     body.addView(pane, lp())
     redrawAll()
+    // THE LOOK ASKS (iOS look, MontanaBoard.swift:609-613, MontanaPeerInfoScreen.swift:636-638, the author's word 25.09):
+    // the wall not held, or held more than ten minutes, is asked for the moment this page opens.
+    Board.look(ref)
+    val wallHeard: () -> Unit = { if (tab == Tab.WALL) drawPane() }
 
     val listener: () -> Unit = { drawHead(); drawPane(); if (selecting) drawFoot() }
     // the one player's turn redraws the music's glyphs, and only its turn: the clock's ticks change nothing here
@@ -489,10 +591,15 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
     }
     return FrameLayout(c).apply {
         setBackgroundColor(Color.BLACK)
-        addView(CrestGround(c), FrameLayout.LayoutParams(MATCH, MATCH))
+        addView(c.chatGround(PageGround.keyOf(ref)), FrameLayout.LayoutParams(MATCH, MATCH))   // the ground they sent, mine where they sent none (iOS MTFacePage 377-406)
         // a stroke begun on the strip rolls the strip and turns nothing; the page scrolled up closes the open face
-        addView(PanesScroll(c, skip = { y -> y in bar.top.toFloat()..bar.bottom.toFloat() }, turn = { turnPane(it) }).apply {
-            isVerticalScrollBarEnabled = false; addView(body); face.attach(this)
+        val rows = PanesScroll(c, skip = { y -> y in bar.top.toFloat()..bar.bottom.toFloat() }, turn = { turnPane(it) }).apply {
+            isVerticalScrollBarEnabled = false; clipToPadding = false; addView(body); face.attach(this)
+        }
+        // THE ROWS SINK INTO THE GROUND PAST THE MARKS ON TOP AND THE BARS AT THE FOOT (iOS MTPageEdges, MontanaPeerHeader.swift:401)
+        lateinit var foot0: View
+        addView(EdgeSink(c, top = { c.dp(50) }, bottom = { height - paddingTop - paddingBottom - foot0.height }).apply {
+            addView(rows, FrameLayout.LayoutParams(MATCH, MATCH))
         }, FrameLayout.LayoutParams(MATCH, MATCH))
         // the back mark on its own round of glass, over the page
         addView(FrameLayout(c).apply {
@@ -507,10 +614,17 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
             addView(c.icon(R.drawable.ic_more_horiz, Color.WHITE), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
             pressable { act.push { close -> peerEditPage(act, ref, close) } }
         }, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(14), 0) })
-        addView(foot, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM))
+        // THE BARS OVER THE PAGE'S BOTTOM STAND OUTSIDE ITS ROWS (iOS MontanaPeerInfoScreen.swift:69-84): the selection's bar over
+        // the mini player, both at the foot, and the rows end above them. THE MINI PLAYER STANDS HERE TOO (the author's word 18.09):
+        // the same bar as the chat's and the list's, by reference — music and voices started on this page play in it, and a tap on
+        // it goes to the letter by the one road (liveBar follows the global Playing state while attached).
+        val bars = c.vstack(Gravity.NO_GRAVITY) { addView(foot, lp()); addView(liveBar(act), lp()) }
+        foot0 = bars
+        bars.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> if (rows.paddingBottom != v.height) v.post { rows.setPadding(0, 0, 0, v.height) } }
+        addView(bars, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM))
         addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) { Book.listen(listener); MusicPlayer.listeners.add(music) }
-            override fun onViewDetachedFromWindow(v: View) { Book.unlisten(listener); MusicPlayer.listeners.remove(music) }
+            override fun onViewAttachedToWindow(v: View) { Book.listen(listener); Board.listen(wallHeard); MyWall.listen(wallHeard); MusicPlayer.listeners.add(music) }
+            override fun onViewDetachedFromWindow(v: View) { Book.unlisten(listener); Board.unlisten(wallHeard); MyWall.unlisten(wallHeard); MusicPlayer.listeners.remove(music) }
         })
     }
 }
@@ -647,18 +761,38 @@ private fun tile(act: MainActivity, m: Msg, law: ItemLaw): View {
         setBackgroundColor(Color.argb(40, 255, 255, 255))
         val img = ImageView(c).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
         addView(img, FrameLayout.LayoutParams(MATCH, MATCH))
-        val held = f?.let { tileCache.get(it.path) }
+        // THE COVER AT THE CELL'S OWN PIXELS (iOS MTCover side, MontanaProfile.swift:1919-1951; MontanaPeerInfoScreen.swift:720 at 2155):
+        // a picture is asked so its SHORT side fills 180 points, kept under its own key beside the gallery's smaller drawing of it
+        val key = f?.let { x -> if (kind == "img") x.path + "#" + c.dp(180) else x.path }
+        val held = key?.let { k -> tileCache.get(k) }
         if (held != null) img.setImageBitmap(held)
         else {
             val man = m.meta?.let { j -> runCatching { JSONObject(j) }.getOrNull() } ?: Media.inline(m.text)
             tileWork.execute {
-                val pic = f?.let { x -> Media.preview(c, x, kind, 360)?.also { b -> tileCache.put(x.path, b) } } ?: Media.thumbOf(man)
+                val drawn = if (f == null) null else if (kind == "img") cellCover(c, f) else Media.preview(c, f, kind, 360)
+                if (drawn != null && key != null) tileCache.put(key, drawn)
+                val pic = drawn ?: Media.thumbOf(man)
                 if (pic != null) img.post { img.setImageBitmap(pic) }
             }
         }
         if (kind == "vid") addView(c.icon(R.drawable.ic_play_fill, Color.WHITE), FrameLayout.LayoutParams(c.dp(28), c.dp(28), Gravity.CENTER))
     }
     return itemLaw(c, face, m, law) { if (f != null) openMedia(act, f, kind) }
+}
+
+/**
+ * THE LONGEST SIDE TO ASK SO THE PICTURE'S SHORT SIDE FILLS THE CELL (iOS MTCover.longest, MontanaProfile.swift:1954-1961 at 2155): 180
+ * points of short side, never more than the picture has -- the gallery's drawing, sampled by 360 pixels, left a long picture's short
+ * side under the cell's.
+ */
+private fun cellCover(c: Context, f: File): android.graphics.Bitmap? {
+    val short = c.dp(180)
+    val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(f.path, o)
+    val long = maxOf(o.outWidth, o.outHeight)
+    val side = minOf(o.outWidth, o.outHeight)
+    if (side <= 0) return Media.preview(c, f, "img", short)
+    return Media.preview(c, f, "img", minOf(long.toLong(), (short.toLong() * long + side - 1) / side).toInt())
 }
 
 /** A row on the bar's own glass (iOS glassRow): the square plate with the glyph, the long plate with the words and the time. */
@@ -698,7 +832,8 @@ private fun safetyPage(act: MainActivity, ref: String, name: String, onClose: ()
             status.setTextColor(if (v) MT.green else MT.gray)
             mark.text = c.getString(if (v) R.string.pi_fp_unverify else R.string.pi_fp_verified)
             mark.setTextColor(if (v) Color.WHITE else Color.BLACK)
-            mark.background = c.rounded(if (v) Color.argb(76, 142, 142, 147) else MT.gold, 10)
+            // NO YELLOW WORD (iOS MontanaScreens.swift:254, 2155: Color.accentColor, white in the dark): the fill lost its gold with every other word.
+            mark.background = c.rounded(if (v) Color.argb(76, 142, 142, 147) else Color.WHITE, 10)
         }
         addView(status, lp().apply { topMargin = c.dp(14) })
         if (digits.isNotEmpty()) addView(QrView(c).apply { code = QrCode.encode("mt:fp:$digits", QrCode.Ecc.M) },
@@ -712,9 +847,10 @@ private fun safetyPage(act: MainActivity, ref: String, name: String, onClose: ()
         }, lp().apply { topMargin = c.dp(18) })
         // THEIR QR READ BY THE CAMERA (iOS SafetyNumberView's scan): only a fingerprint of this shape is compared — any other
         // code keeps the camera looking; the same number verifies, a different one unverifies and is said (it is evidence)
-        if (digits.isNotEmpty()) addView(c.text(c.getString(R.string.sn_scan), 17f, MT.gold, bold = true, center = true).apply {
+        // NO YELLOW WORD (iOS MontanaScreens.swift:261-262, 2155: Color.accentColor, white in the dark): the text and the stroke alike.
+        if (digits.isNotEmpty()) addView(c.text(c.getString(R.string.sn_scan), 17f, Color.WHITE, bold = true, center = true).apply {
             setPadding(0, dp(12), 0, dp(12))
-            background = c.rounded(Color.TRANSPARENT, 10, MT.gold)
+            background = c.rounded(Color.TRANSPARENT, 10, Color.WHITE)
             pressable {
                 act.push { close ->
                     scannerPage(act, close) { code ->
@@ -739,12 +875,14 @@ private fun safetyPage(act: MainActivity, ref: String, name: String, onClose: ()
 // ─────────────────────────── the report (iOS MontanaReportSheet) ───────────────────────────
 
 /** A report by mail to the network's address: the reason, «block this person too», the platform's own mail road. */
-fun reportPage(act: MainActivity, ref: String, name: String, onClose: () -> Unit): View {
+// A post whose writer the wall never named is reported through its wall, and nobody is offered to be blocked for another's words
+// (iOS MontanaReportSheet(offersBlock:), MontanaBoardViews.swift:58-60 at 2155).
+fun reportPage(act: MainActivity, ref: String, name: String, offersBlock: Boolean = true, onClose: () -> Unit): View {
     val c: Context = act
     val reasons = listOf("spam" to R.string.pi_spam, "abuse" to R.string.pi_abuse, "hate" to R.string.pi_hate,
         "illegal" to R.string.pi_illegal, "other" to R.string.pi_other)
     var reason = "spam"
-    var blockToo = true
+    var blockToo = offersBlock
     val mail = "contact@montana.quest"
     return settingsPage(act, c.getString(R.string.pi_report), onClose, cross = true) {
         val rows = reasons.map { (key, words) ->
@@ -752,20 +890,21 @@ fun reportPage(act: MainActivity, ref: String, name: String, onClose: () -> Unit
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(16), dp(12), dp(16), dp(12))
                 addView(c.text(c.getString(words), 16f), lp(0, WRAP, 1f))
-                addView(c.icon(R.drawable.ic_check, MT.gold, 20).apply { tag = key }, lp(dp(20), dp(20)))
+                // NO YELLOW WORD (iOS MontanaSafety.swift:176, 2155: Color.accentColor, white in the dark): the chosen reason's mark.
+                addView(c.icon(R.drawable.ic_check, Color.WHITE, 20).apply { tag = key }, lp(dp(20), dp(20)))
             }
         }
         fun mark() = rows.forEach { r -> (r as LinearLayout).getChildAt(1).visibility = if (r.getChildAt(1).tag == reason) View.VISIBLE else View.INVISIBLE }
         rows.forEachIndexed { i, r -> r.pressable { reason = reasons[i].first; mark() } }
         mark()
         section(c.getString(R.string.pi_reason), null, *rows.toTypedArray())
-        section(null, null, c.hstack {
+        if (offersBlock) section(null, null, c.hstack {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(16), dp(8), dp(14), dp(8))
             addView(c.text(c.getString(R.string.pi_block_too), 16f), lp(0, WRAP, 1f))
             addView(Switch(c).apply { isChecked = true; setOnCheckedChangeListener { _, v -> blockToo = v } })
         })
-        section(null, c.getString(R.string.pi_reports_go, mail), c.text(c.getString(R.string.pi_send_report), 16f, MT.blue).apply {
+        section(null, c.getString(R.string.pi_reports_go, mail), c.text(c.getString(R.string.pi_send_report), 16f, Color.WHITE).apply {   // iOS .accentColor, white since the gold left (MontanaSafety.swift:204, 2155)
             setPadding(dp(16), dp(14), dp(16), dp(14))
             pressable {
                 if (blockToo) PeerSafety.setBlocked(ref, true)
@@ -870,7 +1009,7 @@ fun peerEditPage(act: MainActivity, ref: String, onClose: () -> Unit): View {
     fun keysAway() = c.getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(body.windowToken, 0)
     return FrameLayout(c).apply {
         setBackgroundColor(Color.BLACK)
-        addView(CrestGround(c), FrameLayout.LayoutParams(MATCH, MATCH))
+        addView(c.chatGround(PageGround.keyOf(ref)), FrameLayout.LayoutParams(MATCH, MATCH))   // the ground they sent, mine where they sent none (iOS MTFacePage 377-406)
         addView(ScrollView(c).apply { isVerticalScrollBarEnabled = false; addView(body) }, FrameLayout.LayoutParams(MATCH, MATCH))
         addView(c.text(c.getString(R.string.pe_edit), 17f, Color.WHITE, bold = true, center = true),
             FrameLayout.LayoutParams(WRAP, dp(44), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = dp(6) })

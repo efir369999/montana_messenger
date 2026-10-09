@@ -23,11 +23,13 @@
     <string name="loading_file">加载中…</string>
     <string name="release_send">松开发送</string>   <!-- iOS «Release to send», over a held tape -->
     <string name="release_cancel">松开取消</string>
+    <string name="hold_to_record">按住录制</string>   <!-- iOS «Hold to record», MontanaConversation.swift:911 at 2155 -->
     <string name="unread_messages">未读消息</string>   <!-- iOS «Unread messages» -->
     <string name="to_newest">到最新</string>   <!-- the chevron to the feed's newest end, for the reader -->
     <string name="invite_spent">邀请已失效。请索取新的邀请码。</string>
     <string name="invite_refused">无法打开邀请。请检查链接或重试。</string>
-    <string name="invite_nameless">Android 暂不支持名称——请索取名片链接。</string>
+    <string name="invite_nameless">没有人持有这个名字。</string>
+    <string name="invite_own_name">这是你自己的名字。</string>
     <string name="invite_wait">请先创建身份——邀请随后会自动打开。</string>
     <string name="scan">扫描</string>
     <string name="paste_link">粘贴链接</string>

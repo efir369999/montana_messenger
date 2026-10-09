@@ -24,7 +24,6 @@ import android.widget.TextView
 
 // ─────────── colours (iOS MontanaNetFrames.swift / ContentView.swift) ───────────
 object MT {
-    val gold = Color.rgb(217, 158, 56)          // Color(red: 0.85, green: 0.62, blue: 0.22)
     val gray = Color.rgb(142, 142, 147)         // iOS .gray
     val plate = Color.rgb(31, 31, 31)           // iOS Color(white: 0.12)
     val orange = Color.rgb(255, 159, 10)        // iOS .orange (dark)
@@ -103,15 +102,15 @@ fun View.pressable(onClick: () -> Unit): View {
     return this
 }
 
-/** The gold button (iOS bigButton): gold fill, black headline, corner 14. */
-class GoldButton(ctx: Context, title: String, onClick: () -> Unit) : LinearLayout(ctx) {
+/** The page's act (iOS bigButton, MontanaScreens 579-581 at 2155): the accent's fill -- white in the dark (AccentColor) --, black headline, corner 14. */
+class AccentButton(ctx: Context, title: String, onClick: () -> Unit) : LinearLayout(ctx) {
     private val label = ctx.text(title, 17f, Color.BLACK, bold = true)
     private val spinner = ProgressBar(ctx).apply {
         indeterminateTintList = ColorStateList.valueOf(Color.BLACK); visibility = View.GONE
     }
     init {
         orientation = HORIZONTAL; gravity = Gravity.CENTER
-        background = ctx.rounded(MT.gold, 14)
+        background = ctx.rounded(Color.WHITE, 14)
         setPadding(0, dp(16), 0, dp(16))
         addView(spinner, LayoutParams(dp(18), dp(18)).apply { marginEnd = dp(8) })
         addView(label)
@@ -119,7 +118,7 @@ class GoldButton(ctx: Context, title: String, onClick: () -> Unit) : LinearLayou
     }
     fun setTitle(s: String) { label.text = s }
     fun setBusy(busy: Boolean) { spinner.visibility = if (busy) View.VISIBLE else View.GONE; setOn(!busy) }
-    /** Enabled or dimmed to 0.4, as iOS dims a disabled gold button. */
+    /** Enabled or dimmed to 0.4, as iOS dims a disabled button. */
     fun setOn(on: Boolean) { isEnabled = on; alpha = if (on) 1f else 0.4f }
 }
 
@@ -152,14 +151,6 @@ class PathDoor(ctx: Context, title: String, tint: Int? = null, onClick: () -> Un
     fun setOn(on: Boolean) { isEnabled = on; alpha = if (on) 1f else 0.4f }
 }
 
-/** The outlined button: the word in [color], a 1pt stroke, corner 14. */
-fun Context.outlineButton(title: String, color: Int = MT.gold, stroke: Int = MT.gold, onClick: () -> Unit) =
-    text(title, 17f, color, bold = true, center = true).apply {
-        background = rounded(Color.TRANSPARENT, 14, stroke)
-        setPadding(0, dp(16), 0, dp(16))
-        pressable(onClick)
-    }
-
 /** iOS Button("Back").font(.caption).foregroundColor(.gray) */
 fun Context.backLink(onClick: () -> Unit) =
     text(getString(R.string.back), 12f, MT.gray, center = true).apply { setPadding(dp(16), dp(8), dp(16), dp(8)); pressable(onClick) }
@@ -168,7 +159,7 @@ fun Context.backLink(onClick: () -> Unit) =
 fun Context.toggleRow(title: String, onChange: (Boolean) -> Unit): LinearLayout {
     val sw = Switch(this).apply {
         thumbTintList = ColorStateList.valueOf(Color.WHITE)
-        trackTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(MT.gold, Color.rgb(57, 57, 61)))
+        trackTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(MT.green, Color.rgb(57, 57, 61)))   // iOS Toggle: the platform's green
         setOnCheckedChangeListener { _, on -> onChange(on) }
     }
     return hstack {
@@ -180,13 +171,52 @@ fun Context.toggleRow(title: String, onChange: (Boolean) -> Unit): LinearLayout 
 
 /** The page's glass plate: rows on a rounded dark card (iOS MTGlassRowPlate inside a List section). */
 fun Context.plate(build: LinearLayout.() -> Unit) = vstack(Gravity.NO_GRAVITY) {
-    background = rounded(MT.plate, 12)
+    background = rounded(GLASS_TONE, 12, Color.argb(26, 255, 255, 255))   // the settings' cards on one-tone glass (iOS MTGlassCardPlate, MontanaBoardViews.swift:2764)
     build()
 }
 
 fun LinearLayout.divider() = addView(View(context).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = dp(16) })
 
-/** The face (iOS AvatarCircle): the photo, or the name's first character, bold and white, on a black circle. */
+/**
+ * THE LETTER OR EMOJI OF A FACE, ONE DERIVATION FOR THE WHOLE CLIENT (iOS MontanaAvatar.initial/isEmoji/glyphScale,
+ * MontanaAvatarKit.swift:22-54, atom 344e5535221e/1783): a glyph the person put first IS their face, drawn as is
+ * and larger, as the face itself; otherwise the first letter, uppercased, at the caption's share.
+ */
+fun avatarInitial(name: String): String {
+    val t = name.trim()
+    if (t.isEmpty()) return "?"
+    // the first CHARACTER as the person sees it (iOS t.first, a grapheme): a flag or a family of joined glyphs is one
+    val chars = android.icu.text.BreakIterator.getCharacterInstance().apply { setText(t) }
+    val g = t.substring(0, chars.next().takeIf { 0 < it } ?: t.offsetByCodePoints(0, 1))
+    return if (isAvatarEmoji(g)) g else g.uppercase()
+}
+/** iOS MontanaAvatar.isEmoji (MontanaAvatarKit.swift:22-26): a joined character is a glyph when any of its scalars is; a lone one above U+238C. */
+private fun isAvatarEmoji(g: String): Boolean {
+    val points = g.codePoints().toArray()
+    if (points.isEmpty()) return false
+    if (1 < points.size) return points.any { android.icu.lang.UCharacter.hasBinaryProperty(it, android.icu.lang.UProperty.EMOJI) }
+    return 0x238C < points[0] && android.icu.lang.UCharacter.hasBinaryProperty(points[0], android.icu.lang.UProperty.EMOJI)
+}
+/** iOS MontanaAvatar.glyphScale (MontanaAvatarKit.swift:31-34): a letter 0.40 of the circle, a glyph -- the face itself -- 0.62. */
+fun avatarGlyphScale(g: String): Float = if (g.isNotEmpty() && isAvatarEmoji(g)) 0.62f else 0.40f
+
+/**
+ * THE PLATFORM'S COUNT BADGE (iOS MTCountBadge, ContentView.swift:1436-1455): a red capsule 20 high, the number 13 semibold, 6 at
+ * its sides and never narrower than 20; above 99 «99+»; nothing at all at zero.
+ */
+fun Context.countBadge(): TextView = text("", 13f, Color.WHITE, bold = true).apply {
+    background = rounded(SysColor.red, 10)
+    gravity = Gravity.CENTER
+    minWidth = dp(20)
+    setPadding(dp(6), 0, dp(6), 0)
+    visibility = View.GONE
+}
+fun TextView.showCount(n: Int) {
+    text = if (99 < n) "99+" else n.toString()   // USER-DATA: a count
+    visibility = if (0 < n) View.VISIBLE else View.GONE
+}
+
+/** The face (iOS AvatarCircle): the photo, or the avatar's own initial, bold and white, on a black circle. */
 fun Context.avatar(face: Bitmap?, name: String, sizeDp: Int): View {
     val box = FrameLayout(this)
     box.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.BLACK) }
@@ -196,7 +226,7 @@ fun Context.avatar(face: Bitmap?, name: String, sizeDp: Int): View {
     }
     val inner: View = when {
         face != null -> ImageView(this).apply { setImageBitmap(face); scaleType = ImageView.ScaleType.CENTER_CROP }
-        name.isNotBlank() -> text(name.trim().let { it.substring(0, it.offsetByCodePoints(0, 1)) }, sizeDp * 0.42f, Color.WHITE, bold = true, center = true)
+        name.isNotBlank() -> avatarInitial(name).let { g -> text(g, sizeDp * avatarGlyphScale(g), Color.WHITE, bold = true, center = true) }
         else -> icon(R.drawable.ic_add_a_photo, Color.WHITE, (sizeDp * 0.36f).toInt())
     }
     val p = if (inner is ImageView && face == null) FrameLayout.LayoutParams(dp(sizeDp * 0.36f), dp(sizeDp * 0.36f), Gravity.CENTER)

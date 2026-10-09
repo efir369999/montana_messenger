@@ -1,0 +1,5 @@
+<!-- Material «flash_on», the twin of the SF symbol bolt.fill (iOS the note's flash seat, MontanaShapes.swift:962). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M7,2v11h3v9l7,-12h-4l4,-8z" />
+</vector>

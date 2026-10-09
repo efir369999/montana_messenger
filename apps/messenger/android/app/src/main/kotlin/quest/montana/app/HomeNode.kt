@@ -47,6 +47,8 @@ object MontanaHomeNode {
     fun forget(ctx: Context) { DeviceVault.delete(HOST); DeviceVault.delete(PIN); prefs(ctx).edit().remove(ON).remove(LAST).apply() }
     /** The digest of the node's own certificate (a node put up by address); empty for a named node. */
     val pin: String get() = DeviceVault.get(PIN)?.toString(Charsets.UTF_8) ?: ""
+    /** The digest a copy carried (iOS MontanaHomeNode.setPin, MontanaHomeNode.swift 48): the node's own word, empty for a named node. */
+    fun setPin(p: String) { if (p.isEmpty()) DeviceVault.delete(PIN) else DeviceVault.set(PIN, p.toByteArray()) }
 
     /** A pinned node is spoken to straight, on the door's own TLS port; a named one through its front, under /pushwake. */
     fun base(h: String): String? = when {

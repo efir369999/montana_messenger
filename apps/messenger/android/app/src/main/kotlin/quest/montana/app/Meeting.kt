@@ -19,11 +19,13 @@ object Meeting {
         object Spent : Outcome()
         object Refused : Outcome()
         object Nameless : Outcome()
+        object OwnName : Outcome()   // one's own name opens nothing: a correspondence with oneself is a ghost in both books
     }
     /** The words a meeting that did not open says — the scanner's and the link road's alike (iOS ScanMeetingView 519-522). */
     fun verdict(o: Outcome): Int = when (o) {
         Outcome.Spent -> R.string.invite_spent
         Outcome.Nameless -> R.string.invite_nameless
+        Outcome.OwnName -> R.string.invite_own_name
         else -> R.string.invite_refused
     }
 
@@ -76,6 +78,8 @@ object Meeting {
         firstDone(ref)
     }
     fun wipe() { listOf(FIRSTS, SCANS, CARDS).forEach(DeviceVault::delete) }
+    /** A root this phone met a person by (iOS MontanaMeeting.cardMet(root:)): a name heard before may stand from memory. */
+    fun metAtRoot(root: ByteArray): Boolean = synchronized(gate) { jmap(CARDS).optString(MontanaCard.b64url(root)).isNotEmpty() }
 
     /** A folded conversation's cards and links open the older one (iOS MontanaMeeting.repoint). */
     fun repoint(newer: String, older: String) = synchronized(gate) {
@@ -110,28 +114,63 @@ object Meeting {
         val code = t.removePrefix(form).substringBefore('?').substringBefore('#').trimEnd('/')
         return MontanaCard.unb64url(code)?.takeIf { it.size == 32 }
     }
+    /**
+     * A FACE IS FETCHED FROM THE NODE, NOT WAITED FOR (iOS healFacesFromCards → MontanaCard.refaceFromCard, atom
+     * 796a76a34ae0): the same blob the first meeting fetches (face(inv) below), asked again for a correspondent
+     * already met but still faceless, by their last daily link (Book.healFacesFromCards) -- off the main thread, as
+     * every network ask here is.
+     */
+    fun healFace(ref: String, link: String) {
+        val inv = invite(link) ?: return
+        Thread { face(inv)?.let { Book.face(ref).writeBytes(it); Book.edit(ref) {} } }.start()
+    }
     /** A whole card in the link (the old long form montana://c/…): the key and the name themselves. */
     private fun longCard(link: String): ByteArray? {
         val t = normalize(link)
         if (!t.startsWith("montana://c/")) return null
         return MontanaCard.unb64url(t.removePrefix("montana://c/"))?.takeIf { it.size in 1184..(1184 + 64) }
     }
-    private fun isName(link: String): Boolean {
-        val t = normalize(link).lowercase()
-        return listOf("https://pzr.me/", "https://www.pzr.me/", "http://pzr.me/", "pzr.me/").any { t.startsWith(it) }
+    /**
+     * THE NAME INSIDE AN INVITATION (iOS name(inInvitation:), MontanaFirstContact.swift 154-164): pzr.me and the name, in every shape
+     * a link takes on the way — or the scheme form; a query, a fragment or a closing slash are no part of a name, and a second path
+     * segment means it is not one. Normalized as the set normalizes it, or null.
+     */
+    fun nameIn(link: String): String? {
+        var t = link.trim()
+        val low = t.lowercase()
+        val form = listOf("https://pzr.me/", "https://www.pzr.me/", "http://pzr.me/", "http://www.pzr.me/", "pzr.me/", "www.pzr.me/", "montana://")
+            .firstOrNull { low.startsWith(it) } ?: return null
+        t = t.substring(form.length).substringBefore('?').substringBefore('#').removeSuffix("/")
+        if (t.isEmpty() || '/' in t) return null
+        return Names.normalize(t)
     }
+    private fun isName(link: String): Boolean = nameIn(link) != null
     fun looksLikeInvitation(text: String) = invite(text) != null || longCard(text) != null || isName(text)
 
     // ── the meeting ──
 
     /** Meets whatever was handed over; the network is asked, so this runs off the main thread. */
     fun meet(c: Context, link: String): Outcome {
-        if (isName(link)) return Outcome.Nameless   // the plane of names is not carried by Android yet
+        nameIn(link)?.let { return meetName(it) }
         val inv = invite(link)
         val payload: ByteArray = if (inv != null) {
             val inv64 = MontanaCard.b64url(inv)
             // A REPEATED SCAN OF THE SAME CODE returns into the conversation it opened (iOS meet_rescan).
-            synchronized(gate) { jmap(SCANS).optString(inv64).takeIf { it.isNotEmpty() && Book.secret(it) != null } }?.let { return Outcome.Opened(it) }
+            synchronized(gate) { jmap(SCANS).optString(inv64).takeIf { it.isNotEmpty() && Book.secret(it) != null } }?.let { known ->
+                // THE CARD BEHIND A REPEATED LINK IS RE-READ (iOS MontanaFirstContact.swift fc367faf0575 meet_rescan/
+                // renameFromCard:1166, fea4e68ea0da refaceFromCard:1174; measured 16:35: the same link opened the same
+                // empty chat under the callsign of the first scan, and the card behind it — by then wearing the
+                // person's current name and face — was never looked at again). The chat opens at once; the name and
+                // the face are fetched beside, as the weakest witness (never past a dated word).
+                Thread {
+                    expand(inv)?.takeIf { p -> !p.contentEquals(SPENT) && p.size > 1184 }?.let { p ->
+                        val nm = String(p, 1184, p.size - 1184, Charsets.UTF_8).trim()
+                        if (nm.isNotEmpty() && Book.admitState(known, "name", 0L)) Book.edit(known) { it.name = stripCrown(nm) }
+                    }
+                    face(inv)?.let { Book.face(known).writeBytes(it); Book.edit(known) {} }
+                }.start()
+                return Outcome.Opened(known)
+            }
             // The card's own invitations are not a meeting with oneself.
             if (MontanaCard.outstandingInvites().any { it.contentEquals(inv) }) return Outcome.Refused
             expand(inv) ?: return Outcome.Refused
@@ -143,7 +182,9 @@ object Meeting {
         val root64 = MontanaCard.b64url(root)
         synchronized(gate) { jmap(CARDS).optString(root64).takeIf { it.isNotEmpty() && Book.secret(it) != null } }?.let { known ->
             if (inv != null) synchronized(gate) { jsave(SCANS, jmap(SCANS).put(MontanaCard.b64url(inv), known)) }
-            if (name.isNotEmpty() && Book.admitState(known, "name", 0L)) Book.edit(known) { it.name = name }   // a card is undated: never over the peer's dated word
+            if (name.isNotEmpty() && Book.admitState(known, "name", 0L)) Book.edit(known) { it.name = stripCrown(name) }   // a card is undated: never over the peer's dated word
+            // THE FACE RIDES BESIDE THE NAME ON THIS ROOT TOO (iOS fea4e68ea0da refaceFromCard:1174, the «card-book»/«root» branches).
+            if (inv != null) Thread { face(inv)?.let { Book.face(known).writeBytes(it); Book.edit(known) {} } }.start()
             return Outcome.Opened(known)
         }
         // One encapsulation, and the correspondence exists; the ciphertext waits for the first letter (iOS MontanaCard.meet).
@@ -158,12 +199,44 @@ object Meeting {
             jsave(CARDS, jmap(CARDS).put(root64, ref))
         }
         val perm = inv != null && isPermanent(inv)
-        Book.open(ref, name, perm)
+        Book.open(ref, stripCrown(name), perm)
         if (inv != null) Thread { face(inv)?.let { Book.face(ref).writeBytes(it); Book.edit(ref) {} } }.start()
         Thread { layPipeFace(secret) }.start()
         // ONE PERSON, ONE CONVERSATION (iOS MTSamePair.ask): whether we already share a pipe is asked at once — the silent
         // first letter, which carries the card's ciphertext to its owner.
         SamePair.ask(ref)
+        return Outcome.Opened(ref)
+    }
+
+    /**
+     * A MEETING BY NAME (iOS MontanaMeeting meetOnce .name, MontanaFirstContact.swift 1767-1814): the plane of names answers the contact
+     * key, ONE ROOT ONE TUNNEL as for a card, then one encapsulation; the correspondence wears the name, stays in the book as a
+     * permanent link does, and its first letters go to the point of the name's root — a name has no invitation's box (iOS outgoingTag).
+     */
+    private fun meetName(n: String): Outcome {
+        if (n == Names.currentName) { Log.d("Montana", "meet_refused why=own-name"); return Outcome.OwnName }
+        val root = when (val a = NamePlane.resolve(n)) {
+            is NamePlane.Answer.Found -> a.root
+            NamePlane.Answer.Unknown -> { Log.d("Montana", "meet_refused why=name-unknown"); return Outcome.Nameless }
+            NamePlane.Answer.Unreachable -> { Log.d("Montana", "meet_refused why=name-unreachable"); return Outcome.Refused }
+        }
+        val root64 = MontanaCard.b64url(root)
+        synchronized(gate) { jmap(CARDS).optString(root64).takeIf { it.isNotEmpty() && Book.secret(it) != null } }?.let { known ->
+            Log.d("Montana", "meet_rescan name-book")
+            return Outcome.Opened(known)
+        }
+        val o = MtBindings.nativeMlkemEncaps(root) ?: return Outcome.Refused
+        val ct = o.copyOf(1088); val ss = o.copyOfRange(1088, 1120)
+        val secret = MtBindings.nativeFirstSecret(ss, root, ct) ?: return Outcome.Refused
+        ss.fill(0); o.fill(0)
+        val ref = Book.establish(secret) ?: return Outcome.Refused
+        synchronized(gate) {
+            jsave(FIRSTS, jmap(FIRSTS).put(ref, JSONObject().put("ct", Base64.encodeToString(ct, Base64.NO_WRAP)).put("inv", "")))
+            jsave(CARDS, jmap(CARDS).put(root64, ref))
+        }
+        Book.open(ref, n, true)   // the name's link keeps the person in the book, as the permanent link it stands in for does
+        Thread { layPipeFace(secret) }.start()
+        SamePair.ask(ref)   // one person, one conversation: the same question, by name
         return Outcome.Opened(ref)
     }
 

@@ -23,7 +23,14 @@ import android.widget.ImageView
  * One law for every page under the bar (iOS MontanaTimePanel 150-162): the page hands its list in and draws nothing of it itself.
  */
 class CoinPull(c: Context, private val list: View, private val onRefresh: () -> Unit = { activationRoad() }) : FrameLayout(c) {
+    /** The pull as the page hears it (iOS MontanaTimePanelList onPull): how far the feed is drawn down, in points. */
+    var onPull: ((Float) -> Unit)? = null
+    private var armed = false   // the pull stands past the trigger: the hand felt it once
     companion object {
+        /** THE COIN'S FULL TURN PRESSES THE PANEL (iOS onSettled, MontanaChatListContainer 794-801, MontanaChatsList 848, atom
+         * bd83db719a66): the time panel folds or unfolds the moment the hand lets go past the trigger -- the bar answers the
+         * hand, not the network; the fetch runs on its own. One hook for every page under the bar (Home sets it). */
+        var onSettled: (() -> Unit)? = null
         const val SIDE = 58f       // the row's avatar circle
         const val START = 40f      // the coin is not there before the feed is drawn this far
         const val TRIGGER = 140f   // let go past this and the feed refreshes; short of it, nothing
@@ -69,7 +76,12 @@ class CoinPull(c: Context, private val list: View, private val onRefresh: () -> 
     override fun onTouchEvent(e: MotionEvent): Boolean {
         if (!pulling) return super.onTouchEvent(e)
         when (e.actionMasked) {
-            MotionEvent.ACTION_MOVE -> { pull = maxOf(0f, (e.y - downY) / density * 0.55f); draw(angle(pull), held = true) }   // the feed's own give, as a rubber band
+            MotionEvent.ACTION_MOVE -> {
+                pull = maxOf(0f, (e.y - downY) / density * 0.55f); draw(angle(pull), held = true); onPull?.invoke(pull)   // the feed's own give, as a rubber band
+                // crossing the trigger is felt, both ways (iOS scrollViewDidScroll 786-791: a light impact when it arms)
+                val over = TRIGGER <= pull
+                if (over != armed) { armed = over; if (over) performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK) }
+            }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { pulling = false; release() }
         }
         return true
@@ -88,10 +100,12 @@ class CoinPull(c: Context, private val list: View, private val onRefresh: () -> 
     }
 
     private fun release() {
+        armed = false
         if (TRIGGER <= pull) {
             busy = true
             val from = angle(pull)
             val gap0 = pull
+            onSettled?.invoke()   // the toggle is immediate (iOS 798-800)
             onRefresh()
             ValueAnimator.ofFloat(0f, 1f).apply {
                 duration = FINISH
@@ -104,7 +118,7 @@ class CoinPull(c: Context, private val list: View, private val onRefresh: () -> 
                 }
                 start()
             }
-            postDelayed({ settle() }, FINISH + 650)   // the round completes, the gap stays a breath, then the feed returns
+            postDelayed({ settle() }, FINISH + 150)   // the round completes, then the feed returns (iOS finish + 0.15, 802)
         } else settle()
     }
 
@@ -112,7 +126,7 @@ class CoinPull(c: Context, private val list: View, private val onRefresh: () -> 
         val gap0 = pull
         val a0 = coin.alpha
         ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 250
+            duration = 300   // iOS UIView.animate(withDuration: 0.3) { hold = 0 } (806)
             interpolator = DecelerateInterpolator()
             addUpdateListener { v ->
                 val t = v.animatedValue as Float
@@ -123,6 +137,6 @@ class CoinPull(c: Context, private val list: View, private val onRefresh: () -> 
             }
             start()
         }
-        postDelayed({ busy = false }, 260)
+        postDelayed({ busy = false }, 310)
     }
 }

@@ -19,9 +19,6 @@ private fun emptyPane(c: Context, words: Int, above: View? = null): View = Frame
     }, FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
 }
 
-/** THE FEED under the logo (iOS MTFeedTabView): the posts on my people's walls, by time (Board.kt). */
-fun feedPane(act: MainActivity): View = FeedPane(act)
-
 /** ONE MOMENT OF THE GALLERY (iOS MTMoment): a photo or a video lying in a conversation — the file, where it lies, when. */
 private class Moment(val file: java.io.File, val photo: Boolean, val ref: String, val mid: String, val at: Long)
 
@@ -40,9 +37,9 @@ private fun moments(): List<Moment> = Book.all().flatMap { ch ->
 
 /** The tiles' small drawings, decoded off the frame once and kept by their size (iOS mtTileSharp, MontanaCaches): one cache for the
  *  gallery and the correspondent's page, by the file's path. */
-val tileCache = object : android.util.LruCache<String, android.graphics.Bitmap>(24 * 1024 * 1024) {
+val tileCache: android.util.LruCache<String, android.graphics.Bitmap> = Caches.kept("tiles", object : android.util.LruCache<String, android.graphics.Bitmap>(24 * 1024 * 1024) {
     override fun sizeOf(key: String, value: android.graphics.Bitmap) = value.byteCount
-}
+})
 val tileWork = java.util.concurrent.Executors.newSingleThreadExecutor()
 
 /**
@@ -56,6 +53,13 @@ fun galleryPane(act: MainActivity): View {
     val c: Context = act
     val column = c.vstack(Gravity.NO_GRAVITY)
     val empty = emptyPane(c, R.string.no_photos, PetalsGlyph(c))
+    // THE SWIPE AMONG THE GALLERY'S OWN PHOTOS (iOS MTMomentsViewer/DocPreviewQL, MontanaFeeds.swift:2706-2772 at 2155, the
+    // author's word 25.09: "take the feed out of the gallery; viewing as native as it gets"): the full list a tile opens
+    // among, kept across refills so a tap always pages the gallery as it stands, not the frame it was built in.
+    var all: List<Moment> = emptyList()
+    // THREE TO A ROW, AS THE WALL'S (iOS GalleryTabView.columns, MontanaFeeds.swift:903, 929 at 2155): the page has no pinch --
+    // the grid that changes its columns under two fingers is the attachment picker's (MTTileGrid, MontanaMedia.swift:2454-2576)
+    val columns = 3
     val scroll = android.widget.ScrollView(c).apply {
         isVerticalScrollBarEnabled = false
         addView(c.vstack(Gravity.NO_GRAVITY) { addView(column, lp()); gap(120) })   // the floating player's room at the foot
@@ -71,7 +75,11 @@ fun galleryPane(act: MainActivity): View {
             tileCache.put(key, b)
             post { pic.setImageBitmap(b) }
         }
-        pressable { openMedia(act, m.file, if (m.photo) "img" else "vid") }
+        // THE SWIPE BETWEEN MOMENTS (iOS MTMomentsViewer over QLPreviewController, MontanaFeeds.swift:2706-2772 at 2155):
+        // a photo opens among every photo of the gallery, so the finger pages across conversations as the platform's own
+        // viewer does; a film still opens alone -- the system's own player here carries no such list of its own (gap: the
+        // iPhone's one viewer pages photos and films together, Android pages photos only).
+        pressable { if (m.photo) openPictures(act, m.file, all.filter { it.photo }.map { it.file }) else openMedia(act, m.file, "vid") }
         setOnLongClickListener {
             holdMenu(act, this, listOf(
                 Deed(R.string.gl_show_in_chat, R.drawable.ic_bar_chats) { act.push { close -> conversationPage(act, m.ref, close, jump = m.mid) } },
@@ -90,13 +98,13 @@ fun galleryPane(act: MainActivity): View {
     }
     fun fill() {
         column.removeAllViews()
-        val all = moments()
+        all = moments()
         empty.visibility = if (all.isEmpty()) View.VISIBLE else View.GONE
         val cal = java.util.Calendar.getInstance()
         var day = -1L
         var row: android.widget.LinearLayout? = null
         var inRow = 0
-        fun closeRow() { row?.let { r -> while (inRow < 3) { r.addView(View(c), lp(0, c.dp(1), 1f)); inRow++ } } }
+        fun closeRow() { row?.let { r -> while (inRow < columns) { r.addView(View(c), lp(0, c.dp(1), 1f)); inRow++ } } }
         for (m in all) {
             cal.timeInMillis = m.at
             val d = cal.get(java.util.Calendar.YEAR) * 1000L + cal.get(java.util.Calendar.DAY_OF_YEAR)
@@ -105,14 +113,14 @@ fun galleryPane(act: MainActivity): View {
                 day = d
                 column.addView(c.text(dayWords(m.at), 20f, Color.WHITE, bold = true).apply { setPadding(c.dp(16), c.dp(18), c.dp(16), c.dp(6)) }, lp())
             }
-            if (row == null || inRow == 3) {
+            if (row == null || inRow == columns) {
                 closeRow()
                 row = c.hstack { }
                 inRow = 0
                 column.addView(row, lp().apply { bottomMargin = c.dp(2) })
             }
-            // a tile is a square, a third of the width less the two hairlines between
-            val side = (c.resources.displayMetrics.widthPixels - c.dp(4)) / 3
+            // a tile is a square, a third of the width less the hairlines between
+            val side = (c.resources.displayMetrics.widthPixels - c.dp(2 * (columns - 1))) / columns
             row!!.addView(tile(m), lp(0, side, 1f).apply { if (inRow > 0) marginStart = c.dp(2) })
             inRow++
         }

@@ -1,11 +1,13 @@
 package quest.montana.app
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Outline
+import android.graphics.Paint
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.graphics.SurfaceTexture
@@ -16,6 +18,7 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.TextUtils
 import android.text.style.StyleSpan
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
@@ -72,8 +75,16 @@ object CallScreen {
         if (close != null && !ringing) return
         close?.invoke()
         ringing = false
+        chromeHidden = false   // iOS fullScreen .onAppear (MontanaCall.swift 6915): every reopening starts with the buttons in hand
         close = act.overlay(callPage(act, ref))
+        CallFloat.refresh(act, "show")
     }
+
+    /** The call screen folds into its pill under the window that rose from it (iOS willStart 6209-6211); a ring has no fold. */
+    fun fold() = MainThread.post { if (!ringing) close?.invoke() }
+
+    /** The call's own ground for the window over other apps (one owner of its drawing, iOS MTCallGround). */
+    fun groundOf(c: Context, ref: String, name: String): View = ground(c, ref, name)
 
     /** A call rings while the app stands in front (iOS incomingScreen: the in-app ring). */
     fun ring(ref: String) = MainThread.post {
@@ -87,6 +98,33 @@ object CallScreen {
     fun hide() = MainThread.post { dropPill(); chromeHidden = false; corner = 1; val c = close; close = null; c?.invoke() }
 
     private fun dropPill() { pill?.invoke(); pill = null; foldChanged(null) }
+
+    /**
+     * THE PERSON HEARS WHY (iOS tellNoRoad, MontanaCall.swift, atom 319c1ca96b0a, 29.09): a call that found no road ends
+     * with a word in the person's language, not a screen that simply closes. Android carries no network-filter probe
+     * (iOS MontanaNetProbe) to tell a filtered network from a plain failure, so this build speaks the one general word.
+     */
+    fun tellNoRoad(filtered: Boolean = NetProbe.filtersCalls) = MainThread.post {
+        val act = front ?: return@post
+        // UNDER THE PERMITTED-LIST FILTER THE WORDS SAY SO (iOS tellNoRoad(filtered:) 623-636): the line's one verdict, NetProbe
+        android.app.AlertDialog.Builder(act).setTitle(if (filtered) R.string.call_filtered_title else R.string.call_no_road_title)
+            .setMessage(if (filtered) R.string.call_filtered_body else R.string.call_no_road_body)
+            .setPositiveButton(R.string.ok, null).show()
+    }
+
+    /**
+     * THE CAMERA REFUSAL IS SAID TO THE FACE (iOS cameraDenied alert 6531-6545, ensureCameraAccess 1581-1601, atom 6ebef1dc1ca8,
+     * the author's word 20.09): the system's own alert, the road to the app's own page in Settings, and the call goes on with
+     * sound. Android does not restart the app when the switch is turned on, so its words say to turn the video on again.
+     */
+    fun tellCameraOff() = MainThread.post {
+        val act = front ?: return@post
+        android.app.AlertDialog.Builder(act).setTitle(R.string.call_cam_off_title).setMessage(R.string.call_cam_off_body)
+            .setPositiveButton(R.string.open_settings) { _, _ -> SystemSettings.open(act, callWarned = true) }
+            .setNegativeButton(R.string.continue_with_voice, null).show()
+    }
+
+    private fun log(s: String) { Log.d("Montana", "call screen: " + s) }
 
     /** The call folded into its pill, and whose (iOS CallUIModel.foldedLive, peer): the handsets beside a name watch it. */
     @Volatile var foldedRef: String? = null
@@ -147,7 +185,7 @@ object CallScreen {
         // ── the audio branch's line (iOS 6702-6738): the light, «Montana Audio Call — 0:03», the name at forty, the state ──
         val light = c.icon(R.drawable.ic_dot, SysColor.green, 11)
         val status = c.text("", 20f, Color.argb(153, 255, 255, 255)).apply { singleLineEllipsis(); fontFeatureSettings = "tnum" }
-        val state = c.text("", 17f, Color.WHITE, bold = true, center = true).apply { singleLineEllipsis() }
+        val state = c.text("", 17f, Color.WHITE, bold = true, center = true).apply { maxLines = 2; ellipsize = TextUtils.TruncateAt.END }
         val voiceHead = c.vstack(Gravity.CENTER_HORIZONTAL) {
             gap(20)
             addView(c.hstack {
@@ -159,8 +197,24 @@ object CallScreen {
             addView(bigName(c, name), lp(MATCH, dp(52)).apply { leftMargin = dp(16); rightMargin = dp(16) })
             addView(state, lp().apply { leftMargin = dp(16); rightMargin = dp(16); topMargin = dp(2) })
         }
-        // ── the video branch's top (iOS 6660-6696): the name in the row's centre, the time under it, the events under that ──
-        val title = c.text(name, 32f, Color.WHITE).apply {   // USER-DATA: the peer's name
+        // ── the video branch's top (iOS MTCallTopTitle/MTCallTimeLine/MTCallStateLine, MontanaCall.swift 5301-5422, the
+        // call site 6694-6743 in 2155, atom a14135b48a1d): the name in the row's centre, the time under it, the events under that ──
+        // THE NAME IS AS LARGE AS THE MARKS ALLOW (iOS MTCallTopTitle.nameSize, MontanaCall.swift 5311-5315): the largest
+        // semibold size whose own line fits the 44dp row, read from the platform's font metrics, not guessed ("too small" —
+        // the author, 23.09).
+        val nameSp = run {
+            val target = c.dp(44).toFloat()
+            val paint = Paint().apply { typeface = medium }
+            var s = 40f
+            while (s > 12f) {
+                paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, s, c.resources.displayMetrics)
+                val fm = paint.fontMetrics
+                if (fm.descent - fm.ascent <= target) break
+                s -= 1f
+            }
+            s
+        }
+        val title = c.text(name, nameSp, Color.WHITE).apply {   // USER-DATA: the peer's name
             typeface = medium
             gravity = Gravity.CENTER
             isSingleLine = true
@@ -179,26 +233,45 @@ object CallScreen {
             addView(clock, lp(WRAP, WRAP))
         }
         val events = c.text("", 17f, Color.WHITE, bold = true, center = true).apply { singleLineEllipsis(); setShadowLayer(dp(3).toFloat(), 0f, 0f, haze) }
-        val back = mark(c, R.drawable.ic_chevron_down, R.string.call_back) { close?.invoke() }
+        // THE FOLD IS THE APP'S LEAVING (iOS 6702-6708, the author's word 29.09): the mark asks the platform's own window to
+        // rise; with no window to ask (a ring, a system without it, the person's switch off) it folds the call into the app
+        val back = mark(c, R.drawable.ic_chevron_down, R.string.call_back) { if (!CallFloat.foldAway(act, "back")) close?.invoke() }
         val flip = mark(c, R.drawable.ic_camera_rotate, R.string.call_camera) { CallLine.switchCamera() }
-        val roomL = View(c)   // the mask's twin room keeps the name in the centre (iOS 6665); the mask itself is not in this build
-        val roomR = View(c)
+        val roomL = View(c)   // the mask's twin room keeps the name in the centre (iOS MontanaCall.swift 6709-6713)
+        // THE MASK (iOS MontanaCall.swift 6723-6727, the author's word 30.09, atom c98a92d589e3): a glyph mark with no word on the
+        // platform's 44, beside the camera flip -- the filled masks while it is on (theatermasks.fill)
+        val maskMark = mark(c, R.drawable.ic_theatermasks, R.string.call_mask) { AvatarMask.toggle("tap") }
+        var maskGlyph = R.drawable.ic_theatermasks
         val route = routeButton(c)
         fun line() {
-            val tint = if (CallLine.lost) SysColor.red else SysColor.green   // iOS MTCallLight: red while the link is lost
-            light.setColorFilter(tint)
-            vlight.setColorFilter(tint)
+            // iOS MTCallLight 5427-5433: green clean at the top step, yellow (the system's orange) held below it, red squeezed
+            // now or broken
+            val level = if (CallLine.lost) 0 else CallLine.signal
+            val tint = if (level >= 2) SysColor.green else if (level == 1) SysColor.orange else SysColor.red
+            // THE LIGHT WEARS THE BATTERY (iOS MTCallLight, MontanaCall.swift 5427-5433, build bd83db719a66): while the
+            // power floor holds the picture down, the same light carries the battery glyph instead of the dot.
+            // The battery is a wide glyph (SF battery.25percent at .footnote): its slot widens, the dot's height kept.
+            val glyph = if (CallLine.powerSaving) R.drawable.ic_battery_quarter else R.drawable.ic_dot
+            val wide = c.dp(if (CallLine.powerSaving) 23 else 11)
+            for (v in listOf(light, vlight)) {
+                v.setImageResource(glyph)
+                v.setColorFilter(tint)
+                v.layoutParams?.let { if (it.width != wide) { it.width = wide; v.layoutParams = it } }
+            }
             val since = CallLine.connectedAt
-            val tail = if (since > 0L) ((System.currentTimeMillis() - since) / 1000).toInt().let { String.format(Locale.ROOT, "%d:%02d", it / 60, it % 60) }
+            // the clock runs only while the call stands connected: a break says «Connecting…» there (iOS statusText 6516-6523,
+            // «reconnecting» -> «Connecting…»; the time line shows the timer for «connected» alone, 5342, 6753)
+            val tail = if (since > 0L && !CallLine.lost) ((System.currentTimeMillis() - since) / 1000).toInt().let { String.format(Locale.ROOT, "%d:%02d", it / 60, it % 60) }
                 else c.getString(Calls.stage() ?: R.string.call_connecting)   // «Calling…», «Ringing…», then «Connecting…»
             status.text = c.getString(R.string.call_title_audio) + " — " + tail
             clock.text = tail
             route.second.invoke()
-            // under the name, the call's own state in bold (iOS 6725-6738); a video call's one line puts a break before a hold (5357)
+            // under the name, the call's own state in bold (iOS 6771-6784): the hold line, then the break's own line, each from
+            // the call's state -- both stand when both are so; a video call's one line puts a break before a hold (5399-5414)
             val held = CallLine.held || CallLine.heldByPeer
-            val word = if (held) R.string.call_on_hold else if (CallLine.lost) R.string.call_lost else null
-            state.visibility = if (word == null) View.GONE else View.VISIBLE
-            if (word != null) state.text = c.getString(word)
+            val words = listOfNotNull(if (held) c.getString(R.string.call_on_hold) else null, if (CallLine.lost) c.getString(R.string.call_lost) else null)
+            state.visibility = if (words.isEmpty()) View.GONE else View.VISIBLE
+            if (words.isNotEmpty()) state.text = words.joinToString("\n")
             events.text = if (CallLine.lost) c.getString(R.string.call_lost) else if (held) c.getString(R.string.call_on_hold) else ""
             hold?.invoke()
             videoLit?.invoke()
@@ -275,7 +348,7 @@ object CallScreen {
             addView(back, lp(dp(44), dp(44)))
             addView(roomL, lp(dp(44), dp(44)))
             addView(title, lp(0, dp(44), 1f))
-            addView(roomR, lp(dp(44), dp(44)))
+            addView(maskMark, lp(dp(44), dp(44)))
             addView(flip, lp(dp(44), dp(44)))
         }
         val column = c.vstack(Gravity.CENTER_HORIZONTAL) {
@@ -293,6 +366,15 @@ object CallScreen {
         // ── the pictures (iOS 6599-6616): the big slot, the switch over it, the dial's shade, the corner slot ──
         val big = Picture(c)
         val mini = Picture(c)
+        // THE STALE PICTURE'S COVER (iOS MTCallSurface overlay 6268-6274, MTCallGround 6406, applyCovers 5491-5495):
+        // held, held by the far side, or two witnessed samples without a fresh frame -- the slot carrying their
+        // picture wears their own blurred face instead of the stale frame, whichever slot it rides (sides()).
+        val remoteCoverBig = ground(c, ref, name).apply { visibility = View.GONE; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+        val remoteCoverMini = ground(c, ref, name).apply { visibility = View.GONE; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+        // MY OWN PICTURE'S COVER (iOS MTCallSurface 6274, MTCallGround(own: true) 6452-6457, atom 8bb2dae00749): my own face,
+        // the same haze, while I hold, while my camera is off, and while the system has taken my camera
+        val selfCoverBig = ground(c, ref, name, own = true).apply { visibility = View.GONE; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+        val selfCoverMini = ground(c, ref, name, own = true).apply { visibility = View.GONE; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
         val miniBox = FrameLayout(c).apply {
             setBackgroundColor(Color.BLACK)
             outlineProvider = object : ViewOutlineProvider() {
@@ -301,6 +383,8 @@ object CallScreen {
             clipToOutline = true
             foreground = c.rounded(Color.TRANSPARENT, 12, Color.argb(64, 255, 255, 255))
             addView(mini, FrameLayout.LayoutParams(MATCH, MATCH))
+            addView(remoteCoverMini, FrameLayout.LayoutParams(MATCH, MATCH))
+            addView(selfCoverMini, FrameLayout.LayoutParams(MATCH, MATCH))
             visibility = View.GONE
         }
         val shade = View(c).apply {
@@ -309,6 +393,8 @@ object CallScreen {
         val tap = View(c).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
         val pictures = FrameLayout(c).apply {
             addView(big, FrameLayout.LayoutParams(MATCH, MATCH, Gravity.CENTER))
+            addView(remoteCoverBig, FrameLayout.LayoutParams(MATCH, MATCH, Gravity.CENTER))
+            addView(selfCoverBig, FrameLayout.LayoutParams(MATCH, MATCH, Gravity.CENTER))
             addView(tap, FrameLayout.LayoutParams(MATCH, MATCH))
             addView(shade, FrameLayout.LayoutParams(MATCH, MATCH))
             addView(miniBox, FrameLayout.LayoutParams(c.dp(MINI_W), c.dp(MINI_H), Gravity.TOP or Gravity.START))
@@ -321,13 +407,21 @@ object CallScreen {
             addView(column, FrameLayout.LayoutParams(MATCH, MATCH))
             inner = column
         }
-        // WHICH PICTURE FILLS WHICH SLOT has one owner (iOS CallUIModel.applySides 5512): their picture, once drawn, fills the
-        // screen and mine rides the corner — until the corner is tapped; before theirs comes, mine fills the screen
+        // WHICH PICTURE FILLS WHICH SLOT has one owner (iOS CallUIModel.applySides 5558-5567): their picture, once drawn, fills
+        // the screen and mine rides the corner — until the corner is tapped; before theirs comes, mine fills the screen. The
+        // corner stands whether my camera runs or not (iOS shown = pip && !peerSharing): a sleeping camera wears my own face.
+        var coverSaid = ""
         fun sides() {
+            if (CallFloat.standing) return   // the window over other apps holds the peer's picture while it stands
             // the sharer sees the peer's ground, not the screen it shares (iOS 6566-6574): no picture is drawn
-            if (CallLine.sharing) { CallLine.theirs.into = null; CallLine.own.into = null; miniBox.visibility = View.GONE; return }
+            if (CallLine.sharing) {
+                CallLine.theirs.into = null; CallLine.own.into = null; miniBox.visibility = View.GONE
+                remoteCoverBig.visibility = View.GONE; remoteCoverMini.visibility = View.GONE
+                selfCoverBig.visibility = View.GONE; selfCoverMini.visibility = View.GONE
+                return
+            }
             val pip = CallLine.video && CallLine.remoteLive
-            val shown = pip && !CallLine.peerSharing && CallLine.camera
+            val shown = pip && !CallLine.peerSharing
             val bigLocal = !pip || (CallLine.swapped && shown)
             CallLine.theirs.into = if (!pip) null else if (bigLocal) mini else big
             CallLine.own.into = if (bigLocal) big else if (shown) mini else null
@@ -336,6 +430,17 @@ object CallScreen {
             big.fit = !bigLocal && CallLine.peerSharing   // a shared screen is fitted on black, never cut
             miniBox.visibility = if (shown) View.VISIBLE else View.GONE
             shade.visibility = if (!shown && !CallLine.peerSharing) View.VISIBLE else View.GONE
+            // THE COVER (iOS applyCovers 5491-5495): held, held by the far side, or the witnessed frames stood
+            // still -- the slot carrying their picture wears their blurred face instead of the stale frame.
+            val covered = pip && (CallLine.held || CallLine.heldByPeer || (CallLine.peerPaused && !CallLine.peerSharing))
+            remoteCoverBig.visibility = if (covered && !bigLocal) View.VISIBLE else View.GONE
+            remoteCoverMini.visibility = if (covered && bigLocal && shown) View.VISIBLE else View.GONE
+            // THE COVERS HAVE ONE OWNER (iOS applyCovers 5484-5497): mine while I hold, my camera is off or the system took it
+            val ownCovered = CallLine.video && (CallLine.held || !CallLine.camera || CallLine.selfPaused)
+            selfCoverBig.visibility = if (ownCovered && bigLocal) View.VISIBLE else View.GONE
+            selfCoverMini.visibility = if (ownCovered && !bigLocal && shown) View.VISIBLE else View.GONE
+            val said = "remote=" + (if (covered) 1 else 0) + " self=" + (if (ownCovered) 1 else 0)
+            if (said != coverSaid) { coverSaid = said; Log.d("Montana", "call_cover " + said) }
         }
         // THE CORNER PICTURE'S PLACE, THE 2155 FORM (iOS MTCallMini, MontanaCall.swift 6321-6338): one fact for each edge,
         // read off chromeVisible, not a number measured a frame late -- the top panel up: ten points under its measured
@@ -343,10 +448,26 @@ object CallScreen {
         // edge down: fourteen off the safe side. Where the buttons stand, the touch is theirs (6406-6428, blockRect):
         // Android needs no such mask -- column is laid out after pictures, so a button under the finger claims the
         // touch before it ever reaches miniBox underneath.
+        // AND IT TELLS WHEN IT IS GONE (iOS blockRect, MontanaCall.swift 6324: "(model.chromeVisible && !model.screenSharing)
+        // ? model.bottomRowRect : .zero", plus the .onDisappear at 6887/6903, atom 9efa2d90b61b): the grid goes GONE while a
+        // screen rides but column stays VISIBLE, so grid.top alone would read the stale rect from before the share — up
+        // asks the grid's own visibility too, not only the column's.
         var placed = false
+        var pipLogged = false
+        var pipCorner = -1
+        var pipUp = -1
+        var pipW = 0
+        var pipH = 0
+        // WHERE IT STANDS IS WRITTEN, NOT GUESSED (iOS MTCallMini.note, MontanaCall.swift 6391-6394 in 2155, atom
+        // f4c97f3cc8b0): its corner, its bottom edge, and whether the buttons were up — at birth, at every settle
+        // and when the buttons come or go.
+        fun notePip(why: String, y: Float, up: Boolean) {
+            Log.d("Montana", "call_pip " + why + " corner=" + corner + " bottom=" + (y.toInt() + c.dp(MINI_H)) +
+                " top=" + y.toInt() + " screen=" + pictures.width + "x" + pictures.height + " buttons=" + (if (up) 1 else 0))
+        }
         fun placeMini(glide: Boolean) {
             if (miniBox.visibility != View.VISIBLE || pictures.width == 0) return
-            val up = column.visibility == View.VISIBLE
+            val up = column.visibility == View.VISIBLE && grid.visibility == View.VISIBLE
             val topEdge = if (up && events.bottom > 0) events.bottom + c.dp(10) else column.paddingTop + c.dp(14)
             val raised = if (grid.top > 0) grid.top - c.dp(10) else pictures.height - column.paddingBottom - c.dp(220)
             val bottomEdge = if (up) raised else pictures.height - column.paddingBottom - c.dp(14)
@@ -355,8 +476,22 @@ object CallScreen {
             if (glide && placed) miniBox.animate().translationX(x).translationY(y).setDuration(300).start()
             else { miniBox.animate().cancel(); miniBox.translationX = x; miniBox.translationY = y }
             placed = true
+            val why = if (!pipLogged) "born" else if (pipCorner != corner) "moved" else if ((pipUp == 1) != up) "buttons"
+                else if (pipW != pictures.width || pipH != pictures.height) "screen" else null
+            if (why != null) {
+                notePip(why, y, up)
+                pipLogged = true; pipCorner = corner; pipUp = if (up) 1 else 0; pipW = pictures.width; pipH = pictures.height
+            }
         }
         var foldAt = 0L
+        // AN AUDIO CALL ON A PHONE STANDS UPRIGHT (iOS MTCallUpright, MontanaCall.swift 6919-6935, atom 4513e11ddfeb, the
+        // author's word 24.09: «during an audio call from the phone the screen must not turn, it stays vertical»). A video
+        // call, a folded call (the page detached, below) and a tablet keep the system's own free rotation.
+        val phone = c.resources.configuration.smallestScreenWidthDp < 600
+        fun upright() {
+            act.requestedOrientation = if (!CallLine.video && phone) android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                else android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
         fun redraw() {
             val v = CallLine.video
             val mine = CallLine.sharing
@@ -369,8 +504,12 @@ object CallScreen {
             tap.visibility = if (v && !screen) View.VISIBLE else View.GONE
             column.visibility = if (v && chromeHidden) View.INVISIBLE else View.VISIBLE
             val head = if (v && !screen) View.VISIBLE else View.INVISIBLE
-            roomL.visibility = head; title.visibility = head; roomR.visibility = head
+            roomL.visibility = head; title.visibility = head
             flip.visibility = if (v && !screen && CallLine.camera) View.VISIBLE else View.INVISIBLE
+            // the mask stands with the flip (iOS 6722-6733): without my camera both places stand empty, the name stays centred
+            maskMark.visibility = flip.visibility
+            val glyph = if (AvatarMask.masked) R.drawable.ic_theatermasks_fill else R.drawable.ic_theatermasks
+            if (glyph != maskGlyph) { maskGlyph = glyph; (maskMark.getChildAt(0) as ImageView).setImageResource(glyph) }
             timeLine.visibility = if (v && !screen) View.VISIBLE else View.GONE
             events.visibility = timeLine.visibility
             voiceHead.visibility = if (v || mine) View.GONE else View.VISIBLE
@@ -380,12 +519,13 @@ object CallScreen {
             turnPlate.visibility = if (CallLine.offerMine && v && !screen) View.VISIBLE else View.GONE
             page.keepScreenOn = v   // iOS applyScreenHold: a video call holds the screen awake
             sides()
+            upright()
             videoLit?.invoke()
             page.post { placeMini(true) }
         }
         again = { redraw() }
         // the picture is the switch (iOS 6602-6610): a tap hides the buttons, the next brings them back
-        tap.setOnClickListener { chromeHidden = !chromeHidden; foldAt = 0L; redraw() }
+        tap.setOnClickListener { chromeHidden = !chromeHidden; foldAt = 0L; redraw(); log(if (chromeHidden) "call_chrome hidden by tap" else "call_chrome shown by tap") }
         // THE CORNER PICTURE'S TOUCH (iOS MTCallMiniTouch 6359): a tap that does not move swaps the pictures, a finger that moves
         // drags it, and it settles in the nearest corner
         val slop = ViewConfiguration.get(c).scaledTouchSlop
@@ -400,7 +540,7 @@ object CallScreen {
                         if (dragging) { v.translationX = tx0 + dx; v.translationY = ty0 + dy }
                     }
                     MotionEvent.ACTION_UP -> {
-                        if (!dragging) { v.performClick(); CallLine.swapped = !CallLine.swapped; sides() }
+                        if (!dragging) { v.performClick(); CallLine.swapped = !CallLine.swapped; sides(); log("call_pip tapped — swap") }
                         else {
                             corner = (if (v.translationX + v.width / 2f > pictures.width / 2f) 1 else 0) +
                                 (if (v.translationY + v.height / 2f > pictures.height / 2f) 2 else 0)
@@ -414,7 +554,8 @@ object CallScreen {
         })
         // iOS armChromeFold 5481: a video call that stands, asking nothing of the person, hides its buttons after six seconds
         fun fold() {
-            val want = CallLine.video && CallLine.connectedAt > 0L && !CallLine.peerSharing && !CallLine.sharing && !CallLine.asked &&
+            // iOS armChromeFold 5527-5529: a video call that stands connected -- not broken -- with nothing riding or asked
+            val want = CallLine.video && CallLine.connectedAt > 0L && !CallLine.lost && !CallLine.peerSharing && !CallLine.sharing && !CallLine.asked &&
                 !CallLine.offerMine && !chromeHidden
             if (!want) { foldAt = 0L; return }
             val now = System.currentTimeMillis()
@@ -424,7 +565,9 @@ object CallScreen {
         line()
         var live = true
         MainThread.later(1000, object : Runnable {
-            override fun run() { if (!live) return; line(); fold(); MainThread.later(1000, this) }
+            // sides() here too (iOS applyCovers is didSet-driven; the hold toggle itself calls no moved()): the
+            // cover over a held or stalled picture updates on the same breath as the clock, never later than a second.
+            override fun run() { if (!live) return; line(); sides(); fold(); MainThread.later(1000, this) }
         })
         val hook: () -> Unit = { line(); redraw() }
         // the page goes by the fold, by the system's back or by the call's end; a call still in hand leaves its pill
@@ -432,6 +575,8 @@ object CallScreen {
             override fun onViewAttachedToWindow(v: View) { CallLine.changed = hook; redraw() }
             override fun onViewDetachedFromWindow(v: View) {
                 live = false
+                // a folded call frees the turn (iOS MTCallUpright, atom 4513e11ddfeb): the platform shows it, not us
+                act.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                 if (CallLine.changed === hook) CallLine.changed = null
                 if (CallLine.theirs.into === big || CallLine.theirs.into === mini) CallLine.theirs.into = null
                 if (CallLine.own.into === big || CallLine.own.into === mini) CallLine.own.into = null
@@ -463,10 +608,12 @@ object CallScreen {
     }
 
     /** A mark of the chat's own (iOS MontanaCallMark): the glass circle, its glyph, the finger's forty-four. */
+    /** THE CALL'S MARK (iOS MontanaCallMark, MontanaShapes.swift 1092-1114, atom 710032f3b132): the bar's glyph colour on the
+     * bar's glass circle with a white 0.28 rim, a 44-point target, a press -- the chat's scroll-down face, one to one. */
     private fun mark(c: Context, glyph: Int, label: Int, work: () -> Unit) = FrameLayout(c).apply {
-        background = c.glassPlate(oval = true)
+        background = c.glassPlate(oval = true).apply { setStroke(c.dp(1), Color.argb(71, 255, 255, 255)) }
         contentDescription = c.getString(label)
-        addView(c.icon(glyph, Color.WHITE, 22), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
+        addView(c.icon(glyph, barGlyph, 22), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
         pressable { work() }
     }
 
@@ -508,6 +655,7 @@ object CallScreen {
                 paint()
                 return@pressable
             }
+            face.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)   // the press that opens the route menu is felt too (iOS atom bae0da066289)
             val ways = CallLine.ways(c)
             PopupMenu(c, face).apply {
                 ways.forEachIndexed { i, w -> menu.add(0, i, i, w.name).apply { isCheckable = true; isChecked = w.chosen } }
@@ -591,9 +739,10 @@ object CallScreen {
     }
 
     /** iOS MTCallGround: the blue-grey wash, the face filling it as a haze, and the face itself at seven tenths, softened. */
-    private fun ground(c: Context, ref: String, name: String): View = FrameLayout(c).apply {
+    private fun ground(c: Context, ref: String, name: String, own: Boolean = false): View = FrameLayout(c).apply {
         background = GradientDrawable(GradientDrawable.Orientation.TR_BL, intArrayOf(Color.rgb(33, 38, 48), Color.rgb(41, 51, 71), Color.rgb(26, 28, 33)))
-        val face = Book.shownFace(ref).takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.path) }
+        // my own face for the cover over my own picture (iOS MTCallGround own: MontanaSelfFace.image, 6457)
+        val face = if (own) SelfFace.load(c) else Book.shownFace(ref).takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.path) }
         val soft = Build.VERSION.SDK_INT >= 31
         val m = c.resources.displayMetrics
         val side = (minOf(m.widthPixels, m.heightPixels) * 0.7f).toInt()
@@ -607,7 +756,7 @@ object CallScreen {
                 if (soft) setRenderEffect(blur(8))
             }, FrameLayout.LayoutParams(side, side, Gravity.CENTER))
         } else {
-            addView(c.text(name.take(1).uppercase(), 160f, Color.argb(56, 255, 255, 255), bold = true, center = true),   // USER-DATA: the name's first letter
+            addView(c.text((if (own) Prefs.userName.trim() else name).take(1).uppercase(), 160f, Color.argb(56, 255, 255, 255), bold = true, center = true),   // USER-DATA: the name's first letter
                 FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
         }
     }
@@ -716,6 +865,155 @@ private class GridFloor(c: Context) : View(c) {
  * the finger — the switch over it is a sibling layer (the law of the platform view). A camera fills its room, cut to its shape;
  * a shared screen is fitted whole, its room taking the frame's own shape.
  */
+/**
+ * THE CALL'S WINDOW OVER OTHER APPS (iOS MTCallFloat, MontanaCall.swift 5997-6260; atoms e0cf5ed44256, 78a602cb45d7,
+ * caca0a041069, 9dc4853b6793, 2fefcf4e8cfe, e135ac1d6ea2): the platform's own picture in picture. A call of any kind that
+ * stands arms it -- not an incoming ring, whose own screen rules it: a video call shows the peer's picture in it, a voice call
+ * (and a picture that does not flow or stands covered) the peer's cover, the call's own ground. It rises by itself when the
+ * person leaves the app -- the platform's auto-enter, the person's own switch in Settings deciding -- and the call screen's
+ * fold mark asks it to rise (the author's word 29.09: «our own fold button must count as the app folded away»). Its shape is
+ * the peer's picture's from its birth (upright 1080x1920 until the picture says otherwise) and follows the picture as it
+ * turns. On Android the window IS the app: the app's return is the window's own end, so the peer is never seen on two
+ * screens; a tap on it brings the app back with the call screen. Whether it stands is the platform's own word
+ * (onPictureInPictureModeChanged), never a flag that could outlive it; a call that ends with the window up takes it away.
+ */
+/**
+ * THE ONE DOOR TO THE APP'S PAGE IN SETTINGS (iOS MontanaSystemSettings, MontanaP2PNode.swift 1305-1330, atom 4543d66a9265):
+ * Android ends the app when an access is turned off there, and a call standing then pauses or ends with it -- the platform
+ * does not warn; this door does, while a call stands, and the person decides knowing it: a call whose peer rebuilds goes on
+ * when the person comes back within a minute (Calls.rejoinHeldCall). A road whose own words already say it passes callWarned.
+ */
+object SystemSettings {
+    fun open(act: MainActivity, callWarned: Boolean = false) {
+        val go = { runCatching { act.startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", act.packageName, null))) } }
+        if (callWarned || Calls.held() == null) { go(); return }
+        val goesOn = CallLine.peerRebuilds && CallLine.connectedAt > 0L
+        Log.d("Montana", "privacy_access call warned before settings goes_on=" + (if (goesOn) 1 else 0))
+        android.app.AlertDialog.Builder(act).setTitle(if (goesOn) R.string.call_will_pause else R.string.call_will_end)
+            .setMessage(if (goesOn) R.string.call_will_pause_body else R.string.call_will_end_body)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.open_settings) { _, _ -> Log.d("Montana", "privacy_access settings opened under a call"); go() }
+            .show()
+    }
+}
+
+/**
+ * THE CALL HOLDS THE SOUND WHILE IT LASTS (iOS MontanaAudioSession.refusedUnderCall, ContentView.swift 3203-3220, atom
+ * 25da76a76fd0): every other road of sound -- a voice message, a track, a voice tape, a round note -- passes here; under a
+ * call none of them starts, and the person who asked is told so in the platform's own alert. True when refused.
+ */
+object CallSound {
+    fun refused(what: String): Boolean {
+        if (!Calls.busy()) return false
+        Log.d("Montana", "audio_refused " + what + " -- the call holds the sound")
+        MainThread.post {
+            val act = CallScreen.front ?: return@post
+            android.app.AlertDialog.Builder(act).setTitle(R.string.call_sound_busy_title).setMessage(R.string.call_sound_busy_body)
+                .setPositiveButton(R.string.ok, null).show()
+        }
+        return true
+    }
+    /** A call is born: a track or a voice that plays stands down (iOS VoicePlayer.yieldToCall at setState «born», 4413). */
+    fun yieldToCall() = MainThread.post {
+        if (MusicPlayer.playing) { MusicPlayer.pause(); Log.d("Montana", "audio_yield music -- a call is born") }
+        if (VoicePlayer.playing != null) { VoicePlayer.stop(); Log.d("Montana", "audio_yield voice -- a call is born") }
+    }
+}
+
+object CallFloat {
+    @Volatile var standing = false
+        private set
+    private var at: java.lang.ref.WeakReference<MainActivity>? = null
+    private var face: FrameLayout? = null
+    private var picture: Picture? = null
+    private var cover: View? = null
+    private var shape = android.util.Rational(1080, 1920)
+    private var armed = false
+    private var foldAsked: String? = null
+
+    private fun supported(act: MainActivity) = act.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
+    /** iOS want = state != idle && state != incoming: a call dialled or answered. */
+    private fun want() = Calls.held() != null
+    private fun params(): android.app.PictureInPictureParams = android.app.PictureInPictureParams.Builder().setAspectRatio(shape).apply {
+        if (Build.VERSION.SDK_INT >= 31) { setAutoEnterEnabled(want()); setSeamlessResizeEnabled(true) }
+    }.build()
+
+    /** Re-asked at every move of the call and at every showing of its screen: armed while a call stands, its shape the peer's. */
+    fun refresh(act: MainActivity? = at?.get(), why: String) {
+        val a = act ?: return
+        at = java.lang.ref.WeakReference(a)
+        if (!supported(a)) return
+        CallLine.peerShape?.let { (w, h) ->
+            val r = android.util.Rational(w, h).let { if (it.toFloat() < 0.42f) android.util.Rational(42, 100) else if (it.toFloat() > 2.39f) android.util.Rational(239, 100) else it }
+            if (r != shape) { shape = r; Log.d("Montana", "call_float shape " + w + "x" + h) }
+        }
+        val w = want()
+        if (w != armed) { armed = w; Log.d("Montana", "call_float " + (if (w) "armed kind=" + (if (CallLine.video) "video" else "voice") else "disarmed") + " why=" + why) }
+        runCatching { a.setPictureInPictureParams(params()) }
+        // the window stands on the call: a call that ends under it takes it away (iOS e135ac1d6ea2)
+        if (!w && a.isInPictureInPictureMode) { Log.d("Montana", "call_float the call ended under the window -- it goes"); a.moveTaskToBack(false) }
+        paint()
+    }
+
+    /** The fold mark's ask (iOS foldAway 6146-6167): false when there is no window to ask, and the fold takes its old road. */
+    fun foldAway(act: MainActivity, why: String): Boolean {
+        if (!supported(act) || !want() || act.isInPictureInPictureMode) { Log.d("Montana", "call_float fold by=" + why + " refused"); return false }
+        foldAsked = why
+        val ok = runCatching { act.enterPictureInPictureMode(params()) }.getOrDefault(false)
+        Log.d("Montana", "call_float fold by=" + why + (if (ok) ": asked to rise size=" + shape else " refused by the system"))
+        if (!ok) foldAsked = null
+        return ok
+    }
+
+    /** The person left the app on a system older than the platform's auto-enter (Android 12): the window is asked here. */
+    fun leaving(act: MainActivity) {
+        if (Build.VERSION.SDK_INT < 31 && supported(act) && want() && !act.isInPictureInPictureMode)
+            runCatching { act.enterPictureInPictureMode(params()) }
+    }
+
+    /** The platform's own word: the window stands, or it is gone. */
+    fun changed(act: MainActivity, inPip: Boolean) {
+        standing = inPip
+        if (inPip) {
+            val ref = Calls.held() ?: return
+            val c: Context = act
+            val name = Book.chat(ref)?.shown?.ifBlank { null } ?: c.getString(R.string.peer)
+            val p = Picture(c)
+            val g = CallScreen.groundOf(c, ref, name)
+            val f = FrameLayout(c).apply {
+                setBackgroundColor(Color.BLACK)
+                isClickable = true
+                addView(g, FrameLayout.LayoutParams(MATCH, MATCH))
+                addView(p, FrameLayout.LayoutParams(MATCH, MATCH, Gravity.CENTER))
+            }
+            (act.window.decorView as FrameLayout).addView(f, FrameLayout.LayoutParams(MATCH, MATCH))
+            face = f; picture = p; cover = g
+            CallLine.theirs.into = p
+            if (foldAsked != null) CallScreen.fold()   // the fold mark's ask: the call screen folds away under the window
+            Log.d("Montana", "call_float stands" + (foldAsked?.let { " by=" + it } ?: "") + " peer_live=" + (if (CallLine.remoteLive) 1 else 0))
+            foldAsked = null
+            paint()
+        } else {
+            face?.let { runCatching { (act.window.decorView as FrameLayout).removeView(it) } }
+            if (CallLine.theirs.into === picture) CallLine.theirs.into = null
+            picture?.release()
+            face = null; picture = null; cover = null
+            Log.d("Montana", "call_float gone")
+            CallLine.changed?.invoke()   // the call screen takes its pictures back
+            // a tap on the window brings the app back with the call screen (iOS restore); a window closed leaves the app away
+            MainThread.later(400) { if (CallScreen.front === act && want()) CallScreen.unfold(act) }
+        }
+    }
+
+    /** The picture while it flows and is not covered, else the cover (iOS drawCover 6130-6144). */
+    private fun paint() {
+        val p = picture ?: return
+        val live = CallLine.video && CallLine.remoteLive && !(CallLine.held || CallLine.heldByPeer || CallLine.peerPaused)
+        p.visibility = if (live) View.VISIBLE else View.INVISIBLE
+        cover?.visibility = if (live) View.INVISIBLE else View.VISIBLE
+    }
+}
+
 private class Picture(c: Context) : TextureView(c), TextureView.SurfaceTextureListener, VideoSink {
     private val egl = EglRenderer("mt_picture")
     @Volatile private var ready = false

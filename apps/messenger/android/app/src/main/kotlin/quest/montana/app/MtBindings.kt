@@ -45,6 +45,16 @@ object MtBindings {
     @JvmStatic external fun nativeFirstSecret(ss: ByteArray, root: ByteArray, ct: ByteArray): ByteArray?
     /** root[1184], window → the point of first contact[16] a first letter knocks at in that window (mt_name_first_tag). */
     @JvmStatic external fun nativeFirstTag(root: ByteArray, window: Long): ByteArray?
+    /** The plane of names, the Canon's derivations in the core (mt-names; iOS mt_name_*): normalize, the slot of a normalized name
+     *  (null for anything that does not normalize to itself), the chain's far end, the whole chain (129 × 32, link 0 the anchor),
+     *  the commitment, one link's proof, the seed of the name's contact key. */
+    @JvmStatic external fun nativeNameNormalize(raw: String): String?
+    @JvmStatic external fun nativeNameSlot(normalized: String): ByteArray?
+    @JvmStatic external fun nativeNameOwn(master: ByteArray, slot: ByteArray): ByteArray?
+    @JvmStatic external fun nativeNameChain(own: ByteArray): ByteArray?
+    @JvmStatic external fun nativeNameCommit(slot: ByteArray, blind: ByteArray, tip: ByteArray): ByteArray?
+    @JvmStatic external fun nativeNameVerifyLink(prev: ByteArray, link: ByteArray): Boolean
+    @JvmStatic external fun nativeNameContactSeed(master: ByteArray, slot: ByteArray): ByteArray?
     // The archive of letters (iOS MontanaArchive over mt_archive_*): the media branch, the writer, the log, the twin's export, the
     // reading road and the sealed Media folder — each the core's own, the same composition as the iOS door.
     @JvmStatic external fun nativeMediaKey(entropy: ByteArray): ByteArray?

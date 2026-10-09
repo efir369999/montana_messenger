@@ -57,7 +57,7 @@ class FaceHead(private val act: MainActivity, private val scene: ViewGroup) {
     /** The face and the lines as they stand now; the face keeps whether it is open. */
     fun draw(face: Bitmap?, name: String, blocked: Boolean, bio: String, link: Uri?, note: String) {
         this.face = face
-        glyph = name.trim().let { if (it.isEmpty()) "?" else it.substring(0, it.offsetByCodePoints(0, 1)) }
+        glyph = avatarInitial(name)   // one derivation for the whole client (iOS MontanaAvatar.initial, atom 344e5535221e/1783)
         view.removeAllViews()
         picture = drawPicture()
         view.addView(picture)
@@ -65,9 +65,18 @@ class FaceHead(private val act: MainActivity, private val scene: ViewGroup) {
         line(bubble(c.text(name, 20f, Color.WHITE, bold = true).apply { maxLines = 2; ellipsize = TextUtils.TruncateAt.END }))   // USER-DATA: their name
         if (blocked) line(blockedPill())
         if (bio.isNotEmpty()) line(bubble(c.text("", 17f, Color.WHITE).apply {
-            // their links live, as the iPhone's MTLinks.linked: a tap on a link opens it, the words around it stay selectable
-            autoLinkMask = Linkify.WEB_URLS; setLinkTextColor(MT.blue); setTextIsSelectable(true)
-            text = bio   // USER-DATA: their bio
+            // THEIR LINKS LIVE, THE WEB'S AND MONTANA'S ALIKE (iOS MontanaPeerHeader.swift:317, MTLinks.linked, atom 20c5cef6f490):
+            // a tap opens either; the words around them stay selectable.
+            val spanned = android.text.SpannableString(bio)
+            Linkify.addLinks(spanned, Linkify.WEB_URLS)
+            for ((range, uri) in montanaLinkMatches(bio)) {
+                spanned.setSpan(object : android.text.style.ClickableSpan() {
+                    override fun onClick(widget: View) { act.openLink(uri.toString()) }
+                }, range.first, range.last + 1, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            movementMethod = android.text.method.LinkMovementMethod.getInstance()
+            setLinkTextColor(MT.blue); setTextIsSelectable(true)
+            text = spanned   // USER-DATA: their bio
         }))
         if (link != null) line(bubble(c.text(PeerAbout.shown(link), 17f, MT.blue).apply {   // USER-DATA: their link
             maxLines = 1; ellipsize = TextUtils.TruncateAt.MIDDLE
@@ -107,7 +116,7 @@ class FaceHead(private val act: MainActivity, private val scene: ViewGroup) {
         val side = if (open) maxOf(c.dp(105), minOf(w, (c.resources.displayMetrics.heightPixels * 0.8f).toInt())) else c.dp(104)
         val at = if (open) Gravity.START else Gravity.CENTER_HORIZONTAL
         view.setPadding(0, if (open) 0 else c.dp(8), 0, 0)
-        (picture as? TextView)?.setTextSize(TypedValue.COMPLEX_UNIT_PX, side * 0.42f)
+        (picture as? TextView)?.setTextSize(TypedValue.COMPLEX_UNIT_PX, side * avatarGlyphScale(glyph))
         picture.layoutParams = lp(side, side).apply { gravity = at }
         for (i in 1 until view.childCount) {
             val v = view.getChildAt(i)

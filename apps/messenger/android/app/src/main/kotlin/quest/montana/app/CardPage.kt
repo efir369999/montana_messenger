@@ -18,9 +18,11 @@ import android.widget.ScrollView
 import android.widget.TextView
 
 /**
- * THE ONE SHARE OF ONE'S CARD (iOS MontanaCardShare): the code page's «Share» and the contacts page's round button hand out
- * the same message — the words, then the link on its own line — through the system's own share sheet, nothing between the
- * tap and it. The kind is the one the code page chose (permanent by default).
+ * THE ONE SHARE OF ONE'S CARD (iOS MontanaCardShare, ContentView.swift:4558-4567): the code page's «Share» and the contacts
+ * page's round button hand out the correspondent's link. A LINK GOES AS A LINK (iOS MTShare.web, MontanaE2E.swift:266-274;
+ * the author's word 07.10.2026 00:1x MSK: «Share gives one link that opens in the browser, not a text that turned into a
+ * file»): the link alone, through the system's own share sheet; the words stand beside it only while the link fails to
+ * parse as one. The kind is the one the code page chose (permanent by default).
  */
 fun shareCard(act: MainActivity) {
     val permanent = Prefs.str("cardKind", "perm") == "perm"
@@ -28,8 +30,8 @@ fun shareCard(act: MainActivity) {
         val link = if (permanent) MontanaCard.offerPermanent(act) else MontanaCard.offerShort(act)
         act.onMain {
             if (link == null) { android.widget.Toast.makeText(act, R.string.card_failed, android.widget.Toast.LENGTH_LONG).show(); return@onMain }
-            val send = Intent(Intent.ACTION_SEND).setType("text/plain")
-                .putExtra(Intent.EXTRA_TEXT, MontanaCard.inviteMessage(act, permanent) + "\n" + link)
+            val text = webLink(link) ?: (MontanaCard.inviteMessage(act, permanent) + "\n" + link)
+            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
             act.startActivity(Intent.createChooser(send, null))
         }
     }
@@ -50,6 +52,25 @@ class CardView(private val act: MainActivity, private val onExpand: (() -> Unit)
     private val copy = act.text(act.getString(R.string.copy_link), 12f, Color.WHITE, bold = true)
     private var current: String? = null
     private val permanent get() = Prefs.str("cardKind", "perm") == "perm"
+    // THE NAME ON THE CODE'S PAGE (iOS MontanaCodeView 4353-4369, 4435-4441): «@name» under the face opens the name's own page —
+    // its term and the road to change it; with no name the caption says what the code alone does, and «Take a name» stands under Scan
+    private val named = act.text("", 20f, Color.WHITE, bold = true, center = true).apply { minHeight = act.dp(44); gravity = Gravity.CENTER }
+    private val caption = act.text("", 12f, MT.gray, center = true)
+    private val take = act.hstack {
+        gravity = Gravity.CENTER
+        minimumHeight = act.dp(44)
+        addView(act.icon(R.drawable.ic_at, Color.WHITE), lp(act.dp(20), act.dp(20)))
+        gap(8)
+        addView(act.text(act.getString(R.string.name_take), 15f, Color.WHITE, bold = true))
+    }
+    private fun openName() = act.push { close -> namePage(act, onTaken = { close(); drawName(); draw() }, onClose = close) }
+    private fun drawName() {
+        val n = Names.heldName
+        named.text = n?.let { "@" + it } ?: ""   // USER-DATA: my own name
+        named.visibility = if (n == null) View.GONE else View.VISIBLE
+        take.visibility = if (n == null) View.VISIBLE else View.GONE
+        caption.text = act.getString(if (n == null) R.string.code_caption else R.string.code_caption_named)
+    }
 
     init {
         val c: Context = act
@@ -101,8 +122,9 @@ class CardView(private val act: MainActivity, private val onExpand: (() -> Unit)
         view = c.vstack {
             setPadding(0, dp(20), 0, dp(20))
             addView(face, lp(dp(84), dp(84)))
+            addView(named.apply { pressable { openName() } }, lp(WRAP, WRAP))
             gap(14)
-            addView(c.text(c.getString(R.string.code_caption), 12f, MT.gray, center = true).apply { setPadding(dp(24), 0, dp(24), 0) }, lp())
+            addView(caption.apply { setPadding(dp(24), 0, dp(24), 0) }, lp())
             gap(14)
             addView(box, lp(WRAP, WRAP))
             gap(14)
@@ -127,7 +149,14 @@ class CardView(private val act: MainActivity, private val onExpand: (() -> Unit)
                 addView(c.text(c.getString(R.string.scan), 15f, Color.WHITE, bold = true))
                 pressable { act.push { close -> scannerPage(act, close) } }
             }, lp().apply { setMargins(dp(36), 0, dp(36), 0) })
+            addView(take.apply { pressable { openName() } }, lp(WRAP, WRAP).apply { topMargin = dp(2) })
         }
+        val heard: () -> Unit = { drawName(); draw() }   // a name taken, lost or released (iOS .montanaNameChanged)
+        view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) { NamePlane.listen(heard); drawName() }
+            override fun onViewDetachedFromWindow(v: View) { NamePlane.unlisten(heard) }
+        })
+        drawName()
         draw()
     }
 
