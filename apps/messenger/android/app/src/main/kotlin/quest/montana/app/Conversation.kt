@@ -460,10 +460,14 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
     val draftRow = FrameLayout(c).apply { setPadding(c.dp(10), 0, c.dp(10), c.dp(8)); visibility = View.GONE }
     val feedFrame = FrameLayout(c)
     // THE FEED BEHIND A TAPE IS BLURRED (iOS MontanaConversation.swift:1446-1452 at 2155: «.blur(radius: holding ? 10 : 0)» while a
-    // voice or a note records; the open note's cloud blurs it on its own): radius 10, off again where every tape ends (onRecIdle)
+    // voice or a note records; the open note's cloud blurs it on its own): radius 10, off again where every tape ends (onRecIdle).
+    // WHAT STANDS BEHIND THE BLUR TAKES NO TOUCHES (iOS .allowsHitTesting(!recorder.isRecording), MontanaConversation.swift:1420 at
+    // 2155, atom 859a533eef70): a finger on a bubble under the blur plays nothing and scrolls nothing while a tape rolls.
+    var feedBlocked = false
     fun blurFeed(on: Boolean) {
         if (31 <= android.os.Build.VERSION.SDK_INT) feedFrame.setRenderEffect(if (!on) null
             else android.graphics.RenderEffect.createBlurEffect(c.dp(10).toFloat(), c.dp(10).toFloat(), android.graphics.Shader.TileMode.CLAMP))
+        feedBlocked = on
     }
     var keysAway: () -> Unit = {}   // the field is born below
     var barTop: () -> Int = { Int.MAX_VALUE }   // the bar's top on the screen, once it stands
@@ -479,6 +483,7 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
         private var moved = false
         private fun keysUp() = rootWindowInsets?.isVisible(WindowInsets.Type.ime()) == true
         override fun dispatchTouchEvent(e: MotionEvent): Boolean {
+            if (feedBlocked) return false   // a tape rolls: the feed behind the blur takes no touches (iOS allowsHitTesting)
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> { downX = e.x; downY = e.y; downT = e.eventTime; moved = false }
                 MotionEvent.ACTION_MOVE -> {
