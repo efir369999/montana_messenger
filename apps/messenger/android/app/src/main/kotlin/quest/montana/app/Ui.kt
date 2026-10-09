@@ -38,10 +38,14 @@ fun Context.dp(v: Number): Int = TypedValue.applyDimension(TypedValue.COMPLEX_UN
 
 /**
  * THE SYSTEM TEXT SIZE DISTORTS NOTHING (iOS 1454: every window pinned at its trait): the app's words, its menus and its
- * dialogs keep the sizes they were drawn at, whatever the system's text size says.
+ * dialogs keep the sizes they were drawn at, whatever the system's text size says. ONLY THE LETTERS OF A MESSAGE FOLLOW IT
+ * (iOS MontanaTextSize.letterFont / montanaTextScale, MontanaApp.swift:89-125 at 2155): the person's own step is read once,
+ * here, and asked for by name wherever a letter's own words are drawn.
  */
+object MontanaTextSize { var system = 1f }
 fun pinnedText(base: Context): Context {
     val conf = android.content.res.Configuration(base.resources.configuration)
+    MontanaTextSize.system = conf.fontScale
     if (conf.fontScale == 1f) return base
     conf.fontScale = 1f
     return base.createConfigurationContext(conf)

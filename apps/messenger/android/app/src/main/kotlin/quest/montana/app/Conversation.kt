@@ -1896,7 +1896,7 @@ private fun letterBubble(c: Context, m: Msg, chat: Chat, members: List<Msg> = li
                 // EVERY MONTANA LINK OPENS AT A TOUCH (iOS MTMessageText.swift:227-252, MTLinkedText.updateUIView, atom
                 // 20c5cef6f490): the web's own finder and a Montana link alike, underlined in the bubble's own ink (iOS
                 // MontanaShapes.swift:524).
-                val words = c.text(linkedWords(letterWords(c, m.text)) { u -> (c as? MainActivity)?.openLink(u.toString()) }, 16f, BubbleStyle.text(mine)).apply {
+                val words = c.text(linkedWords(letterWords(c, m.text)) { u -> (c as? MainActivity)?.openLink(u.toString()) }, 16f * MontanaTextSize.system, BubbleStyle.text(mine)).apply {
                     maxWidth = dp(260); setTextIsSelectable(false); visibility = View.GONE
                     movementMethod = android.text.method.LinkMovementMethod.getInstance()
                     setLinkTextColor(BubbleStyle.text(mine))
@@ -1916,7 +1916,9 @@ private fun letterBubble(c: Context, m: Msg, chat: Chat, members: List<Msg> = li
             // EVERY MONTANA LINK OPENS AT A TOUCH (iOS MTMessageText.swift:227-252, MTLinkedText.updateUIView, atom
             // 20c5cef6f490): the web's own finder and a Montana link alike, underlined in the bubble's own ink (iOS
             // MontanaShapes.swift:524).
-            else addView(c.text(linkedWords(letterWords(c, m.text)) { u -> (c as? MainActivity)?.openLink(u.toString()) }, 16f, BubbleStyle.text(mine)).apply {
+            // THE SYSTEM'S TEXT SIZE REACHES ONLY THE LETTER'S OWN WORDS (iOS montanaTextScale/letterFont, the author's
+            // word 11.09): every other size in the app stays pinned (pinnedText, Ui.kt), the bubble's own text does not.
+            else addView(c.text(linkedWords(letterWords(c, m.text)) { u -> (c as? MainActivity)?.openLink(u.toString()) }, 16f * MontanaTextSize.system, BubbleStyle.text(mine)).apply {
                 maxWidth = dp(260); setTextIsSelectable(false)
                 movementMethod = android.text.method.LinkMovementMethod.getInstance()
                 setLinkTextColor(BubbleStyle.text(mine))
