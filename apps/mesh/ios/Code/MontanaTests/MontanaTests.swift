@@ -851,7 +851,7 @@ final class MontanaNetworkTests: XCTestCase {
     // two words differing only in the run are two writers.
     func testMeshRoomWordReadsBack() throws {
         let run = Data([1, 2, 3, 4, 5, 6, 7, 8])
-        let w = MTMeshRoom.Word(run: run, at: 0x01020304, name: "Анна", text: "привет всем 👋")   // CYRILLIC-DATA-OK: a person's own words
+        let w = MTMeshRoom.Word(run: run, at: 0x01020304, name: "Вера", text: "привет всем 👋")   // CYRILLIC-DATA-OK: a person's own words
         let body = MTMeshRoom.encode(w)
         XCTAssertEqual(body[body.startIndex], MTMeshRoom.version)
         XCTAssertEqual(Array(body[9..<13]), [1, 2, 3, 4])
@@ -865,10 +865,10 @@ final class MontanaNetworkTests: XCTestCase {
         XCTAssertEqual(cut.utf8.count, MTMeshRoom.wordBytes); XCTAssertEqual(cut.count, MTMeshRoom.wordBytes / 2)
         XCTAssertEqual(MTMeshRoom.cut("ab👋", 5), "ab")   // the four-byte letter does not fit whole: it is left out, never split
         let ref = MTMeshRoom.ref(of: w)
-        XCTAssertEqual(MTMeshRoom.name(of: ref), "Анна")   // CYRILLIC-DATA-OK
+        XCTAssertEqual(MTMeshRoom.name(of: ref), "Вера")   // CYRILLIC-DATA-OK
         XCTAssertNil(MTMeshRoom.name(of: "a:peer"))
         XCTAssertEqual(MTMeshRoom.name(of: "mesh:0102:a:b"), "a:b")   // a name may hold the separator
-        XCTAssertNotEqual(MTMeshRoom.ref(of: MTMeshRoom.Word(run: Data(repeating: 9, count: 8), at: 1, name: "Анна", text: "x")), ref)   // CYRILLIC-DATA-OK
+        XCTAssertNotEqual(MTMeshRoom.ref(of: MTMeshRoom.Word(run: Data(repeating: 9, count: 8), at: 1, name: "Вера", text: "x")), ref)   // CYRILLIC-DATA-OK
         // THE CELL'S TAIL (the critic, 29.09): a long word ending in a full stop reads back whole from a cell nobody passed on,
         // and from one a hop sealed -- the hop's seal and count are taken off by the mesh (MontanaBLEMesh.body), the zero by
         // the room. Rejects the cell without its zero count: its last byte, a full stop, would be read as a count of 46 seals.

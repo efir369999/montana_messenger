@@ -369,6 +369,7 @@ final class E2E {
     // nothing to carry over or to steal; it dies with the identity, because the secret under it
     // leaves with the seed; and two identities on one phone never share it. The platform value
     // enters under the hash and never leaves it.
+    private static let appWriter = "quest.montana.mesh"   // NOT-UI: this app's own name under the device tag, never shown
     static func deviceTag() -> String {
         deviceTagLock.lock(); defer { deviceTagLock.unlock() }
         if let c = deviceTagCache { return c }
@@ -384,7 +385,12 @@ final class E2E {
         // the first archive write of a launch, on whichever thread got there first, it was the
         // freeze on opening the app — a stretch that exists to slow down a guesser has no
         // business standing between a person and their own screen.
-        var m = Data("mt-device-tag".utf8); m.append(0); m.append(secret); m.append(Data(idfv.utf8))
+        // ONE PHONE, MANY APPS, ONE WRITER EACH (09.10.2026, the author's word: "fix it at once"): the platform's vendor value is one
+        // for every app of one maker on a phone, so the apps of the same words were one writer -- one writer_tag under one
+        // history_key, each counting its blocks from zero: the same nonce over two different blocks (the core's archive: nonce =
+        // block_seq and writer_tag), and a receiver dropped the second app's block as held. The spec's device_id is per install:
+        // this app's own name enters under the hash.
+        var m = Data("mt-device-tag".utf8); m.append(0); m.append(secret); m.append(Data(idfv.utf8)); m.append(0); m.append(Data(Self.appWriter.utf8))
         let id = "ios-" + Array(SHA256.hash(data: m)).prefix(6).map { String(format: "%02x", $0) }.joined()
         deviceTagCache = id
         return id
