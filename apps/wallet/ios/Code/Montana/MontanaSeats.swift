@@ -205,11 +205,12 @@ final class MTSeats: ObservableObject {
                 return false
             }
         }
-        let face = ud.data(forKey: "avatarData") ?? Data()
+        // The drawer's face and name of the person parked: the person of this wallet, as their app holds them (MTWalletPerson,
+        // the author's word 10.10.2026) -- the wallet keeps none of its own.
+        let face = MTWalletPerson.face
         try? face.write(to: faceFile(id), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         var b = book()
-        let name = [ud.string(forKey: "userName"), ud.string(forKey: "userLastName")].compactMap { $0 }
-            .joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = E2E.myDisplayName()
         if let i = b.seats.firstIndex(where: { $0.id == id }) {
             b.seats[i].name = name
             b.seats[i].glyph = E2E.myFaceGlyph()

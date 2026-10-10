@@ -177,31 +177,9 @@ enum MTPhoneProof {
     }
 }
 
-/// THE CARD COMES INTO THE PROFILE (the author's words 06.10.2026 18:3x MSK): the name, the bio and the face the bot's profile
-/// gave fill the person's own profile where it is still empty -- a field the person already filled is theirs and stays; the
-/// public name the profile is reached by there becomes the person's name in Montana (pzr.me) when they hold none yet and it
-/// passes the name's rules, taken at the keeper of names by the one road of a taking (MontanaNamePlane.take).
-enum MTPhoneCard {
-    @MainActor static func adopt(_ c: MTPhoneService.Card?) {
-        guard let c else { return }
-        let d = UserDefaults.standard
-        func blank(_ key: String) -> Bool { (d.string(forKey: key) ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        var took: [String] = []
-        let name = String(MTCrown.plain(c.name).prefix(64))   // the profile's own bound and rule: 64 letters, a crown is never taken in
-        if !name.isEmpty, blank("userName") { d.set(name, forKey: "userName"); E2E.shared.broadcastName(); took.append("name") }
-        if !c.bio.isEmpty, blank("profileBio") { d.set(c.bio, forKey: "profileBio"); E2E.shared.broadcastAbout(); took.append("bio") }
-        if let face = c.photo, (d.data(forKey: "avatarData") ?? Data()).isEmpty { MontanaSelfFace.set(face); took.append("face") }
-        let held = NameSheet.normalized(c.publicName)
-        if !held.isEmpty, MontanaNames.currentName == nil, NameSheet.rejection(held) == nil {
-            took.append("public")
-            Task {
-                let out = await MontanaNamePlane.take(held)
-                if case .taken = out { MontanaP2PTrace.mark("phone_card", "public name taken") } else { MontanaP2PTrace.mark("phone_card", "public name not taken") }
-            }
-        }
-        MontanaP2PTrace.mark("phone_card", "took=" + (took.isEmpty ? "-" : took.joined(separator: ",")))
-    }
-}
+/// THE CARD FILLS NOTHING IN THE WALLET (the author's word 10.10.2026 12:4x MSK: the wallet keeps no person of its own): the
+/// name, the bio, the face and the public name a confirmation's card carries are the account's in Montana or Business, where
+/// the same number's door fills them; here the number alone is confirmed.
 
 /// The countries a number is chosen by: the region and its calling code (ITU-T E.164), written once. The name is the system's
 /// own, in the person's language; the flag is the region's two letters.
@@ -405,8 +383,8 @@ final class MTPhoneFlow: ObservableObject {
                 let ask = Task { await MTPhoneService.wait(nonce: s.nonce, claim: s.claim) }
                 asking = ask
                 switch await ask.value {
-                case .confirmed(let a, let card):
-                    confirm(a, card: card, e164: e164, channel: road.channel, done: done)
+                case .confirmed(let a, _):
+                    confirm(a, e164: e164, channel: road.channel, done: done)
                     return
                 case .mismatch, .unverified: refuse("The confirmation does not match this number."); return
                 case .again: continue
@@ -428,7 +406,7 @@ final class MTPhoneFlow: ObservableObject {
         MontanaP2PTrace.mark("phone_door", "sign-in came back")
         task = Task {
             switch await MTPhoneService.finish(nonce: s.nonce, claim: s.claim, code: code) {
-            case .confirmed(let a, let card): confirm(a, card: card, e164: n, channel: MTPhoneService.signInChannel, done: done)
+            case .confirmed(let a, _): confirm(a, e164: n, channel: MTPhoneService.signInChannel, done: done)
             case .mismatch: refuse("The confirmation does not match this number.")
             case .unverified: refuse("This account has no verified number.")
             case .expired: refuse("The confirmation took too long. Start again.")
@@ -436,9 +414,8 @@ final class MTPhoneFlow: ObservableObject {
             }
         }
     }
-    private func confirm(_ a: Data, card: MTPhoneService.Card?, e164: String, channel: Int, done: () -> Void) {
+    private func confirm(_ a: Data, e164: String, channel: Int, done: () -> Void) {
         guard MTPhoneProof.keep(a, e164: e164) else { refuse("The confirmation does not match this number."); return }
-        MTPhoneCard.adopt(card)   // the card fills what the profile still lacks, the public name included
         MontanaP2PTrace.mark("phone_door", "confirmed channel=\(channel)")
         waiting = nil
         release()
@@ -777,8 +754,7 @@ struct MTPhoneCountrySheet: View {
 }
 
 /// THE NUMBER'S OWN SHEET, for a person already in Montana (the author's word 06.10.2026 18:3x MSK: «attach the number at
-/// once»): the door of the sign-in from the profile; confirmed, the number stands in the profile, and the card fills what the
-/// profile still lacks.
+/// once»): the door of the sign-in from the profile; confirmed, the number stands in the profile.
 struct MTPhoneSheet: View {
     var done: () -> Void
     @Environment(\.dismiss) private var dismiss

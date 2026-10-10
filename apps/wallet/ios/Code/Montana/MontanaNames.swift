@@ -138,8 +138,10 @@ enum MontanaNames {
     static var heldStep: Int? { load()?.step }
     static var heldUntil: Double? { load()?.until }
 
-    static func state(now: UInt32) -> State {
-        guard let h = load() else { return .none }
+    static func state(now: UInt32) -> State { state(of: load(), now: now) }
+    /// One rule for a record wherever it was read: this device's own, or the record a copy of the same words carries.
+    private static func state(of record: Held?, now: UInt32) -> State {
+        guard let h = record else { return .none }
         if let until = h.until {
             let nowS = Double(now) * Double(MTPipe.windowSeconds)
             return nowS < until ? .held(renewBy: UInt32(until / Double(MTPipe.windowSeconds))) : .expired
@@ -165,6 +167,12 @@ enum MontanaNames {
     /// The name this device holds right now. A name whose term ran out is neither shown, nor handed out, nor
     /// listened at (the critic's P5): its slot may be somebody else's already.
     static var heldName: String? { isHeld() ? currentName : nil }
+    /// THE NAME A COPY'S RECORD HOLDS RIGHT NOW (10.10.2026, MTWalletOwner): the record of the same words as another app keeps
+    /// it, read by the same rule as heldName -- a lapsed name is neither shown nor handed out, its slot may be another's.
+    static func heldName(inRecord d: Data, now: UInt32 = UInt32(MTPipe.window())) -> String? {
+        guard let h = try? JSONDecoder().decode(Held.self, from: d), case .held = state(of: h, now: now) else { return nil }
+        return h.name
+    }
 
     /// serialize(name_reveal) (Canon, «The three objects of a name»): the name's length, the name zero-padded to
     /// 32, the blinding factor, the contact root — 1 249 bytes. The node parses these bytes; the digest of one case

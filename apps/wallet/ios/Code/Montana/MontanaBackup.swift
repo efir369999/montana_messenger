@@ -970,6 +970,22 @@ enum MontanaBackup {
         }
     }
 
+    /// THE CARD OF A COPY, READ AND NOT LAID (the author's words 10.10.2026 12:4x and 12:47 MSK: the wallet keeps no person of
+    /// its own and shows the person of the same words). The copy is opened by this phone's words and proved whole by its tail
+    /// exactly as a restore proves it; every other record passes by unfiled, and nothing on this phone changes. Nil for a copy
+    /// these words do not open, a copy cut or torn, or a copy without a card. Version 2 alone is read: a copy laid on the
+    /// nodes is never of version 1.
+    static func cardOf(_ url: URL) -> [String: String]? {
+        guard let mn = MontanaSeed.mnemonic, let ent = MontanaSeedKeys.entropyFrom(mnemonic: mn), ent.count == 32,
+              let fh = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? fh.close() }
+        let size = ((try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? nil) ?? 0
+        let taker = Taker(peek: true)
+        guard case .success = applyV2(fh, size, ent, Share { _ in }, taker),
+              let tail = taker.tail, hex(taker.hash.finalize()) == tail.digest, let card = taker.card else { return nil }
+        return try? JSONDecoder().decode([String: String].self, from: card)
+    }
+
     /// One reporter for both shapes: a share, spoken only when the whole percent moves.
     private final class Share {
         private let say: (Double) -> Void
@@ -1037,7 +1053,7 @@ enum MontanaBackup {
     }
 
     /// Version 2: frames of one length; inside them, one stream of records.
-    private static func applyV2(_ fh: FileHandle, _ size: Int, _ ent: Data, _ share: Share) -> Result<Tally, Refusal> {
+    private static func applyV2(_ fh: FileHandle, _ size: Int, _ ent: Data, _ share: Share, _ taker: Taker = Taker()) -> Result<Tally, Refusal> {
         let body = size - saltBytes
         guard body >= frameBytes,
               let salt = ((try? fh.read(upToCount: saltBytes)) ?? nil), salt.count == saltBytes else { return .failure(.notOurs) }
@@ -1045,7 +1061,6 @@ enum MontanaBackup {
         let whole = body % frameBytes == 0
         func last(_ i: Int) -> Bool { whole && i == n - 1 }
         let k = key(entropy: ent, salt: salt, label: labelV2)
-        let taker = Taker()
         var stream = Data()
         var ended = false
         for i in 0..<n {
@@ -1092,12 +1107,17 @@ enum MontanaBackup {
             }
         }
         guard ended, whole else { taker.close(); return .failure(.torn) }
-        return finish(taker, UInt64(n))
+        // A copy only read lays nothing: its card goes to the reader, never to the store (cardOf).
+        return taker.peek ? .success(taker.tally) : finish(taker, UInt64(n))
     }
 
     /// A COPY HANDED BACK, RECORD BY RECORD — one reading for both shapes of the container, so the old
     /// and the new cannot file an attachment two different ways.
     private final class Taker {
+        /// A COPY ONLY READ (cardOf, 10.10.2026): every record is hashed and passed by unfiled -- no block absorbed, no file
+        /// written -- and the card and the tail alone are kept.
+        let peek: Bool
+        init(peek: Bool = false) { self.peek = peek }
         private let fm = FileManager.default
         private let chats = MontanaArchive.rootURL.appendingPathComponent(MontanaPaths.chats)
         var hash = SHA256()
@@ -1126,6 +1146,7 @@ enum MontanaBackup {
             guard p.count == 8 + nl + dl else { return .torn }
             let data = p.subdata(in: (8 + nl)..<(8 + nl + dl))
             if kind != MontanaBackup.kindTail { hash.update(data: p) }
+            if peek, kind != MontanaBackup.kindCard, kind != MontanaBackup.kindTail { return nil }
             switch kind {
             case MontanaBackup.kindBlock:
                 _ = MontanaArchive.absorb(data)

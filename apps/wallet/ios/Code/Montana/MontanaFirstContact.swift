@@ -1054,7 +1054,7 @@ enum MontanaCard {
     /// again while its record is fresh. A cleared face leaves an empty blob — «no face» is an
     /// answer, so yesterday's picture cannot outlive its owner's decision.
     private static func uploadFace(invite: Data) {
-        let face = UserDefaults.standard.data(forKey: "avatarData") ?? Data()
+        let face = MTWalletPerson.face   // the person of this wallet, as their app keeps the face (the author's word 10.10.2026)
         let stamp = faceStamp(invite)
         let fp = SHA256.hash(data: face).map { String(format: "%02x", $0) }.joined().prefix(16)
         if let last = UserDefaults.standard.string(forKey: stamp) {

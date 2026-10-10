@@ -655,6 +655,30 @@ enum MTKeepDerive {
         return laid > 0
     }
 
+    /// THE NEWEST LIGHT ROADS OF ONE APP OF THESE WORDS, READ AND LEFT IN THE BOX (the author's words 10.10.2026 12:4x and 12:47
+    /// MSK: the wallet keeps no person of its own; it shows the person of the same words -- Montana first, then Business). The
+    /// pipe of light is read as takeLight reads it, and no row is confirmed to the node: every road stays for the phone that
+    /// opens these words tomorrow. The apps are asked in the order named; the first that laid a road answers, with its roads
+    /// newest first by the minute their seal was made (two devices count their generations each from one). Nil when none did.
+    nonisolated static func lightRoads(of apps: [String]) async -> (app: String, roads: [[String: Any]])? {
+        guard agrees, let m = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(m),
+              let secret = MTKeepDerive.lightSecret(master) else { return nil }
+        var rows: [[String: String]] = []
+        let ear = MontanaWakePush.BoxEar(invites: [], pipes: [lightName: secret], owner: MontanaSeed.twin ?? "")
+        _ = await MontanaWakePush.pickup(ear, buries: nil, keep: { row in rows.append(row); return false })
+        var laid: [(road: [String: Any], at: Int)] = []
+        for row in rows {
+            guard let o = word(row["t"] ?? ""), (o["w"] as? String) == "light" else { continue }
+            laid.append((o, Int(row["at"] ?? "") ?? 0))
+        }
+        for app in apps {
+            let roads = laid.filter { ($0.road["a"] as? String) == app }
+                .sorted { $0.at != $1.at ? $0.at > $1.at : ($0.road["g"] as? Int ?? 0) > ($1.road["g"] as? Int ?? 0) }
+            if !roads.isEmpty { return (app, roads.map { $0.road }) }
+        }
+        return nil
+    }
+
     // ── the cargo road of a part ──
     /// A PART ON THE CARGO ROAD: sealed in pieces under a fresh key and put on the nodes, and its list of pieces sealed as one
     /// more piece -- the word that names a part carries that piece's name and key, never the list (a list outgrows a letter).

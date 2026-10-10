@@ -557,7 +557,6 @@ struct MTWallLink: View {
         }
         .accessibilityLabel(Text(LocalizedStringKey(mark)))
         .accessibilityValue(Text(verbatim: card.t ?? card.u)) // USER-DATA: the page title its writer read
-        .task(id: card.u) { await prepare() }
         .task(id: card.i) { image = await MTBoardPoster.decoded(card.i) }
     }
 
@@ -617,15 +616,18 @@ struct MTWallLink: View {
         .contentShape(Rectangle())
     }
 
-    private func prepare() async {
-        guard let u = URL(string: card.u), kind != nil else { return }
-        // A SERVICE'S PAGE PLAYS IN THAT SERVICE (App Review 5.2.2 and 5.2.3, 08.10.2026): its stream is the service's to serve,
-        // never ours to draw -- the card shows its picture, and a tap opens the link there. Only a media file itself plays in place.
-        guard ["mp4", "mov", "m4v", "webm", "mp3", "m4a", "aac", "wav", "flac"].contains(u.pathExtension.lowercased()) else { return }
-        media = u
+    /// A MEDIA FILE ITSELF IS THE ONLY THING THAT PLAYS IN PLACE (App Review 5.2.2 and 5.2.3, 08.10.2026: a service's page plays in
+    /// that service). It is fetched at the visitor's first tap and never before -- the card's own word above; a post shown once had
+    /// told a stranger's site the visitor's address and the moment the feed was read (the finding of 09.10.2026).
+    private var playable: URL? {
+        guard let u = URL(string: card.u), kind != nil else { return nil }
+        return ["mp4", "mov", "m4v", "webm", "mp3", "m4a", "aac", "wav", "flac"].contains(u.pathExtension.lowercased()) ? u : nil
     }
     private func press() {
-        guard let media else { open(); return }
+        guard let media else {
+            if let u = playable { media = u; sound = true } else { open() }
+            return
+        }
         if !sound {
             sound = true
         } else {

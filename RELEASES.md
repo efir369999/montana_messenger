@@ -15,7 +15,7 @@ Each folder of this repository is the tree of one commit of the project's histor
 | `apps/messenger/ios` | 2173 | `38465b7fb99c` | 2026-10-10 11:51 UTC |
 | `apps/p2p/ios` | 2 | `9652b512bced` | 2026-10-10 11:51 UTC |
 | `apps/vpn/ios` | 3 | `298b7dc88d0c` | 2026-10-10 11:51 UTC |
-| `apps/wallet/ios` | 15 | `c52cb09f44e5` | 2026-10-10 11:51 UTC |
+| `apps/wallet/ios` | 16 | `ef83ab8efaff` | 2026-10-10 11:56 UTC |
 | `core` | core line | `3848245e308b` | 2026-10-10 11:51 UTC |
 <!-- sources:end -->
 

@@ -33,6 +33,22 @@
         }
       }
     },
+    "Grail": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Грааль"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圣杯"
+          }
+        }
+      }
+    },
     "Send coins": {
       "localizations": {
         "ru": {
@@ -28631,6 +28647,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "您的历史记录将在后台继续恢复。"
+          }
+        }
+      }
+    },
+    "Your account in Montana": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш аккаунт в Montana"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你在 Montana 的账户"
+          }
+        }
+      }
+    },
+    "Your account in Montana Business": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш аккаунт в Montana Business"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你在 Montana Business 的账户"
+          }
+        }
+      }
+    },
+    "Looking for your Montana account…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ищем ваш аккаунт Montana…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在查找你的 Montana 账户…"
+          }
+        }
+      }
+    },
+    "Not linked to a Montana account yet": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока не привязан к аккаунту Montana"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未关联 Montana 账户"
+          }
+        }
+      }
+    },
+    "Your Montana account did not come from the network yet": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Аккаунт Montana ещё не пришёл из сети"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未从网络获取你的 Montana 账户"
           }
         }
       }

@@ -30,8 +30,7 @@ import Contacts
 
 
 
-// ── "Settings" tab / profile ──
-enum SettingsSheet: Int, Identifiable { case emoji, qr; var id: Int { rawValue } }
+// ── "Settings" tab ──
 
 // Reliable overscroll reading: finds the enclosing UIScrollView (List) and observes contentOffset (KVO).
 // pull = how far the list is dragged down past the top (for expanding the avatar,).
@@ -93,24 +92,8 @@ struct SettingsTabView: View {
     /// THE WAY OUT (the author's word 17.09): the system's cross top left, the done mark's format —
     /// handed in by the page that presents the sheet; absent, the page stands as a tab and has none.
     var onClose: (() -> Void)? = nil
-    @AppStorage("userName") private var displayName: String = ""
-    @AppStorage("avatarData") private var avatarData: Data = Data()
-    @AppStorage("avatarGallery") private var avatarGalleryJSON: String = ""
-    @AppStorage("statusEmoji") private var statusEmoji: String = ""
-    private let testMode = false
-    @State private var info = ""
-    @State private var showInfo = false
-    @State private var pickerItem: PhotosPickerItem?
-    @State private var cropSource: MTCropSource?   // the picked photo awaiting its circle
-    @State private var refCopied = false
-    @State private var showProfile = false
-    @State private var activeSheet: SettingsSheet?
-    @State private var showScan = false
-
-    private var fullName: String { displayName.trimmingCharacters(in: .whitespaces) }
-    /// This person's face — one question, one answer ([C-1]): the same resolver as for peers.
-    // USER-DATA: the person's own glyph or letter, not interface text.
-    private var myFace: String { E2E.myFaceGlyph() }
+    // NO PERSON IS EDITED HERE (the author's word 10.10.2026 12:4x MSK: the wallet keeps no person of its own): the face, the
+    // name, the status and About live in Montana or Business, and the card under the words shows them (MTWalletOwnerSection).
 
     var body: some View {
         NavigationStack {
@@ -127,6 +110,9 @@ struct SettingsTabView: View {
                     Text("Write the 24 words down and keep them: on a new phone your identity and your coins open only from them.")
                 }
                 .listRowBackground(MTGlassRowPlate())
+                // THE PERSON THIS WALLET BELONGS TO, RIGHT UNDER THE WORDS (the author's word 10.10.2026 12:47 MSK): the face, the name,
+                // About and the links of the account these words open in Montana, else in Montana Business -- read, never edited here.
+                MTWalletOwnerSection()
                 Section {
                     NavigationLink { NotificationsView() } label: { navLabel("Notifications and Sounds", "bell.badge.fill", .red) }
                     NavigationLink { DataStorageView() } label: { navLabel("Data and Storage", "arrow.down.circle.fill", .indigo) }
@@ -160,115 +146,6 @@ struct SettingsTabView: View {
                     ToolbarItem(placement: .topBarLeading) { MontanaCloseMark(action: onClose) }
                 }
             }
-            .onChange(of: pickerItem) { _, item in
-                Task {
-                    if let data = try? await item?.loadTransferable(type: Data.self),
-                       let img = UIImage(data: data) {
-                        cropSource = MTCropSource(image: img)   // the circle decides what the face keeps
-                    }
-                }
-            }
-            .fullScreenCover(item: $cropSource) { src in
-                MTAvatarCropView(image: src.image) { jpeg in
-                    cropSource = nil
-                    guard let jpeg else { return }
-                    if let name = saveToDocs(jpeg, ext: "jpg") {
-                        var list = (try? JSONDecoder().decode([String].self, from: Data(avatarGalleryJSON.utf8))) ?? []
-                        list.insert(name, at: 0)
-                        avatarGalleryJSON = String(data: (try? JSONEncoder().encode(list)) ?? Data(), encoding: .utf8) ?? ""
-                    }
-                    MontanaSelfFace.set(jpeg)
-                }
-            }
-            .sheet(item: $activeSheet) { s in
-                Group {
-                    switch s {
-                    case .emoji: emojiSheet
-                    case .qr: qrSheet
-                    }
-                }
-                .montanaMotionMeter()   // every rise and fall of a sheet is measured (25.09)
-            }
-            .sheet(isPresented: $showScan) {
-                NavigationStack {
-                    ScanMeetingView { conv in
-                        showScan = false
-                        // full chat via the same path as the «Chats» tab/notification (no modal)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            NotificationCenter.default.post(name: .openChatRequest, object: nil, userInfo: ["address": conv])
-                        }
-                    }
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { MontanaCloseMark { showScan = false } } }
-                }.preferredColorScheme(.dark).montanaMotionMeter()
-            }
-            .alert(info, isPresented: $showInfo) {
-                Button("Got it", role: .cancel) {}
-            }
-        }
-    }
-
-    func goldRow(_ title: String, _ icon: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 16, weight: .semibold))
-                .foregroundColor(Color.accentColor).frame(width: 26)
-            Text(LocalizedStringKey(title)).foregroundColor(.accentColor)
-            Spacer()
-        }
-    }
-    var qrSheet: some View {
-        NavigationStack {
-            VStack {
-                Spacer(minLength: 8)
-                MontanaCodeView(name: MontanaSelf.name, onScan: {
-                    activeSheet = nil   // the sheet closes, otherwise the camera waits for its collapse
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { showScan = true }
-                }, onMet: { activeSheet = nil })
-                Spacer(minLength: 8)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity).montanaPageGround()   // my page's ground, as every page wears it (26.09)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    MontanaDoneMark { activeSheet = nil }
-                }
-            }
-        }.preferredColorScheme(.dark)
-    }
-    var emojiSheet: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 16) {
-                    Button { statusEmoji = ""; activeSheet = nil } label: {
-                        Text("no").font(.caption).foregroundColor(.gray).frame(width: 40, height: 40)
-                    }
-                    ForEach(montanaStickers, id: \.self) { e in
-                        Button { statusEmoji = e; activeSheet = nil } label: {
-                            Text(e).font(.system(size: 32)).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }.padding()
-            }.frame(maxWidth: .infinity, maxHeight: .infinity).montanaPageGround()   // my page's ground, as every page wears it (26.09)
-        }.preferredColorScheme(.dark).presentationDetents([.medium])
-    }
-    // a single settings row with a branded colored icon
-    func row(_ title: String, _ icon: String, _ color: Color) -> some View {
-        Button {
-            info = "“\(title)” coming soon 🙂"
-            showInfo = true
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 29, height: 29)
-                    .background(color)
-                    .clipShape(RoundedRectangle(cornerRadius: 7))
-                Text(LocalizedStringKey(title)).foregroundColor(.white)
-                Spacer()
-                Image(systemName: "chevron.right").font(.caption).foregroundColor(.gray)
-            }
-            .contentShape(Rectangle())   // the whole row is the target, not only its words (22.09)
         }
     }
 
@@ -277,6 +154,237 @@ struct SettingsTabView: View {
     // diverge in padding on the first edit, and two rows of one list would sit differently.
     func navLabel(_ title: String, _ icon: String, _ color: Color) -> some View {
         settingsToggleLabel(LocalizedStringKey(title), icon, color)
+    }
+}
+
+// ════════════════════════════════════════════════════════════
+// THE PERSON THIS WALLET BELONGS TO (the author's words 10.10.2026 12:4x MSK: the wallet needs no persons and no apps of its
+// own for Montana and for Business; when the words entered several apps, Montana is asked first, then Business -- and 12:47
+// MSK: the wallet's settings show the face, the name, About, the link and the rest, so it is plain which account the wallet
+// is bound to). The wallet keeps no person of its own: the person of the same twenty-four words is read from the light copy
+// their app lays on the nodes (MTKeeping.lightRoads; the road names its app) -- Montana's newest copy first, Business's only
+// when Montana laid none -- and of that copy the card alone is read, nothing of it laid here (MontanaBackup.cardOf). A field
+// the copy does not carry is not drawn.
+// ════════════════════════════════════════════════════════════
+@MainActor final class MTWalletOwner: ObservableObject {
+    static let shared = MTWalletOwner()
+    /// The apps a person of these words may live in, in the order they are asked.
+    enum Home: String, CaseIterable {
+        case montana = "quest.montana.app"        // NOT-UI: Montana's bundle identifier, the app its light road names
+        case business = "xxx.montana.business"    // NOT-UI: Montana Business's bundle identifier
+        var said: LocalizedStringKey {
+            switch self {
+            case .montana: return "Your account in Montana"
+            case .business: return "Your account in Montana Business"
+            }
+        }
+    }
+    /// What the settings draw of the person: each field as the person's own app holds it, read from its newest light copy.
+    struct Card: Codable, Equatable {
+        var home: String      // the app the person lives in (Home)
+        var digest: String    // the light copy it was read from: the same copy is never fetched twice
+        var of: String        // the reference of the words it was read under: a card of other words is never drawn
+        var name: String
+        var claimed: String   // the public name held right now (pzr.me), empty when none is held
+        var bio: String
+        var link: String
+        var face: Data
+    }
+    /// Looking (a reading stands and nothing is known yet), the card, no road of Montana or Business in the pipe of light, or a
+    /// road whose copy did not come whole.
+    enum Seen: Equatable { case looking, found(Card), unlinked, unread }
+    @Published private(set) var seen: Seen = .looking
+    private var asking = false
+    private var askedAt = 0.0
+
+    private init() {
+        if let c = MTWalletPerson.card { seen = .found(c) }
+    }
+    /// Asked whenever the settings or the coins' page stand: once a minute at most while no card is known, every six hours once
+    /// one is -- the light copy is laid again once a day.
+    func look() {
+        // THE CARD STANDS FOR THESE WORDS ONLY: a seat moved or the words changed, and the card of the one before is not drawn
+        // for six hours -- the card kept for the words seated now stands, or a new look is taken at once.
+        let kept = MTWalletPerson.card
+        if case .found(let c) = seen, c != kept {
+            seen = kept.map { k in Seen.found(k) } ?? .looking
+            askedAt = 0
+        }
+        let now = Date().timeIntervalSince1970
+        var rest = 60.0
+        if case .found = seen { rest = 21_600 }
+        guard !asking, rest <= now - askedAt else { return }
+        asking = true
+        askedAt = now
+        if kept == nil { seen = .looking }
+        Task {
+            let got = await Self.read(over: kept)
+            asking = false
+            MontanaP2PTrace.mark("wallet_owner", Self.line(got))
+            if case .found(let c) = got {
+                guard c.of == MontanaSeed.twin else { return }   // the words changed while the copy came: not this person's card
+                let changed = c != kept
+                if changed, let d = try? JSONEncoder().encode(c) { UserDefaults.standard.set(d, forKey: MTWalletPerson.key) }
+                seen = .found(c)
+                if changed { Self.told() }
+            } else if kept == nil {
+                seen = got
+            }
+        }
+    }
+    /// THE PERSON CHANGED, AND WHOEVER THE WALLET SPEAKS TO HEARS IT NOW: the top's row (put asks its owner's yes itself), the
+    /// name, About and face the wallet's contacts were told, and the face beside the wallet's live cards.
+    private static func told() {
+        MontanaSelfFace.invalidate()
+        MTTopNet.shared.put()
+        E2E.shared.broadcastName()
+        E2E.shared.broadcastAbout()
+        E2E.shared.broadcastAvatar()
+        MontanaCard.faceChanged()
+    }
+    /// The order an app is asked in: Montana first.
+    nonisolated private static func rank(_ home: String) -> Int {
+        Home.allCases.firstIndex { $0.rawValue == home } ?? Home.allCases.count
+    }
+    /// THE ONE READING: the newest light road of the first app that laid one; the copy it names fetched, proved by its digest
+    /// and its card read. A card already read from the same copy -- or from an app asked earlier -- is not fetched again.
+    nonisolated private static func read(over kept: Card?) async -> Seen {
+        guard let of = MontanaSeed.twin,
+              let found = await MTKeeping.lightRoads(of: Home.allCases.map { $0.rawValue }) else { return .unlinked }
+        if let k = kept, rank(k.home) < rank(found.app) { return .found(k) }   // Montana first: Business never stands over it
+        for road in found.roads {
+            guard let d = road["d"] as? String else { continue }
+            if let k = kept, k.home == found.app, k.digest == d { return .found(k) }
+            guard let dir = try? MontanaBackup.shelf() else { return .unread }
+            let url = dir.appendingPathComponent(UUID().uuidString + "." + MontanaBackup.ext)
+            defer { try? FileManager.default.removeItem(at: url) }
+            guard await MTKeeping.fetch(road, to: url), MontanaHomeNode.digest(of: url) == d,
+                  let card = MontanaBackup.cardOf(url) else { continue }
+            return .found(Card(home: found.app, digest: d, of: of, card: card))
+        }
+        return .unread
+    }
+    /// The diary's line: what was found, never a word of the person's own.
+    private static func line(_ s: Seen) -> String {
+        switch s {
+        case .found(let c):
+            return "home=" + (c.home == Home.business.rawValue ? "business" : "montana")   // NOT-UI: the diary's own words
+                + " face=" + (c.face.isEmpty ? "0" : "1") + " public=" + (c.claimed.isEmpty ? "0" : "1")
+        case .unlinked: return "no light road of Montana or Business"   // NOT-UI: the diary's own words
+        case .unread: return "a light road stands, its copy did not come whole"   // NOT-UI: the diary's own words
+        case .looking: return "looking"   // NOT-UI: the diary's own words
+        }
+    }
+}
+
+extension MTWalletOwner.Card {
+    /// The person's fields out of a copy's card, each under the key its app writes (SeedScope.dataKeys) and by the rule its
+    /// app shows it by: the name without a crown, the public name only while it is held, About and the link as they are sent.
+    init(home: String, digest: String, of: String, card: [String: String]) {
+        self.home = home
+        self.digest = digest
+        self.of = of
+        name = MTCrown.plain((card["s:userName"] ?? "").trimmingCharacters(in: .whitespaces))
+        claimed = card["d:mt.name"].flatMap { Data(base64Encoded: $0) }.flatMap { MontanaNames.heldName(inRecord: $0) } ?? ""
+        bio = MTPeerAbout.said(card["s:profileBio"] ?? "")
+        link = MTPeerAbout.url(card["s:profileLink"] ?? "")?.absoluteString ?? ""
+        face = (card["b:avatarData"] ?? card["d:avatarData"]).flatMap { Data(base64Encoded: $0) } ?? Data()
+    }
+}
+
+/// THE PERSON OF THIS WALLET, ONE ANSWER FOR EVERY READER (the author's word 10.10.2026 12:4x MSK: the wallet keeps no person of
+/// its own). Whatever the wallet shows or says of its own person -- the face and the name in the top and in the settings, the name
+/// it puts in the top's row, a coin letter's head, the name, About and face its contacts are told, the face beside its cards --
+/// is the card MTWalletOwner read from the person's app, kept under these words; no card, and the wallet is the round face with
+/// no name. Read from any thread; the card is decoded once per change of the kept bytes.
+enum MTWalletPerson {
+    static let key = "mt.owner.card"   // NOT-UI: the card's one store (SeedScope.seatKeys); MTWalletOwner.look alone writes it
+    private static let lock = NSLock()
+    private static var held: (raw: Data, card: MTWalletOwner.Card?)?
+    static var card: MTWalletOwner.Card? {
+        guard let raw = UserDefaults.standard.data(forKey: key), let of = MontanaSeed.twin else { return nil }
+        lock.lock()   // LOCK-OK: only the decoded card in memory, swapped with the bytes it came from
+        if held?.raw != raw { held = (raw, try? JSONDecoder().decode(MTWalletOwner.Card.self, from: raw)) }
+        let c = held?.card
+        lock.unlock()
+        return c?.of == of ? c : nil
+    }
+    /// The name the person gave in their app, else the public name they hold there; empty without a card.
+    static var name: String { card.map { c in c.name.isEmpty ? c.claimed : c.name } ?? "" }
+    static var face: Data { card?.face ?? Data() }
+    static var bio: String { card?.bio ?? "" }
+    static var link: String { card?.link ?? "" }
+}
+
+/// THE CARD UNDER THE 24 WORDS, as the system's own Settings stand the person's card: the face (MTSelfFace, the one drawing of
+/// one's own face), the name, the public name and the app the person lives in, About, and the person's links -- each the
+/// platform's own link, copied by a long press. Nothing here is edited: the profile is the person's app's own.
+struct MTWalletOwnerSection: View {
+    @ObservedObject private var owner = MTWalletOwner.shared
+    var body: some View {
+        Section {
+            switch owner.seen {
+            case .found(let c):
+                rows(c)
+            case .looking:
+                HStack(spacing: 12) {
+                    ProgressView().tint(.white)
+                    Text("Looking for your Montana account…").foregroundStyle(.secondary)
+                }
+                .frame(minHeight: 44)
+            case .unlinked:
+                Text("Not linked to a Montana account yet").foregroundStyle(.secondary).frame(minHeight: 44)
+            case .unread:
+                Text("Your Montana account did not come from the network yet").foregroundStyle(.secondary).frame(minHeight: 44)
+            }
+        }
+        .listRowBackground(MTGlassRowPlate())
+        .onAppear { owner.look() }
+    }
+
+    @ViewBuilder private func rows(_ c: MTWalletOwner.Card) -> some View {
+        HStack(spacing: 14) {
+            MTSelfFace(size: 60).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                if !title(c).isEmpty {
+                    // USER-DATA: the person's own name, as their app holds it
+                    Text(verbatim: title(c)).font(.headline).foregroundStyle(.primary).lineLimit(2)
+                }
+                if !c.name.isEmpty, !c.claimed.isEmpty {
+                    // USER-DATA: the public name the person holds
+                    Text(verbatim: "@" + c.claimed).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Text((MTWalletOwner.Home(rawValue: c.home) ?? .montana).said).font(.subheadline).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
+        if !c.bio.isEmpty {
+            // USER-DATA: the person's own words about themselves
+            Text(verbatim: c.bio).font(.body).foregroundStyle(.primary).lineLimit(4).frame(minHeight: 44)
+        }
+        if !c.claimed.isEmpty, let u = URL(string: MontanaFirstContact.webNamePrefix + c.claimed) { link(u, glyph: "at") }
+        if !c.link.isEmpty, let u = URL(string: c.link) { link(u, glyph: "link") }
+    }
+    /// The name the person gave, or their public name when they gave none.
+    private func title(_ c: MTWalletOwner.Card) -> String {
+        c.name.isEmpty ? (c.claimed.isEmpty ? "" : "@" + c.claimed) : MontanaAvatar.spokenName(c.name)
+    }
+    private func link(_ u: URL, glyph: String) -> some View {
+        Link(destination: u) {
+            HStack(spacing: 12) {
+                Image(systemName: glyph).foregroundColor(.white).frame(width: 29)
+                // USER-DATA: the person's own link
+                Text(verbatim: MTPeerAbout.shown(u)).foregroundColor(Color(uiColor: .link)).lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 0)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .contextMenu {
+            Button { UIPasteboard.general.string = u.absoluteString } label: { Label("Copy", systemImage: "doc.on.doc") }
+        }
     }
 }
 
@@ -879,9 +987,7 @@ struct MTWallpaperPreview: View {
 /// write button (MTBoardWriteFace, the wall's own drawing) and one post of my wall saying what it is (MTBoardCell). The dress
 /// answers no finger: the picture under it is being placed.
 struct MTPagePreviewDress: View {
-    @AppStorage("avatarData") private var avatarData: Data = Data()
-    @AppStorage("profileBio") private var bio: String = ""
-    @AppStorage("profileLink") private var link: String = ""
+    @ObservedObject private var person = MTWalletOwner.shared   // the person of this wallet (MTWalletPerson): drawn again when their card comes
     @StateObject private var face = MTFaceDock()
     private var sample: MTBoardSeen {
         MTBoardSeen(id: "preview", byName: E2E.myDisplayName(), byGlyph: E2E.myFaceGlyph(), at: Date().timeIntervalSince1970,
@@ -893,13 +999,13 @@ struct MTPagePreviewDress: View {
         GeometryReader { g in
             VStack(spacing: 12) {
                 MTFaceHeader(face: face, glyph: E2E.myFaceGlyph(), name: E2E.myDisplayName(), pageWidth: g.size.width,
-                             bio: MTPeerAbout.said(bio), link: MTPeerAbout.url(link))
+                             bio: MTPeerAbout.myBio, link: MTPeerAbout.url(MTPeerAbout.myLink))
                 MTBoardWriteFace().padding(.horizontal, MTPageEdge.side)
                 MTBoardCell(post: sample, owner: nil, onComments: {}).padding(.horizontal, MTPageEdge.side)
                 Spacer(minLength: 0)
             }
         }
-        .onChange(of: avatarData, initial: true) { _, d in face.load(d) }
+        .onChange(of: MTWalletPerson.face, initial: true) { _, d in face.load(d) }
     }
 }
 
@@ -918,7 +1024,8 @@ struct MTAppIconChooser: View {
     // like an NFT»): 1 liquid glass, 2 gold on black, 3 sunlight (the glass with the sun behind the sign, 20:23), 4 Juno (the
     // coin's face, 20:25), 5 the pyramid (the coin's reverse, 20:25) -- each sealed as an icon record with the SHA-256 of its
     // 1024-point picture; the order here is the order of the chain.
-    static let icons = [Icon(name: nil, preview: "IconGlassPreview", label: "Liquid glass"),
+    // The primary is the wallet's own Grail (the author's word 10.10.2026 13:4x MSK: «update every icon of the wallet»).
+    static let icons = [Icon(name: nil, preview: "AppIconPicture", label: "Grail"),
                         Icon(name: "AppIconGold", preview: "IconGoldPreview", label: "Gold on black"),
                         Icon(name: "AppIconSun", preview: "IconSunPreview", label: "Sunlight"),
                         Icon(name: "AppIconJuno", preview: "IconJunoPreview", label: "Juno"),
@@ -2153,10 +2260,9 @@ struct MontanaOnboardingView: View {
             } else {
                 MTWallpaper.paint(MTWallpaper.burgundy).ignoresSafeArea().allowsHitTesting(false)
             }
-            if step == 3 {
-                // Same profile screen as in settings — one source, no second implementation
-                ProfileView(onboarding: true, onFinish: { onDone() })
-            } else {
+            // NO NAME IS ASKED HERE (the author's word 10.10.2026 12:4x MSK: the wallet keeps no person of its own): the words saved
+            // or the number confirmed, the path walks into the wallet; the face and the name are the account's in Montana or Business.
+            Group {
                 VStack { Group {
                     switch step {
                     // THE PAGE DOES NOT OPEN TWICE (the author's word 06.10.2026 15:1x MSK: «from the side panel the login page reloads, and
@@ -2209,8 +2315,8 @@ struct MontanaOnboardingView: View {
 
     /// THE ONE WAY BACK OF THE PATH (the author's word 29.09, 23:25: the buttons in the new style of our OS, and so every page
     /// up to the chats): the platform's back chevron on its glass circle, top left where the system draws its own -- one mark
-    /// (MontanaCallMark) for every page of the path, never a grey word at the foot of each. The doors are the start, the copy
-    /// coming back and the name lead only forward.
+    /// (MontanaCallMark) for every page of the path, never a grey word at the foot of each. The doors are the start; the copy
+    /// coming back leads only forward.
     private var back: (() -> Void)? {
         switch step {
         case 0:
@@ -2448,7 +2554,7 @@ struct MontanaOnboardingView: View {
                     // address page removed: the address and QR are now on the empty chats screen and in settings
                     // The identity is already active from the moment of its creation (see
                     // onAppear): the words screen only shows them and finishes the first launch.
-                    if savedWords, bornKeys != nil { step = 3 }   // the words are saved — now the name
+                    if savedWords, bornKeys != nil { onDone() }   // the words are saved: into the wallet, no name asked
                 } label: { Text("Your identity in Montana") }
                     .buttonStyle(MTLoginDoorStyle(tint: MontanaOctagon.platformBlue)).disabled(!savedWords || bornKeys == nil)
             } else {
@@ -2623,13 +2729,14 @@ struct MontanaOnboardingView: View {
         .onAppear { barSince = Date() }
     }
 
-    /// THE DOORS (the author's design 29.09, his picture in Media): the glass icon, the title, and the Montana door pressed to
+    /// THE DOORS (the author's design 29.09, his picture in Media): the wallet's own icon, the title, and the Montana door pressed to
     /// the foot of the screen, smaller and neater than in his picture.
     /// The doors stand on the platform's glass; the terms and the privacy policy open from the footer's own words.
     var doors: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
-            Image("IconGlassPreview").resizable().scaledToFit().frame(width: 120, height: 120)
+            Image("AppIconPicture").resizable().scaledToFit().frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 27, style: .continuous))   // the wallet's own icon in the home screen's figure
             Text("Sign in to Montana").font(.title.bold()).foregroundColor(.white).padding(.top, 22)
             Text("Choose how to sign in").font(.body).foregroundColor(.gray).padding(.top, 6)
             Spacer(minLength: 0)
@@ -2680,7 +2787,7 @@ struct MontanaOnboardingView: View {
     /// THE NUMBER'S PAGE (the Business's own, 06.10): the person was born at the door, and here stand the title, the field of the
     /// number and «Next», which takes the bot's own sign-in (the number's door, MTPhoneDoor). Without a living service one
     /// honest line and the way on without a number; the number is confirmed later from the profile. Confirmed or not, the path
-    /// goes on to the name (step 3) and into the app.
+    /// goes into the app -- no name is asked (the wallet keeps no person of its own, 10.10.2026).
     var phone: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Join us via phone number").font(.largeTitle.bold()).foregroundColor(.white)
@@ -2688,7 +2795,7 @@ struct MontanaOnboardingView: View {
             Text("A messaging bot confirms your number; no text message is sent").font(.title3).foregroundColor(.white)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.bottom, 24)
-            MTPhoneDoor(onConfirmed: { MTSystemAccess.askContacts(); step = 3 }, onWithout: { step = 3 })
+            MTPhoneDoor(onConfirmed: { MTSystemAccess.askContacts(); onDone() }, onWithout: { onDone() })
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

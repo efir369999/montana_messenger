@@ -445,7 +445,7 @@ enum MontanaSelfFace {
     /// A hand that writes the bytes past `set`/`clear` may say so here; the bytes decide in any case.
     static func invalidate() { cached = nil }
     private static func current() -> (image: UIImage?, turn: Int) {
-        let d = UserDefaults.standard.data(forKey: "avatarData") ?? Data()
+        let d = MTWalletPerson.face   // the person of this wallet, as their app keeps the face (the author's word 10.10.2026)
         if let c = cached, c.bytes == d { return (c.image, turns) }
         turns += 1
         let img = d.isEmpty ? nil : UIImage(data: d)?.preparingForDisplay()
@@ -463,13 +463,16 @@ enum MontanaSelfFace {
 /// local room, the same letter), the platform kept the old body, and Saved Messages wore the old face while the row's
 /// print had moved (T1 29.09 21:15:34 UTC: chat_list apply changed=1 page=chats field=avatar,model). The letter comes
 /// from the host, which watches the name.
+/// THE FACE IS THE PERSON'S OF THIS WALLET (the author's word 10.10.2026 12:4x MSK: the wallet keeps no person of its own): the
+/// face and the letter of the account these words open in Montana, else in Business (MTWalletPerson), watched through its one
+/// reader, so the card that comes draws itself everywhere at once; no account, the round face with nothing on it.
 struct MTSelfFace: View {
-    @AppStorage("avatarData") private var bytes: Data = Data()
+    @ObservedObject private var person = MTWalletOwner.shared
     let size: CGFloat
-    var initial: String = E2E.myFaceGlyph()
+    var initial: String? = nil
     var body: some View {
-        AvatarCircle(photoURL: nil, color: .black, initial: initial, size: size,
-                     image: bytes.isEmpty ? nil : MontanaSelfFace.image)
+        let picture = MontanaSelfFace.image
+        AvatarCircle(photoURL: nil, color: .black, initial: initial ?? E2E.myFaceGlyph(), size: size, image: picture)
     }
 }
 
@@ -525,13 +528,13 @@ enum MontanaNativeBubble {
 }
 
 /// THE WALLET'S ROUND FACE (the author's word 09.10.2026 17:5x MSK: «for the wallet too, update both icons» -- as for Business:
-/// the square and the round, the round one the avatars' placeholder). His file of 09.10 17:04 (Media/Montana_Wallet_round.png,
-/// cad7a156), byte for byte in AppIconRound, is a glass disc on a white field (the disc from x 39 to 1211 and y 29 to 1185 of 1254, its
-/// centre 2 px left and 20 px above the file's): drawn so the disc fills the round frame, its centre on the frame's, cut by a circle.
+/// the square and the round, the round one the avatars' placeholder). His Grail of 09.10 22:53 (Media/Montana_Grail_Round.png,
+/// d59f1684), byte for byte in AppIconRound, is a glass disc on a black field (the disc from x 29 to 1203 and y 28 to 1192 of 1254, its
+/// centre 11 px left and 17 px above the file's): drawn so the disc fills the round frame, its centre on the frame's, cut by a circle.
 struct MTAppRound: View {
     static let asset = "AppIconRound"
-    static let scale: CGFloat = 1254.0 / 1156
-    static let shift = CGSize(width: 2.0 / 1254, height: 20.0 / 1254)
+    static let scale: CGFloat = 1254.0 / 1165
+    static let shift = CGSize(width: 11.0 / 1254, height: 17.0 / 1254)
     var body: some View {
         GeometryReader { g in
             let side = min(g.size.width, g.size.height)

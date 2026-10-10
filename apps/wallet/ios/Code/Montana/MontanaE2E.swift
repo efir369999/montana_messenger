@@ -78,7 +78,8 @@ enum MTPeerAbout {
     private static let key = "peerAbout"
     /// What leaves of a bio: trimmed and held to the limit — one rule for the wire and for «My profile».
     static func said(_ s: String) -> String { String(s.trimmingCharacters(in: .whitespacesAndNewlines).prefix(bioLimit)) }
-    static var myBio: String { said(UserDefaults.standard.string(forKey: "profileBio") ?? "") }
+    /// Mine are the person's own in their app, Montana first, then Business (MTWalletPerson): the wallet keeps no words of its own.
+    static var myBio: String { said(MTWalletPerson.bio) }
     /// A link as a page shows it: the site and the path, without the scheme the phone adds.
     static func shown(_ u: URL) -> String {
         var s = u.absoluteString
@@ -86,7 +87,7 @@ enum MTPeerAbout {
         if s.hasSuffix("/") { s = String(s.dropLast()) }
         return s
     }
-    static var myLink: String { url(UserDefaults.standard.string(forKey: "profileLink") ?? "")?.absoluteString ?? "" }
+    static var myLink: String { url(MTWalletPerson.link)?.absoluteString ?? "" }
     /// A link as a person types it: «site.org» wears https; nothing but the web is a link here.
     static func url(_ s: String) -> URL? {
         let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1140,17 +1141,10 @@ final class E2E {
     // it travels as an attachment through the common pipeline of pieces, and the message carries
     // only the manifest.
     static func myAvatarData() -> Data? {
-        guard let d = UserDefaults.standard.data(forKey: "avatarData"), !d.isEmpty else { return nil }
-        // The STORED bytes are the face — re-encoding on every read made the announcement
-        // tag a different value each sweep, and every sweep re-queued letters (measured
-        // twice 27.08: needy 214 on the big book, then needy=3 every 40s on a legacy 1920px
-        // face). Bytes outside the wire shape are normalized ONCE and written back: after
-        // that the stored bytes are the face everywhere, stable by construction.
-        if MontanaSelfFace.isNormal(d) { return d }
-        guard let normal = MontanaSelfFace.normalize(d) else { return d }
-        UserDefaults.standard.set(normal, forKey: "avatarData")
-        MontanaSelfFace.invalidate()   // the one decoded picture follows the bytes
-        return normal
+        // THE FACE OF THE PERSON OF THIS WALLET (MTWalletPerson, the author's word 10.10.2026): the bytes their app keeps, as its
+        // copy carries them -- already in the wire shape their app writes back once -- so the tag is the same every sweep.
+        let d = MTWalletPerson.face
+        return d.isEmpty ? nil : d
     }
     // Retrying pictures that did not finish downloading: the manifest was kept when the download
     // failed, and it is tried again once the network is back.
@@ -1187,18 +1181,12 @@ final class E2E {
 
     // ── Display name over E2E — the same pipeline as the avatar (send-once flag per peer,
     // keyed by MY address so an account switch re-sends; resend on change; reciprocity on receive).
+    /// THE WALLET KEEPS NO PERSON OF ITS OWN (the author's word 10.10.2026 12:4x MSK): the name is the one the person gave in
+    /// their app, else the public name they hold there -- Montana first, then Business (MTWalletPerson) -- never a field of the
+    /// wallet's own; no account of these words, no name.
+    // AIR-CHECKED: the name leaves only inside the E2E seal of an established channel.
     static func myDisplayName() -> String {
-        let f = MTCrown.plain((UserDefaults.standard.string(forKey: "userName") ?? "").trimmingCharacters(in: .whitespaces))
-        let l = ""
-        let own = (f + " " + l).trimmingCharacters(in: .whitespaces)
-        if !own.isEmpty { return own }
-        // An identity without a name is the eternal @nick — exactly what the person sees in
-        // THEIR OWN profile. A callsign from the «Saved Messages» pipe ref used to stand here —
-        // a random word, unrelated to the person and living no longer than the pipe book:
-        // a reinstall recreated the ref, and peers received two different «names» within a
-        // minute (precedent Blizzard → Bison).
-        // AIR-CHECKED: the nick leaves only inside the E2E seal of an established channel.
-        return MontanaSelf.name
+        MTCrown.plain(MTWalletPerson.name.trimmingCharacters(in: .whitespaces))
     }
     func displayName(for ref: String) -> String {
         // Cold start (voip push): the store is not up yet — the BOOK provides the name directly
@@ -1211,8 +1199,7 @@ final class E2E {
     /// emoji, else the name's letter. Rides in every letter and call envelope — the peer sees
     /// the profile avatar.
     static func myFaceGlyph() -> String {
-        let n = myDisplayName()
-        return MontanaAvatar.initial(title: n.isEmpty ? MontanaSelf.initialSource : n, name: "")
+        MontanaAvatar.initial(title: myDisplayName(), name: "")   // no name: the round face with nothing on it, as a nameless row's
     }
     func broadcastName() {
         broadcastToPeers { sendNameIfNeeded(to: $0) }
@@ -1302,7 +1289,7 @@ final class E2E {
         // THE PAGE'S GROUND RIDES EVERY OCCASION OF THE BIO (25.09): one list of occasions heals my words and my ground.
         defer { sendGroundIfNeeded(to: peer) }
         guard MontanaConv.holds(peer), !silenced(peer) else { return }
-        guard MontanaSelf.holds("profileBio", "profileLink") else { return }   // unread words are silence, not «no words»
+        guard MTWalletPerson.card != nil else { return }   // words of a person not yet read are silence, not «no words»
         let bio = MTPeerAbout.myBio, link = MTPeerAbout.myLink
         sendAboutByDraft(to: peer, bio: bio, link: link)   // the builds 1919-1921 read only the draft word's keys
         guard Self.aboutCapable(peer) else { return }      // [P2P-COMPAT]: the new word only to a proven reader
@@ -1415,7 +1402,7 @@ final class E2E {
             let feed = await MainActor.run { Set(self.store?.messages.keys.map { String($0) } ?? []) }
             let held = refs.filter { MontanaConv.holds($0) && (!requireFeed || feed.contains($0)) }
             guard !held.isEmpty else { return }
-            guard MontanaSelf.holds("avatarData") else { return }   // an unread face is silence, not «no face»
+            guard MTWalletPerson.card != nil else { return }   // the face of a person not yet read is silence, not «no face»
             guard let img = E2E.myAvatarData() else {
                 // The photo is gone — that is SAID, not kept silent, once per correspondent.
                 // An empty mark IS «no face» — the same shape a name letter would have.

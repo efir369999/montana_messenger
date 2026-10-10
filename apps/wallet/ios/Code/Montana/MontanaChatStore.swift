@@ -6222,6 +6222,7 @@ enum SeedScope {
         "callDeadSeeds", "mt.call.heldEpoch", MTBoard.pagesKey, MTBoard.firstKey,
         "mt.backup.icloud.at", "mt.backup.icloud.engine", "mt.home.node.at",
         "mt.apple.signin.id", "mt.restore.outbox", MTSamePair.mergedKey,
+        "mt.owner.card",   // the card of the person of these words in Montana or Business (MTWalletOwner, 10.10.2026): read again from the nodes
         MTGroup.copiesKey]   // the copies of the groups' words on their way (05.10): the person's own ledger of the queue
     static let seatPrefixes = ["ckpt_", "mrefGone_", "rdvFaceUp:", "sentAv4_", "sentAvNone2_", "sentNm2_", "sentAb1_", "sentPg1_"]
     /// THE PERSON'S OWN IN THE KEYCHAIN (the second identity checklist, 1.1): parked with the seat, lifted with it -- the two
@@ -6264,12 +6265,17 @@ enum SeedScope {
         "scheduledMsgs": ["id"], "montana.stickers.packs": ["id"]]
     static let unionKnownByDefault = ["uid", "id", "mid", "ref", "url", "file"]
 
+    /// THE WALLET'S COPY CARRIES NO PERSON (the author's word 10.10.2026 12:4x MSK: the wallet keeps no person of its own): the
+    /// face, the name, the status and About are the account's in Montana or Business, read from the copy that app lays
+    /// (MTWalletPerson); what an earlier build of the wallet wrote under these names stays on this phone with the person and
+    /// leaves with them, and no copy of the wallet carries it any more.
+    static let personKeys: Set<String> = ["userName", "profileBio", "profileLink", "statusEmoji", "avatarData", "avatarGallery"]
     /// WHAT A COPY TAKES FROM THE SETTINGS STORE: the account's content and the person's settings, by name
     /// and by prefix, read from THIS app's own domain and never through the system's — a language list the
     /// system keeps for every app would otherwise land on another phone as this app's own choice.
     static func carried() -> [String: Any] {
         let domain = UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "") ?? [:]
-        let names = Set(dataKeys + settingKeys + markKeys)
+        let names = Set(dataKeys + settingKeys + markKeys).subtracting(personKeys)
         let prefixes = dataPrefixes + settingPrefixes
         return domain.filter { names.contains($0.key) || prefixes.contains(where: $0.key.hasPrefix) }
     }

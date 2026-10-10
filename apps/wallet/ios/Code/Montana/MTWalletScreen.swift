@@ -367,6 +367,7 @@ struct MTWalletPage: View {
             UserDefaults.standard.set(true, forKey: MTCoinShow.toldKey)
             await MTTimeChainTip.shared.gather(why: "wallet")   // the other devices' tips in one round trip (04.10 16:34)
             await MTCoinVault.shared.gather(why: "wallet")   // the seed's book first: the row tells what the seed holds (04.10)
+            MTWalletOwner.shared.look()   // the person of these words in Montana or Business: the row wears their name (10.10.2026)
             MTTopNet.shared.put()
             var turn = 0
             while !Task.isCancelled {
@@ -442,8 +443,21 @@ struct MTCoinTop13: View {
     @ObservedObject private var book = MTLocalCoinLedger.shared
     @ObservedObject private var board = MTCoinBoard.shared
     @ObservedObject private var top = MTTopNet.shared
+    @ObservedObject private var person = MTWalletOwner.shared   // the person of this wallet: the own row follows their card
     var body: some View {
         if top.answered { network } else if let store = ChatStore.live { rows(store).environmentObject(store) } else { rows(nil) }
+    }
+    /// THE OWN ROW WEARS THE PERSON OF THIS WALLET (the author's word 10.10.2026 12:4x MSK: the wallet keeps no person of its own):
+    /// the name their app holds, Montana first, then Business (E2E.myDisplayName asks MTWalletPerson); none found, the word every
+    /// nameless row wears -- the same the table shows of this row on every other phone.
+    @ViewBuilder private var myName: some View {
+        let n = MontanaAvatar.spokenName(E2E.myDisplayName())
+        if n.isEmpty {
+            Text("No name").font(.body).foregroundStyle(.secondary).lineLimit(1)
+        } else {
+            // USER-DATA: the person's own name, as their app holds it
+            Text(verbatim: n).font(.body).foregroundColor(.white).lineLimit(1)
+        }
     }
     /// THE ONE TABLE (the author's word 04.10.2026 05:40 MSK: «everyone has one source of all data»): the rows the nodes keep, the
     /// same on every phone; the person's own row wears their own face, every other row the letter of the name its owner shows.
@@ -455,8 +469,7 @@ struct MTCoinTop13: View {
                 Text(verbatim: String(i + 1)).font(.headline.monospacedDigit()).foregroundStyle(.secondary).frame(minWidth: 24)
                 if r.id == mine {
                     MTSelfFace(size: 40)
-                    // USER-DATA: the person's own name
-                    Text(verbatim: MontanaAvatar.spokenName(E2E.myDisplayName())).font(.body).foregroundColor(.white).lineLimit(1)
+                    myName
                 } else if r.name.isEmpty {
                     AvatarCircle(photoURL: nil, color: .black, initial: "", size: 40, image: nil)
                     Text("No name").font(.body).foregroundStyle(.secondary).lineLimit(1)
@@ -489,8 +502,7 @@ struct MTCoinTop13: View {
                 if p.mine {
                     HStack(spacing: 12) {
                         MTSelfFace(size: 40)
-                        // USER-DATA: the person's own name
-                        Text(verbatim: MontanaAvatar.spokenName(E2E.myDisplayName())).font(.body).foregroundColor(.white).lineLimit(1)
+                        myName
                     }
                 } else if let c = chats.first(where: { $0.name == p.id }) {
                     MontanaChatFace(chat: c)
