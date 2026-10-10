@@ -2793,6 +2793,22 @@ enum MontanaWakePush {
         arr.removeAll { gone.contains($0["m"] ?? "") }
         if arr.count != before, let out = try? JSONEncoder().encode(arr) { MontanaKeychain.set("nseInbox", out) }
     }
+    /// ONE DRAIN FOR A VOLLEY (10.10.2026, T1 on 2173): every letter the signal lane brought asked for a drain of its own. A
+    /// return's volley of 34 signals queued fifteen drains behind one another on the main thread -- each four keychain round
+    /// trips and the whole box decoded, every one after the first taking nothing -- while the main-thread probe measured 1.8 s
+    /// of lateness (main_probe chats-tab worst_ms=1814 at 12:45:16Z); 257 of 514 drains came within a second of the one
+    /// before. A drain asked for and not yet begun takes every letter laid in the box before it begins; an ask that comes
+    /// after it began is a drain of its own.
+    private static let drainLock = NSLock()
+    private static var drainAsked = false
+    static func drainInboxSoon() {
+        drainLock.lock(); let first = !drainAsked; drainAsked = true; drainLock.unlock()
+        guard first else { return }
+        DispatchQueue.main.async {
+            drainLock.lock(); drainAsked = false; drainLock.unlock()
+            drainInbox()
+        }
+    }
     static func drainInbox() {
         // THE OVERLAY IS NOT DISCARDED BEFORE ITS REPLACEMENT EXISTS. It carries what the
         // extension learned while the app was dead — the newest truth there is. Deleting it at
@@ -2858,7 +2874,16 @@ enum MontanaWakePush {
             // A long letter waiting for its own hour is not asked by this drain: every ring and pickup
             // drains the box, and the hour is the letter's, not the drain's (lbDueNow).
             if t.hasPrefix(letterBlobMark), !lbDueNow(m) { continue }
-            guard inboxTaken.insert(m).inserted else { continue }
+            guard inboxTaken.insert(m).inserted else {
+                // A REPEAT OF A LETTER THIS LIFE ALREADY POSTED LEAVES THE BOX (10.10.2026, T1 on 2173): the lane lays every copy
+                // it hears into the box (restash), the drain skipped a name already taken, and the copy stayed. Through a run
+                // the box grew from 11 rows to 54 (wakepush_drain n=, 12:45-14:49Z), every drain on the main thread decoded all
+                // of them to take nothing, and only a relaunch emptied it. An ordinary letter is posted the instant it is
+                // taken, so its repeat leaves as the letter did; a long letter or a first meeting still on its road leaves
+                // when that road ends.
+                if c != "rdv", !t.hasPrefix(letterBlobMark) { handled.append(m) }
+                continue
+            }
             taken += 1
             // A first-meeting letter from a push: the encapsulation rides WITH the letter —
             // the pipe and the chat are born HERE, from the box, without waiting for a live
@@ -3409,7 +3434,7 @@ enum MontanaWakePush {
                     MontanaTrace.mark("sig_apply", "lane=letter mid=\(String(f[0].prefix(8))) from=\(String(conv.prefix(10)))")
                     restash(["c": conv, "m": f[0], "t": f[1], "n": f[2], "g": f[3], "qt": f[4], "qm": f[5], "lp": f[6],
                              "at": String(Int(now) - opened.back * 60)])
-                    DispatchQueue.main.async { drainInbox() }
+                    drainInboxSoon()
                     continue
                 }
                 // Only signals of a call this machine is LIVING (current, second line or
@@ -3925,6 +3950,7 @@ enum MontanaDiagShip {
     private static var lastFailureShip: Double = 0
     private static let failureLock = NSLock()
     static func shipOnFailure() {
+        guard MontanaDiagConsent.on else { return }   // no yes: nothing ships, so no error calls for a shipment
         let now = Date().timeIntervalSince1970
         failureLock.lock()
         refusedLock.lock(); let refusing = refusedStreak > 0; refusedLock.unlock()
@@ -3937,6 +3963,7 @@ enum MontanaDiagShip {
     }
 
     static func shipNow() {
+        guard MontanaDiagConsent.on else { return }   // no yes: no pass, and no hold of the system's background time for one
         Task.detached(priority: .background) {
             // Going background, the phone gets scant seconds from the system. Without the
             // holder the pass breaks on the first chunk, and everything accumulated since the
@@ -3986,6 +4013,11 @@ enum MontanaDiagShip {
         // The truncation stands at the door of EVERY pass (P-61) — before the busy gate too:
         // it is idempotent and must precede any byte that could leave the device.
         forgetJournalsWrittenBeforeTheRule()
+        // NO YES, NO PASS (10.10.2026, T1 on 2173 with the switch off): put() refused every chunk unasked, and the pass read on
+        // regardless -- a quarter-megabyte of each journal decoded, split into lines and thrown away, 32 rounds a pass, a pass at
+        // every error five seconds apart: 4 818 such rounds in three and a half hours, not one line left the phone. The yes is
+        // asked at the door of the pass, before a byte is read; a yes given later finds the loop of kick() still turning.
+        guard MontanaDiagConsent.on else { return }
         passLock.lock()
         let busy = passBusy
         if !busy { passBusy = true }
@@ -4060,6 +4092,7 @@ enum MontanaDiagShip {
     @discardableResult
     private static func shipOnce() async -> Bool {
         var more = false
+        var landed = false   // a watermark moved or a finished file left: only then is another pass worth its reading
         // A silent zero is indistinguishable from a breakage: every skipped file names its
         // reason, and the reason ships once per change — not once per half minute.
         var idle: [String] = []
@@ -4085,7 +4118,9 @@ enum MontanaDiagShip {
                 if held { pending += bytes(of: gen); continue }
                 let b = birth(of: gen)
                 if b != wmBirth { wm = 0; wmBirth = b; ud.set(0, forKey: wmKey); ud.set(b, forKey: genKey) }
+                let from = wm
                 let r = await shipRange(gen, from: wm, name: name)
+                if r.done || r.offset != from { landed = true }
                 wm = r.offset; ud.set(Int(r.offset), forKey: wmKey)
                 guard r.done else { held = true; pending += bytes(of: gen) - min(bytes(of: gen), r.offset); continue }
                 try? fm.removeItem(at: gen)
@@ -4120,6 +4155,7 @@ enum MontanaDiagShip {
             guard !lines.isEmpty else { idle.append(name + "=half-line"); continue }
             guard await put(lines, file: name) else { idle.append(name + "=put-failed"); continue }
             ud.set(Int(wm) + shipped, forKey: wmKey)
+            landed = true
             if UInt64(Int(wm) + shipped) < size { more = true }   // this file is not finished telling
         }
         let r = idle.joined(separator: " ")
@@ -4129,7 +4165,10 @@ enum MontanaDiagShip {
         // refusal if any; written when it changes, so a day that never caught up is read the next morning.
         refusedLock.lock(); let refusing = refusedStreak; refusedLock.unlock()
         MontanaTrace.markChanged("diag_tail", tail.joined(separator: " ") + (refusing > 0 ? " refused=" + String(refusing) : ""), tele: true)
-        return more
+        // A PASS THAT LANDED NOTHING ENDS THE CATCH-UP (10.10.2026, T1 on 2173), as this function's word above has always said:
+        // a generation held by a refusal answered «more», and the caller went round again a quarter-second later to meet the
+        // same refusal -- 107 volleys of 32 passes in three and a half hours, every pass «chunks=0 done=0».
+        return more && landed
     }
 }
 
@@ -4188,14 +4227,14 @@ enum MontanaNetProbe {
 
     private static func ask(_ t: (url: String, want: String)) async -> Shot {
         let host = URL(string: t.url)?.host ?? "-"
-        // A cached answer measures nothing, so the query carries a number nobody asked before.
-        guard var parts = URLComponents(string: t.url) else { return Shot(host: host, code: 0, cls: "other", ms: 0, ok: false) }
-        parts.queryItems = (parts.queryItems ?? []) + [URLQueryItem(name: "mt", value: String(UInt32.random(in: 1 ... UInt32.max)))]
-        guard let url = parts.url else { return Shot(host: host, code: 0, cls: "other", ms: 0, ok: false) }
+        // A cached answer measures nothing, so every cache on the way is asked to pass the request by. The request carries
+        // no mark of this app: a query of our own named Montana to every site the probe asked (10.10.2026).
+        guard let url = URL(string: t.url) else { return Shot(host: host, code: 0, cls: "other", ms: 0, ok: false) }
         var req = URLRequest(url: url)
         req.httpMethod = "HEAD"   // the body is not needed; the fact of an answer is
         req.timeoutInterval = 4
         req.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        req.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
         let began = Date()
         do {
             let (_, resp) = try await URLSession.shared.data(for: req)
@@ -4271,6 +4310,9 @@ enum MontanaNetProbe {
     /// answered where none stood (MontanaNetProbe.settle stops there).
     @discardableResult
     static func round(mute: [String], alive: [String]) async -> Bool {
+        // THE BEACONS FLY ONLY BY THE PERSON'S YES (the constitution's absolute privacy; App Review 5.1.2(i), 10.10.2026): each
+        // site asked sees this phone's address, and the round exists to write the diary, which leaves only by the same yes.
+        guard MontanaDiagConsent.on else { return false }
         // THE CLOCK IS STAMPED BEFORE THE BEACONS FLY. Stamped after, it loses a race it cannot
         // see: the door round is called from more than one place at once, and two rounds both read
         // the old stamp and both flew — measured 15.09, two rounds 28 ms apart on one launch.

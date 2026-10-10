@@ -353,10 +353,9 @@ final class MontanaGifBook: ObservableObject {
 
 /// THE SEARCH FOR MOVING PICTURES GOES THROUGH OUR OWN NODE (the author's word 22.09, road B).
 ///
-/// The reference searches through ITS OWN SERVER: the client resolves a bot named «gif» and the
-/// server asks the picture house for that bot's results (GifContext: resolvePeerByName,
-/// requestContextResults) — the phone never speaks to the house. We keep that shape and change the
-/// server for our own node: the node holds the key, the node asks the house, and the house learns
+/// The reference searches through its own server, which asks the picture house on the client's
+/// behalf -- the phone never speaks to the house. We keep that shape and change the server for
+/// our own node: the node holds the key, the node asks the house, and the house learns
 /// one address — the node's — never a person's. The phone opens no connection outside our own
 /// doors, and nothing of a conversation, a name or a letter is anywhere near this road.
 ///

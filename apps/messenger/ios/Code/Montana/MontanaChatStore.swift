@@ -623,13 +623,21 @@ class ChatStore: ObservableObject {
         badgeWritten = (counts, missed)
         let total = counts.values.reduce(0, +) + missed
         MontanaTrace.mark("badge_set", "total=\(total) chats=\(counts.count) missed=\(missed) src=app")
-        MontanaKeychain.set("unreadCounts", (try? JSONEncoder().encode(counts)) ?? Data())
-        // THE ICON BADGE COUNTS THE MISSED CALLS TOO (the author's word 18.09): the app is the
-        // authoritative writer of the shared mirror, the extension only adds to it while the app
-        // is dead — the same law as the unread ledger.
-        MontanaKeychain.set("missedUnseen", Data(String(missed).utf8))
+        let ledger = (try? JSONEncoder().encode(counts)) ?? Data()
+        // THE KEYCHAIN IS ANOTHER PROCESS, NOT THE SCREEN'S THREAD (10.10.2026, T1 on 2173): these two writes stood 42-91 ms on
+        // the main thread at every changed count (main_slow what=badge:write, and up to 44 ms of a text letter's 98-ms landing).
+        // They ride one line of their own, in the order they were asked; the forgetting of the person waits for that line
+        // before it wipes (forget), so no count lands after the wipe.
+        badgeLine.async {
+            MontanaKeychain.set("unreadCounts", ledger)
+            // THE ICON BADGE COUNTS THE MISSED CALLS TOO (the author's word 18.09): the app is the
+            // authoritative writer of the shared mirror, the extension only adds to it while the app
+            // is dead — the same law as the unread ledger.
+            MontanaKeychain.set("missedUnseen", Data(String(missed).utf8))
+        }
         DispatchQueue.main.async { UNUserNotificationCenter.current().setBadgeCount(total) }
     }
+    static let badgeLine = DispatchQueue(label: "montana.badge", qos: .utility)
     // lastSeen: chat name is not stored in the UserDefaults key (graph leak) — a sealed map under device_key.
     // Clamp the untrusted peer sent_at (spec Stage 9 §Ordering): clamp into
     // [max time already received from this peer, local receive time + tolerance].
@@ -6318,6 +6326,7 @@ enum SeedScope {
         // more, but a device that lived through those builds still holds them — and forgets them here.
         // LEGACY-FORGET: names of the era of entry. Nothing in this tree writes them; they are
         // listed so that a device carrying them from an older build forgets them too.
+        ChatStore.badgeLine.sync {}   // MAIN-SAFE-SYNC: the badge line holds two keychain writes and never waits on main; a count on its way lands before the wipe
         for k in ["unreadCounts", "mutedChats", "me_addr", "e2eKeys", "e2eSessions", "apiToken", "deviceId", "nseTexts"] { MontanaKeychain.set(k, Data()) }
         for k in ["e2eKeys", "e2eSessions", "accHistKey", "deviceIdStable", "serverAuthToken"] { E2EKeychain.delete(k) }
         MontanaAppleID.withdrawOwn()   // the account's record of this installation leaves with the seed; a twin's record stands (28.09)

@@ -492,6 +492,7 @@ final class MTSeats: ObservableObject {
         settled()
     }
     private func parkThenLift(from: String?, to target: String?, t0: Date) {
+        ChatStore.badgeLine.sync {}   // MAIN-SAFE-SYNC: two keychain writes at most, never a wait on main; the leaving count lands before the park reads it
         let ground = target == nil && from != nil ? MTWallpaper.carry() : nil   // a seat emptied for a new person keeps the cover (03.10)
         if let from {
             Self.stage("park")

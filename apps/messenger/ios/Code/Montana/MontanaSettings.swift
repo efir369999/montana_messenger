@@ -1721,11 +1721,9 @@ struct PrivacyView: View {
         // earlier build put in the public table is withdrawn from every node while the words still derive its token.
         MTRetiredRow.withdraw()
         Task { @MainActor in
-            // THE NAME AND THE NUMBER LEAVE FIRST (App Review 5.1.1(v), 08.10.2026: the text says so, and so it is): the keeper of
-            // names releases the name, the confirmation service's catalogue forgets the number, while the words and the
-            // confirmation still stand on this phone.
+            // THE NAME LEAVES FIRST (App Review 5.1.1(v), 08.10.2026: the text says so, and so it is): the keeper of names releases
+            // it while the words still stand. No number is kept off this phone (10.10.2026), so none is asked back.
             await MontanaNamePlane.releaseHeld()
-            _ = await MTPhoneService.withdraw()
             // Everything the seed can reopen is sealed and on disk FIRST (15.10.4); the wipe follows.
             guard let store = ChatStore.live else { SeedScope.forget(); ui.settingsShown = false; return }
             store.sealForForget { SeedScope.forget(); ui.settingsShown = false }
@@ -1905,7 +1903,7 @@ struct PrivacyView: View {
             Button("Delete account", role: .destructive) { forgetSeed() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Your account is deleted: this device erases your 24-word identity, and your public name and your confirmed number leave Montana's nodes and services. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.")
+            Text("Your account is deleted: this device erases your 24-word identity, and your public name leaves Montana's nodes. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.")
         }
         .sheet(isPresented: $showSeed) {
             NavigationStack { SeedShowView() }.preferredColorScheme(.dark).montanaMotionMeter()

@@ -38,6 +38,19 @@ enum MontanaPower {
                         lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled,
                         thermal: ProcessInfo.processInfo.thermalState)
     }
+    /// THE HEAT IS MEASURED, NOT FELT (10.10.2026, the author's word: «freezes and overheating»): T1's diary of three and a half
+    /// hours named the phone's thermal state only inside two call summaries, so the minutes it grew hot could not be laid beside
+    /// what the app was doing in them. The state at launch and every change of it is one line in the trace and the telemetry,
+    /// Low Power Mode beside it; a state that did not change writes nothing (markChanged).
+    static func witnessHeat() {
+        let say = {
+            let p = ProcessInfo.processInfo
+            MontanaTrace.markChanged("thermal", "state=\(thermalWord(p.thermalState)) lowpower=\(p.isLowPowerModeEnabled ? 1 : 0)", tele: true)
+        }
+        say()
+        NotificationCenter.default.addObserver(forName: ProcessInfo.thermalStateDidChangeNotification, object: nil, queue: nil) { _ in say() }
+        NotificationCenter.default.addObserver(forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: nil) { _ in say() }
+    }
     static func thermalWord(_ t: ProcessInfo.ThermalState) -> String {
         switch t {
         case .nominal: return "nominal"

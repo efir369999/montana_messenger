@@ -1354,6 +1354,7 @@ final class MontanaTelemetry {
             MontanaTrace.mark("memory_warning", "mem_mb=\(mem)")
             self.writeAlive(force: true)   // the picture caches are NSCaches and give way here by their own policy (03.10)
         }
+        MontanaPower.witnessHeat()   // the thermal state and Low Power Mode at launch and at every change (10.10.2026)
         // The battery answers -1 until monitoring is on; on from the first line, so the first call
         // of a run reads a level and not a placeholder.
         UIDevice.current.isBatteryMonitoringEnabled = true

@@ -111,21 +111,6 @@ enum MTPhoneService {
         default: return .failed
         }
     }
-    /// THE CATALOGUE FORGETS THE NUMBER WITH THE ACCOUNT (App Review 5.1.1(v), 08.10.2026: the service keeps one entry per
-    /// confirmed number -- the key, the name, the public name): the entry goes by the number's last confirmation, the service's own
-    /// door (/dir/remove, as the Business asks it). True when the catalogue holds nothing of it any more, taken now or already gone.
-    static func withdraw() async -> Bool {
-        guard let a = UserDefaults.standard.data(forKey: "phoneProof") else { return true }   // NOT-UI: the confirmation's key
-        guard let u = URL(string: base + "/dir/remove"),
-              let body = try? JSONSerialization.data(withJSONObject: ["attestation": a.montanaHexString]) else { return false }
-        var q = URLRequest(url: u, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 8)
-        q.httpMethod = "POST"
-        q.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        q.httpBody = body
-        guard let got = try? await URLSession.shared.data(for: q), let code = (got.1 as? HTTPURLResponse)?.statusCode else { return false }
-        MontanaTrace.mark("phone_dir", "withdrawn=\(code == 200 || code == 404 ? 1 : 0)")
-        return code == 200 || code == 404
-    }
     /// The card beside the confirmation: the name (first and last), the bio, the face, the public name; a card with nothing in it
     /// is none.
     static func card(in d: Data) -> Card? {
@@ -184,7 +169,7 @@ enum MTPhoneProof {
     }
     /// The number confirmed for the person seated, proved again at every reading.
     static var number: String? { UserDefaults.standard.data(forKey: "phoneProof").flatMap { open($0) }?.e164 }
-    /// The confirmation leaves this phone once the service has let the number go (MTPhoneSheet, the person's own removal).
+    /// The confirmation leaves this phone at the person's own removal (MTPhoneSheet); no service holds anything to let go.
     static func forget() { UserDefaults.standard.removeObject(forKey: "phoneProof") }
     /// The confirmed number as the field writes it: the plus, the calling code, the national digits in groups.
     static var shownNumber: String? {
@@ -568,10 +553,10 @@ struct MTPhoneDoor: View {
             } else {
                 VStack(spacing: 16) {
                     field
-                    // THE CATALOGUE IS SAID BEFORE THE NUMBER LEAVES (the author's word 08.10.2026 17:09 MSK: «write it all in the
-                    // open and by the rules»; App Review 5.1.1(i)): the confirmation service keeps the number with the name and
-                    // the username the bot reports, answers whoever holds the number with them, and forgets them with the account.
-                    Text("Montana's confirmation service keeps your number with the name and username your messenger account shows. Anyone who has your number can look them up by it. Deleting your account removes them.")
+                    // WHO CONFIRMS AND WHO KEEPS IS SAID BEFORE THE NUMBER LEAVES (the author's words 10.10.2026 17:2x-17:3x MSK:
+                    // «state that by number one can, that we do not keep them»; App Review 5.1.1(i)): the bot confirms, the
+                    // service signs and forgets, the confirmation stays on this phone.
+                    Text("A messaging bot confirms your number. Montana keeps no phone numbers: the confirmation stays on this phone.")
                         .font(.footnote).foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -908,15 +893,13 @@ struct MTPhoneCardSheet: View {
 /// THE NUMBER'S OWN SHEET, for a person already in Montana (the author's word 06.10.2026 18:3x MSK: «attach the number at
 /// once»): the door of the sign-in from the profile; confirmed, the number stands in the profile, and the card is offered.
 /// A CONFIRMED NUMBER IS TAKEN BACK HERE, the account staying (App Review 5.1.1(ii): «an easily accessible and understandable way
-/// to withdraw consent»): the service lets the number, the name and the username go (MTPhoneService.withdraw), and only then does
-/// the confirmation leave this phone; a service that does not answer leaves both where they are and says so.
+/// to withdraw consent»): the number lives on this phone alone (no service keeps one, 10.10.2026), so taking it back is
+/// forgetting it here -- at once, with or without a network.
 struct MTPhoneSheet: View {
     var done: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var held = MTPhoneProof.shownNumber
     @State private var asking = false
-    @State private var removing = false
-    @State private var word: String?
     var body: some View {
         NavigationStack {
             Group {
@@ -926,12 +909,11 @@ struct MTPhoneSheet: View {
                             // USER-DATA: the person's own confirmed number
                             Text(verbatim: n).foregroundColor(.white)
                         } footer: {
-                            Text("Anyone who has your number can find your name and username by it in Montana's confirmation service. Removing the number takes them out.")
+                            Text("This number is kept on this phone and in your sealed copies. Montana keeps no phone numbers.")
                         }
                         .listRowBackground(MTGlassRowPlate())
                         Section {
                             Button(role: .destructive) { asking = true } label: { Text("Remove Number") }
-                                .disabled(removing)
                         }
                         .listRowBackground(MTGlassRowPlate())
                     }
@@ -952,23 +934,14 @@ struct MTPhoneSheet: View {
             .confirmationDialog("Remove this number?", isPresented: $asking, titleVisibility: .visible) {
                 Button("Remove Number", role: .destructive) { remove() }
             }
-            .mtPhoneWord($word, title: "Phone number")
         }
         .preferredColorScheme(.dark)
     }
     private func remove() {
-        removing = true
-        Task {
-            if await MTPhoneService.withdraw() {
-                MTPhoneProof.forget()
-                held = nil
-                MontanaTrace.mark("phone_dir", "removed by the person")
-                done()
-            } else {
-                word = "No connection: the number could not be removed. Try again."
-            }
-            removing = false
-        }
+        MTPhoneProof.forget()
+        held = nil
+        MontanaTrace.mark("phone_dir", "removed by the person")
+        done()
     }
 }
 

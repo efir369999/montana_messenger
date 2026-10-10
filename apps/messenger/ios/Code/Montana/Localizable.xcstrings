@@ -18566,18 +18566,18 @@
         }
       }
     },
-    "Your account is deleted: this device erases your 24-word identity, and your public name and your confirmed number leave Montana's nodes and services. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.": {
+    "Your account is deleted: this device erases your 24-word identity, and your public name leaves Montana's nodes. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш аккаунт удаляется: это устройство стирает вашу личность из 24 слов, а ваше публичное имя и подтверждённый номер уходят с узлов и служб Montana. История остаётся здесь запечатанной и открывается снова только теми же 24 словами — на этом устройстве или на другом, где уже есть копия. Никто не хранит слова за вас: сначала запишите их: Настройки → Приватность → Сид-фраза. Удаление приложения стирает и историю."
+            "value": "Ваш аккаунт удаляется: это устройство стирает вашу личность из 24 слов, а ваше публичное имя уходит с узлов Montana. История остаётся здесь запечатанной и открывается снова только теми же 24 словами — на этом устройстве или на другом, где уже есть копия. Никто не хранит слова за вас: сначала запишите их: Настройки → Приватность → Сид-фраза. Удаление приложения стирает и историю."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你的账户将被删除：此设备会抹去你的 24 词身份，你的公开名称和已确认的号码也会从 Montana 的节点和服务中移除。你的历史记录会加密留在这里，只有用同样的 24 个词才能再次打开——在此设备上，或在已持有副本的另一台设备上。没有人替你保管这些词：请先写下来：设置 → 隐私 → 助记词。删除应用也会抹去历史记录。"
+            "value": "你的账户将被删除：此设备会抹去你的 24 词身份，你的公开名称也会从 Montana 的节点中移除。你的历史记录会加密留在这里，只有用同样的 24 个词才能再次打开——在此设备上，或在已持有副本的另一台设备上。没有人替你保管这些词：请先写下来：设置 → 隐私 → 助记词。删除应用也会抹去历史记录。"
           }
         }
       }
@@ -18694,18 +18694,18 @@
         }
       }
     },
-    "Montana's confirmation service keeps your number with the name and username your messenger account shows. Anyone who has your number can look them up by it. Deleting your account removes them.": {
+    "A messaging bot confirms your number. Montana keeps no phone numbers: the confirmation stays on this phone.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Служба подтверждения Montana хранит ваш номер вместе с именем и именем пользователя, которые показывает ваш аккаунт мессенджера. Любой, у кого есть ваш номер, может найти их по нему. Удаление аккаунта стирает их."
+            "value": "Номер подтверждает бот мессенджера. Montana не хранит номера телефонов: подтверждение остаётся на этом телефоне."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Montana 的验证服务会保存你的号码，以及你的通讯应用账户显示的姓名和用户名。任何拥有你号码的人都可以通过号码查到它们。删除账户会将其清除。"
+            "value": "你的号码由通讯应用的机器人确认。Montana 不保存任何电话号码：确认信息只保留在这部手机上。"
           }
         }
       }
@@ -18774,18 +18774,18 @@
         }
       }
     },
-    "Anyone who has your number can find your name and username by it in Montana's confirmation service. Removing the number takes them out.": {
+    "This number is kept on this phone and in your sealed copies. Montana keeps no phone numbers.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Любой, у кого есть ваш номер, может найти по нему ваши имя и ник в службе подтверждения Montana. Удаление номера убирает их оттуда."
+            "value": "Этот номер хранится на этом телефоне и в ваших запечатанных копиях. Montana не хранит номера телефонов."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "任何拥有您号码的人都可以在 Montana 的验证服务中通过号码找到您的名字和用户名。移除号码会将它们一并删除。"
+            "value": "此号码保存在这部手机上以及您加密的副本中。Montana 不保存任何电话号码。"
           }
         }
       }
@@ -18818,22 +18818,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "要移除此号码吗？"
-          }
-        }
-      }
-    },
-    "No connection: the number could not be removed. Try again.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нет связи: номер не удалось удалить. Попробуйте ещё раз."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无网络连接：无法移除号码。请重试。"
           }
         }
       }

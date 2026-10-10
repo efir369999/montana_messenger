@@ -69,36 +69,6 @@
 			</array>
 		</dict>
 		<dict>
-			<!-- A phone number the person chooses to confirm: sent with the identity it belongs to
-			     (MTPhoneService.start), kept in the confirmation service's catalogue, and withdrawn
-			     when the account is deleted (MTPhoneService.withdraw). Optional. -->
-			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypePhoneNumber</string>
-			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<true/>
-			<key>NSPrivacyCollectedDataTypeTracking</key>
-			<false/>
-			<key>NSPrivacyCollectedDataTypePurposes</key>
-			<array>
-				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
-			</array>
-		</dict>
-		<dict>
-			<!-- The name of a person who confirms a phone number: the confirmation service takes the
-			     first and last name the messenger's bot reports and keeps them in its catalogue beside
-			     the number and the identity, until the account is deleted. Optional. -->
-			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypeName</string>
-			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<true/>
-			<key>NSPrivacyCollectedDataTypeTracking</key>
-			<false/>
-			<key>NSPrivacyCollectedDataTypePurposes</key>
-			<array>
-				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
-			</array>
-		</dict>
-		<dict>
 			<!-- A public @name the person chooses to take: held by the keeper of names beside the
 			     identity it points to, released when the account is deleted. Optional. -->
 			<key>NSPrivacyCollectedDataType</key>
