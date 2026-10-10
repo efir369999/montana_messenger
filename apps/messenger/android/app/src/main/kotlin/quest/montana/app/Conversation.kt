@@ -2237,19 +2237,30 @@ fun letterMenu(act: MainActivity, ref: String, m: Msg, onReply: () -> Unit, onEd
     }
     val chat = Book.chat(ref)
     val copy = if (chat != null) letterBubble(c, m, chat, members) else View(c)
+    val menuColumn = c.vstack(if (m.mine) Gravity.END else Gravity.START) {
+        setPadding(dp(14), 0, dp(14), 0)
+        if (!group || !Groups.isOut(ref)) { addView(reactions, lp(WRAP, WRAP)); addView(grid, lp(MATCH, dp(220))); gap(8) }
+        addView(copy, lp())
+        gap(8)
+        addView(actions, lp(dp(250), WRAP))
+    }
+    // A LETTER TALLER THAN THE SCREEN OPENS ON ITS BOTTOM (iOS the ScrollViewReader over the menu's cloud,
+    // MontanaMessageMenu.swift:298-316 at 2155, the author's word 22.09): the actions are what the hold asked
+    // for, so the cloud comes to rest with its end in view at once, no transition; a short letter keeps the
+    // centred place fillViewport already gave it.
+    val scroller = ScrollView(c).apply {
+        isVerticalScrollBarEnabled = false
+        isFillViewport = true
+        addView(FrameLayout(c).apply { addView(menuColumn, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.CENTER)) }, FrameLayout.LayoutParams(MATCH, MATCH))
+    }
     val page = FrameLayout(c).apply {
         setBackgroundColor(Color.argb(150, 0, 0, 0))
         isClickable = true
         pressable { close() }
-        addView(c.vstack(if (m.mine) Gravity.END else Gravity.START) {
-            setPadding(dp(14), 0, dp(14), 0)
-            if (!group || !Groups.isOut(ref)) { addView(reactions, lp(WRAP, WRAP)); addView(grid, lp(MATCH, dp(220))); gap(8) }
-            addView(copy, lp())
-            gap(8)
-            addView(actions, lp(dp(250), WRAP))
-        }, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.CENTER))
+        addView(scroller, FrameLayout.LayoutParams(MATCH, MATCH))
     }
     close = act.overlay(page)
+    scroller.post { if (menuColumn.height > scroller.height) scroller.scrollTo(0, menuColumn.height - scroller.height) }
 }
 
 

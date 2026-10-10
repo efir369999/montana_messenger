@@ -19,7 +19,10 @@ import android.widget.ScrollView
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 
 // ─────────────────────────── the local room (iOS savedMessagesKey, ChatStore.isLocalRoom) ───────────────────────────
 
@@ -65,10 +68,22 @@ object SavedMessages {
         set(v) = Prefs.setStr("draft.savedMessages", v)
 }
 
-/** The time a chats row shows: the hour today, the date before (iOS the list's time column). */
-fun rowTime(c: Context, at: Long): String =
-    if (DateUtils.isToday(at)) android.text.format.DateFormat.getTimeFormat(c).format(Date(at))
-    else DateUtils.formatDateTime(c, at, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_NUMERIC_DATE)
+/** THE LIST'S STAMP (iOS MTClock.listStamp, MontanaMessageFeed.swift:570-588 at 2155, the author's word 22.09; asked for
+ * the chats row by ChatStore.rowTime, MontanaChatStore.swift:420-423): today -- the time; within a week -- the weekday's
+ * short name with a capital; further -- the day and the month in the region's own order. */
+fun rowTime(c: Context, at: Long): String {
+    if (DateUtils.isToday(at)) return android.text.format.DateFormat.getTimeFormat(c).format(Date(at))
+    val weekStart = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        add(Calendar.DAY_OF_YEAR, -6)
+    }.timeInMillis
+    if (at >= weekStart) {
+        val w = SimpleDateFormat("EEE", Locale.getDefault()).format(Date(at))
+        return w.take(1).uppercase(Locale.getDefault()) + w.drop(1)
+    }
+    val pattern = android.text.format.DateFormat.getBestDateTimePattern(Locale.getDefault(), "ddMM")
+    return SimpleDateFormat(pattern, Locale.getDefault()).format(Date(at))
+}
 
 /**
  * THE SAVED MESSAGES PAGE (iOS ChatConversationView for the local room): the bar with the back mark, the name and one's own
