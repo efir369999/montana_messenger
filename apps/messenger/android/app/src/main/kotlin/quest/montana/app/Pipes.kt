@@ -879,7 +879,12 @@ object Post {
             if (body.size + tail.size <= Wire.ENVELOPE) body += tail
         }
         if (body.size > Wire.ENVELOPE) return false
-        Channels.lay(secret, mid, body)   // the live road beside the box: laid before the nodes under the pipe's tag (iOS sendP2P)
+        // the live road beside the box: laid before the nodes under the pipe's tag (iOS sendP2P) -- WORDS, NEVER A LONG LETTER'S
+        // REFERENCE: iOS lays the letter's own text there (sendP2P(text:), MontanaDeliveryEngine.swift:1478, 1502) and seals the
+        // reference into the envelope alone (sealLetterEnvelope, 1574). An iPhone files what the live road brings as a row: a
+        // reference filed so stood as a loading row and was healed into the face's base64 as text (MontanaChatStore.swift:3295-3307;
+        // A1 to an iPhone 10.10.2026 22:03-22:28, the author's word: make it never repeat). A long letter rides the box alone.
+        if (!text.startsWith(Marks.LONG)) Channels.lay(secret, mid, body)
         val plain = body + ByteArray(Wire.ENVELOPE - body.size)
         val cw = Wire.convW(secret, Wire.day())
         // a service word asks the node for a silent push (iOS wake: body["silent"]), judged by its words, not by a long letter's reference
