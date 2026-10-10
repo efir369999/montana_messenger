@@ -1255,12 +1255,17 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
             }
         }
         noteControls = controls
+        // THE VISIBLE STAGE, NOT THE WHOLE PAGE (iOS MontanaShapes.swift:674-679 at 2155, atom 404698df8f72, the author's
+        // word 21.09: the circle centres on the room ABOVE the controls' row, not on the page's own middle -- the strip the
+        // controls hold at the bottom is never part of the circle's middle, as the feed's own visible part excludes the bar).
+        val noteStage = FrameLayout(c)
         val page = FrameLayout(c).apply {
             setBackgroundColor(Color.argb(170, 0, 0, 0))
             keepScreenOn = true   // the screen stays awake while a note records (iOS 1687)
             addView(controls, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM).apply { bottomMargin = c.dp(60) })
-            addView(ring, FrameLayout.LayoutParams(side + c.dp(16), side + c.dp(16), Gravity.CENTER))
-            addView(NoteWindow(c, live = { note?.badgeNow }).holding(tv.apply {
+            addView(noteStage, FrameLayout.LayoutParams(MATCH, MATCH).apply { bottomMargin = c.dp(60 + 48) })
+            noteStage.addView(ring, FrameLayout.LayoutParams(side + c.dp(16), side + c.dp(16), Gravity.CENTER))
+            noteStage.addView(NoteWindow(c, live = { note?.badgeNow }).holding(tv.apply {
                 setOnClickListener { note?.flip() }
                 // THE BADGE UNDER THE FINGER (iOS MontanaVideoNoteHold 1658-1672): a finger on the badge drags it, and the badge
                 // eases to the nearest corner when let go; a tap anywhere else turns the camera, as before
