@@ -867,7 +867,15 @@ object Presence {
     @Volatile private var appOpen = false
     /** The app stands on the person's screen (iOS: the scene is active). */
     val shown: Boolean get() = appOpen
-    fun appShown() { if (appOpen) return; appOpen = true; appPresence(true) }
+    // THE RETURN TO THE FOREGROUND READS AGAIN (iOS ContentView.swift:451-452 with MontanaConversation.swift:1495-1501 at
+    // 2155: scenePhase turns .active -> store.markRead(chat.name)): a letter that landed under a locked phone with the chat
+    // left open stood unread there; coming back reads it now, the one road markRead already is (Post.markRead).
+    fun appShown() {
+        if (appOpen) return
+        appOpen = true
+        appPresence(true)
+        Book.openChat?.let { ref -> if ((Book.chat(ref)?.unread ?: 0) > 0) Thread { Post.markRead(ref) }.start() }
+    }
     fun appHidden() { if (!appOpen) return; appOpen = false; appPresence(false) }
     fun log(s: String) = Log.d("Montana", "presence: $s")
 

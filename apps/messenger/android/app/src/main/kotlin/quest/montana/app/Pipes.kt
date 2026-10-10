@@ -1402,7 +1402,10 @@ object Post {
                     if (had == null) {
                         val at = Marks.birthMs(mid) ?: System.currentTimeMillis()
                         c.msgs.add(Msg(mid, text, false, at, qt = qt, qm = qm, lp = lp?.takeIf { LinkCard.parse(it) != null })); c.msgs.sortBy { it.at }
-                        if (Book.openChat != ref) c.unread++
+                        // A LOCKED PHONE DOES NOT READ WHAT IT CANNOT SHOW (iOS placeRow, MontanaChatStore.swift:184 at 2155): a letter
+                        // landing with the chat left open while the app itself is backgrounded used to be born read, and the icon never
+                        // met it; the open chat alone is not enough, the app must stand before the person too (MTForeground.active).
+                        if (Book.openChat != ref || !Presence.shown) c.unread++
                         if (c.name.isEmpty() && name.isNotBlank()) c.name = name
                         isNew = true
                     }
@@ -1534,6 +1537,10 @@ object Post {
 
     /** «Read» covering the newest letter of theirs on the screen, by their birth millisecond (iOS sendReadMark). */
     fun markRead(ref: String) {
+        // UNDER A LOCKED PHONE IT WAITS FOR THE RETURN (iOS sendReadMark's own guard, MontanaChatStore.swift:2848 at 2155:
+        // «guard MTForeground.active else ... return»): the one emitter of the read mark refuses while the app is not before
+        // the person's eyes; Presence.appShown asks again the moment it is.
+        if (!Presence.shown) return
         val c = Book.chat(ref) ?: return
         // a blocked person hears no word of mine (iOS sendReadMark 2842: read_skip why=blocked)
         if (!Prefs.bool("readReceiptsEnabled", true) || PeerSafety.isBlocked(ref)) { Book.edit(ref) { it.unread = 0 }; return }
