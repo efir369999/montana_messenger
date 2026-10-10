@@ -139,6 +139,14 @@ final class NotificationService: UNNotificationServiceExtension {
                 return
             }
             if Self.serveMissedLetter(rawText, mid: mid, conv: conv, name: envName, handler: contentHandler) { return }
+            // A TRANSFER LETTER RINGS NOTHING HERE (the author's word 10.10.2026 15:3x MSK: «transfers do not touch Montana at all»;
+            // T1 12:24:29Z: an older build's transfer letter showed «New message» and its chat stood empty -- the app buries it
+            // unread, MTRowLetter.retiredLetter): it is stashed for the app without a face and turns no badge.
+            if MTRowLetter.retiredLetter(text) {
+                Self.diagLine("transfer letter stashed silently mid=\(mid.prefix(8))")
+                contentHandler(Self.quietFace())
+                return
+            }
             // TWO LETTERS OF A GAME RING (29.09, MTChessLetter.rings): the invitation and the letter that ends the game wear
             // the chess words and name their game for the tap; a step an older build sent loud is stashed for the board
             // and swallowed here.
@@ -233,6 +241,11 @@ final class NotificationService: UNNotificationServiceExtension {
                 return
             }
             if Self.serveMissedLetter(sc.text, mid: sc.mid, conv: sc.conv, name: sc.name, handler: contentHandler) { return }
+            if MTRowLetter.retiredLetter(sc.text) {   // a transfer letter from the box rings nothing either (10.10.2026)
+                Self.diagLine("transfer letter from the box stashed silently mid=\(sc.mid.prefix(8))")
+                contentHandler(Self.quietFace())
+                return
+            }
             if let chess = MTChessLetter.parse(sc.text) {
                 guard chess.rings else {
                     Self.diagLine("chess step from the box stashed silently mid=\(sc.mid.prefix(8))")
@@ -1142,6 +1155,7 @@ final class NotificationService: UNNotificationServiceExtension {
     /// grow on it. New senders do not ring these at all; this guards against older builds.
     private static func isQuietText(_ t: String) -> Bool {
         if MTChessLetter.isStep(t) { return true }   // a step of a game turns no badge: the board is its reader (29.09)
+        if MTRowLetter.retiredLetter(t) { return true }   // a transfer letter turns no badge: the app buries it unread (10.10.2026)
         if t.hasPrefix("\u{200B}\u{200B}VC:") || t.hasPrefix("\u{200B}\u{200B}MD:")
             || t.hasPrefix("\u{200B}\u{200B}RG:") || t.hasPrefix("\u{200B}\u{200B}MC:") { return false }   // voice, media, call, missed call — loud
         return t.hasPrefix("\u{2063}") || t.hasPrefix("\u{2064}") || t.hasPrefix("\u{200B}")
