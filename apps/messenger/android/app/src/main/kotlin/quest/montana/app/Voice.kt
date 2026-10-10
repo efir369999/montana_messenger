@@ -462,12 +462,16 @@ class WaveView(c: Context) : View(c) {
     private var peak = 4000f / 32767   // iOS referenceFull: −18 dBFS is the whole height
     private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { strokeCap = android.graphics.Paint.Cap.ROUND }
 
-    /** The swell of a tape being spoken: each new loudness pushes a line in from the right. */
+    /** The swell of a tape being spoken (iOS MTLiveWave 260-283 at 2155, atoms fa9d72ba0f0d/93d6b5f591f5): each
+     *  new loudness pushes a line in from the right, scaled against the loudest line IN THE SHOWN WINDOW —
+     *  `levels.suffix(count).max()` — recomputed on every push, not a peak that only ever grows: a loud word
+     *  that has scrolled out of sight no longer holds the rest of the wave down. */
     fun push(a: Float) {
         val l = live ?: ArrayList<Float>().also { live = it }
-        l.add(a); peak = maxOf(peak, a)
-        val room = maxOf(1, width / (dp(3) + dp(2)))
+        l.add(a)
+        val room = maxOf(1, (width / ((barDp + 2f) * resources.displayMetrics.density)).toInt())
         while (l.size > room) l.removeAt(0)
+        peak = maxOf(l.max(), 4000f / 32767)
         invalidate()
     }
 

@@ -11,7 +11,7 @@ Each folder of this repository is the tree of one commit of the project's histor
 | Folder | Build | Source commit | Staged |
 |---|---|---|---|
 | `apps/mesh/ios` | 3 | `9d9eaa61456d` | 2026-10-10 11:51 UTC |
-| `apps/messenger/android` | 403 | `e84c0d431538` | 2026-10-10 19:41 UTC |
+| `apps/messenger/android` | 405 | `59615b93e958` | 2026-10-10 19:45 UTC |
 | `apps/messenger/ios` | 2179 | `270009b93c9d` | 2026-10-10 19:28 UTC |
 | `apps/p2p/ios` | 2 | `9652b512bced` | 2026-10-10 11:51 UTC |
 | `apps/vpn/ios` | 3 | `298b7dc88d0c` | 2026-10-10 11:51 UTC |
