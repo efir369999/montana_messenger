@@ -2829,10 +2829,12 @@ fun captionPage(act: MainActivity, p: Media.Picked, draft: String, onCancel: () 
         }.getOrNull()
         else -> null
     }
+    // THE SAME PLATE AS THE CHAT'S OWN FIELD (iOS MTComposeRow.montanaFieldGlass, MontanaBubble.swift:67,2279 at 2155, the author's
+    // word 22.09): one glass, one radius (18) for the caption and the chat row alike — never a field drawn by hand with its own shape.
     val field = EditText(c).apply {
         hint = c.getString(R.string.caption_hint); setText(draft); setSelection(text.length)
         setHintTextColor(MT.gray); setTextColor(Color.WHITE); textSize = 17f
-        background = c.glassPlate().apply { cornerRadius = c.dp(20).toFloat() }
+        background = c.glassPlate().apply { cornerRadius = c.dp(18).toFloat() }
         setPadding(c.dp(16), c.dp(9), c.dp(16), c.dp(9))
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
         maxLines = 5
@@ -2851,11 +2853,13 @@ fun captionPage(act: MainActivity, p: Media.Picked, draft: String, onCancel: () 
             setPadding(dp(10), dp(8), dp(10), dp(10))
             setBackgroundColor(Color.argb(150, 0, 0, 0))
             addView(field, lp(0, WRAP, 1f))
+            // THE SAME TIER AS THE CHAT'S OWN SEND KEY (iOS MontanaOctagon.composeHeight == MTInputField.tier, MontanaBubble.swift:2331,
+            // 2289 at 2155): 36, not a size picked for this page alone (ChatInputBar.TIER carries the same number).
             addView(ImageView(c).apply {
                 setImageResource(R.drawable.send_button); scaleType = ImageView.ScaleType.FIT_CENTER
                 contentDescription = c.getString(R.string.send)
                 pressable { onSend(field.text.toString().trim()) }
-            }, lp(dp(40), dp(40)).apply { marginStart = dp(8) })
+            }, lp(dp(36), dp(36)).apply { marginStart = dp(8) })
         }, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM))
         setOnApplyWindowInsetsListener { v, insets ->
             val b = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.ime())
