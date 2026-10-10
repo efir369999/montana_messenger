@@ -2146,7 +2146,7 @@ class ChatStore: ObservableObject {
         }
         guard added > 0 else { MontanaTrace.mark("feed_restored", "rows=0 chats=\(feed.count)"); return }
         messages = merged
-        Self.writeSnapshotNow(merged)
+        persist(merged, why: "copy")
         handMarksYield(to: merged)   // a hand mark laid by the copy yields where its letters stand unread
         for (chat, rows) in merged where feed[chat] != nil {
             if let last = rows.max(by: ChatStore.before) { noteOrder(chat, at: Int(last.createdAt * 1000)) }
@@ -2228,13 +2228,15 @@ class ChatStore: ObservableObject {
         // THE 24 WORDS OPEN THE ARCHIVE (15.10). A restored identity beside an empty feed is the
         // exact moment the sealed log on disk is worth reading: it was written under this seed.
         NotificationCenter.default.addObserver(forName: .montanaSeedOpened, object: nil, queue: .main) { [weak self] _ in
-            guard let self, self.messages.isEmpty else { return }
+            // Only the live store of the person seated reads their archive (P-164): a store a seat's move retired heard the next
+            // seat's opening word with an emptied memory and rebuilt that person's history from the transcript (T1, 10.10).
+            guard let self, self.writes, self.messages.isEmpty else { return }
             let epoch = self.seedEpoch, acct = MontanaSeed.twin ?? ""
             DispatchQueue.global(qos: .userInitiated).async { self.restoreFromArchive(epoch: epoch, acct: acct, folders: nil) }
         }
         // A block the twin sent has been filed — it is read back into the feed by the same road.
         NotificationCenter.default.addObserver(forName: .montanaArchiveIngested, object: nil, queue: .main) { [weak self] note in
-            guard let self, let folder = note.userInfo?["folder"] as? String else { return }
+            guard let self, self.writes, let folder = note.userInfo?["folder"] as? String else { return }
             self.ingestedFolders.insert(folder)
             self.ingestWork?.cancel()
             let w = DispatchWorkItem { [weak self] in
@@ -2438,7 +2440,7 @@ class ChatStore: ObservableObject {
                     }
                     if droppedChats > 0 || droppedRows > 0 {
                         MontanaTrace.mark("archive_heal", "chats=\(droppedChats) rows=\(droppedRows)")
-                        Self.writeSnapshotNow(merged)
+                        self.persist(merged, why: "heal")
                         NotificationCenter.default.post(name: .montanaChatsRestored, object: nil)
                     }
                     // THE JOURNAL FILLS WHAT THE SNAPSHOT MISSED (16.09): a row born and journaled that
@@ -2474,7 +2476,7 @@ class ChatStore: ObservableObject {
                     // THE VERDICT IS ON DISK BEFORE ITS FLAG (the critic 23.09): a flag written first and a relaunch before
                     // the snapshot would read the old history as all unread. The verdict's own capture is written now, and
                     // the flag follows it on the same queue only when it landed; until then the next load takes it again.
-                    if takesOldVerdict {
+                    if takesOldVerdict, self.writes {
                         let gen = ChatStore.captureGen()
                         ChatStore.writeSnapshot(merged, gen: gen)
                         ChatStore.unreadVerdictStands(after: gen)
@@ -2900,7 +2902,7 @@ class ChatStore: ObservableObject {
         guard !loading else { MontanaTrace.mark("save_skip", "history-not-read"); return }
         saveWork?.cancel(); saveWork = nil
         followStages()
-        Self.writeSnapshotNow(messages, sync: true)
+        persist(messages, sync: true, why: "save")
     }
     private func scheduleSave() {
         guard !loading, !retired else { return }   // SILENT-OK: history is still being read, or the store stepped down (retire)
@@ -2908,7 +2910,8 @@ class ChatStore: ObservableObject {
         let snapshot = messages   // copy on main (copy-on-write — cheap)
         let gen = Self.captureGen()   // the generation is the CAPTURE's, not the moment the debounce fires
         let w = DispatchWorkItem { [weak self] in
-            self?.followStages()   // the row's stage is written in the beat the letters are
+            guard let self, self.writes else { return }   // the capture of a store that stepped down reaches no disk (P-164)
+            self.followStages()   // the row's stage is written in the beat the letters are
             Self.writeSnapshot(snapshot, gen: gen)
         }
         saveWork = w
@@ -2926,6 +2929,22 @@ class ChatStore: ObservableObject {
         seedEpoch += 1
         if ChatStore.live === self { ChatStore.live = nil }
         MontanaTrace.mark("store_retired", "rows=" + String(messages.values.reduce(0) { a, b in a + b.count }))
+    }
+    /// THE HISTORY FILE HAS ONE WRITER: THE LIVE STORE OF THE PERSON SEATED (P-164; the author's word 10.10.2026 15:4x MSK: «on T1
+    /// part of the chat with iPhone 15 is gone -- find the cause, and by construction it must never be allowed»). T1, 2173,
+    /// 12:34:45-12:35:32Z: a seat's move retired the store, the forgotten seed's word emptied its memory, and the next seat's
+    /// opening word found it empty -- it rebuilt 43 conversations from the archive's transcript (6 701 rows; iPhone 15's 1 979
+    /// letters became 773) and wrote the whole history file over the person's own, before the park and again after the lift. A
+    /// store that stepped down, or is not the one live store, restores, wipes and writes nothing: every road to the file asks this.
+    var writes: Bool { !retired && ChatStore.live === self }
+    /// The one instance door to the history file: the snapshot of a store that does not write is refused and said aloud.
+    @discardableResult func persist(_ snapshot: [String: [Message]], sync: Bool = false, why: String) -> Bool {
+        guard writes else {
+            MontanaTrace.mark("history_foreign", "why=" + why + " retired=" + (retired ? "1" : "0") + " rows=" + String(snapshot.values.reduce(0) { a, b in a + b.count }))
+            return false
+        }
+        Self.writeSnapshotNow(snapshot, sync: sync)
+        return true
     }
     // ── THE ARCHIVE → FEED ROAD (15.10) ─────────────────────────────────────────
     private var ingestedFolders = Set<String>()
@@ -3014,6 +3033,11 @@ class ChatStore: ObservableObject {
     @MainActor
     func applyRestored(_ built: [(MontanaArchive.RestoredChat, [Message])]) {
         MontanaMainProbe.crumb = "archive-apply"; defer { MontanaMainProbe.crumb = "" }
+        // A transcript lands only in the live store of the person seated (P-164): an empty memory elsewhere is no empty history.
+        guard writes else {
+            MontanaTrace.mark("history_foreign", "why=archive retired=" + (retired ? "1" : "0") + " chats=" + String(built.count))
+            return
+        }
         // BOTH SHELVES ARE ASKED (the critic 24.09): a conversation standing in the archive keeps its row there — a
         // second, bare one on the standing shelf was a row twice (dup_rows) and hid nothing the archive did not.
         var rows = chatsShelf() ?? []
@@ -3067,7 +3091,7 @@ class ChatStore: ObservableObject {
         // «restored», which the chats tab did not reread on — its stale copy wrote the row away at its next change
         // (T1: arc:d7f0fd without a row since 17.09).
         if rowsChanged { saveStored(chats: rows) }
-        Self.writeSnapshotNow(messages)
+        persist(messages, why: "archive")
         recalcBadge()
         NotificationCenter.default.post(name: .montanaChatsRestored, object: nil)
         MontanaTrace.mark("archive_applied", "chats=\(built.count) rows=\(added) media=\(media) faces=\(faces) rows_changed=\(rowsChanged) keys=\(built.map { String(($0.0.ref ?? ("arc:" + $0.0.folder)).prefix(10)) }.joined(separator: ","))")
@@ -3148,6 +3172,10 @@ class ChatStore: ObservableObject {
 
     // Wipe ALL local history and chat metadata (a different seed takes over -> another identity's data is not shown).
     func wipeLocal() {
+        // A STORE THAT STEPPED DOWN OWNS NOTHING OF THE PERSON SEATED NOW (P-164): their folders and keychain items moved with
+        // the park, and every write here -- the dropped file, an emptied map's didSet -- would land on the next person. Its loads
+        // are let go, nothing else.
+        guard writes else { seedEpoch += 1; return }
         seedEpoch += 1   // invalidate any background load of the previous account's history
         listState = [:]; MontanaKeychain.delete("chatListState"); MontanaKeychain.delete("chatListOverlay")   // the list record dies with the identity (stage 9)
         MTRowJournal.dropAll(); MTHistoryFile.drop()   // and the journal of rows and the history file with it
@@ -4888,7 +4916,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             }
         }
         dropPendingMedia(msgId)   // the file is assembled — the intent is fulfilled
-        let persisted = ChatStore.writeHistory(messages)
+        let persisted = writes && ChatStore.writeHistory(messages)   // a store that stepped down holds the receipt (P-164)
         if persisted {
             sendDeliveryReceipt(chat, msgId: msgId, isFromMe: isFromMe, text: mediaMark)
         } else {
@@ -6751,7 +6779,7 @@ extension ChatStore {
         MontanaMeeting.repoint(from: newer, to: older)
         dropShelfRow(newer)
         recalcBadge()
-        Self.writeSnapshotNow(messages)
+        persist(messages, why: "fold")
         MontanaTrace.mark("same_fold", "from=\(String(newer.prefix(10))) into=\(String(older.prefix(10))) rows=\(add.count)")
         if openConv == newer { NotificationCenter.default.post(name: .openChatRequest, object: nil, userInfo: ["address": older]) }
     }

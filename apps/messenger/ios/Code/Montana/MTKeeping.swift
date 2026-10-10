@@ -1052,7 +1052,7 @@ extension ChatStore {
             noteListState(conv, last: last)
             noteOrder(conv, at: Int(last.createdAt * 1000))
         }
-        Self.writeSnapshotNow(messages)
+        persist(messages, why: "given")
         return add.count
     }
 }
