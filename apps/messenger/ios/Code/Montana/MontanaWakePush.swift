@@ -822,7 +822,7 @@ enum MontanaWakePush {
             guard let url = URL(string: b + "/register"), let gone = URL(string: b + "/unregister") else { continue }   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
             let host = URL(string: b)?.host ?? b
             let standing = registeredPairs(host, token: hex)   // positive: held by the door since; negative: confirmed gone at; absent: unknown
-            let due = subs.filter { p in (standing[pairKey(p)] ?? 0) < now - regRefresh }
+            let due = doubtedNow(host, token: hex) ? subs : subs.filter { p in (standing[pairKey(p)] ?? 0) < now - regRefresh }
             var stale: [[String: String]] = standing.filter { 0 < $0.value && !wanted.contains($0.key) }.keys.compactMap { k in
                 let parts = k.split(separator: "|", maxSplits: 1).map(String.init)
                 return parts.count == 2 ? ["conv": parts[0], "sid": parts[1]] : nil
@@ -847,13 +847,16 @@ enum MontanaWakePush {
             }
             guard !due.isEmpty else {
                 MontanaTrace.markFolded("wakepush_reg", "standing=\(subs.count) door=\(host) token=\(String(hex.prefix(8))) — nothing new", window: 600)
+                if let p = subs.first { askHeld(url, host: host, token: hex, topic: topic, pair: p, extra: ["faces": 1, "heard": 1], tag: "wakepush_held") }
                 continue
             }
             // «faces»: this build holds the fallback keys in its catalog, so the node may send a
             // loc-key instead of the English literal. A build without them never says it, and the
             // node keeps the literal for it — the raw key must never reach a screen.
+            // «heard»: this build's extension tells the doors which bell it heard (NotificationService.tellHeard), so the
+            // node may keep the token's last bell loud until then (10.10).
             sendChunks(due, url: url, token: hex, topic: topic, digestKey: regDigestKey, tag: "wakepush_reg",
-                       recorded: { chunk in noteRegistered(host, chunk, at: now, token: hex) }, extra: ["faces": 1])
+                       recorded: { chunk in noteRegistered(host, chunk, at: now, token: hex) }, extra: ["faces": 1, "heard": 1])
         }
     }
 
@@ -883,11 +886,15 @@ enum MontanaWakePush {
     /// week while the door rang the token of yesterday.
     /// The door's standing maps are named under this prefix, once: SeedScope names it as this device's own.
     static let regSetPrefix = "regSet_"
+    /// THE MAPS ARE BORN AGAIN ONCE (10.10.2026). Until the node kept one row per token, another app of the same seed took a
+    /// pair's row and its withdrawal deleted it while this map still called the pair held: T1's letters of 23:10Z and 00:00Z
+    /// found no row at either node (woken=0/0). A new generation finds every map empty and posts every pair once.
+    private static let regGeneration = "-g2"
     /// The call token keeps maps of its own under the same law (23.09): the caller names the token the pairs
     /// were posted under -- the letters' token or the call token -- and each gets its own map per door.
     private static func regSetKey(_ host: String, token hex: String) -> String {
         let tok = SHA256.hash(data: Data(hex.utf8)).prefix(6).map { String(format: "%02x", $0) }.joined()
-        return regSetPrefix + subIdFormat + "_" + host + "_" + tok
+        return regSetPrefix + subIdFormat + regGeneration + "_" + host + "_" + tok
     }
     private static func registeredPairs(_ host: String, token hex: String) -> [String: Double] {
         regSetLock.lock(); defer { regSetLock.unlock() }   // LOCK-OK: read-modify-write of the registration-set record
@@ -899,6 +906,44 @@ enum MontanaWakePush {
         guard let d = MontanaLocalVault.getDecrypted(regSetKey(host, token: hex)),
               let m = try? JSONDecoder().decode([String: Double].self, from: d) else { return [:] }
         return m
+    }
+    /// WHAT A DOOR KEEPS IS ASKED, NOT REMEMBERED (the author's word 10.10.2026 12:5x MSK: «notifications reinforced concrete, not
+    /// one error in principle»). The standing map is this phone's belief, and the belief stood a week while the door had lost the
+    /// rows under it. A round with nothing to post asks the door, at most twice an hour, how many rows it keeps for this token
+    /// (montana-notify answers "rows" since 10.10, re-asserting one pair); a door keeping fewer than the map believes is posted
+    /// the whole set at the next round. The node keeps at most 8192 rows for a token, so a belief above that is read at the cap.
+    private static var heldAskedAt: [String: Double] = [:]   // BOUND-OK: one moment per door and token
+    private static var doubted: Set<String> = []             // BOUND-OK: doors whose rows fell short, until the next round
+    private static let heldLock = NSLock()
+    private static func doubtedNow(_ host: String, token hex: String) -> Bool {
+        heldLock.withLock { doubted.remove(host + "@" + hex) != nil }
+    }
+    private static func askHeld(_ url: URL, host: String, token hex: String, topic: String, pair: [String: String],
+                                extra: [String: Any], tag: String) {
+        let now = Date().timeIntervalSince1970
+        let key = host + "@" + hex
+        let ask: Bool = heldLock.withLock {
+            if let at = heldAskedAt[key], now - at < 1800 { return false }
+            heldAskedAt[key] = now
+            return true
+        }
+        guard ask else { return }
+        var req = URLRequest(url: url); req.httpMethod = "POST"   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        var body: [String: Any] = ["token": hex, "environment": apsEnvironment(), "topic": topic, "subs": [pair]]
+        for (k, v) in extra { body[k] = v }
+        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        knockSession.dataTask(with: req) { data, resp, _ in   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
+            guard (resp as? HTTPURLResponse)?.statusCode == 200,
+                  let o = data.flatMap({ try? JSONSerialization.jsonObject(with: $0) }) as? [String: Any],
+                  let rows = o["rows"] as? Int else { return }   // a door before 10.10 does not say what it keeps
+            let believed = min(8192, registeredPairs(host, token: hex).values.filter { 0 < $0 && now - 31 * 86400 < $0 }.count)
+            MontanaTrace.markFolded(tag, "door=\(host) keeps=\(rows) believed=\(believed)", window: 3600)
+            guard rows < believed else { return }
+            MontanaTrace.mark(tag, "door=\(host) keeps=\(rows) believed=\(believed) -- rows lost at the door, the whole set goes again")
+            heldLock.withLock { _ = doubted.insert(key) }
+            DispatchQueue.main.async { registerConvs() }
+        }.resume()
     }
     private static func noteRegistered(_ host: String, _ chunk: [[String: String]], at now: Double, token hex: String) {
         regSetLock.lock(); defer { regSetLock.unlock() }   // LOCK-OK: read-modify-write of the registration-set record
@@ -2577,9 +2622,12 @@ enum MontanaWakePush {
             guard let url = URL(string: b + "/register-voip") else { continue }   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
             let host = URL(string: b)?.host ?? b
             let standing = registeredPairs(host, token: hex)
-            let due = subs.filter { p in (standing[pairKey(p)] ?? 0) < now - regRefresh }
+            let due = doubtedNow(host, token: hex) ? subs : subs.filter { p in (standing[pairKey(p)] ?? 0) < now - regRefresh }
             guard !due.isEmpty else {
                 MontanaTrace.markFolded("wakepush_vreg", "standing=\(subs.count) door=\(host) -- nothing new", window: 600)
+                if let p = subs.first {
+                    askHeld(url, host: host, token: hex, topic: topic, pair: p, extra: ["life": Int(MontanaCall.callLifeS)], tag: "wakepush_vheld")
+                }
                 continue
             }
             if !told {

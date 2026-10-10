@@ -37,6 +37,7 @@ final class NotificationService: UNNotificationServiceExtension {
         // extension ever invoked» had no witness. The line rides to the node's diary door now, as the
         // sheet's does; a line that does not make it is a line lost, never a banner held.
         Self.shipLive("wake: env=\((info["env"] as? String)?.isEmpty == false ? 1 : 0) at=\((info["at"] as? Int) ?? 0)")
+        Self.tellHeard((info["mid"] as? String) ?? "")
 
         // The conversation key is conv from DECRYPTION (the shared tag the app keys the chat
         // and avatar by), NOT from the payload's from (the sender address is a different key
@@ -52,7 +53,7 @@ final class NotificationService: UNNotificationServiceExtension {
         // RESULT of the placement, not a promise (class 6.8 «notification exists — no letter»
         // forbidden by this order by construction).
         if let envB64 = info["env"] as? String, let sealed = Data(base64Encoded: envB64),
-           let rdv = Self.openRdvLetter(sealed) {
+           let rdv = Self.openRdvLetter(sealed, at: Self.sealMoment(info)) {
             let text = rdv.text.hasPrefix("\u{2063}LB:") ? (Self.resolveLongLetterSync(rdv.text) ?? rdv.text) : rdv.text
             Self.stashRdv(mid: rdv.mid, text: text, name: rdv.name, glyph: rdv.glyph, ct64: rdv.ct64,
                           invite: rdv.invite, conf: rdv.conf)
@@ -69,7 +70,7 @@ final class NotificationService: UNNotificationServiceExtension {
         }
         if let envB64 = info["env"] as? String, !envB64.isEmpty,
            let sealed = Data(base64Encoded: envB64),
-           let (openedConv, mid, rawText, envName, envGlyph, envQt, envQm, envLp) = Self.openWithOwnPipes(sealed) {
+           let (openedConv, mid, rawText, envName, envGlyph, envQt, envQm, envLp) = Self.openWithOwnPipes(sealed, at: Self.sealMoment(info)) {
             // A CALL IN THE PIPE OF A SLOT THIS PHONE KEEPS (MTKeeping in the app, 08.10): never stashed -- the app answers it from
             // the box. A loud call (the restoring phone heard nothing for minutes) wears one banner with the owner's name, and the
             // tap opens the app, which answers; a quiet one rings nobody.
@@ -180,7 +181,7 @@ final class NotificationService: UNNotificationServiceExtension {
             // Apple's bare fallback showed, the letter inside the push went unprocessed).
             ready = Self.nativeFace(content, from: convKey, glyph: senderGlyph)
             _ = Self.fetchBoxSync(deadline: Self.within(6, of: began))
-        } else if let envB64 = info["env"] as? String, let sealed = Data(base64Encoded: envB64), let sh = Self.openForShelf(sealed) {
+        } else if let envB64 = info["env"] as? String, let sealed = Data(base64Encoded: envB64), let sh = Self.openForShelf(sealed, at: Self.sealMoment(info)) {
             // A LETTER TO A PERSON ON THE SHELF (07.10, MTShelfPost): the sender's name, and under it whose the letter is; the tap
             // seats that person. Nothing is stashed in the inbox of the person seated: the letter stays on the node for the
             // shelf's own pickup. A service word rings nobody.
@@ -643,14 +644,28 @@ final class NotificationService: UNNotificationServiceExtension {
 
     /// A first-meeting envelope: [encapsulation 1088][mid\0 text\0 name\0 glyph\0 padding] =
     /// 1536, the key derived from the live card's invite (mirror «rdv:<invite>»).
-    private static func openRdvLetter(_ sealed: Data)
+    /// THE MINUTES A SEAL IS TRIED UNDER (the author's word 10.10.2026 12:5x MSK: «notifications reinforced concrete»). The seal's
+    /// minute is the sender's; a push Apple held for a phone that was away arrives minutes or hours later, and tried only around
+    /// this phone's own minute its envelope never opened -- the banner fell back to the box and, the box's newest letter being an
+    /// old one, said nothing new. The push names the moment the node sent it ("at"); the seal stands at it or a few minutes
+    /// before (the door walk). A short ladder, not MTNodeWire.openBoxed's day: the extension has seconds and many pipes.
+    private static func sealMinutes(_ at: Int) -> [UInt64] {
+        let now = UInt64(Date().timeIntervalSince1970) / 60
+        var out: [UInt64] = [now &- 1, now, now &+ 1]
+        guard 0 < at else { return out }
+        let a = UInt64(at) / 60
+        for w in [a, a &- 1, a &+ 1, a &- 2, a &- 3, a &- 4, a &- 5] where !out.contains(w) { out.append(w) }
+        return out
+    }
+
+    private static func openRdvLetter(_ sealed: Data, at: Int)
         -> (mid: String, text: String, name: String, glyph: String, ct64: String, invite: String,
             conf: String)? {
         let secrets = pipeSecrets().filter { $0.key.hasPrefix("rdv:") }
         guard !secrets.isEmpty else { return nil }
-        let now = UInt64(Date().timeIntervalSince1970) / 60
+        let minutes = sealMinutes(at)
         for (key, secret) in secrets {
-            for w in [now &- 1, now, now &+ 1] {
+            for w in minutes {
                 guard let plain = openBlob(key: bodyKey(secret: secret, window: w), sealed: sealed),
                       plain.count > 1092 else { continue }
                 let ct = plain.prefix(1088)
@@ -674,11 +689,11 @@ final class NotificationService: UNNotificationServiceExtension {
     /// A LETTER TO A PERSON ON THE SHELF (07.10, MTShelfPost): opened with the keys the app mirrors for the persons waiting on
     /// this phone's shelf (MTNodeWire.ShelfEar), shown with whose it is, and left on the node -- the shelf's own pickup files
     /// it in that person's inbox, and the landing door opens it at their lift.
-    private static func openForShelf(_ sealed: Data) -> (seat: String, seatName: String, mid: String, text: String, name: String)? {
-        let now = UInt64(Date().timeIntervalSince1970) / 60
+    private static func openForShelf(_ sealed: Data, at: Int) -> (seat: String, seatName: String, mid: String, text: String, name: String)? {
+        let minutes = sealMinutes(at)
         for ear in MTNodeWire.shelfEars() {
             for (key, secret) in ear.keys {
-                for w in [now &- 1, now, now &+ 1] {
+                for w in minutes {
                     guard let plain = openBlob(key: bodyKey(secret: secret, window: w), sealed: sealed) else { continue }
                     let rdv = key.hasPrefix("rdv:")
                     guard !rdv || plain.count > 1092 else { continue }
@@ -707,13 +722,13 @@ final class NotificationService: UNNotificationServiceExtension {
         if let d = try? JSONEncoder().encode(arr) { MontanaKeychain.set("nseInbox", d) }
     }
 
-    private static func openWithOwnPipes(_ sealed: Data)
+    private static func openWithOwnPipes(_ sealed: Data, at: Int)
         -> (conv: String, mid: String, text: String, name: String, glyph: String, qt: String, qm: String, lp: String)? {
         let secrets = pipeSecrets()
         guard !secrets.isEmpty else { return nil }
-        let now = UInt64(Date().timeIntervalSince1970) / 60
+        let minutes = sealMinutes(at)
         for (conv, secret) in secrets {
-            for w in [now &- 1, now, now &+ 1] {
+            for w in minutes {
                 let key = bodyKey(secret: secret, window: w)
                 if let plain = openBlob(key: key, sealed: sealed), plain.contains(0) {
                     // Fields split by 0x00: mid ‖ text ‖ sender name ‖ face glyph ‖ padding.
@@ -975,6 +990,24 @@ final class NotificationService: UNNotificationServiceExtension {
     private static let liveIso: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f
     }()
+    /// THE BELL IS HEARD (the author's word 10.10.2026 12:5x MSK: «notifications reinforced concrete»). Apple keeps one stored
+    /// push per app for a phone that is away, and a silent push sent after the letter's bell took its place. The node keeps this
+    /// token's last bell loud until this word reaches it -- every door at once, since the bell came from one of them.
+    private static func tellHeard(_ mid: String) {
+        guard !mid.isEmpty, let tok = MontanaKeychain.get("wakeOwnToken").flatMap({ String(data: $0, encoding: .utf8) }), !tok.isEmpty,
+              let data = try? JSONSerialization.data(withJSONObject: ["token": tok, "mids": [mid]]) else { return }
+        for b in Set(MTNodeWire.mirroredDoors()) {
+            guard let u = URL(string: b + "/heard") else { continue }   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
+            var req = URLRequest(url: u); req.httpMethod = "POST"   // SERVER-DEBT-ACK: the accelerator node (rung 4)
+            req.setValue("application/json", forHTTPHeaderField: "content-type")
+            req.timeoutInterval = 4
+            req.httpBody = data
+            URLSession.shared.dataTask(with: req).resume()   // SERVER-DEBT-ACK: the accelerator node (rung 4)
+        }
+    }
+    /// The seal stands at the bell's first sending: a bell sent again (the node's kept bell, "sat") names that moment.
+    private static func sealMoment(_ info: [AnyHashable: Any]) -> Int { (info["sat"] as? Int) ?? (info["at"] as? Int) ?? 0 }
+
     private static func shipLive(_ line: String) {
         guard let dg = MontanaKeychain.get("diagId").flatMap({ String(data: $0, encoding: .utf8) }), !dg.isEmpty else { return }
         let stamped = liveIso.string(from: Date()) + "|0|nse_live|-|t=" + MTNodeWire.clock() + " " + line
