@@ -514,7 +514,9 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
     lateinit var drawFoot: () -> Unit
     var toQuoted: (String) -> Unit = {}
 
-    val field = EditText(c).apply { setText(Prefs.str("draft.$ref", "")) }
+    // A DRAFT OPENS AT ITS END (iOS MontanaBubble.swift:2429-2433 at 2155, atom 8cdb001dfc9d): the caret stands after the
+    // last word, not at the beginning -- the writing goes on at once.
+    val field = EditText(c).apply { setText(Prefs.str("draft.$ref", "")); setSelection(text.length) }
     // THE KEYBOARD AWAY IS THE FIELD LET GO (iOS inputFocused = false with hideKeyboard): a field kept focused under a hidden keyboard
     // is raised again by the system each time the window comes forward (SHOW_AUTO_EDITOR_FORWARD_NAV, the Pixel's own record 07.10 22:35)
     fun hideKeys() { c.getSystemService(InputMethodManager::class.java).hideSoftInputFromWindow(field.windowToken, 0); field.clearFocus() }
@@ -1636,7 +1638,13 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
             addView(groupFoot, lp())
         }
         scroll.clipToPadding = false
-        addView(scroll, FrameLayout.LayoutParams(MATCH, MATCH))
+        // THE FEED SINKS INTO THE GROUND PAST THE HEADER AND THE BAR (iOS MTEdgeWash, ContentView.swift:1182-1207 at 2155,
+        // read 21.09 in WallpaperEdgeEffectNodeImpl; atoms d4817f6e3b72/39b5b03396cb/331a040adb4e/df3a6b50be61 -- the ground
+        // drawn again under a fading mask, 80 past the header and 60+20 past the bar): the one EdgeSink mask (PeerInfo.kt's
+        // own road, EdgeSink.kt) on the feed's own layer instead -- the ground never drawn twice.
+        addView(EdgeSink(c, top = { head.height + dp(34) }, bottom = { height - under.height }).apply {
+            addView(scroll, FrameLayout.LayoutParams(MATCH, MATCH))
+        }, FrameLayout.LayoutParams(MATCH, MATCH))
         addView(head, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.TOP))
         addView(under, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM))
         fun room() {
