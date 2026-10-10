@@ -2197,6 +2197,7 @@ struct MTCoinCounts {
         MTTimeChain.appendPast(r.moves)
         MTCoinBalance.set(sum)
         MTCoinVault.shared.soon("read", after: 1)
+        MTCoinSend.returnUndeliverable(self)
     }
 
     /// THE MOVES OF THE SEED'S OTHER DEVICES (MTCoinVault): taken once by their names into this book and this phone's file, in one
@@ -2222,6 +2223,7 @@ struct MTCoinCounts {
         MTTimeChain.appendPast(fresh)
         if let file { let lines = fresh; disk.async { MTLocalCoinLedger.append(lines, to: file) } }
         MontanaP2PTrace.mark("coin_book", "joined moves=\(fresh.count) balance=\(sum)")
+        MTCoinSend.returnUndeliverable(self)
         return fresh.count
     }
 
@@ -2507,10 +2509,10 @@ struct MTCoinCounts {
     func received(_ ref: String) -> Bool { taken.contains("receive:" + ref) }
     /// Whether the book holds a move of this kind under this name (MTCoinSend.hold counts a coin letter's moves by them).
     func holds(_ k: MTCoinEntry.Kind, _ ref: String) -> Bool { taken.contains(k.rawValue + ":" + ref) }
-    /// The coins of one move by its kind and name (a coin letter's transfer, read when its row is gone: MTCoinSend.arrived).
-    func amount(_ k: MTCoinEntry.Kind, _ ref: String) -> Int? {
+    /// One move by its kind and name (a coin letter's transfer, read when its row is gone: MTCoinSend.arrived, returnUndeliverable).
+    func entry(_ k: MTCoinEntry.Kind, _ ref: String) -> MTCoinEntry? {
         let id = k.rawValue + ":" + ref
-        return entries.last { e in e.id == id }?.c
+        return entries.last { e in e.id == id }
     }
 }
 
@@ -2669,17 +2671,60 @@ enum MTCoinSend {
     /// reading asks it of every one (settle) -- a letter red before this build gives its coins back at the first launch.
     static let backPrefix = "back:"
     static let againPrefix = "again:"
+    /// A COIN LETTER NOT DELIVERED IN A DAY GIVES ITS COINS BACK (the author's words 10.10.2026 23:3x MSK: «a rule common to every
+    /// wallet: if it did not arrive in 24 hours -- it comes back»): T2's 727 639 coins to an account whose phone is gone rode 44 hours
+    /// without a receipt and stayed taken, for a letter of mine rides to its receipt (MTRefusal) and only red gave coins back. The
+    /// coins follow the letter's proof as well as its rung: delivered or read, they are the receiver's; on its way and born within
+    /// the day, held; red, or on its way past the day, back. The letter rides on under its rung, and a receipt after the day takes
+    /// them again by the same again move -- a coin never stands in two books.
+    static let day: Double = 86_400
     @MainActor static func hold(_ m: Message, in key: String) {
         guard m.isFromMe, let coin = m.coinLetter, !m.mid.isEmpty else { return }
         let book = MTLocalCoinLedger.shared.whole
         guard book.holds(.send, m.mid) else { return }   // a transfer the book refused never took a coin
         let again = moves(book, .send, againPrefix + m.mid), back = moves(book, .receive, backPrefix + m.mid)
-        let held = again == back
-        if m.deliveryStatus == .failed, held {
-            giveBack(coin.c, letter: m.mid, count: back, to: key, why: "red")
-        } else if m.deliveryStatus != .failed, !held {
+        let held = again == back, owed = owes(m)
+        if held, !owed {
+            giveBack(coin.c, letter: m.mid, count: back, to: key, why: m.deliveryStatus == .failed ? "red" : "day")
+        } else if !held, owed {
             let took = book.retake(coin.c, to: key, ref: againPrefix + m.mid + ":" + String(again + 1))
             MontanaP2PTrace.mark("coin_again", "coins=\(coin.c) took=\(took ? 1 : 0) status=\(m.deliveryStatus)")
+        }
+    }
+    /// Whether a coin letter of mine holds its coins: proven delivered, or on its way and born within the day.
+    @MainActor private static func owes(_ m: Message) -> Bool {
+        switch m.deliveryStatus {
+        case .delivered, .read: return true
+        case .failed: return false
+        case .sending, .sent:
+            guard let born = ChatStore.birthMs(fromMid: m.mid) else { return true }   // a name without its birth: held as before
+            return Date().timeIntervalSince1970 - born < day
+        }
+    }
+    /// The day ends while no rung moves: every beat of the queue's mirror (MontanaDeliveryEngine.reconcile) asks the coin letters
+    /// of mine still on their way past their day.
+    @MainActor static func due(_ store: ChatStore) {
+        let edge = Date().timeIntervalSince1970 - day
+        for (chat, rows) in store.messages {
+            for m in rows where m.isFromMe && (m.deliveryStatus == .sending || m.deliveryStatus == .sent) {
+                guard let born = ChatStore.birthMs(fromMid: m.mid), born < edge, m.coinLetter != nil else { continue }
+                hold(m, in: chat)
+            }
+        }
+    }
+    /// THE LETTERS THE AUTHOR NAMED UNDELIVERABLE (the author's words 10.10.2026 23:2x-23:3x MSK: «there was a transfer from T2 to a
+    /// dead account on Android, the coins were not received, they got stuck somewhere -- find them and return them to the sender»;
+    /// «and return them to the sender now»): T2's coin letter of 08.10 18:18:19Z rode 44 hours without a receipt, no device of the
+    /// account waking (woken=0), and the Montana build that took the coins out of the chats ended its row and its queue item
+    /// (queue_mirror 10.10 14:05:46Z) -- no chat of any wallet holds it, and the day above cannot reach it. Its name stands here;
+    /// the book that holds its transfer -- T2's words, in whichever wallet they open -- gives the coins back once, by the back move.
+    static let undeliverable = ["mid:t1791483499406-5CA782B0-A754-4443-B673-0579412060C2"]   // NOT-UI: a letter's wire name
+    @MainActor static func returnUndeliverable(_ book: MTLocalCoinLedger) {
+        for name in undeliverable {
+            guard let sent = book.entry(.send, name), let peer = sent.peer else { continue }
+            let back = moves(book, .receive, backPrefix + name)
+            guard moves(book, .send, againPrefix + name) == back else { continue }
+            giveBack(sent.c, letter: name, count: back, to: peer, why: "named")
         }
     }
     /// How many moves of one kind a coin letter's name has drawn: name:1, name:2 ...
@@ -2724,7 +2769,7 @@ enum MTCoinSend {
     @MainActor static func arrived(_ mid: String, from key: String) {
         let name = mid.hasPrefix("mid:") ? mid : "mid:" + mid
         let book = MTLocalCoinLedger.shared.whole
-        guard book.holds(.send, name), let c = book.amount(.send, name) else { return }
+        guard book.holds(.send, name), let c = book.entry(.send, name)?.c else { return }
         let again = moves(book, .send, againPrefix + name), back = moves(book, .receive, backPrefix + name)
         guard again < back else { return }
         let took = book.retake(c, to: key, ref: againPrefix + name + ":" + String(again + 1))

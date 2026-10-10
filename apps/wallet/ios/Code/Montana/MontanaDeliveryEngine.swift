@@ -1129,6 +1129,7 @@ final class MontanaDeliveryEngine {
             let verdicts = store.rowVerdicts(facing.map { $0.mid })
             store.liftClockRed(riding: riding)   // once: the reds of silence an older build painted on letters still riding
             store.paintOrphanSending(queueMids: queueMids)
+            MTCoinSend.due(store)   // a coin letter of mine past its day gives its coins back (10.10)
             guard !facing.isEmpty else { return }
             self.q.async {
                 var a = self.load(); let n = a.count
