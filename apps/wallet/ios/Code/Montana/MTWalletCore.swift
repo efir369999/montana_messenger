@@ -850,6 +850,12 @@ enum MTCoinShow {
         return (seal, Data(HMAC<SHA256>.authenticationCode(for: tokenLabel, using: owner)),
                 Data(HMAC<SHA256>.authenticationCode(for: tipLabel, using: owner)))
     }
+    nonisolated private static let personLabel = Data("mt-person-chain-token".utf8)   // NOT-UI: the chain of the person's row label (MTPersonChain)
+    /// The chain of the person's row and seal (MTPersonChain): the book's seal key, and a row of its own under the owner key.
+    static func personRow() -> (seal: SymmetricKey, token: Data)? {
+        guard let m = MontanaSeed.mnemonic, let e = MontanaSeedKeys.entropyFrom(mnemonic: m), e.count == 32 else { return nil }
+        return (keys(entropy: e).seal, Data(HMAC<SHA256>.authenticationCode(for: personLabel, using: ownerKey(e))))
+    }
     /// THE TAG OF A PAIR ONLY THE SAME WORDS MAKE (MTOwnWords): HMAC-SHA-256 under the owner key over the label and the conversation's
     /// name. A pair of other words reads 32 bytes it can neither check nor tie to any other conversation; no node sees them (the word
     /// about oneself rides end to end).
@@ -1001,6 +1007,7 @@ enum MTCoinShow {
         req.setValue("application/json", forHTTPHeaderField: "content-type")
         req.httpBody = d
         guard let (data, resp) = try? await URLSession.shared.data(for: req) else { return (-1, nil) }   // SERVER-DEBT-ACK: the accelerator node (rung 4)
+        MTPersonChain.shared.answered(resp)   // a node's answer is a second of the person on the network (MTPersonChain)
         return ((resp as? HTTPURLResponse)?.statusCode ?? -1, try? JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
@@ -1549,6 +1556,232 @@ enum MTTimeChain {
     }
 }
 
+// MARK: - THE CHAIN OF THE PERSON (the author's words 10.10.2026 13:4x, 15:0x and 15:2x MSK)
+
+/// THE CHAIN OF THE PERSON COUNTS THE SECONDS THE WORDS WERE ON THE NETWORK (the author's word 10.10.2026 13:4x MSK: «in this
+/// section the first TimeChain is called Person: it shows the levels of the person, and the count goes only for the seconds this
+/// seed was actually online on any device»; App, «The chains of time a client shows»). A second counts while the wallet stands on
+/// the screen and a node answers its exchanges: the seconds are the node's own, read from the answer's Date header, never this
+/// phone's clock, and two answers at most `reach` apart vouch for every second between them. The seconds are kept as spans and
+/// joined with the spans every other device of the words laid under the words' own key -- one sealed piece a device on every
+/// node, beside the coin book -- so two devices present in one second add one second. The level is the number of whole doublings
+/// of the count (Canon, «The level of the chain of the person»: bit_length(s) - 1, none below one second); one link a level, at
+/// the second the count reached it, sealed on the one before by MTTimeChain's own seal, so the same union gives the same chain on
+/// every device. The person sees it; it is published nowhere and leaves the phone only sealed under the words.
+@MainActor final class MTPersonChain: ObservableObject {
+    static let shared = MTPersonChain()
+    struct Span: Codable, Equatable { var a: Int64; var b: Int64 }   // node seconds, both ends counted
+    struct Away: Codable { var at: Int64; var level: Int }
+    /// Two answers this far apart or nearer vouch for every second between them: the wallet asks the nodes every three seconds
+    /// while it stands open, and an answer slow by a beat or two still continues the span.
+    static let reach: Int64 = 10
+    static let awayPrefix = MTPantheon.refPrefix + "away-"
+    @Published private(set) var seconds: Int64 = 0
+    @Published private(set) var links: [MTTimeChain.Link] = []
+    var level: Int? { Self.level(seconds) }
+    private var spans: [Span] = []
+    private var lane = Data()
+    private var last: Int64?   // the node second of the last answer in this stretch on the screen
+    private var away: Away?    // the app left the screen: the node second of its last answer and the Global Level of then
+    private var loaded = false, dirty = false, putting = false, keepDue = false, checked = false
+    private var putAt: Double = 0, gotAt: Double = 0
+    private var opened: [String: Data] = [:]   // a piece's name: its lane, opened once
+    private var mine: [String: String] = [:]   // a node's door: the piece of this lane it holds now
+    private var stale = Set<String>()
+
+    /// THE LEVEL (Canon, «The level of the chain of the person»): the whole doublings of the count, none below one second.
+    nonisolated static func level(_ s: Int64) -> Int? { s < 1 ? nil : 63 - s.leadingZeroBitCount }
+    /// THE FROZEN VECTORS (Canon: level(1) = 0, level(3) = 1, level(1048576) = 20, none below one second) and the doubling's edge at
+    /// every power: three refuses a logarithm rounded upward, one refuses a bit length taken without its minus one, the edges refuse
+    /// a level that opens a second early or late.
+    nonisolated static func levelKAT() -> Bool {
+        guard level(1) == 0, level(3) == 1, level(1_048_576) == 20, level(0) == nil, level(-5) == nil else { return false }
+        for k in 1...62 where level(Int64(1) << k) != k || level((Int64(1) << k) - 1) != k - 1 { return false }
+        return level(Int64.max) == 62
+    }
+    /// THE GLOBAL LEVEL OF THE PERSON (the author's word 10.10.2026 15:0x MSK: «the lowest level among the chain of the person and
+    /// the chain of the wallet becomes the Global Level of the person»): the lower of the person's level and the wallet's level of π.
+    static func global(person: Int?, balance: Int) -> Int { min(person ?? 0, MTPiLevels.place(balance)) }
+
+    private struct Kept: Codable { var lane: String; var spans: [Span]; var away: Away? }
+    private static var file: URL? { MTTimeChainPlace.dir()?.appendingPathComponent("person-seconds.json") }
+    private func load() {
+        guard !loaded else { return }
+        loaded = true
+        if let u = Self.file, let d = try? Data(contentsOf: u), let k = try? JSONDecoder().decode(Kept.self, from: d),
+           let l = Data(base64Encoded: k.lane), l.count == 16 {
+            lane = l; spans = Self.joined(k.spans); away = k.away
+        } else {
+            lane = Data((0..<16).map { _ in UInt8.random(in: 0...255) })
+        }
+        recount(write: false)
+    }
+    private func keep() {
+        guard let u = Self.file, let d = try? JSONEncoder().encode(Kept(lane: lane.base64EncodedString(), spans: spans, away: away)) else { return }
+        try? d.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+    private func keepSoon() {
+        guard !keepDue else { return }
+        keepDue = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in self?.keepDue = false; self?.keep() }
+    }
+    /// A person lifted into the seat: the seconds of the person who left go with their folder; the seated person's are read next.
+    func reread() {
+        loaded = false; spans = []; links = []; seconds = 0; last = nil; away = nil
+        opened = [:]; mine = [:]; stale = []; dirty = false
+    }
+
+    /// Spans joined: sorted, and any two that touch or overlap become one -- a second is counted once however many devices held it.
+    nonisolated static func joined(_ all: [Span]) -> [Span] {
+        var out: [Span] = []
+        for s in all.filter({ x in x.a <= x.b }).sorted(by: { x, y in x.a < y.a }) {
+            if let l = out.last, s.a <= l.b + 1 { out[out.count - 1].b = max(l.b, s.b) } else { out.append(s) }
+        }
+        return out
+    }
+    /// One link a level, at the node second the count reached 2^k, each sealed on the one before (MTTimeChain.seal).
+    nonisolated static func chain(_ spans: [Span]) -> [MTTimeChain.Link] {
+        var out: [MTTimeChain.Link] = [], count: Int64 = 0, next: Int64 = 1, prev = MTTimeChain.genesis
+        for s in spans {
+            let len = s.b - s.a + 1
+            while next <= count + len {
+                let at = (s.a + (next - count) - 1) * 1000
+                let k = out.count, ref = "level:" + String(out.count)
+                let hash = MTTimeChain.seal(n: k + 1, at: at, k: "level", c: k, ref: ref, prev: prev)
+                out.append(MTTimeChain.Link(n: k + 1, at: at, k: "level", c: k, ref: ref, prev: prev, hash: hash))
+                prev = hash
+                guard next <= Int64.max / 2 else { return out }
+                next *= 2
+            }
+            count += len
+        }
+        return out
+    }
+    /// The count and the links read again; the chain's file (TimeChain/wallet-person.jsonl, seen in Files) follows a new level.
+    private func recount(write: Bool = true) {
+        seconds = spans.reduce(0) { n, s in n + (s.b - s.a + 1) }
+        let fresh = Self.chain(spans)
+        guard fresh.last?.hash != links.last?.hash else { return }   // the head's seal seals the whole chain
+        links = fresh
+        guard write, let u = MTTimeChainPlace.file("person") else { return }
+        var body = Data()
+        for l in fresh { if let d = try? JSONEncoder().encode(l) { body.append(d); body.append(0x0A) } }
+        try? body.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+
+    /// A node answered an exchange of this app (MTCoinVault.post): while the app stands on the screen its second counts, and so does
+    /// every second back to the answer before it when they are no further apart than the reach.
+    func answered(_ resp: URLResponse?) {
+        guard UIApplication.shared.applicationState == .active,
+              let hdr = (resp as? HTTPURLResponse)?.value(forHTTPHeaderField: "Date"),
+              let at = MontanaWakePush.httpDateFormatter.date(from: hdr) else { return }
+        load()
+        let s = Int64(at.timeIntervalSince1970)
+        if let w = away { came(back: s, from: w) }
+        let from = last.flatMap { l in l <= s && s - l <= Self.reach ? l : nil } ?? s
+        last = max(last ?? s, s)
+        let before = seconds
+        spans = Self.joined(spans + [Span(a: from, b: s)])
+        recount()
+        guard seconds != before else { return }
+        dirty = true
+        keepSoon()
+    }
+
+    /// THE MINTING GOES ON WHILE THE APP IS AWAY (the author's word 10.10.2026 15:0x MSK: «when any of our apps is minimized, the
+    /// minting must go on at the lowest level among the chain of the person and the chain of the wallet -- the levels of π»): the app
+    /// leaving the screen keeps the node second of its last answer and the Global Level of that moment; the first answer after its
+    /// return names the second it came back, and every second between is minted at that level, the limit of a second at most
+    /// (MTCoinBook.limit). Both ends are the nodes' seconds, so a clock turned on the phone moves nothing, and a stretch with no
+    /// answer before the leave mints nothing.
+    func left(level global: Int) {
+        load()
+        defer { last = nil }
+        guard let from = last, 0 < global else { return }
+        away = Away(at: from, level: min(global, MTCoinBook.limit))
+        keep()
+        Task { await self.put() }
+    }
+    private func came(back s: Int64, from w: Away) {
+        away = nil
+        keep()
+        let gone = s - w.at
+        guard 0 < gone, 0 < w.level else { return }
+        let (coins, over) = Int(gone).multipliedReportingOverflow(by: w.level)
+        guard !over else { return }
+        let minted = MTCoinBook.ledger.mintInWindow(coins, prefix: Self.awayPrefix, seconds: Int(gone), byLevel: false)
+        MontanaP2PTrace.mark("person_away", "seconds=\(gone) level=\(w.level) minted=\(minted)")
+    }
+
+    // MARK: the devices of the words join their seconds: one sealed piece a device, beside the coin book on every node
+    private static let aad = Data("mt.person.chain".utf8)   // NOT-UI: the words the piece's seal is bound to
+    private struct Piece: Codable { var lane: String; var spans: [Span] }
+    /// The wallet's live beat asks this every turn: the other devices' pieces every half minute, this device's union when it moved,
+    /// once a minute at most.
+    func tick() async {
+        load()
+        if !checked { checked = true; MontanaP2PTrace.mark("person_self", "ok=\(Self.levelKAT() ? 1 : 0)") }
+        let now = Date().timeIntervalSince1970
+        if 30 <= now - gotAt { gotAt = now; await gather() }
+        if dirty, 60 <= now - putAt { await put() }
+    }
+    private func put() async {
+        guard !putting, let k = MTCoinVault.personRow(),
+              let plain = try? JSONEncoder().encode(Piece(lane: lane.base64EncodedString(), spans: spans)),
+              let sealed = try? ChaChaPoly.seal(plain, using: k.seal, authenticating: Self.aad).combined else { return }
+        putting = true
+        defer { putting = false }
+        putAt = Date().timeIntervalSince1970
+        dirty = false
+        let token = MontanaHomeNode.hex(k.token)
+        let id = MontanaHomeNode.hex(Data(SHA256.hash(data: sealed)))
+        var laid = 0
+        for door in MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "vault")) {
+            let gone = Array(stale.union(mine[door].map { p in [p] } ?? [])).filter { p in p != id }
+            let (code, o) = await MTCoinVault.post(door + "/vault-put", ["token": token, "blob": sealed.base64EncodedString(), "replace": gone], timeout: 10)
+            guard code == 200, let piece = o?["piece"] as? String else { continue }
+            mine[door] = piece
+            opened[piece] = lane
+            laid += 1
+        }
+        if 0 < laid { stale = [] } else { dirty = true }
+        MontanaP2PTrace.markFolded("person_put", "spans=\(spans.count) seconds=\(seconds) doors=\(laid)", window: 60)
+    }
+    private func gather() async {
+        guard let k = MTCoinVault.personRow() else { return }
+        let gen = MTCoinBook.generation
+        let token = MontanaHomeNode.hex(k.token)
+        for door in MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "vault")) {
+            guard case let (200, o?) = await MTCoinVault.post(door + "/vault-get", ["token": token, "have": Array(opened.keys.prefix(256))], timeout: 6),
+                  let held = o["held"] as? [String] else { continue }
+            guard gen == MTCoinBook.generation else { return }   // the seat moved during the wait: nothing of the person who left joins
+            let horizon = Int64(MontanaWakePush.nodeNow()) + 60   // no second of the future is a second lived
+            var got: [Span] = []
+            for x in (o["pieces"] as? [[String: Any]]) ?? [] {
+                guard let id = x["piece"] as? String, let b = (x["blob"] as? String).flatMap({ s in Data(base64Encoded: s) }),
+                      MontanaHomeNode.hex(Data(SHA256.hash(data: b))) == id,   // a piece is its own name
+                      let box = try? ChaChaPoly.SealedBox(combined: b),
+                      let plain = try? ChaChaPoly.open(box, using: k.seal, authenticating: Self.aad),
+                      let p = try? JSONDecoder().decode(Piece.self, from: plain), let l = Data(base64Encoded: p.lane) else { continue }
+                opened[id] = l
+                if l == lane {
+                    if mine[door] != id { stale.insert(id) }
+                    continue
+                }
+                got += p.spans.filter { s in s.b <= horizon }
+            }
+            let standing = Set(held)
+            opened = opened.filter { e in standing.contains(e.key) }
+            let before = seconds
+            spans = Self.joined(spans + got)
+            recount()
+            if seconds != before { dirty = true; keepSoon() }
+            MontanaP2PTrace.markFolded("person_get", "seconds=\(seconds) level=\(level ?? -1) joined=\(seconds - before)", window: 60)
+            return
+        }
+    }
+}
+
 // MARK: - THE COIN CORE OF THE APP (the author's words 03.10 13:40, 13:52 and 13:53 MSK)
 
 /// ONE MOVE OF COINS on this phone's book: a coin earned by a letter of the ribbon, coins received in a chat or on a letter,
@@ -1710,6 +1943,7 @@ enum MTCoinBook {
         MTCoinVault.shared.forget()
         MTTimeChainTip.shared.reread()
         MTTimeChain.forget()
+        MTPersonChain.shared.reread()
         MTLocalCoinLedger.shared.reread()
         MTChatMint.shared.reread()
         MTCoinBoard.shared.reread()

@@ -302,6 +302,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         away = true                           // the next activation is a return
         E2E.shared.appPresence(open: false)   // the farewell
         MontanaDiagShip.shipNow()   // leaving the person — say it now, another occasion may not come
+        // THE MINTING GOES ON WHILE THE APP IS AWAY, AT THE GLOBAL LEVEL OF THIS MOMENT (the author's word 10.10.2026 15:0x MSK;
+        // MTPersonChain.left): the observer runs on the main queue.
+        MainActor.assumeIsolated {
+            let person = MTPersonChain.shared
+            person.left(level: MTPersonChain.global(person: person.level, balance: MTCoinBook.ledger.balance))
+        }
     }
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {

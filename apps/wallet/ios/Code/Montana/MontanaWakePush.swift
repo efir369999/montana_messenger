@@ -595,9 +595,11 @@ enum MontanaWakePush {
     /// Frozen vectors: V1 catches a conv-addr swap and a hash without the domain separator,
     /// V2 — concatenation without the second separator, CW — reading the window from the
     /// other end (BE), a daily tag without its domain and a tag that lost the wallet's own door
-    /// (the shared tag of 0..31 at 29737 is 43eaf281…), RW — an invite's tag without the wallet's door.
+    /// (the shared tag of 0..31 at 29737 is 43eaf281…), RW — an invite's tag without the wallet's door, LT — a live frame's tag
+    /// without the wallet's door (MTPipeBook.wireTagAgrees: the set's tag is the messenger's).
     static func agreesWithCanon() -> Bool {
-        subId("mt-conv-Q7", ref: "mtAddrZ93kLmNoPq") ==
+        MTPipeBook.wireTagAgrees()
+        && subId("mt-conv-Q7", ref: "mtAddrZ93kLmNoPq") ==
             "e5438bfedc8b1fdcdadfb9f4d3995fac7722c0074f3a20ccd3e911ce5beb35de"
         && subId("ab", ref: "c") ==
             "a279974b24ff1b84299330076b5f5858684d56733458de21b152aa8521c7a230"
@@ -609,6 +611,10 @@ enum MontanaWakePush {
             "6a815526013720264b7927dfd3186d9fbbf449b449db94ac253d96d3708e4de6"
         && rdvConvW(Data(0..<32), window: 29737) ==
             "185ad69b003ef6c42355819d3aab207e929f6f0abbc6e0733897c6bd96d891c4"
+        // CS -- the tag at the door the person's other apps share, Montana's and Business's own frozen vector: a reader of their
+        // pipe of light that kept the wallet's door on it (or any door) hears nothing they lay (MTKeeping.lightRoads).
+        && MTNodeWire.convW(Data(0..<32), window: 29737, door: MTNodeWire.sharedDoor) ==
+            "43eaf2811da7947166d4e851e52c4ab89e09c8c92247370d3c734ef08ca1e6ea"
     }
 
     // ── registering our token under our conversations ──────────────────────────
@@ -2109,7 +2115,9 @@ enum MontanaWakePush {
         var subs: [String] = [], sids: [String] = []
         var secretOf: [String: Data] = [:], invOf: [String: String] = [:], chatOf: [String: String] = [:]
         var rdvLabels = Set<String>()
-        init(invites: [Data], pipes: [String: Data], owner: String) {   // owner: the person's own reference (P-118.1)
+        /// door: the door the pipes are heard at -- the wallet's own, or the one the person's other apps share for the pipe of
+        /// light they name their copy in (MTNodeWire.sharedDoor, MTKeeping.lightRoads).
+        init(invites: [Data], pipes: [String: Data], owner: String, door: String = MTNodeWire.ownDoor) {   // owner: the person's own reference (P-118.1)
             let w0 = MontanaWakePush.dayWindow()
             for inv in invites {
                 let sec = MontanaWakePush.rdvLetterSecret(inv)
@@ -2121,7 +2129,7 @@ enum MontanaWakePush {
             }
             for (conv, secret) in pipes {
                 for w in (w0 - 8)...(w0 + 1) {
-                    let cw = MontanaWakePush.convW(secret, window: w)
+                    let cw = MTNodeWire.convW(secret, window: w, door: door)
                     secretOf[cw] = secret; chatOf[cw] = conv
                     subs.append(cw); sids.append(MontanaWakePush.subId(cw, ref: owner))
                 }
@@ -2132,8 +2140,11 @@ enum MontanaWakePush {
     /// THE ONE PICKUP OF THE BOX (07.10, MTShelfPost): one person's labels go to every store page by page, every row opens under
     /// its label's secret and becomes the inbox row the landing reads -- the person seated now (restash) and a person on the
     /// shelf (MTSeats.fileShelf) alike. The keep closure says the row is in hand: only a row in hand is confirmed to the node,
-    /// which then removes it. The buries closure takes a refused person's letter before it is kept. The count of rows kept.
-    static func pickup(_ ear: BoxEar, buries: ((String, String) async -> Bool)?, keep: ([String: String]) -> Bool) async -> Int {
+    /// which then removes it. The buries closure takes a refused person's letter before it is kept. The heard closure is told
+    /// each time a door answers a page: a reader that keeps nothing learns from it that the box was asked and answered
+    /// (MTKeeping.lightRoads), so «nothing there» is never said of a box no door answered for. The count of rows kept.
+    static func pickup(_ ear: BoxEar, buries: ((String, String) async -> Bool)?, keep: ([String: String]) -> Bool,
+                       heard: (() -> Void)? = nil) async -> Int {
         let subs = ear.subs, sids = ear.sids, secretOf = ear.secretOf
         let rdvLabels = ear.rdvLabels, invOf = ear.invOf, chatOf = ear.chatOf
         var stashed = 0
@@ -2197,6 +2208,7 @@ enum MontanaWakePush {
                     }
                     doorSpoke(a.door)
                     anyDoor = true
+                    heard?()
                     for l in ls where seenMid.insert(l["m"] as? String ?? UUID().uuidString).inserted {
                         letters.append(l)
                     }

@@ -1627,6 +1627,38 @@
         }
       }
     },
+    "No balances to level": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Некого выравнивать"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可拉平的余额"
+          }
+        }
+      }
+    },
+    "None of your contacts shows their coins yet. A contact's balance appears here once they turn on Show my coins in their wallet.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Никто из ваших контактов пока не показывает свои монеты. Баланс контакта появится здесь, когда он включит «Показывать мои монеты» в своём кошельке."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的联系人中还没有人显示自己的硬币。联系人在其钱包中打开“显示我的硬币”后，其余额会出现在这里。"
+          }
+        }
+      }
+    },
     "%lld of your top 13 receive coins, %@ in all, each raised to %@ coins; the richest receive none. The amounts are written beside their names, and nothing leaves until you send them.": {
       "localizations": {
         "ru": {
@@ -28699,34 +28731,50 @@
         }
       }
     },
-    "Not linked to a Montana account yet": {
+    "No Montana or Montana Business account was found for these 24 words": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пока не привязан к аккаунту Montana"
+            "value": "Для этих 24 слов не найден аккаунт ни в Montana, ни в Montana Business"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "尚未关联 Montana 账户"
+            "value": "未找到这 24 个词对应的 Montana 或 Montana Business 账户"
           }
         }
       }
     },
-    "Your Montana account did not come from the network yet": {
+    "The network did not answer. Looking for your account again…": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Аккаунт Montana ещё не пришёл из сети"
+            "value": "Сеть не ответила. Ищем ваш аккаунт снова…"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "尚未从网络获取你的 Montana 账户"
+            "value": "网络没有回应。正在重新查找你的账户…"
+          }
+        }
+      }
+    },
+    "Your account did not come from the network whole yet": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш аккаунт ещё не пришёл из сети целиком"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的账户尚未从网络完整获取"
           }
         }
       }
@@ -28791,6 +28839,294 @@
           "stringUnit": {
             "state": "translated",
             "value": "联系人给你发币，你也可以把自己的币发给联系人。"
+          }
+        }
+      }
+    },
+    "Global level": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Глобальный уровень"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全局等级"
+          }
+        }
+      }
+    },
+    "The lower of the two levels below. While the app is minimized, minting goes on at it.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Меньший из двух уровней ниже. Пока приложение свёрнуто, чеканка идёт по нему."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以下两个等级中较低的一个。应用最小化时，按此等级继续铸造。"
+          }
+        }
+      }
+    },
+    "Time online": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Время в сети"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在线时间"
+          }
+        }
+      }
+    },
+    "To the next level": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "До следующего уровня"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "距下一等级"
+          }
+        }
+      }
+    },
+    "Chain links": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звенья цепи"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "链节"
+          }
+        }
+      }
+    },
+    "Person": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Личность"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "个人"
+          }
+        }
+      }
+    },
+    "A second counts while the wallet stands open on any of your devices and a node answers it — the node's second, never the phone's clock. Each level doubles the seconds of the one before. Shown only to you, published nowhere.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Секунда засчитывается, пока Кошелёк открыт на любом вашем устройстве и узел отвечает ему, — по часам узла, не телефона. Каждый уровень удваивает секунды предыдущего. Видно только вам, нигде не публикуется."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当钱包在您的任一设备上打开且节点应答时计一秒——以节点的时间为准，而非手机时钟。每一级的秒数是前一级的两倍。仅您可见，不对外公布。"
+          }
+        }
+      }
+    },
+    "Level of π": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уровень по Пи"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "π 等级"
+          }
+        }
+      }
+    },
+    "Your balance reveals π: each level opens when the balance reaches the next amount — 3, 31, 314 …": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Баланс раскрывает π: каждый уровень открывается, когда баланс достигает следующей суммы — 3, 31, 314 …"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "余额揭示 π：余额达到下一个数额（3、31、314……）时开启新等级。"
+          }
+        }
+      }
+    },
+    "Chats and calls": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чаты и звонки"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天与通话"
+          }
+        }
+      }
+    },
+    "Chats and calls live in Montana and Montana Business; here stand the chains of the coins they moved.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чаты и звонки живут в Montana и Montana Business; здесь — цепочки монет, которые они двигали."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天与通话位于 Montana 和 Montana Business 中；这里是它们所移动硬币的链。"
+          }
+        }
+      }
+    },
+    "Frozen vectors": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замороженные векторы"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "冻结向量"
+          }
+        }
+      }
+    },
+    "People who show their coins": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывают свои монеты"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公开硬币的人数"
+          }
+        }
+      }
+    },
+    "Coins they show": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показано монет"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "公开的硬币"
+          }
+        }
+      }
+    },
+    "Genesis machines reached": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Машины генезиса на связи"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已连接的创世机器"
+          }
+        }
+      }
+    },
+    "Share the chains": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поделиться цепочками"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分享链"
+          }
+        }
+      }
+    },
+    "For an observer": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для наблюдателя"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "供观察者"
+          }
+        }
+      }
+    },
+    "Every link is sealed by SHA-256 over its number, moment, kind, amount, name and the seal before it; the level of the person is bit_length(seconds) − 1 (Canon). Shared chains can be checked link by link anywhere.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каждое звено запечатано SHA-256 над номером, моментом, видом, суммой, именем и печатью предыдущего; уровень личности — bit_length(секунды) − 1 (Канон). Поделённые цепочки проверяются звено за звеном где угодно."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每个链节都以 SHA-256 封印其编号、时刻、类型、数额、名称及前一链节的封印；个人等级为 bit_length(秒数) − 1（Canon）。分享出去的链可在任何地方逐节核验。"
           }
         }
       }

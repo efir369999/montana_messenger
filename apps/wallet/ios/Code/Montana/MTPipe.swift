@@ -262,6 +262,29 @@ enum MTPipeBook {
 
     static func secret(for conv: String) -> Data? { load()[conv] }
 
+    /// THE LIVE LANE KNOCKS AT THE WALLET'S OWN DOOR TOO (the author's words 10.10.2026 15:3x MSK: «transfers do not touch Montana
+    /// at all -- it is the wallet's module only»; 09.10.2026 18:1x MSK: «the calls and the chats do not touch the wallet -- the Wallet
+    /// lives in its own chain of time»). Since build 13 the box, the bell and the signal lane carry the wallet's door
+    /// (MTNodeWire.ownDoor) and no other app of the seed hears them; the live lane did not. A frame named its pipe by the set's tag,
+    /// SHA-256("mt-tag" ‖ 0x00 ‖ secret ‖ W)[0..16], and the messenger of the same words -- holding the same secret from the archive
+    /// under the seed -- listens at exactly that tag. T1 10.10: the wallet landed a chat's picture from Montana's frame at 12:10:28Z,
+    /// and Montana landed (and buried) a coin letter at 12:29:29Z from the very frame the wallet took it from. Every frame of this
+    /// app names its pipe at the wallet's door, SHA-256("mt-tag-wallet" ‖ 0x00 ‖ secret ‖ W_8B_LE)[0..16]: a wallet hears a wallet,
+    /// and a frame of the messenger is not this app's to open. The set's tag stays where the set is meant (MTPipe.tag, its vectors).
+    static func wireTag(_ secret: Data, window: UInt64) -> Data {
+        MTPipe.domained("mt-tag" + MTNodeWire.ownDoor, [secret, MTPipe.windowLE(window)]).prefix(16)
+    }
+    /// The door tag's frozen vectors, computed apart from this code (SHA-256 over the domain, one zero byte, the secret and the
+    /// window's eight bytes little-endian, the first sixteen bytes) on the counting secret 0x00..0x1f at windows 1000 and 1001 and
+    /// on 0x44 thirty-two times at 1000. They reject the set's tag in its place (1d994670... for 0x44 -- the messenger's own), a
+    /// window read big-endian (32724240...), a domain without its zero byte (2a9921c0...) and a reversed secret (4be35c29...).
+    static func wireTagAgrees() -> Bool {
+        let counting = Data((0..<32).map { UInt8($0) })
+        return wireTag(counting, window: 1000).montanaHexString == "1baaa88ec9f3d35674515b0164b629ff"
+            && wireTag(counting, window: 1001).montanaHexString == "c5c0f85c5990ec5f7c2b3428acd9a29f"
+            && wireTag(Data(repeating: 0x44, count: 32), window: 1000).montanaHexString == "ebe0c4827e00ea557ad117c5fbb860f8"
+    }
+
     /// The identity left: the book in memory leaves with it. The disk copy is sealed under the
     /// device key that SeedScope resets, so only the cache could have carried the previous
     /// person's pipes into the next person's book — and re-sealed them there on the first write.
@@ -606,7 +629,7 @@ enum MTPipeBook {
 
     /// Where a letter of this correspondence is deposited in this window.
     static func tag(for conv: String, window w: UInt64) -> Data? {
-        if let s = secret(for: conv) { return MTPipe.tag(sharedSecret: s, window: w) }
+        if let s = secret(for: conv) { return wireTag(s, window: w) }   // the wallet's door (wireTag)
         return nil
     }
 
@@ -630,7 +653,8 @@ enum MTPipeBook {
         if let i = index, i.window == w { return i.map }
         var map: [Data: String] = [:]
         for (conv, secret) in load() {
-            for k in MTPipe.windows(around: w) { map[MTPipe.tag(sharedSecret: secret, window: k)] = conv }
+            // The wallet's door (wireTag): a frame of the messenger under the set's tag is not this app's.
+            for k in MTPipe.windows(around: w) { map[wireTag(secret, window: k)] = conv }
         }
         index = (w, map)
         return map
@@ -669,7 +693,7 @@ enum MTPipeBook {
     /// mechanism computing them is removed from here whole, so that one line cannot bring it back.
     static func myTag(for conv: String, at: Date = Date()) -> Data? {
         guard let s = secret(for: conv) else { return nil }
-        return MTPipe.tag(sharedSecret: s, window: MTPipe.window(at))
+        return wireTag(s, window: MTPipe.window(at))   // the wallet's door (wireTag)
     }
 
     /// How many correspondences this device can answer for — the measure of the stage, countable

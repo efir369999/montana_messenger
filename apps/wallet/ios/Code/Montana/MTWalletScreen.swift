@@ -20,6 +20,7 @@ struct MTWalletPage: View {
     @State private var toppingUp = false
     @State private var levelsShown = false
     @State private var contactsShown = false
+    @State private var chainsShown = false
     /// THE COIN TURNS ONCE (the author's word 03.10.2026 16:55 MSK: «the coin makes one turn at the opening and at a tap»).
     @State private var coinTurn = 0
     /// The touches of the coin that minted, each its rising +1 until it fades (MTRisingPlus).
@@ -197,12 +198,12 @@ struct MTWalletPage: View {
                         .buttonStyle(.borderedProminent)
                         .buttonBorderShape(.capsule)
                         .tint(MontanaOctagon.platformBlue)
-                        // ONE MORE PERSON FROM THE WALLET (the author's word 03.10: «in the wallet a + account button, as the side
-                        // panel's: signing in and creating»): the first screen rises over the wallet.
-                        Button {
-                            NotificationCenter.default.post(name: .montanaAddPerson, object: nil)
-                        } label: {
-                            Label("Add account", systemImage: "person.crop.circle.badge.plus").font(.headline).frame(maxWidth: .infinity, minHeight: 44)
+                        // THE TIMECHAIN IN PLACE OF A SECOND ACCOUNT (the author's words 10.10.2026 13:4x and 15:2x MSK: «remove the Add
+                        // account button and put TimeChains in its place»; «the TimeChain, where the first chain of time is the Person,
+                        // the second the Wallet»; App, «The chains of time a client shows»): one seed is one person, and what stands
+                        // beside it is the evidence of its time.
+                        Button { chainsShown = true } label: {
+                            Label("TimeChain", systemImage: "link").font(.headline).frame(maxWidth: .infinity, minHeight: 44)
                         }
                         .buttonStyle(.bordered)
                         .buttonBorderShape(.capsule)
@@ -228,9 +229,8 @@ struct MTWalletPage: View {
                     else { Text("You are not in the Montana top. Privacy settings turn it on.") }
                 }
                 // EVERY ROAD OF THE COINS, ON THE PAGE ITSELF (the author's words 08.10.2026 02:2x MSK, «crystal clear»): not behind a button.
+                // The chains moved to the TimeChain page, the wallet's second chain (10.10.2026).
                 Section { MTCoinRules() } header: { Text("How coins come and go") }
-                // THE TIMECHAINS (the author's word 04.10 00:25, MTTimeChain): each source's chain, its length, its head, its seal.
-                Section { MTTimeChainRows() } header: { Text("TimeChains") }
                 // THE BOOK'S ROWS (the author's word 03.10 13:53: every row reads the coin ledger). The chats, the wall and chess left
                 // the wallet (the author's word 09.10.2026 16:00 MSK): their rows stand only on a book that already holds such coins.
                 Section {
@@ -323,11 +323,11 @@ struct MTWalletPage: View {
             // wallet's scroll off»; «while it is on I do not want to see scrolling at all»): no scroll from the first tap until the fire
             // goes out after three quiet seconds (MTPantheon.quiet); the coin's own touch locks the page even before its first coin.
             .scrollDisabled(pantheon.lit)
-            .navigationTitle("TimeCoin")
             // THE TITLE AT THE LEFT (the author's word 04.10.2026 13:34 MSK: «align the word Wallet to the left, it goes past the
-            // borders»): the platform's large title inline at the bar's leading edge -- the page reads itself again by its pull, the
-            // coin (pulled). The root has no cross: the contacts and the wallet's management stand at the trailing edge.
-            .toolbarTitleDisplayMode(.inlineLarge)
+            // borders») AND WHOLE ON EVERY SCREEN (10.10.2026 15:2x MSK: MTFittingTitle). The root has no cross: the contacts and
+            // the wallet's management stand at the trailing edge.
+            .montanaFittingTitle("TimeCoin")
+            .navigationDestination(isPresented: $chainsShown) { MTTimeChainsPage() }
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     MontanaBarMark(glyph: "person.2", label: "Contacts") { contactsShown = true }
@@ -378,6 +378,7 @@ struct MTWalletPage: View {
                 // device of the words is on the other's balance within that.
                 await MTTimeChainTip.shared.gather(why: "live")   // a tip every three seconds: a coin of another device within that (16:34)
                 if turn % 5 == 4 { await MTCoinVault.shared.gather(why: "live") }
+                await MTPersonChain.shared.tick()   // the devices of the words join the seconds of the person (10.10.2026)
                 turn += 1
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
             }
@@ -1059,10 +1060,12 @@ struct MTPantheonStreak: View {
 /// THE TIMECHAINS ON THE WALLET (the author's word 04.10.2026 00:25 MSK): every source's chain with its length and the first
 /// letters of its head, and the platform's seal when every link's seal holds from the genesis -- read again whenever the book moves.
 struct MTTimeChainRows: View {
+    /// The chains this list names, in the wallet's order (the TimeChain page parts the wallet's own from the chats' and calls').
+    var sources: [String] = MTTimeChain.sources
     @ObservedObject private var book = MTLocalCoinLedger.shared
     @State private var heads: [String: MTTimeChain.Head] = [:]
     var body: some View {
-        ForEach(MTTimeChain.sources.filter { 0 < (heads[$0]?.n ?? 0) }, id: \.self) { source in
+        ForEach(sources.filter { 0 < (heads[$0]?.n ?? 0) }, id: \.self) { source in
             if let h = heads[source] {
                 NavigationLink { MTTimeChainPage(source: source) } label: {
                 LabeledContent {
@@ -1080,7 +1083,7 @@ struct MTTimeChainRows: View {
             // a tap must not cost thirteen whole readings -- three quiet seconds first, the first reading at once.
             if !heads.isEmpty { try? await Task.sleep(nanoseconds: 3_000_000_000) }
             guard !Task.isCancelled else { return }
-            for source in MTTimeChain.sources { MTTimeChain.head(source) { heads[source] = $0 } }
+            for source in sources { MTTimeChain.head(source) { heads[source] = $0 } }
         }
     }
     /// A source's word in the catalogue, one table for every place that names it: the game or the road its coins came by.
@@ -1099,6 +1102,7 @@ struct MTTimeChainRows: View {
         case "received": return "Coins received"
         case "spent": return "Coins on reactions"
         case "pi": return "Levels of π"
+        case "person": return "Person"
         case "calls": return "Burned for calls"
         case "letters": return "Burned for letters"
         case "system": return "System chain"
@@ -1137,8 +1141,11 @@ struct MTTimeChainPage: View {
                         // USER-DATA: the link's number in its chain
                         Text(verbatim: "#" + String(l.n)).font(.subheadline.monospacedDigit().weight(.semibold))
                         Spacer()
-                        // USER-DATA: the coins the link moved, signed by its way; a link of the wall's posts moves none
-                        if 0 < l.c {
+                        // A LEVEL'S LINK NAMES ITS LEVEL (the chain of the person, the levels of π): it moves no coins.
+                        if l.k == "level" {
+                            Text("Level \(l.c)").font(.body.monospacedDigit())
+                        } else if 0 < l.c {
+                            // USER-DATA: the coins the link moved, signed by its way; a link of the wall's posts moves none
                             Text(verbatim: (["earn", "receive", "keep"].contains(l.k) ? "+" : "−") + MTCoinText.count(l.c)).font(.body.monospacedDigit())
                         }
                     }
@@ -1159,6 +1166,186 @@ struct MTTimeChainPage: View {
             MTTimeChain.head(source) { head = $0 }
         }
     }
+}
+
+/// THE TIMECHAIN OF THE PERSON (the author's words 10.10.2026 13:4x, 15:2x and 15:4x MSK: «remove the Add account button and put
+/// TimeChains in its place»; «the TimeChain, where the first chain of time is the Person, the second the Wallet»; «the third chain
+/// of time is chats and calls»; 14:1x: «the whole TimeChain core shown for an external observer»; App, «The chains of time a client
+/// shows»): one seed is one person, and what stands beside it is the evidence of its time -- the Global Level the minting keeps
+/// while the app is away, the chain of the person, the wallet's chain of π and coins, the chains of the chats and calls, and what
+/// an observer checks for themselves.
+struct MTTimeChainsPage: View {
+    @ObservedObject private var person = MTPersonChain.shared
+    @ObservedObject private var book = MTLocalCoinLedger.shared
+    @ObservedObject private var top = MTTopNet.shared
+    @ObservedObject private var node = MTNetworkNode.shared
+    @State private var core: Result<MTWalletCore.Snapshot, MTWalletCore.Absence>?
+    @State private var chainFiles: [URL] = []
+    /// The chats' and calls' chains: the third chain of time; every other source is the wallet's own.
+    static let talk = ["chats", "groups", "channels", "comments", "wall", "calls", "letters"]
+    private static let own = MTTimeChain.sources.filter { s in s != "pi" && !talk.contains(s) }
+    private var vectorsHold: Bool { MTPersonChain.levelKAT() && MTTopNet.keyKAT() && MTCoinVault.keyKAT() && MTTimeChainTip.selfCheck() }
+    var body: some View {
+        let place = MTPiLevels.place(book.balance)
+        List {
+            Section {
+                LabeledContent {
+                    // USER-DATA: the Global Level of the person, a number
+                    Text(verbatim: String(MTPersonChain.global(person: person.level, balance: book.balance))).font(.title.bold().monospacedDigit())
+                } label: { Label("Global level", systemImage: "globe") }
+            } footer: { Text("The lower of the two levels below. While the app is minimized, minting goes on at it.") }
+            Section {
+                LabeledContent("Level") {
+                    // USER-DATA: the level of the chain of the person, a number, or a dash below one second
+                    Text(verbatim: person.level.map { n in String(n) } ?? "—").monospacedDigit()
+                }
+                LabeledContent("Time online") {
+                    // USER-DATA: the seconds the chain of the person counts, as the system writes a span of time
+                    Text(verbatim: Duration.seconds(person.seconds).formatted(.units(allowed: [.days, .hours, .minutes, .seconds], width: .abbreviated)))
+                        .monospacedDigit()
+                }
+                if let n = person.level, n < 62 {
+                    let from = Int64(1) << n
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("To the next level").font(.subheadline).foregroundStyle(.secondary)
+                        ProgressView(value: Double(person.seconds - from), total: Double(from))
+                    }
+                    .frame(minHeight: 44)
+                }
+                NavigationLink { MTTimeChainPage(source: "person") } label: {
+                    LabeledContent("Chain links") {
+                        // USER-DATA: the chain's length and the first letters of its head's seal
+                        Text(verbatim: String(person.links.count) + " · " + String((person.links.last?.hash ?? MTTimeChain.genesis).prefix(8)))
+                            .font(.footnote.monospaced()).foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Label("Person", systemImage: "1.circle")
+            } footer: {
+                Text("A second counts while the wallet stands open on any of your devices and a node answers it — the node's second, never the phone's clock. Each level doubles the seconds of the one before. Shown only to you, published nowhere.")
+            }
+            Section {
+                LabeledContent("Level of π") {
+                    // USER-DATA: the level of π the balance fills and π revealed to it
+                    Text(verbatim: String(place) + " · π " + MTPiLevels.revealed(place)).monospacedDigit()
+                }
+                NavigationLink { MTTimeChainPage(source: "pi") } label: { Text("Levels of π") }
+                MTTimeChainRows(sources: Self.own)
+            } header: {
+                Label("Wallet", systemImage: "2.circle")
+            } footer: {
+                Text("Your balance reveals π: each level opens when the balance reaches the next amount — 3, 31, 314 …")
+            }
+            Section {
+                MTTimeChainRows(sources: Self.talk)
+            } header: {
+                Label("Chats and calls", systemImage: "3.circle")
+            } footer: {
+                Text("Chats and calls live in Montana and Montana Business; here stand the chains of the coins they moved.")
+            }
+            Section {
+                LabeledContent("Frozen vectors") {
+                    Image(systemName: vectorsHold ? "checkmark.seal.fill" : "xmark.seal.fill").foregroundStyle(vectorsHold ? .green : .red)
+                }
+                if top.answered {
+                    LabeledContent("People who show their coins") {
+                        // USER-DATA: how many rows the public table holds, a number
+                        Text(verbatim: String(top.rows.count)).monospacedDigit()
+                    }
+                    LabeledContent("Coins they show") {
+                        // USER-DATA: the coins of every row of the public table together, a number
+                        Text(verbatim: MTCoinText.count(top.rows.reduce(0) { n, r in n + r.coins })).monospacedDigit()
+                    }
+                }
+                LabeledContent("Genesis machines reached") {
+                    // USER-DATA: how many machines of the genesis this phone's node holds a link to, of all of them
+                    Text(verbatim: String(node.reached ?? 0) + " / " + String(MTNetworkNode.genesis.count)).monospacedDigit()
+                }
+                switch core {
+                case .success(let w)?:
+                    LabeledContent("Confirmed balance", value: w.balance)
+                    if let head = w.lastConfirmedWindow {
+                        LabeledContent("Last confirmed window", value: String(head))
+                    } else {
+                        Text("No confirmed window yet").foregroundStyle(.secondary)
+                    }
+                    LabeledContent("Wallet notes", value: String(w.notes))
+                case .failure(let a)?:
+                    // USER-DATA: the core's own state, said by the core's reader in the person's language
+                    Text(verbatim: MTWalletCore.said(a)).foregroundStyle(.secondary)
+                case nil:
+                    // USER-DATA: the core's own state, said by the core's reader in the person's language
+                    Text(verbatim: MTWalletCore.said(nil)).foregroundStyle(.secondary)
+                }
+                if !chainFiles.isEmpty {
+                    // The chains' own files go through the app's one share sheet (MTShare), raised by the owner of the stack.
+                    Button { MTShare.present(chainFiles) } label: { Label("Share the chains", systemImage: "square.and.arrow.up") }
+                        .frame(minHeight: 44)
+                }
+            } header: {
+                Text("For an observer")
+            } footer: {
+                Text("Every link is sealed by SHA-256 over its number, moment, kind, amount, name and the seal before it; the level of the person is bit_length(seconds) − 1 (Canon). Shared chains can be checked link by link anywhere.")
+            }
+        }
+        .scrollContentBackground(.hidden).montanaPageGround()
+        .navigationTitle("TimeChain")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            let read = await Task.detached(priority: .utility) { MTWalletCore.read() }.value
+            core = read
+            let fm = FileManager.default
+            let dir = MTTimeChainPlace.dir()
+            chainFiles = ((try? fm.contentsOfDirectory(atPath: dir?.path ?? "")) ?? []).sorted()
+                .filter { n in n.hasPrefix("wallet-") && n.hasSuffix(".jsonl") }
+                .compactMap { n in dir?.appendingPathComponent(n) }
+            MTNetworkNode.shared.join()
+        }
+    }
+}
+
+/// THE PAGE'S NAME STANDS WHOLE ON EVERY SCREEN (the author's word 10.10.2026 15:2x MSK: «make the words Time Coin adaptive, so they
+/// always fit any screen fully»): the platform's inline-large title cut the Russian name of the page short beside the bar's two marks on a narrow
+/// phone. The name stands at the bar's leading edge in the largest of the platform's title sizes that fits the width the marks
+/// leave, down to the headline, which shrinks before it cuts a letter; the platform's own title keeps the name for VoiceOver and
+/// the pages pushed over it, and its centre stays empty.
+struct MTFittingTitle: ViewModifier {
+    let title: LocalizedStringKey
+    @Environment(\.mtWindowSize) private var window
+    /// The bar's width the name may take: the window's, less the margins, the bar's two marks and the gap between.
+    private var room: CGFloat {
+        let w = 0 < window.width ? window.width : (UIApplication.shared.connectedScenes.compactMap { s in (s as? UIWindowScene)?.screen.bounds.width }.first ?? 375)
+        return max(120, w - 152)
+    }
+    private var name: some View {
+        ViewThatFits(in: .horizontal) {
+            Text(title).font(.largeTitle.bold())
+            Text(title).font(.title.bold())
+            Text(title).font(.title2.bold())
+            Text(title).font(.title3.bold())
+            Text(title).font(.headline).minimumScaleFactor(0.4)
+        }
+        .lineLimit(1)
+        .frame(maxWidth: room, alignment: .leading)
+        .accessibilityAddTraits(.isHeader)
+    }
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.navigationTitle(title).navigationBarTitleDisplayMode(.inline).toolbar {
+                ToolbarItem(placement: .topBarLeading) { name }.sharedBackgroundVisibility(.hidden)
+                ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1).accessibilityHidden(true) }.sharedBackgroundVisibility(.hidden)
+            }
+        } else {
+            content.navigationTitle(title).navigationBarTitleDisplayMode(.inline).toolbar {
+                ToolbarItem(placement: .topBarLeading) { name }
+                ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1).accessibilityHidden(true) }
+            }
+        }
+    }
+}
+
+extension View {
+    func montanaFittingTitle(_ title: LocalizedStringKey) -> some View { modifier(MTFittingTitle(title: title)) }
 }
 
 /// EVERY ROAD OF THE COINS, SAID WHERE THE COINS ARE (the author's words 08.10.2026 02:2x MSK: «everything explicit, crystal clear»;
@@ -1246,6 +1433,7 @@ struct MTCoinSendSheet: View {
     @State private var refused = false
     @State private var going: [String: Bool] = [:]   // the coins in flight per chat: false while they go, true when the letter stands
     @State private var levelAsked = false
+    @State private var levelNone = false   // no contact shows a balance: the press says so instead of doing nothing
     @FocusState private var typing: String?
     private func coins(_ name: String) -> Int { Int(amounts[name] ?? "") ?? 0 }
     private var total: Int { picked.reduce(0) { sum, name in sum + coins(name) } }
@@ -1274,9 +1462,14 @@ struct MTCoinSendSheet: View {
                             }
                         }
                     }
-                    Button { levelAsked = true } label: { Label("Level the top 13", systemImage: "chart.bar.xaxis.ascending") }
-                        .frame(minHeight: 44)
-                        .disabled(topThirteen.count < 2)
+                    // A BUTTON IS NEVER DEAD (the author's word 10.10.2026 15:3x MSK: «in the wallet the button Level the top 13 does
+                    // not work»): it stood disabled while fewer than two contacts had told a balance -- on T1 none ever had, so it
+                    // never answered a press. Now a press always answers: the levelling's question, or the platform's alert saying
+                    // that no contact shows a balance and how one comes.
+                    Button { if topThirteen.isEmpty { levelNone = true } else { levelAsked = true } } label: {
+                        Label("Level the top 13", systemImage: "chart.bar.xaxis.ascending")
+                    }
+                    .frame(minHeight: 44)
                     if !picked.isEmpty {
                         // USER-DATA: the coins of every picked chat together, a number
                         LabeledContent { Text(verbatim: MTCoinText.count(total)).monospacedDigit() } label: { Text("Total") }
@@ -1342,6 +1535,9 @@ struct MTCoinSendSheet: View {
                 if !levelPlan().gifts.isEmpty { Button("Level them") { level() } }
                 Button("Cancel", role: .cancel) {}
             } message: { levelWords }
+            .alert("No balances to level", isPresented: $levelNone) {
+                Button("OK", role: .cancel) {}
+            } message: { Text("None of your contacts shows their coins yet. A contact's balance appears here once they turn on Show my coins in their wallet.") }
         }
         .onAppear {
             guard let store = ChatStore.live else { return }

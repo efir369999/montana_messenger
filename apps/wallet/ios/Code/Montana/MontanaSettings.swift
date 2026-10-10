@@ -190,9 +190,9 @@ struct SettingsTabView: View {
         var link: String
         var face: Data
     }
-    /// Looking (a reading stands and nothing is known yet), the card, no road of Montana or Business in the pipe of light, or a
-    /// road whose copy did not come whole.
-    enum Seen: Equatable { case looking, found(Card), unlinked, unread }
+    /// Looking (a reading stands and nothing is known yet), the card, no road of Montana or Business in the pipe of light the
+    /// nodes answered with, no door answering at all, or a road whose copy did not come whole.
+    enum Seen: Equatable { case looking, found(Card), unlinked, unheard, unread }
     @Published private(set) var seen: Seen = .looking
     private var asking = false
     private var askedAt = 0.0
@@ -249,8 +249,18 @@ struct SettingsTabView: View {
     /// THE ONE READING: the newest light road of the first app that laid one; the copy it names fetched, proved by its digest
     /// and its card read. A card already read from the same copy -- or from an app asked earlier -- is not fetched again.
     nonisolated private static func read(over kept: Card?) async -> Seen {
-        guard let of = MontanaSeed.twin,
-              let found = await MTKeeping.lightRoads(of: Home.allCases.map { $0.rawValue }) else { return .unlinked }
+        guard let of = MontanaSeed.twin else { return .unlinked }
+        let found: (app: String, roads: [[String: Any]])
+        switch await MTKeeping.lightRoads(of: Home.allCases.map { $0.rawValue }) {
+        case .found(let app, let roads):
+            found = (app, roads)
+        case .absent(let apps):
+            // The diary names the apps whose roads did stand in the pipe: identifiers of apps, never a word of the person's own.
+            MontanaP2PTrace.mark("wallet_owner", "the pipe of light answered with roads of " + (apps.isEmpty ? "no app" : apps.joined(separator: ",")))
+            return .unlinked
+        case .unheard:
+            return .unheard
+        }
         if let k = kept, rank(k.home) < rank(found.app) { return .found(k) }   // Montana first: Business never stands over it
         for road in found.roads {
             guard let d = road["d"] as? String else { continue }
@@ -271,6 +281,7 @@ struct SettingsTabView: View {
             return "home=" + (c.home == Home.business.rawValue ? "business" : "montana")   // NOT-UI: the diary's own words
                 + " face=" + (c.face.isEmpty ? "0" : "1") + " public=" + (c.claimed.isEmpty ? "0" : "1")
         case .unlinked: return "no light road of Montana or Business"   // NOT-UI: the diary's own words
+        case .unheard: return "no door answered the pipe of light"   // NOT-UI: the diary's own words
         case .unread: return "a light road stands, its copy did not come whole"   // NOT-UI: the diary's own words
         case .looking: return "looking"   // NOT-UI: the diary's own words
         }
@@ -333,13 +344,26 @@ struct MTWalletOwnerSection: View {
                 }
                 .frame(minHeight: 44)
             case .unlinked:
-                Text("Not linked to a Montana account yet").foregroundStyle(.secondary).frame(minHeight: 44)
+                // NO ACCOUNT OF THESE WORDS, SAID PLAINLY (the author's word 10.10.2026 12:47 MSK: it is plain which account the
+                // wallet is bound to) -- and only on the nodes' own answer: a door answered the pipe of light, and no road of
+                // Montana or Business stands in it.
+                Text("No Montana or Montana Business account was found for these 24 words").foregroundStyle(.secondary).frame(minHeight: 44)
+            case .unheard:
+                // No door answered: nothing is known of the account, so nothing is said of it but that it is asked again.
+                Text("The network did not answer. Looking for your account again…").foregroundStyle(.secondary).frame(minHeight: 44)
             case .unread:
-                Text("Your Montana account did not come from the network yet").foregroundStyle(.secondary).frame(minHeight: 44)
+                Text("Your account did not come from the network whole yet").foregroundStyle(.secondary).frame(minHeight: 44)
             }
         }
         .listRowBackground(MTGlassRowPlate())
-        .onAppear { owner.look() }
+        // ASKED AGAIN WHILE THE CARD STANDS: every minute (look keeps its own rest -- a minute while no card is known, six hours
+        // once one is), so the words «looking again» are true without leaving the page.
+        .task {
+            while !Task.isCancelled {
+                owner.look()
+                try? await Task.sleep(nanoseconds: 60_000_000_000)
+            }
+        }
     }
 
     @ViewBuilder private func rows(_ c: MTWalletOwner.Card) -> some View {

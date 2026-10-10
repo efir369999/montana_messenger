@@ -659,13 +659,21 @@ enum MTKeepDerive {
     /// MSK: the wallet keeps no person of its own; it shows the person of the same words -- Montana first, then Business). The
     /// pipe of light is read as takeLight reads it, and no row is confirmed to the node: every road stays for the phone that
     /// opens these words tomorrow. The apps are asked in the order named; the first that laid a road answers, with its roads
-    /// newest first by the minute their seal was made (two devices count their generations each from one). Nil when none did.
-    nonisolated static func lightRoads(of apps: [String]) async -> (app: String, roads: [[String: Any]])? {
+    /// newest first by the minute their seal was made (two devices count their generations each from one). NONE OF THEM IS THE
+    /// BOX'S OWN WORD (the author's word 10.10.2026 12:47 MSK: it is plain which account the wallet is bound to): absent is said
+    /// only when a door answered, with the apps whose roads did stand in the pipe; no door answering is unheard -- nothing is
+    /// known of the box then, and nothing is said of the person.
+    enum Light { case found(app: String, roads: [[String: Any]]), absent(apps: [String]), unheard }
+    nonisolated static func lightRoads(of apps: [String]) async -> Light {
         guard agrees, let m = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(m),
-              let secret = MTKeepDerive.lightSecret(master) else { return nil }
+              let secret = MTKeepDerive.lightSecret(master) else { return .unheard }
         var rows: [[String: String]] = []
-        let ear = MontanaWakePush.BoxEar(invites: [], pipes: [lightName: secret], owner: MontanaSeed.twin ?? "")
-        _ = await MontanaWakePush.pickup(ear, buries: nil, keep: { row in rows.append(row); return false })
+        var answered = false
+        // AT THE DOOR THE PERSON'S APPS SHARE (MTNodeWire.sharedDoor): Montana and Business name their light copy there; at the
+        // wallet's own door this pipe holds only the wallet's own road.
+        let ear = MontanaWakePush.BoxEar(invites: [], pipes: [lightName: secret], owner: MontanaSeed.twin ?? "", door: MTNodeWire.sharedDoor)
+        _ = await MontanaWakePush.pickup(ear, buries: nil, keep: { row in rows.append(row); return false }, heard: { answered = true })
+        guard answered else { return .unheard }
         var laid: [(road: [String: Any], at: Int)] = []
         for row in rows {
             guard let o = word(row["t"] ?? ""), (o["w"] as? String) == "light" else { continue }
@@ -674,9 +682,9 @@ enum MTKeepDerive {
         for app in apps {
             let roads = laid.filter { ($0.road["a"] as? String) == app }
                 .sorted { $0.at != $1.at ? $0.at > $1.at : ($0.road["g"] as? Int ?? 0) > ($1.road["g"] as? Int ?? 0) }
-            if !roads.isEmpty { return (app, roads.map { $0.road }) }
+            if !roads.isEmpty { return .found(app: app, roads: roads.map { $0.road }) }
         }
-        return nil
+        return .absent(apps: Set(laid.map { $0.road["a"] as? String ?? "" }).sorted())
     }
 
     // ── the cargo road of a part ──

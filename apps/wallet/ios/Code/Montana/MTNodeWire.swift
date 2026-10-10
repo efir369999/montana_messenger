@@ -51,9 +51,15 @@ enum MTNodeWire {
     /// 8a36288e). A coin letter rang, and was taken by, the Messenger of the same seed. The wallet's labels carry the wallet's own
     /// domain: a wallet's letter goes to a wallet, and no other app of the seed hears it, rings for it or takes it from the box.
     static let ownDoor = "-wallet"
-    /// The conversation's daily tag: both sides derive it from the shared pipe secret.
-    static func convW(_ secret: Data, window: UInt64) -> String {
-        var m = Data(("mt-wake-conv" + ownDoor).utf8); m.append(0); m.append(secret)   // LOCAL-HASH-OK: canon owner
+    /// THE DOOR THE PERSON'S OTHER APPS WRITE AT (the author's word 10.10.2026 12:4x MSK: «when the words entered several apps,
+    /// Montana is asked first, then Business»). Montana and Montana Business label every pipe with no door of their own -- their
+    /// canon freezes the tag of 0..31 at 29737 as 43eaf281… -- so the pipe of light they name their light copy in is heard at that
+    /// door alone. Read at the wallet's own door it was silent by construction (T1 10.10.2026 12:09:53Z: both nodes answered the
+    /// wallet's ten labels of light with letters=0, and the card of the person stood empty).
+    static let sharedDoor = ""
+    /// The conversation's daily tag: both sides derive it from the shared pipe secret, at the door both of them use.
+    static func convW(_ secret: Data, window: UInt64, door: String = ownDoor) -> String {
+        var m = Data(("mt-wake-conv" + door).utf8); m.append(0); m.append(secret)   // LOCAL-HASH-OK: canon owner
         var w = window.littleEndian; withUnsafeBytes(of: &w) { m.append(contentsOf: $0) }
         return hexHash(m)
     }

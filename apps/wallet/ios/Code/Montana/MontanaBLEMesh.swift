@@ -568,7 +568,7 @@ final class MontanaBLEMesh: NSObject {
         carryStore = carryStore.filter { $0.value.expiry > now }
         var tags = Set<Data>()
         for w in MTPipe.windows() {
-            if let s = MTPipeBook.secret(for: conv) { tags.insert(MTPipe.tag(sharedSecret: s, window: w)) }
+            if let t = MTPipeBook.tag(for: conv, window: w) { tags.insert(t) }   // the wallet's door, as every frame of this app
         }
         for (mid, c) in carryStore where tags.contains(c.dst) {
             broadcast(packet(type: c.type, msgId: mid, dst: c.dst, payload: c.payload), exceptLink: nil)
