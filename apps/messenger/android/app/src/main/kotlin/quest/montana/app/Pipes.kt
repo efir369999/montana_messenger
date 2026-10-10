@@ -1013,11 +1013,26 @@ object Post {
         send(ref, Marks.mintMid(), Marks.AVATAR)
         send(ref, Marks.mintMid(), Presence.APP + "0B" + Presence.saidTail())
     }
-    /** THEIR SCREEN HOLDS A STALE FACE OR NAME OF MINE (iOS heardHeld 663-664: forgetFace / forgetName, then send again): the receipted mark is forgotten and announced anew. */
-    fun announceAgain(ref: String, face: Boolean, name: Boolean) {
-        if (face) for (k in listOf("annFace2.", "annFlyF.")) Prefs.remove(k + ref)
-        if (name) for (k in listOf("annName2.", "annFlyN.")) Prefs.remove(k + ref)
-        announce(ref)
+    /**
+     * THEIR SCREEN HOLDS A STALE FACE OR NAME OF MINE (iOS heardHeld 663-664: forgetFace / forgetName, then send again): the receipted
+     * mark is forgotten and announced anew; the letter still on its way is not doubled (iOS forgetFace keeps the queue's pendingStateTag,
+     * MontanaDeliveryEngine.swift:393-396, 539-547). ONE ANSWER TO ONE STATE (the author's word 10.10.2026 22:1x: make it never repeat):
+     * a value they receipted, while they still name the same stale tag, is not sent again -- the same bytes meet the same screen. A1 sent
+     * a correspondent its face every minute from 22:00, and the iPhone, healing the long letter into a row, showed it as text. It goes again when my
+     * value or the tag they name changes, and a letter lost on its way goes again past its hour (inFlight).
+     */
+    fun announceAgain(ref: String, face: Boolean, name: Boolean, theirFace: String, theirName: String) {
+        val f = face && again("F", ref, "annFace2.", Wire.hex(Wire.sha(SelfFace.bytes(Book.ctx) ?: ByteArray(0))).take(16), theirFace)
+        val n = name && again("N", ref, "annName2.", stripCrown(Prefs.userName.trim()), theirName)
+        if (f) Prefs.remove("annFace2." + ref)
+        if (n) Prefs.remove("annName2." + ref)
+        if (f || n) announce(ref) else Log.d("Montana", "held_answered -- this stale state was answered and receipted, nothing goes again")
+    }
+    private fun again(kind: String, ref: String, mark: String, mine: String, theirs: String): Boolean {
+        val said = mine + "\n" + theirs
+        if (Prefs.str(mark + ref, "") == mine && Prefs.str("annHeld" + kind + "." + ref, "") == said) return false
+        Prefs.setStr("annHeld" + kind + "." + ref, said)
+        return true
     }
     /** UNBLOCKED (iOS announceUnblocked 1458-1466): the person is told I am here again — my name, my face, my presence. */
     fun unblocked(ref: String) {
