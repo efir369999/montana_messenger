@@ -19,6 +19,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import java.io.File
+import org.json.JSONObject
 
 /**
  * THE VOICE TAPE (iOS VoiceRecorder + MontanaVoiceSound): 48 kHz mono, AAC at 64 kbit/s in an .m4a — the same speech through
@@ -219,7 +220,12 @@ object VoicePlayer {
             // for no answer; a voice with a next one walks on to it
             val atEar = then == null && this.fromPeer && proximityArmed && Proximity.isNear
             Log.d("Montana", "voice_end ear=" + (if (atEar) 1 else 0) + " theirs=" + (if (this.fromPeer) 1 else 0))
+            // A TO B DIRECTLY (iOS finished, MontanaMedia.swift:613-615 at 2155): a voice handed on to the next keeps the track
+            // that stepped aside for it aside -- the track plays on when nothing follows, never in the moment between two voices
+            val aside = then != null && musicAside
+            if (aside) musicAside = false
             stop(); then?.invoke()
+            if (aside) { if (player != null) musicAside = true else if (!MusicPlayer.playing) MusicPlayer.resume() }
             if (atEar) endedAtEar?.invoke()
         }
         // A LONG LISTEN GOES ON WHERE IT STOPPED (iOS VoicePlayer.toggle:411-414 at 2155, MTPlayPlaces.at, the author's word
@@ -337,6 +343,28 @@ object VoiceLength {
     }
 }
 
+/** The chat's voices, oldest first, stand behind the one that starts: auto-next walks them, always (iOS
+ *  ChatConversationView.playVoice, MontanaConversation.swift:1288-1299 at 2155; VoicePlayer.finished,
+ *  MontanaMedia.swift:606-621 -- atoms 187adeae0742 and eb49f096614a). */
+private fun chatVoiceQueue(chat: Chat): List<Triple<String, String, Boolean>> = chat.msgs.mapNotNull { r ->
+    val man = r.meta?.let { runCatching { JSONObject(it) }.getOrNull() } ?: Media.inline(r.text)
+    if (man?.optString("k") != "aud") return@mapNotNull null
+    val f = r.file?.takeIf { File(it).exists() } ?: return@mapNotNull null
+    Triple(f, if (r.mine) Prefs.userName.trim() else chat.shown, r.mine)
+}
+
+/** The one after it follows by itself when this one ends (iOS: A to B directly, never through «nothing playing»)
+ *  -- no bubble of its own is asked for a progress closure here; the inline capsule that happens to be on screen
+ *  catches up from the one player's own clock (voiceBody's `follow`, below). */
+private fun playChatVoice(path: String, queue: List<Triple<String, String, Boolean>>) {
+    val at = queue.indexOfFirst { it.first == path }
+    val sender = queue.getOrNull(at)?.second ?: ""
+    val mine = queue.getOrNull(at)?.third ?: false
+    val next = if (at >= 0) queue.getOrNull(at + 1) else null
+    VoicePlayer.toggle(path, onProgress = { _, _ -> }, stopped = {},
+        then = next?.let { n -> { playChatVoice(n.first, queue) } }, sender = sender, fromPeer = !mine)
+}
+
 fun voiceBody(c: Context, m: Msg, du: Double, into: LinearLayout, wave: FloatArray? = null, chat: Chat? = null) {
     val tint = BubbleStyle.text(m.mine)
     val path = m.file?.takeIf { File(it).exists() }
@@ -365,8 +393,12 @@ fun voiceBody(c: Context, m: Msg, du: Double, into: LinearLayout, wave: FloatArr
         val p = path ?: run { if (Media.waiting(c, m)) Media.tapped(c, m); return@setOnClickListener }
         // USER-DATA: whose voice it is, as the one bar names it (iOS nowSender)
         val who = if (m.mine) Prefs.userName.trim() else chat?.shown.orEmpty()
+        // The chat's voices stand behind this one: auto-next walks them, always (iOS playVoice/finished, above).
+        val queue = chat?.let(::chatVoiceQueue) ?: emptyList()
+        val next = queue.indexOfFirst { it.first == p }.takeIf { it >= 0 }?.let { queue.getOrNull(it + 1) }
         VoicePlayer.toggle(p, onProgress = { cur, dur -> bar.progress = cur.toFloat() / maxOf(1, dur); time.text = fmt(cur) },
-            stopped = { mark.setImageResource(R.drawable.ic_play_fill); bar.progress = 0f; bar.rest = MT.withAlpha(ink, 0.9f); time.text = fmt(total) }, sender = who,
+            stopped = { mark.setImageResource(R.drawable.ic_play_fill); bar.progress = 0f; bar.rest = MT.withAlpha(ink, 0.9f); time.text = fmt(total) },
+            then = next?.let { n -> { playChatVoice(n.first, queue) } }, sender = who,
             fromPeer = !m.mine)
         bar.rest = MT.withAlpha(ink, 0.4f)
         mark.setImageResource(if (VoicePlayer.sounding(p)) R.drawable.ic_pause_fill else R.drawable.ic_play_fill)
@@ -387,6 +419,12 @@ fun voiceBody(c: Context, m: Msg, du: Double, into: LinearLayout, wave: FloatArr
         val chosen = path != null && VoicePlayer.playing == path
         val want = MT.withAlpha(ink, if (chosen) 0.4f else 0.9f)
         if (bar.rest != want) bar.rest = want
+        // AUTO-NEXT LEAVES NO BUBBLE WITHOUT ITS OWN PROGRESS (iOS finished() chains player to player, never through
+        // «nothing playing», MontanaMedia.swift:613-621 at 2155): a bubble the chain reaches without its own tap's
+        // onProgress still follows the one player's own clock here.
+        if (chosen && total > 0) { bar.progress = VoicePlayer.fraction.toFloat(); time.text = fmt((VoicePlayer.fraction * total).toInt()) }
+        // the chain's bubble rests again when its voice ends, as a tapped one's own stopped puts it
+        else if (!chosen && bar.progress != 0f) { bar.progress = 0f; time.text = fmt(total) }
     }
     mark.addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
         override fun onViewAttachedToWindow(v: android.view.View) { Playing.listen(follow) }

@@ -163,8 +163,9 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
     val panes = FrameLayout(c)
     val music = MusicPage(act)
     val feed = FeedPane(act)
+    val chats = ChatsPane(act)
     var goContacts: () -> Unit = {}   // the calls' «New call» turns to the contacts (set once choose stands)
-    val views = mapOf(Pane.CHATS to chatsPane(act), Pane.CONTACTS to contactsPane(act), Pane.CALLS to callsPane(act) { goContacts() },
+    val views = mapOf(Pane.CHATS to chats, Pane.CONTACTS to contactsPane(act), Pane.CALLS to callsPane(act) { goContacts() },
         Pane.FEED to feed, Pane.MUSIC to music.view, Pane.GALLERY to galleryPane(act),
         Pane.GROUPS to groupsPane(act, channel = false), Pane.CHANNELS to groupsPane(act, channel = true), Pane.MESH to meshPane(act), Pane.P2P to p2pPane(act))
     views.values.forEach { v -> v.visibility = View.GONE; panes.addView(v, FrameLayout.LayoutParams(MATCH, MATCH)) }
@@ -178,6 +179,7 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
         if (on) player.live()
         music.reserve(on && pane == Pane.MUSIC)
         feed.reserve(on && pane == Pane.FEED)   // the write button steps above the bar, as the music's plus (iOS MTFeedTabView reserve)
+        chats.reserve(on && pane == Pane.CHATS)   // the rows keep its room and «Write» steps above it too (iOS MontanaChatsList.swift:1021,1030 at 2155)
     }
     Playing.listen { if (player.isAttachedToWindow) showPlayer() }   // a track, a voice or a note: the one gate (iOS MontanaPlayerBar.Gate)
     // THE ONE SEARCH (iOS searchResults, [C-1]): the same field and the same results stand on the chats, the contacts and the
@@ -861,22 +863,26 @@ private class SearchResults(val act: MainActivity) : ScrollView(act) {
  * THE CHATS PAGE as a new person first sees it (iOS, the author's word 17.09): the local room in one's own face, under it
  * «No chats yet» with the code's card, and the round «Write» button at the foot (iOS composeButton).
  */
-private fun chatsPane(act: MainActivity): View {
-    val c = act
+/** THE CHATS LIST KEEPS ITS OWN ROOM FOR THE FLOATING PLAYER TOO (iOS MontanaChatsList.swift:856,1021,1030 at 2155,
+ *  atoms 93ab0f2ba212 and eb49f096614a): the rows reserve the bar's room at the foot while it stands, and «Write»
+ *  steps above it, as the music's plus (MusicPage.reserve) and the feed's write (FeedPane.reserve) do. */
+private class ChatsPane(private val act: MainActivity) : FrameLayout(act) {
+    private val c = act
     // THE SELECTION (iOS selecting): «Select» in a row's menu begins it; the bar at the foot acts on the chosen chats
-    val bar = FrameLayout(c).apply { visibility = View.GONE }
-    lateinit var write: View
-    lateinit var redrawRows: () -> Unit
-    var archiveRevealed = false   // the archive's row is summoned by a pull (iOS archiveRevealed)
-    var revealArchive: (Boolean) -> Unit = {}
-    val sel = ChatSelection { s ->
+    private val bar = FrameLayout(c).apply { visibility = View.GONE }
+    private lateinit var write: View
+    private lateinit var redrawRows: () -> Unit
+    private var archiveRevealed = false   // the archive's row is summoned by a pull (iOS archiveRevealed)
+    private var revealArchive: (Boolean) -> Unit = {}
+    private val foot = View(c)   // the floating player's room at the foot (reserve)
+    private val sel = ChatSelection { s ->
         redrawRows()
         bar.removeAllViews()
         if (s.on) bar.addView(selectionBar(act, s), FrameLayout.LayoutParams(MATCH, WRAP))
         bar.visibility = if (s.on) View.VISIBLE else View.GONE
         write.visibility = if (s.on) View.GONE else View.VISIBLE
     }
-    val list = ScrollView(c).apply {
+    private val list = ScrollView(c).apply {
         isVerticalScrollBarEnabled = false
         addView(c.vstack(Gravity.NO_GRAVITY) {
             // The local room: stands in the list from the first moment; a tap opens it (iOS: the row opens its conversation).
@@ -968,12 +974,17 @@ private fun chatsPane(act: MainActivity): View {
                 override fun onViewDetachedFromWindow(v: View) { Book.unlisten(onBook); ChatMarks.unlisten(onBook) }
             })
             addView(rows, lp())
-            gap(120)   // the floating player's room at the foot
+            addView(foot, lp(MATCH, dp(120)))
         })
     }
-    // THE LIST'S OWN DRAG AND ITS FLING, MEASURED (iOS MTFrameMeter, MontanaMessageFeed.swift:268-437, 1125-1149).
-    Motion.watch(list) { _, _, y, _, _ -> if (c.dp(25) < y) revealArchive(false) }   // a stroke up folds the archive's row
-    return FrameLayout(c).apply {
+    /** The bar stands: the rows keep room under it and «Write» steps above it, as the music's plus and the feed's write. */
+    fun reserve(on: Boolean) {
+        foot.layoutParams = lp(MATCH, dp(if (on) 180 else 120)); foot.requestLayout()
+        write.layoutParams = PageCorner.params(c, reserve = on)
+    }
+    init {
+        // THE LIST'S OWN DRAG AND ITS FLING, MEASURED (iOS MTFrameMeter, MontanaMessageFeed.swift:268-437, 1125-1149).
+        Motion.watch(list) { _, _, y, _, _ -> if (c.dp(25) < y) revealArchive(false) }   // a stroke up folds the archive's row
         addView(CoinPull(c, list).apply { onPull = { pull -> if (25f < pull) revealArchive(true) } }, FrameLayout.LayoutParams(MATCH, MATCH))   // the coin's pull refreshes the feed (iOS MontanaCoinSpinner) and summons the archive's row
         // «WRITE» (iOS composeButton): the one door to the code and the link — the QR opens here and nowhere else.
         write = FrameLayout(c).apply {
