@@ -271,7 +271,8 @@ registry! {
         MT_CASCADE => "mt-cascade",
         MT_GENESIS_STATE => "mt-genesis-state",
         MT_SEED => "mt-seed",
-        MT_ACCOUNT_KEY => "mt-account-key",
+        // The label is frozen on the wire; the branch it names is the signing branch of a person.
+        MT_SIGNING_KEY => "mt-account-key",
         MT_NODE_KEY => "mt-node-key",
         MT_NOTE_KEY => "mt-note-key",
         MT_NF_KEY => "mt-nf-key",

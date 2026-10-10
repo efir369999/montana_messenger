@@ -184,7 +184,6 @@ pub unsafe extern "C" fn mt_account_from_mnemonic(
     })
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn mt_sign(
     seckey: *const u8,

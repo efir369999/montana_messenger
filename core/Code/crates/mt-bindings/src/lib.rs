@@ -273,3 +273,48 @@ mod kat_address {
         assert_eq!(crate::address_to_account_id(&addr), Some(id));
     }
 }
+
+#[cfg(test)]
+mod seed_keys {
+    // The door the client links: the same words open the same keys as the transitional
+    // wrapper, byte for byte, and nothing that names the holder leaves it.
+    #[test]
+    fn seed_keys_match_the_wrapper_byte_for_byte() {
+        let mut entropy = [0u8; 32];
+        for (i, b) in entropy.iter_mut().enumerate() {
+            *b = i as u8;
+        }
+        let m = mt_mnemonic::entropy_to_mnemonic(&entropy);
+        let mc = std::ffi::CString::new(m).unwrap();
+        let mut pk = vec![0u8; 1952];
+        let mut sk = vec![0u8; 4032];
+        let rc =
+            unsafe { crate::ffi_c::mt_seed_keys(mc.as_ptr(), pk.as_mut_ptr(), sk.as_mut_ptr()) };
+        assert_eq!(rc, 0);
+        let mut pk2 = vec![0u8; 1952];
+        let mut sk2 = vec![0u8; 4032];
+        let mut id = [0u8; 32];
+        let rc = unsafe {
+            crate::ffi_c::mt_account_from_mnemonic(
+                mc.as_ptr(),
+                pk2.as_mut_ptr(),
+                sk2.as_mut_ptr(),
+                id.as_mut_ptr(),
+            )
+        };
+        assert_eq!(rc, 0);
+        assert_eq!(pk, pk2);
+        assert_eq!(sk, sk2);
+        assert!(pk.iter().any(|&b| b != 0));
+    }
+
+    #[test]
+    fn seed_keys_refuses_null() {
+        let mut pk = vec![0u8; 1952];
+        let mut sk = vec![0u8; 4032];
+        let rc = unsafe {
+            crate::ffi_c::mt_seed_keys(std::ptr::null(), pk.as_mut_ptr(), sk.as_mut_ptr())
+        };
+        assert_ne!(rc, 0);
+    }
+}

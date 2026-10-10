@@ -3,6 +3,22 @@
 Binaries are attached to the releases of this repository; on iPhone, iPad and Mac the applications install through
 TestFlight. Each row names the folder that holds the source and the commit of the project's history that folder is.
 
+## Sources
+
+Each folder of this repository is the tree of one commit of the project's history, staged as it is built. The publisher writes this table in the same commit as the folder it names; the message of that commit names the source commit in full.
+
+<!-- sources:start -->
+| Folder | Build | Source commit | Staged |
+|---|---|---|---|
+| `apps/mesh/ios` | 3 | `9d9eaa61456d` | 2026-10-10 11:51 UTC |
+| `apps/messenger/android` | 395 | `4d200dd60f68` | 2026-10-10 11:51 UTC |
+| `apps/messenger/ios` | 2173 | `38465b7fb99c` | 2026-10-10 11:51 UTC |
+| `apps/p2p/ios` | 2 | `9652b512bced` | 2026-10-10 11:51 UTC |
+| `apps/vpn/ios` | 3 | `298b7dc88d0c` | 2026-10-10 11:51 UTC |
+| `apps/wallet/ios` | 15 | `c52cb09f44e5` | 2026-10-10 11:51 UTC |
+| `core` | core line | `3848245e308b` | 2026-10-10 11:51 UTC |
+<!-- sources:end -->
+
 ## 2026-10-08: the Montana Time ecosystem
 
 | File | Application | Version | SHA-256 | Source |

@@ -49,26 +49,6 @@ pub unsafe extern "C" fn mt_deeplink_kind(link: *const c_char) -> i32 {
     }
 }
 
-/// For montana://<mt-address>: writes the wallet address (ASCII) to `out`, returns length
-/// (0 if not an address / buffer too small / error).
-///
-/// # Safety
-/// `link` — C-string; `out` — ≥ `out_cap` bytes.
-#[no_mangle]
-pub unsafe extern "C" fn mt_deeplink_address(
-    link: *const c_char,
-    out: *mut u8,
-    out_cap: usize,
-) -> usize {
-    let Some(s) = cstr(link) else {
-        return 0;
-    };
-    let Ok(DeepLink::Address(addr)) = parse_deep_link(s) else {
-        return 0;
-    };
-    write_str(addr.as_bytes(), out, out_cap)
-}
-
 /// For montana://b/<payload>: decodes QRBootstrap, writes current_endpoint
 /// (SSRF-filtered, "host:port" ASCII) to `out`; returns length (0 if expired /
 /// internal address / not bootstrap / error).
@@ -187,12 +167,10 @@ mod tests {
             .unwrap()
             .contains("2606:4700"));
 
-        // Address
+        // A link carrying an address of a person is still told apart (kind 1) and nothing else
+        // is read from it: the set publishes no address of a person.
         let alink = CString::new("montana://mt1qqqqqq").unwrap();
         assert_eq!(unsafe { mt_deeplink_kind(alink.as_ptr()) }, 1);
-        let mut aout = [0u8; 64];
-        let an = unsafe { mt_deeplink_address(alink.as_ptr(), aout.as_mut_ptr(), aout.len()) };
-        assert_eq!(&aout[..an], b"mt1qqqqqq");
     }
 
     #[test]

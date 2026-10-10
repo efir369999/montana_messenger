@@ -19,14 +19,14 @@ project's private history, published as it builds, under the publication notes b
 | Path | What it is |
 |---|---|
 | [`core/`](core/) | The protocol: the normative specification, the reference implementation and the client core in Rust; ML-DSA-65, ML-KEM-768, ChaCha20-Poly1305, SHA-256. See [`core/README.md`](core/README.md) |
-| [`apps/messenger/ios/`](apps/messenger/ios/) | **Montana** (Messenger) for iPhone, iPad and Mac, build 2165 |
-| [`apps/messenger/android/`](apps/messenger/android/) | **Montana** (Messenger) for Android, build 246 |
-| [`apps/wallet/ios/`](apps/wallet/ios/) | **MT Wallet**, the coins of time, build 5 |
-| [`apps/mesh/ios/`](apps/mesh/ios/) | **MT Mesh**, rooms over Bluetooth between phones that are near, build 2 |
-| [`apps/p2p/ios/`](apps/p2p/ios/) | **MT P2P**, delivery straight from phone to phone, build 1 |
-| [`apps/vpn/ios/`](apps/vpn/ios/) | **MT VPN**, a VPN client and the wall where a person shares their own VPN, build 2 |
+| [`apps/messenger/ios/`](apps/messenger/ios/) | **Montana** (Messenger) for iPhone, iPad and Mac |
+| [`apps/messenger/android/`](apps/messenger/android/) | **Montana** (Messenger) for Android |
+| [`apps/wallet/ios/`](apps/wallet/ios/) | **MT Wallet**, the coins of time |
+| [`apps/mesh/ios/`](apps/mesh/ios/) | **MT Mesh**, rooms over Bluetooth between phones that are near |
+| [`apps/p2p/ios/`](apps/p2p/ios/) | **MT P2P**, delivery straight from phone to phone |
+| [`apps/vpn/ios/`](apps/vpn/ios/) | **MT VPN**, a VPN client and the wall where a person shares their own VPN |
 | [`WHITEPAPER.md`](WHITEPAPER.md) | The ecosystem in one paper, with the specification it rests on |
-| [`RELEASES.md`](RELEASES.md), [`CHANGELOG.md`](CHANGELOG.md) | Every published build; the timestamped log of every change |
+| [`RELEASES.md`](RELEASES.md), [`CHANGELOG.md`](CHANGELOG.md) | The build and the source commit of every folder, written by the publisher with the folder itself; the published binaries; the log of changes as it stood on 2026-10-03, when the log stopped being published |
 | [`SECURITY.md`](SECURITY.md) | How to report a weakness |
 
 ## Download
@@ -104,15 +104,22 @@ cd ../Code
 cargo test --workspace --release
 ```
 
-**iPhone, iPad and Mac applications.** Xcode 26.2 on macOS 15.7 or later; the applications run on iOS 17.2 or later. In the folder of an application: build the
-core frameworks from `core/`, fetch the call engine, then open `Montana.xcodeproj` and choose your own team for signing.
+**iPhone, iPad and Mac applications.** Xcode 26.2 on macOS 15.7 or later, Rust 1.92.0 through rustup with the device target
+(`rustup target add aarch64-apple-ios --toolchain 1.92.0`); the applications run on iOS 17.2 or later. The core is built for the
+device, so an application is built for a device: with your own team for signing, or with signing off to check that the source
+compiles. In the folder of an application, the core's two frameworks are built from `core/`, the call engine is fetched, and the
+project is built:
 
 ```
 cd apps/messenger/ios
 MONTANA_CORE_SRC="$PWD/../../../core/Code/crates/mt-bindings" bash scripts/build-core.sh
 MONTANA_PROTOCOL_CORE="$PWD/../../../core/Montana-Core" bash scripts/build-protocol-core.sh
 bash fetch-webrtc.sh
+xcodebuild build -project Montana.xcodeproj -scheme Montana -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO
 ```
+
+The same four steps build `apps/wallet/ios`, `apps/mesh/ios` and `apps/p2p/ios`. MT VPN links two more engines, built by the
+scripts in its `scripts/xray-ios` and `scripts/hev-ios`; they are published with its next build.
 
 **Android.** `apps/messenger/android/scripts/setup.py` installs the pinned toolchain of `scripts/toolchain.json`
 (JDK 17, Android SDK 35, NDK, Kotlin, the call engine, each by digest); `scripts/build.py` builds the APK.
@@ -122,15 +129,15 @@ bash fetch-webrtc.sh
 Node endpoints in this tree are documentation addresses (RFC 5737) and the VPN test credential is a made-up one; the
 released binaries carry the live endpoints. The trees hold the code, its build files and its tests; signing material,
 process documents and deployment scripts stay with the project. Comments and documents are in English. Apart from those
-endpoints and that credential, the code is the code of the commit named for each folder in [`RELEASES.md`](RELEASES.md).
+endpoints and that credential, the code is the code of the commit named for each folder in the Sources table of
+[`RELEASES.md`](RELEASES.md).
 
 ## Beta, testing and reports
 
 | Item | State |
 |---|---|
 | Platform | iPhone and iPad with iOS 17.2 or later; Apple silicon Mac; Android 8 or later for the Messenger |
-| TestFlight | Messenger 1.0 (2165), Wallet 1.0 (5), Business 1.0 (68) |
-| App Store | Messenger 1.0, submitted for review |
+| TestFlight | Messenger, Wallet and Business: the links above carry the newest build of each |
 | Feedback | GitHub Issues in this repository, or contact@montana.quest |
 | Privacy policy | https://montana.quest/privacy/ |
 
@@ -146,8 +153,9 @@ They never hold message content, names, phrases or network addresses.
 
 ## Known limits
 
-- History lives on the device; deleting the application erases it there. Two copies can be turned on, both off by default: one
-  in the application's own iCloud container and one on a node you run yourself, both sealed under a key only your 24 words open.
+- History lives on the device; deleting the application erases it there. A copy sealed under a key only your 24 words open is
+  kept by the people you write to (on by default; the application asks once, at the first opening), and can be kept in the
+  application's own iCloud container and on a node you run yourself.
 - Two phones that are both behind carrier NAT, without IPv6 and without a forwarded port, cannot reach each other directly and
   talk through the nodes.
 - The coins of time are a tally kept on the phone in its own time chains, separate from the notes of the core's wallet.

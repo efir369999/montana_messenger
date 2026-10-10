@@ -17,8 +17,8 @@ mt_codec::constants! {
     pub const GROUP_MODULUS: u64 = 100_000, writes "reduced modulo 100000";
 }
 
-pub fn digits(identity_key: &[u8]) -> [u32; GROUPS] {
-    let mut h = hash_of_one(domain::MT_SAFETY, identity_key);
+pub fn digits(answering_key: &[u8]) -> [u32; GROUPS] {
+    let mut h = hash_of_one(domain::MT_SAFETY, answering_key);
     for _ in 1..ITERATIONS {
         h = hash(domain::MT_SAFETY, &[Part::of(&h)]);
     }
@@ -36,8 +36,8 @@ pub fn digits(identity_key: &[u8]) -> [u32; GROUPS] {
 
 // Six groups of five digits, separated by single spaces: one number for speech, screen and a
 // scanned code alike.
-pub fn shown(identity_key: &[u8]) -> String {
-    let groups = digits(identity_key);
+pub fn shown(answering_key: &[u8]) -> String {
+    let groups = digits(answering_key);
     let mut out = String::with_capacity(GROUPS * (GROUP_BYTES + 1) - 1);
     for (i, group) in groups.iter().enumerate() {
         if i > 0 {

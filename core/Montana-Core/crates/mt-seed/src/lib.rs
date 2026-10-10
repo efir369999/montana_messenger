@@ -262,7 +262,7 @@ impl Branch {
 
     pub fn domain(self) -> Domain {
         match self {
-            Branch::Signing => domain::MT_ACCOUNT_KEY,
+            Branch::Signing => domain::MT_SIGNING_KEY,
             Branch::Note => domain::MT_NOTE_KEY,
             Branch::Nullifier => domain::MT_NF_KEY,
             Branch::Encryption => domain::MT_APP_ENCRYPTION_KEY,

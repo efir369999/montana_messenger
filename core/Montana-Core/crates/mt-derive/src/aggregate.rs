@@ -11,7 +11,7 @@
 use mt_codec::{domain, hash, Domain, Part, Preimage};
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct RepeatedIdentity;
+pub struct RepeatedSigner;
 
 // The identities are concatenated ascending, so two nodes holding one set reach one value
 // whatever order they saw its members in.
@@ -27,14 +27,14 @@ pub fn for_seed(
     agg_domain: Domain,
     empty_domain: Domain,
     context: &[u8; 8],
-) -> Result<[u8; 32], RepeatedIdentity> {
+) -> Result<[u8; 32], RepeatedSigner> {
     if signer_ids.is_empty() {
         return Ok(Preimage::under(empty_domain).fixed(context).finish());
     }
     let mut sorted: Vec<[u8; 32]> = signer_ids.to_vec();
     sorted.sort_unstable();
     if sorted.windows(2).any(|pair| pair[0] == pair[1]) {
-        return Err(RepeatedIdentity);
+        return Err(RepeatedSigner);
     }
     // The run of identities is of one width and the context of another, so the preimage reads one
     // way and the builder writes it: no body is assembled here, and no width can be erased on the
@@ -47,7 +47,7 @@ pub fn for_seed(
 
 // The aggregate of a window: its context is the window, so one set of signers at two heights
 // yields two values.
-pub fn aggregate(signer_ids: &[[u8; 32]], window: u64) -> Result<[u8; 32], RepeatedIdentity> {
+pub fn aggregate(signer_ids: &[[u8; 32]], window: u64) -> Result<[u8; 32], RepeatedSigner> {
     for_seed(
         signer_ids,
         domain::MT_BC_AGGREGATE,
@@ -191,11 +191,11 @@ mod tests {
     fn a_run_holding_one_identity_twice_is_refused() {
         assert_eq!(
             aggregate(&[[0x10u8; 32], [0x10u8; 32]], W),
-            Err(RepeatedIdentity)
+            Err(RepeatedSigner)
         );
         assert_eq!(
             aggregate(&[[0x40u8; 32], [0x10u8; 32], [0x40u8; 32]], W),
-            Err(RepeatedIdentity)
+            Err(RepeatedSigner)
         );
         // And the set of two distinct members stands, so what is refused is the repeat and not
         // the shape of the call.

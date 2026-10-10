@@ -319,16 +319,6 @@ size_t mt_client_recv_erasure(const MtClient *client,
  */
 int32_t mt_deeplink_kind(const char *link);
 
-/**
- * For montana://<mt-address>: writes the wallet address (ASCII) to `out`, returns the length
- * (0 if not an address / buffer too small / on error).
- *
- * # Safety
- * `link` is a C-string; `out` is at least `out_cap` bytes.
- */
-size_t mt_deeplink_address(const char *link,
-                              uint8_t *out,
-                              size_t out_cap);
 
 /**
  * For montana://b/<payload>: decodes QRBootstrap, writes current_endpoint
@@ -385,7 +375,7 @@ int mt_mldsa_seed_for_role(const uint8_t *master_seed,
 
 int mt_mldsa_keypair_from_seed(const uint8_t *seed, uint8_t *out_pubkey, uint8_t *out_seckey);
 
-int mt_derive_account_id(uint16_t suite_id, const uint8_t *pubkey, uint8_t *out_account_id);
+int mt_seed_keys(const char *mnemonic_utf8, uint8_t *out_pubkey, uint8_t *out_seckey);
 
 /**
  * 24-word mnemonic -> ML-DSA-65 account keypair + canonical account_id (suite 0x0001).
@@ -395,19 +385,7 @@ int mt_account_from_mnemonic(const char *mnemonic_utf8,
                              uint8_t *out_seckey,
                              uint8_t *out_account_id);
 
-/**
- * account_id (32 bytes) -> text address "mt…" (Base58Check), written to out + NUL.
- */
-int mt_account_id_to_address(const uint8_t *account_id,
-                             uint8_t *out,
-                             size_t out_capacity,
-                             size_t *out_len);
 
-/**
- * Text address "mt…" -> account_id (32 bytes). Verifies the checksum.
- */
-int mt_address_to_account_id(const char *address_utf8,
-                             uint8_t *out_account_id);
 
 int mt_sign(const uint8_t *seckey, const uint8_t *msg, size_t msg_len, uint8_t *out_sig);
 
@@ -698,15 +676,6 @@ bool mt_wake_handle_of(const WakeRegistry *reg,
                        const uint8_t *account_id,
                        uint8_t *out_handle);
 
-/**
- * Resolves account_id by wake_handle (postman, tier 4). true if found.
- *
- * # Safety
- * `reg` is valid; `handle` is at least 16 B; `out_account` is at least 32 B.
- */
-bool mt_wake_account_of(const WakeRegistry *reg,
-                        const uint8_t *handle,
-                        uint8_t *out_account);
 
 /**
  * Derives queue keys from routing_secret(32)+queue_index -- recv/send ML-DSA keypairs.

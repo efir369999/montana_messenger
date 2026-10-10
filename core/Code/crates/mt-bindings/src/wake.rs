@@ -184,30 +184,6 @@ pub unsafe extern "C" fn mt_wake_handle_of(
     }
 }
 
-/// Resolves account_id by wake_handle (postman, rung 4). true if found.
-///
-/// # Safety
-/// `reg` is valid; `handle` is ≥16 B; `out_account` is ≥32 B.
-#[no_mangle]
-pub unsafe extern "C" fn mt_wake_account_of(
-    reg: *const WakeRegistry,
-    handle: *const u8,
-    out_account: *mut u8,
-) -> bool {
-    if reg.is_null() || handle.is_null() || out_account.is_null() {
-        return false;
-    }
-    let mut h = [0u8; WAKE_HANDLE_LEN];
-    std::ptr::copy_nonoverlapping(handle, h.as_mut_ptr(), WAKE_HANDLE_LEN);
-    match (*reg).account_of(&h) {
-        Some(acc) => {
-            std::ptr::copy_nonoverlapping(acc.as_ptr(), out_account, ACCOUNT_ID_LEN);
-            true
-        },
-        None => false,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -292,12 +268,7 @@ mod tests {
             assert!(mt_wake_register(reg, acc.as_ptr(), h2.as_mut_ptr()));
         }
         assert_eq!(h1, h2);
-        let mut acc_out = [0u8; 32];
-        unsafe {
-            assert!(mt_wake_account_of(reg, h1.as_ptr(), acc_out.as_mut_ptr()));
-            mt_wake_registry_free(reg);
-        }
-        assert_eq!(acc_out, acc);
+        unsafe { mt_wake_registry_free(reg) };
     }
 
     #[test]
@@ -307,11 +278,6 @@ mod tests {
             assert!(!mt_wake_inline_encode(
                 std::ptr::null(),
                 0,
-                out.as_mut_ptr()
-            ));
-            assert!(!mt_wake_account_of(
-                std::ptr::null(),
-                out.as_ptr(),
                 out.as_mut_ptr()
             ));
         }
