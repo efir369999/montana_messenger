@@ -28,7 +28,7 @@ import java.io.File
 object SelfFace {
     private fun file(ctx: Context) = File(ctx.filesDir, "avatar.jpg")
     fun load(ctx: Context): Bitmap? = file(ctx).takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.path) }
-    fun clear(ctx: Context) { file(ctx).delete() }
+    fun clear(ctx: Context) { file(ctx).delete(); changed() }
     /** The face as it travels (iOS avatarData): the JPEG itself, or null when there is none. */
     fun bytes(ctx: Context): ByteArray? = file(ctx).takeIf { it.exists() }?.readBytes()
 
@@ -43,8 +43,13 @@ object SelfFace {
 
     /** The face the crop rendered (640×640 JPEG) becomes the face. */
     fun set(ctx: Context, jpeg: ByteArray): Boolean = try {
-        file(ctx).writeBytes(jpeg); true
+        file(ctx).writeBytes(jpeg); changed(); true
     } catch (e: Exception) { false }
+
+    /** THE ONE EVENT OF A CHANGE OF FACE (iOS MontanaSelfFace.changed, E2E.broadcastAvatar, MontanaShapes.swift:424-429 at 2155):
+     * every correspondent is told at once -- the face waited for the next pickup of the box (Post.fetch), and a new face set
+     * 10.10.2026 23:01 had gone to nobody a minute later. */
+    private fun changed() = Thread { Book.refs().filter { SamePair.merged(it) == null }.forEach { Post.announce(it) } }.start()
 }
 
 /** A page's top bar: an optional back mark on the left, a title, an optional mark on the right. */
