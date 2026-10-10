@@ -46,6 +46,16 @@ object Library {
     /** Whole or a part the person chose (Android 14's «selected photos», iOS limited access): either lets the grid show it. */
     fun allowed(c: Context): Boolean = perms().any { c.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
 
+    /** What a prior warm or read already found, shown at once while a fresh read runs underneath (iOS RecentMedia.assets). */
+    @Volatile private var cached: List<LibraryItem>? = null
+    fun cachedNow(): List<LibraryItem>? = cached
+
+    /** THE LIBRARY IS READ BEFORE THE FINGER ASKS FOR IT (iOS RecentMedia.warm, MontanaMedia.swift:1301-1310 at 2155,
+     * atom 1cf77b0a8360, the author's word 22.09: «the first time it shows no photographs, only the second time»):
+     * the chat warms it at its own opening, off the screen's thread, asking for no permission here -- only reading
+     * what is already granted. */
+    fun warm(c: Context) { if (allowed(c)) Thread { recent(c) }.start() }
+
     fun recent(c: Context, limit: Int = 600): List<LibraryItem> {
         val out = ArrayList<LibraryItem>()
         fun read(base: Uri, video: Boolean) {
@@ -63,7 +73,7 @@ object Library {
         }
         runCatching { read(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, false) }
         runCatching { read(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true) }
-        return out.sortedByDescending { it.at }.take(limit)
+        return out.sortedByDescending { it.at }.take(limit).also { cached = it }
     }
 
     /** The covers (iOS MTAssetImages: 360 px, one bounded cache, a tile holds its own picture). */
@@ -298,6 +308,9 @@ fun galleryPick(act: MainActivity, onPick: (List<Uri>) -> Unit, onCamera: () -> 
         sheet.setH(sheet.low)
     }
     fun load() {
+        // A WARM LIBRARY SHOWS AT ONCE (iOS RecentMedia.assets, atom 1cf77b0a8360): what a prior warm already found
+        // stands in the grid before this very read returns, instead of a spinner over nothing a second time.
+        Library.cachedNow()?.let { items = it; spinner.visibility = View.GONE; adapter.notifyDataSetChanged() }
         act.background {
             val got = if (Library.allowed(c)) Library.recent(c) else emptyList()
             act.onMain {

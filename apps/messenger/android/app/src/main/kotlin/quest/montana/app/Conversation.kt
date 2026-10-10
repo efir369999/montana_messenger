@@ -1084,6 +1084,10 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
             null
         }
     }
+    // THE LIBRARY IS WARM BEFORE THE FINGER ASKS (iOS RecentMedia.warm, MontanaMedia.swift:1301-1310 and
+    // MontanaConversation.swift:3120-3126 at 2155, atom 1cf77b0a8360: «the first time it shows no photographs, only
+    // the second time»): the chat warms it at its own opening, off the screen's thread, asking for no permission here.
+    Library.warm(c)
     // THE GALLERY OF THE ROW (iOS openGallery → MTGalleryPick): the phone's latest pictures at once, the camera the first tile,
     // «All photos» the system's own picker with its ten; what is chosen waits above the field
     barTop = { IntArray(2).also { bar.getLocationOnScreen(it) }[1] }
@@ -2132,6 +2136,9 @@ fun letterMenu(act: MainActivity, ref: String, m: Msg, onReply: () -> Unit, onEd
             if (writes) row(c.getString(R.string.reply), R.drawable.ic_reply) { onReply() }
             // EDIT STICKER (iOS MontanaMessageMenu 474-476, MontanaConversation 2251-2254): a letter's own card sticker, re-cut into a new one
             if (Stickers.editable(m)) row(c.getString(R.string.sticker_edit), R.drawable.ic_pencil) { Stickers.editFromLetter(act, ref, m) }
+            // VIEW STICKER SET (iOS onViewSet: MontanaMessageMenu.swift:479-482, MontanaConversation.swift:2256-2259 at
+            // 2155): any card sticker, mine or theirs, opens the same panel a hold on the emoji key opens
+            if (Stickers.viewable(m)) row(c.getString(R.string.sticker_view_set), R.drawable.ic_grid_2x2) { Stickers.panel(act, ref) }
             // COPY (iOS MontanaMessageMenu 483-485): the letter's own text, whatever it carries — not narrowed to a kind
             if (m.text.isNotEmpty()) row(c.getString(R.string.copy), R.drawable.ic_content_copy) {
                 // a post's card copies the post's words, never its record (iOS MTRowLetter.words, MTRowLetter.swift:55-59 at 2155)

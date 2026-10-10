@@ -126,10 +126,16 @@ object Stickers {
         Thread { Media.send(c, ref, Media.Picked(bytes, "img", f.extension, CARD), "") }.start()
     }
 
-    /** A LETTER'S OWN CARD STICKER CAN BE RE-CUT (iOS onEditSticker: MontanaMessageMenu 474-476, MontanaConversation 2251-2254):
-     * Android narrows this to a letter of mine, with its picture already on this phone — the other person's set carries no
-     * passport yet (the header above: «not yet here»). */
-    fun editable(m: Msg): Boolean = m.mine && isPicture(m) && m.file != null
+    /** ANY STICKER LETTER CAN BE RE-CUT, MINE OR THEIRS (iOS onEditSticker: MontanaMessageMenu.swift:474-476 and
+     * MontanaConversation.swift:2251-2254 at 2155, neither narrowed to m.isFromMe): the editor opens on that very
+     * picture and what the check keeps is a NEW sticker of my own set — the letter it came from is never touched.
+     * Android narrows only to a picture already on this phone (the file assembled). */
+    fun editable(m: Msg): Boolean = isPicture(m) && m.file != null
+
+    /** THE SAME LETTER OPENS MY OWN SET, MINE OR THEIRS (iOS onViewSet: MontanaMessageMenu.swift:479-482 and
+     * MontanaConversation.swift:2256-2259 at 2155): the panel a hold on the emoji key already opens (panel below)
+     * is the very page the row would open. */
+    fun viewable(m: Msg): Boolean = isPicture(m)
 
     /** EDIT STICKER (iOS MontanaStickerEditor via the .stickerEdit sheet, MontanaConversation 2139-2149): the letter's own
      * picture opens in the editor; what the check keeps is a NEW sticker of my set, sent at once — the letter it came from

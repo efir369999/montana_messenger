@@ -5,6 +5,7 @@
     <string name="edit">编辑</string>
     <string name="editing">正在编辑</string>
     <string name="sticker_edit">编辑贴纸</string>
+    <string name="sticker_view_set">查看贴纸包</string>
     <string name="delete_for_me">为我删除</string>
     <string name="delete_for_everyone">为所有人删除</string>
     <string name="delete_message_q">删除消息？</string>

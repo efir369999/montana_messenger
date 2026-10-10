@@ -5,6 +5,7 @@
     <string name="edit">Изменить</string>
     <string name="editing">Редактирование</string>
     <string name="sticker_edit">Изменить стикер</string>
+    <string name="sticker_view_set">Посмотреть набор</string>
     <string name="delete_for_me">Удалить у меня</string>
     <string name="delete_for_everyone">Удалить у всех</string>
     <string name="delete_message_q">Удалить сообщение?</string>

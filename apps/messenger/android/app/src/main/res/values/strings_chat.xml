@@ -5,6 +5,7 @@
     <string name="edit">Edit</string>
     <string name="editing">Editing</string>
     <string name="sticker_edit">Edit sticker</string>   <!-- iOS «Edit sticker», MontanaMessageMenu.swift:475 -->
+    <string name="sticker_view_set">View sticker set</string>   <!-- iOS «View sticker set», MontanaMessageMenu.swift:480 -->
     <string name="delete_for_me">Delete for me</string>
     <string name="delete_for_everyone">Delete for everyone</string>
     <string name="delete_message_q">Delete message?</string>

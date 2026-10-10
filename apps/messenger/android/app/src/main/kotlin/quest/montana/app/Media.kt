@@ -410,6 +410,10 @@ object Media {
                     return@Thread
                 }
                 Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.let { it.file = dest.path; it.meta = man.toString() } }
+                // A STICKER THAT ARRIVED IS KEPT (iOS MontanaChatStore.swift:3608-3620 at 2155, atom 0d501f110022): the
+                // receiver's panel holds what was used in the conversation, exactly as the sender's does -- one copy per
+                // picture, since Stickers.add names a sticker by its own bytes and moves a known one to the front.
+                if (man.optString("n") == Stickers.CARD) runCatching { Stickers.add(c, dest.readBytes(), dest.extension) }
                 // a group's copy was receipted by the group (Groups.handle), and its pieces serve every other member of it
                 if (!Groups.isKey(ref)) { Post.receiptFor(ref, mid); drop(man) }
             } catch (e: Exception) { Log.w("Montana", "media fetch: ${e.javaClass.simpleName}") }
