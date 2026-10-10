@@ -3,7 +3,7 @@
    phrase without a translation reaches every language unchanged. The source is English
    (Info.plist); this file is one language of it. */
 
-"NSCameraUsageDescription" = "Montana 使用相机为聊天拍摄照片和视频。";
+"NSCameraUsageDescription" = "Montana 使用相机在聊天中拍摄照片和视频、录制视频消息、进行视频通话，以及扫描他人的二维码。";
 "NSContactsUsageDescription" = "Montana 使用通讯录，以便你在聊天中分享联系人，并按 @名称将你在 Montana 中添加的人保存到通讯录。可在设置的隐私中关闭“同步联系人”。";
 "NSFaceIDUsageDescription" = "Montana 使用面容 ID 显示你的 24 个恢复词。";
 "NSLocationWhenInUseUsageDescription" = "Montana 使用你的位置，以便你在聊天中发送它。";

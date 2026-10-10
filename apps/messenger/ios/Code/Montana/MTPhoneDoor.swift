@@ -636,8 +636,20 @@ struct MTPhoneDoor: View {
     }
 
     /// «Next» stands whatever the service says: the question comes after the number, and the sheet of the question speaks the
-    /// service's silence honestly, with the way on where the page has one.
+    /// service's silence honestly, with the way on where the page has one. THE NUMBER IS OPTIONAL IN SIGHT (audit No.57, A-12):
+    /// where the page has a way on, it stands under «Next» at once -- a person, or a reviewer without the bot's messenger, is
+    /// never asked for a number to go on (5.1.1(v): «Apps may not require users to enter personal information to function»).
     private var foot: some View {
+        VStack(spacing: 12) {
+            nextButton
+            if let without {
+                Button { without() } label: { Text("Continue without a number") }
+                    .buttonStyle(MTLoginDoorStyle())
+            }
+        }
+    }
+
+    private var nextButton: some View {
         Button {
             typing = false
             // THE BOT'S OWN SIGN-IN IS THE ROAD TAKEN when the service offers it; a service that keeps one road is not asked

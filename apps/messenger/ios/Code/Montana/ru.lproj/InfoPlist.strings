@@ -3,7 +3,7 @@
    phrase without a translation reaches every language unchanged. The source is English
    (Info.plist); this file is one language of it. */
 
-"NSCameraUsageDescription" = "Montana использует камеру, чтобы снимать фото и видео для чатов.";
+"NSCameraUsageDescription" = "Montana использует камеру для фото и видео в чатах, видеосообщений и видеозвонков, а также чтобы сканировать QR-код человека.";
 "NSContactsUsageDescription" = "Montana использует контакты, чтобы вы могли поделиться ими в чате, и сохраняет людей, добавленных в Montana, в ваши контакты по их @имени. Это выключается в Настройках: Приватность, Синхронизировать контакты.";
 "NSFaceIDUsageDescription" = "Montana использует Face ID, чтобы показать 24 слова восстановления.";
 "NSLocationWhenInUseUsageDescription" = "Montana использует геопозицию, чтобы вы могли отправить своё местоположение в чат.";

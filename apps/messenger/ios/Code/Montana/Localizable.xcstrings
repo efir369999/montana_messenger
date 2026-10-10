@@ -2287,18 +2287,18 @@
         }
       }
     },
-    "Block: a blocked person can no longer reach you — their letters are refused on every road and never shown.": {
+    "Block: a blocked person can no longer reach you — their letters and calls are refused on every road and never shown.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Блокировка: заблокированный человек больше не может до вас дотянуться — его письма отвергаются на всех дорогах и никогда не показываются."
+            "value": "Блокировка: заблокированный человек больше не может до вас дотянуться — его письма и звонки отвергаются на всех дорогах и никогда не показываются."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "屏蔽：被屏蔽的人再也无法联系您——其信件在所有通道上都会被拒收，且永不显示。"
+            "value": "屏蔽：被屏蔽的人再也无法联系您——其信件和通话在所有通道上都会被拒收，且永不显示。"
           }
         }
       }
@@ -7228,18 +7228,18 @@
         }
       }
     },
-    "Montana is a messenger between people who chose to talk to each other. Every conversation is encrypted end to end; nobody but its two sides can read it.": {
+    "Montana is a messenger between people who chose to talk to each other. Every conversation is encrypted end to end; nobody but the people in it can read it.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Montana — мессенджер между людьми, которые сами решили говорить друг с другом. Каждый разговор зашифрован из конца в конец; никто, кроме двух его сторон, прочесть его не может."
+            "value": "Montana — мессенджер между людьми, которые сами решили говорить друг с другом. Каждый разговор зашифрован из конца в конец; никто, кроме его участников, прочесть его не может."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Montana 是一款供彼此选择交谈的人使用的通讯软件。每一段对话都经过端到端加密；除对话双方外，无人能读取。"
+            "value": "Montana 是一款供彼此选择交谈的人使用的通讯软件。每一段对话都经过端到端加密；除对话参与者外，无人能读取。"
           }
         }
       }

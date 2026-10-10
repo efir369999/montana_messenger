@@ -885,7 +885,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
                 guard let r = self.live, r.pairs[p.seat] === p else { return }
                 if p.pc == nil {
                     let c = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
-                    guard let pc = MontanaCall.shared.factory.peerConnection(with: cfg, constraints: c, delegate: p) else {
+                    guard let pc = MontanaCall.shared.factory.peerConnection(with: cfg, constraints: c, certificateVerifier: MTRelayTrust.shared, delegate: p) else {
                         MontanaTrace.mark("room_pair", "connection refused by the factory")
                         return
                     }

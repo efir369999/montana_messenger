@@ -15,6 +15,7 @@
 import Foundation
 import UserNotifications
 import Network
+import Security
 import WebRTC
 import CallKit
 import ReplayKit
@@ -1106,6 +1107,7 @@ final class MontanaCall: NSObject {
             if !stun.isEmpty { servers = [RTCIceServer(urlStrings: stun)] }
             // 12.6: the TLS door first — it survives dead UDP and DPI; tcp, then udp.
             let ordered = uris.sorted { turnRank($0) < turnRank($1) }
+            MTRelayTrust.learn(ordered)   // the names the relay's certificate is checked against, by the system's own trust
             if !ordered.isEmpty {
                 servers.append(RTCIceServer(urlStrings: ordered, username: t.name, credential: t.credential))
             }
@@ -1139,7 +1141,7 @@ final class MontanaCall: NSObject {
         factory.setOptions(opts)
         MontanaTrace.mark("call_ice", MontanaNetWitness.tunnelPresent() ? "every adapter -- a tunnel among them" : "every adapter")
         let constraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
-        pc = factory.peerConnection(with: cfg, constraints: constraints, delegate: self)
+        pc = factory.peerConnection(with: cfg, constraints: constraints, certificateVerifier: MTRelayTrust.shared, delegate: self)
         let audioConstraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
         let audioSource = factory.audioSource(with: audioConstraints)
         let track = factory.audioTrack(with: audioSource, trackId: "mt_audio")
@@ -7465,5 +7467,46 @@ enum MTProximity {
     }
     private static func note(_ what: String, _ why: String) {
         MontanaTrace.mark("proximity", "\(what) by=\(why) holders=\(holders.sorted().joined(separator: ","))")
+    }
+}
+
+/// THE RELAY'S TLS IS JUDGED BY THE SYSTEM'S OWN TRUST (10.10.2026, measured). The engine checks a relay's certificate against
+/// the roots compiled into it, and the root our relays' certificates chain to is not among them: 411 of 411 TLS relay gatherings
+/// across the fleet since 07.10 ended «701 Failed to establish connection», so a network that lets only TLS through left a call
+/// without any relay. The same request on the Mac with the same engine: no relay candidate under the engine's own check, two
+/// under the system's. Nothing is waived: iOS checks the chain and the name, and the names are the TLS relays of the passes
+/// this phone was handed by its nodes.
+final class MTRelayTrust: NSObject, RTCSSLCertificateVerifier {
+    static let shared = MTRelayTrust()
+    private static let lock = NSLock()
+    private static var names: Set<String> = []   // BOUND-OK: the TLS relay names of the passes this launch was handed
+    /// The TLS relays of a pass: «turns:host:port?transport=tcp» names «host»; a relay named by an IPv6 address has no name to check.
+    static func learn(_ uris: [String]) {
+        let hosts: [String] = uris.compactMap { u in
+            guard u.hasPrefix("turns:") else { return nil }
+            let authority = u.dropFirst("turns:".count).split(separator: "?").first.map(String.init) ?? ""
+            guard !authority.isEmpty, !authority.hasPrefix("[") else { return nil }
+            let host = authority.split(separator: ":").first.map(String.init) ?? ""
+            return host.isEmpty ? nil : host.lowercased()
+        }
+        lock.withLock { names.formUnion(hosts) }
+    }
+    func verify(_ derCertificate: Data) -> Bool {
+        guard let cert = SecCertificateCreateWithData(nil, derCertificate as CFData) else {
+            MontanaTrace.mark("relay_tls", "REFUSED not a certificate")
+            return false
+        }
+        let hosts = Self.lock.withLock { Self.names.sorted() }
+        for host in hosts {
+            var trust: SecTrust?
+            guard SecTrustCreateWithCertificates(cert, SecPolicyCreateSSL(true, host as CFString), &trust) == errSecSuccess,
+                  let judged = trust else { continue }
+            if SecTrustEvaluateWithError(judged, nil) {
+                MontanaTrace.mark("relay_tls", "trusted host=\(host)")
+                return true
+            }
+        }
+        MontanaTrace.mark("relay_tls", "REFUSED names=\(hosts.count)")
+        return false
     }
 }

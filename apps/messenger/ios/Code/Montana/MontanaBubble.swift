@@ -209,7 +209,6 @@ struct MessageBubble: View, Equatable {
     /// The invitation waits for this phone's answer (MTChessSend.awaitsMe): its two buttons stand under it.
     var chessOpen = false
     var onChessDecline: (String) -> Void = { _ in }
-    /// What the game this letter closes gave or took from this phone (MTChessCoins.net); nil where it holds no pot.
     /// The Accept under an invitation that waits for this phone: the one door of an acceptance from the chat (MTChessSend.join).
     var onChessAccept: (String) -> Void = { _ in }
     /// An invitation answered: the game's state in its words (accepted and played, declined, over); nil while it waits.
@@ -262,6 +261,12 @@ struct MessageBubble: View, Equatable {
     var groupCaption: String {
         let worded = members.filter { !$0.text.isEmpty }
         return worded.count == 1 ? worded[0].text : ""
+    }
+    /// THE FILTER (Guideline 1.2) folds a letter, or a whole plate of pictures, whose words carry an objectionable word: the
+    /// plate's branch stood before the check and showed a stranger's caption unfolded (audit No.57, A-18).
+    var filterFolds: Bool {
+        !message.isMine && !fold.opened.contains(message.id) && MontanaSafety.filterOn
+            && MontanaContentFilter.flags(isGroup ? groupCaption : message.text)
     }
     /// The plate's one status: the stage of its slowest letter (MTLadder) -- the stamp, the line under the plate and the
     /// chat row read one rung.
@@ -632,9 +637,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         // different from the sender's, the sender sees a resend button — on ANY bubble
         // kind. One attachment point at the bubble root ([C-1]), not per-kind copies.
         Group {
-            if isGroup {
-                groupBubble()
-            } else if !message.isMine, !fold.opened.contains(message.id), MontanaSafety.filterOn, MontanaContentFilter.flags(message.text) {
+            if filterFolds {
                 // THE FILTER (Guideline 1.2): a letter carrying an objectionable word stands
                 // folded — nothing of it is read by surprise; the person's own tap unfolds it.
                 // THE FOLD IS A BUTTON (the author's word 24.09: «it must always show on the tap»). It was a
@@ -654,6 +657,8 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+            } else if isGroup {
+                groupBubble()
             } else if let chess = message.chessLetter {
                 chessBubble(chess)
             } else if let card = MTWallCard.of(message.text) {

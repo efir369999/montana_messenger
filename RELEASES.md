@@ -12,7 +12,7 @@ Each folder of this repository is the tree of one commit of the project's histor
 |---|---|---|---|
 | `apps/mesh/ios` | 3 | `9d9eaa61456d` | 2026-10-10 11:51 UTC |
 | `apps/messenger/android` | 400 | `36d89f272c6c` | 2026-10-10 19:27 UTC |
-| `apps/messenger/ios` | 2177 | `70a2d8641e81` | 2026-10-10 17:37 UTC |
+| `apps/messenger/ios` | 2179 | `270009b93c9d` | 2026-10-10 19:28 UTC |
 | `apps/p2p/ios` | 2 | `9652b512bced` | 2026-10-10 11:51 UTC |
 | `apps/vpn/ios` | 3 | `298b7dc88d0c` | 2026-10-10 11:51 UTC |
 | `apps/wallet/ios` | 17 | `371e8c39c386` | 2026-10-10 13:15 UTC |

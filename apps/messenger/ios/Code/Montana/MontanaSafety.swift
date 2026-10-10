@@ -83,7 +83,7 @@ struct MontanaTermsView: View {
         VStack(spacing: 0) {
             List {
                 Section {
-                    Text("Montana is a messenger between people who chose to talk to each other. Every conversation is encrypted end to end; nobody but its two sides can read it.")
+                    Text("Montana is a messenger between people who chose to talk to each other. Every conversation is encrypted end to end; nobody but the people in it can read it.")
                     Text("By using Montana you agree to these terms.")
                 }.listRowBackground(MTGlassRowPlate()).foregroundColor(.white)
                 Section("No tolerance for abuse") {
@@ -92,7 +92,7 @@ struct MontanaTermsView: View {
                     Text("A person who sends such content or abuses others is barred from Montana's relays and doors.")
                 }.listRowBackground(MTGlassRowPlate()).foregroundColor(.white)
                 Section("Your tools") {
-                    Text("Block: a blocked person can no longer reach you — their letters are refused on every road and never shown.")
+                    Text("Block: a blocked person can no longer reach you — their letters and calls are refused on every road and never shown.")
                     Text("Report: any letter or person can be reported from its menu. Reports are reviewed within 24 hours; offending content is removed and the offender is barred.")
                     Text("Filter: letters carrying objectionable words are folded by default and unfold only by your tap. The filter is yours to keep or turn off in Privacy.")
                     Text("Delete: any letter can be removed from your feed at once — for you, or for everyone.")

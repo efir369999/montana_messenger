@@ -24,7 +24,7 @@
 	<key>MontanaPhoneService</key>
 	<string>id.montana.quest</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Montana uses the camera to take photos and videos for your chats.</string>
+	<string>Montana uses the camera for photos and videos in your chats, video messages and video calls, and to scan a person's QR code.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Montana uses your contacts so you can share one in a chat, and saves the people you add in Montana to your contacts by their @name. Turn this off in Settings, Privacy, Sync contacts.</string>
 	<key>NSFaceIDUsageDescription</key>
