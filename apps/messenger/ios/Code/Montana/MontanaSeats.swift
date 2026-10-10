@@ -291,7 +291,6 @@ final class MTSeats: ObservableObject {
         E2E.forgetDeviceTag()
         SeedScope.reread(restored: false)
         MTBoard.shared.reread()   // the wall loads on the forgotten seed's word, which is not spoken here: it reads the lifted wall
-        MontanaAppleID.publish()
         NotificationCenter.default.post(name: .montanaSeedOpened, object: nil)
         MontanaWakePush.registerConvs()
         MontanaPhoneNode.shared.reconnectNow()

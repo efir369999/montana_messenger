@@ -1401,22 +1401,6 @@
         }
       }
     },
-    "Another identity": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Другая личность"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "另一个身份"
-          }
-        }
-      }
-    },
     "Anyone who holds a name can be written to by it.": {
       "localizations": {
         "ru": {
@@ -1478,22 +1462,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "外观"
-          }
-        }
-      }
-    },
-    "Apple Account carries": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В учётной записи Apple"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple 账户中保存"
           }
         }
       }
@@ -1590,22 +1558,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在请求联系人链接…"
-          }
-        }
-      }
-    },
-    "Asking iCloud…": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Спрашиваем iCloud…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在询问 iCloud…"
           }
         }
       }
@@ -3648,22 +3600,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "继续语音通话"
-          }
-        }
-      }
-    },
-    "Continue with your Apple Account": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Продолжить с учётной записью Apple"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用您的 Apple 账户继续"
           }
         }
       }
@@ -5839,22 +5775,6 @@
         }
       }
     },
-    "Identity in Apple Account": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Личность в учётной записи Apple"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple 账户中的身份"
-          }
-        }
-      }
-    },
     "Identity verified": {
       "extractionState": "manual",
       "localizations": {
@@ -6208,22 +6128,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "保存者"
-          }
-        }
-      }
-    },
-    "Kept for the account": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Записано для учётной записи"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已为账户保存"
           }
         }
       }
@@ -12352,22 +12256,6 @@
         }
       }
     },
-    "The 24 words are written to the iCloud Keychain, which carries them to every device signed in with your Apple Account. Passwords & Keychain must be on in iCloud settings on both devices; the phone cannot see whether it is.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "24 слова записываются в Связку ключей iCloud, которая переносит их на каждое устройство, вошедшее в вашу учётную запись Apple. На обоих устройствах в настройках iCloud должны быть включены «Пароли и Связка ключей»; телефон не может проверить, включены ли они."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这 24 个词会写入 iCloud 钥匙串，由其带到登录了您 Apple 账户的每台设备。两台设备的 iCloud 设置中都必须开启“密码与钥匙串”；手机无法得知是否已开启。"
-          }
-        }
-      }
-    },
     "The call found no road": {
       "extractionState": "manual",
       "localizations": {
@@ -13222,38 +13110,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "此文件不是 Montana 备份。"
-          }
-        }
-      }
-    },
-    "This identity": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Эта личность"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此身份"
-          }
-        }
-      }
-    },
-    "This identity and another": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Эта личность и ещё одна"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此身份及另一个"
           }
         }
       }
@@ -14454,22 +14310,6 @@
         }
       }
     },
-    "Which identity?": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Какую личность открыть?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开哪个身份？"
-          }
-        }
-      }
-    },
     "While a call lasts, the sound belongs to it.": {
       "localizations": {
         "en": {
@@ -15153,22 +14993,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "您的 24 个单词助记词"
-          }
-        }
-      }
-    },
-    "Your Apple Account carries more than one identity of Montana. Choose the one to open on this phone.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В вашей учётной записи Apple хранится несколько личностей Montana. Выберите ту, которую открыть на этом телефоне."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "您的 Apple 账户中保存了多个 Montana 身份。请选择要在此手机上打开的身份。"
           }
         }
       }
@@ -15973,22 +15797,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "此处无法使用 iCloud Drive。请在系统设置中启用 iCloud 与 iCloud Drive 后重试。"
-          }
-        }
-      }
-    },
-    "iCloud Drive is off on this device, or no Apple Account is signed in. The identity is open; a copy can be taken later in Settings.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud Drive на этом устройстве выключен, или не выполнен вход в учётную запись Apple. Личность открыта; копию можно забрать позже в Настройках."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此设备上的 iCloud Drive 已关闭，或未登录 Apple 账户。身份已打开；稍后可在设置中取回副本。"
           }
         }
       }

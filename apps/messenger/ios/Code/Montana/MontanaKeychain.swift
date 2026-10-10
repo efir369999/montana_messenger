@@ -267,7 +267,8 @@ enum MTRetired {
         "1e847a7b99f7fb2f", "6dfb4dfc75a048bb", "a2c89a470c8b4e68", "b4ef431650d29952", "16dc366cf5d4ab7e", "b303a9915419595b",
         "cf5df0cfaf6abb42", "0ebfb5e39c166c31", "286e79df368bc274", "d9eab097aafefbad", "aecf27cf098af505", "066a6017681b9a29",
         "5465de8e02330255", "914177d545951a4a", "baec03f439ab049f", "bea05dfb708b7053", "f5f3635e36459afa", "02fd86fa4a224958",
-        "20819e7cb6c89c93", "1319ba68952fb7a7"]
+        "20819e7cb6c89c93", "1319ba68952fb7a7",
+        "893dae5f6adc44d7"]   // the switch of the seed in the Apple Account (10.10.2026: the door closed, the switch leaves)
     /// Values a conversation kept under its own key: the name up to and including its first dot.
     private static let valuePrefixes: Set<String> = ["877c3850af65880d", "1acf252d0dea4e14", "57e5c61ef47cc715", "8c8189a5f4adb303"]
     static let keychainItems: Set<String> = ["9a59fadd4343ec4b"]

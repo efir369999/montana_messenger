@@ -6095,7 +6095,7 @@ enum SeedScope {
         "cardKind", "lastMediaPane", "timePanelOpen",
         "mt.net.tab2", "exitReachability",
         "mt.backup.icloud", "mt.backup.icloud.replace", "mt.backup.plan",
-        "mt.apple.signin", "mt.home.node", "mt.home.node.on", "mt.home.node.pin",   // the Apple Account switch, the person's own node, its daily copies and the digest of its certificate (28.09)
+        "mt.home.node", "mt.home.node.on", "mt.home.node.pin",   // the person's own node, its daily copies and the digest of its certificate (28.09)
         MTBoardRule.key, MTBoardRule.sightKey]
     /// THE MARKS OF MIGRATIONS ALREADY RUN over the data they describe: a copy carries them with that data, so a
     /// one-time sweep never runs a second time over what it already swept; a change of seed keeps them.
@@ -6136,8 +6136,8 @@ enum SeedScope {
     /// THE PERSON ON THIS PHONE (the second identity checklist, 1.2): never in a copy, as before -- derived from the seed or
     /// learned for this person's correspondences on this device -- and parked with the person's seat, lifted with it
     /// (MTSeats). The keys of the correspondences and of this person's node, the archive's and the delivery's ledgers, what
-    /// was announced to whom, the name of this person's record in the Apple Account (a second person publishes a record of
-    /// their own and never writes over the first), the copies' clocks (a copy is named by its owner's proof, one per person).
+    /// was announced to whom, the name of the record a build before kept for this person in the Apple Account (withdrawn with
+    /// the identity), the copies' clocks (a copy is named by its owner's proof, one per person).
     static let seatKeys = [
         "peerFaceOwned",   // the digests of the faces the correspondents themselves sent (ChatStore.faceOwned, 04.10): this person's
         "mt.account.keys", "mt.twin.ref", "mt.node.identity", "mt.node.kem", "pipeSecrets",
