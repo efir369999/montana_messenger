@@ -4851,7 +4851,15 @@ extension MontanaCall: CXProviderDelegate {
             guard self.audioUnitPending, (!self.isVideo || self.videoReady) else { return }
             self.audioUnitPending = false
             let t0 = Date()
-            RTCAudioSession.sharedInstance().isAudioEnabled = true
+            // A SESSION THE SYSTEM TAKES OVER RESTARTS THE AUDIO NODE (10.10.2026, T1 to a correspondent 11:02Z, the author: «I did not
+            // hear her and the call broke»). The outgoing call's activation came six seconds late, after the ringback's own
+            // activation had raised the node; the system's takeover stopped the running node, and «enabled», already true, set
+            // again changed nothing -- the microphone sent 8314 bytes and then nothing, her voice arrived and was never played.
+            // An enabled node is lowered and raised again, so it runs on the session the system has just handed over.
+            let session = RTCAudioSession.sharedInstance()
+            let restarted = session.isAudioEnabled
+            if restarted { session.isAudioEnabled = false }
+            session.isAudioEnabled = true
             if self.speakerOn, !MontanaAudioRoute.isExternal {
                 let s = RTCAudioSession.sharedInstance()
                 s.lockForConfiguration()
@@ -4859,7 +4867,7 @@ extension MontanaCall: CXProviderDelegate {
                 catch { E2ELog.write("call: speaker route err \(error)") }
                 s.unlockForConfiguration()
             }
-            MontanaTrace.mark("audio_on", "ms=\(Int(Date().timeIntervalSince(t0)*1000)) after=\(ev.rawValue)")
+            MontanaTrace.mark("audio_on", "ms=\(Int(Date().timeIntervalSince(t0)*1000)) after=\(ev.rawValue) restarted=\(restarted ? 1 : 0)")
             DispatchQueue.main.async { self.autoSpeakerOnVideo() }   // the audio node rose: the video call's loudspeaker is decided now
         }
     }
