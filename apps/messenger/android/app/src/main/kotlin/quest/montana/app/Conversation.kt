@@ -2495,7 +2495,6 @@ private fun mediaBox(c: Context, w0: Int, h0: Int, ceiling: Int = PLATE_CEILING)
     else c.dp(Math.round(maxOf(minShort, long * w / h))) to c.dp(ceiling)
 }
 
-private val gifFrozen = HashSet<String>()   // a moving picture's mid, held on the frame the finger stopped it on (iOS gifFrozen, 23.09)
 private var gifCeilingCache = -1
 
 /** THE MOVING PICTURE'S CEILING IS THE DEVICE'S, NOT THE WINDOW'S (iOS MessageBubble.gifCeiling, 23.09): 0.6 of the device's
@@ -2510,10 +2509,42 @@ private fun gifCeilingDp(c: Context): Int {
 }
 
 /**
- * A LETTER'S MOVING PICTURE PLAYS BY THE PLATFORM'S OWN ANIMATOR (iOS MTGifView/MTGifPlayer, 23.09): ImageDecoder reads the
- * file's frames one at a time into an AnimatedImageDrawable; nothing of ours decodes every frame ahead. The plate's shape
- * comes from the file's header alone. A tap freezes it on the frame it stands on (stop keeps that frame); the next tap lets
- * it go on (start resumes) — never a new window. Below API 28, or where the platform refuses, the first frame stands still.
+ * THE PLAY OF A GIF HAS ONE OWNER, BY ITS FILE NAME (iOS MTGifPlay, MontanaGif.swift 47-127 at 2155, the author's word
+ * 23.09: "make them play their cycle three times when sent, and then only on a tap -- three cycles -- and a tap at any
+ * moment stops them"): a first showing ever plays three cycles once in the file's life (the mark survives a relaunch,
+ * capped at 3000 files, iOS ranCap); after that only a tap plays three cycles, and a tap on a playing one stops it where
+ * it stands. The platform's own repeat count carries the cycles -- Android's stateful AnimatedImageDrawable needs none of
+ * iOS's manual frame-index bookkeeping (MTGifView's wrap-around guard, P-130): stop()/start() alone hold the frame.
+ */
+private object GifPlay {
+    const val CYCLES = 3
+    private const val KEY = "gifFirstRun"
+    private const val CAP = 3000
+    private var ran: MutableList<String>? = null
+    @Synchronized private fun load(): MutableList<String> =
+        ran ?: Prefs.str(KEY, "").split(",").filter { it.isNotEmpty() }.toMutableList().also { ran = it }
+
+    /** True once in the file's life; the mark is written before the caller returns (iOS framesLeft/shown). */
+    @Synchronized fun firstEver(file: String): Boolean {
+        val list = load()
+        if (list.contains(file)) return false
+        list.add(file)
+        while (list.size > CAP) list.removeAt(0)
+        Prefs.setStr(KEY, list.joinToString(","))
+        return true
+    }
+}
+
+/**
+ * A LETTER'S MOVING PICTURE PLAYS BY THE PLATFORM'S OWN ANIMATOR (iOS MTGifView/MTGifPlayer, MontanaGif.swift 138-253 at
+ * 2155, 23.09): ImageDecoder reads the file's frames one at a time into an AnimatedImageDrawable; nothing of ours decodes
+ * every frame ahead, and the plate's shape comes from the file's header alone. THE TOUCH IS THE PLATE'S OWN (iOS
+ * v.isUserInteractionEnabled = false, MontanaGif.swift 242): the image view asks nothing of the finger, so every tap
+ * lands on this click listener, never inside the image itself. A tap on a playing gif stops it on the frame it stands
+ * on (iOS MontanaBubble.swift 463-470, MTGifPlay.toggle); a tap on a resting one plays three cycles (GifPlay above).
+ * THREE CYCLES END WHERE THEY BEGAN (iOS "they stop crookedly" fix, 23.09, MontanaGif.swift 211-217): a natural end
+ * rests on the first frame, never on whatever frame the repeat count happened to land on; a tap's own stop freezes the
+ * frame it stands on instead. Below API 28, or where the platform refuses, the first frame stands still.
  */
 private fun gifBody(c: Context, m: Msg, f: java.io.File, into: LinearLayout): Int {
     val shape = runCatching {
@@ -2529,15 +2560,26 @@ private fun gifBody(c: Context, m: Msg, f: java.io.File, into: LinearLayout): In
         }
         clipToOutline = true
         val iv = ImageView(c).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
-        if (android.os.Build.VERSION.SDK_INT >= 28) runCatching {
-            val d = android.graphics.ImageDecoder.decodeDrawable(android.graphics.ImageDecoder.createSource(f)) as? android.graphics.drawable.AnimatedImageDrawable
-            if (d != null) { iv.setImageDrawable(d); if (gifFrozen.contains(m.mid)) d.stop() else d.start() }
+        val key = f.name
+        var byTap = false   // a tap's own stop freezes the frame it stands on -- it must never rest to the first (iOS 23.09)
+        fun rest() { Media.preview(c, f, "img")?.let { iv.setImageBitmap(it) } }
+        fun playThree() {
+            val d = if (android.os.Build.VERSION.SDK_INT >= 28) runCatching {
+                android.graphics.ImageDecoder.decodeDrawable(android.graphics.ImageDecoder.createSource(f)) as? android.graphics.drawable.AnimatedImageDrawable
+            }.getOrNull() else null
+            if (d == null) { rest(); return }
+            d.repeatCount = GifPlay.CYCLES - 1
+            d.registerAnimationCallback(object : android.graphics.drawable.Animatable2.AnimationCallback() {
+                override fun onAnimationEnd(drawable: android.graphics.drawable.Drawable) { if (byTap) byTap = false else rest() }
+            })
+            iv.setImageDrawable(d)
+            d.start()
         }
-        if (iv.drawable == null) Media.preview(c, f, "img")?.let { iv.setImageBitmap(it) }
+        if (GifPlay.firstEver(key)) playThree() else rest()
         addView(iv, FrameLayout.LayoutParams(MATCH, MATCH))
         setOnClickListener {
-            if (!gifFrozen.remove(m.mid)) gifFrozen.add(m.mid)
-            (iv.drawable as? android.graphics.drawable.AnimatedImageDrawable)?.let { d -> if (gifFrozen.contains(m.mid)) d.stop() else d.start() }
+            val d = iv.drawable as? android.graphics.drawable.AnimatedImageDrawable
+            if (d != null && d.isRunning) { byTap = true; d.stop() } else playThree()
         }
     }, LinearLayout.LayoutParams(fit.first, fit.second).apply { bottomMargin = c.dp(4) })
     return fit.first

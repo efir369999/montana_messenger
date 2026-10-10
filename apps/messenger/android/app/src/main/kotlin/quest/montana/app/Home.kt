@@ -985,7 +985,14 @@ private class ChatsPane(private val act: MainActivity) : FrameLayout(act) {
     init {
         // THE LIST'S OWN DRAG AND ITS FLING, MEASURED (iOS MTFrameMeter, MontanaMessageFeed.swift:268-437, 1125-1149).
         Motion.watch(list) { _, _, y, _, _ -> if (c.dp(25) < y) revealArchive(false) }   // a stroke up folds the archive's row
-        addView(CoinPull(c, list).apply { onPull = { pull -> if (25f < pull) revealArchive(true) } }, FrameLayout.LayoutParams(MATCH, MATCH))   // the coin's pull refreshes the feed (iOS MontanaCoinSpinner) and summons the archive's row
+        // THE ROWS RUN ON TO THE SCREEN'S EDGES, AS THE CHAT'S OWN FEED (iOS MTChatListFrame/MTEdgeWash, MontanaChatsList.swift
+        // 51-170 and ContentView.swift 936-943 at 2155, the author's word 23.09: "the chat list in the same style above and
+        // below -- the feed to the end of the screen, as in the chats"): the one EdgeSink mask (Conversation.kt's own road) on
+        // the rows' own layer, fading into the page's ground past the bar above (the list's own top room, set globally by
+        // underlapPage) and the screen's own bottom edge below.
+        addView(EdgeSink(c, top = { list.paddingTop + dp(34) }, bottom = { height }).apply {
+            addView(CoinPull(c, list).apply { onPull = { pull -> if (25f < pull) revealArchive(true) } }, FrameLayout.LayoutParams(MATCH, MATCH))   // the coin's pull refreshes the feed (iOS MontanaCoinSpinner) and summons the archive's row
+        }, FrameLayout.LayoutParams(MATCH, MATCH))
         // «WRITE» (iOS composeButton): the one door to the code and the link — the QR opens here and nowhere else.
         write = FrameLayout(c).apply {
             background = c.glassPlate(oval = true)

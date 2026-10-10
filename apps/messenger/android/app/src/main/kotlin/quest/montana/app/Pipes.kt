@@ -1275,6 +1275,9 @@ object Post {
                 Presence.noteSeen(ref, System.currentTimeMillis(), "read")   // reading is being there (not a word a phone says by itself)
                 // the door lets «read» only onto what was delivered — the bulk word never paints a letter they do not have
                 Book.edit(ref) { c -> c.msgs.filter { it.mine && (upTo == null || (Marks.birthMs(it.mid) ?: 0) <= upTo) }.forEach { it.advance(3) } }
+                // A BIRTH IN THE DIARY IS WRITTEN AS THE LETTER BORN THEN IS NAMED THERE (iOS MontanaP2PTrace.shortMs,
+                // MontanaChatStore.swift 3232 at 2155, 23.09): the watermark's last eight digits, never the whole hidden address.
+                Log.d("Montana", "read_rx from=" + ref.take(10) + " upto=" + (upTo?.let { Diary.shortMs(it) } ?: "-"))
             }
             // A VOICE OF MINE WAS PLAYED THERE (iOS playedMark): their own playing — the only road to «Listened»; the word itself
             // proves their build says it, so from now on a mere «read» of a voice stays «delivered».
@@ -1536,6 +1539,9 @@ object Post {
         if (!Prefs.bool("readReceiptsEnabled", true) || PeerSafety.isBlocked(ref)) { Book.edit(ref) { it.unread = 0 }; return }
         val upTo = c.msgs.filter { !it.mine }.mapNotNull { Marks.birthMs(it.mid) }.maxOrNull()
         Book.edit(ref) { it.unread = 0 }
+        // A BIRTH IN THE DIARY IS WRITTEN AS THE LETTER BORN THEN IS NAMED THERE (iOS MontanaP2PTrace.shortMs,
+        // MontanaChatStore.swift 2067 at 2155, 23.09): the watermark's last eight digits, never the whole hidden address.
+        Log.d("Montana", "read_tx to=" + ref.take(10) + " upto=" + (upTo?.let { Diary.shortMs(it) } ?: "-"))
         send(ref, Marks.mintMid(), Marks.READ + (upTo?.toString() ?: ""))
     }
 

@@ -21,6 +21,10 @@ object Diary {
     private const val KEEP = 6                      // iOS MontanaLog.keep: finished generations wait for the shipper
     private const val CHUNK = 262_144               // iOS shipRange: a quarter of a megabyte a request
     private const val PER_PASS = 32                 // iOS perPass: up to 8 MB of catching up per pass
+    /** A birth millisecond in the diary, written as the letter born then is named there (iOS MontanaP2PTrace.shortMs,
+     *  MontanaP2PTelemetry.swift 47-51 at 2155, 23.09): its last eight digits -- the whole thirteen are hidden by the
+     *  diary as an address, and a reader could not match "upto=a:ec589d" with any letter. */
+    fun shortMs(ms: Long): String = ms.toString().takeLast(8)
     private var dir: File? = null
     private var started = false
     @Volatile private var app: Context? = null
