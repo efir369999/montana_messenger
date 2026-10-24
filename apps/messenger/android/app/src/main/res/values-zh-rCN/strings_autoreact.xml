@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The paid reactions: the Money Flow's auto-reactions and the menu's «Give a coin» (iOS MTAutoReactPage; Localizable.xcstrings zh-Hans). -->
+<resources>
+    <string name="ar_title">自动回应</string>
+    <string name="ar_header">每封新消息的币</string>
+    <string name="ar_footer">从现在起，对方每写一封消息，就自动以回应支付，直到你的币用完。</string>
+    <string name="give_coin">赠送硬币</string>
+</resources>

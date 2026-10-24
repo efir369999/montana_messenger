@@ -155,12 +155,26 @@ def rust(p):
             env=env, feed=script)
         rustup = p.tool("rustup")
     run([rustup, "toolchain", "install", channel, "--profile", "minimal"], env=env)
-    run([rustup, "target", "add", "--toolchain", channel, "aarch64-linux-android"], env=env)
+    # the phone's target, and the emulator's (scripts/build.py --abi x86_64)
+    run([rustup, "target", "add", "--toolchain", channel, "aarch64-linux-android", "x86_64-linux-android"], env=env)
     cargo = p.tool("cargo")
     have = subprocess.run([cargo, "ndk", "--version"], env=env, capture_output=True, text=True).stdout
     if PIN["cargo_ndk"] not in have:
         run([cargo, "+" + channel, "install", "cargo-ndk", "--version", PIN["cargo_ndk"], "--locked"], env=env)
-    say("Rust %s with aarch64-linux-android and cargo-ndk %s in place" % (channel, PIN["cargo_ndk"]))
+    say("Rust %s with aarch64-linux-android, x86_64-linux-android and cargo-ndk %s in place" % (channel, PIN["cargo_ndk"]))
+
+
+def go(p):
+    # the VPN wall's engine is Xray-core bound by gomobile, as iOS binds it (scripts/build.py vpn)
+    pin = PIN["go"]
+    if os.path.exists(p.go):
+        found = subprocess.run([p.go, "version"], capture_output=True, text=True).stdout
+        if ("go%s " % pin["version"]) not in found:
+            raise SystemExit("setup: %s holds %s; set it aside and run again (pinned go%s)"
+                             % (p.go_root, found.strip(), pin["version"]))
+        return say("Go %s in place" % pin["version"])
+    unpack(pin[p.host]["url"], "sha256", pin[p.host]["sha256"], "go", p.go_root)
+    say("Go %s installed" % pin["version"])
 
 
 def main():
@@ -181,6 +195,7 @@ def main():
     webrtc(p)
     if core:
         rust(p)
+        go(p)
     say("ready on %s%s" % (p.host, "" if core else " (the core is built on the shared host)"))
 
 

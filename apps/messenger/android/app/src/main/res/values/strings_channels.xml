@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A channel's birth and its pages, as iOS 2235 says them (MontanaChannel.swift MTChannelIntroStep … MTChannelActionsPage and
+     MTChannelPage.head; MontanaScreens.swift MTGroupPageAsks for a channel; Localizable.xcstrings en). Cancel, Search, Copy and
+     Share are the catalogue's shared words (strings.xml). -->
+<resources>
+    <!-- the birth: MTChannelIntroStep, MTChannelInfoStep, MTChannelSubscribersStep -->
+    <string name="chn_new_channel">New Channel</string>
+    <string name="chn_what_is">What is a Channel?</string>
+    <string name="chn_what_is_sub">Channels are a new tool for broadcasting your messages to large audiences.</string>
+    <string name="chn_create">Create Channel</string>
+    <string name="chn_name">Channel Name</string>
+    <string name="chn_about_hint">Description (Optional)</string>
+    <string name="chn_about_footer">You can provide an optional description for your channel.</string>
+    <string name="chn_add_subscribers">Add Subscribers</string>
+    <string name="chn_pick_note">A post rides the pipe of each person, so only the people you write with are listed.</string>
+    <string name="chn_done">Done</string>
+    <!-- the head: MTChannelPage.head -->
+    <plurals name="chn_subscribers"><item quantity="one">%d subscriber</item><item quantity="other">%d subscribers</item></plurals>
+    <!-- Subscribers: MTChannelPeoplePage -->
+    <string name="chn_subscribers_title">Subscribers</string>
+    <string name="chn_remove">Remove</string>
+    <string name="chn_remove_q">Remove from the channel?</string>
+    <!-- Invite Links: MTChannelInviteLinksPage -->
+    <string name="chn_invite_links">Invite Links</string>
+    <string name="chn_invite_link">Invite Link</string>
+    <string name="chn_invite_footer">Anyone who follows this link will be able to join your channel.</string>
+    <string name="chn_revoke_link">Revoke Link</string>
+    <string name="chn_revoke_q">Are you sure you want to revoke this link? Once you do, no one will be able to join the channel using it.</string>
+    <string name="chn_revoke">Revoke</string>
+    <!-- Administrators: MTChannelAdminsPage -->
+    <string name="chn_administrators">Administrators</string>
+    <string name="chn_admins_header">CHANNEL ADMINS</string>
+    <string name="chn_admins_footer">You can add admins to help you manage your channel.</string>
+    <string name="chn_you">You</string>
+    <string name="chn_owner">Owner</string>
+    <string name="chn_admin">Admin</string>
+    <string name="chn_dismiss_admin">Dismiss Admin</string>
+    <string name="chn_add_admin">Add Admin</string>
+    <string name="chn_sign_messages">Sign Messages</string>
+    <string name="chn_sign_footer">Add names of the admins to the messages they post.</string>
+    <!-- Reactions: MTChannelReactionsPage -->
+    <string name="chn_reactions">Reactions</string>
+    <string name="chn_allow_reactions">Allow Reactions</string>
+    <string name="chn_reactions_footer">Allow subscribers to react to channel posts.</string>
+    <!-- Removed Users: MTChannelRemovedPage -->
+    <string name="chn_removed_users">Removed Users</string>
+    <string name="chn_removed_header">REMOVED USERS</string>
+    <string name="chn_removed_footer">Users removed from the channel by admins cannot rejoin it via invite links.</string>
+    <string name="chn_add_to_channel">Add to Channel</string>
+    <string name="chn_delete">Delete</string>
+    <!-- Recent Actions: MTChannelActionsPage and its words -->
+    <string name="chn_recent_actions">Recent Actions</string>
+    <string name="chn_no_actions">No actions here yet</string>
+    <string name="chn_no_actions_sub">No service actions were taken by the channel\'s subscribers and admins in the last 48 hours.</string>
+    <string name="chn_act_invited">You added %1$s</string>
+    <string name="chn_act_joined">%1$s joined via invite link</string>
+    <string name="chn_act_removed">You removed %1$s</string>
+    <string name="chn_act_left">%1$s left the channel</string>
+    <string name="chn_act_title">You changed the channel name to \"%1$s\"</string>
+    <string name="chn_act_about">You edited channel description</string>
+    <string name="chn_act_photo">You changed the channel photo</string>
+    <string name="chn_act_promoted">You promoted %1$s</string>
+    <string name="chn_act_demoted">You demoted %1$s</string>
+    <string name="chn_act_sign_on">You enabled signatures</string>
+    <string name="chn_act_sign_off">You disabled signatures</string>
+    <string name="chn_act_react_on">You enabled all reactions</string>
+    <string name="chn_act_react_off">You disabled reactions</string>
+    <!-- the channel page's own questions (MTGroupPageAsks for a channel): for the page that leads to these -->
+    <string name="chn_leave_q">Are you sure you want to leave the channel %1$s?</string>
+    <string name="chn_leave">Leave Channel</string>
+    <string name="chn_delete_q">Wait! Deleting this channel will remove all members and all messages will be lost. Delete the channel anyway?</string>
+    <string name="chn_delete_channel">Delete Channel</string>
+</resources>

@@ -70,6 +70,21 @@ object TimeChain {
     private fun dir(): File = File(Book.ctx.filesDir, "TimeChain").apply { mkdirs() }
     private fun file(chain: String): File = File(dir(), "wallet-" + chain + ".jsonl")
 
+    /**
+     * A WHOLE CHAIN LAID ANEW (iOS MTPersonChain.recount, TimeChain/wallet-person.jsonl): a chain recomputed from its own record -- the
+     * person's, from its seconds -- written whole on the chains' queue, the held head read again from it.
+     */
+    fun lay(chain: String, all: List<Link>) {
+        q.execute {
+            runCatching {
+                val f = file(chain)
+                val tmp = File(f.path + ".tmp")
+                tmp.writeText(all.joinToString("") { it.line() + "\n" })
+                tmp.renameTo(f)
+            }
+            held.remove(chain)
+        }
+    }
     /** The seal: SHA-256 over the link's fields, one per line, the previous seal last. */
     fun seal(n: Int, at: Long, k: String, c: Long, ref: String, prev: String): String =
         sha256(listOf(n.toString(), at.toString(), k, c.toString(), ref, prev).joinToString("\n"))
@@ -174,4 +189,18 @@ object TimeChain {
 object LetterSeal {
     private const val DOMAIN = "montana-letter-seal"
     fun seal(mid: String): String? = if (mid.startsWith("mid:")) TimeChain.sha256(DOMAIN + "\n" + mid) else null
+    /** What a letter's stamp wears of its seal (iOS MTLetterSeal.Mark): the seal's first eight hex digits and its gematria. */
+    class Mark(val head: String, val gematria: Int)
+    private val kept = android.util.LruCache<String, Mark>(4096)
+    /**
+     * A LETTER'S MARK (iOS MTLetterSeal.mark, MontanaBubble.swift:158-186): the head of its seal and its prime sum (Board.gematria, the
+     * wall's own count), counted once per name and kept -- the feed redraws, a name never changes. A row the archive or a keeper gave
+     * back holds no wire name and wears none (CoinEntry.restored); every other row's name is its wire name.
+     */
+    fun mark(mid: String): Mark? {
+        if (mid.isEmpty() || CoinEntry.restored(mid)) return null
+        kept.get(mid)?.let { return it }
+        val h = seal(CoinSend.wire(mid)) ?: return null
+        return Mark(h.take(8), Board.gematria(h)).also { kept.put(mid, it) }
+    }
 }

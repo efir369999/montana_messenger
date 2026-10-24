@@ -43,6 +43,16 @@ class MainActivity : Activity() {
         DeviceVault.init(this)
         Prefs.init(this)
         Book.ctx = applicationContext
+        // THE COIN CHAINS WALKED ON THE PHONE ALONE (CoinLocalTest): a test build's own door, `am start … --ez coinLocalTest true`;
+        // two chain nodes in memory, throwaway keys -- nothing reaches the network or the person's book
+        if (packageName.endsWith(".dev") && intent?.getBooleanExtra("coinLocalTest", false) == true) Thread { runCatching { CoinLocalTest.run() }
+            .onFailure { android.util.Log.w("Montana", "coin_local " + it.javaClass.simpleName + " " + it.message) } }.start()
+        // THE COPY'S GROUPS IN THE IPHONE'S FORM, CHECKED (Groups.copyCheck): a test build's door, `--ez groupsCopyTest true`; reads only
+        if (packageName.endsWith(".dev") && intent?.getBooleanExtra("groupsCopyTest", false) == true) Thread { runCatching { Groups.copyCheck(applicationContext) }
+            .onFailure { android.util.Log.w("Montana", "groups_copy " + it.javaClass.simpleName + " " + it.message) } }.start()
+        // THE FIRST WRITE'S DIALOG ON A TEST BUILD (askGenesis), `--ez genesisDialog true`: such a build writes nothing, so its «Open» lays nothing
+        if (packageName.endsWith(".dev") && !CoinTx.WRITES && intent?.getBooleanExtra("genesisDialog", false) == true)
+            window.decorView.postDelayed({ if (!isFinishing) askGenesis(this) {} }, 2500)
         window.setDecorFitsSystemWindows(false)
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT
@@ -55,6 +65,9 @@ class MainActivity : Activity() {
         root.setOnApplyWindowInsetsListener { v, insets ->
             val b = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.ime())
             v.setPadding(b.left, b.top, b.right, b.bottom)
+            // THE PAGES OVER THE ROOT FOLLOW ITS INSETS (overlay, cloud): a page took the root's padding once, at its opening, so a page
+            // opened while the keys were still falling kept their height as a black band under its rows for as long as it stood
+            for (i in 0 until surface.childCount) surface.getChildAt(i).takeIf { it !== v }?.setPadding(b.left, b.top, b.right, b.bottom)
             WindowInsets.CONSUMED
         }
         // THE KEYBOARD'S RISE AND FALL ARE MEASURED (iOS MTKeyboard will-show/will-hide to did-show/did-hide, atom b19d306a9d08): the
@@ -79,6 +92,8 @@ class MainActivity : Activity() {
         Diary.start(this)   // the diary on disk and its shipper (iOS MontanaLog, MontanaDiagShip; 1340)
         Thread { Names.agreesWithCanon }.start()   // the core's name derivations against the Canon's own values, said once in the diary (names_canon)
         Exits.witness(this)   // how the last run ended, said once (iOS run sentinel, 1336)
+        VpnStore.warm()   // the VPN wall's sealed store read off the main thread now, so its page is born holding its rows (iOS ContentView 2348)
+        VpnTunnel.startStatsBeat()   // the tunnel's throughput in the diary every 30 s while it stands (iOS pollTunnelStats)
         CallEngine.warm(this)   // the call engine stands from launch, as iOS MontanaCall.shared
         // «Share → Montana» from another app, else an invitation's link
         if (takeUpdate(intent)) return
@@ -185,15 +200,21 @@ class MainActivity : Activity() {
             !termsAccepted -> termsGate(this, onAgree = { Prefs.termsAccepted = true; termsAccepted = true; render() })
             showWelcome -> welcome(this) { showWelcome = false; render() }
             else -> mainScreen(this) {
-                // «Forget this device» (iOS: Privacy): first the archive seals what the words can reopen — every head, name and face
-                // (iOS sealForForget) — then the seed and everything of the person leave; the sealed history stays for the 24 words.
-                Archive.sealForForget {
-                    MontanaSeed.clear(); Archive.forgetKeys(); Prefs.forgetPerson(); SelfFace.clear(this); SavedMessages.forget(this)
-                    MontanaHomeNode.forget(this); MontanaBackup.forget(this); MontanaCard.forget(); Book.wipe()
-                    MontanaBackupID.withdrawOwn(this)   // this installation's record leaves the account; a twin's stands
-                    hasSeed = false; termsAccepted = false
-                    render()
-                }
+                // «Delete account» (iOS: Privacy, forgetSeed): the name held leaves its keeper first, while the words still derive it
+                // (iOS MontanaNamePlane.releaseHeld); then the archive seals what the words can reopen — every head, name and face
+                // (iOS sealForForget) — and the seed and everything of the person leave; the sealed history stays for the 24 words.
+                Thread {
+                    runCatching { NamePlane.releaseHeld() }
+                    MainThread.post {
+                        Archive.sealForForget {
+                            MontanaSeed.clear(); Archive.forgetKeys(); Prefs.forgetPerson(); SelfFace.clear(this); SavedMessages.forget(this)
+                            MontanaHomeNode.forget(this); MontanaBackup.forget(this); MontanaCard.forget(); Book.wipe()
+                            MontanaBackupID.withdrawOwn(this)   // this installation's record leaves the account; a twin's stands
+                            hasSeed = false; termsAccepted = false
+                            render()
+                        }
+                    }
+                }.start()
             }
         }
         show(page)
@@ -202,6 +223,7 @@ class MainActivity : Activity() {
         // THE DAILY ROAD to the person's own node, a little after the first screen stands (iOS tickSoon).
         if (hasSeed && termsAccepted) HomeNodeWatch.tickSoon(this)
         if (hasSeed && termsAccepted) Archive.atLaunch()   // the archive read into the feed's empty conversations (iOS cold start 15.10)
+        if (hasSeed && termsAccepted) Keeping.tickSoon()   // the copy kept by the people one writes to: the daily renewal, when the person chose it (iOS MontanaApp 438)
         // The identity is born: the invitation that waited for it opens by itself (iOS replayPendingInvite).
         if (hasSeed && termsAccepted && !showWelcome) Prefs.str("pendingInvite", "").takeIf { it.isNotEmpty() }?.let { Prefs.remove("pendingInvite"); openInvitation(this, it) }
     }
@@ -388,27 +410,45 @@ class MainActivity : Activity() {
     // ── THE BOX IS READ WHILE THE APP STANDS (iOS fetchBox on activation and by its kick): at once, then every eight seconds ──
     private val boxRound = object : Runnable {
         override fun run() {
-            if (hasSeed && termsAccepted) { Signal.ear(true); Thread { Post.fetch() }.start() }   // a conversation born since is heard too
+            // a conversation born since is heard too; the queue walks with it -- a letter a node holds is knocked again by its own clock
+            if (hasSeed && termsAccepted) { Signal.ear(true); Thread { Post.fetch(); runCatching { Post.flush() } }.start() }
             main.postDelayed(this, 8000)
         }
     }
+    // THE APP STANDS IN FRONT OF THE PERSON (iOS applicationState != .background): the VPN wall's seconds are paid only then
+    override fun onStart() { super.onStart(); VpnWallMint.front = true; VpnWallMint.count() }
+    override fun onStop() { VpnWallMint.front = false; super.onStop() }
     override fun onResume() {
         super.onResume(); CallScreen.front = this; main.removeCallbacks(boxRound); main.post(boxRound); EarService.start(this)
+        // THE VPN AT A RETURN (iOS MontanaApp.appBecameActive 329, 349): the freshener's quiet beat lives while the app stands on the
+        // screen, and the tunnel is read -- a requested connection with no session standing rises again
+        VpnFreshener.appActive(true)
+        VpnTunnel.load()
         if (hasSeed && termsAccepted) Calls.rejoinHeldCall(this)   // the run goes back into the call its process held, once the app faces the person
+        // THE SYSTEM'S QUESTION ANSWERED AND THE APP BACK: THE COPY'S QUESTION FOLLOWS (iOS ContentView 2369-2373), until it is answered
+        if (hasSeed && termsAccepted && !showWelcome && Prefs.notifyAsked && !Keeping.told) main.postDelayed({ if (!isFinishing) Keeping.askAtOpening(this) }, 1200)
         Thread { Update.look(applicationContext) }.start()   // a newer build on the site rings its notice (Update)
         if (hasSeed && termsAccepted) Thread { Signal.sweep() }.start()   // every peer's last word, one question (iOS ContentView 471)
         if (hasSeed && termsAccepted) Thread { LiveDraft.sayLinkToAll() }.start()   // the daily link, preloaded to every correspondent (iOS ContentView.swift:472)
         if (hasSeed && termsAccepted) Thread { Book.healFacesFromCards() }.start()   // a faceless correspondent is read from their card at once (iOS MontanaChatStore.swift:1916, atom 796a76a34ae0)
         if (hasSeed && termsAccepted) Thread { MontanaCard.keepLiveCardsUp(applicationContext) }.start()   // the live cards turn and top up on every return (iOS MontanaApp.swift:297)
         if (hasSeed && termsAccepted) Thread { NamePlane.keepInStep() }.start()   // the name renewed when due, its point listened at (iOS keepInStep)
-        Thread { CoinBook.warm(); CoinSend.settle(); ChessSend.settleAll() }.start()
+        Thread { CoinBook.warm(); PersonChain.prime(); CoinSend.settle(); ChessSend.settleAll() }.start()   // the person's seconds read before a word says the level (iOS MontanaApp 332)
+        if (hasSeed && termsAccepted) Thread { LevelDistribution.refresh() }.start()   // the levels' distribution read again on every return (iOS MontanaApp 339)
+        // THE NETWORK'S COIN CHAINS, COPIED AND FOLDED HERE (iOS MTCoinReplica.run at the scan's end, COIN-TX-V3 section 6): reads only
+        // while the owner keeps the writes shut (CoinTx.WRITES); once in ten minutes, with the consent to keep for others
+        if (hasSeed && termsAccepted) Thread { if (CoinTx.agrees) CoinTx.scan("active") }.start()
         // THE WALLS AT A RETURN (iOS ContentView.swift:474-477 at 2155): every wall never seen is asked (Board.sweep), and the owner carries
         // my wall to whoever speaks it -- at a return only while the presence is shown (the critic's N6)
         if (hasSeed && termsAccepted) Thread { Board.sweep(); if (Presence.sharing) MyWall.schedulePush() }.start()
         if (hasSeed && termsAccepted) Thread { MyWall.roadBack("active") }.start()   // a post on its way goes on by itself (iOS roadBack 1922)   // every coin letter the chats hold stands in the book (iOS MTCoinSend.settle)
     }
     // the ear stays when the app leaves the screen: EarService holds it (the app closed is heard as the app open)
-    override fun onPause() { super.onPause(); CoinBook.closeWindows(); if (CallScreen.front === this) CallScreen.front = null; main.removeCallbacks(boxRound) }
+    override fun onPause() {
+        super.onPause(); CoinBook.closeWindows(); if (CallScreen.front === this) CallScreen.front = null; main.removeCallbacks(boxRound)
+        VpnFreshener.appActive(false)   // iOS appLeft: the VPN page's quiet beat stops with the app
+        CoinVault.soon("leave", 1)   // what the book holds is asked of the nodes as the app leaves the screen (iOS willResignActive)
+    }
 
     // THE CALL'S WINDOW OVER OTHER APPS (CallFloat): the person leaving on a system before the platform's auto-enter, and the
     // platform's own word that the window stands or is gone
@@ -561,6 +601,14 @@ class MainActivity : Activity() {
         runCatching { @Suppress("DEPRECATION") startActivityForResult(mpm.createScreenCaptureIntent(), ASK_SCREEN) }.onFailure { screenDone = null; done(null) }
     }
 
+    /** The system's own question before the VPN wall's tunnel is born (VpnService.prepare; iOS: the system's dialog at the first
+     *  profile's save): its answer comes back once. */
+    private var vpnDone: ((Boolean) -> Unit)? = null
+    fun askVpn(intent: Intent, done: (Boolean) -> Unit) {
+        vpnDone = done
+        runCatching { @Suppress("DEPRECATION") startActivityForResult(intent, ASK_VPN) }.onFailure { vpnDone = null; done(false) }
+    }
+
     /** The system's code screen on Android 8–9 (OwnerCheck): its answer comes back through onActivityResult. */
     fun confirmOwner(intent: Intent) {
         @Suppress("DEPRECATION") startActivityForResult(intent, CONFIRM_OWNER)
@@ -594,11 +642,14 @@ class MainActivity : Activity() {
         } else if (requestCode == ASK_SCREEN) {
             screenDone?.invoke(if (resultCode == RESULT_OK) data else null)
             screenDone = null
+        } else if (requestCode == ASK_VPN) {
+            vpnDone?.invoke(resultCode == RESULT_OK)
+            vpnDone = null
         }
     }
 
     /** The app's own language before Android 13 (from 13 the system keeps it: AppLanguage). */
     override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(pinnedText(AppLanguage.wrap(base)))
 
-    private companion object { const val PICK_PHOTO = 1; const val ASK_NOTIFY = 2; const val DOCUMENT = 3; const val ASK_CAMERA = 4; const val CONFIRM_OWNER = 5; const val CAPTURE = 6; const val PICK_CONTACT = 7; const val ASK_CALL_MIC = 9; const val ASK_CALL_OUT = 10; const val ASK_SCREEN = 11; const val PICK_MANY = 12; const val ASK_MEDIA = 13; const val ASK_MIC = 14; const val ADD_CONTACT = 15 }
+    private companion object { const val PICK_PHOTO = 1; const val ASK_NOTIFY = 2; const val DOCUMENT = 3; const val ASK_CAMERA = 4; const val CONFIRM_OWNER = 5; const val CAPTURE = 6; const val PICK_CONTACT = 7; const val ASK_CALL_MIC = 9; const val ASK_CALL_OUT = 10; const val ASK_SCREEN = 11; const val PICK_MANY = 12; const val ASK_MEDIA = 13; const val ASK_MIC = 14; const val ADD_CONTACT = 15; const val ASK_VPN = 16 }
 }

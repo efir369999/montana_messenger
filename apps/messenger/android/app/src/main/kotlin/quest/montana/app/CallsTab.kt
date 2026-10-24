@@ -226,7 +226,7 @@ fun callsPane(act: MainActivity, onNewCall: () -> Unit = {}): View {
         val action = FrameLayout(c).apply {
             background = c.glassPlate(oval = true)
             contentDescription = c.getString(R.string.new_call)
-            addView(c.icon(R.drawable.ic_phone_plus, Color.rgb(204, 204, 204)), FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
+            addView(c.icon(R.drawable.ic_phone_plus, MT.barGlyph), FrameLayout.LayoutParams(dp(28), dp(28), Gravity.CENTER))
             pressable { onNewCall() }
         }
         addView(action, PageCorner.params(c))

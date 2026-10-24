@@ -52,11 +52,17 @@ object SelfFace {
     private fun changed() = Thread { Book.refs().filter { SamePair.merged(it) == null }.forEach { Post.announce(it) } }.start()
 }
 
-/** A page's top bar: an optional back mark on the left, a title, an optional mark on the right. */
+/**
+ * A page's top bar: an optional back mark on the left, a title, an optional mark on the right. The back mark is a round of glass
+ * round the chevron in a 44 frame (iOS MontanaBarMark, MontanaShapes.swift:1115-1134).
+ */
 fun Context.topBar(title: String? = null, onBack: (() -> Unit)? = null, trailing: View? = null) = FrameLayout(this).apply {
     setPadding(dp(8), 0, dp(8), 0)
-    if (onBack != null) addView(icon(R.drawable.ic_arrow_back_ios_new, Color.WHITE).apply {
-        setPadding(dp(10), dp(10), dp(10), dp(10)); pressable(onBack)
+    if (onBack != null) addView(FrameLayout(context).apply {
+        background = glassPlate(oval = true)
+        contentDescription = getString(R.string.back)
+        addView(icon(R.drawable.ic_arrow_back_ios_new, Color.WHITE), FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
+        pressable(onBack)
     }, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.START))
     if (title != null) addView(text(title, 17f, Color.WHITE, bold = true, center = true),
         FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
@@ -83,7 +89,7 @@ class Profile(private val act: MainActivity, private val onboarding: Boolean, pr
         view.setBackgroundColor(Color.BLACK)   // the editor's own ground (iOS: black under the page), over the first screens' picture
         act.back = if (onboarding) null else ({ done() })
         val col = c.vstack(Gravity.NO_GRAVITY) {
-            addView(c.topBar(trailing = c.icon(R.drawable.ic_check, Color.rgb(204, 204, 204)).apply {
+            addView(c.topBar(trailing = c.icon(R.drawable.ic_check, MT.barGlyph).apply {
                 setPadding(dp(10), dp(10), dp(10), dp(10)); pressable { done() }
             }.also { it.layoutParams = FrameLayout.LayoutParams(dp(44), dp(44)) }))
             val body = c.vstack(Gravity.NO_GRAVITY) {

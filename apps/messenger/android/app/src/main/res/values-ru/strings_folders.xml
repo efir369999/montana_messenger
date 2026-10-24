@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The folders over the chats (iOS MTChatFolders.swift, MontanaChatsList.swift folderMenu/folderEmpty, MontanaSettings.swift:130;
+     Localizable.xcstrings ru). -->
+<resources>
+    <string name="fl_title">Папки с чатами</string>
+    <string name="fl_folders">Папки</string>
+    <string name="fl_all_chats">Все чаты</string>
+    <string name="fl_all">Все</string>
+    <string name="fl_bots">Боты</string>
+    <string name="fl_kind_contacts">Контакты</string>
+    <string name="fl_kind_non_contacts">Не контакты</string>
+    <string name="fl_leave_muted">Без звука</string>
+    <string name="fl_leave_read">Прочитано</string>
+    <string name="fl_leave_archived">В архиве</string>
+    <string name="fl_bot">бот</string>
+    <string name="fl_intro">Создавайте папки для разных групп чатов и быстро переключайтесь между ними.</string>
+    <string name="fl_create">Создать папку</string>
+    <string name="fl_folders_footer">Нажмите на карандаш, чтобы изменить порядок папок или удалить их.</string>
+    <string name="fl_recommended">Рекомендуемые папки</string>
+    <string name="fl_unread">Не прочитан</string>
+    <string name="fl_unread_words">Новые сообщения из всех чатов.</string>
+    <string name="fl_personal">Личные</string>
+    <string name="fl_personal_words">Только сообщения из личных чатов.</string>
+    <string name="fl_groups_words">Только сообщения из групп.</string>
+    <string name="fl_channels_words">Только сообщения из каналов.</string>
+    <string name="fl_bots_words">Только сообщения от ботов.</string>
+    <string name="fl_new">Новая папка</string>
+    <string name="fl_edit_folder">Изменить папку</string>
+    <string name="fl_name">Название папки</string>
+    <string name="fl_add_chats">Добавить чаты</string>
+    <string name="fl_included">Включённые чаты</string>
+    <string name="fl_included_footer">Выберите чаты и типы чатов, которые будут в этой папке.</string>
+    <string name="fl_exclude_add">Исключить чаты</string>
+    <string name="fl_excluded">Исключённые чаты</string>
+    <string name="fl_excluded_footer">Выберите чаты и типы чатов, которые никогда не появятся в этой папке.</string>
+    <string name="fl_discard_q">Вы изменили папку. Отменить изменения?</string>
+    <string name="fl_discard">Отменить</string>
+    <string name="fl_chat_types">Типы чатов</string>
+    <string name="fl_include">Включить чаты</string>
+    <string name="fl_exclude">Исключить чаты</string>
+    <string name="fl_read_all">Прочитать все</string>
+    <string name="fl_mute_all">Выключить звук у всех</string>
+    <string name="fl_unmute_all">Включить звук у всех</string>
+    <string name="fl_remove">Убрать</string>
+    <string name="fl_edit_folders">Изменить папки</string>
+    <string name="fl_reorder">Изменить порядок вкладок</string>
+    <string name="fl_remove_q">Удалить «%1$s»?</string>
+    <string name="fl_remove_note">Папка будет удалена, ваши чаты останутся.</string>
+    <string name="fl_empty">Папка пуста.</string>
+    <string name="fl_empty_note">Сейчас в этой папке нет чатов.</string>
+</resources>

@@ -197,7 +197,7 @@ object Stickers {
         fun mark(res: Int, label: Int, onTap: () -> Unit) = FrameLayout(c).apply {
             background = c.glassPlate(oval = true)
             contentDescription = c.getString(label)
-            addView(c.icon(res, Color.rgb(204, 204, 204)), FrameLayout.LayoutParams(c.dp(20), c.dp(20), Gravity.CENTER))
+            addView(c.icon(res, MT.barGlyph), FrameLayout.LayoutParams(c.dp(20), c.dp(20), Gravity.CENTER))
             pressable(onTap)
         }
         val sheet = c.vstack(Gravity.NO_GRAVITY) {

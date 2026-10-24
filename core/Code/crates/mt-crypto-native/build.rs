@@ -39,8 +39,12 @@ fn main() {
         "cargo:rustc-link-search=native={}",
         openssl_lib.to_str().expect("openssl lib path utf8")
     );
-    println!("cargo:rustc-link-lib=static=ssl");
-    println!("cargo:rustc-link-lib=static=crypto");
+    // OpenSSL built by MSVC names its static libraries libssl.lib and libcrypto.lib; everywhere else they are
+    // libssl.a and libcrypto.a, which the linker finds as ssl and crypto.
+    let msvc = env::var("CARGO_CFG_TARGET_ENV").map(|e| e == "msvc").unwrap_or(false);
+    let (ssl, crypto) = if msvc { ("libssl", "libcrypto") } else { ("ssl", "crypto") };
+    println!("cargo:rustc-link-lib=static={ssl}");
+    println!("cargo:rustc-link-lib=static={crypto}");
 
     let target_os = env::var("CARGO_CFG_TARGET_OS").expect("CARGO_CFG_TARGET_OS set by cargo");
     if target_os == "macos" {
@@ -49,6 +53,11 @@ fn main() {
     } else if target_os == "linux" {
         println!("cargo:rustc-link-lib=dylib=dl");
         println!("cargo:rustc-link-lib=dylib=pthread");
+    } else if target_os == "windows" {
+        // what static OpenSSL calls in Windows itself: sockets, the certificate store, the registry, the screen
+        for lib in ["ws2_32", "crypt32", "advapi32", "user32", "gdi32"] {
+            println!("cargo:rustc-link-lib=dylib={lib}");
+        }
     }
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR set by cargo"));

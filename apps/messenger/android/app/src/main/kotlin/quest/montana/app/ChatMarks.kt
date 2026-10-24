@@ -86,6 +86,8 @@ object ChatMarks {
      */
     fun toggleUnread(chat: Chat) {
         if (hasUnread(chat)) {
+            // read here is read on the person's other devices too (iOS markRead(tellPeer: false) mirrors its «TR:»)
+            Twin.readHere(chat.ref, chat.msgs.filter { !it.mine }.mapNotNull { Marks.birthMs(it.mid) }.maxOrNull())
             if (chat.unread > 0) Book.edit(chat.ref) { it.unread = 0 }
             change { forcedUnread.remove(chat.ref) }
         } else change { forcedUnread.add(chat.ref) }

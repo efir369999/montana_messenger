@@ -1932,7 +1932,7 @@ class FeedPane(private val act: MainActivity) : FrameLayout(act) {
     private val write = FrameLayout(c).apply {
         background = c.glassPlate(oval = true)
         contentDescription = c.getString(R.string.pi_write_wall)
-        addView(c.icon(R.drawable.ic_compose, android.graphics.Color.rgb(204, 204, 204)), LayoutParams(dp(30), dp(30), Gravity.CENTER))
+        addView(c.icon(R.drawable.ic_compose, MT.barGlyph), LayoutParams(dp(30), dp(30), Gravity.CENTER))
         pressable { act.push { close -> newPostPage(act, close) } }
     }
     init {

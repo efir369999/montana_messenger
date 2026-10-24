@@ -163,14 +163,10 @@ impl SecretKey {
 impl Drop for SecretKey {
     fn drop(&mut self) {
         self.0.zeroize();
-        unsafe {
-            // SAFETY: self.0 — owned heap-allocated Box<[u8; SECRET_KEY_SIZE]>,
-            // pointer valid for SECRET_KEY_SIZE bytes at the time of Drop. munlock
-            // takes const void* and does not mutate the data. errno EINVAL
-            // (if mlock was not applied in the fallback path) is ignored
-            // as a no-op.
-            libc::munlock(self.0.as_ptr() as *const libc::c_void, SECRET_KEY_SIZE);
-        }
+        // self.0 — owned heap-allocated Box<[u8; SECRET_KEY_SIZE]>, valid for
+        // SECRET_KEY_SIZE bytes at the time of Drop. A failed unlock (if the lock
+        // was not applied in the fallback path) is ignored as a no-op.
+        unlock_secret_pages(&self.0[..]);
     }
 }
 
@@ -191,18 +187,51 @@ impl Drop for SecretKey {
 // is read by nobody in production -- hence deferred until the telemetry framework.
 fn alloc_locked_secret_box(size: usize) -> Box<[u8]> {
     let boxed = vec![0u8; size].into_boxed_slice();
-    unsafe {
-        // SAFETY: boxed — freshly allocated heap-buffer of `size` bytes
-        // (vec![0u8; size].into_boxed_slice() guarantees a valid pointer +
-        // exact size). mlock takes const void* and does not mutate the data;
-        // operates on the page-aligned region containing the buffer. Return
-        // code 0 = success, -1 = failure (errno set: ENOMEM when exceeding
-        // RLIMIT_MEMLOCK, EPERM without CAP_IPC_LOCK on Linux,
-        // kern.maxlockedmem on macOS). Best-effort: on failure we return a
-        // non-locked Box and rely on encrypted swap (FileVault/LUKS).
-        let _ = libc::mlock(boxed.as_ptr() as *const libc::c_void, size);
-    }
+    // Best-effort: on failure we return a non-locked Box and rely on encrypted
+    // swap (FileVault/LUKS, BitLocker on Windows).
+    lock_secret_pages(&boxed);
     boxed
+}
+
+// The page lock itself, per platform. Unix: mlock/munlock. Windows: VirtualLock/
+// VirtualUnlock of kernel32, best-effort the same way -- a lock past the process's
+// minimum working set fails and the bytes stay unlocked; an unlock of pages never
+// locked fails and is ignored. Neither reads nor writes the bytes.
+#[cfg(unix)]
+fn lock_secret_pages(bytes: &[u8]) {
+    // SAFETY: `bytes` is a live buffer of bytes.len() bytes. mlock takes const
+    // void* and does not mutate the data; it operates on the page-aligned region
+    // containing the buffer. Return code 0 = success, -1 = failure (errno set:
+    // ENOMEM when exceeding RLIMIT_MEMLOCK, EPERM without CAP_IPC_LOCK on Linux,
+    // kern.maxlockedmem on macOS), ignored.
+    let _ = unsafe { libc::mlock(bytes.as_ptr() as *const libc::c_void, bytes.len()) };
+}
+
+#[cfg(unix)]
+fn unlock_secret_pages(bytes: &[u8]) {
+    // SAFETY: as in lock_secret_pages; errno EINVAL with no prior mlock is ignored.
+    let _ = unsafe { libc::munlock(bytes.as_ptr() as *const libc::c_void, bytes.len()) };
+}
+
+#[cfg(windows)]
+#[link(name = "kernel32")]
+extern "system" {
+    fn VirtualLock(address: *mut core::ffi::c_void, size: usize) -> i32;
+    fn VirtualUnlock(address: *mut core::ffi::c_void, size: usize) -> i32;
+}
+
+#[cfg(windows)]
+fn lock_secret_pages(bytes: &[u8]) {
+    // SAFETY: `bytes` is a live buffer of bytes.len() bytes. VirtualLock takes the
+    // pages containing the region into the working set and neither reads nor writes
+    // them; the mutable pointer type is the API's, not a write. FALSE on failure, ignored.
+    let _ = unsafe { VirtualLock(bytes.as_ptr() as *mut core::ffi::c_void, bytes.len()) };
+}
+
+#[cfg(windows)]
+fn unlock_secret_pages(bytes: &[u8]) {
+    // SAFETY: as in lock_secret_pages; FALSE for pages never locked, ignored.
+    let _ = unsafe { VirtualUnlock(bytes.as_ptr() as *mut core::ffi::c_void, bytes.len()) };
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -363,17 +392,10 @@ impl MlkemSecretKey {
 impl Drop for MlkemSecretKey {
     fn drop(&mut self) {
         self.0.zeroize();
-        unsafe {
-            // SAFETY: self.0 — owned heap-allocated Box<[u8;
-            // MLKEM_SECRET_KEY_SIZE]>, pointer valid for
-            // MLKEM_SECRET_KEY_SIZE bytes at the time of Drop. munlock does not mutate
-            // the data. errno EINVAL with no prior mlock is ignored (no-op
-            // semantics in the fallback path).
-            libc::munlock(
-                self.0.as_ptr() as *const libc::c_void,
-                MLKEM_SECRET_KEY_SIZE,
-            );
-        }
+        // self.0 — owned heap-allocated Box<[u8; MLKEM_SECRET_KEY_SIZE]>, valid for
+        // MLKEM_SECRET_KEY_SIZE bytes at the time of Drop. A failed unlock with no
+        // prior lock is ignored (no-op semantics in the fallback path).
+        unlock_secret_pages(&self.0[..]);
     }
 }
 

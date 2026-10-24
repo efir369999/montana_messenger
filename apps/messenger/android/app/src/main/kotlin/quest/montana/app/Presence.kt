@@ -36,13 +36,21 @@ object Signal {
     /** One word on the lane, at the door the other side asks (iOS postSignal): per-node stores do not talk to each other. */
     fun post(ref: String, text: String) = postWord(ref, "chat", text.toByteArray())
 
+    /**
+     * THE WORDS ENTER THEIR LANES IN THE ORDER THEY WERE SAID (iOS postSignal seals and queues on its caller, MontanaWakePush.swift:
+     * 3508-3550): every word was sealed on a thread of its own, so a newer chat word could reach its lane before an older one and then be
+     * replaced there by it -- the waiting word a conversation keeps would be the older one. One thread seals and queues the words one after
+     * another; the posts themselves still run on the lanes' own threads.
+     */
+    private val sealing = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "montana.signal.seal").apply { isDaemon = true } }
+
     /** A word of any epoch (iOS postSignal 3000-3054): «chat» for the live words, a call's own epoch for its words (Calls). */
     fun postWord(ref: String, epoch: String, payload: ByteArray) {
         val twin = MontanaSeed.twin ?: return
         val secret = Book.secret(ref) ?: return
-        Thread {
+        sealing.execute {
             val body = twin.toByteArray() + byteArrayOf(0) + epoch.toByteArray() + byteArrayOf(0) + deflate(payload)
-            val sealed = Wire.seal(Wire.bodyKey(secret, Wire.minute()), body) ?: return@Thread
+            val sealed = Wire.seal(Wire.bodyKey(secret, Wire.minute()), body) ?: return@execute
             val cw = Wire.convW(secret, Wire.day())
             val req = JSONObject().put("conv", cw).put("from_id", Wire.subId(cw, twin)).put("env", Base64.encodeToString(sealed, Base64.NO_WRAP))
             // THE PEER NAMED THE DOORS THEY ASK — the word goes to the conversation's door and nowhere else; a peer who has not (an old
@@ -51,10 +59,13 @@ object Signal {
             val doors = (if (peerDoors(ref) != null) listOf(signalDoor(ref)) else Doors.ordered("signal").filter { doorAlive(it) }).filter { it.isNotEmpty() }.toMutableList()
             // A CALL KNOCKS EVERY DOOR (iOS 3014-3021, 15.13): a door dead a minute ago is the very door the path may carry again now
             if (epoch != "chat" || Calls.busy() || doors.isEmpty()) for (b in callDoors()) if (b !in doors) doors.add(b)
-            if (doors.isEmpty()) { Log.d("Montana", "sig_tx SKIP no-door"); return@Thread }
+            if (doors.isEmpty()) { Log.d("Montana", "sig_tx SKIP no-door"); return@execute }
+            // a chat word is known by its conversation and its kind -- the live draft, «typing», «in chat», the app's word: its mark up to
+            // the colon (LiveDraft.MARK, Presence.TYPING, WATCH, APP), so a waiting draft is replaced by a newer draft and never by a beacon
+            val key = if (epoch != "chat") null else ref + "\u0000" + String(payload, 0, minOf(payload.size, 16), Charsets.UTF_8).substringBefore(':')
             for (door in doors) {
                 // ONE LANE PER DOOR (iOS 3031-3053): the word waits its turn; a chat word of this conversation replaces the one still waiting
-                onSignalLane(door, if (epoch == "chat") ref else null) {
+                onSignalLane(door, key) {
                     try {
                         // a chat word that waited past its door's death does not dial it; a call's word knocks every door (iOS 3033-3037)
                         if (epoch == "chat" && !doorAlive(door) && !Calls.busy()) return@onSignalLane
@@ -63,7 +74,7 @@ object Signal {
                     } finally { leaveSignalLane(door) }
                 }
             }
-        }.start()
+        }
     }
 
     /**
@@ -296,10 +307,11 @@ object Signal {
      * «chat» to the presence, any other to the call it names; «box» hints fetch the box.
      */
     private fun open(ref: String, envs: org.json.JSONArray) {
-        val secret = Book.secret(ref) ?: return
+        val secret = laneSecret(ref) ?: return
         for (k in 0 until envs.length()) {
             val e = envs.optString(k)
             if (e == "box") { Thread { Post.fetch() }.start(); continue }
+            if (ref == Archive.TWIN_PIPE) continue   // the twin's pipe carries only the box's hint on this lane
             val sealed = runCatching { Base64.decode(e, Base64.DEFAULT) }.getOrNull() ?: continue
             val w0 = Wire.minute()
             val plain = listOf(w0, w0 - 1, w0 + 1).firstNotNullOfOrNull { w -> Wire.open(Wire.bodyKey(secret, w), sealed) } ?: continue
@@ -392,7 +404,14 @@ object Signal {
      */
     fun ear(on: Boolean) {
         for (ref in Book.refs()) if (on && !PeerSafety.isBlocked(ref)) hold(ref, "ear") else release(ref, "ear")
+        // THE PERSON'S OTHER DEVICES ARE HEARD AS A CORRESPONDENT IS (iOS: the node's silent push wakes every device of the twin's pipe but
+        // the one that spoke, MontanaPQ twinDeviceRef; this phone's ear is its push): a word another device laid for this one -- its letters,
+        // a correspondent's letter it took, its reading -- fetches the box at once, not at the five-minute round (docs/identity-sync/07 4.5)
+        if (on && Archive.twinSecret() != null) hold(Archive.TWIN_PIPE, "ear") else release(Archive.TWIN_PIPE, "ear")
     }
+    /** A lane's pipe: a conversation's, or the twin's -- whose secret the seed's history key derives and whose name is this device's. */
+    private fun laneSecret(ref: String): ByteArray? = if (ref == Archive.TWIN_PIPE) Archive.twinSecret() else Book.secret(ref)
+    private fun laneFrom(ref: String, cw: String, twin: String): String = if (ref == Archive.TWIN_PIPE) Archive.twinSid(cw) else Wire.subId(cw, twin)
 
     /**
      * THE LONG QUESTION (iOS fetchSignals 3270-3321): the conversation's door asked with a wait of twelve seconds — the doors' gate
@@ -403,7 +422,7 @@ object Signal {
             var fails = 0
             while (true) {
                 val twin = MontanaSeed.twin
-                val secret = Book.secret(ref)
+                val secret = laneSecret(ref)
                 val go = synchronized(holders) {
                     val ok = twin != null && secret != null && !holders[ref].isNullOrEmpty()
                     if (!ok) running[ref] = (running[ref] ?: 1) - 1
@@ -418,7 +437,16 @@ object Signal {
                 // WHILE A CALL IS BUILT THE QUESTIONS ARE SHORT (iOS fetchSignals 3286-3299): a silently dead one costs six seconds, not
                 // thirty — three while it rings or connects, ten in a joined call, twelve at rest (the doors' nginx holds fifteen)
                 val wait = if (Calls.busy() && CallLine.connectedAt == 0L) 3 else if (CallLine.connectedAt > 0L) 10 else 12
-                val (code, text) = Wire.post(door, "/signal-fetch", JSONObject().put("conv", cw).put("from_id", Wire.subId(cw, twin)).put("wait", wait), (wait + 3) * 1000, asking)
+                val fetch = JSONObject().put("conv", cw).put("from_id", laneFrom(ref, cw, twin)).put("wait", wait)
+                // EVERY DEVICE OF THE SEED TAKES THE WORD ONCE (iOS fetchSignals, MontanaWakePush.swift:3821-3832; 11.10.2026, No.61): the store
+                // hands each word once to each asking device it can tell apart, where it used to hand it to the first device of the seed
+                // that asked -- a second phone of the same words, its ear holding the same lanes, took every other word of a live draft
+                // (measured on A 18.10.2026 06:49 UTC: C's words reached A one in two while B, A's twin, listened). This device names itself
+                // for this lane only, by its tag and the conversation's daily label, so the node links no two conversations, nor two days,
+                // of one phone; a tag still pending names nothing -- the old shared hand.
+                val tag = Archive.deviceTag()
+                if (tag != "android-pending") fetch.put("dev", Wire.hex(Wire.sha(("mt-lane-dev\u0000" + tag + "\u0000" + cw).toByteArray()).copyOf(8)))
+                val (code, text) = Wire.post(door, "/signal-fetch", fetch, (wait + 3) * 1000, asking)
                 // CUT BY OUR OWN HAND (iOS 3304-3307, 3317): the fresh lane asks now, and a question we cut says nothing of the door
                 if (gen != laneGen.get()) { fails = 0; continue }
                 EarService.awake()   // the answer woke the phone: it stays up for the word and the next question (the app closed)
@@ -452,6 +480,8 @@ object Presence {
     private val listeners = mutableListOf<() -> Unit>()
     fun listen(l: () -> Unit) { synchronized(listeners) { listeners.add(l) } }
     fun unlisten(l: () -> Unit) { synchronized(listeners) { listeners.remove(l) } }
+    /** A word moved outside the presence itself (a group's typing, Groups.typed): every page that shows it reads it again. */
+    fun poke() = changed()
     private fun changed() {
         val ls = synchronized(listeners) { listeners.toList() }
         MainThread.post { ls.forEach { it() } }
@@ -507,7 +537,21 @@ object Presence {
         // «W» + my wall's version and «G» + the tag of their page's ground on my screen, after the name's digits (iOS heldTail 566-567):
         // uppercase and digits, unread by every older build — they stop at the first letter after the digits they read
         // «C» + my balance right after the ground's digits (iOS heldTail 565-567): the same uppercase and digits (coinTail)
-        return "F" + face + "N" + wireTag(if (n.isEmpty()) null else n.toByteArray(Charsets.UTF_8)) + "W" + MyWall.spokenVersion(ref) + "G" + PageGround.heldTag(ref) + coinTail()
+        // «A» + the tag of their bio and link on my screen, between the name and the wall (iOS heldTail 543-551): it also tells an iPhone
+        // that this phone reads the word about oneself -- without it no iPhone sent this phone its word, nor the coin key in it
+        // «L» + my Global Level after the balance, and «Q» closing the tags -- this phone takes a deletion for everyone quietly (iOS
+        // heldTail 550: E2E.coinTail() + E2E.levelTail() + "Q")
+        return "F" + face + "N" + wireTag(if (n.isEmpty()) null else n.toByteArray(Charsets.UTF_8)) + "A" + PeerAbout.heldTag(ref) +
+            "W" + MyWall.spokenVersion(ref) + "G" + PageGround.heldTag(ref) + coinTail() + levelTail() + "Q"
+    }
+    /**
+     * THE GLOBAL LEVEL RIDES AFTER THE BALANCE (iOS E2E.levelTail, MontanaE2E.swift:598-604, the author's word 11.10.2026 21:2x MSK):
+     * «L» and the level, said only once this life knows both the person's seconds and the book -- an unknown level is not said as none.
+     */
+    private fun levelTail(): String {
+        val person = PersonChain.known ?: return ""
+        val coins = CoinBook.said ?: return ""
+        return "L" + PersonChain.global(person, coins)
     }
     /**
      * WHAT THEY HOLD OF ME, heard in their word (iOS heardHeld 629-667): their screen's tags of my face and my name against what I am —
@@ -522,13 +566,22 @@ object Presence {
         }
         val f = digits('F') ?: return
         val n = digits('N') ?: return
+        // «A» stands only right after the name's digits (iOS heardHeld 662-700): an older word has none, and a door's name later in the
+        // word is never read for it
+        val ni = payload.indexOf('N')
+        val afterName = payload.substring(ni + 1).dropWhile { it.isDigit() }
+        val a = if (afterName.startsWith("A")) afterName.drop(1).takeWhile { it.isDigit() }.ifEmpty { null } else null
         val faceOff = f != wireTag(SelfFace.bytes(Book.ctx))
         val nameOff = n != wireTag(Prefs.userName.trim().takeIf { it.isNotEmpty() }?.toByteArray(Charsets.UTF_8))
-        if (!faceOff && !nameOff) return
+        val aboutOff = a != null && a != MyAbout.wireTag()
+        if (!faceOff && !nameOff && !aboutOff) return
         val now = System.currentTimeMillis()
         synchronized(heldAskedAt) { if (now - (heldAskedAt[ref] ?: 0L) < 60_000L) return; heldAskedAt[ref] = now }
-        Log.d("Montana", "held_differs face=" + (if (faceOff) 1 else 0) + " name=" + (if (nameOff) 1 else 0))
-        Thread { Post.announceAgain(ref, faceOff, nameOff, f, n) }.start()
+        Log.d("Montana", "held_differs face=" + (if (faceOff) 1 else 0) + " name=" + (if (nameOff) 1 else 0) + " about=" + (if (aboutOff) 1 else 0))
+        Thread {
+            if (faceOff || nameOff) Post.announceAgain(ref, faceOff, nameOff, f, n)
+            if (aboutOff) { Prefs.remove("annAbout.$ref"); MyAbout.sendIfNeeded(ref, force = true) }   // their screen holds other words of mine
+        }.start()
     }
     /** «@DOORS» — the doors alive for me, in the chat word's tail (iOS doorTail 685-691): UPPERCASE, so no old reader takes a host's «h» for hiding. */
     private fun doorTail() = Signal.aliveHosts().joinToString(",").let { if (it.isEmpty()) "" else "@" + it.uppercase() }
@@ -701,6 +754,8 @@ object Presence {
     /** A word of the lane from `ref` (iOS append's presence branches 3797-3954 + liveWordMoves). */
     fun hear(ref: String, text: String) {
         if (PeerSafety.isBlocked(ref)) return   // a blocked person reaches nothing
+        // A GROUP'S TYPING WORD RIDES THE LANE (iOS MTGroup.typing → E2E.signalNow): the group reads it, nothing answers it
+        if (text.startsWith(Groups.MARK)) { Groups.hearLive(ref, text); return }
         // THEIR LIVE DRAFT (iOS handleMeshDraft): its bubble, and «typing…» when it is a keystroke said now
         if (text.startsWith(LiveDraft.MARK)) {
             if (LiveDraft.hear(ref, text)) { peerTyping(ref); noteSeen(ref, System.currentTimeMillis(), "draft"); changed() }
@@ -725,6 +780,7 @@ object Presence {
                 if (fresh) heardHeld(ref, payload)   // only a word said now says what their screen holds
                 heardHeldLetters(ref, payload)   // which of my letters they hold whole (iOS 3909, 3935): a letter once held whole is delivered for good
                 CoinBoard.heard(ref, payload, wordAt)   // the balance the word tells (iOS E2E.heardCoins, MontanaChatStore.swift:3907, 3933)
+                CoinBoard.heardLevel(ref, payload, wordAt)   // the Global Level it tells, and «Q» (iOS E2E.heardLevel, heardCapable)
                 if (chat) {
                     if (liveWordMoves(ref, saidAt, true, open, WORD_LIFE)) {
                         peerWatching(ref, open, saidAt)
@@ -793,6 +849,7 @@ object Presence {
         if (app || text.startsWith(WATCH)) {
             val payload = text.removePrefix(if (app) APP else WATCH)
             CoinBoard.heard(ref, payload, at)   // the balance the node's last word tells (iOS sweepPresence, MontanaWakePush.swift:3246)
+            CoinBoard.heardLevel(ref, payload, at)   // and its Global Level (iOS sweepPresence heardLevel)
             hides(ref, payload.drop(1).contains('h'), at)
             payload.indexOf('@').takeIf { it >= 0 }?.let { Signal.notePeerDoor(ref, payload.substring(it + 1)) }
             if (app && payload.drop(1).startsWith("B")) gone(ref, at) else if (app) back(ref, at)
@@ -876,7 +933,14 @@ object Presence {
         appPresence(true)
         Book.openChat?.let { ref -> if ((Book.chat(ref)?.unread ?: 0) > 0) Thread { Post.markRead(ref) }.start() }
     }
-    fun appHidden() { if (!appOpen) return; appOpen = false; appPresence(false) }
+    fun appHidden() {
+        if (!appOpen) return
+        appOpen = false
+        appPresence(false)
+        // the app leaves the screen: the person's chain keeps its last second and the Global Level of now (iOS MontanaApp 363, person.left)
+        val coins = CoinBook.said
+        if (coins != null) Thread { PersonChain.left(PersonChain.global(PersonChain.known, coins)) }.start()
+    }
     fun log(s: String) = Log.d("Montana", "presence: $s")
 
     /**
@@ -930,7 +994,10 @@ object NodeClock {
     val skewMs: Long get() { load(); return skew }
     fun learn(conn: java.net.HttpURLConnection) {
         val server = runCatching { conn.getHeaderFieldDate("Date", 0L) }.getOrDefault(0L)
-        if (server > 0L) learn(server)   // no Date, or one unread: nothing is learned (iOS learnSkew 1028-1029)
+        if (server > 0L) {
+            learn(server)   // no Date, or one unread: nothing is learned (iOS learnSkew 1028-1029)
+            PersonChain.answered(server)   // a node's answer of any road is a second of the words on the network (iOS personFeed)
+        }
     }
     @Synchronized fun learn(serverMs: Long) {
         load()

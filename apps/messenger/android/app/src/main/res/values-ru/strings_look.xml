@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The look of the latest iOS (MontanaBubble, MontanaConversation; Localizable.xcstrings ru). -->
+<resources>
+    <string name="bubble_forwarded">Переслано</string>
+    <string name="bubble_forwarded_from">Переслано из %s</string>
+    <string name="gr_role_owner">владелец</string>
+    <string name="gr_role_admin">админ</string>
+    <string name="chat_search_hint">Поиск в чате…</string>
+    <string name="chat_nothing_found">Ничего не найдено</string>
+</resources>

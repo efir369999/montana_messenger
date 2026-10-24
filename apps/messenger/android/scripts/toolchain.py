@@ -40,6 +40,14 @@ class Paths:
         self.adb = os.path.join(self.sdk, "platform-tools", "adb")
         self.webrtc = os.path.join(self.tools, "webrtc", "android-%s.aar" % PIN["webrtc"]["version"])
         self.protocol = os.path.normpath(os.path.join(ROOT, PIN["protocol"]["dir"]))
+        # the VPN wall's engine (scripts/build.py vpn): Go and the gomobile it installs, their modules, the pump's source
+        # and each built engine, kept by the digest of its inputs
+        self.go_root = os.path.join(self.tools, "go")
+        self.go = os.path.join(self.go_root, "bin", "go")
+        self.go_bin = os.path.join(self.tools, "go-bin")
+        self.go_path = os.path.join(self.tools, "go-path")
+        self.vpn_src = os.path.join(self.tools, "vpn-src")
+        self.vpn_cache = os.path.join(self.tools, "vpn-cache")
 
     def env(self):
         e = dict(os.environ)

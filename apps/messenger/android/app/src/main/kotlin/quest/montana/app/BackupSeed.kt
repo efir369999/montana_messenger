@@ -26,11 +26,15 @@ import java.util.UUID
  * What stays as it was: the ACTIVE seed lives device-only in the vault (Identity.kt) and nothing here writes over it.
  * A carried seed is a second reading of the same words, opened only by the person's tap.
  *
+ * OFF UNTIL THE PERSON TURNS IT ON (Montana-Android): the words are the identity, and a copy in the account is a second
+ * place they can be opened from, so the account carries them only by the person's own choice on the Privacy page.
+ * iOS 2229 withdrew its own account copy (MontanaAppleID is a stub there).
+ *
  * ONE RECORD PER INSTALLATION, as on iOS: every installation writes a record of its own, named by a name drawn once
  * here and never carried; «Forget this device» withdraws this installation's record alone.
  */
 object MontanaBackupID {
-    private const val SWITCH = "mt.backup.signin"       // the person's switch, standing by default (iOS mt.apple.signin)
+    private const val SWITCH = "mt.backup.signin"       // the person's switch, off by default (iOS mt.apple.signin)
     private const val RECORD = "mt.backup.signin.id"    // this installation's record name, this device's own
     private const val CARRIED = "mt.backup.carried"     // what the account brought to this phone, sealed in the vault
     const val KEY_PREFIX = "seed."
@@ -39,7 +43,7 @@ object MontanaBackupID {
 
     private fun prefs(c: Context) = c.getSharedPreferences("mt.backup", Context.MODE_PRIVATE)
 
-    fun on(c: Context) = prefs(c).getBoolean(SWITCH, true)
+    fun on(c: Context) = prefs(c).getBoolean(SWITCH, false)
 
     /** The switch on the Privacy page (iOS MontanaAppleID.set(on:)): the system is told, and the agent writes or leaves out the words. */
     fun setOn(c: Context, v: Boolean) { prefs(c).edit().putBoolean(SWITCH, v).commit(); publish(c) }

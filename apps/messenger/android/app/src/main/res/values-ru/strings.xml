@@ -6,10 +6,10 @@
     <string name="priv_words_sub">Ключ держите только вы</string>
     <string name="priv_e2e_title">Сквозное шифрование</string>
     <string name="priv_e2e_sub">Ключ живёт на ваших устройствах</string>
-    <string name="priv_wallet_title">Свой адрес-кошелёк</string>
-    <string name="priv_wallet_sub">По нему вам пишут и отправляют Montana</string>
-    <string name="priv_servers_title">Серверов нет</string>
-    <string name="priv_servers_sub">Письма несёт сам телефон</string>
+    <string name="priv_name_title">Имя или приглашение</string>
+    <string name="priv_name_sub">По любому из них вам пишут</string>
+    <string name="priv_sealed_title">Запечатано в пути</string>
+    <string name="priv_sealed_sub">Узлы несут конверты, которые не могут открыть</string>
     <string name="creating">Рождается личность…</string>
     <string name="create">Создать</string>
     <string name="open_identity">Открыть личность</string>

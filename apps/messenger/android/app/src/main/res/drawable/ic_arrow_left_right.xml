@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS arrow.left.arrow.right: drawn for Montana (the arrow to the left over the arrow to the right): «Reorder Tabs» -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.8" android:strokeLineJoin="round" android:strokeLineCap="round"
+      android:pathData="M19.5,7.5H4.5M8.5,3.5l-4,4l4,4"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.8" android:strokeLineJoin="round" android:strokeLineCap="round"
+      android:pathData="M4.5,16.5h15M15.5,12.5l4,4l-4,4"/>
+</vector>

@@ -151,10 +151,11 @@ private fun underlap(v: View, room: Int): Boolean {
 private fun underlapPage(page: View, room: Int) { if (!underlap(page, room)) roomAbove(page, room) }
 
 /** The glyph inside a bar button (iOS MontanaOctagon.barGlyph: Color(white: 0.8)). */
-private val barGlyph = Color.rgb(204, 204, 204)
+private val barGlyph = MT.barGlyph
 
-/** The pages under the bar (iOS UIState.Pane): the mesh wall from the drawer, the P2P wall the globe's page. */
-enum class Pane { CHATS, CONTACTS, CALLS, FEED, MUSIC, GALLERY, GROUPS, CHANNELS, MESH, P2P }
+/** The pages under the bar (iOS UIState.Pane, ContentView.swift:168 at 2235): the VPN wall the globe's page, the mesh and the P2P walls
+ *  from the drawer. */
+enum class Pane { CHATS, CONTACTS, CALLS, FEED, MUSIC, GALLERY, GROUPS, CHANNELS, VPN, MESH, P2P }
 
 fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
     val c = act
@@ -163,23 +164,33 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
     val panes = FrameLayout(c)
     val music = MusicPage(act)
     val feed = FeedPane(act)
-    val chats = ChatsPane(act)
+    // THE FOLDER CHOSEN (iOS folderID, MontanaChatsList.swift:283-286 at 2235, the author's words 17.10.2026 18:4x MSK): All Chats at every
+    // launch, as the reference
+    var folderID = ChatFolder.ALL_ID
+    val chats = ChatsPane(act) { folderID }
+    // the drawer's Groups and Channels are the chats page on the folder of their kind (iOS paneFolder 1067-1074: one view for the three)
+    val groups = ChatsPane(act, FolderKind.GROUPS)
+    val channels = ChatsPane(act, FolderKind.CHANNELS)
     var goContacts: () -> Unit = {}   // the calls' «New call» turns to the contacts (set once choose stands)
+    val vpn = VpnWallPage(act)   // the globe's page (iOS NetworkTabView on .vpn)
     val views = mapOf(Pane.CHATS to chats, Pane.CONTACTS to contactsPane(act), Pane.CALLS to callsPane(act) { goContacts() },
         Pane.FEED to feed, Pane.MUSIC to music.view, Pane.GALLERY to galleryPane(act),
-        Pane.GROUPS to groupsPane(act, channel = false), Pane.CHANNELS to groupsPane(act, channel = true), Pane.MESH to meshPane(act), Pane.P2P to p2pPane(act))
+        Pane.GROUPS to groups, Pane.CHANNELS to channels, Pane.VPN to vpn.view, Pane.MESH to meshPane(act), Pane.P2P to p2pPane(act))
     views.values.forEach { v -> v.visibility = View.GONE; panes.addView(v, FrameLayout.LayoutParams(MATCH, MATCH)) }
     views.getValue(Pane.CHATS).visibility = View.VISIBLE
     // THE FLOATING PLAYER stands on the chats, the feed and the music while anything plays (iOS playerBar).
     val player = miniBar(act)
     panes.addView(player, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM).apply { bottomMargin = c.dp(8) })
     fun showPlayer() {
-        val on = Playing.kind != null && pane in setOf(Pane.CHATS, Pane.FEED, Pane.MUSIC)
+        // the drawer's Groups and Channels wear it too: they are the chats page (iOS 2235, the playerBar over the one view, 1049-1052)
+        val on = Playing.kind != null && pane in setOf(Pane.CHATS, Pane.FEED, Pane.MUSIC, Pane.GROUPS, Pane.CHANNELS)
         player.visibility = if (on) View.VISIBLE else View.GONE
         if (on) player.live()
         music.reserve(on && pane == Pane.MUSIC)
         feed.reserve(on && pane == Pane.FEED)   // the write button steps above the bar, as the music's plus (iOS MTFeedTabView reserve)
         chats.reserve(on && pane == Pane.CHATS)   // the rows keep its room and «Write» steps above it too (iOS MontanaChatsList.swift:1021,1030 at 2155)
+        groups.reserve(on && pane == Pane.GROUPS)
+        channels.reserve(on && pane == Pane.CHANNELS)
     }
     Playing.listen { if (player.isAttachedToWindow) showPlayer() }   // a track, a voice or a note: the one gate (iOS MontanaPlayerBar.Gate)
     // THE ONE SEARCH (iOS searchResults, [C-1]): the same field and the same results stand on the chats, the contacts and the
@@ -191,18 +202,49 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
     var foldSearch: () -> Unit = {}   // the search folds with the panel unless it is in use (iOS barOpen || searchActive, 748)
     fun showResults() {
         foldSearch()
-        val on = search.active && pane in setOf(Pane.CHATS, Pane.CONTACTS, Pane.CALLS)
+        // the drawer's Groups and Channels search as the chats do (iOS 2235: timePanel(.chats, ownSearch: false) over the one view)
+        val on = search.active && pane in setOf(Pane.CHATS, Pane.CONTACTS, Pane.CALLS, Pane.GROUPS, Pane.CHANNELS)
         if (on && results.visibility != View.VISIBLE) results.scrollTo(0, 0)
         results.visibility = if (on) View.VISIBLE else View.GONE
         if (on) results.show(search.query)
+        vpn.search(if (search.active && pane == Pane.VPN) search.query else "")   // the VPN wall searches itself (iOS searchesItself)
         if (search.active != searching) {
             searching = search.active
             if (searching) { keepBack = act.back; act.back = { search.clear() } } else { act.back = keepBack; keepBack = null }
         }
     }
     search = SearchRow(c) { _, _ -> showResults() }
+    // THE FOLDERS' TABS IN PLACE OF THE SEGMENTS (iOS MTFolderTabs, MontanaChatsList.swift:983-995 at 2235, the author's words 17.10.2026
+    // 18:4x MSK): between the bar and the search, as the reference stands them over its list -- the strip 44 high, the row 12 from the screen's
+    // edges and 2 above and below it -- on the chats page and on the drawer's Groups and Channels, which are that page on their folder; with
+    // any other page the row folds away as the pages change
+    val tabs = FolderTabs(act)
+    val tabsRow = FrameLayout(c).apply {
+        setPadding(dp(12), dp(2), dp(12), dp(2))
+        addView(tabs, FrameLayout.LayoutParams(MATCH, dp(44)))
+    }
+    fun paneFolder(p: Pane): ChatFolder = when (p) { Pane.GROUPS -> groups.folder(); Pane.CHANNELS -> channels.folder(); else -> chats.folder() }
+    fun drawTabs(animated: Boolean) = tabs.show(ChatFolders.tabs(c), paneFolder(pane).id, animated)
+    var tabsOn = true
+    var tabsTurn: android.animation.ValueAnimator? = null
+    fun showTabs(on: Boolean) {
+        if (on == tabsOn) return
+        tabsOn = on
+        tabsTurn?.cancel()
+        val full = c.dp(48)
+        tabsTurn = android.animation.ValueAnimator.ofInt(tabsRow.layoutParams?.height?.takeIf { 0 <= it } ?: full, if (on) full else 0).apply {
+            duration = 200   // the pages' own change (iOS .easeInOut(duration: 0.2))
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { a ->
+                val h = a.animatedValue as Int
+                tabsRow.layoutParams = tabsRow.layoutParams.apply { height = h }
+                tabsRow.alpha = h / full.toFloat()
+            }
+            start()
+        }
+    }
     lateinit var bar: HomeBar
-    /** The pane stands: the bar's puck under it, the dynamic glyph's memory, the music's walk, the player's place. */
+    /** The pane stands: the bar's puck under it, the dynamic glyph's memory, the music's walk, the player's place, the folders' tabs. */
     fun arrived(p: Pane) {
         pane = p
         if (p == Pane.CALLS) CallsSeen.clear()   // the calls page is looked at: the missed calls are seen (iOS 3010-3012)
@@ -210,6 +252,9 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
         if (p == Pane.MUSIC || p == Pane.GALLERY) Prefs.setStr("lastMediaPane", if (p == Pane.MUSIC) "music" else "gallery")
         bar.showPane(p)
         if (p == Pane.MUSIC) MusicFolders.walk(act)          // what was put into the lent folders since comes in
+        if (p == Pane.VPN) vpn.opened()                      // the VPN wall's opening reads the tunnel and the list (iOS onChange(of: ui.pane))
+        showTabs(p == Pane.CHATS || p == Pane.GROUPS || p == Pane.CHANNELS)
+        drawTabs(animated = true)
         showPlayer()
         showResults()
     }
@@ -222,19 +267,35 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
         arrived(p)
     }
     goContacts = { choose(Pane.CONTACTS) }
+    // A TAP ON A TAB (iOS pick, MontanaChatsList.swift:988-992): the selection ends, the folder is chosen, and the page is the chats'
+    tabs.onPick = { id ->
+        chats.endSelecting()
+        folderID = id
+        chats.showFolder()
+        if (pane != Pane.CHATS) choose(Pane.CHATS) else drawTabs(animated = true)
+    }
+    // A HOLD ON A TAB (iOS menu, 993): the folder's own menu; a folder taken away while chosen gives the page back to All Chats (1056-1058)
+    tabs.onMenu = { id, held ->
+        folderMenu(act, held, tabs.lifted(id), id) { gone -> if (folderID == gone) { folderID = ChatFolder.ALL_ID; chats.showFolder() } }
+    }
+    val tabsHeard: () -> Unit = { act.onMain { drawTabs(animated = false) } }
+    tabs.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: View) { Book.listen(tabsHeard); ChatMarks.listen(tabsHeard); ChatFolders.listen(tabsHeard); drawTabs(animated = false) }
+        override fun onViewDetachedFromWindow(v: View) { Book.unlisten(tabsHeard); ChatMarks.unlisten(tabsHeard); ChatFolders.unlisten(tabsHeard) }
+    })
     val shell = DrawerShell(act)
     act.drawer = shell
     // THE PAGES FOLLOW THE FINGER (iOS turnOrder, turnStroke): the pane moves by the finger and the page beside it slides in
     // from its side — the next on a stroke to the left, the one before on a stroke to the right; at the release a moving finger
     // says the way, a still one the distance. The order is the bar's: contacts, calls, the feed, the chats, the dynamic glyph's
-    // page — the music, or the gallery when it was the last opened — and the globe's P2P wall.
+    // page — the music, or the gallery when it was the last opened — and the globe's VPN wall (iOS turnOrder, ContentView.swift:242).
     shell.turner = object : DrawerShell.Turner {
         var next: Pane? = null
         var side = 0
         fun order(): List<Pane> {
             val media = if (pane == Pane.MUSIC || pane == Pane.GALLERY) pane
                         else if (Prefs.str("lastMediaPane", "music") == "gallery") Pane.GALLERY else Pane.MUSIC
-            return listOf(Pane.CONTACTS, Pane.CALLS, Pane.FEED, Pane.CHATS, media, Pane.P2P)   // iOS turnOrder
+            return listOf(Pane.CONTACTS, Pane.CALLS, Pane.FEED, Pane.CHATS, media, Pane.VPN)   // iOS turnOrder
         }
         override fun begin(side: Int): Boolean {
             val o = order(); val i = o.indexOf(pane); val j = i + side
@@ -293,6 +354,7 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
     // room itself, so nothing of it stands under the bar.
     val head = c.vstack(Gravity.NO_GRAVITY) {
         addView(bar, lp(MATCH, dp(60)).apply { setMargins(dp(12), dp(4), dp(12), dp(2)) })
+        addView(tabsRow, lp(MATCH, dp(48)))   // the folders' tabs (above)
         addView(search, lp(MATCH, dp(56)))
         addView(hair, lp(MATCH, dp(21)))
     }
@@ -473,7 +535,7 @@ class DrawerShell(private val act: MainActivity) : FrameLayout(act) {
         return true
     }
 
-    private companion object { const val DIM = 0.35f }
+    private companion object { const val DIM = 0.45f }   // iOS drawer: the page dims to black 0.45 (ContentView.swift:2100)
 }
 
 /**
@@ -507,31 +569,42 @@ private fun sideDrawer(act: MainActivity, onPane: (Pane) -> Unit, onProfile: () 
         setPadding(dp(2), dp(2), dp(2), dp(2))
     }
     val name = Prefs.userName.trim()
-    val face = c.vstack {
+    // one's own face wears the coins one shows and the level one holds (iOS MTSelfFace → AvatarCircle(who: MTAvatarBadges.me)), read
+    // again each time the drawer comes out
+    val faceFrame = FrameLayout(c).apply {
         addView(c.avatar(SelfFace.load(c), name, 48).apply {
             foreground = GradientDrawable().apply { shape = GradientDrawable.OVAL; setStroke(dp(3), MT.blue) }   // the ring of the shown shell
-        }, lp(dp(48), dp(48)))
+        }, FrameLayout.LayoutParams(dp(48), dp(48)))
+    }
+    fun drawBadges() { while (1 < faceFrame.childCount) faceFrame.removeViewAt(1); c.wearBadges(faceFrame, FACE_ME, 48) }
+    drawBadges()
+    val face = c.vstack {
+        clipChildren = false
+        addView(faceFrame, lp(dp(48), dp(48)))
         if (name.isNotEmpty()) addView(c.text(name, 12f, Color.WHITE, center = true).apply { maxLines = 2 }, lp(dp(88), WRAP).apply { topMargin = dp(6) })   // USER-DATA: the person's own name
         pressable(onProfile)
     }
     val column = c.vstack(Gravity.NO_GRAVITY) {
         setPadding(dp(24), dp(20), dp(16), 0)
+        clipChildren = false; clipToPadding = false   // the face's badges stand in the column's top room
         addView(face, lp(dp(88), WRAP).apply { marginStart = -dp(20) })
         gap(14)
         addView(row(glyph(R.drawable.ic_bar_contacts), R.string.contacts) { onPane(Pane.CONTACTS) }, lp())
         addView(row(glyph(R.drawable.ic_bar_calls), R.string.app_calls, { CallsSeen.unseen() }) { onPane(Pane.CALLS) }, lp())
         addView(row(feedMark(), R.string.app_feed) { onPane(Pane.FEED) }, lp())
-        // THE COUNTS (iOS MTApplication.badge, ContentView.swift:1489-1498): the chats with something unread, the groups' and the channels' each their own
+        // THE COUNTS (iOS MTApplication.badge, ContentView.swift:1489-1498): the chats with something unread. The groups and the channels
+        // stand in the chats' own folders, not in the drawer (iOS 2235 MontanaSideDrawer.apps, ContentView.swift:1576: «filter { $0 !=
+        // .groups && $0 != .channels }»)
         addView(row(glyph(R.drawable.ic_bar_chats), R.string.chats, { Book.all().count { !Groups.isKey(it.ref) && ChatMarks.hasUnread(it) } }) { onPane(Pane.CHATS) }, lp())
-        // the groups and the channels, apps of their own under the chats (iOS MTApplication .groups, .channels: person.3.fill, megaphone.fill)
-        addView(row(glyph(R.drawable.ic_app_groups), R.string.app_groups, { Book.all().count { Groups.isKey(it.ref) && !Groups.isChannel(it.ref) && ChatMarks.hasUnread(it) } }) { onPane(Pane.GROUPS) }, lp())
-        addView(row(glyph(R.drawable.ic_app_channels), R.string.app_channels, { Book.all().count { Groups.isChannel(it.ref) && ChatMarks.hasUnread(it) } }) { onPane(Pane.CHANNELS) }, lp())
         addView(row(glyph(R.drawable.ic_bar_play), R.string.app_music) { onPane(Pane.MUSIC) }, lp())
         addView(row(glyph(R.drawable.ic_app_gallery), R.string.app_gallery) { onPane(Pane.GALLERY) }, lp())
         addView(row(android.widget.ImageView(c).apply { setImageResource(R.drawable.chess_knight) }, R.string.app_chess, onTap = onChess), lp())   // chess (iOS MTChessPage)
         addView(row(glyph(R.drawable.ic_app_wallet), R.string.app_wallet, onTap = onWallet), lp())   // TimeCoin (iOS MTWalletPage)
-        // THE WALLS BESIDE THE FEED (iOS MTApplication .meshWall, .p2pWall; the author's word 29.09): the people around, phone to
-        // phone; the nodes this phone reaches
+        // THE WALLS BESIDE THE FEED (iOS MTApplication .vpnWall, .meshWall, .p2pWall; the author's word 29.09): the VPN on its globe on
+        // a stand (MTApplicationLibrary.swift:105: MontanaVPNGlyph 24 in the row's 30); the people around, phone to phone; the nodes
+        addView(row(FrameLayout(c).apply { addView(c.vpnGlyph(Color.WHITE, 24), FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER)) }, R.string.app_vpn_wall) {
+            VpnOpen.tap(); onPane(Pane.VPN)
+        }, lp())
         addView(row(glyph(R.drawable.ic_set_antenna), R.string.app_mesh_wall) { onPane(Pane.MESH) }, lp())
         addView(row(glyph(R.drawable.ic_language), R.string.app_p2p_wall) { onPane(Pane.P2P) }, lp())
         addView(row(glyph(R.drawable.ic_app_card), R.string.app_card, onTap = onCard), lp())   // the business card (iOS MTCardFromDrawer, the author's word 28.09)
@@ -546,7 +619,7 @@ private fun sideDrawer(act: MainActivity, onPane: (Pane) -> Unit, onProfile: () 
         isVerticalScrollBarEnabled = false
         overScrollMode = View.OVER_SCROLL_NEVER
         addView(column)
-        tag = Runnable { for ((badge, count) in counts) badge.showCount(count()) }   // the drawer's counts, read when it comes out
+        tag = Runnable { for ((badge, count) in counts) badge.showCount(count()); drawBadges() }   // the drawer's counts and face, read when it comes out
     }
 }
 
@@ -554,7 +627,7 @@ private fun sideDrawer(act: MainActivity, onPane: (Pane) -> Unit, onProfile: () 
  * THE TIME PANEL (iOS chatsTopBarPlate): ONE glass capsule at the bar's height, and on it seven glyphs with equal shares of
  * the width, left to right — the drawer, the contacts, the calls, THE LOGO AT THE CENTRE, the chats, the player and the
  * globe. One puck stands under the chosen glyph and flows to the one tapped next; the globe is the network's lamp and opens
- * the P2P wall.
+ * the VPN wall (iOS 2235).
  */
 class HomeBar(private val act: MainActivity, onDrawer: (View) -> Unit, onPane: (Pane) -> Unit) : FrameLayout(act) {
     private val puck = View(act).apply {
@@ -632,7 +705,18 @@ class HomeBar(private val act: MainActivity, onDrawer: (View) -> Unit, onPane: (
         background = act.glassPlate()
         addView(puck, LayoutParams(0, 0))
         addView(row, LayoutParams(MATCH, MATCH))
-        glyph(R.drawable.ic_bar_drawer, 26) { onDrawer(it) }
+        // THE CROSSED PEOPLE IN THE FIRST SLOT (iOS MontanaChatsList 360-383, the author's word 08.10.2026 23:2x MSK: «when it is off, a
+        // crossed glyph like the muted sound, with the way to the settings of the copy with contacts»): the drawer otherwise
+        val first = glyph(R.drawable.ic_bar_drawer, 26) { if (Keeping.offShown) act.push { dataStoragePage(act, it) } else onDrawer(it) }
+        val keepShown: () -> Unit = {
+            first.setImageResource(if (Keeping.offShown) R.drawable.ic_person_2_slash else R.drawable.ic_bar_drawer)
+            (first.parent as? View)?.contentDescription = if (Keeping.offShown) act.getString(R.string.keep_mine) else null
+        }
+        keepShown()
+        addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) { Keeping.listen(keepShown); keepShown() }
+            override fun onViewDetachedFromWindow(v: View) { Keeping.unlisten(keepShown) }
+        })
         glyph(R.drawable.ic_bar_contacts, 26) { onPane(Pane.CONTACTS) }
         glyph(R.drawable.ic_bar_calls, 26, badge = callsBadge) { onPane(Pane.CALLS) }
         // THE LOGO ON THE GLASS (iOS MTFeedGlyph): the gold sign on a round glass plate, a quarter of its side around it.
@@ -657,8 +741,9 @@ class HomeBar(private val act: MainActivity, onDrawer: (View) -> Unit, onPane: (
         media = glyph(R.drawable.ic_bar_play, 26) { onPane(if (Prefs.str("lastMediaPane", "music") == "gallery") Pane.GALLERY else Pane.MUSIC) }
         if (Prefs.str("lastMediaPane", "music") == "gallery") media.setImageResource(R.drawable.ic_app_gallery)
         // THE GLOBE (iOS MTBarGlobe, MontanaTransportIcon): the network's lamp — green while a machine is held, red while none is,
-        // grey before the first knock (unknown is not «no»); a tap chooses the P2P wall (the author's word 25.09)
-        globe = glyph(R.drawable.ic_language, 26, tint = Color.rgb(115, 115, 115)) { onPane(Pane.P2P) }
+        // grey before the first knock (unknown is not «no»); a tap chooses the VPN wall (iOS 2235 MontanaChatsList.swift:426), the touch
+        // stamped when it changes the page (MontanaVPNOpen)
+        globe = glyph(R.drawable.ic_language, 26, tint = Color.rgb(115, 115, 115)) { if (slot != 6) VpnOpen.tap(); onPane(Pane.VPN) }
         addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             place(false)
             if (!foldLaid && width > 0) { foldLaid = true; if (!open) post { applyFold(0f) } }   // a panel left folded is born folded
@@ -698,7 +783,7 @@ class HomeBar(private val act: MainActivity, onDrawer: (View) -> Unit, onPane: (
     /** The puck goes under the pane's slot; the dynamic glyph wears the music's or the gallery's face (iOS slot(of:)). */
     fun showPane(p: Pane, animated: Boolean = true) {
         // the groups and the channels are opened from the drawer: no glyph of the bar is theirs, the puck stands away (iOS slot nil)
-        slot = when (p) { Pane.CONTACTS -> 1; Pane.CALLS -> 2; Pane.FEED -> 3; Pane.CHATS -> 4; Pane.MUSIC, Pane.GALLERY -> 5; Pane.P2P -> 6; Pane.GROUPS, Pane.CHANNELS, Pane.MESH -> -1 }
+        slot = when (p) { Pane.CONTACTS -> 1; Pane.CALLS -> 2; Pane.FEED -> 3; Pane.CHATS -> 4; Pane.MUSIC, Pane.GALLERY -> 5; Pane.VPN -> 6; Pane.GROUPS, Pane.CHANNELS, Pane.MESH, Pane.P2P -> -1 }
         if (p == Pane.MUSIC) media.setImageResource(R.drawable.ic_bar_play)
         if (p == Pane.GALLERY) media.setImageResource(R.drawable.ic_app_gallery)
         place(animated)
@@ -860,128 +945,182 @@ private class SearchResults(val act: MainActivity) : ScrollView(act) {
 }
 
 /**
- * THE CHATS PAGE as a new person first sees it (iOS, the author's word 17.09): the local room in one's own face, under it
+ * THE CHATS PAGE (iOS ChatsListView .chats, .groups and .channels at 2235, MontanaChatsList.swift:977-1065): the folder the page shows -- the
+ * tab chosen, or the drawer's Groups and Channels their kind's (paneFolder 1067-1074) -- and its rows in the chats' one order (rows(of:) over
+ * live 979): the local room on top while the folder takes it, the conversations with the pinned first, our bot last; the archive's row on All
+ * Chats alone (archiveShown 335); a folder of no rows says so (folderEmpty 1124-1134); the corner gives birth to the folder's one kind, or
+ * writes (1040-1045). As a new person first sees it (iOS, the author's word 17.09): the local room in one's own face, our bot, under them
  * «No chats yet» with the code's card, and the round «Write» button at the foot (iOS composeButton).
+ * THE CHATS LIST KEEPS ITS OWN ROOM FOR THE FLOATING PLAYER TOO (iOS MontanaChatsList.swift:856,1021,1030 at 2155, atoms 93ab0f2ba212 and
+ * eb49f096614a): the rows reserve the bar's room at the foot while it stands, and «Write» steps above it, as the music's plus
+ * (MusicPage.reserve) and the feed's write (FeedPane.reserve) do.
  */
-/** THE CHATS LIST KEEPS ITS OWN ROOM FOR THE FLOATING PLAYER TOO (iOS MontanaChatsList.swift:856,1021,1030 at 2155,
- *  atoms 93ab0f2ba212 and eb49f096614a): the rows reserve the bar's room at the foot while it stands, and «Write»
- *  steps above it, as the music's plus (MusicPage.reserve) and the feed's write (FeedPane.reserve) do. */
-private class ChatsPane(private val act: MainActivity) : FrameLayout(act) {
+private class ChatsPane(private val act: MainActivity, private val only: FolderKind? = null, private val chosen: () -> String = { ChatFolder.ALL_ID }) : FrameLayout(act) {
     private val c = act
     // THE SELECTION (iOS selecting): «Select» in a row's menu begins it; the bar at the foot acts on the chosen chats
     private val bar = FrameLayout(c).apply { visibility = View.GONE }
     private lateinit var write: View
-    private lateinit var redrawRows: () -> Unit
+    private lateinit var plus: View
     private var archiveRevealed = false   // the archive's row is summoned by a pull (iOS archiveRevealed)
-    private var revealArchive: (Boolean) -> Unit = {}
+    private var dirty = false              // the rows changed while the page stood hidden: drawn when it is looked at
     private val foot = View(c)   // the floating player's room at the foot (reserve)
+    // THE CONVERSATIONS (iOS MTChatListView): newest first under the pins, each row a person; «No chats yet» while there are none.
+    private val rows = c.vstack(Gravity.NO_GRAVITY)
+    private val empty = folderEmpty(c).apply { visibility = View.GONE }
     private val sel = ChatSelection { s ->
-        redrawRows()
+        fillRows()
         bar.removeAllViews()
         if (s.on) bar.addView(selectionBar(act, s), FrameLayout.LayoutParams(MATCH, WRAP))
         bar.visibility = if (s.on) View.VISIBLE else View.GONE
-        write.visibility = if (s.on) View.GONE else View.VISIBLE
+        corner()
     }
+    // THE EMPTY LIST (iOS MontanaQRCard, the author's word 17.09): «No chats yet» and the code itself under the local room; a tap on the code
+    // opens its whole page. Built once: the rows are drawn again on every letter.
+    private val emptyCard by lazy {
+        c.vstack {
+            setPadding(dp(8), dp(50), dp(8), dp(20))
+            addView(c.text(c.getString(R.string.no_chats), 20f, Color.WHITE, bold = true, center = true), lp())
+            gap(16)
+            addView(CardView(act) { act.push { cardPage(act, it) } }.view, lp())
+        }
+    }
+    // The local room: stands in the list from the first moment; a tap opens it (iOS: the row opens its conversation).
+    private val savedPreview = c.text("", 16f, MT.gray).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+    private val savedTime = c.text("", 14f, MT.gray)
+    private val savedFace = FrameLayout(c)
+    // the local room's line in the chats page's measure (iOS ChatRow with library: 72, the face 48, the gap 16, the side 18; 22 and 20)
+    private val savedRow = c.hstack {
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(dp(18), 0, dp(18), 0)
+        minimumHeight = dp(72)
+        addView(savedFace, lp(dp(48), dp(48)).apply { marginEnd = dp(16) })
+        addView(c.vstack(Gravity.NO_GRAVITY) {
+            addView(c.hstack {
+                gravity = Gravity.CENTER_VERTICAL
+                addView(c.text(c.getString(R.string.saved_messages), 17f, Color.WHITE, bold = true), lp(0, WRAP, 1f))
+                addView(savedTime)
+            }, lp(MATCH, dp(22)))
+            addView(savedPreview, lp(MATCH, dp(20)).apply { topMargin = dp(4) })
+        }, lp(0, WRAP, 1f))
+        pressable {
+            act.push { close ->
+                savedMessagesPage(act, close).apply {
+                    // back by the arrow or by the system's gesture alike: the row reads the room again
+                    addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                        override fun onViewAttachedToWindow(v: View) {}
+                        override fun onViewDetachedFromWindow(v: View) { refresh() }
+                    })
+                }
+            }
+        }
+    }
+    private val savedLine = hairline()
     private val list = ScrollView(c).apply {
         isVerticalScrollBarEnabled = false
         addView(c.vstack(Gravity.NO_GRAVITY) {
-            // The local room: stands in the list from the first moment; a tap opens it (iOS: the row opens its conversation).
-            val preview = c.text("", 16f, MT.gray).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
-            val time = c.text("", 14f, MT.gray)
-            val face = FrameLayout(c)
-            fun refresh() {
-                // Saved Messages wears one's own face (iOS MTSelfFace, the author's word 11.09): read again on every return
-                face.removeAllViews()
-                face.addView(c.avatar(SelfFace.load(c), Prefs.userName, 48))
-                val last = SavedMessages.last(c)
-                preview.text = last?.text ?: ""   // USER-DATA: one's own last letter
-                preview.visibility = if (last == null) View.GONE else View.VISIBLE
-                time.text = last?.let { rowTime(c, it.at) } ?: ""
-            }
-            refresh()
-            // the local room's line in the chats page's measure (iOS ChatRow with library: 72, the face 48, the gap 16, the side 18; 22 and 20)
-            addView(c.hstack {
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(18), 0, dp(18), 0)
-                minimumHeight = dp(72)
-                addView(face, lp(dp(48), dp(48)).apply { marginEnd = dp(16) })
-                addView(c.vstack(Gravity.NO_GRAVITY) {
-                    addView(c.hstack {
-                        gravity = Gravity.CENTER_VERTICAL
-                        addView(c.text(c.getString(R.string.saved_messages), 17f, Color.WHITE, bold = true), lp(0, WRAP, 1f))
-                        addView(time)
-                    }, lp(MATCH, dp(22)))
-                    addView(preview, lp(MATCH, dp(20)).apply { topMargin = dp(4) })
-                }, lp(0, WRAP, 1f))
-                pressable {
-                    act.push { close ->
-                        savedMessagesPage(act, close).apply {
-                            // back by the arrow or by the system's gesture alike: the row reads the room again
-                            addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-                                override fun onViewAttachedToWindow(v: View) {}
-                                override fun onViewDetachedFromWindow(v: View) { refresh() }
-                            })
-                        }
-                    }
-                }
-            }, lp())
-            addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = dp(82) })
-            // THE CONVERSATIONS (iOS MTChatListView): newest first, each row a person; «No chats yet» while there are none.
-            val rows = c.vstack(Gravity.NO_GRAVITY)
-            // THE EMPTY LIST (iOS MontanaQRCard, the author's word 17.09): «No chats yet» and the code itself under the local
-            // room; a tap on the code opens its whole page. Built once: the rows are drawn again on every letter.
-            val emptyCard by lazy {
-                c.vstack {
-                    setPadding(dp(8), dp(50), dp(8), dp(20))
-                    addView(c.text(c.getString(R.string.no_chats), 20f, Color.WHITE, bold = true, center = true), lp())
-                    gap(16)
-                    addView(CardView(act) { act.push { cardPage(act, it) } }.view, lp())
-                }
-            }
-            fun fillRows() {
-                rows.removeAllViews()
-                // THE ARCHIVE'S ROW over the chats while it is summoned and something is archived (iOS archiveRevealed: a pull-down
-                // summons it, a stroke up folds it -- the contacts' one law, «as on the chats»)
-                val archived = archivedChats().size
-                if (archiveRevealed && archived > 0 && !sel.on) {
-                    rows.addView(archiveEntry(act, archived), lp())
-                    rows.addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = dp(82) })
-                }
-                // a meeting that never carried a word leaves no row (iOS: the list stands on letters) — the silent question
-                // of a scan must not raise an empty person here; the pinned stand first (listedChats)
-                val all = chatRows()   // the groups and the channels stand in their own pages (iOS bare, 06.10)
-                if (all.isEmpty() && archived == 0) rows.addView(emptyCard, lp())
-                for (ch in all) {
-                    rows.addView(listRow(act, ch, inArchive = false, sel = sel), lp())
-                    rows.addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = dp(82) })
-                }
-            }
-            redrawRows = { fillRows() }
-            revealArchive = { on ->
-                if (on != archiveRevealed && !(on && archivedChats().isEmpty())) {
-                    archiveRevealed = on
-                    fillRows()
-                    if (on) rows.getChildAt(0)?.let { v ->
-                        v.translationY = -c.dp(72).toFloat(); v.alpha = 0f
-                        v.animate().translationY(0f).alpha(1f).setDuration(300).setInterpolator(android.view.animation.AccelerateDecelerateInterpolator()).start()
-                    }
-                }
-            }
-            fillRows()
-            val onBook: () -> Unit = { act.onMain { fillRows() } }
-            rows.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(v: View) { Book.listen(onBook); ChatMarks.listen(onBook); refresh(); fillRows() }
-                override fun onViewDetachedFromWindow(v: View) { Book.unlisten(onBook); ChatMarks.unlisten(onBook) }
-            })
+            addView(savedRow, lp())
+            addView(savedLine, lp(MATCH, 1).apply { marginStart = dp(82) })
             addView(rows, lp())
             addView(foot, lp(MATCH, dp(120)))
         })
     }
-    /** The bar stands: the rows keep room under it and «Write» steps above it, as the music's plus and the feed's write. */
+
+    /** The folder the page shows (iOS paneFolder, MontanaChatsList.swift:1067-1074): the drawer's Groups and Channels open the folder of their
+     *  kind -- one of their own while the person keeps none --, the chats page the tab chosen. */
+    fun folder(): ChatFolder = when (only) {
+        null -> ChatFolders.folder(chosen()) ?: ChatFolder.ALL
+        else -> ChatFolders.folder(only) ?: ChatFolder(only.raw, preset = only, kinds = listOf(only))
+    }
+    fun endSelecting() { if (sel.on) sel.end() }
+    fun showFolder() = fillRows()
+
+    private fun hairline() = View(c).apply { setBackgroundColor(MT.hairline) }
+
+    private fun refresh() {
+        if (only != null) return   // a folder of one kind alone never takes the local room: the drawer's Groups and Channels draw none
+        // Saved Messages wears one's own face (iOS MTSelfFace, the author's word 11.09): read again on every return
+        savedFace.removeAllViews()
+        // one's own face, and the rim every face of the list wears (iOS ChatRow, MontanaChatsList.swift:2229-2231)
+        savedFace.addView(c.avatar(SelfFace.load(c), Prefs.userName, 48).apply { foreground = c.rim(0.45f) })
+        val last = SavedMessages.last(c)
+        savedPreview.text = last?.text ?: ""   // USER-DATA: one's own last letter
+        savedPreview.visibility = if (last == null) View.GONE else View.VISIBLE
+        savedTime.text = last?.let { rowTime(c, it.at) } ?: ""
+    }
+
+    /** The folder's rows, drawn again on every letter, mark and change of the folders; a page looked away from waits until it is looked at. */
+    private fun fillRows() {
+        if (!isShown) { dirty = true; return }
+        dirty = false
+        rows.removeAllViews()
+        val f = folder()
+        val live = ChatFolders.live()
+        val archived = ChatFolders.archived()
+        val shown = ChatFolders.rows(f, live, archived, ChatFolders.contacts())
+        // the local room stands where this phone keeps it, at the top, while the folder takes it
+        savedRow.visibility = if (shown.any { it.ref == SAVED_ROW }) View.VISIBLE else View.GONE
+        savedLine.visibility = savedRow.visibility
+        // THE ARCHIVE'S ROW over the chats while it is summoned and something is archived (iOS archiveShown 335: the chats page on All Chats
+        // alone; a pull-down summons it, a stroke up folds it -- the contacts' one law, «as on the chats»)
+        if (only == null && f.isAll && archiveRevealed && archived.isNotEmpty() && !sel.on) {
+            rows.addView(archiveEntry(act, archived.size), lp())
+            rows.addView(hairline(), lp(MATCH, 1).apply { marginStart = dp(82) })
+        }
+        // a meeting that never carried a word leaves no row (iOS: the list stands on letters) — the silent question of a scan must not raise an
+        // empty person here; the pinned stand first (listedChats); our bot is no conversation of this phone (folderBotRow)
+        for (r in shown) {
+            if (r.ref == SAVED_ROW) continue
+            val ch = r.chat
+            rows.addView(if (ch == null) folderBotRow(act, sel.on) else listRow(act, ch, inArchive = ChatMarks.isArchived(ch.ref), sel = sel), lp())
+            rows.addView(hairline(), lp(MATCH, 1).apply { marginStart = dp(82) })
+        }
+        // the code's card, the last row (iOS empty 997-998): All Chats holding nothing but the local room and our bot, and nothing archived
+        if (f.isAll && live.none { it.chat != null } && archived.isEmpty()) rows.addView(emptyCard, lp())
+        // A FOLDER OF EMPTY ROWS SAYS SO (iOS .overlay { if rows.isEmpty { folderEmpty } }, 1038-1039)
+        empty.visibility = if (shown.isEmpty()) View.VISIBLE else View.GONE
+        corner()
+    }
+
+    override fun onVisibilityChanged(changedView: View, visibility: Int) {
+        super.onVisibilityChanged(changedView, visibility)
+        if (dirty && isShown) fillRows()
+    }
+
+    /** The archive's row comes down by a pull on All Chats (iOS onPull 1008-1023: guard folder.isAll) and folds by a stroke up anywhere. */
+    private fun revealArchive(on: Boolean) {
+        if (on == archiveRevealed || (on && (only != null || !folder().isAll || archivedChats().isEmpty()))) return
+        archiveRevealed = on
+        fillRows()
+        if (on) rows.getChildAt(0)?.let { v ->
+            v.translationY = -c.dp(72).toFloat(); v.alpha = 0f
+            v.animate().translationY(0f).alpha(1f).setDuration(300).setInterpolator(android.view.animation.AccelerateDecelerateInterpolator()).start()
+        }
+    }
+
+    /** THE PAGE'S CORNER (iOS mtPageAction, MontanaChatsList.swift:1040-1045): a folder of groups alone gives birth to a group, a folder of
+     *  channels alone to a channel (createButton 1440-1448), every other folder writes (composeButton); nothing while the list selects. */
+    private fun corner() {
+        if (!::write.isInitialized) return
+        val kind = folder().onlyKind
+        val births = kind == FolderKind.GROUPS || kind == FolderKind.CHANNELS
+        write.visibility = if (!sel.on && !births) View.VISIBLE else View.GONE
+        plus.visibility = if (!sel.on && births) View.VISIBLE else View.GONE
+        plus.contentDescription = c.getString(if (kind == FolderKind.CHANNELS) R.string.app_channels else R.string.app_groups)
+    }
+    private fun cornerMark(glyph: Int, words: Int, onTap: () -> Unit): View = FrameLayout(c).apply {
+        background = c.glassPlate(oval = true)
+        contentDescription = c.getString(words)
+        addView(c.icon(glyph, barGlyph), FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER))
+        pressable(onTap)
+    }
+
+    /** The bar stands: the rows keep room under it and the corner steps above it, as the music's plus and the feed's write. */
     fun reserve(on: Boolean) {
         foot.layoutParams = lp(MATCH, dp(if (on) 180 else 120)); foot.requestLayout()
         write.layoutParams = PageCorner.params(c, reserve = on)
+        plus.layoutParams = PageCorner.params(c, reserve = on)
     }
+
     init {
         // THE LIST'S OWN DRAG AND ITS FLING, MEASURED (iOS MTFrameMeter, MontanaMessageFeed.swift:268-437, 1125-1149).
         Motion.watch(list) { _, _, y, _, _ -> if (c.dp(25) < y) revealArchive(false) }   // a stroke up folds the archive's row
@@ -993,52 +1132,32 @@ private class ChatsPane(private val act: MainActivity) : FrameLayout(act) {
         addView(EdgeSink(c, top = { list.paddingTop + dp(34) }, bottom = { height }).apply {
             addView(CoinPull(c, list).apply { onPull = { pull -> if (25f < pull) revealArchive(true) } }, FrameLayout.LayoutParams(MATCH, MATCH))   // the coin's pull refreshes the feed (iOS MontanaCoinSpinner) and summons the archive's row
         }, FrameLayout.LayoutParams(MATCH, MATCH))
+        // the empty folder's words stand in the middle of the list under the bar, deaf to the finger (iOS folderEmpty .allowsHitTesting(false))
+        addView(empty, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.CENTER))
+        list.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            val l = empty.layoutParams as FrameLayout.LayoutParams
+            val half = list.paddingTop / 2
+            if (l.topMargin != half) { l.topMargin = half; empty.post { empty.layoutParams = l } }
+        }
         // «WRITE» (iOS composeButton): the one door to the code and the link — the QR opens here and nowhere else.
-        write = FrameLayout(c).apply {
-            background = c.glassPlate(oval = true)
-            contentDescription = c.getString(R.string.share)
-            addView(c.icon(R.drawable.ic_compose, barGlyph), FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER))
-            pressable { act.push { cardPage(act, it) } }
+        write = cornerMark(R.drawable.ic_compose, R.string.share) { act.push { cardPage(act, it) } }
+        // THE CORNER CREATES ONE OF THE FOLDER'S KIND (iOS createButton 1440-1448 and the sheets 1281-1299): the plus on the bar's glass, the
+        // group's two steps or the channel's three; born, it opens in its own chat
+        plus = cornerMark(R.drawable.ic_plus, R.string.app_groups) {
+            val opened: (String) -> Unit = { key -> act.push { back -> conversationPage(act, key, back) } }
+            if (folder().onlyKind == FolderKind.CHANNELS) act.push { close -> channelCreatePage(act, close, opened) }
+            else act.push { close -> groupPickPage(act, close, onCreated = opened) }
         }
         addView(write, PageCorner.params(c))
+        addView(plus, PageCorner.params(c))
         addView(bar, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM).apply { bottomMargin = dp(26) })
-    }
-}
-
-/**
- * THE GROUPS' PAGE AND THE CHANNELS' PAGE (iOS ChatsTabView .groups / .channels, the author's words 06.10.2026 11:5x-12:0x MSK:
- * «in the side panel, under Chats, separate apps Groups and Channels — whole apps of their own, where groups and channels are
- * created and where they live; the chats list does not show them»): the rows of its kind alone, drawn as the chats list draws them.
- */
-private fun groupsPane(act: MainActivity, channel: Boolean): View {
-    val c = act
-    val rows = c.vstack(Gravity.NO_GRAVITY)
-    fun fill() {
-        rows.removeAllViews()
-        for (ch in groupRows(channel)) {
-            rows.addView(listRow(act, ch, inArchive = false, sel = null), lp())
-            rows.addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = c.dp(82) })
-        }
-    }
-    val onBook: () -> Unit = { act.onMain { fill() } }
-    rows.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-        override fun onViewAttachedToWindow(v: View) { Book.listen(onBook); ChatMarks.listen(onBook); fill() }
-        override fun onViewDetachedFromWindow(v: View) { Book.unlisten(onBook); ChatMarks.unlisten(onBook) }
-    })
-    val list = ScrollView(c).apply {
-        isVerticalScrollBarEnabled = false
-        addView(c.vstack(Gravity.NO_GRAVITY) { addView(rows, lp()); gap(120) })   // the floating player's room at the foot
-    }
-    if (channel) return list   // a channel is born by its own three steps (the plan's stage 6)
-    // THE CORNER CREATES ONE OF THE PAGE'S KIND (iOS createButton): the plus on the bar's glass, the group's two steps
-    return FrameLayout(c).apply {
-        addView(list, FrameLayout.LayoutParams(MATCH, MATCH))
-        addView(FrameLayout(c).apply {
-            background = c.glassPlate(oval = true)
-            contentDescription = c.getString(R.string.app_groups)
-            addView(c.icon(R.drawable.ic_plus, barGlyph), FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER))
-            pressable { act.push { close -> groupPickPage(act, close, onCreated = { key -> act.push { back -> conversationPage(act, key, back) } }) } }
-        }, PageCorner.params(c))
+        val heard: () -> Unit = { act.onMain { fillRows() } }
+        rows.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) { Book.listen(heard); ChatMarks.listen(heard); ChatFolders.listen(heard); refresh(); fillRows() }
+            override fun onViewDetachedFromWindow(v: View) { Book.unlisten(heard); ChatMarks.unlisten(heard); ChatFolders.unlisten(heard) }
+        })
+        refresh()
+        corner()
     }
 }
 

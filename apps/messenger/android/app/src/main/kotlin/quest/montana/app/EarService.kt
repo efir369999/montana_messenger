@@ -64,7 +64,13 @@ class EarService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         publish()   // asked into the foreground, it stands there at once — then lets go if no person stands on this phone
         if (!MontanaSeed.hasSeed || !Prefs.termsAccepted) { stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); return START_NOT_STICKY }
-        if (!live) { live = true; MainThread.later(0, round); log("up") }
+        if (!live) {
+            live = true; MainThread.later(0, round); log("up")
+            // THE VPN RISES AGAIN WITH THE EAR (iOS On Demand and the raise after an install, MontanaVPNTunnel.load): after a reboot, an
+            // update or a process the system took, a requested connection rises by the ordinary start road, the person's consent standing;
+            // the platform restarts no VPN service by itself unless its own always-on switch is set
+            runCatching { VpnTunnel.load() }
+        }
         return START_STICKY
     }
 

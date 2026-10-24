@@ -344,7 +344,13 @@ object Calls {
 
     /** The offer on the lane every two seconds until the far phone rings or answers, six times at most (iOS 1895-1918). */
     private fun offerOut(r: Ring, n: Int) {
-        val sdp = synchronized(gate) { if (ring !== r || r.ringing || r.answered) null else r.offer } ?: return
+        // «RINGING» STOPS THE RESENDS, NEVER THE FIRST OFFER (iOS handleSignalBody 2934: «the caller hears ringing; their offer
+        // resends stop»; ringCall, MontanaE2E.swift:1236-1292: the offer stands in the signal queue before the ring letter
+        // leaves). Here the ring letter leaves at the dial, before the offer is built: a far phone rung by that letter said
+        // «ringing» first, the offer never left, and its answer waited for it fifteen seconds and ended (offer-missing; a video
+        // call on 18.10.2026, its camera set up slower than the letter flew). The first offer always goes out -- into the
+        // queue the ringing phone reads.
+        val sdp = synchronized(gate) { if (ring !== r || r.answered || (r.ringing && n > 0)) null else r.offer } ?: return
         val w = JSONObject().put("t", "cal").put("ctrl", "call").put("ts", NodeClock.now()).put("e", epochOf(r.seed))
             .put("sdp", JSONObject().put("type", "offer").put("sdp", sdp)).put("video", r.video).put("caps", CallLine.caps())
             .put("n", Prefs.userName.trim()).put("s", r.seed)
@@ -609,6 +615,21 @@ object Calls {
         Notify.letter(ref, rowText(video, true, 0, true))
     }
 
+    /**
+     * MY CALL NOBODY ANSWERED, TOLD FROM ANOTHER DEVICE OF MINE (Windows twin.rs land_own 755-765, its «missed» letter to the correspondent
+     * that rode the mirror or was heard on the pipe): the row of my unanswered call stands here too, once a call by its seed -- the seed
+     * noted «dead» here, never engaged, so this phone speaks for no call it never held. Nothing rings: it was my call.
+     */
+    fun ownMissed(ref: String, json: String) {
+        val o = runCatching { JSONObject(json) }.getOrNull() ?: JSONObject()
+        val seed = o.optString("s").takeIf { it.isNotEmpty() && it.length <= 64 } ?: return
+        if (Book.chat(ref) == null) return
+        val fresh = synchronized(gate) { (seedState(seed) == null).also { if (it) noteSeed(seed, "dead") } }
+        if (!fresh) return log("own missed letter of a call seen here")
+        row(ref, o.optBoolean("v"), incoming = false, dur = 0, missed = true)
+        log("own missed letter -- the row of my unanswered call stands here too")
+    }
+
     // ── the call's row (iOS appendCallLog, callMark) ──
 
     class Info(val video: Boolean, val incoming: Boolean, val dur: Int, val missed: Boolean)
@@ -641,8 +662,9 @@ object Calls {
         else -> R.string.call_voice
     })
 
-    /** iOS MessageBubble.callBubble: the glyph, red when missed; the kind; under it the arrow, how it went and the moment. */
-    fun body(c: Context, m: Msg, into: LinearLayout) {
+    /** iOS MessageBubble.callBubble: the glyph, red when missed; the kind; under it the arrow, how it went and the stamp -- the moment
+     *  and the row's seal (metaLine, sealMarks). */
+    fun body(c: Context, m: Msg, into: LinearLayout, ribbon: Boolean = false) {
         val i = info(m.text) ?: return
         val ink = BubbleStyle.text(m.mine)
         val accent = if (i.missed) SysColor.red else ink
@@ -661,6 +683,7 @@ object Calls {
                     gravity = Gravity.CENTER_VERTICAL
                     addView(c.icon(if (i.incoming) R.drawable.ic_call_received else R.drawable.ic_call_made, accent, 10), lp(dp(10), dp(10)).apply { marginEnd = dp(4) })
                     addView(c.text(how + " · " + time, 12f, BubbleStyle.time(m.mine)), lp(WRAP, WRAP))
+                    c.sealMarks(m, ribbon, BubbleStyle.time(m.mine), this)
                 }, lp(WRAP, WRAP).apply { topMargin = dp(2) })
             }, lp(WRAP, WRAP))
         }, lp(WRAP, WRAP))

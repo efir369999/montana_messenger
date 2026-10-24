@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS 2235 Localizable.xcstrings zh-Hans, the channel's birth and pages (values/strings_channels.xml) -->
+<resources>
+    <string name="chn_new_channel">新建频道</string>
+    <string name="chn_what_is">什么是频道？</string>
+    <string name="chn_what_is_sub">频道是向大量受众广播消息的新工具。</string>
+    <string name="chn_create">创建频道</string>
+    <string name="chn_name">频道名称</string>
+    <string name="chn_about_hint">描述（可选）</string>
+    <string name="chn_about_footer">您可以为频道添加可选描述。</string>
+    <string name="chn_add_subscribers">添加订阅者</string>
+    <string name="chn_pick_note">帖子经由每个人各自的通道传送，因此这里只列出与你有通信的人。</string>
+    <string name="chn_done">完成</string>
+    <plurals name="chn_subscribers"><item quantity="other">%d 位订阅者</item></plurals>
+    <string name="chn_subscribers_title">订阅者</string>
+    <string name="chn_remove">移除</string>
+    <string name="chn_remove_q">从频道中移除？</string>
+    <string name="chn_invite_links">邀请链接</string>
+    <string name="chn_invite_link">邀请链接</string>
+    <string name="chn_invite_footer">任何点击此链接的人都可以加入您的频道。</string>
+    <string name="chn_revoke_link">撤销链接</string>
+    <string name="chn_revoke_q">确定要撤销此链接吗？撤销后任何人都无法通过它加入频道。</string>
+    <string name="chn_revoke">撤销</string>
+    <string name="chn_administrators">管理员</string>
+    <string name="chn_admins_header">频道管理员</string>
+    <string name="chn_admins_footer">您可以添加管理员来帮助您管理频道。</string>
+    <string name="chn_you">您</string>
+    <string name="chn_owner">所有者</string>
+    <string name="chn_admin">管理员</string>
+    <string name="chn_dismiss_admin">撤销管理员</string>
+    <string name="chn_add_admin">添加管理员</string>
+    <string name="chn_sign_messages">消息署名</string>
+    <string name="chn_sign_footer">在管理员发布的消息中添加其姓名。</string>
+    <string name="chn_reactions">回应</string>
+    <string name="chn_allow_reactions">允许回应</string>
+    <string name="chn_reactions_footer">允许订阅者对频道帖子作出回应。</string>
+    <string name="chn_removed_users">已移除的用户</string>
+    <string name="chn_removed_header">已移除的用户</string>
+    <string name="chn_removed_footer">被管理员移出频道的用户无法通过邀请链接重新加入。</string>
+    <string name="chn_add_to_channel">添加到频道</string>
+    <string name="chn_delete">删除</string>
+    <string name="chn_recent_actions">最近操作</string>
+    <string name="chn_no_actions">这里还没有操作</string>
+    <string name="chn_no_actions_sub">过去 48 小时内频道订阅者和管理员没有进行任何服务操作。</string>
+    <string name="chn_act_invited">你添加了 %1$s</string>
+    <string name="chn_act_joined">%1$s 通过邀请链接加入</string>
+    <string name="chn_act_removed">你移除了 %1$s</string>
+    <string name="chn_act_left">%1$s 退出了频道</string>
+    <string name="chn_act_title">您将频道名称更改为“%1$s”</string>
+    <string name="chn_act_about">您编辑了频道描述</string>
+    <string name="chn_act_photo">您更改了频道照片</string>
+    <string name="chn_act_promoted">您将 %1$s 设为管理员</string>
+    <string name="chn_act_demoted">您撤销了 %1$s 的管理员</string>
+    <string name="chn_act_sign_on">您启用了署名</string>
+    <string name="chn_act_sign_off">您停用了署名</string>
+    <string name="chn_act_react_on">您启用了所有回应</string>
+    <string name="chn_act_react_off">您停用了回应</string>
+    <string name="chn_leave_q">确定要退出频道 %1$s 吗？</string>
+    <string name="chn_leave">退出频道</string>
+    <string name="chn_delete_q">等等！删除此频道将移除所有成员，所有消息都将丢失。仍要删除频道吗？</string>
+    <string name="chn_delete_channel">删除频道</string>
+</resources>

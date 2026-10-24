@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Money Flow of a chat (iOS MTMoneyFlow, flipMark, MTMoneyFlowRow, MTMoneyFlowBegins; Localizable.xcstrings zh-Hans). -->
+<resources>
+    <string name="mf_title">资金流</string>
+    <string name="mf_begun">资金流已开始</string>
+    <string name="mf_begun_sub">每封信铸造一枚硬币</string>
+</resources>

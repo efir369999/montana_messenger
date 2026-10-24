@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS doc.on.clipboard: Paste from clipboard -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:strokeWidth="1.8" android:pathData="M8.5,5H7C5.9,5 5,5.9 5,7V19C5,20.1 5.9,21 7,21H17C18.1,21 19,20.1 19,19V7C19,5.9 18.1,5 17,5H15.5M9.5,3.5H14.5C15.05,3.5 15.5,3.95 15.5,4.5V5.5C15.5,6.05 15.05,6.5 14.5,6.5H9.5C8.95,6.5 8.5,6.05 8.5,5.5V4.5C8.5,3.95 8.95,3.5 9.5,3.5ZM8.5,11H15.5M8.5,14.5H15.5M8.5,18H12.5"/>
+</vector>

@@ -116,12 +116,16 @@ object MontanaSeed {
         clear()
         val stored = DeviceVault.set(MN, keys.mnemonic.toByteArray(Charsets.UTF_8))
         Log.i("Montana", "seed write: words=${keys.mnemonic.split(' ').size} stored=$stored (value not logged)")
+        // THE SEED'S BOOK IS GATHERED AS THE PERSON SITS DOWN (iOS MTCoinBook.reread → the book's reading → MTCoinVault.soon): words restored
+        // here find their coins on the nodes before anything of the book is laid
+        if (stored) { CoinVault.forget(); CoinVault.soon("seat", 1) }
         return stored
     }
 
     fun clear() {
         DeviceVault.delete(MN)
         DeviceVault.delete(TWIN)
+        authorHeld = null
         NodeIdentity.forget()   // a machine's value outliving the person would join the two for anyone listening (iOS MontanaOverlayKey.forget)
         NodeKem.forget()
         Channels.forget()
@@ -147,6 +151,25 @@ object MontanaSeed {
             owner.fill(0)
             DeviceVault.set(TWIN, ref.toByteArray(Charsets.UTF_8))
             return ref
+        }
+
+    /**
+     * The person's key for the author field of a letter (iOS MontanaQueueKeys.authorKey, MTLetterAuthor.key):
+     * `mt_mldsa_seed_for_role(master, "mt-letter-author")`, the same on every device of the words and on none other.
+     * Held in memory for the run against the digest of the words it came from (PBKDF2 of the words is slow).
+     */
+    @Volatile private var authorHeld: Pair<String, ByteArray>? = null
+    val authorKey: ByteArray?
+        get() {
+            val m = mnemonic ?: return null
+            val of = MessageDigest.getInstance("SHA-256").digest(m.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+            authorHeld?.let { if (it.first == of) return it.second }
+            val master = MtBindings.nativeMnemonicToMasterSeed(m) ?: return null
+            val key = MtBindings.nativeRoleSeed(master, "mt-letter-author")
+            master.fill(0)
+            if (key == null || key.size != 32) return null
+            authorHeld = of to key
+            return key
         }
 }
 

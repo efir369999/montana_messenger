@@ -349,7 +349,12 @@ private object NodeTrust {
             override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
         }
         c.sslSocketFactory = SSLContext.getInstance("TLS").apply { init(null, arrayOf(tm), null) }.socketFactory
-        // The digest names the machine; its address carries no name a certificate could be issued to.
-        c.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, _ -> true }
+        // The digest names the machine; its address carries no name a certificate could be issued to. So the name check
+        // asks what the trust check asked -- this session's own certificate is the pinned one -- instead of passing every
+        // session (a verifier that answers yes to everything is the pattern the platform warns of).
+        c.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, session ->
+            val leaf = runCatching { session.peerCertificates.firstOrNull() as? X509Certificate }.getOrNull()
+            leaf != null && hex(MessageDigest.getInstance("SHA-256").digest(leaf.encoded)) == pin
+        }
     }
 }

@@ -220,21 +220,28 @@ object MontanaBackup {
      * conversation and their attachments, the correspondence store, the other places, the feed, the card, the tail.
      * A file that will not read stops the copy: a copy one attachment short that calls itself whole is the shape a
      * person leans on and loses. Runs on the caller's worker thread.
+     * `light` — THE COPY WITHOUT ITS ATTACHMENTS (iOS MTKeeping.layLight, scope.skipKinds = every kind): no file of the
+     * correspondence store and no picture beside an attachment; every letter, the faces, the grounds and the card stay.
+     * ONE COPY AT A TIME (the keeping's daily copies, the person's node and the person's own hand share the shelf): a copy
+     * waits for the one being sealed, and only a leftover older than a day is swept from the shelf, never another's copy
+     * still being handed on.
      */
-    fun create(c: Context, progress: (Double) -> Unit): CopyResult {
+    @Synchronized
+    fun create(c: Context, light: Boolean = false, progress: (Double) -> Unit): CopyResult {
         if (!keyKAT() || !ownerKAT()) return CopyResult.Refused(Refusal.NoVault)
         val mn = MontanaSeed.mnemonic ?: return CopyResult.Refused(Refusal.NoSeed)
         val ent = MtBindings.nativeMnemonicToEntropy(mn)?.takeIf { it.size == 32 } ?: return CopyResult.Refused(Refusal.NoSeed)
         val card = Card.build(c) ?: return CopyResult.Refused(Refusal.NoVault)
         val salt = MtBindings.nativeRandom(32) ?: return CopyResult.Refused(Refusal.DiskRefused("salt"))
         val dir = shelf(c) ?: return CopyResult.Refused(Refusal.DiskRefused("shelf"))
-        dir.listFiles()?.forEach { it.delete() }   // a copy of the copy has no business waiting here
+        val stale = System.currentTimeMillis() - 86_400_000L
+        dir.listFiles()?.filter { it.lastModified() < stale }?.forEach { it.delete() }   // a copy of the copy has no business waiting here
         val part = File(dir, java.util.UUID.randomUUID().toString() + ".part")   // NOT-UI: the unfinished name
 
         // What will be taken, counted from the disk: the bar measures bytes sealed against it.
         val chats = MontanaPaths.chats(c).listFiles { f -> f.isDirectory }?.sortedBy { it.name } ?: emptyList()
-        val store = MontanaPaths.store(c).listFiles { f -> f.isFile && !f.name.startsWith(".") }?.sortedBy { it.name } ?: emptyList()
-        val placed = MontanaPaths.places(c).flatMap { (place, d) ->
+        val store = if (light) emptyList() else MontanaPaths.store(c).listFiles { f -> f.isFile && !f.name.startsWith(".") }?.sortedBy { it.name } ?: emptyList()
+        val placed = MontanaPaths.places(c).filter { !light || it.key != "pictures" }.flatMap { (place, d) ->
             (d.listFiles { f -> f.isFile && plainName(f.name) }?.sortedBy { it.name } ?: emptyList()).map { place to it }
         }
         val feed = Card.kept(c, "feed")
@@ -320,10 +327,11 @@ object MontanaBackup {
                 w.put(KIND_TAIL, "", t.toString().toByteArray())
                 w.finish()
             }
-            val made = File(dir, nameNow(ent))
+            // two copies in one second keep two names: the second is not written over the first one still being handed on
+            val made = File(dir, nameNow(ent)).let { f -> if (f.exists()) File(dir, f.name.removeSuffix(".$EXT") + "-" + java.util.UUID.randomUUID().toString().take(8) + ".$EXT") else f }
             if (!part.renameTo(made)) return CopyResult.Refused(Refusal.DiskRefused("move"))
             progress(1.0)
-            Log.i("Montana", "backup_made chats=${tally.chats} rec=${tally.records} media=${tally.media} places=${placed.size} card=${card.count} bytes=${tally.bytes}")
+            Log.i("Montana", "backup_made chats=${tally.chats} rec=${tally.records} media=${tally.media} places=${placed.size} card=${card.count} bytes=${tally.bytes}" + if (light) " light" else "")
             return CopyResult.Made(made, tally)
         } catch (e: Exception) {
             return CopyResult.Refused(if (e.message?.contains("ENOSPC") == true) Refusal.NoSpace else Refusal.DiskRefused("write " + e.javaClass.simpleName))
@@ -613,6 +621,7 @@ object Card {
     private const val MIRRORED = "copy.mirrored"   // NOT-UI: the paths of the links the last copy laid, one a line
     private const val NODE = "mt.home.node"           // NOT-UI: iOS MontanaHomeNode.hostKey, sealed
     private const val NODE_PIN = "mt.home.node.pin"   // NOT-UI: iOS MontanaHomeNode.pinKey, sealed
+    private const val GROUPS_HELD = "groups.held"     // NOT-UI: iOS MTGroup.stateKey, sealed
 
     /**
      * The card a copy made HERE carries: the card last taken back, every value this phone owns written over it in the iPhone's
@@ -733,6 +742,21 @@ object Card {
         QuickReactions.counts().takeIf { it.isNotEmpty() }?.let { out.put("p:reactionUse", b64(plist(it))) } ?: out.remove("p:reactionUse")
         // The moment the calls page was last seen (iOS ChatStore.loadCallsSeenAt 593-603: a sealed word of seconds)
         CallsSeen.kept()?.let { out.put("d:callsSeenAt", b64(secs(it))) } ?: out.remove("d:callsSeenAt")
+        // The folders over the chats and their tabs' order (iOS MTChatFolders.key among SeedScope.settingKeys, MontanaChatStore.swift:6691 at
+        // 2235): the vault's JSON as it stands, a sealed value as the iPhone carries it; none while the person never changed them
+        ChatFolders.carried()?.let { out.put("d:" + ChatFolders.KEY, b64(it)) } ?: out.remove("d:" + ChatFolders.KEY)
+        // The groups and channels this person owns or was invited to, with the pipes of their people (iOS MTGroup.stateKey among
+        // SeedScope.dataKeys, MontanaChatStore.swift:6634-6635 at 2235): the iPhone's own JSON, each group's face in the copy's avatars,
+        // where the iPhone keeps a group's face (MTGroupState.face); none while there is none
+        val faceNames = HashMap<String, String>()
+        MontanaPaths.places(c)["avatars"]?.let { dir ->
+            for ((id, f) in Groups.facesHeld()) {
+                val dst = File(dir, "group_$id.jpg")
+                val ok = dst.isFile && dst.length() == f.length() || runCatching { dir.mkdirs(); f.copyTo(dst, overwrite = true) }.isSuccess
+                if (ok) { laid.add(dst.path); faceNames[id] = dst.name }
+            }
+        }
+        Groups.carried(faceNames)?.let { out.put("d:" + GROUPS_HELD, b64(it)) } ?: out.remove("d:" + GROUPS_HELD)
         val before = Prefs.str(MIRRORED, "").split('\n').filter { it.isNotEmpty() }
         for (path in before) if (path !in laid) runCatching { File(path).delete() }
         Prefs.setStr(MIRRORED, laid.joinToString("\n"))
@@ -771,6 +795,8 @@ object Card {
         var stickers: List<String>? = null
         var reactions: Map<String, Int>? = null
         var callsSeen: Long? = null
+        var folders: ByteArray? = null
+        var groups: ByteArray? = null
         var laid = 0
         fun one(tagged: String) {
             val tag = tagged.take(2)
@@ -815,6 +841,9 @@ object Card {
                 tag == "a:" && k == "montana.stickers.mine" -> stickers = words(v)
                 tag == "p:" && k == "reactionUse" -> reactions = unb64(v)?.let { counts(it) }
                 tag == "d:" && k == "callsSeenAt" -> callsSeen = unb64(v)?.let { ms(String(it, Charsets.UTF_8)) }
+                // the folders: the copy's own, not a union (iOS layCard «d:» outside SeedScope.unionKeys)
+                tag == "d:" && k == ChatFolders.KEY -> folders = unb64(v)
+                tag == "d:" && k == GROUPS_HELD -> groups = unb64(v)
             }
         }
         for (tagged in map.keys()) runCatching { one(tagged) }
@@ -845,7 +874,10 @@ object Card {
             { pins?.let { MsgPins.lay(it) } },
             { stickers?.let { Stickers.lay(c, it, MontanaPaths.store(c)) } },
             { reactions?.let { QuickReactions.lay(it) } },
-            { callsSeen?.let { CallsSeen.lay(it) } }
+            { callsSeen?.let { CallsSeen.lay(it) } },
+            { folders?.let { ChatFolders.lay(it) } },
+            // the groups before the history's rows are read: a group's folder finds its row (Archive.restore maps a group's chat by it)
+            { groups?.let { Groups.lay(it, avatars) } }
         ).forEach { runCatching(it) }
         Log.i("Montana", "card laid values=$laid marks=${marks.size} grounds=${grounds.size} of ${map.length()}")
         return keep(c, "card", raw)

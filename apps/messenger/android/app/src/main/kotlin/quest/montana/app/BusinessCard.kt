@@ -251,11 +251,16 @@ fun businessCardPage(act: MainActivity, onClose: () -> Unit, onSend: ((BusinessC
     }
     val bar = FrameLayout(c).apply {
         setPadding(dp(8), 0, dp(8), 0)
-        addView(c.icon(if (onSend != null) R.drawable.ic_close else R.drawable.ic_arrow_back_ios_new, Color.WHITE).apply {
-            setPadding(dp(10), dp(10), dp(10), dp(10)); pressable { if (changed) { changed = false; card.keep() }; onClose() }
+        // the bar's marks on their rounds of glass in 44 frames (iOS MontanaBarMark)
+        addView(FrameLayout(c).apply {
+            background = c.glassPlate(oval = true)
+            contentDescription = c.getString(if (onSend != null) R.string.coin_close else R.string.back)
+            addView(c.icon(if (onSend != null) R.drawable.ic_close else R.drawable.ic_arrow_back_ios_new, Color.WHITE), FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
+            pressable { if (changed) { changed = false; card.keep() }; onClose() }
         }, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.START))
         addView(c.text(c.getString(R.string.app_card), 17f, Color.WHITE, bold = true, center = true), FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
-        addView(mark, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
+        addView(FrameLayout(c).apply { background = c.glassPlate(oval = true); addView(mark, FrameLayout.LayoutParams(MATCH, MATCH)) },
+            FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
     }
     val body = c.vstack(Gravity.NO_GRAVITY) {
         setPadding(dp(16), dp(8), dp(16), dp(32))

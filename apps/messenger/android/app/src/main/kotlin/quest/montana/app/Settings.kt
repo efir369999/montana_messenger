@@ -54,7 +54,7 @@ fun Context.settingsRow(res: Int?, color: Int, title: String, value: View? = nul
     setPadding(dp(16), dp(10), dp(14), dp(10))
     minimumHeight = dp(48)
     if (res != null) { addView(settingsGlyph(res, color), lp(dp(29), dp(29))); gap(12) }
-    addView(text(title, 16f, words), lp(0, WRAP, 1f))
+    addView(text(title, 17f, words), lp(0, WRAP, 1f))   // iOS settings rows: 17 (body), MontanaSettings.swift:1608-1618
     if (value != null) addView(value, lp(WRAP, WRAP).apply { marginStart = dp(8) })
     if (chevron) addView(icon(R.drawable.ic_chevron_right, Color.rgb(89, 89, 89), 18), lp(dp(18), dp(18)).apply { marginStart = dp(6) })
     pressable(onTap)
@@ -102,12 +102,21 @@ fun settingsPage(act: MainActivity, title: String, onLead: () -> Unit, cross: Bo
     val c: Context = act
     val bar = FrameLayout(c).apply {
         setPadding(dp(8), 0, dp(8), 0)
-        addView(c.icon(if (cross) R.drawable.ic_close else R.drawable.ic_arrow_back_ios_new, Color.WHITE).apply {
-            setPadding(dp(10), dp(10), dp(10), dp(10)); pressable(onLead)
+        // THE BAR'S MARKS ARE ROUNDS OF GLASS (iOS MontanaBarMark, MontanaShapes.swift:1115-1134 and 1225-1246: the toolbar's own glass
+        // circle round the glyph in a 44 frame): the back chevron, or the cross on the settings' root, on the left
+        addView(FrameLayout(c).apply {
+            background = c.glassPlate(oval = true)
+            contentDescription = c.getString(if (cross) R.string.coin_close else R.string.back)
+            addView(c.icon(if (cross) R.drawable.ic_close else R.drawable.ic_arrow_back_ios_new, Color.WHITE), FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
+            pressable(onLead)
         }, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.START))
         addView(c.text(title, 17f, Color.WHITE, bold = true, center = true), FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
-        // the page's own act at the right of its bar (iOS the toolbar's trailing mark: «Done» as the platform's checkmark)
-        trailing?.let { addView(it, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END)) }
+        // the page's own act at the right of its bar (iOS the toolbar's trailing mark: «Done» as the platform's checkmark), on its round
+        // of glass as well; a mark that brings its own round keeps it
+        trailing?.let { t ->
+            val round = if (t.background != null) t else FrameLayout(c).apply { background = c.glassPlate(oval = true); addView(t, FrameLayout.LayoutParams(MATCH, MATCH)) }
+            addView(round, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
+        }
     }
     return FrameLayout(c).apply {
         setBackgroundColor(Color.BLACK)
@@ -133,17 +142,68 @@ fun MainActivity.push(build: (close: () -> Unit) -> View) {
 fun settingsRoot(act: MainActivity, onForget: () -> Unit, onClose: () -> Unit): View {
     val c: Context = act
     return settingsPage(act, c.getString(R.string.settings), onClose, cross = true) {
+        // THE 24 WORDS AT THE HEAD (iOS MontanaSettings.swift:120-126, the author's word 08.10.2026): the one thing nobody can give back
+        section(null, c.getString(R.string.set_save_words_footer),
+            c.settingsRow(R.drawable.ic_key, SysColor.gray, c.getString(R.string.set_save_words)) { act.push { seedPage(act, it) } })
         section(null, null,
             c.settingsRow(R.drawable.ic_set_bell, SysColor.red, c.getString(R.string.notif_sounds)) { act.push { notificationsPage(act, it) } },
+            // THE FOLDERS' TABS (iOS MontanaSettings.swift:130 at 2235, 17.10.2026): «Chat Folders», folder.fill on blue, after the notifications
+            c.settingsRow(R.drawable.ic_folder_fill, SysColor.blue, c.getString(R.string.fl_title)) { act.push { folderSettingsPage(act, it) } },
             c.settingsRow(R.drawable.ic_arrow_circle_down, SysColor.indigo, c.getString(R.string.data_storage)) { act.push { dataStoragePage(act, it) } },
             c.settingsRow(R.drawable.ic_set_server, SysColor.gray, c.getString(R.string.your_node)) { act.push { NodePage(act, it).view } },
             c.settingsRow(R.drawable.ic_set_lock, SysColor.gray, c.getString(R.string.privacy)) { act.push { privacyPage(act, onForget, it) } },
+            // ACCESS BY LEVEL (iOS MontanaSettings.swift:134, MTLevelAccessPage): stairs on orange, after Privacy
+            c.settingsRow(R.drawable.ic_stairs, SysColor.orange, c.getString(R.string.la_title)) { act.push { levelAccessPage(act, it) } },
             c.settingsRow(R.drawable.ic_set_brush, SysColor.blue, c.getString(R.string.appearance)) { act.push { AppearancePage(act, it).view } },
             c.settingsRow(R.drawable.ic_language, SysColor.cyan, c.getString(R.string.language)) { act.push { languagePage(act, it) } })
         section(null, null,
             c.settingsRow(R.drawable.ic_set_help, SysColor.blue, c.getString(R.string.ask_question)) { act.push { supportPage(act, it) } },
-            c.settingsRow(R.drawable.ic_set_doc, SysColor.gray, c.getString(R.string.terms_of_use)) { act.push { termsGate(act, onAgree = null, onClose = it) } })
+            c.settingsRow(R.drawable.ic_set_doc, SysColor.gray, c.getString(R.string.terms_of_use)) { act.push { termsGate(act, onAgree = null, onClose = it) } },
+            // THE POLICY STANDS WHERE THE TERMS STAND (iOS 141-143, App Review 5.1.1(i)): it opens on the site, in the languages the site speaks
+            c.settingsRow(R.drawable.ic_hand, SysColor.blue, c.getString(R.string.set_privacy_policy), chevron = false) {
+                runCatching { act.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(PRIVACY_URL))) }
+            })
     }
+}
+
+/**
+ * ACCESS BY LEVEL (iOS MTLevelAccessPage, MontanaSettings.swift:2682-2750, the author's words 16.10.2026 18:2x MSK): the Global Level and
+ * what each level opens -- level 7 forbids deletion on this phone, level 8 joins the person's own node to the network through this app.
+ * Below its level a switch stands off and shows what works; the person's own choice is kept for the day it opens. (iOS «Record calls»
+ * of level 7 joins with the calls' recording stage.)
+ */
+fun levelAccessPage(act: MainActivity, onBack: () -> Unit): View {
+    val c: Context = act
+    val level = PersonChain.global(PersonChain.level, CoinBook.balance)
+    val seven = LevelAccess.Feature.KEEP_DELETED.level
+    val open = LevelAccess.opens(LevelAccess.Feature.KEEP_DELETED)
+    val eight = LevelAccess.Feature.OWN_NODE.level
+    val nodeOpen = LevelAccess.opens(LevelAccess.Feature.OWN_NODE)
+    return settingsPage(act, c.getString(R.string.la_title), onBack) {
+        section(null, c.getString(R.string.la_global_footer),
+            c.text(c.getString(R.string.la_global, level), 17f).apply { setPadding(dp(16), dp(13), dp(16), dp(13)) })   // USER-DATA: the Global Level
+        section(c.getString(R.string.la_level, seven), if (open) null else c.getString(R.string.la_opens, seven, level),
+            c.switchLine(R.drawable.ic_shield, SysColor.green, c.getString(R.string.la_keep), open && Prefs.bool(LevelAccess.KEEP_KEY, true),
+                caption = c.getString(R.string.la_keep_caption)) { on -> Prefs.setBool(LevelAccess.KEEP_KEY, on) }.apply { isEnabled = open; alpha = if (open) 1f else 0.5f; disableAll(this, open) })
+        section(c.getString(R.string.la_level, eight), if (nodeOpen) null else c.getString(R.string.la_opens, eight, level),
+            c.vstack(Gravity.NO_GRAVITY) {
+                setPadding(dp(16), dp(10), dp(14), dp(10))
+                addView(c.hstack {
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(c.settingsGlyph(R.drawable.ic_set_server, SysColor.gray), lp(dp(29), dp(29))); gap(12)
+                    addView(c.text(c.getString(R.string.your_node), 16f), lp(0, WRAP, 1f))
+                    addView(c.icon(R.drawable.ic_chevron_right, Color.rgb(89, 89, 89), 18), lp(dp(18), dp(18)))
+                }, lp())
+                addView(c.text(c.getString(R.string.la_node_caption), 12f, MT.gray).apply { setPadding(0, dp(4), 0, dp(2)) }, lp())
+                alpha = if (nodeOpen) 1f else 0.5f
+                if (nodeOpen) pressable { act.push { NodePage(act, it).view } }
+            })
+    }
+}
+/** A row and every control in it off together (iOS .disabled on a section). */
+private fun disableAll(v: View, on: Boolean) {
+    v.isEnabled = on
+    if (v is android.view.ViewGroup) for (i in 0 until v.childCount) disableAll(v.getChildAt(i), on)
 }
 
 // ─────────────────────────── Notifications and Sounds (iOS NotificationsView) ───────────────────────────
@@ -270,23 +330,38 @@ fun supportPage(act: MainActivity, onBack: () -> Unit): View {
 // ─────────────────────────── Privacy (iOS PrivacyView) ───────────────────────────
 
 /**
- * PRIVACY: the switches of what this person shares, the Google Account's copy of the words (the twin of iOS «Identity in
- * Apple Account»), the seed phrase, and the one act that forgets the device. The system accesses of iOS (local network,
- * location, photos, contacts) have no row here: the app asks Android for none of them — the photo picker is the system's
- * and needs no permission.
+ * PRIVACY (iOS PrivacyView, MontanaSettings.swift:1702-1946): the system's answers, the switches of what this person shares, the wall's
+ * rules, the filter and the blocked, the seed phrase, and the one act that deletes the account. iOS's contacts row and «Sync contacts»
+ * stand with the feature that writes a person's Montana name into the phone's book (iOS ContactsTabView.upsertSystemCard), which
+ * Android has not yet: a row would claim what nothing does.
  */
 fun privacyPage(act: MainActivity, onForget: () -> Unit, onBack: () -> Unit): View {
     val c: Context = act
     fun sw(res: Int, color: Int, word: Int, key: String, caption: Int? = null) =
         c.switchLine(res, color, c.getString(word), Prefs.bool(key, true), caption?.let { c.getString(it) }) { Prefs.setBool(key, it) }
+    fun granted(p: String) = c.checkSelfPermission(p) == android.content.pm.PackageManager.PERMISSION_GRANTED
     // THE SYSTEM'S OWN ANSWERS (iOS PrivacyView, its first section): the local network — «Connected» while this phone is findable
     // on the mesh, the one switch owning the concept (iOS MontanaSettings 1731, 1765), and it leads to where the system keeps it; the
-    // location — asked here when never asked, changed where the system keeps it, the same answer the place page reads. iOS's
-    // photos and contacts rows say what the system holds of a standing access; Android's pickers hold none, nothing to say.
+    // location — asked here when never asked, changed where the system keeps it, the same answer the place page reads; the photos —
+    // the system's own word for this app's pictures (iOS MTSystemAccess.photosWord): all of them, the ones the person chose, none,
+    // or never asked, and the same road
     val place = c.text("", 15f, MT.gray)
-    fun placeAllowed() = c.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
-        c.checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    fun drawPlace() { place.text = c.getString(if (placeAllowed()) R.string.st_allowed else if (Prefs.bool("locAsked", false)) R.string.st_denied else R.string.st_not_asked) }
+    val photos = c.text("", 15f, MT.gray)
+    fun placeAllowed() = granted(android.Manifest.permission.ACCESS_FINE_LOCATION) || granted(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+    val photoAsks = if (34 <= android.os.Build.VERSION.SDK_INT) arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO,
+            android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+        else if (33 <= android.os.Build.VERSION.SDK_INT) arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO)
+        else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+    fun photosWord(): Int = when {
+        if (33 <= android.os.Build.VERSION.SDK_INT) granted(android.Manifest.permission.READ_MEDIA_IMAGES) else granted(android.Manifest.permission.READ_EXTERNAL_STORAGE) -> R.string.pr_full_access
+        34 <= android.os.Build.VERSION.SDK_INT && granted(android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) -> R.string.pr_limited_access
+        Prefs.bool("photosAsked", false) -> R.string.pr_none
+        else -> R.string.st_not_asked
+    }
+    fun drawPlace() {
+        place.text = c.getString(if (placeAllowed()) R.string.st_allowed else if (Prefs.bool("locAsked", false)) R.string.st_denied else R.string.st_not_asked)
+        photos.text = c.getString(photosWord())
+    }
     fun systemSettings() = SystemSettings.open(act)   // the one door, warning while a call stands
     drawPlace()
     val page = settingsPage(act, c.getString(R.string.privacy), onBack) {
@@ -297,37 +372,46 @@ fun privacyPage(act: MainActivity, onForget: () -> Unit, onBack: () -> Unit): Vi
                     Prefs.setBool("locAsked", true)
                     act.requestPermissions(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION), 7)
                 } else systemSettings()
+            },
+            c.settingsRow(R.drawable.ic_photo, SysColor.blue, c.getString(R.string.pr_photos), photos) {
+                if (photosWord() == R.string.st_not_asked) { Prefs.setBool("photosAsked", true); act.requestPermissions(photoAsks, 8) } else systemSettings()
             })
         section(null, null,
             // the switch speaks: hidden, one farewell word; shown, «here» at once (iOS MontanaPresencePrivacy.setSharing)
             c.switchLine(R.drawable.ic_set_eye, SysColor.teal, c.getString(R.string.online_status), Presence.sharing, c.getString(R.string.online_status_sub)) { Presence.setSharing(it) },
+            // THE OWNER SHOWS OR HIDES THEIR COINS (iOS MTCoinShow, MontanaSettings.swift:1815-1825): the coins told to the correspondents
+            // and the coins on one's own face; the pairs in the app hear it at once (iOS showChanged → MTCoinTell)
+            c.switchLine(R.drawable.ic_trophy, SysColor.orange, c.getString(R.string.pr_show_coins), CoinShow.on, c.getString(R.string.pr_show_coins_sub)) { CoinShow.set(it) },
             sw(R.drawable.ic_set_check_circle, SysColor.green, R.string.read_receipts, "readReceiptsEnabled"),
-            sw(R.drawable.ic_set_keyboard, SysColor.indigo, R.string.live_chat, "liveTypingEnabled"),
-            // «Sync contacts» (iOS ContactsTabView.upsertSystemCard 2463-2476) writes a person's Montana name into the phone's
-            // book; Android has no names yet, so the switch would claim what nothing does — it stands again with the names
             sw(R.drawable.ic_set_link, SysColor.blue, R.string.link_previews, "linkPreviewsEnabled", R.string.link_previews_sub),
             // THE DIARY LEAVES ONLY BY THE PERSON'S YES (iOS MontanaSettings 1852-1861, MontanaDiagConsent; App Review 5.1.1(ii), 08.10):
             // off, nothing of the diary leaves this phone; the doc glyph stands for the iPhone's stethoscope, which the set lacks
             c.switchLine(R.drawable.ic_set_doc, SysColor.gray, c.getString(R.string.diag_share), Diary.consented, c.getString(R.string.diag_share_sub)) { Diary.setConsent(it) })
-        // THE WALL (iOS MontanaSettings 1847-1874, the author's word 24.09): who may write on my wall, and who may see it -- everyone,
-        // until the person says otherwise. The pen stands for the iPhone's text.below.photo, which the set lacks; the VPN wall's rule
-        // waits for the word on the VPN
+        // THE WALL (iOS MontanaSettings 1858-1878, the author's word 24.09): who may write on my wall, and who may see it -- everyone,
+        // until the person says otherwise
         section(null, c.getString(R.string.wall_rule_footer),
-            c.settingsRow(R.drawable.ic_compose, SysColor.blue, c.getString(R.string.wall_who_write_mine)) { act.push { wallRulePage(act, WallRule.Act.WRITE, it) } },
+            c.settingsRow(R.drawable.ic_text_below_photo, SysColor.blue, c.getString(R.string.wall_who_write_mine)) { act.push { wallRulePage(act, WallRule.Act.WRITE, it) } },
             c.settingsRow(R.drawable.ic_set_eye, SysColor.blue, c.getString(R.string.wall_who_see_mine)) { act.push { wallRulePage(act, WallRule.Act.SEE, it) } })
         section(null, null, sw(R.drawable.ic_set_eye_slash, SysColor.purple, R.string.filter_objectionable, "objectionableFilterOn"),
             c.settingsRow(R.drawable.ic_hand, SysColor.red, c.getString(R.string.blocked_users)) { act.push { blockedPage(act, it) } })
-        section(null, null, c.switchLine(R.drawable.ic_key, SysColor.blue, c.getString(R.string.identity_google), MontanaBackupID.on(c),
+        // [COMPAT-LOCAL] the words in the Google Account: off by default, and iOS 2235 lays no such row -- it stands only while it is on,
+        // so the person who once turned it on can turn it off
+        if (MontanaBackupID.on(c)) section(null, null, c.switchLine(R.drawable.ic_key, SysColor.blue, c.getString(R.string.identity_google), true,
             c.getString(R.string.identity_google_sub)) { MontanaBackupID.setOn(c, it) })
         section(null, null, c.settingsRow(R.drawable.ic_key, SysColor.gray, c.getString(R.string.seed_phrase)) { act.push { seedPage(act, it) } })
-        section(null, null, c.text(c.getString(R.string.forget_device), 16f, MT.red, center = true).apply {
+        section(null, null, c.text(c.getString(R.string.pr_delete_account), 17f, MT.red, center = true).apply {
             setPadding(dp(16), dp(14), dp(16), dp(14))
             pressable {
-                // The words come first: a person without the phrase leaves here toward it, not past the edge.
-                AlertDialog.Builder(act).setTitle(R.string.forget_q).setMessage(R.string.forget_msg)
+                // The words come first: a person without the phrase leaves here toward it, not past the edge. An account that holds coins
+                // says how many first, and that only its 24 words bring them back (iOS PrivacyView.alert, the author's word 12.10.2026)
+                val coins = CoinBook.balance
+                val words = c.getString(R.string.pr_delete_account_msg)
+                AlertDialog.Builder(act).setTitle(R.string.pr_delete_account_q)
+                    .setMessage(if (0L < coins) c.getString(R.string.pr_delete_account_coins, coins.toString()) + "\n\n" + words else words)
                     .setNeutralButton(R.string.show_seed) { _, _ -> act.push { seedPage(act, it) } }
-                    .setPositiveButton(R.string.forget) { _, _ -> onForget() }
+                    .setPositiveButton(R.string.pr_delete_account) { _, _ -> onForget() }
                     .setNegativeButton(R.string.cancel, null).show()
+                    .getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(SysColor.red)
             }
         })
     }
@@ -552,6 +636,7 @@ fun dataStoragePage(act: MainActivity, onBack: () -> Unit): View {
             c.settingsRow(R.drawable.ic_arrow_circle_up, SysColor.green, c.getString(R.string.create_backup), chevron = false) { make() },
             c.settingsRow(R.drawable.ic_arrow_circle_down, SysColor.orange, c.getString(R.string.restore_backup), chevron = false) { restore() },
             progress)
+        keepingSection(act)   // the copy kept by the people one writes to (iOS MTKeepingSection, 08.10)
         // THE PICTURE CACHE (iOS MontanaSettings.swift:1225-1242 at 2155, MontanaCaches.dropAll; atom 542558a36f0e): the pictures kept
         // so chats and walls open without waiting are emptied here alone, by the person; the checkmark says it was done
         val cleared = c.icon(R.drawable.ic_check, MT.gray).apply { visibility = View.INVISIBLE }

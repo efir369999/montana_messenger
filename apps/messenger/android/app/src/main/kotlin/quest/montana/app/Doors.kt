@@ -64,6 +64,23 @@ object Doors {
         return all.filter { it !in mute }.ifEmpty { all }
     }
 
+    /**
+     * ONE DOOR PER MACHINE (iOS oneDoorPerNode, MontanaWakePush.swift:203-216): two doors lead to one node, and asking both spends the same
+     * budget twice and buys nothing. The door book says which door led to which machine; a door whose machine is unknown keeps its place.
+     */
+    fun onePerNode(bases: List<String>): List<String> {
+        val book = book()
+        val known = list()
+        val seen = HashSet<String>()
+        val out = ArrayList<String>()
+        for (d in bases) {
+            val h = android.net.Uri.parse(d).host ?: continue
+            val id = known.firstOrNull { it.host == h }?.let { book[it.label]?.first }
+            if (id == null || seen.add(id)) out.add(d)
+        }
+        return out
+    }
+
     /** A door of the list (iOS MontanaNodes.Node 38-52): a bare one, or one behind a delivery network with the web socket's path. */
     class Door(val host: String, val port: Int, val path: String?) {
         val label: String get() = Channels.labelOf(host, port, path != null)

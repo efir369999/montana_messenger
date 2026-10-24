@@ -13,7 +13,8 @@ import org.json.JSONObject
  * I type them — a grey bubble at the feed's foot with the caret where I hold it — and theirs on mine. The word is
  * «⁣mtdraft:» + base64 {t, c, n[, rm][, ck]}: the text, the caret, the moment it was said (strictly growing), the letter it
  * answers, «ck» for a checkpoint of a closing chat. It rides the signal lane (at most four a second, the ending always);
- * an empty text is the ending. «Live chat» in Privacy (liveTypingEnabled) silences my words and hides theirs.
+ * an empty text is the ending. LIVE CHAT LIVES ONLY IN THE MONEY FLOW, AND ALWAYS THERE (iOS sendDraftWord and handleMeshDraft,
+ * MontanaE2E.swift:406-441 and 1073-1082, the author's word 03.10): my words leave, and theirs show, only in a chat whose flow is on.
  */
 object LiveDraft {
     const val MARK = "⁣mtdraft:"
@@ -29,7 +30,8 @@ object LiveDraft {
     fun unlisten(l: () -> Unit) { synchronized(listeners) { listeners.remove(l) } }
     private fun changed() { val ls = synchronized(listeners) { listeners.toList() }; MainThread.post { ls.forEach { it() } } }
 
-    private val on get() = Prefs.bool("liveTypingEnabled", true)
+    /** This chat's Money Flow is on: its live words go both ways (iOS MTMoneyFlow.isOn(peer)). */
+    private fun on(ref: String) = MoneyFlow.isOn(SamePair.root(ref))
     private val h = android.os.Handler(android.os.Looper.getMainLooper())
     private var lastStamp = 0L
     /** The moment a word was said, strictly growing (iOS draftStamp): two words in one millisecond keep their order. */
@@ -42,7 +44,7 @@ object LiveDraft {
     /** The field as it stands; an empty text ends the draft (and is always said, whatever the switch). */
     fun say(ref: String, text: String, caret: Int = -1, replyMid: String = "", checkpoint: Boolean = false) {
         val ending = text.isEmpty()
-        if (!ending && !on) return
+        if (!ending && !on(ref)) return
         if (PeerSafety.isBlocked(ref)) return
         if (!checkpoint && said[ref] == text) return        // the wire already says exactly this
         if (ending && said[ref] == null) return              // nothing of mine stands there
@@ -53,6 +55,7 @@ object LiveDraft {
         val speak = Runnable {
             sentAt[ref] = System.currentTimeMillis(); pending.remove(ref)
             val body = doors(JSONObject().put("t", text).put("c", caret).put("n", stamp()))
+            android.util.Log.d("Montana", "draft_tx " + (if (ending) "end" else "word len=" + text.length))   // iOS MontanaTrace «draft_tx»
             if (replyMid.isNotEmpty()) body.put("rm", replyMid)
             if (checkpoint) body.put("ck", 1)
             Signal.post(ref, MARK + Base64.encodeToString(body.toString().toByteArray(), Base64.NO_WRAP))
@@ -107,12 +110,17 @@ object LiveDraft {
         val j = runCatching { JSONObject(String(Base64.decode(word.removePrefix(MARK), Base64.DEFAULT), Charsets.UTF_8)) }.getOrNull() ?: return false
         j.optString("d").takeIf { it.isNotEmpty() }?.let { Signal.notePeerDoor(ref, it) }   // the doors they ask (iOS handleMeshDraft 1032)
         val n = j.optLong("n", 0)
-        if (n > 0) { if (n <= (heardAt[ref] ?: 0)) return false; heardAt[ref] = n }   // an older word is an echo of the road
+        if (n > 0) {   // an older word is an echo of the road (iOS «draft_echo»)
+            if (n <= (heardAt[ref] ?: 0)) { android.util.Log.d("Montana", "draft_echo dropped an older word"); return false }
+            heardAt[ref] = n
+        }
         // THEIR DAILY LINK, handed to us to hand on (iOS MTPeerLinks.note); their ask for mine is answered at once (iOS rq)
         j.optString("rl").takeIf { Meeting.invite(it) != null }?.let { PeerLinks.note(ref, it, j.optDouble("rb", System.currentTimeMillis() / 1000.0)) }
         if (j.optInt("rq") == 1) MainThread.post { sayLink(ref, force = true) }
         val state = j.has("rl") || j.has("rq") || j.has("ab") || j.has("al")   // a word of state, never a keystroke (iOS draftStateKeys)
-        if (!on) return false
+        // MY MONEY FLOW IS OFF (iOS handleMeshDraft 1073-1082): their door and their link above are noted -- those are not live chat --
+        // but their words show nothing and move nothing here: no bubble, no «typing…»
+        if (!on(ref)) return false
         val text = j.optString("t")
         // WORDS THAT ALREADY BECAME A LETTER ARE NOT A DRAFT (iOS draft_ghost): a word equal to a letter of theirs just landed
         val landed = text.isNotEmpty() && Book.chat(SamePair.root(ref))?.msgs?.takeLast(5)?.any { !it.mine && it.text == text } == true
@@ -122,6 +130,24 @@ object LiveDraft {
         return text.isNotEmpty() && !landed && !j.has("ck") && !state && fresh
     }
     fun of(ref: String): Draft? = shown[ref]
+    /**
+     * A LETTER ENDS THE DRAFT THAT BECAME IT (iOS ChatStore, MontanaChatStore.swift:4619-4636): at the letter, not on a separate word that
+     * must also arrive -- a state that must end on an event is ended by the event, or a lost ending leaves the ghost standing for ever.
+     * Every word of that draft was said before the letter, so none may be applied any more: the moment held is now by the node's clock,
+     * never below one of theirs already held.
+     */
+    fun letterLanded(ref: String) {
+        heardAt[ref] = maxOf(heardAt[ref] ?: 0L, NodeClock.now())
+        if (shown.remove(ref) != null) changed()
+    }
+    /**
+     * THE FLOW WENT OFF IN ONE CHAT (iOS liveTypingSwitched(on: false), MontanaE2E.swift:409-414): my words standing on their screen
+     * are ended, theirs leave mine; the other chats are not touched.
+     */
+    fun flowOff(ref: String) {
+        if (said[ref] != null) say(ref, "")
+        if (shown.remove(ref) != null) changed()
+    }
 }
 
 /**

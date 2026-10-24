@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS link.badge.plus: Subscription URL -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:strokeWidth="1.8" android:pathData="M9.2,15.8a3.6,3.6 0 0,0 5.1,0l2.4,-2.4a3.6,3.6 0 0,0 -5.1,-5.1l-1,1M13.4,11.6a3.6,3.6 0 0,0 -5.1,0l-2.4,2.4a3.6,3.6 0 0,0 5.1,5.1l1,-1M18.5,2.5V8.5M15.5,5.5H21.5"/>
+</vector>

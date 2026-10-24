@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import android.util.Log
 
 // ─────────────────────────── the local room (iOS savedMessagesKey, ChatStore.isLocalRoom) ───────────────────────────
 
@@ -31,14 +32,47 @@ import java.util.Locale
  * written (iOS: «no wire: settled, never red»). The letters lie on the device, in the app's own files.
  */
 object SavedMessages {
+    /** iOS savedMessagesKey: the room's key, English and never translated -- its archive folder is this key's own (iOS isLocalRoom). */
+    const val KEY = "Saved Messages"
+
     class Letter(val id: String, val text: String, val at: Long)
 
     private fun file(ctx: Context) = File(ctx.filesDir, "saved_messages.json")
+    private val lock = Any()
 
-    fun all(ctx: Context): List<Letter> = try {
-        val a = JSONArray(file(ctx).readText())
-        (0 until a.length()).map { a.getJSONObject(it).let { o -> Letter(o.getString("id"), o.getString("text"), o.getLong("at")) } }
-    } catch (e: Exception) { emptyList() }
+    fun all(ctx: Context): List<Letter> = synchronized(lock) { read(ctx) }
+
+    /** AN UNREADABLE LIST IS NOT AN EMPTY ONE (the owner's word 24.10.2026: no loss): a file that does not parse is set aside under a
+     *  name of its own and kept, never taken for an empty room the next letter would write over. */
+    private fun read(ctx: Context): List<Letter> {
+        val f = file(ctx)
+        if (!f.exists()) return emptyList()
+        return try {
+            val a = JSONArray(f.readText())
+            (0 until a.length()).map { a.getJSONObject(it).let { o -> Letter(o.getString("id"), o.getString("text"), o.getLong("at")) } }
+        } catch (e: Exception) {
+            val aside = File(ctx.filesDir, "saved_messages.unreadable-" + System.currentTimeMillis() + ".json")
+            Log.w("Montana", "saved_unreadable kept=" + f.renameTo(aside))
+            emptyList()
+        }
+    }
+
+    /** A letter's name as iOS keeps a Saved Messages row (MontanaChatStore mintMid): mid:t<birth ms>-<ID>, the id upper-cased --
+     *  the moment and Android's own id both kept, the id given back by lower-casing it. */
+    fun mid(l: Letter) = "mid:t" + l.at + "-" + l.id.uppercase(Locale.ROOT)
+    private fun sig(atMs: Long, text: String) = (atMs / 1000).toString() + "|" + text
+
+    // THE ROOM RIDES THE ARCHIVE TO THE PERSON'S OTHER DEVICES (iOS: Saved Messages travels as its folder's blocks alone, the head
+    // «a:Saved Messages»): every letter written here is sealed into that folder; a letter its own device wrote is named in
+    // «saved.archived», so the carrying of the older ones is done once and never twice.
+    private const val ARCHIVED = "saved.archived"
+    private const val GONE = "saved.gone"
+    private const val MIGRATED = "migrated.savedMessages"
+    private fun names(key: String): MutableSet<String> = runCatching {
+        val a = JSONArray(Prefs.str(key, "[]")); (0 until a.length()).mapTo(LinkedHashSet()) { a.getString(it) }
+    }.getOrElse { LinkedHashSet() }
+    private fun keepNames(key: String, s: Set<String>) = Prefs.setStr(key, JSONArray(s.toList().takeLast(4000)).toString())
+    private fun toArchive(l: Letter) = Archive.row(KEY, Msg(mid(l), l.text, true, l.at, state = 1))
 
     private fun write(ctx: Context, list: List<Letter>) {
         val a = JSONArray()
@@ -51,16 +85,84 @@ object SavedMessages {
 
     fun add(ctx: Context, text: String): Letter {
         val l = Letter(java.util.UUID.randomUUID().toString(), text, System.currentTimeMillis())
-        write(ctx, all(ctx) + l)
+        synchronized(lock) {
+            write(ctx, read(ctx) + l)
+            toArchive(l)
+            keepNames(ARCHIVED, names(ARCHIVED).apply { add(l.id) })
+        }
         return l
     }
 
-    fun delete(ctx: Context, id: String) = write(ctx, all(ctx).filter { it.id != id })
+    /** A letter taken away here stays away (iOS: Saved Messages' deletion is local, the archive only grows): its second and words are
+     *  kept, so the blocks of another device never lay it back. */
+    fun delete(ctx: Context, id: String) = synchronized(lock) {
+        val all = read(ctx)
+        all.firstOrNull { it.id == id }?.let { l -> keepNames(GONE, names(GONE).apply { add(sig(l.at, l.text)) }) }
+        write(ctx, all.filter { it.id != id })
+    }
+
+    /** THE BLOCKS OF THE PERSON'S OTHER DEVICES (Archive.restore over the folder «Saved Messages»): every letter of theirs this room does
+     *  not hold by its second and its words, and that was not taken away here, stands -- named by its own signature, so the same
+     *  block read twice lays nothing twice. A file's row waits: this room holds words alone. The letters laid. */
+    fun takeFromArchive(ctx: Context, items: List<Pair<Long, String>>): Int = synchronized(lock) {
+        val have = read(ctx)
+        val held = have.mapTo(HashSet()) { sig(it.at, it.text) }
+        val gone = names(GONE)
+        val fresh = items.filter { (sec, t) -> !t.startsWith(Marks.MEDIA) && t.isNotEmpty() }
+            .map { (sec, t) -> sec * 1000 to t }
+            .filter { (ms, t) -> held.add(sig(ms, t)) && sig(ms, t) !in gone }
+            .map { (ms, t) -> Letter(java.util.UUID.nameUUIDFromBytes(("mt-saved|" + sig(ms, t)).toByteArray()).toString(), t, ms) }
+        if (fresh.isNotEmpty()) {
+            write(ctx, (have + fresh).sortedBy { it.at })
+            keepNames(ARCHIVED, names(ARCHIVED).apply { fresh.forEach { add(it.id) } })   // they came from the archive: carried already
+        }
+        fresh.size
+    }
+
+    /**
+     * THE LETTERS WRITTEN BEFORE THE ROOM RODE THE ARCHIVE (the owner's word 24.10.2026: a backup first, then the carrying, then the
+     * count): once, at the launch, the file is copied whole into noBackupFilesDir/migrate with its manifest -- the sha-256 of the
+     * file, the count, every id, every letter's moment and the sha-256 of its words -- and the copy read back; only then each letter
+     * not carried yet is sealed into the folder. The original stays where it lies. The check that every letter stands in the
+     * folder runs after the archive's queue (Archive.savedCheck); until it holds, the carrying is not marked done, and a letter
+     * carried twice is read once (the archive's readers keep one row a signature).
+     */
+    fun migrate(ctx: Context) {
+        if (Prefs.bool(MIGRATED, false)) return
+        val list = all(ctx)
+        if (list.isEmpty()) { Prefs.setBool(MIGRATED, true); return }
+        val f = file(ctx)
+        val raw = runCatching { f.readBytes() }.getOrNull() ?: return
+        val dir = File(ctx.noBackupFilesDir, "migrate").apply { mkdirs() }
+        val stamp = System.currentTimeMillis()
+        val copy = File(dir, "saved_messages-$stamp.json")
+        fun sha(b: ByteArray) = Wire.hex(Wire.sha(b))
+        copy.writeBytes(raw)
+        if (sha(copy.readBytes()) != sha(raw)) { Log.w("Montana", "saved_migrate backup unequal -- nothing carried"); return }
+        val manifest = JSONObject().put("sha256", sha(raw)).put("count", list.size)
+            .put("ids", JSONArray(list.map { it.id }))
+            .put("letters", JSONArray(list.map { JSONObject().put("id", it.id).put("at", it.at).put("text_sha256", sha(it.text.toByteArray())) }))
+        File(dir, "saved_messages-$stamp.manifest.json").writeText(manifest.toString())
+        val carried = names(ARCHIVED)
+        val todo = list.filter { it.id !in carried }
+        synchronized(lock) {
+            todo.forEach { toArchive(it) }
+            keepNames(ARCHIVED, carried.apply { todo.forEach { add(it.id) } })
+        }
+        Log.d("Montana", "saved_migrate backup=" + copy.name + " count=" + list.size + " carried=" + todo.size)
+        Archive.savedCheck(list.map { (it.at / 1000) to it.text }) { ok, inFolder ->
+            Log.d("Montana", "saved_migrate check " + (if (ok) "ok" else "SHORT") + " letters=" + list.size + " folder=" + inFolder)
+            if (ok) Prefs.setBool(MIGRATED, true)
+        }
+    }
 
     fun last(ctx: Context): Letter? = all(ctx).lastOrNull()
 
-    /** «Forget this device»: the room goes with the person. */
-    fun forget(ctx: Context) { file(ctx).delete() }
+    /** «Forget this device»: the room goes with the person, and its marks with it. */
+    fun forget(ctx: Context) {
+        file(ctx).delete()
+        Prefs.setStr(ARCHIVED, "[]"); Prefs.setStr(GONE, "[]"); Prefs.setBool(MIGRATED, false)
+    }
 
     /** The unsent words in the field outlive the page and the launch (iOS ChatStore.draft). */
     var draft: String
@@ -92,7 +194,7 @@ fun rowTime(c: Context, at: Long): String {
  */
 fun savedMessagesPage(act: MainActivity, onClose: () -> Unit): View {
     val c: Context = act
-    val column = c.vstack(Gravity.NO_GRAVITY) { setPadding(dp(10), dp(8), dp(10), dp(8)) }
+    val column = c.vstack(Gravity.NO_GRAVITY) { setPadding(dp(12), dp(12), dp(12), dp(12)) }   // the feed's edges (iOS MontanaMessageFeed.swift:673)
     val scroll = ScrollView(c).apply {
         isVerticalScrollBarEnabled = false
         isFillViewport = true

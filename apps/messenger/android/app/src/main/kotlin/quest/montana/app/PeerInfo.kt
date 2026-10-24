@@ -58,7 +58,25 @@ object PeerAbout {
     fun note(ref: String, bio: String, link: String, at: Double) {
         val held = of(ref)
         if (held != null && held.at > at) return
-        Prefs.setStr("about.$ref", JSONObject().put("b", bio.take(BIO_LIMIT)).put("l", url(link)?.toString() ?: "").put("at", at).toString())
+        Prefs.setStr("about.$ref", JSONObject().put("b", graphemes(bio, BIO_LIMIT)).put("l", url(link)?.toString() ?: "").put("at", at).toString())
+    }
+    /**
+     * THE FIRST N CHARACTERS AS A PERSON SEES THEM (Swift's String.prefix counts graphemes): an emoji of several code units is one. Cut by
+     * UTF-16 units, a long bio held here differed from the one held on an iPhone, its presence tag «A» with it, and the word came again
+     * every minute.
+     */
+    fun graphemes(s: String, n: Int): String {
+        if (s.length <= n) return s
+        val chars = java.text.BreakIterator.getCharacterInstance()
+        chars.setText(s)
+        var end = 0
+        repeat(n) { val next = chars.next(); if (next == java.text.BreakIterator.DONE) return s; end = next }
+        return s.substring(0, end)
+    }
+    /** What I hold of their words, as my presence word's «A» names it (iOS aboutHeldTag, MontanaE2E.swift:107-113): «0», or the wire tag. */
+    fun heldTag(ref: String): String {
+        val a = of(ref) ?: return "0"
+        return if (a.bio.isEmpty() && a.link.isEmpty()) "0" else Presence.wireTag((a.bio + "\n" + a.link).toByteArray(Charsets.UTF_8))
     }
 
     /** A link as a person types it: «site.org» wears https; nothing but the web is a link here. */
@@ -166,6 +184,9 @@ object PeerContact {
 
 private enum class Tab(val title: Int, val icon: Int, val empty: Int) {
     WALL(R.string.pi_wall, R.drawable.ic_compose_photo, R.string.pi_wall_empty),
+    // THE TRANSACTIONS AFTER THE WALL (iOS MTMediaTab.transactions, MontanaPeerInfo.swift:42-44 and 52-91; the author's word 12.10.2026
+    // 15:2x MSK: «on the correspondent's page add after the wall a section of transactions»): arrow.left.arrow.right
+    TRANSACTIONS(R.string.ch_transactions, R.drawable.ic_arrow_left_right, R.string.ch_no_transactions),
     MEDIA(R.string.pi_media, R.drawable.ic_photo, R.string.pi_media_empty),
     VIDEO(R.string.pi_video, R.drawable.ic_peer_video, R.string.pi_video_empty),
     FILES(R.string.pi_files, R.drawable.ic_set_doc, R.string.pi_files_empty),
@@ -233,6 +254,7 @@ private fun linksIn(text: String): List<Uri> {
 
 private fun select(tab: Tab, msgs: List<Msg>): List<Msg> = when (tab) {
     Tab.WALL -> emptyList()   // the wall is its owner's posts, not the letters
+    Tab.TRANSACTIONS -> emptyList()   // the transfers are the coin book's, not the letters (iOS MTCoinHistory.with, MontanaPeerInfo.swift:109)
     Tab.MEDIA -> msgs.filter { itemOf(it)?.kind == "img" }
     Tab.VIDEO -> msgs.filter { itemOf(it)?.kind == "vid" }
     Tab.FILES -> msgs.filter { itemOf(it)?.let { i -> i.kind == "doc" && !i.isMusic() } == true }
@@ -246,23 +268,31 @@ private fun select(tab: Tab, msgs: List<Msg>): List<Msg> = when (tab) {
 /**
  * THE CORRESPONDENT'S PAGE (iOS MontanaPeerInfoScreen): the face, their name, their bio and their link each on its own glass
  * bubble; the four plates — message, call, video, more; the fingerprint and the sharing of the contact; report and block; and
- * the strip of panes — the wall, then what the conversation carried: media, video, files, links, music, voices, newest on top,
- * cut by day. The whole page scrolls as one. A hold on an item opens the chat's own menu of its letter; «Show in chat» and a
- * forward land through [toChat] — the chat beneath jumps, or another opens (iOS ui.showLetter).
+ * the strip of panes — the wall, the coins sent to and received from them (transactionsPane), then what the conversation
+ * carried: media, video, files, links, music, voices, newest on top, cut by day. The whole page scrolls as one. A hold on an
+ * item opens the chat's own menu of its letter; «Show in chat» and a forward land through [toChat] — the chat beneath jumps,
+ * or another opens (iOS ui.showLetter).
  */
-fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
+fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit, onGone: () -> Unit = onClose, onSearch: () -> Unit = onClose,
                  toChat: (String, String?) -> Unit = { to, mid -> act.push { close -> conversationPage(act, to, close, jump = mid) } }): View {
     val c: Context = act
     var name = Book.chat(ref)?.shown?.ifBlank { null } ?: c.getString(R.string.peer)
     val body = c.vstack(Gravity.NO_GRAVITY) { setPadding(0, dp(56), 0, dp(40)) }
+    // A GROUP'S OR A CHANNEL'S PAGE IS THIS PAGE (iOS isGroupPage / isChannelPage): its own head, plates and rows, the media's panes
+    val group = Groups.isKey(ref)
+    // the panes a page offers (iOS paneTabs 893): a group's and a channel's are the conversation's media alone
+    val tabs = if (group) listOf(Tab.MEDIA, Tab.VIDEO, Tab.FILES, Tab.LINKS, Tab.MUSIC, Tab.VOICE) else Tab.values().toList()
 
     fun notYet() = Toast.makeText(c, R.string.compose_not_yet, Toast.LENGTH_SHORT).show()
     lateinit var redrawAll: () -> Unit
 
-    // ── the face and the head's lines: one owner, the settings' and my page's own (iOS MTFacePage, MTFaceHeader) ──
-    val face = FaceHead(act, body)
+    // ── the face and the head's lines: one owner, the settings' and my page's own (iOS MTFacePage, MTFaceHeader); a group's head is
+    // the plain header (iOS MTPeerHeader, faced = a person's alone) ──
+    val face = if (group) null else FaceHead(act, body)
+    val groupHeadBox = FrameLayout(c)
     fun drawHead() {
         name = Book.chat(ref)?.shown?.ifBlank { null } ?: c.getString(R.string.peer)
+        if (face == null) { groupHeadBox.removeAllViews(); groupHeadBox.addView(groupHeadView(c, ref), FrameLayout.LayoutParams(MATCH, WRAP)); return }
         val about = PeerAbout.of(ref)
         val f = Book.shownFace(ref)
         face.draw(if (f.exists()) BitmapFactory.decodeFile(f.path) else null, name, PeerSafety.isBlocked(ref),
@@ -282,6 +312,7 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
                 pressable { work(this) }
             }, lp(0, c.dp(44), 1f))   // the touch target's height, the glyph 20 (iOS actionFace)
         }
+        if (group) { groupPlates(act, ref, onSearch, onGone) { redrawAll() }.forEach { p -> plate(p.icon, p.label, p.work) }; return }
         plate(R.drawable.ic_peer_message, R.string.pi_message) { onClose() }   // opened from the chat: back to it
         if (!PeerSafety.isBlocked(ref)) {
             plate(R.drawable.ic_peer_phone, R.string.pi_voice_call) { act.callOut(ref) }
@@ -319,6 +350,10 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
     val sections = c.vstack(Gravity.NO_GRAVITY) { setPadding(dp(16), dp(10), dp(16), 0) }
     fun drawSections() {
         sections.removeAllViews()
+        if (group) {
+            groupSections(act, ref, onGone) { redrawAll() }.forEachIndexed { i, v -> sections.addView(v, lp().apply { if (i > 0) topMargin = c.dp(22) }) }
+            return
+        }
         val verified = PeerSafety.isVerified(ref)
         val first = mutableListOf<View>()
         // grey until compared, green once compared (iOS info.fingerprint: checkmark.shield.fill, shield.lefthalf.filled)
@@ -399,9 +434,9 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
     // ── THE STRIP (iOS MTTabStrip): the system's glass capsule 44 tall stands still on the page's margin and the words roll inside it,
     // under its edge; the chosen word wears the system's grey pill, which rides to the next one; while every word fits, the tabs
     // share the capsule equally ──
-    var tab = Tab.WALL   // a page opens on its wall
+    var tab = tabs.first()   // a page opens on its wall; a group's on its media
     val dim = Color.argb(153, 235, 235, 245)   // iOS .secondaryLabel
-    val words = Tab.values().map { t ->
+    val words = tabs.map { t ->
         c.text(c.getString(t.title), 15f, dim, center = true).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); maxLines = 1 }
     }
     val pill = View(c).apply { background = c.rounded(Color.rgb(58, 58, 60), 19) }   // iOS .systemGray4
@@ -440,7 +475,7 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
     }
     // the pill under the chosen word, ridden there on the platform's spring of 0.4 s (iOS place, usingSpringWithDamping 0.85)
     fun place(animated: Boolean) {
-        val i = tab.ordinal
+        val i = tabs.indexOf(tab)
         if (i == maxOf(i, slots.size)) return
         words.forEachIndexed { k, v -> v.setTextColor(if (k == i) Color.WHITE else dim) }
         val p = pill.layoutParams as FrameLayout.LayoutParams
@@ -497,7 +532,7 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
                 gravity = Gravity.CENTER_VERTICAL
                 setBackgroundColor(Color.argb(235, 44, 44, 46))   // the menus' own material (iOS .ultraThinMaterial)
                 setPadding(dp(16), dp(10), dp(16), dp(10))
-                addView(key(R.drawable.ic_close, R.string.cancel, Color.rgb(204, 204, 204), true) { endSelecting() }, lp(dp(44), dp(44)))
+                addView(key(R.drawable.ic_close, R.string.cancel, MT.barGlyph, true) { endSelecting() }, lp(dp(44), dp(44)))
                 addView(View(c), lp(0, 1, 1f))
                 addView(c.text(letters.size.toString(), 17f, MT.gray).apply { fontFeatureSettings = "tnum" }, lp(WRAP, WRAP))
                 addView(View(c), lp(0, 1, 1f))
@@ -514,7 +549,7 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
     }
     // the chosen word rides into view, a hundred points of its neighbour showing beside it (iOS reveal)
     fun reveal(animated: Boolean) {
-        val i = tab.ordinal
+        val i = tabs.indexOf(tab)
         val w = roll.width
         if (w == 0 || i == maxOf(i, slots.size)) return
         val from = slots[i]
@@ -525,16 +560,21 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
         x = x.coerceIn(0, maxOf(0, track.width - w))
         if (animated) roll.smoothScrollTo(x, 0) else roll.scrollTo(x, 0)
     }
-    fun choose(t: Tab) { if (t != tab) { tab = t; place(true); reveal(true); drawPane() } }
-    words.forEachIndexed { i, v -> v.setOnClickListener { choose(Tab.values()[i]) } }
+    fun choose(t: Tab) {
+        if (t == tab) return
+        tab = t
+        if (t == Tab.TRANSACTIONS) CoinHistory.warm(c)   // the coins' fold, once, at the tab's opening (iOS MontanaPeerInfoScreen.swift:779)
+        place(true); reveal(true); drawPane()
+    }
+    words.forEachIndexed { i, v -> v.setOnClickListener { choose(tabs[i]) } }
     // the capsule measured anew (the first layout, a turn of the phone): the words take their places again
     bar.addOnLayoutChangeListener { _, left, _, right, _, oldLeft, _, oldRight, _ ->
         if (right - left != oldRight - oldLeft) bar.post { lay(); wordRow.requestLayout(); wordRow.post { place(false); reveal(false) } }
     }
     // THE PANES ARE TURNED BY THE FINGER (iOS MTSwipePanes): one step along the strip, stopping at its ends
     fun turnPane(step: Int) {
-        val j = tab.ordinal + step
-        if (j in Tab.values().indices) choose(Tab.values()[j])
+        val j = tabs.indexOf(tab) + step
+        if (j in tabs.indices) choose(tabs[j])
     }
     fun emptyPane(): View = c.vstack(Gravity.CENTER_HORIZONTAL) {
         setPadding(0, dp(36), 0, dp(36))
@@ -566,12 +606,13 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
             val wallPosts = Board.posts(ref)
             if (wallPosts.isEmpty() && onItsWay.isEmpty()) pane.addView(emptyPane(), lp())
             else wallPosts.forEach { item -> pane.addView(postCell(act, item, onItsWall = true), lp().apply { topMargin = c.dp(10) }) }
-        } else if (msgs.isEmpty()) pane.addView(emptyPane(), lp())
+        } else if (tab == Tab.TRANSACTIONS) transactionsPane(act, ref, name, pane) { emptyPane() }   // the one fold of the coins (iOS MontanaPeerInfoScreen.swift:788-789)
+        else if (msgs.isEmpty()) pane.addView(emptyPane(), lp())
         else paneRows(act, tab, msgs.reversed(), pane, law)   // newest on top
     }
 
     redrawAll = { drawHead(); drawActions(); drawSections(); drawPane() }
-    body.addView(face.view, lp())
+    body.addView(face?.view ?: groupHeadBox, lp())
     body.addView(actions, lp())
     body.addView(sections, lp())
     body.addView(bar, lp(MATCH, c.dp(44)).apply { topMargin = c.dp(24); marginStart = c.dp(16); marginEnd = c.dp(16) })
@@ -579,8 +620,10 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
     redrawAll()
     // THE LOOK ASKS (iOS look, MontanaBoard.swift:609-613, MontanaPeerInfoScreen.swift:636-638, the author's word 25.09):
     // the wall not held, or held more than ten minutes, is asked for the moment this page opens.
-    Board.look(ref)
+    if (!group) Board.look(ref)
     val wallHeard: () -> Unit = { if (tab == Tab.WALL) drawPane() }
+    // the coins' fold stood: the transactions read it again (iOS @ObservedObject coinHistory, MontanaPeerInfoScreen.swift:38)
+    val coinsFolded: () -> Unit = { if (tab == Tab.TRANSACTIONS) drawPane() }
 
     val listener: () -> Unit = { drawHead(); drawPane(); if (selecting) drawFoot() }
     // the one player's turn redraws the music's glyphs, and only its turn: the clock's ticks change nothing here
@@ -594,7 +637,7 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
         addView(c.chatGround(PageGround.keyOf(ref)), FrameLayout.LayoutParams(MATCH, MATCH))   // the ground they sent, mine where they sent none (iOS MTFacePage 377-406)
         // a stroke begun on the strip rolls the strip and turns nothing; the page scrolled up closes the open face
         val rows = PanesScroll(c, skip = { y -> y in bar.top.toFloat()..bar.bottom.toFloat() }, turn = { turnPane(it) }).apply {
-            isVerticalScrollBarEnabled = false; clipToPadding = false; addView(body); face.attach(this)
+            isVerticalScrollBarEnabled = false; clipToPadding = false; addView(body); face?.attach(this)
         }
         // THE ROWS SINK INTO THE GROUND PAST THE MARKS ON TOP AND THE BARS AT THE FOOT (iOS MTPageEdges, MontanaPeerHeader.swift:401)
         lateinit var foot0: View
@@ -612,7 +655,9 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
             background = c.glassPlate(oval = true)
             contentDescription = c.getString(R.string.pe_edit)
             addView(c.icon(R.drawable.ic_more_horiz, Color.WHITE), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
-            pressable { act.push { close -> peerEditPage(act, ref, close) } }
+            // a group's editor is its owner's alone (iOS data.canEdit): the name, the face, the description, its link and its end
+            if (group && !(Groups.owns(ref) && !Groups.isOut(ref))) visibility = View.GONE
+            pressable { act.push { close -> if (group) groupEditPage(act, ref, close, onGone) else peerEditPage(act, ref, close) } }
         }, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(14), 0) })
         // THE BARS OVER THE PAGE'S BOTTOM STAND OUTSIDE ITS ROWS (iOS MontanaPeerInfoScreen.swift:69-84): the selection's bar over
         // the mini player, both at the foot, and the rows end above them. THE MINI PLAYER STANDS HERE TOO (the author's word 18.09):
@@ -623,8 +668,8 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
         bars.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> if (rows.paddingBottom != v.height) v.post { rows.setPadding(0, 0, 0, v.height) } }
         addView(bars, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM))
         addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) { Book.listen(listener); Board.listen(wallHeard); MyWall.listen(wallHeard); MusicPlayer.listeners.add(music) }
-            override fun onViewDetachedFromWindow(v: View) { Book.unlisten(listener); Board.unlisten(wallHeard); MyWall.unlisten(wallHeard); MusicPlayer.listeners.remove(music) }
+            override fun onViewAttachedToWindow(v: View) { Book.listen(listener); Board.listen(wallHeard); MyWall.listen(wallHeard); MusicPlayer.listeners.add(music); CoinHistory.listen(coinsFolded) }
+            override fun onViewDetachedFromWindow(v: View) { Book.unlisten(listener); Board.unlisten(wallHeard); MyWall.unlisten(wallHeard); MusicPlayer.listeners.remove(music); CoinHistory.unlisten(coinsFolded) }
         })
     }
 }
@@ -717,7 +762,7 @@ private fun paneRows(act: MainActivity, tab: Tab, msgs: List<Msg>, into: LinearL
                 into.addView(glassRow(c, if (on) R.drawable.ic_pause_fill else R.drawable.ic_play_fill, c.getString(R.string.pi_voice_message),
                     "%d:%02d".format(s / 60, s % 60), m, law) { playVoice(m) }, lp().apply { bottomMargin = c.dp(8) })
             }
-            Tab.WALL -> {}
+            Tab.WALL, Tab.TRANSACTIONS -> {}
         }
     }
 }
@@ -800,7 +845,7 @@ private fun glassRow(c: Context, icon: Int, title: String, detail: String, m: Ms
     gravity = Gravity.CENTER_VERTICAL
     addView(FrameLayout(c).apply {
         background = c.glassPlate().apply { cornerRadius = dp(16).toFloat() }
-        addView(c.icon(icon, Color.rgb(204, 204, 204)), FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
+        addView(c.icon(icon, MT.barGlyph), FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
     }, lp(dp(56), dp(56)).apply { marginEnd = dp(10) })
     addView(c.hstack {
         gravity = Gravity.CENTER_VERTICAL

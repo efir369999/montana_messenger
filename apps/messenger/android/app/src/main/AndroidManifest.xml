@@ -76,6 +76,8 @@
                 <data android:scheme="https" android:host="montana.quest" android:pathPrefix="/perp/" />
                 <data android:scheme="https" android:host="montana.quest" android:pathPrefix="/temp/" />
                 <data android:scheme="https" android:host="montana.quest" android:pathPrefix="/r/" />
+                <data android:scheme="https" android:host="montana.quest" android:pathPrefix="/n/" />
+                <data android:scheme="https" android:host="www.montana.quest" android:pathPrefix="/n/" />
                 <data android:scheme="https" android:host="montana.xxx" android:pathPrefix="/perp/" />
                 <data android:scheme="https" android:host="montana.xxx" android:pathPrefix="/temp/" />
                 <data android:scheme="https" android:host="montana.xxx" android:pathPrefix="/r/" />
@@ -168,6 +170,19 @@
             android:name="quest.montana.app.EarService"
             android:exported="false"
             android:foregroundServiceType="remoteMessaging" />
+        <!-- The VPN wall's tunnel (VpnTunnel.kt; iOS the PacketTunnel extension): bound by the system alone, raised again by the
+             system's own always-on switch. -->
+        <service
+            android:name="quest.montana.app.MontanaVpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON"
+                android:value="true" />
+        </service>
         <!-- The ear comes back after a reboot and after an update (EarService.kt). -->
         <receiver
             android:name="quest.montana.app.EarStart"

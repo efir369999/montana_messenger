@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The coins' history as iOS 2235 has it (MTWalletScreen.swift: MTCoinHistory, MTCoinHistoryPage, MTHistoryRow, MTCoinAnalyticsPage,
+     MTHistoryCard; MontanaPeerInfo.swift: MTMediaTab.transactions); Localizable.xcstrings en -->
+<resources>
+    <string name="ch_all">All</string>
+    <string name="ch_spending">Spending</string>
+    <string name="ch_income">Income</string>
+    <string name="ch_operations">Operations</string>
+    <string name="ch_no_operations">No operations</string>
+    <string name="ch_search_contacts">Search contacts</string>
+    <string name="ch_minted">Minted</string>
+    <string name="ch_minting_day">Minting of the day</string>
+    <string name="ch_burning_day">Burning of the day</string>
+    <string name="ch_spending_day">Spending of the day</string>
+    <string name="ch_every_month">Every month</string>
+    <string name="ch_operation">Operation</string>
+    <string name="ch_kind">Kind</string>
+    <string name="ch_category">Category</string>
+    <string name="ch_when">When</string>
+    <string name="ch_open_explorer">Open in Explorer</string>
+    <string name="ch_key_chain_footer">Your coin key\'s whole chain, checked in the Explorer.</string>
+    <string name="ch_transactions">Transactions</string>
+    <string name="ch_no_transactions">No transactions yet</string>
+</resources>

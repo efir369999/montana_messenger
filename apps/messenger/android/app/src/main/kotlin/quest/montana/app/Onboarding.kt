@@ -75,7 +75,7 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
             content.addView(FrameLayout(act).apply {
                 background = act.glassPlate(oval = true)
                 contentDescription = act.getString(R.string.back)
-                addView(act.icon(R.drawable.ic_arrow_back_ios_new, Color.rgb(204, 204, 204), 22), FrameLayout.LayoutParams(act.dp(22), act.dp(22), Gravity.CENTER))
+                addView(act.icon(R.drawable.ic_arrow_back_ios_new, MT.barGlyph, 22), FrameLayout.LayoutParams(act.dp(22), act.dp(22), Gravity.CENTER))
                 pressable { b() }
             }, FrameLayout.LayoutParams(act.dp(44), act.dp(44), Gravity.TOP or Gravity.START).apply { leftMargin = act.dp(12); topMargin = act.dp(4) })
         }
@@ -101,8 +101,10 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
         addView(c.vstack(Gravity.NO_GRAVITY) {
             privRow(R.drawable.ic_key, R.string.priv_words_title, R.string.priv_words_sub); gap(12)
             privRow(R.drawable.ic_shield, R.string.priv_e2e_title, R.string.priv_e2e_sub); gap(12)
-            privRow(R.drawable.ic_credit_card, R.string.priv_wallet_title, R.string.priv_wallet_sub); gap(12)
-            privRow(R.drawable.ic_hub, R.string.priv_servers_title, R.string.priv_servers_sub)
+            // WHAT IS TRUE OF THIS BUILD (iOS 2257-2258, App Review 2.3.1(a), 08.10): a person is reached by a name or an
+            // invitation, and a letter waits on a node as an envelope the node cannot open
+            privRow(R.drawable.ic_at, R.string.priv_name_title, R.string.priv_name_sub); gap(12)
+            privRow(R.drawable.ic_triangle_path, R.string.priv_sealed_title, R.string.priv_sealed_sub)
         })
         spacer()
         // EVERY ACT OF THE PATH IS A DOOR (iOS intro 2281-2291): the main act rimmed in the platform's blue, the second clear;
@@ -163,11 +165,13 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
 
     private fun LinearLayout.privRow(iconRes: Int, title: Int, sub: Int) {
         val c = context
+        // iOS privRow (MontanaSettings.swift:2559-2568): the glyph at body size in a 28 column, 12 to the words, 2 between them
         addView(c.hstack {
-            addView(c.icon(iconRes, Color.WHITE), LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(16) })
+            addView(FrameLayout(c).apply { addView(c.icon(iconRes, Color.WHITE), FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER)) },
+                LinearLayout.LayoutParams(dp(28), dp(24)).apply { marginEnd = dp(12) })
             addView(c.vstack(Gravity.NO_GRAVITY) {
                 addView(c.text(c.getString(title), 15f, Color.WHITE, bold = true))
-                addView(c.text(c.getString(sub), 12f, MT.gray))
+                addView(c.text(c.getString(sub), 12f, MT.gray), lp().apply { topMargin = dp(2) })
             }, lp(0, WRAP, 1f))
         }, lp())
     }
@@ -237,12 +241,13 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
         val order = (0 until half).flatMap { r -> if (r + half < words.size) listOf(r, r + half) else listOf(r) }
         val grid = GridLayout(c).apply { columnCount = 2 }
         order.forEach { i ->
+            // iOS seed (MontanaSettings.swift:2363-2368): body type, the number gray in a 26 column, the word bold, a glass card of 10
             val cell = c.hstack {
-                background = c.rounded(MT.plate, 8)
+                background = c.rounded(MT.plate, 10)
                 setPadding(dp(7), dp(7), dp(7), dp(7))
-                addView(c.text("${i + 1}.", 15f, MT.gray).apply { gravity = Gravity.END }, lp(dp(26), WRAP))
+                addView(c.text("${i + 1}.", 17f, MT.gray).apply { gravity = Gravity.END }, lp(dp(26), WRAP))
                 gap(6)
-                addView(c.text(words[i], 15f, Color.WHITE, bold = true))
+                addView(c.text(words[i], 17f, Color.WHITE, bold = true))
             }
             grid.addView(cell, GridLayout.LayoutParams(GridLayout.spec(GridLayout.UNDEFINED), GridLayout.spec(GridLayout.UNDEFINED, 1f)).apply {
                 width = 0; setMargins(dp(4), dp(4), dp(4), dp(4))
@@ -344,13 +349,14 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
 
     // ── 5: the copy coming back ──
 
-    /** THE WORDS OPENED; THE PERSON'S OWN NODE, IF NAMED, HANDS THE COPY BACK (iOS takeFromNode) — otherwise the first screen. */
+    /** THE WORDS OPENED; THE PERSON'S OWN NODE, IF NAMED, HANDS THE COPY BACK (iOS takeFromNode) — otherwise the people one wrote to do. */
     private fun takeFromNode() {
         val h = nodeHost.trim()
-        if (h.isEmpty()) return onDone()
+        if (h.isEmpty()) return takeFromKeepers()
         MontanaHomeNode.setHost(h)
         MontanaHomeNode.setOn(act, true)
         walkedOn = false
+        fromKeepers = false
         go(5)
         act.background {
             HomeNodeWatch.takeBack(act) { r ->
@@ -367,6 +373,28 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
         }
     }
 
+    /**
+     * THE COPY KEPT BY THE PEOPLE ONE WROTE TO (iOS takeFromKeepers, MontanaSettings 2438-2455): with no node named, the words call the
+     * pipe of every slot; the page shows the parts in hand, and the person may walk on at any moment -- the copy is laid whenever it
+     * stands, merged. THE LIGHT COPY LETS THE PERSON IN (App: «once the light copy is laid»): the full copy follows from the keepers.
+     */
+    private fun takeFromKeepers() {
+        walkedOn = false
+        fromKeepers = true
+        go(5)
+        Keeping.onboardingWaits = true
+        Keeping.onLight = { act.onMain { if (Keeping.onboardingWaits) { Keeping.onboardingWaits = false; onDone() } } }
+        Keeping.takeBack { r ->
+            act.onMain {
+                if (!Keeping.onboardingWaits) return@onMain
+                Keeping.onboardingWaits = false
+                if (r is CopyResult.Taken) onDone() else refuse(act.getString(R.string.keep_none_came_back)) { takeFromKeepers() }
+            }
+        }
+    }
+    /** The copy on this page comes from the people one wrote to, not from the person's own node. */
+    private var fromKeepers = false
+
     private fun refuse(word: String, again: () -> Unit) {
         AlertDialog.Builder(act)
             .setTitle(R.string.your_history).setMessage(word)
@@ -380,8 +408,12 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
         spacer()
         addView(c.icon(R.drawable.ic_arrow_circle_down, Color.WHITE, 46))
         gap(16)
-        addView(c.text(c.getString(R.string.taking_back), 20f, Color.WHITE, bold = true, center = true))
+        // the author's word 11.10.2026 17:13 MSK: the person's chain comes back first (iOS takingWord)
+        addView(c.text(c.getString(if (fromKeepers) R.string.keep_restoring_chain else R.string.taking_back), 20f, Color.WHITE, bold = true, center = true))
         gap(16)
+        val parts = c.text("", 12f, MT.gray, center = true).apply { visibility = View.GONE }
+        addView(parts, lp())
+        gap(8)
         val bar = android.widget.ProgressBar(c, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 100
             progressTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
@@ -393,10 +425,29 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
         addView(pct, lp())
         spacer()
         // The person may walk on without the copy while nothing is being laid into this device: a copy half laid is
-        // not a state to leave in (iOS canGoOn).
-        val without = PathDoor(c, c.getString(R.string.go_on_without_copy)) { walkedOn = true; HomeNodeWatch.onChange = null; onDone() }
+        // not a state to leave in (iOS canGoOn). THE KEEPERS' COPY GOES ON BY ITSELF behind them (the author's word 09.10.2026:
+        // «Continue -- the restore goes on in the background»): its one owner is Keeping, not this page.
+        val without = PathDoor(c, c.getString(R.string.go_on_without_copy)) {
+            walkedOn = true; HomeNodeWatch.onChange = null; Keeping.onboardingWaits = false; onDone()
+        }
         addView(without, lp())
+        val behind = c.text(c.getString(R.string.keep_in_background), 12f, MT.gray, center = true).apply { visibility = View.GONE }
+        addView(behind, lp().apply { topMargin = dp(8) })
         fun show() {
+            if (fromKeepers) {
+                val t = Keeping.taking
+                parts.visibility = if (t is Keeping.Taking.Calling && t.need > 0) View.VISIBLE else View.GONE
+                if (t is Keeping.Taking.Calling && t.need > 0) parts.text = c.getString(R.string.keep_parts_in_hand, t.have, t.need)
+                // THE BAR FROM THE FIRST FRAME (the author's word 09.10.2026 11:3x MSK): nothing measured yet is a bar at zero, never a spinner
+                val f = Keeping.share() ?: 0.0
+                bar.isIndeterminate = false
+                bar.progress = (f * 100).toInt()
+                pct.text = "${(f * 100).toInt()}%"   // USER-DATA: a share
+                without.setTitle(c.getString(if (Keeping.isTaking) R.string.continue_word else R.string.go_on_without_copy))
+                without.visibility = if (t is Keeping.Taking.Laying) View.GONE else View.VISIBLE
+                behind.visibility = if (Keeping.isTaking) View.VISIBLE else View.GONE
+                return
+            }
             val f = HomeNodeWatch.fetching ?: HomeNodeWatch.restoring
             bar.isIndeterminate = f == null
             if (f != null) bar.progress = (f * 100).toInt()
@@ -404,7 +455,13 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
             without.visibility = if (HomeNodeWatch.restoring == null) View.VISIBLE else View.GONE
         }
         show()
-        HomeNodeWatch.onChange = { act.onMain { if (isAttachedToWindow) show() } }
+        if (fromKeepers) {
+            val heard: () -> Unit = { if (isAttachedToWindow) show() }
+            addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) { Keeping.listen(heard); show() }
+                override fun onViewDetachedFromWindow(v: View) { Keeping.unlisten(heard) }
+            })
+        } else HomeNodeWatch.onChange = { act.onMain { if (isAttachedToWindow) show() } }
     }
 }
 

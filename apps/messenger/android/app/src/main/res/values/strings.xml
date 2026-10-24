@@ -7,10 +7,10 @@
     <string name="priv_words_sub">Only you hold the key</string>
     <string name="priv_e2e_title">End-to-end encryption</string>
     <string name="priv_e2e_sub">The key lives on your devices</string>
-    <string name="priv_wallet_title">Your own wallet address</string>
-    <string name="priv_wallet_sub">People message you and send Montana to it</string>
-    <string name="priv_servers_title">No servers</string>
-    <string name="priv_servers_sub">Your phone carries the messages itself</string>
+    <string name="priv_name_title">Name or invitation</string>
+    <string name="priv_name_sub">People reach you by either</string>
+    <string name="priv_sealed_title">Sealed on the way</string>
+    <string name="priv_sealed_sub">Nodes carry envelopes they cannot open</string>
     <string name="creating">Bringing an identity into being…</string>
     <string name="create">Create</string>
     <string name="open_identity">Open identity</string>

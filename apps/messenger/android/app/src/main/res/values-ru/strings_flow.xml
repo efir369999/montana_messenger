@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Money Flow of a chat (iOS MTMoneyFlow, flipMark, MTMoneyFlowRow, MTMoneyFlowBegins; Localizable.xcstrings ru). -->
+<resources>
+    <string name="mf_title">Денежный поток</string>
+    <string name="mf_begun">Денежный поток начался</string>
+    <string name="mf_begun_sub">Каждое письмо чеканит монету</string>
+</resources>

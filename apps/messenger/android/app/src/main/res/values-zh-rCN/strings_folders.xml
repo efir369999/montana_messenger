@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The folders over the chats (iOS MTChatFolders.swift, MontanaChatsList.swift folderMenu/folderEmpty, MontanaSettings.swift:130;
+     Localizable.xcstrings zh-Hans). -->
+<resources>
+    <string name="fl_title">聊天文件夹</string>
+    <string name="fl_folders">文件夹</string>
+    <string name="fl_all_chats">所有聊天</string>
+    <string name="fl_all">全部</string>
+    <string name="fl_bots">机器人</string>
+    <string name="fl_kind_contacts">联系人</string>
+    <string name="fl_kind_non_contacts">非联系人</string>
+    <string name="fl_leave_muted">已静音</string>
+    <string name="fl_leave_read">已读</string>
+    <string name="fl_leave_archived">已归档</string>
+    <string name="fl_bot">机器人</string>
+    <string name="fl_intro">为不同的聊天分组创建文件夹，并在它们之间快速切换。</string>
+    <string name="fl_create">创建文件夹</string>
+    <string name="fl_folders_footer">点击铅笔图标以更改顺序或删除文件夹。</string>
+    <string name="fl_recommended">推荐的文件夹</string>
+    <string name="fl_unread">未读</string>
+    <string name="fl_unread_words">来自所有聊天的新消息。</string>
+    <string name="fl_personal">个人</string>
+    <string name="fl_personal_words">仅显示来自个人聊天的消息。</string>
+    <string name="fl_groups_words">仅显示来自群组的消息。</string>
+    <string name="fl_channels_words">仅显示来自频道的消息。</string>
+    <string name="fl_bots_words">仅显示来自机器人的消息。</string>
+    <string name="fl_new">新建文件夹</string>
+    <string name="fl_edit_folder">编辑文件夹</string>
+    <string name="fl_name">文件夹名称</string>
+    <string name="fl_add_chats">添加聊天</string>
+    <string name="fl_included">包含的聊天</string>
+    <string name="fl_included_footer">选择将显示在此文件夹中的聊天和聊天类型。</string>
+    <string name="fl_exclude_add">添加要排除的聊天</string>
+    <string name="fl_excluded">排除的聊天</string>
+    <string name="fl_excluded_footer">选择永远不会显示在此文件夹中的聊天和聊天类型。</string>
+    <string name="fl_discard_q">你已更改此文件夹。要放弃更改吗？</string>
+    <string name="fl_discard">放弃</string>
+    <string name="fl_chat_types">聊天类型</string>
+    <string name="fl_include">包含聊天</string>
+    <string name="fl_exclude">排除聊天</string>
+    <string name="fl_read_all">全部标为已读</string>
+    <string name="fl_mute_all">全部静音</string>
+    <string name="fl_unmute_all">全部取消静音</string>
+    <string name="fl_remove">移除</string>
+    <string name="fl_edit_folders">管理文件夹</string>
+    <string name="fl_reorder">调整标签顺序</string>
+    <string name="fl_remove_q">删除“%1$s”？</string>
+    <string name="fl_remove_note">这将删除该文件夹，你的聊天不会被删除。</string>
+    <string name="fl_empty">文件夹为空。</string>
+    <string name="fl_empty_note">目前没有符合此文件夹的聊天。</string>
+</resources>

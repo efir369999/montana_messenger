@@ -31,6 +31,26 @@ object MT {
     val green = Color.rgb(48, 209, 88)          // iOS .green (dark)
     val blue = Color.rgb(10, 132, 255)          // iOS .systemBlue (dark), MontanaOctagon.platformBlue
     val hairline = Color.argb(20, 255, 255, 255)
+    /** The bars' glyph ink (iOS MontanaOctagon.barGlyph, MontanaShapes.swift:93-96): white in the default icon style «White icons»
+     *  (MTLibraryIconStyle.initial, the latest iOS) -- the old #CCCCCC belongs to the «Montana OS» and «Gold» styles alone. */
+    val barGlyph = Color.WHITE
+    /** iOS secondaryLabel (dark): #EBEBF5 at 60 %. */
+    val secondary = Color.argb(153, 235, 235, 245)
+    /** A person's own tint among many (iOS MontanaAvatar.paletteHex, MontanaAvatarKit.swift:10-18): eight colours, the reference's
+     *  FNV-1a hash picks one -- a group's speaker names wear it. */
+    private val palette = intArrayOf(0xFF007AFF.toInt(), 0xFF34C759.toInt(), 0xFFFF9500.toInt(), 0xFFAF52DE.toInt(),
+        0xFFFF2D55.toInt(), 0xFFFF3B30.toInt(), 0xFF30B0C7.toInt(), 0xFF5856D6.toInt())
+    fun memberTint(ref: String): Int {
+        var h = 0x811C9DC5.toInt()
+        for (b in ref.toByteArray(Charsets.UTF_8)) { h = h xor (b.toInt() and 0xff); h *= 0x01000193 }
+        return palette[((h.toLong() and 0xffffffffL) % palette.size).toInt()]
+    }
+    /** The group's roles (iOS MontanaConversation 4686-4690): the owner's violet, an administrator's green. */
+    val roleOwner = 0xFF956AC8.toInt()
+    val roleAdmin = 0xFF49A355.toInt()
+    /** iOS bubble meta and reactions: the reaction chip white 0.22, my own 0.30 (MontanaBubble.swift:556-586). */
+    val reactChip = Color.rgb(56, 56, 56)
+    val reactMine = Color.rgb(77, 77, 77)
     fun withAlpha(c: Int, a: Float) = Color.argb((a * 255).toInt(), Color.red(c), Color.green(c), Color.blue(c))
 }
 
@@ -71,6 +91,24 @@ fun LinearLayout.spacer() = addView(View(context), lp(if (orientation == LinearL
 
 /** A fixed gap (SwiftUI Spacer().frame(height:)). */
 fun LinearLayout.gap(size: Int) = addView(View(context), if (orientation == LinearLayout.VERTICAL) lp(MATCH, dp(size)) else lp(dp(size), 1))
+
+/**
+ * A ROUND FILL WHATEVER THE FRAME (iOS Circle() as a view's background): the circle inscribed in the bounds -- its diameter the shorter
+ * side, centred -- where GradientDrawable.OVAL stretches into an ellipse over a frame that is not square. A count's badge is a short
+ * word in a padded frame taller than it is wide; iOS draws it round, and so does this (the author's word 18.10.2026, the P2P wall's
+ * count: «the notification's circle is not round»).
+ */
+class CircleFill(color: Int) : android.graphics.drawable.Drawable() {
+    private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
+    override fun draw(canvas: android.graphics.Canvas) {
+        val b = bounds
+        canvas.drawCircle(b.exactCenterX(), b.exactCenterY(), minOf(b.width(), b.height()) / 2f, paint)
+    }
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha; invalidateSelf() }
+    override fun setColorFilter(filter: android.graphics.ColorFilter?) { paint.colorFilter = filter; invalidateSelf() }
+    @Deprecated("Deprecated in Java")
+    override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+}
 
 fun Context.text(s: CharSequence, sizeSp: Float = 17f, color: Int = Color.WHITE, bold: Boolean = false, center: Boolean = false) =
     TextView(this).apply {
@@ -219,6 +257,13 @@ private fun isAvatarEmoji(g: String): Boolean {
 }
 /** iOS MontanaAvatar.glyphScale (MontanaAvatarKit.swift:31-34): a letter 0.40 of the circle, a glyph -- the face itself -- 0.62. */
 fun avatarGlyphScale(g: String): Float = if (g.isNotEmpty() && isAvatarEmoji(g)) 0.62f else 0.40f
+/** The name for display in words (iOS MontanaAvatar.spokenName, MontanaAvatarKit.swift:36-42): a glyph the person put first already
+ *  stands in the face's circle, so the line leaves it out -- by the face's own measure (avatarInitial, isAvatarEmoji). */
+fun spokenName(name: String): String {
+    if (name.isEmpty() || name[0].isWhitespace()) return name
+    val g = avatarInitial(name)   // a glyph comes back as it is, a letter uppercased
+    return if (name.startsWith(g) && isAvatarEmoji(g)) name.substring(g.length).trim() else name
+}
 
 /**
  * THE PLATFORM'S COUNT BADGE (iOS MTCountBadge, ContentView.swift:1436-1455): a red capsule 20 high, the number 13 semibold, 6 at

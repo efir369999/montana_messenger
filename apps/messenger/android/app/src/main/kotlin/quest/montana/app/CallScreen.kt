@@ -61,7 +61,7 @@ object CallScreen {
     private const val MINI_W = 110   // iOS MTCallMini: the corner picture's fixed frame
     private const val MINI_H = 156
     private const val FOLD_MS = 6000L   // iOS chromeFoldS: a video call's buttons step aside after six untouched seconds
-    private val barGlyph = Color.rgb(204, 204, 204)   // iOS MontanaOctagon.barGlyph
+    private val barGlyph = MT.barGlyph   // iOS MontanaOctagon.barGlyph
     @Volatile var front: MainActivity? = null   // the activity on the screen (its onResume / onPause): an in-app ring stands there
     private var close: (() -> Unit)? = null
     private var ringing = false   // the page on the screen is the in-app ring, not the call in hand
@@ -756,7 +756,10 @@ object CallScreen {
                 if (soft) setRenderEffect(blur(8))
             }, FrameLayout.LayoutParams(side, side, Gravity.CENTER))
         } else {
-            addView(c.text((if (own) Prefs.userName.trim() else name).take(1).uppercase(), 160f, Color.argb(56, 255, 255, 255), bold = true, center = true),   // USER-DATA: the name's first letter
+            // THE FIRST CHARACTER AS THE PERSON SEES IT (iOS MTCallGround 7525: String(name.prefix(1)).uppercased(), a grapheme):
+            // take(1) cut «🐆 Irbis» in half -- a lone surrogate drawn as «?» in a diamond (18.10.2026)
+            val who = (if (own) Prefs.userName else name).trim()
+            addView(c.text(if (who.isEmpty()) "" else avatarInitial(who), 160f, Color.argb(56, 255, 255, 255), bold = true, center = true),   // USER-DATA: the name's first character
                 FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
         }
     }

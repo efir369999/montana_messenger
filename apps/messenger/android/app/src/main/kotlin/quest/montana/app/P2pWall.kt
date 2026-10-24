@@ -1,15 +1,14 @@
 package quest.montana.app
 
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ScrollView
 
 /**
- * THE P2P WALL (iOS NetworkTabView on the globe's pane, MontanaNetworkView 146-281; the author's word 23.09: «the tab is the
- * nodes»; the VPN left for its own app 08.10). The head: the globe on the plain glass, on its badge the machines held, green
+ * THE P2P WALL (iOS NetworkTabView on the .p2p pane, MontanaNetworkView 146-281 at 2235, opened from the drawer -- the globe's pane is
+ * the VPN wall since 2235; the author's word 23.09: «the tab is the nodes»). The head: the globe on the plain glass, on its badge the machines held, green
  * while this phone holds one and red while it holds none, and one line saying what the wall is. Then «Reachable nodes (N)»:
  * NODES, not doors (the author's word 26.08) — one machine behind two doors is one row with its doors nested; the groups are
  * the machines the network named, else the machines the handshakes proved; every door says one of four words — open, spare
@@ -22,7 +21,7 @@ fun p2pPane(act: MainActivity): View {
         gravity = Gravity.CENTER
         val pad = c.dp(5)
         setPadding(pad, pad, pad, pad)
-        minWidth = c.dp(22); minHeight = c.dp(22)
+        // no least size: iOS draws the padded count's frame as it falls and a Circle() inside it (CircleFill)
         translationX = c.dp(5).toFloat(); translationY = -c.dp(3).toFloat()   // iOS .offset(x: 5, y: -3)
     }
     val head = c.vstack {
@@ -61,7 +60,7 @@ fun p2pPane(act: MainActivity): View {
     fun draw() {
         val nodes = Channels.nodesHeld()
         badge.text = nodes.toString()   // USER-DATA: a count — the machines held
-        badge.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(if (nodes > 0) MT.green else MT.red) }
+        badge.background = CircleFill(if (nodes > 0) MT.green else MT.red)   // iOS Circle().fill: round in any frame
         rows.removeAllViews()
         rows.addView(c.text(c.getString(R.string.p2p_reachable) + " (" + nodes + ")", 12f, MT.gray).apply { setPadding(side, c.dp(12), side, c.dp(12)) }, lp())
         val live = Channels.heldLabels()

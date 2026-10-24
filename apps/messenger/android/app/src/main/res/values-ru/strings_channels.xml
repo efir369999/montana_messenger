@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS 2235 Localizable.xcstrings ru, the channel's birth and pages (values/strings_channels.xml) -->
+<resources>
+    <string name="chn_new_channel">Новый канал</string>
+    <string name="chn_what_is">Что такое канал?</string>
+    <string name="chn_what_is_sub">Каналы — это новый инструмент для трансляции ваших сообщений большой аудитории.</string>
+    <string name="chn_create">Создать канал</string>
+    <string name="chn_name">Название канала</string>
+    <string name="chn_about_hint">Описание (необязательно)</string>
+    <string name="chn_about_footer">Можно добавить описание канала.</string>
+    <string name="chn_add_subscribers">Добавить подписчиков</string>
+    <string name="chn_pick_note">Пост идёт по каналу каждого человека, поэтому в списке только те, с кем вы переписываетесь.</string>
+    <string name="chn_done">Готово</string>
+    <plurals name="chn_subscribers"><item quantity="one">%d подписчик</item><item quantity="few">%d подписчика</item><item quantity="many">%d подписчиков</item><item quantity="other">%d подписчика</item></plurals>
+    <string name="chn_subscribers_title">Подписчики</string>
+    <string name="chn_remove">Убрать</string>
+    <string name="chn_remove_q">Удалить из канала?</string>
+    <string name="chn_invite_links">Ссылки-приглашения</string>
+    <string name="chn_invite_link">Ссылка-приглашение</string>
+    <string name="chn_invite_footer">Любой, кто перейдёт по этой ссылке, сможет подписаться на ваш канал.</string>
+    <string name="chn_revoke_link">Сбросить ссылку</string>
+    <string name="chn_revoke_q">Отозвать эту ссылку? После этого никто не сможет подписаться на канал по ней.</string>
+    <string name="chn_revoke">Сбросить</string>
+    <string name="chn_administrators">Администраторы</string>
+    <string name="chn_admins_header">АДМИНИСТРАТОРЫ КАНАЛА</string>
+    <string name="chn_admins_footer">Вы можете добавить администраторов, которые помогут вести канал.</string>
+    <string name="chn_you">Вы</string>
+    <string name="chn_owner">Владелец</string>
+    <string name="chn_admin">Админ</string>
+    <string name="chn_dismiss_admin">Разжаловать администратора</string>
+    <string name="chn_add_admin">Добавить администратора</string>
+    <string name="chn_sign_messages">Подписывать сообщения</string>
+    <string name="chn_sign_footer">Добавлять имена администраторов к их публикациям.</string>
+    <string name="chn_reactions">Реакции</string>
+    <string name="chn_allow_reactions">Разрешить реакции</string>
+    <string name="chn_reactions_footer">Разрешить подписчикам ставить реакции на публикации канала.</string>
+    <string name="chn_removed_users">Удалённые пользователи</string>
+    <string name="chn_removed_header">УДАЛЁННЫЕ ПОЛЬЗОВАТЕЛИ</string>
+    <string name="chn_removed_footer">Пользователи, удалённые из канала администраторами, не смогут вернуться по ссылке-приглашению.</string>
+    <string name="chn_add_to_channel">Добавить в канал</string>
+    <string name="chn_delete">Удалить</string>
+    <string name="chn_recent_actions">Недавние действия</string>
+    <string name="chn_no_actions">Здесь пока нет действий</string>
+    <string name="chn_no_actions_sub">За последние 48 часов подписчики и администраторы канала не совершали служебных действий.</string>
+    <string name="chn_act_invited">Вы добавили %1$s</string>
+    <string name="chn_act_joined">%1$s вступил(а) по ссылке-приглашению</string>
+    <string name="chn_act_removed">Вы удалили %1$s</string>
+    <string name="chn_act_left">%1$s покинул(а) канал</string>
+    <string name="chn_act_title">Вы изменили название канала на «%1$s»</string>
+    <string name="chn_act_about">Вы изменили описание канала</string>
+    <string name="chn_act_photo">Вы изменили фото канала</string>
+    <string name="chn_act_promoted">Вы назначили администратором %1$s</string>
+    <string name="chn_act_demoted">Вы сняли администратора %1$s</string>
+    <string name="chn_act_sign_on">Вы включили подписи</string>
+    <string name="chn_act_sign_off">Вы выключили подписи</string>
+    <string name="chn_act_react_on">Вы включили все реакции</string>
+    <string name="chn_act_react_off">Вы выключили реакции</string>
+    <string name="chn_leave_q">Вы действительно хотите покинуть канал %1$s?</string>
+    <string name="chn_leave">Покинуть канал</string>
+    <string name="chn_delete_q">Подождите! Удаление канала удалит всех подписчиков, и все сообщения будут потеряны. Всё равно удалить канал?</string>
+    <string name="chn_delete_channel">Удалить канал</string>
+</resources>

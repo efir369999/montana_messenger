@@ -55,6 +55,20 @@ class ChatInputBar(private val act: MainActivity, val field: EditText, private v
         setOnLongClickListener { if (field.text.isNotBlank()) onSendLater?.invoke(it); onSendLater != null }   // a hold: «Send later» (iOS)
     }
     private val record = RecordKey(c)
+    /**
+     * THE TURNED FEED'S ROW OF BUTTONS (iOS ChatInputBar.Part, MontanaConversation.swift:668-672 and 748-757; rowGroup, 3523-3531; the
+     * author's word 03.10 13:35: «the turned ribbon is the normal one mirrored -- the line of words on top under the bar, the buttons on
+     * the keys»): under the turned feed the page hosts the words at the top and the open bar's row of buttons on the keys, two places of
+     * one bar. This is the row's own place, with the bar's room around it; the page lays it at its foot. It is seen only while the feed
+     * is turned and the bar is open and shown.
+     */
+    val rowBar = LinearLayout(c).apply {
+        orientation = VERTICAL
+        setPadding(dp(16), dp(6), dp(16), dp(8))
+        visibility = View.GONE
+        setOnClickListener { if (!field.hasFocus() && !record.active) showKeys() }   // the room beside the buttons wakes the field too
+    }
+    private var turned = false
 
     init {
         orientation = VERTICAL
@@ -73,14 +87,18 @@ class ChatInputBar(private val act: MainActivity, val field: EditText, private v
             minHeight = dp(TIER)
         }
         plate.background = c.glassPlate().apply { cornerRadius = dp(18).toFloat() }
+        // THE FIELD ROUNDS AS IT GROWS (iOS MTInputField, MontanaBubble.swift:2371-2470: radius min(22, h/2)): a capsule while it holds one
+        // line, 22 once it holds more
+        plate.addOnLayoutChangeListener { v, _, top, _, bottom, _, oldTop, _, oldBottom ->
+            if (bottom - top != oldBottom - oldTop) (v.background as? android.graphics.drawable.GradientDrawable)?.cornerRadius = minOf(dp(22).toFloat(), (bottom - top) / 2f)
+        }
         plate.addView(field, FrameLayout.LayoutParams(MATCH, WRAP))
         plate.addView(emojiInside, FrameLayout.LayoutParams(dp(TIER), dp(TIER), Gravity.BOTTOM or Gravity.END))
 
         sendColumn.addView(send, FrameLayout.LayoutParams(dp(TIER), dp(TIER), Gravity.CENTER))
         sendColumn.addView(record, FrameLayout.LayoutParams(dp(TIER), dp(TIER), Gravity.CENTER))
 
-        addView(fieldRow, lp())
-        addView(actionRow, lp().apply { topMargin = dp(10) })
+        addView(fieldRow, lp())   // the row of buttons takes its place in shape(): under the words, or on the keys while the feed is turned
 
         field.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, d: Int) {}
@@ -97,10 +115,23 @@ class ChatInputBar(private val act: MainActivity, val field: EditText, private v
         shape()
     }
 
+    /** The feed turned, or back (iOS part = newestFirst ? .field : .whole): the row of buttons goes to the keys, or comes home under the words. */
+    fun turn(on: Boolean) { if (turned != on) { turned = on; shape() } }
+    /** The flow came on: the row unfolds at once (iOS flipMark: «composeOpen = true»), and stays the person's own choice after. */
+    fun unfold() { if (!open && !record.active) setOpen(true) }
+    private fun placeRow() { rowBar.visibility = if (turned && open && visibility == View.VISIBLE) View.VISIBLE else View.GONE }
+    /** The row on the keys is this bar's: it hides and shows with it (the selection, a closed conversation, a group that reads). */
+    override fun setVisibility(visibility: Int) {
+        super.setVisibility(visibility)
+        @Suppress("SENSELESS_COMPARISON") if (rowBar != null) placeRow()   // the platform's constructor may ask before the row is born
+    }
+
     private fun shape() {
         (sendColumn.parent as? LinearLayout)?.removeView(sendColumn)
         (unfoldKey.parent as? LinearLayout)?.removeView(unfoldKey)
         (plate.parent as? LinearLayout)?.removeView(plate)
+        (actionRow.parent as? LinearLayout)?.removeView(actionRow)
+        if (turned) rowBar.addView(actionRow, lp()) else addView(actionRow, lp().apply { topMargin = dp(10) })
         fieldRow.removeAllViews(); actionRow.removeAllViews()
         if (open) {
             // the words take the whole upper tier; the room of the emoji key is given back to them
@@ -130,6 +161,7 @@ class ChatInputBar(private val act: MainActivity, val field: EditText, private v
             field.setPadding(dp(14), dp(8), dp(TIER + 4), dp(8))
             actionRow.visibility = View.GONE
         }
+        placeRow()
         syncSend()
         widenTouchTarget()
     }
@@ -192,14 +224,17 @@ class ChatInputBar(private val act: MainActivity, val field: EditText, private v
     private fun widenTouchTarget() {
         record.post {
             val r = Rect()
-            record.getDrawingRect(r)   // the key's own frame, carried into the bar's coordinates below
-            if (runCatching { offsetDescendantRectToMyCoords(record, r) }.isSuccess) {
+            record.getDrawingRect(r)   // the key's own frame, carried into its host's coordinates below
+            // the key stands in the bar, or in the row on the keys while the feed is turned and the bar open: its reach is that host's
+            val host: android.view.ViewGroup = if (turned && open) rowBar else this
+            for (h in listOf(this, rowBar)) { h.touchDelegate = null; if (29 <= android.os.Build.VERSION.SDK_INT) h.systemGestureExclusionRects = emptyList() }
+            if (runCatching { host.offsetDescendantRectToMyCoords(record, r) }.isSuccess) {
                 r.left -= dp(10); r.top -= dp(8); r.right += dp(40); r.bottom += dp(8)
-                touchDelegate = TouchDelegate(r, record)
+                host.touchDelegate = TouchDelegate(r, record)
                 // THE HOLD IS THE KEY'S, NOT THE SYSTEM'S BACK (measured on A1 09.10.2026 21:46 MSK: the key stands at the right edge,
                 // where the platform's back gesture lives; it took the finger -- startBackNavigation -- and the tape was left locked):
                 // the key and its reach are kept out of the system's edge gestures
-                if (29 <= android.os.Build.VERSION.SDK_INT) systemGestureExclusionRects = listOf(Rect(r))
+                if (29 <= android.os.Build.VERSION.SDK_INT) host.systemGestureExclusionRects = listOf(Rect(r))
             }
         }
     }
@@ -389,7 +424,7 @@ class ChatInputBar(private val act: MainActivity, val field: EditText, private v
         const val LOCK_WAY_LIVE = 110f
         const val FLICK = 400f                             // iOS flick, points a second
         const val TIER = 36                                // iOS MontanaOctagon.composeHeight
-        val GLYPH = Color.rgb(204, 204, 204)               // iOS MontanaOctagon.barGlyph
+        val GLYPH = MT.barGlyph               // iOS MontanaOctagon.barGlyph
         const val OPEN_KEY = "composeOpen"
         const val MODE_KEY = "composeMediaMode"            // iOS @AppStorage("composeMediaMode")
     }

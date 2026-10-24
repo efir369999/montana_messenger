@@ -286,7 +286,7 @@ object Playing {
 class MiniFace(ctx: Context, private val bar: Boolean) : LinearLayout(ctx) {
     private val h = dp(44)
     val play = FrameLayout(ctx)
-    private val playGlyph = ctx.icon(R.drawable.ic_play_fill, Color.rgb(204, 204, 204))
+    private val playGlyph = ctx.icon(R.drawable.ic_play_fill, MT.barGlyph)
     private val plate = FrameLayout(ctx)
     private val fill = View(ctx).apply { setBackgroundColor(Color.argb(41, 255, 255, 255)) }
     private val title = ctx.text("", 15f).apply { singleLineEllipsis() }
@@ -397,7 +397,7 @@ class MiniFace(ctx: Context, private val bar: Boolean) : LinearLayout(ctx) {
 
     private fun square(res: Int, onTap: () -> Unit) = FrameLayout(context).apply {
         background = context.glassPlate(oval = true)
-        addView(context.icon(res, Color.rgb(204, 204, 204)), FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
+        addView(context.icon(res, MT.barGlyph), FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
         pressable(onTap)
     }
 
@@ -485,8 +485,8 @@ class MusicPage(private val act: MainActivity) {
     private val rows = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 0, 0, act.dp(140)) }
     private val empty = act.text(act.getString(R.string.no_music), 17f, MT.gray, center = true)
     private val plus = FrameLayout(act)
-    private val spinner = ProgressBar(act).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(Color.rgb(204, 204, 204)); visibility = View.GONE }
-    private val plusGlyph = act.icon(R.drawable.ic_plus, Color.rgb(204, 204, 204))
+    private val spinner = ProgressBar(act).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(MT.barGlyph); visibility = View.GONE }
+    private val plusGlyph = act.icon(R.drawable.ic_plus, MT.barGlyph)
     private val faces = HashMap<String, MiniFace>()
     private var lastRing: String? = null
     private var lastPlaying = false

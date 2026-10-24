@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- THE COIN CHAINS' WRITES (CoinTx.WRITES): false in the repository and in every build of the test emulators. The build for the
+     owner's own test of the coins turns it on in its copy alone (tools/wsl-build.sh apk with the coin-writes switch); its APK is
+     named Montana-(commit)-coins-(abi).apk and is never installed on MontanaA, MontanaB or MontanaC (the owner's decision 17.10.2026). -->
+<resources>
+    <bool name="coin_writes">false</bool>
+</resources>

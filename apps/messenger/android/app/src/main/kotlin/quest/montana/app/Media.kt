@@ -345,12 +345,13 @@ object Media {
 
     // ── receiving ──
 
-    /** Every media letter of theirs still without its file is asked for (once at a time), and «delivered» follows the file. */
+    /** Every media letter of theirs still without its file is asked for (once at a time), and «delivered» follows the file; a letter of
+     *  mine without its file -- one my other device sent, landed here by the mirror -- is asked for quietly (Windows post.rs 953-963). */
     fun fetchPending(c: Context) {
         val auto = autoAllowed(c)
-        for (ch in Book.all()) for (m in ch.msgs) if (!m.mine && m.text.startsWith(Marks.MEDIA) && m.file == null) {
+        for (ch in Book.all()) for (m in ch.msgs) if (m.text.startsWith(Marks.MEDIA) && m.file == null && !m.mid.startsWith("arc:")) {
             // a file that waits for a tap still has its manifest read: its small face, its kind and its group stand at once
-            if (auto) fetch(c, ch.ref, m.mid, m.text) else if (m.meta == null) learn(ch.ref, m.mid, m.text)
+            if (auto) fetch(c, ch.ref, m.mid, m.text, quiet = m.mine) else if (m.meta == null) learn(ch.ref, m.mid, m.text)
         }
     }
 
@@ -389,7 +390,9 @@ object Media {
         fetch(c, ref, m.mid, m.text, manual = true)
     }
 
-    fun fetch(c: Context, ref: String, mid: String, text: String, manual: Boolean = false) {
+    /** `quiet`: a file of a letter another device of these words took, or of my own -- assembled here, never receipted, its pieces left on
+     *  the nodes for the other devices (iOS: the receiver never drops them; the sender does after the receipt). */
+    fun fetch(c: Context, ref: String, mid: String, text: String, manual: Boolean = false, quiet: Boolean = false) {
         if (!manual && !autoAllowed(c)) { Log.d("Montana", "media: automatic download is off -- the attachment waits for a tap"); return }
         synchronized(inFlight) {
             val now = System.currentTimeMillis()
@@ -406,7 +409,7 @@ object Media {
                     // THE ROW STAYS, THE SENDER IS TOLD (iOS MontanaChatStore 4635-4649, atom aeabdc576605): a cargo every store called
                     // gone is knowledge -- the bubble stands without its file and the sender hears it once; a silent store is no verdict
                     val chunks = man.optJSONArray("chunks")
-                    if (!Groups.isKey(ref) && chunks != null && (0 until chunks.length()).any { Wire.isGone(chunks.getJSONObject(it).optString("bid")) }) Post.cargoLost(ref, mid)
+                    if (!quiet && !Groups.isKey(ref) && chunks != null && (0 until chunks.length()).any { Wire.isGone(chunks.getJSONObject(it).optString("bid")) }) Post.cargoLost(ref, mid)
                     return@Thread
                 }
                 Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.let { it.file = dest.path; it.meta = man.toString() } }
@@ -415,7 +418,7 @@ object Media {
                 // picture, since Stickers.add names a sticker by its own bytes and moves a known one to the front.
                 if (man.optString("n") == Stickers.CARD) runCatching { Stickers.add(c, dest.readBytes(), dest.extension) }
                 // a group's copy was receipted by the group (Groups.handle), and its pieces serve every other member of it
-                if (!Groups.isKey(ref)) { Post.receiptFor(ref, mid); drop(man) }
+                if (!Groups.isKey(ref) && !quiet) { Post.receiptFor(ref, mid); drop(man) }
             } catch (e: Exception) { Log.w("Montana", "media fetch: ${e.javaClass.simpleName}") }
             finally { synchronized(inFlight) { inFlight.remove(mid) } }
         }.start()
@@ -457,12 +460,15 @@ object Media {
         return tmp.renameTo(dest)
     }
 
-    /** The file is assembled — the node's pieces serve nobody (iOS dropChunks), nor the ones a neighbour brought. */
+    /**
+     * The file is assembled — the pieces a neighbour brought to this phone's own store serve nobody now (iOS dropChunks, MontanaDeliveryEngine
+     * 1805-1812: MontanaBlobStore, the disk alone). The node's pieces live out their own week: iOS 2305 never drops a media letter's pieces
+     * from the nodes (MontanaWakePush.dropChunks has no caller), and the person's other devices take the same file from them by the mirror's
+     * word -- Android used to drop them from every store the moment its own copy stood (D8).
+     */
     private fun drop(man: JSONObject) {
         val a = man.optJSONArray("chunks") ?: return
-        val bids = JSONArray(); for (i in 0 until a.length()) bids.put(a.getJSONObject(i).optString("bid"))
-        Blobs.drop((0 until bids.length()).map { bids.optString(it) })
-        for (door in Doors.ordered("blob")) Wire.post(door, "/blob-drop", JSONObject().put("bids", bids), 8000)   // the drop goes to every store (iOS 1638)
+        Blobs.drop((0 until a.length()).map { a.getJSONObject(it).optString("bid") })
     }
 
     // ── showing ──

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The coin chains of version 3 (iOS Localizable.xcstrings zh-Hans). -->
+<resources>
+    <string name="coin_pending_title">正在确认转账</string>
+    <string name="coin_pending_sub">可用余额充足。该转账已有一条待确认记录，请勿重复发送。</string>
+    <!-- The first irreversible record asks the person (the owner's word 17.10.2026); Android's own words, iOS has no such dialog. -->
+    <string name="coin_genesis_title">开启您的币链？</string>
+    <string name="coin_genesis_body_before">这是您的币在 Montana 网络公共账本中的第一条记录（GENESIS），无法撤销或删除。它将公布您账本中的 %1$s %2$s。此后本手机会自动记录您铸造的币（MINT）并接收别人转给您的币（RECV）。币链未开启时，无法发送或接收币。</string>
+    <string name="coin_genesis_body_after">这是您的币在 Montana 网络公共账本中的第一条记录（GENESIS），无法撤销或删除。它以零开启币链：您账本中的币（%1$s %2$s）将通过铸造记录（MINT）在密钥时间范围内逐步确认。此后本手机会自动记录您铸造的币并接收别人转给您的币（RECV）。币链未开启时，无法发送或接收币。</string>
+    <string name="coin_genesis_open">开启币链</string>
+    <string name="coin_genesis_later">暂不</string>
+    <string name="coin_chain_open_button">开启币链</string>
+    <string name="coin_book_loading">正在从网络加载币账…</string>
+    <string name="coin_chain_asking">正在与网络核对…</string>
+    <string name="coin_chain_closed">币链尚未开启</string>
+    <string name="coin_confirmed">网络已确认：%1$s %2$s</string>
+</resources>

@@ -138,7 +138,11 @@ object Meeting {
     fun nameIn(link: String): String? {
         var t = link.trim()
         val low = t.lowercase()
-        val form = listOf("https://pzr.me/", "https://www.pzr.me/", "http://pzr.me/", "http://www.pzr.me/", "pzr.me/", "www.pzr.me/", "montana://")
+        // the name's web form first (iOS webNamePrefix, montana.quest/n/ -- the standing card link of a person who holds a name): Android
+        // knew only pzr.me and the scheme, and the link an iPhone hands out opened nothing here
+        val form = listOf("https://montana.quest/n/", "https://www.montana.quest/n/", "http://montana.quest/n/", "http://www.montana.quest/n/",
+            "montana.quest/n/", "www.montana.quest/n/",
+            "https://pzr.me/", "https://www.pzr.me/", "http://pzr.me/", "http://www.pzr.me/", "pzr.me/", "www.pzr.me/", "montana://")
             .firstOrNull { low.startsWith(it) } ?: return null
         t = t.substring(form.length).substringBefore('?').substringBefore('#').removeSuffix("/")
         if (t.isEmpty() || '/' in t) return null
@@ -149,8 +153,16 @@ object Meeting {
 
     // ── the meeting ──
 
-    /** Meets whatever was handed over; the network is asked, so this runs off the main thread. */
+    /**
+     * Meets whatever was handed over; the network is asked, so this runs off the main thread. A GROUP'S INVITATION LINK (iOS 2235: the
+     * owner's card link with «?jg=<group>.<mark>») meets the owner first, then asks to join (Groups.askJoin, the word «jn»).
+     */
     fun meet(c: Context, link: String): Outcome {
+        val o = meetOnce(c, link)
+        if (o is Outcome.Opened) Groups.joinMark(link)?.let { (g, mark) -> Groups.askJoin(o.ref, g, mark) }
+        return o
+    }
+    private fun meetOnce(c: Context, link: String): Outcome {
         nameIn(link)?.let { return meetName(it) }
         val inv = invite(link)
         val payload: ByteArray = if (inv != null) {

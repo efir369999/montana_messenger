@@ -267,6 +267,18 @@ object NamePlane {
         MainThread.post { android.widget.Toast.makeText(Book.ctx, Book.ctx.getString(R.string.name_lost), android.widget.Toast.LENGTH_LONG).show() }
     }
 
+    /**
+     * THE NAME LEAVES WITH THE ACCOUNT (iOS MontanaNamePlane.releaseHeld, MontanaFirstContact.swift:576-583; App Review 5.1.1(v)): the
+     * name this phone holds is released at its keeper as a new name releases the one before it -- with the next link of its chain,
+     * while the words still derive it. Off the main thread: it asks the keeper.
+     */
+    fun releaseHeld() {
+        if (!Names.isHeld()) return
+        val master = master() ?: return
+        val held = Names.nextRenewal(master) ?: return
+        release(held.first, held.second)
+    }
+
     /** The name held before a new one: released with a link nobody has seen; a keeper out of reach leaves it to lapse by its term. */
     private fun release(slot: ByteArray, link: ByteArray) {
         val (code, obj) = askFirst("/name-drop", JSONObject().put("slot", Wire.hex(slot)).put("link", Wire.hex(link)))

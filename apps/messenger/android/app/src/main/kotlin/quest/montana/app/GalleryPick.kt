@@ -245,7 +245,7 @@ fun galleryPick(act: MainActivity, onPick: (List<Uri>) -> Unit, onCamera: () -> 
     }
     val note = c.text(c.getString(R.string.gp_no_access), 15f, MT.gray, center = true).apply { visibility = View.GONE }
     val spinner = ProgressBar(c)
-    val glyph = Color.rgb(204, 204, 204)   // iOS MontanaOctagon.barGlyph
+    val glyph = MT.barGlyph   // iOS MontanaOctagon.barGlyph
     val back = FrameLayout(c).apply {
         background = c.glassPlate(oval = true); contentDescription = c.getString(R.string.back)
         addView(c.icon(R.drawable.ic_arrow_back_ios_new, glyph), FrameLayout.LayoutParams(c.dp(20), c.dp(20), Gravity.CENTER))

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The privacy page (iOS PrivacyView, MontanaSettings.swift:1702-1946; Localizable.xcstrings en). -->
+<resources>
+    <string name="pr_photos">Photos</string>
+    <string name="pr_full_access">Full Access</string>
+    <string name="pr_limited_access">Limited Access</string>
+    <string name="pr_none">None</string>
+    <string name="pr_show_coins">Show my coins</string>
+    <string name="pr_show_coins_sub">Your name and coins stand in the Montana top for everyone, and your correspondents see your coins. Off, you are not in the top.</string>
+    <string name="pr_delete_account">Delete account</string>
+    <string name="pr_delete_account_q">Delete account?</string>
+    <string name="pr_delete_account_msg">Your account is deleted: this device erases your 24-word identity, and your public name leaves Montana\'s nodes. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.</string>
+    <string name="pr_delete_account_coins">This account holds %1$s coins. They stay with its 24 words and come back only with them.</string>
+</resources>

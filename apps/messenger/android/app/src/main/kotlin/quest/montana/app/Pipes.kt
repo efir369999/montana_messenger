@@ -27,10 +27,47 @@ object Wire {
     fun minute() = System.currentTimeMillis() / 60_000
     fun day() = System.currentTimeMillis() / 86_400_000
 
-    /** The letter body key: SHA-256("mt-pipe-key" ‖ 0 ‖ secret ‖ W_LE). */
-    fun bodyKey(secret: ByteArray, w: Long) = sha(d("mt-pipe-key"), secret, le8(w))
-    /** The conversation's daily label at the node. */
-    fun convW(secret: ByteArray, day: Long) = hex(sha(d("mt-wake-conv"), secret, le8(day)))
+    // ── THE PIPE SECRET WALKS WITH THE CLIENT'S DAY (iOS MTNodeWire.pipeSecret, 21.10.2026; Canon, «The secret a tag stands on walks
+    // with the window»): pipe_secret(D + 1) = SHA-256("mt-pipe-ratchet" ‖ 0 ‖ pipe_secret(D)), one step a day, standing still through
+    // WALK_ANCHOR_DAY (28.10.2026 UTC) -- up to that day every key is byte for byte the one the earlier builds derive, so they still
+    // meet, and from 29.10 each day stands one hash further down a one-way walk. The day is the UTC day of the client's clock; a day
+    // is clamped to MAX_WALK steps, so a forged time costs a bounded walk and opens nothing. Every day's value is made from the
+    // established secret: a day missed, a letter of an older day, a device long offline -- each reads by its own day. ──
+    const val WALK_ANCHOR_DAY = 20754L
+    const val MINUTES_PER_DAY = 1440L
+    private const val MAX_WALK = 36_600L
+    /** secret (hex) -> the steps walked and the value there: a walk goes on from where it stood */
+    private val walked = HashMap<String, Pair<Long, ByteArray>>()
+    fun pipeSecret(secret: ByteArray, day: Long): ByteArray {
+        val steps = (day - WALK_ANCHOR_DAY).coerceIn(0L, MAX_WALK)
+        if (steps == 0L) return secret
+        synchronized(walked) {
+            val k = hex(secret)
+            var at = 0L
+            var value = secret
+            walked[k]?.let { (s, v) -> if (s <= steps) { at = s; value = v } }
+            while (at < steps) { value = domained("mt-pipe-ratchet", value); at++ }
+            if (walked.size >= 256) walked.clear()
+            walked[k] = steps to value
+            return value
+        }
+    }
+    /** The raw seal key of the set: SHA-256("mt-pipe-key" ‖ 0 ‖ step_secret ‖ W_LE) -- held by the canon vectors. */
+    fun sealKey(stepSecret: ByteArray, w: Long) = sha(d("mt-pipe-key"), stepSecret, le8(w))
+    /** The letter body key of a minute: the seal key under the pipe secret of that minute's day (iOS MTNodeWire.bodyKey). */
+    fun bodyKey(secret: ByteArray, w: Long) = sealKey(pipeSecret(secret, Math.floorDiv(w, MINUTES_PER_DAY)), w)
+    /** The canon's daily tag over the day's secret: SHA-256("mt-wake-conv" ‖ 0 ‖ day_secret ‖ W_LE) -- held by the canon vectors apart
+     *  from the walk that feeds it, as sealKey is for bodyKey (iOS MTNodeWire.convTag). */
+    fun convTag(daySecret: ByteArray, day: Long) = hex(sha(d("mt-wake-conv"), daySecret, le8(day)))
+    /** The conversation's daily label at the node: both sides derive it from the pipe secret of that day (iOS MTNodeWire.convW). */
+    fun convW(secret: ByteArray, day: Long) = convTag(pipeSecret(secret, day), day)
+    /** THE ROOT OF A CONVERSATION (iOS MTNodeWire.convRoot): SHA-256("mt-conv-root" ‖ 0 ‖ the established secret). The blind of a coin
+     *  SEND and the author field of a letter stand on it from the day after WALK_ANCHOR_DAY, so the walk can erase that secret. */
+    fun convRoot(secret: ByteArray) = domained("mt-conv-root", secret)
+    /** The key an item laid on the day stands on: the root past the anchor, the established secret up to it (iOS itemKey). */
+    fun itemKey(secret: ByteArray, day: Long = day()): ByteArray = if (day > WALK_ANCHOR_DAY) convRoot(secret) else secret
+    /** The keys a received item may stand on, the root first: the sender's day is its own clock (iOS itemKeys). */
+    fun itemKeys(secret: ByteArray): List<ByteArray> = listOf(convRoot(secret), secret)
     /** The daily label of a handed-out invitation (the first letter's box). */
     fun rdvConvW(inv: ByteArray, day: Long) = hex(sha(d("mt-rdv-wake"), inv, le8(day)))
     /** The subscription tag standing in for the device at the node. */
@@ -90,23 +127,71 @@ object Wire {
         return null
     }
 
-    /** mid‖0‖text‖0‖name‖0‖glyph‖0… — up to seven fields, the last one whole (iOS parseLetterFields). */
-    fun fields(plain: ByteArray, from: Int = 0): List<String> {
-        val out = ArrayList<String>(7)
+    /** mid‖0‖text‖0‖name‖0‖glyph‖0… — up to seven fields, or eight with the author's (iOS parseLetterFields). */
+    fun fields(plain: ByteArray, from: Int = 0, count: Int = 7): List<String> {
+        val out = ArrayList<String>(count)
         var i = from
-        while (out.size < 7) {
+        while (out.size < count) {
             var z = i
             while (z < plain.size && plain[z] != 0.toByte()) z++
             out.add(String(plain, i, z - i, Charsets.UTF_8))
             if (z >= plain.size) break
             i = z + 1
         }
-        while (out.size < 7) out.add("")
+        while (out.size < count) out.add("")
         return out
     }
 
     /** One size for every envelope — the node cannot tell letter lengths apart (iOS envelopeSize). */
     const val ENVELOPE = 2048
+
+    // ── THE LETTER'S AUTHOR IS THE PERSON, NOT THE DEVICE (iOS MTNodeWire.authorTag / withAuthor / authorHolds 99-125, iOS 2191+):
+    // the eighth field names the author by the person's words -- HMAC-SHA-256 under the branch «mt-letter-author» of the master
+    // seed, over the pipe's secret, the letter's name and its words, cut to sixteen bytes. Every device of the person reads its own
+    // letter as its own whatever road brought it; the correspondent holds sixteen bytes it can neither open nor make; an older
+    // build reads seven fields and none of this. ──
+    /** The fields before the author: mid, text, name, glyph, quote, quoted mid, card. */
+    const val AUTHOR_FIELDS = 7
+    fun authorTag(key: ByteArray, secret: ByteArray, mid: String, text: String): String =
+        Base64.encodeToString(Hkdf.hmac(key, d("mt-letter-author") + secret + mid.toByteArray() + byteArrayOf(0) + text.toByteArray())
+            .copyOf(16), Base64.NO_WRAP)
+    /** The body with the author's field: every field before it closed and the empty ones written, so the tag stands eighth
+     *  whatever the letter carries; a body that would outgrow the envelope rides without it. */
+    fun withAuthor(body: ByteArray, key: ByteArray?, secret: ByteArray, mid: String, text: String, day: Long = day()): ByteArray {
+        if (key == null || key.size != 32) return body
+        var b = body
+        if (b.isNotEmpty() && b.last() != 0.toByte()) b += byteArrayOf(0)
+        var closed = b.count { it == 0.toByte() }
+        while (closed < AUTHOR_FIELDS) { b += byteArrayOf(0); closed++ }
+        if (closed != AUTHOR_FIELDS) return body
+        // past WALK_ANCHOR_DAY the field stands on the conversation's root, not on the pipe's secret (iOS withAuthor -> itemKey)
+        b += authorTag(key, itemKey(secret, day), mid, text).toByteArray() + byteArrayOf(0)
+        return if (b.size <= ENVELOPE) b else body
+    }
+    /** Whether a letter's author field is this person's: the tag made again under this person's key, compared in constant time. */
+    fun authorHolds(tag: String, key: ByteArray?, secret: ByteArray, mid: String, text: String): Boolean {
+        if (key == null || key.size != 32 || tag.isEmpty()) return false
+        val got = runCatching { Base64.decode(tag, Base64.DEFAULT) }.getOrNull()?.takeIf { it.size == 16 } ?: return false
+        // the root first, then the established secret while it is held: the sender's day is its own clock (iOS authorHolds)
+        return itemKeys(secret).any { k -> MessageDigest.isEqual(got, Base64.decode(authorTag(key, k, mid, text), Base64.DEFAULT)) }
+    }
+    /** The author field's vectors, made outside this code from the iOS formula (tools/author_vectors.py); a drift leaves letters unsigned. */
+    val authorAgreesWithCanon: Boolean by lazy {
+        val key = ByteArray(32) { 0x61 }
+        val secret = ByteArray(32) { 0x44 }
+        val mid = "t1792249000000-ABCD"
+        val text = "Привет, Montana 🌍"
+        val head = mid.toByteArray() + byteArrayOf(0) + text.toByteArray() + byteArrayOf(0) + "Alice".toByteArray() + byteArrayOf(0, 0)
+        val card = head + byteArrayOf(0, 0) + "{\"u\":\"https://montana.quest\",\"t\":\"Montana\"}".toByteArray()
+        val ok = authorTag(key, secret, mid, text) == "WcOqZdlxhSpBEZYKgbjSSg=="
+            && authorTag(key, secret, mid, "") == "AZIK29ezKo70HRREQwXbzA=="
+            && withAuthor(head, key, secret, mid, text).let { it.size == 82 && hex(sha(it)) == "5fe43b371f456a08e30ffe5d736c866719e26f5702fcf4da3ca7145ca39b358d" }
+            && hex(sha(withAuthor(card, key, secret, mid, text))) == "bd472907cb6fb8d2d13a4291f80f976fdb836658b4ecd1f3d9d53ad1ea112d9c"
+            && authorHolds("WcOqZdlxhSpBEZYKgbjSSg==", key, secret, mid, text) && !authorHolds("WcOqZdlxhSpBEZYKgbjSSg==", key, secret, mid, "x")
+            && walkAgreesWithCanon
+        Log.d("Montana", "author_canon " + if (ok) "ok" else "DISAGREES — letters ride unsigned")
+        ok
+    }
 
     /** The iOS vectors (MontanaWakePush.agreesWithCanon, MTPipe body key). */
     fun agreesWithCanon(): Boolean {
@@ -114,10 +199,40 @@ object Wire {
         return subId("mt-conv-Q7", "mtAddrZ93kLmNoPq") == "e5438bfedc8b1fdcdadfb9f4d3995fac7722c0074f3a20ccd3e911ce5beb35de"
             && subId("ab", "c") == "a279974b24ff1b84299330076b5f5858684d56733458de21b152aa8521c7a230"
             && subId("a", "bc") == "c04b7d58e4c7aaca35800d119fd6fde021f95f7d3c9438e3ca46cd855afe6a8a"
-            && convW(s32, 29737) == "43eaf2811da7947166d4e851e52c4ab89e09c8c92247370d3c734ef08ca1e6ea"
-            && convW(s32, 29738) == "f5f2941435d76c0a80dd229722ef42382695e88fdd1fabf89d71f317bef05430"
-            && hex(bodyKey(s32, 0x0102030405060708)) == "e55fbc1e0f95c4fe012b476c4dd1a51c9455e24641248f4f1557ed57f8c14f35"
+            // the wake canon's days lie past the anchor: they hold the tag over a day's secret, apart from the walk (iOS convTag)
+            && convTag(s32, 29737) == "43eaf2811da7947166d4e851e52c4ab89e09c8c92247370d3c734ef08ca1e6ea"
+            && convTag(s32, 29738) == "f5f2941435d76c0a80dd229722ef42382695e88fdd1fabf89d71f317bef05430"
+            && hex(sealKey(s32, 0x0102030405060708)) == "e55fbc1e0f95c4fe012b476c4dd1a51c9455e24641248f4f1557ed57f8c14f35"
             && hex(bodyKey(s32, 1000)) == "e25542e65a84d1a5b5c72a13172ecb62319c18f21a59978a53e7dac2c22a966a"
+            && walkAgreesWithCanon
+    }
+
+    /**
+     * THE WALK'S VECTORS, the iOS ones (MTPipe.agreesWithCanon 198-237): the anchor day is the established secret, the next two are
+     * one and two steps down; the body key and the daily label follow the walk; the root and the author field stand on the root past
+     * the anchor and on the secret on it, and a reader holds both. They reject a walk that never steps, one that steps once whatever
+     * the distance, one that steps by the day's number, one without the domain -- a drift of one byte and no letter leaves.
+     */
+    val walkAgreesWithCanon: Boolean by lazy {
+        val s32 = ByteArray(32) { it.toByte() }
+        val a = WALK_ANCHOR_DAY
+        val person = ByteArray(32) { 0x33 }
+        val rootTag = authorTag(person, convRoot(s32), "m", "t")
+        val anchorTag = authorTag(person, s32, "m", "t")
+        val ok = pipeSecret(s32, a).contentEquals(s32)
+            && hex(pipeSecret(s32, a + 1)) == "5dcfd87692fcd444a4344d756dfa37abe670d2eb252aa9b402646be97cf3c50a"
+            && hex(pipeSecret(s32, a + 2)) == "0c31775e80ae463de61fecee68bee8bb4ebbcee8e6b2045f8714e93ef18cb1b0"
+            && hex(bodyKey(s32, (a + 2) * MINUTES_PER_DAY)) == "925378a4bb83e7137cbb1f8cdaba8b79fc37e30d3159e4158da6e0fee8518bb5"
+            && convW(s32, a) == "d29425fcf807a325b74d8bb017420cfe2250cc47e8bdc6351f6006cd4a6bdc9b"
+            && convW(s32, a + 2) == "c665fdca8978b9c6e54b9a4f16a06ccac657ba7da259df0a8f3e2550d7c2d518"
+            && hex(convRoot(s32)) == "d9c3e7f533da2d0ed10b6729601c478ab29d1b0cafed60443113ee6a63824e11"
+            && itemKey(s32, a).contentEquals(s32) && itemKey(s32, a + 1).contentEquals(convRoot(s32))
+            && rootTag != anchorTag
+            && withAuthor(ByteArray(0), person, s32, "m", "t", a + 1).contentEquals(ByteArray(7) + rootTag.toByteArray() + byteArrayOf(0))
+            && withAuthor(ByteArray(0), person, s32, "m", "t", a).contentEquals(ByteArray(7) + anchorTag.toByteArray() + byteArrayOf(0))
+            && authorHolds(rootTag, person, s32, "m", "t") && authorHolds(anchorTag, person, s32, "m", "t")
+        Log.d("Montana", "walk_canon " + if (ok) "ok" else "DISAGREES")
+        ok
     }
 
     /**
@@ -308,6 +423,9 @@ object Marks {
     const val RING = "\u200B\u200BRG:"   // + {v, s, n, t}: a call as a letter (iOS ringMark) — it rings, never a row
     const val MISSED = "\u200B\u200BMC:"   // + {v, s}: the caller's «missed call» (iOS missedCallMark) — it lands as a call row
     const val CALL = "\u200B\u200BCL:"   // + {v, inc, dur, miss}: a call's row, laid by each phone for itself (iOS callMark), never sent
+    /** The keeper's word: their phone kept the letter I deleted for everyone (iOS deleteKeptMark, MTLevelAccess 16.10) \u2014 + the wire name. */
+    const val DELETE_KEPT = "\u200B\u200BDK:"
+    const val KEEP = "\u200B\u200BKP:"   // + {w, \u2026}: the keeping of a copy (iOS keepMark, MTKeeping) \u2014 answered there, never a row
     /** A word of the wire, not a row of the feed. */
     fun isService(t: String) = t.startsWith("​") || t.startsWith("⁣")
     /**
@@ -317,8 +435,16 @@ object Marks {
      */
     private val SILENT = listOf(READ, DELIVERED, TYPING, REACTION, AVATAR, NAME, ABOUT, "​​PG:", "​​QC:", DELETE,
         CONVDEL_MARK, "​​DF:", "​​WH:", "​​PA:", "​​EX:", "​​CG:", Presence.WATCH, PLAYED,
-        Presence.APP, EDIT, PIN_MARK, "​​SP:", "​​WL:", SAME_ASK, SAME_YES, "​​PX:", LiveDraft.MARK)
+        Presence.APP, EDIT, PIN_MARK, "​​SP:", "​​WL:", SAME_ASK, SAME_YES, "​​PX:", LiveDraft.MARK, KEEP, DELETE_KEPT)
     fun isSilent(t: String) = SILENT.any { t.startsWith(it) } || ChessLetter.silent(t)
+    /**
+     * A CONTROL WORD IS HEARD ONCE (iOS isControlMarker + controlSeen, MontanaDeliveryEngine 220-231): the receipts, the read mark and
+     * every word of the wire but a call's, a draft's, a ring, a media letter, a voice and a sticker -- a copy of one already heard is
+     * dropped unanswered (the presence word's K covers a receipt that was lost).
+     */
+    private val CONTROL = listOf(READ, DELIVERED) + listOf("TY", "RC", "AV", "NM", "AB", "PG", "QC", "DL", "DF", "WH", "PA", "EX", "CG",
+        "WA", "PL", "AP", "ED", "PN", "SP", "WL", "SM", "SY", "PX", "KP", "DK").map { "​​$it:" } + CONVDEL_MARK
+    fun isControl(t: String) = CONTROL.any { t.startsWith(it) }
 
     /** A letter's name: t<birth ms>-<UUID> (iOS ChatStore.mintMid). */
     private var lastMs = 0L
@@ -352,10 +478,14 @@ class Msg(
     var lp: String? = null,   // the link's card (iOS linkPreview, LinkPreview.kt): the body's seventh field
     val from: String? = null,   // a group's speaker (iOS Message.senderRef, Groups.speakerName); null in a pipe's own feed
     var peerReact: String? = null,   // the correspondent's one answer on this letter (iOS Message.peerReact): a new one replaces it
+    // THE AUTHOR FIELD A CORRESPONDENT'S LETTER RODE WITH (iOS Message.authorTag, ContentView 3668-3671), kept as it came: this phone
+    // can neither open nor make it, and gives it back with the conversation to the phone that restores their words (Keeping)
+    var au: String? = null,
 ) {
     fun json(): JSONObject = JSONObject().put("m", mid).put("t", text).put("o", mine).put("at", at).put("s", state).put("e", edited)
         .put("qt", qt ?: "").put("qm", qm ?: "").put("r", JSONArray(reactions)).put("mr", myReact ?: "")
         .put("f", file ?: "").put("mm", meta ?: "").put("sa", statusAt).put("h", heard).put("lp", lp ?: "").put("sr", from ?: "").put("pr", peerReact ?: "")
+        .apply { au?.let { put("au", it) } }   // absent = none: an older reader of the store skips the key
 
     /** The moment the letter's rung was reached, or its birth (iOS Message.statusMoment). */
     val statusMoment: Long get() = if (statusAt > 0) statusAt else at
@@ -379,7 +509,8 @@ class Msg(
             o.optString("qt").ifEmpty { null }, o.optString("qm").ifEmpty { null },
             o.optJSONArray("r")?.let { a -> MutableList(a.length()) { a.getString(it) } } ?: mutableListOf(),
             o.optString("mr").ifEmpty { null }, o.optString("f").ifEmpty { null }, o.optString("mm").ifEmpty { null },
-            o.optLong("sa"), o.optBoolean("h"), o.optString("lp").ifEmpty { null }, o.optString("sr").ifEmpty { null }, o.optString("pr").ifEmpty { null })
+            o.optLong("sa"), o.optBoolean("h"), o.optString("lp").ifEmpty { null }, o.optString("sr").ifEmpty { null }, o.optString("pr").ifEmpty { null },
+            o.optString("au").ifEmpty { null })
     }
 }
 
@@ -441,6 +572,8 @@ object Book {
     fun listen(l: () -> Unit) { synchronized(listeners) { listeners.add(l) } }
     fun unlisten(l: () -> Unit) { synchronized(listeners) { listeners.remove(l) } }
     private fun changed() { val ls = synchronized(listeners) { listeners.toList() }; MainThread.post { ls.forEach { it() } } }
+    /** A store beside the book changed (SavedMessages): the screens that listen draw again. */
+    fun poke() = changed()
 
     private fun sec(): MutableMap<String, ByteArray> {
         secrets?.let { return it }
@@ -509,6 +642,7 @@ object Book {
     fun edit(ref: String, work: (Chat) -> Unit) {
         val born = ArrayList<Msg>()
         var renamed: String? = null
+        var gone: Set<String> = emptySet()
         synchronized(lock) {
             ensure(); val c = chats[ref] ?: return
             // THE ONE ROAD FROM A ROW TO THE ARCHIVE (iOS archiveRow): rows are born in many places here, so the archive reads them where
@@ -524,17 +658,63 @@ object Book {
                 if ((had == null && (!media || m.file != null)) || (had == false && media && m.file != null)) born.add(m)
             }
             if (c.name != name0) renamed = c.name
+            // A ROW THAT LEFT THE FEED LEAVES ITS NAME BEHIND (iOS ChatStore.bury, the tombstones): every road that takes a letter away
+            // passes here, so its name is buried here — a copy, a correspondent giving the conversation back, my other device, never
+            // stand it again (MTKeeping layGivenBack, landOwn)
+            val now = c.msgs.mapTo(HashSet(c.msgs.size * 2)) { it.mid }
+            if (!now.containsAll(before.keys)) gone = before.keys.filterTo(HashSet()) { it !in now }
         }
+        if (gone.isNotEmpty()) bury(ref, gone)
         for (m in born) Archive.row(ref, m)
         renamed?.let { Archive.nameHead(ref, it) }
         changed()
+    }
+
+    // ── THE GRAVES OF A CONVERSATION (iOS ChatStore.buried): the names of its letters taken away, kept beside the feed ──
+    private const val GRAVES = "mt.graves."   // + ref, in the device vault
+    private val graveLock = Any()
+    private fun graves(ref: String): Set<String> = DeviceVault.get(GRAVES + ref)?.let { raw ->
+        runCatching { JSONArray(String(raw, Charsets.UTF_8)).let { a -> (0 until a.length()).mapTo(HashSet()) { a.optString(it) } } }.getOrNull()
+    } ?: emptySet()
+    private fun bury(ref: String, mids: Collection<String>) = synchronized(graveLock) {
+        val all = LinkedHashSet<String>()
+        DeviceVault.get(GRAVES + ref)?.let { raw -> runCatching { JSONArray(String(raw, Charsets.UTF_8)).let { a -> for (i in 0 until a.length()) all.add(a.optString(i)) } } }
+        all.addAll(mids)
+        DeviceVault.set(GRAVES + ref, JSONArray(all.toList().takeLast(4096)).toString().toByteArray())
+    }
+    /** Whether a letter of this conversation was taken away here: its name is buried (iOS ChatStore.buried). */
+    fun buried(ref: String, mid: String) = mid in graves(ref)
+    /** A letter taken away before it stood here -- my other device's deletion, a blocked person's row -- never stands (iOS bury). */
+    fun buryName(ref: String, mid: String) = bury(ref, listOf(mid))
+
+    /**
+     * THE LETTERS A CORRESPONDENT GAVE BACK (iOS ChatStore.layGivenBack, MTKeeping 1053-1084): rows later than the feed's last join it by
+     * edit's one road — the archive takes each — and nothing is receipted, rung or counted unread: it is history the person already lived.
+     * A letter both sides hold is known by its second, its side and its words; a letter erased here stays erased whoever gives it back.
+     */
+    fun layGivenBack(ref: String, rows: List<Msg>): Int {
+        if (rows.isEmpty() || chat(ref) == null || PeerSafety.isBlocked(ref) || PeerSafety.isBarred(ref)) return 0
+        val dead = graves(ref)
+        var added = 0
+        edit(ref) { c ->
+            fun sig(m: Msg) = (m.at / 1000).toString() + "@" + (if (m.mine) "1" else "0") + "@" + m.text
+            val had = c.msgs.mapTo(HashSet()) { it.mid }
+            val seen = c.msgs.mapTo(HashSet()) { sig(it) }
+            val add = rows.filter { m ->
+                val wire = m.mid.removePrefix(Keeping.RESTORED_GIVEN)
+                sig(m) !in seen && m.mid !in had && wire !in had && m.mid !in dead && wire !in dead
+            }
+            c.msgs.addAll(add); c.msgs.sortBy { it.at }
+            added = add.size
+        }
+        return added
     }
 
     /** A chat deleted here (and its pipe with it — iOS MTPipeBook.forget), with every pipe folded into it. */
     fun forget(ref: String) {
         val dead = listOf(ref) + SamePair.folded(ref)
         synchronized(lock) {
-            ensure(); chats.remove(ref); DeviceVault.delete("chat:$ref"); saveIndex()
+            ensure(); chats.remove(ref); DeviceVault.delete("chat:$ref"); DeviceVault.delete(GRAVES + ref); saveIndex()
             val m = sec(); dead.forEach { m.remove(it); Meeting.forget(it) }
             val o = JSONObject(); m.forEach { (k, v) -> o.put(k, Base64.encodeToString(v, Base64.NO_WRAP)) }
             DeviceVault.set(SECRETS, o.toString().toByteArray())
@@ -660,21 +840,58 @@ object Book {
     /** The person leaves: every correspondence leaves with them. */
     fun wipe() {
         synchronized(lock) {
-            ensure(); chats.keys.forEach { DeviceVault.delete("chat:$it") }; chats.clear()
+            ensure(); chats.keys.forEach { DeviceVault.delete("chat:$it"); DeviceVault.delete(GRAVES + it) }; chats.clear()
             DeviceVault.delete(INDEX); DeviceVault.delete(SECRETS); secrets = null
         }
         File(ctx.filesDir, "faces").deleteRecursively()
         DeviceVault.delete(Post.OUTBOX)
-        Meeting.wipe(); SamePair.wipe(); Groups.wipe(); PeerLinks.wipe(); PasswordVault.wipe()
+        Meeting.wipe(); SamePair.wipe(); Groups.wipe(); ChannelViews.wipe(); PersonChain.forget(); PeerLinks.wipe(); PasswordVault.wipe(); ControlSeen.wipe()
         CoinBook.setAside()   // the book of a person forgotten leaves with them (iOS MTCoinPlace.setAside)
         // NOTHING OF THE PERSON OUTLIVES THEM ON THIS PHONE BUT WHAT THE WORDS ALONE REOPEN (iOS SeedScope.forget; the absolute privacy,
         // 29.07): the history was sealed under the words before they left (Archive.sealForForget, iOS sealForForget) and stays in
         // Montana/Chats; everything else goes — the chats' files, the letters set for later, the words still waiting to leave, the
         // pins and marks of the chats, the card, the read marks, the walls held, the stickers and the grounds.
         Media.wipe(ctx); Scheduled.wipe(); ChatMarks.wipe(); MsgPins.wipe(); BusinessCard.forget(); Post.PeerRead.wipe()
-        Board.wipe(); Stickers.wipe(ctx); ChatWall.wipe()
+        Board.wipe(); Stickers.wipe(ctx); ChatWall.wipe(); Twin.wipe()
         changed()
     }
+}
+
+/**
+ * THE CONTROL WORDS ALREADY HEARD (iOS ChatStore.controlSeen 916-932): their names, «mid:» + the envelope's name, the newest 4 000, kept
+ * sealed in the device vault as iOS keeps «controlMids» -- a copy the box brings again, or the sender's knock again, is answered once.
+ * Written a few seconds after the last word, not at every receipt.
+ */
+object ControlSeen {
+    private const val KEY = "controlMids"
+    private const val LIMIT = 4000
+    private var order: ArrayDeque<String>? = null
+    private val set = HashSet<String>()
+    private var due = false
+    private fun ensure(): ArrayDeque<String> = order ?: ArrayDeque<String>().also { o ->
+        val a = DeviceVault.get(KEY)?.let { runCatching { JSONArray(String(it, Charsets.UTF_8)) }.getOrNull() }
+        if (a != null) for (i in 0 until a.length()) {
+            val k = a.optString(i)
+            if (k.isNotEmpty() && set.add(k)) o.addLast(k)
+        }
+        order = o
+    }
+    /** True when this word was heard before; else it is noted now. */
+    @Synchronized fun seen(mid: String): Boolean {
+        val o = ensure()
+        val k = "mid:$mid"
+        if (k in set) return true
+        set.add(k); o.addLast(k)
+        while (LIMIT < o.size) set.remove(o.removeFirst())
+        if (!due) { due = true; MainThread.later(5_000L, Runnable { save() }) }
+        return false
+    }
+    @Synchronized private fun save() {
+        due = false
+        val o = order ?: return
+        DeviceVault.set(KEY, JSONArray(o.toList()).toString().toByteArray(Charsets.UTF_8))
+    }
+    @Synchronized fun wipe() { order = null; set.clear(); DeviceVault.delete(KEY) }
 }
 
 object MainThread {
@@ -761,6 +978,7 @@ object Post {
             red?.let { CoinSend.hold(it, chat) }
             return
         }
+        Twin.sent(to, mid, text, qt, qm, lp, quiet)   // the person's other devices hear what was sent (iOS enqueue 963-972)
         Thread { flush() }.start()
     }
     /** A letter taken off the road unsent: it leaves the queue (a coin letter whose day is over, CoinSend.expire). */
@@ -797,13 +1015,53 @@ object Post {
         return DeviceVault.set(OUTBOX, a.toString().toByteArray())
     }
 
-    /** Every waiting letter knocks once more; the ones a door boxed leave the queue. */
-    fun flush() {
+    /**
+     * Every waiting letter knocks once more; the ones a door boxed leave the queue. ONE WALK OF THE QUEUE AT A TIME (iOS drainAll on
+     * one queue): every send started a walk of its own, and a burst -- the thirty-two parts of a copy handed around the ring (Keeping)
+     * -- walked the whole queue thirty-two times at once, every letter knocked as often (17.10.2026: 2143 «held» heard for 16 slots).
+     * The walks follow one another, and every caller returns after its own: a funeral flushed before its pipe is forgotten
+     * (buryChat) has left by then; the walks after the first find the queue already emptied of what it boxed.
+     */
+    private val flushLock = Any()
+    fun flush() = synchronized(flushLock) { flushOnce() }
+    /**
+     * A STATE OF MINE, NOT A WORD (iOS isState, MontanaDeliveryEngine 1650): my name, my face, my words about myself, my page's ground --
+     * each waits for the receiver's receipt like a letter, for that receipt is what writes «they hold it», and lives an hour.
+     */
+    private fun isState(t: String) = t.startsWith(Marks.NAME) || t.startsWith(Marks.AVATAR) || t.startsWith(Marks.ABOUT) || t.startsWith(PageGround.MARK)
+    /** The tries that ring (iOS MontanaDeliveryEngine 396-409): the first, then fewer and fewer; the others knock quietly. */
+    private fun rings(tries: Int) = tries == 0 || tries == 2 || tries == 5 || tries == 9 || 11 <= tries
+    private const val REKNOCK_MS = 300_000L    // a letter a node holds is knocked again, quietly, every five minutes (iOS 1777-1788)
+    private const val STATE_MS = 3_600_000L    // a state lives an hour (iOS 1555-1563)
+    private const val RING_MS = 45_000L        // a call as a letter, forty-five seconds (iOS 1482-1486)
+    private fun flushOnce() {
         val items = synchronized(outLock) { outbox() }
         val done = mutableSetOf<String>()
+        val moved = HashMap<String, JSONObject>()   // the items whose tries or node's word changed: written back below
+        val now = System.currentTimeMillis()
         for (i in 0 until items.length()) {
             val o = items.getJSONObject(i)
             val to = o.getString("to"); val mid = o.getString("m")
+            // A KEEPING WORD LIVES WHILE IT CAN STILL MEAN SOMETHING (iOS MontanaDeliveryEngine 1476-1479, MTKeeping.expired): a question an
+            // hour, every other word two days -- it leaves the queue unsent, and no row turns red for it
+            val born = Marks.birthMs(mid)
+            if (born != null && Keeping.expired(o.optString("t"), (now - born) / 1000.0)) { done.add(mid); continue }
+            // THE LETTER WAITS FOR THE RECEIVER, NOT FOR THE NODE (iOS MontanaDeliveryEngine 4-18, confirmDelivered 992-1042): a node box
+            // keeps a letter one day and the sixty-four newest of a label, so a letter that left this queue at the node's first «taken»
+            // was lost to a phone away longer than that. A letter a node took stays, its row «sent», and is knocked again quietly every
+            // five minutes -- which renews the box's day -- until the receipt (markDelivered) or the peer's word naming it (K) takes it
+            // away; a state after its hour, a ring after its breath, a letter after the carriage's thirty days.
+            val acked = o.optLong("ak", 0L)
+            val text0 = o.optString("t")
+            if (text0.startsWith(Marks.RING) && born != null && RING_MS <= now - born) { done.add(mid); continue }
+            if (0L < acked) {
+                if (isState(text0) && born != null && STATE_MS <= now - born) { done.add(mid); continue }
+                if (born != null && CARRY_MS <= now - born) { done.add(mid); continue }   // the carriage is over: the row stays «sent»
+                if (now - o.optLong("lt", acked) < REKNOCK_MS) continue
+            } else {
+                val tries = o.optInt("tr", 0)
+                if (0 < tries && now - o.optLong("lt", 0L) < minOf(20_000L, 1000L shl minOf(tries - 1, 5))) continue   // the backoff (iOS 1260)
+            }
             val secret = Book.secret(to)
             if (secret == null) {
                 // THE LETTER HAS NO ROAD (iOS MTRefusal.noRoad, the one door into red, ContentView 3083-3111): the pipe is gone — nobody to
@@ -820,6 +1078,8 @@ object Post {
             // the words of the wire (receipts, reads, name, face) wait for the pipe to stand (iOS first_hold).
             val intro = Meeting.first(to)
             val text = o.getString("t")
+            val tries = o.optInt("tr", 0)
+            val quiet = o.optBoolean("q") || 0L < acked || !rings(tries)   // a knock again never rings again
             val sent = if (intro != null) {
                 // the question «do we already share a pipe?» is itself the silent first letter that carries the ciphertext (iOS MTSamePair.ask)
                 if (Marks.isService(text) && !text.startsWith(Marks.MEDIA) && !text.startsWith(Marks.VOICE) && !text.startsWith(Marks.SAME_ASK)) false
@@ -829,17 +1089,25 @@ object Post {
                     val laid = words != null && Meeting.root(to)?.let { root -> Channels.layFirst(secret, root, intro.first, mid, letterHead(mid, words)) } == true
                     // a name has no invitation's box: its first letters ride the point of the name's root alone (iOS outgoingTag 502-510)
                     if (intro.second.isEmpty()) laid
-                    else words != null && Meeting.knockFirst(secret, intro.first, intro.second, mid, words, Marks.isSilent(text) || o.optBoolean("q"))
+                    else words != null && Meeting.knockFirst(secret, intro.first, intro.second, mid, words, Marks.isSilent(text) || quiet)
                 }
-            } else knock(secret, mid, text, o.optString("qt").ifEmpty { null }, o.optString("qm").ifEmpty { null }, o.optString("lp").ifEmpty { null }, o.optBoolean("q"))
+            } else knock(secret, mid, text, o.optString("qt").ifEmpty { null }, o.optString("qm").ifEmpty { null }, o.optString("lp").ifEmpty { null }, quiet)
             if (sent) {
-                done.add(mid)
-                Book.edit(SamePair.root(to)) { c -> c.msgs.find { it.mid == mid }?.advance(1) }   // a letter queued on a pipe since folded settles in the conversation
-                Groups.copyHeld(mid)   // a group's copy has no row of the pipe: the node holds it, and the group's row moves (iOS copyHeld)
-            } else if (Marks.birthMs(mid)?.let { CARRY_MS <= System.currentTimeMillis() - it } == true) {
+                // A SILENT WORD SETTLES ON THE NODE'S «TAKEN», A DELETION TOO -- NEVER A STATE (iOS settlesOnNode, MontanaDeliveryEngine 1650)
+                val settles = (Marks.isSilent(text) || o.optBoolean("q") || text.startsWith(Marks.DELETE)) && !isState(text)
+                if (settles) done.add(mid) else { if (acked == 0L) o.put("ak", now); o.put("lt", now); moved[mid] = o }
+                if (acked == 0L) {
+                    Book.edit(SamePair.root(to)) { c -> c.msgs.find { it.mid == mid }?.advance(1) }   // a letter queued on a pipe since folded settles in the conversation
+                    Groups.copyHeld(mid)   // a group's copy has no row of the pipe: the node holds it, and the group's row moves (iOS copyHeld)
+                }
+            } else if (0L < acked) {
+                o.put("lt", now); moved[mid] = o   // no door took the knock again: the next one in five minutes
+            } else if (Marks.birthMs(mid)?.let { CARRY_MS <= System.currentTimeMillis() - it } != true) {
+                o.put("tr", tries + 1); o.put("lt", now); moved[mid] = o
+            } else {
                 // THE CARRIAGE IS THE ONE END, AND NEVER A CLOCK'S RED FOR A LETTER A NODE TOOK (iOS carryDays and neverLeft,
-                // MontanaDeliveryEngine 315-316, 1354-1366; atom 4d96053c1090): a letter a door boxed left this queue at once, still
-                // sent; one no node ever took in thirty days turns red by that word -- it never left this phone -- and leaves the queue.
+                // MontanaDeliveryEngine 315-316, 1354-1366; atom 4d96053c1090): a letter a node took stays «sent» to the carriage's end;
+                // one no node ever took in thirty days turns red by that word -- it never left this phone -- and leaves the queue.
                 // A coin letter never reaches here: its day ends first (CoinSend.expire, the author's word 09.10 11:3x).
                 done.add(mid); Groups.copyLost(mid)
                 Log.d("Montana", "send_failed m=" + mid.take(8) + " — no node ever took it in the carriage's thirty days")
@@ -849,10 +1117,18 @@ object Post {
                 red?.let { CoinSend.hold(it, chat) }
             }
         }
-        if (done.isEmpty()) return
+        if (done.isEmpty() && moved.isEmpty()) return
+        val waiting = moved.values.count { 0L < it.optLong("ak", 0L) }
+        if (0 < waiting || done.isNotEmpty()) Log.d("Montana", "queue_walk left=" + done.size + " held_by_node=" + waiting + " of=" + items.length())
         synchronized(outLock) {
             val a = outbox(); val keep = JSONArray()
-            for (i in 0 until a.length()) a.getJSONObject(i).let { if (it.getString("m") !in done) keep.put(it) }
+            for (i in 0 until a.length()) a.getJSONObject(i).let { item ->
+                val m = item.getString("m")
+                if (m in done) return@let
+                // what this walk learned of the item -- the node's word, the tries -- joins the item as it stands now
+                moved[m]?.let { w -> for (f in listOf("ak", "lt", "tr")) if (w.has(f)) item.put(f, w.get(f)) }
+                keep.put(item)
+            }
             keepOutbox(keep)
         }
     }
@@ -879,13 +1155,21 @@ object Post {
             if (body.size + tail.size <= Wire.ENVELOPE) body += tail
         }
         if (body.size > Wire.ENVELOPE) return false
+        // THE PERSON SIGNS THE LETTER AS ITS AUTHOR (iOS sealLetterEnvelope 1500-1501): the box's envelope carries the eighth field
+        val signed = Wire.withAuthor(body, MontanaSeed.authorKey?.takeIf { Wire.authorAgreesWithCanon }, secret, mid, text)
+        Log.d("Montana", "letter_author mid=" + mid.take(8) + if (signed !== body) " signed" else " unsigned")
         // the live road beside the box: laid before the nodes under the pipe's tag (iOS sendP2P) -- WORDS, NEVER A LONG LETTER'S
         // REFERENCE: iOS lays the letter's own text there (sendP2P(text:), MontanaDeliveryEngine.swift:1478, 1502) and seals the
         // reference into the envelope alone (sealLetterEnvelope, 1574). An iPhone files what the live road brings as a row: a
         // reference filed so stood as a loading row and was healed into the face's base64 as text (MontanaChatStore.swift:3295-3307;
         // A1 to an iPhone 10.10.2026 22:03-22:28, the author's word: make it never repeat). A long letter rides the box alone.
-        if (!text.startsWith(Marks.LONG)) Channels.lay(secret, mid, body)
-        val plain = body + ByteArray(Wire.ENVELOPE - body.size)
+        // THE LIVE FRAME CARRIES THE AUTHOR TOO (an extension of this side, compatible: a reader of seven fields reads none of it,
+        // as with the box's): two devices of one person hold every pipe and both listen at its tag, so a word one of them laid there
+        // reached the other as the correspondent's -- its name, its face, its answer to my own question (17.10.2026, MontanaA and
+        // MontanaB on one seed: «🐆 Irbis» named the correspondent on both sides). iOS lays seven fields there (MontanaPhoneNode
+        // 899-917); with the eighth this side tells its own device's word wherever it came from.
+        if (!text.startsWith(Marks.LONG)) Channels.lay(secret, mid, signed)
+        val plain = signed + ByteArray(Wire.ENVELOPE - signed.size)
         val cw = Wire.convW(secret, Wire.day())
         // a service word asks the node for a silent push (iOS wake: body["silent"]), judged by its words, not by a long letter's reference
         val silent = Marks.isSilent(text0) || quiet
@@ -901,6 +1185,83 @@ object Post {
     }
     private operator fun ByteArray.plus(b: Int) = this + byteArrayOf(b.toByte())
 
+    /**
+     * A WORD IN A PIPE OF ITS OWN (iOS MTKeeping.knock 815-826 over MTNodeWire.knockLetter): a slot's, the light's, the seed's devices' —
+     * boxed like every letter of a pipe, the envelope mid‖0‖words‖0‖0‖0 sealed afresh at every door, under the sender's name the pipe
+     * asks for (the store yields no letter to the name that laid it); the first door that boxes it ends the walk.
+     */
+    fun knockWord(secret: ByteArray, text: String, sender: String, silent: Boolean): Boolean {
+        val mid = UUID.randomUUID().toString().uppercase()
+        val body = mid.toByteArray() + 0 + text.toByteArray() + 0 + 0 + 0
+        if (body.size > Wire.ENVELOPE) return false
+        val plain = body + ByteArray(Wire.ENVELOPE - body.size)
+        val cw = Wire.convW(secret, Wire.day())
+        val from = Wire.subId(cw, sender)
+        for (door in Signal.writeOrder("box")) {
+            val env = Wire.seal(Wire.bodyKey(secret, Wire.minute()), plain) ?: return false
+            val (code, _) = Wire.post(door, "/wake", JSONObject().put("conv", cw).put("from_id", from).put("mid", mid)
+                .put("env", Base64.encodeToString(env, Base64.NO_WRAP)).apply { if (silent) put("silent", true) })
+            if (code == 200) { Signal.doorAnswered(door); return true }
+            Signal.doorFailed(door, code)
+        }
+        return false
+    }
+
+    /**
+     * THE ONE PICKUP OF PIPES OF THEIR OWN (iOS MontanaWakePush.pickup 2565-2715 over a BoxEar of named pipes): each name's labels across
+     * the box's term go to every store, every row opens under its label's secret and is handed to `keep` as the landing reads it — «c» the
+     * name, «m» the envelope's mid, «t» its words; only a row `keep` says is in hand is confirmed to the node, which then removes it.
+     * The seed's own pipe asks under this device's name (Archive.twinSid), every other under the person's. The count kept.
+     */
+    fun pickup(pipes: Map<String, ByteArray>, keep: (Map<String, String>) -> Boolean): Int {
+        val twin = MontanaSeed.twin ?: return 0
+        val w0 = Wire.day()
+        val secretOf = HashMap<String, ByteArray>()
+        val nameOf = HashMap<String, String>()
+        for ((name, s) in pipes) for (w in (w0 - 8)..(w0 + 1)) { val cw = Wire.convW(s, w); secretOf[cw] = s; nameOf[cw] = name }
+        val subs = secretOf.keys.toList()
+        var kept = 0
+        val taken = ArrayList<String>()
+        for (chunk in subs.chunked(128)) {
+            val page = JSONObject().put("subs", JSONArray(chunk))
+                .put("sids", JSONArray(chunk.map { if (nameOf[it] == Archive.TWIN_PIPE) Archive.twinSid(it) else Wire.subId(it, twin) }))
+            val seen = HashSet<String>()
+            val rows = mutableListOf<JSONObject>()
+            for (door in Doors.ordered("box")) {
+                val (code, text) = Wire.post(door, "/fetch", page, 6000)
+                if (code != 200 || text == null) continue
+                val ls = runCatching { JSONObject(text).optJSONArray("letters") }.getOrNull() ?: continue
+                for (i in 0 until ls.length()) ls.getJSONObject(i).let { if (seen.add(it.optString("m"))) rows.add(it) }
+            }
+            for (l in rows) {
+                val cw = l.optString("c")
+                val secret = secretOf[cw] ?: continue
+                val name = nameOf[cw] ?: continue
+                val sealed = runCatching { Base64.decode(l.optString("e"), Base64.DEFAULT) }.getOrNull() ?: continue
+                val plain = Wire.openBoxed(sealed, secret, l.optLong("at")) ?: continue
+                val f = Wire.fields(plain)
+                if (f[0].isEmpty() || f[1].isEmpty()) continue
+                if (keep(mapOf("c" to name, "m" to f[0], "t" to f[1]))) { kept++; l.optString("m").takeIf { it.isNotEmpty() }?.let { taken.add(it) } }
+            }
+        }
+        confirm(taken)
+        return kept
+    }
+
+    /**
+     * THE ROWS IN HAND ARE CONFIRMED, AND THE STORES ASKED AT ONCE, ONLY THE LIVING ONES (iOS MontanaWakePush.swift:2381-2399, 2155, atom
+     * fea4e68ea0da; 21.09 measured 13:50:13→13:50:23 on the tablet: a walk door by door cost every burial ten seconds to two doors dead on
+     * that network, and the drain stood behind it). One deadline for all; a burial is a cleanup, never delivery, so it never waits in line
+     * behind a door that rests.
+     */
+    private fun confirm(mids: List<String>) {
+        if (mids.isEmpty()) return
+        val body = JSONObject().put("mids", JSONArray(mids))
+        val doors = Doors.ordered("box")
+        val awake = doors.filter { Signal.doorAlive(it) }   // the one door book (Presence.kt, object Signal)
+        for (door in (awake.ifEmpty { doors })) Thread { Wire.post(door, "/box-del", body, 5000) }.start()
+    }
+
     /** mid‖0‖text sealed under a fresh key, laid on the node under SHA-256 of the seal (iOS blobIdHex); the reference once per letter. */
     private fun sealLong(mid: String, text: String): String? {
         Prefs.str("longRef.$mid", "").takeIf { it.isNotEmpty() }?.let { return it }
@@ -914,7 +1275,7 @@ object Post {
     }
 
     /** The words behind a long letter's reference: the words, null — later (no door answered), "" — gone for good. */
-    private fun fetchLong(text: String): String? = fetchLongV(text).first
+    internal fun fetchLong(text: String): String? = fetchLongV(text).first
 
     /** The words, and whether every store said the cargo is gone (iOS askBlob's verdict) when there are none yet. */
     private fun fetchLongV(text: String): Pair<String?, Boolean> {
@@ -1072,6 +1433,7 @@ object Post {
         SamePair.askUnasked()
         Book.refs().filter { SamePair.merged(it) == null }.forEach { announce(it) }   // a folded pipe only forwards
         Media.fetchPending(Book.ctx)
+        runCatching { Twin.walk() }   // the mirror's words that are due ride to the other devices; words held for an unknown pipe land
         Thread { Media.drainIntents(Book.ctx) }.start()   // a file whose pieces did not land goes out again (iOS 1675), never ahead of the letters
         flush()
     }
@@ -1091,11 +1453,19 @@ object Post {
             val s = Book.secret(ref) ?: continue
             for (w in (w0 - 8)..(w0 + 1)) { val cw = Wire.convW(s, w); secretOf[cw] = s; chatOf[cw] = ref }
         }
+        // THE PIPES OF THEIR OWN BESIDE EVERY CORRESPONDENCE (iOS fetchBox 2501-2502, restash 3108-3110): the slots this phone keeps
+        // (Keeping) and the seed's devices (Archive) — their rows are those files' own, never a letter of the feed
+        val ownOf = HashMap<String, String>()
+        for ((name, s) in Keeping.listening() + Archive.twinListening()) {
+            for (w in (w0 - 8)..(w0 + 1)) { val cw = Wire.convW(s, w); secretOf[cw] = s; ownOf[cw] = name }
+        }
         val subs = secretOf.keys.toList()
         if (subs.isEmpty()) return
         val taken = mutableListOf<String>()
         for (chunk in subs.chunked(128)) {
-            val page = JSONObject().put("subs", JSONArray(chunk)).put("sids", JSONArray(chunk.map { Wire.subId(it, twin) }))
+            // the seed's own pipe names each device apart: the store yields no letter to the sid that laid it (iOS BoxEar 2553-2560)
+            val page = JSONObject().put("subs", JSONArray(chunk))
+                .put("sids", JSONArray(chunk.map { if (ownOf[it] == Archive.TWIN_PIPE) Archive.twinSid(it) else Wire.subId(it, twin) }))
             val seen = HashSet<String>()
             val rows = mutableListOf<JSONObject>()
             // THE READ SWEEPS EVERY STORE of the network's list: a letter lies on the one node the writer elected (iOS 1638)
@@ -1110,20 +1480,14 @@ object Post {
                 val secret = secretOf[cw] ?: continue
                 val sealed = runCatching { Base64.decode(e, Base64.DEFAULT) }.getOrNull() ?: continue
                 val plain = Wire.openBoxed(sealed, secret, l.optLong("at")) ?: continue
-                val ok = invOf[cw]?.let { inv -> first(plain, inv) } ?: chatOf[cw]?.let { ref -> letter(ref, plain) } ?: false
+                val own = ownOf[cw]
+                val ok = if (own != null) Wire.fields(plain).let { f ->
+                    f[0].isNotEmpty() && f[1].isNotEmpty() && mapOf("c" to own, "m" to f[0], "t" to f[1]).let { row -> Keeping.takes(row) || Archive.twinTakes(row) }
+                } else invOf[cw]?.let { inv -> first(plain, inv) } ?: chatOf[cw]?.let { ref -> letter(ref, plain, secret) } ?: false
                 if (ok && m.isNotEmpty()) taken.add(m)
             }
         }
-        if (taken.isNotEmpty()) {
-            val body = JSONObject().put("mids", JSONArray(taken))
-            // THE STORES ARE ASKED AT ONCE, AND ONLY THE LIVING ONES (iOS MontanaWakePush.swift:2381-2399, 2155, atom fea4e68ea0da,
-            // 21.09 measured 13:50:13→13:50:23 on the tablet: a walk door by door cost every burial ten seconds to two doors dead
-            // on that network, and the drain stood behind it). One deadline for all; a burial is a cleanup, never delivery, so it
-            // never waits in line behind a door that rests.
-            val doors = Doors.ordered("box")
-            val awake = doors.filter { Signal.doorAlive(it) }   // the one door book (Presence.kt, object Signal)
-            for (door in (awake.ifEmpty { doors })) Thread { Wire.post(door, "/box-del", body, 5000) }.start()
-        }
+        confirm(taken)
     }
 
     /**
@@ -1207,6 +1571,7 @@ object Post {
         val fresh = Book.chat(ref) == null
         Book.open(ref, name, MontanaCard.isPermanentRoot(root))
         if (fresh) Thread { readPipeFace(ref, secret) }.start()
+        Twin.heard(ref, mid, text, null, null, null)   // the first letter of a meeting rides to the other devices too (Windows post.rs 1161)
         place(ref, mid, text, name, null, null)
         announce(ref)
         if (fresh) CodeMet.met()   // the page of the code that brought them closes (iOS onMet)
@@ -1217,8 +1582,8 @@ object Post {
     fun fromChannel(ref: String, plain: ByteArray) { letter(ref, plain) }
 
     /** A letter under a pipe's label: a person's word becomes a row, a word of the wire changes the feed. */
-    private fun letter(ref: String, plain: ByteArray): Boolean {
-        val f = Wire.fields(plain)
+    private fun letter(ref: String, plain: ByteArray, secret0: ByteArray? = null): Boolean {
+        val f = Wire.fields(plain, count = 8)
         if (f[0].isEmpty() || f[1].isEmpty()) return false
         // THE ONE QUESTION EVERY INCOMING ROAD ASKS, WHERE THE BYTES ENTER (iOS ChatStore.refuses 874-879, 15.09): the feed's door
         // refused a blocked person's row while their name, face, deletions, edits, answers, pins, a call's ring and the erasure of
@@ -1227,8 +1592,16 @@ object Post {
         // like a block, both here and at the root a folded pipe speaks for.
         if (PeerSafety.isBlocked(ref) || PeerSafety.isBlocked(SamePair.root(ref)) ||
             PeerSafety.isBarred(ref) || PeerSafety.isBarred(SamePair.root(ref))) return true
-        Meeting.firstDone(ref)   // a word sealed under the pipe by the other side: the introduction is over
-        Channels.heard(ref)   // the pipe lives: the moment to name my own address when no road of mine reaches them (iOS ChatStore 3976-3986)
+        // THE PERSON'S OWN LETTER FROM ANOTHER OF THEIR DEVICES (iOS pickup «own» 2692-2694, MontanaDeliveryEngine.landOwn 215-219;
+        // 11.10.2026, No.62): told by its author field as it rode -- a long letter's words change at its landing, its author field
+        // does not -- it is mine, whichever device wrote it, never the correspondent's name, face, banner or receipt
+        val secret = secret0 ?: Book.secret(ref)
+        val own = f[7].isNotEmpty() && secret != null &&
+            Wire.authorHolds(f[7], MontanaSeed.authorKey?.takeIf { Wire.authorAgreesWithCanon }, secret, f[0], f[1])
+        if (!own) {
+            Meeting.firstDone(ref)   // a word sealed under the pipe by the other side: the introduction is over
+            Channels.heard(ref)   // the pipe lives: the moment to name my own address when no road of mine reaches them (iOS ChatStore 3976-3986)
+        }
         var text = f[1]
         if (text.startsWith(Marks.LONG)) {
             // THE LETTER KEEPS ITS OWN HOUR (iOS lbDueNow 2672-2681): a pickup asks only a letter whose hour has come
@@ -1238,11 +1611,111 @@ object Post {
             lbForget(f[0])
             text = words.ifEmpty { text }
         }
-        place(ref, f[0], text, f[2], f[4].ifEmpty { null }, f[5].ifEmpty { null }, f[6].ifEmpty { null })
+        if (own) { landOwn(SamePair.root(ref), f[0], text, f[4].ifEmpty { null }, f[5].ifEmpty { null }, f[6].ifEmpty { null }); return true }
+        // THE BOX GAVE IT TO THIS PHONE, AND THIS PHONE'S CONFIRMATION ERASES IT FOR THE OTHER DEVICES (iOS receive 246-250): it rides to them
+        Twin.heard(ref, f[0], text, f[4].ifEmpty { null }, f[5].ifEmpty { null }, f[6].ifEmpty { null })
+        if (Marks.isControl(text) && ControlSeen.seen(f[0])) return true   // heard before: no second answer, no receipt
+        place(ref, f[0], text, f[2], f[4].ifEmpty { null }, f[5].ifEmpty { null }, f[6].ifEmpty { null }, f[7].ifEmpty { null })
         return true
     }
 
-    private fun place(ref: String, mid: String, text: String, name: String, qt: String?, qm: String?, lp: String? = null) {
+    /**
+     * A LETTER OF THIS PERSON'S OTHER DEVICE LANDS AS MINE (iOS MontanaDeliveryEngine.landOwn 241-275): a row stands on my side, «sent»
+     * until the correspondent's receipt moves it, ringing nothing and receipting nothing. A word that changes no row -- a name, a face, a
+     * receipt, a presence, a call written as a letter -- is that device's word to the correspondent, applied to nobody here; a deletion is
+     * not such a word (iOS landOwnDeletion 277-303): the letter or the whole conversation goes here too, and nothing is said again.
+     */
+    private fun landOwn(ref: String, mid: String, text: String, qt: String?, qm: String?, lp: String?) {
+        // THE PERSON'S OWN GROUP WORD (iOS landOwn 105-111 → MTGroup.handleOwn; Windows land_own → group_own): the group stands on every
+        // device of these words, so what that device said there is done here as it was done there -- never a row of the pipe it rode
+        if (text.startsWith(Groups.MARK)) { Groups.handleOwn(ref, text); return }
+        // MY CALL NOBODY ANSWERED, TOLD FROM ANOTHER DEVICE OF MINE (Windows land_own 755-765): its row stands here too, once a call
+        if (text.startsWith(Marks.MISSED)) { Calls.ownMissed(ref, text.removePrefix(Marks.MISSED)); return }
+        val row = !Marks.isService(text) || text.startsWith(Marks.MEDIA) || text.startsWith(Marks.VOICE) || text.startsWith(Marks.STICKER)
+        if (!row) {
+            when {
+                text.startsWith(Marks.DELETE) -> {
+                    val d = text.removePrefix(Marks.DELETE).removePrefix("mid:")
+                    if (d.isNotEmpty() && Book.chat(ref)?.msgs?.find { it.mid == d }?.let { CoinSend.travels(it) } != true) Book.edit(ref) { c -> c.msgs.removeAll { it.mid == d } }
+                    Log.d("Montana", "rx_own mid=" + mid.take(8) + " a deletion of another device of these words, applied here")
+                }
+                text.startsWith(CONVDEL_MARK) -> {
+                    Book.chat(ref)?.msgs?.toList()?.forEach { CoinSend.release(it, ref) }
+                    buryChat(ref)
+                    Log.d("Montana", "rx_own mid=" + mid.take(8) + " the conversation erased by another device of these words")
+                }
+                else -> Log.d("Montana", "rx_own word of another device of these words -- applied to nobody")
+            }
+            return
+        }
+        if (Book.chat(ref)?.msgs?.any { it.mid == mid } == true) { Log.d("Montana", "rx_own mid=" + mid.take(8) + " the row already stands"); return }
+        // a letter my other device took away stays away, whichever of its two words came first
+        if (Book.buried(ref, mid)) { Log.d("Montana", "rx_own mid=" + mid.take(8) + " buried here -- not landing"); return }
+        val at = Marks.birthMs(mid) ?: System.currentTimeMillis()
+        Book.edit(ref) { c ->
+            if (c.msgs.none { it.mid == mid }) {
+                c.msgs.add(Msg(mid, text, true, at, state = 1, qt = qt, qm = qm, lp = lp?.takeIf { LinkCard.parse(it) != null }))
+                c.msgs.sortBy { it.at }
+            }
+        }
+        Log.d("Montana", "rx_own mid=" + mid.take(8) + " landed from=" + ref.take(10))
+    }
+
+    // ── THE WORDS OF THE PERSON'S OTHER DEVICES (Twin: iOS landMirrored, landOwn; Windows twin.rs land_theirs, land_own, place_quiet) ──
+    /** A landing of a word another device of these words took: it answers nobody -- that device already did. */
+    private val quietLanding = ThreadLocal<Boolean>()
+    private fun quiet() = quietLanding.get() == true
+
+    /**
+     * A CORRESPONDENT'S WORD ANOTHER DEVICE TOOK (iOS receive(mirrored: true); Windows land_theirs 707-723, place_quiet): it lands as if
+     * this phone had taken it -- the row, the count, the banner -- but no receipt, no «kept», no automatic payment and no pieces taken off
+     * the nodes; a blocked or barred person's row is buried, a ring is stale, a control word heard before is heard once.
+     */
+    internal fun placeQuiet(ref: String, mid: String, text: String, qt: String?, qm: String?, lp: String?) {
+        val person = !Marks.isService(text) || text.startsWith(Marks.MEDIA) || text.startsWith(Marks.VOICE) || text.startsWith(Marks.STICKER)
+        if (PeerSafety.isBlocked(ref) || PeerSafety.isBlocked(SamePair.root(ref)) || PeerSafety.isBarred(ref) || PeerSafety.isBarred(SamePair.root(ref))) {
+            if (person) Book.buryName(SamePair.root(ref), mid)
+            return
+        }
+        if (text.startsWith(Marks.RING)) return
+        Meeting.firstDone(ref)
+        // a group's word: done here as there, carried on to nobody, answered to nobody (Windows land_theirs → group_heard_by_twin)
+        if (text.startsWith(Groups.MARK)) { Groups.heardByTwin(SamePair.root(ref), mid, text); return }
+        if (Marks.isControl(text) && ControlSeen.seen(mid)) return
+        quietLanding.set(true)
+        try { place(ref, mid, text, "", qt, qm, lp) } finally { quietLanding.remove() }
+        Log.d("Montana", "twin_rx mid=" + mid.take(8) + " a correspondent's word another device took, landed quietly")
+    }
+
+    /**
+     * THE PERSON'S OWN WORD FROM ANOTHER DEVICE BY THE MIRROR (iOS landOwn 105-169; Windows land_own 728-788): as a word off the pipe with the
+     * author field lands (landOwn), and two things more -- a deletion buries the letter's name even before the letter stands here, so its
+     * later copy never stands, and a row the twin's blocks gave back under the archive's own name takes the wire name instead of standing twice.
+     */
+    internal fun landOwnMirrored(ref0: String, mid: String, text: String, qt: String?, qm: String?, lp: String?) {
+        val ref = SamePair.root(ref0)
+        if (text.startsWith(Marks.DELETE)) {
+            val d = text.removePrefix(Marks.DELETE).removePrefix("mid:")
+            if (d.isNotEmpty() && Book.chat(ref)?.msgs?.none { it.mid == d } == true) Book.buryName(ref, d)
+        }
+        val row = !Marks.isService(text) || text.startsWith(Marks.MEDIA) || text.startsWith(Marks.VOICE) || text.startsWith(Marks.STICKER)
+        if (row && Book.chat(ref)?.msgs?.none { it.mid == mid } == true && !Book.buried(ref, mid)) {
+            var renamed = false
+            Book.edit(ref) { c -> renamed = arcRename(c, mid, text, true, Marks.birthMs(mid) ?: System.currentTimeMillis()) }
+            if (renamed) { Log.d("Montana", "rx_own mid=" + mid.take(8) + " the archive's row takes its wire name"); return }
+        }
+        landOwn(ref, mid, text, qt, qm, lp)
+    }
+
+    /** A row the archive gave back («arc:»: the second, the side, the words) that is this letter takes its wire name (Windows arc_rename). */
+    private fun arcRename(c: Chat, mid: String, text: String, mine: Boolean, at: Long): Boolean {
+        val i = c.msgs.indexOfFirst { it.mid.startsWith("arc:") && it.mine == mine && it.text == text && kotlin.math.abs(it.at - at) < 2_000L }
+        if (i < 0) return false
+        c.msgs[i] = Msg.of(c.msgs[i].json().put("m", mid))
+        return true
+    }
+
+    private fun place(ref: String, mid: String, text: String, name: String, qt: String?, qm: String?, lp: String? = null, au: String? = null) {
         val sid = mid
         // A FOLDED PIPE FORWARDS (iOS MTSamePair): a word still on its way over a pipe folded into a conversation lands in that
         // conversation; a letter of theirs into it says our answer may have been lost, and it is said again.
@@ -1250,7 +1723,7 @@ object Post {
         if (speaksFor != ref && !SamePair.speaksOfPipe(text)) {
             val person = !Marks.isService(text) || text.startsWith(Marks.VOICE) || text.startsWith(Marks.MEDIA) || text.startsWith(Marks.STICKER)
             if (person) SamePair.remind(ref)
-            return place(speaksFor, mid, text, name, qt, qm, lp)
+            return place(speaksFor, mid, text, name, qt, qm, lp, au)
         }
         when {
             // THE CORRESPONDENT NAMED THEIR ADDRESS (iOS ChatStore 3959-3967): into the book, dialled at once, mine named back
@@ -1286,6 +1759,11 @@ object Post {
                 runCatching {
                     val o = JSONObject(text.removePrefix(Marks.ABOUT))
                     PeerAbout.note(ref, o.optString("b"), o.optString("l"), o.optDouble("at", System.currentTimeMillis() / 1000.0))
+                    // the pair's coin key: a SEND of version 3 commits to it (iOS ChatStore 4450, COIN-TX-V3 section 1)
+                    o.optString("k").takeIf { it.length == 64 }?.let { CoinTx.notePeerFrom(ref, it) }
+                    // their balance for the rating, -1 when hidden (iOS ChatStore 4458-4472, MTCoinBoard.note), and their own-words tag
+                    if (o.has("c")) CoinBoard.note(ref, o.optLong("c"), o.optDouble("at", System.currentTimeMillis() / 1000.0))
+                    o.optString("o").takeIf { it.isNotEmpty() }?.let { OwnWords.heard(it, ref) }
                 }
                 Book.edit(ref) {}
                 receipt(ref, sid)
@@ -1308,8 +1786,17 @@ object Post {
             }
             text.startsWith(Marks.DELETE) -> {
                 val d = text.removePrefix(Marks.DELETE).removePrefix("mid:")
+                // THE PERSON KEEPS WHAT OTHERS DELETE (iOS ChatStore 4523-4547, MTLevelAccess.keepDeleted, the author's word 16.10.2026 18:19
+                // MSK): the letter stays, and this phone says so itself -- the sender's phone never believes a deletion that did not happen
+                // here. The level is read before it is asked; a letter not on this phone is not kept, it is buried as before.
+                PersonChain.prime(); CoinBook.warm()
+                val row = Book.chat(ref)?.msgs?.find { it.mid == d }
+                if (LevelAccess.keepsDeleted && row != null) {
+                    Log.d("Montana", "delete_kept mid=" + d.take(14) + " kept by the person's choice (level access) -- the sender is told")
+                    if (!quiet()) send(ref, Marks.mintMid(), Marks.DELETE_KEPT + text.removePrefix(Marks.DELETE))   // the device that took it told
+                }
                 // a coin letter of mine on its way keeps its row whoever asks (iOS deleteLocally 122-128: every door asks first)
-                if (Book.chat(ref)?.msgs?.find { it.mid == d }?.let { CoinSend.travels(it) } != true) Book.edit(ref) { c -> c.msgs.removeAll { it.mid == d } }
+                else if (row?.let { CoinSend.travels(it) } != true) Book.edit(ref) { c -> c.msgs.removeAll { it.mid == d } }
             }
             text.startsWith(Marks.EDIT) -> runCatching {
                 val o = JSONObject(text.removePrefix(Marks.EDIT)); val d = o.getString("sid").removePrefix("mid:"); val tx = o.optString("tx")
@@ -1368,11 +1855,20 @@ object Post {
             // A DRAFT WORD BY THE QUEUE (iOS ChatStore 3884-3898): the daily link, a checkpoint, an ask — read as the live lane reads
             // it (Presence.hear), never a row; the durable link rode here and was dropped unread
             text.startsWith(LiveDraft.MARK) -> Presence.hear(ref, text)
+            // THE KEEPING OF A COPY (iOS ChatStore 4590-4598, MTKeeping 08.10): a question, a yes, a part, a keeper's «held», a release, a
+            // request to give a conversation back and its answer -- answered there, receipted here, never a row
+            text.startsWith(Marks.KEEP) -> { receipt(ref, sid); if (Keeping.once(sid)) Keeping.heard(text, ref) }
+            // THEIR PHONE KEPT WHAT I DELETED FOR EVERYONE (iOS ChatStore 4549-4552, presentKept): told as they said it, never a row;
+            // silent and no state, it settled on the node already -- nothing to receipt
+            text.startsWith(Marks.DELETE_KEPT) -> { Notify.kept(SamePair.root(ref)); Log.d("Montana", "kept_rx from=" + ref.take(10)) }
             Marks.isService(text) && !text.startsWith(Marks.VOICE) && !text.startsWith(Marks.MEDIA) && !text.startsWith(Marks.STICKER) && !text.startsWith(Marks.LONG) -> {}
             // A BLOCKED PERSON'S LETTERS DO NOT REACH THE FEED (iOS MontanaSafety: the block is enforced on every road).
             // A STEP OF A GAME (iOS MTChessLetter.isStep): the board reads it; no bubble, no unread, the closing letter alone rings
             ChessLetter.isStep(text) && !PeerSafety.isBlocked(ref) -> ChessSend.landed(ref, mid, text)
             PeerSafety.isBlocked(ref) -> {}
+            // A LETTER TAKEN AWAY STAYS AWAY (iOS ChatStore 4231-4247): a copy of a letter deleted here -- for everyone, or by the hand --
+            // that a later box copy or the sender's knock brings again is answered and never stands again
+            Book.buried(ref, mid) -> { receipt(ref, sid); Log.d("Montana", "rx mid=" + mid.take(8) + " buried here -- answered, not landing") }
             else -> {
                 var isNew = false
                 if (lp != null) Log.d("Montana", "link card: rides the letter mid=" + mid.take(8))
@@ -1399,9 +1895,14 @@ object Post {
                         had.text = text; had.meta = null
                         Log.d("Montana", "rx_refill m=" + mid.take(8) + " the row stands without its file — the copy's cargo is taken")
                     }
-                    if (had == null) {
-                        val at = Marks.birthMs(mid) ?: System.currentTimeMillis()
-                        c.msgs.add(Msg(mid, text, false, at, qt = qt, qm = qm, lp = lp?.takeIf { LinkCard.parse(it) != null })); c.msgs.sortBy { it.at }
+                    // a row the twin's blocks gave back under the archive's own name is this letter: it takes the wire name (Windows arc_rename)
+                    if (had == null && quiet() && arcRename(c, mid, text, false, minOf(Marks.birthMs(mid) ?: System.currentTimeMillis(), System.currentTimeMillis() + 120_000L))) {
+                        Log.d("Montana", "twin_rx mid=" + mid.take(8) + " the archive's row takes its wire name")
+                    } else if (had == null) {
+                        // a correspondent's claimed birth stands two minutes ahead of this clock at most (iOS DeliveryEngine 89-94)
+                        val now = System.currentTimeMillis()
+                        val at = minOf(Marks.birthMs(mid) ?: now, now + 120_000L)
+                        c.msgs.add(Msg(mid, text, false, at, qt = qt, qm = qm, lp = lp?.takeIf { LinkCard.parse(it) != null }, au = au)); c.msgs.sortBy { it.at }
                         // A LOCKED PHONE DOES NOT READ WHAT IT CANNOT SHOW (iOS placeRow, MontanaChatStore.swift:184 at 2155): a letter
                         // landing with the chat left open while the app itself is backgrounded used to be born read, and the icon never
                         // met it; the open chat alone is not enough, the app must stand before the person too (MTForeground.active).
@@ -1411,10 +1912,15 @@ object Post {
                     }
                 }
                 // A MEDIA LETTER IS ANSWERED ONLY ONCE ITS FILE IS ASSEMBLED (iOS: the receipt waits for the file).
-                if (text.startsWith(Marks.MEDIA)) Media.fetch(Book.ctx, ref, mid, text) else receipt(ref, sid)
+                if (text.startsWith(Marks.MEDIA)) Media.fetch(Book.ctx, ref, mid, text, quiet = quiet()) else receipt(ref, sid)
                 if (isNew && Book.openChat == ref) markRead(ref)
                 if (isNew && Book.openChat != ref) Notify.letter(ref, text)
                 if (isNew) CoinSend.landed(ref, mid, text, qt)   // a coin letter is credited once by its wire name (iOS MTCoinSend)
+                if (isNew) ChatMint.pair(ref)   // every letter of a pair mints its level's coins, once by its name (iOS MTCoinSend.mintLetter)
+                if (isNew) LiveDraft.letterLanded(ref)   // their letter ends their draft, whatever word was lost on the road (iOS 4619-4636)
+                if (isNew && !quiet()) AutoReact.landed(ref, mid, text)   // a chosen person's fresh letter is paid by itself, by one device (iOS MTAutoReact.landed)
+                // A TRANSFER'S TELLING LETTER ASKS THE NODES (iOS ChatStore 4655-4658): the letter credits nothing; the record it names is read from the log
+                if (isNew && text.contains(CoinTx.LINK)) Thread { if (CoinTx.agrees) CoinTx.scan("told", force = true) }.start()
                 if (isNew) takeEdit(ref, mid)?.let { applyEdit(ref, mid, it) }   // the words that outran the letter (iOS takePendingEdit)
             }
         }
@@ -1475,11 +1981,12 @@ object Post {
 
     /** «Delivered» for a letter of theirs — under its own name, so the queue holds one per letter (iOS receiptMid). */
     // THE ONE RECEIPT DOOR also says the letter stands whole here: its name rides every presence word after «K» (iOS HeldLetters.note)
-    private fun receipt(ref: String, mid: String) { HeldLetters.note(ref, mid); send(ref, "rcpt-$mid", Marks.DELIVERED + mid) }
+    private fun receipt(ref: String, mid: String) { if (quiet()) return; HeldLetters.note(ref, mid); send(ref, "rcpt-$mid", Marks.DELIVERED + mid) }
     fun receiptFor(ref: String, mid: String) = receipt(ref, mid)
 
     /** THE ONE DELIVERY DOOR (iOS markDelivered): a receipt, or a presence word naming the letter whole (HeldLetters, «by=word»). */
     fun markDelivered(ref: String, d: String) {
+        unqueue(d)   // THE RECEIPT ENDS THE LETTER'S ROAD (iOS confirmDelivered 992-1042): it leaves the queue only now
         announcedDelivered(ref, d)   // a receipt of my name or my face writes the mark (iOS recordDelivered)
         // a group's copy witnesses the group's row, never a row of the pipe (iOS markDelivered → MTGroup.copyDelivered)
         if (Groups.copyDelivered(d)) return
@@ -1542,9 +2049,19 @@ object Post {
         // the person's eyes; Presence.appShown asks again the moment it is.
         if (!Presence.shown) return
         val c = Book.chat(ref) ?: return
+        // A GROUP'S READ MARK RIDES THE GROUP'S OWN ROAD (iOS sendReadMark → MTGroup.tellRead, the checklist's B.13), on the same moment's
+        // terms: the chat on screen, the app active, coalesced -- a group has no pipe of its own to receipt on
+        if (Groups.isKey(ref)) {
+            Book.edit(ref) { it.unread = 0 }
+            MainThread.later(800, Runnable { if (Book.openChat == ref && Presence.shown) Thread { Groups.tellRead(ref) }.start() })
+            return
+        }
+        // THE OTHER DEVICES READ IT TOO (iOS ChatStore.markRead 3151-3157): said once there was something unread, whether or not the
+        // correspondent hears a word of it
+        val upTo = c.msgs.filter { !it.mine }.mapNotNull { Marks.birthMs(it.mid) }.maxOrNull()
+        if (c.unread > 0 || ChatMarks.handMark(ref)) Twin.readHere(ref, upTo)
         // a blocked person hears no word of mine (iOS sendReadMark 2842: read_skip why=blocked)
         if (!Prefs.bool("readReceiptsEnabled", true) || PeerSafety.isBlocked(ref)) { Book.edit(ref) { it.unread = 0 }; return }
-        val upTo = c.msgs.filter { !it.mine }.mapNotNull { Marks.birthMs(it.mid) }.maxOrNull()
         Book.edit(ref) { it.unread = 0 }
         // A BIRTH IN THE DIARY IS WRITTEN AS THE LETTER BORN THEN IS NAMED THERE (iOS MontanaP2PTrace.shortMs,
         // MontanaChatStore.swift 2067 at 2155, 23.09): the watermark's last eight digits, never the whole hidden address.
@@ -1575,16 +2092,38 @@ object Post {
  */
 object MyAbout {
     const val BIO_LIMIT = 140
-    fun bio() = Prefs.str("profileBio", "").trim().take(BIO_LIMIT)
+    fun bio() = PeerAbout.graphemes(Prefs.str("profileBio", "").trim(), BIO_LIMIT)
     fun link() = PeerAbout.url(Prefs.str("profileLink", ""))?.toString() ?: ""
     private fun tag(b: String, l: String) = if (b.isEmpty() && l.isEmpty()) "0" else Wire.hex(Wire.sha((b + "\n" + l).toByteArray())).take(16)
-    fun sendIfNeeded(ref: String) {
+    /** My words as the presence word's «A» names them (iOS Announced.aboutTag, MontanaDeliveryEngine 452-454): «0», or the wire tag. */
+    fun wireTag(): String { val b = bio(); val l = link(); return if (b.isEmpty() && l.isEmpty()) "0" else Presence.wireTag((b + "\n" + l).toByteArray(Charsets.UTF_8)) }
+    fun sendIfNeeded(ref: String, force: Boolean = false) {
         if (PeerSafety.isBlocked(ref) || SamePair.merged(ref) != null) return
         val b = bio(); val l = link(); val t = tag(b, l)
         val held = Prefs.str("annAbout.$ref", "")
-        if (held == t || (held.isEmpty() && t == "0")) return
+        val now = System.currentTimeMillis() / 1000.0
+        // THE BALANCE RIDES THE SAME WORD (iOS sendAboutIfNeeded, MontanaE2E.swift:1553-1560, 03.10 and 04.10): told again when it changed,
+        // once in ten minutes at most; an owner who hid the coins tells -1 once, so the pair's rating drops the row
+        val coins = CoinBook.said?.let { if (CoinShow.on) it else -1L }
+        val said = runCatching { JSONObject(Prefs.str("aboutCoins.$ref", "")) }.getOrNull()
+        val coinsDue = coins != null && (said?.optLong("c", Long.MIN_VALUE) != coins) && 600 <= now - (said?.optDouble("at", 0.0) ?: 0.0)
+        // MY COIN KEY RIDES THE SAME WORD (iOS sendAboutIfNeeded 1561-1579, COIN-TX-V3 section 1): a SEND of version 3 commits to the
+        // receiver's key, so a correspondent learns mine once -- a coin key's tag, never a name -- and only from the key this run
+        // already derived; told once a key a pipe. Only where the chains are written: a key told while this phone lays no RECV would
+        // draw records it cannot take, and they would come back to their sender a day later.
+        val k = if (CoinTx.WRITES) CoinTx.cachedKeyTag else null
+        val keyDue = k != null && Prefs.str("aboutKey.$ref", "") != k
+        if (held == t && !coinsDue && !keyDue) return
+        if (held.isEmpty() && t == "0" && !force && !coinsDue && !keyDue) return
         Prefs.setStr("annAbout.$ref", t)
-        Post.send(ref, Marks.mintMid(), Marks.ABOUT + JSONObject().put("b", b).put("l", l).put("at", System.currentTimeMillis() / 1000.0))
+        val word = JSONObject().put("b", b).put("l", l).put("at", now)
+        if (coins != null) word.put("c", coins)
+        if (k != null) word.put("k", k)
+        // A TAG ONLY MY WORDS MAKE (iOS MTOwnWords, 06.10): a pair of my own words knows itself, and no coins go between them
+        OwnWords.tag(ref)?.let { word.put("o", it) }
+        Post.send(ref, Marks.mintMid(), Marks.ABOUT + word)
+        if (coins != null) Prefs.setStr("aboutCoins.$ref", JSONObject().put("c", coins).put("at", now).toString())
+        if (k != null) Prefs.setStr("aboutKey.$ref", k)
     }
     fun broadcast() { Book.refs().forEach { sendIfNeeded(it) } }
 }

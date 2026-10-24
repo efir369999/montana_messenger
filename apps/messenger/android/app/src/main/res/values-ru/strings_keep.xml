@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The keeping of a copy with the people one writes to (iOS MTKeeping, Localizable.xcstrings ru). -->
+<resources>
+    <string name="keep_ask_title">Хранить вашу копию у собеседников?</string>
+    <string name="keep_ask_yes">Хранить</string>
+    <string name="keep_ask_not_now">Не сейчас</string>
+    <string name="keep_explained">Копия запечатана вашими 24 словами и разрезана на части. Ваши собеседники хранят части по кругу, каждую — двое: они видят только её размер и когда она меняется, а открыть её не могут. С вашими словами на новом телефоне части возвращаются от них, и каждый отдаёт вашу общую переписку.</string>
+    <string name="keep_header">Копия у собеседников</string>
+    <string name="keep_mine">Хранить мою копию у собеседников</string>
+    <string name="keep_asking">Спрашиваю ваших собеседников…</string>
+    <string name="keep_nobody_yet">Пока никто из собеседников не может хранить часть</string>
+    <string name="keep_not_yet">Пока не хранится</string>
+    <string name="keep_kept_by">Хранят %1$d из %2$d</string>
+    <string name="keep_others">Хранить части для собеседников</string>
+    <string name="keep_stop_part">Больше не хранить эту часть</string>
+    <string name="keep_take_back">Вернуть мою копию от собеседников</string>
+    <string name="keep_parts_in_hand">Частей получено: %1$d из %2$d</string>
+    <string name="keep_restoring_chain">Восстанавливаю цепочку личности</string>
+    <string name="keep_came_back">Копия вернулась</string>
+    <string name="keep_none_came_back">Копия не вернулась</string>
+    <string name="keep_others_footer">Части чужих копий запечатаны: этот телефон не может их открыть, и каждая возвращается только к словам своего владельца.</string>
+    <string name="keep_note_title">Хранение копии</string>
+    <string name="keep_note_body">%1$s хранит на этом телефоне запечатанную часть своей копии (%2$s). Открыть её здесь нельзя.</string>
+    <string name="keep_in_background">История продолжит возвращаться в фоне.</string>
+</resources>

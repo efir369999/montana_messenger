@@ -6,10 +6,10 @@
     <string name="priv_words_sub">只有您持有密钥</string>
     <string name="priv_e2e_title">端到端加密</string>
     <string name="priv_e2e_sub">密钥仅存于您的设备</string>
-    <string name="priv_wallet_title">您自己的钱包地址</string>
-    <string name="priv_wallet_sub">他人通过它给您发消息和 Montana</string>
-    <string name="priv_servers_title">没有服务器</string>
-    <string name="priv_servers_sub">消息由您的手机自己传递</string>
+    <string name="priv_name_title">名字或邀请</string>
+    <string name="priv_name_sub">别人可以凭其中任何一个给你写信</string>
+    <string name="priv_sealed_title">途中密封</string>
+    <string name="priv_sealed_sub">节点只传递它们无法打开的信封</string>
     <string name="creating">正在生成身份…</string>
     <string name="create">创建</string>
     <string name="open_identity">打开身份</string>

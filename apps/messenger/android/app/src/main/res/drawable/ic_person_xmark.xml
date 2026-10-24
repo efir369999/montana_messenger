@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS person.fill.xmark: the person and a cross beside it (Material person, the cross drawn for Montana) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:fillColor="@android:color/white"
+      android:pathData="M10,12c2.21,0 4,-1.79 4,-4s-1.79,-4 -4,-4 -4,1.79 -4,4 1.79,4 4,4zM10,14c-2.67,0 -8,1.34 -8,4v2h16v-2c0,-2.66 -5.33,-4 -8,-4z"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="2" android:strokeLineCap="round"
+      android:pathData="M17.5,7.5L22,12M22,7.5L17.5,12"/>
+</vector>

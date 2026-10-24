@@ -14,6 +14,8 @@ import java.io.File
 
 /** THE WORDS OF A FORWARDED LETTER'S QUOTE ON THE WIRE (iOS Message.forwardedQuote): the same literal both ways, never translated. */
 const val FORWARDED_QUOTE = "↪︎ Forwarded message"
+/** A channel's post forwarded (iOS 2235): the quote's head and the channel's title; older builds draw it as an ordinary quote. */
+const val FORWARDED_FROM_HEAD = "↪︎ Forwarded from "
 
 /** THE PIN'S WORD ON THE WIRE (iOS pinMark): silent, + {sid, txt, op}. */
 const val PIN_MARK = "\u200B\u200BPN:"
@@ -67,8 +69,12 @@ object MsgPins {
  * THE PIN TRAVELS (iOS tellPin: «both see it»): the letter's wire name and its words, «pin» or «unpin», silent on the one
  * delivery road.
  */
-fun tellPin(ref: String, m: Msg, pin: Boolean) =
+fun tellPin(ref: String, m: Msg, pin: Boolean) {
+    // in a group the pin rides the group's own answer (iOS 2235 «sig» with «PN:»): to the owner, who carries it to everyone; Post.send
+    // carries nothing for a group's key, and the pin stayed on this phone alone
+    if (Groups.isKey(ref)) { Groups.signal(ref, PIN_MARK + JSONObject().put("sid", "mid:" + m.mid).put("op", if (pin) "pin" else "unpin")); return }
     Post.send(ref, Marks.mintMid(), PIN_MARK + JSONObject().put("sid", "mid:" + m.mid).put("txt", m.text.take(200)).put("op", if (pin) "pin" else "unpin"))
+}
 
 /** A pin or an unpin of theirs (iOS applyPinFromControl): the letter is found by its wire name, else by its words; a fresh
  * pin tells the person by the app's own banner, unless this chat stands open (iOS presentPinned). */

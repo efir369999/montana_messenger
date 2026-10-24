@@ -23,18 +23,25 @@ private fun reachable(adding: String?): List<Chat> = chatRows().filter {
     Book.secret(SamePair.root(it.ref)) != null && (adding == null || !Groups.carriesTo(it.ref, adding))   // adding: its own people are not listed again
 }
 
-/** A step's bar (iOS the sheet's toolbar): the cross or the back on the left, the title, the tick on the right — dim and deaf until it may act. */
+/**
+ * A step's bar (iOS the sheet's toolbar): the cross or the back on the left, the title, the tick on the right — dim and deaf until it
+ * may act; each mark on its round of glass in a 44 frame (iOS MontanaBarMark).
+ */
 private class StepBar(c: Context, title: String, back: Boolean, onLead: () -> Unit, onDone: () -> Unit) : FrameLayout(c) {
     private val tick = c.icon(R.drawable.ic_check, Color.WHITE)
     init {
         setPadding(dp(8), 0, dp(8), 0)
-        addView(c.icon(if (back) R.drawable.ic_arrow_back_ios_new else R.drawable.ic_close, Color.WHITE).apply {
-            setPadding(dp(10), dp(10), dp(10), dp(10)); pressable(onLead)
+        addView(FrameLayout(c).apply {
+            background = c.glassPlate(oval = true)
+            contentDescription = c.getString(if (back) R.string.back else R.string.coin_close)
+            addView(c.icon(if (back) R.drawable.ic_arrow_back_ios_new else R.drawable.ic_close, Color.WHITE), LayoutParams(dp(20), dp(20), Gravity.CENTER))
+            pressable(onLead)
         }, LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.START))
         addView(c.text(title, 17f, Color.WHITE, bold = true, center = true), LayoutParams(WRAP, WRAP, Gravity.CENTER))
         tick.setPadding(dp(10), dp(10), dp(10), dp(10))
         tick.pressable { if (tick.alpha == 1f) onDone() }
-        addView(tick, LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
+        addView(FrameLayout(c).apply { background = c.glassPlate(oval = true); addView(tick, LayoutParams(MATCH, MATCH)) },
+            LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
     }
     fun ready(on: Boolean) { tick.alpha = if (on) 1f else 0.4f }
 }

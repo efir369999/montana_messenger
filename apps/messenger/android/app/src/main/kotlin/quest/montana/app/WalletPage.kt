@@ -24,7 +24,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import java.util.Date
 
-// ─────────────────────────── the wallet's pages (iOS MTWalletScreen: MTWalletPage, MTCoinSendSheet, MTPiLevelsSheet, MTCoinHistoryPage) ───────────────────────────
+// ─────────────────────────── the wallet's pages (iOS MTWalletScreen: MTWalletPage, MTCoinSendSheet, MTPiLevelsSheet; the history and the analytics: CoinHistoryPages.kt) ───────────────────────────
 
 /**
  * OUR COIN, the one drawing of it (iOS MTMintCoin): the author's two faces, byte for byte (CoinFace, CoinBack), in a circle. It
@@ -113,30 +113,32 @@ private fun Context.labeled(title: String, value: String): View = hstack {
     addView(text(value, 16f, MT.gray), lp(WRAP, WRAP))   // USER-DATA: a number of coins
 }
 
-/** One window of the wall's comments, as iOS lays it (MTWalletScreen.swift:296-309): its minutes large, its span, every comment's
- * moment, its post, whether it is open and its right to a share. */
-private fun Context.wallWindowRow(w: WallWindows.Row): View = vstack(Gravity.NO_GRAVITY) {
-    setPadding(dp(16), dp(10), dp(16), dp(10))
-    addView(text(w.share.toString(), 34f, Color.WHITE, bold = true), lp(WRAP, WRAP))   // USER-DATA: the minutes this comment series minted
-    addView(text(w.span, 12f, MT.gray), lp(WRAP, WRAP))   // USER-DATA: the window from its first comment to its last
-    addView(text(w.marks.joinToString(" | "), 11f, MT.gray).apply { maxLines = 4; ellipsize = android.text.TextUtils.TruncateAt.END }, lp(MATCH, WRAP))   // USER-DATA: every comment's moment
-    addView(text(w.title, 15f).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END }, lp(MATCH, WRAP))   // USER-DATA: the post whose comments opened the window
-    addView(labeled(getString(R.string.coin_window), getString(if (w.open) R.string.coin_window_active else R.string.coin_window_inactive)).apply { setPadding(0, dp(6), 0, dp(6)); minimumHeight = 0 }, lp())
-    addView(labeled(getString(R.string.coin_right_share), w.share.toString()).apply { setPadding(0, dp(6), 0, dp(6)); minimumHeight = 0 }, lp())
-}
-
 /** A page of the wallet: the bar with the cross or the back chevron, a mark at the trailing edge when it has one, the list that
  * scrolls — a pull of it mints, only where `onPull` names it (iOS MTWalletPage .onPreferenceChange(MTWalletPullKey.self),
  * MTWalletScreen.swift:343-349 and 367-380). */
-private fun walletFrame(act: MainActivity, title: String, onLead: () -> Unit, cross: Boolean, trailing: View?, body: LinearLayout, onPull: (() -> Unit)? = null): View {
+private fun walletFrame(act: MainActivity, title: String, onLead: () -> Unit, cross: Boolean, trailing: View?, body: LinearLayout,
+                        large: Boolean = false, onPull: (() -> Unit)? = null): View {
     val c: Context = act
     val bar = FrameLayout(c).apply {
         setPadding(dp(8), 0, dp(8), 0)
-        addView(c.icon(if (cross) R.drawable.ic_close else R.drawable.ic_arrow_back_ios_new, Color.WHITE).apply {
-            setPadding(dp(10), dp(10), dp(10), dp(10)); contentDescription = c.getString(R.string.coin_close); pressable(onLead)
-        }, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.START))
-        addView(c.text(title, 17f, Color.WHITE, bold = true, center = true), FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
-        if (trailing != null) addView(trailing, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
+        // the bar's one mark on its round of glass in a 44 frame (iOS MontanaBarMark)
+        val mark = FrameLayout(c).apply {
+            background = c.glassPlate(oval = true)
+            contentDescription = c.getString(R.string.coin_close)
+            addView(c.icon(if (cross) R.drawable.ic_close else R.drawable.ic_arrow_back_ios_new, Color.WHITE), FrameLayout.LayoutParams(dp(20), dp(20), Gravity.CENTER))
+            pressable(onLead)
+        }
+        if (large) {
+            // THE TITLE AT THE LEFT, THE CROSS IN THE RIGHT CORNER (iOS .toolbarTitleDisplayMode(.inlineLarge), MTWalletScreen.swift:323-327,
+            // the author's word 04.10.2026 13:34 MSK): the large title inline at the bar's leading edge, one mark on the bar
+            addView(c.text(title, 28f, Color.WHITE, bold = true).apply { maxLines = 1; setPadding(dp(8), 0, dp(52), 0) },
+                FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER_VERTICAL or Gravity.START))
+            addView(mark, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
+        } else {
+            addView(mark, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.START))
+            addView(c.text(title, 17f, Color.WHITE, bold = true, center = true), FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
+            if (trailing != null) addView(trailing, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
+        }
     }
     val scroll = ScrollView(c).apply { addView(body.apply { setPadding(dp(16), 0, dp(16), dp(32)) }) }
     val list: View = if (onPull != null) CoinPull(c, scroll) { onPull() } else scroll
@@ -157,84 +159,156 @@ private fun walletFrame(act: MainActivity, title: String, onLead: () -> Unit, cr
  */
 fun walletPage(act: MainActivity, onClose: () -> Unit): View {
     val c: Context = act
+    // the person's chain asked at once -- the confirmed line -- then the transfers' records of every pipe (iOS MTWalletScreen 368)
+    Thread { if (CoinTx.agrees) { if (CoinTx.WRITES) runCatching { CoinTx.readMine() }; CoinTx.scan("wallet", force = true) } }.start()
+    VpnWallMint.count()   // the wallet opened: the VPN wall's seconds since the last count are paid (iOS MTWalletScreen.swift:280)
     val body = c.vstack(Gravity.NO_GRAVITY)
-    val fire = c.text(c.getString(R.string.coin_pantheon), 22f, MT.orange, bold = true, center = true)
+    // PANTHEON ON FIRE STANDS ALWAYS AND BURNS WHILE THE GAME BURNS (iOS MTWalletScreen.swift:66-74, the author's words 08.10.2026
+    // 02:2x MSK): the flame in its own colours, the name white at title2 bold, an orange glow round it while the game is lit
+    val fireWords = c.text(c.getString(R.string.coin_pantheon), 22f, Color.WHITE, bold = true)
+    val fire = c.hstack {
+        gravity = Gravity.CENTER
+        addView(ImageView(c).apply { setImageResource(R.drawable.ic_flame) }, lp(dp(24), dp(24)))
+        gap(6)
+        addView(fireWords, lp(WRAP, WRAP))
+    }
+    // THE CAPTION COMES WITH THE FINGER (iOS 75-84, the author's word 09.10.2026): one line while a finger is on the coin and three
+    // seconds after the last one lifts; hidden, it keeps its place, so the coin never moves under the finger
+    val hint = c.text(c.getString(R.string.coin_hint), 13f, MT.gray, center = true).apply { alpha = 0f }
+    var hintTurn = 0
+    fun showHint() { hintTurn++; hint.animate().alpha(1f).setDuration(250).start() }
+    fun hideHintSoon() { val turn = ++hintTurn; MainThread.later(3000, Runnable { if (turn == hintTurn) hint.animate().alpha(0f).setDuration(250).start() }) }
     val coin = MintCoin(c, 120)
     val pops = FrameLayout(c)
     val badge = c.text("", 13f, Color.WHITE, bold = true, center = true).apply {
-        background = c.rounded(MT.blue, 11); setPadding(dp(7), dp(1), dp(7), dp(1)); minWidth = dp(22)
+        // THE LEVEL ON THE COIN (iOS MTMintLevelBadge, MTWalletScreen.swift:1133-1142): the platform's count badge, red, 20 high
+        background = c.rounded(SysColor.red, 10); setPadding(dp(6), 0, dp(6), 0); minWidth = dp(20); minHeight = dp(20); gravity = Gravity.CENTER
     }
-    val speed = c.text("", 15f, MT.gray, center = true)
+    // THE COIN CATCHES FIRE AT THE TAPS (iOS 138-146): a still orange circle beneath it, its light following the speed; the
+    // platform's ring round the coin while the Pantheon burns (iOS 148-150, MTMiniFace.playingRing, 3 pt at 8 outside)
+    val glow = View(c).apply {
+        background = GradientDrawable().apply {
+            gradientType = GradientDrawable.RADIAL_GRADIENT; gradientRadius = c.dp(74).toFloat()
+            colors = intArrayOf(MT.orange, MT.orange, Color.TRANSPARENT)
+        }
+        alpha = 0f
+    }
+    val ring = View(c).apply {
+        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.TRANSPARENT); setStroke(c.dp(3), MT.blue) }
+        visibility = View.INVISIBLE
+    }
+    val speed = c.text("", 15f, MT.gray, center = true).apply { fontFeatureSettings = "tnum" }
     val bar = ProgressBar(c, null, android.R.attr.progressBarStyleHorizontal).apply {
         max = 1000; progressTintList = android.content.res.ColorStateList.valueOf(MT.blue)
     }
-    val toLevel = c.text("", 13f, MT.gray, center = true)
-    val balance = c.text("", 44f, Color.WHITE, bold = true, center = true).apply { maxLines = 1; setAutoSizeTextTypeUniformWithConfiguration(20, 44, 1, android.util.TypedValue.COMPLEX_UNIT_SP) }
-    val inMontana = c.text("", 15f, MT.gray, center = true)
-    val pi = c.text("", 13f, MT.gray, center = true)
+    val toLevel = c.text("", 13f, MT.gray, center = true).apply { fontFeatureSettings = "tnum" }
+    // THE PRICE OF A SECOND, FIXED UNDER THE COUNT (iOS MTSecondPrice, MTCurrentMintRate, MTWalletScreen.swift:1080-1088 and 1650-1658)
+    val rate = c.text("", 13f, MT.gray, center = true).apply { fontFeatureSettings = "tnum" }
+    // THE TOTAL IS THE BOOK'S, THE AVAILABLE THE NETWORK'S (iOS 158-171, the author's words 12.10.2026 15:5x MSK): the figure is every
+    // coin the book holds, 48 bold with even digits, the ticker in the same type; under it the part the chain holds for its owner
+    val balance = c.text("", 48f, Color.WHITE, bold = true, center = true).apply {
+        maxLines = 1; fontFeatureSettings = "tnum"
+        setAutoSizeTextTypeUniformWithConfiguration(24, 48, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
+    }
+    // THE SEED'S BOOK IS ON ITS WAY (iOS 176-178): a phone restored by its words says it is gathering, never a balance of nothing
+    val gathering = c.hstack {
+        gravity = Gravity.CENTER
+        addView(ProgressBar(c).apply { indeterminateTintList = android.content.res.ColorStateList.valueOf(MT.gray) }, lp(dp(16), dp(16)))
+        gap(8)
+        addView(c.text(c.getString(R.string.coin_gathering), 13f, MT.gray), lp(WRAP, WRAP))
+    }
+    val inMontana = c.text("", 15f, MT.gray, center = true).apply { fontFeatureSettings = "tnum" }
+    val available = c.text("", 15f, MT.gray, center = true).apply { fontFeatureSettings = "tnum" }
+    val pi = c.text("", 13f, MT.gray, center = true).apply { fontFeatureSettings = "tnum" }
+    // WHAT THE NETWORK CONFIRMED (the owner's word 17.10.2026: «show the real confirmed results, not only the locally computed balance»):
+    // the book gathered from the seed's vault, then the person's chain as its node says it; a chain not opened yet offers its opening
+    val confirmed = c.text("", 13f, MT.gray, center = true)
     val rows = c.vstack(Gravity.NO_GRAVITY)
-    // THE TIMECHAINS (iOS MTTimeChainRows): each source's chain, its length, the first letters of its head and its seal, every chain read
-    // whole off the screen's thread — at the opening, then three quiet seconds after the book's moves change (iOS, T1's stalls 04.10)
-    var heads: Map<String, TimeChain.Head> = emptyMap()
-    var headsDue = false
-    var headsAt = -1
-    var windows: List<WallWindows.Row> = emptyList()   // the wall's comment windows, read at the opening, at the pull and at the return (iOS refresh 418-419)
-    val windowRows = c.vstack(Gravity.NO_GRAVITY)
+    // the wall's comment windows: their minutes stand on the minting's rows, never added into the book (iOS 254-255); the windows
+    // themselves stand on the wall (iOS MTBoardChainPage), no more on the wallet
+    var windows: List<WallWindows.Row> = emptyList()
 
-    fun capsule(word: Int, glyph: Int?, filled: Boolean, onTap: () -> Unit) = c.hstack {
+    // THE SYSTEM'S BUTTONS, ONE WIDTH (iOS MTWalletScreen.swift:186-235): «Send» and «Top up» on the platform's blue (borderedProminent),
+    // every other door bordered -- the blue at a fifth on its ground and the words in the blue -- each a capsule 44 high, headline type
+    fun capsule(word: Int, glyph: Int?, filled: Boolean, picture: Boolean = false, onTap: () -> Unit) = c.hstack {
         gravity = Gravity.CENTER
         minimumHeight = dp(44)
-        background = if (filled) c.rounded(MT.blue, 22) else c.rounded(Color.TRANSPARENT, 22, MT.blue)
-        if (glyph != null) { addView(c.icon(glyph, if (filled) Color.WHITE else MT.blue, 20), lp(dp(20), dp(20))); gap(8) }
+        setPadding(dp(12), 0, dp(12), 0)
+        background = c.rounded(if (filled) MT.blue else MT.withAlpha(MT.blue, 0.2f), 22)
+        if (glyph != null) {
+            // OUR SEND, AS IN THE CHATS (iOS MTTimeSendMark(height: 24), the author's word 05.10): the author's picture in its own colours
+            if (picture) addView(ImageView(c).apply { setImageResource(glyph); scaleType = ImageView.ScaleType.FIT_CENTER }, lp(dp(17), dp(24)))
+            else addView(c.icon(glyph, if (filled) Color.WHITE else MT.blue, 20), lp(dp(20), dp(20)))
+            gap(8)
+        }
         addView(c.text(c.getString(word), 17f, if (filled) Color.WHITE else MT.blue, bold = true))
         pressable(onTap)
     }
-    val send = capsule(R.string.coin_send, R.drawable.ic_paperplane, true) { act.push { sendCoinsPage(act, it) } }
+    val send = capsule(R.string.coin_send, R.drawable.time_send, true, picture = true) { act.push { sendCoinsPage(act, it) } }
+    // EVERY ROAD OF THE COINS STANDS BEHIND TOP UP (iOS MTCoinTopUpSheet, the author's word 11.10.2026 20:2x MSK)
+    val topUp = capsule(R.string.coin_top_up, R.drawable.ic_plus_circle_fill, true) { act.push { coinTopUpPage(act, it) } }
+    lateinit var redraw: () -> Unit
+    val openChain = capsule(R.string.coin_chain_open_button, null, false) { askGenesis(act) { redraw() } }
 
     fun draw() {
-        val b = CoinBook.balance
-        val place = PiLevels.place(b)
+        // THE TOTAL IS THE BOOK'S (iOS total, MTWalletScreen.swift:47): every coin the book holds, minted and received by every road
+        val total = CoinBook.balance
+        // THE AVAILABLE, ONE NUMBER EVERYWHERE (iOS MTCoinSplit.available, the author's word 16.10.2026 17:19 MSK) where the chains are written
+        val avail = if (CoinTx.WRITES) CoinSplit.available else total
+        val gather = !CoinVault.heard && total == 0L
+        gathering.visibility = if (gather) View.VISIBLE else View.GONE
+        if (CoinTx.WRITES) {
+            val m = CoinTx.mine
+            confirmed.text = when {
+                !CoinVault.heard -> if (gather) "" else c.getString(R.string.coin_book_loading)
+                m == null -> c.getString(R.string.coin_chain_asking)
+                !m.v3 -> c.getString(R.string.coin_chain_closed)
+                else -> c.getString(R.string.coin_confirmed, CoinText.count(m.proven + m.declared), CoinBook.TICKER)   // USER-DATA: the chain's coins
+            }
+            confirmed.visibility = if (confirmed.text.isEmpty()) View.GONE else View.VISIBLE
+            openChain.visibility = if (CoinVault.heard && m != null && !m.v3 && !CoinTx.genesisAllowedCached()) View.VISIBLE else View.GONE
+        } else { confirmed.visibility = View.GONE; openChain.visibility = View.GONE }
+        val place = PiLevels.place(total)
         val lit = Pantheon.lit
-        fire.visibility = if (lit) View.VISIBLE else View.INVISIBLE
-        speed.visibility = fire.visibility
+        fireWords.setShadowLayer(if (lit) c.dp(8).toFloat() else 0f, 0f, 0f, if (lit) MT.withAlpha(MT.orange, 0.8f) else Color.TRANSPARENT)
+        speed.visibility = if (lit) View.VISIBLE else View.INVISIBLE
+        ring.visibility = speed.visibility
+        glow.animate().alpha(if (!lit) 0f else if (0 < Pantheon.speed) 0.8f else 0.3f).setDuration(250).start()
         speed.text = Pantheon.speed.toString() + " / " + Pantheon.CEILING   // USER-DATA: the taps of the last second
         coin.spinAt(maxOf(Pantheon.speed, if (WalletPull.on) 1 else 0))   // at least once a second while the auto minting runs (iOS MTWalletScreen.swift:73-77)
-        badge.text = maxOf(1, place).toString()   // the level the minting multiplies by
+        badge.text = if (0 < place) place.toString() else ""   // the level the minting multiplies by (iOS MTMintLevelBadge)
+        badge.visibility = if (0 < place) View.VISIBLE else View.INVISIBLE
         val shownBar = (lit || WalletPull.on) && place < PiLevels.all.size   // iOS MTLevelProgress, MTWalletScreen.swift:124-126
         bar.visibility = if (shownBar) View.VISIBLE else View.INVISIBLE
         toLevel.visibility = bar.visibility
         if (place < PiLevels.all.size) {
             val low = if (0 < place) PiLevels.all[place - 1] else 0L
             val high = PiLevels.all[place]
-            bar.progress = (((b - low).toDouble() / maxOf(1L, high - low)) * 1000).toInt()
-            toLevel.text = c.getString(R.string.coin_to_level, CoinText.count(high - b), place + 1)
+            bar.progress = (((total - low).toDouble() / maxOf(1L, high - low)) * 1000).toInt()
+            toLevel.text = c.getString(R.string.coin_to_level, CoinText.count(high - total), place + 1)
         }
-        balance.text = CoinText.count(b) + " " + CoinBook.TICKER   // USER-DATA: the balance and the ticker
-        inMontana.text = CoinText.montana(b) + " Ɱ"   // USER-DATA: the balance in Montana
+        val n = PiLevels.multiplier(total).toInt()
+        rate.text = c.resources.getQuantityString(R.plurals.coin_second_rate, n, n)   // USER-DATA: the coins one second mints now
+        balance.text = CoinText.count(total) + " " + CoinBook.TICKER   // USER-DATA: the balance and the ticker
+        inMontana.text = CoinText.montana(total) + " Ɱ"   // USER-DATA: the balance in Montana
+        available.text = c.getString(R.string.coin_available, CoinText.count(avail))   // USER-DATA: the spendable part of the total
         pi.text = "π " + PiLevels.revealed(place) + " · " + place   // USER-DATA: the level of π and π revealed to it
-        send.isEnabled = 0 < b; send.alpha = if (0 < b) 1f else 0.4f
+        send.isEnabled = 0 < total; send.alpha = if (0 < total) 1f else 0.4f
         rows.removeAllViews()
-        val chains = TimeChain.SOURCES.mapNotNull { s ->
-            heads[s]?.takeIf { 0 < it.n }?.let { h -> c.settingsRow(null, 0, c.chainName(s), value = c.chainHead(h, 8)) { act.push { back -> timeChainPage(act, s, back) } } }
-        }
-        if (chains.isNotEmpty()) rows.section(c.getString(R.string.tc_title), null, *chains.toTypedArray())
-        // THE WALL'S MINTING STANDS ON THE WALLET (iOS MTWalletScreen.swift:210-214): the rights the comment windows hold, beside the book and never added into it
+        // THE MINTING, ONE VALUE PER ROW (iOS MTWalletScreen.swift:252-299): the wall's rights beside the book and never added into it,
+        // then every source the book counts (CoinBook.count, iOS MTCoinCounts)
         rows.section(c.getString(R.string.coin_minting), c.getString(R.string.coin_counted_here),
             c.labeled(c.getString(R.string.coin_minting_now), windows.filter { it.open }.sumOf { it.share }.toString()),   // USER-DATA: a number of minutes
             c.labeled(c.getString(R.string.coin_wall_rights), windows.sumOf { it.share }.toString()),   // USER-DATA: a number of minutes
+            c.labeled(c.getString(R.string.coin_from_chats), CoinText.count(CoinBook.earned)),
             c.labeled(c.getString(R.string.coin_from_pantheon), CoinText.count(CoinBook.tapped)),
+            c.labeled(c.getString(R.string.coin_from_chess), CoinText.count(CoinBook.played)),
+            c.labeled(c.getString(R.string.coin_from_vpn_wall), CoinText.count(CoinBook.walled)),
+            c.labeled(c.getString(R.string.coin_burned_n), CoinText.count(CoinBook.burned)),
             c.labeled(c.getString(R.string.coin_received_n), CoinText.count(CoinBook.received)),
             c.labeled(c.getString(R.string.coin_sent_n), CoinText.count(CoinBook.sent)),
-            c.labeled(c.getString(R.string.coin_in_montana), CoinText.montana(b)))
-        rows.section(null, null, c.settingsRow(null, 0, c.getString(R.string.coin_history)) { act.push { coinHistoryPage(act, it) } })
-    }
-    // THE COMMENT WINDOWS OF THE WALL (iOS MTWalletScreen.swift:292-313): each window's minutes, its span, every comment's moment, its
-    // post, whether it is open and its right to a share; none stands — «No comments yet». Drawn when the windows are read, not at every coin.
-    fun drawWindows() {
-        windowRows.removeAllViews()
-        val shown: List<View> = if (windows.isEmpty()) listOf(c.text(c.getString(R.string.wall_no_comments), 16f, MT.gray).apply { setPadding(dp(16), dp(14), dp(16), dp(14)) })
-            else windows.map { c.wallWindowRow(it) }
-        windowRows.section(c.getString(R.string.coin_timechain), c.getString(R.string.coin_right_note), *shown.toTypedArray())
+            c.labeled(c.getString(R.string.coin_on_reactions), CoinText.count(CoinBook.spent)),
+            c.labeled(c.getString(R.string.coin_in_montana), CoinText.montana(total)))
     }
 
     // THE COIN TAKES EVERY FINGER (iOS MTCoinTapPad): each finger that lands mints, its +N rising where it touched; the page holds
@@ -257,62 +331,94 @@ fun walletPage(act: MainActivity, onClose: () -> Unit): View {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     v.parent?.requestDisallowInterceptTouchEvent(true)
                     Pantheon.touched()
+                    showHint()
                     val coins = Pantheon.tap()
                     v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     if (0 < coins) pop(e.getX(i), e.getY(i), coins)
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> Pantheon.released()
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { Pantheon.released(); hideHintSoon() }
             }
             true
         }
         setOnClickListener { Pantheon.tap() }   // the accessibility service's own tap
     }
+    // THE WALLET'S HEAD (iOS MTWalletScreen.swift:53-240): one column, 14 between its parts, 20 above and below; a part that comes
+    // and goes keeps its place (the author's word 04.10.2026 04:21 MSK: the page does not move under the game)
     val head = c.vstack {
-        setPadding(0, dp(12), 0, dp(20))
+        setPadding(0, dp(20), 0, dp(20))
         addView(fire, lp(WRAP, WRAP))
-        gap(10)
+        gap(14)
+        addView(hint, lp(MATCH, WRAP))
+        gap(14)
+        // THE APPS THAT MINT, ABOVE THE COIN (iOS MTMintingApps, 1115-1131): the row keeps its 30 when none mints
+        addView(View(c), lp(MATCH, dp(30)))
+        gap(14)
         addView(FrameLayout(c).apply {
+            addView(glow, FrameLayout.LayoutParams(dp(148), dp(148), Gravity.CENTER))
             addView(coin, FrameLayout.LayoutParams(dp(120), dp(120), Gravity.CENTER))
-            addView(badge, FrameLayout.LayoutParams(WRAP, WRAP, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(10), dp(10), 0) })
+            addView(ring, FrameLayout.LayoutParams(dp(136), dp(136), Gravity.CENTER))
+            // the badge at the coin's top-trailing corner, 8 in from each side (iOS .offset(x: -8, y: 8))
+            addView(badge, FrameLayout.LayoutParams(WRAP, dp(20), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(22), dp(22), 0) })
             addView(pad, FrameLayout.LayoutParams(MATCH, MATCH))
             addView(pops, FrameLayout.LayoutParams(MATCH, MATCH))
-        }, lp(dp(144), dp(144)))
-        gap(10)
+        }, lp(dp(148), dp(148)))
+        gap(14)
         addView(speed, lp(WRAP, WRAP))
-        gap(6)
-        addView(bar, lp(dp(240), WRAP))
-        addView(toLevel, lp(WRAP, WRAP))
-        gap(10)
+        gap(14)
+        addView(c.vstack {
+            addView(bar, lp(dp(240), WRAP))
+            gap(6)
+            addView(toLevel, lp(WRAP, WRAP))
+        }, lp(WRAP, WRAP))
+        gap(14)
+        addView(rate, lp(WRAP, WRAP))
+        gap(14)
         addView(balance, lp(MATCH, WRAP))
+        addView(gathering, lp(WRAP, WRAP).apply { topMargin = dp(14) })
+        gap(14)
         addView(inMontana, lp(WRAP, WRAP))
-        gap(4)
+        gap(14)
+        addView(available, lp(WRAP, WRAP))
+        gap(14)
         addView(pi, lp(WRAP, WRAP))
-        gap(16)
+        addView(confirmed, lp(WRAP, WRAP).apply { topMargin = dp(14) })
+        gap(14)
         addView(c.hstack {
             addView(send, lp(0, WRAP, 1f))
             gap(12)
-            addView(capsule(R.string.coin_levels, null, false) { act.push { piLevelsPage(act, it) } }, lp(0, WRAP, 1f))
+            addView(topUp, lp(0, WRAP, 1f))
         }, lp(MATCH, WRAP))
+        addView(openChain, lp(MATCH, WRAP).apply { topMargin = dp(14) })
+        gap(14)
+        // THE TIMECHAIN IN PLACE OF A SECOND ACCOUNT (iOS 205-215), THE LEVELS OF π (216-222), THE HISTORY UNDER THEM (223-230)
+        addView(capsule(R.string.coin_timechain, R.drawable.ic_link, false) { act.push { timeChainsPage(act, it) } }, lp(MATCH, WRAP))
+        gap(14)
+        addView(capsule(R.string.coin_levels, R.drawable.ic_list_number, false) { act.push { piLevelsPage(act, it) } }, lp(MATCH, WRAP))
+        gap(14)
+        addView(capsule(R.string.coin_history, R.drawable.ic_history, false) { act.push { coinHistoryPage(act, it) } }, lp(MATCH, WRAP))
+        gap(14)
+        // THE ANALYTICS BY ITS OWN BUTTON (iOS 231-239, the author's word 12.10.2026 15:2x MSK: «make the analytics a separate button, so it
+        // opens and nothing lags»): under the History, read from the one fold of the history (coinAnalyticsPage, CoinHistory)
+        addView(capsule(R.string.coin_analytics, R.drawable.ic_chart_pie, false) { act.push { coinAnalyticsPage(act, it) } }, lp(MATCH, WRAP))
     }
     pops.isClickable = false
     body.addView(head, lp())
     body.addView(rows, lp())
-    body.addView(windowRows, lp())
     // THE WALL'S COMMENT WINDOWS ARE READ OFF THE SCREEN'S THREAD (iOS refresh, MTWalletScreen.swift:418-419): at the opening, at the
     // pull and at the return to the app — never at every coin
     lateinit var holder: FrameLayout
-    fun readWindows() { Thread { val w = WallWindows.all(); MainThread.post { windows = w; if (holder.isAttachedToWindow) { draw(); drawWindows() } } }.start() }
+    fun readWindows() { Thread { val w = WallWindows.all(); MainThread.post { windows = w; if (holder.isAttachedToWindow) draw() } }.start() }
     // THE TOP IS A LIVE SET FROM THE NODES (iOS MTWalletPage .task, MTWalletScreen.swift:361-381): while the wallet stands on the screen
     // the pairs' last words are asked of the nodes every three seconds, one question after the other — their balances ride them
     // (CoinBoard); a round that is no longer the page's own stops
     var asking = 0
     fun askNodes(round: Int) {
         if (round != asking || !holder.isAttachedToWindow) return
-        Thread { runCatching { Signal.sweep(quiet = true) }; MainThread.later(3000, Runnable { askNodes(round) }) }.start()
+        Thread { runCatching { Signal.sweep(quiet = true) }; runCatching { PersonChain.tick() }; MainThread.later(3000, Runnable { askNodes(round) }) }.start()   // the devices of the words join the seconds of the person (iOS MTWalletScreen 379)
     }
     // THE PULL SWITCHES THE AUTO MINTING ON (iOS MTWalletPage.pulled, MTWalletScreen.swift:404-417): let go past the trigger, the pull
     // mints every second from now on (WalletPull) and the page reads its windows again; the book's own change redraws it (CoinBook.listen).
-    val page = walletFrame(act, c.getString(R.string.coin_title), onClose, true, null, body) { WalletPull.fire(); readWindows() }
+    val page = walletFrame(act, c.getString(R.string.coin_title), onClose, true, null, body, large = true) { WalletPull.fire(); readWindows() }
     // THE LOCK ENDS IT, NOT A GLANCE (iOS .onChange(of: phase), MTWalletScreen.swift:382-386): the app gone from the screen — its window
     // hidden, the screen locked — stops the auto minting and the nodes' questions; a shade or a dialog over it does not. The return reads
     // the windows again and asks the nodes at once.
@@ -324,21 +430,161 @@ fun walletPage(act: MainActivity, onClose: () -> Unit): View {
         }
     }.apply { addView(page, FrameLayout.LayoutParams(MATCH, MATCH)) }
     val again: () -> Unit = { draw() }
-    fun readHeads() { headsAt = CoinBook.size(); TimeChain.heads { h -> heads = h; if (page.isAttachedToWindow) draw() } }
+    redraw = again
+    page.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+        // the history's fold is ready before its door (iOS .onAppear MTCoinHistory.shared.warm(), MTWalletScreen.swift:360)
+        override fun onViewAttachedToWindow(v: View) { CoinBook.listen(again); Pantheon.listen(again); WalletPull.listen(again); draw(); coin.turnOnce(); CoinHistory.warm(c) }
+        // the page left: the auto minting stops with it and the nodes are asked no more (iOS .onDisappear, MTWalletScreen.swift:387)
+        override fun onViewDetachedFromWindow(v: View) { CoinBook.unlisten(again); Pantheon.unlisten(again); WalletPull.unlisten(again); asking++; WalletPull.stop("page"); Pantheon.released(); CoinBook.closeWindows() }
+    })
+    Thread { CoinBook.warm(); MainThread.post { draw() } }.start()
+    return holder
+}
+
+/**
+ * THE TIMECHAIN PAGE (iOS MTTimeChainsPage, MTWalletScreen.swift:1507-1645): the wallet's own chains and the level of π they reveal,
+ * the chats' and calls' chains, the Explorer, and what an observer checks. Every chain is read whole off the screen's thread -- at the
+ * opening, then three quiet seconds after the book's moves change (iOS MTTimeChainRows, T1's stalls 04.10). The person's chain and
+ * the global level join this page with the levels' stage (iOS MTPersonChain).
+ */
+fun timeChainsPage(act: MainActivity, onBack: () -> Unit): View {
+    val c: Context = act
+    val body = c.vstack(Gravity.NO_GRAVITY)
+    // the chats' and calls' chains, the third chain of time; every other source is the wallet's own (iOS talk, own)
+    val talk = listOf("chats", "groups", "channels", "comments", "wall", "calls", "letters")
+    val own = TimeChain.SOURCES.filter { it != "pi" && it !in talk }
+    var heads: Map<String, TimeChain.Head> = emptyMap()
+    var headsDue = false
+    var headsAt = -1
+    fun chainRows(sources: List<String>): List<View> = sources.mapNotNull { s ->
+        heads[s]?.takeIf { 0 < it.n }?.let { h -> c.settingsRow(null, 0, c.chainName(s), value = c.chainHead(h, 8)) { act.push { back -> timeChainPage(act, s, back) } } }
+    }
+    fun draw() {
+        body.removeAllViews()
+        val place = PiLevels.place(CoinBook.balance)
+        // THE GLOBAL LEVEL (iOS 1520-1527): the lower of the person's level and the wallet's, large
+        body.section(null, c.getString(R.string.tc_glevel_footer), c.hstack {
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(16), dp(10), dp(16), dp(10))
+            minimumHeight = dp(52)
+            addView(c.icon(R.drawable.ic_language, Color.WHITE, 22), lp(dp(22), dp(22)).apply { marginEnd = dp(12) })
+            addView(c.text(c.getString(R.string.tc_glevel), 17f), lp(0, WRAP, 1f))
+            addView(c.text(PersonChain.global(PersonChain.level, CoinBook.balance).toString(), 28f, Color.WHITE, bold = true).apply { fontFeatureSettings = "tnum" }, lp(WRAP, WRAP))   // USER-DATA: the Global Level
+        })
+        // THE PERSON (iOS 1528-1559): the chain's level, its seconds on the network, the way to the next level, its links
+        val lv = PersonChain.level
+        val secs = PersonChain.seconds
+        val person = mutableListOf(
+            c.labeled(c.getString(R.string.tc_level), lv?.toString() ?: "—"),   // USER-DATA: the person's level, a dash below one second
+            c.labeled(c.getString(R.string.tc_time_online), spanWords(c, secs)))   // USER-DATA: the seconds the chain counts
+        if (lv != null && lv < 62) {
+            val from = 1L shl lv
+            person += c.vstack(Gravity.NO_GRAVITY) {
+                setPadding(dp(16), dp(10), dp(16), dp(10))
+                addView(c.text(c.getString(R.string.tc_next_level), 15f, MT.gray), lp())
+                addView(ProgressBar(c, null, android.R.attr.progressBarStyleHorizontal).apply {
+                    max = 1000; progress = (((secs - from).toDouble() / from) * 1000).toInt().coerceIn(0, 1000)
+                    progressTintList = android.content.res.ColorStateList.valueOf(MT.blue)
+                }, lp().apply { topMargin = dp(6) })
+            }
+        }
+        person += c.settingsRow(null, 0, c.getString(R.string.tc_links),
+            value = c.mono(PersonChain.links.size.toString() + " · " + (PersonChain.links.lastOrNull()?.hash ?: TimeChain.GENESIS).take(8), 13f, MT.gray)) {
+            act.push { back -> timeChainPage(act, "person", back) }
+        }
+        body.section(c.getString(R.string.tc_person), c.getString(R.string.tc_person_footer), *person.toTypedArray())
+        body.section(c.getString(R.string.tc_wallet), c.getString(R.string.tc_wallet_footer),
+            c.labeled(c.getString(R.string.tc_level_pi), place.toString() + " · π " + PiLevels.revealed(place)),   // USER-DATA: the level and π to it
+            c.settingsRow(null, 0, c.getString(R.string.coin_levels)) { act.push { back -> timeChainPage(act, "pi", back) } },
+            *chainRows(own).toTypedArray())
+        val chats = chainRows(talk)
+        if (chats.isNotEmpty()) body.section(c.getString(R.string.tc_talk), c.getString(R.string.tc_talk_footer), *chats.toTypedArray())
+        // THE EXPLORER (iOS 1585-1594, the author's word 11.10.2026 20:2x MSK): the public page that reads a transfer's record from the
+        // nodes and checks its signature
+        body.section(null, c.getString(R.string.tc_explorer_footer), c.settingsRow(R.drawable.ic_search, MT.blue, c.getString(R.string.tc_explorer), chevron = false) {
+            runCatching { c.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(CoinTx.EXPLORER))) }
+        })
+        // FOR AN OBSERVER (iOS 1595-1640): the frozen vectors this build holds -- the coin rules' own and the vault's keys; the
+        // person's level and the top's key join them with their stages
+        val hold = CoinTx.agrees && CoinVault.keyKAT()
+        body.section(c.getString(R.string.tc_observer), c.getString(R.string.tc_observer_footer), c.hstack {
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            minimumHeight = dp(48)
+            gravity = Gravity.CENTER_VERTICAL
+            addView(c.text(c.getString(R.string.tc_vectors), 16f), lp(0, WRAP, 1f))
+            addView(c.sealGlyph(hold, 20), lp(dp(20), dp(20)))
+        })
+    }
+    fun readHeads() { headsAt = CoinBook.size(); TimeChain.heads { h -> heads = h; if (body.isAttachedToWindow) draw() } }
     val moved: () -> Unit = {
         if (!headsDue && CoinBook.size() != headsAt) {
             headsDue = true
-            MainThread.later(3000, Runnable { headsDue = false; if (page.isAttachedToWindow) readHeads() })
+            MainThread.later(3000, Runnable { headsDue = false; if (body.isAttachedToWindow) readHeads() })
         }
     }
-    page.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-        override fun onViewAttachedToWindow(v: View) { CoinBook.listen(again); CoinBook.listen(moved); Pantheon.listen(again); WalletPull.listen(again); draw(); coin.turnOnce() }
-        // the page left: the auto minting stops with it and the nodes are asked no more (iOS .onDisappear, MTWalletScreen.swift:387)
-        override fun onViewDetachedFromWindow(v: View) { CoinBook.unlisten(again); CoinBook.unlisten(moved); Pantheon.unlisten(again); WalletPull.unlisten(again); asking++; WalletPull.stop("page"); Pantheon.released(); CoinBook.closeWindows() }
+    val page = walletFrame(act, c.getString(R.string.coin_timechain), onBack, false, null, body)
+    // the person's seconds move the head's numbers (iOS @ObservedObject person): read again at most once a second
+    var drawDue = false
+    val personMoved: () -> Unit = { if (!drawDue) { drawDue = true; MainThread.later(1000, Runnable { drawDue = false; if (body.isAttachedToWindow) draw() }) } }
+    body.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: View) { CoinBook.listen(moved); PersonChain.listen(personMoved) }
+        override fun onViewDetachedFromWindow(v: View) { CoinBook.unlisten(moved); PersonChain.unlisten(personMoved) }
     })
+    draw()
     // the book read first, so its past is in the chains before their heads are read (one queue, in order)
-    Thread { CoinBook.warm(); MainThread.post { draw(); readHeads() } }.start()
-    return holder
+    Thread { CoinBook.warm(); MainThread.post { readHeads() } }.start()
+    return page
+}
+
+/**
+ * TOP UP: EVERY ROAD OF THE COINS (iOS MTCoinTopUpSheet and MTCoinRules, MTWalletScreen.swift:1661-1706, the author's words 08.10.2026
+ * «crystal clear» and 11.10.2026 20:2x MSK; App Review 2.3.1(a)): how coins come and how they go, each rule as the code keeps it,
+ * and what the coins are not. Nothing here buys anything.
+ */
+fun coinTopUpPage(act: MainActivity, onClose: () -> Unit): View {
+    val c: Context = act
+    val body = c.vstack(Gravity.NO_GRAVITY)
+    fun words(res: Int): View = c.text(c.getString(res), 16f).apply { setPadding(dp(16), dp(12), dp(16), dp(12)) }
+    fun labelled(glyph: Int, res: Int): View = c.hstack {
+        gravity = Gravity.TOP
+        setPadding(dp(16), dp(12), dp(16), dp(12))
+        addView(c.icon(glyph, MT.blue, 22), lp(dp(22), dp(22)).apply { marginEnd = dp(14); topMargin = dp(1) })
+        addView(c.text(c.getString(res), 16f), lp(0, WRAP, 1f))
+    }
+    val n = PiLevels.multiplier(CoinBook.balance).toInt()
+    body.section(c.getString(R.string.coin_rate_now), null,
+        c.text(c.resources.getQuantityString(R.plurals.coin_second_rate, n, n), 16f).apply { fontFeatureSettings = "tnum"; setPadding(dp(16), dp(12), dp(16), dp(12)) },   // USER-DATA: the coins one second mints now
+        words(R.string.coin_rule_level))
+    body.section(c.getString(R.string.coin_rules_calls), null,
+        labelled(R.drawable.ic_peer_phone, R.string.coin_rule_calls), words(R.string.coin_rule_calls_each), words(R.string.coin_rule_calls_total))
+    body.section(c.getString(R.string.coin_rules_more), null,
+        labelled(R.drawable.ic_hand_tap, R.string.coin_rule_tap), labelled(R.drawable.ic_arrow_circle_down, R.string.coin_rule_hold),
+        labelled(R.drawable.ic_bar_chats, R.string.coin_rule_messages), labelled(R.drawable.ic_app_groups, R.string.coin_rule_groups),
+        labelled(R.drawable.ic_hub, R.string.coin_rule_vpn))
+    body.section(c.getString(R.string.coin_rules_games), null,
+        labelled(R.drawable.ic_checkerboard, R.string.coin_rule_chess), labelled(R.drawable.ic_timer, R.string.coin_rule_timer),
+        labelled(R.drawable.ic_person_2, R.string.coin_rule_people))
+    body.section(c.getString(R.string.coin_rules_money), null, words(R.string.coin_rule_money))
+    return walletFrame(act, c.getString(R.string.coin_top_up), onClose, true, null, body)
+}
+
+/**
+ * THE FIRST IRREVERSIBLE WRITE ASKS THE PERSON (the owner's word 17.10.2026; Android's own, iOS opens the chain unasked): the chain's
+ * GENESIS is the first record of this coin key in the network's public journal and can never be taken back. The dialog says what it
+ * announces -- the book until the v2 cut, nothing after it -- and what the phone writes by itself once the chain is open. «Open» lets
+ * the phone lay it now (CoinTx.allowGenesis) and goes on with `then`; «Not now» changes nothing.
+ */
+fun askGenesis(act: MainActivity, then: () -> Unit) {
+    val now = CoinTx.mine?.now ?: (System.currentTimeMillis() / 1000)
+    val before = now < CoinRules.V2_CUT
+    val book = CoinBook.balance
+    val shown = if (before) minOf(maxOf(0L, book), CoinRules.genesisCap) else maxOf(0L, book)
+    AlertDialog.Builder(act)
+        .setTitle(R.string.coin_genesis_title)
+        .setMessage(act.getString(if (before) R.string.coin_genesis_body_before else R.string.coin_genesis_body_after, CoinText.count(shown), CoinBook.TICKER))
+        .setPositiveButton(R.string.coin_genesis_open) { _, _ -> CoinTx.allowGenesis(); then() }
+        .setNegativeButton(R.string.coin_genesis_later, null)
+        .show()
 }
 
 /**
@@ -380,7 +626,7 @@ fun sendCoinsPage(act: MainActivity, onClose: () -> Unit): View {
         for (n in PiLevels.all) {
             addView(c.text(PiLevels.short(c, n), 15f, Color.WHITE, bold = true).apply {   // USER-DATA: a level's coins, short
                 background = c.rounded(Color.rgb(77, 77, 77), 16); setPadding(dp(12), dp(6), dp(12), dp(6))
-                val can = n <= CoinBook.balance
+                val can = n <= (if (CoinTx.WRITES) CoinSplit.available else CoinBook.balance)
                 alpha = if (can) 1f else 0.4f
                 if (can) pressable { chosen = n; for (f in picked.values) f.setText(n.toString()); drawTotal() }
             }, lp(WRAP, WRAP).apply { marginEnd = dp(6) })
@@ -439,12 +685,40 @@ fun sendCoinsPage(act: MainActivity, onClose: () -> Unit): View {
     lateinit var close: () -> Unit
     val go = c.icon(R.drawable.ic_paperplane, MT.blue).apply {
         setPadding(dp(10), dp(10), dp(10), dp(10)); contentDescription = c.getString(R.string.coin_send)
+        var going = false
         pressable {
+            if (going) return@pressable   // one walk of the transfers at a time: a second tap sends nothing twice
             val to = picked.filter { 0L < coinsOf(it.value) }
             var sum = 0L
             for (f in to.values) sum += coinsOf(f)
-            if (to.isEmpty() || CoinBook.balance < sum) {
+            val available = if (CoinTx.WRITES) CoinSplit.available else CoinBook.balance
+            if (to.isEmpty() || available < sum) {
                 AlertDialog.Builder(act).setTitle(R.string.coin_not_enough).setMessage(R.string.coin_not_enough_sub).setPositiveButton(R.string.ok, null).show()
+                return@pressable
+            }
+            if (CoinTx.WRITES) {
+                // THE RECORDS ON THE NODES, ONE AFTER ANOTHER (iOS MTWalletScreen.send 2027-2066): each recipient's record laid and its
+                // letter told, off the screen's thread; the page leaves when one went, and a record still waiting is said, never sent again
+                val each = to.mapValues { coinsOf(it.value) }
+                val walk = {
+                    going = true; alpha = 0.4f
+                    act.background {
+                        val results = each.map { (ref, n) -> ref to CoinSend.transferResult(ref, n) }
+                        act.onMain {
+                            going = false; alpha = 1f
+                            val went = results.filter { it.second is CoinSend.Transfer.Sent }.map { it.first }
+                            val pending = results.any { it.second == CoinSend.Transfer.Pending }
+                            if (pending) AlertDialog.Builder(act).setTitle(R.string.coin_pending_title).setMessage(R.string.coin_pending_sub).setPositiveButton(R.string.ok, null).show()
+                            else if (went.isEmpty()) AlertDialog.Builder(act).setTitle(R.string.coin_not_enough).setMessage(R.string.coin_not_enough_sub).setPositiveButton(R.string.ok, null).show()
+                            if (went.isEmpty()) return@onMain
+                            close()
+                            if (went.size == 1 && !pending) act.push { back -> conversationPage(act, went[0], back) }
+                        }
+                    }
+                }
+                // a chain not opened yet is opened first, by the person's own yes (askGenesis): the transfer's reconcile lays the GENESIS
+                val m = CoinTx.mine
+                if (m != null && !m.v3 && !CoinTx.genesisAllowedCached()) askGenesis(act) { walk() } else walk()
                 return@pressable
             }
             val went = to.keys.filter { ref -> CoinSend.transfer(ref, coinsOf(to.getValue(ref))) }
@@ -490,121 +764,6 @@ fun piLevelsPage(act: MainActivity, onClose: () -> Unit): View {
         }
     }, lp().apply { topMargin = c.dp(12) })
     return walletFrame(act, c.getString(R.string.coin_levels), onClose, true, null, body)
-}
-
-/** A GROUP OF THE HISTORY (iOS MTCoinGroup, MTWalletScreen.swift:514-540): the moves of one source, one way and one person
- * within one minute — one row with their sum and count. */
-private class CoinGroup(val source: String, val first: CoinEntry, var signed: Long, var count: Int, val at: Double) {
-    companion object {
-        private const val SHOWN = 60
-        fun recent(moves: List<CoinEntry>): List<CoinGroup> {
-            val out = ArrayList<CoinGroup>()
-            var last = ""
-            for (e in moves) {
-                val source = TimeChain.source(e)
-                val key = source + "|" + e.k + "|" + (e.peer ?: "") + "|" + (e.at / 60).toLong()
-                if (key == last && out.isNotEmpty()) { out[out.size - 1].signed += e.signed; out[out.size - 1].count++; continue }
-                if (out.size == SHOWN) break
-                last = key
-                out.add(CoinGroup(source, e, e.signed, 1, e.at))
-            }
-            return out
-        }
-    }
-}
-
-/** A SOURCE'S TOTALS OVER A PERIOD (iOS MTCoinTotal, MTWalletScreen.swift:542-558): what came in by it and what went out. */
-private class CoinTotal(val source: String, var into: Long = 0, var out: Long = 0) {
-    companion object {
-        fun of(moves: List<CoinEntry>): List<CoinTotal> {
-            val by = LinkedHashMap<String, CoinTotal>()
-            for (e in moves) {
-                val s = TimeChain.source(e)
-                val x = by.getOrPut(s) { CoinTotal(s) }
-                if (0 < e.signed) x.into += e.signed else x.out -= e.signed
-            }
-            return TimeChain.SOURCES.mapNotNull { by[it] }
-        }
-    }
-}
-
-/** From where to where, as a person reads it (iOS MTWalletPage.route, reused by MTCoinHistoryPage's groups, MTWalletScreen.swift:728). */
-private fun Context.coinRoute(e: CoinEntry): String {
-    val me = getString(R.string.coin_you)
-    fun who(ref: String?): String = ref?.let { Book.chat(it)?.shown?.ifBlank { null } } ?: getString(R.string.peer)
-    return when (e.k) {
-        CoinEntry.EARN -> (if (e.ref.startsWith(Pantheon.PREFIX)) getString(R.string.coin_pantheon) else getString(R.string.coin_kind_earn)) + " → " + me
-        CoinEntry.RECEIVE -> who(e.peer) + " → " + me
-        CoinEntry.BURN -> me + " → " + getString(R.string.coin_burned)
-        else -> me + " → " + who(e.peer)
-    }
-}
-
-/** The platform's segmented choice of a period (iOS MTCoinHistoryPage.Period, MTWalletScreen.swift:665-684). */
-private enum class HistoryPeriod(val word: Int, val seconds: Double?) {
-    HOUR(R.string.history_period_hour, 3600.0), DAY(R.string.history_period_day, 86400.0),
-    WEEK(R.string.history_period_week, 604800.0), ALL(R.string.history_period_all, null)
-}
-
-/**
- * THE HISTORY'S OWN PAGE (iOS MTCoinHistoryPage, MTWalletScreen.swift:664-746, the author's word 04.10.2026 04:02 MSK: «the history
- * as a link button into it, with the choice of the period and the details of the analysis, grouped neatly»): the platform's
- * segmented choice of the period, each source's coins in and out over it, and the moves grouped by source, way, person and
- * minute — each group opening its source's TimeChain.
- */
-fun coinHistoryPage(act: MainActivity, onBack: () -> Unit): View {
-    val c: Context = act
-    val body = c.vstack(Gravity.NO_GRAVITY)
-    val lists = c.vstack(Gravity.NO_GRAVITY)
-    var period = HistoryPeriod.DAY
-    fun drawLists() {
-        lists.removeAllViews()
-        val since = period.seconds?.let { System.currentTimeMillis() / 1000.0 - it } ?: 0.0
-        val moves = CoinBook.moves().filter { since <= it.at }
-        if (moves.isEmpty()) {
-            lists.addView(c.text(c.getString(R.string.coin_no_moves_period), 16f, MT.gray).apply { setPadding(dp(16), dp(14), dp(16), dp(14)) }, lp())
-            return
-        }
-        lists.section(c.getString(R.string.coin_by_source), null, *CoinTotal.of(moves).map { x ->
-            c.hstack {
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(16), dp(10), dp(16), dp(10))
-                minimumHeight = dp(48)
-                addView(c.text(c.chainName(x.source), 16f), lp(0, WRAP, 1f))
-                addView(c.vstack(Gravity.END) {
-                    if (0L < x.into) addView(c.text("+" + CoinText.count(x.into), 15f, MT.green))   // USER-DATA: the coins in by this source
-                    if (0L < x.out) addView(c.text("−" + CoinText.count(x.out), 15f, Color.WHITE))   // USER-DATA: the coins out by this source
-                }, lp(WRAP, WRAP))
-                pressable { act.push { back -> timeChainPage(act, x.source, back) } }
-            } as View
-        }.toTypedArray())
-        lists.section(c.getString(R.string.coin_moves_section), null, *CoinGroup.recent(moves).map { g ->
-            c.vstack(Gravity.NO_GRAVITY) {
-                setPadding(dp(16), dp(10), dp(16), dp(10))
-                addView(c.hstack {
-                    addView(c.text(c.chainName(g.source), 15f, Color.WHITE, bold = true), lp(0, WRAP, 1f))   // USER-DATA: the source the moves came by
-                    addView(c.text((if (0L < g.signed) "+" else "") + CoinText.count(g.signed), 15f, if (0L < g.signed) MT.green else Color.WHITE), lp(WRAP, WRAP))   // USER-DATA: the coins the group moved
-                }, lp())
-                addView(c.text(c.coinRoute(g.first), 13f, MT.gray))   // USER-DATA: where the coins came from and where they went
-                addView(c.hstack {
-                    addView(c.text(android.text.format.DateFormat.getMediumDateFormat(c).format(Date((g.at * 1000).toLong())) + " " +
-                        android.text.format.DateFormat.getTimeFormat(c).format(Date((g.at * 1000).toLong())), 12f, MT.gray), lp(0, WRAP, 1f))   // USER-DATA: the group's newest move
-                    addView(c.text("× " + g.count, 12f, MT.gray))   // USER-DATA: how many moves the group holds
-                }, lp())
-                pressable { act.push { back -> timeChainPage(act, g.source, back) } }
-            } as View
-        }.toTypedArray())
-    }
-    body.addView(segmented(c, HistoryPeriod.values().map { it.word to it.name }, period.name) { v -> period = HistoryPeriod.valueOf(v); drawLists() }, lp().apply { bottomMargin = c.dp(8) })
-    body.addView(lists, lp())
-    drawLists()
-    val again: () -> Unit = { drawLists() }
-    val page = walletFrame(act, c.getString(R.string.coin_history), onBack, false, null, body)
-    page.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-        override fun onViewAttachedToWindow(v: View) { CoinBook.listen(again) }
-        override fun onViewDetachedFromWindow(v: View) { CoinBook.unlisten(again) }
-    })
-    return page
 }
 
 /** A source's word in the catalogue, one table for every place that names it (iOS MTTimeChainRows.key). */
@@ -734,4 +893,18 @@ fun coinMovePage(act: MainActivity, ref: String, mine: Boolean, peer: String, on
             c.sealRow(c.getString(R.string.tc_seal), l.hash))
     }
     return walletFrame(act, c.getString(R.string.tc_transaction), onBack, false, null, body)
+}
+
+/**
+ * A SPAN OF TIME AS THE SYSTEM WRITES IT (iOS Duration.formatted(.units(allowed: [.days, .hours, .minutes, .seconds], width: .abbreviated))):
+ * the units that are not zero, abbreviated, in the person's language; nothing but «0 sec» for none.
+ */
+private fun spanWords(c: Context, seconds: Long): String {
+    val s = maxOf(0L, seconds)
+    val parts = listOf(s / 86_400 to android.icu.util.MeasureUnit.DAY, s % 86_400 / 3600 to android.icu.util.MeasureUnit.HOUR,
+        s % 3600 / 60 to android.icu.util.MeasureUnit.MINUTE, s % 60 to android.icu.util.MeasureUnit.SECOND)
+        .filter { it.first > 0 }.ifEmpty { listOf(0L to android.icu.util.MeasureUnit.SECOND) }
+        .map { android.icu.util.Measure(it.first, it.second) }
+    val locale = c.resources.configuration.locales[0]
+    return android.icu.text.MeasureFormat.getInstance(locale, android.icu.text.MeasureFormat.FormatWidth.SHORT).formatMeasures(*parts.toTypedArray())
 }

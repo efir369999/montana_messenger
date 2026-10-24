@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS arrow.up.arrow.down: Sort by ping -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:strokeWidth="1.8" android:pathData="M8,19V5M4.5,8.5L8,5L11.5,8.5M16,5V19M12.5,15.5L16,19L19.5,15.5"/>
+</vector>

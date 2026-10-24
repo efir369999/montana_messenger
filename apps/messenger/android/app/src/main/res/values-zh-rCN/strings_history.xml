@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ch_all">全部</string>
+    <string name="ch_spending">支出</string>
+    <string name="ch_income">收入</string>
+    <string name="ch_operations">操作</string>
+    <string name="ch_no_operations">暂无操作</string>
+    <string name="ch_search_contacts">搜索联系人</string>
+    <string name="ch_minted">铸造</string>
+    <string name="ch_minting_day">当日铸造</string>
+    <string name="ch_burning_day">当日燃烧</string>
+    <string name="ch_spending_day">当日支出</string>
+    <string name="ch_every_month">所有月份</string>
+    <string name="ch_operation">操作详情</string>
+    <string name="ch_kind">类型</string>
+    <string name="ch_category">类别</string>
+    <string name="ch_when">时间</string>
+    <string name="ch_open_explorer">在浏览器中打开</string>
+    <string name="ch_key_chain_footer">您的时间币密钥的整条链，在浏览器中核验。</string>
+    <string name="ch_transactions">交易</string>
+    <string name="ch_no_transactions">暂无交易</string>
+</resources>

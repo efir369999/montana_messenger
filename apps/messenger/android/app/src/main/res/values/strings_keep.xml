@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The keeping of a copy with the people one writes to (iOS MTKeeping, Localizable.xcstrings): the words as iOS says them. -->
+<resources>
+    <string name="keep_ask_title">Keep your copy with your contacts?</string>
+    <string name="keep_ask_yes">Keep</string>
+    <string name="keep_ask_not_now">Not now</string>
+    <string name="keep_explained">Your copy is sealed with your 24 words and cut into parts. The people you write to keep the parts around a ring, each part with two of them: they see only its size and when it changes, and cannot open it. With your words on a new phone, the parts come back from them, and each of them gives back the conversation you share.</string>
+    <string name="keep_header">Copy with contacts</string>
+    <string name="keep_mine">Keep my copy with my contacts</string>
+    <string name="keep_asking">Asking the people you write to…</string>
+    <string name="keep_nobody_yet">None of your contacts can keep a part yet</string>
+    <string name="keep_not_yet">Not kept yet</string>
+    <string name="keep_kept_by">Kept by %1$d of %2$d</string>
+    <string name="keep_others">Keep parts for my contacts</string>
+    <string name="keep_stop_part">Stop keeping this part</string>
+    <string name="keep_take_back">Take my copy back from my contacts</string>
+    <string name="keep_parts_in_hand">Parts in hand: %1$d of %2$d</string>
+    <string name="keep_restoring_chain">Restoring the identity chain</string>
+    <string name="keep_came_back">The copy came back</string>
+    <string name="keep_none_came_back">No copy came back</string>
+    <string name="keep_others_footer">Parts of other people\'s copies are sealed: this phone cannot open them, and each goes back only to its owner\'s words.</string>
+    <string name="keep_note_title">Keeping a copy</string>
+    <string name="keep_note_body">%1$s keeps a sealed part of their copy on this phone (%2$s). Nobody can open it here.</string>
+    <string name="keep_in_background">Your history keeps coming back in the background.</string>
+</resources>

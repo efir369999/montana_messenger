@@ -8,8 +8,10 @@ use mt_crypto_native::{
 fn sha256_hex(data: &[u8]) -> String {
     use std::io::Write;
     use std::process::{Command, Stdio};
-    let mut child = Command::new("shasum")
-        .args(["-a", "256"])
+    // shasum is a Perl script Windows cannot start; Git for Windows ships sha256sum.exe, same output
+    let (program, args): (&str, &[&str]) = if cfg!(windows) { ("sha256sum", &[]) } else { ("shasum", &["-a", "256"]) };
+    let mut child = Command::new(program)
+        .args(args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
