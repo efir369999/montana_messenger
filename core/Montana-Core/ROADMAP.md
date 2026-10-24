@@ -1,5 +1,11 @@
 # The plan, in twenty-one stages
 
+**Current review, 2026-10-14:** this plan states the intended protocol. Its earlier stage
+closure narrative is historical and is superseded by the reopened findings in
+[AUDIT.md](AUDIT.md). Complete finality, bounded issuance, admission, authenticated joining
+and operator anonymity have not been established. Primitive proofs and earlier host
+measurements do not close those requirements.
+
 An empty directory at the start. At the end: a network a stranger joins by verifying one proof, in
 which a person reaches another by a name and nobody else learns of it, a body is kept alive by
 whoever loves it and found by whoever seeks it, and a client written by someone else stands on the
@@ -722,6 +728,8 @@ the two circuits freezes there, with every ledger row that awaits the artifact.
 
 ## Stage 12 — the circuit of a window, and what returns to the documents
 
+*2026-10-15.* The relation this stage derived — an accumulation over lattice commitments of hidden weight — has no prover, and left the set and the tree with `WINDOW-RELATION.md`: the quorum is a count of distinct parts against the electorate, the ticket is proven in the proposal, and the certificate of a window is its attestations. The text below is the record of what this stage held and why it was derived; it is not what the tree builds.
+
 **Holds.** The ticket cleared, the cement opened against the quorum, the count of the living, the
 round index of the beacon the proposal names, and the accumulation of the previous window's claim
 inside the circuit — an accumulation and not a verification, because a verification in circuit is
@@ -731,8 +739,8 @@ height the folding admits puts the cheapest verification at more than twice what
 after a frame, so accumulation is forced rather than preferred; a step is cheap only over an
 additively homomorphic commitment, and the minimal-surface rule admits the lattice the set already
 carries. What this stage owes is therefore one derivation and not a design
-space, and the derivation has since been made: norm and slack are two quantities and a fold must
-answer both. The norm is answered by decomposing the folded randomness every step. The slack is
+space, and the derivation has since been made: norm and margin are two quantities and a fold must
+answer both. The norm is answered by decomposing the folded randomness every step. The margin is
 answered by the algebra of the challenge, and it is what fixes that algebra — taking two accepting
 answers apart divides by the difference of the challenges, so a scalar drawn from the modulus
 yields an inverse of half the modulus and an extracted witness six orders longer than the bound the
@@ -1057,6 +1065,10 @@ state before its proof is looked at, and the same frame standing at every point 
 applied once for the same reason.
 
 ## Stage 14 — the join, and the cold start
+
+*2026-10-15.* The join of `WINDOW-RELATION.md` is from an anchor — the proposals of two consecutive final windows an operator hands a device — and walks the retained certificates to the head, verifying each as the living did; the constant join from Genesis the text below holds left the set with the proof of a window carried apart. What this stage owes is that walk, the verifier of a window's closure as one entry point, and the acceptance matrix of the relation through it.
+
+*2026-10-15, session 41.* The verifier of a window's closure, the walk and the matrix stand, and the running node closes through them: `montana-node/src/certificate.rs` (`verify_certificate`, `decided_of`, `verify_proposal`, `verify_successor`, `walk`), `montana-node/src/pulse.rs` (`live_doing`, `join`), proven in the small by `certificate_matrix.rs`, `a_walk_from_an_anchor.rs` and `a_device_joins_the_running_chain.rs` — two machines living four windows and a third walking from an anchor to their head. What this stage still owes is the same on the hosts, and the cold start.
 
 **Holds.** The join of a device that holds nothing to a chain of any age: the latest proposal asked
 of several machines and judged alone, its length, its signature, its version rule and its proof

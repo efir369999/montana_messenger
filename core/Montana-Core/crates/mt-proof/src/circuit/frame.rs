@@ -380,7 +380,17 @@ pub fn split(at: usize) -> super::branch::Halves {
 }
 
 pub fn trace_width() -> usize {
+    moments().width() + super::branch::COLUMN_COUNT
+}
+
+// These bits persist for the entire redemption. Per-seam selectors alone let a prover select
+// filler only at the membership check while keeping the value of a note at the balance check.
+fn branch_active() -> usize {
     moments().width()
+}
+
+fn branch_right() -> usize {
+    branch_active() + 1
 }
 
 // Where the public input of a frame holds each of its values, in limbs of four bytes.
@@ -677,7 +687,116 @@ pub fn description(places: &Places, rows_log2: u8) -> Option<Description> {
     held.constraints
         .extend(index_constraints(mine, amounts_at, &amounts));
     held.boundaries.extend(boundaries(places));
+    bind_redemption_branches(&mut held, places);
     Some(held)
+}
+
+fn bind_redemption_branches(description: &mut Description, places: &Places) {
+    use crate::air::Constraint;
+    use sponge::{factor, term};
+    let active = branch_active();
+    let right = branch_right();
+    let schedules = [
+        places.root_rows(),
+        places.capacity_rows(),
+        places.leaf_rows(),
+        places.read_rows(),
+        places.position_rows(),
+        places.nullifier_final_rows(),
+    ];
+    for (which, rows) in schedules.iter().enumerate() {
+        let schedule = trace_width() + description.periodic.len();
+        description.periodic.push(mark(description.rows_log2, rows));
+        let halves = split(which);
+        for (half, source) in [(halves.right, right), (halves.note, active)] {
+            let mut terms = vec![
+                term(F::ONE, vec![factor(half, 0, 1)]),
+                term(
+                    F::ONE.negated(),
+                    vec![factor(schedule, 0, 1), factor(source, 0, 1)],
+                ),
+            ];
+            if half == halves.note {
+                terms.push(term(
+                    F::ONE,
+                    vec![factor(schedule, 0, 1), factor(right, 0, 1)],
+                ));
+            }
+            description
+                .constraints
+                .push(Constraint { degree: 2, terms });
+        }
+    }
+    let carries: Vec<_> = places
+        .each_redemption()
+        .iter()
+        .flat_map(|r| r.first * period()..(r.first + r.blocks()) * period() - 1)
+        .collect();
+    let carry = trace_width() + description.periodic.len();
+    description
+        .periodic
+        .push(mark(description.rows_log2, &carries));
+    for bit in [active, right] {
+        description.constraints.push(Constraint {
+            degree: 2,
+            terms: vec![
+                term(F::ONE, vec![factor(bit, 0, 2)]),
+                term(F::ONE.negated(), vec![factor(bit, 0, 1)]),
+            ],
+        });
+        description.constraints.push(Constraint {
+            degree: 2,
+            terms: vec![
+                term(F::ONE, vec![factor(carry, 0, 1), factor(bit, 1, 1)]),
+                term(
+                    F::ONE.negated(),
+                    vec![factor(carry, 0, 1), factor(bit, 0, 1)],
+                ),
+            ],
+        });
+    }
+    description.constraints.push(Constraint {
+        degree: 2,
+        terms: vec![
+            term(F::ONE, vec![factor(right, 0, 1)]),
+            term(
+                F::ONE.negated(),
+                vec![factor(right, 0, 1), factor(active, 0, 1)],
+            ),
+        ],
+    });
+    // The amount column also decomposes outputs in the final rows of a redemption.
+    // Only an input's tie must inherit its branch. The path bit is free at these
+    // ties (they are not path levels), so it carries the branch there without
+    // adding a column or a cubic gated product. Nonzero amounts require that bit
+    // to be one; a filler ties it to zero exactly where its input enters balance.
+    let input_tie = trace_width() + description.periodic.len();
+    description
+        .periodic
+        .push(mark(description.rows_log2, &places.consumed_ties()));
+    description.constraints.push(Constraint {
+        degree: 2,
+        terms: vec![
+            term(
+                F::ONE,
+                vec![factor(input_tie, 0, 1), factor(path::BIT, 0, 1)],
+            ),
+            term(
+                F::ONE.negated(),
+                vec![factor(input_tie, 0, 1), factor(active, 0, 1)],
+            ),
+        ],
+    });
+    description.constraints.push(Constraint {
+        degree: 2,
+        terms: vec![
+            term(F::ONE, vec![factor(amounts().amount, 0, 1)]),
+            term(
+                F::ONE.negated(),
+                vec![factor(path::BIT, 0, 1), factor(amounts().amount, 0, 1)],
+            ),
+        ],
+    });
 }
 
 fn mark(rows_log2: u8, rows: &[usize]) -> crate::air::Periodic {
@@ -997,11 +1116,42 @@ pub fn trace_of(
     rows_log2: u8,
 ) -> Option<(Vec<Vec<F>>, Digest)> {
     let rows = 1usize << rows_log2;
-    if places.blocks() * period() > rows {
+    if places.blocks() * period() > rows
+        || frame.spends.len() != places.spends
+        || frame
+            .spends
+            .iter()
+            .any(|s| s.consumed.len() != places.consumed || s.created.len() != places.created)
+    {
         return None;
     }
     let mut columns = vec![vec![F::ZERO; rows]; trace_width()];
+    // Actual path levels overwrite this bit in write_frame. At input ties it
+    // takes the persistent branch; elsewhere one permits output decompositions.
+    columns[path::BIT].fill(F::ONE);
+    columns[branch_active()].fill(F::ONE);
+    for (spend, held) in frame.spends.iter().enumerate() {
+        for (at, consumed) in held.consumed.iter().enumerate() {
+            let r = places.redemption_at(spend, at);
+            let rows = r.first * period()..(r.first + r.blocks()) * period();
+            columns[branch_active()][rows.clone()].fill(
+                if matches!(consumed, Consumed::Filler(_)) {
+                    F::ZERO
+                } else {
+                    F::ONE
+                },
+            );
+            columns[branch_right()][rows].fill(if matches!(consumed, Consumed::Right(_)) {
+                F::ONE
+            } else {
+                F::ZERO
+            });
+        }
+    }
     let root = write_frame(&mut columns, places, frame, admitted)?;
+    for tie in places.consumed_ties() {
+        columns[path::BIT][tie] = columns[branch_active()][tie];
+    }
     for block in places.blocks()..rows / period() {
         permutation::write_block(&mut columns, block, &[F::ZERO; WIDTH])?;
     }
@@ -1269,6 +1419,23 @@ mod tests {
         assert_eq!(deep.redemption_blocks(), 50);
         assert_eq!(deep.spend_blocks(), 110);
         assert_eq!(deep.blocks(), 330);
+        for layout in [places, deep] {
+            let path_rows: std::collections::BTreeSet<_> = layout
+                .each_redemption()
+                .iter()
+                .flat_map(|r| r.level_rows())
+                .collect();
+            for tie in layout
+                .consumed_ties()
+                .into_iter()
+                .chain(layout.created_ties())
+            {
+                assert!(!path_rows.contains(&tie));
+                for row in value::range_rows(tie, value::BITS_OF_AN_AMOUNT) {
+                    assert!(!path_rows.contains(&row));
+                }
+            }
+        }
     }
 
     #[test]
@@ -1282,6 +1449,85 @@ mod tests {
         let public =
             poseidon::limbs_of(&public_of(&frame, &places, &root, &admitted()).expect("a public"));
         assert!(held.satisfied_by(&trace, &public));
+    }
+
+    #[test]
+    fn membership_cannot_be_disabled_at_the_root_seam_alone() {
+        let (frame, places, _) = frame_of(balanced());
+        let description = description(&places, ROWS_LOG2).unwrap();
+        let (mut trace, _) = trace_of(&places, &frame, &admitted(), ROWS_LOG2).unwrap();
+        // Keep nonzero inputs and every note derivation, but choose the filler branch only at
+        // membership checks. The public root is now an empty tree containing none of the notes.
+        let empty = notes::empty_root();
+        for row in places.root_rows() {
+            trace[split(SPLIT_ROOT).note][row] = F::ZERO;
+            trace[split(SPLIT_ROOT).right][row] = F::ZERO;
+            for j in 0..CAPACITY {
+                trace[roots_at() + j][row] = empty.elements()[j];
+            }
+        }
+        let public = public_of(&frame, &places, &empty, &admitted()).unwrap();
+        assert!(
+            !description.satisfied_by(&trace, &poseidon::limbs_of(&public)),
+            "a nonzero input skipped membership by switching only one branch selector"
+        );
+    }
+
+    #[test]
+    fn malformed_witness_shape_is_refused_before_writing_branch_rows() {
+        let (mut frame, places, _) = frame_of(balanced());
+        frame.spends.push(frame.spends[0].clone());
+        assert!(trace_of(&places, &frame, &admitted(), ROWS_LOG2).is_none());
+        frame.spends.pop();
+        let repeated = frame.spends[0].consumed[0].clone();
+        frame.spends[0].consumed.push(repeated);
+        assert!(trace_of(&places, &frame, &admitted(), ROWS_LOG2).is_none());
+    }
+
+    #[test]
+    fn one_real_input_and_filler_can_pay_nonzero_outputs() {
+        let (mut frame, places, root) = frame_of([[17, 0, 10, 7], [0; 4], [0; 4]]);
+        for (spend, held) in frame.spends.iter_mut().enumerate() {
+            for (at, consumed) in held.consumed.iter_mut().enumerate() {
+                if spend != 0 || at != 0 {
+                    *consumed = Consumed::filler(&[0x51; 32], spend * 2 + at, DEPTH);
+                }
+            }
+        }
+        let description = description(&places, ROWS_LOG2).unwrap();
+        let (trace, reached) = trace_of(&places, &frame, &admitted(), ROWS_LOG2).unwrap();
+        assert_eq!(reached, root);
+        let public = public_of(&frame, &places, &root, &admitted()).unwrap();
+        assert!(description.satisfied_by(&trace, &poseidon::limbs_of(&public)));
+        let proof = crate::scheme::prove(&description, &public, &trace).unwrap();
+        assert_eq!(crate::scheme::verify(&description, &public, &proof), Ok(()));
+    }
+
+    #[test]
+    fn changing_every_seam_to_filler_cannot_keep_nonzero_inputs() {
+        let (frame, places, root) = frame_of(balanced());
+        let description = description(&places, ROWS_LOG2).unwrap();
+        let (mut trace, _) = trace_of(&places, &frame, &admitted(), ROWS_LOG2).unwrap();
+        for which in 0..6 {
+            trace[split(which).note].fill(F::ZERO);
+            trace[split(which).right].fill(F::ZERO);
+        }
+        for r in places.each_redemption() {
+            let rows = r.first * period()..(r.first + r.blocks()) * period();
+            trace[branch_active()][rows.clone()].fill(F::ZERO);
+            trace[branch_right()][rows].fill(F::ZERO);
+        }
+        // Keep the branch/amount helper coherent too; refusal must be caused by
+        // the nonzero filler input, not by leaving that helper on the note branch.
+        for tie in places.consumed_ties() {
+            trace[path::BIT][tie] = F::ZERO;
+        }
+        path::write_pairs(&mut trace);
+        let public = public_of(&frame, &places, &root, &admitted()).unwrap();
+        assert!(
+            !description.satisfied_by(&trace, &poseidon::limbs_of(&public)),
+            "a filler carried a nonzero consumed amount into conservation"
+        );
     }
 
     #[test]

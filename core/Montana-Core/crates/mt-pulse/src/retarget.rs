@@ -1,7 +1,7 @@
-// The two recomputations. The set states both in `docs/Montana Canon.md` — "The recomputation of
-// the draw threshold" and "The recomputation of the round threshold" — and this is their one
-// transcription: the multiplication before the division, the division toward zero, the clamp after
-// the division and the floor last and by name.
+// The thresholds the set computes. It states them in `docs/Montana Canon.md` — "The threshold of the
+// draw", "The recomputation of a walked threshold" and "The threshold of a round" — and this is
+// their one transcription: the multiplication before the division, the division toward zero, the
+// clamp after the division and the floor last and by name.
 //
 // The direction of each ratio is the property, not the arithmetic. A rule that reproduces the
 // shape and inverts the direction is a network that stalls once and then stalls forever, so both
@@ -14,14 +14,13 @@ fn parameter(name: &str) -> Result<u64, PulseError> {
     mt_genesis::scalar(name).ok_or(PulseError::DecreeIncomplete)
 }
 
-// The threshold both retargets begin from: the largest value the width of the comparison carries.
-// Canon states it and states why it is forced — a threshold is walked by observations that exist
-// only once windows have closed, so a starting value too low for the population that stands is a
-// deadlock the arithmetic cannot leave, while the largest value opens the network and lets the
-// first observation move it.
+// The threshold of the draw: the largest value the width of the comparison carries, at every
+// window. Canon states why — a runner carries what the window decided and nothing of its own, so
+// excluding a machine from running buys only the bandwidth of its copy and costs a window nobody
+// clears; the ticket orders the runners instead of excluding them.
 //
 // It reads `hash_bytes` and nothing else, which is why it stands in no row of the Decree.
-pub fn opening_threshold() -> Result<U256, PulseError> {
+pub fn draw_threshold() -> Result<U256, PulseError> {
     let width = parameter("hash_bytes")?;
     if usize::try_from(width) != Ok(32) {
         return Err(PulseError::DecreeIncomplete);
@@ -51,11 +50,11 @@ fn clamp_and_floor(new: Option<U256>, old: U256, step_bound: u64) -> Result<U256
     Ok(if held.is_zero() { U256::ONE } else { held })
 }
 
-// The draw: `cleared` is the count of windows of the period in which at least one machine cleared
-// the threshold. A higher threshold is an easier one, so the quotient rises when fewer windows
-// cleared — written the other way a network that stalled once would make its next window harder,
+// A threshold walked by the windows that met it: `cleared` is the count of windows of the period in
+// which it was met. A higher threshold is an easier one, so the quotient rises when fewer windows
+// met it — written the other way a network that stalled once would make its next window harder,
 // and harder again, with no bottom.
-pub fn recompute_draw(target_old: U256, cleared: u64) -> Result<U256, PulseError> {
+pub fn recompute(target_old: U256, cleared: u64) -> Result<U256, PulseError> {
     let period = parameter("retarget_period")?;
     let damping = parameter("retarget_damping")?;
     let step_bound = parameter("retarget_step_bound")?;
@@ -82,7 +81,7 @@ pub fn recompute_draw(target_old: U256, cleared: u64) -> Result<U256, PulseError
 // product — the strikes of a machine per window — is the constant the volume of the Decree is
 // checked against.
 pub fn round_threshold(admitted: u64, chains: u64) -> Result<U256, PulseError> {
-    let width = opening_threshold()?;
+    let width = draw_threshold()?;
     if admitted == 0 || chains == 0 {
         return Ok(width);
     }
@@ -115,27 +114,27 @@ mod tests {
     }
 
     #[test]
-    fn the_frozen_vectors_of_the_draw_reproduce() {
+    fn the_frozen_vectors_of_the_recomputation_reproduce() {
         // Canon, "Vectors of the recomputation".
         let period = mt_genesis::scalar("retarget_period").expect("named");
         assert_eq!(
-            hex(recompute_draw(two_pow_248(), period).expect("computes")),
+            hex(recompute(two_pow_248(), period).expect("computes")),
             "0100000000000000000000000000000000000000000000000000000000000000"
         );
         assert_eq!(
-            hex(recompute_draw(two_pow_248(), 0).expect("computes")),
+            hex(recompute(two_pow_248(), 0).expect("computes")),
             "0400000000000000000000000000000000000000000000000000000000000000"
         );
         assert_eq!(
-            hex(recompute_draw(two_pow_248(), period / 2).expect("computes")),
+            hex(recompute(two_pow_248(), period / 2).expect("computes")),
             "01aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         );
         assert_eq!(
-            hex(recompute_draw(U256::from_u64(3), 0).expect("computes")),
+            hex(recompute(U256::from_u64(3), 0).expect("computes")),
             "000000000000000000000000000000000000000000000000000000000000000c"
         );
         assert_eq!(
-            hex(recompute_draw(U256::from_u64(1), 0).expect("computes")),
+            hex(recompute(U256::from_u64(1), 0).expect("computes")),
             "0000000000000000000000000000000000000000000000000000000000000004"
         );
     }
@@ -196,7 +195,7 @@ mod tests {
         // floor of one: a chain no machine is ever eligible for.
         let floor = mt_genesis::scalar("round_floor").expect("named");
         let divisor = mt_genesis::scalar("committee_divisor").expect("named");
-        let width = opening_threshold().expect("computes");
+        let width = draw_threshold().expect("computes");
         let without_the_floor = |admitted: u64, chains: u64| {
             let crowd = (admitted / (divisor * chains)).min(admitted);
             let held = width.mul_div(crowd, admitted).expect("divides");
@@ -238,7 +237,7 @@ mod tests {
         // would be a different rule wearing the same shape.
         let floor = mt_genesis::scalar("round_floor").expect("named");
         let divisor = mt_genesis::scalar("committee_divisor").expect("named");
-        let width = opening_threshold().expect("computes");
+        let width = draw_threshold().expect("computes");
 
         // At and below the floor every machine of the population is drawn, so the threshold is the
         // whole width — the network of one machine a cold start begins with among them.
@@ -287,35 +286,35 @@ mod tests {
     }
 
     #[test]
-    fn the_direction_of_the_draw_is_the_one_the_set_states() {
-        // The named wrong implementation of the draw: the quotient falling when nothing cleared.
+    fn the_direction_of_the_recomputation_is_the_one_the_set_states() {
+        // The named wrong implementation: the quotient falling when nothing cleared.
         // A network that stalled once would then make its next window harder, and harder again.
         let period = mt_genesis::scalar("retarget_period").expect("named");
         let held = two_pow_248();
-        let none = recompute_draw(held, 0).expect("computes");
-        let all = recompute_draw(held, period).expect("computes");
-        let half = recompute_draw(held, period / 2).expect("computes");
+        let none = recompute(held, 0).expect("computes");
+        let all = recompute(held, period).expect("computes");
+        let half = recompute(held, period / 2).expect("computes");
         assert!(none > half, "fewer cleared must be the easier threshold");
         assert!(half > all, "fewer cleared must be the easier threshold");
         assert_eq!(all, held, "every window cleared holds the threshold");
     }
 
     #[test]
-    fn no_threshold_of_the_draw_reaches_zero_however_it_is_driven() {
+    fn no_walked_threshold_reaches_zero_however_it_is_driven() {
         let mut target = U256::from_u64(1);
         for _ in 0..64 {
             let period = mt_genesis::scalar("retarget_period").expect("named");
-            target = recompute_draw(target, period).expect("computes");
+            target = recompute(target, period).expect("computes");
             assert!(!target.is_zero());
         }
     }
 
     #[test]
-    fn a_step_of_the_draw_never_exceeds_the_bound() {
+    fn a_step_of_the_recomputation_never_exceeds_the_bound() {
         let bound = mt_genesis::scalar("retarget_step_bound").expect("named");
         let held = two_pow_248();
         for cleared in [0u64, 1, 5_000, 20_160] {
-            let new = recompute_draw(held, cleared).expect("computes");
+            let new = recompute(held, cleared).expect("computes");
             assert!(new <= held.saturating_mul_u64(bound));
             assert!(new >= held.div_u64(bound).expect("divides"));
         }
@@ -323,13 +322,13 @@ mod tests {
 }
 
 #[cfg(test)]
-mod opening {
+mod of_the_draw {
     use super::*;
 
-    // Canon, "The threshold the draw begins from".
+    // Canon, "The threshold of the draw".
     #[test]
-    fn the_opening_threshold_is_the_width_and_every_draw_clears_it() {
-        let held = opening_threshold().expect("the Decree names the width");
+    fn the_threshold_of_the_draw_is_the_width_and_every_ticket_clears_it() {
+        let held = draw_threshold().expect("the Decree names the width");
         assert_eq!(held.to_be_bytes(), [0xFFu8; 32]);
         // Every value the width carries stands below it but the one value equal to it, which is
         // what "drawn by everybody" means at the largest threshold there is.
@@ -344,27 +343,23 @@ mod opening {
         );
     }
 
-    // The named wrong implementation this refuses: a starting value below the population that
-    // stands. Its own retarget cannot repair it — the rise happens once per period of windows, and
-    // a window ends only by closing, so a threshold nobody clears never gets its period.
-    //
-    // What the vector shows is the arithmetic of that: from the smallest thresholds the rule can
-    // only walk while something clears, and the clamp of the first step from the largest value
-    // saturates rather than wrapping.
+    // The named wrong implementation this refuses: a walked threshold whose clamp wraps at the width.
+    // From the largest value a step of the recomputation holds where every window met it and
+    // saturates where none did, rather than turning the largest threshold into a small one.
     #[test]
-    fn the_first_recomputation_from_the_opening_threshold_saturates_rather_than_wrapping() {
-        let opening = opening_threshold().expect("named");
+    fn a_recomputation_from_the_width_saturates_rather_than_wrapping() {
+        let opening = draw_threshold().expect("named");
         let period = parameter("retarget_period").expect("named");
         // Every window of the period cleared, which is what an opening cohort does: the ratio is
         // one and the threshold holds.
-        let held = recompute_draw(opening, period).expect("the rule computes");
+        let held = recompute(opening, period).expect("the rule computes");
         assert_eq!(
             held, opening,
             "a period that cleared every window moved the threshold"
         );
         // And where none cleared, the clamp bounds the rise to one step, which at the width is the
         // width itself rather than a value that wrapped to something small.
-        let risen = recompute_draw(opening, 0).expect("the rule computes");
+        let risen = recompute(opening, 0).expect("the rule computes");
         assert_eq!(
             risen, opening,
             "the upper clamp wrapped instead of saturating"

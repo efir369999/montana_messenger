@@ -54,8 +54,8 @@ awaits anything. One thing is open and the Constitution names it at the front: t
 of the two circuits, an artifact this set binds by its hash rather than by prose, with the
 statements it must assert, the format of its description and the verifier that consumes it all
 frozen in Canon. Everything else — every value, every layout, every domain, the whole of the wire,
-the join, the commitment that carries standing — reaches a mechanism, a derivation, a conformance
-item and a vector.
+the join, the cement and the certificate of a window — reaches a mechanism, a derivation, a
+conformance item and a vector.
 
 ## What is not part of the set
 

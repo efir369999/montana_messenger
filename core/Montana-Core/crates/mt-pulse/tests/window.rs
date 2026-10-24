@@ -5,14 +5,12 @@
 // its one-time key for the window from its own secret under the domain the set names, asks the
 // eligibility of every round with it, publishes a heavy attestation the first time it is eligible,
 // and every machine accumulates the cement from what it has seen. The window closes when the
-// standing of the cement reaches the quorum by the comparison of the set.
+// count of the cement reaches the quorum share of the electorate's count by the comparison of the
+// set.
 
+use mt_pulse::cement::Cement;
 use mt_pulse::close::quorum_reached;
-use mt_pulse::fold::{Cement, Leaf};
 use mt_pulse::{clears, retarget, U256};
-use mt_suite::standing::weight_commit;
-
-const STANDING: u64 = 1_000;
 
 // The population the running tests of this file stand at: the count of admitted machines at which
 // the crowd of a round is the admitted through the divisor exactly, which is where a window takes
@@ -43,11 +41,11 @@ fn the_share_a_retarget_aimed_at() -> U256 {
     U256::from_be_bytes(&bytes)
 }
 
-// A machine of the simulation holds what a window turns on: its secret, and the nullifier of its
-// part, which is what the draw of a round reads. Its one-time key signs and draws nothing, so
-// nothing here holds one — what a signature adds is checked where signatures are checked.
+// A machine of the simulation holds what a window turns on: the nullifier of its part, which is
+// what the draw of a round reads and what the cement takes. Its one-time key signs and draws
+// nothing, so nothing here holds one — what a signature adds is checked where signatures are
+// checked.
 struct Machine {
-    secret: [u8; 32],
     part: [u8; 32],
     attested: bool,
 }
@@ -63,7 +61,6 @@ impl Machine {
         // nothing, so this simulation derives none.
         let part = mt_derive::nullifier::part(&secret, window).expect("a half of the family");
         Machine {
-            secret,
             part,
             attested: false,
         }
@@ -72,19 +69,6 @@ impl Machine {
     fn eligible(&self, aggregate: &[u8; 32], chain: u8, round: u32, threshold: &U256) -> bool {
         let value = mt_derive::pulse::round_eligibility(&self.part, aggregate, chain, round);
         clears(&value, threshold)
-    }
-
-    fn leaf(&self, window: u64) -> Leaf {
-        Leaf {
-            part_nullifier: self.part,
-            commitment: weight_commit(
-                STANDING,
-                0,
-                window,
-                mt_suite::standing::Blind::of(self.secret, window),
-            )
-            .expect("bounded"),
-        }
     }
 }
 
@@ -99,8 +83,8 @@ enum Window {
 }
 
 // One window, run to its close: the count of rounds it took, or the round it stood at. What decides
-// a round is eligibility and nothing else, so this carries no commitment — the cement is a property
-// of the sum and is put to a population of its own below, where every leaf is a real commitment.
+// a round is eligibility and nothing else, so this carries no aggregate — the cement as a beacon
+// carries it is put to a population of its own below.
 //
 // **Every machine is asked, and not only the ones that have not attested.** A machine already in
 // the cement answers a later round it is drawn for with a light attestation, and that answer closes
@@ -120,7 +104,7 @@ fn run_window_of(run: u64, population: u64, window: u64, threshold: &U256, hones
         .collect();
     let aggregate =
         mt_derive::aggregate::aggregate(&[], window).expect("an empty set holds no repeat");
-    let total = u128::from(population) * u128::from(STANDING);
+    let total = u128::from(population);
 
     let mut cemented: u128 = 0;
     let mut round: u32 = 0;
@@ -133,7 +117,7 @@ fn run_window_of(run: u64, population: u64, window: u64, threshold: &U256, hones
             answered = true;
             if !machine.attested {
                 machine.attested = true;
-                cemented += u128::from(STANDING);
+                cemented += 1;
             }
         }
         if honest && !answered {
@@ -230,9 +214,9 @@ fn the_rule_gives_the_derived_count_where_the_divisor_binds_and_fewer_below_it()
 
 #[test]
 fn a_window_that_cemented_nothing_closes_nothing() {
-    // The quorum is a comparison and not a count: a total that nobody answered for is not closed
-    // by an empty cement, whatever the population.
-    let total = u128::from(population()) * u128::from(STANDING);
+    // The quorum is a comparison against the electorate: an electorate nobody answered for is not
+    // closed by an empty cement, whatever the population.
+    let total = u128::from(population());
     assert_eq!(quorum_reached(0, total), Ok(false));
     // And a cement that reached the share closes it exactly there.
     let (num, den) = mt_genesis::ratio("confirmation_quorum").expect("named");
@@ -241,47 +225,52 @@ fn a_window_that_cemented_nothing_closes_nothing() {
 }
 
 // The other half of the closing condition: the cement every verifier recomputes from what it
-// holds. What decides it is the sum and the one-entry-per-part-nullifier rule, not the size of
-// the population, so this runs over a set small enough that every leaf is a real commitment.
+// holds. What decides it is the set of parts and the one-entry-per-part-nullifier rule, not the
+// order of arrival, so four verifiers seeing one window four ways carry one aggregate and one count.
 #[test]
 fn every_verifier_recomputes_one_cement_from_what_it_holds() {
     let window = 3_000u64;
     let machines: Vec<Machine> = (0..24u64).map(|i| Machine::of(7, i, window)).collect();
-    let published: Vec<Leaf> = machines.iter().map(|m| m.leaf(window)).collect();
+    let published: Vec<[u8; 32]> = machines.iter().map(|m| m.part).collect();
 
     let mut forward = Cement::new();
-    for leaf in &published {
-        forward.add(leaf).expect("within the population");
+    for part in &published {
+        forward.add(*part);
     }
     let mut backward = Cement::new();
-    for leaf in published.iter().rev() {
-        backward.add(leaf).expect("within the population");
+    for part in published.iter().rev() {
+        backward.add(*part);
     }
     // A verifier that saw a delivery twice: the repetition is lawful and adds nothing.
     let mut doubled = Cement::new();
-    for leaf in published.iter().chain(published.iter()) {
-        doubled.add(leaf).expect("within the population");
+    for part in published.iter().chain(published.iter()) {
+        doubled.add(*part);
     }
     // And one that saw them shuffled by a stride no machine chose.
     let mut shuffled = Cement::new();
     for step in [7usize, 5, 3, 1] {
-        for leaf in published.iter().step_by(step) {
-            shuffled.add(leaf).expect("within the population");
+        for part in published.iter().step_by(step) {
+            shuffled.add(*part);
         }
     }
 
-    assert_eq!(forward.count(), published.len());
-    assert_eq!(doubled.count(), published.len());
-    assert_eq!(shuffled.count(), published.len());
-    assert_eq!(forward.state(), backward.state());
-    assert_eq!(forward.state(), doubled.state());
-    assert_eq!(forward.state(), shuffled.state());
-    // A cement missing one attestation is a different cement: the sum is not a count.
+    assert_eq!(forward.count(), published.len() as u64);
+    assert_eq!(doubled.count(), published.len() as u64);
+    assert_eq!(shuffled.count(), published.len() as u64);
+    assert_eq!(forward.aggregate(window), backward.aggregate(window));
+    assert_eq!(forward.aggregate(window), doubled.aggregate(window));
+    assert_eq!(forward.aggregate(window), shuffled.aggregate(window));
+    assert_eq!(
+        forward.aggregate(window),
+        Ok(mt_derive::aggregate::aggregate(&published, window).expect("distinct parts"))
+    );
+    // A cement missing one attestation is a different cement, and the count says so as well.
     let mut short = Cement::new();
-    for leaf in published.iter().skip(1) {
-        short.add(leaf).expect("within the population");
+    for part in published.iter().skip(1) {
+        short.add(*part);
     }
-    assert_ne!(forward.state(), short.state());
+    assert_ne!(forward.aggregate(window), short.aggregate(window));
+    assert_eq!(short.count() + 1, forward.count());
 }
 
 // **A round nobody is drawn for stalls the chain, and that is why the share this set aimed a

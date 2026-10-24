@@ -15,13 +15,315 @@ with the commit that closes it.
 Nothing here is scheduled by this file. What the plan already owns is listed at the end so it is
 not filed twice, and what the plan does not yet own is marked as exactly that.
 
+## The secret of a pipe walks with the window (Canon 8.1.0, Core 0.26.0)
+
+**A letter's key did not ratchet, and the public audit said so (F-3).** The key of the inner seal,
+the tag and the right to collect all stood on the secret the first letter established, unchanged
+for the life of the correspondence: whoever obtained that secret from a device, or from a copy of
+its storage, opened every cell of the pipe they had recorded, before and after the taking. Closed
+by construction in the set rather than in a client: Canon walks the secret one step per window
+under `mt-pipe-ratchet`, every quantity of a window takes the value of that window, and a device
+erases what it walked from — so a value taken at a window reaches no earlier one. `mt-derive` holds
+the step and the walk; the gate compares the walk at both frozen inputs (a repeated byte and a
+secret no permutation of which is itself), the tags and the first frozen key of the inner seal
+standing on it, and the two values frozen for the named wrong walks — a secret held unchanged,
+which is exactly the old vector of the second window, and a secret stepped once per unit of height.
+The harness flips each of those rows and holds the gate to refusing every one.
+
+**What the walk does not give is named in Network's threat model rather than implied.** It does not
+heal after a taking: the pipe is read from that window on until the correspondents establish a new
+secret, and a healing step is a mechanism of its own, not claimed here. The clients hold the walk as
+they hold the tag — in one place each, against these vectors; until a client walks, its letters
+stand on the unwalked secret and fail the second vector of the block, which is the state this entry
+exists to make visible.
+
 ## What the gate does not compare
 
-**One thing of this tree stands here, and it is the gate's own denominator.** The rest of the
-findings this section carried are closed by construction, and what closed each of them is written
-below rather than remembered. The questions that remain beyond the one below are not this tree's to
-answer: they belong to the set, and they stand in the last section with the item of the plan that
-owns them.
+### The standing weighs in the close and is disclosed nowhere, 2026-10-16
+
+**The author ruled for the sortition of `WINDOW-RELATION.md`, section 2, and it stands in the set
+and the tree (session 42).** Canon 8.0.0, "The standing of an electorate, and the votes it draws";
+Consensus 6.0.0; Constitution 3.14.0, [I-12]; Registry CNS-26. What stands, each held by the gate or
+by a test named here:
+
+- a unit of standing is a census window — one in every `census_interval` — whose cement holds the
+  machine's part; the proposal carries the root and the count of the last `standing_censuses` census
+  cements inside its identifier (686 bytes), carried and shifted by `mt-pulse/src/standing.rs`, and a
+  moved count is refused with the roots (`certificate_matrix.rs`); the tree of a cement folds its
+  parts ascending under `mt-cement-leaf` and `mt-cement-node` (`mt-proof/src/cement.rs`);
+- the committee is a function of the standing alone: nought below `standing_censuses x
+  standing_committee` units, where a sample would be the whole and publish every weight, and
+  `width x standing_committee / standing` from there (`committee`, vectors frozen in Canon);
+- a ballot proves in zero knowledge how many units of the machine's standing drew a vote, under
+  `mt-vote`, and publishes the count and nothing else (`mt-proof/src/circuit/ballot.rs`, 63 columns
+  at the frame's height, bound into `air_hash`): its unit tests hold an honest ballot to the count
+  computed outside the circuit, refuse one vote more or less, a moved census root or window, another
+  aggregate and another window, show the comparison strict, show a census not lived casting nothing —
+  a trace forged around the free walk breaks the rule of the root at its seam and no rule of the
+  votes — and prove and verify one ballot end to end;
+- a window closes on the count to the quorum of the electorate and on the votes of the verified
+  ballots of the cement's parts to the quorum of the committee (`closes_window`); a ballot that does
+  not verify casts nothing, a part counts once at its largest ballot, and a final beacon carrying
+  more votes than the certificate's ballots cast is refused (`verify_certificate`, `decided_of`); the
+  matrix holds an electorate whose standing is sampled refusing the whole count without votes, and
+  forged ballots claiming every census casting nothing under a committee of three;
+- the votes stand on the final beacon as evidence and in no field of the proposal's name, so two
+  runners that verified the ballots of one cement at different moments write one name.
+
+What a ballot discloses is one number per machine per window — a binomial sample of its standing at
+the rate the committee sets, under a part that joins to nothing across windows — and below the floor
+of the committee nobody votes at all.
+
+### The relation of a window stands in the set and the tree, 2026-10-15
+
+**The weight, the fold and the proof of a window carried apart have left; the cement is the set
+of parts, the ticket is proven in the proposal, and the certificate of a window is its
+attestations.** `WINDOW-RELATION.md` states the finding that forced it: the quorum the set
+specified was an inequality over a sum of lattice commitments whose opening is the sum of the
+private randomnesses of distinct machines, so no prover held the witness, at any parameters and
+any population. The relation that replaces it weighs every machine of the electorate alike and
+counts distinct part-nullifiers against the count the proposal of the window two before carries.
+
+What stands after this commit, each held by the gate or by a test named here:
+
+- the cement of a beacon is `aggregate(parts, W)` beside the count (`mt-pulse/src/cement.rs`); two
+  real machines gathering one window's heavy attestations in two orders carry one beacon
+  (`montana-node/tests/window_cement_audit.rs`, which once reproduced the opposite), and the
+  simulation of a population reaches one cement four ways (`mt-pulse/tests/window.rs`);
+- the close is `count x den >= num x electorate` over counts a verifier holds (`mt-pulse/src/close.rs`,
+  `montana-node/tests/a_window_closes.rs`);
+- the ticket is proven by its own description at the presence's height
+  (`mt-proof/src/circuit/ticket.rs`): the halves of the secret, the walk of the electorate, the
+  ticket over the spending half and the aggregate, the digest of the runner's key under
+  `mt-runner-key-digest`, and a comparison of thirty-two rows that subtracts the ticket from the
+  threshold less one byte by byte with every byte held in range and every word held canonical; a
+  ticket at the threshold writes no trace, a moved aggregate, a lifted key and a lowered threshold
+  are refused, and a stranger cannot graft an admitted machine's branch;
+- the proposal carries `admitted_count`, `cement_aggregate` and `cement_count` inside its
+  identifier and a ticket proof of `PRESENCE_PROOF_LEN`; the confirmation carries no weight; the
+  beacon is 85 bytes; every length and vector that moved is recomputed by `relation-values` and
+  `genesis-values` and compared by the gate;
+- the two key digests take domains of their own, because the set holds every domain to one
+  family and the seed of a key is SHA-256 while its digest is of the proof hash; the family of the
+  proof hash is listed as the code computes it, twenty-six.
+
+The entry point stands since the same day: `montana-node/src/certificate.rs` judges a window's
+closure as one door — the electorate of `W - 2`, every heavy attestation against it, the distinct
+parts, the count against the quorum, and the proposal's predecessor, cement, roots, signature and
+ticket proof — and `montana-node/src/runner.rs` assembles and signs the proposal of a machine whose
+ticket cleared, answering nothing for one whose did not. The acceptance matrix of
+`WINDOW-RELATION.md`, section 4, runs through that door in `montana-node/tests/certificate_matrix.rs`
+and `ITEM-1-INTERNAL-AUDIT.md` carries its rows.
+
+**The running node closes through the door, and a device behind walks to its head (session 41,
+2026-10-15).** The second half of stage four stands, with the set amended in the same pass (Canon
+7.1.0, Consensus 5.1.0):
+
+- the six roots of state are defined — Canon, "The roots of state": the set of nullifiers and the
+  table of machines as sparse trees whose present keys carry the record `0x01`, the tree of
+  operations as the identifiers of the frames one window applied in the order they applied, the
+  frames of a round applying as a machine leaves it in ascending order of identifier — and
+  `State::roots` is their one owner (`montana-node/src/state.rs`); `the_roots_of_state.rs` holds
+  them against a real frame, the rate nullifiers outside the set and the operations of one window;
+- a window closes on its final beacon — a beacon whose carried count reaches the quorum of the
+  electorate of `W - 2`, reconciled and answered — and the proposal carries that beacon's pair;
+- the identifier of a proposal is taken over what the window decided, `window` through `suite_id`,
+  286 bytes, `final_beacon` moved after it: the first four-window run found two machines closing one
+  window on two branches of the versions of a round (nine rounds and one) on one cement, and a name
+  over the beacon parted the next window between two identifiers; under the decided name both took
+  one in every window;
+- `live_doing` reads the electorate and the aggregate of every window off the proposal two before
+  it, links round zero to the proposal of the window before (the Genesis State Hash for the first),
+  proves its own ticket and judges every proposal it takes with `verify_proposal` against its own
+  recomputed roots and final beacon, keeps the proposal, and moves the head onto the proposal of the
+  window before only when this window's cement reached the quorum on it;
+- points live `retained_windows` windows after their own, read from the Decree at start;
+- `certificate::walk` and `pulse::join` walk from an anchor of two consecutive final proposals,
+  verifying each certificate and judging each next proposal whole but for its roots, which the
+  certificate making it final attests; the head is the newest proposal whose certificate verified.
+  A step judges every proposal standing under the name the window after attests and takes the first
+  that stands, so a runner publishing a refused copy of an honest decision stops no device.
+  The set had said the next proposal is final once its ticket clears, which would have let a device
+  take state against roots no quorum attested; Consensus 5.1.0 corrects it.
+
+Proven by `certificate_matrix.rs`, `a_walk_from_an_anchor.rs` (two trees, so the electorate of
+`W - 2` and not of `W - 1` is what accepts), `the_roots_of_state.rs`,
+`a_device_joins_the_running_chain.rs` (two machines living four windows, a third walking from an
+anchor to their head, a forged anchor refused), `two_hosts_live_a_window.rs` and
+`three_machines_live_a_window.rs`.
+
+Found on the way, and what became of each (session 42, 2026-10-16):
+
+- **agreement on what a window decided** (items 5, 7 and 13, and named in the Constitution, "What
+  the set does not yet fix"): a machine closes a window on the final beacon it reconciled and applies
+  the frames standing at the points of each round as it leaves that round, so two honest machines
+  may close one window on two pairs, or on one pair with two sets of frames, and take two names for
+  one window; the window after parts its cement between the names, and where neither reaches its
+  quorum both halves wait. Session 41 named the half of it that is the pair; the frames are the
+  other half, and both have one cause: the set orders the rounds and never votes a second time on
+  the predecessor of a window. Closing it is an agreement step over that predecessor — a second
+  vote with a lock, or an agreement over a common coin — with its safety under the quorum, its
+  liveness once delivery is bounded, and a partition and rejoin test; `AGREEMENT.md` is its design
+  gate. It is a stage of its own and not a remainder of the relation: the runs here are of two and
+  three machines, where the quorum asks all and no frame races the close.
+- **the payer's own frame** (item 7) — closed: the frame stands at the points of its round and
+  applies with the round's frames in the order of their identifiers; the wallet settles once the
+  round has applied it (`Machine::settle_when_applied`, `a_payers_own_frame_applies_with_its_round.rs`).
+- **the threshold of the draw** (item 7) — closed in the set: the threshold is the width at every
+  window, and the ticket orders the runners rather than excluding them (Canon, "The threshold of the
+  draw"; Consensus, "The threshold of the draw, and the order of the runners"); a machine waits the
+  share of `CARRIES_WITHIN` its ticket stands at before it proves its own proposal. A machine whose
+  final beacon differs from a runner's proves its own and waits on nobody.
+- **a right without the machine's part in the cement** (item 3) — closed: the right of `Lived` is
+  derived only where the machine's own part is among the parts the final beacon carried.
+- **the table of machines is empty** (stage 19): no selection event is implemented, so
+  `machine_root` is the root of the empty table, which is what the set states of a network whose
+  every machine came of an opening cohort.
+
+Two findings outside item 1 were met on the way and are filed rather than fixed here: the frame's
+filler derivation computes a digest under `mt-note-key` with the proof hash while the registry
+holds that domain as a branch of a seed under HKDF (`mt-proof/src/circuit/frame.rs`, `filler`), a
+second use of one domain under the other family of the kind the registry forbids; and the volume
+paragraph of the Decree and the ledger of this file carry prose numbers no rule computes.
+
+### The scheme hides its witness, 2026-10-15
+
+**Closed by construction; the reproduction of 2026-10-14 is now a refusal.** The proof scheme
+enforces constraints on the live rows of a trace but the last and fills the last
+`proof_free_rows` rows of every column with uniform randomness before committing; a randomizer
+column of uniform values enters the deep composition under weights of its own; the composition is
+divided by what vanishes on the live rows and carried in two parts. What a query opens of a column
+(`proof_queries` rows) and what the two points outside the domain evaluate of it are linear forms
+over a polynomial of which `proof_free_rows` values are free, so they are uniform and independent of
+the witness; the folding layers open a batch that carries the randomizer. The construction is
+ethSTARK's with the batch randomizer of Haboeck and Kindi (ePrint 2024/1037); Canon states it in
+"The proof scheme" and the hiding argument stands in `WINDOW-RELATION.md`, section 5.
+
+The session 37 observer is kept as it was written and run against the construction in
+`montana-node/tests/presence_disclosure_audit.rs`: a confirmation produced by the actual node
+prover and accepted by `verify_heavy`, whose serialized proof is handed to the observer. The
+observer now reads forty-eight distinct lane rows, none of them the spending half, and the
+nullifiers it predicts from any of them are not the machine's at any height; a second proof of
+the same presence opens other rows. `mt-proof/tests/scheme.rs` holds the same property at the
+scheme: two proofs of one statement differ in every opened value and both stand, and a boundary
+naming a row of the free block is refused where a description becomes one.
+
+The construction moves every length that carries a proof — `PROOF_LEN` to 213 440 bytes,
+`PRESENCE_PROOF_LEN` to 176 544 — and the frozen layout vectors with them; Canon 6.0.0 carries the
+new values and the gate recomputes each. The descriptions and their identifiers are unchanged: what
+changed is what the scheme asserts of a description, so the version of the set moved and not the
+artifact.
+
+What this closes is W02 of `ITEM-1-INTERNAL-AUDIT.md` and the confidentiality prerequisite of
+`WINDOW-STATEMENT.md`. It closes nothing of the quorum, the weights, the transition, the ticket or
+the history, whose relation `WINDOW-RELATION.md` states and whose work follows it.
+
+### Reopened by adversarial review, 2026-10-14
+
+The earlier claim that only the gate's denominator remained open was incorrect.
+Agreement with frozen vectors and a circuit identifier does not establish that
+the circuit enforces its intended statement. The following findings override
+historical closure prose below. Test results here concern this source candidate;
+they do not attest to a deployed network or an independent operator's run.
+
+| Finding | Evidence and state |
+|---|---|
+| Presence membership could be detached from the secret | A coherent trace using an outsider's secret and an admitted machine's public path satisfied the old AIR. The naming digest is now constrained across the leaf seam. The attack regression rejects it, and the honest proof verifies. |
+| Presence padding supplied extra nullifier entropy | A coherent trace could choose absorption padding and produce another part. Padding is now constrained to the canonical delimiter and zeroes. The old AIR accepted the attack trace; the new AIR rejects it. |
+| Opening and admission padding supplied extra nullifier entropy | Both old descriptions accepted a coherent trace with an extra secret absorption element and a different nullifier. The candidate constrains padding in both circuits, including their other hash chains. Both attack regressions now reject the forged traces, while the honest opening and admission proofs still verify. This repair does not supply admission's missing continuity or common-origin constraints. |
+| Presence did not bind the window as public input | The public input now follows Consensus: admitted root, key digest, part-nullifier, window. Re-signing an old presence for another window fails proof verification. Replacing its key and re-signing also fails proof verification. |
+| An empty population passed the quorum arithmetic | Both close predicates now reject a zero total and a cement exceeding the total. The new negative test fails against the unmodified source and passes here. |
+| A polling budget advanced a round without an answer | The private transition authorization now requires a verified answer to the actual beacon and previous proposal. Light attestations inherit a heavy proof from this window. Replays, missing proofs and invalid signatures do not advance it; exhausting the polling budget returns without a transition. Local round and two-machine scenarios pass. |
+| Moving a round dropped late heavy attestations | Local and remote delivery retain write eligibility for already held points of the open window. Historical heavy answers are checked against their own round and predecessor and can add cement without authorizing another round. The runtime revisits historical rounds. The delayed-heavy regression and the ordinary two-machine scenario pass. Writes to a previous window are still refused. |
+| A growing tip starved historical reads | The separate-host full sweep did not finish its three-machine scenario; its process was stopped at about 3.5 GiB RSS. A bounded rerun showed hundreds of advancing rounds with only one or two of three heavy participants. Taking a historical cursor modulo the growing current round never revisited early rounds. Historical sweeps now freeze their end and return to the beginning before including newer rounds. Regression and network verification of this follow-up are pending. This scheduling repair does not supply a canonical Proposal, finality, or a global memory bound. |
+| Beacon cement state was not recomputed before endorsement | The baseline signed a beacon whose cement was changed while its context stayed valid. The pulse now compares the sum of verified heavy attestations before signing and before allowing advancement; a real signature over an unreconciled sum does not authorize it. Earlier verified versions remain identifiable while late leaves arrive. Four round and delivery checks passed. This is reconciliation of held evidence, not the missing full-window proof or authenticated weight statement. |
+| A count-based attempt is used as the runtime close | Still open: `live_doing` uses `attempts_the_close` as its closing decision and carries a beacon identifier forward. It does not assemble, prove, store and serve a canonical `Proposal`. An advancing log and the integration scenarios do not prove network finality. |
+| The window circuit proves only fold arithmetic | Still open: `circuit/window.rs` binds accumulators, instance and challenges and checks their arithmetic. It does not constrain the quorum, standing openings, proposal state transition or runner ticket required by Consensus. Passing its honest proof test does not establish those statements. |
+| Fold challenges and incoming history are caller-controlled | The public baseline accepts both complete arithmetic counterexamples on the separate host. The candidate adds nonzero-inverse AIR constraints and a checked arithmetic API deriving challenges from fixed canonical inputs. The separate-host v12 run passed all 189 proof-package tests, including refusal of the retired zero-challenge proof, 72 conformance tests, whole-workspace Clippy and release. All 205 source files matched their manifest afterwards. Authenticated history and the complete window relation remain open; the generic AIR verifier does not become a window verifier. See `WINDOW-STATEMENT.md`. |
+| An opening of the running sum does not authenticate quorum weight | Two separate-host reproductions use the actual standing commitment: four bounded weight-one commitments sum to a bounded opening of weight five, and coefficient addition does not implement the carry in `255 + 1`. The first crosses the quorum at parent total seven. These establish why the fresh tree's child-sum proofs and authenticated leaves are required; they do not break one commitment or demonstrate acceptance by a complete window verifier. Both tests pass by reproducing the open premises. |
+| The actual heavy-attestation verifier does not authenticate weight | The v12 server run constructed one presence proof and signed three commitments under its admitted key. `verify_heavy` accepted the ordinary weight and alternatives committing to zero and `u64::MAX`; neither the proof nor its admitted-state context changed. This is an actual node-verifier reproduction, not merely an unconstrained witness in an honest prover. The full authenticated weight relation remains open. |
+| A future public part opens an earlier standing commitment | The node used the next window's part-nullifier as its current blinding factor. A server regression reconstructed all three committed quantities from that later public part and the actual node's commitment. It failed the confidentiality expectation in 14.80 seconds. The candidate now derives a private mask with the existing HMAC primitive from the machine secret and every committed quantity, with no public-nullifier input and no wrapping window increment. The actual-node confidentiality regression passed in 14.44 seconds; the derivation package passed 67 tests and whole-workspace Clippy passed. The same node still accepts unauthorized weights in the separate open-finding test. This repair does not supply the missing authorized-weight proof. |
+| The stated history bound does not establish the lifetime target | Still open: for the stated `k / q^6` bound, `floor(q^6 / 2^128) = 1018`. The bound therefore does not establish the 128-bit target for longer histories. Its strict `q^-6 < 2^-138` inequality is also reversed. This arithmetic gap is separate from the missing soundness argument; it is not evidence of an attack with that probability. |
+| Admission's component witnesses are not bound together | Still open: the record walk, admitted naming leaf and operator-secret absorption are independent chains; the former record-to-nullifier lane is empty. Neither their common origin nor continuity follows from proving the three published digests. |
+| Record-tree byte order disagreed with its bit order | Three interleaved little-endian keys produced a root different from an independent recursive Merkle calculation; an existing record's membership path did not reach that root. Both regressions fail on the previous code and pass after ordering branches by their actual bit significance. One fold now constructs both the full root and the subtrees used in paths. This changes affected nonempty roots and requires state reconciliation before deployment. |
+| Reserved continuity bits could manufacture lived segments | The record reader and writer accepted bits above `max_entry_segments`, and the native continuity reader counted them. Three baseline tests reproduce those acceptances. The record rule now rejects reserved bits before serialization and parsing; the native counter refuses them before shifting, so a fabricated future bit cannot age into the valid region. Five memory-only regressions and 17 existing layout tests pass, as do whole-Core clippy and release. This does not enforce the gate-specific 14-to-56-segment period or its share in the admission proof. |
+| Admission continuity is not enforced end to end | Still open: an Identity segment is earned by an included action of the record. Replaying other people's cements creates no such action. The record reader and admission circuit must enforce the shifted active period and the share, including minority partition and rejoin cases. |
+| Persisted value state accepted noncanonical sets and trusted allocation counts | The old decoder accepted duplicate record keys by silently replacing a leaf, out-of-order record keys and repeated spent nullifiers. Three baseline regressions reproduce those acceptances. The decoder now checks element counts against remaining bytes before allocation, requires the stored record-key order and rejects duplicate spent entries. Five memory-only tests cover those cases, maximum forged counts, exact valid round trips, every truncation and trailing bytes; whole-Core clippy and release pass. The existing in-memory state-restoration test also passes. The disk restart scenario was not run in this pass. Valid encoding is unchanged. This is stored-state validation, not evidence of network finality. |
+| Bootstrap and origin privacy | Still open: a dialable cohort requires authenticated discovery and transport that do not expose protected origins. Removing an address or identity from the current source does not revoke historical exposure or make direct DNS records anonymous. |
+
+The first candidate's library run passed 138 `mt-proof` tests and 28
+`mt-pulse` tests, with one window proof ignored. Its formatting, whole-workspace
+clippy and release build passed. The later prover review below records the
+previously ignored test separately. Earlier targeted checks passed four
+`a_window_closes` tests and the round and delayed-delivery scenarios. The baseline
+reproduced all four forged-trace acceptances and the zero-total close; its honest
+presence test passed. The two-machine test uses local secrets and a local admitted
+tree. These are not outside observations of the live cohort or a completed
+workspace-wide test sweep.
+
+The new AIR changes `air_hash`, the published-parameter digest and the genesis
+state hash. Canon 4.4.0 / Core 0.20.0 is a candidate requiring a verified network
+transition, not a compatible binary to drop onto existing state. No fallback
+accepting the vulnerable proof descriptions is added.
+
+### Boundary evaluation cost closed without changing the statement, 2026-10-14
+
+The historical performance entries below described a domain sweep that visited
+all 27,654 boundaries and their row divisors at each point. The prover now
+interpolates their weighted samples once per trace column. For a trace subgroup
+H of size n and root r, its Lagrange basis satisfies
+`L_r(X) = (X^n - 1) / ((n/r) * (X-r))`. Taking samples
+`A_c(r) += beta * n/r` and `B(r) += beta * v * n/r` therefore turns the same
+boundary sum into `(sum_c T_c(X)*A_c(X) - B(X))/(X^n-1)`.
+This is an application of the polynomial identity in
+[Berrut and Trefethen, section 3](https://people.maths.ox.ac.uk/trefethen/barycentric.pdf),
+to the existing finite-field subgroup. It is not a new cryptographic assumption.
+The implementation retains every boundary and transcript weight. The verifier
+and the prover's out-of-domain evaluation still use the direct quotient sum.
+Only one boundary column and one extension component are expanded at a time.
+
+The full `mt-proof` package passes all 174 tests with no failures or ignored tests.
+Whole-workspace clippy with warnings denied and the release build pass.
+The direct and batched sums agree at every coset point for
+empty, sparse and dense boundary sets, repeated boundaries and literal/public/
+word values, including traces that do not satisfy them. All 22 proof-scheme
+integration tests pass. A proof recorded before optimization retains exactly
+its SHA-256 `f78487b470b50a689c65eb7fa1694c22fab0a6c25e53b7c85f86002ba6c40399`.
+The previously ignored full-height window test passed in 29.07 seconds in a
+release build on the review machine; its modified-public-input refusal also
+passed. The ignore marker is removed. These are local measurements, not a
+latency guarantee for another machine.
+
+No AIR, public-input encoding, proof encoding or genesis identifier changes in
+this optimization. It closes the skipped arithmetic-test finding only. The
+window circuit still lacks the quorum and full proposal-transition constraints
+listed above; a fast proof of its current statement does not establish finality.
+The historical digest/second-phase proposals below are not prerequisites for
+this performance repair and remain unimplemented design alternatives.
+
+### Record-tree ordering, 2026-10-14
+
+`records::root_of_leaves` paired adjacent entries in `BTreeMap` byte order,
+while its tree walks the key from its least significant bit. For keys whose
+first two bytes are `[1,0]`, `[1,1]`, `[2,0]`, this separates branches that must
+fold together. Two independent checks reproduce the defect on the prior source:
+the root disagrees with a recursive partition by the specified key bits, and
+folding a returned membership path does not reach the published root.
+
+The repair orders entries by little-endian numeric significance before folding
+and gives root construction and path subtrees one implementation. Path selection
+partitions on the actual key bits. All three record-tree integration tests pass, including keys spanning all 256
+bits, together with four existing tree tests and all six admission circuit tests.
+The complete proof package then passes all 177 tests with none ignored.
+Whole-workspace clippy with warnings denied and the release build pass.
+
+The empty root and record encoding are unchanged. Affected nonempty roots are
+corrected, so previously stored roots must be reconciled from their committed
+leaves before this candidate can replace live code. This is not a transparent
+upgrade of an existing record tree, and it does not close admission's missing
+common-origin or continuity constraints.
+
+### The gate's denominator
 
 **The numerals the gate counts are declarations, and a number inside a function is invisible to
 it.** The pass that refuses a numeral standing in no register reads lines that declare a constant;
@@ -281,7 +583,11 @@ day the code moves. Six of the measurements are now computed and compared by a t
 ledger; the sentences remain sentences, and the honest thing is to say so where a reader will look
 rather than to claim the section is empty again.
 
-## What closed, and by what construction
+## Historical implementation claims and their construction
+
+This section preserves earlier stage reports. It is not a current closure ledger. In particular,
+its claims about window finality, issuance, admission, bootstrap and privacy are superseded by
+the findings above and SESSION-35.md. Passing an old stage does not close an outstanding finding.
 
 **The core stands on a telephone, and what it costs there is measured rather than assumed.** The
 mechanisms of this tree reached a person only through a terminal, and the device the whole
@@ -1222,7 +1528,7 @@ fold that window, it **drops** it, and an accumulator standing at the end assert
 about a window dropped along the way. A prover holding one false window would need no forgery at
 all, only the luck of a zero — probability one half per fold, which is not a security margin but the
 absence of one. The repair costs nothing and improves the cost: the two values are one and two,
-their difference still one and its inverse still one, so the slack of the extraction is unchanged,
+their difference still one and its inverse still one, so the margin of the extraction is unchanged,
 while multiplying by one or two is a conditional doubling and therefore cheaper than the general
 scalar it replaces. The norm grows by three per fold instead of two, and the decomposition takes it
 back before the next.
@@ -1305,8 +1611,8 @@ three hundred and forty-seven. So the extracted witness is longer than the bound
 the binding it was to rest on says nothing at all.
 
 **The repair is a bit, and it is cheaper to state than the thing it replaces.** A difference of bits
-is one and its inverse is one, so the slack of the extraction is exactly one. That is not an
-improvement of a constant, it is the difference between possible and impossible: any slack above one
+is one and its inverse is one, so the margin of the extraction is exactly one. That is not an
+improvement of a constant, it is the difference between possible and impossible: any margin above one
 compounds once per window, and over a thousand windows nothing survives to be extracted. A bit
 carries one bit of soundness, so the security target takes a hundred and twenty-eight folds in
 parallel rather than six — twenty-seven thousand nine hundred and four rows where the scalar asked
@@ -1314,7 +1620,7 @@ one thousand three hundred and eight — and the whole step rises from under sev
 thirty-four thousand, a quarter of the height the memory admits rather than a twentieth. It still
 fits, and now it fits around the thing that makes it mean something.
 
-**What the shape of the defect was.** Norm and slack are two quantities. The step's derivation
+**What the shape of the defect was.** Norm and margin are two quantities. The step's derivation
 answered the first — the decomposition resets the norm every fold — and never named the second, so a
 shape was counted into a fit and would have been proved impossible afterwards, at the stage that
 tried to write its soundness. The set now names both and says which answers which. What remains
@@ -1634,14 +1940,14 @@ the register of its family now, with the derivation of what it is: a guard again
 nobody, and no quantity of the protocol, since nothing measures how long an echo flies.
 
 **Two machines closed two windows and then waited on each other for ever.** The first run of a
-cohort meant to live until stopped — Lauterbourg and Moscow, one machine each, from window 0 — closed
-windows 0 and 1 on a cement of two within forty seconds and then stood still: Moscow in window 2
-with a cement of one, Lauterbourg in window 1 with a cement of one, and Lauterbourg's account
+cohort meant to live until stopped — two hosts, one machine each, from window 0 — closed
+windows 0 and 1 on a cement of two within forty seconds and then stood still: the second host in window 2
+with a cement of one, the first in window 1 with a cement of one, and the first host's account
 counting one thousand eight hundred and twenty-four deposits refused for points it did not hold.
-Two constructions met there. Lauterbourg started first, dialled Moscow before Moscow answered, and
+Two constructions met there. The first host started first, dialled the second before it answered, and
 never dialled again — so it held no link of its own and could be written into but never ask. And
-Moscow, having closed window 1, dropped every point of it the moment window 2 opened, while
-Lauterbourg still lacked Moscow's attestation of window 1: what it needed stood nowhere. The set
+The second, having closed window 1, dropped every point of it the moment window 2 opened, while
+the first still lacked its attestation of window 1: what it needed stood nowhere. The set
 already says what should have stood: the heavy attestations of a window survive at their points
 until the proof of that window stands, as the bridge a machine behind walks to the head. Closed by
 two constructions, both of an implementation and neither a value of the set: a machine dials again,
@@ -1696,8 +2002,9 @@ under, the rule a value answers before it becomes an object, and — since the s
 the declaration — the scope it covers. Five kinds a field may stand under and no sixth; a field of
 variable width written without its width fails to compile, and so does a signature written by hand.
 
-**Status.** Thirteen of thirteen stand. The ninth stage is closed whole, and what the gate does not
-compare is the empty section above.
+**Historical stage status.** The earlier report counted thirteen Kernel hardening tasks. Those
+are not the author's thirteen closure requirements of 2026-10-14. The claim that the findings
+section was empty is withdrawn; the current blockers are listed above and in SESSION-35.md.
 
 ## What the plan already owns, so it is not filed twice
 
@@ -1739,33 +2046,33 @@ numbers, which says the method and not the tree is what is missing.
 | rows of the Decree the library reads | 28 of 54 |
 | of those, rows that decide a width | 9, and one relation tying a tenth to a parameter |
 | implementations of `Layout` | 17, each one declaration, and the register is held against the source |
-| domains of the registry | 96, minted as 94 rows of one declaration, counted by the harness rather than by a grep |
+| domains of the registry | 99, each one declaration, counted by the harness rather than by a grep |
 | values of the set awaiting a stage | 0 — every one is read by a checker on every build |
-| domains of the registry a run takes a preimage under | 69 of 94 — the gate refuses a domain that is neither taken nor named, so this number is ninety-four less the twenty-five named and is not a count anybody keeps |
-| of the rest, named with what owes them a vector | 26, and a silent one that is unnamed fails the build |
+| domains of the registry a run takes a preimage under | 75 of 99 — the gate refuses a domain that is neither taken nor named, so this number is ninety-nine less the twenty-four named and is not a count anybody keeps |
+| of the rest, named with what owes them a vector | 24, and a silent one that is unnamed fails the build |
 | prefix pairs among them, closed by the zero and the alphabet | 5 |
-| frozen lines of the set of the shape the coverage pass reads | 248, counted by the pass itself |
-| numerals of the library, every one of them in a register | 172, the modulus of the lattice among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
-| of those, compared against a place of the set | 68 |
+| frozen lines of the set of the shape the coverage pass reads | 268, counted by the pass itself |
+| numerals of the library, every one of them in a register | 163, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
+| of those, compared against a place of the set | 69 |
 | of those, named as of this tree with the reason each is | the rest, each with the reason it is of this tree and of no document |
-| rows a wrong value would pass | 0 of 68 |
+| rows a wrong value would pass | 0 of 69 |
 | headings of a derivation restating a value of the Decree | 19, all compared |
-| rows of the Registry of mechanisms | 96: 37 closed, 59 awaiting a stage, 0 awaiting the artifact — the Registry recounts its own table on every build, and this row is held against that recount rather than counted a second time |
-| domains of the separator registry owned by exactly one row | 92 of 92 |
+| rows of the Registry of mechanisms | 99: 38 closed, 61 awaiting a stage, 0 awaiting the artifact — the Registry recounts its own table on every build, and this row is held against that recount rather than counted a second time |
+| domains of the separator registry owned by exactly one row | 99 of 99 |
 | places reaching a preimage through the door of one body | 11 in library code under SHA-256, none of them assembling |
 | the same under the proof hash, where the set writes the preimage as a concatenation | 5, of which 3 assemble fields of fixed width, which cannot erase one |
 | kinds a field of a layout may stand under | 5, and a sixth does not compile |
-| tests of the workspace | 591 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
+| tests of the workspace | 678 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
 | crates carrying the gate in their own tests | 15 of 15, by one macro of the harness rather than fifteen readings of one invocation |
-| columns the width of a proof admits, and columns each written circuit **declares** | 62, and 62 / 62 / 30 for the frame, the window and the admission, held on every run by a test that reads all three. What the window **spends** is fifty-one of those: its description declares the bound rather than the count of its own lanes, so the eleven columns above them are committed and constrained by nothing. The frame is the one that stands at the ceiling by counting, and the sentence "no room under the ceiling" is true of it and not of the window |
-| gadgets of the window's circuit written and green | four: the fold at a scalar challenge, the assembled window, and beside them two written and standing in no description — the wide discharge and the atom of a reduction. The window's own decomposition rides inside a lane of the fold, a bit to a column, so the wide gadget is written and not spent; the atom was priced and kept for wherever lattice arithmetic does enter a circuit. Neither is reached by `air_hash`, and saying so here is the difference between a gadget of the circuit and a gadget beside it |
-| the window's circuit, proven and verified end to end | once, inside the full suite: an honest window proves, a moved public is refused |
-| the prover's time on the window, debug profile under a loaded machine | near nineteen minutes, the boundary composition dominating — the measured price of binding twenty-seven thousand cells, which the release profile and an idle machine divide but do not erase |
+| columns the width of a proof admits, and columns each written circuit **declares** | 64, and 64 / 59 / 30 / 30 / 30 / 63 for the frame, the ticket, the admission, the presence, the opening and the ballot; the width check reads all six registered descriptions |
+| the circuit of the ticket, written and green | the chains of the presence with the ticket's absorption in place of the nullifier's, the digest of the runner's key, and the comparison of thirty-two rows; the window, fold, discharge and reduce circuits left the tree with the relation they served |
+| the ticket, proven and verified end to end | once in its unit tests at the presence's height: an honest ticket proves and verifies, and a lifted key, a moved aggregate and a lowered threshold are refused; a ticket at the threshold writes no trace |
+| the prover's time on the ticket, debug profile | the six unit tests of the ticket, two of them proving at the presence's height and one verifying, finish in 61 s together under the debug profile; the whole mt-proof library suite, 134 tests, in 655 s |
 | the admission's circuit, proven and verified end to end | once: the record chain, a walk of two hundred and fifty-six levels by the bits of a key, the admitted branch, the lane, the nullifier — and a moved public refused |
 | the prover's time on the admission, same profile and machine | near two minutes and a quarter for three hundred and sixty-four permutation blocks against the window's nineteen for twelve boundaries against twenty-seven thousand — the boundary composition measured twice, from both sides |
-| the identifiers of the four descriptions | frozen in the set and recomputed by the gate on every build; their binding is the Decree's own air_hash row |
+| the identifiers of the five descriptions | frozen in the set and recomputed by the gate on every build; their binding is the Decree's own air_hash row |
 | the Decree | complete: every parameter published, the Genesis State Hash exists, both digests computed by the gate rather than remembered |
-| the population of a split | run: the larger part resumes after the onset and not before, the smaller never, in three orders; the no-part case restarts at the derived round exactly, binding the closed head |
+| the population of a split | fixed-parent quorum required at every round; disjoint minorities halt, rejoin recovers only the original quorum; automatic self-selected restart is refused. These arithmetic tests do not authenticate stake or prove runtime finality |
 | what stage twelve still owes | nothing of its plan; what the whole plan still owes past it is its later stages |
 
 ## The frame these were found under
@@ -1795,3 +2102,37 @@ circuits, `9dc470e` carries the pass a critic made over its own thirty-three, an
 the ownership, the order, and the one relation that tied a population to a path. What closed the
 ten findings above is in the two commits that closed them, and the constructions themselves are
 where they are written.
+
+## Session 35: verified failures and partial repairs
+
+The branch-selector bypass in the frame AIR was reproduced by preserving nonzero inputs while
+switching only the root seam to filler and using an empty public root. Persistent branch bits
+now bind every seam of one redemption; filler amounts are constrained to zero. The proof width,
+lengths, descriptions, Genesis and canonical serialization vectors change together. Eight frame
+checks, including complete honest proofs and the original counterexample, passed on 2026-10-14;
+the further all-seam counterexample is recorded separately in the subsequent run.
+
+The fixed-parent quorum repair removes the conflicting 51-percent recovery certificates and
+self-selected restart. This does not authenticate a quorum's weight and does not supply the
+missing complete window proof. The full-proof oversized-right issue and onward spend were
+accepted in the baseline and remain OPEN. Atomic in-memory frame application does not yet prove
+crash-atomic storage of a window. See SESSION-35.md for all thirteen requirements and their scope.
+
+The storage follow-up binds each new directory to the exact computed Genesis. Pre-existing
+unbound directories and a changed marker are refused without importing their balances.
+Exclusive creation and single-winner identity publication passed race/symlink fixtures.
+State encoding checks representable counts and total allocation before writing. Live node
+updates use a candidate and publish it only after complete-file persistence; an uncertainty
+after the rename is reported explicitly. Full-window crash atomicity remains open.
+
+The pulse follow-up also persists one predecessor choice per window before preparing a signing
+identity. The baseline could reopen the same window on a different predecessor; the new path
+refuses it. Store reopening, conflicting concurrent writers, identical retries and malformed
+lock bytes are covered. This signing discipline is one finality premise; the complete verifier,
+authenticated parent and issuance binding remain required.
+
+The complete workspace attempt exposed an overconstraint in the first branch repair: the
+shared amount column already decomposed outputs while still inside a filler redemption.
+The quadratic repair binds its reusable boolean at input ties only, leaving outputs lawful.
+The mixed-input proof and both forged-branch checks pass (eleven frame checks total).
+Canon 5.0.1 / Core 0.21.1 carries the revised AIR and Genesis; the full sweep is being rerun.

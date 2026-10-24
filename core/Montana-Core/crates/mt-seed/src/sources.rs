@@ -188,7 +188,7 @@ pub fn alive(samples: &[u8]) -> bool {
 
 // n > 2 m and 414736 * m * (n - m) <= 15625 * (n - 2 m)^2 * (n - 1). The first condition is what
 // makes the second sound: squaring both sides of the estimate is faithful only where the side
-// being squared is non-negative, and that is exactly where the slack is positive. Every count here
+// being squared is non-negative, and that is exactly where the margin is positive. Every count here
 // is bounded by the samples a source draws, so nothing approaches the width it is computed in.
 pub fn bound_holds(count: usize, most_frequent: usize) -> bool {
     // A count no draw of this protocol produces is not a measurement, and admitting one would
@@ -203,8 +203,8 @@ pub fn bound_holds(count: usize, most_frequent: usize) -> bool {
     }
     let n = count as u128;
     let m = most_frequent as u128;
-    let slack = n - 2 * m;
-    CONFIDENCE_NUM * m * (n - m) <= CONFIDENCE_DEN * slack * slack * (n - 1)
+    let margin = n - 2 * m;
+    CONFIDENCE_NUM * m * (n - m) <= CONFIDENCE_DEN * margin * margin * (n - 1)
 }
 
 // The rule for the generator of the operating system: it answered with a whole block, and that
@@ -215,7 +215,12 @@ fn generator_is_alive(block: &[u8]) -> bool {
 }
 
 fn sorted(samples: &[u8]) -> Vec<&[u8]> {
-    let mut v: Vec<&[u8]> = samples.chunks_exact(SAMPLE).collect();
+    let mut v: Vec<&[u8]> = samples
+        .as_chunks::<SAMPLE>()
+        .0
+        .iter()
+        .map(|sample| sample.as_slice())
+        .collect();
     v.sort_unstable();
     v
 }

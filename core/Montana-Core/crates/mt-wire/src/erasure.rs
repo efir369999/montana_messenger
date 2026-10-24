@@ -223,7 +223,8 @@ pub fn reconstruct(present: &[(usize, Vec<u8>)]) -> Result<Vec<Vec<u8>>, WireErr
 
 // A body is cut into blocks of the width one cell carries, the last block padded with zeros to that
 // width. The count of blocks the delivery layer names is what tells the reader where the body ends;
-// the padding says nothing, because every block is of one width whatever it holds.
+// the padding says nothing, because every block is of one width whatever it holds — and every block
+// is laid in one time whatever it holds, so the length says nothing to a clock either (`crate::lay`).
 //
 // MSRV-OK: integer `div_ceil` is stable since 1.73 and this workspace declares 1.90.
 pub fn cut(body: &[u8]) -> Result<Vec<Vec<u8>>, WireError> {
@@ -231,12 +232,8 @@ pub fn cut(body: &[u8]) -> Result<Vec<Vec<u8>>, WireError> {
     let count = body.len().div_ceil(width).max(1);
     let mut out = Vec::with_capacity(count);
     for index in 0..count {
-        let at = index * width;
-        let end = body.len().min(at + width);
         let mut block = vec![0u8; width];
-        if at < body.len() {
-            block[..end - at].copy_from_slice(&body[at..end]);
-        }
+        crate::lay(body, index * width, &mut block);
         out.push(block);
     }
     Ok(out)

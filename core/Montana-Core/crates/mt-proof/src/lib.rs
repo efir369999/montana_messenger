@@ -32,6 +32,7 @@ pub fn tree_depth() -> usize {
 
 pub mod admitted;
 pub mod air;
+pub mod cement;
 pub mod circuit;
 pub mod commit;
 pub mod ext;

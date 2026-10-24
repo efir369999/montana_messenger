@@ -3,17 +3,21 @@
 //
 // **The first attestation of a window is heavy and every later one is light.** The heavy one
 // carries the proof of presence — that the nullifier of this machine's part comes of the secret of
-// a machine whose naming half stands in the tree of admitted machines, and that the key signing the
-// attestation is the one that proof was made for — and the freshly blinded standing that enters the
-// cement. A light one is the same object without the proof and without the standing, valid because
-// the key it signs under already stood proven in the heavy every verifier holds.
+// a machine whose naming half stands in the tree of the electorate, and that the key signing the
+// attestation is the one that proof was made for — and its part-nullifier is what enters the
+// cement. A light one is the same object without the proof, valid because the key it signs under
+// already stood proven in the heavy every verifier holds. Nothing an attestation carries weighs
+// anything: a part counts once or not at all.
 //
 // **Nothing here decides anything a rule does not.** Eligibility is the draw of `mt-derive`, the
 // proof is the description of `mt-proof`, the cement and the close are of `mt-pulse`, the objects
 // are the layouts of `mt-state`. What this file holds is the order.
 
+use crate::certificate::Electorate;
 use crate::NodeError;
-use mt_state::layout::{Confirmation, LightAttestation};
+use mt_proof::circuit::ballot;
+use mt_proof::poseidon::Digest;
+use mt_state::layout::{Ballot, Confirmation, LightAttestation, Pledge};
 use mt_state::Layout;
 use zeroize::Zeroizing;
 
@@ -26,7 +30,6 @@ pub struct Standing {
     pub key: mt_suite::sign::PublicKey,
     secret_of_the_key: mt_suite::sign::SecretKey,
     pub presence: Vec<u8>,
-    pub commitment: Vec<u8>,
 }
 
 impl Standing {
@@ -37,7 +40,6 @@ impl Standing {
         window: u64,
         admitted_siblings: &[mt_proof::poseidon::Digest],
         admitted_position: u64,
-        standing: u64,
     ) -> Result<Self, NodeError> {
         let part_nullifier =
             mt_derive::nullifier::part(machine_secret, window).ok_or(NodeError::Unprovable {
@@ -50,8 +52,8 @@ impl Standing {
         held.copy_from_slice(&seed[..mt_suite::sign::SEED_BYTES]);
         let (key, secret_of_the_key) = mt_suite::sign::keypair_from_seed(&held);
 
-        // The proof of presence: what the network verifies before it lets this machine's standing
-        // enter a cement.
+        // The proof of presence: what the network verifies before it lets this machine's part enter
+        // a cement.
         let (trace, digests) = mt_proof::circuit::presence::trace_of(
             machine_secret,
             admitted_siblings,
@@ -62,7 +64,7 @@ impl Standing {
         .ok_or(NodeError::Unprovable {
             what: "the presence of this machine in this window",
         })?;
-        let public = mt_proof::circuit::presence::public_of(&digests);
+        let public = mt_proof::circuit::presence::public_of(&digests, window);
         let description =
             mt_proof::circuit::presence::description().ok_or(NodeError::Unprovable {
                 what: "the description of a presence",
@@ -73,31 +75,12 @@ impl Standing {
             }
         })?;
 
-        // The standing this machine answers with, blinded afresh for this window: two machines of
-        // equal standing present two commitments, and one machine presents two across two windows.
-        let blind = mt_derive::nullifier::part(machine_secret, window.wrapping_add(1)).ok_or(
-            NodeError::Unprovable {
-                what: "the blinding factor of a window",
-            },
-        )?;
-        let commitment = mt_suite::standing::weight_commit(
-            standing,
-            0,
-            window,
-            mt_suite::standing::Blind::of(blind, window),
-        )
-        .map_err(|_| NodeError::Unprovable {
-            what: "the commitment of this machine's standing",
-        })?
-        .serialize();
-
         Ok(Self {
             window,
             part_nullifier,
             key,
             secret_of_the_key,
             presence,
-            commitment,
         })
     }
 
@@ -114,8 +97,8 @@ impl Standing {
         crate::round::eligible(&self.part_nullifier, aggregate, chain, round, threshold)
     }
 
-    // The heavy attestation of a window: the proof, the standing, and the two identifiers it
-    // attests in the canonical order the layout demands.
+    // The heavy attestation of a window: the proof and the two identifiers it attests in the
+    // canonical order the layout demands.
     pub fn heavy(
         &self,
         machine_secret: &[u8; 32],
@@ -128,7 +111,6 @@ impl Standing {
             attested,
             part_nullifier: self.part_nullifier,
             round_nullifier: mt_derive::nullifier::round(machine_secret, &beacon_id),
-            weight_commit: self.commitment.clone(),
             suite_id: mt_net::SUITE,
             answering_key: self.key.as_bytes().to_vec(),
             proof: self.presence.clone(),
@@ -137,8 +119,8 @@ impl Standing {
         self.signed(held)
     }
 
-    // Every later attestation of the same window: the same object without the proof and without the
-    // standing, valid because its key already stood proven in the heavy.
+    // Every later attestation of the same window: the same object without the proof, valid because
+    // its key already stood proven in the heavy.
     pub fn light(
         &self,
         machine_secret: &[u8; 32],
@@ -156,6 +138,30 @@ impl Standing {
             signature: vec![0u8; mt_codec::size::SIGNATURE],
         };
         self.signed_light(held)
+    }
+
+    // A pledge of the agreement on the proposal of the window before, under the key this window's
+    // heavy attestation proves.
+    pub fn pledge(&self, attempt: u32, name: [u8; 32], since: u32) -> Result<Pledge, NodeError> {
+        let mut held = Pledge {
+            window: self.window,
+            attempt,
+            name,
+            since,
+            part_nullifier: self.part_nullifier,
+            suite_id: mt_net::SUITE,
+            answering_key: self.key.as_bytes().to_vec(),
+            signature: vec![0u8; mt_codec::size::SIGNATURE],
+        };
+        let scope = held.signed_scope().map_err(NodeError::Object)?;
+        let signature = mt_suite::sign::sign(&self.secret_of_the_key, &scope).map_err(|_| {
+            NodeError::Unprovable {
+                what: "the signature of a pledge",
+            }
+        })?;
+        held.signature = signature.as_bytes().to_vec();
+        held.bytes().map_err(NodeError::Object)?;
+        Ok(held)
     }
 
     fn signed(&self, mut held: Confirmation) -> Result<Confirmation, NodeError> {
@@ -209,28 +215,14 @@ pub fn verify_heavy(
             what: "an attestation of a round this machine is not drawn for",
         });
     }
-    let key: [u8; mt_codec::size::SIGNING_PUBLIC_KEY] = held
+    let scope = held.signed_scope().map_err(NodeError::Object)?;
+    verify_signature(held.suite_id, &held.answering_key, &held.signature, &scope)?;
+    let key: &[u8; mt_codec::size::SIGNING_PUBLIC_KEY] = held
         .answering_key
-        .clone()
+        .as_slice()
         .try_into()
         .map_err(|_| NodeError::Refused {
-            what: "a key of another width",
-        })?;
-    let scope = held.signed_scope().map_err(NodeError::Object)?;
-    let signature: [u8; mt_codec::size::SIGNATURE] =
-        held.signature
-            .clone()
-            .try_into()
-            .map_err(|_| NodeError::Refused {
-                what: "a signature of another width",
-            })?;
-    mt_suite::sign::verify(
-        &mt_suite::sign::PublicKey::from_bytes(key),
-        &scope,
-        &mt_suite::sign::Signature::from_bytes(signature),
-    )
-    .map_err(|_| NodeError::Refused {
-        what: "an attestation under a signature that does not verify",
+        what: "a key of another width",
     })?;
 
     // The public input a verifier computes for itself: the root it holds, the nullifier the
@@ -240,11 +232,12 @@ pub fn verify_heavy(
         mt_proof::poseidon::Digest::of_bytes(&held.part_nullifier).ok_or(NodeError::Refused {
             what: "a part-nullifier that is no digest of the family",
         })?;
-    let digest = mt_derive::pulse::key_digest(&key);
+    let digest = mt_derive::pulse::key_digest(key);
     let key_digest = mt_proof::poseidon::Digest::of_bytes(&digest).ok_or(NodeError::Refused {
         what: "a digest that is no digest of the family",
     })?;
-    let public = mt_proof::circuit::presence::public_of(&[*admitted_root, part, key_digest]);
+    let public =
+        mt_proof::circuit::presence::public_of(&[*admitted_root, part, key_digest], held.window);
     let description = mt_proof::circuit::presence::description().ok_or(NodeError::Unprovable {
         what: "the description of a presence",
     })?;
@@ -254,6 +247,275 @@ pub fn verify_heavy(
         }
     })?;
     Ok(())
+}
+
+// A light answer inherits only a key already proven in this window. The pulse
+// owns that cache; a signature under an arbitrary wire key is not a presence.
+pub fn verify_light(
+    held: &LightAttestation,
+    proven_key: &[u8],
+    aggregate: &[u8; 32],
+    chain: u8,
+    round: u32,
+    threshold: &mt_pulse::U256,
+) -> Result<(), NodeError> {
+    if held.answering_key != proven_key {
+        return Err(NodeError::Refused {
+            what: "a light attestation without the same proven answering key",
+        });
+    }
+    if !crate::round::eligible(&held.part_nullifier, aggregate, chain, round, threshold) {
+        return Err(NodeError::Refused {
+            what: "an attestation of a round this machine is not drawn for",
+        });
+    }
+    let scope = held.signed_scope().map_err(NodeError::Object)?;
+    verify_signature(held.suite_id, &held.answering_key, &held.signature, &scope)
+}
+
+// A pledge of the agreement counts only under the key its part's heavy attestation proved in this
+// window. Consensus, "The agreement on what a window decided": until that heavy is seen the pledge
+// stands in escrow, so the caller holds the proven key and this door judges the rest.
+pub fn verify_pledge(held: &Pledge, proven_key: &[u8]) -> Result<(), NodeError> {
+    if held.answering_key != proven_key {
+        return Err(NodeError::Refused {
+            what: "a pledge without the same proven answering key",
+        });
+    }
+    let scope = held.signed_scope().map_err(NodeError::Object)?;
+    verify_signature(held.suite_id, &held.answering_key, &held.signature, &scope)
+}
+
+fn verify_signature(
+    suite: u16,
+    key: &[u8],
+    signature: &[u8],
+    scope: &[u8],
+) -> Result<(), NodeError> {
+    if suite != mt_net::SUITE {
+        return Err(NodeError::Refused {
+            what: "an attestation under an unsupported suite",
+        });
+    }
+    let key = key.try_into().map_err(|_| NodeError::Refused {
+        what: "a key of another width",
+    })?;
+    let signature = signature.try_into().map_err(|_| NodeError::Refused {
+        what: "a signature of another width",
+    })?;
+    mt_suite::sign::verify(
+        &mt_suite::sign::PublicKey::from_bytes(key),
+        scope,
+        &mt_suite::sign::Signature::from_bytes(signature),
+    )
+    .map_err(|_| NodeError::Refused {
+        what: "an attestation under a signature that does not verify",
+    })
+}
+
+// A census window this machine lived: the root of its cement and the branch the machine's part walks
+// in it. It is what a ballot is proven from, and it is the machine's own — no reader learns which
+// census windows a machine lived, and the store keeps it closed to everyone but its owner.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LivedCensus {
+    pub window: u64,
+    pub root: [u8; 32],
+    pub siblings: Vec<Digest>,
+    pub position: u64,
+}
+
+impl LivedCensus {
+    // The census windows a machine lived, written one after another: the window, the root, the
+    // position, and the siblings of the branch, every count of fixed width and every value whole.
+    pub fn encode(held: &[LivedCensus]) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&(held.len() as u32).to_le_bytes());
+        for one in held {
+            out.extend_from_slice(&one.window.to_le_bytes());
+            out.extend_from_slice(&one.root);
+            out.extend_from_slice(&one.position.to_le_bytes());
+            out.extend_from_slice(&(one.siblings.len() as u32).to_le_bytes());
+            for sibling in &one.siblings {
+                out.extend_from_slice(&sibling.bytes());
+            }
+        }
+        out
+    }
+
+    // Read back whole or refused: a file of another shape is not this machine's standing.
+    pub fn decode(bytes: &[u8]) -> Result<Vec<LivedCensus>, NodeError> {
+        let short = || NodeError::Refused {
+            what: "a standing shorter than what it declares",
+        };
+        if bytes.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut at = 0usize;
+        let mut take = |n: usize| -> Result<&[u8], NodeError> {
+            let end = at.checked_add(n).ok_or_else(short)?;
+            let held = bytes.get(at..end).ok_or_else(short)?;
+            at = end;
+            Ok(held)
+        };
+        let four = |b: &[u8]| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize;
+        let eight = |b: &[u8]| {
+            let mut w = [0u8; 8];
+            w.copy_from_slice(b);
+            u64::from_le_bytes(w)
+        };
+        let count = four(take(4)?);
+        let mut out = Vec::new();
+        for _ in 0..count {
+            let window = eight(take(8)?);
+            let mut root = [0u8; 32];
+            root.copy_from_slice(take(32)?);
+            let position = eight(take(8)?);
+            let depth = four(take(4)?);
+            if depth != mt_proof::tree_depth() {
+                return Err(NodeError::Refused {
+                    what: "a branch of another depth than the cement's",
+                });
+            }
+            let mut siblings = Vec::with_capacity(depth);
+            for _ in 0..depth {
+                let mut held = [0u8; 32];
+                held.copy_from_slice(take(32)?);
+                siblings.push(Digest::of_bytes(&held).ok_or(NodeError::Refused {
+                    what: "a sibling that is no digest of the family",
+                })?);
+            }
+            out.push(LivedCensus {
+                window,
+                root,
+                siblings,
+                position,
+            });
+        }
+        if at != bytes.len() {
+            return Err(NodeError::Refused {
+                what: "a standing longer than what it declares",
+            });
+        }
+        Ok(out)
+    }
+}
+
+// The units of standing a machine holds against an electorate: every census window of it, with the
+// branch the machine walks where it lived that census under the root the electorate names. A census
+// it lived under another root — a window it closed on another cement than the one that stood — casts
+// nothing.
+fn units_of(
+    electorate: &Electorate,
+    lived: &[LivedCensus],
+) -> Result<Vec<ballot::Census>, NodeError> {
+    electorate
+        .census_roots()?
+        .into_iter()
+        .zip(&electorate.census)
+        .map(|((window, root), entry)| {
+            let branch = lived
+                .iter()
+                .find(|one| one.window == window && one.root == entry.root)
+                .map(|one| (one.siblings.clone(), one.position));
+            Ok(ballot::Census {
+                window,
+                root,
+                branch,
+            })
+        })
+        .collect()
+}
+
+fn spending_of(machine_secret: &[u8; 32]) -> Result<Digest, NodeError> {
+    Digest::of_bytes(&mt_derive::nullifier::machine_halves(machine_secret).0).ok_or(
+        NodeError::Unprovable {
+            what: "the halves of this machine's secret",
+        },
+    )
+}
+
+// The ballot of this machine for a window: nothing where the electorate is counted whole or where its
+// standing drew no vote, and otherwise the count of votes and the proof of it. The aggregate is the
+// one of the window two before, which the draw of a runner reads as well.
+pub fn ballot_of(
+    machine_secret: &[u8; 32],
+    window: u64,
+    electorate: &Electorate,
+    aggregate: &[u8; 32],
+    lived: &[LivedCensus],
+) -> Result<Option<Ballot>, NodeError> {
+    if electorate.committee.expected == 0 {
+        return Ok(None);
+    }
+    let spending = spending_of(machine_secret)?;
+    let threshold = electorate.committee.threshold.to_be_bytes();
+    let units = units_of(electorate, lived)?;
+    let unprovable = || NodeError::Unprovable {
+        what: "the ballot of this machine",
+    };
+    let votes =
+        ballot::votes_of(&spending, &units, aggregate, &threshold).ok_or_else(unprovable)?;
+    if votes == 0 {
+        return Ok(None);
+    }
+    let (trace, part, votes) = ballot::trace_of(&spending, window, &units, aggregate, &threshold)
+        .ok_or_else(unprovable)?;
+    let pairs = electorate.census_roots()?;
+    let public = ballot::public_of(&part, window, &pairs, aggregate, &threshold, votes);
+    let description = ballot::description().ok_or_else(unprovable)?;
+    let proof = mt_proof::scheme::prove(&description, &public, &trace).map_err(|_| unprovable())?;
+    let held = Ballot {
+        window,
+        part_nullifier: part.bytes(),
+        votes,
+        proof,
+    };
+    held.bytes().map_err(NodeError::Object)?;
+    Ok(Some(held))
+}
+
+// What a verifier does with a ballot that arrived: its rule, its window, and its proof against the
+// census, the aggregate and the committee of the electorate it answers to. It answers with the count
+// the ballot casts; whether the part it names entered the cement is the caller's question, since a
+// ballot counts for a part of the cement and for no other.
+pub fn verify_ballot(
+    held: &Ballot,
+    window: u64,
+    electorate: &Electorate,
+    aggregate: &[u8; 32],
+) -> Result<u64, NodeError> {
+    held.bytes().map_err(NodeError::Object)?;
+    if held.window != window {
+        return Err(NodeError::Refused {
+            what: "a ballot of another window",
+        });
+    }
+    if electorate.committee.expected == 0 {
+        return Err(NodeError::Refused {
+            what: "a ballot of an electorate counted whole",
+        });
+    }
+    let part = Digest::of_bytes(&held.part_nullifier).ok_or(NodeError::Refused {
+        what: "a part-nullifier that is no digest of the family",
+    })?;
+    let pairs = electorate.census_roots()?;
+    let public = ballot::public_of(
+        &part,
+        window,
+        &pairs,
+        aggregate,
+        &electorate.committee.threshold.to_be_bytes(),
+        held.votes,
+    );
+    let description = ballot::description().ok_or(NodeError::Unprovable {
+        what: "the description of a ballot",
+    })?;
+    mt_proof::scheme::verify(&description, &public, &held.proof).map_err(|_| {
+        NodeError::Refused {
+            what: "a ballot whose proof does not verify",
+        }
+    })?;
+    Ok(held.votes)
 }
 
 // What a window mints, and to whom. Minting creates no note: a window mints a fixed quantity and
@@ -326,18 +588,5 @@ pub fn right_of(machine_secret: &[u8; 32], window: u64, living: usize) -> Result
         accepted_in,
         share: mint / living,
         carried_forward: mint % living,
-    })
-}
-
-// The leaf a verified heavy attestation contributes to the cement of its window.
-pub fn leaf_of(held: &Confirmation) -> Result<mt_pulse::fold::Leaf, NodeError> {
-    let commitment = mt_suite::standing::Commitment::deserialize(&held.weight_commit).ok_or(
-        NodeError::Refused {
-            what: "a commitment of another width",
-        },
-    )?;
-    Ok(mt_pulse::fold::Leaf {
-        part_nullifier: held.part_nullifier,
-        commitment,
     })
 }

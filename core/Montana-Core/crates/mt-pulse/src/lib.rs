@@ -1,7 +1,7 @@
 // The pulse of Montana, without proofs. What a window is made of before a circuit enters it: the
 // eligibility of a machine for a round, the ticket of the draw, the two thresholds and their
-// recomputations, the close of a window, the slots a selection event offers, the cement, and the
-// fold the cement is opened over.
+// recomputations, the close of a window, the slots a selection event offers, and the cement — the
+// set of distinct machines, by the nullifier of their part, whose heavy attestations verified.
 //
 // Every number here comes from the Decree through `mt-genesis`; every derivation from `mt-derive`;
 // every commitment from `mt-suite`. Nothing in this crate invents a value, and the conformance
@@ -10,9 +10,10 @@
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
 
+pub mod cement;
 pub mod close;
-pub mod fold;
 pub mod retarget;
+pub mod standing;
 pub use mt_codec::wide;
 
 pub use wide::U256;
@@ -37,6 +38,20 @@ mt_codec::constants! {
     /// it can be written into and never ask, so a window it falls one behind in is a window it
     /// never leaves.
     pub const REACHES_AGAIN_EVERY: u32 = 400, code "how often a machine dials again an acquaintance that did not answer at its start, which is the patience of an operator restarting a neighbour and no quantity of the protocol: a machine that dialled twice as often holds the same link one asking sooner";
+    /// How many askings the runners of one decision are spread over before each proves its own
+    /// proposal: a machine waits the share of them its ticket stands at, so the lowest ticket
+    /// usually carries the decision first and alone.
+    pub const CARRIES_WITHIN: u32 = 2_400, code "the span the runners of one decision are spread over by their tickets before each proves its own proposal, which is the conduct of a machine sparing the network a copy and no quantity of the protocol: a machine that waited for nobody publishes one copy too many and nothing worse";
+    /// How many askings the span of attempt zero of the agreement is, doubling from attempt to
+    /// attempt: how long a machine listens before it proposes, follows or moves on. Consensus names
+    /// the span as conduct read by no rule of acceptance, and a machine that waited twice as long
+    /// reaches the same decisions later.
+    /// How many askings a machine lets pass before it asks its acquaintances again for a proposal
+    /// of the window before and its roll that did not stand at their points: reading a past window
+    /// asks every acquaintance for every point of every round of it, and a machine that asked at
+    /// every asking would spend its door on the asking.
+    pub const ASKS_FOR_A_ROLL_AGAIN_AFTER: u32 = 8, code "how many askings a machine lets pass before it asks again for a proposal of the window before and its roll that did not stand at the points, which is the conduct of a machine sparing its acquaintances a read of a whole window and no quantity of the protocol: a machine that asked at every asking replays the same rolls later";
+    pub const SPAN_OF_ATTEMPT_ZERO: u32 = 40, code "the span of attempt zero of the agreement on what a window decided, in a machine's own askings, doubling from attempt to attempt; it is the conduct of a machine deciding how long to listen before it proposes, follows or moves on, and no quantity of the protocol: a machine that waited twice as long reaches the same decisions later";
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -44,14 +59,14 @@ pub enum PulseError {
     // The Decree names every number this crate reads; a tree without one of them is not this
     // protocol, and a tree whose Decree is incomplete opens no chain at all.
     DecreeIncomplete,
+    // An unknown finality rule is never interpreted as the retired recovery rule.
+    UnsupportedFinalityRule,
     // A count no run of this protocol produces, offered to a rule that would have to wrap to
     // accept it.
     CountBeyondWidth,
-    // A fold over no leaves is not a fold: a window that cemented nothing has no tree.
-    NoLeaves,
-    // Two attestations under one part-nullifier offered to the tree. Which of them entered the
-    // cement is decided by arrival and not by a sort, so the tree refuses the pair rather than
-    // choosing between them.
+    // A run of parts holding one of them twice offered to the aggregation. The cement itself is a
+    // set and never holds a repeat, so this names the aggregation refusing a run no cement of this
+    // tree produces.
     RepeatedPart,
 }
 

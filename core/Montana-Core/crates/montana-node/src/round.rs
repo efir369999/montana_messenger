@@ -70,19 +70,24 @@ pub fn eligible(
 
 // The beacon that opens a round. Round zero links to the proposal of the window before — the very
 // proposal whose cement these rounds accumulate — and every later round to the beacon before it.
+// The votes are what the ballots of the cement's parts cast, each part's once.
 pub fn beacon(
     window: u64,
     chain: u8,
     round: u32,
     previous: [u8; 32],
-    cement_state: Vec<u8>,
+    cement_aggregate: [u8; 32],
+    cement: (u64, u64),
 ) -> Result<Beacon, RoundError> {
+    let (cement_count, cement_votes) = cement;
     let held = Beacon {
         window,
         chain,
         round,
         previous,
-        cement_state,
+        cement_aggregate,
+        cement_count,
+        cement_votes,
     };
     // The rule of the object is answered where it is written as well as where it is read, so a
     // beacon of the wrong width cannot be signed, cannot carry an identifier and cannot be
@@ -120,8 +125,10 @@ mod tests {
         mt_derive::nullifier::part(&[machine; 32], 1_000).expect("a half of the family")
     }
 
-    fn empty_state() -> Vec<u8> {
-        vec![0u8; mt_state::WEIGHT_COMMIT_BYTES]
+    // The cement of a window that cemented nothing: the aggregate of the empty set at that window,
+    // beside a count of nought.
+    fn empty_cement() -> [u8; 32] {
+        mt_derive::aggregate::aggregate(&[], 1_000).expect("the empty set holds no repeat")
     }
 
     #[test]
@@ -170,27 +177,31 @@ mod tests {
 
     #[test]
     fn a_chain_of_beacons_links_by_the_identifier_a_verifier_recomputes() {
-        let zero = beacon(1_000, 0, 0, [0xAAu8; 32], empty_state()).expect("a beacon stands");
+        let zero =
+            beacon(1_000, 0, 0, [0xAAu8; 32], empty_cement(), (0, 0)).expect("a beacon stands");
         let one = beacon(
             1_000,
             0,
             1,
             zero.id().expect("an identifier"),
-            empty_state(),
+            empty_cement(),
+            (0, 0),
         )
         .expect("a beacon stands");
         assert!(links_to(&one, &zero).expect("the rule answers"));
 
         // The named wrong implementations, each refused: a beacon carrying an identifier nobody
         // computes, one of another round, one of another chain, one of another window.
-        let forged = beacon(1_000, 0, 1, [0xBBu8; 32], empty_state()).expect("a beacon stands");
+        let forged =
+            beacon(1_000, 0, 1, [0xBBu8; 32], empty_cement(), (0, 0)).expect("a beacon stands");
         assert!(!links_to(&forged, &zero).expect("the rule answers"));
         let skipped = beacon(
             1_000,
             0,
             2,
             zero.id().expect("an identifier"),
-            empty_state(),
+            empty_cement(),
+            (0, 0),
         )
         .expect("a beacon stands");
         assert!(!links_to(&skipped, &zero).expect("the rule answers"));
@@ -199,7 +210,8 @@ mod tests {
             1,
             1,
             zero.id().expect("an identifier"),
-            empty_state(),
+            empty_cement(),
+            (0, 0),
         )
         .expect("a beacon stands");
         assert!(!links_to(&elsewhere, &zero).expect("the rule answers"));
@@ -208,33 +220,39 @@ mod tests {
             0,
             1,
             zero.id().expect("an identifier"),
-            empty_state(),
+            empty_cement(),
+            (0, 0),
         )
         .expect("a beacon stands");
         assert!(!links_to(&later, &zero).expect("the rule answers"));
 
         // And the count that cannot go on: a predecessor at the last round a count carries links to
         // nothing, where an addition left to wrap would stop the machine reading it.
-        let last =
-            beacon(1_000, 0, u32::MAX, [0xAAu8; 32], empty_state()).expect("a beacon stands");
+        let last = beacon(1_000, 0, u32::MAX, [0xAAu8; 32], empty_cement(), (0, 0))
+            .expect("a beacon stands");
         let after = beacon(
             1_000,
             0,
             0,
             last.id().expect("an identifier"),
-            empty_state(),
+            empty_cement(),
+            (0, 0),
         )
         .expect("a beacon stands");
         assert!(!links_to(&after, &last).expect("the rule answers"));
     }
 
     #[test]
-    fn a_beacon_of_the_wrong_width_is_refused_where_it_is_written() {
-        // The cement state is of one width, and a beacon carrying another is not a beacon of this
-        // protocol: it is refused before it can be signed or carry an identifier.
-        assert!(matches!(
-            beacon(1_000, 0, 0, [0u8; 32], vec![0u8; 7]),
-            Err(RoundError::Object(ObjectError::Length { .. }))
-        ));
+    fn the_cement_a_beacon_carries_is_the_pair_and_not_one_of_them() {
+        // Two beacons of one round carrying one aggregate and two counts are two beacons, and so
+        // are two carrying one count and two aggregates: a verifier compares the pair.
+        let zero =
+            beacon(1_000, 0, 0, [0xAAu8; 32], empty_cement(), (0, 0)).expect("a beacon stands");
+        let counted =
+            beacon(1_000, 0, 0, [0xAAu8; 32], empty_cement(), (1, 0)).expect("a beacon stands");
+        assert_ne!(zero.id(), counted.id());
+        let other =
+            beacon(1_000, 0, 0, [0xAAu8; 32], [0x11u8; 32], (0, 0)).expect("a beacon stands");
+        assert_ne!(zero.id(), other.id());
     }
 }

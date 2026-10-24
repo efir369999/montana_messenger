@@ -9,8 +9,9 @@
 // parameter: domains come from the registry, lengths from the sizes of the set, parameters from
 // `mt-genesis`.
 //
-// Every function here takes a secret by reference and answers a public value. None of them holds
-// a secret, stores one, or can be asked for one back.
+// Inputs remain borrowed. Most outputs are public derivations; private key seeds
+// and the weight blind must stay on the machine. The latter is returned in a
+// wiping wrapper, since publishing it would open the commitment it masks.
 
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
@@ -49,18 +50,6 @@ pub fn node_commit(
 // The identifier of an application, over the bytes of its name as its author writes them.
 pub fn app_id(name: &[u8]) -> [u8; 32] {
     hash_of_one(domain::MT_APP, name)
-}
-
-// Which machine produces which node of the fold of a window.
-pub fn fold_work(window: u64, level: u8, index: u64) -> [u8; 32] {
-    hash(
-        domain::MT_FOLD_WORK,
-        &[
-            Part::of(&window.to_le_bytes()),
-            Part::of(&[level]),
-            Part::of(&index.to_le_bytes()),
-        ],
-    )
 }
 
 #[cfg(test)]
@@ -106,13 +95,5 @@ mod tests {
             hex(&app_id(b"montana")),
             "a3ededc374700026f1f872bebf3ba0199103f4082ea609688f82e69e64fa8a82"
         );
-    }
-
-    #[test]
-    fn the_work_of_a_fold_names_one_machine_per_position() {
-        let a = fold_work(1000, 0, 0);
-        assert_ne!(a, fold_work(1000, 0, 1));
-        assert_ne!(a, fold_work(1000, 1, 0));
-        assert_ne!(a, fold_work(1001, 0, 0));
     }
 }

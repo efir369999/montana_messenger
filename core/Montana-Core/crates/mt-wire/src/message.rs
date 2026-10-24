@@ -197,10 +197,10 @@ pub fn collect_answer_max() -> Result<usize, WireError> {
         mt_state::layout::Proposal::expected_len(),
         mt_state::layout::Frame::expected_len(),
         mt_state::layout::Confirmation::expected_len(),
-        mt_state::layout::FoldNode::expected_len(),
         mt_state::layout::Candidacy::expected_len(),
         mt_state::layout::Beacon::expected_len(),
         mt_state::layout::LightAttestation::expected_len(),
+        mt_state::layout::Ballot::expected_len(),
     ];
     let mut widest = 0usize;
     for width in widths {
@@ -216,7 +216,9 @@ pub fn collect_answer_max() -> Result<usize, WireError> {
 // The round's own part is what the machines admitted to the window may put there: each of them at
 // most one beacon, since it runs at most one version of a chain, and one attestation for every
 // version it sees, since it answers every valid version of a round and presents one round
-// nullifier per beacon. The slots' part is the frames and the operations of the identity plane
+// nullifier per beacon, and one ballot, since a ballot stands beside the one heavy attestation of
+// its part and a part is one per machine per window. The slots' part is the frames and the
+// operations of the identity plane
 // whose canonical slot names this round: their residues are derived and may coincide, so what
 // bounds them is the window's own caps — `frames_per_window` frames and
 // `max_openings_per_window` openings — and nothing finer is knowable at the door. The ceiling is
@@ -239,9 +241,11 @@ pub fn collect_answer_max() -> Result<usize, WireError> {
 pub fn point_ceiling(admitted: u64) -> Result<usize, WireError> {
     let beacon = cells_for(mt_state::layout::Beacon::expected_len())?;
     let answer = cells_for(mt_state::layout::Confirmation::expected_len())?;
+    let ballot = cells_for(mt_state::layout::Ballot::expected_len())?;
     let held = usize::try_from(admitted).unwrap_or(usize::MAX).max(1);
     let of_round = beacon
         .saturating_add(answer.saturating_mul(held))
+        .saturating_add(ballot)
         .saturating_mul(held);
     let frames =
         mt_genesis::scalar("frames_per_window").ok_or(WireError::DecreeIncomplete)? as usize;
@@ -385,72 +389,26 @@ pub fn parse_head_query(bytes: &[u8]) -> Result<[u8; mt_codec::size::HASH], Wire
     Ok(held)
 }
 
-// The newest proposal the answerer holds, and beside it the newest window whose proof it holds —
-// the proofs may lag the head by the depth the Decree bounds, and a joining device steers by the
-// proven height, not the head alone. One length for the whole answer: there is no shorter proposal
-// and no longer one, so an answer of any other length is refused before a field of it is reached.
+// The newest proposal the answerer holds. A joining device takes it as a hint of where the head
+// stands and verifies its way there from its own anchor; nothing of it is trusted. One length for
+// the whole answer: there is no shorter proposal and no longer one, so an answer of any other
+// length is refused before a field of it is reached.
 pub fn head_answer_len() -> usize {
-    8 + <mt_state::layout::Proposal as mt_state::Layout>::expected_len()
+    <mt_state::layout::Proposal as mt_state::Layout>::expected_len()
 }
 
-pub fn encode_head_answer(proven: u64, proposal: &[u8]) -> Result<Vec<u8>, WireError> {
-    if 8 + proposal.len() != head_answer_len() {
-        return Err(width(head_answer_len(), 8 + proposal.len()));
+pub fn encode_head_answer(proposal: &[u8]) -> Result<Vec<u8>, WireError> {
+    if proposal.len() != head_answer_len() {
+        return Err(width(head_answer_len(), proposal.len()));
     }
-    let mut out = Vec::with_capacity(head_answer_len());
-    out.extend_from_slice(&proven.to_le_bytes());
-    out.extend_from_slice(proposal);
-    Ok(out)
+    Ok(proposal.to_vec())
 }
 
-pub fn parse_head_answer(bytes: &[u8]) -> Result<(u64, Vec<u8>), WireError> {
+pub fn parse_head_answer(bytes: &[u8]) -> Result<Vec<u8>, WireError> {
     if bytes.len() != head_answer_len() {
         return Err(width(head_answer_len(), bytes.len()));
     }
-    let mut proven = [0u8; 8];
-    proven.copy_from_slice(&bytes[..8]);
-    Ok((u64::from_le_bytes(proven), bytes[8..].to_vec()))
-}
-
-// The proof of a window is asked for by its height and answered with the object or with nothing,
-// exactly as a point that holds nothing answers: an emptiness is an answer, never an error.
-pub fn proof_query_len() -> usize {
-    8
-}
-
-pub fn encode_proof_query(window: u64) -> Vec<u8> {
-    window.to_le_bytes().to_vec()
-}
-
-pub fn parse_proof_query(bytes: &[u8]) -> Result<u64, WireError> {
-    if bytes.len() != proof_query_len() {
-        return Err(width(proof_query_len(), bytes.len()));
-    }
-    let mut held = [0u8; 8];
-    held.copy_from_slice(bytes);
-    Ok(u64::from_le_bytes(held))
-}
-
-pub fn proof_answer_len() -> usize {
-    <mt_state::layout::WindowProof as mt_state::Layout>::expected_len()
-}
-
-pub fn encode_proof_answer(window_proof: Option<&[u8]>) -> Result<Vec<u8>, WireError> {
-    match window_proof {
-        None => Ok(Vec::new()),
-        Some(bytes) if bytes.len() == proof_answer_len() => Ok(bytes.to_vec()),
-        Some(bytes) => Err(width(proof_answer_len(), bytes.len())),
-    }
-}
-
-pub fn parse_proof_answer(bytes: &[u8]) -> Result<Option<Vec<u8>>, WireError> {
-    if bytes.is_empty() {
-        return Ok(None);
-    }
-    if bytes.len() != proof_answer_len() {
-        return Err(width(proof_answer_len(), bytes.len()));
-    }
-    Ok(Some(bytes.to_vec()))
+    Ok(bytes.to_vec())
 }
 
 // The roots a state query may ask against, in the order the set gives them.
@@ -595,10 +553,10 @@ mod tests {
             mt_state::layout::Proposal::expected_len(),
             mt_state::layout::Frame::expected_len(),
             mt_state::layout::Confirmation::expected_len(),
-            mt_state::layout::FoldNode::expected_len(),
             mt_state::layout::Candidacy::expected_len(),
             mt_state::layout::Beacon::expected_len(),
             mt_state::layout::LightAttestation::expected_len(),
+            mt_state::layout::Ballot::expected_len(),
         ] {
             assert!(cells_for(width).expect("cells") <= bound);
         }

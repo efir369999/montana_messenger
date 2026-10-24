@@ -78,6 +78,42 @@ impl Transcript {
         (0..count).map(|_| self.challenge(counter)).collect()
     }
 
+    // Uniform nonzero scalars for an accumulation over a smaller modulus.
+    // The digest words are canonical elements of F, not uniform u64 values.
+    // Reject its incomplete final bucket before taking a remainder, then
+    // reject zero. Reducing every word directly would bias the draw.
+    pub fn nonzero_scalars(
+        &self,
+        counter: &mut u64,
+        modulus: u32,
+        count: usize,
+    ) -> Option<Vec<u32>> {
+        if modulus < 2 {
+            return None;
+        }
+        let modulus = u64::from(modulus);
+        let limit = crate::field::P - crate::field::P % modulus;
+        let mut out = Vec::with_capacity(count);
+        while out.len() < count {
+            let words = self.words(*counter);
+            *counter = counter.checked_add(1)?;
+            for word in words {
+                let word = word.as_u64();
+                if word >= limit {
+                    continue;
+                }
+                let scalar = word % modulus;
+                if scalar != 0 {
+                    out.push(scalar as u32);
+                    if out.len() == count {
+                        break;
+                    }
+                }
+            }
+        }
+        Some(out)
+    }
+
     // A position rather than an element: one word, taken modulo the size of the domain, and a
     // repeat redrawn — the set states both, and a proof whose queries repeat opens fewer places
     // than its count claims.
@@ -219,5 +255,24 @@ mod tests {
     #[test]
     fn a_digest_yields_four_words() {
         assert_eq!(words_of_a_digest(), 4);
+    }
+
+    #[test]
+    fn small_modulus_draws_are_nonzero_canonical_and_reproducible() {
+        let held = transcript();
+        let (mut first, mut second) = (0, 0);
+        let values = held.nonzero_scalars(&mut first, 8_380_417, 128).unwrap();
+        assert_eq!(
+            Some(values.clone()),
+            held.nonzero_scalars(&mut second, 8_380_417, 128)
+        );
+        assert_eq!(first, second);
+        assert!(values.iter().all(|value| *value > 0 && *value < 8_380_417));
+        assert_eq!(held.nonzero_scalars(&mut 0, 2, 16), Some(vec![1; 16]));
+        assert_eq!(held.nonzero_scalars(&mut 0, 0, 1), None);
+        assert_eq!(held.nonzero_scalars(&mut 0, 1, 1), None);
+        let mut exhausted = u64::MAX;
+        assert_eq!(held.nonzero_scalars(&mut exhausted, 3, 1), None);
+        assert_eq!(exhausted, u64::MAX);
     }
 }

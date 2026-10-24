@@ -56,15 +56,21 @@ pub fn aggregate(signer_ids: &[[u8; 32]], window: u64) -> Result<[u8; 32], Repea
     )
 }
 
-// The ticket of a machine, never published: the window's proof asserts its clearing, and that
-// assertion is the only judge it has. It is therefore of the proof hash family — a function the
+// The ticket of a machine, never published: the proof a proposal carries asserts its clearing, and
+// that assertion is the only judge it has. It is therefore of the proof hash family — a function the
 // circuit cannot carry would put the draw beyond proving — while the three order keys below stay
 // SHA-256, because every verifier computes those from state with no proof in hand.
-pub fn ticket(machine_secret: &[u8; 32], aggregate: &[u8; 32]) -> [u8; 32] {
-    let mut preimage = Vec::with_capacity(64);
-    preimage.extend_from_slice(machine_secret);
-    preimage.extend_from_slice(aggregate);
-    mt_proof::poseidon::hash_bytes(domain::MT_TICKET, &preimage).bytes()
+//
+// It takes the half of the secret that spends — the same half the nullifier of a part takes, so a
+// circuit reads the secret once and the description of the ticket lays the same chains the presence
+// lays — as its four cells, and the aggregate as its eight limbs.
+pub fn ticket(machine_secret: &[u8; 32], aggregate: &[u8; 32]) -> Option<[u8; 32]> {
+    let spending = crate::nullifier::machine_halves(machine_secret).0;
+    let cells = mt_proof::poseidon::Digest::of_bytes(&spending)?;
+    let mut elements = Vec::with_capacity(4 + 8);
+    elements.extend_from_slice(cells.elements());
+    elements.extend(mt_proof::poseidon::limbs_of(aggregate));
+    Some(mt_proof::poseidon::hash_elements(domain::MT_TICKET, &elements).bytes())
 }
 
 // The three canonical orders. Both stand on the same aggregate as the draw and for the same
@@ -126,8 +132,8 @@ mod tests {
             "5d25d6189f62e347d8075dc3485e31e66e4c67492f1b25c1131a57d9e1af62f7"
         );
         assert_eq!(
-            hex(&ticket(&[0x77u8; 32], &agg)),
-            "c156cf92ed5da581dd5691330f53058666e15133777d84bea48e066c830ab95b"
+            hex(&ticket(&[0x77u8; 32], &agg).expect("a half of the family")),
+            "d2ca93d9be5af8ee3cad183f185fea7df9925946a3006ce84d5d54d9fcd9884b"
         );
         assert_eq!(
             hex(&selection_key(&agg, &[0x10u8; 32])),
@@ -231,11 +237,37 @@ mod tests {
         assert_ne!(without, aggregate(&cemented(), W).expect("no repeat"));
     }
 
+    // The ticket reads the half that spends and never the secret itself: the named wrong
+    // implementation absorbs the secret's bytes, which the circuit of the ticket cannot do without
+    // a second reading of the secret beside the halves. Two machines of one spending half would be
+    // one machine, so the ticket moves with the secret and with the aggregate and with nothing else.
+    #[test]
+    fn the_ticket_reads_the_spending_half_and_moves_with_the_secret_and_the_aggregate() {
+        let agg = aggregate(&cemented(), W).expect("no repeat");
+        let held = ticket(&[0x77u8; 32], &agg).expect("a half of the family");
+        let mut bare = Vec::with_capacity(64);
+        bare.extend_from_slice(&[0x77u8; 32]);
+        bare.extend_from_slice(&agg);
+        assert_ne!(
+            held,
+            mt_proof::poseidon::hash_bytes(domain::MT_TICKET, &bare).bytes()
+        );
+        assert_ne!(
+            held,
+            ticket(&[0x78u8; 32], &agg).expect("a half of the family")
+        );
+        let other = aggregate(&cemented(), W + 1).expect("no repeat");
+        assert_ne!(
+            held,
+            ticket(&[0x77u8; 32], &other).expect("a half of the family")
+        );
+    }
+
     #[test]
     fn each_of_the_three_calls_stands_under_its_own_domain() {
         let agg = aggregate(&cemented(), W).expect("no repeat");
         let mut seen = vec![
-            ticket(&[0x77u8; 32], &agg),
+            ticket(&[0x77u8; 32], &agg).expect("a half of the family"),
             selection_key(&agg, &[0x10u8; 32]),
             registration_key(&agg, &[0x10u8; 32]),
         ];

@@ -31,7 +31,7 @@ fn holding_the_window(at: &PathBuf, window: u64) {
     // A proposal has one length and no other, so what stands here stands at that length: a machine
     // answering a head query with anything else would be answering with what is not a proposal.
     store
-        .put_proposal(window, &vec![0x7Au8; message::head_answer_len() - 8])
+        .put_proposal(window, &vec![0x7Au8; message::head_answer_len()])
         .expect("stored");
     store
         .set_head(window)
@@ -175,7 +175,7 @@ fn what_is_deposited_at_the_points_of_a_window_stands_at_them() {
     assert_eq!(kind, Kind::HeadAnswer);
     assert_eq!(
         message::parse_head_answer(&arrived[..message::head_answer_len()]),
-        Ok((0, vec![0x7Au8; message::head_answer_len() - 8]))
+        Ok(vec![0x7Au8; message::head_answer_len()])
     );
 
     // A head query naming another network is answered with silence rather than with a proposal, and

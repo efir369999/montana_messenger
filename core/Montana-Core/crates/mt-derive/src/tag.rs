@@ -8,6 +8,7 @@
 // value frozen for the secret, and fails the comparison.
 
 use mt_codec::{domain, hash, hash_of_one, size, Domain, Part};
+use zeroize::Zeroize;
 
 mt_codec::constants! {
     TAG_WIDTHS:
@@ -92,6 +93,30 @@ pub fn ephemeral_id(sender_secret: &[u8; 32], window: u64) -> [u8; 32] {
         domain::MT_SLOT,
         &[Part::of(sender_secret), Part::of(&window.to_le_bytes())],
     )
+}
+
+// The walk of the secret of a pipe: one step per window, one way. The set states it beside the
+// integer form of a tag — `pipe_secret(W + 1) = SHA-256("mt-pipe-ratchet" ‖ 0x00 ‖ pipe_secret(W))`
+// — and every quantity of a pipe for a window takes the value of that window and never the value
+// the first letter established. A holder of one value reaches every later window and none before
+// it, which is what lets a device erase what it walked from.
+pub fn pipe_secret_step(secret: &[u8; 32]) -> [u8; 32] {
+    hash_of_one(domain::MT_PIPE_RATCHET, secret)
+}
+
+// The secret of a later window from the secret of an earlier one, one step per window between
+// them. A window before the one the value stands at has no secret derivable from it — that is the
+// property and not a gap — so the answer is nothing rather than a walk backwards nobody defined.
+// Every value passed on the way is wiped, so the walk leaves only its answer behind.
+pub fn pipe_secret_at(secret: &[u8; 32], from: u64, to: u64) -> Option<[u8; 32]> {
+    let steps = to.checked_sub(from)?;
+    let mut held = *secret;
+    for _ in 0..steps {
+        let next = pipe_secret_step(&held);
+        held.zeroize();
+        held = next;
+    }
+    Some(held)
 }
 
 fn int_le(bytes: &[u8]) -> u64 {
@@ -300,6 +325,60 @@ mod tests {
             assert_ne!(of_slot_bytes, held, "W = {window}");
             assert_ne!(other_end, held, "W = {window}");
         }
+    }
+
+    #[test]
+    fn the_walk_of_the_secret_of_a_pipe_is_the_frozen_values() {
+        // Canon, "A tag and the labels of its steps": the secret walked one and two steps, and the
+        // tags of the windows standing on them.
+        let shared = [0x44u8; 32];
+        let one = pipe_secret_step(&shared);
+        let two = pipe_secret_step(&one);
+        assert_eq!(
+            hex(&one),
+            "1defe2877d6630f056ebaff2b6b94cd31baeb24747346b542ff5f31fe35db94d"
+        );
+        assert_eq!(
+            hex(&two),
+            "a84614faf98fddb2d569aaf7a8bd3d6ff8b20fb5c22e72338af4558993176798"
+        );
+        assert_eq!(hex(&tag(&one, W + 1)), "5bcdd791565a49a2764157d72a8450dc");
+        assert_eq!(hex(&tag(&two, W + 2)), "7d15bb090586a75f651ab429b86e62f4");
+        assert_eq!(pipe_secret_at(&shared, W, W + 2), Some(two));
+        assert_eq!(pipe_secret_at(&shared, W, W), Some(shared));
+        assert_eq!(pipe_secret_at(&shared, W + 1, W), None);
+    }
+
+    #[test]
+    fn the_named_wrong_walks_answer_elsewhere() {
+        use sha2::Digest as _;
+        let shared = [0x44u8; 32];
+        let of_window = tag(&pipe_secret_step(&shared), W + 1);
+        // The secret held unchanged: the value the set froze for that mistake, and not the tag.
+        assert_eq!(
+            hex(&tag(&shared, W + 1)),
+            "c146445f67c990e25256dd88dfb39a49"
+        );
+        assert_ne!(tag(&shared, W + 1), of_window);
+        // The secret walked once per unit of height rather than once per window.
+        let by_height = pipe_secret_at(&shared, 0, W + 1).unwrap();
+        assert_eq!(
+            hex(&tag(&by_height, W + 1)),
+            "11062c7ece61d640abf601e486170994"
+        );
+        assert_ne!(tag(&by_height, W + 1), of_window);
+        // The step without its domain.
+        let bare: [u8; 32] = sha2::Sha256::digest(shared).into();
+        assert_ne!(bare, pipe_secret_step(&shared));
+        // A secret no permutation of which is itself, read from its other end.
+        let distinct: [u8; 32] = sha2::Sha256::digest(b"mt-vector-pipe-secret").into();
+        let mut reversed = distinct;
+        reversed.reverse();
+        assert_eq!(
+            hex(&pipe_secret_step(&distinct)),
+            "92aa039f4d82a59e12a6e65eacaa998fa06455b63e4aef6405556f9e99e4c666"
+        );
+        assert_ne!(pipe_secret_step(&distinct), pipe_secret_step(&reversed));
     }
 }
 

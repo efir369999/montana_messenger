@@ -1,0 +1,232 @@
+{
+  "session": 38,
+  "date": "2026-10-14",
+  "scope": "Item 1 only; native Montana-Core candidate",
+  "status": "OPEN; complete window proof and working replacement network are not implemented",
+  "base_commit": "efcc7fca717a57c4b3d42cdd109936d0e9f2d873",
+  "branch": "fix/session38-window-proof",
+  "production_code_changed_in_session38": false,
+  "protocol_parameters_changed_in_session38": false,
+  "deployed": false,
+  "independent_external_audit": false,
+  "environment": {
+    "os": "Linux x86-64",
+    "rustc": "1.92.0 (ded5c06cf 2025-12-08)",
+    "cargo": "1.92.0 (344c4567c 2025-10-21)",
+    "openssl": "3.5.4",
+    "python": "3.12.3",
+    "test_threads": 1,
+    "network": "isolated network namespace with loopback only"
+  },
+  "snapshots": [
+    {
+      "source_files_before": 208,
+      "checks": [
+        {
+          "name": "format",
+          "command": [
+            "cargo",
+            "fmt",
+            "--all",
+            "--check"
+          ],
+          "exit_code": 0,
+          "seconds": 1.42,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "clippy",
+          "command": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 101,
+          "seconds": 26.94,
+          "log_sha256": "00dae73b4c3e18b1cf6cd1faa362223e783c78a7bea55ecfe393d2bd990339a8"
+        }
+      ],
+      "source_files_after": 208,
+      "snapshot": "session38-window-v2",
+      "archive_sha256": "9ea7fdb70bc283edea18efd78b92a37555d922c0afe92d54c484bd477adfcaba"
+    },
+    {
+      "source_files_before": 208,
+      "checks": [
+        {
+          "name": "format",
+          "command": [
+            "cargo",
+            "fmt",
+            "--all",
+            "--check"
+          ],
+          "exit_code": 0,
+          "seconds": 0.95,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "clippy",
+          "command": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "seconds": 14.37,
+          "log_sha256": "bc9b9cf2e24da629b50022f7950c2f519079169c8b78669f7093ae1a4b760aa7"
+        },
+        {
+          "name": "cement",
+          "command": [
+            "unshare",
+            "--net",
+            "sh",
+            "-c",
+            "ip link set lo up && cargo test --release -p montana-node --test window_cement_audit -- --nocapture"
+          ],
+          "exit_code": 0,
+          "seconds": 152.77,
+          "log_sha256": "50fec2e6f5c4ffdaf95400e5eeff42a7fa2f116aca45d13797c3cb609f92f79c"
+        },
+        {
+          "name": "conformance",
+          "command": [
+            "cargo",
+            "test",
+            "--release",
+            "-p",
+            "mt-conformance"
+          ],
+          "exit_code": 0,
+          "seconds": 23.52,
+          "log_sha256": "df860450ca2699ac206e7b4cfbd1cb46278c44e486ffcaf7d2f2c51844471d46"
+        },
+        {
+          "name": "release",
+          "command": [
+            "cargo",
+            "build",
+            "--release",
+            "--workspace"
+          ],
+          "exit_code": 0,
+          "seconds": 2.45,
+          "log_sha256": "9bf49245957db75606999058df8fa27abba87c3555d50703e5607b1dd0e7033b"
+        }
+      ],
+      "source_files_after": 208,
+      "snapshot": "session38-window-v3",
+      "archive_sha256": "62a4b6274ada23feb3d23d25123c451a2e8787da59e7e2e5d919e1653fc1d707"
+    },
+    {
+      "source_files_before": 208,
+      "checks": [
+        {
+          "name": "format",
+          "command": [
+            "cargo",
+            "fmt",
+            "--all",
+            "--check"
+          ],
+          "exit_code": 0,
+          "seconds": 1.0,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "clippy",
+          "command": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "seconds": 12.67,
+          "log_sha256": "6b59b1f057259468ae6542c742ce77f35d0f71dc457976b627d0524719aa560d"
+        },
+        {
+          "name": "cement",
+          "command": [
+            "unshare",
+            "--net",
+            "sh",
+            "-c",
+            "ip link set lo up && cargo test --release -p montana-node --test window_cement_audit -- --nocapture"
+          ],
+          "exit_code": 0,
+          "seconds": 140.07,
+          "log_sha256": "4dc52f69a234fdc6e5c4d808205afd9e0525f228dbc8117abe1908275abb6113"
+        },
+        {
+          "name": "conformance",
+          "command": [
+            "cargo",
+            "test",
+            "--release",
+            "-p",
+            "mt-conformance"
+          ],
+          "exit_code": 0,
+          "seconds": 25.09,
+          "log_sha256": "d0295ab95b46026ad51001247b68ba7e61a4abaededf61ae03187013cce9351e"
+        },
+        {
+          "name": "release",
+          "command": [
+            "cargo",
+            "build",
+            "--release",
+            "--workspace"
+          ],
+          "exit_code": 0,
+          "seconds": 0.18,
+          "log_sha256": "765f1396d07f30f3a451cd3f9d9cad4e83c92c8e0aecf955ffc09061a6cf1e02"
+        }
+      ],
+      "source_files_after": 208,
+      "snapshot": "session38-window-v4",
+      "archive_sha256": "0a4a31fd973e328c43a733016e5c32553df784420a3f506954d9ed1b73daa38d"
+    }
+  ],
+  "final_conformance_tests_passed": 74,
+  "final_cement_test_seconds_excluding_compilation": 45.52,
+  "final_test": "open_finding_conflicting_member_signatures_produce_order_dependent_cements",
+  "observations": [
+    "Two Machine instances with separate stores and equal receiver context accept different first weight commitments for one admitted part.",
+    "Zero and u64::MAX commitments are validly signed by the admitted sender under the same presence proof.",
+    "Reversed delivery leaves different running cements; duplicate arrivals do not increase the living count.",
+    "The honest presence control accepts; wrong root and correctly re-signed key/proof substitutions reject.",
+    "Key/proof substitutions fail specifically at presence-proof verification.",
+    "The quorum helper returns false for 0/7 and true for 5/7 independently of the cement.",
+    "Calls enter Pulse::gather directly. No wire-delivery, cross-host finality or complete Proposal acceptance is established."
+  ],
+  "errors_and_review_corrections": [
+    "The first launcher had an unterminated string and did not run the checks; a separate corrected runner was retained.",
+    "v2 Clippy found an unused Layout import; removed before v3.",
+    "v3 used two Pulse instances of one Machine and unsigned key/proof corruption controls; Critic review identified both limitations.",
+    "v4 uses two Machine instances with separate stores and correctly re-signs both negative controls.",
+    "The destructive-command guard refused a launcher log truncation; the run was not started by that call. Append-only launcher logging was then used.",
+    "A diagnostic OpenSSL version command omitted its custom library path and failed; the corrected command confirmed 3.5.4. Test runners had the required library path throughout."
+  ],
+  "limits": [
+    "No complete valid weighted window proof was produced.",
+    "No full-workspace test sweep is claimed.",
+    "Passing an open-finding reproduction confirms a defect.",
+    "History, hidden authorized sum, quorum, state transition and runner-ticket composition remain unimplemented.",
+    "The source manifest precedes this receipt and the narrative report; later additions are documentation only.",
+    "Earlier session37 disclosure and weight-authority results are historical receipts, not fresh runs in session38."
+  ]
+}

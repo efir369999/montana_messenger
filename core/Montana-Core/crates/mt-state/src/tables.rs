@@ -107,6 +107,41 @@ impl Table {
     }
 }
 
+// A table holding a set is a sparse tree whose key is the whole of the entry: a present key carries
+// one byte, because the construction holds no empty record. `docs/Montana Canon.md`, "The roots of
+// state".
+mt_codec::constants! {
+    SETS:
+    pub const PRESENT: u8 = 0x01, writes "a sparse tree whose every present key carries the one-byte record `0x01`";
+}
+
+// The root of a table holding a set, over the keys present in it. A set is the keys and nothing
+// else, so the order they are offered in moves nothing; a table of another construction has no root
+// of this shape here, and asking for one answers nothing rather than a root of another kind.
+pub fn root_of_set<'a>(
+    table: Table,
+    keys: impl IntoIterator<Item = &'a [u8; 32]>,
+) -> Option<[u8; 32]> {
+    let mut tree = table.sparse_tree()?;
+    for key in keys {
+        tree.insert(*key, vec![PRESENT]).ok()?;
+    }
+    Some(tree.root())
+}
+
+// The root of an append-only table of this crate over its leaves in the order they entered. The
+// order is of the root: two windows applying one set of frames in two orders carry two roots.
+pub fn root_of_sequence<'a>(
+    table: Table,
+    leaves: impl IntoIterator<Item = &'a [u8; 32]>,
+) -> Option<[u8; 32]> {
+    let mut tree = table.append_tree()?;
+    for leaf in leaves {
+        tree.push(*leaf).ok()?;
+    }
+    Some(tree.root())
+}
+
 // The six empty roots in the order a proposal carries them.
 pub fn genesis_roots() -> [[u8; 32]; 6] {
     let mut out = [[0u8; 32]; 6];
@@ -251,6 +286,40 @@ mod tests {
                 .finish()
         };
         assert_ne!(over([1, 0, 2, 3, 4]), over([0, 1, 2, 3, 4]));
+    }
+
+    // The named wrong implementations: a set keyed by its record rather than by its key, under which
+    // every set of one size has one root; a set that remembers the order its keys came in; and a
+    // sequence that sorts its leaves, under which two orders of one window's frames carry one root.
+    #[test]
+    fn a_set_is_its_keys_and_a_sequence_is_its_order() {
+        let (a, b) = ([0x11u8; 32], [0x22u8; 32]);
+        assert_eq!(
+            root_of_set(Table::Nullifiers, []),
+            Some(Table::Nullifiers.empty_root())
+        );
+        let one = root_of_set(Table::Nullifiers, [&a]).expect("a set table");
+        assert_ne!(one, Table::Nullifiers.empty_root());
+        assert_ne!(Some(one), root_of_set(Table::Nullifiers, [&b]));
+        assert_eq!(
+            root_of_set(Table::Nullifiers, [&a, &b]),
+            root_of_set(Table::Nullifiers, [&b, &a])
+        );
+        assert_eq!(
+            root_of_set(Table::Machines, [&a]),
+            Some(one),
+            "two set tables of one pair of domains hold one content at one root"
+        );
+        assert_eq!(root_of_set(Table::Notes, [&a]), None);
+        assert_eq!(
+            root_of_sequence(Table::Operations, []),
+            Some(Table::Operations.empty_root())
+        );
+        assert_ne!(
+            root_of_sequence(Table::Operations, [&a, &b]),
+            root_of_sequence(Table::Operations, [&b, &a])
+        );
+        assert_eq!(root_of_sequence(Table::Nullifiers, [&a]), None);
     }
 
     #[test]

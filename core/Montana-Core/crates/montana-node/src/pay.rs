@@ -14,6 +14,27 @@ use montana_wallet::pay::{Payee, Payment};
 use montana_wallet::Wallet;
 use mt_proof::poseidon::Digest;
 use mt_wire::message::{self, Kind, RootIndex};
+use std::path::Path;
+use zeroize::Zeroizing;
+
+fn wallet_at(at: &Path) -> Result<Wallet, NodeError> {
+    Wallet::open(at).map_err(|e| NodeError::Unreadable {
+        what: format!("what this wallet keeps: {e:?}"),
+    })
+}
+
+fn identifier_of(frame: &[u8]) -> Result<[u8; 32], NodeError> {
+    <mt_state::layout::Frame as mt_state::Layout>::parse(frame)
+        .map_err(NodeError::Object)?
+        .id()
+        .map_err(NodeError::Object)
+}
+
+fn not_applied() -> NodeError {
+    NodeError::Refused {
+        what: "a frame its round left without applying",
+    }
+}
 
 // What a machine does with the right a window minted it: it redeems it into a note of its own
 // wallet, in the window that right is accepted in.
@@ -27,6 +48,10 @@ use mt_wire::message::{self, Kind, RootIndex};
 // The window whose right this is, and how many machines its cement named, are what the operator
 // read off that window when it closed. They are of the world in the same way an acquaintance is:
 // the machine cannot ask anybody for them, and nothing else it holds implies them.
+//
+// **The note enters the wallet once its frame has applied, and not before.** The frame stands at
+// the points of the round and applies with the frames of that round as the machine leaves it, so the
+// position the note took is known there, and `settled` is told it — or told why there is none.
 pub struct Minted {
     pub value: u128,
     pub position: u64,
@@ -36,7 +61,7 @@ impl Machine {
     #[allow(clippy::too_many_arguments)]
     pub fn redeem_into(
         &self,
-        wallet: &Wallet,
+        at: &Path,
         cohort: &pulse::Cohort,
         of_the_window: u64,
         living: usize,
@@ -44,7 +69,9 @@ impl Machine {
         chain: u8,
         round: u32,
         rate_secret: &[u8; 32],
-    ) -> Result<Minted, NodeError> {
+        mut settled: Box<dyn FnMut(Result<Minted, NodeError>) + Send>,
+    ) -> Result<(), NodeError> {
+        let wallet = wallet_at(at)?;
         let secret = self.machine_secret()?;
         let mut of_the_machine = [0u8; 32];
         of_the_machine.copy_from_slice(&secret[..32]);
@@ -91,33 +118,85 @@ impl Machine {
                 what: format!("a right this machine cannot write a frame for: {e:?}"),
             })?;
 
+        let created = minted
+            .created
+            .into_iter()
+            .next()
+            .ok_or(NodeError::Refused {
+                what: "a redemption that created no note",
+            })?;
+        let frame = identifier_of(&minted.frame)?;
         self.stand_the_frame(&minted.frame, window, chain, round)?;
-        let object = <mt_state::layout::Frame as mt_state::Layout>::parse(&minted.frame)
-            .map_err(NodeError::Object)?;
-        let positions = self.apply_and_keep(&object, window)?;
-        let created = minted.created.first().ok_or(NodeError::Refused {
-            what: "a redemption that created no note",
-        })?;
-        let position = *positions.first().ok_or(NodeError::Refused {
-            what: "a redemption that took no position",
-        })?;
-        let note = montana_wallet::Note::of(
-            created.value,
-            created.note_pk,
-            person.note_nullifier_key(),
-            created.rcm,
-            position,
+        let at = at.to_path_buf();
+        // The note of the minted share, as the wallet of this machine would hold it at a position.
+        let wallet_of = at.clone();
+        let minted_note = move |position: u64| -> Result<montana_wallet::Note, NodeError> {
+            let wallet = wallet_at(&wallet_of)?;
+            let person = wallet.person().ok().flatten().ok_or(NodeError::Refused {
+                what: "a wallet holding no person",
+            })?;
+            montana_wallet::Note::of(
+                created.value,
+                created.note_pk,
+                person.note_nullifier_key(),
+                created.rcm,
+                position,
+            )
+            .map_err(|_| NodeError::Refused {
+                what: "a note that is not of the family",
+            })
+        };
+        let value = created.value;
+        self.settle_when_applied(
+            (window, chain, round),
+            frame,
+            // **The operator is told every time**: once as the round leaves, and again where a replay
+            // moves the note or leaves the frame out, with the position that now stands or the
+            // refusal; and a wallet that would not follow is a refusal the operator reads, never a
+            // silence.
+            Box::new(move |told| match told {
+                // The round left: the note enters the wallet at the position it took.
+                crate::Told::Applied(positions) => settled((|| {
+                    let position = *positions.first().ok_or(NodeError::Refused {
+                        what: "a redemption that took no position",
+                    })?;
+                    let note = minted_note(position)?;
+                    wallet_at(&at)?
+                        .enter(note)
+                        .map_err(|_| NodeError::Refused {
+                            what: "a ledger that would not take the note",
+                        })?;
+                    Ok(Minted { value, position })
+                })()),
+                // A replay moved the frame: the note moves to the position the decided roll gave it,
+                // and the operator is told the position again.
+                crate::Told::Moved(positions) => settled((|| {
+                    let position = *positions.first().ok_or(NodeError::Refused {
+                        what: "a redemption that took no position",
+                    })?;
+                    let note = minted_note(position)?;
+                    wallet_at(&at)?
+                        .move_note(&note.commitment, position)
+                        .map_err(|_| NodeError::Refused {
+                            what: "a ledger that would not move the note a replay moved",
+                        })?;
+                    Ok(Minted { value, position })
+                })()),
+                // The frame applies in no window: the note never stood, and the operator is told so.
+                crate::Told::Left => settled((|| {
+                    let note = minted_note(0)?;
+                    wallet_at(&at)?
+                        .forget(&note.commitment)
+                        .map_err(|_| NodeError::Refused {
+                            what: "a ledger that would not forget the note of a frame applied nowhere",
+                        })?;
+                    Err(not_applied())
+                })()),
+                // The window is final: a redemption spends no note of the wallet, so nothing is kept
+                // whole to release.
+                crate::Told::Final => {}
+            }),
         )
-        .map_err(|_| NodeError::Refused {
-            what: "a note that is not of the family",
-        })?;
-        wallet.enter(note).map_err(|_| NodeError::Refused {
-            what: "a ledger that would not take the note",
-        })?;
-        Ok(Minted {
-            value: created.value,
-            position,
-        })
     }
 }
 
@@ -232,6 +311,11 @@ impl Machine {
 // machine living a window is that machine: it applied the frames that put those notes where they
 // are, so it asks itself, and the path it walks is the one it would have answered anybody with.
 //
+// **And it applies its own frame as everybody does.** The frame stands at the points of the round
+// and applies with the round's frames in the order of their identifiers as the machine leaves it;
+// only then does the wallet spend, take back what the payment left and learn where the payee's
+// note stands, and `settled` is told it.
+//
 // What is published names nobody: nullifiers, commitments and the nullifier of a rate, and no
 // amount and no key among them.
 pub struct Paid {
@@ -245,14 +329,16 @@ impl Machine {
     #[allow(clippy::too_many_arguments)]
     pub fn pay_of_its_own(
         &self,
-        wallet: &Wallet,
+        at: &Path,
         to: &Payee,
         amount: u128,
         window: u64,
         chain: u8,
         round: u32,
         rate_secret: &[u8; 32],
-    ) -> Result<Paid, NodeError> {
+        mut settled: Box<dyn FnMut(Result<Paid, NodeError>) + Send>,
+    ) -> Result<(), NodeError> {
+        let wallet = wallet_at(at)?;
         let ledger = wallet.ledger().map_err(|_| NodeError::Refused {
             what: "a ledger this wallet cannot read",
         })?;
@@ -293,33 +379,121 @@ impl Machine {
                 what: format!("a payment this wallet cannot write a frame for: {e:?}"),
             })?;
 
+        let frame = identifier_of(&payment.frame)?;
         self.stand_the_frame(&payment.frame, window, chain, round)?;
-        let object = <mt_state::layout::Frame as mt_state::Layout>::parse(&payment.frame)
-            .map_err(NodeError::Object)?;
-        let positions = self.apply_and_keep(&object, window)?;
-        for commitment in &payment.spent {
-            wallet.spend(commitment).map_err(|_| NodeError::Refused {
-                what: "a note this wallet holds",
-            })?;
-        }
-        // What the payment did not pay away is the payer's own, and the wallet is what knows it.
-        wallet
-            .enter_what_it_left(&payment, &positions, &mine.nf_key)
-            .map_err(|_| NodeError::Refused {
-                what: "a ledger that would not take the note a payment left",
-            })?;
-        let created = payment.created.first().ok_or(NodeError::Refused {
-            what: "a payment that created no note",
-        })?;
-        Ok(Paid {
-            value: created.value,
-            position: *positions.first().ok_or(NodeError::Refused {
-                what: "a payment that took no position",
-            })?,
-            rcm: created.rcm,
-            note_pk: created.note_pk,
-        })
+        let at = at.to_path_buf();
+        let nf_key = Zeroizing::new(mine.nf_key);
+        self.settle_when_applied(
+            (window, chain, round),
+            frame,
+            // **The operator is told every time**: once as the round leaves, and again where a replay
+            // moves the frame or leaves it out of every window, with the positions that now stand or
+            // the refusal; a wallet that would not follow is a refusal the operator reads.
+            Box::new(move |told| match told {
+                // The round left and the frame applied: the notes it spent leave the wallet, what it
+                // did not pay away comes back at the positions it took, and the operator is told.
+                crate::Told::Applied(positions) => settled((|| {
+                    let wallet = wallet_at(&at)?;
+                    for commitment in &payment.spent {
+                        wallet.spend(commitment).map_err(|_| NodeError::Refused {
+                            what: "a note this wallet holds",
+                        })?;
+                    }
+                    // What the payment did not pay away is the payer's own, and the wallet is what
+                    // knows it.
+                    wallet
+                        .enter_what_it_left(&payment, &positions, &nf_key)
+                        .map_err(|_| NodeError::Refused {
+                            what: "a ledger that would not take the note a payment left",
+                        })?;
+                    paid_at(&payment, &positions)
+                })()),
+                // A replay moved the frame: every note the payment left the payer moves to the
+                // position the decided roll gave it, and the operator is told the payee's position
+                // again.
+                crate::Told::Moved(positions) => settled((|| {
+                    let wallet = wallet_at(&at)?;
+                    for (which, left) in payment.created.iter().enumerate().skip(1) {
+                        if left.value == 0 {
+                            continue;
+                        }
+                        let position = *positions.get(which).ok_or(NodeError::Refused {
+                            what: "a replay that gave a note of the payment no position",
+                        })?;
+                        let note = montana_wallet::Note::of(
+                            left.value,
+                            left.note_pk,
+                            *nf_key,
+                            left.rcm,
+                            position,
+                        )
+                        .map_err(|_| NodeError::Refused {
+                            what: "a note that is not of the family",
+                        })?;
+                        wallet
+                            .move_note(&note.commitment, position)
+                            .map_err(|_| NodeError::Refused {
+                                what: "a ledger that would not move the note a replay moved",
+                            })?;
+                    }
+                    paid_at(&payment, &positions)
+                })()),
+                // The frame applies in no window: the notes it spent stand again, what it left never
+                // stood, and the operator is told so.
+                crate::Told::Left => settled((|| {
+                    let wallet = wallet_at(&at)?;
+                    wallet
+                        .take_back(&payment.spent)
+                        .map_err(|_| NodeError::Refused {
+                        what: "a ledger that would not take back the notes of a frame applied nowhere",
+                    })?;
+                    for left in payment.created.iter().skip(1) {
+                        let note = montana_wallet::Note::of(
+                            left.value,
+                            left.note_pk,
+                            *nf_key,
+                            left.rcm,
+                            0,
+                        )
+                        .map_err(|_| NodeError::Refused {
+                            what: "a note that is not of the family",
+                        })?;
+                        wallet.forget(&note.commitment).map_err(|_| NodeError::Refused {
+                            what: "a ledger that would not forget the note of a frame applied nowhere",
+                        })?;
+                    }
+                    Err(not_applied())
+                })()),
+                // The window of the frame is final: the notes it spent are past moving and past
+                // taking back, so the wallet lets go of what it kept of them whole; the nullifiers
+                // stay. A wallet that would not is a refusal the operator reads.
+                crate::Told::Final => {
+                    if let Err(why) = wallet_at(&at).and_then(|wallet| {
+                        wallet.release(&payment.spent).map_err(|_| NodeError::Refused {
+                            what: "a ledger that would not release the notes of a final spending",
+                        })
+                    }) {
+                        settled(Err(why));
+                    }
+                }
+            }),
+        )
     }
+}
+
+// What a payer is told of a payment: the payee's note, its value and the position it stands at.
+fn paid_at(payment: &montana_wallet::pay::Payment, positions: &[u64]) -> Result<Paid, NodeError> {
+    let created = payment.created.first().ok_or(NodeError::Refused {
+        what: "a payment that created no note",
+    })?;
+    Ok(Paid {
+        value: created.value,
+        position: *positions.first().ok_or(NodeError::Refused {
+            what: "a payment that took no position",
+        })?,
+        rcm: created.rcm,
+        note_pk: created.note_pk,
+    })
 }
 
 // The path to one leaf of the tree of notes, asked of the machine holding it. Nothing comes back

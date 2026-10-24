@@ -125,6 +125,15 @@ impl Places {
                 value,
             });
         }
+        // The length delimiter and zero padding are constraints of the statement.
+        out.extend(sponge::padding_boundaries(
+            self.right(),
+            crate::poseidon::limbs_of(&[0u8; 32]).len(),
+        ));
+        out.extend(sponge::padding_boundaries(
+            self.record(),
+            super::admission::RECORD_LIMBS,
+        ));
         out
     }
 
@@ -327,6 +336,34 @@ mod tests {
                 &crate::poseidon::limbs_of(&public_of_the_honest(&digests))
             ),
             "a record claiming another window satisfied the description"
+        );
+    }
+    #[test]
+    fn padding_cannot_create_a_second_nullifier_for_one_right() {
+        let secret = [0x44; 32];
+        let record = a_new_record(0, 0);
+        let (mut trace, mut digests) = trace_of(&secret, &record).unwrap();
+        let description = description().unwrap();
+        assert!(description.satisfied_by(
+            &trace,
+            &crate::poseidon::limbs_of(&public_of(&digests, 0, 0))
+        ));
+        let mut longer = crate::poseidon::limbs_of(&secret);
+        longer.push(crate::field::F::ONE);
+        for (at, state) in sponge::chain(mt_codec::domain::MT_OPEN_NF, &longer)
+            .iter()
+            .enumerate()
+        {
+            permutation::write_block(&mut trace, Places.right() + at, state).unwrap();
+        }
+        digests[0] = crate::poseidon::hash_elements(mt_codec::domain::MT_OPEN_NF, &longer);
+
+        assert!(
+            !description.satisfied_by(
+                &trace,
+                &crate::poseidon::limbs_of(&public_of(&digests, 0, 0))
+            ),
+            "padding must not give another nullifier to the same right"
         );
     }
 }

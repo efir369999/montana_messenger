@@ -9,10 +9,10 @@
 // circuit is that it asserts the same function a verifier of the network computes.
 
 pub mod admission;
+pub mod ballot;
 pub mod branch;
 pub mod capacity;
-pub mod discharge;
-pub mod fold;
+pub mod compare;
 pub mod frame;
 pub mod lane;
 pub mod moment;
@@ -21,10 +21,9 @@ pub mod path;
 pub mod permutation;
 pub mod presence;
 pub mod redemption;
-pub mod reduce;
 pub mod sponge;
+pub mod ticket;
 pub mod value;
-pub mod window;
 
 use crate::field::F;
 use crate::poseidon::{self, WIDTH};

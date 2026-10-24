@@ -1,7 +1,9 @@
 // The condition of the stage of two hosts, in the part that was never driven from a terminal: two
 // machines start, reach each other by an acquaintance handed over out of band, and then **live** —
 // they stand at the points of their rounds, publish beacons, answer them, gather what verifies into
-// their cements, close the window on the cement and take the right it mints.
+// their cements, close the window on the cement and take the right it mints — once the window is
+// final, decided by the agreement of the window after it, which is why two windows are lived here:
+// a right is issued from the decided roll of a final window and from no count (Protocol-13 item 2).
 //
 // **Nothing here is a model of the pulse.** What runs is the same loop the binary runs: every
 // object crosses as cells at the points of its round, every attestation is verified as a far side
@@ -71,40 +73,63 @@ fn two_machines_live_a_window_from_end_to_end_and_each_takes_one_share() {
     let living = std::thread::spawn({
         let cohort = Cohort::of(&halves).expect("the same cohort");
         move || {
-            let lived = pulse::live(&far, &cohort, WINDOW, 1, PATIENCE);
+            let lived = pulse::live(&far, &cohort, WINDOW, 2, PATIENCE);
             (far, lived)
         }
     });
     let mine =
-        pulse::live(&near, &cohort, WINDOW, 1, PATIENCE).expect("the dialler lives the window");
-    let (_far, theirs) = living.join().expect("the thread stands");
-    let theirs = theirs.expect("the answerer lives the window");
+        pulse::live(&near, &cohort, WINDOW, 2, PATIENCE).expect("the dialler lives the windows");
+    let (far, theirs) = living.join().expect("the thread stands");
+    let theirs = theirs.expect("the answerer lives the windows");
 
-    // One window, closed by both, on a cement naming both machines.
-    assert_eq!(mine.len(), 1);
-    assert_eq!(theirs.len(), 1);
-    assert_eq!(mine[0].window, WINDOW);
-    assert_eq!(theirs[0].window, WINDOW);
-    assert_eq!(
-        mine[0].living, 2,
-        "the cement of the dialler does not name both machines"
-    );
-    assert_eq!(
-        theirs[0].living, 2,
-        "the cement of the answerer does not name both machines"
-    );
+    // Two windows, closed by both, each on a cement naming both machines; the first is final,
+    // decided by the second.
+    assert_eq!(mine.len(), 2);
+    assert_eq!(theirs.len(), 2);
+    for at in 0..2 {
+        assert_eq!(mine[at].window, WINDOW + at as u64);
+        assert_eq!(theirs[at].window, WINDOW + at as u64);
+        assert_eq!(
+            mine[at].living, 2,
+            "the cement of the dialler does not name both machines"
+        );
+        assert_eq!(
+            theirs[at].living, 2,
+            "the cement of the answerer does not name both machines"
+        );
+        // One decision, one name: both closed the window under the identifier of one proposal,
+        // whichever runner's bytes each took.
+        assert_eq!(
+            mine[at].proposal, theirs[at].proposal,
+            "two machines closing one window on one beacon took two proposals"
+        );
+    }
+    for machine in [&near, &far] {
+        assert_eq!(machine.head().expect("the store answers"), Some(WINDOW));
+    }
+    // The second window awaits the decision of a window nobody lived: no right stands for it.
+    assert!(mine[1].right.is_none() && theirs[1].right.is_none());
 
     // And each takes one share of that window and no more: two machines, two rights, two
     // nullifiers, and the shares plus what does not divide are the mint of the window exactly.
     let mint = montana_node::attest::mint_of(WINDOW).expect("the Decree names the schedule");
-    assert_eq!(mine[0].right.share, mint / 2);
-    assert_eq!(theirs[0].right.share, mint / 2);
+    // Both parts entered the cement, so both machines lived the window and both took a right.
+    let mine = mine[0]
+        .right
+        .as_ref()
+        .expect("this machine's part entered the cement");
+    let theirs = theirs[0]
+        .right
+        .as_ref()
+        .expect("the other's part entered the cement");
+    assert_eq!(mine.share, mint / 2);
+    assert_eq!(theirs.share, mint / 2);
     assert_ne!(
-        mine[0].right.nullifier, theirs[0].right.nullifier,
+        mine.nullifier, theirs.nullifier,
         "two machines took one right"
     );
     assert_eq!(
-        mine[0].right.share + theirs[0].right.share + mine[0].right.carried_forward,
+        mine.share + theirs.share + mine.carried_forward,
         mint,
         "the shares of the living and what does not divide are not the mint of the window"
     );

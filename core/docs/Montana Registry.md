@@ -39,9 +39,9 @@ code that computes it.
 
 | Count | Value |
 |---|---|
-| rows | 96 |
-| closed — nothing awaited | 37 |
-| awaiting a stage of the plan | 59 |
+| rows | 99 |
+| closed — nothing awaited | 38 |
+| awaiting a stage of the plan | 61 |
 | awaiting the artifact `air_hash` | 0 |
 
 The artifact stands published, so no row awaits it; what a row may still await is its stage.
@@ -50,18 +50,18 @@ The artifact stands published, so no row awaits it; what a row may still await i
 
 | id | mechanism | anchors | derivations | domains | proven by | awaits |
 |---|---|---|---|---|---|---|
-| CNS-01 | the TimeChain | Consensus, "The TimeChain" | — | `mt-proposal` | vectors: "A proposal, and its length", the identifier over the deterministic fields among them | — |
+| CNS-01 | the TimeChain | Consensus, "The TimeChain" | — | `mt-proposal` | vectors: "A proposal, and its length", the identifier over the fields the window decided among them | — |
 | CNS-02 | the round | Consensus, "The round"; Canon, "The round of a chain, in integers" | — | `mt-beacon`, `mt-round-att`, `mt-round-nf`, `mt-part-key` | vectors: "The round, the beacon, and the chain of a sender" | stage 13 |
 | CNS-03 | the pulse and the close of a window | Consensus, "The pulse and the close of a window" | `target_rounds` | `mt-cascade` | the derivation; a scenario of the close | stage 13 |
 | CNS-04 | the threshold of a round, computed from the admitted | Canon, "The threshold of a round"; Canon, "`round_floor` = 50" | `round_floor` | — | the derivation; the integer form; vectors: "Vectors of the threshold of a round", compared by the gate | — |
 | CNS-05 | parallel chains | Consensus, "Parallel chains" | `k_max`, `k_step` | — | the derivations; a scenario of the split | stage 13 |
 | CNS-06 | the runner's draw | Consensus, "The runner's draw"; Canon, "The draw, and the two canonical orders" | — | `mt-ticket` | vectors: "The aggregate, the ticket and the two orders" | — |
-| CNS-07 | the nameless runner | Consensus, "Closing a window" | — | `mt-runner-key` | the proof that a ticket passed, inside the circuit | — |
-| CNS-08 | the fold of the cement | Consensus, "Closing a window"; Canon, "The node of the fold" | — | `mt-bc-aggregate`, `mt-bc-aggregate-empty`, `mt-fold-work`, `mt-fold-node` | vectors: "The vector of the node's identifier" | — |
-| CNS-09 | finality and the quorum | Consensus, "Finality"; Canon, "The commitment that carries standing" | — | `mt-weight`, `mt-standing-matrix` | vectors of the standing commitment | stage 13 |
-| CNS-10 | the sanction of a double answer | Consensus, "The sanction of a double answer" | — | `mt-part-nf` | vectors: "The nullifier of a part, and the identifier of an application"; a scenario of two closings of one height | stage 19 |
-| CNS-11 | the proof a window carries | Consensus, "The proof a window carries" | — | — | the circuit of a window; the argument the accumulation carries stands written in the document, symbol by symbol | — |
-| CNS-12 | the constant join | Consensus, "The join" | — | — | a scenario of a stranger joining from the Genesis State Hash | stage 14 |
+| CNS-07 | the nameless runner | Consensus, "Closing a window"; Canon, "The arithmetization, and how the set is bound to it" | — | `mt-runner-key`, `mt-runner-key-digest` | the description of the ticket, proven and verified end to end at the height of the presence, its identifier among the six of `air_hash`; vectors: "The round, the beacon, and the chain of a sender" | — |
+| CNS-08 | the cement of a window | Consensus, "The round"; Canon, "The round of a chain, in integers" | — | `mt-bc-aggregate`, `mt-bc-aggregate-empty` | vectors: "The aggregate, the ticket and the two orders"; a scenario of two verifiers reaching one cement from two arrival orders | stage 13 |
+| CNS-09 | finality and the quorum | Consensus, "Finality"; Canon, "The close of a window, and the slots an event offers" | — | — | vectors: the close, compared by the gate; a scenario of two cements of one height intersecting in a third of the electorate | stage 13 |
+| CNS-10 | the sanction of a double answer | Consensus, "The sanction of a double answer" | — | `mt-part-nf` | vectors: "The nullifier of a part, and the identifier of an application"; a scenario of a contradicting pair of pledges of one window | stage 19 |
+| CNS-11 | the certificate of a window | Consensus, "The certificate of a window"; Canon, "The certificate of a window"; Canon, "`retained_windows` = 8" | `retained_windows` | — | the derivation; the acceptance matrix of the relation through the node's own verifier, and the same door in the running node's close | — |
+| CNS-12 | the join from an anchor | Consensus, "The join" | — | — | a scenario of a device walking from an anchor to the head by verifying each certificate, run against two machines living four windows | — |
 | CNS-13 | membership for a term | Consensus, "Presence and admission" | — | — | a scenario of a term expiring unobserved | stage 19 |
 | CNS-14 | selection events | Consensus, "Presence and admission"; Canon, "The close of a window, and the slots an event offers" | — | `mt-nodereg`, `mt-nodereg-sort`, `mt-selection` | vectors: "The aggregate, the ticket and the two orders"; a scenario of admission | stage 19 |
 | CNS-15 | the one-time right to raise a machine | Consensus, "Presence and admission" | — | `mt-operator-nf` | a scenario of the right spent once | stage 19 |
@@ -69,12 +69,13 @@ The artifact stands published, so no row awaits it; what a row may still await i
 | CNS-17 | the three points of a round | Canon, "The points a round stands at" | `consensus_replicas` | `mt-round-point`, `mt-window-point` | the derivation and the ring rule | stage 13 |
 | CNS-18 | the right to a window's share | Consensus, "The right to a window's share" | — | — | VAL-08, where the right and what redeems it stand | — |
 | CNS-19 | the cold start | Consensus, "The cold start" | — | — | a scenario of the first window closing itself | stage 14 |
-| CNS-20 | the way back | Consensus, "The way back"; Canon, "The close of a window, and the slots an event offers" | `recovery_onset_multiple` | — | the derivation; vectors: "Vectors of the way back"; a scenario of a split where one part resumes and the other never does | — |
-| CNS-21 | the attestation of presence | Consensus, "The attestation of presence"; Canon, "The arithmetization, and how the set is bound to it" | — | — | the description written, proven and verified end to end at the height of its own duty, its length derived beside it, and `air_hash` recomputed over the five | stage 13 |
+| CNS-20 | the way back | Consensus, "The way back"; Canon, "The close of a window, and the slots an event offers" | `finality_rule` | — | the derivation; vectors: "Vectors of the way back"; a scenario of overlapping Byzantine signers, halted partitions and rejoining under the fixed parent quorum | — |
+| CNS-21 | the attestation of presence | Consensus, "The attestation of presence"; Canon, "The arithmetization, and how the set is bound to it" | — | `mt-part-key-digest` | the description written, proven and verified end to end at the height of its own duty, its length derived beside it, and `air_hash` recomputed over the six | stage 13 |
 | CNS-22 | presence witnessed and never self-declared | Consensus, "Presence is witnessed and never self-declared" | — | — | a scenario of a machine outside the cement taking no share | stage 13 |
-| CNS-23 | the proof of a window, carried apart | Consensus, "The proof a window carries"; Canon, "The proof of a window, carried apart"; Canon, "`unproven_depth` = 8" | `unproven_depth` | `mt-window-proof` | the derivation; vectors: "The proof of a window, and its length"; a scenario of a chain running ahead of its prover to the bound and waiting there | stage 14 |
 | CNS-24 | the canonical order | Consensus, "The canonical order" | — | — | a scenario of one coordinate carrying one meaning for every participant and recomputed from the chain alone, and of a machine that has not seen the network holding no current window | stage 13 |
 | CNS-25 | the secret of a machine | Consensus, "The secret of a machine" | — | — | a scenario of every published value derived from it in one direction under a domain of its own, of the owner branch kept apart from it, and of a device that is not a machine placing itself in a window by the same kind of secret | stage 13 |
+| CNS-26 | the standing of a machine and the votes it draws | Consensus, "The standing of a machine, and the ballot"; Canon, "The standing of an electorate, and the votes it draws"; Canon, "The ballot of a part"; Canon, "`standing_censuses` = 10"; Canon, "`standing_committee` = 6 499" | `standing_censuses`, `standing_committee` | `mt-vote`, `mt-cement-leaf`, `mt-cement-node` | the derivations; vectors: "The standing of an electorate, and the votes it draws", and the votes of the close; the description of the ballot proven and verified end to end at the frame's height, a vote of a census not lived and a count overstated refused, its identifier among the six of `air_hash`; a scenario of a population wide enough to sample closing on votes | stage 19 |
+| CNS-27 | the agreement on what a window decided | Consensus, "The agreement on what a window decided"; Consensus, "Finality"; Canon, "The pledge of a part"; Canon, "The roll of a proposal"; Canon, "The round of a chain, in integers" | — | `mt-proposer`, `mt-roll` | the counting of the agreement in unit tests; the vectors of the place of a part and of a roll; a scenario of four machines at a quorum of three under a held part, a late frame and a partition that heals | stage 13 |
 
 ## Value
 
@@ -145,6 +146,7 @@ The artifact stands published, so no row awaits it; what a row may still await i
 | NET-21 | how the objects of consensus travel | Network, "How the objects of consensus travel" | — | — | a scenario of an object of consensus riding the same cells as correspondence, deposited at every point of its round by a machine that computed them without asking anybody | stage 13 |
 | NET-22 | privacy is not rented | Network, "Privacy is not rented" | — | — | a scenario of privacy standing whole with every external tunnel switched off | stage 18 |
 | NET-23 | the threat model of the wire | Network, "Threat model of the wire" | — | — | the model itself, read against the observability ledger of this document | stage 22 |
+| NET-24 | the walk of the secret of a pipe | Canon, "The integer form of a tag"; Network, "There is no address" | — | `mt-pipe-ratchet` | vectors: "A tag and the labels of its steps" | — |
 
 ## App
 
@@ -156,6 +158,7 @@ The artifact stands published, so no row awaits it; what a row may still await i
 | APP-04 | the reproducibility of a client | App, "The reproducibility of a client" | — | — | a scenario of one release hash in three places | stage 20 |
 | APP-05 | the boundary of the protocol and the client | App, "The boundary" | — | — | a scenario of a client holding none of the four layers and asking the protocol to carry none of its own, and of proving moved only between the devices of one owner | stage 21 |
 | APP-06 | what a client owes the person | App, "What a client owes the person" | — | — | a scenario of an unverified handshake marked as such until a comparison, and of a consequence stated before the act | stage 21 |
+| APP-07 | an agent | App, "An agent" | — | — | a scenario of an agent on a seed born on its own machine exchanging letters with a phone through the pipes, its reasoning program holding no key | stage 21 |
 
 ## Canon
 

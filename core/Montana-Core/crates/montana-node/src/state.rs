@@ -13,8 +13,10 @@
 use crate::NodeError;
 use mt_proof::poseidon::Digest;
 use mt_state::layout::Frame;
+use mt_state::tables::{self, Table};
 use mt_state::Layout;
 
+#[derive(Clone)]
 pub struct State {
     notes: mt_proof::notes::Tree,
     spent: Vec<[u8; 32]>,
@@ -26,6 +28,12 @@ pub struct State {
     nullifiers: Vec<[u8; 32]>,
     // How many records this window has opened, against the ceiling the Decree fixes.
     opened: (u64, u64),
+    // The rate nullifiers frames presented. They stand in the rate set of the horizon and in no
+    // root: the set of nullifiers a proposal carries is of spent notes, rights and openings alone.
+    rates: Vec<[u8; 32]>,
+    // The frames applied in the window this state last applied one in, by identifier and in the
+    // order they applied: the tree of operations a proposal carries holds one window.
+    operations: (u64, Vec<[u8; 32]>),
 }
 
 impl Default for State {
@@ -43,6 +51,8 @@ impl State {
             records: std::collections::BTreeMap::new(),
             nullifiers: Vec::new(),
             opened: (0, 0),
+            rates: Vec::new(),
+            operations: (0, Vec::new()),
         }
     }
 
@@ -56,8 +66,29 @@ impl State {
     // The order is the order of the fields, counts before what they count, every count four bytes
     // little-endian and every value thirty-two — so an implementation reading it back reads it in
     // one pass and a file of another shape is refused rather than read half.
-    pub fn encode(&self) -> Vec<u8> {
+    pub fn encode(&self) -> Result<Vec<u8>, NodeError> {
+        let sizes = [
+            (self.notes.leaves().len(), 32usize),
+            (self.spent.len(), 32),
+            (self.records.len(), 64),
+            (self.nullifiers.len(), 32),
+            (self.rates.len(), 32),
+            (self.operations.1.len(), 32),
+        ];
+        let refuses = || NodeError::Refused {
+            what: "value plane exceeds its canonical encoding or allocation",
+        };
+        // The admitted root, the opening window and count, and the window of the operations.
+        let mut size = 32usize + 16 + 8;
+        for (count, width) in sizes {
+            u32::try_from(count).map_err(|_| refuses())?;
+            size = size
+                .checked_add(4)
+                .and_then(|s| count.checked_mul(width).and_then(|n| s.checked_add(n)))
+                .ok_or_else(refuses)?;
+        }
         let mut out = Vec::new();
+        out.try_reserve_exact(size).map_err(|_| refuses())?;
         let count = |out: &mut Vec<u8>, n: usize| out.extend_from_slice(&(n as u32).to_le_bytes());
         count(&mut out, self.notes.leaves().len());
         for leaf in self.notes.leaves() {
@@ -79,7 +110,16 @@ impl State {
         }
         out.extend_from_slice(&self.opened.0.to_le_bytes());
         out.extend_from_slice(&self.opened.1.to_le_bytes());
-        out
+        count(&mut out, self.rates.len());
+        for nullifier in &self.rates {
+            out.extend_from_slice(nullifier);
+        }
+        out.extend_from_slice(&self.operations.0.to_le_bytes());
+        count(&mut out, self.operations.1.len());
+        for frame in &self.operations.1 {
+            out.extend_from_slice(frame);
+        }
+        Ok(out)
     }
 
     pub fn decode(bytes: &[u8]) -> Result<Self, NodeError> {
@@ -93,10 +133,16 @@ impl State {
             *at = end;
             Ok(held)
         };
-        let count = |at: &mut usize| -> Result<usize, NodeError> {
+        let count = |at: &mut usize, width: usize| -> Result<usize, NodeError> {
             let mut four = [0u8; 4];
             four.copy_from_slice(take(4, at)?);
-            Ok(u32::from_le_bytes(four) as usize)
+            let held = u32::from_le_bytes(four) as usize;
+            // A persisted count cannot reserve memory beyond the bytes that
+            // can actually carry its entries, even when the file is corrupt.
+            if held > bytes.len().saturating_sub(*at) / width {
+                return Err(short());
+            }
+            Ok(held)
         };
         let of_digest = |held: &[u8]| -> Result<Digest, NodeError> {
             let mut out = [0u8; 32];
@@ -110,35 +156,53 @@ impl State {
             out.copy_from_slice(held);
             out
         };
+        let distinct_values = |at: &mut usize| -> Result<Vec<[u8; 32]>, NodeError> {
+            let held = count(at, 32)?;
+            let mut values = Vec::with_capacity(held);
+            let mut seen = std::collections::BTreeSet::new();
+            for _ in 0..held {
+                let value = of_bytes(take(32, at)?);
+                if !seen.insert(value) {
+                    return Err(NodeError::Refused {
+                        what: "a persisted spent set repeating a nullifier",
+                    });
+                }
+                values.push(value);
+            }
+            Ok(values)
+        };
 
-        let leaves_held = count(&mut at)?;
+        let leaves_held = count(&mut at, 32)?;
         let mut leaves = Vec::with_capacity(leaves_held);
         for _ in 0..leaves_held {
             leaves.push(of_digest(take(32, &mut at)?)?);
         }
-        let spent_held = count(&mut at)?;
-        let mut spent = Vec::with_capacity(spent_held);
-        for _ in 0..spent_held {
-            spent.push(of_bytes(take(32, &mut at)?));
-        }
+        let spent = distinct_values(&mut at)?;
         let admitted = of_digest(take(32, &mut at)?)?;
-        let records_held = count(&mut at)?;
+        let records_held = count(&mut at, 64)?;
         let mut records = std::collections::BTreeMap::new();
+        let mut previous_key = None;
         for _ in 0..records_held {
             let key = of_bytes(take(32, &mut at)?);
+            if previous_key.is_some_and(|previous| key <= previous) {
+                return Err(NodeError::Refused {
+                    what: "persisted records repeating a key or outside their encoded order",
+                });
+            }
+            previous_key = Some(key);
             let held = of_digest(take(32, &mut at)?)?;
             records.insert(key, held);
         }
-        let nullifiers_held = count(&mut at)?;
-        let mut nullifiers = Vec::with_capacity(nullifiers_held);
-        for _ in 0..nullifiers_held {
-            nullifiers.push(of_bytes(take(32, &mut at)?));
-        }
+        let nullifiers = distinct_values(&mut at)?;
         let mut eight = [0u8; 8];
         eight.copy_from_slice(take(8, &mut at)?);
         let window = u64::from_le_bytes(eight);
         eight.copy_from_slice(take(8, &mut at)?);
         let opened = u64::from_le_bytes(eight);
+        let rates = distinct_values(&mut at)?;
+        eight.copy_from_slice(take(8, &mut at)?);
+        let of_the_window = u64::from_le_bytes(eight);
+        let operations = distinct_values(&mut at)?;
         if at != bytes.len() {
             return Err(NodeError::Refused {
                 what: "a value plane longer than what it declares",
@@ -155,6 +219,8 @@ impl State {
             records,
             nullifiers,
             opened: (window, opened),
+            rates,
+            operations: (of_the_window, operations),
         })
     }
 
@@ -193,8 +259,80 @@ impl State {
         self.notes.path(position)
     }
 
+    // A value a frame presents is refused where it stands already, whichever of the two sets holds
+    // it: a spent note or right, or a rate the horizon holds.
     pub fn is_spent(&self, nullifier: &[u8; 32]) -> bool {
-        self.spent.contains(nullifier)
+        self.spent.contains(nullifier) || self.rates.contains(nullifier)
+    }
+
+    // The six roots and the count a proposal of `window` carries, recomputed from this plane and the
+    // cohort it stands against. `docs/Montana Canon.md`, "The roots of state". The tree of admitted
+    // machines is the cohort's, and a plane told another tree is refused rather than mixed with it;
+    // the table of machines holds what selection events admit, and an opening cohort writes none.
+    pub fn roots(
+        &self,
+        cohort: &crate::pulse::Cohort,
+        window: u64,
+        parts: &[[u8; 32]],
+    ) -> Result<crate::certificate::Roots, NodeError> {
+        if cohort.root() != self.admitted {
+            return Err(NodeError::Refused {
+                what: "a plane standing against another tree of admitted machines than its cohort",
+            });
+        }
+        let refused = || NodeError::Refused {
+            what: "a table of the state its construction cannot hold",
+        };
+        let nullifier_root =
+            tables::root_of_set(Table::Nullifiers, self.spent.iter().chain(&self.nullifiers))
+                .ok_or_else(refused)?;
+        let machine_root = tables::root_of_set(Table::Machines, []).ok_or_else(refused)?;
+        let applied: &[[u8; 32]] = if self.operations.0 == window {
+            &self.operations.1
+        } else {
+            &[]
+        };
+        let operations_root =
+            tables::root_of_sequence(Table::Operations, applied).ok_or_else(refused)?;
+        let roll = self.roll(window, parts).id().map_err(NodeError::Object)?;
+        Ok(crate::certificate::Roots {
+            note_root: self.notes_root().bytes(),
+            nullifier_root,
+            record_root: self.records_root().bytes(),
+            machine_root,
+            admitted_root: self.admitted.bytes(),
+            operations_root,
+            roll,
+            admitted_count: cohort.count(),
+            // The census is carried from the proposal before with the cement of the window, which
+            // the plane does not hold; the pulse writes it beside these roots.
+            census: Vec::new(),
+        })
+    }
+
+    // The identifiers of the frames this plane applied in `window`, in the order they applied, and
+    // nothing where the tree of operations holds another window.
+    pub fn operations_of(&self, window: u64) -> Vec<[u8; 32]> {
+        if self.operations.0 == window {
+            self.operations.1.clone()
+        } else {
+            Vec::new()
+        }
+    }
+
+    // The roll of `window` as this plane applied it: the frames in the order they applied, then the
+    // parts of the cement the window decided, ascending. Canon, "The roll of a proposal".
+    pub fn roll(&self, window: u64, parts: &[[u8; 32]]) -> mt_state::layout::Roll {
+        let frames = if self.operations.0 == window {
+            self.operations.1.clone()
+        } else {
+            Vec::new()
+        };
+        mt_state::layout::Roll {
+            window,
+            frames,
+            parts: parts.to_vec(),
+        }
     }
 
     // A commitment entering the tree outside a frame: what a window's minting writes, and what a
@@ -287,16 +425,32 @@ impl State {
     // commitments this frame creates enter after, and the positions they took come back so a
     // recipient knows where its own note stands.
     pub fn apply(&mut self, frame: &Frame, window: u64) -> Result<Vec<u64>, NodeError> {
+        // Public Rust fields need the same shape check as a wire decoder. In particular an
+        // overlong nested run must not manufacture additional public inputs or output leaves.
+        frame.bytes().map_err(|_| NodeError::Refused {
+            what: "a frame outside its canonical shape",
+        })?;
         if !frame.nullifiers_are_distinct() {
             return Err(NodeError::Refused {
                 what: "a frame spending one note twice within itself",
             });
         }
+        let id = frame.id().map_err(NodeError::Object)?;
+        let mut taken = std::collections::BTreeSet::new();
         for spend in &frame.spends {
-            for nullifier in &spend.nullifiers {
+            for nullifier in spend
+                .nullifiers
+                .iter()
+                .chain(std::iter::once(&spend.rate_nullifier))
+            {
+                if !taken.insert(*nullifier) {
+                    return Err(NodeError::Refused {
+                        what: "a frame repeating a spending or rate nullifier",
+                    });
+                }
                 if self.is_spent(nullifier) {
                     return Err(NodeError::Refused {
-                        what: "a frame spending a note already spent",
+                        what: "a frame repeating a spent note or rate right",
                     });
                 }
             }
@@ -331,17 +485,40 @@ impl State {
             }
         })?;
 
-        // Past the verification nothing can refuse it, so the whole of it enters: the spendings
-        // recorded and the commitments appended in the order the frame writes them.
-        let mut positions = Vec::new();
-        for spend in &frame.spends {
-            for nullifier in &spend.nullifiers {
-                self.spent.push(*nullifier);
-            }
-            for commitment in &spend.commitments {
-                positions.push(self.witness(commitment)?);
-            }
+        // Reserve and validate every fallible operation before either table changes. The tree
+        // owns its atomic append; after it succeeds extending these reserved sets cannot fail.
+        // This is in-memory atomicity; persistence must commit the enclosing snapshot.
+        let reserving = |_| NodeError::Refused {
+            what: "cannot reserve the frame's spent set",
+        };
+        self.spent.try_reserve(taken.len()).map_err(reserving)?;
+        self.rates
+            .try_reserve(frame.spends.len())
+            .map_err(reserving)?;
+        self.operations.1.try_reserve(1).map_err(reserving)?;
+        let commitments: Vec<_> = frame
+            .spends
+            .iter()
+            .flat_map(|spend| spend.commitments.iter().copied())
+            .collect();
+        let positions = self
+            .notes
+            .append_many(&commitments)
+            .map_err(|_| NodeError::Refused {
+                what: "a frame whose complete commitments cannot enter the tree",
+            })?;
+        let rates: std::collections::BTreeSet<[u8; 32]> = frame
+            .spends
+            .iter()
+            .map(|spend| spend.rate_nullifier)
+            .collect();
+        self.spent
+            .extend(taken.into_iter().filter(|value| !rates.contains(value)));
+        self.rates.extend(rates);
+        if self.operations.0 != window {
+            self.operations = (window, Vec::new());
         }
+        self.operations.1.push(id);
         Ok(positions)
     }
 

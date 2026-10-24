@@ -42,7 +42,7 @@ fn a_plane_written_reads_back_as_the_plane_it_was() {
     let before = held.notes_root();
     let held_notes = held.notes_held();
 
-    let bytes = held.encode();
+    let bytes = held.encode().unwrap();
     let back = State::decode(&bytes).expect("a plane this machine wrote reads back");
     assert_eq!(back.notes_held(), held_notes, "the count of notes moved");
     assert_eq!(

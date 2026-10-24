@@ -246,7 +246,7 @@ mod tests {
         assert_eq!(head("art"), "art");
         assert_eq!(head(""), "");
         assert_eq!(head("aaaé"), "aaaé");
-        assert_eq!(head("ааааа"), "аааа");
+        assert_eq!(head("ааааа"), "аааа"); // CYRILLIC-DATA-OK: a word of another script is the input the test needs
     }
 
     #[test]

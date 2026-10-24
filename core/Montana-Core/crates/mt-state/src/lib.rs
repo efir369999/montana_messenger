@@ -22,20 +22,41 @@ pub use layout::{Layout, ObjectError};
 
 use mt_codec::{hash_of_one, Domain};
 
-// The length of a proof, and the width of the commitment that carries standing. Both stand in the
-// set, both are frozen, and the gate recomputes the first from the parts the set fixes.
+// The lengths of the two proofs, and the width of the fields of a proposal the window decides. All
+// stand in the set, all are frozen, and the gate recomputes the lengths from the parts the set fixes.
 mt_codec::constants! {
     PROOF_AND_COMMITMENT:
-    pub const PROOF_LEN: usize = 210_968, writes "| `PROOF_LEN` | 210 968 B |";
+    pub const PROOF_LEN: usize = 213_440, writes "| `PROOF_LEN` | 213 440 B |";
     /// The length of a proof of the presence, at the presence's own height: the one description a
-    /// machine proves every window is priced by its own statement, not by the tallest.
-    pub const PRESENCE_PROOF_LEN: usize = 174_072, writes "| `PRESENCE_PROOF_LEN` | 174 072 B |";
-    pub const WEIGHT_COMMIT_BYTES: usize = 6_144, writes "weight_commit_bytes        = n x d x 4 = 6 144 B";
-    /// The deterministic fields of a proposal: everything before the ticket proof. The identifier
-    /// of a proposal is taken over exactly these bytes, because the name is what an attestation
-    /// attests and what separates two clearings of one height — and a name over proof bytes is a
-    /// name its maker redraws by reproving.
-    pub const PROPOSAL_DETERMINISTIC_LEN: usize = 2_222, writes "proposal_id = SHA-256(\"mt-proposal\" || 0x00 || serialize(proposal)[0 .. 2 222])";
+    /// machine proves every window is priced by its own statement, not by the tallest. The ticket
+    /// stands at the same height, so the proof a proposal carries is of this length as well.
+    pub const PRESENCE_PROOF_LEN: usize = 176_544, writes "| `PRESENCE_PROOF_LEN` | 176 544 B |";
+    /// The fields of a proposal the window decides: everything from the height through the suite,
+    /// the census of the standing among them. The identifier of a proposal is taken over exactly
+    /// these bytes, because the name is what an attestation attests — and a name over proof bytes
+    /// is a name its maker redraws by reproving, while a name over the final beacon or the runner's
+    /// key is one name per branch or per runner of a single decision.
+    pub const PROPOSAL_DECIDED_LEN: usize = 718, writes "proposal_id = SHA-256(\"mt-proposal\" || 0x00 || serialize(proposal)[0 .. 718])";
+}
+
+// The one value of the agreement the set writes as a number: what the `since` of a pledge holds
+// where it stands on no quorum. No attempt takes it, since a pledge made in an attempt of that
+// number is refused where it is read.
+mt_codec::constants! {
+    AGREEMENT:
+    pub const STANDS_ON_NONE: u32 = 0xFFFF_FFFF, writes "or 0xFFFFFFFF for none";
+}
+
+// The rules this tree implements. The Constitution has every machine publish the version its own
+// software implements, so the set holds no value of it and the place of this one is the code.
+mt_codec::constants! {
+    RULES:
+    pub const PROTOCOL_VERSION: u32 = 0x0001_0000, code "the rules this tree implements, major one in the upper sixteen bits and minor zero in the lower: the Constitution has every machine state its own version, so the set holds none";
+}
+
+// The major component of the rules this tree implements: a proposal under a larger one is refused.
+pub fn implemented_major() -> u16 {
+    (PROTOCOL_VERSION >> 16) as u16
 }
 
 // The identifier of a signed object: taken from signed scope under the class domain of the object,
@@ -51,11 +72,6 @@ pub(crate) fn identifier(class: Domain, signed_scope: &[u8]) -> [u8; 32] {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn hex(bytes: &[u8]) -> String {
-        bytes.iter().map(|b| format!("{b:02x}")).collect()
-    }
-
     use mt_codec::domain;
 
     #[test]
@@ -70,32 +86,6 @@ mod tests {
         assert_ne!(
             identifier(domain::MT_PROPOSAL, scope),
             identifier(domain::MT_OP, scope)
-        );
-    }
-
-    #[test]
-    fn the_identifier_of_a_node_of_the_fold_is_the_frozen_value() {
-        // Canon, "The vector of the node's identifier": there being no signature to exclude, the
-        // identifier is taken over the whole of the canonical bytes.
-        let mut bytes = Vec::with_capacity(32 + 32 + WEIGHT_COMMIT_BYTES + PROOF_LEN);
-        bytes.extend_from_slice(&[0xABu8; 32]);
-        bytes.extend_from_slice(&[0xCDu8; 32]);
-        bytes.extend_from_slice(&[0x11u8; WEIGHT_COMMIT_BYTES]);
-        bytes.extend_from_slice(&vec![0x00u8; PROOF_LEN]);
-        // The value of this identifier lives in the set, and the gate compares the code against it
-        // there. What is checked here is the rule the value stands on: the whole of the bytes goes
-        // in, so moving the last of them moves the identifier.
-        assert_eq!(
-            identifier(domain::MT_FOLD_NODE, &bytes),
-            hash_of_one(domain::MT_FOLD_NODE, &bytes)
-        );
-        let mut moved = bytes.clone();
-        let last = moved.len() - 1;
-        moved[last] ^= 0x01;
-        assert_ne!(
-            hex(&identifier(domain::MT_FOLD_NODE, &bytes)),
-            hex(&identifier(domain::MT_FOLD_NODE, &moved)),
-            "the last byte of a node stands outside its identifier"
         );
     }
 }

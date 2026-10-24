@@ -7,26 +7,13 @@
 // this file is the standing witness of it: it measures, rather than asserts, that the two classes
 // of body cost the same.
 //
-// The measurement follows the shape Reparaz, Balasch and Verbauwhede published as dudect
-// (DATE 2017): two classes drawn once, their samples interleaved so that drift of the machine
-// falls on both alike, the slowest tenth dropped because a scheduler interruption is not the code,
-// and Welch's t over what remains. A t of ten is the threshold that work uses to call a leak.
+// The instrument is the one of `tests/dudect`, shared with the measurements of the cell and the
+// link in `tests/timing_cell.rs`, so that two surfaces of the wire are measured one way.
 
+mod dudect;
+
+use dudect::{fill, t_between, SAMPLES, THRESHOLD};
 use mt_wire::erasure;
-
-const SAMPLES: usize = 2_000;
-const CROP: f64 = 0.9;
-const THRESHOLD: f64 = 10.0;
-
-fn fill(seed: u64, into: &mut [u8]) {
-    let mut x = seed | 1;
-    for byte in into.iter_mut() {
-        x ^= x << 13;
-        x ^= x >> 7;
-        x ^= x << 17;
-        *byte = (x >> 24) as u8;
-    }
-}
 
 fn blocks(seed: Option<u64>, count: usize, width: usize) -> Vec<Vec<u8>> {
     (0..count)
@@ -40,26 +27,6 @@ fn blocks(seed: Option<u64>, count: usize, width: usize) -> Vec<Vec<u8>> {
         .collect()
 }
 
-fn welch(a: &[f64], b: &[f64]) -> f64 {
-    let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
-    let (ma, mb) = (mean(a), mean(b));
-    let var = |v: &[f64], m: f64| {
-        v.iter().map(|x| (x - m) * (x - m)).sum::<f64>() / (v.len() as f64 - 1.0)
-    };
-    let (va, vb) = (var(a, ma), var(b, mb));
-    let denominator = (va / a.len() as f64 + vb / b.len() as f64).sqrt();
-    if denominator == 0.0 {
-        return 0.0;
-    }
-    (ma - mb).abs() / denominator
-}
-
-fn cropped(mut samples: Vec<f64>) -> Vec<f64> {
-    samples.sort_by(|x, y| x.partial_cmp(y).expect("a duration is a number"));
-    samples.truncate((samples.len() as f64 * CROP) as usize);
-    samples
-}
-
 // The two classes are the extremes of what a body can be: a body of zeros, where every product is
 // the trivial one, and a body of uniform bytes, where none of them is. An implementation that
 // short-circuits a zero — the obvious optimization, and the one a compiler is glad to make — is
@@ -71,24 +38,16 @@ fn the_parity_of_a_group_costs_the_same_whatever_the_body_holds() {
     let zeros = blocks(None, count, width);
     let drawn = blocks(Some(0x5EED_1234_ABCD_0001), count, width);
 
-    for warm in [&zeros, &drawn] {
-        for _ in 0..64 {
-            let _ = erasure::parity(warm).expect("parity of a full group");
-        }
-    }
-
-    let mut of_zeros = Vec::with_capacity(SAMPLES);
-    let mut of_drawn = Vec::with_capacity(SAMPLES);
-    for _ in 0..SAMPLES {
-        let start = std::time::Instant::now();
-        let _ = erasure::parity(&zeros).expect("parity of a full group");
-        of_zeros.push(start.elapsed().as_nanos() as f64);
-        let start = std::time::Instant::now();
-        let _ = erasure::parity(&drawn).expect("parity of a full group");
-        of_drawn.push(start.elapsed().as_nanos() as f64);
-    }
-
-    let t = welch(&cropped(of_zeros), &cropped(of_drawn));
+    let t = t_between(
+        SAMPLES,
+        || {
+            let _ = erasure::parity(&zeros).expect("parity of a full group");
+        },
+        || {
+            let _ = erasure::parity(&drawn).expect("parity of a full group");
+        },
+    );
+    dudect::report("erasure::parity zeros vs drawn", SAMPLES, t);
     assert!(
         t < THRESHOLD,
         "the parity of a group of zeros and of a group of drawn bytes differ in time: \
@@ -116,24 +75,16 @@ fn reconstruction_costs_the_same_whatever_the_survivors_carry() {
     let of_zeros_input = present(&blocks(None, count, width));
     let of_drawn_input = present(&blocks(Some(0x5EED_1234_ABCD_0002), count, width));
 
-    for warm in [&of_zeros_input, &of_drawn_input] {
-        for _ in 0..16 {
-            let _ = erasure::reconstruct(warm).expect("a group with four losses reconstructs");
-        }
-    }
-
-    let mut of_zeros = Vec::with_capacity(SAMPLES / 4);
-    let mut of_drawn = Vec::with_capacity(SAMPLES / 4);
-    for _ in 0..SAMPLES / 4 {
-        let start = std::time::Instant::now();
-        let _ = erasure::reconstruct(&of_zeros_input).expect("reconstruction");
-        of_zeros.push(start.elapsed().as_nanos() as f64);
-        let start = std::time::Instant::now();
-        let _ = erasure::reconstruct(&of_drawn_input).expect("reconstruction");
-        of_drawn.push(start.elapsed().as_nanos() as f64);
-    }
-
-    let t = welch(&cropped(of_zeros), &cropped(of_drawn));
+    let t = t_between(
+        SAMPLES / 4,
+        || {
+            let _ = erasure::reconstruct(&of_zeros_input).expect("reconstruction");
+        },
+        || {
+            let _ = erasure::reconstruct(&of_drawn_input).expect("reconstruction");
+        },
+    );
+    dudect::report("erasure::reconstruct zeros vs drawn", SAMPLES / 4, t);
     assert!(
         t < THRESHOLD,
         "reconstruction of a group of zeros and of drawn bytes differ in time: \
@@ -189,25 +140,20 @@ fn the_measurement_catches_a_multiplication_that_returns_early_on_a_zero() {
     let zeros = blocks(None, count, width);
     let drawn = blocks(Some(0x5EED_1234_ABCD_0003), count, width);
 
-    for warm in [&zeros, &drawn] {
-        for _ in 0..8 {
-            let _ = parity_that_leaks(warm, &matrix);
-        }
-    }
-
-    let rounds = SAMPLES / 8;
-    let mut of_zeros = Vec::with_capacity(rounds);
-    let mut of_drawn = Vec::with_capacity(rounds);
-    for _ in 0..rounds {
-        let start = std::time::Instant::now();
-        let _ = parity_that_leaks(&zeros, &matrix);
-        of_zeros.push(start.elapsed().as_nanos() as f64);
-        let start = std::time::Instant::now();
-        let _ = parity_that_leaks(&drawn, &matrix);
-        of_drawn.push(start.elapsed().as_nanos() as f64);
-    }
-
-    let t = welch(&cropped(of_zeros), &cropped(of_drawn));
+    let t = t_between(
+        SAMPLES / 8,
+        || {
+            let _ = parity_that_leaks(&zeros, &matrix);
+        },
+        || {
+            let _ = parity_that_leaks(&drawn, &matrix);
+        },
+    );
+    dudect::report(
+        "power: multiplication returning early on a zero",
+        SAMPLES / 8,
+        t,
+    );
     assert!(
         t > THRESHOLD,
         "the instrument did not see a multiplication that returns early on a zero: t = {t:.2}. \

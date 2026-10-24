@@ -10,6 +10,7 @@ mt-genesis = { workspace = true }
 mt-codec = { workspace = true }
 mt-merkle = { workspace = true }
 sha2 = { workspace = true }
+getrandom = { workspace = true }
 
 [dev-dependencies]
 mt-conformance = { path = "../mt-conformance" }

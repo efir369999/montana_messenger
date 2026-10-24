@@ -1,8 +1,15 @@
 # Montana Core
 
-The protocol, runnable. Libraries that hold the primitives, the encodings, the trees, the
-derivations, the wire and the movement of the clock; one binary that runs a machine; and a wallet
-that spends from a terminal. Start it on a laptop and on a server and you have a network.
+The reference implementation under active audit: primitives, encodings, trees, derivations,
+transport, proof circuits, a node and a terminal wallet. Two running processes exercise transport
+and local protocol scenarios. They do not establish that the live cohort has finalized a window.
+
+The current source candidate repairs presence and frame branch binding, padding, round authorization,
+beacon reconciliation and persisted predecessor choices. It also binds stores to Genesis. Canonical
+window finalization, the complete window-proof statement, admission continuity and authenticated
+bootstrap remain blockers. Read the current findings at the top of [AUDIT.md](AUDIT.md) before
+running these examples. The changed AIR and genesis identifiers require a verified network
+transition; this candidate is not a compatible replacement for a deployed node.
 
 What is not here is the client layer — how a message is composed or displayed, how media is
 chunked, how a profile is rendered, how a call is presented. That is built elsewhere, against the
@@ -13,18 +20,16 @@ implementation is the same network.
 ## One truth, held by the build rather than by discipline
 
 The normative set is `../docs`, and this tree is subordinate to it: where the two disagree, the
-documents are right and the code is a defect. That is not two sources — the harness makes it one.
+documents state the requirement and a weaker implementation is a defect to fix.
 The harness binds what the stages have built: every value of the Genesis Decree, every domain
 separator, and the frozen vectors of the hash primitive and of the trees are parsed out of the set
 and asserted against the code on every build, and a divergence fails the build and names what
 diverged. Each stage that lands its code extends the gate to the sizes and vectors that code
-answers for. Nothing here is kept in step by anyone remembering to.
+answers for. This compares registered values and encodings; it does not prove that every circuit
+constrains its intended statement or that the runtime executes the whole protocol.
 
-The reason it works this way rather than the way Bitcoin does — where the code is the specification
-and every accidental behaviour is normative forever — is the property this protocol is built for: a
-stranger writes their own Montana against the documents and the vectors, and stands on the same
-network. That property is worth a harness, and the harness is what makes the documents cost nothing
-to keep true.
+The documents define what an independent implementation must reproduce. The harness checks
+registered counterparts; the open findings identify requirements it does not yet establish.
 
 ## What the build does not hold
 
@@ -38,9 +43,9 @@ before the code, because it names the places the green build says nothing about.
 
 `ROADMAP.md` holds twenty-one stages, from an empty directory to a network a stranger joins by verifying
 one proof, reaches a person in by name, keeps a library alive in, and writes their own client
-against. The constraint set of the two circuits — the one thing the set
-leaves open — sits inside that plan rather than beside it, because a network cannot close its first
-window without a proof, and a plan that stopped short of it would stop short of a network.
+against. It records intended stages. Current completion is tracked in [SESSION-35.md](SESSION-35.md),
+including the incomplete window and admission statements, authorized issuance and authenticated
+first synchronization. A stage label does not establish those properties.
 
 ## Two machines, from a terminal
 
@@ -122,7 +127,7 @@ is refused by the state before its proof is looked at, and the same frame standi
 a round is applied once for the same reason. What the payer prints for the payee is three public
 values of the note created; the position of it comes of the window that applied the frame.
 
-**And two machines live windows.** A machine of an opening cohort is handed the naming half of
+**The local window scenario.** A machine of an opening cohort is handed the naming half of
 every machine admitted to the window, its own among them — a cohort that witnesses itself is exactly
 that, and the halves pass between operators as an acquaintance does. Each machine prints its own on
 start; neither is told the tree, and both reach the same one from the halves alone, because the
@@ -136,18 +141,25 @@ target/release/montana-node --data ~/montana --listen 0.0.0.0:9635 \
   --from 1000 --windows 1
 ```
 
-From there nothing is driven from outside. Each machine enters the window, stands at the points of
-its rounds, publishes a beacon of every round it runs the chain of and answers every beacon it sees,
-gathers what verifies into its cement, and closes the window on that cement — taking the one equal
-share the window mints to every machine the cement names, with the indivisible remainder carried
-forward. A runner does not read the cement and cannot: it attempts the close, and the circuit
-answers — below the quorum share nothing proves, at or above it something does, and that proof is
-the close.
+Each machine enters the window, publishes beacons, verifies answers and gathers attestations. It
+closes the window on a beacon carrying a cement at the quorum share of the electorate of the window
+two before, recomputes the six roots of state, proves its ticket and publishes the proposal under the
+identifier of what the window decided, judges every proposal it takes at the one door of
+`montana-node/src/certificate.rs`, links the next window to that identifier, and moves its head onto
+a proposal only when the cement of the window after it reaches the quorum on it. A device holding
+nothing joins from two consecutive final proposals its operator hands it and walks the retained
+certificates to the same head (`montana-node::pulse::join`). The right a machine takes of a window
+is still created locally from the count of the cement and is no evidence of issuance; item 3 of the
+audit list carries it.
 
-**Nothing here is measured by a clock.** A round is made of waiting and the waiting is the pulse: a
-round closes when an answer arrives, a window closes on its cement, and the one duration the machine
-holds is how often it asks its acquaintances what stands at a point. A machine that asked twice as
-often would cement the same windows.
+Round advancement now requires a verified answer. Polling uses a local sleep; exhausting its
+budget returns without advancing the round. This testable property does not establish the missing
+window-finalization property.
+
+The addresses in these examples are transport configuration. Directly listening on a public
+interface exposes that machine's origin; this implementation does not make it anonymous.
+Cross-host testing of protected origins requires an authenticated private transport path and
+operator-supplied peer information. No public dialable cohort is supplied by these examples.
 
 The door and the pulse stand at once. A link a machine opened is its way of asking — a deposit and a
 collection are both requests whose answer comes back on the link they went out on — and a link it

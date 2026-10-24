@@ -69,22 +69,30 @@ pub fn root_of(records: &BTreeMap<[u8; 32], Vec<u8>>) -> Digest {
 // machine that demanded the preimage would be demanding what the plane exists to withhold.
 pub fn root_of_leaves(leaves: &BTreeMap<[u8; 32], Digest>) -> Digest {
     let depth = key_bits();
-    let empties = empty_internals(depth);
-    if leaves.is_empty() {
+    fold_at(
+        leaves.iter().map(|(key, leaf)| (*key, *leaf)).collect(),
+        depth,
+        &empty_internals(depth),
+    )
+}
+
+// Keys are little-endian bit strings. BTreeMap's byte order is different:
+// [1, 0, ...], [1, 1, ...], [2, 0, ...] interleaves two subtrees. Order by
+// the most significant byte first before pairing adjacent branches. The same
+// fold owns the full root and every subtree used to build a membership path.
+fn fold_at(mut level: Vec<([u8; 32], Digest)>, depth: usize, empties: &[Digest]) -> Digest {
+    if level.is_empty() {
         return empties[depth];
     }
-    let mut level: Vec<([u8; 32], Digest)> = leaves.iter().map(|(key, l)| (*key, *l)).collect();
+    level.sort_unstable_by(|(left, _), (right, _)| left.iter().rev().cmp(right.iter().rev()));
     for (height, empty) in empties.iter().enumerate().take(depth) {
-        let mut above: Vec<([u8; 32], Digest)> = Vec::with_capacity(level.len());
+        let mut above = Vec::with_capacity(level.len());
         let mut at = 0;
         while at < level.len() {
             let (key, value) = level[at];
-            let pairs = at + 1 < level.len() && {
-                let (next, _) = level[at + 1];
-                same_prefix_above(&key, &next, height)
-            };
+            let pairs = at + 1 < level.len() && same_prefix_above(&key, &level[at + 1].0, height);
             let folded = if pairs {
-                let (_, sibling) = level[at + 1];
+                let sibling = level[at + 1].1;
                 at += 2;
                 if bit_at(&key, height) {
                     node(&sibling, &value)
@@ -103,10 +111,7 @@ pub fn root_of_leaves(leaves: &BTreeMap<[u8; 32], Digest>) -> Digest {
         }
         level = above;
     }
-    level
-        .first()
-        .map(|(_, root)| *root)
-        .unwrap_or_else(|| empties[depth])
+    level[0].1
 }
 
 // Two keys share a parent at the level above `height` when every bit strictly above it agrees.
@@ -135,58 +140,21 @@ pub fn path_of_leaves(leaves: &BTreeMap<[u8; 32], Digest>, key: &[u8; 32]) -> Op
     let depth = key_bits();
     let empties = empty_internals(depth);
     let mut out = Vec::with_capacity(depth);
-    // At every level the sibling is the root over the records whose key agrees with this one above
-    // that level and differs at it. Folding that subtree through the same door keeps one walk.
-    for height in 0..depth {
-        let mut of_the_sibling: BTreeMap<[u8; 32], Digest> = BTreeMap::new();
-        for (other, held) in leaves.iter() {
-            if other == key {
-                continue;
-            }
-            if same_prefix_above(key, other, height) && bit_at(other, height) != bit_at(key, height)
-            {
-                of_the_sibling.insert(*other, *held);
-            }
-        }
-        if of_the_sibling.is_empty() {
-            out.push(empties[height]);
-            continue;
-        }
-        // The subtree of the sibling stands `height` levels tall, and its root is the fold of what
-        // it holds against the empties below it.
-        let mut level: Vec<([u8; 32], Digest)> =
-            of_the_sibling.iter().map(|(k, held)| (*k, *held)).collect();
-        for (at, empty) in empties.iter().enumerate().take(height) {
-            let mut above: Vec<([u8; 32], Digest)> = Vec::with_capacity(level.len());
-            let mut which = 0;
-            while which < level.len() {
-                let (k, value) = level[which];
-                let pairs = which + 1 < level.len() && {
-                    let (next, _) = level[which + 1];
-                    same_prefix_above(&k, &next, at)
-                };
-                let folded = if pairs {
-                    let (_, sibling) = level[which + 1];
-                    which += 2;
-                    if bit_at(&k, at) {
-                        node(&sibling, &value)
-                    } else {
-                        node(&value, &sibling)
-                    }
-                } else {
-                    which += 1;
-                    if bit_at(&k, at) {
-                        node(empty, &value)
-                    } else {
-                        node(&value, empty)
-                    }
-                };
-                above.push((k, folded));
-            }
-            level = above;
-        }
-        out.push(level[0].1);
+    let mut below: Vec<([u8; 32], Digest)> =
+        leaves.iter().map(|(key, leaf)| (*key, *leaf)).collect();
+    for height in (0..depth).rev() {
+        let (left, right): (Vec<_>, Vec<_>) = below
+            .into_iter()
+            .partition(|(entry, _)| !bit_at(entry, height));
+        let (next, sibling) = if bit_at(key, height) {
+            (right, left)
+        } else {
+            (left, right)
+        };
+        out.push(fold_at(sibling, height, &empties));
+        below = next;
     }
+    out.reverse();
     Some(out)
 }
 

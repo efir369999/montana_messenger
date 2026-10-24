@@ -50,6 +50,11 @@ pub enum AirError {
     RowOutsideTrace {
         row: u64,
     },
+    // A boundary naming a row of the free block. The prover fills those rows with randomness and
+    // the constraints do not reach them, so a boundary there would hold a cell nobody wrote.
+    RowInsideTheFreeBlock {
+        row: u64,
+    },
     // A factor naming a row further on than the shape of a proof carries. It is a refusal of its
     // own and never the one above: that row stands inside the trace, and what it stands outside of
     // is the slot beside the roots, which holds every column at the point outside the domain and at
@@ -110,7 +115,8 @@ pub enum BoundaryValue {
     Literal(u64),
     Public(u16),
     // The pair of adjacent limbs at this index, low first: a 64-bit word of a hash state, which
-    // no single four-byte limb can carry.
+    // no single four-byte limb can carry. Both limbs are u32 and the combined word must be
+    // below the field modulus. A second byte spelling of the same field element is refused.
     Word(u16),
 }
 
@@ -126,6 +132,19 @@ pub struct Description {
 impl Description {
     pub fn rows(&self) -> u64 {
         1u64 << self.rows_log2
+    }
+
+    // The rows the constraints and the boundaries reach: every row but the free block at the end,
+    // which the prover fills with randomness. A description shorter than the free block has no
+    // free block — it is a description no shape proves, and its rows are all live.
+    pub fn live_rows(&self) -> u64 {
+        let rows = self.rows();
+        let free = crate::params::FREE_ROWS as u64;
+        if rows > free {
+            rows - free
+        } else {
+            rows
+        }
     }
 
     // The columns a factor may name: the trace, then the periodic columns after it.
@@ -215,6 +234,9 @@ impl Description {
             }
             if boundary.row >= rows {
                 return Err(AirError::RowOutsideTrace { row: boundary.row });
+            }
+            if boundary.row >= self.live_rows() {
+                return Err(AirError::RowInsideTheFreeBlock { row: boundary.row });
             }
         }
         Ok(())
@@ -387,9 +409,10 @@ impl Description {
         sum
     }
 
-    // Whether a trace satisfies this description: every constraint at every row, and every
-    // boundary where it stands. What a frozen vector of an encoding is worth is that it encodes a
-    // description of something rather than of nothing, and this is what says the two agree.
+    // Whether a trace satisfies this description: every constraint at every live row but the last
+    // — whose transition would read the free block — and every boundary where it stands. What a
+    // frozen vector of an encoding is worth is that it encodes a description of something rather
+    // than of nothing, and this is what says the two agree.
     pub fn satisfied_by(&self, trace: &[Vec<F>], public: &[F]) -> bool {
         if trace.len() != usize::from(self.trace_width) {
             return false;
@@ -398,8 +421,9 @@ impl Description {
         if trace.iter().any(|column| column.len() != rows) {
             return false;
         }
+        let reached = self.live_rows().saturating_sub(1);
         for at in 0..self.constraints.len() {
-            for row in 0..self.rows() {
+            for row in 0..reached {
                 if !self.evaluate(trace, at, row).is_zero() {
                     return false;
                 }

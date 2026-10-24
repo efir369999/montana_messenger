@@ -1,22 +1,22 @@
 // The closing condition of the stage of two hosts, in the part that was the wall: two machines
-// answer a window, their attestations gather into a cement, the cement reaches the quorum share of
-// the committed total, and the window closes — with the share of that window belonging to the
-// machines the cement names and to no others.
+// answer a window, their attestations gather into a cement, the count of the cement reaches the
+// quorum share of the electorate's count, and the window closes — with the share of that window
+// belonging to the machines the cement names and to no others.
 //
 // **Nothing here is a model of the rules.** Each machine draws its own eligibility, makes its own
 // proof of presence, signs with its own one-time key, and every attestation is verified as a far
 // side would verify it: the draw natively, the signature under the key it carries, and the proof
 // against the root of admitted machines. What the test arranges is only the world outside — which
-// machines stand in the tree, and what standing each answers with.
+// machines stand in the tree.
 //
 // **The opening cohort witnesses itself.** Two machines stand in the tree of admitted machines from
 // the first window, which is what the set states of an opening cohort: it witnesses itself by the
 // same quorum, and the rule takes no exception for it.
 
 use montana_node::attest::{self, Standing};
-use mt_pulse::fold::{Cement, Leaf};
+use mt_pulse::cement::Cement;
+use mt_state::Layout;
 
-const STANDING: u64 = 1_000;
 const WINDOW: u64 = 1_000;
 
 // The tree of admitted machines over a cohort, and the branch each machine walks. Both come of the
@@ -55,9 +55,9 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
     let previous_proposal = [0x55u8; 32];
 
     let mut cement = Cement::new();
-    let mut leaves: Vec<Leaf> = Vec::new();
+    let mut parts: Vec<[u8; 32]> = Vec::new();
     for (secret, (siblings, position)) in secrets.iter().zip(branches.iter()) {
-        let standing = Standing::of_the_window(secret, WINDOW, siblings, *position, STANDING)
+        let standing = Standing::of_the_window(secret, WINDOW, siblings, *position)
             .expect("a machine of the cohort proves its presence");
         assert!(
             standing.eligible(&aggregate, 0, 7, &everything),
@@ -71,42 +71,47 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
         attest::verify_heavy(&heavy, &root, &aggregate, 0, 7, &everything)
             .expect("the attestation of a machine of the cohort verifies");
 
-        let leaf = attest::leaf_of(&heavy).expect("its commitment reads back");
         assert!(
-            cement.add(&leaf).expect("the cement takes it"),
+            cement.add(heavy.part_nullifier),
             "a first appearance enters"
         );
         assert!(
-            !cement.add(&leaf).expect("the cement answers"),
+            !cement.add(heavy.part_nullifier),
             "a second appearance of one part-nullifier adds nothing"
         );
-        leaves.push(leaf);
+        parts.push(heavy.part_nullifier);
     }
 
     assert_eq!(cement.count(), 2, "both machines entered the cement");
 
-    // The window closes when the standing that entered the cement reaches the share of the whole
-    // active set the Decree names. Both machines of a cohort of two answered, so the cement carries
-    // the whole of it.
-    let total = u128::from(STANDING) * 2;
-    let cemented = u128::from(STANDING) * cement.count() as u128;
+    // The window closes when the count of distinct machines of the electorate in the cement reaches
+    // the share of the electorate's count the Decree names. Both machines of a cohort of two
+    // answered, so the cement carries the whole of it.
+    let electorate = u128::from(secrets.len() as u64);
+    let cemented = u128::from(cement.count());
     assert_eq!(
-        mt_pulse::close::closes(cemented, total, 0),
+        mt_pulse::close::closes(cemented, electorate, 0),
         Ok(true),
         "a cement holding every machine of the cohort closes the window"
     );
     // And one machine alone does not: the share is a rule and not a count of who spoke.
     assert_eq!(
-        mt_pulse::close::closes(u128::from(STANDING), total, 0),
+        mt_pulse::close::closes(1, electorate, 0),
         Ok(false),
-        "half of the standing does not reach the quorum share"
+        "half of the electorate does not reach the quorum share"
     );
 
-    // The leaves of the window, ascending by part-nullifier: the order the fold is built over and
-    // the order every verifier reaches alone.
-    let ordered = mt_pulse::fold::ordered(leaves).expect("no part-nullifier repeats");
-    assert_eq!(ordered.len(), 2);
-    assert!(ordered[0].part_nullifier < ordered[1].part_nullifier);
+    // The state a beacon carries is the aggregate over the parts with the window as context, and
+    // every verifier reaches it whatever order it saw the parts in.
+    let mut reversed = Cement::new();
+    for part in parts.iter().rev() {
+        reversed.add(*part);
+    }
+    assert_eq!(cement.aggregate(WINDOW), reversed.aggregate(WINDOW));
+    assert_eq!(
+        cement.aggregate(WINDOW),
+        Ok(mt_derive::aggregate::aggregate(&parts, WINDOW).expect("two distinct parts"))
+    );
 }
 
 // What a closed window mints, and to whom. Minting creates no note: the window issues to each
@@ -154,23 +159,56 @@ fn a_proof_lifted_onto_another_key_is_refused() {
     let everything = mt_pulse::U256::from_be_bytes(&[0xFFu8; 32]);
 
     let (siblings, position) = &branches[0];
-    let standing = Standing::of_the_window(&secrets[0], WINDOW, siblings, *position, STANDING)
+    let standing = Standing::of_the_window(&secrets[0], WINDOW, siblings, *position)
         .expect("a machine of the cohort proves its presence");
     let mut heavy = standing
         .heavy(&secrets[0], [0x44u8; 32], [0x55u8; 32])
         .expect("a heavy attestation stands");
 
     // The key of the second machine, under which this proof was never made.
-    let (theirs, _) = branches[1].clone();
-    let _ = theirs;
     let seed = mt_derive::pulse::part_key_seed(&secrets[1], WINDOW);
     let mut held = [0u8; mt_suite::sign::SEED_BYTES];
     held.copy_from_slice(&seed[..mt_suite::sign::SEED_BYTES]);
-    let (other_key, _) = mt_suite::sign::keypair_from_seed(&held);
+    let (other_key, other_secret) = mt_suite::sign::keypair_from_seed(&held);
     heavy.answering_key = other_key.as_bytes().to_vec();
+    heavy.signature = mt_suite::sign::sign(&other_secret, &heavy.signed_scope().expect("scope"))
+        .expect("the attacker owns the replacement key")
+        .as_bytes()
+        .to_vec();
 
-    assert!(
-        attest::verify_heavy(&heavy, &root, &aggregate, 0, 7, &everything).is_err(),
-        "a proof standing against another key was accepted"
+    assert_eq!(
+        attest::verify_heavy(&heavy, &root, &aggregate, 0, 7, &everything),
+        Err(montana_node::NodeError::Refused {
+            what: "an attestation whose proof of presence does not verify",
+        }),
+        "the proof itself must reject the replacement, even with a valid signature"
+    );
+}
+
+#[test]
+fn an_admitted_machine_cannot_resign_an_old_presence_into_another_window() {
+    let secret = [0x11u8; 32];
+    let (root, branches) = cohort(&[secret]);
+    let (siblings, position) = &branches[0];
+    let standing = Standing::of_the_window(&secret, WINDOW, siblings, *position)
+        .expect("the admitted machine proves its presence");
+    let mut forged = standing
+        .heavy(&secret, [0x44; 32], [0x55; 32])
+        .expect("attestation");
+    forged.window = WINDOW + 1;
+    let seed = mt_derive::pulse::part_key_seed(&secret, WINDOW);
+    let mut signing_seed = [0u8; mt_suite::sign::SEED_BYTES];
+    signing_seed.copy_from_slice(&seed[..mt_suite::sign::SEED_BYTES]);
+    let (_, key) = mt_suite::sign::keypair_from_seed(&signing_seed);
+    forged.signature = mt_suite::sign::sign(&key, &forged.signed_scope().expect("scope"))
+        .expect("the attacker can sign again")
+        .as_bytes()
+        .to_vec();
+    let everything = mt_pulse::U256::from_be_bytes(&[0xFF; 32]);
+    assert_eq!(
+        attest::verify_heavy(&forged, &root, &[0x33; 32], 0, 7, &everything),
+        Err(montana_node::NodeError::Refused {
+            what: "an attestation whose proof of presence does not verify",
+        }),
     );
 }

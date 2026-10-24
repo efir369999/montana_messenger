@@ -1,5 +1,4 @@
-// What every vector of this crate needs and none of them owns: a directory that is wiped whether the
-// vector passes or panics, the two public values of a person a payer needs, and the byte pattern the
+// What every vector of this crate needs and none of them owns: a fresh directory retained for inspection, the two public values of a person a payer needs, and the byte pattern the
 // vectors draw their keys from.
 //
 // **One place, because seven were seven.** Each of these stood copied into every file that used it,
@@ -14,22 +13,24 @@
 use montana_wallet::pay::Payee;
 use std::path::PathBuf;
 
-// A directory of its own for a vector, gone when the vector is. The name is the vector's to choose
-// and must be distinct, since two of them under one name would share a wallet.
+// Each run creates a fresh directory and retains it for failure inspection.
+// A predictable name must never erase files left by another run or operator.
 pub struct Scratch(pub PathBuf);
 
 impl Scratch {
     pub fn named(what: &str) -> Self {
-        let at = std::env::temp_dir().join(format!("montana-{what}"));
-        let _ = std::fs::remove_dir_all(&at);
-        std::fs::create_dir_all(&at).expect("a scratch directory is writable");
-        Self(at)
-    }
-}
-
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.0);
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        loop {
+            let nonce = NEXT.fetch_add(1, Ordering::Relaxed);
+            let at =
+                std::env::temp_dir().join(format!("montana-{what}-{}-{nonce}", std::process::id()));
+            match std::fs::create_dir(&at) {
+                Ok(()) => return Self(at),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => panic!("cannot create test directory: {error}"),
+            }
+        }
     }
 }
 

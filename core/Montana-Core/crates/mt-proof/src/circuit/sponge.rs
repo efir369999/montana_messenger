@@ -39,6 +39,19 @@ pub fn blocks_of(elements: usize) -> usize {
     (elements + 1).div_ceil(RATE)
 }
 
+// Padding is part of the statement, not a convention of the honest trace writer.
+// Without these boundaries the prover can use padding as an extra secret input,
+// deriving many nullifiers for a right that the protocol permits only once.
+pub fn padding_boundaries(first_block: usize, elements: usize) -> Vec<Boundary> {
+    (elements..blocks_of(elements) * RATE)
+        .map(|at| Boundary {
+            column: ring_column(at % RATE) as u16,
+            row: ((first_block + at / RATE) * period()) as u64,
+            value: BoundaryValue::Literal(u64::from(at == elements)),
+        })
+        .collect()
+}
+
 // The states the blocks of a chain enter with: the first carrying the capacity of its domain, each
 // later one the capacity the block before it left, its rate overwritten by what follows.
 pub fn chain(domain: Domain, elements: &[F]) -> Vec<[F; WIDTH]> {
@@ -81,7 +94,17 @@ pub fn squeeze_rows(first_block: usize, absorbed: usize) -> Vec<usize> {
 // the rule above already carries. Together they say the state after the seam is the state before
 // it, which is what a squeeze of a sponge is.
 pub fn rate_carries(carry_column: usize) -> Vec<Constraint> {
-    (0..RATE)
+    prefix_carries(carry_column, RATE)
+}
+
+// A digest passed into the next absorption carries only its own cells. The
+// remaining input cells belong to the next absorption's canonical padding.
+pub fn digest_carries(carry_column: usize) -> Vec<Constraint> {
+    prefix_carries(carry_column, CAPACITY)
+}
+
+fn prefix_carries(carry_column: usize, cells: usize) -> Vec<Constraint> {
+    (0..cells)
         .map(|j| {
             let cell = ring_column(j);
             Constraint {
@@ -183,21 +206,15 @@ pub fn description_of_one(domain: Domain, elements: usize, rows_log2: u8) -> Opt
             value: BoundaryValue::Literal(value.as_u64()),
         });
     }
-    for at in 0..blocks * RATE {
+    for at in 0..elements {
         let (block, slot) = (at / RATE, at % RATE);
-        let value = if at < elements {
-            BoundaryValue::Word((2 * at) as u16)
-        } else if at == elements {
-            BoundaryValue::Literal(F::ONE.as_u64())
-        } else {
-            BoundaryValue::Literal(0)
-        };
         held.boundaries.push(Boundary {
             column: ring_column(slot) as u16,
             row: (block * period()) as u64,
-            value,
+            value: BoundaryValue::Word((2 * at) as u16),
         });
     }
+    held.boundaries.extend(padding_boundaries(0, elements));
     for j in 0..CAPACITY {
         held.boundaries.push(Boundary {
             column: ring_column(j) as u16,

@@ -120,16 +120,115 @@ fn a_proof_of_a_true_statement_is_accepted() {
 }
 
 #[test]
+fn a_public_hash_word_cannot_alias_another_encoding_modulo_the_field() {
+    use mt_proof::air::BoundaryValue;
+    let mut held = description();
+    held.boundaries.push(Boundary {
+        column: 0,
+        row: 0,
+        value: BoundaryValue::Word(0),
+    });
+    // The first trace cell is zero. P is a different public byte string, not
+    // another spelling of that zero: spent identifiers are stored as bytes.
+    let aliased = P.to_le_bytes();
+    assert!(
+        scheme::prove(&held, &aliased, &trace()).is_err(),
+        "a prover must not certify a noncanonical public hash word"
+    );
+    let canonical = 0u64.to_le_bytes();
+    let proof = scheme::prove(&held, &canonical, &trace()).unwrap();
+    assert_eq!(scheme::verify(&held, &canonical, &proof), Ok(()));
+    assert!(scheme::verify(&held, &aliased, &proof).is_err());
+    assert_eq!(
+        scheme::resolve(
+            BoundaryValue::Word(0),
+            &mt_proof::poseidon::limbs_of(&aliased)
+        ),
+        None
+    );
+}
+
+#[test]
+fn a_public_hash_word_has_two_u32_limbs_and_a_canonical_field_value() {
+    use mt_proof::air::BoundaryValue;
+    let resolve = |bytes: &[u8]| {
+        scheme::resolve(BoundaryValue::Word(0), &mt_proof::poseidon::limbs_of(bytes))
+    };
+    for value in [0, 1, u64::from(u32::MAX), P - 1] {
+        assert_eq!(resolve(&value.to_le_bytes()), F::try_from_u64(value));
+    }
+    for value in [P, P + 1, u64::MAX] {
+        assert_eq!(resolve(&value.to_le_bytes()), None);
+    }
+    let oversized = F::try_from_u64(1u64 << 32).unwrap();
+    assert_eq!(
+        scheme::resolve(BoundaryValue::Word(0), &[oversized, F::ZERO]),
+        None
+    );
+    assert_eq!(
+        scheme::resolve(BoundaryValue::Word(0), &[F::ZERO, oversized]),
+        None
+    );
+    assert_eq!(scheme::resolve(BoundaryValue::Word(0), &[F::ZERO]), None);
+}
+
+#[test]
 fn a_proof_reads_back_and_writes_back_to_the_same_bytes() {
     let (_, bytes) = written();
     assert_eq!(mutated(&bytes, |_, _| {}), bytes);
 }
 
+// Two proofs of one statement are two different byte strings, and both stand: the free block and
+// the randomizer are drawn afresh for every proof, so what a query opens says nothing of the
+// witness. The named wrong implementation is the one that wrote the same bytes twice — a proof
+// whose openings are a function of the witness alone.
 #[test]
-fn a_proof_is_the_same_bytes_where_it_is_written_twice() {
-    let (_, first) = written();
+fn two_proofs_of_one_statement_differ_and_both_stand() {
+    let (description, first) = written();
     let (_, second) = written();
-    assert_eq!(first, second);
+    assert_ne!(first, second);
+    assert_eq!(stands(&description, &first), Ok(()));
+    assert_eq!(stands(&description, &second), Ok(()));
+    // The rows a query opens differ between the two, column by column, including the randomizer;
+    // the values outside the domain differ as well. Nothing a verifier reads is fixed by the trace.
+    let (one, _) = Proof::decode(shape(), &first).expect("its own bytes read");
+    let (two, _) = Proof::decode(shape(), &second).expect("its own bytes read");
+    assert_ne!(one.ood_values[0], two.ood_values[0]);
+    assert_ne!(
+        one.ood_values[mt_proof::scheme::RANDOMIZER],
+        two.ood_values[mt_proof::scheme::RANDOMIZER]
+    );
+    assert_ne!(one.trace_root, two.trace_root);
+}
+
+#[test]
+fn boundary_batching_proves_a_trace_bound_at_many_rows() {
+    let mut held = description();
+    let trace = trace();
+    for row in (0..shape().live_rows()).step_by(32) {
+        for (column, values) in trace.iter().enumerate() {
+            held.boundaries.push(Boundary {
+                column: column as u16,
+                row: row as u64,
+                value: mt_proof::air::BoundaryValue::Literal(values[row].as_u64()),
+            });
+        }
+    }
+    let bytes = scheme::prove(&held, INPUT, &trace).expect("the bounded trace proves");
+    assert_eq!(scheme::verify(&held, INPUT, &bytes), Ok(()));
+    // A boundary at a row of the free block is refused where a description becomes one: the
+    // prover fills those rows with randomness and a boundary there would hold a cell nobody wrote.
+    held.boundaries.push(Boundary {
+        column: 0,
+        row: shape().live_rows() as u64,
+        value: mt_proof::air::BoundaryValue::Literal(0),
+    });
+    assert_eq!(
+        held.check(),
+        Err(mt_proof::air::AirError::RowInsideTheFreeBlock {
+            row: shape().live_rows() as u64
+        })
+    );
 }
 
 #[test]

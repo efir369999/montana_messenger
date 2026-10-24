@@ -1,9 +1,5 @@
-# The machine belongs to the person in front of it: two build tasks and one test thread at a time.
-# The bound stands here because it travels with the tree — a stranger who clones this workspace
-# gets it, and a bound that lived only beside the machine that wrote it would not be one they hold.
-# It is forced, so an ambient value in the environment cannot quietly raise it.
-[build]
-jobs = 2
-
+# Compilation uses Cargo's available CPU parallelism at ordinary priority.
+# Proof tests run sequentially because each full trace has a large memory working set;
+# this does not constrain compiler jobs or put the process in the background class.
 [env]
 RUST_TEST_THREADS = { value = "1", force = true }

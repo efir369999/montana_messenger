@@ -18,10 +18,11 @@ mt_codec::constants! {
     pub const FOLD: usize = 4, writes "| `proof_fold` | 4 |";
     /// Folding stops when the bound reaches this, and the tail travels nowhere.
     pub const TAIL_DEGREE: usize = 64, writes "| `proof_tail_degree` | 64 |";
-    /// The slot beside the roots: every column at the out-of-domain point, every column at the
-    /// point one row on, and the composition there — sized to the bound on the width rather than
-    /// to a width, so the length of a proof says nothing about the circuit that wrote it.
-    pub const OOD_VALUES: usize = 125, writes "| `proof_ood_values` | 125 |";
+    /// The slot beside the roots: every slot of a row at the out-of-domain point, every slot at
+    /// the point one row on, and the two parts of the composition there — sized to the values of
+    /// a row rather than to a width, so the length of a proof says nothing about the circuit that
+    /// wrote it.
+    pub const OOD_VALUES: usize = 132, writes "| `proof_ood_values` | 132 |";
     /// What one permutation of the proof hash costs in rows of a trace. It is measured rather than
     /// assumed: the layout of the gadget that asserts the permutation stands beside it as the
     /// witness, and the count closes on a power of two of its own accord.
@@ -29,7 +30,19 @@ mt_codec::constants! {
     /// The bound on the width of a trace, which the memory of a telephone fixes and the slot of
     /// the out-of-domain evaluations covers. A query opens a row of this width whatever the
     /// circuit is, so a narrower trace pays the difference in padding and not in disclosure.
-    pub const TRACE_WIDTH_BOUND: usize = 62, writes "| `proof_trace_width_bound` | 62 |";
+    pub const TRACE_WIDTH_BOUND: usize = 64, writes "| `proof_trace_width_bound` | 64 |";
+    /// The rows at the end of every trace that carry no constraint and no boundary. The prover
+    /// fills them with uniform randomness before it commits, so what a proof opens of a column —
+    /// the rows of the queries, the two points outside the domain — says nothing of the witness:
+    /// one block of the permutation, and more than twice the queries and the two points together.
+    pub const FREE_ROWS: usize = 128, writes "| `proof_free_rows` | 128 |";
+    /// The values a query opens of a row: every column of the bound and the randomizer beside
+    /// them — a column of uniform values the prover draws, which the deep composition takes under
+    /// weights of its own, so that what a folding layer opens is uniform as well.
+    pub const ROW_VALUES: usize = 65, writes "| `proof_row_values` | 65 |";
+    /// The parts the composition polynomial is carried in: its degree stands above the height by
+    /// the free rows, so one part of the height and one of the free rows carry it.
+    pub const COMPOSITION_PARTS: usize = 2, writes "| `proof_composition_parts` | 2 |";
     /// The degree a constraint may carry. The composition of a constraint of degree d carries
     /// degree about (d - 1) times the rows; the folding divides by the fold at every layer and the
     /// count of layers is what carries the rows down to the tail, so it carries the composition
@@ -83,6 +96,12 @@ impl Shape {
         1usize << self.rows_log2
     }
 
+    // The rows the constraints and the boundaries reach: every row but the free block at the end,
+    // which the prover fills with randomness.
+    pub fn live_rows(self) -> usize {
+        self.rows() - FREE_ROWS
+    }
+
     pub fn domain_log2(self) -> u32 {
         self.rows_log2 + BLOWUP.trailing_zeros()
     }
@@ -106,13 +125,13 @@ impl Shape {
     }
 
     // The bytes of one query: the path of the trace and the row it opens, the path of the
-    // composition and the value it opens, and for every folding layer its path and the values it
-    // folds. The row is of the bound on the width whatever the circuit is.
+    // composition and the parts it opens, and for every folding layer its path and the values it
+    // folds. The row is of the values of a row whatever the circuit is.
     pub fn query_bytes(self) -> usize {
         ROOT_BYTES * (self.domain_log2() as usize)
-            + TRACE_WIDTH_BOUND * 8
+            + ROW_VALUES * 8
             + ROOT_BYTES * (self.domain_log2() as usize)
-            + ELEMENT_BYTES
+            + COMPOSITION_PARTS * ELEMENT_BYTES
             + ROOT_BYTES * self.levels_of_a_query()
             + self.layers() * FOLD * ELEMENT_BYTES
     }
@@ -183,8 +202,8 @@ mod tests {
         assert_eq!(shape.domain_log2(), 19);
         assert_eq!(shape.layers(), 5);
         assert_eq!(shape.levels_of_a_query(), 65);
-        assert_eq!(shape.query_bytes(), 4_296);
-        assert_eq!(shape.proof_bytes(), 210_968);
+        assert_eq!(shape.query_bytes(), 4_344);
+        assert_eq!(shape.proof_bytes(), 213_440);
         // And the length the state layer carries for a proof is that number, held in one place.
         assert_eq!(shape.proof_bytes(), mt_state::PROOF_LEN);
     }
@@ -204,7 +223,7 @@ mod tests {
         assert_eq!(presence.layers(), 4);
         assert_eq!(presence.domain_log2(), 17);
         assert_eq!(presence.levels_of_a_query(), 48);
-        assert_eq!(presence.query_bytes(), 3_528);
+        assert_eq!(presence.query_bytes(), 3_576);
         assert_eq!(presence.proof_bytes(), mt_state::PRESENCE_PROOF_LEN);
         // The named wrong implementation: a description built at a height of its own choosing.
         // Every height is a length, and the objects of this protocol have room for exactly two.

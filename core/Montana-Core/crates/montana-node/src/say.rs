@@ -49,6 +49,11 @@ pub struct Counts {
     pub attestations_unsigned: AtomicU64,
     pub attestations_unproven: AtomicU64,
     pub attestations_refused: AtomicU64,
+    // The pledges of the agreement: booked under a proven key, refused under one, and made by this
+    // machine.
+    pub pledges_booked: AtomicU64,
+    pub pledges_refused: AtomicU64,
+    pub pledges_made: AtomicU64,
 }
 
 impl Counts {
@@ -67,7 +72,7 @@ impl Counts {
         format!(
             "arrived {} took {} repeat {} refused {}w/{}p/{}n/{}c | published {} in {} cells, pushed {} lost {} \
              | asked {} pulled {} cells | read back {} of memory {} | cement +{} repeat {} \
-             refused {}w/{}d/{}s/{}p/{}o",
+             refused {}w/{}d/{}s/{}p/{}o | pledges booked {} refused {} made {}",
             held(&self.deposits_arrived),
             held(&self.deposits_taken),
             held(&self.deposits_repeated),
@@ -90,6 +95,9 @@ impl Counts {
             held(&self.attestations_unsigned),
             held(&self.attestations_unproven),
             held(&self.attestations_refused),
+            held(&self.pledges_booked),
+            held(&self.pledges_refused),
+            held(&self.pledges_made),
         )
     }
 }

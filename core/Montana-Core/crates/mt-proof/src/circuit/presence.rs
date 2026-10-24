@@ -111,24 +111,40 @@ impl Places {
         path::level_rows(self.admitted_nodes(), self.admitted_depth())
     }
 
-    // The three digests the public input carries: the root of admitted machines at the walk's end,
-    // the nullifier of the part at its chain's end, and the digest of the key at its chain's end.
+    // Consensus orders the public input as admitted root, key digest, part
+    // nullifier, window. Trace order differs: the nullifier is absorbed before
+    // the key, so each seam names its public position explicitly.
     pub fn boundaries(&self) -> Vec<Boundary> {
         let ends = [
-            self.seam_before(self.nullifier()),
-            self.seam_before(self.key()),
-            self.blocks() * permutation::period() - 1,
+            (self.seam_before(self.nullifier()), 0),
+            (self.seam_before(self.key()), 2),
+            (self.blocks() * permutation::period() - 1, 1),
         ];
         let mut out = Vec::with_capacity(ends.len() * CAPACITY);
-        for (which, row) in ends.iter().enumerate() {
+        for (row, which) in ends {
             for cell in 0..CAPACITY {
                 out.push(Boundary {
                     column: ring_column(cell) as u16,
-                    row: *row as u64,
+                    row: row as u64,
                     // A word is a pair of adjacent limbs, so a cell's index steps by two limbs.
                     value: BoundaryValue::Word((2 * (which * CAPACITY + cell)) as u16),
                 });
             }
+        }
+        // The nullifier's window is verifier input. A private window would let
+        // one admitted machine derive arbitrarily many parts of this window.
+        out.push(Boundary {
+            column: ring_column(CAPACITY) as u16,
+            row: (self.nullifier() * permutation::period()) as u64,
+            value: BoundaryValue::Word((2 * ends.len() * CAPACITY) as u16),
+        });
+        for (first, elements) in [
+            (self.halves(), crate::poseidon::limbs_of(&[0u8; 32]).len()),
+            (self.admitted_leaf(), CAPACITY),
+            (self.nullifier(), CAPACITY + 1),
+            (self.key(), KEY_LIMBS),
+        ] {
+            out.extend(sponge::padding_boundaries(first, elements));
         }
         out
     }
@@ -160,7 +176,7 @@ impl Places {
             ));
         }
         out.push((self.seam_before(self.nullifier()), domain::MT_PART_NF));
-        out.push((self.seam_before(self.key()), domain::MT_PART_KEY));
+        out.push((self.seam_before(self.key()), domain::MT_PART_KEY_DIGEST));
         out
     }
 }
@@ -179,7 +195,8 @@ pub fn description() -> Option<Description> {
     let base = width + held.periodic.len();
     let carry = base;
     let squeeze = base + 1;
-    let walk = base + 2;
+    let naming = base + 2;
+    let walk = base + 3;
     let opens_at = walk + path::PERIODIC_COUNT;
     let lane_at = opens_at + capacity::PERIODIC_COUNT;
 
@@ -187,6 +204,10 @@ pub fn description() -> Option<Description> {
         .push(sponge::carry_column(rows_log2, &places.carry_rows()));
     held.periodic
         .push(sponge::carry_column(rows_log2, &places.squeeze_rows()));
+    held.periodic.push(sponge::carry_column(
+        rows_log2,
+        &[places.seam_before(places.admitted_leaf())],
+    ));
     held.periodic.extend(path::periodic_columns(
         rows_log2,
         &[places.admitted_levels()],
@@ -202,6 +223,7 @@ pub fn description() -> Option<Description> {
 
     held.constraints.extend(sponge::capacity_carries(carry));
     held.constraints.extend(sponge::rate_carries(squeeze));
+    held.constraints.extend(sponge::digest_carries(naming));
     held.constraints.extend(path::constraints(walk));
     held.constraints.extend(capacity::constraints(opens_at));
     held.constraints
@@ -263,11 +285,11 @@ pub fn trace_of(
     if key_limbs.len() != KEY_LIMBS {
         return None;
     }
-    let key_states = sponge::chain(domain::MT_PART_KEY, &key_limbs);
+    let key_states = sponge::chain(domain::MT_PART_KEY_DIGEST, &key_limbs);
     for (at, state) in key_states.iter().enumerate() {
         permutation::write_block(&mut columns, places.key() + at, state)?;
     }
-    let key_digest = poseidon::hash_elements(domain::MT_PART_KEY, &key_limbs);
+    let key_digest = poseidon::hash_elements(domain::MT_PART_KEY_DIGEST, &key_limbs);
 
     // The lane: a cyclic hold with one load is a constant, and the constant is the half that spends.
     for cell in 0..CAP {
@@ -295,14 +317,15 @@ pub fn trace_of(
     Some((columns, [admitted_root, part_nullifier, key_digest]))
 }
 
-// The public input of a presence: the root of admitted machines, the nullifier of the part and the
-// digest of the key, in the order the boundaries bind them. The window enters the nullifier it is
-// absorbed into rather than standing beside it, so nothing carries a second encoding of it.
-pub fn public_of(digests: &[crate::poseidon::Digest; 3]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(3 * 32);
-    for digest in digests {
+// The public input in the order Consensus states: admitted root, key digest,
+// part nullifier, and the window the verifier is checking. The window
+// already belongs to the attestation; these bytes add no field to its wire layout.
+pub fn public_of(digests: &[crate::poseidon::Digest; 3], window: u64) -> Vec<u8> {
+    let mut out = Vec::with_capacity(3 * 32 + 8);
+    for digest in [&digests[0], &digests[2], &digests[1]] {
         out.extend_from_slice(&digest.bytes());
     }
+    out.extend_from_slice(&window.to_le_bytes());
     out
 }
 
@@ -338,6 +361,70 @@ mod tests {
         (secret, empties[..depth].to_vec(), 0)
     }
 
+    #[test]
+    fn a_presence_cannot_graft_another_machines_public_membership_path() {
+        let (admitted_secret, siblings, position) = a_machine();
+        let stranger = [0xB7; 32];
+        let key = vec![0xA1; mt_codec::size::SIGNING_PUBLIC_KEY];
+        let (mut trace, mut digests) = trace_of(&stranger, &siblings, position, 1_000, &key)
+            .expect("an attacker can compute its own trace");
+        let (_, public_naming_half) = crate::poseidon::hash_elements_twice(
+            domain::MT_KEY_HALVES,
+            &crate::poseidon::limbs_of(&admitted_secret),
+        );
+        let places = Places;
+        digests[0] = path::write_walk_under(
+            &mut trace,
+            places.admitted_leaf(),
+            &public_naming_half,
+            &siblings,
+            position,
+            domain::MT_ADMITTED_LEAF,
+            domain::MT_ADMITTED_NODE,
+        )
+        .expect("the membership branch contains no secret");
+        path::write_pairs(&mut trace);
+        path::write_accumulator(&mut trace, &[places.admitted_levels()], &[]);
+        assert!(
+            !description().expect("description").satisfied_by(
+                &trace,
+                &crate::poseidon::limbs_of(&public_of(&digests, 1_000)),
+            ),
+            "membership must belong to the secret that derives the part nullifier"
+        );
+    }
+
+    #[test]
+    fn a_part_cannot_choose_extra_nullifiers_through_sponge_padding() {
+        let (secret, siblings, position) = a_machine();
+        let key = vec![0xA1; mt_codec::size::SIGNING_PUBLIC_KEY];
+        let (mut trace, mut digests) =
+            trace_of(&secret, &siblings, position, 1_000, &key).expect("honest trace");
+        let (spending, _) = crate::poseidon::hash_elements_twice(
+            domain::MT_KEY_HALVES,
+            &crate::poseidon::limbs_of(&secret),
+        );
+        let mut forged_preimage = spending.elements().to_vec();
+        forged_preimage.push(crate::field::F::try_from_u64(1_000).expect("window fits"));
+        forged_preimage.push(crate::field::F::ONE);
+        let places = Places;
+        for (at, state) in sponge::chain(domain::MT_PART_NF, &forged_preimage)
+            .iter()
+            .enumerate()
+        {
+            permutation::write_block(&mut trace, places.nullifier() + at, state).expect("fits");
+        }
+        digests[1] = crate::poseidon::hash_elements(domain::MT_PART_NF, &forged_preimage);
+        path::write_pairs(&mut trace);
+        assert!(
+            !description().expect("description").satisfied_by(
+                &trace,
+                &crate::poseidon::limbs_of(&public_of(&digests, 1_000)),
+            ),
+            "one admitted secret must have only one part nullifier per window"
+        );
+    }
+
     // What a failure of the honest trace looks like, said by name rather than by a bare refusal: the
     // first rule that does not hold and the first boundary that does not bind.
     #[test]
@@ -346,7 +433,7 @@ mod tests {
         let key = vec![0xA1u8; mt_codec::size::SIGNING_PUBLIC_KEY];
         let (trace, digests) =
             trace_of(&secret, &siblings, position, 1_000, &key).expect("the presence stands");
-        let public = crate::poseidon::limbs_of(&public_of(&digests));
+        let public = crate::poseidon::limbs_of(&public_of(&digests, 1_000));
         let held = description().expect("the description stands");
         let mut broken: Vec<String> = Vec::new();
         for at in 0..held.constraints.len() {
@@ -381,7 +468,7 @@ mod tests {
         let key = vec![0xA1u8; mt_codec::size::SIGNING_PUBLIC_KEY];
         let (trace, digests) = trace_of(&secret, &siblings, position, window, &key)
             .expect("the presence of a machine of the tree");
-        let public = public_of(&digests);
+        let public = public_of(&digests, window);
         let held = description().expect("the description stands");
         assert!(
             held.satisfied_by(&trace, &crate::poseidon::limbs_of(&public)),
@@ -392,8 +479,13 @@ mod tests {
 
         // A moved public is refused: the nullifier of the part, one bit over.
         let mut moved = public.clone();
-        moved[32] ^= 1;
+        moved[64] ^= 1;
         assert!(crate::scheme::verify(&held, &moved, &bytes).is_err());
+
+        // Re-signing the same part at another height cannot re-use its proof.
+        let later = public_of(&digests, window + 1);
+        assert!(!held.satisfied_by(&trace, &crate::poseidon::limbs_of(&later)));
+        assert!(crate::scheme::verify(&held, &later, &bytes).is_err());
     }
 
     // What the circuit publishes is what the tree computes outside it: the same root, the same
@@ -421,7 +513,7 @@ mod tests {
         assert_eq!(digests[0], current, "the root of admitted machines");
         assert_eq!(
             digests[2],
-            crate::poseidon::hash_bytes(domain::MT_PART_KEY, &key),
+            crate::poseidon::hash_bytes(domain::MT_PART_KEY_DIGEST, &key),
             "the digest of the one-time key"
         );
     }

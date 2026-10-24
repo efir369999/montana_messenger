@@ -170,25 +170,25 @@ fn run() -> Result<(), String> {
     // only machine that takes it is one still lagging behind. It is carried into the pulse, which
     // runs it after this machine has entered the round and before it attests anything.
     let cohort_of_the_errand = &cohort;
-    let errand =
-        |machine: &montana_node::Machine, window: u64| -> Result<(), montana_node::NodeError> {
-            let cohort = cohort_of_the_errand;
-            let out = (|| -> Result<(), String> {
-                // The right of a window turned into a note of a wallet, in the window that right
-                // is accepted in — and it is done here, where the machine does stand at the points
-                // of that window, rather than after a close that has already released them.
-                if let Some((of_the_window, living)) = configuration.redeem {
-                    let at = configuration
-                        .wallet
-                        .as_deref()
-                        .ok_or("--redeem asks for --wallet")?;
-                    let wallet = montana_wallet::Wallet::open(at)
-                        .map_err(|e| format!("what this wallet keeps: {e:?}"))?;
-                    let rate_secret = *mt_wire::draw::block::<32>()
-                        .map_err(|e| format!("nothing to draw from: {e:?}"))?;
-                    let minted = machine
+    let errand = |machine: &montana_node::Machine,
+                  window: u64|
+     -> Result<(), montana_node::NodeError> {
+        let cohort = cohort_of_the_errand;
+        let out = (|| -> Result<(), String> {
+            // The right of a window turned into a note of a wallet, in the window that right
+            // is accepted in — and it is done here, where the machine does stand at the points
+            // of that window, rather than after a close that has already released them.
+            if let Some((of_the_window, living)) = configuration.redeem {
+                let at = configuration
+                    .wallet
+                    .as_deref()
+                    .ok_or("--redeem asks for --wallet")?;
+                let rate_secret = *mt_wire::draw::block::<32>()
+                    .map_err(|e| format!("nothing to draw from: {e:?}"))?;
+                let wallet_at = std::path::PathBuf::from(at);
+                machine
                         .redeem_into(
-                            &wallet,
+                            &wallet_at.clone(),
                             cohort,
                             of_the_window,
                             living,
@@ -196,65 +196,87 @@ fn run() -> Result<(), String> {
                             montana_node::pulse::opening_chain(),
                             0,
                             &rate_secret,
+                            Box::new(move |settled| match settled {
+                                Ok(minted) => {
+                                    println!(
+                                        "the right of window {of_the_window} is a note now: {} at position {}",
+                                        minted.value, minted.position
+                                    );
+                                    if let Ok(balance) = montana_wallet::Wallet::open(&wallet_at)
+                                        .and_then(|wallet| wallet.balance())
+                                    {
+                                        println!("this wallet holds {balance}");
+                                    }
+                                }
+                                Err(e) => println!("the right of window {of_the_window} stands unredeemed: {e:?}"),
+                            }),
                         )
                         .map_err(|e| format!("{e:?}"))?;
-                    println!(
-                        "the right of window {of_the_window} is a note now: {} at position {}",
-                        minted.value, minted.position
-                    );
-                    println!(
-                        "this wallet holds {}",
-                        wallet.balance().map_err(|e| format!("a balance: {e:?}"))?
-                    );
-                }
-                // And what a living machine pays out of its own wallet, against the tree it holds itself.
-                if let Some((half, note_pk)) = configuration.pay_to {
-                    let at = configuration
-                        .wallet
-                        .as_deref()
-                        .ok_or("--pay-to asks for --wallet")?;
-                    let file = configuration
-                        .hand_to
-                        .as_deref()
-                        .ok_or("--pay-to asks for --hand-to")?;
-                    let amount = configuration.amount.ok_or("--pay-to asks for --amount")?;
-                    let wallet = montana_wallet::Wallet::open(at)
-                        .map_err(|e| format!("what this wallet keeps: {e:?}"))?;
-                    let rate_secret = *mt_wire::draw::block::<32>()
-                        .map_err(|e| format!("nothing to draw from: {e:?}"))?;
-                    let paid = machine
+                println!(
+                    "the redemption of window {of_the_window} stands; it applies with its round"
+                );
+            }
+            // And what a living machine pays out of its own wallet, against the tree it holds itself.
+            if let Some((half, note_pk)) = configuration.pay_to {
+                let at = configuration
+                    .wallet
+                    .as_deref()
+                    .ok_or("--pay-to asks for --wallet")?;
+                let file = configuration
+                    .hand_to
+                    .as_deref()
+                    .ok_or("--pay-to asks for --hand-to")?;
+                let amount = configuration.amount.ok_or("--pay-to asks for --amount")?;
+                let rate_secret = *mt_wire::draw::block::<32>()
+                    .map_err(|e| format!("nothing to draw from: {e:?}"))?;
+                let wallet_at = std::path::PathBuf::from(at);
+                let file = file.to_string();
+                machine
                         .pay_of_its_own(
-                            &wallet,
+                            &wallet_at.clone(),
                             &montana_wallet::pay::Payee { half, note_pk },
                             amount,
                             window,
                             montana_node::pulse::opening_chain(),
                             0,
                             &rate_secret,
+                            Box::new(move |settled| {
+                                let handed = settled.map_err(|e| format!("{e:?}")).and_then(|paid| {
+                                    let wallet = montana_wallet::Wallet::open(&wallet_at)
+                                        .map_err(|e| format!("what this wallet keeps: {e:?}"))?;
+                                    wallet
+                                        .hand_over(
+                                            std::path::Path::new(&file),
+                                            paid.value,
+                                            &paid.rcm,
+                                            &paid.note_pk,
+                                        )
+                                        .map_err(|e| format!("the note handed to the payee: {e:?}"))?;
+                                    let balance = wallet
+                                        .balance()
+                                        .map_err(|e| format!("a balance: {e:?}"))?;
+                                    Ok((paid, balance))
+                                });
+                                match handed {
+                                    Ok((paid, balance)) => {
+                                        println!(
+                                            "paid {} — the note for the payee stands in {file}, closed to its owner alone",
+                                            paid.value
+                                        );
+                                        println!("its position in the tree of notes is {}", paid.position);
+                                        println!("this wallet holds {balance} now");
+                                    }
+                                    Err(what) => println!("the payment stands unpaid: {what}"),
+                                }
+                            }),
                         )
                         .map_err(|e| format!("{e:?}"))?;
-                    wallet
-                        .hand_over(
-                            std::path::Path::new(file),
-                            paid.value,
-                            &paid.rcm,
-                            &paid.note_pk,
-                        )
-                        .map_err(|e| format!("the note handed to the payee: {e:?}"))?;
-                    println!(
-                "paid {} — the note for the payee stands in {file}, closed to its owner alone",
-                paid.value
-            );
-                    println!("its position in the tree of notes is {}", paid.position);
-                    println!(
-                        "this wallet holds {} now",
-                        wallet.balance().map_err(|e| format!("a balance: {e:?}"))?
-                    );
-                }
-                Ok(())
-            })();
-            out.map_err(|what| montana_node::NodeError::Unreadable { what })
-        };
+                println!("the payment stands; it applies with its round");
+            }
+            Ok(())
+        })();
+        out.map_err(|what| montana_node::NodeError::Unreadable { what })
+    };
     let lived = montana_node::pulse::live_doing(
         &machine,
         &cohort,
@@ -269,10 +291,13 @@ fn run() -> Result<(), String> {
             "window {} closed after {} rounds on a cement naming {} machines",
             one.window, one.rounds, one.living
         );
-        println!(
-            "  it mints {} to this machine, accepted in window {}",
-            one.right.share, one.right.accepted_in
-        );
+        match &one.right {
+            Some(right) => println!(
+                "  it mints {} to this machine, accepted in window {}",
+                right.share, right.accepted_in
+            ),
+            None => println!("  this machine's part is not in its cement, so it mints it nothing"),
+        }
     }
     Ok(())
 }
@@ -392,6 +417,9 @@ fn said(e: NodeError) -> String {
              what a verifier would refuse"
         ),
         NodeError::Refused { what } => format!("refused: {what}"),
+        NodeError::UnreconciledCement => {
+            "waiting: beacon cement does not match the verified heavy attestations; no signature or round transition is authorized".to_string()
+        }
         NodeError::Object(e) => format!("an object of another shape than its layout gives: {e:?}"),
     }
 }

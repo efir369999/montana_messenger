@@ -7,10 +7,10 @@
 // network accepts proofs under rather than about the first of them. A test naming "every" and
 // reading one is a denominator of one wearing the name of the whole: the property would hold by the
 // unit tests of each circuit, and the guard the plan credits with holding it would be empty. The
-// enumeration is therefore the same one `identifiers.rs` binds into `air_hash` — the day a fourth
+// enumeration is therefore the same one `identifiers.rs` binds into `air_hash` — the day another
 // description joins that binding, it joins this bound.
 
-use mt_proof::circuit::{admission, frame, presence, window};
+use mt_proof::circuit::{admission, ballot, frame, opening, presence, ticket};
 
 // Every description the network accepts a proof under, with the width it spends. The list is the
 // one the Decree's `air_hash` binds, so a circuit that reaches the network reaches this test.
@@ -19,15 +19,20 @@ fn every_written_circuit() -> Vec<(&'static str, usize)> {
     let places = frame::Places::of(depth).expect("the Decree names the shape of a frame");
     let of_frame = frame::description(&places, mt_proof::params::ROWS_LOG2)
         .expect("the frame's description stands");
-    let of_window = window::description();
+    // PANIC-OK: as below — a description of this tree, built from its own constants.
+    let of_ticket = ticket::description().expect("the ticket's description stands");
     let of_admission = admission::description().expect("the admission's description stands");
     // PANIC-OK: as above — a description of this tree, built from its own constants.
     let of_presence = presence::description().expect("the presence's description stands");
+    let of_opening = opening::description().expect("the opening's description stands");
+    let of_ballot = ballot::description().expect("the ballot's description stands");
     vec![
         ("frame", usize::from(of_frame.trace_width)),
-        ("window", usize::from(of_window.trace_width)),
+        ("ticket", usize::from(of_ticket.trace_width)),
         ("admission", usize::from(of_admission.trace_width)),
         ("presence", usize::from(of_presence.trace_width)),
+        ("opening", usize::from(of_opening.trace_width)),
+        ("ballot", usize::from(of_ballot.trace_width)),
     ]
 }
 
@@ -37,7 +42,7 @@ fn every_written_circuit_stands_under_the_one_bound() {
     let written = every_written_circuit();
     assert_eq!(
         written.len(),
-        4,
+        6,
         "the circuits `air_hash` binds and the circuits this test reads are one list"
     );
     for (name, width) in written {

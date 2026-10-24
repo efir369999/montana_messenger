@@ -25,9 +25,10 @@ mt_codec::constants! {
 // with it.
 pub const FRAMING_BYTES: usize = INDEX_BYTES + COUNT_BYTES + KIND_BYTES;
 
-// The pieces a message is cut into: the last one padded with zeros to the one width. The kind is
-// written into every piece rather than into the first alone, so a reader that lost the first has
-// lost the message and never a message it reads as something else.
+// The pieces a message is cut into: the last one padded with zeros to the one width, every one laid
+// in a time that follows the width and not the length (`crate::lay`). The kind is written into every
+// piece rather than into the first alone, so a reader that lost the first has lost the message and
+// never a message it reads as something else.
 pub fn pieces(kind: u8, message: &[u8]) -> Result<Vec<Vec<u8>>, WireError> {
     let width = piece_bytes()?;
     let count = message.len().div_ceil(width).max(1);
@@ -39,15 +40,12 @@ pub fn pieces(kind: u8, message: &[u8]) -> Result<Vec<Vec<u8>>, WireError> {
     }
     let mut out = Vec::with_capacity(count);
     for index in 0..count {
-        let at = index * width;
-        let end = message.len().min(at + width);
         let mut piece = vec![0u8; FRAMING_BYTES + width];
         piece[..2].copy_from_slice(&(index as u16).to_le_bytes());
         piece[2..4].copy_from_slice(&(count as u16).to_le_bytes());
         piece[4] = kind;
-        if at < message.len() {
-            piece[FRAMING_BYTES..FRAMING_BYTES + (end - at)].copy_from_slice(&message[at..end]);
-        }
+        // Laid in one time whatever the length of the message, as a block of a body is.
+        crate::lay(message, index * width, &mut piece[FRAMING_BYTES..]);
         out.push(piece);
     }
     Ok(out)

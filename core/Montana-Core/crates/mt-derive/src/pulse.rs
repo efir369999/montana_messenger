@@ -1,10 +1,10 @@
-// The round of a chain: the seeds a machine's one-time keys are generated from, and the
-// eligibility of a machine for a round. The set states them in `docs/Montana Canon.md`,
-// "The round of a chain, in integers".
+// The round of a chain: the seeds a machine's one-time keys are generated from, the eligibility of
+// a machine for a round, and the digests a proof binds a one-time key by. The set states them in
+// `docs/Montana Canon.md`, "The round of a chain, in integers".
 //
 // Both key seeds stand under domains of their own, so the key that runs a window and the key
-// that answers for a part never join; eligibility takes the answering key, the aggregate, the
-// chain and the round, and nothing in that preimage is anyone's to choose.
+// that answers for a part never join; eligibility takes the nullifier of the part, the aggregate,
+// the chain and the round, and nothing in that preimage is anyone's to choose.
 
 use mt_codec::{domain, hash, size, Part};
 
@@ -51,9 +51,18 @@ pub fn round_eligibility(
 // What a proof of presence binds a one-time key by. The key enters no proof — its generation is
 // the thing no circuit asserts — so what the public input carries is this digest, computed by a
 // verifier from the key the attestation carries: a proof lifted from one attestation onto another
-// fails at the boundary that names it.
+// fails at the boundary that names it. The digest takes a domain of its own and not the domain of
+// the key's seed: the seed is SHA-256 and the digest is of the proof hash, and the set holds every
+// domain to one family.
 pub fn key_digest(one_time_pk: &[u8; size::SIGNING_PUBLIC_KEY]) -> [u8; 32] {
-    mt_proof::poseidon::hash_bytes(domain::MT_PART_KEY, one_time_pk).bytes()
+    mt_proof::poseidon::hash_bytes(domain::MT_PART_KEY_DIGEST, one_time_pk).bytes()
+}
+
+// What a proof of a ticket binds the key of a proposal by, under a digest domain of its own: the
+// same construction as the digest of a part key under another domain, so a key that attested a
+// window and a key that published one never share a digest even where they shared bytes.
+pub fn runner_digest(runner_pk: &[u8; size::SIGNING_PUBLIC_KEY]) -> [u8; 32] {
+    mt_proof::poseidon::hash_bytes(domain::MT_RUNNER_KEY_DIGEST, runner_pk).bytes()
 }
 
 // The machine standing at a point: the least commitment of the living set whose first sixteen
@@ -169,16 +178,31 @@ mod tests {
     #[test]
     fn the_digest_a_proof_binds_a_one_time_key_by_is_the_frozen_value() {
         // Canon, "The round of a chain, in integers": the key enters no proof, and this is what the
-        // public input of a presence carries in its place.
-        assert_eq!(
-            hex(&key_digest(&test_answering_key())),
-            "720e87ab3f36f6812351e148fb55999e5049f6f8250982b3e27431699b9014c6"
+        // public input of a presence carries in its place. The value lives in the set and the gate
+        // compares the code against it there; what is checked here is the rule the value stands on.
+        assert_ne!(
+            key_digest(&test_answering_key()),
+            mt_proof::poseidon::hash_bytes(domain::MT_PART_KEY, &test_answering_key()).bytes(),
+            "the digest of a key is not taken under the domain of its seed"
         );
         // One byte of the key moved yields another digest, which is what stops a proof of presence
         // from being lifted from one attestation onto another.
         let mut moved = test_answering_key();
         moved[0] ^= 1;
         assert_ne!(key_digest(&moved), key_digest(&test_answering_key()));
+    }
+
+    #[test]
+    fn the_digest_of_a_runner_key_stands_apart_from_the_digest_of_a_part_key() {
+        // One key, two domains: the digest a proof of a ticket binds a proposal's key by is never
+        // the digest a proof of presence binds an attestation's key by. The named wrong
+        // implementation is the one that reuses the part-key door for the runner, which would let
+        // one proof name a key under both duties.
+        let key = test_answering_key();
+        assert_ne!(runner_digest(&key), key_digest(&key));
+        let mut moved = key;
+        moved[0] ^= 1;
+        assert_ne!(runner_digest(&moved), runner_digest(&test_answering_key()));
     }
 
     #[test]

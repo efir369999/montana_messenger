@@ -373,6 +373,49 @@ fn a_changed_value_of_any_derivation_breaks_the_build_with_both_values() {
 }
 
 #[test]
+fn a_changed_value_of_the_walk_of_a_pipe_breaks_the_build_with_both_values() {
+    // The walk of the secret of a pipe is named row by row rather than left to the sweep above:
+    // the secret walked one and two steps, the tags standing on them, the first frozen key of the
+    // inner seal, the two values frozen for the wrong walks, and the rows of the messages at the
+    // next window.
+    let md = canon();
+    let rows_of = [
+        (TAG_HEADER, "pipe_secret(W + 1)"),
+        (TAG_HEADER, "pipe_secret(W + 2)"),
+        (TAG_HEADER, "tag (W = 1001)"),
+        (TAG_HEADER, "tag (W = 1002)"),
+        (TAG_HEADER, "test_secret"),
+        (TAG_HEADER, "pipe_secret(test_secret, W + 1)"),
+        (TAG_HEADER, "tag(test_secret, W)"),
+        (TAG_HEADER, "tag(pipe_secret(test_secret, W + 1), W + 1)"),
+        (
+            TAG_HEADER,
+            "pipe_key(pipe_secret(test_secret, W + 1), W + 1)",
+        ),
+        (TAG_HEADER, "tag(unwalked secret, W = 1001)"),
+        (TAG_HEADER, "tag(walked 1001 steps, W = 1001)"),
+        (MESSAGES_HEADER, "pipe_key"),
+        (MESSAGES_HEADER, "collect_right (W = 1001)"),
+        (MESSAGES_HEADER, "pipe_key (W = 1001)"),
+    ];
+    for (header, label) in rows_of {
+        let rows = parse_labeled(&md, header).expect("the block parses");
+        let mut old = String::new();
+        for (l, v) in &rows {
+            if l == label {
+                old = v.clone();
+            }
+        }
+        assert!(!old.is_empty(), "{label} stands frozen");
+        let flipped = flip_first_hex(&old);
+        let err =
+            check_all(&doctored_canon(&md, &old, &flipped)).expect_err("the gate must refuse");
+        assert!(err.contains(&old), "{label}: {err}");
+        assert!(err.contains(&flipped), "{label}: {err}");
+    }
+}
+
+#[test]
 fn a_changed_fingerprint_or_its_count_of_iterations_breaks_the_build() {
     let md = canon();
     // Both values are read out of the set and doctored where they stand: a test restating one
@@ -758,38 +801,6 @@ fn bump_after_last_sign(md: &str, prefix: &str) -> (String, String, u64, u64) {
 }
 
 #[test]
-fn a_changed_identifier_of_the_fold_node_breaks_the_build_with_both_values() {
-    let md = canon();
-    let rows = parse_labeled(&md, FOLD_HEADER).expect("the fold block parses");
-    let (_, old) = rows
-        .iter()
-        .find(|(l, _)| l == "fold_node_id")
-        .expect("the identifier stands frozen")
-        .clone();
-    let flipped = flip_first_hex(&old);
-    let err = check_all(&doctored_canon(&md, &old, &flipped)).expect_err("the gate must refuse");
-    assert!(err.contains("fold_node_id"), "{err}");
-    assert!(err.contains(&old), "{err}");
-    assert!(err.contains(&flipped), "{err}");
-}
-
-#[test]
-fn a_changed_work_vector_of_the_fold_breaks_the_build_with_both_values() {
-    let md = canon();
-    let rows = parse_labeled(&md, COMMIT_VECTORS_HEADER).expect("the block parses");
-    let (label, old) = rows
-        .iter()
-        .find(|(l, _)| l.starts_with("fold_work("))
-        .expect("the work vector stands frozen")
-        .clone();
-    let flipped = flip_first_hex(&old);
-    let err = check_all(&doctored_canon(&md, &old, &flipped)).expect_err("the gate must refuse");
-    assert!(err.contains(&label), "{err}");
-    assert!(err.contains(&old), "{err}");
-    assert!(err.contains(&flipped), "{err}");
-}
-
-#[test]
 fn a_changed_confirmation_total_breaks_the_build_with_both_lengths() {
     let md = canon();
     let (line, doctored, old, new) = bump_after_last_sign(&md, "confirmation_len");
@@ -886,50 +897,6 @@ fn the_secret_of_first_contact_and_the_two_spaces_break_the_build_when_changed()
         assert!(err.contains(&old), "{label}: {err}");
         assert!(err.contains(&flipped), "{label}: {err}");
     }
-}
-
-#[test]
-fn a_changed_matrix_seed_of_the_standing_commitment_breaks_the_build() {
-    let md = canon();
-    let rows = parse_labeled(&md, COMMIT_VECTORS_HEADER).expect("the block parses");
-    let (_, old) = rows
-        .iter()
-        .find(|(l, _)| l == "matrix_seed")
-        .expect("the seed stands frozen")
-        .clone();
-    let flipped = flip_first_hex(&old);
-    let err = check_all(&doctored_canon(&md, &old, &flipped)).expect_err("the gate must refuse");
-    assert!(err.contains("matrix_seed"), "{err}");
-    assert!(err.contains(&old), "{err}");
-    assert!(err.contains(&flipped), "{err}");
-}
-
-#[test]
-fn a_changed_parameter_of_the_standing_commitment_breaks_the_build_with_both_values() {
-    // The parameters are those of ML-DSA-65 taken whole; a set that moves one of them is a
-    // set the code no longer transcribes. The value of q is read out of the set and bumped.
-    let md = canon();
-    let line = md
-        .lines()
-        .find(|l| l.trim_start().starts_with("d = ") && l.contains("q ="))
-        .expect("the set states the parameters")
-        .to_string();
-    let q_at = line.find("q =").expect("q stands in the line");
-    let after = &line[q_at + 3..];
-    let end = after.find(',').expect("a comma follows q");
-    let old_text = after[..end].trim().to_string();
-    let old: u64 = old_text
-        .chars()
-        .filter(|c| c.is_ascii_digit())
-        .collect::<String>()
-        .parse()
-        .expect("digits parse");
-    let new = old + 1;
-    let doctored_line = line.replacen(&old_text, &new.to_string(), 1);
-    let err =
-        check_all(&doctored_canon(&md, &line, &doctored_line)).expect_err("the gate must refuse");
-    assert!(err.contains(&old.to_string()), "{err}");
-    assert!(err.contains(&new.to_string()), "{err}");
 }
 
 #[test]
@@ -1034,7 +1001,7 @@ fn a_changed_vector_of_the_draw_or_of_a_round_threshold_breaks_the_build_with_bo
     // is covered the day it lands and none is covered by having been remembered.
     let md = canon();
     let mut walked = 0;
-    for header in [DRAW_RETARGET_HEADER, ROUND_THRESHOLD_HEADER] {
+    for header in [RECOMPUTATION_HEADER, ROUND_THRESHOLD_HEADER] {
         let rows = parse_labeled(&md, header).unwrap_or_else(|e| panic!("{header}: {e}"));
         for (label, stated) in rows {
             let hexish = stated.len() == 64 && stated.bytes().all(|b| b.is_ascii_hexdigit());
@@ -1061,7 +1028,7 @@ fn a_changed_input_of_a_frozen_vector_of_the_pulse_breaks_the_build() {
     // value no longer answers for it. Both the label and its number are read out of the set.
     let md = canon();
     for (header, name) in [
-        (DRAW_RETARGET_HEADER, "cleared "),
+        (RECOMPUTATION_HEADER, "cleared "),
         (ROUND_THRESHOLD_HEADER, "admitted "),
     ] {
         let rows = parse_labeled(&md, header).expect("the block parses");

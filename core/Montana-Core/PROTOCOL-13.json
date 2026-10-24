@@ -1,0 +1,104 @@
+{
+ "what": "The status of the thirteen protocol requirements as this tree holds them. A session that closes or moves an item edits its row and its report (protocol-13/, beside this file) in the same commit as the work, and publish_protocol13.py writes the public folder Audit/Protocol-13 from that commit: the reports, the table from this file and the source; an item is closed only with an implementation revision, the exact test command and its result in the report of that item.",
+ "recorded": "2026-10-16",
+ "items": [
+  {
+   "item": 1,
+   "report": "01-WINDOW-PROOF.md",
+   "requirement": "A complete window proof and verifier",
+   "status": "open",
+   "summary": "Active, sessions 39 to 47. In the branch: the window closes through one verifying door, the roots of state are defined and a device walks from an anchor to the head (2add1f6); the ballot proves a count of votes and hides the standing it was drawn from, a payer's frame applies with its round, the draw's threshold is the width and the ticket orders runners, a right needs the machine's own part in the cement (cdcbd7a, 6ae1a3b, 9f22057, 2538b6a). Open: agreement on what a window decided. The author chose its construction on 2026-10-16 (AGREEMENT.md, section 6: the roll of a proposal is one body whose root stands inside its name); its specification text, its code and the test of four machines at a quorum of three are not written. A run on six hosts closed window 0 on two names, and the memory of a stalled window grew without a bound."
+  },
+  {
+   "item": 2,
+   "report": "02-CANONICAL-PROPOSAL.md",
+   "requirement": "Close only a verified canonical Proposal",
+   "status": "open",
+   "summary": "A participant count may trigger an attempt, but must not advance the closed head or authorize issuance. Recompute the beacon and archive the verified Proposal and its actual identifier."
+  },
+  {
+   "item": 3,
+   "report": "03-AUTHORIZED-ISSUANCE.md",
+   "requirement": "Bind redemption to authorized issuance",
+   "status": "open",
+   "summary": "Bind the window, recipient, amount and one-time redemption. Reject excess value, invented rights and repeated redemption at the verifying node."
+  },
+  {
+   "item": 4,
+   "report": "04-ADMISSION-ORIGIN.md",
+   "requirement": "Bind admission witnesses to one state",
+   "status": "open",
+   "summary": "The identity record, machine key, operator secret and public values must share an authenticated origin. Reject mixed witnesses."
+  },
+  {
+   "item": 5,
+   "report": "05-CONTINUITY-AND-REJOIN.md",
+   "requirement": "Prove continuity and return after a partition",
+   "status": "open",
+   "summary": "Enforce bitmap shift, period boundaries and required participation inside admission. Replaying other machines' records does not create one's own participation."
+  },
+  {
+   "item": 6,
+   "report": "06-CLOCKS-AND-BOOTSTRAP.md",
+   "requirement": "Remove clock authority and implicit private bootstrap",
+   "status": "open",
+   "summary": "The same protocol state must have the same validity under changed clocks or machine speed in both generations. Test settings must not silently become network settings."
+  },
+  {
+   "item": 7,
+   "report": "07-LEGACY-LOTTERY.md",
+   "requirement": "Make the earlier core's lottery deterministic",
+   "status": "open",
+   "summary": "Use historical thresholds and weights, correct epoch boundaries and complete reveals; reject conflicting proposals and unannounced private bootstrap."
+  },
+  {
+   "item": 8,
+   "report": "08-ATOMIC-WINDOW.md",
+   "requirement": "Apply and persist the entire window atomically",
+   "status": "open",
+   "summary": "Tables, proof, Proposal archive and head must recover together after rejection, crash or replay, without extra issuance. Partial storage repairs do not establish this transaction."
+  },
+  {
+   "item": 9,
+   "report": "09-AUTHENTICATED-JOIN.md",
+   "requirement": "Authenticate first connection and fast sync",
+   "status": "open",
+   "summary": "A fresh node must authenticate history from the network's trusted beginning or an authenticated checkpoint. A server's own advertised root does not authenticate its snapshot."
+  },
+  {
+   "item": 10,
+   "report": "10-OBSERVABLE-STALLS.md",
+   "requirement": "Expose a stalled protocol",
+   "status": "open",
+   "summary": "Distinguish insufficient quorum, missing data, invalid proof and unavailable diagnostics through the used network path. Timeouts must not authorize a close."
+  },
+  {
+   "item": 11,
+   "report": "11-ANONYMITY.md",
+   "requirement": "Protect node identity and origin",
+   "status": "open",
+   "summary": "Verify handshake identities, protected entry points, direct origin access, DNS, logs, public history, resource limits and replays. Total anonymity is a design requirement, not a verified property of this snapshot."
+  },
+  {
+   "item": 12,
+   "report": "12-SOURCE-AND-CLAIMS.md",
+   "requirement": "Reconcile code, specification, audits and publication",
+   "status": "open",
+   "summary": "Each closed finding needs an implementation revision and matching evidence. Changed proof identifiers require an explicit migration. Whole-repository consistency and historical disclosures remain under review."
+  },
+  {
+   "item": 13,
+   "report": "13-NETWORK-REPRODUCTION.md",
+   "requirement": "Reproduce distributed finality and joining",
+   "status": "open",
+   "summary": "Multiple weighted nodes must close, lose quorum, recover, partition, rejoin and restart with canonical artifacts. The authorized self-run on a separate server must preserve canonical artifacts; it is not independent external review."
+  }
+ ],
+ "reproduced": {
+  "commit": "9a5d5656e6d4",
+  "public": "2425f72",
+  "sha256": "32897c85f8e13e6fd6e0fd27e9e9507e150311f8f6a9c2261e24a7d7f505e2bf",
+  "platform": "macOS 26.7 on arm64 (aarch64-apple-darwin)",
+  "toolchain": "rustc 1.92.0 (ded5c06cf 2025-12-08), LLVM 21.1.7"
+ }
+}

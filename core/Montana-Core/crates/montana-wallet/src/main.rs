@@ -74,7 +74,7 @@ fn run() -> Result<(), String> {
             let (person, entropy) = Person::born().map_err(said)?;
             wallet.bear_person(&entropy).map_err(said)?;
             println!("write these words down; they are the whole of this person:");
-            println!("{}", &*Person::words(&entropy));
+            println!("{}", *Person::words(&entropy));
             // **A payer needs two values of a person and not one.** The key a note is paid to says
             // where value goes; the half a person is named by is what the frame binds it to, and
             // without it nobody can be paid at all. Both are public and neither names anybody: a

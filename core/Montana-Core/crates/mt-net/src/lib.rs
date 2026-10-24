@@ -213,11 +213,31 @@ pub struct Link {
     opened_it: bool,
 }
 
+// The end of a link, held apart from it: a thread reading a link waits without end between two
+// messages, so whoever must stop that thread ends the socket under it rather than waiting for the
+// far side to. Shutting the socket both ways returns the reading thread at once, on every copy of
+// the socket.
+pub struct Closer {
+    stream: TcpStream,
+}
+
+impl Closer {
+    // A socket already shut, or one the far side already closed, has nothing left to end.
+    pub fn close(&self) {
+        let _ = self.stream.shutdown(std::net::Shutdown::Both);
+    }
+}
+
 impl Link {
     // What a caller compares out of band to know it reached the machine it meant. The transcript
     // is public by design and both signatures cover it.
     pub fn transcript(&self) -> &[u8; 32] {
         self.channel.transcript()
+    }
+
+    pub fn closer(&self) -> Result<Closer, NetError> {
+        let stream = self.stream.try_clone().map_err(socket)?;
+        Ok(Closer { stream })
     }
 
     fn sending_key(&self) -> &[u8; 32] {

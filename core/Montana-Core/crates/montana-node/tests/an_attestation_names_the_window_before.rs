@@ -21,10 +21,11 @@ use common::Scratch;
 
 const WINDOW: u64 = 2_600;
 const CHAIN: u8 = 0;
-const STANDING: u64 = 1_000;
 // The window before, as this vector hands it in. No beacon of this window can equal it, which is
 // what lets the assertions below tell the two apart by value.
 const OF_THE_WINDOW_BEFORE: [u8; 32] = [0x5A; 32];
+// The proposal of the window two before, which round zero stands on: not the one the answers name.
+const TWO_BEFORE: [u8; 32] = [0x59; 32];
 
 #[test]
 fn every_attestation_of_a_window_names_the_window_before_and_never_the_beacon_it_came_from() {
@@ -34,6 +35,9 @@ fn every_attestation_of_a_window_names_the_window_before_and_never_the_beacon_it
     let branch = cohort.branch_of(&secret).expect("its own leaf");
     let (machine, _) =
         Machine::start(&Configuration::at(&at.0, "127.0.0.1:0")).expect("the machine starts");
+    let aggregate = [0x11u8; 32];
+    let electorate = montana_node::certificate::Electorate::opening(cohort.root(), 1, WINDOW)
+        .expect("an opening electorate stands");
     let mut pulse = Pulse::open(
         &machine,
         &secret,
@@ -41,24 +45,29 @@ fn every_attestation_of_a_window_names_the_window_before_and_never_the_beacon_it
         &Branch {
             siblings: branch.siblings,
             position: branch.position,
-            standing: STANDING,
         },
         OF_THE_WINDOW_BEFORE,
+        TWO_BEFORE,
+        &electorate,
+        &aggregate,
     )
     .expect("the machine enters the window");
 
     // A threshold of everything: what this vector is about is what an answer names, and a draw that
     // admitted nobody would be measuring the draw instead.
     let everything = mt_pulse::U256::from_be_bytes(&[0xFFu8; 32]);
-    let aggregate = [0x11u8; 32];
 
-    // Round nought. Its beacon stands on the window before, and so does the answer — at this round
-    // the two duties name one value, which is why one round proves nothing here.
+    // Round nought. Its beacon stands on the proposal of the window two before, and the answer names
+    // the window before beside the beacon: the two duties never name one value, so round nought
+    // already tells a beacon that stood on the name being decided from one that stands on the
+    // proposal that fixed the electorate (Consensus, "Why round zero stands on the proposal two
+    // before").
     let first = pulse
         .beacon_of_this_round()
         .expect("a beacon of this round");
     let first_id = first.id().expect("a beacon carries its identifier");
-    assert_eq!(first.previous, OF_THE_WINDOW_BEFORE);
+    assert_eq!(first.previous, TWO_BEFORE);
+    assert_ne!(first.previous, OF_THE_WINDOW_BEFORE);
     let heavy = pulse
         .answer(&secret, &first, &aggregate, &everything)
         .expect("an answer is drawn")
@@ -69,6 +78,9 @@ fn every_attestation_of_a_window_names_the_window_before_and_never_the_beacon_it
 
     // Round one. The beacon moves on to link to the beacon before it — that is the beacon's own
     // rule — while what the answer attests beside it must not move with it.
+    pulse
+        .gather(&heavy, &cohort.root(), &aggregate, &first, &everything)
+        .expect("a verified answer authorizes the round");
     pulse.advance(&machine, &first).expect("the machine moves");
     let second = pulse
         .beacon_of_this_round()

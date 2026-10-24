@@ -552,13 +552,18 @@ pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, wi
             ) {
                 Ok(rows) => {
                     if let Ok(mut held) = lived.lock() {
+                        // A window whose cement does not hold this machine's part minted it nothing,
+                        // and its row says so with a share of nought.
                         for one in rows {
                             held.push(Row {
                                 window: one.window,
                                 rounds: one.rounds,
                                 living: one.living,
-                                share: one.right.share,
-                                accepted_in: one.right.accepted_in,
+                                share: one.right.as_ref().map_or(0, |right| right.share),
+                                accepted_in: one
+                                    .right
+                                    .as_ref()
+                                    .map_or(0, |right| right.accepted_in),
                             });
                         }
                     }
@@ -579,7 +584,7 @@ pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, wi
 fn run_the_errand(
     machine: &Machine,
     cohort: &pulse::Cohort,
-    wallet_at: &PathBuf,
+    wallet_at: &std::path::Path,
     asked: Errand,
     window: u64,
     paid: &Arc<Mutex<Option<Handed>>>,
@@ -587,15 +592,14 @@ fn run_the_errand(
     if asked.redeem.is_none() && asked.pay.is_none() {
         return Ok(());
     }
-    let wallet = Wallet::open(wallet_at).map_err(|e| NodeError::Unreadable {
-        what: format!("what this wallet keeps: {e:?}"),
-    })?;
     if let Some((of_the_window, living)) = asked.redeem {
         let rate = *mt_wire::draw::block::<32>().map_err(|e| NodeError::Unreadable {
             what: format!("nothing to draw from: {e:?}"),
         })?;
+        // The note enters the wallet as the round applies the frame; what the device reads after
+        // is the wallet, so nothing is handed back here.
         machine.redeem_into(
-            &wallet,
+            wallet_at,
             cohort,
             of_the_window,
             living,
@@ -603,29 +607,35 @@ fn run_the_errand(
             pulse::opening_chain(),
             0,
             &rate,
+            Box::new(|_| {}),
         )?;
     }
     if let Some((half, note_pk, amount)) = asked.pay {
         let rate = *mt_wire::draw::block::<32>().map_err(|e| NodeError::Unreadable {
             what: format!("nothing to draw from: {e:?}"),
         })?;
-        let done = machine.pay_of_its_own(
-            &wallet,
+        // What the payee is handed stands once the round has applied the frame and the position of
+        // the payee's note is known; until then the last payment reads as none.
+        let paid = Arc::clone(paid);
+        machine.pay_of_its_own(
+            wallet_at,
             &Payee { half, note_pk },
             amount,
             window,
             pulse::opening_chain(),
             0,
             &rate,
+            Box::new(move |settled| {
+                if let (Ok(done), Ok(mut held)) = (settled, paid.lock()) {
+                    *held = Some(Handed {
+                        value: done.value,
+                        rcm: done.rcm,
+                        note_pk: done.note_pk,
+                        position: done.position,
+                    });
+                }
+            }),
         )?;
-        if let Ok(mut held) = paid.lock() {
-            *held = Some(Handed {
-                value: done.value,
-                rcm: done.rcm,
-                note_pk: done.note_pk,
-                position: done.position,
-            });
-        }
     }
     Ok(())
 }

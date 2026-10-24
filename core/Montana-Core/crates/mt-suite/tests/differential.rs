@@ -327,6 +327,222 @@ fn a_second_implementation_seals_and_opens_what_this_tree_does() {
     );
 }
 
+// The third implementation: liboqs, whose ML-KEM is mlkem-native and whose ML-DSA is
+// mldsa-native — C code from neither the libcrux nor the OpenSSL family. Two agreements with
+// OpenSSL say two implementations meet; a third, written apart from both, is what tells a shared
+// misreading of the standard from the standard. It is reached through its own C interface rather
+// than a binding, so nothing between the two sides translates a byte. The library is named by
+// MT_LIBOQS, the path of the shared object; a machine without it compared nothing and says so.
+const LIBOQS_PROBE: &str = r#"
+import ctypes, sys
+lib = ctypes.CDLL(sys.argv[1])
+lib.OQS_init()
+lib.OQS_version.restype = ctypes.c_char_p
+lib.OQS_KEM_new.restype = ctypes.c_void_p
+lib.OQS_SIG_new.restype = ctypes.c_void_p
+def ok(rc, what):
+    if rc != 0:
+        raise SystemExit(what + ' refused')
+def say(name, value):
+    sys.stdout.write(name + ' ' + value + chr(10))
+say('version', lib.OQS_version().decode())
+mode = sys.argv[2]
+if mode == 'kem':
+    pk_n, sk_n, ct_n, ss_n = (int(a) for a in sys.argv[3:7])
+    seed, m, ours = (bytes.fromhex(a) for a in sys.argv[7:10])
+    kem = ctypes.c_void_p(lib.OQS_KEM_new(b'ML-KEM-768'))
+    if not kem.value:
+        raise SystemExit('ML-KEM-768 is not enabled in this liboqs')
+    pk, sk = ctypes.create_string_buffer(pk_n), ctypes.create_string_buffer(sk_n)
+    ct, ss = ctypes.create_string_buffer(ct_n), ctypes.create_string_buffer(ss_n)
+    ok(lib.OQS_KEM_keypair_derand(kem, pk, sk, seed), 'keypair_derand')
+    ok(lib.OQS_KEM_encaps_derand(kem, ct, ss, pk, m), 'encaps_derand')
+    opened = ctypes.create_string_buffer(ss_n)
+    ok(lib.OQS_KEM_decaps(kem, opened, ours, sk), 'decaps')
+    doctored = bytes([ours[0] ^ 1]) + ours[1:]
+    rejected = ctypes.create_string_buffer(ss_n)
+    ok(lib.OQS_KEM_decaps(kem, rejected, doctored, sk), 'decaps of the doctored')
+    say('pk', pk.raw.hex()); say('ct', ct.raw.hex()); say('ss', ss.raw.hex())
+    say('opened', opened.raw.hex()); say('rejected', rejected.raw.hex())
+elif mode == 'sig':
+    pk_n, sk_n, sig_n = (int(a) for a in sys.argv[3:6])
+    pk_ours, sig_ours, msg = (bytes.fromhex(a) for a in sys.argv[6:9])
+    sig = ctypes.c_void_p(lib.OQS_SIG_new(b'ML-DSA-65'))
+    if not sig.value:
+        raise SystemExit('ML-DSA-65 is not enabled in this liboqs')
+    def verify(s, k):
+        return lib.OQS_SIG_verify(sig, msg, ctypes.c_size_t(len(msg)), s, ctypes.c_size_t(len(s)), k) == 0
+    doctored = bytes([sig_ours[0] ^ 1]) + sig_ours[1:]
+    say('accepts', str(verify(sig_ours, pk_ours)))
+    say('accepts_doctored', str(verify(doctored, pk_ours)))
+    pk, sk = ctypes.create_string_buffer(pk_n), ctypes.create_string_buffer(sk_n)
+    ok(lib.OQS_SIG_keypair(sig, pk, sk), 'keypair')
+    out, out_n = ctypes.create_string_buffer(sig_n), ctypes.c_size_t(0)
+    ok(lib.OQS_SIG_sign(sig, out, ctypes.byref(out_n), msg, ctypes.c_size_t(len(msg)), sk), 'sign')
+    say('pk', pk.raw.hex()); say('sig', out.raw[:out_n.value].hex())
+else:
+    raise SystemExit('unknown mode ' + mode)
+"#;
+
+fn liboqs(mode: &str, args: &[String]) -> std::collections::BTreeMap<String, String> {
+    let library = std::env::var("MT_LIBOQS").unwrap_or_default();
+    assert!(
+        !library.is_empty() && std::path::Path::new(&library).exists(),
+        "the third implementation is absent: MT_LIBOQS names no liboqs shared object on this \
+         machine, so nothing was compared. Build liboqs with OQS_USE_OPENSSL=OFF and \
+         BUILD_SHARED_LIBS=ON and point MT_LIBOQS at the library."
+    );
+    let out = Command::new("python3")
+        .args(["-c", LIBOQS_PROBE, &library, mode])
+        .args(args)
+        .output()
+        .expect("python answers");
+    assert!(
+        out.status.success(),
+        "liboqs refused: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter_map(|l| l.split_once(' '))
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect()
+}
+
+fn unhex(text: &str) -> Vec<u8> {
+    (0..text.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&text[i..i + 2], 16).expect("liboqs writes hex"))
+        .collect()
+}
+
+// A seed whose bytes all differ: a key generation that read `z || d` for `d || z`, or a half
+// of the seed in reverse, lands on another key here, where a constant seed would hide it.
+fn stepped<const N: usize>(start: u8, step: u8) -> [u8; N] {
+    let mut out = [0u8; N];
+    for (i, b) in out.iter_mut().enumerate() {
+        *b = start.wrapping_add((i as u8).wrapping_mul(step));
+    }
+    out
+}
+
+#[test]
+fn liboqs_and_this_tree_draw_one_key_and_reach_one_secret_from_one_seed() {
+    let seed: [u8; kem::SEED_BYTES] = stepped(0x11, 29);
+    let randomness: [u8; kem::SHARED_SECRET_BYTES] = stepped(0xA3, 13);
+    let (public, secret) = kem::keypair_from_seed(&seed);
+    let (ciphertext, ours) = kem::encapsulate_with_randomness(&public, randomness);
+
+    let theirs = liboqs(
+        "kem",
+        &[
+            mt_codec::size::KEM_PUBLIC_KEY.to_string(),
+            mt_codec::size::KEM_SECRET_KEY.to_string(),
+            kem::CIPHERTEXT_BYTES.to_string(),
+            kem::SHARED_SECRET_BYTES.to_string(),
+            hex(&seed),
+            hex(&randomness),
+            hex(ciphertext.as_bytes()),
+        ],
+    );
+    assert_eq!(
+        unhex(&theirs["pk"]),
+        public.as_bytes().to_vec(),
+        "one seed, two public keys: liboqs and this tree do not generate alike"
+    );
+    assert_eq!(
+        unhex(&theirs["ct"]),
+        ciphertext.as_bytes().to_vec(),
+        "one key and one randomness, two ciphertexts"
+    );
+    assert_eq!(
+        unhex(&theirs["ss"]),
+        ours.as_bytes().to_vec(),
+        "one key and one randomness, two secrets"
+    );
+    assert_eq!(
+        unhex(&theirs["opened"]),
+        ours.as_bytes().to_vec(),
+        "liboqs opens our ciphertext to another secret"
+    );
+    assert_ne!(
+        unhex(&theirs["rejected"]),
+        ours.as_bytes().to_vec(),
+        "a doctored ciphertext lands on our secret in liboqs"
+    );
+
+    // And this tree opens what liboqs sealed, so the agreement runs in both directions.
+    let their_ct: [u8; kem::CIPHERTEXT_BYTES] = unhex(&theirs["ct"])
+        .try_into()
+        .expect("a ciphertext of its size");
+    let opened = kem::decapsulate(&secret, &kem::Ciphertext::from_bytes(their_ct));
+    assert_eq!(
+        opened.as_bytes().to_vec(),
+        unhex(&theirs["ss"]),
+        "this tree opens the liboqs ciphertext to another secret"
+    );
+    ledger(
+        "ML-KEM-768",
+        "libcrux-ml-kem",
+        &format!("liboqs {} (mlkem-native)", theirs["version"]),
+        "key, ciphertext and secret agreed byte for byte from one seed and one randomness; each opened the other's",
+    );
+}
+
+// liboqs signs only in the hedged form and draws its keys only at random, so the signature is
+// compared by verdicts in both directions rather than in bytes; the bytes are compared with
+// OpenSSL above.
+#[test]
+fn liboqs_and_this_tree_verify_each_other_and_refuse_the_doctored() {
+    let seed: [u8; sign::SEED_BYTES] = stepped(0x5A, 37);
+    let (public, secret) = sign::keypair_from_seed(&seed);
+    let message = b"a third implementation meets the two on a value none of them published";
+    let ours = sign::sign(&secret, message).expect("signs");
+
+    let theirs = liboqs(
+        "sig",
+        &[
+            mt_codec::size::SIGNING_PUBLIC_KEY.to_string(),
+            mt_codec::size::SIGNING_SECRET_KEY.to_string(),
+            mt_codec::size::SIGNATURE.to_string(),
+            hex(public.as_bytes()),
+            hex(ours.as_bytes()),
+            hex(message),
+        ],
+    );
+    assert_eq!(
+        theirs["accepts"], "True",
+        "liboqs refuses a signature this tree produced"
+    );
+    assert_eq!(
+        theirs["accepts_doctored"], "False",
+        "liboqs accepts a signature nobody produced"
+    );
+
+    let their_key: [u8; mt_codec::size::SIGNING_PUBLIC_KEY] =
+        unhex(&theirs["pk"]).try_into().expect("a key of its size");
+    let their_sig: [u8; mt_codec::size::SIGNATURE] = unhex(&theirs["sig"])
+        .try_into()
+        .expect("liboqs wrote a signature of the set's width");
+    let their_key = sign::PublicKey::from_bytes(their_key);
+    assert!(
+        sign::verify(&their_key, message, &sign::Signature::from_bytes(their_sig)).is_ok(),
+        "this tree refuses a signature liboqs produced"
+    );
+    let mut doctored = their_sig;
+    doctored[0] ^= 1;
+    assert!(
+        sign::verify(&their_key, message, &sign::Signature::from_bytes(doctored)).is_err(),
+        "this tree accepts a doctored liboqs signature"
+    );
+    ledger(
+        "ML-DSA-65",
+        "libcrux-ml-dsa",
+        &format!("liboqs {} (mldsa-native)", theirs["version"]),
+        "each verified the other's signature and refused the doctored",
+    );
+}
+
 // What a run states about itself: the primitive, the two implementations that met, and what
 // they met on. A reader of a build log sees the comparison rather than a colour.
 fn ledger(primitive: &str, ours: &str, theirs: &str, on: &str) {

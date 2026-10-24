@@ -1,5 +1,6 @@
-// The circuit of an admission: a candidacy proves its continuity out of the record that holds it,
-// and its right out of the tree of admitted machines, disclosing neither.
+// The current admission circuit proves two membership walks and a nullifier absorption.
+// Continuity and the required common origin of the component witnesses remain open in AUDIT.md;
+// a proof of these three digests alone is not a complete admission proof.
 //
 // **The shape.** One trace of chained permutation blocks, rows and not columns: the record chain —
 // the serialized record absorbed limb by limb, whose squeeze is the leaf of the tree of records —
@@ -16,11 +17,9 @@
 // The roots the two walks answer and the nullifier the chain yields are bound to the public input
 // as words of the hash state. The bits of the record walk are witness by design, as a
 // note's position is: the statement is membership under a public root, not the key. The
-// nullifier's absorption takes the very commitment the record walk proved, through a lane of one
-// digest loaded at the record chain's last seam and wired at the nullifier's first. **The proving
-// run stands**: the witness-side filling is written and one admission is proven and verified end to
-// end below, which is what let this identifier be offered at all — an identifier frozen before the
-// thing it names has run is a number that measures nothing, and this one is not that.
+// nullifier absorbs the supplied operator secret independently: the former record-to-nullifier
+// lane is empty. The end-to-end test establishes that the assembled statement proves and verifies;
+// it does not establish the missing continuity or witness-binding assertions.
 
 use super::permutation::ring_column;
 use super::{capacity, lane, path, permutation, sponge};
@@ -124,6 +123,13 @@ impl Places {
                 });
             }
         }
+        // The length delimiter and zero padding are constraints of the statement.
+        out.extend(sponge::padding_boundaries(self.record(), RECORD_LIMBS));
+        out.extend(sponge::padding_boundaries(self.admitted_leaf(), CAPACITY));
+        out.extend(sponge::padding_boundaries(
+            self.nullifier(),
+            crate::poseidon::limbs_of(&[0u8; 32]).len(),
+        ));
         out
     }
 
@@ -165,7 +171,7 @@ impl Places {
 }
 
 // The assembled shape: the permutation base at the admission\'s height, the carries, the walks and
-// the capacity wiring. The loads are the seam that remains, named above.
+// the capacity wiring. The missing witness links and continuity are recorded above.
 pub fn description() -> Option<Description> {
     let places = Places;
     let rows_log2 = crate::params::ROWS_LOG2;
@@ -204,9 +210,8 @@ pub fn description() -> Option<Description> {
     Some(held)
 }
 
-// The trace of an admission: every chain written through the doors that exist, the record walk by
-// the bits of its key, the lane holding the record\'s commitment at every row — a cyclic hold with
-// one load is a constant lane, and the constant is the digest.
+// The trace of the current admission statement: separate record and admitted-tree walks, followed
+// by the operator-secret absorption. The empty lane does not bind these component witnesses.
 pub fn trace_of(
     record: &[u8],
     key: &[u8; 32],
@@ -275,7 +280,7 @@ pub fn trace_of(
     // machine, under the domain of that right. **This is the value a candidacy publishes**, and
     // asserting it is the whole of what makes the right a right: a claimant free to publish
     // anything spends a right it never held, and a bound counted over such values counts nobody.
-    // The record and the branch stand in one seed, and neither leaves the proof.
+    // The required common origin of the record and this branch is not yet constrained here.
     let right_limbs = poseidon::limbs_of(operator_secret);
     let nf_states = sponge::chain(mt_codec::domain::MT_OPERATOR_NF, &right_limbs);
     for (at, state) in nf_states.iter().enumerate() {
@@ -343,7 +348,12 @@ mod tests {
     fn the_three_digests_are_bound_as_words_inside_the_trace() {
         let places = Places;
         let held = places.boundaries();
-        assert_eq!(held.len(), 3 * CAPACITY);
+        assert_eq!(
+            held.iter()
+                .filter(|b| matches!(b.value, BoundaryValue::Word(_)))
+                .count(),
+            3 * CAPACITY
+        );
         for boundary in &held {
             assert!((boundary.row as usize) < (1 << crate::params::ROWS_LOG2));
         }
@@ -423,5 +433,39 @@ mod tests {
         for rule in &held.constraints {
             assert!(rule.degree <= crate::params::DEGREE_BOUND);
         }
+    }
+    #[test]
+    fn padding_cannot_create_a_second_nullifier_for_one_right() {
+        let secret = [0x44; 32];
+        let places = Places;
+        let records = crate::records::empty_internals(places.record_depth());
+        let admitted = crate::admitted::empty_internals(places.admitted_depth());
+        let naming = crate::poseidon::Digest::of_bytes(&[0x5C; 32]).unwrap();
+        let (mut trace, mut digests) = trace_of(
+            &vec![0xA7; 2042],
+            &[0; 32],
+            &records[..places.record_depth()],
+            &naming,
+            &admitted[..places.admitted_depth()],
+            0,
+            &secret,
+        )
+        .unwrap();
+        let description = description().unwrap();
+        assert!(description.satisfied_by(&trace, &crate::poseidon::limbs_of(&public_of(&digests))));
+        let mut longer = crate::poseidon::limbs_of(&secret);
+        longer.push(crate::field::F::ONE);
+        for (at, state) in sponge::chain(mt_codec::domain::MT_OPERATOR_NF, &longer)
+            .iter()
+            .enumerate()
+        {
+            permutation::write_block(&mut trace, Places.nullifier() + at, state).unwrap();
+        }
+        digests[2] = crate::poseidon::hash_elements(mt_codec::domain::MT_OPERATOR_NF, &longer);
+        path::write_pairs(&mut trace);
+        assert!(
+            !description.satisfied_by(&trace, &crate::poseidon::limbs_of(&public_of(&digests))),
+            "padding must not give another nullifier to the same right"
+        );
     }
 }

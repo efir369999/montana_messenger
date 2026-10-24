@@ -1,5 +1,12 @@
 # The checklist of the living network
 
+**Current review, 2026-10-14:** the observations below are historical operational reports,
+not current acceptance of the thirteen protocol requirements. The live loop still uses a
+count-based close and a beacon identifier; full window finality and authorized issuance remain
+open in [AUDIT.md](AUDIT.md). A historical log saying that a window closed or minted is not
+evidence of those missing properties. The current server run and its limits are recorded in
+[SESSION-35.md](SESSION-35.md); this review does not reaffirm every earlier host claim.
+
 What must hold on real hosts, in order. One item at a time: built, green in the small, run on the
 hosts, and only then the next number. An item is **done** when it was measured on the hosts and the
 machines' own accounts say so — never when it merely compiles.
@@ -56,9 +63,9 @@ Every item names what proves it, so that nobody has to remember what "works" mea
 8. **A wallet on one host pays a wallet on another, and the payee takes it.** The payer builds the
    frame against the tree as it stands, proves it, publishes it at the points of the round it is
    living; every machine holding those points verifies and applies it; the payee takes the note into
-   its own wallet. — *Measured on three hosts. A wallet on Lauterbourg went from nought to a
+   its own wallet. — *Measured on three hosts. A wallet on a server went from nought to a
    thousand million paid from a machine on a laptop, and a wallet on the laptop from nought to a
-   thousand million paid from a machine in Moscow — the first value ever to reach a far side in this
+   thousand million paid from a machine on a second server — the first value ever to reach a far side in this
    tree. The run named five defects of its own, each by a number rather than a suspicion, and each
    is closed: a payment that destroyed what it did not pay away; a value plane that did not survive
    a stop; an errand carried out after the window it belonged to had closed; a patience that
@@ -70,6 +77,11 @@ Every item names what proves it, so that nobody has to remember what "works" mea
    stated in the set for the first time: a payee spends onward to a third owner inside one window,
    with the cement empty and no proposal anywhere. What one echo does not yet carry is named in the
    register of what the set does not yet fix.*
+
+   **The payer's own frame applies with its round, and its wallet settles after.** — *Green in the
+   small on 2026-10-16 (`a_payers_own_frame_applies_with_its_round.rs`): the tree of notes and the
+   wallet hold still until the machine leaves the round, and the payer learns where the payee's note
+   stands as the round applies the frame in the order of the names. Never on the hosts.*
 
 9. **A machine applies what stands at its points while it lives.** — *Written into the pulse,
    never measured on the hosts.*
@@ -83,9 +95,11 @@ Every item names what proves it, so that nobody has to remember what "works" mea
 12. **Windows without end.** Every run above named how many windows to live and stopped. A machine
     that runs until it is stopped, over hours, has never been watched. — *Not run.*
 
-13. **A machine joins a chain already running.** The join of a device that holds nothing, by
-    verifying one proof. — *Stage fourteen of the plan; it waits on the proof of a window, which
-    costs an hour and is filed with what it blocks.*
+13. **A machine joins a chain already running.** The join of a device that holds nothing, from an
+    anchor its operator handed it, walking the retained certificates to the head and verifying
+    each as the living did. — *Green in the small on 2026-10-15: two machines live four windows and
+    a third walks from an anchor to their head through the one door
+    (`montana-node/tests/a_device_joins_the_running_chain.rs`). Never on the hosts.*
 
 ## The rule this checklist stands on
 

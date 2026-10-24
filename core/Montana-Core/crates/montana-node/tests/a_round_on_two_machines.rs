@@ -24,7 +24,6 @@ use common::Scratch;
 
 const WINDOW: u64 = 1_000;
 const CHAIN: u8 = 0;
-const STANDING: u64 = 1_000;
 
 // The tree of admitted machines over a cohort, and the branch each machine walks. Both come of the
 // one construction the tree carries: the halves alone, in their ascending order, which every
@@ -60,6 +59,9 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
     // A threshold of everything: what this scenario is about is the crossing, and a draw that
     // admitted nobody would be testing the draw instead.
     let everything = mt_pulse::U256::from_be_bytes(&[0xFFu8; 32]);
+    let electorate =
+        montana_node::certificate::Electorate::opening(root, secrets.len() as u64, WINDOW)
+            .expect("an opening electorate stands");
 
     // The runner: it holds the window, so it stands at the points of it and of the round it enters.
     let (runner, _) =
@@ -71,9 +73,11 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
         &Branch {
             siblings: branches[0].0.clone(),
             position: branches[0].1,
-            standing: STANDING,
         },
         [0x55u8; 32],
+        [0x54u8; 32],
+        &electorate,
+        &aggregate,
     )
     .expect("the runner enters the window");
 
@@ -95,9 +99,11 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
         &Branch {
             siblings: branches[1].0.clone(),
             position: branches[1].1,
-            standing: STANDING,
         },
         [0x55u8; 32],
+        [0x54u8; 32],
+        &electorate,
+        &aggregate,
     )
     .expect("the attester enters the window");
     let runner = waiting.join().expect("the thread stands");
@@ -117,15 +123,22 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
         "a point of a round nothing was deposited at answered with something"
     );
 
-    // The runner publishes the beacon at the first point of its round. A beacon does not fit a
-    // cell, so what crosses is a delivery of cells and not one deposit.
+    // The runner publishes the beacon at the first point of its round. A beacon fits one cell now
+    // that it carries the aggregate and the count of its cement rather than a commitment, so what
+    // crosses here is one group of the erasure code — the least a delivery is cut into; a delivery
+    // of many groups is measured below, on the attestation that answers it.
+    let cell = mt_wire::cell_bytes().expect("the Decree names it");
     assert!(
-        beacon_bytes.len() > mt_wire::cell_bytes().expect("the Decree names it"),
-        "a beacon that fitted a cell would take no delivery, and this would measure nothing"
+        beacon_bytes.len() <= cell,
+        "a beacon that did not fit a cell would carry more than the aggregate and the count"
     );
+    let one_group = mt_wire::message::cells_for(beacon_bytes.len()).expect("the Decree names it");
     let cells = pulse::publish_at(&mut link, &points[0], WINDOW, &beacon_bytes)
         .expect("the beacon stands at the point");
-    assert!(cells > 1, "an object larger than a cell rode in one cell");
+    assert_eq!(
+        cells, one_group,
+        "an object of one cell rode in more than one group"
+    );
 
     // And the far side takes it back whole, having been told neither the point nor the keys: it
     // computes the point from the window, the chain, the round and the index, and both keys from
@@ -162,11 +175,32 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
         .expect("a threshold of everything draws it");
     let answered = Confirmation::parse(&answer).expect("an attestation reads back");
 
+    // A heavy attestation does not fit a cell, so what crosses is a delivery of cells and not one
+    // deposit — at the second point of the round, so that what is taken back is this object alone —
+    // and the far side takes it back whole, having been told neither the point nor the keys.
+    assert!(
+        answer.len() > cell,
+        "an attestation that fitted a cell would take no delivery, and this would measure nothing"
+    );
+    let cells = pulse::publish_at(&mut link, &points[1], WINDOW, &answer)
+        .expect("the attestation stands at the point");
+    assert!(
+        cells > one_group,
+        "an object larger than a cell rode in one group"
+    );
+    let taken = pulse::take_from(&mut link, &points[1], WINDOW, answer.len())
+        .expect("a collection is answered")
+        .expect("the delivery is whole");
+    assert_eq!(
+        taken, answer,
+        "what stood at the point is not the attestation that was published"
+    );
+
     // And the runner gathers it: verified as any far side verifies it, and folded into the cement
     // at its first appearance.
     assert!(
         running
-            .gather(&answered, &root, &aggregate, 0, &everything)
+            .gather(&answered, &root, &aggregate, &beacon, &everything)
             .expect("the attestation verifies"),
         "a first appearance did not enter the cement"
     );
@@ -177,7 +211,7 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
     );
     // A second appearance of one part-nullifier adds nothing and is lawful.
     assert!(!running
-        .gather(&answered, &root, &aggregate, 0, &everything)
+        .gather(&answered, &root, &aggregate, &beacon, &everything)
         .expect("the attestation verifies"));
 
     // Whether the runner attempts to close is read off two public counts and nothing else: how many
@@ -201,9 +235,10 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
     // it ever answered. A sender may deposit into the current window, wait for it to turn and
     // repeat, and every rule is kept at every step — so a holder with no moment of release holds
     // one window's worth of cells per window forever. A window turning drops what belonged to the
-    // windows before the last one. And the second wrong implementation, the one two hosts stood
-    // still on (06.10.2026): a holder that drops its window the moment the next one opens leaves a
-    // machine one window behind nothing to collect, so the last window stays one window longer.
+    // windows before the retention the Decree names. And the second wrong implementation, the one
+    // two hosts stood still on (06.10.2026): a holder that drops its window the moment the next one
+    // opens leaves a machine behind nothing to collect, so a point stands `retained_windows` windows
+    // after its own — the certificate a device behind walks — and goes at the window after that.
     let of_this_round = round::points_of_round(WINDOW, CHAIN, 0).expect("named");
     assert!(
         !runner.standing_at(&of_this_round[0]).is_empty(),
@@ -231,23 +266,31 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
         !runner.standing_at(&of_the_next[0]).is_empty(),
         "the deposit of the current window did not stand"
     );
-    runner
-        .enter_round(WINDOW + 2, CHAIN, 0)
-        .expect("the machine stands in the window after the next");
-    let of_the_one_after = round::points_of_round(WINDOW + 2, CHAIN, 0).expect("named");
-    let of_the_one_after_cells =
-        mt_wire::publish::cells_of(&of_the_one_after[0], WINDOW + 2, &beacon_bytes)
-            .expect("a beacon cuts");
-    runner
-        .take_deposit(&of_the_one_after[0], &of_the_one_after_cells[0])
-        .expect("a deposit of the current window");
+    let retained = mt_genesis::scalar("retained_windows").expect("the Decree names it");
+    let deposit_in = |window: u64| {
+        runner
+            .enter_round(window, CHAIN, 0)
+            .expect("the machine stands in a later window");
+        let point = round::points_of_round(window, CHAIN, 0).expect("named")[0];
+        let cells =
+            mt_wire::publish::cells_of(&point, window, &beacon_bytes).expect("a beacon cuts");
+        runner
+            .take_deposit(&point, &cells[0])
+            .expect("a deposit of the current window");
+    };
+    deposit_in(WINDOW + retained);
+    assert!(
+        !runner.standing_at(&of_this_round[0]).is_empty(),
+        "a point was dropped before the retention the Decree names ran out"
+    );
+    deposit_in(WINDOW + retained + 1);
     assert!(
         runner.standing_at(&of_this_round[0]).is_empty(),
-        "a point two windows past still holds what was deposited in it"
+        "a point past the retention still holds what was deposited in it"
     );
     assert!(
         !runner.standing_at(&of_the_next[0]).is_empty(),
-        "the window just past was dropped with the one before it"
+        "the window after it was dropped with it"
     );
 
     // The round moves on: the beacon of this one becomes the predecessor of the next, and the

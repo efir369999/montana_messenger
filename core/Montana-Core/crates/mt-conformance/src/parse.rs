@@ -1337,7 +1337,6 @@ pub fn check_seed(md: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub const COMMIT_VECTORS_HEADER: &str = "**The vectors of the commitment.**";
 pub const WIRE_VECTORS_HEADER: &str = "**The vectors of the wire.**";
 
 pub const HANDSHAKE_HEADER: &str = "**The post-quantum handshake.**";
@@ -1573,68 +1572,6 @@ pub fn check_wire(md: &str) -> Result<(), String> {
     Ok(())
 }
 
-// The node of the fold: its identifier over the bytes the set states, and the work vector that
-// names which machine produces which node. The lattice values of the same block await the suite
-// and are named so in the coverage pass.
-pub fn check_fold(md: &str) -> Result<(), String> {
-    let rows = parse_labeled(md, FOLD_HEADER)?;
-    let inputs = labeled(&rows, "left")?;
-    let left = repeat_bytes(bare_input(inputs))?;
-    let right = repeat_bytes(input_of(inputs, "right")?)?;
-    let commitment = repeat_bytes(input_of(inputs, "commitment")?)?;
-    let proof = repeat_bytes(input_of(inputs, "proof")?)?;
-    if commitment.len() != mt_state::WEIGHT_COMMIT_BYTES {
-        return Err(format!(
-            "fold divergence: the set states a commitment of {} B, the code holds {} B",
-            commitment.len(),
-            mt_state::WEIGHT_COMMIT_BYTES
-        ));
-    }
-    if proof.len() != mt_state::PROOF_LEN {
-        return Err(format!(
-            "fold divergence: the set states a proof of {} B, the code holds {} B",
-            proof.len(),
-            mt_state::PROOF_LEN
-        ));
-    }
-    verified_note_number("PROOF_LEN", mt_state::PROOF_LEN as u64);
-    // The bytes are taken as they were read and never round-tripped through their hex: a value
-    // written to be parsed again would be noted as one the set states, and the set states a
-    // repeated byte here rather than sixty-four characters of it.
-    let width = |what: &str, v: &[u8]| format!("the {what} of the fold is {} B where 32 stand", v.len());
-    let node = mt_state::layout::FoldNode {
-        left: <[u8; 32]>::try_from(left.as_slice()).map_err(|_| width("left", &left))?,
-        right: <[u8; 32]>::try_from(right.as_slice()).map_err(|_| width("right", &right))?,
-        commitment,
-        proof,
-    };
-    let id = node
-        .id()
-        .map_err(|e| format!("the node of the fold is not an object of this protocol: {e:?}"))?;
-    compare_hash("fold_node_id", labeled(&rows, "fold_node_id")?, &id)?;
-
-    let commit_rows = parse_labeled(md, COMMIT_VECTORS_HEADER)?;
-    let mut work_walked = 0;
-    for (label, value) in &commit_rows {
-        let Some(rest) = label.strip_prefix("fold_work(") else {
-            continue;
-        };
-        let call = rest.trim_end_matches(')');
-        let window = number(input_of(call, "W")?)?;
-        let level = u8::try_from(number(input_of(call, "level")?)?)
-            .map_err(|e| format!("a level beyond a byte: {e}"))?;
-        let index = number(input_of(call, "index")?)?;
-        compare_hash(label, value, &mt_derive::fold_work(window, level, index))?;
-        work_walked += 1;
-    }
-    if work_walked == 0 {
-        return Err("the block of the commitment freezes no work vector".to_string());
-    }
-    Ok(())
-}
-
-pub const STANDING_HEADER: &str = "### The commitment that carries standing";
-
 // The number a cell opens with, prose after it ignored: the set writes a parameter and then
 // speaks about it on the same line.
 fn leading_number(text: &str) -> Result<u64, String> {
@@ -1647,290 +1584,6 @@ fn leading_number(text: &str) -> Result<u64, String> {
     number(&t[..end])
 }
 
-// An affine formula of the set, `((a t + idx + b) mod m) - s`, read from its text: the
-// coefficient of t, the constant, the modulus and the shift. The index name between them is
-// positional — the first formula of a row draws r1 over j, the second r2 over i.
-fn affine(text: &str) -> Result<Option<(u64, u64, u64, u64)>, String> {
-    let Some(open) = text.find("((") else {
-        return Ok(None);
-    };
-    let inner = &text[open + 2..];
-    let Some(close) = inner.find(") mod ") else {
-        return Ok(None);
-    };
-    let expr = &inner[..close];
-    let after = &inner[close + 6..];
-    let Some(paren) = after.find(')') else {
-        return Ok(None);
-    };
-    let modulus = number(&after[..paren])?;
-    let tail = &after[paren + 1..];
-    let dash = tail
-        .find('-')
-        .ok_or_else(|| format!("a formula without its shift: {text:?}"))?;
-    let shift = leading_number(&tail[dash + 1..])?;
-    let mut coefficient = 1u64;
-    let mut constant = 0u64;
-    for token in expr.split('+').map(str::trim) {
-        if let Some(head) = token.strip_suffix('t') {
-            let head = head.trim();
-            coefficient = if head.is_empty() { 1 } else { number(head)? };
-        } else if token.bytes().all(|b| b.is_ascii_digit()) && !token.is_empty() {
-            constant = number(token)?;
-        }
-    }
-    Ok(Some((coefficient, constant, modulus, shift)))
-}
-
-// The commitment that carries standing: the parameters of the set against the code, the seed
-// and the first coefficients of the matrix, and the three frozen commitments — two children
-// and the node that folds them, each recomputed from the formulas the set writes.
-// The serialization of the first frozen commitment of the set: the cement state of the beacon
-// vector is that value, so it is computed once here and read by both checks that need it.
-pub fn standing_first_commitment(md: &str) -> Result<Vec<u8>, String> {
-    let rows = parse_labeled(md, COMMIT_VECTORS_HEADER)?;
-    let (formulas, values) = standing_rows(&rows)?;
-    let [a1, b1, m1, s1, a2, b2, m2, s2] = formulas[0];
-    let r1: [[i8; mt_suite::standing::D]; mt_suite::standing::K] = core::array::from_fn(|j| {
-        core::array::from_fn(|t| (((a1 * t as u64 + j as u64 + b1) % m1) as i64 - s1 as i64) as i8)
-    });
-    let r2: [[i8; mt_suite::standing::D]; mt_suite::standing::N] = core::array::from_fn(|i| {
-        core::array::from_fn(|t| (((a2 * t as u64 + i as u64 + b2) % m2) as i64 - s2 as i64) as i8)
-    });
-    Ok(mt_suite::standing::commit(values[0], &r1, &r2)
-        .map_err(|e| format!("the randomness of the set leaves the bound: {e:?}"))?
-        .serialize())
-}
-
-// The rows of formulas and the values they commit to, read once for every check that needs
-// them: a second reading would be a second place the shape of that block lives.
-// The rows of one commitment of the set: the two affine formulas its randomness is drawn by, and
-// the three values it carries.
-type StandingRows = (Vec<[u64; 8]>, Vec<[u64; 3]>);
-
-fn standing_rows(rows: &[(String, String)]) -> Result<StandingRows, String> {
-    let mut formulas: Vec<[u64; 8]> = Vec::new();
-    let mut values: Vec<[u64; 3]> = Vec::new();
-    for (label, value) in rows {
-        let whole = format!("{label} = {value}");
-        // A row states the three values a commitment carries, whether beside its formulas or on
-        // a line of its own; both spellings are one rule here, so neither is a second place.
-        if let Some((_, tail)) = whole.rsplit_once("values =") {
-            let stated: Vec<&str> = tail.split(',').collect();
-            if stated.len() != mt_suite::standing::VALUES {
-                return Err(format!(
-                    "a commitment of the set carries {} values where {} stand: {whole:?}",
-                    stated.len(),
-                    mt_suite::standing::VALUES
-                ));
-            }
-            let mut triple = [0u64; 3];
-            for (slot, cell) in triple.iter_mut().zip(stated.iter()) {
-                *slot = number(cell)?;
-            }
-            // A row that states its values alone is a frozen line like any other, and the
-            // coverage pass counts it read here rather than anywhere else.
-            verified_note(label, value);
-            values.push(triple);
-        }
-        let Some(first) = affine(&whole)? else {
-            continue;
-        };
-        let Some(mod_at) = whole.find(") mod ") else {
-            continue;
-        };
-        let second = affine(&whole[mod_at + 6..])?
-            .ok_or_else(|| format!("a row with one formula where two stand: {whole:?}"))?;
-        formulas.push([
-            first.0, first.1, first.2, first.3, second.0, second.1, second.2, second.3,
-        ]);
-    }
-    if formulas.len() != 3 || values.len() != 3 {
-        return Err(format!(
-            "the block of the commitment states {} formula rows and {} triples of values",
-            formulas.len(),
-            values.len()
-        ));
-    }
-    Ok((formulas, values))
-}
-
-pub fn check_standing(md: &str) -> Result<(), String> {
-    use mt_suite::standing;
-
-    let body = section(md, STANDING_HEADER, &["\n### ", "\n## "])?;
-    let open = body
-        .find("```")
-        .ok_or_else(|| "the standing commitment carries no fenced block".to_string())?;
-    let fenced = &body[open + 3..];
-    let close = fenced
-        .find("```")
-        .ok_or_else(|| "the fence of the standing commitment never closes".to_string())?;
-    let block = &fenced[..close];
-    let params = block
-        .lines()
-        .find(|l| l.trim_start().starts_with("d = "))
-        .ok_or_else(|| "the standing commitment names no parameters".to_string())?;
-    let cell = params.split_once('=').map(|(_, v)| v).unwrap_or_default();
-    for (label, stated, held) in [
-        ("d", leading_number(cell)?, standing::D as u64),
-        (
-            "q",
-            leading_number(input_of(params, "q")?)?,
-            u64::from(standing::Q),
-        ),
-        ("n", leading_number(input_of(params, "n")?)?, standing::N as u64),
-        ("k", leading_number(input_of(params, "k")?)?, standing::K as u64),
-        (
-            "eta",
-            leading_number(input_of(params, "eta")?)?,
-            standing::ETA as u64,
-        ),
-    ] {
-        compare_number(label, stated, held)?;
-    }
-
-    // The number the construction owns rather than cites, and the shape it lays a value in. The
-    // lift is what the binding argument of the set rests on for the case the matrix does not
-    // enter, so a set that moved it would be a set this code no longer transcribes.
-    let tail_number = |name: &str| -> Result<u64, String> {
-        let line = block
-            .lines()
-            .find(|l| l.trim_start().starts_with(name))
-            .ok_or_else(|| format!("the standing commitment names no {name}"))?;
-        leading_number(
-            line.rsplit_once('=')
-                .map(|(_, v)| v.trim())
-                .unwrap_or_default(),
-        )
-    };
-    compare_number("lift", tail_number("lift")?, u64::from(standing::LIFT))?;
-    compare_number(
-        "max_openable_summands",
-        tail_number("max_openable_summands")?,
-        standing::MAX_OPENABLE_SUMMANDS,
-    )?;
-    let widths = block
-        .lines()
-        .find(|l| l.trim_start().starts_with("value_digits"))
-        .ok_or_else(|| "the standing commitment names no width of a value".to_string())?;
-    compare_number(
-        "value_digits",
-        number(input_of(widths, "value_digits")?)?,
-        standing::VALUE_DIGITS as u64,
-    )?;
-    compare_number(
-        "values",
-        leading_number(input_of(widths, "values")?)?,
-        standing::VALUES as u64,
-    )?;
-
-    let width = block
-        .lines()
-        .find(|l| l.trim_start().starts_with("weight_commit_bytes"))
-        .ok_or_else(|| "the standing commitment names no width".to_string())?;
-    let stated_width = number(
-        width
-            .rsplit_once('=')
-            .map(|(_, v)| v.trim().trim_end_matches('B').trim())
-            .unwrap_or_default(),
-    )? as usize;
-    if stated_width != standing::SERIALIZED_LEN || stated_width != mt_state::WEIGHT_COMMIT_BYTES {
-        return Err(format!(
-            "width divergence at `weight_commit_bytes`: the set states {stated_width} B, the code holds {} B",
-            standing::SERIALIZED_LEN
-        ));
-    }
-
-    let rows = parse_labeled(md, COMMIT_VECTORS_HEADER)?;
-    compare_hash(
-        "matrix_seed",
-        labeled(&rows, "matrix_seed")?,
-        &standing::matrix_seed(),
-    )?;
-    let coefficients = labeled(&rows, "A[0][0] first four coefficients")?;
-    verified_note("A[0][0] first four coefficients", coefficients);
-    let held = standing::matrix_coefficients(0, 0);
-    for (at, cell) in coefficients.split(',').enumerate().take(4) {
-        compare_number(
-            &format!("A[0][0] coefficient {at}"),
-            number(cell)?,
-            u64::from(held[at]),
-        )?;
-    }
-
-    // The commitment a machine keeps about itself: its three quantities and the blinding factor
-    // its randomness is expanded from, both read out of the set.
-    let inputs = labeled(&rows, "weight_commit inputs")?;
-    verified_note("weight_commit inputs", inputs);
-    let standing_value = number(input_of(inputs, "standing")?)?;
-    let granted = number(input_of(inputs, "granted")?)?;
-    let last = number(input_of(inputs, "last")?)?;
-    let blind = input32(inputs, "blind")?;
-    let (expanded_r1, _) = standing::expand(&blind);
-    let expansion = labeled(&rows, "r1 from that blind, first four coefficients")?;
-    verified_note("r1 from that blind, first four coefficients", expansion);
-    for (at, stated) in expansion.split(',').enumerate().take(4) {
-        let held: i64 = stated
-            .trim()
-            .parse()
-            .map_err(|e| format!("not a coefficient: {stated:?} ({e})"))?;
-        if held != i64::from(expanded_r1[0][at]) {
-            return Err(format!(
-                "divergence at `r1 from that blind` coefficient {at}: the set holds {held}, the code computes {}",
-                expanded_r1[0][at]
-            ));
-        }
-    }
-    compare_hash(
-        "SHA-256(serialize(weight_commit)), over the inputs above",
-        labeled(&rows, "SHA-256(serialize(weight_commit)), over the inputs above")?,
-        &sha256(
-            &standing::weight_commit(
-                standing_value,
-                granted,
-                last,
-                standing::Blind::of(blind, last),
-            )
-                .map_err(|e| format!("the expansion of the set leaves the bound: {e:?}"))?
-                .serialize(),
-        ),
-    )?;
-
-    // The three commitments: each row of formulas carries r1 and r2, and the values it commits
-    // to stand beside them or on the line below, both read as one rule.
-    let (formulas, values) = standing_rows(&rows)?;
-    let expected = [
-        "SHA-256(serialize(the first commitment))",
-        "SHA-256(serialize(the second commitment))",
-        "SHA-256(serialize(the node))",
-    ];
-    for (which, ([a1, b1, m1, s1, a2, b2, m2, s2], triple)) in
-        formulas.iter().zip(values.iter()).enumerate()
-    {
-        let r1: [[i8; standing::D]; standing::K] = core::array::from_fn(|j| {
-            core::array::from_fn(|t| {
-                (((a1 * t as u64 + j as u64 + b1) % m1) as i64 - *s1 as i64) as i8
-            })
-        });
-        let r2: [[i8; standing::D]; standing::N] = core::array::from_fn(|i| {
-            core::array::from_fn(|t| {
-                (((a2 * t as u64 + i as u64 + b2) % m2) as i64 - *s2 as i64) as i8
-            })
-        });
-        let commitment = standing::commit(*triple, &r1, &r2)
-            .map_err(|e| format!("the randomness of the set leaves the bound: {e:?}"))?;
-        compare_hash(
-            expected[which],
-            labeled(&rows, expected[which])?,
-            &sha256(&commitment.serialize()),
-        )?;
-    }
-    Ok(())
-}
-
-// The frozen value of the Genesis State Hash: the last `= <hex>` line of the fenced block
-// under its bold header.
 pub fn parse_genesis_state_hash(md: &str) -> Result<Option<String>, String> {
     let body = section(md, "**The Genesis State Hash**", &["\n**"])?;
     let fence_open = body
@@ -2026,16 +1679,15 @@ pub fn check_genesis_state_hash(md: &str) -> Result<(), String> {
 pub fn check_sizes(md: &str) -> Result<(), String> {
     use mt_codec::size;
     // The rows of the Decree that carry a width, each read by its own name.
-    for (row, held) in [("hash_bytes", size::HASH)] {
-        match mt_genesis::scalar(row) {
-            Some(width) if width as usize == held => verified_note_number(row, width),
-            Some(width) => {
-                return Err(format!(
-                    "size divergence at `{row}`: the Decree states {width} B, the code holds {held} B"
-                ))
-            }
-            None => return Err(format!("the Decree names no `{row}`")),
+    let (row, held) = ("hash_bytes", size::HASH);
+    match mt_genesis::scalar(row) {
+        Some(width) if width as usize == held => verified_note_number(row, width),
+        Some(width) => {
+            return Err(format!(
+                "size divergence at `{row}`: the Decree states {width} B, the code holds {held} B"
+            ))
         }
+        None => return Err(format!("the Decree names no `{row}`")),
     }
     // The widths the row of the form table carries, each read at its own name in that row.
     let body = section(md, "### The form table", &["\n### ", "\n## "])?;
@@ -2088,9 +1740,20 @@ pub fn check_serialized_layouts(md: &str) -> Result<(), String> {
         machine_root: [0x66; 32],
         admitted_root: [0x77; 32],
         operations_root: [0x88; 32],
+        roll: [0xBB; 32],
+        admitted_count: 3,
+        cement_aggregate: [0x99; 32],
+        cement_count: 2,
+        census: (0..mt_genesis::scalar("standing_censuses")
+            .ok_or("the Decree names no standing_censuses")? as usize)
+            .map(|at| Census {
+                root: [0xC0 + at as u8; 32],
+                count: at as u64,
+            })
+            .collect(),
         suite_id: 1,
         runner_pubkey: vec![0xA1; mt_codec::size::SIGNING_PUBLIC_KEY],
-        ticket_proof: vec![0x00; mt_state::PROOF_LEN],
+        ticket_proof: vec![0x00; mt_state::PRESENCE_PROOF_LEN],
         signature: vec![0x5E; mt_codec::size::SIGNATURE],
     };
     let bytes = proposal.encode();
@@ -2108,43 +1771,19 @@ pub fn check_serialized_layouts(md: &str) -> Result<(), String> {
         labeled(&rows, "SHA-256 of the serialized proposal")?,
         &sha256(&bytes),
     )?;
-    // The identifier stands over the deterministic fields alone; an implementation hashing the
-    // whole object reproduces the serialization hash above and misses this one.
+    // The identifier stands over the fields the window decided; an implementation hashing the
+    // whole object reproduces the serialization hash above and misses this one, and one hashing
+    // through the runner's key misses it too.
+    let decided = format!(
+        "proposal_id over the {} bytes the window decided",
+        mt_state::PROPOSAL_DECIDED_LEN
+    );
     compare_hash(
-        "proposal_id over the deterministic 2 222 bytes",
-        labeled(&rows, "proposal_id over the deterministic 2 222 bytes")?,
+        &decided,
+        labeled(&rows, &decided)?,
         &proposal
             .id()
             .map_err(|e| format!("the identifier of the frozen proposal does not compute: {e:?}"))?,
-    )?;
-
-    // The proof of a window, carried apart: its length, its bytes, and its identifier.
-    let rows = parse_labeled(md, WINDOW_PROOF_HEADER)?;
-    let held = WindowProof {
-        window: number(input_of(labeled(&rows, "window")?, "window").unwrap_or("1000"))?,
-        proposal: [0x99; 32],
-        proof: vec![0x00; mt_state::PROOF_LEN],
-    };
-    let bytes = held.encode();
-    let stated = number(labeled(&rows, "window_proof_len")?)? as usize;
-    verified_note("window_proof_len", &format!("{stated} B"));
-    if stated != bytes.len() {
-        return Err(format!(
-            "layout divergence at `window_proof_len`: the set states {stated} B, the code serializes {} B",
-            bytes.len()
-        ));
-    }
-    compare_hash(
-        "SHA-256 of the serialized object",
-        labeled(&rows, "SHA-256 of the serialized object")?,
-        &sha256(&bytes),
-    )?;
-    compare_hash(
-        "window_proof_id",
-        labeled(&rows, "window_proof_id")?,
-        &held
-            .id()
-            .map_err(|e| format!("the identifier of the frozen proof does not compute: {e:?}"))?,
     )?;
 
     let rows = parse_labeled(md, FRAME_HEADER)?;
@@ -2242,8 +1881,10 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
         }
         Ok(totals)
     };
-    let named: [(&str, usize, &str); 12] = [
+    let named: [(&str, usize, &str); 13] = [
         ("proposal_len", Proposal::expected_len(), Proposal::NAME),
+        ("ballot_len", Ballot::expected_len(), Ballot::NAME),
+        ("pledge_len", Pledge::expected_len(), Pledge::NAME),
         (
             "confirmation_len",
             Confirmation::expected_len(),
@@ -2256,7 +1897,6 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
             LightAttestation::NAME,
         ),
         ("candidacy_len", Candidacy::expected_len(), Candidacy::NAME),
-        ("fold_node_len", FoldNode::expected_len(), FoldNode::NAME),
         ("beacon_len", Beacon::expected_len(), Beacon::NAME),
         (
             "name_reveal_len",
@@ -2285,7 +1925,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
     let wire = |value: Result<usize, mt_wire::WireError>| -> Result<usize, String> {
         value.map_err(|e| format!("the wire cannot read the Decree: {e:?}"))
     };
-    let of_the_wire: [(&str, usize, &str); 15] = [
+    let of_the_wire: [(&str, usize, &str); 14] = [
         ("hello_len", mt_wire::handshake::hello_len(), "hello"),
         ("hello_answer_len", mt_wire::handshake::hello_answer_len(), "answer of a hello"),
         ("hello_finish_len", mt_wire::handshake::hello_finish_len(), "finish of a hello"),
@@ -2297,7 +1937,6 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
         ("wake_handle_len", mt_wire::message::wake_len(), "wake by handle"),
         ("head_query_len", mt_wire::message::head_query_len(), "query of a head"),
         ("state_query_len", mt_wire::message::state_query_len(), "query of a leaf"),
-        ("proof_query_len", mt_wire::message::proof_query_len(), "query of a proof of a window"),
         ("slot_query_len", mt_wire::message::slot_query_len(), "query of a slot"),
         ("channel_commit_len", SlotCommit::expected_len(), "commitment over a slot of a channel"),
         ("channel_renew_len", SlotRenew::expected_len(), "renewal of a slot of a channel"),
@@ -2331,10 +1970,8 @@ pub const MACHINE_HEADER: &str = "**The commitment standing for a machine.**";
 pub const PART_HEADER: &str =
     "**The nullifier of a part, and the identifier of an application.**";
 pub const FINGERPRINT_HEADER: &str = "**The fingerprint compared out of band.**";
-pub const FOLD_HEADER: &str = "**The vector of the node's identifier.**";
 pub const SEAL_HEADER: &str = "**The seal of a step, and the placement of a sender.**";
 pub const PROPOSAL_HEADER: &str = "**A proposal, and its length.**";
-pub const WINDOW_PROOF_HEADER: &str = "**The proof of a window, and its length.**";
 pub const TWO_SPACES_HEADER: &str =
     "**The branches of the two spaces, from a stated master seed.**";
 pub const FRAME_HEADER: &str = "**A frame, and its length.**";
@@ -2664,10 +2301,29 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
     let shared = repeat32(bare_input(tag_inputs))?;
     let tw = window_of(tag_inputs)?;
     compare16("tag", labeled(&tag_rows, "tag")?, mt_derive::tag::tag(&shared, tw))?;
+    // The walk of the secret: the tags of the second and third windows stand on the secret walked
+    // one and two steps, and the two values of the walk are compared on their own.
+    let one = mt_derive::tag::pipe_secret_step(&shared);
+    let two = mt_derive::tag::pipe_secret_step(&one);
+    compare_hash(
+        "pipe_secret(W + 1)",
+        labeled(&tag_rows, "pipe_secret(W + 1)")?,
+        &one,
+    )?;
+    compare_hash(
+        "pipe_secret(W + 2)",
+        labeled(&tag_rows, "pipe_secret(W + 2)")?,
+        &two,
+    )?;
     compare16(
         "tag (W = 1001)",
         labeled(&tag_rows, "tag (W = 1001)")?,
-        mt_derive::tag::tag(&shared, tw + 1),
+        mt_derive::tag::tag(&one, tw + 1),
+    )?;
+    compare16(
+        "tag (W = 1002)",
+        labeled(&tag_rows, "tag (W = 1002)")?,
+        mt_derive::tag::tag(&two, tw + 2),
     )?;
     // The two pairs of the block, each written as a repeated byte with words beside it.
     let pairs: Vec<[u8; 32]> = labeled(&tag_rows, "handshake_secret")?
@@ -2705,6 +2361,58 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
                 return Err("the negative vector of a tag equals the positive one".to_string());
             }
         }
+    }
+    // The walk a second time, on a secret no permutation of which is itself, and the first frozen
+    // value of the key of the inner seal standing on it.
+    let test_secret = sha256(b"mt-vector-pipe-secret");
+    compare_hash(
+        "test_secret",
+        labeled(&tag_rows, "test_secret")?,
+        &test_secret,
+    )?;
+    let walked = mt_derive::tag::pipe_secret_step(&test_secret);
+    compare_hash(
+        "pipe_secret(test_secret, W + 1)",
+        labeled(&tag_rows, "pipe_secret(test_secret, W + 1)")?,
+        &walked,
+    )?;
+    compare16(
+        "tag(test_secret, W)",
+        labeled(&tag_rows, "tag(test_secret, W)")?,
+        mt_derive::tag::tag(&test_secret, tw),
+    )?;
+    compare16(
+        "tag(pipe_secret(test_secret, W + 1), W + 1)",
+        labeled(&tag_rows, "tag(pipe_secret(test_secret, W + 1), W + 1)")?,
+        mt_derive::tag::tag(&walked, tw + 1),
+    )?;
+    compare_hash(
+        "pipe_key(pipe_secret(test_secret, W + 1), W + 1)",
+        labeled(&tag_rows, "pipe_key(pipe_secret(test_secret, W + 1), W + 1)")?,
+        &mt_derive::delivery::pipe_key(&walked, tw + 1),
+    )?;
+    // The two named wrong walks: the secret held unchanged, and the secret walked once per unit
+    // of height. Each yields the value frozen for it, and neither yields the tag of the window.
+    let of_window = mt_derive::tag::tag(&one, tw + 1);
+    let unwalked = mt_derive::tag::tag(&shared, tw + 1);
+    compare16(
+        "tag(unwalked secret, W = 1001)",
+        labeled(&tag_rows, "tag(unwalked secret, W = 1001)")?,
+        unwalked,
+    )?;
+    if unwalked == of_window {
+        return Err("the tag of an unwalked secret equals the tag of the window".to_string());
+    }
+    let by_height = mt_derive::tag::pipe_secret_at(&shared, 0, tw + 1)
+        .ok_or("the walk forward from the origin stands")?;
+    let by_height_tag = mt_derive::tag::tag(&by_height, tw + 1);
+    compare16(
+        "tag(walked 1001 steps, W = 1001)",
+        labeled(&tag_rows, "tag(walked 1001 steps, W = 1001)")?,
+        by_height_tag,
+    )?;
+    if by_height_tag == of_window {
+        return Err("the tag of a secret walked by height equals the tag of the window".to_string());
     }
 
     // The seal of a step and the placement of a sender.
@@ -2966,8 +2674,11 @@ pub const DOMAINS_AWAITING_A_VECTOR: &[(&str, &str)] = &[
     ("mt-channel-key", "names and channels"),
     // The pulse: the objects a window carries beside its attestations.
     ("mt-nodereg", "the pulse"),
-    ("mt-weight", "the pulse"),
     ("mt-cascade", "the pulse"),
+    // The agreement on what a window decided: the place of a part in an attempt and the identifier
+    // of a roll, frozen with the stage that runs them.
+    ("mt-proposer", "the agreement on what a window decided"),
+    ("mt-roll", "the agreement on what a window decided"),
     // The wire: the two signatures of the handshake and the envelope of a delivery.
     ("mt-noise-pq-v1-sig-r", "the wire"),
     ("mt-noise-pq-v1-sig-i", "the wire"),
@@ -3159,23 +2870,27 @@ pub fn check_pulse(md: &str) -> Result<(), String> {
     let vector_secret = sha256(b"mt-vector-machine");
     let vector_aggregate = sha256(b"mt-vector-aggregate");
     let previous = sha256(b"mt-vector-prev-beacon");
-    let cement = standing_first_commitment(md)?;
+    // The cement the beacon of this block carries: the aggregate of the vectors, which the set
+    // reuses here as the cement aggregate, and the count the beacon's own line names.
+    let beacon_line = rows
+        .iter()
+        .map(|(label, _)| label.as_str())
+        .find(|label| label.starts_with("beacon_id("))
+        .ok_or_else(|| "the pulse block freezes the identifier of a beacon".to_string())?;
+    let cement_count = number(input_of(beacon_line, "cement_count")?.trim_end_matches(')'))?;
+    let cement_votes = number(input_of(beacon_line, "cement_votes")?.trim_end_matches(')'))?;
     let beacon = mt_state::layout::Beacon {
         window,
         chain: 0,
         round: 7,
         previous,
-        cement_state: cement,
+        cement_aggregate: vector_aggregate,
+        cement_count,
+        cement_votes,
     };
     for (label, value) in &rows {
         match label.as_str() {
             "test_machine_secret" => compare_hash(label, value, &vector_secret)?,
-            // The state the beacon of this block stands on is the serialization of the commitment
-            // the standing block freezes, and the set states its digest where it names the input.
-            // It is compared here, under the label the pulse block writes it at, because coverage
-            // keys by the pair: a value verified under another label is not thereby read under
-            // this one.
-            "test_cement_state" => compare_hash(label, value, &sha256(&beacon.cement_state))?,
             "test_aggregate" => compare_hash(label, value, &vector_aggregate)?,
             "test_prev_beacon" => compare_hash(label, value, &previous)?,
             "SHA-256(test_answering_key)" => {
@@ -3197,6 +2912,14 @@ pub fn check_pulse(md: &str) -> Result<(), String> {
                     .try_into()
                     .map_err(|_| "the key of the vector is not of the width of the set".to_string())?;
                 compare_hash(label, value, &mt_derive::pulse::key_digest(&key))?
+            }
+            l if l.starts_with("runner_digest(") => {
+                // The same key under the digest domain of a runner: one key, two duties, two
+                // digests, which is what keeps a proof of presence from naming a proposal's key.
+                let key: [u8; mt_codec::size::SIGNING_PUBLIC_KEY] = test_answering_key()
+                    .try_into()
+                    .map_err(|_| "the key of the vector is not of the width of the set".to_string())?;
+                compare_hash(label, value, &mt_derive::pulse::runner_digest(&key))?
             }
             l if l.starts_with("beacon_id(") => {
                 let id = beacon
@@ -3259,7 +2982,8 @@ pub fn check_orders(md: &str) -> Result<(), String> {
     compare_hash(
         "ticket",
         labeled(&rows, "ticket")?,
-        &mt_derive::aggregate::ticket(&secret, &aggregate),
+        &mt_derive::aggregate::ticket(&secret, &aggregate)
+            .ok_or_else(|| "the secret of the vector yields no half of the family".to_string())?,
     )?;
     for (label, value) in &rows {
         if let Some(rest) = label.strip_prefix("selection_key(") {
@@ -3337,6 +3061,23 @@ pub fn check_delivery(md: &str) -> Result<(), String> {
         "collect_right",
         labeled(&rows, "collect_right")?,
         &mt_derive::delivery::collect_right(&shared, window),
+    )?;
+    compare_hash(
+        "pipe_key",
+        labeled(&rows, "pipe_key")?,
+        &mt_derive::delivery::pipe_key(&shared, window),
+    )?;
+    // The two rows of the next window stand on the secret walked one step.
+    let walked = mt_derive::tag::pipe_secret_step(&shared);
+    compare_hash(
+        "collect_right (W = 1001)",
+        labeled(&rows, "collect_right (W = 1001)")?,
+        &mt_derive::delivery::collect_right(&walked, window + 1),
+    )?;
+    compare_hash(
+        "pipe_key (W = 1001)",
+        labeled(&rows, "pipe_key (W = 1001)")?,
+        &mt_derive::delivery::pipe_key(&walked, window + 1),
     )?;
     for (label, value) in &rows {
         if let Some(rest) = label.strip_prefix("round_point(") {
@@ -3577,8 +3318,8 @@ fn check_record_layout(md: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub const OPENING_THRESHOLD_HEADER: &str = "**Vector of the opening threshold**";
-pub const DRAW_RETARGET_HEADER: &str = "**Vectors of the recomputation**";
+pub const DRAW_THRESHOLD_HEADER: &str = "**Vector of the threshold of the draw**";
+pub const RECOMPUTATION_HEADER: &str = "**Vectors of the recomputation**";
 pub const ROUND_THRESHOLD_HEADER: &str = "**Vectors of the threshold of a round**";
 pub const CLOSE_HEADER: &str = "**Vectors:**";
 pub const ANSWERS_HEADER: &str = "**Vectors of what a device answers:**";
@@ -3605,15 +3346,15 @@ fn threshold_of(hexed: &str) -> Result<mt_pulse::U256, String> {
 // slots an event offers. What the gate computes is the code's own answer over the inputs the set
 // writes into the label of each line, so a set that moved an input moves the answer with it.
 pub fn check_pulse_arithmetic(md: &str) -> Result<(), String> {
-    // The value both retargets begin from. It is derived from the width and stands in no row of the
-    // Decree, so what the gate compares is the code's own answer against the line of the set.
-    let begins = parse_labeled(md, OPENING_THRESHOLD_HEADER)?;
-    let stated = consumed(&begins, "opening threshold")?;
-    let held = mt_pulse::retarget::opening_threshold()
-        .map_err(|e| format!("the opening threshold of the set does not compute: {e:?}"))?;
-    compare_hash("opening threshold", stated, &held.to_be_bytes())?;
+    // The threshold of the draw. It is derived from the width and stands in no row of the Decree, so
+    // what the gate compares is the code's own answer against the line of the set.
+    let begins = parse_labeled(md, DRAW_THRESHOLD_HEADER)?;
+    let stated = consumed(&begins, "threshold of the draw")?;
+    let held = mt_pulse::retarget::draw_threshold()
+        .map_err(|e| format!("the threshold of the draw of the set does not compute: {e:?}"))?;
+    compare_hash("threshold of the draw", stated, &held.to_be_bytes())?;
 
-    let draw = parse_labeled(md, DRAW_RETARGET_HEADER)?;
+    let draw = parse_labeled(md, RECOMPUTATION_HEADER)?;
     let opening = threshold_of(consumed(&draw, "target_old 2^248")?)?;
     let mut walked = 0;
     for (label, stated) in &draw {
@@ -3624,13 +3365,13 @@ pub fn check_pulse_arithmetic(md: &str) -> Result<(), String> {
             Some(v) => mt_pulse::U256::from_u64(v),
             None => opening,
         };
-        let held = mt_pulse::retarget::recompute_draw(old, cleared)
-            .map_err(|e| format!("the draw retarget of the set does not compute: {e:?}"))?;
+        let held = mt_pulse::retarget::recompute(old, cleared)
+            .map_err(|e| format!("the recomputation of the set does not compute: {e:?}"))?;
         compare_hash(label, stated, &held.to_be_bytes())?;
         walked += 1;
     }
     if walked < 5 {
-        return Err(format!("the set freezes {walked} vectors of the draw retarget"));
+        return Err(format!("the set freezes {walked} vectors of the recomputation"));
     }
 
     let round = parse_labeled(md, ROUND_THRESHOLD_HEADER)?;
@@ -3654,7 +3395,19 @@ pub fn check_pulse_arithmetic(md: &str) -> Result<(), String> {
     let close = parse_labeled(md, CLOSE_HEADER)?;
     let mut closes = 0;
     let mut offers = 0;
+    let mut votes_lines = 0;
     for (label, stated) in &close {
+        if let Some(rest) = label.strip_prefix("votes(") {
+            let call = rest.trim_end_matches(')');
+            let votes = labelled_input(call, "votes")
+                .ok_or_else(|| format!("a vote of the set names no votes: {label}"))?;
+            let expected = labelled_input(call, "expected")
+                .ok_or_else(|| format!("a vote of the set names no expectation: {label}"))?;
+            let held = mt_pulse::close::votes_reached(u128::from(votes), u128::from(expected))
+                .map_err(|e| format!("the votes of the set do not compute: {e:?}"))?;
+            compare_number(label, number(stated)?, u64::from(held))?;
+            votes_lines += 1;
+        }
         if label.starts_with("quorum(") {
             let cemented = labelled_input(label, "cemented")
                 .ok_or_else(|| format!("a close of the set names no cemented standing: {label}"))?;
@@ -3674,14 +3427,14 @@ pub fn check_pulse_arithmetic(md: &str) -> Result<(), String> {
             offers += 1;
         }
     }
-    if closes < 4 || offers < 5 {
+    if closes < 4 || offers < 5 || votes_lines < 3 {
         return Err(format!(
-            "the set freezes {closes} vectors of the close and {offers} of the offering"
+            "the set freezes {closes} vectors of the close, {votes_lines} of the votes and {offers} of the offering"
         ));
     }
 
-    // The way back: the share at every round the set pins it at, the close at the floor from both
-    // sides, and the round a restart is admitted at.
+    // Fixed-parent recovery: the same share at the retired round boundaries, rejection below
+    // the quorum, acceptance at it, and refusal of self-selected restarts.
     let back = parse_labeled(md, WAY_BACK_HEADER)?;
     let mut shares = 0;
     let mut floors = 0;
@@ -3719,10 +3472,115 @@ pub fn check_pulse_arithmetic(md: &str) -> Result<(), String> {
     }
     if shares < 7 || floors < 2 || restarts < 2 {
         return Err(format!(
-            "the set freezes {shares} shares of the way back, {floors} closes at the floor and \
-             {restarts} rounds of a restart, where the fall, its floor and its onset take seven, \
+            "the set freezes {shares} shares of the way back, {floors} closes around the quorum and \
+             {restarts} restart refusals; the required vector counts are seven, \
              two and two"
         ));
+    }
+    Ok(())
+}
+
+pub const STANDING_HEADER: &str = "**The standing of an electorate, and the votes it draws.**";
+
+// The standing of an electorate: the parts of two secrets at one census window, the tree of a
+// census cement over one and over both, the coin of a unit at two census windows, the census
+// windows of two windows, and the committee at the last standing below its floor, at it and above
+// it. Every value is the code's own answer over the inputs the label of its line names.
+pub fn check_standing(md: &str) -> Result<(), String> {
+    use mt_proof::poseidon::Digest;
+    let rows = parse_labeled(md, STANDING_HEADER)?;
+    let depth = note_tree_depth()?;
+    let part = |secret: &[u8; 32], window: u64| -> Result<[u8; 32], String> {
+        mt_derive::nullifier::part(secret, window)
+            .ok_or_else(|| "the secret of the vector yields no half of the family".to_string())
+    };
+    let digest = |bytes: &[u8; 32]| -> Result<Digest, String> {
+        Digest::of_bytes(bytes).ok_or_else(|| "a value of the vector is no digest of the family".to_string())
+    };
+    let first = repeat32("0x5A x 32")?;
+    let second = repeat32("0x7B x 32")?;
+    let census = 4032;
+    let one = part(&first, census)?;
+    let two = part(&second, census)?;
+    let mut both = vec![one, two];
+    both.sort_unstable();
+    let spending = digest(&mt_derive::nullifier::machine_halves(&first).0)?;
+    let aggregate = repeat32("0x33 x 32")?;
+    let mut read = 0usize;
+    for (label, stated) in &rows {
+        let held: Option<[u8; 32]> = match label.as_str() {
+            "part(0x5A x 32, W = 4032)" => Some(one),
+            "part(0x7B x 32, W = 4032)" => Some(two),
+            "cement_leaf(part of 0x5A x 32 at 4032)" => {
+                Some(mt_proof::cement::leaf_of(&digest(&one)?).bytes())
+            }
+            "cement_root (empty)" => Some(mt_proof::cement::empty_root().bytes()),
+            "cement_root (the part of 0x5A x 32 alone)" => Some(
+                mt_proof::cement::root_of(&[one], depth)
+                    .ok_or("a cement of one part does not fold")?
+                    .bytes(),
+            ),
+            "cement_root (both parts, ascending)" => Some(
+                mt_proof::cement::root_of(&both, depth)
+                    .ok_or("a cement of two parts does not fold")?
+                    .bytes(),
+            ),
+            l if l.starts_with("coin(0x5A x 32, census ") => {
+                let census = labelled_input(l, "census")
+                    .ok_or_else(|| format!("a coin of the set names no census: {l}"))?;
+                Some(
+                    mt_proof::circuit::ballot::coin_of(&spending, census, &aggregate)
+                        .ok_or("a census window outside the field")?
+                        .bytes(),
+                )
+            }
+            l if l.starts_with("threshold(standing ") => {
+                let standing = labelled_input(l, "standing")
+                    .ok_or_else(|| format!("a threshold of the set names no standing: {l}"))?;
+                Some(
+                    mt_pulse::standing::committee(standing)
+                        .map_err(|e| format!("the committee of the set does not compute: {e:?}"))?
+                        .threshold
+                        .to_be_bytes(),
+                )
+            }
+            l if l.starts_with("expected(standing ") => {
+                let standing = labelled_input(l, "standing")
+                    .ok_or_else(|| format!("an expectation of the set names no standing: {l}"))?;
+                let expected = mt_pulse::standing::committee(standing)
+                    .map_err(|e| format!("the committee of the set does not compute: {e:?}"))?
+                    .expected;
+                compare_number(l, number(stated)?, expected)?;
+                read += 1;
+                None
+            }
+            l if l.starts_with("census_windows(w ") => {
+                let window = labelled_input(l, "w ")
+                    .ok_or_else(|| format!("census windows of the set name no window: {l}"))?;
+                let held = mt_pulse::standing::census_windows(window)
+                    .map_err(|e| format!("the census windows of the set do not compute: {e:?}"))?
+                    .iter()
+                    .map(|w| w.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                if normalized(stated) != normalized(&held) {
+                    return Err(format!(
+                        "divergence at `{l}`: the set holds {stated}, the code computes {held}"
+                    ));
+                }
+                verified_note(l, stated);
+                read += 1;
+                None
+            }
+            _ => None,
+        };
+        if let Some(held) = held {
+            compare_hash(label, stated, &held)?;
+            read += 1;
+        }
+    }
+    if read < 16 {
+        return Err(format!("the set freezes {read} vectors of the standing, and sixteen are owed"));
     }
     Ok(())
 }
@@ -4007,6 +3865,14 @@ pub fn check_layout_register(md: &str) -> Result<(), String> {
             absent.join(", ")
         ));
     }
+    // A body is held against the set as a layout is: every row of its register stands as a block of
+    // the set, so a body the code holds and the set never laid out fails with its name.
+    for (name, in_the_set) in mt_state::layout::BODIES {
+        let opens = format!("serialize({in_the_set})");
+        if !md.lines().any(|line| line.trim() == opens) {
+            return Err(format!("the body `{name}` the code holds is laid out by no block of the set"));
+        }
+    }
     // The other direction: every line of the set that opens a layout block names a layout the code
     // holds. A block is opened by `serialize(` in this set, and what stands inside the parentheses
     // is the layout it lays out.
@@ -4029,6 +3895,12 @@ pub fn check_layout_register(md: &str) -> Result<(), String> {
             continue;
         }
         if mt_wire::NAMES.contains(&named) {
+            continue;
+        }
+        if mt_state::layout::BODIES
+            .iter()
+            .any(|(_, in_the_set)| *in_the_set == named)
+        {
             continue;
         }
         // Two spaces share the shape of a commitment and of a renewal, so the set lays each out
@@ -4067,16 +3939,18 @@ fn registers() -> Vec<&'static [mt_codec::Constant]> {
         mt_suite::aead::SEALING_WIDTHS,
         mt_suite::kem::KEM_WIDTHS,
         mt_suite::sign::SIGNING_WIDTHS,
-        mt_suite::standing::LATTICE,
         mt_derive::delivery::DELIVERY_WIDTHS,
         mt_derive::fingerprint::FINGERPRINT,
         mt_derive::tag::TAG_WIDTHS,
         mt_state::PROOF_AND_COMMITMENT,
+        mt_state::AGREEMENT,
         mt_pulse::CHAINS,
         mt_store::STORE,
         mt_net::NET,
         montana_wallet::WALLET,
         mt_state::layout::ATTESTED,
+        mt_state::tables::SETS,
+        mt_state::RULES,
         mt_wire::erasure::FIELD,
         mt_wire::message::COLLECTION_WIDTHS,
         mt_wire::link::LINK_FRAMING,
@@ -4095,10 +3969,8 @@ fn registers() -> Vec<&'static [mt_codec::Constant]> {
         mt_proof::circuit::path::WALK,
         mt_proof::circuit::redemption::REDEMPTION,
         mt_proof::circuit::value::AMOUNTS,
-        mt_proof::circuit::discharge::DISCHARGE,
-        mt_proof::circuit::fold::FOLD,
-        mt_proof::circuit::reduce::REDUCE,
-        mt_proof::circuit::window::WINDOW,
+        mt_proof::circuit::compare::COMPARISON,
+        mt_proof::circuit::ballot::BALLOT,
         mt_proof::circuit::capacity::CAPACITIES,
         mt_proof::circuit::admission::ADMISSION,
         mt_proof::circuit::presence::PRESENCE,
@@ -4702,9 +4574,12 @@ pub fn check_proof_vectors(md: &str) -> Result<(), String> {
 pub fn check_proof_parameters(md: &str) -> Result<(), String> {
     use mt_proof::ext::ELEMENT_BYTES;
     use mt_proof::params as p;
-    let rows: [(&str, u64); 10] = [
+    let rows: [(&str, u64); 13] = [
         ("proof_security_bits", u64::from(p::SECURITY_BITS)),
         ("proof_trace_width_bound", p::TRACE_WIDTH_BOUND as u64),
+        ("proof_row_values", p::ROW_VALUES as u64),
+        ("proof_composition_parts", p::COMPOSITION_PARTS as u64),
+        ("proof_free_rows", p::FREE_ROWS as u64),
         ("proof_blowup", p::BLOWUP as u64),
         ("proof_queries", p::QUERIES as u64),
         ("proof_fold", p::FOLD as u64),
@@ -4781,14 +4656,13 @@ pub fn check_all(md: &str) -> Result<(), String> {
     check_record_layout(md)?;
     check_serialized_layouts(md)?;
     check_derivations(md)?;
-    check_fold(md)?;
-    check_standing(md)?;
     check_suite_table(md)?;
     check_pulse(md)?;
     check_orders(md)?;
     check_delivery(md)?;
     check_wire(md)?;
     check_pulse_arithmetic(md)?;
+    check_standing(md)?;
     check_device_answers(md)?;
     check_derivation_headings(md)?;
     check_demands(md)?;
@@ -4803,7 +4677,7 @@ pub fn check_all(md: &str) -> Result<(), String> {
     Ok(())
 }
 
-// The identifiers of the three descriptions the network accepts proofs under, recomputed from the
+// The identifiers of the six descriptions the network accepts proofs under, recomputed from the
 // running circuits on every build and held against the set — and their binding held against the
 // Decree's own row, so the one parameter that names the constraint sets can never drift from the
 // circuits that are actually accepted.
@@ -4820,7 +4694,9 @@ pub fn check_identifiers(md: &str) -> Result<(), String> {
     let of_frame = mt_proof::circuit::frame::description(&places, mt_proof::params::ROWS_LOG2)
     .ok_or_else(|| "the frame's description stands".to_string())?
     .identifier();
-    let of_window = mt_proof::circuit::window::description().identifier();
+    let of_ticket = mt_proof::circuit::ticket::description()
+        .ok_or_else(|| "the ticket's description stands".to_string())?
+        .identifier();
     let of_admission = mt_proof::circuit::admission::description()
         .ok_or_else(|| "the admission's description stands".to_string())?
         .identifier();
@@ -4830,13 +4706,17 @@ pub fn check_identifiers(md: &str) -> Result<(), String> {
     let of_opening = mt_proof::circuit::opening::description()
         .ok_or_else(|| "the opening's description stands".to_string())?
         .identifier();
+    let of_ballot = mt_proof::circuit::ballot::description()
+        .ok_or_else(|| "the ballot's description stands".to_string())?
+        .identifier();
     let mut bound = Vec::with_capacity(128);
     for (label, value) in [
         ("identifier of the frame", of_frame),
-        ("identifier of the window", of_window),
+        ("identifier of the ticket", of_ticket),
         ("identifier of the admission", of_admission),
         ("identifier of the presence", of_presence),
         ("identifier of the opening", of_opening),
+        ("identifier of the ballot", of_ballot),
     ] {
         let line = body
             .lines()

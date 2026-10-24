@@ -1,0 +1,201 @@
+{
+  "session": 37,
+  "date": "2026-10-14",
+  "status": "OPEN: item 1 is not implemented or closed; zero of thirteen requirements closed",
+  "base_commit": "3392f6628613c7ce5fec1775a3592c9035c8e4ec",
+  "branch": "fix/session37-window-proof",
+  "change_scope": [
+    "new executable disclosure reproduction",
+    "audit and complete-window requirements updated",
+    "declared test count corrected from 649 to 650"
+  ],
+  "production_code_changed": false,
+  "protocol_parameters_changed": false,
+  "deployed": false,
+  "independent_external_audit": false,
+  "execution": "Separate Linux verification host; no network listeners or services started",
+  "snapshots": [
+    {
+      "name": "session37-window-v1",
+      "archive_sha256": "80b3a3ee8c2b483686ea1ee6be4025a40a90039d7c0cc5e36c7e15a3a9c3f9df",
+      "verified_source_files_before": 206,
+      "verified_source_files_after": 206,
+      "checks": [
+        {
+          "name": "format",
+          "exit_code": 0,
+          "seconds": 1.97,
+          "command": [
+            "cargo",
+            "fmt",
+            "--all",
+            "--check"
+          ],
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "clippy",
+          "exit_code": 0,
+          "seconds": 111.66,
+          "command": [
+            "cargo",
+            "clippy",
+            "-p",
+            "montana-node",
+            "--test",
+            "presence_disclosure_audit",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "log_sha256": "c1604f12b6588aa23a511ffe9ec9714c52b171e31c90348afcf12ae3f21cd96b"
+        },
+        {
+          "name": "presence-disclosure",
+          "exit_code": 0,
+          "seconds": 261.43,
+          "command": [
+            "cargo",
+            "test",
+            "--release",
+            "-p",
+            "montana-node",
+            "--test",
+            "presence_disclosure_audit",
+            "--",
+            "--nocapture"
+          ],
+          "log_sha256": "a958c26bb641e17018627301fe5fa5241de8d622e7545f128201a037bffc1b89"
+        },
+        {
+          "name": "unauthorized-weight",
+          "exit_code": 0,
+          "seconds": 17.59,
+          "command": [
+            "cargo",
+            "test",
+            "--release",
+            "-p",
+            "montana-node",
+            "--test",
+            "window_weight_audit",
+            "--",
+            "--nocapture"
+          ],
+          "log_sha256": "fffbc3f9c9d591adf6596a9613752f43c80b590ee09db5a0a51902d686ab367c"
+        },
+        {
+          "name": "workspace-clippy",
+          "exit_code": 0,
+          "seconds": 18.25,
+          "command": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "log_sha256": "00681a1457c8217ee911a7d9439443de70edaf2ec1ec9a2336fa739daaeac9c2"
+        },
+        {
+          "name": "conformance",
+          "exit_code": 101,
+          "seconds": 25.68,
+          "command": [
+            "cargo",
+            "test",
+            "--release",
+            "-p",
+            "mt-conformance"
+          ],
+          "log_sha256": "395cb60e8fa44725737733d19d2a003c3d304a8480be1653f00460acb48eb7aa"
+        }
+      ]
+    },
+    {
+      "name": "session37-window-v2",
+      "archive_sha256": "ecb6d1b08ee8eb9bca3ac6b25555609a4e7a587301a57a703d6e8f703e7e8417",
+      "verified_source_files_before": 206,
+      "verified_source_files_after": 206,
+      "changes_from_v1": [
+        "Montana-Core/AUDIT.md",
+        "Montana-Core/WINDOW-STATEMENT.md"
+      ],
+      "checks": [
+        {
+          "name": "conformance",
+          "exit_code": 0,
+          "seconds": 118.94,
+          "command": [
+            "cargo",
+            "test",
+            "--release",
+            "-p",
+            "mt-conformance"
+          ],
+          "log_sha256": "fd03c2e656e1e532ca906fdfff06230f3236faf0d2eddc123349cb66cd849655"
+        },
+        {
+          "name": "release",
+          "exit_code": 0,
+          "seconds": 2.04,
+          "command": [
+            "cargo",
+            "build",
+            "--release",
+            "--workspace"
+          ],
+          "log_sha256": "cc3aaae7d25305b4d3124373298eb1266be49289c860f1a63c53f5833b83ea70"
+        }
+      ],
+      "conformance_tests_passed": 74
+    }
+  ],
+  "initial_conformance_failure": "The new test raised the declared workspace test count to 650, while AUDIT.md still stated 649; corrected and rerun. Release did not run after the failed first conformance.",
+  "test_findings": [
+    {
+      "test": "crates/montana-node/tests/presence_disclosure_audit.rs",
+      "status": "OPEN defect reproduced",
+      "test_seconds_excluding_compilation": 15.63,
+      "actual_verifier": "montana_node::attest::verify_heavy",
+      "observer_input": "Serialized public proof bytes only",
+      "extracted": "Permanent spending half, four field words from the constant lane columns",
+      "predictions": "Part and credit nullifiers match at heights 0, 999, 1000, 1001 and 11000; a different machine is a negative control",
+      "limits": [
+        "Does not recover the original machine secret or signing key",
+        "Does not demonstrate theft or recovery of the standing HMAC mask",
+        "A passing attack reproduction is not an acceptance test for a repaired verifier"
+      ]
+    },
+    {
+      "test": "crates/montana-node/tests/window_weight_audit.rs",
+      "status": "OPEN defect reproduced again",
+      "test_seconds_excluding_compilation": 16.65,
+      "actual_verifier": "montana_node::attest::verify_heavy",
+      "result": "Accepts commitments to zero and u64::MAX under an unchanged presence proof and admitted context, resigned by the admitted owner"
+    }
+  ],
+  "critic_self_review": [
+    "The observer does not receive the secret or fixture as an argument",
+    "The proof is produced by the real node and accepted by the real verifier before extraction",
+    "No production fix, full-window proof or network finality is established",
+    "Clippy, formatting and builds do not establish confidentiality or soundness",
+    "The final source differs from v1 only in the two documentation files; this report is added after verification"
+  ],
+  "remaining_item_1": [
+    "A hiding proof transcript, including trace, OOD and FRI disclosures",
+    "Hidden permitted weights authenticated to parent state",
+    "Exact fresh-sum relation and parent quorum",
+    "Canonical state-root transition",
+    "Runner ticket ownership and historical eligibility",
+    "Authenticated predecessor, reset and discharge history",
+    "Full genuine verifier acceptance of a valid window and rejection of all required adversarial cases"
+  ],
+  "preserved_server_evidence": [
+    "/opt/montana-check-session37-window-v1",
+    "/opt/montana-check-session37-window-v2"
+  ],
+  "evidence_note": "Archives, manifests and raw logs remain on the verification host. Source snapshots precede this report. No canonical full-window Proposal or proof was produced."
+}

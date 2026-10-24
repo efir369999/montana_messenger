@@ -51,6 +51,7 @@ pub fn empty_root() -> Digest {
 // were seen, the root over them, and the path a spender walks to prove one is in it. A caller that
 // folded the levels itself would be a second implementation of the fold above, and the two would
 // agree only until one of them was edited.
+#[derive(Clone)]
 pub struct Tree {
     depth: usize,
     leaves: Vec<Digest>,
@@ -74,6 +75,30 @@ impl Tree {
         }
         self.leaves.push(leaf(commitment).ok_or(TreeFull)?);
         Ok(self.leaves.len() as u64 - 1)
+    }
+
+    // Validate the entire append before changing a leaf. A malformed final commitment or a
+    // full tree must not leave an accepted prefix behind after a frame is refused.
+    pub fn append_many(&mut self, commitments: &[[u8; 32]]) -> Result<Vec<u64>, TreeFull> {
+        let end = self
+            .leaves
+            .len()
+            .checked_add(commitments.len())
+            .ok_or(TreeFull)?;
+        if self.depth < 64 && end as u64 > 1u64 << self.depth {
+            return Err(TreeFull);
+        }
+        let leaves: Vec<_> = commitments
+            .iter()
+            .map(leaf)
+            .collect::<Option<_>>()
+            .ok_or(TreeFull)?;
+        self.leaves
+            .try_reserve(leaves.len())
+            .map_err(|_| TreeFull)?;
+        let positions = (self.len()..end as u64).collect();
+        self.leaves.extend(leaves);
+        Ok(positions)
     }
 
     // The leaves this tree stands on, and a tree built back from them. A tree is a function of its
@@ -187,5 +212,22 @@ mod tests {
         // anything; the door of the words refuses what no digest of the family ever is.
         assert!(leaf(&[0xFFu8; 32]).is_none());
         assert_eq!(root_of(&[[0xFFu8; 32]], 4), None);
+    }
+
+    #[test]
+    fn a_batch_refusal_never_keeps_its_valid_prefix() {
+        let mut tree = Tree::new(2);
+        assert_eq!(tree.push(&[0x11; 32]).ok(), Some(0));
+        let before = tree.root();
+        for batch in [vec![[0x22; 32], [0xff; 32]], vec![[0x22; 32]; 4]] {
+            assert!(tree.append_many(&batch).is_err());
+            assert_eq!(tree.len(), 1);
+            assert_eq!(tree.root(), before);
+        }
+        assert_eq!(tree.append_many(&[[0x22; 32]; 3]).ok(), Some(vec![1, 2, 3]));
+        let full = tree.root();
+        assert!(tree.append_many(&[[0x33; 32]]).is_err());
+        assert_eq!(tree.root(), full);
+        assert_eq!(tree.append_many(&[]).ok(), Some(vec![]));
     }
 }

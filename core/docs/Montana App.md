@@ -1,6 +1,6 @@
 # Montana — App
 
-**Version:** 3.3.0
+**Version:** 3.4.0
 
 App holds the boundary between the protocol and everything built on it: what an application may
 put into the chain, what it may never learn about the people using it, and what a client owes
@@ -10,7 +10,8 @@ the person in front of it.
 
 **In scope.** The anchor and what it publishes; the identifier of an application and why it
 must not sort people; the economics of an application; the boundary between protocol and
-client; what a client states to a person and when; the reproducibility of a client build.
+client; what a client states to a person and when; the boundary of the machine that runs an
+agent; the reproducibility of a client build.
 
 **Not in scope.** Values and layouts — Canon. Notes and proofs — Value. Records of people —
 Identity. Delivery — Network. Windows — Consensus.
@@ -97,6 +98,62 @@ not an action of a person but a **lie about the state**.
 A client that hides, weakens or lets a person dismiss any of these does not implement this
 protocol, whatever else it implements.
 
+## An agent
+
+An agent is a program that holds a seed and acts on it without a person present at each act: it
+opens the letters of its pipes, composes answers, and may hold and move value. The protocol has no
+notion of an agent and needs none. A mark that told the seed of an agent from the seed of a
+person would be exactly the edge the identifier of an application is forbidden to be — it sorts the
+holders of seeds into kinds — and the rule that keeps an application identifier off the wire keeps
+this mark off it by the same argument. To the protocol an agent is what a person is: a seed, the
+record it opens, and the pipes its secrets stand on. Its letters are cells like every other cell,
+and its windows, barriers and value are those Identity and Value state for every record, with no
+exemption and no surcharge. Because every barrier of the identity plane is a quantity of time, a
+population of agents costs its operator the time those barriers count and nothing cheaper: to start
+an agent is to open a record, which the ceiling of openings per window already bounds.
+
+What remains to fix is therefore not a mechanism of the protocol but the boundary of the machine
+that runs an agent, and it is fixed here because each of its four clauses, broken, hands somebody's
+secret to somebody else.
+
+**The seed of an agent is its own.** It is born on the machine that runs the agent, by the birth
+Identity defines, and it is never the seed of the person who operates the agent. Everything of a
+person derives from one seed: an agent holding its operator's seed would sign as the operator, open
+every correspondence of the operator, and expose all of it to whatever compromises a machine that
+reads untrusted text by design. Whose agent it is, is a statement the operator makes in content,
+under the keys of a pipe, and never a derivation that joins the two seeds.
+
+**The machine of an agent is a node.** It holds the pipes of the agent and deposits and collects
+for them itself, as any device does under Network. No third machine stands between an agent and its
+correspondents, and none is needed: a tag points at its holder without a directory.
+
+**The reasoning program holds no key.** The program that decides what an agent says — a language
+model or any other — receives the plaintext of the letters the node opened and returns the plaintext
+of the letters to send, and nothing else crosses between the two: no seed, no branch, no shared
+secret and no witness of a proof enters its context. A letter is untrusted input to that program, so
+a letter that persuades it can at most make the agent say something; it cannot make the agent
+disclose a key the program never held, and value moves only under the rules the operator fixed at
+the node, never at the request of a letter. The interface between the node and the reasoning program
+lives on that one machine and leaves it by no path.
+
+**Where reasoning runs is declared.** The protocol protects a letter up to its recipient and no
+further, so a letter to an agent whose reasoning runs at a model provider reaches that provider in
+plaintext — the act of a recipient forwarding what it received, chosen by the operator and not by
+the correspondent. A conforming agent therefore declares, inside its content and under the keys of
+the pipe, that it is an agent and where its reasoning runs: on its own machine, or at a provider it
+names. A client shows the declaration to the person before their first letter to that agent, as a
+statement of the correspondent and not as a fact the protocol checks, in the manner a transport of
+a plainly different property is owed to the person.
+
+**Invariants of an agent:**
+
+- No field of any object of the protocol tells an agent from a person.
+- The seed of an agent is born on its machine and shares no derivation with any seed of its operator.
+- No seed, branch, shared secret or witness of an agent enters the context of its reasoning program.
+- A letter moves no value of an agent and discloses no secret of it; value moves only under rules its operator fixed at the node.
+- The interface between the node of an agent and its reasoning program is reachable only from that machine.
+- An agent declares inside its content that it is an agent and where its reasoning runs, and a client shows the declaration before a person's first letter to it.
+
 ## The reproducibility of a client
 
 Constitution states the property and why prevention is refused in favour of detection. App
@@ -119,6 +176,9 @@ the expense of people who cannot check for themselves.
 | what a person pays an application | closed: payment is an ordinary transfer, which names no party |
 | the hash of a client build | **deliberately observable**: it is the detection surface, and it is about a binary rather than about a person |
 | the calendar reading a client shows beside a coordinate | closed to the protocol: it is derived locally from the client's own clock and enters nothing the client emits |
+| that a seed belongs to an agent | closed: no field of the protocol carries it; the agent declares it in content, under the keys of a pipe, and the person learns it from that declaration alone |
+| the plaintext a reasoning program of an agent reads | **deliberately observable to the place of reasoning the agent declares**: its operator chose it, the declaration precedes the first letter, and nothing of it reaches the network |
+| the keys of an agent | closed to its reasoning program: none enters its context |
 
 ## Conformance set
 
@@ -133,3 +193,6 @@ An implementation conforms to this document when all of the following hold.
 7. It builds reproducibly from public source and publishes the hash of every release in the three independent places.
 8. It derives any calendar rendering of a coordinate locally, marks it as its own reading where it could mislead, and lets no quantity of the device's clock enter anything it emits.
 9. It moves proving only between the devices of one owner, tells the person which of their devices proves, and offers no path that carries the witness of a proof beyond the owner's devices.
+10. It emits nothing that tells an agent from a person, and runs an agent on a seed born on the agent's machine that shares no derivation with any seed of its operator.
+11. It keeps every seed, branch, shared secret and witness of an agent out of the context of the agent's reasoning program, moves value only under rules fixed at the node, and reaches the interface between the node and the reasoning program only from that machine.
+12. It declares, for an agent, that it is one and where its reasoning runs, inside content under the keys of a pipe, and, as a client, shows a correspondent's declaration before a person's first letter to it.
