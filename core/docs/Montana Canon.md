@@ -1,6 +1,6 @@
 # Montana — Canon
 
-**Version:** 9.5.0
+**Version:** 9.6.0
 
 Canon is the one place where the values and the bytes of Montana live. Every other document
 of the set names a quantity and points here; none of them restates a number, a size, a
@@ -5190,6 +5190,9 @@ One body suffices because both of its counts are bounded before it is read: the 
 
 ### The candidacy of a machine
 
+The frozen layout below describes the pre-transition wire and intended statement. The proposed replacement is
+"The candidacy self-transfer proposal" below; its review and artifact gates remain open.
+
 What a claimant publishes to enter the set of machines. It carries no key and no signature: the key
 a machine answers with is published nowhere, so a candidacy is proven rather than signed.
 
@@ -5216,6 +5219,172 @@ candidacy_len = 8 + 32 + 32 + 32 + 2 + PROOF_LEN = 404 682 B
 - The public input is `window ‖ record_root ‖ naming_half ‖ operator_nullifier`, 104 B, each value in its own bytes. `window` is the field of this object, and a verifier applying another window refuses the candidacy before it verifies anything. `record_root` is no field of this object: it is the root of the tree of records the proposal of the standing stride's last window carries, the stride standing for `window` by the integer form of the horizon of proving, taken by the verifier from that one proposal — the same rule by which a frame walks a right against the root of admitted machines. Before the first stride stands no root does, and no candidacy applies.
 - The proof asserts the lived continuity the gate of entry demands of this window, out of that same record, disclosing neither the record nor its history.
 - It carries no signature and no key, and an implementation that adds one names a machine for the whole of its life.
+
+### The candidacy self-transfer proposal
+
+**Review status.** Decision 212 chooses a network proof of a transfer to self for the pi gate.
+This section specifies the proposed replacement for "The candidacy of a machine". It is a
+K0 review proposal, not an enabled wire format. The implementing circuit, its fixed proof
+length and the reconciliation with Constitution [I-2], [I-6] and [I-12] remain review gates;
+the source map and the precise conflicts are in `core/Montana-Core/protocol-13/ADMISSION-LEVEL1-K0.md`. Existing frozen
+vectors describe the preceding statement and are not evidence for this replacement.
+
+**Unit and threshold.** For this proposal, one integer unit of the note's unsigned amount is
+one coin. The author's decision supplies the threshold `admission_pi_min = 3` such units.
+The client unit is stated at `apps/messenger/ios/Code/Montana/MontanaSettings.swift:320`
+at the base named in the K0 report: one second is one coin. This maps the denomination,
+not a clock measurement, into the note amount of "The derivations of a note". No elapsed
+seconds, timestamp or conversion by a verifier enters the statement. The amount's canonical
+encoding remains that of a note; the threshold's encoding in that width is `03` followed by
+fifteen zero bytes. There is no decimal scale factor. This unit bridge is part of the proposal;
+the client sentence alone did not previously specify a core admission threshold.
+
+**Fixed positions.** A candidacy has one self-transfer group, with `spend_inputs` consumed
+positions and `spend_outputs` created positions from Forms. The count of groups is fixed by
+its one admission operation, not by `spends_per_frame`. It has no payment rate nullifier:
+the one-time operator right bounds this operation. Ordinary payments retain their rate rule.
+An unused input has the filler semantics of Value, "What the proof asserts": one hidden
+selector governs every check and its contribution is zero. This proposal consumes notes,
+not issuance rights; a right must first be redeemed through the existing frame mechanism.
+Every created position is a fresh commitment to an owned note, including zero-value filler.
+No selector, input position, note key, amount or record identifier is published.
+
+```
+serialize(candidacy_self_transfer)
+  window                            8 B   u64, little-endian
+  naming_half                      32 B   canonical proof-hash digest
+  node_commit                      32 B   bytes of the machine commitment
+  operator_nullifier               32 B   canonical proof-hash digest
+  note_nullifier x spend_inputs    32 B each, canonical proof-hash digests, slot order
+  note_commitment x spend_outputs  32 B each, canonical proof-hash digests, slot order
+  suite_id                          2 B   u16, little-endian
+  proof                            P B   the fixed proof length of the accepted replacement artifact
+
+candidacy_len = 8 + (3 + spend_inputs + spend_outputs) x 32 + 2 + P
+             = 234 + P B
+
+public_input(candidacy_self_transfer)
+  window                            8 B   offset 0
+  record_root                      32 B   offset 8
+  naming_half                      32 B   offset 40
+  operator_nullifier               32 B   offset 72
+  node_commit                      32 B   offset 104
+  note_root                        32 B   offset 136
+  note_nullifier x spend_inputs    32 B each, offsets 168 and 200
+  note_commitment x spend_outputs  32 B each, offsets 232 and 264
+  suite_id                          2 B   offset 296
+
+public_input_len = 8 + (5 + spend_inputs + spend_outputs) x 32 + 2 = 298 B
+```
+
+`P` is a specification placeholder, not a field, negotiable length or new parameter chosen
+by an emitter. The accepted artifact fixes one length for all such candidacies. If it fits
+the present common proof geometry, `P = PROOF_LEN` and the wire size is 404 810 B. That is a
+conditional estimate, not a frozen size: the common-origin circuit and continuity must first
+fit the geometry. Every size in the prefix comes from the preceding candidacy's integer and
+digest widths and the existing Forms rows. The suite is last in the public input so the
+proof-hash digests begin on limb boundaries; the last limb contains only its two bytes.
+This is the byte-exact proposed pi/origin input. A remaining completeness gate is the
+adaptive continuity period: Identity compares the active share against `segments_in_force`,
+which Consensus raises under applicant pressure. The present admission input contains no
+verifier-bound pressure or period, and the current circuit reads no continuity. The reviewer
+must settle the canonical pressure snapshot and how the derived period reaches the proof
+before this layout can be called the complete replacement input. An extra verifier input
+changes the layout above; silently letting the prover choose the period is inadmissible.
+
+Proof verification binds the exact byte stream, including the suite and commitment, into
+the transcript. Binding these fields prevents a relay transplanting the proof to different
+bytes; it does not by itself prove knowledge of the answering key or the commitment's blind.
+
+**Invariants of the proposed candidacy:**
+
+- The window equals the window being applied. Both roots are obtained by the verifier from
+  the same proposal: the last window of the standing stride given by "The horizon of proving".
+  They are not carried in the object. The note walk ends at that proposal's note root, a
+  fixed member of the horizon; it does not let the claimant choose another member or a newer
+  root. Before that stride exists, or without its authenticated proposal, acceptance fails.
+- Exact length, supported suite, canonical digest encodings and resource bounds are checked
+  before proof verification. `node_commit` is a byte digest, not a proof-field encoding.
+  The operator nullifier and all note nullifiers must be pairwise distinct and absent from
+  the current set of spent nullifiers. This is checked even for filler. An old membership
+  root does not exempt any nullifier from the current spentness check.
+- Every real consumed position proves the canonical commitment, its membership at its hidden
+  position under `note_root`, the two squeezes of its nullifier key, and the canonical note
+  nullifier at that position. Filler contributes zero and cannot select different branches
+  at different seams. A declared amount alone is not a note witness.
+- Input and output amounts use the frame circuit's range rule. Their sums are formed as
+  unsigned integers without overflow, their equality is constrained, and the input sum is
+  at least `admission_pi_min`. A field equality alone is insufficient. A range-constrained
+  nonnegative difference from the threshold must reject underflow and modular wraparound.
+- All real inputs and every output belong to the same claimant under the common-origin
+  relation below. Fresh output blinds are drawn privately; output commitments are computed
+  under the ordinary note domains. Only the threshold predicate and the self-transfer's
+  public slot values are disclosed; the sum and the consumed leaves remain hidden.
+- Record membership, its unchanged operator right and the lived-continuity requirement are
+  proven from that same record. The machine's naming half comes from its own private
+  machine secret. Continuity is measured by Identity's shifted segment/share rule, not the
+  client's display of attended seconds. Fabric remains a client gate as explained in Consensus.
+- Verification and application form one state transition in the canonical application order.
+  On refusal, none of the rights, notes or candidate state changes. On success, the operator
+  and note nullifiers enter the existing spent set, output commitments append in slot order
+  at the next free note positions, roots are recomputed and the candidacy enters its existing
+  selection path. These effects persist together across restart. A second candidacy or frame
+  spending a now-present nullifier is refused, including in the same window. Selection failure
+  does not undo this applied transfer or resurrect the operator right.
+- This is a threshold, not a lock. After the new notes become eligible under the ordinary
+  proving horizon, their holder can transfer them to another record's holder, who can use
+  them for another candidacy. One record raises one machine because of its operator
+  nullifier, not because its value stays immobilized. There is no lifetime capital bound.
+- A holder whose balance is spread over more input notes than the fixed positions permit
+  must consolidate through ordinary frames and wait for an eligible root. Total wallet
+  balance alone is therefore not sufficient for immediate candidacy. Consolidation consumes
+  ordinary rate capacity; neither an extra input nor a selected root may be supplied to skip it.
+
+**Proposed common-origin relation.** Existing Canon formulas can express the required
+relation, but the current admission circuit does not assert it. The witness contains one
+private `master_seed` of "The master seed". Its `operator_secret`, `nf_key` and `note_sk`
+are exactly the three corresponding HKDF-Expand branches of "The branches of a seed".
+The operator-secret absorption yields the public operator nullifier and the record's
+`operator_nf`. The nullifier key supplies the spending/naming halves of every real input
+and the naming half of every output; the note key supplies their `note_pk` by "The
+derivations of a note". The circuit must constrain the shared seed and derived values
+across every use, rather than accepting separate caller-supplied branches or equal-looking
+witness labels. This proves one seed behind the record right and the notes; it does not
+prove how that seed was generated, the holder's civil identity, or the record signing key.
+The machine secret remains independent, as Consensus, "The secret of a machine" requires.
+
+This proposed binding uses the existing branch formulas rather than setting independent
+branches equal or defining a new key derivation. It needs a constrained HMAC/SHA-256
+composition and equality wiring in addition to the existing proof-hash chains. The current
+Poseidon-only admission description supplies neither. Review must settle the artifact and
+its cost before this proposal can be frozen. PBKDF2 over the mnemonic is not replayed inside
+the proof: the witness is the master seed, and the claimed relation is branch consistency.
+
+**Cost and transition gates.** The present admission's placement formula contains 327
+permutation blocks, including its idle prefix: `1 + ceil((519 + 1)/8) + 256 + 3 + 2`.
+One existing note-redemption placement at the Forms depth contains 50 blocks:
+`3 + ceil((28 + 1)/8) + 1 + 40 + ceil((9 + 1)/8)`. Each created note adds four.
+Serially composing that skeleton with the fixed positions gives 435 blocks, or 55 680
+rows at `rows_per_permutation`. These counts come from `circuit/admission.rs:59-99`,
+`circuit/redemption.rs:60-109`, `circuit/frame.rs:155-157,194-207` and
+`circuit/sponge.rs:38-40` at the K0 base. They omit common-origin hash constraints,
+continuity, cross-gadget wiring and the threshold check; they are not an implemented layout.
+The present height has 65 536 rows including 256 free rows, leaving at most 9 600 further
+constrained rows under that accounting. Width, degree and zero-knowledge padding must also
+fit. No fit, memory, latency or unchanged proof-length claim follows from this subtotal.
+
+The common-origin hash composition needs three existing branch derivations plus the note
+payment-key hash. Its row/column cost has not been established. The next step must count
+that cost and the continuity gadget, then derive the fixed proof length and every dependent
+layout from the resulting geometry. A larger common geometry also changes other proof
+lengths; a variable per-witness proof length is not an option.
+
+The accepted replacement changes the admission description identifier, `air_hash`, Genesis
+State Hash and published parameter digest. They must be computed by the artifact and
+conformance tools in later K steps, never copied from the preceding statement or supplied by
+hand. Layout vectors, identifier vectors, encoded boundaries and both honest and adversarial
+proofs must agree before the protocol can activate the replacement. Until then the proposal
+has no frozen artifact identifiers or claimed network acceptance.
 
 ### The three objects of a name
 

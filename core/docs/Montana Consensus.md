@@ -1,6 +1,6 @@
 # Montana — Consensus
 
-**Version:** 7.3.0
+**Version:** 7.4.0
 
 Consensus holds the TimeChain and its movement: how a window advances, who runs it, how it is cemented,
 how a machine enters the set that runs windows, and how the right to a window's share is
@@ -932,6 +932,29 @@ holds. Without this a lived continuity period would buy an unbounded fleet: the 
 time once and yield machines forever, and one person's record would seat another person's
 machine.
 
+**The proposed pi gate and its review boundary.** Decision 212 requests a network-verified
+transfer to self at candidacy. Canon, "The candidacy self-transfer proposal", owns the candidate
+layout, units, public input, spentness rule and proposed common-origin relation. The candidate
+must prove ownership from the same origin as the record's one-time right and return the value
+to that origin. Reusing ordinary note and nullifier storage supplies no balance field or lock.
+The proposal remains at specification review: its origin proof, continuity and artifact cost
+are not implemented by the present admission circuit.
+
+Its honest limit is liquidity at candidacy. Once the ordinary horizon permits another payment,
+the returned value can fund another claimant. Admission therefore retains its lived-continuity
+and selection rules; this threshold does not establish a capital cost per simultaneous machine.
+The one-time right still extinguishes when the candidacy applies, independently of selection.
+Fabric is a client gate: per-correspondence keys do not expose a balance or a public link to the
+person's record (the source analysis is in `core/Montana-Core/protocol-13/ADMISSION-LEVEL1-K0.md`). A client's attended-time
+display is not the network's segment/share proof and adds no timestamp to state.
+
+The observable difference also requires review. A candidacy carrying self-transfer outputs
+associates that output group with its machine commitment and discloses a lower-bound predicate.
+It does not identify an input leaf or a civil person, but the output association and predicate
+must not be described as zero leakage. Constitution's financial, fungibility and time-only
+scarcity language must be reconciled with this later decision before activation. The review
+report identifies those clauses; this proposal does not silently narrow them.
+
 **Invariants of admission:**
 
 - A candidate is admitted only through a selection event; no other path into the active set exists.
@@ -1310,6 +1333,7 @@ apply, and it finalizes its own chain while the committee consists of itself alo
 | an equivocation in the agreement of a window | **deliberately observable**: a contradicting pair of pledges under one part-nullifier is exactly the evidence a sanction requires, and it names no one |
 | the name a part pledges, and its place as a proposer | **deliberately observable**: a pledge says which name some part stood behind in which attempt, and the place of a part is computed from the part, the aggregate and the attempt; both are quantities about a part, which names nobody and joins to nothing across windows |
 | that a machine was admitted in a selection event | **deliberately observable**: admission adds a commitment about a machine and names no owner, no address and no person; it is what the bound per event is enforced against |
+| the proposed pi threshold and self-transfer output group | **open specification review**: the candidacy proposal associates an output group and a lower-bound predicate with its machine commitment; input leaves and the exact amount stay hidden. Reconciliation with the financial privacy, fungibility and time-only scarcity clauses is required before activation; see Canon, "The candidacy self-transfer proposal" |
 | the thresholds of the draw and of the round | **deliberately observable**: each is a quantity about the network and about no machine |
 | the count of rounds in a window | **deliberately observable**: it is the coverage theorem's check, it stands at the derived target wherever the crowd of a round is the admitted through the divisor and falls below it where the floor of the crowd binds, so what it carries is the count of the **admitted** — already in the open at every admission — and never the count of the living, and it names nobody |
 | the lived duration of a window | **observable**: it is the echo of committees drawn like the population — a property of the geography of the living as a whole, from which no machine is derivable |
