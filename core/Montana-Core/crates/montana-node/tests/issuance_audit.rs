@@ -1,15 +1,15 @@
-// Reproduces an OPEN finding. A passing test here is evidence of the defect,
-// not conformance. Replace the acceptance assertion with refusal when the
-// issued entitlement is authenticated by the frame relation.
+// THE FINDING, TURNED (Protocol-13 item 3, issue #14 A2 and T4). This test once reproduced an open
+// finding: a right redeemed one coin above its window's credit became a spendable note and was paid
+// onward. The frame now holds a right's worth to the credit, so the same redemption is refused
+// before any balance moves, and the right it tried to inflate is still redeemable at its credit.
 use montana_node::{attest, state::State};
 use montana_wallet::{Note, Wallet};
-use mt_state::Layout;
 
 mod common;
 use common::{of, payee_of, Scratch};
 
 #[test]
-fn audit_reproduces_an_oversized_right_becoming_a_spendable_note() {
+fn an_oversized_right_is_refused_and_the_right_stays_redeemable_at_its_credit() {
     let location = Scratch::named("issuance-audit");
     let wallet = Wallet::open(&location.0).unwrap();
     let secret = of(0x77, 0);
@@ -20,22 +20,41 @@ fn audit_reproduces_an_oversized_right_becoming_a_spendable_note() {
     let (siblings, position) = state.credited_branch(&part).unwrap();
     let root = state.credited();
     let right = attest::right_of(&secret, 1_000).unwrap();
-    let forged = u128::from(right.worth) + 1;
+    let credit = u128::from(attest::window_credit().unwrap());
+    assert_eq!(u128::from(right.worth), credit, "a right is worth its window's credit");
     let (payee, spending_key) = payee_of(0xA1);
-    let payment = wallet
-        .redeem(
+    let notes = state.notes_root();
+    let redeem = |worth: u128, seed: u8| {
+        wallet.redeem(
             &secret,
             right.window,
-            forged,
+            worth,
             &siblings,
             position,
             &payee,
             right.accepted_in,
-            &of(0xD4, 0),
-            &state.notes_root(),
+            &of(seed, 0),
+            &notes,
             &root,
         )
-        .unwrap();
+    };
+
+    // One coin above the credit: no proof the verifier takes, so nothing is applied.
+    match redeem(credit + 1, 0xD4) {
+        Err(_) => {}
+        Ok(payment) => {
+            let frame = mt_state::layout::Frame::parse(&payment.frame).unwrap();
+            assert!(
+                state.apply(&frame, right.accepted_in).is_err(),
+                "the verifier accepted a right redeemed above its window's credit"
+            );
+        }
+    }
+    assert_eq!(state.notes_root(), notes, "a refused frame moved the tree of notes");
+    assert_eq!(wallet.balance().unwrap(), 0, "a refused frame moved a balance");
+
+    // At the credit the same right redeems: the refusal spent nothing of it.
+    let payment = redeem(credit, 0xD5).unwrap();
     let frame = mt_state::layout::Frame::parse(&payment.frame).unwrap();
     let positions = state.apply(&frame, right.accepted_in).unwrap();
     let created = &payment.created[0];
@@ -49,31 +68,5 @@ fn audit_reproduces_an_oversized_right_becoming_a_spendable_note() {
     .unwrap();
     assert_eq!(note.commitment, frame.spends[0].commitments[0]);
     wallet.enter(note).unwrap();
-    assert_eq!(wallet.balance().unwrap(), forged);
-    // A right is worth its window's credit (Consensus, "The right to a window's coin"); the frame
-    // took one coin more.
-    assert!(forged > u128::from(attest::window_credit().unwrap()));
-
-    let (recipient, _) = payee_of(0xB2);
-    let positions = (mt_genesis::scalar("spend_inputs").unwrap()
-        * mt_genesis::scalar("spends_per_frame").unwrap()) as usize;
-    let paths: Vec<_> = (0..positions)
-        .map(|at| state.path_of(at as u64).unwrap_or_default())
-        .collect();
-    let paid = wallet
-        .pay(
-            &recipient,
-            forged,
-            right.accepted_in,
-            &of(0xD5, 0),
-            &payee,
-            &paths,
-            &state.notes_root(),
-            &root,
-        )
-        .unwrap();
-    let forwarded = mt_state::layout::Frame::parse(&paid.frame).unwrap();
-    state.apply(&forwarded, right.accepted_in).unwrap();
-    assert_eq!(paid.created[0].value, forged);
-    eprintln!("OPEN FINDING: the verifier accepted a right redeemed above its window's credit and its onward spend");
+    assert_eq!(wallet.balance().unwrap(), credit);
 }

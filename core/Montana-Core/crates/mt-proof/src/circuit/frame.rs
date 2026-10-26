@@ -700,6 +700,7 @@ pub fn description(places: &Places, rows_log2: u8) -> Option<Description> {
         .extend(index_constraints(mine, amounts_at, &amounts));
     held.boundaries.extend(boundaries(places));
     bind_redemption_branches(&mut held, places);
+    bind_the_worth_of_a_right(&mut held, places)?;
     Some(held)
 }
 
@@ -809,6 +810,57 @@ fn bind_redemption_branches(description: &mut Description, places: &Places) {
             ),
         ],
     });
+}
+
+// A RIGHT IS WORTH THE WINDOW'S CREDIT (Protocol-13 item 3, issue #14 A2; Canon, "The right of a
+// machine to its coin of a window, and what redeems it"). The worth of a right rides the cells an
+// amount rides in, and the balance of its spend takes it at the tie of its commitment chain like a
+// note's; without this rule a prover could write any worth there and the frame would mint it. The
+// seam before that tie is a row of the capacity split, so the split's right half there is the bit
+// of a right, and one rule of degree two holds the amount at the next row to the credit:
+//
+//     right(r) * (amount(r + 1) - credit(r)) = 0
+//
+// where `credit` is the Decree's `window_credit` at those seams and zero at every other seam of the
+// split. At the others the amount of the next row is empty in every lawful trace (the rows of a
+// decomposition stand only in the last sixty-two rows before a tie, and no leaf, node or nullifier
+// block opens at a tie), so the rule asks nothing a true frame does not already hold. A note's half
+// is not named, so a note's amount stays the note's.
+fn bind_the_worth_of_a_right(description: &mut Description, places: &Places) -> Option<()> {
+    use crate::air::Constraint;
+    use sponge::{factor, term};
+    let credit = F::try_from_u64(mt_genesis::scalar("window_credit")?)?;
+    let rows = 1usize << description.rows_log2;
+    let mut values = vec![0u64; rows];
+    for row in places
+        .each_redemption()
+        .iter()
+        .flat_map(|r| r.worth_rows())
+    {
+        if row < rows {
+            values[row] = credit.as_u64();
+        }
+    }
+    let at = trace_width() + description.periodic.len();
+    description.periodic.push(crate::air::Periodic {
+        period_log2: description.rows_log2,
+        values,
+    });
+    let right = split(SPLIT_CAPACITY).right;
+    description.constraints.push(Constraint {
+        degree: 2,
+        terms: vec![
+            term(
+                F::ONE,
+                vec![factor(right, 0, 1), factor(amounts().amount, 1, 1)],
+            ),
+            term(
+                F::ONE.negated(),
+                vec![factor(right, 0, 1), factor(at, 0, 1)],
+            ),
+        ],
+    });
+    Some(())
 }
 
 fn mark(rows_log2: u8, rows: &[usize]) -> crate::air::Periodic {

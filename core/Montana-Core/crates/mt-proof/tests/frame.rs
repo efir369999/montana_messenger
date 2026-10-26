@@ -64,11 +64,17 @@ fn credited_of_one(machine_secret: &[u8; 32], window: u64) -> (Digest, Vec<Diges
     (tree.root(), tree.path(0).expect("the position written"))
 }
 
+// What a right is worth: the window's credit, one coin for every second of a window (the Decree's
+// `window_credit`; Consensus, "The right to a window's coin").
+fn credit() -> u128 {
+    u128::from(mt_genesis::scalar("window_credit").expect("the Decree names the credit"))
+}
+
 fn a_real_frame() -> (Frame, Places, Digest, Digest) {
     let places = Places::of(depth()).expect("the Decree names the shape of a frame");
     let amounts: [[u128; 4]; 3] = [
-        // The first position of the first spend is a right, worth one coin.
-        [1, 3_000_000_000, 2_000_000_001, 1_000_000_000],
+        // The first position of the first spend is a right, worth the window's credit.
+        [credit(), 3_000_000_000, 2_000_000_000 + credit(), 1_000_000_000],
         [13_000_000_000, 1, 1, 13_000_000_000],
         [1 << 40, 1 << 20, 1 << 20, 1 << 40],
     ];
@@ -155,14 +161,18 @@ fn a_real_frame() -> (Frame, Places, Digest, Digest) {
 // what the named wrong implementation cannot build: a circuit knowing only a note and a right
 // leaves that machine unable to compose a frame at all, so nothing minted ever becomes spendable.
 fn a_first_frame() -> (Frame, Places, Digest, Digest) {
+    a_first_frame_worth(credit())
+}
+
+// The same machine's frame with the right written at a worth of the caller's choosing, and the
+// coin it pays out at that same worth, so the balance of the spend holds whatever is written.
+fn a_first_frame_worth(worth: u128) -> (Frame, Places, Digest, Digest) {
     let places = Places::of(depth()).expect("the Decree names the shape of a frame");
     let machine_secret = [0x77u8; 32];
     let due = 1000u64;
     let (credited_root, credited_siblings) = credited_of_one(&machine_secret, due);
     let window = mt_derive::nullifier::claim_window(&machine_secret, due)
         .expect("the Decree names the spread");
-    // A right is worth one coin (Consensus, "The right to a window's coin").
-    let worth = 1u128;
     let mut spends: Vec<Spend> = (0..3)
         .map(|spend| Spend {
             consumed: (0..2)
@@ -219,6 +229,26 @@ fn the_first_value_of_the_network_is_a_right_redeemed_beside_filler() {
     );
     let bytes = mt_proof::scheme::prove(&held, &public, &trace).expect("a true frame proves");
     assert_eq!(mt_proof::scheme::verify(&held, &public, &bytes), Ok(()));
+}
+
+// THE FRAME PRICES A RIGHT (Protocol-13 item 3, issue #14 A2): a right written one coin above the
+// window's credit, its spend balanced at that worth, satisfies no description — before the rule
+// of a right's worth this very frame satisfied it, and its coin became spendable (the finding of
+// `montana-node/tests/issuance_audit.rs`). One coin below is refused alike.
+#[test]
+fn a_right_worth_anything_but_the_credit_satisfies_no_description() {
+    for worth in [credit() + 1, credit() - 1, 0] {
+        let (frame, places, root, credited_root) = a_first_frame_worth(worth);
+        let held = frame::description(&places, ROWS_LOG2).expect("a lawful height");
+        let (trace, _) = frame::trace_of(&places, &frame, &credited_root, ROWS_LOG2)
+            .expect("a frame of any worth is written");
+        let public = frame::public_of(&frame, &places, &root, &credited_root).expect("a public input");
+        assert!(
+            !held.satisfied_by(&trace, &poseidon::limbs_of(&public)),
+            "a right written at {worth}, not at the credit {}, satisfies its description",
+            credit()
+        );
+    }
 }
 
 #[test]

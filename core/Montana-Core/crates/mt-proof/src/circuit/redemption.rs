@@ -191,12 +191,21 @@ impl Places {
         path::level_rows(self.nodes(), self.depth)
     }
 
-    // The rows where the two branches open chains under different domains: the seam before the
-    // leaf, before every node of the walk, and before the chain of the nullifier. One split
-    // covers all of them; which value the capacity takes at each row is a periodic column's to
-    // say, and a column of the description costs no width.
+    // The seam before the chain of the commitment, whose next row is the tie where the amount of
+    // this redemption meets its limbs and enters the balance. A right is worth the window's credit
+    // and nothing else, so it is here that the frame holds the worth of a right to that constant.
+    pub fn worth_rows(&self) -> Vec<usize> {
+        vec![self.seam_before(self.commitment())]
+    }
+
+    // The rows where the two branches open chains: the seam before the commitment, where both
+    // open under the domain of a commitment and the split of a right names the tie of its worth,
+    // the seam before the leaf, before every node of the walk, and before the chain of the
+    // nullifier. One split covers all of them; which value the capacity takes at each row is a
+    // periodic column's to say, and a column of the description costs no width.
     pub fn capacity_rows(&self) -> Vec<usize> {
-        let mut out = vec![self.seam_before(self.leaf())];
+        let mut out = self.worth_rows();
+        out.push(self.seam_before(self.leaf()));
         for level in 0..self.depth {
             out.push(self.seam_before(self.nodes() + level));
         }
@@ -228,11 +237,14 @@ pub fn periodic_columns(rows_log2: u8, places: &Places) -> Vec<Periodic> {
 }
 
 // The capacity values of the two branches, one periodic column per cell per branch: at the seam
-// of a leaf the leaf domain, at a node the node domain, at the nullifier its own. What this pins
-// is exactly what an unconditional boundary pinned before the second tree existed — the fold a
-// chain opens under — said once for both branches instead of once for the only one.
+// of the commitment the domain of a commitment in both, at the seam of a leaf the leaf domain, at a
+// node the node domain, at the nullifier its own. What this pins is exactly what an unconditional
+// boundary pinned before the second tree existed — the fold a chain opens under — said once for
+// both branches instead of once for the only one; at the commitment it repeats the boundary that
+// already holds it, and stands only so the split of that seam is the split of every other.
 pub fn capacity_value_columns(rows_log2: u8, places_list: &[Places]) -> Vec<Periodic> {
     let rows = 1usize << rows_log2;
+    let of_a_commitment = poseidon::capacity_of(domain::MT_NOTE_CM);
     let note = [
         poseidon::capacity_of(domain::MT_NOTE_LEAF),
         poseidon::capacity_of(domain::MT_NOTE_NODE),
@@ -245,8 +257,11 @@ pub fn capacity_value_columns(rows_log2: u8, places_list: &[Places]) -> Vec<Peri
     ];
     let mut out = Vec::new();
     for [of_leaf, of_node, of_nf] in [note, right] {
-        for ((leaf_value, node_value), nf_value) in
-            of_leaf.iter().zip(of_node.iter()).zip(of_nf.iter())
+        for (((leaf_value, node_value), nf_value), cm_value) in of_leaf
+            .iter()
+            .zip(of_node.iter())
+            .zip(of_nf.iter())
+            .zip(of_a_commitment.iter())
         {
             let mut column = vec![0u64; rows];
             for places in places_list {
@@ -255,6 +270,7 @@ pub fn capacity_value_columns(rows_log2: u8, places_list: &[Places]) -> Vec<Peri
                         column[row] = value.as_u64();
                     }
                 };
+                write(places.seam_before(places.commitment()), cm_value);
                 write(places.seam_before(places.leaf()), leaf_value);
                 for level in 0..places.depth {
                     write(places.seam_before(places.nodes() + level), node_value);
@@ -706,10 +722,10 @@ pub fn write_right_redemption(
     // standing so the count of blocks says nothing about the branch. The worth rides in the cells
     // an amount rides in, so the balance of the spend takes it by the same tie it takes a note's.
     // A right is worth the window's credit, a constant and never a quantity of its window (Canon, "The right
-    // of a machine to its coin of a window, and what redeems it"); no rule of this branch holds the
-    // witnessed worth to that constant yet, so a frame alone does not price a right — the open
-    // finding `montana-node/tests/issuance_audit.rs` reproduces it, and the Registry's VAL-08 owes
-    // the constraint.
+    // of a machine to its coin of a window, and what redeems it"); the frame holds the witnessed
+    // worth to that constant at the tie of this chain (`frame::bind_the_worth_of_a_right`), so a
+    // right written with any other worth satisfies no description — what
+    // `montana-node/tests/issuance_audit.rs` once reproduced as accepted it now holds refused.
     let mut unread = Vec::new();
     unread.extend_from_slice(naming.elements());
     unread.extend_from_slice(&poseidon::limbs_of(&held.value.to_le_bytes()));
