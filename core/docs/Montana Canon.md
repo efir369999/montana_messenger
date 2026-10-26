@@ -4396,7 +4396,7 @@ air_hash = the hash, under the domain of a description's identifier, of the iden
            descriptions the network accepts proofs under, in the order the planes stand:
            the frame, the ticket, the admission, the presence, the opening, the ballot
 
-identifier of the frame     = 4621cdac82085204c6ce0ecff60be914b726f0529746dcde88d3893be02d163b
+identifier of the frame     = 01f51109574f2c463fa5bf4da0d43dd314447e10bd79aa17820f0827e65b2562
 identifier of the ticket    = 0c50e4291fede09b20945f9070e50746429b40153911600a690832aab6e65378
 identifier of the admission = 3c922d853e8a474174c46ceeb16abf2b3290fdeabfff7273c2df566c65576187
 identifier of the presence  = a948eeaf8b4b07e7d51763944498a6edc463670f649dfdf351e7b478bb053052
@@ -4736,7 +4736,7 @@ demands the width from this row rather than declaring one of its own.
 | `standing_censuses` — the census windows the standing of a machine is counted over, newest first | 10 |
 | `census_interval`, in windows — derived: τ₂ / standing_censuses, so the censuses span one period of adaptation | τ₂ / 10 = 2 016 |
 | `standing_committee` — the votes the standing of an electorate draws in a window, in expectation, once it is wide enough to be sampled | 6 499 |
-| `air_hash` — the constraint sets the proofs of this network are accepted under | 4933ad20446fdac81ab971171d7c2a075decf3cc8e69a38878eb6cb4881fb8f5 |
+| `air_hash` — the constraint sets the proofs of this network are accepted under | 386737ff95308260f48a5ea85d7001740032d0aeffb9c54cdf3d766a63790ca0 |
 
 **The volume the schedule is checked against.** Per machine, per window, across its chains:
 eligibility strikes 1.1094 times in expectation; 0.6710 of machines publish one heavy

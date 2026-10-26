@@ -74,7 +74,12 @@ fn a_real_frame() -> (Frame, Places, Digest, Digest) {
     let places = Places::of(depth()).expect("the Decree names the shape of a frame");
     let amounts: [[u128; 4]; 3] = [
         // The first position of the first spend is a right, worth the window's credit.
-        [credit(), 3_000_000_000, 2_000_000_000 + credit(), 1_000_000_000],
+        [
+            credit(),
+            3_000_000_000,
+            2_000_000_000 + credit(),
+            1_000_000_000,
+        ],
         [13_000_000_000, 1, 1, 13_000_000_000],
         [1 << 40, 1 << 20, 1 << 20, 1 << 40],
     ];
@@ -242,7 +247,8 @@ fn a_right_worth_anything_but_the_credit_satisfies_no_description() {
         let held = frame::description(&places, ROWS_LOG2).expect("a lawful height");
         let (trace, _) = frame::trace_of(&places, &frame, &credited_root, ROWS_LOG2)
             .expect("a frame of any worth is written");
-        let public = frame::public_of(&frame, &places, &root, &credited_root).expect("a public input");
+        let public =
+            frame::public_of(&frame, &places, &root, &credited_root).expect("a public input");
         assert!(
             !held.satisfied_by(&trace, &poseidon::limbs_of(&public)),
             "a right written at {worth}, not at the credit {}, satisfies its description",

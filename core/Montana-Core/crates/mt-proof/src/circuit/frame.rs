@@ -832,11 +832,7 @@ fn bind_the_worth_of_a_right(description: &mut Description, places: &Places) -> 
     let credit = F::try_from_u64(mt_genesis::scalar("window_credit")?)?;
     let rows = 1usize << description.rows_log2;
     let mut values = vec![0u64; rows];
-    for row in places
-        .each_redemption()
-        .iter()
-        .flat_map(|r| r.worth_rows())
-    {
+    for row in places.each_redemption().iter().flat_map(|r| r.worth_rows()) {
         if row < rows {
             values[row] = credit.as_u64();
         }

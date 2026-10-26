@@ -21,7 +21,11 @@ fn an_oversized_right_is_refused_and_the_right_stays_redeemable_at_its_credit() 
     let root = state.credited();
     let right = attest::right_of(&secret, 1_000).unwrap();
     let credit = u128::from(attest::window_credit().unwrap());
-    assert_eq!(u128::from(right.worth), credit, "a right is worth its window's credit");
+    assert_eq!(
+        u128::from(right.worth),
+        credit,
+        "a right is worth its window's credit"
+    );
     let (payee, spending_key) = payee_of(0xA1);
     let notes = state.notes_root();
     let redeem = |worth: u128, seed: u8| {
@@ -50,8 +54,16 @@ fn an_oversized_right_is_refused_and_the_right_stays_redeemable_at_its_credit() 
             );
         }
     }
-    assert_eq!(state.notes_root(), notes, "a refused frame moved the tree of notes");
-    assert_eq!(wallet.balance().unwrap(), 0, "a refused frame moved a balance");
+    assert_eq!(
+        state.notes_root(),
+        notes,
+        "a refused frame moved the tree of notes"
+    );
+    assert_eq!(
+        wallet.balance().unwrap(),
+        0,
+        "a refused frame moved a balance"
+    );
 
     // At the credit the same right redeems: the refusal spent nothing of it.
     let payment = redeem(credit, 0xD5).unwrap();
