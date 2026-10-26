@@ -4783,11 +4783,11 @@ genesis_state_hash = SHA-256("mt-genesis-state" || 0x00 || parameters
                              || note_root || nullifier_root || record_root || machine_root || admitted_root
                              || credited_root || operations_root)
 
-                   = 718214ab11915051aed3763f4ba13d5b11d36221a75450cb04947eb34ccd2644
+                   = bd3dcf02d807e7bb74ef5a82ecb9a0128613ad36efae59b649caa5330d472515
 
 published_parameters = SHA-256("mt-genesis-state" || 0x00 || the parameters that are published,
                                in the order and the encoding above)
-                     = 8d6dec4bd010c6ed08013b09a7c7c1e937282d4fa0142946e1ade5a31f3fb7e8
+                     = ae6e346f07d71ebee68c651180ce1d988b0404e1246cfc69c98860148e597e0d
 ```
 
 A chain whose value differs is not a fork of Montana but a different protocol, and honest
