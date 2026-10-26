@@ -60,12 +60,14 @@ its current signing-key preimage; the proposal preserves the admission meaning o
    row estimate and an explicitly conditional wire size. A fixed final proof length cannot be
    asserted until the whole replacement fits height, width, degree and free-row rules. No
    latency or RAM estimate is reported as measured.
-2. **Adaptive continuity input.** The current public input binds a window and record root;
-   it does not bind the pressure-dependent entry period. Identity's rule needs the period in
-   force, while Consensus raises it with applicant pressure. The proposal gives a byte-exact
-   pi/origin input, and expressly does not call it the complete final admission input. The
-   canonical snapshot for that pressure and a verifier-owned input (or a constrained canonical
-   derivation) must be specified before freezing it. A prover-chosen period is a counterexample.
+2. **Adaptive continuity context.** K0b now proposes an exact verifier-owned period input
+   and pressure snapshot in Canon, shared with both roots. Difficulty depends on the canonical
+   post-snapshot pending population and living count, never announcements or a claimant's
+   count. The proposal fixes strict comparison, zero-population behavior, overflow widths,
+   expiry boundary and the masked continuity predicate. Authenticated replay of pending
+   candidacies remains an implementation dependency: the current proposal roll contains
+   frames and cement parts, and current `apply_candidacy` records only a spent right.
+   Thus the contract is specified for review, but its runtime input is not established.
 3. **Privacy compatibility.** The requested public output commitments stand beside a machine
    commitment in one self-transfer. An observer can group those outputs with that candidacy
    and learns the threshold predicate. This does not reveal an input leaf, exact amount,
@@ -83,8 +85,35 @@ its current signing-key preimage; the proposal preserves the admission meaning o
    must be checked against the opening cohort; this proposal neither invents premint nor proves
    bootstrap liveness. It adds no fee, lock, expiry or new tree to hide these obligations.
 
-The author's choice is recorded, not reversed. These are concrete implementation and
-compatibility questions for reviewing its realization. K1-K4 remain stopped at this boundary.
+The author's choice is recorded, not reversed. The chairman's
+[K0 review](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6419157012)
+accepted the first proposal for review and assigned K0b; the constitutional questions are
+with the author and do not block preparing K0b. K1-K4 remain stopped at the cost gate.
+
+## K0b response to the chairman
+
+| Finding | Proposed correction and evidence |
+|---|---|
+| F-564-1, denomination | Canon now owns one explicit proposed Values row, shared by the note amount, emission mint and issued share. The client FAQ is context, not a previous core unit anchor; `montana-wallet/src/pay.rs:108-114` at the base copies the share without a denomination conversion. The earlier core gap is stated explicitly. |
+| F-564-2, one order | The common object fields have the same order in serialization and public input. Verifier-owned roots and the period are inserted without permuting those fields. Canon owns the offsets. |
+| Gate 2, pressure/period | Canon chooses the last proposal of the standing stride, post-application/selection/expiry. It defines the living and canonical pending counts, exact period rule and verifier-owned encoding, plus refusal if the authenticated pending snapshot cannot be reconstructed. That missing canonical-history path is not replaced by local state or a default. |
+| F-564-3, cost first | The complete gadget registry and relevant assembled descriptions were read; exact-name searches covered the proof source tree. There is no registered SHA-256/HMAC/HKDF or complete continuity gadget. Canon gives the actual partial column counts and identifies the native helpers that do not supply constraints. Neither a final width nor growth of the common height can be justified yet. K1 remains stopped. |
+| Proof-length impact | Canon distinguishes common-height consumers from separate presence/ticket height and explains why shared width changes affect both families. A larger domain also requires rechecking the proof soundness budget; no guessed length is frozen. |
+
+Additional source anchors at the unchanged base:
+`mt-proof/src/circuit.rs:11-26`, `mt-codec/src/lib.rs:570-629`,
+`mt-proof/src/air.rs:628-648`, `mt-proof/src/circuit/opening.rs:12-19,97-130`,
+`mt-proof/src/circuit/compare.rs:1-17,39-94`, `mt-state/src/layout.rs:1009-1023`,
+`mt-proof/src/circuit/presence.rs:185-190`, `mt-proof/src/circuit/ticket.rs:222-226`,
+`mt-proof/src/params.rs:88-94,135-161` (all crate paths beneath
+`core/Montana-Core/crates/`). The missing gadget cost is a finding, not an estimate of zero.
+
+K0b self-check: one denomination row; common-field order compared directly; input offsets
+and pressure equality/zero-population arithmetic checked locally. No runtime or proof run.
+Pressure manipulation and snapshot delay are explicit policy consequences: a larger pending
+set can raise the later stride's period, but local arrival order cannot change it. The
+privacy/scarcity findings stay with the author's decision record. No independent review or
+completed admission proof is claimed.
 
 ## Gate -1: required failing-before / passing-after evidence
 
@@ -105,7 +134,8 @@ Every refusal must compare the full pre/post state and, for persistent applicati
 | Note origin A with operator right B; output key C | Common-origin constraint fails, including an adversarial trace with otherwise valid branch computations and memberships. |
 | Machine secret substituted for person seed or note key | Refused by the distinct derivation relations, not merely by honest-prover validation. |
 | Same root, wrong window; missing first stride | Refused by context; no unanchored bootstrap exception. |
-| Easier adaptive period, stale/future continuity, inflated or reserved bits | Fails the same-record, verifier-owned-period and shifted-share checks. |
+| Easier adaptive period, stale/future continuity, inflated or reserved bits | Fails the same-record, verifier-owned-period and shifted/masked-share checks. |
+| Local pending announcement, expiry equality, pressure equality, zero population, period from a different stride | Only the authenticated post-snapshot population determines the period; the exact boundaries and cross-stride binding must be tested. |
 | Fragmented balance requiring more positions than the format allows | No variable-length shortcut; ordinary consolidation and horizon wait are required. |
 | Conserved self-transfer then ordinary transfer to another holder | Allowed after ordinary root eligibility; documents the threshold's non-locking limit. |
 | Crash across operator/nullifier/note/candidate application | Full old or full new state, never a consumed right with missing returned notes. |
@@ -129,7 +159,7 @@ being promoted to an independent audit or to a completed K0.
 | 5. Expiry plus scarce slot | Existing one-time right is consumed before selection; no invented retry or expiry. Availability remains a separate obligation. |
 | 6. Hardware/precomputation | New origin proof cost unknown; no hardware-neutral runtime claim. |
 | 7. Field necessity | Public roots, note outputs/nullifiers and machine/suite binding have named checks; amount, account, time and branch selector stay private or absent. |
-| 8. Cross-section consistency | Privacy/scarcity conflicts and continuity input gap are open, explicitly cross-referenced. |
+| 8. Cross-section consistency | Privacy/scarcity conflicts and the missing gadget/canonical-history dependencies are open, explicitly cross-referenced. |
 | 9. Scope | Documentation only, existing PR, old vectors retained and labeled pre-transition. |
 | 10. Temporal evolution | Spentness is current even when membership root is old; output eligibility follows the ordinary horizon. |
 | 11. Threat concentration | One common-origin witness requires proving on the holder's device; no master seed is sent to a node. |

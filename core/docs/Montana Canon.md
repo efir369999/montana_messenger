@@ -5330,7 +5330,7 @@ bounded reaction delay is a policy consequence, not a claim of immediate spam re
 
 `N` must come from authenticated replay of the canonical candidacy/selection history,
 not from the note or nullifier root alone. The current proposal layout names a roll of
-frames and cement parts (`Canon:4923-4995` at the K0 base), and `apply_candidacy` currently
+frames and cement parts (`Canon:4923-4995,5164-5189` at the K0 base), and `apply_candidacy` currently
 records only the spent right (`montana-node/src/state.rs:441-481`). Those facts do not yet
 supply the authenticated pending-candidate history this rule needs. Its canonical replay
 path is an explicit implementation dependency. If the verifier cannot reconstruct the
@@ -5427,11 +5427,45 @@ The present height has 65 536 rows including 256 free rows, leaving at most 9 60
 constrained rows under that accounting. Width, degree and zero-knowledge padding must also
 fit. No fit, memory, latency or unchanged proof-length claim follows from this subtotal.
 
-The common-origin hash composition needs three existing branch derivations plus the note
-payment-key hash. Its row/column cost has not been established. The next step must count
-that cost and the continuity gadget, then derive the fixed proof length and every dependent
-layout from the resulting geometry. A larger common geometry also changes other proof
-lengths; a variable per-witness proof length is not an option.
+**K0b gadget inventory and feasibility gate.** The complete module registry at
+`mt-proof/src/circuit.rs:11-26` contains no SHA-256, HMAC or HKDF constraint gadget.
+`mt-codec/src/lib.rs:570-629` implements these functions natively with `sha2`; calling
+that Rust utility outside a constraint system supplies no proof rows or equality wires.
+The SHA-256 call in `mt-proof/src/air.rs:628-648` hashes an encoding in a test; it is not
+a SHA-256 AIR. All paths here are beneath `core/Montana-Core/crates/` at the K0 base.
+
+| Component | Source-based count and its limit |
+|---|---|
+| Existing Poseidon permutation | 16 trace columns: width plus one lane's multiplication cells (`permutation.rs:28-64`, `poseidon.rs:17-22`). Its row cost is `rows_per_permutation`, not the cost of SHA-256. |
+| Existing admission | 26 trace columns: permutation plus two digests and two walk columns (`path.rs:28-34`, `admission.rs:179-216`). Its placement count is derived above. |
+| Standalone note-redemption skeleton | 34 columns: path plus the two-digest lane (`redemption.rs:28-42`). Amount, filler and the complete admission cross-wiring are additional; this is not the final proposed width. |
+| Common-seed SHA-256/HMAC/HKDF relation | No registered gadget. Required rows, columns and degree are uncounted, not zero. Native function calls cannot be assigned the Poseidon cost. |
+| Shifted, masked continuity and required-share comparison | No registered continuity gadget. `opening.rs:12-19,97-130` binds initial fields; it does not prove the admission predicate. `mt-state/src/layout.rs:1009-1023` computes a native shifted population count, not constraints and not the period mask. Required rows and columns remain uncounted. |
+| Existing digest comparator | `compare.rs:1-17,39-94` provides a bytewise digest comparison. That alone supplies neither the bitmap shift/population count nor equality to the record limbs, and is not a complete continuity gadget. |
+
+Consequently **the existing sources do not determine whether the common geometry must
+grow**. They establish a skeleton and identify the missing gadgets, not a complete bound.
+It is equally unsupported to claim that the remaining rows suffice or to charge one
+SHA-256 compression as one Poseidon permutation. The specified origin binding's feasibility
+is unestablished. K1 does not start until the new gadgets have a reviewable row/column,
+degree and equality-wiring budget, including continuity and the amount threshold.
+
+If only the common height grows, the descriptions using `params::ROWS_LOG2` (admission,
+opening, frame and ballot) and the `PROOF_LEN` wire consumers (opening, action, frame,
+candidacy and ballot) must be rederived. The wire consumers are in
+`mt-state/src/layout.rs:543-568,669-676,723-728`. Presence and ticket use the separate
+`PRESENCE_ROWS_LOG2` (`presence.rs:185-190`, `ticket.rs:222-226`), so that height alone
+does not change their lengths. If the shared width/row or out-of-domain slots grow,
+**both** proof-length families change (`params.rs:135-161`), including the ticket in a
+proposal and the proof in a heavy attestation. The transport envelopes and cell counts
+must then be reconciled as well.
+
+A height is not freely rounded upward: `Shape::of_rows_log2` requires the folding reach
+the tail exactly (`params.rs:88-94`); the next permitted exponent after the present common
+one is 18, not 17. Even a mechanically derived length at that height would not establish
+security: the `proof_queries` derivation above uses the largest extended domain, which
+would also grow. Its soundness budget and possibly its query count must be rederived.
+No new height, proof length or artifact identifier is frozen by this proposal.
 
 The accepted replacement changes the admission description identifier, `air_hash`, Genesis
 State Hash and published parameter digest. They must be computed by the artifact and
