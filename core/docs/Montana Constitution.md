@@ -165,11 +165,30 @@ indistinguishable from every other unit, at every moment, forever. The protocol 
 property by which one coin could be told from another: no origin, no age, no history, no
 label, no list.
 
-Forbidden without exception: any field, tag, list or set distinguishing coins by origin,
+Forbidden without exception, apart from the single node-lock exception stated below:
+any field, tag, list or set distinguishing coins by origin,
 history, holder or age; freezing, seizure, blocking or reversal of value by any actor,
 including a supermajority; allow-lists and deny-lists of participants or coins at the
 protocol layer; any mechanism letting a third party learn the history of a coin, now or
 retroactively.
+
+**K0d amendment provenance (proposed text for the chairman's line review).** The author's
+record 224 says, in the chairman's translation, "the key must live a tau-2 window of 14 days
+and put those coins up as a lock to create a node". Record 231, council link 8935, adds
+"on any violation of the protocol -- slashing and exclusion of the node from consensus".
+[The chairman's K0d instruction](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6420399577)
+records both. [Record 233, council link 8951](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6420491388)
+decides the Decree amount, continuity plus lock as the gate, and burning of a slashed lock.
+The amendments here, in [I-12] and in the constitutional monetary layer implement those
+decisions as proposed wording; they claim neither an implemented mechanism nor acceptance
+of this PR. Refs #15.
+
+The sole exception to the freezing and seizure prohibition is the owner's voluntary node
+lock, consumed under the protocol's release or slashing rule. A proven protocol violation
+burns that lock and revokes the machine's admission; silence, timeout and an accusation
+are not proof. A released lock returns ordinary fungible value: no coin acquires a label,
+age, history or privileged spending rule. The exception authorizes no discretionary
+confiscation and no disclosure of the owner, funding notes or person's record.
 
 **Retroactive marking is impossible by construction, not by policy.** A spend publishes a
 nullifier unlinkable to the commitment it consumes, and commitments unlinkable to their
@@ -247,19 +266,22 @@ draw weight, and still occupy a million records.
 
 **[I-12] Time-based scarcity.** Every defence against spam, against bloat of state,
 against Sybil on resources and against Sybil on the validator role is constructed
-exclusively through canonical time-based primitives.
+through canonical time-based primitives, with one exception for the validator role:
+the voluntary node lock specified in Canon.
 
 The scarce resource of the protocol is time: the TimeChain, the window
 periods, the chain length of a machine, the activity of a record, the continuity of life.
-This time-market is built into consensus as the single objective scarcity. Defences
-through the existing scarcity are symmetric for every participant regardless of holdings,
-free of duplication of the existing time-based limiters, and independent of the nominal
-value of the currency.
+This time-market is built into consensus as its time-based scarcity. Time-based defences
+remain symmetric regardless of holdings. The node lock is the sole additional monetary
+primitive for the validator role; its amount is the decided Decree row `node_lock` in
+Canon, denominated in `value_unit`, never derived from a runtime clock. Opening a node
+requires the key's tau-2 continuity and this lock, with no Global-level, pi-level or Fabric
+threshold in addition. The ordinary proof, one-time-right and selection rules still apply.
 
 Admissible primitives: rate per identity; a lifetime through activity; a cooldown of
 activation; a chain-length requirement; seniority gating; the continuity gate; a ceiling per
 window or per event; and the canonical unpredictable-offline binding required by [I-8]. Each
-is a quantity of time, and none of them is a quantity of money. Each is proven and not
+is a time-based primitive; the node lock is the sole admitted quantity of money. Each is proven and not
 published: a barrier of time that names who cleared it would buy scarcity at the price of a
 graph, which [I-17] forbids.
 
@@ -813,15 +835,13 @@ insufficient and a structural one is required.
 **The constitutional layer.** A change at this level is not a valid update of the existing
 network — it is a new network with a new genesis, and honest machines reject such proposals as
 an unknown protocol rather than as a fork. The layer covers: the global invariants in force
-and their operational requirements; the monetary constitution — the mint of a window read from a
-schedule Genesis fixes and no later act may change, divided equally among the window's living
-machines with the divisor private, supply growing strictly monotonically, no halving driven by the
-protocol, no premiums, no protocol-level burning; a schedule of one row is a constant mint and is
-what Genesis carries, and a founder shaping the early height writes rows rather than powers, since
-what the layer forbids is a rule that mints differently over time by itself, not a value fixed once
-before anyone joined; the emission constitution — the minting of a window divided equally among the
-living, no emission lottery, no personal reward to the runner, the floor remainder
-carried over rather than appropriated; the draw constitution — an unweighted ticket against
+and their operational requirements; the monetary constitution — every living machine earns
+one coin for every second it lived, with the amount of a window's right derived by the
+Decree's `window_credit` rule; supply grows by issuance and falls by exactly `node_lock`
+for each slashed node, with no halving driven by the protocol, no premiums and no
+protocol-level burning except a slashed node lock; the emission constitution — equal
+credit for equal lived time, no emission lottery and no personal reward to the runner;
+the draw constitution — an unweighted ticket against
 the threshold orders the runners on duty, and the draw does not touch minting; absolute
 privacy of the financial layer; perfect fungibility; transport indistinguishability; the absence
 of a graph — no edge, no persistent identifier of a person, no address; the

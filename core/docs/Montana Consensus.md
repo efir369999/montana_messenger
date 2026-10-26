@@ -1,6 +1,6 @@
 # Montana — Consensus
 
-**Version:** 7.3.0
+**Version:** 7.4.0
 
 Consensus holds the TimeChain and its movement: how a window advances, who runs it, how it is cemented,
 how a machine enters the set that runs windows, and how the right to a window's share is
@@ -908,9 +908,10 @@ public timeline of any machine.
 Admission runs by selection events at a fixed interval, each admitting a bounded number of
 candidates; the interval and the divisor that bounds an event are numbers of Canon. A
 candidate is admitted only after a lived continuity period, which Identity defines and which
-cannot be bought or parallelized. Where the pressure of pending candidates exceeds a threshold
-of the active set, the required continuity rises by the multiplier Canon fixes, to a bounded
-maximum — so that a rush of applicants raises the price in time rather than in money.
+cannot be bought or parallelized. In the pre-transition rule, pending-candidate pressure
+raised the required continuity. Author record 233 replaces that node-opening gate with
+tau-2 continuity plus the lock only, as specified below; a pressure multiplier is not an
+additional condition on the replacement gate. Selection capacity remains bounded.
 
 **The commitment that stands for a machine.** A machine is represented in every consensus
 structure by a commitment derived, under the domain Canon names for it, from the public key it
@@ -932,6 +933,29 @@ holds. Without this a lived continuity period would buy an unbounded fleet: the 
 time once and yield machines forever, and one person's record would seat another person's
 machine.
 
+**The decided node gate and its proposed construction.** Author records 224, 231 and 233
+require the key's tau-2 continuity plus the voluntary node lock, and nothing else as a
+level gate. Canon, "The continuity and node-lock candidacy proposal", owns the denomination,
+Decree amount, public-input proposal, F-1 machine/suite binding and spentness requirements.
+The prior self-transfer proposal is superseded. Global level, pi level and Fabric are not
+additional node-opening thresholds. The client's old level-8 gate is an owed client change,
+outside this core documentation proposal; it is not claimed delivered.
+
+The one-time operator right, verifier-owned continuity context and canonical selection still
+apply. The replacement verifier fixes the continuity period to tau-2 under record 233;
+K0c's verifier-owned period input is retained, while K0b's proposed pressure extension is
+superseded for this node gate. Local announcements cannot choose difficulty. Current circuits do not implement the new lock or complete continuity.
+
+The owner's voluntary exit revokes participation before releasing value, and release waits
+until the challenge of the last lived window closes. The existing Finality rule gives the
+exact boundary: the close of its successor window. A proven violation burns the lock and
+revokes admission without identifying an owner; excluded parts no longer enter cement.
+Existing CNS-10 pledge-pair evidence is the starting case, never silence or a timeout.
+Canon names the missing anonymous evidence-to-lock/revocation relation and its lifecycle
+gates. These obligations qualify the pre-transition sanction text above: its claim that
+nothing beyond the current right is touched does not describe the decided lock mechanism.
+Neither a new persistent identity nor an offender blacklist may fill that missing relation.
+
 **Invariants of admission:**
 
 - A candidate is admitted only through a selection event; no other path into the active set exists.
@@ -941,7 +965,7 @@ machine.
 - A candidacy carries the extinguished one-time right to raise a machine; a second candidacy under the same right is refused, and the refusal names nobody.
 - The order of candidates within an event follows the canonical sort key derived from the cemented aggregate; no participant chooses it.
 - The number admitted by one event never exceeds the bound Canon fixes.
-- A candidacy that is not admitted expires after the period Canon fixes and leaves nothing behind but the right it spent.
+- A candidacy that is not admitted expires after the period Canon fixes. Under the proposed lock transition, its spent right remains spent and its lock needs a proved withdrawal/release; expiry cannot strand, spend or silently refund it.
 
 ## The attestation of presence
 
@@ -1310,6 +1334,7 @@ apply, and it finalizes its own chain while the committee consists of itself alo
 | an equivocation in the agreement of a window | **deliberately observable**: a contradicting pair of pledges under one part-nullifier is exactly the evidence a sanction requires, and it names no one |
 | the name a part pledges, and its place as a proposer | **deliberately observable**: a pledge says which name some part stood behind in which attempt, and the place of a part is computed from the part, the aggregate and the attempt; both are quantities about a part, which names nobody and joins to nothing across windows |
 | that a machine was admitted in a selection event | **deliberately observable**: admission adds a commitment about a machine and names no owner, no address and no person; it is what the bound per event is enforced against |
+| the proposed node lock | **open construction review**: a lock commitment and its public constant amount accompany a candidacy; input leaves, owner and record stay hidden. Release, evidence-to-lock binding and anonymous exclusion must satisfy the financial privacy and graph invariants before activation; see Canon, "The continuity and node-lock candidacy proposal" |
 | the thresholds of the draw and of the round | **deliberately observable**: each is a quantity about the network and about no machine |
 | the count of rounds in a window | **deliberately observable**: it is the coverage theorem's check, it stands at the derived target wherever the crowd of a round is the admitted through the divisor and falls below it where the floor of the crowd binds, so what it carries is the count of the **admitted** — already in the open at every admission — and never the count of the living, and it names nobody |
 | the lived duration of a window | **observable**: it is the echo of committees drawn like the population — a property of the geography of the living as a whole, from which no machine is derivable |

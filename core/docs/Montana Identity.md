@@ -107,7 +107,10 @@ required_segments = ceil(segments_in_force x continuity_required_num / continuit
 with the multiplication before the division and the division rounding upward. `segments_in_force`
 is `continuity_segments`, raised by the gate of entry under pressure to at most
 `max_entry_segments`; the share holds against whatever count is in force, so one rule serves
-every gate that consumes it. The proof asserts that the threshold is met; it names no record
+every pre-transition gate that consumes it. For the replacement node-opening gate of author
+record 233, `segments_in_force` is the base `continuity_segments`, without a pressure
+multiplier: Canon, "The continuity and node-lock candidacy proposal", owns that exception.
+The proof asserts that the threshold is met; it names no record
 and discloses no history.
 
 Lived time is the one scarcity that cannot be acquired. It does not parallelize for one

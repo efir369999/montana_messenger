@@ -1,6 +1,6 @@
 # Montana — Canon
 
-**Version:** 9.5.0
+**Version:** 9.6.0
 
 Canon is the one place where the values and the bytes of Montana live. Every other document
 of the set names a quantity and points here; none of them restates a number, a size, a
@@ -4654,6 +4654,7 @@ demands the width from this row rather than declaring one of its own.
 | `retarget_step_bound` | 4 |
 | `continuity_period`, in windows — derived: `continuity_segments` x `segment_windows` | τ₂ = 20 160 |
 | `continuity_segments` | 14 |
+| `node_lock` — decided by author record 233, in `value_unit` coins | 1 209 600 |
 | `segment_windows` | τ₂ / 14 = 1 440 |
 | `continuity_required_num` over `_den` | 2 over 3 |
 | `max_entry_segments` | 56 |
@@ -5190,6 +5191,9 @@ One body suffices because both of its counts are bounded before it is read: the 
 
 ### The candidacy of a machine
 
+The frozen layout below describes the pre-transition wire and intended statement. The proposed replacement is
+"The continuity and node-lock candidacy proposal" below; its review and artifact gates remain open.
+
 What a claimant publishes to enter the set of machines. It carries no key and no signature: the key
 a machine answers with is published nowhere, so a candidacy is proven rather than signed.
 
@@ -5216,6 +5220,163 @@ candidacy_len = 8 + 32 + 32 + 32 + 2 + PROOF_LEN = 404 682 B
 - The public input is `window ‖ record_root ‖ naming_half ‖ operator_nullifier`, 104 B, each value in its own bytes. `window` is the field of this object, and a verifier applying another window refuses the candidacy before it verifies anything. `record_root` is no field of this object: it is the root of the tree of records the proposal of the standing stride's last window carries, the stride standing for `window` by the integer form of the horizon of proving, taken by the verifier from that one proposal — the same rule by which a frame walks a right against the root of admitted machines. Before the first stride stands no root does, and no candidacy applies.
 - The proof asserts the lived continuity the gate of entry demands of this window, out of that same record, disclosing neither the record nor its history.
 - It carries no signature and no key, and an implementation that adds one names a machine for the whole of its life.
+
+### The continuity and node-lock candidacy proposal
+
+**Decision and status.** Author records 224 and 231 supersede decision 212's transfer to
+self. Record 233 decides the amount in the Decree, the gate of tau-2 continuity plus lock
+only, and burning of the slashed lock. The chairman's instructions are
+[K0d](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6420399577) and
+[record 233](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6420491388).
+The decision is settled; the layouts and cryptographic construction here are proposals.
+They are not an enabled format. K0 and K1-K4 remain open as described in
+`core/Montana-Core/protocol-13/ADMISSION-LEVEL1-K0.md`.
+
+| Value | Definition |
+|---|---|
+| `value_unit` | One integer unit of a note amount, emission mint or credited right is one coin, with no decimal scaling. |
+
+The Decree owns the sole numerical `node_lock` definition. Its decision derives from
+14 x 86 400 at one coin per second, as recorded by the chairman; no clock supplies a
+consensus input. The alternative count of credited windows is not used because record
+233 explicitly chose the coin amount, independently of the core's per-window credit rule.
+The amount's canonical representation is the existing 16-byte little-endian note amount.
+
+**Stand-alone continuity and F-1 binding (K0c).** Before adding value, the proposed
+admission statement has this public input, without any self-transfer field:
+
+```
+public_input(admission_continuity)
+  window                    8 B   u64 LE, offset 0
+  record_root              32 B   offset 8, verifier-owned
+  naming_half              32 B   offset 40
+  node_commit              32 B   offset 72
+  operator_nullifier       32 B   offset 104
+  entry_segments            4 B   u32 LE, offset 136, verifier-owned
+  suite_id                  2 B   u16 LE, offset 140
+public_input_len = 142 B
+```
+
+The widths come from the preceding candidacy and the segment-count type
+`mt-state/src/layout.rs:1011` at base `4c6430a6`. The commitment and suite enter the proof
+transcript, so changing either invalidates a captured proof. Transcript binding is not
+by itself proof of knowledge of the answering key or its blinding factor.
+`record_root` is the authenticated last proposal of the standing stride's root. A missing
+stride, wrong window, future record segment or reserved bitmap bit refuses admission.
+The proof shifts the same record's bitmap by the unsigned elapsed segment distance,
+masks to the verifier's period and checks Identity's required share rounded upward.
+Distance beyond the bitmap width yields zero. An unconstrained native helper is not a proof.
+
+**Continuity decision boundary.** For the decided node-opening gate, the verifier sets
+`entry_segments = continuity_segments`: the period is exactly the Decree's tau-2.
+Record 233's tau-2-plus-lock-only decision supersedes K0b's proposed pressure multiplier
+for this gate. The verifier-owned input, shifted bitmap and required-share checks remain;
+no claimant or local queue may shorten or extend the period. Historical adaptive rules
+and their Decree rows are not an additional requirement on this replacement node gate.
+The base period's four-byte public-input encoding is retained from K0c. A complete
+continuity gadget still has to constrain the same record and its shifted/masked bitmap.
+
+**Lock-bearing candidacy proposal.** The note input and change output counts reuse
+Forms' `spend_inputs` and `spend_outputs` (`Canon:4817-4821` at the base). These are
+ordinary spent notes and ordinary change, not a transfer-to-self admission threshold.
+One additional commitment holds exactly the Decree amount bound to `node_commit`.
+
+```
+serialize(candidacy_lock)
+  window                    8 B   offset 0
+  naming_half              32 B   offset 8
+  node_commit              32 B   offset 40
+  operator_nullifier       32 B   offset 72
+  note_nullifier x 2       32 B each, offsets 104, 136
+  change_commitment x 2    32 B each, offsets 168, 200
+  lock_commitment          32 B   offset 232
+  suite_id                  2 B   offset 264
+  proof                     P B   offset 266
+candidacy_len = 266 + P B
+
+public_input(candidacy_lock)
+  window                    8 B   offset 0
+  record_root              32 B   offset 8, verifier-owned
+  naming_half              32 B   offset 40
+  node_commit              32 B   offset 72
+  operator_nullifier       32 B   offset 104
+  note_root                32 B   offset 136, verifier-owned
+  note_nullifier x 2       32 B each, offsets 168, 200
+  change_commitment x 2    32 B each, offsets 232, 264
+  lock_commitment          32 B   offset 296
+  entry_segments            4 B   offset 328, verifier-owned
+  suite_id                  2 B   offset 332
+public_input_len = 334 B
+```
+
+All shared fields retain their serialization order. Integer widths/endian match the
+stand-alone input; digests use their existing canonical encodings. `node_commit` is a byte
+digest, not a proof-field digest. The counts above instantiate the existing Forms rows;
+they do not add configurable slot counts. `P` is the one accepted artifact's fixed length,
+not an emitter's choice. No final proof length or new artifact hash is frozen here.
+
+**Invariants proposed for the lock-bearing candidacy:**
+
+- Both roots come from one authenticated standing proposal. Current spentness is checked
+  even for an older eligible membership root. Before verification, exact length, suite,
+  canonical encodings and pairwise-distinct unspent operator/note nullifiers are checked.
+- Every real input proves note membership, ownership and its position-dependent nullifier.
+  One selector governs every filler check; filler value is zero. The proof uses unsigned
+  range-constrained arithmetic and enforces input sum = change sum + `node_lock`, without
+  overflow or modular wrap. Fragmented funds require ordinary consolidation first.
+- The record right and funding ownership use the common-seed branch relation of K0b;
+  independent branches are not made equal. Machine secret and person's seed remain
+  separate. Constrained SHA-256/HMAC/HKDF and equality wiring remain necessary and unbuilt.
+- The lock commitment binds the exact amount, machine commitment and hidden release
+  authority. Its hiding construction, domain and encoding require a complete proof design
+  before freezing. An unbound opaque digest does not implement this invariant.
+- Success spends the operator and note nullifiers in the existing nullifier set, appends
+  change notes, registers the lock and candidacy, and persists all effects together.
+  Refusal changes none of them. The lock is not an ordinary spendable note; putting it in
+  the ordinary note path without a constrained consumption rule would bypass the lock.
+- Only release or slash consumes a lock, once. Their mutual exclusion must survive restart
+  and same-window races. No second spent set may allow ordinary frame/candidacy replay.
+- Voluntary exit withdraws the candidate or revokes its active admission before release.
+  The challenge of its last lived window W must close first: Consensus, "Finality", closes
+  it when W+1 closes. This is one successor-window close, not elapsed seconds. A candidate
+  never selected has no lived-window challenge, but must be canonically withdrawn first;
+  expiry alone must not strand or silently refund its lock.
+- Slash requires a proven protocol violation. The existing evidence is the three
+  contradicting pledge pairs of Consensus, "The sanction of a double answer", CNS-10.
+  Silence, timeout, an invalid incoming proof or an accusation cannot consume a lock.
+  A valid slash burns it, supplies no reward and revokes admission; subsequent parts of
+  that admission cannot enter cement. The result names no person or funding note.
+- Release after the challenge boundary cannot override timely accepted evidence. The
+  canonical ordering must process the closed challenge's evidence before eligibility
+  for release. Repeated evidence cannot burn twice. No lifecycle action resurrects the
+  spent operator right or permits a still-selected candidate to obtain a refund.
+
+**Open construction gates, not optional implementation detail.** The current proof of
+equivocation identifies a part-nullifier of W, not a persistent machine or its lock.
+K0 needs a verifiable, privacy-preserving relation from that evidence to exactly the
+consumed lock and revoked admission, without the offender's cooperation and without
+linking honest windows. The lock commitment alone does not supply it. A complete lock
+state/root/lifecycle card, release/slash public-input layouts and domain encodings are
+therefore not frozen; inventing offsets before deciding that relation would conceal the
+missing statement. The candidacy layouts above are partial K0 proposals, not a complete
+wire specification. This is a concrete OPEN finding for chairman review, not a request
+to defer the decided amount or burning rule.
+
+The public lock commitment is associated with a candidate and its public constant amount;
+funding leaves, owner, record and change amounts stay hidden. That association must pass
+[I-2], [I-6] and [I-17] review; no zero-leakage claim follows from a hiding commitment.
+Release must produce ordinary fungible value without a history tag or public link to its
+funding inputs. The transition cannot activate until the linkability review is complete.
+
+**Artifact gate.** The K0b source inventory remains relevant: `mt-proof/src/circuit.rs:11-26`
+at the base registers no SHA-256/HMAC/HKDF or complete continuity gadget. Native helpers
+in `mt-codec/src/lib.rs:570-629` and `mt-state/src/layout.rs:1009-1023` supply no constraints.
+The old self-transfer skeleton cost is not the cost of the lock construction. Rows,
+columns, degree, equality wiring, lifecycle proof and anonymous exclusion costs are OPEN.
+The common-height and separate presence/ticket-height dependencies in
+`mt-proof/src/params.rs:88-94,135-161` must be rederived if geometry changes.
+K1-K4 remain stopped. Admission identifier, air_hash, Genesis State Hash, parameter digest
+and vectors must come from the accepted artifact's computed output, never guessed values.
 
 ### The three objects of a name
 

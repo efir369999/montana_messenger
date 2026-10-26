@@ -190,8 +190,24 @@ where no observer can tell which entries are rights and which are notes.
 ## Conservation of issuance
 
 - **Per payment:** what is created equals what is consumed, asserted by the proof and never by adding open numbers.
-- **Per window:** the change of supply equals the mint of that window — one right per living machine, each extinguished by exactly one nullifier — with the indivisible remainder carried forward.
-- **Globally:** the sum of unspent notes, unredeemed rights and the carried remainder equals the supply, held by proof and induction and **unverifiable by addition** — amounts are hidden and rights are private.
+- **Per window:** each living machine earns the seconds it lived at one coin per second,
+  with a window's right worth the Decree's `window_credit`. Each right is extinguished by
+  exactly one nullifier. Under the decided slash rule below, supply change also subtracts
+  each distinct burned node lock.
+- **Globally:** the sum of unspent notes, unredeemed rights and the carried remainder equals the pre-transition supply, held by proof and induction and **unverifiable by addition** — amounts are hidden and rights are private.
+
+**Decided node-lock amendment (record 233; construction proposed).** Under Canon, "The
+continuity and node-lock candidacy proposal", the supply equation also includes outstanding
+locked value. Creating a lock and releasing it conserve supply: spendable value moves into
+the lock and back, never into both. Every valid slash reduces supply by exactly `node_lock`;
+there is no recipient, issuance refund, premium or personal reward. Per window, supply
+change is issuance minus `node_lock` times the count of distinct validly slashed locks.
+Globally, unspent notes plus unredeemed rights plus carried remainder plus outstanding
+locked value equals initial supply plus cumulative issuance minus cumulative burned locks.
+A repeated proof cannot burn a lock twice, and a released lock cannot also be burned. The
+ordinary payment equality remains unchanged. These equations specify the decided rule,
+not an implemented lock proof or a completed conservation audit; the anonymous slash
+binding, canonical release ordering and restart atomicity remain K0/implementation gates.
 
 **The honest price.** The ability to detect a breach of issuance by simple summation is lost
 together with open amounts, and no reconciliation of balances replaces it. The integrity of
