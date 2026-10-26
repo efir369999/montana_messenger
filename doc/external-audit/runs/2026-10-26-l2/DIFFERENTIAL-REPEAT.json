@@ -1,0 +1,62 @@
+{
+  "source_pin": "a835c1c3ff4bc95ea3c75e02391d3d69e2e08833",
+  "original": {
+    "name": "Montana-Core-test-028-differential",
+    "command": [
+      "unshare",
+      "-n",
+      "--",
+      "sh",
+      "-c",
+      "ip link set lo up && exec \"$@\"",
+      "audit",
+      "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/differential-057d22d16924bfe2",
+      "--test-threads=1"
+    ],
+    "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/mt-suite",
+    "exit": 101,
+    "timed_out": false,
+    "elapsed_seconds": 0.674,
+    "environment": {
+      "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+      "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/mt-suite",
+      "CARGO_PKG_NAME": "mt-suite"
+    },
+    "log_sha256": "bdbc5c5a2a8e10c017676a35f3a62114c3b27b08f04c6c2deac6a9e112bf2729"
+  },
+  "command": [
+    "unshare",
+    "-n",
+    "--",
+    "sh",
+    "-c",
+    "ip link set lo up && exec \"$@\"",
+    "audit",
+    "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/differential-057d22d16924bfe2",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/mt-suite",
+  "binary_sha256": "c1ea177ae7739101609b8931dc059aef2185c40c87f00b7ec0ab426f817a6400",
+  "library_path": "/srv/montana/oqs-290/liboqs/lib/liboqs.so.0.16.0",
+  "library_sha256": "b8cbeee1169de37adc92ceb2f9947900ee0ea68d39f9c236d288711d3ca77bee",
+  "environment": {
+    "PATH": "/root/.cargo/bin:/opt/ossl35/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/snap/bin",
+    "LD_LIBRARY_PATH": "/opt/ossl35/lib64:/opt/ossl35/lib",
+    "RUSTUP_TOOLCHAIN": "1.92.0",
+    "RUST_BACKTRACE": "1",
+    "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+    "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/mt-suite",
+    "CARGO_PKG_NAME": "mt-suite",
+    "MT_LIBOQS": "/srv/montana/oqs-290/liboqs/lib/liboqs.so.0.16.0",
+    "TMPDIR": "/srv/montana/audit-issue2-552/differential-repeat/tmp"
+  },
+  "as_of_utc": "2026-10-26T15:02:25Z",
+  "main_runner_complete": false,
+  "timed_out": false,
+  "exit": 0,
+  "elapsed_seconds": 0.734,
+  "log_sha256": "e8fe575a760ab07ed797a04a199e8aaf026e0d8179de44f713824b2ff68cec86",
+  "binary_sha256_after": "c1ea177ae7739101609b8931dc059aef2185c40c87f00b7ec0ab426f817a6400",
+  "library_sha256_after": "b8cbeee1169de37adc92ceb2f9947900ee0ea68d39f9c236d288711d3ca77bee"
+}

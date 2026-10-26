@@ -73,3 +73,21 @@ are retained. The earlier snapshot above remains historical; the main runner con
 its gate is not green. A ready liboqs was found on the host; the bounded repeat script
 records its hash and reuses the same pinned binary, with private scratch and network namespace.
 A repeat result will be separate evidence and will not erase this failure.
+
+The bounded repeat at 2026-10-26T15:02:25Z passed all six tests, exit 0, no ignored tests
+and no timeout. [Receipt](DIFFERENTIAL-REPEAT.json), [log](logs/Montana-Core-differential-repeat.log).
+The executable and installed library hashes agree before and after. The library reports
+liboqs 0.16.0; its installed configuration has OpenSSL disabled and enables ML-KEM-768 and
+ML-DSA-65. The retained build recipe names source commit
+`5a1a854b0dc9f2141bdc771c555ee60c37950183`, but the old source/build directories are not
+present: that recipe is provenance context, not a reproduced library build. The binary
+hash in the receipt is the tested artifact identity. No library was installed or rebuilt.
+
+The repeat reused the original executable under a private loopback-only network namespace,
+set `MT_LIBOQS` to that existing library, supplied isolated temporary storage and enabled
+uncaptured test output. Its separate unit requested CPUWeight=1, MemoryMax=512 MiB, zero
+swap and a 120-second unit bound; the script also imposed a 60-second command timeout.
+It ran for 1.159 seconds as reported by systemd, with 2.3 MiB peak memory and no swap.
+Only this executable was repeated; the original main runner and its retained failure were
+not changed. These results resolve the missing dependency for this differential check,
+not the still-running full core/legacy gate, and do not apply to newer PR heads.
