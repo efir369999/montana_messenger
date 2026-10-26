@@ -1,6 +1,6 @@
 # L2 run ledger — interim, not a completed gate
 
-Evidence snapshot: 2026-10-26T13:47:05.200506+00:00. Source pin `a835c1c3ff4bc95ea3c75e02391d3d69e2e08833`.
+Evidence snapshot: 2026-10-26T14:09:47.977364+00:00. Source pin `a835c1c3ff4bc95ea3c75e02391d3d69e2e08833`.
 
 The main runner is still executing. `RUN-RESULTS.json` explicitly records `complete: false`.
 Only completed commands appear below. Their unmodified logs are checked against the SHA-256
@@ -38,6 +38,15 @@ automatic claim of a product defect or of host contention.
 | Montana-Core-test-004-a_fuller_cement_closes_on_a_later_beacon | 0 | 95.817 | [log](logs/Montana-Core-test-004-a_fuller_cement_closes_on_a_later_beacon.log) |
 | Montana-Core-test-005-a_machine_keeps_what_it_holds | 0 | 0.22 | [log](logs/Montana-Core-test-005-a_machine_keeps_what_it_holds.log) |
 | Montana-Core-test-006-a_machine_stopped_lets_its_store_go | 0 | 0.275 | [log](logs/Montana-Core-test-006-a_machine_stopped_lets_its_store_go.log) |
+| Montana-Core-test-007-a_payer_is_told_again_where_a_replay_moves_its_frame | 0 | 116.142 | [log](logs/Montana-Core-test-007-a_payer_is_told_again_where_a_replay_moves_its_frame.log) |
+| Montana-Core-test-008-a_payers_own_frame_applies_with_its_round | 0 | 115.099 | [log](logs/Montana-Core-test-008-a_payers_own_frame_applies_with_its_round.log) |
+| Montana-Core-test-009-a_payment_crosses_the_wire | 0 | 115.948 | [log](logs/Montana-Core-test-009-a_payment_crosses_the_wire.log) |
+| Montana-Core-test-010-a_payment_settles_before_a_window | 0 | 232.71 | [log](logs/Montana-Core-test-010-a_payment_settles_before_a_window.log) |
+| Montana-Core-test-011-a_record_is_opened | 0 | 192.812 | [log](logs/Montana-Core-test-011-a_record_is_opened.log) |
+| Montana-Core-test-012-a_record_raises_one_machine | 0 | 362.179 | [log](logs/Montana-Core-test-012-a_record_raises_one_machine.log) |
+| Montana-Core-test-013-a_round_on_two_machines | 0 | 39.876 | [log](logs/Montana-Core-test-013-a_round_on_two_machines.log) |
+| Montana-Core-test-014-a_round_over_the_wire | 0 | 37.627 | [log](logs/Montana-Core-test-014-a_round_over_the_wire.log) |
+| Montana-Core-test-015-a_round_requires_an_answer | 0 | 57.783 | [log](logs/Montana-Core-test-015-a_round_requires_an_answer.log) |
 
 ## Meaning of the results
 
@@ -45,7 +54,7 @@ automatic claim of a product defect or of host contention.
 - Existing premise probes: 4 passed, 0 ignored. Their success confirms the characterized constructions/controls; it does not establish GPA resistance.
 - Supplemental published F-1: 2 passed, 0 ignored; two valid channel legs and a rejected bad signature, with scope in channel-probes/README.md.
 - Supplemental published F-13: 1 passed, 19,450 malformed/stale cases rejected and two valid controls; native parser boundaries only.
-- New core: formatting, strict all-target Clippy and release test compilation succeeded. Seven of 96 compiled test executables had completed at this snapshot. The rest, doctests and final release build are pending; the legacy Code workspace stage is pending.
+- New core: formatting, strict all-target Clippy and release test compilation succeeded. 16 of 96 compiled test executables had completed at this snapshot. The rest, doctests and final release build are pending; the legacy Code workspace stage is pending.
 - The synthetic traffic demonstration checks the instrument only. No production or real-app GPA capture is included.
 - A separate dependency/advisory investigation is retained for the author privately under SECURITY.md. This public ledger does not disclose new project-specific security findings.
 

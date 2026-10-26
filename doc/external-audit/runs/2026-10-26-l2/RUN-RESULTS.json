@@ -1,5 +1,5 @@
 {
-  "as_of_utc": "2026-10-26T13:47:05.200506+00:00",
+  "as_of_utc": "2026-10-26T14:09:47.977364+00:00",
   "complete": false,
   "source_pin": "a835c1c3ff4bc95ea3c75e02391d3d69e2e08833",
   "rows": [
@@ -495,6 +495,222 @@
         "CARGO_PKG_NAME": "montana-node"
       },
       "log_sha256": "744d6a0f70a338023be40d477bf5bc8d298b94eb9787ed787d3438d167e7ac0e"
+    },
+    {
+      "name": "Montana-Core-test-007-a_payer_is_told_again_where_a_replay_moves_its_frame",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/a_payer_is_told_again_where_a_replay_moves_its_frame-0e343b54e4b5bb99",
+        "--test-threads=1"
+      ],
+      "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+      "exit": 0,
+      "timed_out": false,
+      "elapsed_seconds": 116.142,
+      "environment": {
+        "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+        "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+        "CARGO_PKG_NAME": "montana-node"
+      },
+      "log_sha256": "f5022fb9d41d2613ecc95915ae41146c525ec4baeb5b9fdef5f0e9005c544396"
+    },
+    {
+      "name": "Montana-Core-test-008-a_payers_own_frame_applies_with_its_round",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/a_payers_own_frame_applies_with_its_round-d66cdf86722d6e49",
+        "--test-threads=1"
+      ],
+      "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+      "exit": 0,
+      "timed_out": false,
+      "elapsed_seconds": 115.099,
+      "environment": {
+        "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+        "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+        "CARGO_PKG_NAME": "montana-node"
+      },
+      "log_sha256": "42c9c0f6d4fa1a5b73005ba3ab201afbd07e932a61a3b3a60ed7cc40171cf080"
+    },
+    {
+      "name": "Montana-Core-test-009-a_payment_crosses_the_wire",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/a_payment_crosses_the_wire-b4b6964855a96f8f",
+        "--test-threads=1"
+      ],
+      "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+      "exit": 0,
+      "timed_out": false,
+      "elapsed_seconds": 115.948,
+      "environment": {
+        "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+        "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+        "CARGO_PKG_NAME": "montana-node"
+      },
+      "log_sha256": "341e6582b56ff07d4d48021c9827e98fd711702ea2fb02be146b5116c8f2cb9d"
+    },
+    {
+      "name": "Montana-Core-test-010-a_payment_settles_before_a_window",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/a_payment_settles_before_a_window-d2b1cdfca2621c6b",
+        "--test-threads=1"
+      ],
+      "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+      "exit": 0,
+      "timed_out": false,
+      "elapsed_seconds": 232.71,
+      "environment": {
+        "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+        "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+        "CARGO_PKG_NAME": "montana-node"
+      },
+      "log_sha256": "b37f448923407a406bcf245096c852c507f0516adb1af6c41d5328883b0333b7"
+    },
+    {
+      "name": "Montana-Core-test-011-a_record_is_opened",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/a_record_is_opened-f2fc0f925749f23c",
+        "--test-threads=1"
+      ],
+      "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+      "exit": 0,
+      "timed_out": false,
+      "elapsed_seconds": 192.812,
+      "environment": {
+        "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+        "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+        "CARGO_PKG_NAME": "montana-node"
+      },
+      "log_sha256": "717122f49652e3840e473c17d95f40e8ee21dc152ad5156ac393001fdb20ccc8"
+    },
+    {
+      "name": "Montana-Core-test-012-a_record_raises_one_machine",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/a_record_raises_one_machine-edabe8ce39dd91de",
+        "--test-threads=1"
+      ],
+      "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+      "exit": 0,
+      "timed_out": false,
+      "elapsed_seconds": 362.179,
+      "environment": {
+        "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+        "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+        "CARGO_PKG_NAME": "montana-node"
+      },
+      "log_sha256": "cf819d1e19952efc9cb145fd7da9a0b88a7d0d3fe26ba2d5dd0ed9e3f4753fcc"
+    },
+    {
+      "name": "Montana-Core-test-013-a_round_on_two_machines",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/a_round_on_two_machines-3b3b0141407a6b8e",
+        "--test-threads=1"
+      ],
+      "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+      "exit": 0,
+      "timed_out": false,
+      "elapsed_seconds": 39.876,
+      "environment": {
+        "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+        "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+        "CARGO_PKG_NAME": "montana-node"
+      },
+      "log_sha256": "0405bbc4897403f18895e6457c39007a9963336986155905cf68bc8f6013943f"
+    },
+    {
+      "name": "Montana-Core-test-014-a_round_over_the_wire",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/a_round_over_the_wire-f9981bcbe87e38a3",
+        "--test-threads=1"
+      ],
+      "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+      "exit": 0,
+      "timed_out": false,
+      "elapsed_seconds": 37.627,
+      "environment": {
+        "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+        "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+        "CARGO_PKG_NAME": "montana-node"
+      },
+      "log_sha256": "1dd63b490b1f3fd7cb218dfdff6ad8d6b36829d0d3a9d6297509dc881d8b23d0"
+    },
+    {
+      "name": "Montana-Core-test-015-a_round_requires_an_answer",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/a_round_requires_an_answer-4bfef2b1ee4d3a3e",
+        "--test-threads=1"
+      ],
+      "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+      "exit": 0,
+      "timed_out": false,
+      "elapsed_seconds": 57.783,
+      "environment": {
+        "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+        "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/montana-node",
+        "CARGO_PKG_NAME": "montana-node"
+      },
+      "log_sha256": "a0b832dfd2eecce0cad3db86060b147c0b39c2de89dd95b13c33e3bd03b9a683"
     }
   ]
 }

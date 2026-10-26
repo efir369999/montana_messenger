@@ -1,0 +1,7 @@
+
+running 2 tests
+test a_frame_the_round_passed_over_is_told_applied_when_the_decided_roll_holds_it ... ok
+test a_payer_is_told_again_where_a_replay_moves_its_frame_and_when_it_applies_nowhere ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 116.06s
+
