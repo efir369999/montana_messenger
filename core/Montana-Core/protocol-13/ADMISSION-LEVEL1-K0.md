@@ -1,3 +1,112 @@
+# Item 4: K0c/K0d and author decision 233, partial specification
+
+Refs #15. Existing PR branch; predecessor `6de0f4b6bb4749909cd566f5f8dd3eeca9e23987`.
+
+Decision sources: [K0c](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6420072906),
+[K0d, records 224/231 and link 8935](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6420399577),
+[record 233 and link 8951](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6420491388).
+Decision 212's self-transfer is superseded. The author's amount, continuity-plus-lock gate
+and burning decision are settled. The cryptographic construction and its activation are not.
+
+**Constitution is a separate commit: `4221b83`.** Its I-6, I-12 and monetary-layer amendment
+quotes the chairman's translation and cites the author's records. It is proposed wording
+for line review, not a declaration that this PR has been accepted or deployed.
+
+## Current source map and result
+
+| Task | Source in this revision | Result |
+|---|---|---|
+| Decided amount | `core/docs/Montana Canon.md:4657` | One decided Decree row; denomination in the candidacy proposal. No runtime clock conversion. |
+| Stand-alone continuity/F-1 input | `core/docs/Montana Canon.md:5245-5268` | Explicit offsets, verifier-owned period/root, machine commitment and suite binding; no self-transfer fields. |
+| Pressure context | `core/docs/Montana Canon.md:5270-5277` | Verifier-owned K0c input retained; record 233 fixes tau-2 and supersedes the proposed pressure extension for the node gate. |
+| Lock candidacy bytes | `core/docs/Montana Canon.md:5279-5314` | Input/change/lock fields and both layouts specified; fixed proof length and lock construction remain uncomputed. |
+| Release and slash | `core/docs/Montana Canon.md:5337-5365` | Exact existing challenge boundary, one successor-window close; mutual exclusion, no double burn, anonymous revocation and withdrawal duties named. Release/slash byte layouts await the missing cryptographic relation. |
+| Gate and client debt | `core/docs/Montana Consensus.md:936-959` | Continuity plus lock; no additional Global/pi/Fabric node gate. Client is unchanged and owed. |
+| Conservation | `core/docs/Montana Value.md:196-208` | Lock/release conserve supply; each distinct slash burns the Decree amount; outstanding locks enter the supply equation. |
+
+The continuity numbers come from base `4c6430a6` Canon:4649,4655-4657: 14 segments of
+1 440 windows give tau-2. The public-input four-byte period comes from
+`core/Montana-Core/crates/mt-state/src/layout.rs:1011` at that base; integer/digest widths
+come from Canon:5197-5206, fixed input/output counts from Canon:4817-4821. The release
+boundary is Consensus:772-773 at that base, not a newly chosen waiting constant.
+
+Client facts at that base, `apps/messenger/ios/Code/Montana/MontanaSettings.swift`:
+line 277 says Global is the lowest of three levels; line 279 gives level n at 2^n seconds;
+the author's chosen amount of seconds therefore reaches level 20. Line 281's pi-prefix
+rule gives level 6 because 314 159 <= the decided balance < 3 141 592. Line 283 still
+opens one's own node at level 8; line 281 says pi falls with balance, so locking spendable
+funds can reduce that display. `apps/messenger/ios/FABRIC-OF-TIME.md:362` supplies the
+network-verification limitation. None of these client displays is an additional node gate
+under record 233. Removing that client threshold is owed outside this PR, not delivered.
+
+## Concrete unfinished construction
+
+1. **Evidence to lock and anonymous revocation.** Current CNS-10 evidence is a pair under
+   a one-window part-nullifier. Neither it nor the existing candidacy proves which persistent
+   lock must burn or which future parts must be excluded. Publishing a stable identifier
+   across honest windows would defeat the privacy requirement. The lock commitment alone
+   cannot prove this relation. A noncooperating offender must not prevent slash/exclusion.
+   The missing relation, commitment/domain encoding, lock state commitment, lifecycle card
+   and release/slash public inputs remain OPEN. This is why K0d is reported partial.
+2. **Continuity construction.** Record 233 fixes the base tau-2 period. Canon, Consensus
+   and Identity explicitly distinguish it from the pre-transition pressure rule. The full
+   shifted/masked continuity gadget remains unimplemented; a fixed public period alone
+   does not prove the record lived it.
+3. **Circuit cost and privacy.** SHA-256/HMAC/HKDF and full continuity gadgets remain absent
+   from the cited K0b registry. The old self-transfer skeleton is not a lock/exclusion cost
+   estimate. Funding ownership, lock release and sanction wiring need a joint artifact
+   budget and a linkability analysis. No frozen hash, proof length or proof run is claimed.
+
+## Separate Critic pass: all 21 criteria
+
+This is implementing-session self-review, not an independent external audit.
+
+| Criterion | Result and remaining obligation |
+|---|---|
+| 1. Accelerate one's own | Lock cannot circulate while outstanding; prove every consumption path excludes ordinary spending. |
+| 2. Delay another | F-1 and suite transplant must fail at the proof verifier; native checks alone are insufficient. |
+| 3. Punish without evidence | Only proven violation; existing signed contradicting pairs qualify. Silence, timeout and malformed deposits do not. Evidence-to-lock relation OPEN. |
+| 4. Subjective seed | No seed change; verifier roots and period need canonical authenticated state. |
+| 5. Expiry and slot | Pending expiry does not refund a still-selectable candidate; explicit withdrawal/release prevents trapped value and double use. |
+| 6. Hardware/precomputation | Full gadget budget absent; no commodity-device feasibility claim. |
+| 7. Field necessity | Note roots/nullifiers fund a lock; commitment associates it with the candidate; period/suite/machine bind the statement. No owner or record identifier added. |
+| 8. Cross-section | Constitutional exception, Consensus gate and Value equation aligned; fixed-period override and sanction linkage gap are explicit. |
+| 9. Scope | Documentation only, existing branch, constitutional amendment separate. No client or Rust edits. |
+| 10. Temporal evolution | Release follows successor-window close, not a timer; canonical evidence precedes refund eligibility; repeated evidence cannot double burn. |
+| 11. Concentration | Fixed capital can exclude cash-poor eligible keys; decided policy does not establish decentralization or prevent rented capital. |
+| 12. New-class review | Slash association must protect all honest windows, not only hide one funding input. Public lock/candidate association remains a review surface. |
+| 13. Invariants | Adjacent candidacy invariants name checks and state effects. Full release/slash statement is OPEN, not hidden behind an opaque digest. |
+| 14. Lifecycle | Lock state, root and storage card unresolved; no unbounded registry claimed safe. Existing nullifier set owns spentness. |
+| 15. Sabotage | Cheap parsing/spentness checks first; unsolicited junk cannot burn an honest lock. Proof-cost DoS unmeasured. |
+| 16. Completeness | Prior decision-212 text retained below as historical evidence; active Canon/Consensus/Registry point to the replacement. Old frozen vectors are pre-transition. |
+| 17. Single source | Canon Decree owns the amount; other texts refer to node_lock. Canon owns layout offsets and denomination. |
+| 18. Whole class | Required tests cover all funding conflicts, release/slash permutations, repeats, restart and anonymous exclusion after slash. |
+| 19. Scarcity | Constitution expressly admits the one monetary exception; it is not relabeled time. |
+| 20. Minimality | Existing note slots, change and spent set reused; one lock. New persistent machinery must justify its full lifecycle before acceptance. |
+| 21. Equilibrium | Simultaneous locks immobilize value; voluntary exit and challenge delay constrain reuse. Loans, wealth concentration and bootstrap availability remain unproven. Burning supplies no reporter reward. |
+
+Required later tests: honest lock, below/exact/above funding with correct change; forged
+amount/filler/ownership; F-1 and suite mutation; spent inputs and duplicate operator right;
+release before/at/after last challenge boundary; slash before release and release before
+late evidence; repeated evidence, same-window ordering and restart; candidate expiry and
+withdrawal; noncooperating offender; exclusion from every later cement without linking
+honest windows. Every refusal compares full state. Each mutation must turn its regression
+red. None of these tests was executed here.
+
+Validation for this documentation pass: `git diff --check`, exit 0. Byte offsets reviewed
+field by field against existing widths. No Cargo, build, test, proof, device or server run.
+All source-map paths are in the existing branch. K0 is partial and K1-K4 remain stopped.
+
+GPT agent [01a1792c], model id not visible to the agent
+
+---
+
+## Historical decision-212/K0b report, superseded as the active proposal
+
+The following is retained evidence of the earlier proposal and its source inventory.
+Its present-tense status, self-transfer rules, numerical threshold, estimates and review
+conclusions refer only to the predecessor. They are not the current K0d specification.
+
 # Item 4: decision-212 self-transfer, K0 review proposal
 
 Base: `4c6430a6feb54527606e3e93023ec71219c2c352`, 2026-10-26 UTC.

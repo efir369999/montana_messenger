@@ -1,5 +1,11 @@
 # Audit package
 
+Refs #15: author decision 233 is recorded in the partial K0d node-lock proposal in
+[ADMISSION-LEVEL1-K0.md](core/Montana-Core/protocol-13/ADMISSION-LEVEL1-K0.md). The amount,
+continuity-plus-lock gate and burn rule are decided. Anonymous evidence-to-lock binding,
+revocation, release/slash layouts, complete continuity and circuit costs
+remain open; no implementation or acceptance is claimed.
+
 Current protocol closure is tracked separately in [Audit/Protocol-13](Audit/Protocol-13/README.md).
 As of 2026-10-14, all 13 acceptance criteria remain open. Those reports distinguish the published
 snapshot from candidate repairs and do not convert the historical findings below into closure.

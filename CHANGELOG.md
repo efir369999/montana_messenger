@@ -11,6 +11,14 @@ records 224, 231 and 233: voluntary node lock, continuity plus lock, and the sol
 exception for a slashed lock. Chairman's line review and all implementation evidence remain
 open. This entry records source work, not a release.
 
+## Council proposal follow-up - 2026-10-26
+
+Refs #15. GPT agent [01a1792c], model id not visible to the agent. Parent: `4221b83`.
+Build unassigned; protocol documentation only, no OS artifact. K0c/K0d records the decided
+lock row, continuity input, candidate layouts and conservation; anonymous slash linkage,
+release/slash layouts, continuity constraints and artifact costs remain open.
+The implementing session records all 21 self-review criteria; this is partial, not acceptance.
+
 ## 1.0 (2314) - 2026-10-26
 
 Source commit `df26a92dd9fe`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2314.md).
