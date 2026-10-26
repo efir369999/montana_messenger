@@ -4693,7 +4693,7 @@ demands the width from this row rather than declaring one of its own.
 |---|---|
 | `hash_bytes` — the width of a hash output, and therefore of every identifier, commitment, nullifier and root | 32 |
 | `τ₂` — the period of adaptation, in windows | 20 160 |
-| `window_credit` — the coins credited to every machine living in a window, for that window; the constitutional layer fixes it | 1 |
+| `window_credit` — the coins credited to every machine living in a window, one for every second of it (article 11); derived: 86 400 / `segment_windows`, never read from a clock | 60 |
 | `slot_modulus` | 64 |
 | `retarget_period`, in windows | τ₂ |
 | `retarget_damping` | 4 |
