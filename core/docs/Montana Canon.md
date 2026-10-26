@@ -5229,15 +5229,24 @@ length and the reconciliation with Constitution [I-2], [I-6] and [I-12] remain r
 the source map and the precise conflicts are in `core/Montana-Core/protocol-13/ADMISSION-LEVEL1-K0.md`. Existing frozen
 vectors describe the preceding statement and are not evidence for this replacement.
 
-**Unit and threshold.** For this proposal, one integer unit of the note's unsigned amount is
-one coin. The author's decision supplies the threshold `admission_pi_min = 3` such units.
-The client unit is stated at `apps/messenger/ios/Code/Montana/MontanaSettings.swift:320`
-at the base named in the K0 report: one second is one coin. This maps the denomination,
-not a clock measurement, into the note amount of "The derivations of a note". No elapsed
-seconds, timestamp or conversion by a verifier enters the statement. The amount's canonical
-encoding remains that of a note; the threshold's encoding in that width is `03` followed by
-fifteen zero bytes. There is no decimal scale factor. This unit bridge is part of the proposal;
-the client sentence alone did not previously specify a core admission threshold.
+**Unit and threshold.** The pre-transition core did not define the denomination of its
+integer note/share amounts: the wallet copies the share directly into `HeldRight.value`
+(`montana-wallet/src/pay.rs:108-114` at the K0 base). The client's denomination sentence at
+`apps/messenger/ios/Code/Montana/MontanaSettings.swift:320` does not supply that missing
+core rule. This proposal supplies it here as one Values row, subject to K0 review:
+
+| Value | Definition |
+|---|---|
+| `value_unit` | One integer unit of a note amount, an emission-schedule mint or an issued share is one coin; all three use this same denomination, with no decimal scaling. |
+
+This is a denomination definition, not an elapsed-time conversion or a configurable
+Decree multiplier. Division of a window's mint among its living machines rounds in this
+same unit by the existing share rule; it does not turn a window into measured seconds.
+The author's decision supplies `admission_pi_min = 3` value units. The threshold's
+canonical encoding in the note amount width is `03` followed by fifteen zero bytes.
+The client's sentence that one second is one coin describes its presentation; no clock
+measurement, timestamp or physical second enters the core proof. This row closes the
+specification's unit-anchor gap only if accepted, not any implementation or conformance gap.
 
 **Fixed positions.** A candidacy has one self-transfer group, with `spend_inputs` consumed
 positions and `spend_outputs` created positions from Forms. The count of groups is fixed by
