@@ -30,7 +30,7 @@ finding must not be silently applied to this base after merged PR #26.
 | `core/Montana-Core/crates/montana-wallet/src/lib.rs:381-383` | `balance()` sums values from the wallet's local held-note ledger. It is not a balance commitment under the record root and is not an admission proof. |
 | `core/docs/Montana Value.md:173` | Applying a frame inserts commitments and nullifiers; no account balance exists. |
 | `core/Montana-Core/crates/montana-node/tests/a_record_raises_one_machine.rs:1-146` | Existing source exercises another root/window, repeated right, a second machine under one right, restart and the standing-stride root rule. These tests do not establish Global level 1. |
-| `core/Montana-Core/crates/montana-node/tests/admission_audit.rs:31-104,110-134` | The mixed-witness case is refused; the second test still expects a lifted `node_commit` to apply. This is F-1, not a successful binding. Tests were read, not run in this K0. |
+| `core/Montana-Core/crates/montana-node/tests/admission_audit.rs:31-104,110-133` | The mixed-witness case is refused; the second test still expects a lifted `node_commit` to apply. This is F-1, not a successful binding. Tests were read, not run in this K0. |
 | `apps/messenger/ios/Code/Montana/MontanaSettings.swift:277-281`; `apps/messenger/ios/FABRIC-OF-TIME.md:362` | The client describes Global as the minimum of chain, pi and Fabric levels (2 seconds and 3 coins for level 1). A per-correspondence key cannot be tied to the balance by the Fabric verifier. Decision 207 keeps Fabric a client gate. |
 
 ## What needs a specification before K0 can continue
@@ -39,10 +39,9 @@ finding must not be silently applied to this base after merged PR #26.
    plane (or an explicitly authorized different construction), its relation to
    the claimant, the root/stride and unspentness rule. Neither a record-only
    range check nor a note-membership check supplies all of these facts.
-2. Define how the committed chain fields prove the author's two seconds. Record
-   age and lived-segment count must not silently be equated with the client's
-   seconds of online activity; the existing pressure-dependent entry gate also
-   needs an explicit relationship to the new level-1 rule.
+2. Keep the network's lived-continuity gate (`Canon:5217`) distinct from the
+   client's two seconds of attended time, which are not in state. The chairman's
+   review confirms this distinction; no new time field is inferred or invented.
 3. Then specify the complete new public input, including `node_commit` and
    `suite_id`, the client-only Fabric gate, and the new admission identifier,
    `air_hash` and Genesis State Hash. Appending 32+2 bytes to the current input
@@ -53,6 +52,14 @@ Canon, Consensus and Registry are unchanged. No circuit, verifier, transition,
 client, release row or old core is changed. F-1 remains open. No K1-K4 work may
 start until the chairman accepts a completed K0. The requested stop is reported
 with source evidence rather than replaced by an invented state quantity.
+
+The chairman accepted this stop on 2026-10-26 in
+[PR #52](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6414349902).
+The value-plane choice is the author's question 212: a candidacy carrying a
+self-transfer of at least 3 coins, or pi remaining a client gate. Neither option
+is adopted here. K1-K4 wait; the chairman will issue the K0 specification task
+after that answer. The public input must bind `node_commit` and `suite_id` either
+way, as the review states.
 
 Validation: pinned source reading, separate Critic self-review of the note-plane
 counterexample to "there is no committed value", and `git diff --check` (0).
