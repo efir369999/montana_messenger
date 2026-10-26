@@ -5281,9 +5281,10 @@ public_input(candidacy_self_transfer)
   note_root                        32 B   offset 136
   note_nullifier x spend_inputs    32 B each, offsets 168 and 200
   note_commitment x spend_outputs  32 B each, offsets 232 and 264
-  suite_id                          2 B   offset 296
+  entry_segments                    4 B   u32, little-endian, offset 296, verifier-owned
+  suite_id                          2 B   offset 300
 
-public_input_len = 8 + (5 + spend_inputs + spend_outputs) x 32 + 2 = 298 B
+public_input_len = 8 + (5 + spend_inputs + spend_outputs) x 32 + 4 + 2 = 302 B
 ```
 
 `P` is a specification placeholder, not a field, negotiable length or new parameter chosen
@@ -5295,13 +5296,55 @@ digest widths and the existing Forms rows. The suite is last in the public input
 proof-hash digests begin on limb boundaries; the last limb contains only its two bytes.
 The fields shared with serialization have exactly its order; verifier-owned context is
 inserted without permuting those object fields.
-This is the byte-exact proposed pi/origin input. A remaining completeness gate is the
-adaptive continuity period: Identity compares the active share against `segments_in_force`,
-which Consensus raises under applicant pressure. The present admission input contains no
-verifier-bound pressure or period, and the current circuit reads no continuity. The reviewer
-must settle the canonical pressure snapshot and how the derived period reaches the proof
-before this layout can be called the complete replacement input. An extra verifier input
-changes the layout above; silently letting the prover choose the period is inadmissible.
+`entry_segments` is context, not an additional wire field. Its four-byte width matches the
+segment-count type (`mt-state/src/layout.rs:1011`) and gives one canonical public limb;
+its allowed value is the exact result of the following rule, never any caller-chosen period.
+
+**Proposed canonical pressure snapshot.** Let `S` be the standing stride's last window,
+the same authenticated proposal from which the verifier takes both roots. All pressure
+state is frozen after applying that window's canonical operations, selection and expirations.
+Let `A` be that proposal's `cement_count`, the living population at this snapshot: this is
+the meaning of `active` in "The close of a window, and the slots an event offers". Let `N`
+count distinct applied candidacies still pending after that same snapshot: not admitted and
+not expired, with `S - candidacy.window < candidate_expiry`. A future candidacy, an unapplied
+announcement, a local mempool entry or a duplicate operator right contributes nothing.
+Subtract only after checking `candidacy.window <= S`; the equality boundary is expired.
+
+```
+pressure_high = N x adaptive_entry_threshold_den > A x adaptive_entry_threshold_num
+entry_segments = if pressure_high:
+                   min(continuity_segments x adaptive_entry_multiplier, max_entry_segments)
+                 else:
+                   continuity_segments
+```
+
+`A` and `N` are unsigned counts checked to fit `u64`; products use checked `u128` arithmetic,
+and the resulting period must fit `u32` and lie within the Decree's segment range. The
+multiplier applies once to the base period, not repeatedly to an earlier result. The strict
+comparison makes equality the base-period case. With no living population, a nonempty
+pending set selects the raised period and an empty one selects the base period; there is
+no division by zero or special period outside the rule. This proposes the missing precise
+snapshot and multiplier interpretation for review rather than claiming the current code
+already enforces it. A pressure change after `S` affects the next standing stride: this
+bounded reaction delay is a policy consequence, not a claim of immediate spam resistance.
+
+`N` must come from authenticated replay of the canonical candidacy/selection history,
+not from the note or nullifier root alone. The current proposal layout names a roll of
+frames and cement parts (`Canon:4923-4995` at the K0 base), and `apply_candidacy` currently
+records only the spent right (`montana-node/src/state.rs:441-481`). Those facts do not yet
+supply the authenticated pending-candidate history this rule needs. Its canonical replay
+path is an explicit implementation dependency. If the verifier cannot reconstruct the
+snapshot, it refuses candidacy; it neither accepts an asserted count nor substitutes zero.
+The proposal adds no root, tree or claimant-supplied count to cover that dependency.
+
+The proof reads `window` and the verifier-derived period. It derives the current segment
+by the existing window/segment division, refuses a record from a future segment or with
+reserved bitmap bits, shifts that record's bitmap by the unsigned elapsed segment distance
+(a distance beyond the bitmap width yields zero), masks to the period in force, and
+compares the population count with Identity's required share rounded upward. Counting all
+bits without the period mask is insufficient. The period and window are bound into the
+proof input; a prover cannot select an easier period or replace the record whose right it
+spends. These constraints still require a continuity gadget; the native helper is not one.
 
 Proof verification binds the exact byte stream, including the suite and commitment, into
 the transcript. Binding these fields prevents a relay transplanting the proof to different

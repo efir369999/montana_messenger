@@ -944,6 +944,9 @@ Its honest limit is liquidity at candidacy. Once the ordinary horizon permits an
 the returned value can fund another claimant. Admission therefore retains its lived-continuity
 and selection rules; this threshold does not establish a capital cost per simultaneous machine.
 The one-time right still extinguishes when the candidacy applies, independently of selection.
+Canon also proposes the pressure snapshot shared by both roots and a verifier-owned
+continuity-period input. Its authenticated pending-candidate replay path remains an
+implementation dependency; local pending announcements cannot determine admission difficulty.
 Fabric is a client gate: per-correspondence keys do not expose a balance or a public link to the
 person's record (the source analysis is in `core/Montana-Core/protocol-13/ADMISSION-LEVEL1-K0.md`). A client's attended-time
 display is not the network's segment/share proof and adds no timestamp to state.
