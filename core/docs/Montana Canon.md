@@ -2961,7 +2961,7 @@ domain would let the public kind collide with the private kind.
 
 A machine is admitted once and stands in the tree of admitted machines from then on; the leaf it
 occupies is the half of its secret that names it, and nothing else. A window it lived credits it
-one coin, and what the network holds of that credit is a leaf of a second tree, the **tree of
+`window_credit` coins, one for every second of the window, and what the network holds of that credit is a leaf of a second tree, the **tree of
 credited rights**, taken over the part its secret derives for that window:
 
 ```
@@ -3010,7 +3010,7 @@ window written beside the part would bind again what the part already binds.
 half and that same element of the window, and walks the credited leaf of that part to the
 credited root the proposal of the standing stride's last window carries; the nullifier of this
 window's right under that half is the published value, the amount the right brings into the
-balance of the frame is one coin, and the computed moment of taking falls within the standing
+balance of the frame is `window_credit`, and the computed moment of taking falls within the standing
 stride of the window the frame applies in — every window of a stride stands before its standing
 period, so nothing lands before its moment, and a moment of a stride the horizon has left is
 unprovable. It proves membership exactly as the redemption of a note does, and against a root of its
@@ -3018,7 +3018,7 @@ own; the two branches occupy the same blocks, so nothing of which was taken is r
 length of a frame or the shape of its trace. Neither the part, nor `W`, nor the position of the
 leaf is published: `credit_nf` is the one public value of the position, and the part — public in
 the attestations of `W` — does not join to it, since the two take distinct domains. The amount is
-a constant of the construction and not a witness: a right is worth one coin whatever the count of
+a constant of the construction and not a witness: a right is worth `window_credit` coins whatever the count of
 the living of its window, so a frame prices a right alone and no count of a cement enters its proof
 to do it. The credited root of a stride holds the parts of every window before the stride's last;
 a right whose computed moment is its own window, where that window is the last of its stride, finds
@@ -3043,7 +3043,7 @@ deriving the part.
 - The proposal of `W + 1` appends the parts of the cement of `W` and no other value, ascending, after the challenge of `W` has closed, and the root it carries is recomputed by every verifier; a part a contradicting pair of that challenge convicts enters no leaf.
 - The nullifier takes the spending half and the window and nothing else, so two machines never collide and one machine cannot spend one window twice.
 - Nothing published by a machine carries either half's preimage, so a coin taken says nothing about who runs the machine.
-- A redemption of a right brings exactly one coin into the balance of its spend; a right standing for any other amount is not a right of this construction.
+- A redemption of a right brings exactly `window_credit` coins into the balance of its spend; a right standing for any other amount is not a right of this construction.
 - A nullifier already present in its window is refused in silence.
 - The moment of taking is the second squeeze of that same absorption, so no third reading of the secret exists anywhere in this construction.
 - All of it is of the proof hash family, for the reason the envelope of a note is: a right is redeemed by a frame and by nothing else, so the one judge of these derivations is a verifier of a proof, and a function the circuit cannot carry would put the redemption of a right beyond proving.
@@ -4518,7 +4518,7 @@ proving — the fold of the standing stride of the window the frame applies in �
 a right, that the part its secret derives for its window, from the half its nullifier takes and the
 same window, stands at a leaf of the tree of credited rights under the root the proposal of that
 stride's last window carries; that what is created equals what is consumed, a right counting
-as one coin; that
+as `window_credit` coins; that
 every nullifier derives from what was consumed by the canonical formula of its branch; that the
 rate nullifier belongs to a window of the standing stride and its index is within the bound;
 that the computed moment of a right falls within the standing stride, which is what stands
@@ -4758,10 +4758,10 @@ verifies as they arrive; the envelope and the gate of entry bound that count, an
 majority costs a signature check alone. **The young
 network pays itself while it is everyone who exists:** the length of a window in rounds falls with
 the population below the floor of the crowd and stands at the target above it, so windows pass
-quickly in lived time while the geography is one room, and the credit of one coin to every living
-machine for every window pays a machine quickly in those early days — its coin of a window lasts
-the lived length of that window, which is short while the network is small, and what a window adds
-to the supply is the count of its living, which is small with it.
+quickly in lived time while the geography is one room, and the credit of one coin for every second
+of a window to every living machine pays a machine quickly in those early days — its coins of a
+window last the lived length of that window, which is short while the network is small, and what a
+window adds to the supply is the credit times the count of its living, which is small with it.
 
 **Every parameter of the table is published.** The last to land was the hash binding the constraint
 sets — the identifiers of the six descriptions the network accepts proofs under. These bind
@@ -4783,11 +4783,11 @@ genesis_state_hash = SHA-256("mt-genesis-state" || 0x00 || parameters
                              || note_root || nullifier_root || record_root || machine_root || admitted_root
                              || credited_root || operations_root)
 
-                   = 0efbca26fc06499d8611191ec11000c4c9a7b32f94d4da3ab3edce11f629cd6e
+                   = 718214ab11915051aed3763f4ba13d5b11d36221a75450cb04947eb34ccd2644
 
 published_parameters = SHA-256("mt-genesis-state" || 0x00 || the parameters that are published,
                                in the order and the encoding above)
-                     = 1b42e8fe07a11004539c480040b00e9149236a929abc770dd13450abe8621356
+                     = 8d6dec4bd010c6ed08013b09a7c7c1e937282d4fa0142946e1ade5a31f3fb7e8
 ```
 
 A chain whose value differs is not a fork of Montana but a different protocol, and honest

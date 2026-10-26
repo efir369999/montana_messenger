@@ -10,10 +10,10 @@
 // field elements is exact, and nothing about it can wrap.
 //
 // **What that bound costs, named rather than discovered.** An amount above two to the sixty-second
-// is unrepresentable in a frame. No note holds more than the supply, and the supply grows by one
-// coin for every machine living each window, so it reaches that number after two to the
-// sixty-second divided by N windows at a steady N living machines — some 4.6 · 10⁹ windows at a
-// billion machines, 4.6 · 10⁶ at a trillion. That is a bound in windows and in the count of the
+// is unrepresentable in a frame. No note holds more than the supply, and the supply grows by
+// `window_credit` coins for every machine living each window, so it reaches that number after two
+// to the sixty-second divided by `window_credit` · N windows at a steady N living machines — some
+// 7.7 · 10⁷ windows at a billion machines, 7.7 · 10⁴ at a trillion. That is a bound in windows and in the count of the
 // living, not in years: the set fixes neither the lived length of a window nor a ceiling on the
 // machines, so how much lived time it leaves depends on both, and a network wide enough reaches it
 // sooner. Until the supply passes it, what the bound removes is a quantity no note can hold — and

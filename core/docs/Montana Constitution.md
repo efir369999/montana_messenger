@@ -814,14 +814,15 @@ insufficient and a structural one is required.
 network — it is a new network with a new genesis, and honest machines reject such proposals as
 an unknown protocol rather than as a fork. The layer covers: the global invariants in force
 and their operational requirements; the monetary constitution — one second, one coin: every
-machine living in a window is credited exactly one coin for that window, where the second is the
-name of one unit of witnessed presence, one window in whose cement the machine's part stands,
-read off the cement and never off a clock, so that a coin equals a second by name only and its
-lived length is its window's; the credit is fixed at Genesis and no later act may change it,
-supply growing strictly monotonically by the count of the living of every window, no halving
-driven by the protocol, no premiums, no protocol-level burning; the emission constitution — the
-credit of a window one coin to each of its living machines alike, nothing divided and so no
-remainder to carry or to appropriate, no emission lottery, no personal reward to the runner; the
+machine living in a window is credited one coin for every second of that window, and a window is
+its seconds by count — the day of 86 400 seconds divided into `segment_windows` windows — so the
+credit of a window is `window_credit` = 86 400 / `segment_windows` coins, read off the cement and
+the Decree and never off a clock: a second is counted and never measured, and the lived length of
+a window's seconds is its window's; the credit is fixed at Genesis and no later act may change it,
+supply growing strictly monotonically by the credit times the count of the living of every
+window, no halving driven by the protocol, no premiums, no protocol-level burning; the emission
+constitution — the credit of a window alike to each of its living machines, nothing divided and
+so no remainder to carry or to appropriate, no emission lottery, no personal reward to the runner; the
 draw constitution — an unweighted ticket against
 the threshold orders the runners on duty, and the draw does not touch minting; absolute
 privacy of the financial layer; perfect fungibility; transport indistinguishability; the absence

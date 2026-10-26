@@ -392,7 +392,7 @@ from the other.
 
 The draw answers one service question — **who runs this window** — and it answers nothing
 about money. Every machine living in a window is credited one coin
-for it, and the machine on duty receives the same coin as any other.
+for every second of it, and the machine on duty receives the same coins as any other.
 
 **A threshold, not a comparison.** Every living machine computes its own ticket at home from
 its own secret and the cemented aggregate of the window two before the one being drawn, and
@@ -407,7 +407,7 @@ one that cleared the threshold is revealed by the fact of publishing a window, a
 asserts that it cleared without disclosing the ticket, the secret or the machine.
 
 **The ticket carries no weight.** Every machine of the electorate draws against one threshold, so
-every living machine has the same chance, and its income is the one coin of every window it
+every living machine has the same chance, and its income is the credit of every window it
 lived, whether it ran or not. What the network holds of "how many of us there are" is the counts a proposal carries in
 the open — the admitted, the cement and the census of the standing — and nothing finer: the draw
 weighs no machine, and names none. Standing weighs in the close and only there, through the votes
@@ -1134,20 +1134,23 @@ everywhere, and it is the choice here.
 
 ## The right to a window's coin
 
-Minting creates no note. A window credits **one coin** to every machine living in it, and issues
-to each a **right to its coin** of that window. Nothing is divided, so no remainder exists to
-carry or to appropriate. The count of the living is the count of the cement of the window, which
-every machine holds, and it is the supply the window adds, in coins.
+Minting creates no note. A window credits **one coin for every second of it** — `window_credit`
+of the Decree — to every machine living in it, and issues to each a **right to its coins** of that
+window. Nothing is divided, so no remainder exists to carry or to appropriate. The count of the
+living is the count of the cement of the window, which every machine holds, and the credit times
+that count is the supply the window adds, in coins.
 
-**One second, one coin, and the second is a window.** Inside the protocol "one second" is the
-name of one unit of witnessed presence, and that unit is one window in whose cement the machine's
-part-nullifier stands — the only presence the cement witnesses, by the invariants above. No clock
-is read to issue a coin and none could be: a coin equals a second by name only, and its lived
-length is the lived length of its window, which varies as the section on the pulse states.
+**One second, one coin, and a window is its seconds by count.** The Decree divides the day of
+86 400 seconds into `segment_windows` windows, so a window is 86 400 / `segment_windows` seconds by
+count and credits that many coins to every machine whose part-nullifier its cement holds — the
+only presence the cement witnesses, by the invariants above. No clock is read to issue a coin and
+none could be: a second is counted by the Decree and never measured, and the lived length of a
+window's seconds is the lived length of that window, which varies as the section on the pulse
+states.
 
-Each living machine holds exactly one right per window, worth one coin, and each such right is
-extinguished by exactly one nullifier — so no machine takes its coin twice, and no machine takes
-another's. The right is bound to its window by its nullifier, to its amount by this rule, to one
+Each living machine holds exactly one right per window, worth the window's credit, and each such
+right is extinguished by exactly one nullifier — so no machine takes its coins twice, and no
+machine takes another's. The right is bound to its window by its nullifier, to its amount by this rule, to one
 use by the set of nullifiers, and to its recipient by the payment that redeems it, whose notes
 are the recipient's.
 
@@ -1160,8 +1163,8 @@ admitted or not, present in other windows or not — holds nothing to walk to an
 it. Admission is not presence: the tree of admitted machines says who may answer, and only a cement
 says who did.
 
-Consensus issues the right and states what it is worth: one coin to every living machine, the
-same for each of them whatever the count of the living. How a right is proven and consumed is
+Consensus issues the right and states what it is worth: the window's credit to every living
+machine, the same for each of them whatever the count of the living. How a right is proven and consumed is
 Value's, and is not described here — a second description of one construction is how two
 documents come to disagree about it.
 
@@ -1327,7 +1330,7 @@ apply, and it finalizes its own chain while the committee consists of itself alo
 |---|---|
 | the coordinate of a window | closed by construction: it is the point of the whole layer, it names no one, and it is one number for the network |
 | who ran a window | closed: the runner is nameless under a one-time key, and the ticket proof of its proposal asserts clearing without the ticket, the secret or the machine |
-| how many machines are living | **deliberately observable**: the count of the cement is the supply the window adds, one coin to each living machine, and the quorum is a count against the count of the electorate, so every machine reads both; they are numbers about the network and name nobody |
+| how many machines are living | **deliberately observable**: the count of the cement times the credit is the supply the window adds, the window's credit to each living machine, and the quorum is a count against the count of the electorate, so every machine reads both; they are numbers about the network and name nobody |
 | the standing of a machine | closed: it is the census windows whose cements hold the machine's parts, and a part names nobody; no object carries it, the ballot proves it without disclosing it, and the sum of the electorate's standing is a sum of census counts that names nobody |
 | the votes of a ballot | **deliberately observable**: the count of votes a standing drew in a window is what the vote half of the close adds up, and it is a draw whose expectation is the standing over the committee — joined to nothing across windows and to no machine, and published only above the floor of the committee, where a full standing expects at most one vote; below the floor no ballot exists |
 | the presence of a machine over time | closed: a part-nullifier and a one-time key join to nothing across windows, and the proof of presence hides its witness, so no public timeline of a machine exists |
@@ -1352,7 +1355,7 @@ An implementation conforms to this document when all of the following hold.
 5. It finalizes a proposal only on the decision of the agreement of the window after it — closing pledges of distinct machines of the electorate on its name reaching the quorum share of its count, with ballots of their parts casting the quorum share of the committee the electorate's standing draws — verifying the roots and the control set — the canonically admitted objects that change who runs windows — by independent recomputation rather than by trust.
 6. It takes two clearings that closed on one final beacon as one proposal under one identifier, and walks the cascade in the standby order Canon derives — the ascending order of the cascade key over the commitments of the active set — running the entitled parallel versions from the window's first round and closing on the senior completed cement.
 7. It admits a candidate only through a selection event, in the canonical order, within the bound, and only after the lived continuity period Identity defines.
-8. It issues one right per living machine per window, worth one coin, divides nothing and carries no remainder, reads no clock to issue it, and derives the count of the living — the coins the window adds — from the cement and from nothing else.
+8. It issues one right per living machine per window, worth the window's credit, divides nothing and carries no remainder, reads no clock to issue it, and derives the count of the living — which times the credit is the coins the window adds — from the cement and from nothing else.
 9. It publishes of an admission the commitment that stands for the machine — derived under the domain Canon names from the answering key, its suite and a blinding factor — and nothing that names an owner, an address or a person.
 10. It refuses a candidacy whose one-time right to raise a machine is already extinguished, and it derives that right under the domain Canon names.
 11. It disregards, for the window in which a proposal was rejected, the ticket of the machine that published it — and restores it for the next window, because the loss is of duty and never of its place.

@@ -156,7 +156,7 @@ machine secret that proves it — the secret whose part of that window is a leaf
 credited rights under the root the proposal of the standing stride's last window carries, so the
 window witnessed the machine that redeems its coin. In both branches the nullifier published is derived from what was
 consumed by the canonical formula of that branch. What is created equals what is consumed, and a
-right consumed is worth one coin — a constant of the protocol and never a witness, so a frame prices
+right consumed is worth `window_credit` coins — a constant of the protocol and never a witness, so a frame prices
 a right alone and no quantity of its window enters the proof to do it. The rate nullifier
 belongs to a window of the standing stride — every window of which stands before the one the
 frame applies in — and its index is within the bound, neither the window nor the index being
@@ -205,7 +205,7 @@ its right to that window's coin is a right nobody issued, and the proof refuses 
 ## Conservation of issuance
 
 - **Per payment:** what is created equals what is consumed, asserted by the proof and never by adding open numbers.
-- **Per window:** the change of supply equals the count of the cement of that window, in coins — one right of one coin per living machine, each extinguished by exactly one nullifier; nothing is divided and nothing is carried forward. A right the sanction of Consensus extinguishes without issue is a coin that window does not add: its part is the one the proposal of the window after it leaves out of the tree of credited rights, so the coins a window adds are the leaves that proposal appends.
+- **Per window:** the change of supply equals `window_credit` times the count of the cement of that window, in coins — one right of `window_credit` coins per living machine, each extinguished by exactly one nullifier; nothing is divided and nothing is carried forward. A right the sanction of Consensus extinguishes without issue is a credit that window does not add: its part is the one the proposal of the window after it leaves out of the tree of credited rights, so the coins a window adds are the leaves that proposal appends.
 - **Globally:** the supply is the sum over the windows of what each added, and it equals the sum of unspent notes and unredeemed rights, held by proof and induction and **unverifiable by addition** — amounts are hidden and rights are private. The supply itself is public, as the counts of the cements are; what no addition verifies is that the hidden notes and the private rights sum to it.
 
 **The honest price.** The ability to detect a breach of issuance by simple summation is lost
