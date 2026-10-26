@@ -19,22 +19,6 @@ use common::{of, payee_of, Scratch};
 
 const WINDOW: u64 = 1_000;
 
-// The tree of admitted machines holding one machine, and the branch it walks.
-fn admitted_of_one(
-    machine_secret: &[u8; 32],
-) -> (mt_proof::poseidon::Digest, Vec<mt_proof::poseidon::Digest>) {
-    let naming = mt_derive::nullifier::machine_halves(machine_secret).1;
-    let leaf = mt_proof::admitted::leaf(&naming).expect("a half of the family");
-    let empties = mt_proof::admitted::empty_internals(mt_proof::tree_depth());
-    let mut current = leaf;
-    let mut siblings = Vec::new();
-    for empty in empties.iter().take(mt_proof::tree_depth()) {
-        siblings.push(*empty);
-        current = mt_proof::admitted::node(&current, empty);
-    }
-    (current, siblings)
-}
-
 #[test]
 fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
     let miner_at = Scratch::named("value-miner");
@@ -45,8 +29,15 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
     let (of_payee, payee_key) = payee_of(0xB2);
 
     let machine_secret = of(0x77, 0);
-    let (admitted_root, admitted_siblings) = admitted_of_one(&machine_secret);
-    let mut state = State::new().with_admitted(admitted_root);
+    // The window closed on a cement naming one machine, and the proposal of the window after it
+    // credited that machine's part: the leaf its right walks to.
+    let part = mt_derive::nullifier::part(&machine_secret, WINDOW).expect("a secret of the family");
+    let mut state = State::new();
+    state.credit(&[part]).expect("a cement the tree holds");
+    let (credited_siblings, credited_position) = state
+        .credited_branch(&part)
+        .expect("the part the window credited");
+    let credited_root = state.credited();
 
     // The window closed on a cement naming one machine, so that machine takes one coin, as every
     // machine of every cement does.
@@ -63,13 +54,13 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
             &machine_secret,
             WINDOW,
             u128::from(right.worth),
-            &admitted_siblings,
-            0,
+            &credited_siblings,
+            credited_position,
             &of_miner,
             right.accepted_in,
             &of(0xD4, 0),
             &state.notes_root(),
-            &admitted_root,
+            &credited_root,
         )
         .expect("a machine holding one right writes a frame");
 
@@ -121,7 +112,7 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
             &of_miner,
             &paths,
             &state.notes_root(),
-            &admitted_root,
+            &credited_root,
         )
         .expect("a wallet holding a note pays");
     let object = mt_state::layout::Frame::parse(&payment.frame).expect("a frame reads back");

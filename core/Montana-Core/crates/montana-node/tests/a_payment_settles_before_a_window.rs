@@ -56,7 +56,7 @@ fn a_note_is_spendable_the_moment_it_stands_and_no_window_closes_between() {
             .expect("the tree takes a commitment");
         payer.enter(note).expect("the ledger takes it");
     }
-    let admitted = mt_proof::admitted::empty_root();
+    let credited = mt_proof::credited::empty_root();
 
     // The first payment. Everything of it is ordinary; what matters is the tree it leaves behind.
     let paths: Vec<Vec<mt_proof::poseidon::Digest>> = (0..taking as u64)
@@ -73,7 +73,7 @@ fn a_note_is_spendable_the_moment_it_stands_and_no_window_closes_between() {
             &of_payer,
             &paths,
             &before,
-            &admitted,
+            &credited,
         )
         .expect("a payment of what the payer holds");
     let object = mt_state::layout::Frame::parse(&first.frame).expect("a frame reads back");
@@ -118,7 +118,7 @@ fn a_note_is_spendable_the_moment_it_stands_and_no_window_closes_between() {
             &of_payee,
             &of_the_payee,
             &after,
-            &admitted,
+            &credited,
         )
         .expect("a payment of a note that stands in the tree");
     let onward_object = mt_state::layout::Frame::parse(&second.frame).expect("a frame reads back");

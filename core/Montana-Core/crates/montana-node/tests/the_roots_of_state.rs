@@ -80,7 +80,7 @@ fn the_roots_of_state_are_the_tables_the_window_left() {
             &of_payer,
             &paths,
             &before,
-            &cohort.root(),
+            &state.credited(),
         )
         .expect("a payment of what the payer holds");
     let frame = mt_state::layout::Frame::parse(&paid.frame).expect("a frame reads back");

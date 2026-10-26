@@ -106,7 +106,7 @@ fn four_machines_decide_one_name_under_a_held_part_a_late_frame_and_a_healed_par
         wallet.enter(note).expect("the ledger takes it");
     }
     // The frame, built once against the roots every plane holds as the first window opens: the
-    // tree of notes as seeded, and the tree of admitted machines of the cohort.
+    // tree of notes as seeded, and the tree of credited rights, which no window has credited yet.
     let frame = {
         let plane = machines[0].value().expect("the plane");
         let paths: Vec<_> = (0..inputs * count)
@@ -121,7 +121,7 @@ fn four_machines_decide_one_name_under_a_held_part_a_late_frame_and_a_healed_par
                 &of_payer,
                 &paths,
                 &plane.notes_root(),
-                &cohort.root(),
+                &plane.credited(),
             )
             .expect("the payment is built")
             .frame

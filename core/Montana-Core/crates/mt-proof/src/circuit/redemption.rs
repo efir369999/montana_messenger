@@ -7,7 +7,10 @@
 // below is therefore not a taste: the half feeds the commitment, the commitment feeds the leaf, the
 // walk carries the leaf to a root, and the nullifier closes over the commitment and the position the
 // walk was made at. One value alone is needed twice far apart — the commitment, by the leaf and by
-// the nullifier — and that one travels a lane of four columns with a rule of its own.
+// the nullifier — and that one travels a lane of four columns with a rule of its own. Between the
+// commitment and the leaf stands the one block of the part: a right derives there the part of its
+// window, which its leaf takes from the block beside it, and a note runs it over the lane and reads
+// nothing of it, so the commitment reaches the note's leaf by the lane as it reaches the nullifier.
 //
 // **What a proof of this says.** There is a note in the tree of this root whose nullifier is this
 // value, and whoever wrote the proof holds the key that spends it. The commitment, the amount, the
@@ -84,9 +87,20 @@ impl Places {
         sponge::blocks_of(CAPACITY + 4 + 2 * CAPACITY + 2 * CAPACITY)
     }
 
-    // The leaf of the tree, which absorbs the commitment.
-    pub fn leaf(&self) -> usize {
+    // The part, which a right derives from the half that spends and its window, as the cement of
+    // that window holds it: one block, the absorption the nullifier of a right takes, under the
+    // domain of a part.
+    pub fn part(&self) -> usize {
         self.commitment() + self.commitment_blocks()
+    }
+
+    pub fn part_blocks(&self) -> usize {
+        sponge::blocks_of(CAPACITY + 1)
+    }
+
+    // The leaf of the tree, which absorbs the commitment of a note or the part of a right.
+    pub fn leaf(&self) -> usize {
+        self.part() + self.part_blocks()
     }
 
     // The nodes of the walk.
@@ -118,6 +132,7 @@ impl Places {
             self.commitment(),
             self.commitment_blocks(),
         ));
+        out.extend(sponge::carry_rows(self.part(), self.part_blocks()));
         out.extend(sponge::carry_rows(
             self.nullifier(),
             self.nullifier_blocks(),
@@ -126,21 +141,18 @@ impl Places {
     }
 
     // The one seam at which a digest is wired to the block beside it in both branches: the naming
-    // half into the commitment chain. The seam of the leaf is a split — a note wires the
-    // commitment in, a right takes the naming half out of the lane.
+    // half into the commitment chain. The seam of the leaf is a split — a right wires the part in
+    // from the block beside it, a note takes its commitment out of the lane.
     pub fn wire_rows(&self) -> Vec<usize> {
         vec![self.seam_before(self.commitment())]
     }
 
-    // Where the first slot of the lane takes the ring: at the seam of the commitment it picks up
-    // the naming half — which is what the leaf of a right absorbs — and at the seam of the leaf
-    // the commitment, which is what the nullifier of a note reads. A load lands one row on, so at
-    // the leaf's own seam the first pickup still stands.
+    // Where the first slot of the lane takes the ring: at the seam of the part, where the
+    // commitment chain has just ended, so the slot holds a note's commitment across the block of
+    // the part and the walk — what the leaf of a note absorbs and what its nullifier reads. A load
+    // lands one row on, so at the part's own seam the slot still holds what it held before.
     pub fn load_rows(&self) -> Vec<usize> {
-        vec![
-            self.seam_before(self.commitment()),
-            self.seam_before(self.leaf()),
-        ]
+        vec![self.seam_before(self.part())]
     }
 
     // Where the half that spends enters the lane: the seam of the squeeze that yields it.
@@ -153,8 +165,20 @@ impl Places {
         vec![self.seam_before(self.leaf())]
     }
 
+    // The seams of the two chains that open by absorbing the lane: the part's and the nullifier's.
+    // A right absorbs the same preimage at both — the half that spends and its window — and a note
+    // the whole lane at both, so one split serves the two seams.
     pub fn read_rows(&self) -> Vec<usize> {
-        vec![self.seam_before(self.nullifier())]
+        vec![
+            self.seam_before(self.part()),
+            self.seam_before(self.nullifier()),
+        ]
+    }
+
+    // The first rows of the two chains that take the window of a right, where the window the frame
+    // stands in is pinned for the rule of that window to read.
+    pub fn window_rows(&self) -> Vec<usize> {
+        vec![self.part() * period(), self.nullifier() * period()]
     }
 
     // The position stands in the second block of the nullifier's chain, after the commitment and
@@ -215,8 +239,8 @@ pub fn capacity_value_columns(rows_log2: u8, places_list: &[Places]) -> Vec<Peri
         poseidon::capacity_of(domain::MT_NOTE_NF),
     ];
     let right = [
-        poseidon::capacity_of(domain::MT_ADMITTED_LEAF),
-        poseidon::capacity_of(domain::MT_ADMITTED_NODE),
+        poseidon::capacity_of(domain::MT_CREDIT_LEAF),
+        poseidon::capacity_of(domain::MT_CREDIT_NODE),
         poseidon::capacity_of(domain::MT_CREDIT_NF),
     ];
     let mut out = Vec::new();
@@ -320,9 +344,9 @@ pub fn constraints(periodic_base: usize, wrap: usize, places: &Places) -> Vec<Co
     out
 }
 
-// The seam of the leaf's input, split: a note wires the commitment out of the block beside it,
-// a right takes the naming half of its machine out of the lane's first slot — where it has stood
-// since the seam of the commitment picked it up, a load landing one row on.
+// The seam of the leaf's input, split: a right wires the part out of the block beside it, where
+// its chain has just derived it, and a note takes its commitment out of the lane's first slot —
+// where it has stood since the seam of the part picked it up, a load landing one row on.
 pub fn leaf_input_constraints(halves: &super::branch::Halves) -> Vec<Constraint> {
     let minus = F::ONE.negated();
     let mut out = Vec::new();
@@ -331,17 +355,17 @@ pub fn leaf_input_constraints(halves: &super::branch::Halves) -> Vec<Constraint>
         out.push(Constraint {
             degree: 2,
             terms: vec![
-                term(F::ONE, vec![factor(halves.note, 0, 1), factor(cell, 1, 1)]),
-                term(minus, vec![factor(halves.note, 0, 1), factor(cell, 0, 1)]),
+                term(F::ONE, vec![factor(halves.right, 0, 1), factor(cell, 1, 1)]),
+                term(minus, vec![factor(halves.right, 0, 1), factor(cell, 0, 1)]),
             ],
         });
         out.push(Constraint {
             degree: 2,
             terms: vec![
-                term(F::ONE, vec![factor(halves.right, 0, 1), factor(cell, 1, 1)]),
+                term(F::ONE, vec![factor(halves.note, 0, 1), factor(cell, 1, 1)]),
                 term(
                     minus,
-                    vec![factor(halves.right, 0, 1), factor(LANE + j, 0, 1)],
+                    vec![factor(halves.note, 0, 1), factor(LANE + j, 0, 1)],
                 ),
             ],
         });
@@ -349,10 +373,13 @@ pub fn leaf_input_constraints(halves: &super::branch::Halves) -> Vec<Constraint>
     out
 }
 
-// The seam of the nullifier chain's first block, split. A note reads the whole lane — the
-// commitment and the half that spends, side by side. A right reads the half that spends into the
-// first four cells, takes its window as the one element after them — pinned to the window the
-// frame stands in less the remainder the moment drew — and closes the block with its own padding.
+// The seam of a chain that opens on the lane, split, and it stands twice in a redemption: before
+// the part and before the nullifier. A note reads the whole lane — at the nullifier the commitment
+// and the half that spends side by side, at the part what the lane holds there, which nothing reads.
+// A right reads the half that spends into the first four cells, takes its window as the one element
+// after them — pinned to the window the frame stands in less the remainder the moment drew — and
+// closes the block with its own padding: at the part that is the whole preimage of the part of its
+// window, and at the nullifier the whole preimage of its nullifier, one window read at both.
 pub fn nf_first_constraints(
     halves: &super::branch::Halves,
     window_pin: usize,
@@ -543,6 +570,16 @@ fn write_key(
     Some((spending, naming))
 }
 
+// The block of the part as a note runs it: the lane absorbed whole under the domain of a part —
+// the first slot empty, since nothing loads it before this seam, and the half that spends in the
+// second — and the digest read by nobody. One block and no padding, since no reader hashes it again.
+fn write_unread_part(columns: &mut [Vec<F>], places: &Places, spending: &Digest) -> Option<()> {
+    let mut state = [F::ZERO; crate::poseidon::WIDTH];
+    state[CAPACITY..LANE_WIDTH].copy_from_slice(spending.elements());
+    state[RATE..].copy_from_slice(&poseidon::capacity_of(domain::MT_PART_NF));
+    permutation::write_block(columns, places.part(), &state).map(|_| ())
+}
+
 // One chain written where it stands, answering with the digest it leaves.
 fn write_chain(
     columns: &mut [Vec<F>],
@@ -570,6 +607,7 @@ pub fn write_redemption(
         domain::MT_NOTE_CM,
         &commitment_elements(held, &half),
     )?;
+    write_unread_part(columns, places, &spending)?;
     let root = path::write_walk(
         columns,
         places.leaf(),
@@ -631,9 +669,10 @@ pub fn write_lane(columns: &mut [Vec<F>], loads: &[usize], spending: &[usize], c
 }
 
 // What a redemption of a right holds instead of a note: a machine's secret, the window the right
-// belongs to, what it is worth — one coin — and the walk to the machine's own leaf in the tree of
-// admitted machines. It spends its own nullifier and stands at its own moment, and the blocks it
-// occupies are the note branch's exactly, so a frame says nothing by its size.
+// belongs to, what it is worth — one coin — and the walk to the leaf of the machine's part of that
+// window in the tree of credited rights, which only a cement of that window put there. It spends
+// its own nullifier and stands at its own moment, and the blocks it occupies are the note branch's
+// exactly, so a frame says nothing by its size.
 #[derive(Clone, Debug)]
 pub struct HeldRight {
     pub machine_secret: [u8; 32],
@@ -644,9 +683,10 @@ pub struct HeldRight {
 }
 
 // The whole of a right's redemption written into the trace: the key absorbed once and squeezed
-// twice, the unread note of the commitment blocks, the leaf of the naming half, the walk of the
-// tree of admitted machines, and the chain of the nullifier squeezed for its moment. It answers
-// with the root it reaches, the nullifier it spends, and the element the delay was drawn from.
+// twice, the unread note of the commitment blocks, the part of the window from the half that
+// spends, the leaf of that part and the walk of the tree of credited rights, and the chain of the
+// nullifier squeezed for its moment over the same half and the same window. It answers with the
+// root it reaches, the nullifier it spends, and the element the delay was drawn from.
 pub fn write_right_redemption(
     columns: &mut [Vec<F>],
     places: &Places,
@@ -676,19 +716,25 @@ pub fn write_right_redemption(
     unread.resize(CAPACITY + 4 + 2 * CAPACITY + 2 * CAPACITY, F::ZERO);
     write_chain(columns, places.commitment(), domain::MT_NOTE_CM, &unread)?;
 
-    let reached = path::write_walk_under(
-        columns,
-        places.leaf(),
-        &naming,
-        &held.siblings,
-        held.position,
-        domain::MT_ADMITTED_LEAF,
-        domain::MT_ADMITTED_NODE,
-    )?;
-
+    // The part of the window: the preimage the nullifier takes, under the domain of a part — the
+    // value the cement of that window holds for this machine — and the leaf of the tree of credited
+    // rights over it. No tree of admitted machines is walked: a part entered a cement only beside a
+    // proof of presence against the admitted, so its leaf says what the walk to that tree said and
+    // the window besides.
     let mut nf_elements = Vec::new();
     nf_elements.extend_from_slice(spending.elements());
     nf_elements.push(F::try_from_u64(held.window)?);
+    let part = write_chain(columns, places.part(), domain::MT_PART_NF, &nf_elements)?;
+    let reached = path::write_walk_under(
+        columns,
+        places.leaf(),
+        &part,
+        &held.siblings,
+        held.position,
+        domain::MT_CREDIT_LEAF,
+        domain::MT_CREDIT_NODE,
+    )?;
+
     for (at, state) in sponge::chain_twice(domain::MT_CREDIT_NF, &nf_elements)
         .iter()
         .enumerate()
@@ -755,7 +801,7 @@ pub fn root_boundaries(
     places: &Places,
     roots: usize,
     public_note_root: u16,
-    public_admitted_root: u16,
+    public_credited_root: u16,
 ) -> Vec<Boundary> {
     let row = ((places.nodes() + places.depth) * period() - 1) as u64;
     let mut out = Vec::new();
@@ -768,7 +814,7 @@ pub fn root_boundaries(
         out.push(Boundary {
             column: (roots + CAPACITY + j) as u16,
             row,
-            value: BoundaryValue::Word(public_admitted_root + 2 * j as u16),
+            value: BoundaryValue::Word(public_credited_root + 2 * j as u16),
         });
     }
     out
@@ -822,10 +868,21 @@ pub fn boundaries(places: &Places, public_nullifier: u16) -> Vec<Boundary> {
             });
         }
     }
+    // The block of the part opens under the domain of a part in both branches, so its capacity is
+    // a boundary. What it absorbs is the lane's, by the split of the seams that read the lane, and
+    // its padding stands in that split too: a right pads the one element after its window, and a
+    // note's block of the part is read by nobody and pads nothing.
+    for (j, value) in poseidon::capacity_of(domain::MT_PART_NF).iter().enumerate() {
+        out.push(Boundary {
+            column: ring_column(RATE + j) as u16,
+            row: (places.part() * period()) as u64,
+            value: BoundaryValue::Literal(value.as_u64()),
+        });
+    }
     // The nullifier the chain leaves is a rule of its branch and not a boundary of the ring: a
     // note's stands at the chain's last row and a right's at the end of its first block, and a
     // boundary knows no branch. What is pinned instead is the published value itself, into the
-    // admitted root's lanes at both rows — see `nullifier_pin_boundaries`.
+    // credited root's lanes at both rows — see `nullifier_pin_boundaries`.
     let _ = public_nullifier;
     out
 }
@@ -1083,7 +1140,7 @@ mod tests {
         let public = poseidon::limbs_of(&public_of(&nullifier));
         assert!(held_description.satisfied_by(&trace, &public));
         let places = places();
-        let seam = places.read_rows()[0];
+        let seam = places.seam_before(places.nullifier());
         trace[LANE][seam] = trace[LANE][seam].plus(F::ONE);
         assert!(!held_description.satisfied_by(&trace, &public));
     }
@@ -1102,5 +1159,55 @@ mod tests {
         let mut other = public.clone();
         other[0] ^= 1;
         assert!(crate::scheme::verify(&held_description, &other, &bytes).is_err());
+    }
+
+    #[test]
+    fn a_right_walks_the_part_of_its_window_to_the_tree_of_credited_rights() {
+        // The block of the part leaves the part-nullifier of the machine for the right's window —
+        // the value the cement of that window holds — and the walk folds the leaf of that part under
+        // the doors of the tree of credited rights. The wrong implementations this refuses: one
+        // walking the naming half, which reaches the root of admitted machines over that half; and
+        // one deriving the part of another window, which reaches another root.
+        let places = places();
+        let rows = 1usize << ROWS_LOG2;
+        let machine_secret = [0x77u8; 32];
+        let window = 1000u64;
+        let part = mt_derive::nullifier::part(&machine_secret, window).expect("a secret");
+        let mut tree = crate::credited::Tree::new(DEPTH);
+        assert!(tree.credit(&[part]).is_ok());
+        let right = HeldRight {
+            machine_secret,
+            window,
+            value: 1,
+            siblings: tree.path(0).expect("the position written"),
+            position: 0,
+        };
+        let mut columns = vec![vec![F::ZERO; rows]; TRACE_WIDTH];
+        let (reached, nullifier, _) =
+            write_right_redemption(&mut columns, &places, &right).expect("a right is written");
+        let at_the_end_of_the_part = (places.part() + places.part_blocks()) * period() - 1;
+        let derived: Vec<F> = (0..CAPACITY)
+            .map(|j| columns[ring_column(j)][at_the_end_of_the_part])
+            .collect();
+        assert_eq!(
+            derived,
+            Digest::of_bytes(&part)
+                .expect("a digest")
+                .elements()
+                .to_vec()
+        );
+        assert_eq!(reached, tree.root());
+        assert_eq!(
+            Some(nullifier.bytes()),
+            mt_derive::nullifier::credit(&machine_secret, window)
+        );
+        let naming = mt_derive::nullifier::machine_halves(&machine_secret).1;
+        assert_ne!(
+            Some(reached),
+            crate::admitted::root_of(&[naming], DEPTH),
+            "the walk took the naming half"
+        );
+        let other = mt_derive::nullifier::part(&machine_secret, window + 1).expect("a secret");
+        assert_ne!(Some(reached), crate::credited::root_of(&[other], DEPTH));
     }
 }

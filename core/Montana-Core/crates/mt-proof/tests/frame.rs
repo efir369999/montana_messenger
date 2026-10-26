@@ -55,17 +55,13 @@ fn commitment_of(held: &Held) -> Digest {
     poseidon::hash_elements(domain::MT_NOTE_CM, &elements)
 }
 
-fn admitted_of_one(machine_secret: &[u8; 32]) -> (Digest, Vec<Digest>) {
-    let naming = poseidon::hash_bytes_twice(domain::MT_KEY_HALVES, machine_secret).1;
-    let leaf = mt_proof::admitted::leaf_of(&naming);
-    let empties = mt_proof::admitted::empty_internals(depth());
-    let mut current = leaf;
-    let mut siblings = Vec::new();
-    for empty in empties.iter().take(depth()) {
-        siblings.push(*empty);
-        current = mt_proof::admitted::node(&current, empty);
-    }
-    (current, siblings)
+// The tree of credited rights as the proposal of the window after `window` leaves it when that
+// window's cement held this machine alone: its part at position zero, and the path it walks.
+fn credited_of_one(machine_secret: &[u8; 32], window: u64) -> (Digest, Vec<Digest>) {
+    let part = mt_derive::nullifier::part(machine_secret, window).expect("a secret of the family");
+    let mut tree = mt_proof::credited::Tree::new(depth());
+    assert!(tree.credit(&[part]).is_ok(), "a tree of one part");
+    (tree.root(), tree.path(0).expect("the position written"))
 }
 
 fn a_real_frame() -> (Frame, Places, Digest, Digest) {
@@ -106,11 +102,11 @@ fn a_real_frame() -> (Frame, Places, Digest, Digest) {
     for held in consumed.iter_mut() {
         held.siblings = paths[held.position as usize].clone();
     }
-    // The first redemption of the frame consumes a right: the machine's membership in the tree
-    // of admitted machines, its one coin riding the cells an amount rides in, its moment computed.
+    // The first redemption of the frame consumes a right: the part of its window in the tree of
+    // credited rights, its one coin riding the cells an amount rides in, its moment computed.
     let machine_secret = [0x77u8; 32];
-    let (admitted_root, admitted_siblings) = admitted_of_one(&machine_secret);
     let due = 1000u64;
+    let (credited_root, credited_siblings) = credited_of_one(&machine_secret, due);
     let window = mt_derive::nullifier::claim_window(&machine_secret, due)
         .expect("the Decree names the spread");
     let spends: Vec<Spend> = (0..3)
@@ -147,10 +143,10 @@ fn a_real_frame() -> (Frame, Places, Digest, Digest) {
         machine_secret,
         window: due,
         value: amounts[0][0],
-        siblings: admitted_siblings,
+        siblings: credited_siblings,
         position: 0,
     });
-    (Frame { spends, window }, places, root, admitted_root)
+    (Frame { spends, window }, places, root, credited_root)
 }
 
 // A machine that holds one right and nothing else. Five of its six positions have nothing to put
@@ -161,8 +157,8 @@ fn a_real_frame() -> (Frame, Places, Digest, Digest) {
 fn a_first_frame() -> (Frame, Places, Digest, Digest) {
     let places = Places::of(depth()).expect("the Decree names the shape of a frame");
     let machine_secret = [0x77u8; 32];
-    let (admitted_root, admitted_siblings) = admitted_of_one(&machine_secret);
     let due = 1000u64;
+    let (credited_root, credited_siblings) = credited_of_one(&machine_secret, due);
     let window = mt_derive::nullifier::claim_window(&machine_secret, due)
         .expect("the Decree names the spread");
     // A right is worth one coin (Consensus, "The right to a window's coin").
@@ -197,7 +193,7 @@ fn a_first_frame() -> (Frame, Places, Digest, Digest) {
         machine_secret,
         window: due,
         value: worth,
-        siblings: admitted_siblings,
+        siblings: credited_siblings,
         position: 0,
     });
     // The root of the tree of notes as it stands when nothing has been witnessed yet: the first
@@ -206,17 +202,17 @@ fn a_first_frame() -> (Frame, Places, Digest, Digest) {
         Frame { spends, window },
         places,
         notes::empty_root(),
-        admitted_root,
+        credited_root,
     )
 }
 
 #[test]
 fn the_first_value_of_the_network_is_a_right_redeemed_beside_filler() {
-    let (frame, places, root, admitted_root) = a_first_frame();
+    let (frame, places, root, credited_root) = a_first_frame();
     let held = frame::description(&places, ROWS_LOG2).expect("a lawful height");
-    let (trace, _) = frame::trace_of(&places, &frame, &admitted_root, ROWS_LOG2)
+    let (trace, _) = frame::trace_of(&places, &frame, &credited_root, ROWS_LOG2)
         .expect("a machine holding one right writes a frame");
-    let public = frame::public_of(&frame, &places, &root, &admitted_root).expect("a public input");
+    let public = frame::public_of(&frame, &places, &root, &credited_root).expect("a public input");
     assert!(
         held.satisfied_by(&trace, &poseidon::limbs_of(&public)),
         "a frame of one right and filler does not satisfy its own description"
@@ -227,8 +223,8 @@ fn the_first_value_of_the_network_is_a_right_redeemed_beside_filler() {
 
 #[test]
 fn a_real_frame_is_proven_verified_and_measured() {
-    let (frame, places, root, admitted_root) = a_real_frame();
-    assert_eq!(places.blocks(), 330, "the blocks the set counts");
+    let (frame, places, root, credited_root) = a_real_frame();
+    assert_eq!(places.blocks(), 336, "the blocks the set counts");
     let rows = 1usize << ROWS_LOG2;
     assert!(
         places.blocks() * mt_proof::circuit::permutation::period() <= rows,
@@ -244,12 +240,12 @@ fn a_real_frame_is_proven_verified_and_measured() {
     );
 
     let (trace, reached) =
-        frame::trace_of(&places, &frame, &admitted_root, ROWS_LOG2).expect("a written frame");
+        frame::trace_of(&places, &frame, &credited_root, ROWS_LOG2).expect("a written frame");
     assert_eq!(
         reached, root,
-        "every note proves against one root, and the right against the tree of machines"
+        "every note proves against one root, and the right against the tree of credited rights"
     );
-    let public = frame::public_of(&frame, &places, &root, &admitted_root).expect("a public input");
+    let public = frame::public_of(&frame, &places, &root, &credited_root).expect("a public input");
     let bytes = mt_proof::scheme::prove(&held, &public, &trace).expect("a true frame proves");
     assert_eq!(mt_proof::scheme::verify(&held, &public, &bytes), Ok(()));
 

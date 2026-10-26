@@ -242,21 +242,18 @@ impl State {
         })
     }
 
-    // The tree of admitted machines this state stands beside. A frame carries it as a public value
-    // whichever branch its redemptions took, so the state names it rather than each caller.
+    // The tree of admitted machines this state stands beside: the root a proposal carries and the
+    // cohort its roots are answered for. A frame does not prove against it — a right walks the tree
+    // of credited rights below — so it is what the pulse stands on, told to the plane.
     pub fn with_admitted(mut self, admitted: Digest) -> Self {
         self.admitted = admitted;
         self
     }
 
     // The same value, told rather than built with. **A machine's value plane stands against the
-    // same tree of admitted machines its pulse does**: a frame redeeming a right proves that the
-    // machine is among those the window admitted, and a state holding an empty tree verifies that
-    // proof against a tree standing for nobody — so the machine refuses its own true frame. The
-    // pulse learns the cohort when it opens a window, and tells the state in the same breath.
-    // The tree of admitted machines this state stands against, as a caller building a frame needs
-    // it: what the frame proves and what this state verifies are one value or the machine refuses
-    // its own true frame.
+    // same tree of admitted machines its pulse does**, or the roots it answers for a proposal are
+    // another cohort's. The pulse learns the cohort when it opens a window, and tells the state in
+    // the same breath.
     pub fn admitted(&self) -> Digest {
         self.admitted
     }
@@ -274,6 +271,10 @@ impl State {
         })
     }
 
+    // The root of the tree of credited rights as this plane holds it: the root every frame it
+    // applies proves its rights against, and so the one a caller building a frame proves against —
+    // what the frame proves and what this state verifies are one value or the machine refuses its
+    // own true frame.
     pub fn credited(&self) -> Digest {
         self.credited.root()
     }
@@ -503,10 +504,13 @@ impl State {
                 rate_nullifier: spend.rate_nullifier,
             })
             .collect();
+        // A right of a window stands under the tree of credited rights and under no other: the
+        // root laid here is the plane's own, so a frame proving a part no credited cement held is
+        // refused before anything of it applies.
         let public = mt_proof::circuit::frame::public_of_published(
             &published,
             &self.notes_root(),
-            &self.admitted,
+            &self.credited(),
             window,
         );
         let places = mt_proof::circuit::frame::Places::of(mt_proof::tree_depth()).ok_or(

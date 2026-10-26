@@ -1555,22 +1555,22 @@ it becomes a description.
 the circuit speaks one arithmetic and carries no second. Each redemption proves a path of
 `note_tree_depth` node permutations and the one of its leaf, carries the walk on through the
 leaf of the horizon and its seven node levels for eight more, opens its commitment at four,
-absorbs its key once and squeezes the two halves out of it at three, and derives its nullifier
-at two after the walk: fifty-eight permutations. What the walk answers with costs no permutation
-of its own: the value the accumulator ends at is held, by the split of the moment's seam, to one
-of the two roots the verifier computes — the horizon of proving and the root of admitted
-machines the proposal of the standing stride's last window carries — pinned by boundaries
-where the walk ends. Each spend holds
+derives the part of a right's window at one, absorbs its key once and squeezes the two halves out
+of it at three, and derives its nullifier at two after the walk: fifty-nine permutations. What the
+walk answers with costs no permutation of its own: the value the accumulator ends at is held, by
+the split of the moment's seam, to one of the two roots the verifier computes — the horizon of
+proving and the root of the tree of credited rights the proposal of the standing stride's last
+window carries — pinned by boundaries where the walk ends. Each spend holds
 two redemptions, two output commitments of four permutations each and one rate nullifier of
-two: one hundred and twenty-six permutations. A frame holds three spends: three hundred and
-seventy-eight permutations, which at `rows_per_permutation` is forty-eight thousand three
-hundred and eighty-four rows, rounded up to the next lawful height — 2¹⁶, the least the folding
+two: one hundred and twenty-eight permutations. A frame holds three spends: three hundred and
+eighty-four permutations, which at `rows_per_permutation` is forty-nine thousand one hundred and
+fifty-two rows, rounded up to the next lawful height — 2¹⁶, the least the folding
 reaches the tail from above that count. Extended by `proof_blowup` the domain is 2¹⁹. The cost of
 one permutation is measured rather than assumed: it is what the three bounds of a constraint
 leave it — degree two, a factor naming this row or the one after it, and the bound on the width —
 and the count they leave closes on a power of two of its own accord, so the schedule of a
 permutation is carried by a periodic column without one idle row. The margin the frame keeps at
-that cost is stated with it: a permutation of more than one hundred and seventy-three rows would
+that cost is stated with it: a permutation of more than one hundred and seventy rows would
 carry the trace past 2¹⁶ and move every length that carries a proof.
 
 **The count of folding layers follows from the tail and is not chosen.** Folding by `proof_fold`
@@ -1592,12 +1592,19 @@ tail opens none: it rides in the clear.
 redemption proves either a note or a right, and which of the two must not be readable from the
 length or the shape. The blocks are one set: the key absorbed once and squeezed twice in either
 branch; the commitment blocks computing a note's envelope — or, for a right, running that same
-chain over the naming half and the share, a note nobody reads; the leaf and the walk folding the
-tree of the branch under the domains of the branch; the nullifier chain absorbing the lane and
-closing, for a note, over the position the walk accumulated, and for a right over its window,
-squeezed once more for the moment it is due. Six seams differ, and each is a split of its
-selector — two columns whose sum is the schedule and whose product is nothing — so a rule of a
-branch fires exactly where its half stands and the degree it carries is the degree it carried.
+chain over the naming half and its worth, a note nobody reads; the block of the part, deriving for
+a right the part of its window from the half that spends and the window — the preimage its
+nullifier takes — and running for a note over the lane, read by nobody; the leaf and the walk
+folding the tree of the branch — of notes, or of credited rights — under the domains of the branch,
+a note's leaf taking its commitment out of the lane and a right's the part beside it; the nullifier
+chain absorbing the lane and closing, for a note, over the position the walk accumulated, and for a
+right over its window, squeezed once more for the moment it is due. Six kinds of seam differ, the
+one that opens a chain on the lane standing twice — before the part and before the nullifier — and
+each is a split of its selector — two columns whose sum is the schedule and whose product is
+nothing — so a rule of a branch fires exactly where its half stands and the degree it carries is the
+degree it carried. The window of a right is read at both of its chains as the window the frame
+stands in less one remainder of the moment, held from before the part to the end of the nullifier,
+so the part and the nullifier are of one window.
 The trace is therefore the same shape whichever branch a redemption took, and a frame of rights
 is indistinguishable from a frame of notes in every field and every length.
 
@@ -4389,7 +4396,7 @@ air_hash = the hash, under the domain of a description's identifier, of the iden
            descriptions the network accepts proofs under, in the order the planes stand:
            the frame, the ticket, the admission, the presence, the opening, the ballot
 
-identifier of the frame     = 0c2b70014a8aa0834177472226118a5637c991715f54a0518bafc14e8304fa42
+identifier of the frame     = 4621cdac82085204c6ce0ecff60be914b726f0529746dcde88d3893be02d163b
 identifier of the ticket    = 0c50e4291fede09b20945f9070e50746429b40153911600a690832aab6e65378
 identifier of the admission = 3c922d853e8a474174c46ceeb16abf2b3290fdeabfff7273c2df566c65576187
 identifier of the presence  = a948eeaf8b4b07e7d51763944498a6edc463670f649dfdf351e7b478bb053052
@@ -4508,7 +4515,8 @@ the one the public input carries — and nothing of the ticket, the secret or th
 For a frame — that every redemption takes one of the two branches without
 saying which; where the branch is a note, that its root stands at a leaf of the horizon of
 proving — the fold of the standing stride of the window the frame applies in — and where it is
-a right, that its walk answers against the root of admitted machines the proposal of that
+a right, that the part its secret derives for its window, from the half its nullifier takes and the
+same window, stands at a leaf of the tree of credited rights under the root the proposal of that
 stride's last window carries; that what is created equals what is consumed, a right counting
 as one coin; that
 every nullifier derives from what was consumed by the canonical formula of its branch; that the
@@ -4728,7 +4736,7 @@ demands the width from this row rather than declaring one of its own.
 | `standing_censuses` — the census windows the standing of a machine is counted over, newest first | 10 |
 | `census_interval`, in windows — derived: τ₂ / standing_censuses, so the censuses span one period of adaptation | τ₂ / 10 = 2 016 |
 | `standing_committee` — the votes the standing of an electorate draws in a window, in expectation, once it is wide enough to be sampled | 6 499 |
-| `air_hash` — the constraint sets the proofs of this network are accepted under | b8f1be4f243c887c10bc8fb44f2059df3b8854c929b3a2ef0c31663995b4f86d |
+| `air_hash` — the constraint sets the proofs of this network are accepted under | 4933ad20446fdac81ab971171d7c2a075decf3cc8e69a38878eb6cb4881fb8f5 |
 
 **The volume the schedule is checked against.** Per machine, per window, across its chains:
 eligibility strikes 1.1094 times in expectation; 0.6710 of machines publish one heavy
@@ -4775,11 +4783,11 @@ genesis_state_hash = SHA-256("mt-genesis-state" || 0x00 || parameters
                              || note_root || nullifier_root || record_root || machine_root || admitted_root
                              || credited_root || operations_root)
 
-                   = 8670319f420cc516dda68ec9a07ad103e366ab99ab065a92f1e432e285ccc991
+                   = 0efbca26fc06499d8611191ec11000c4c9a7b32f94d4da3ab3edce11f629cd6e
 
 published_parameters = SHA-256("mt-genesis-state" || 0x00 || the parameters that are published,
                                in the order and the encoding above)
-                     = e9118266d4ba19f75db5d567e1d36f1eb7bd1b3b28a82b82c30a361f1c7f23cb
+                     = 1b42e8fe07a11004539c480040b00e9149236a929abc770dd13450abe8621356
 ```
 
 A chain whose value differs is not a fork of Montana but a different protocol, and honest

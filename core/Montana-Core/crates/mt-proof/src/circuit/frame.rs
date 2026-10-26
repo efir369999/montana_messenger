@@ -7,9 +7,10 @@
 // second place for a layout to drift in.
 //
 // **What stands outside.** The nullifiers a frame spends, the commitments it creates and the
-// nullifiers of its rates — the bytes of the frame itself — and beside them two values no field of
-// a frame carries: the canonical root the redemptions prove against and the window the rates belong
-// to. A verifier computes both from the state it already holds, so a frame publishes neither.
+// nullifiers of its rates — the bytes of the frame itself — and beside them three values no field
+// of a frame carries: the canonical root the redemptions of notes prove against, the root of the
+// tree of credited rights the redemptions of rights prove against, and the window the rates belong
+// to. A verifier computes all three from the state it already holds, so a frame publishes none.
 
 use super::moment;
 use super::path;
@@ -301,11 +302,22 @@ impl Places {
             .collect()
     }
 
-    // The first rows of the nullifier chains, which the moment's decompositions end before.
-    pub fn nullifier_first_rows(&self) -> Vec<usize> {
+    // The first rows of the blocks of the part, which the moment's decompositions end before: the
+    // remainder of the moment is held from there to the end of the nullifier chain, so the window of
+    // a right is read as one value at both chains that take it.
+    pub fn part_first_rows(&self) -> Vec<usize> {
         self.each_redemption()
             .iter()
-            .map(|r| r.nullifier() * period())
+            .map(|r| r.part() * period())
+            .collect()
+    }
+
+    // The rows the window of the frame is pinned at, for the rule of a right's window to read: the
+    // first rows of the part and of the nullifier chain of every redemption.
+    pub fn window_rows(&self) -> Vec<usize> {
+        self.each_redemption()
+            .iter()
+            .flat_map(|r| r.window_rows())
             .collect()
     }
 
@@ -419,7 +431,7 @@ pub struct Published {
 pub fn public_of_published(
     spends: &[Published],
     root: &Digest,
-    admitted: &Digest,
+    credited: &Digest,
     window: u64,
 ) -> Vec<u8> {
     let mut out = Vec::new();
@@ -432,7 +444,7 @@ pub fn public_of_published(
         }
         out.extend_from_slice(&held.rate_nullifier);
     }
-    for cell in root.elements().iter().chain(admitted.elements().iter()) {
+    for cell in root.elements().iter().chain(credited.elements().iter()) {
         out.extend_from_slice(&cell.as_u64().to_le_bytes());
     }
     out.extend_from_slice(&window.to_le_bytes());
@@ -488,7 +500,7 @@ pub fn public_of(
     frame: &Frame,
     places: &Places,
     root: &Digest,
-    admitted: &Digest,
+    credited: &Digest,
 ) -> Option<Vec<u8>> {
     let _ = places;
     let published = frame
@@ -499,7 +511,7 @@ pub fn public_of(
     Some(public_of_published(
         &published,
         root,
-        admitted,
+        credited,
         frame.window,
     ))
 }
@@ -547,9 +559,9 @@ fn places_of_public(places: &Places) -> (Vec<usize>, Vec<usize>, Vec<usize>, usi
         rates.push(base + (places.consumed + places.created) * CAPACITY);
     }
     let root = places.spends * per_spend * CAPACITY;
-    let admitted = root + CAPACITY;
-    let window = admitted + CAPACITY;
-    (nullifiers, commitments, rates, root, admitted, window)
+    let credited = root + CAPACITY;
+    let window = credited + CAPACITY;
+    (nullifiers, commitments, rates, root, credited, window)
 }
 
 // The description of a frame at a stated depth and height.
@@ -615,7 +627,7 @@ pub fn description(places: &Places, rows_log2: u8) -> Option<Description> {
         .push(mark(rows_log2, &places.nullifier_final_rows()));
     held.periodic.extend(moment::periodic_columns(
         rows_log2,
-        &places.nullifier_first_rows(),
+        &places.part_first_rows(),
         &places.nullifier_final_rows(),
     ));
 
@@ -858,7 +870,7 @@ fn index_constraints(
 // Every boundary of a frame: what each chain opens with, what it pads with, and the values that
 // stand outside it.
 pub fn boundaries(places: &Places) -> Vec<Boundary> {
-    let (nullifiers, commitments, rates, root, admitted, window) = places_of_public(places);
+    let (nullifiers, commitments, rates, root, credited, window) = places_of_public(places);
     let mut out = Vec::new();
     let mut at_nullifier = 0usize;
     for spend in 0..places.spends {
@@ -877,16 +889,19 @@ pub fn boundaries(places: &Places) -> Vec<Boundary> {
                 &redemption_places,
                 roots_at(),
                 word(root),
-                word(admitted),
+                word(credited),
             ));
             // The window the frame stands in, pinned where the rule of a right's window reads it:
-            // the first row of the nullifier chain. The column is the note root's lane, free at
-            // this row in both branches; a boundary knows no branch and both carry the pin.
-            out.push(Boundary {
-                column: roots_at() as u16,
-                row: (redemption_places.nullifier() * period()) as u64,
-                value: BoundaryValue::Word(word(window)),
-            });
+            // the first row of the part and the first row of the nullifier chain. The column is the
+            // note root's lane, free at these rows in both branches; a boundary knows no branch and
+            // both carry the pins.
+            for row in redemption_places.window_rows() {
+                out.push(Boundary {
+                    column: roots_at() as u16,
+                    row: row as u64,
+                    value: BoundaryValue::Word(word(window)),
+                });
+            }
             at_nullifier += 1;
         }
         for at in 0..places.created {
@@ -975,7 +990,7 @@ pub fn write_frame(
     columns: &mut [Vec<F>],
     places: &Places,
     frame: &Frame,
-    admitted: &Digest,
+    credited: &Digest,
 ) -> Option<Digest> {
     let mut root = None;
     let spread = mt_genesis::divisor("claim_spread")?;
@@ -1006,17 +1021,17 @@ pub fn write_frame(
                     let (reached, nullifier, delay) =
                         redemption::write_right_redemption(columns, &redemption_places, right)?;
                     write_nullifier_pins(columns, &redemption_places, &nullifier);
-                    // A right proves against the tree of admitted machines and against nothing
+                    // A right proves against the tree of credited rights and against nothing
                     // else: a walk ending elsewhere is a frame no verifier accepts, refused here
                     // where it is written.
-                    if reached != *admitted {
+                    if reached != *credited {
                         return None;
                     }
                     moment::write_moment(
                         columns,
                         &moments(),
                         amounts().bit,
-                        redemption_places.nullifier() * period(),
+                        redemption_places.part() * period(),
                         (redemption_places.nullifier() + redemption_places.nullifier_blocks())
                             * period()
                             - 1,
@@ -1112,7 +1127,7 @@ pub fn write_amounts(columns: &mut [Vec<F>], places: &Places, frame: &Frame) {
 pub fn trace_of(
     places: &Places,
     frame: &Frame,
-    admitted: &Digest,
+    credited: &Digest,
     rows_log2: u8,
 ) -> Option<(Vec<Vec<F>>, Digest)> {
     let rows = 1usize << rows_log2;
@@ -1148,7 +1163,7 @@ pub fn trace_of(
             });
         }
     }
-    let root = write_frame(&mut columns, places, frame, admitted)?;
+    let root = write_frame(&mut columns, places, frame, credited)?;
     for tie in places.consumed_ties() {
         columns[path::BIT][tie] = columns[branch_active()][tie];
     }
@@ -1168,20 +1183,20 @@ pub fn trace_of(
         .collect();
     path::write_accumulator(&mut columns, &walks, &clears);
     // The two roots stand where a walk ends, and the half of the split says which of them the
-    // redemption answered against. Every redemption of this frame answers against the tree of
-    // notes; a redemption of a right answers against the other, and nothing of the difference
-    // reaches the length of a frame or the shape of its trace.
+    // redemption answered against. Every redemption of a note answers against the tree of notes; a
+    // redemption of a right answers against the tree of credited rights, and nothing of the
+    // difference reaches the length of a frame or the shape of its trace.
     let root_rows = places.root_rows();
     for (at, row) in root_rows.iter().enumerate() {
         let _ = at;
         for j in 0..CAPACITY {
             columns[roots_at() + j][*row] = root.elements()[j];
-            columns[roots_at() + CAPACITY + j][*row] = admitted.elements()[j];
+            columns[roots_at() + CAPACITY + j][*row] = credited.elements()[j];
         }
     }
-    // The window of the frame, standing where its pin reads it: the first row of every
-    // nullifier chain, in the note root's lane, which is free there in both branches.
-    for row in places.nullifier_first_rows() {
+    // The window of the frame, standing where its pins read it: the first row of every part and
+    // of every nullifier chain, in the note root's lane, which is free there in both branches.
+    for row in places.window_rows() {
         columns[roots_at()][row] = F::try_from_u64(frame.window)?;
     }
     // Which redemptions were rights, and therefore which rows of every schedule carry the right
@@ -1391,12 +1406,12 @@ mod tests {
         )
     }
 
-    // The root of the tree of admitted machines this frame stands beside. No redemption of these
+    // The root of the tree of credited rights this frame stands beside. No redemption of these
     // tests answers against it; what it is here for is that the shape of a frame does not depend on
     // which branch was taken, and a frame of notes therefore carries it exactly as a frame of
     // rights would.
-    fn admitted() -> Digest {
-        crate::admitted::empty_root()
+    fn credited() -> Digest {
+        crate::credited::empty_root()
     }
 
     fn balanced() -> [[u128; 4]; 3] {
@@ -1416,9 +1431,9 @@ mod tests {
         // And at the depth the Decree names, the blocks of a frame are the count the set derives.
         let deep = Places::of(mt_genesis::scalar("note_tree_depth").expect("named") as usize)
             .expect("the Decree names the shape of a frame");
-        assert_eq!(deep.redemption_blocks(), 50);
-        assert_eq!(deep.spend_blocks(), 110);
-        assert_eq!(deep.blocks(), 330);
+        assert_eq!(deep.redemption_blocks(), 51);
+        assert_eq!(deep.spend_blocks(), 112);
+        assert_eq!(deep.blocks(), 336);
         for layout in [places, deep] {
             let path_rows: std::collections::BTreeSet<_> = layout
                 .each_redemption()
@@ -1444,10 +1459,10 @@ mod tests {
         let held = description(&places, ROWS_LOG2).expect("a lawful height");
         held.check().expect("the description stands");
         let (trace, reached) =
-            trace_of(&places, &frame, &admitted(), ROWS_LOG2).expect("a written frame");
+            trace_of(&places, &frame, &credited(), ROWS_LOG2).expect("a written frame");
         assert_eq!(reached, root);
         let public =
-            poseidon::limbs_of(&public_of(&frame, &places, &root, &admitted()).expect("a public"));
+            poseidon::limbs_of(&public_of(&frame, &places, &root, &credited()).expect("a public"));
         assert!(held.satisfied_by(&trace, &public));
     }
 
@@ -1455,7 +1470,7 @@ mod tests {
     fn membership_cannot_be_disabled_at_the_root_seam_alone() {
         let (frame, places, _) = frame_of(balanced());
         let description = description(&places, ROWS_LOG2).unwrap();
-        let (mut trace, _) = trace_of(&places, &frame, &admitted(), ROWS_LOG2).unwrap();
+        let (mut trace, _) = trace_of(&places, &frame, &credited(), ROWS_LOG2).unwrap();
         // Keep nonzero inputs and every note derivation, but choose the filler branch only at
         // membership checks. The public root is now an empty tree containing none of the notes.
         let empty = notes::empty_root();
@@ -1466,7 +1481,7 @@ mod tests {
                 trace[roots_at() + j][row] = empty.elements()[j];
             }
         }
-        let public = public_of(&frame, &places, &empty, &admitted()).unwrap();
+        let public = public_of(&frame, &places, &empty, &credited()).unwrap();
         assert!(
             !description.satisfied_by(&trace, &poseidon::limbs_of(&public)),
             "a nonzero input skipped membership by switching only one branch selector"
@@ -1477,11 +1492,11 @@ mod tests {
     fn malformed_witness_shape_is_refused_before_writing_branch_rows() {
         let (mut frame, places, _) = frame_of(balanced());
         frame.spends.push(frame.spends[0].clone());
-        assert!(trace_of(&places, &frame, &admitted(), ROWS_LOG2).is_none());
+        assert!(trace_of(&places, &frame, &credited(), ROWS_LOG2).is_none());
         frame.spends.pop();
         let repeated = frame.spends[0].consumed[0].clone();
         frame.spends[0].consumed.push(repeated);
-        assert!(trace_of(&places, &frame, &admitted(), ROWS_LOG2).is_none());
+        assert!(trace_of(&places, &frame, &credited(), ROWS_LOG2).is_none());
     }
 
     #[test]
@@ -1495,9 +1510,9 @@ mod tests {
             }
         }
         let description = description(&places, ROWS_LOG2).unwrap();
-        let (trace, reached) = trace_of(&places, &frame, &admitted(), ROWS_LOG2).unwrap();
+        let (trace, reached) = trace_of(&places, &frame, &credited(), ROWS_LOG2).unwrap();
         assert_eq!(reached, root);
-        let public = public_of(&frame, &places, &root, &admitted()).unwrap();
+        let public = public_of(&frame, &places, &root, &credited()).unwrap();
         assert!(description.satisfied_by(&trace, &poseidon::limbs_of(&public)));
         let proof = crate::scheme::prove(&description, &public, &trace).unwrap();
         assert_eq!(crate::scheme::verify(&description, &public, &proof), Ok(()));
@@ -1507,7 +1522,7 @@ mod tests {
     fn changing_every_seam_to_filler_cannot_keep_nonzero_inputs() {
         let (frame, places, root) = frame_of(balanced());
         let description = description(&places, ROWS_LOG2).unwrap();
-        let (mut trace, _) = trace_of(&places, &frame, &admitted(), ROWS_LOG2).unwrap();
+        let (mut trace, _) = trace_of(&places, &frame, &credited(), ROWS_LOG2).unwrap();
         for which in 0..6 {
             trace[split(which).note].fill(F::ZERO);
             trace[split(which).right].fill(F::ZERO);
@@ -1523,7 +1538,7 @@ mod tests {
             trace[path::BIT][tie] = F::ZERO;
         }
         path::write_pairs(&mut trace);
-        let public = public_of(&frame, &places, &root, &admitted()).unwrap();
+        let public = public_of(&frame, &places, &root, &credited()).unwrap();
         assert!(
             !description.satisfied_by(&trace, &poseidon::limbs_of(&public)),
             "a filler carried a nonzero consumed amount into conservation"
@@ -1539,8 +1554,8 @@ mod tests {
         let (frame, places, root) = frame_of(amounts);
         let held = description(&places, ROWS_LOG2).expect("a lawful height");
         let (trace, _) =
-            trace_of(&places, &frame, &admitted(), ROWS_LOG2).expect("a written frame");
-        let public = public_of(&frame, &places, &root, &admitted()).expect("a public input");
+            trace_of(&places, &frame, &credited(), ROWS_LOG2).expect("a written frame");
+        let public = public_of(&frame, &places, &root, &credited()).expect("a public input");
         assert!(!held.satisfied_by(&trace, &poseidon::limbs_of(&public)));
     }
 
@@ -1552,8 +1567,8 @@ mod tests {
         frame.spends[0].rate.index = mt_genesis::scalar("spends_per_window").expect("named") as u8;
         let held = description(&places, ROWS_LOG2).expect("a lawful height");
         let (trace, _) =
-            trace_of(&places, &frame, &admitted(), ROWS_LOG2).expect("a written frame");
-        let public = public_of(&frame, &places, &root, &admitted()).expect("a public input");
+            trace_of(&places, &frame, &credited(), ROWS_LOG2).expect("a written frame");
+        let public = public_of(&frame, &places, &root, &credited()).expect("a public input");
         assert!(!held.satisfied_by(&trace, &poseidon::limbs_of(&public)));
     }
 
@@ -1567,8 +1582,8 @@ mod tests {
         let (frame, places, root) = frame_of(balanced());
         let held = description(&places, ROWS_LOG2).expect("a lawful height");
         let (mut trace, _) =
-            trace_of(&places, &frame, &admitted(), ROWS_LOG2).expect("a written frame");
-        let public = public_of(&frame, &places, &root, &admitted()).expect("a public input");
+            trace_of(&places, &frame, &credited(), ROWS_LOG2).expect("a written frame");
+        let public = public_of(&frame, &places, &root, &credited()).expect("a public input");
         assert!(held.satisfied_by(&trace, &poseidon::limbs_of(&public)));
 
         let Consumed::Note(note) = &frame.spends[0].consumed[0] else {
@@ -1617,23 +1632,16 @@ mod tests {
         );
     }
 
-    // The admitted tree of these tests: one machine at position zero, at the depth the test
-    // frames use, folded by the doors of the tree of admitted machines.
-    fn admitted_of_one(machine_secret: &[u8; 32]) -> (Digest, Vec<Digest>) {
-        let naming = poseidon::hash_bytes_twice(domain::MT_KEY_HALVES, machine_secret).1;
-        let leaf = crate::admitted::leaf_of(&naming);
-        let mut empties = vec![crate::admitted::empty_leaf()];
-        for level in 0..DEPTH {
-            let below = empties[level];
-            empties.push(crate::admitted::node(&below, &below));
-        }
-        let mut current = leaf;
-        let mut siblings = Vec::new();
-        for empty in empties.iter().take(DEPTH) {
-            siblings.push(*empty);
-            current = crate::admitted::node(&current, empty);
-        }
-        (current, siblings)
+    // The tree of credited rights of these tests: the part of one machine for one window at
+    // position zero, at the depth the test frames use, as the proposal of the window after it would
+    // have credited it.
+    fn credited_of_one(machine_secret: &[u8; 32], window: u64) -> (Digest, Vec<Digest>) {
+        // PANIC-OK: a test deriving the part of a secret of the family.
+        let part = mt_derive::nullifier::part(machine_secret, window).expect("a secret");
+        let mut tree = crate::credited::Tree::new(DEPTH);
+        assert!(tree.credit(&[part]).is_ok(), "a tree of one part");
+        // PANIC-OK: the position this same test wrote one line above.
+        (tree.root(), tree.path(0).expect("the position written"))
     }
 
     // The window whose computed moment of extinguishing is the stated one: found by walking the
@@ -1649,13 +1657,13 @@ mod tests {
     #[test]
     fn a_frame_redeeming_a_right_is_proven_and_a_wrong_moment_or_tree_is_not() {
         // The disjunction driven from one trace: the first redemption of the frame consumes a
-        // right — the machine's membership walked in the tree of admitted machines, its nullifier
+        // right — the part of its window walked in the tree of credited rights, its nullifier
         // squeezed for the moment, the moment's division ranged — and the other five consume
         // notes. The frame's fields and length say nothing of which.
         let machine_secret = [0x77u8; 32];
-        let (admitted_root, admitted_siblings) = admitted_of_one(&machine_secret);
         // The frame stands in the window the machine's right of window 1000 is due at.
         let due = 1000u64;
+        let (credited_root, credited_siblings) = credited_of_one(&machine_secret, due);
         // PANIC-OK: a test reading a moment the Decree's spread bounds.
         let window = mt_derive::nullifier::claim_window(&machine_secret, due)
             .expect("the Decree names the spread");
@@ -1668,15 +1676,15 @@ mod tests {
             machine_secret,
             window: due,
             value: amounts[0][0],
-            siblings: admitted_siblings.clone(),
+            siblings: credited_siblings.clone(),
             position: 0,
         });
         let held = description(&places, ROWS_LOG2).expect("a lawful height");
         held.check().expect("the description stands");
         let (trace, reached) =
-            trace_of(&places, &frame, &admitted_root, ROWS_LOG2).expect("a written frame");
+            trace_of(&places, &frame, &credited_root, ROWS_LOG2).expect("a written frame");
         assert_eq!(reached, root, "the notes still prove against their root");
-        let public = public_of(&frame, &places, &root, &admitted_root).expect("a public input");
+        let public = public_of(&frame, &places, &root, &credited_root).expect("a public input");
         assert!(
             held.satisfied_by(&trace, &poseidon::limbs_of(&public)),
             "a frame redeeming a right stands"
@@ -1689,20 +1697,21 @@ mod tests {
         if let Consumed::Right(right) = &mut wrong_moment.spends[0].consumed[0] {
             right.window = due + 1;
         }
-        if let Some((trace, _)) = trace_of(&places, &wrong_moment, &admitted_root, ROWS_LOG2) {
+        if let Some((trace, _)) = trace_of(&places, &wrong_moment, &credited_root, ROWS_LOG2) {
             let public =
-                public_of(&wrong_moment, &places, &root, &admitted_root).expect("a public input");
+                public_of(&wrong_moment, &places, &root, &credited_root).expect("a public input");
             assert!(
                 !held.satisfied_by(&trace, &poseidon::limbs_of(&public)),
                 "a right taken at a moment its delay does not name is refused"
             );
         }
 
-        // A membership in a tree the frame does not publish: the walk of a fresh secret reaches
-        // some root, and against the published one the frame does not stand. This is the mint the
-        // set closed: a fresh secret yields a fresh nullifier, and membership is what refuses it.
-        // A stranger whose own moment lands in this same window, found by searching secrets: the
-        // refusal below must be membership's alone, not the moment's.
+        // A membership in a tree the frame does not publish: a machine whose part the credited
+        // cement does not hold — an invented secret, or a machine admitted and absent from that
+        // window — walks its own part to a tree of its own making, and against the published root
+        // the frame does not stand. A fresh secret yields a fresh nullifier, and the credit of a
+        // window is what refuses it. A stranger whose own moment lands in this same window, found
+        // by searching secrets: the refusal below must be membership's alone, not the moment's.
         // PANIC-OK: a test walking secrets until one of two hundred f56 moments lands.
         let stranger = (0..=u8::MAX)
             .map(|k| {
@@ -1712,20 +1721,25 @@ mod tests {
             })
             .find(|secret| a_right_due_at(secret, window).is_some())
             .expect("one of the secrets has a right due here");
-        let (strangers_root, strangers_siblings) = admitted_of_one(&stranger);
+        // PANIC-OK: found one line above.
+        let strangers_window = a_right_due_at(&stranger, window).expect("found above");
+        let (strangers_root, strangers_siblings) = credited_of_one(&stranger, strangers_window);
         let mut fresh = frame.clone();
         if let Consumed::Right(right) = &mut fresh.spends[0].consumed[0] {
             right.machine_secret = stranger;
-            // PANIC-OK: found one line above.
-            right.window = a_right_due_at(&stranger, window).expect("found above");
+            right.window = strangers_window;
             right.siblings = strangers_siblings;
         }
+        assert!(
+            trace_of(&places, &fresh, &credited_root, ROWS_LOG2).is_none(),
+            "a part the credited cement does not hold walks to no credited root"
+        );
         let (trace, _) = trace_of(&places, &fresh, &strangers_root, ROWS_LOG2)
             .expect("the stranger writes a trace against its own tree");
-        let public = public_of(&fresh, &places, &root, &admitted_root).expect("a public input");
+        let public = public_of(&fresh, &places, &root, &credited_root).expect("a public input");
         assert!(
             !held.satisfied_by(&trace, &poseidon::limbs_of(&public)),
-            "a coin claimed by an invented secret is refused by membership"
+            "a coin of a window that did not witness the claimer is refused by membership"
         );
     }
 
@@ -1737,8 +1751,8 @@ mod tests {
         let (frame, places, root) = frame_of(balanced());
         let held = description(&places, ROWS_LOG2).expect("a lawful height");
         let (trace, _) =
-            trace_of(&places, &frame, &admitted(), ROWS_LOG2).expect("a written frame");
-        let public = public_of(&frame, &places, &root, &admitted()).expect("a public input");
+            trace_of(&places, &frame, &credited(), ROWS_LOG2).expect("a written frame");
+        let public = public_of(&frame, &places, &root, &credited()).expect("a public input");
         let bytes = crate::scheme::prove(&held, &public, &trace).expect("a true frame proves");
         assert_eq!(crate::scheme::verify(&held, &public, &bytes), Ok(()));
         let mut other = public.clone();

@@ -63,7 +63,6 @@ impl Machine {
     pub fn redeem_into(
         &self,
         at: &Path,
-        cohort: &pulse::Cohort,
         of_the_window: u64,
         window: u64,
         chain: u8,
@@ -81,11 +80,23 @@ impl Machine {
                 what: "a right presented in a window it is not accepted in",
             });
         }
-        let branch = cohort
-            .branch_of(&of_the_machine)
-            .ok_or(NodeError::Refused {
-                what: "a machine that stands in no cohort of this window",
+        // **The right walks the part of its window, and only a cement of that window put it in the
+        // tree.** The plane of this machine holds the tree of credited rights as the proposals it
+        // closed left it; a machine whose part the cement of that window did not hold finds no
+        // branch here and has no right of that window to write. Canon, "The right of a machine to
+        // its coin of a window, and what redeems it".
+        let part = mt_derive::nullifier::part(&of_the_machine, of_the_window).ok_or(
+            NodeError::Unprovable {
+                what: "the halves of this machine's secret",
+            },
+        )?;
+        let (credited, (siblings, position)) = {
+            let plane = self.value()?;
+            let branch = plane.credited_branch(&part).ok_or(NodeError::Refused {
+                what: "a right of a window whose cement this machine's credited tree does not hold",
             })?;
+            (plane.credited(), branch)
+        };
         let person = wallet.person().map_err(|_| NodeError::Refused {
             what: "a wallet holding no person",
         })?;
@@ -96,23 +107,19 @@ impl Machine {
             half: mt_derive::note::nf_pk(&person.note_nullifier_key()),
             note_pk: person.payment_key(),
         };
-        // The tree of admitted machines this redemption proves the machine stands in is the cohort's
-        // own, and never an empty one: what the frame asserts is that this machine is among those
-        // the window admitted, and an empty root asserts that it is among nobody.
-        let admitted = cohort.root();
         let root = self.value()?.notes_root();
         let minted = wallet
             .redeem(
                 &of_the_machine,
                 of_the_window,
                 u128::from(right.worth),
-                &branch.siblings,
-                branch.position,
+                &siblings,
+                position,
                 &own,
                 window,
                 rate_secret,
                 &root,
-                &admitted,
+                &credited,
             )
             .map_err(|e| NodeError::Unreadable {
                 what: format!("a right this machine cannot write a frame for: {e:?}"),
@@ -360,9 +367,9 @@ impl Machine {
                     })?,
             );
         }
-        let (root, admitted) = {
+        let (root, credited) = {
             let value = self.value()?;
-            (value.notes_root(), value.admitted())
+            (value.notes_root(), value.credited())
         };
         let payment = wallet
             .pay(
@@ -373,7 +380,7 @@ impl Machine {
                 &own,
                 &paths,
                 &root,
-                &admitted,
+                &credited,
             )
             .map_err(|e| NodeError::Unreadable {
                 what: format!("a payment this wallet cannot write a frame for: {e:?}"),
@@ -556,7 +563,7 @@ impl Machine {
         at: u32,
         rate_secret: &[u8; 32],
         root: &Digest,
-        admitted: &Digest,
+        credited: &Digest,
     ) -> Result<Payment, NodeError> {
         let mut link = self.reach(line)?;
         let inputs = mt_genesis::scalar("spend_inputs").ok_or(NodeError::Decree {
@@ -587,7 +594,7 @@ impl Machine {
                 own,
                 &paths,
                 root,
-                admitted,
+                credited,
             )
             .map_err(|_| NodeError::Unprovable {
                 what: "a frame over the notes this wallet holds",

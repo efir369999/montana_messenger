@@ -13,13 +13,12 @@ fn audit_reproduces_an_oversized_right_becoming_a_spendable_note() {
     let location = Scratch::named("issuance-audit");
     let wallet = Wallet::open(&location.0).unwrap();
     let secret = of(0x77, 0);
-    let naming = mt_derive::nullifier::machine_halves(&secret).1;
-    let mut root = mt_proof::admitted::leaf(&naming).unwrap();
-    let siblings = mt_proof::admitted::empty_internals(mt_proof::tree_depth());
-    for sibling in siblings.iter().take(mt_proof::tree_depth()) {
-        root = mt_proof::admitted::node(&root, sibling);
-    }
-    let mut state = State::new().with_admitted(root);
+    // The machine lived window 1 000, and the proposal of the window after it credited its part.
+    let part = mt_derive::nullifier::part(&secret, 1_000).unwrap();
+    let mut state = State::new();
+    state.credit(&[part]).unwrap();
+    let (siblings, position) = state.credited_branch(&part).unwrap();
+    let root = state.credited();
     let right = attest::right_of(&secret, 1_000).unwrap();
     let forged = u128::from(right.worth) + 1;
     let (payee, spending_key) = payee_of(0xA1);
@@ -28,8 +27,8 @@ fn audit_reproduces_an_oversized_right_becoming_a_spendable_note() {
             &secret,
             right.window,
             forged,
-            &siblings[..mt_proof::tree_depth()],
-            0,
+            &siblings,
+            position,
             &payee,
             right.accepted_in,
             &of(0xD4, 0),

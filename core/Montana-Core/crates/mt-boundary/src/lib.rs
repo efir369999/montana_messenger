@@ -545,9 +545,8 @@ pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, wi
             .map_err(|_| "an errand another thread left locked".to_string())?;
         running.store(true, Ordering::SeqCst);
         std::thread::spawn(move || {
-            let of_the_cohort = &cohort;
             let work = |machine: &Machine, window: u64| -> Result<(), NodeError> {
-                run_the_errand(machine, of_the_cohort, &wallet_at, asked, window, &paid)
+                run_the_errand(machine, &wallet_at, asked, window, &paid)
             };
             match pulse::live_doing(
                 &machine,
@@ -590,7 +589,6 @@ pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, wi
 // slot names and a machine releases those points the moment its window closes.
 fn run_the_errand(
     machine: &Machine,
-    cohort: &pulse::Cohort,
     wallet_at: &std::path::Path,
     asked: Errand,
     window: u64,
@@ -607,7 +605,6 @@ fn run_the_errand(
         // is the wallet, so nothing is handed back here.
         machine.redeem_into(
             wallet_at,
-            cohort,
             of_the_window,
             window,
             pulse::opening_chain(),
@@ -772,11 +769,17 @@ pub extern "C" fn mtc_measure_redemption(milliseconds: *mut u64, width: *mut usi
             note_pk: person.payment_key(),
         };
         let secret = *mt_wire::draw::block::<32>().map_err(|e| format!("{e:?}"))?;
-        let cohort =
-            pulse::Cohort::of(&[pulse::Cohort::half_of(&secret)]).map_err(|e| format!("{e:?}"))?;
-        let branch = cohort
-            .branch_of(&secret)
-            .ok_or_else(|| "a machine that stands in no cohort".to_string())?;
+        // The tree of credited rights a window of this machine alone leaves: its part of window
+        // nought at position nought, and the walk to it.
+        let part = mt_derive::nullifier::part(&secret, 0)
+            .ok_or_else(|| "a secret whose halves are no digest of the family".to_string())?;
+        let mut credited = mt_proof::credited::Tree::new(mt_proof::tree_depth());
+        credited
+            .credit(&[part])
+            .map_err(|_| "a tree of one credited part".to_string())?;
+        let siblings = credited
+            .path(0)
+            .ok_or_else(|| "the position just credited".to_string())?;
         let right = montana_node::attest::right_of(&secret, 0).map_err(|e| format!("{e:?}"))?;
         let rate = *mt_wire::draw::block::<32>().map_err(|e| format!("{e:?}"))?;
         let root = montana_node::state::State::new().notes_root();
@@ -786,13 +789,13 @@ pub extern "C" fn mtc_measure_redemption(milliseconds: *mut u64, width: *mut usi
                 &secret,
                 right.window,
                 u128::from(right.worth),
-                &branch.siblings,
-                branch.position,
+                &siblings,
+                0,
                 &own,
                 right.accepted_in,
                 &rate,
                 &root,
-                &cohort.root(),
+                &credited.root(),
             )
             .map_err(|e| format!("{e:?}"))?;
         let spent = began.elapsed();

@@ -170,11 +170,9 @@ fn run() -> Result<(), String> {
     // window closes — so an errand run after the window publishes into points nobody holds, and the
     // only machine that takes it is one still lagging behind. It is carried into the pulse, which
     // runs it after this machine has entered the round and before it attests anything.
-    let cohort_of_the_errand = &cohort;
     let errand = |machine: &montana_node::Machine,
                   window: u64|
      -> Result<(), montana_node::NodeError> {
-        let cohort = cohort_of_the_errand;
         let out = (|| -> Result<(), String> {
             // The right of a window turned into a note of a wallet, in the window that right
             // is accepted in — and it is done here, where the machine does stand at the points
@@ -190,7 +188,6 @@ fn run() -> Result<(), String> {
                 machine
                         .redeem_into(
                             &wallet_at.clone(),
-                            cohort,
                             of_the_window,
                             window,
                             montana_node::pulse::opening_chain(),
@@ -336,6 +333,12 @@ fn pay_and_report(machine: &Machine, asked: &Asked) -> Result<(), String> {
     // here and never typed: a payer that supplied it would be choosing what must be drawn.
     let rate_secret =
         *mt_wire::draw::block::<32>().map_err(|e| format!("nothing to draw from: {e:?}"))?;
+    // The two roots a frame proves against, as this machine's plane holds them: the tree of notes
+    // and the tree of credited rights, read under one hold of the plane.
+    let (root, credited) = {
+        let plane = machine.value().map_err(said)?;
+        (plane.notes_root(), plane.credited())
+    };
     let payment = machine
         .pay(
             &asked.line,
@@ -350,8 +353,8 @@ fn pay_and_report(machine: &Machine, asked: &Asked) -> Result<(), String> {
             asked.chain,
             asked.round,
             &rate_secret,
-            &machine.value().map_err(said)?.notes_root(),
-            &mt_proof::admitted::empty_root(),
+            &root,
+            &credited,
         )
         .map_err(said)?;
     println!("the frame stands at the points of round {}", asked.round);

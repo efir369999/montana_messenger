@@ -171,8 +171,9 @@ mod tests {
         let depth = mt_genesis::scalar("note_tree_depth").expect("the Decree names it") as usize;
         // Every hash of the circuit is of the proof hash family. A redemption walks its path —
         // one node per level and the two permutations of its leaf — opens its commitment and the
-        // public half of its nullifier key, and derives its nullifier; the counts of the openings
-        // are the sponge's own: limbs of the preimage, the pad element, blocks of the rate.
+        // public half of its nullifier key, derives the part a right walks from, and derives its
+        // nullifier; the counts of the openings are the sponge's own: limbs of the preimage, the
+        // pad element, blocks of the rate.
         // An absorption counts in elements: four-byte limbs for a byte field, the four words
         // of a digest where a derivation consumes another, one pad element, blocks of the rate.
         let blocks = |elements: usize| (elements + 1).div_ceil(8);
@@ -180,6 +181,8 @@ mod tests {
         let leaf_permutations = blocks(4);
         let cm_permutations = blocks(limbs(16) + limbs(32) + 4 + limbs(32));
         let nf_permutations = blocks(4 + 4 + 1);
+        // The part of a right's window: the half that spends and the window, one element.
+        let part_permutations = blocks(4 + 1);
         // The key is absorbed once and squeezed twice: the blocks of the absorption, and one more
         // whose state is the state they left. That block is what makes the two halves two values
         // of one reading of the key rather than two readings of it.
@@ -187,17 +190,21 @@ mod tests {
         let rate_permutations = blocks(limbs(32) + limbs(8) + limbs(1));
         // What the walk answers with costs no permutation: the value a redemption's accumulator
         // ends at stands at a boundary of the trace, against the root or against the right.
-        let redemption_permutations =
-            depth + leaf_permutations + cm_permutations + nf_permutations + key_permutations;
-        assert_eq!(redemption_permutations, 50);
+        let redemption_permutations = depth
+            + leaf_permutations
+            + cm_permutations
+            + part_permutations
+            + nf_permutations
+            + key_permutations;
+        assert_eq!(redemption_permutations, 51);
         let spend_permutations =
             2 * redemption_permutations + 2 * cm_permutations + rate_permutations;
-        assert_eq!(spend_permutations, 110);
+        assert_eq!(spend_permutations, 112);
         let frame_permutations = 3 * spend_permutations;
-        assert_eq!(frame_permutations, 330);
+        assert_eq!(frame_permutations, 336);
 
         let rows = frame_permutations * ROWS_PER_PERMUTATION;
-        assert_eq!(rows, 42_240);
+        assert_eq!(rows, 43_008);
         // The least lawful height above that count: 2^15 does not reach the tail by whole folds,
         // so the height is 2^16 — and every length that carries a proof stands where it stood.
         assert!(Shape::of_rows_log2(15).is_err());
@@ -207,7 +214,7 @@ mod tests {
         // one row more than this would carry the trace past its height and move every length that
         // carries a proof.
         let ceiling = (1usize << rows_log2) / frame_permutations;
-        assert_eq!(ceiling, 198);
+        assert_eq!(ceiling, 195);
         assert!(ROWS_PER_PERMUTATION <= ceiling);
 
         let shape = Shape::of_rows_log2(rows_log2).expect("the height reaches the tail");
