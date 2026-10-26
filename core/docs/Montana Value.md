@@ -190,7 +190,10 @@ where no observer can tell which entries are rights and which are notes.
 ## Conservation of issuance
 
 - **Per payment:** what is created equals what is consumed, asserted by the proof and never by adding open numbers.
-- **Per window:** the change of supply equals the mint of that window — one right per living machine, each extinguished by exactly one nullifier — with the indivisible remainder carried forward.
+- **Per window:** each living machine earns the seconds it lived at one coin per second,
+  with a window's right worth the Decree's `window_credit`. Each right is extinguished by
+  exactly one nullifier. Under the decided slash rule below, supply change also subtracts
+  each distinct burned node lock.
 - **Globally:** the sum of unspent notes, unredeemed rights and the carried remainder equals the pre-transition supply, held by proof and induction and **unverifiable by addition** — amounts are hidden and rights are private.
 
 **Decided node-lock amendment (record 233; construction proposed).** Under Canon, "The

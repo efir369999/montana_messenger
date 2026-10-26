@@ -12,7 +12,19 @@ and burning decision are settled. The cryptographic construction and its activat
 quotes the chairman's translation and cites the author's records. It is proposed wording
 for line review, not a declaration that this PR has been accepted or deployed.
 
-## Current source map and result
+## Follow-up to the chairman's line review
++
++[Review of 4221b83](https://github.com/efir369999/montana_messenger/pull/52#issuecomment-6422507154):
++the proposal entries in the iOS build CHANGELOG are removed from the branch diff. I-6 keeps
++"Forbidden without exception" with the one explicit voluntary-lock exception. The monetary
++clause follows the author's [17:08 UTC word](https://github.com/efir369999/montana_messenger/issues/14#issuecomment-6422452584):
++one coin per lived second, not a shared fixed mint. The chairman owns A1/A2 code and amount
++binding; this branch changes documentation only. Canon's node_lock row remains decided;
++tau-2 times the corrected window credit must equal that row. Source line anchors below
++describe 0dcbd81; headings are stable through this follow-up. The Value equation still
++subtracts each distinct slashed lock and includes outstanding locked value.
++
++## Current source map and result
 
 | Task | Source in this revision | Result |
 |---|---|---|

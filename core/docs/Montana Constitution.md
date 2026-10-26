@@ -165,7 +165,8 @@ indistinguishable from every other unit, at every moment, forever. The protocol 
 property by which one coin could be told from another: no origin, no age, no history, no
 label, no list.
 
-Forbidden: any field, tag, list or set distinguishing coins by origin,
+Forbidden without exception, apart from the single node-lock exception stated below:
+any field, tag, list or set distinguishing coins by origin,
 history, holder or age; freezing, seizure, blocking or reversal of value by any actor,
 including a supermajority; allow-lists and deny-lists of participants or coins at the
 protocol layer; any mechanism letting a third party learn the history of a coin, now or
@@ -834,16 +835,13 @@ insufficient and a structural one is required.
 **The constitutional layer.** A change at this level is not a valid update of the existing
 network — it is a new network with a new genesis, and honest machines reject such proposals as
 an unknown protocol rather than as a fork. The layer covers: the global invariants in force
-and their operational requirements; the monetary constitution — the mint of a window read from a
-schedule Genesis fixes and no later act may change, divided equally among the window's living
-machines with the divisor private, supply growing by issuance and falling by exactly
-`node_lock` for each slashed node, no halving driven by the protocol, no premiums, and no
-protocol-level burning except a slashed node lock; a schedule of one row is a constant mint and is
-what Genesis carries, and a founder shaping the early height writes rows rather than powers, since
-what the layer forbids is a rule that mints differently over time by itself, not a value fixed once
-before anyone joined; the emission constitution — the minting of a window divided equally among the
-living, no emission lottery, no personal reward to the runner, the floor remainder
-carried over rather than appropriated; the draw constitution — an unweighted ticket against
+and their operational requirements; the monetary constitution — every living machine earns
+one coin for every second it lived, with the amount of a window's right derived by the
+Decree's `window_credit` rule; supply grows by issuance and falls by exactly `node_lock`
+for each slashed node, with no halving driven by the protocol, no premiums and no
+protocol-level burning except a slashed node lock; the emission constitution — equal
+credit for equal lived time, no emission lottery and no personal reward to the runner;
+the draw constitution — an unweighted ticket against
 the threshold orders the runners on duty, and the draw does not touch minting; absolute
 privacy of the financial layer; perfect fungibility; transport indistinguishability; the absence
 of a graph — no edge, no persistent identifier of a person, no address; the
