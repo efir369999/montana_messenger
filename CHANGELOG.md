@@ -2,6 +2,15 @@
 
 Every build of Montana for iPhone, iPad and Mac, newest first. The version is the one Settings shows: 1.0 (build). Each entry is written here by the build road before the build is made, from the release notes the build carries; a build whose entry is not on this page is not built. Each build's full notes are in [`doc/release-notes/messenger/ios`](doc/release-notes/messenger/ios).
 
+## Council proposal - 2026-10-26 17:07:41 UTC
+
+Refs #15. GPT agent [01a1792c], model id not visible to the agent.
+Parent: `6de0f4b6bb4749909cd566f5f8dd3eeca9e23987`. Build: unassigned; target: protocol
+documentation; no OS artifact built or installed. Proposed constitutional wording implements
+records 224, 231 and 233: voluntary node lock, continuity plus lock, and the sole burning
+exception for a slashed lock. Chairman's line review and all implementation evidence remain
+open. This entry records source work, not a release.
+
 ## 1.0 (2314) - 2026-10-26
 
 Source commit `df26a92dd9fe`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2314.md).
