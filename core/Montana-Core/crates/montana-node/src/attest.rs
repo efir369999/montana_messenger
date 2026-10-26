@@ -518,12 +518,14 @@ pub fn verify_ballot(
     Ok(held.votes)
 }
 
-// What a window credits, and to whom. Minting creates no note: a window credits **one coin** to
-// every machine living in it and issues to each a **right to its coin** of that window — one right
-// per machine per window, extinguished by exactly one nullifier, so no machine takes its coin twice
+// What a window credits, and to whom. Minting creates no note: a window credits **one coin for
+// every second of it** — `window_credit` of the Decree, 86 400 / `segment_windows` = 60 — to every
+// machine living in it, and issues to each a **right to its coins** of that window — one right per
+// machine per window, extinguished by exactly one nullifier, so no machine takes its coins twice
 // and none takes another's. Nothing is divided, so no remainder exists to carry: the count of the
-// living is the count of part-nullifiers the cement holds, and it is the supply the window adds, in
-// coins, and never the price of a right. Consensus, "The right to a window's coin".
+// living is the count of part-nullifiers the cement holds, the credit times that count is the
+// supply the window adds, in coins, and the count is never the price of a right. Consensus, "The
+// right to a window's coin".
 //
 // A machine reads its own right out of its own secret and tells nobody: the nullifier names no one,
 // and the window it is accepted in is drawn from the same absorption, so a person chooses nothing
@@ -533,20 +535,21 @@ pub struct Right {
     pub nullifier: [u8; 32],
     // The window this right is accepted in — not early and not late.
     pub accepted_in: u64,
-    // What the right brings into the balance of the frame that redeems it: one coin.
+    // What the right brings into the balance of the frame that redeems it: the window's credit.
     pub worth: u64,
 }
 
-// The coins a window credits to every machine living in it, read off the Decree: one, fixed by the
-// constitutional layer, whatever the height and whatever the count of the living. No clock is read
-// to issue it.
+// The coins a window credits to every machine living in it, read off the Decree: one for every
+// second of the window, 86 400 / `segment_windows` = 60, fixed by the constitutional layer whatever
+// the height and whatever the count of the living. The seconds are counted by the Decree and never
+// measured: no clock is read to issue it.
 pub fn window_credit() -> Result<u64, NodeError> {
     mt_genesis::scalar("window_credit").ok_or(NodeError::Decree {
         row: "window_credit".to_string(),
     })
 }
 
-// What a window adds to the supply: the credit of one coin to every part its cement names, and
+// What a window adds to the supply: the window's credit to every part its cement names, and
 // nothing else. A cement of nobody adds nothing.
 pub fn supply_added(living: usize) -> Result<u64, NodeError> {
     let living = u64::try_from(living).map_err(|_| NodeError::Refused {
@@ -559,8 +562,9 @@ pub fn supply_added(living: usize) -> Result<u64, NodeError> {
         })
 }
 
-// The right this machine holds to its coin of a window it lived in. What the right is worth does not
-// read the count of the living: one coin, the same for every machine of every cement. Whether the
+// The right this machine holds to its coins of a window it lived in. What the right is worth does
+// not read the count of the living: the window's credit, the same for every machine of every
+// cement. Whether the
 // machine lived the window is the caller's to know — its part among the parts the decided roll
 // names — and nothing here can see it.
 pub fn right_of(machine_secret: &[u8; 32], window: u64) -> Result<Right, NodeError> {

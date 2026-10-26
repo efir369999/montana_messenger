@@ -39,11 +39,15 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
         .expect("the part the window credited");
     let credited_root = state.credited();
 
-    // The window closed on a cement naming one machine, so that machine takes one coin, as every
-    // machine of every cement does.
+    // The window closed on a cement naming one machine, so that machine takes the window's credit, one coin for
+    // every second of it, as every machine of every cement does.
     let right = attest::right_of(&machine_secret, WINDOW).expect("a window that named a machine");
     assert_eq!(right.window, WINDOW);
-    assert_eq!(right.worth, 1, "a right is worth one coin");
+    assert_eq!(
+        right.worth,
+        attest::window_credit().expect("the Decree names it"),
+        "a right is worth its window's credit"
+    );
 
     // The right becomes a note: five positions of filler, the sixth the right itself, and the coin
     // leaves as one note the machine pays to itself. Nothing else could have been built — this
@@ -72,7 +76,7 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
     assert_eq!(
         u128::from(right.worth),
         created.value,
-        "the note created is not the coin the window credited"
+        "the note created is not the coins the window credited"
     );
     let note = Note::of(
         created.value,
@@ -93,7 +97,7 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
         "the first value of the network did not reach the wallet that mined it"
     );
 
-    // And now it pays like anybody: the whole coin, since nothing smaller than a coin exists. The
+    // And now it pays like anybody: the whole credit, since nothing smaller than a coin exists. The
     // wallet holds one note where a frame consumes six, so the rest of its positions take filler
     // too — the same branch, used for what it was written for.
     let paid = u128::from(right.worth);

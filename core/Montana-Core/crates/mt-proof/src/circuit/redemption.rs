@@ -669,7 +669,7 @@ pub fn write_lane(columns: &mut [Vec<F>], loads: &[usize], spending: &[usize], c
 }
 
 // What a redemption of a right holds instead of a note: a machine's secret, the window the right
-// belongs to, what it is worth — one coin — and the walk to the leaf of the machine's part of that
+// belongs to, what it is worth — the window's credit — and the walk to the leaf of the machine's part of that
 // window in the tree of credited rights, which only a cement of that window put there. It spends
 // its own nullifier and stands at its own moment, and the blocks it occupies are the note branch's
 // exactly, so a frame says nothing by its size.
@@ -705,7 +705,7 @@ pub fn write_right_redemption(
     // the right is worth, and nothing else — a chain whose digest no rule of this branch consumes,
     // standing so the count of blocks says nothing about the branch. The worth rides in the cells
     // an amount rides in, so the balance of the spend takes it by the same tie it takes a note's.
-    // A right is worth one coin, a constant and never a quantity of its window (Canon, "The right
+    // A right is worth the window's credit, a constant and never a quantity of its window (Canon, "The right
     // of a machine to its coin of a window, and what redeems it"); no rule of this branch holds the
     // witnessed worth to that constant yet, so a frame alone does not price a right — the open
     // finding `montana-node/tests/issuance_audit.rs` reproduces it, and the Registry's VAL-08 owes

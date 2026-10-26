@@ -27,8 +27,8 @@ montana-node — a machine of Montana
                          two values are what the payee's wallet printed of them.
   --amount <n>           what to pay, in the smallest unit
   --hand-to <file>       where to write what the payee needs of the note, closed to its owner
-  --redeem <w>           the right of window <w>, worth one coin, redeemed into a note of --wallet:
-                         every machine living a window is credited one coin for it, whatever the
+  --redeem <w>           the right of window <w>, worth the window's credit, redeemed into a note of --wallet:
+                         every machine living a window is credited one coin for every second of it, whatever the
                          count of its cement. A right is not a note: it is extinguished inside a
                          frame and what comes out is a commitment its holder keeps. It is presented in the
                          window that right is accepted in, which the machine printed when it took
@@ -545,7 +545,7 @@ fn read_configuration(held: &[String]) -> Result<(Configuration, Option<Asked>),
         admitted,
         from: from.unwrap_or(0),
         windows,
-        // A right is worth one coin whatever its cement counted, so the window alone names it.
+        // A right is worth the window's credit whatever its cement counted, so the window alone names it.
         redeem: match redeem {
             None => None,
             Some(said) => Some(

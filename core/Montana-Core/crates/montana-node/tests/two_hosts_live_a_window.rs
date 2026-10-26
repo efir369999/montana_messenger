@@ -112,7 +112,7 @@ fn two_machines_live_a_window_from_end_to_end_and_each_takes_one_share() {
     // The second window awaits the decision of a window nobody lived: no right stands for it.
     assert!(mine[1].right.is_none() && theirs[1].right.is_none());
 
-    // And each takes one coin of that window and no more: two machines, two rights, two
+    // And each takes the credit of that window and no more: two machines, two rights, two
     // nullifiers, and the coins of the two are what the window adds to the supply exactly.
     // Both parts entered the cement, so both machines lived the window and both took a right.
     let mine = mine[0]
@@ -123,8 +123,9 @@ fn two_machines_live_a_window_from_end_to_end_and_each_takes_one_share() {
         .right
         .as_ref()
         .expect("the other's part entered the cement");
-    assert_eq!(mine.worth, 1);
-    assert_eq!(theirs.worth, 1);
+    let credit = montana_node::attest::window_credit().expect("the Decree names it");
+    assert_eq!(mine.worth, credit);
+    assert_eq!(theirs.worth, credit);
     assert_ne!(
         mine.nullifier, theirs.nullifier,
         "two machines took one right"

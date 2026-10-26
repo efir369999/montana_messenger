@@ -208,9 +208,9 @@ fn a_changed_window_credit_breaks_the_build_with_both_values() {
     let md = canon();
     let line = row_line(&md, "window_credit");
     let (doctored, old, new) = bump_last_number(&line);
-    // One coin to every machine living in a window: the constitutional layer fixes the number,
-    // and the set and the code hold the same one.
-    assert_eq!(old, 1);
+    // One coin for every second of a window to every machine living in it: the constitutional
+    // layer fixes the number, and the set and the code hold the same one.
+    assert_eq!(old, 60);
     assert_eq!(Some(old), mt_genesis::scalar("window_credit"));
     let err = check_all(&doctored_canon(&md, &line, &doctored)).expect_err("the gate must refuse");
     assert!(err.contains("window_credit"), "{err}");

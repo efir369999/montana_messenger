@@ -459,7 +459,7 @@ pub extern "C" fn mtc_machine_account(out: *mut c_char, cap: usize, len: *mut us
 // window that right is accepted in. The window it is the right of is what the operator read off
 // that window when it closed: the machine cannot ask anybody for it and nothing it holds implies it.
 //
-// **The count of the cement prices nothing now.** A right is worth one coin whatever its cement
+// **The count of the cement prices nothing now.** A right is worth the window's credit whatever its cement
 // counted (Consensus, "The right to a window's coin"). The door still takes the count, so the
 // clients standing on it do not move with the rule, and it reads it for one thing only: a window
 // whose cement named nobody issued no right, and asking to redeem one is refused here.
@@ -722,7 +722,7 @@ pub extern "C" fn mtc_pulse_lived(out: *mut usize) -> i32 {
 }
 
 // One window of what was lived, read by its place. Every value of it is a count and none names a
-// machine. The fourth is what the window credited this machine: one coin where its part stood in
+// machine. The fourth is what the window credited this machine: the window's credit where its part stood in
 // the cement, nought where it did not.
 #[no_mangle]
 pub extern "C" fn mtc_pulse_lived_at(

@@ -195,7 +195,7 @@ pub struct Configuration {
     pub from: u64,
     pub windows: Option<u64>,
     // The window whose right is to be redeemed into a note of the wallet below, which the operator
-    // read off that window when it closed. The right is worth one coin, so nothing else of the
+    // read off that window when it closed. The right is worth the window's credit, so nothing else of the
     // window is asked for.
     pub redeem: Option<u64>,
     pub wallet: Option<String>,

@@ -53,7 +53,7 @@ impl Wallet {
     #[allow(clippy::too_many_arguments)]
     // The first value a machine holds: the coin of a window it lived through, turned into a note of
     // its own. Five of the six positions have nothing to put in them and take filler; the sixth
-    // consumes the right, and its worth — one coin — comes out as one note the machine pays to
+    // consumes the right, and its worth — the window's credit — comes out as one note the machine pays to
     // itself.
     //
     // **This is where value enters a wallet at all.** Minting creates no note — it issues a right —

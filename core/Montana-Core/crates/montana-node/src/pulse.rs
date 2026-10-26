@@ -1811,7 +1811,7 @@ pub fn live_doing(
         )?;
         // **The decision of this window made the proposal before it final**, and the head moves
         // onto it now, after the proposal it names stands kept and verified. The right of that
-        // window is issued from its decided roll: one coin to every part the roll names, and none
+        // window is issued from its decided roll: the window's credit to every part the roll names, and none
         // to a machine whose part it does not name. The proposal of this window is kept before
         // anything points at it, and is final when the agreement of the next window decides it.
         if let Some(before) = &predecessor_held {

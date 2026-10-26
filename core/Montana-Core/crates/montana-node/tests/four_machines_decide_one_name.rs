@@ -267,9 +267,9 @@ fn four_machines_decide_one_name_under_a_held_part_a_late_frame_and_a_healed_par
                 "the head stands elsewhere than on the newest decided window"
             );
         }
-        // **The right of a window is issued from its decided roll**: one coin to every part the
+        // **The right of a window is issued from its decided roll**: the window's credit to every part the
         // decided proposal's cement names, none to a machine whose part it does not name, and the
-        // coins of the window are its count of the cement exactly.
+        // coins of the window are its credit times the count of the cement exactly.
         for at in 0..(WINDOWS - 1) {
             let window = FROM + at;
             let decided = machines[0]
@@ -286,12 +286,15 @@ fn four_machines_decide_one_name_under_a_held_part_a_late_frame_and_a_healed_par
                 "window {window} minted to another count of machines than its decided cement names"
             );
             for right in &rights {
-                assert_eq!(right.worth, 1);
+                assert_eq!(
+                    right.worth,
+                    montana_node::attest::window_credit().expect("the Decree names it")
+                );
             }
             assert_eq!(
                 Ok(rights.iter().map(|right| right.worth).sum::<u64>()),
                 montana_node::attest::supply_added(decided.cement_count as usize),
-                "window {window} credited other than one coin to each part of its decided cement"
+                "window {window} credited other than its credit to each part of its decided cement"
             );
             let mut nullifiers: Vec<[u8; 32]> = rights.iter().map(|r| r.nullifier).collect();
             nullifiers.sort_unstable();

@@ -103,7 +103,7 @@ fn three_machines_close_a_window_and_each_takes_one_share() {
             );
         }
         // The first window is final, decided by the second: its right is issued from the decided
-        // roll, which names all three parts, and it is one coin whatever the count of the three.
+        // roll, which names all three parts, and it is the window's credit whatever the count of the three.
         // The second awaits the decision of a window nobody lived, and credits nothing yet.
         assert_eq!(
             one[0]
@@ -111,7 +111,7 @@ fn three_machines_close_a_window_and_each_takes_one_share() {
                 .as_ref()
                 .expect("the first window is final and its roll names every part")
                 .worth,
-            1
+            montana_node::attest::window_credit().expect("the Decree names it")
         );
         assert!(
             one[1].right.is_none(),

@@ -5,7 +5,7 @@
 // The encoding is the Decree's own rule: every parameter as an unsigned eight-byte little-endian
 // integer in the order the table stands; a ratio as two such integers, numerator first; a
 // parameter written as a hash as its thirty-two bytes. The credit of a window is a scalar like any
-// other: one coin to every machine living in it, eight bytes by the general rule.
+// other: one coin for every second of it to every machine living in it, eight bytes by the general rule.
 
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
@@ -318,7 +318,7 @@ mod tests {
         assert_eq!(s("claim_spread"), s("segment_windows"));
         assert_eq!(s("retarget_period"), TAU2);
         assert_eq!(s("census_interval") * s("standing_censuses"), TAU2);
-        // One second, one coin: every machine living a window is credited one coin for it, and
+        // One second, one coin: every machine living a window is credited one coin for every second of it, and
         // the constitutional layer fixes the number.
         assert_eq!(s("window_credit"), 60);
         assert_eq!(s("window_credit") * s("segment_windows"), 86_400);

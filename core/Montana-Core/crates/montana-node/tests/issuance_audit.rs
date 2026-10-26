@@ -50,7 +50,8 @@ fn audit_reproduces_an_oversized_right_becoming_a_spendable_note() {
     assert_eq!(note.commitment, frame.spends[0].commitments[0]);
     wallet.enter(note).unwrap();
     assert_eq!(wallet.balance().unwrap(), forged);
-    // A right is worth one coin (Consensus, "The right to a window's coin"); the frame took two.
+    // A right is worth its window's credit (Consensus, "The right to a window's coin"); the frame
+    // took one coin more.
     assert!(forged > u128::from(attest::window_credit().unwrap()));
 
     let (recipient, _) = payee_of(0xB2);
@@ -74,5 +75,5 @@ fn audit_reproduces_an_oversized_right_becoming_a_spendable_note() {
     let forwarded = mt_state::layout::Frame::parse(&paid.frame).unwrap();
     state.apply(&forwarded, right.accepted_in).unwrap();
     assert_eq!(paid.created[0].value, forged);
-    eprintln!("OPEN FINDING: the verifier accepted a right redeemed above its one coin and its onward spend");
+    eprintln!("OPEN FINDING: the verifier accepted a right redeemed above its window's credit and its onward spend");
 }

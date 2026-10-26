@@ -47,7 +47,7 @@ fn not_applied() -> NodeError {
 //
 // The window this right is of is what the operator read off that window when it closed. It is of
 // the world in the same way an acquaintance is: the machine cannot ask anybody for it, and nothing
-// else it holds implies it. What the right is worth is not asked for: one coin, whatever
+// else it holds implies it. What the right is worth is not asked for: the window's credit, whatever
 // the count of that window's cement (Consensus, "The right to a window's coin").
 //
 // **The note enters the wallet once its frame has applied, and not before.** The frame stands at
