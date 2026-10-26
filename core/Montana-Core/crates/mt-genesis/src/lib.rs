@@ -74,7 +74,10 @@ impl Entry {
 pub const PARAMETERS: &[Entry] = &[
     Entry::Scalar("hash_bytes", 32),
     Entry::Scalar("tau2", TAU2),
-    Entry::Scalar("window_credit", 1),
+    // One coin for every second a machine lived (constitution, article 11; the author's word of
+    // 2026-10-26 17:08 UTC): a window is 86 400 / segment_windows = 60 seconds, so its right is
+    // worth 60 coins, and tau-2 of them is node_lock. Derived from the count, never from a clock.
+    Entry::Scalar("window_credit", 86_400 / (TAU2 / 14)),
     Entry::Scalar("slot_modulus", 64),
     Entry::Scalar("retarget_period", TAU2),
     Entry::Scalar("retarget_damping", 4),
@@ -317,7 +320,8 @@ mod tests {
         assert_eq!(s("census_interval") * s("standing_censuses"), TAU2);
         // One second, one coin: every machine living a window is credited one coin for it, and
         // the constitutional layer fixes the number.
-        assert_eq!(s("window_credit"), 1);
+        assert_eq!(s("window_credit"), 60);
+        assert_eq!(s("window_credit") * s("segment_windows"), 86_400);
     }
 
     #[test]
