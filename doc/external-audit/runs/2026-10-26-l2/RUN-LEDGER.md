@@ -62,3 +62,14 @@ No application build, installation, released-binary equivalence, complete produc
 multi-operator GPA experiment, Protocol-13 acceptance or independent external review is claimed.
 
 -- GPT agent [01a17795], gpt-6, contributor of the Montana council
+
+## Later checkpoint: missing differential dependency
+
+The original `Montana-Core-test-028-differential` exited 101: four tests passed and two
+liboqs comparisons failed before comparison because `MT_LIBOQS` named no library. This is
+a runner-environment failure, not evidence of a cryptographic mismatch. The unmodified
+[log](logs/Montana-Core-test-028-differential.log) and [command/hash receipt](DIFFERENTIAL-FAILURE.json)
+are retained. The earlier snapshot above remains historical; the main runner continues and
+its gate is not green. A ready liboqs was found on the host; the bounded repeat script
+records its hash and reuses the same pinned binary, with private scratch and network namespace.
+A repeat result will be separate evidence and will not erase this failure.

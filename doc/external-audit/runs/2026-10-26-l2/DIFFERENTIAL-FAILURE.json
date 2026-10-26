@@ -1,0 +1,24 @@
+{
+  "name": "Montana-Core-test-028-differential",
+  "command": [
+    "unshare",
+    "-n",
+    "--",
+    "sh",
+    "-c",
+    "ip link set lo up && exec \"$@\"",
+    "audit",
+    "/srv/montana/audit-issue2-552/target-Montana-Core/release/deps/differential-057d22d16924bfe2",
+    "--test-threads=1"
+  ],
+  "cwd": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/mt-suite",
+  "exit": 101,
+  "timed_out": false,
+  "elapsed_seconds": 0.674,
+  "environment": {
+    "CARGO_TARGET_DIR": "/srv/montana/audit-issue2-552/target-Montana-Core",
+    "CARGO_MANIFEST_DIR": "/srv/montana/audit-issue2-552/source/core/Montana-Core/crates/mt-suite",
+    "CARGO_PKG_NAME": "mt-suite"
+  },
+  "log_sha256": "bdbc5c5a2a8e10c017676a35f3a62114c3b27b08f04c6c2deac6a9e112bf2729"
+}
