@@ -37,10 +37,14 @@ struct MTWalletPage: View {
     /// THE PERSON'S COINS ARE THE CHAIN'S (fold-7; the author's words 23.10.2026 00:27 UTC: «the phone only mirrors the chain»): once the
     /// chain has spoken in this run, the available it holds (MTCoinSplit.available); before it, every coin the book holds, and before
     /// the seed's book lands, the balance a device of the same words told in its tip (04.10 16:34).
+    /// THE SECONDS BEFORE THE WINDOW IS FINALIZED RISE ON THE PAGE (the author's words 26.10.2026 09:2x UTC, links 8615 and 8617): the
+    /// Time Balance is the available and the person's seconds on their way to the chain (MTCoinSplit.growing), so it moves every second
+    /// while the person is here; the line Available beneath stays what the chain holds, and Send is weighed by that alone.
     private var total: Int {
-        if coinSplit.split != nil { return coinSplit.available }
+        if coinSplit.split != nil { return coinSplit.growing }
         return vault.heard ? book.balance : max(book.balance, tipNet.seen ?? 0)
     }
+    private var spendable: Int { coinSplit.split != nil ? coinSplit.available : total }
     /// One of the three sums of the balance: the main one large and white, the others small; the whole row takes the finger and
     /// makes its sum the main one.
     private func balanceSum(_ unit: MTCoinUnit) -> some View {
@@ -202,7 +206,7 @@ struct MTWalletPage: View {
                                 Label { Text("Send") } icon: { MTTimeSendMark(height: 24) }
                                     .font(.headline).frame(maxWidth: .infinity, minHeight: 44)
                             }
-                            .disabled(total <= 0)
+                            .disabled(spendable <= 0)
                             Button { toppingUp = true } label: {
                                 Label("Top up", systemImage: "plus.circle.fill").font(.headline).frame(maxWidth: .infinity, minHeight: 44)
                             }
@@ -395,6 +399,8 @@ struct MTWalletPage: View {
             if new == .active { Task { await refresh() }; if !pantheon.lit { autoMint.fire() } } else if new == .background { autoMint.stop(why: "background") }
         }
         .onDisappear { autoMint.stop(why: "page"); pantheon.released() }
+        // the page's own beat: the seconds on their way rise once a second, with the +1 of the minting (MTCoinSplit.beat)
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in coinSplit.beat() }
     }
 
     /// The coin drawn down past its trigger and let go: one minting of the pull (MTWalletPull) and the page read again. While the

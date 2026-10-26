@@ -2,6 +2,16 @@
 
 Every build of Montana for iPhone, iPad and Mac, newest first. The version is the one Settings shows: 1.0 (build). Each entry is written here by the build road before the build is made, from the release notes the build carries; a build whose entry is not on this page is not built. Each build's full notes are in [`doc/release-notes/messenger/ios`](doc/release-notes/messenger/ios).
 
+## 1.0 (2314) - 2026-10-26
+
+Source commit `df26a92dd9fe`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2314.md).
+
+- The Time Coins page shows the minting as it happens: while you are in the app, your Time Balance rises every second with the seconds on their way to the network, before the window that confirms them is finalized; when the network confirms them the number moves on without a jump. The line Available beneath it, and what you can send, stay exactly what the network has confirmed.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged: the rising seconds are shown and never spent, a transfer is weighed by the confirmed balance alone, and a minting record now counts only from the moment the person came into the app, so no second before their presence is claimed. Nothing new leaves the phone.
+
 ## 1.0 (2313) - 2026-10-25
 
 Source commit `7c3624af1f00`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2313.md).

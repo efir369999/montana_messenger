@@ -18,11 +18,19 @@ first build) and starts the container with a persistent `montana-data` volume.
 The node starts in **singleton bootstrap mode** — it works out of the box with
 zero external dependencies: it runs its own genesis TimeChain and cements a
 Proposal every window. On first launch it generates a 24-word recovery mnemonic
-and writes it to `/var/lib/montana/mnemonic.txt` (mode `0400`). Save it offline:
+and writes its initialization output, including the recovery mnemonic, to
+`/var/lib/montana/mnemonic.txt`. The file is created with mode `0400` before
+initialization; the container's standard output, standard error and controlling
+terminal do not receive the phrase. Initialization failure stops startup and preserves the private output
+for inspection. An existing recovery file is never overwritten. Save it offline:
 
 ```bash
 docker exec montana-node cat /var/lib/montana/mnemonic.txt
 ```
+
+The entrypoint sends no unsolicited node report to the project site. This does
+not remove earlier disclosures or establish transport anonymity. Runtime logs
+of the node binary are outside this bootstrap change.
 
 ## Verify
 

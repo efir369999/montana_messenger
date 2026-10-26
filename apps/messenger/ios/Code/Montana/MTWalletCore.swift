@@ -4057,17 +4057,17 @@ enum MTCoinChainRules {
 /// node does (POST /tx-head), and a word of the node never stands over the copy's fresher one. Nothing before the chain opened.
 @MainActor final class MTCoinSplit: ObservableObject {
     static let shared = MTCoinSplit()
-    struct Split: Equatable { let proven: Int64; let declared: Int64; let fromCopy: Bool; let at: TimeInterval; let height: Int; let second: Int64 }
+    struct Split: Equatable { let proven: Int64; let declared: Int64; let fromCopy: Bool; let at: TimeInterval; let height: Int; let second: Int64; var mintEnd: Int64 = 0 }
     @Published private(set) var split: Split?
     /// THE NEWEST STATE OF THE CHAIN SPEAKS, WHOEVER FOLDED IT (the author's words 12.10.2026 12:5x UTC: «the available depends on the
     /// network and the confirmed ... everything at once»): the copy's fold stood an hour over every fresher word of the node, so a RECV or
     /// a MINT the node had taken waited for the copy's next round. The chain's height says which word is newer; one height is one state.
-    func heard(proven: Int64, declared: Int64, opened: Bool, fromCopy: Bool, height: Int, second: Int64) {
+    func heard(proven: Int64, declared: Int64, opened: Bool, fromCopy: Bool, height: Int, second: Int64, mintEnd: Int64) {
         guard opened else { return }
         if let s = split, height < s.height { return }
         let now = Date().timeIntervalSince1970
-        if split?.proven != proven || split?.declared != declared || split?.height != height {
-            split = Split(proven: proven, declared: declared, fromCopy: fromCopy, at: now, height: height, second: second)
+        if split?.proven != proven || split?.declared != declared || split?.height != height || split?.mintEnd != mintEnd {
+            split = Split(proven: proven, declared: declared, fromCopy: fromCopy, at: now, height: height, second: second, mintEnd: mintEnd)
         }
         if flying.contains(where: { _, f in f.height < height }) { flying = flying.filter { _, f in height <= f.height } }
         told()
@@ -4095,24 +4095,42 @@ enum MTCoinChainRules {
         let lived = MTCoinChainRules.since(s.second, to: s.second &+ Int64(max(0, Date().timeIntervalSince1970 - s.at)))
         return Int(clamping: max(0, s.proven &+ s.declared &+ lived &- away))
     }
+    /// THE SECONDS ON THEIR WAY TO THE CHAIN (the author's words 26.10.2026 09:2x UTC, links 8615 and 8617: «I do not see how the
+    /// coins are minted every second on the Time Coins page ... even if not all are available or finalized»; «let it count so, then
+    /// show visually what happens before the window is finalized»): from the online cut the chain credits a person's seconds only by
+    /// a MINT the phone lays while the person is here, once in a minute or so (MTCoinTx.reconcile), so the chain's number stood and
+    /// leapt. These are the very seconds the next MINT will name -- from the later of the last MINT's end, the node's freshness less
+    /// the road's margin and the person's coming -- counted at the node's second; when it lands the chain holds them and they leave
+    /// here, so the sum moves on without a leap. Shown and never spent: the available leaves them out, and a transfer weighs nothing else.
+    var minting: Int {
+        guard let s = split, let from = MTCoinTx.hereFrom, MTCoinTx.here else { return 0 }
+        let now = s.second &+ Int64(max(0, Date().timeIntervalSince1970 - s.at))
+        guard MTCoinChainRules.onlineCut <= now else { return 0 }
+        let t0 = max(s.mintEnd, now - MTCoinChainRules.mintFresh + MTCoinTx.presentMargin, from)
+        return Int(clamping: max(0, now - t0))
+    }
+    /// What the wallet's Time Balance shows: the available and the seconds on their way to it.
+    var growing: Int { available + (split == nil ? 0 : minting) }
     /// The number the readers off the main actor hear (MTCoinBalance): the available, told at every move of the book and the chain.
     /// Before the chain has spoken the available is the book's, so its views hear every move of the book here.
     private var shown: Int?
     func told() {
         if split == nil { objectWillChange.send() }
-        shown = available
+        shown = growing
         MTCoinBalance.set(available)
     }
     /// THE CHAIN'S SECOND ON THE SCREEN (the author's words 23.10.2026 20:2x UTC: «in the client the minting shows just as before, only
     /// it all happens at the core's level»): the chain credits the key every second by its own step (MTCoinChainRules.since), so the
     /// beat of the minting raises those seconds with their sum as the book's coins once rose, and never a coin the chain did not fold.
+    /// The seconds on their way rise by the same beat (minting), and when they leave -- the person away, or the MINT landed -- the
+    /// figure is told again without a rise.
     func beat() {
         guard split != nil, let before = shown else { return }
-        let now = available
-        guard before < now else { return }
+        let now = growing
+        guard before != now else { return }
         objectWillChange.send()
         told()
-        MTCoinFlash.shared.born(now - before, ref: MTWalletPull.refPrefix)
+        if before < now { MTCoinFlash.shared.born(now - before, ref: MTWalletPull.refPrefix) }
     }
 }
 
@@ -4577,17 +4595,26 @@ extension MTCoinTx {
     /// Under the node's minute plus one beat, a MINT's interval never passes the freshness less the margin: no second here is lost.
     nonisolated static let presentBeat: UInt64 = 40
     @MainActor private static var presence: Task<Void, Never>?
+    /// THE NODE SECOND THE PERSON CAME (the author's words 26.10.2026 09:2x UTC, links 8615 and 8617: «show how the coins are minted
+    /// every second ... so that it works right over the network too»; «let it count so, then show visually what happens before the
+    /// window is finalized»): the first second of this stay the chain's node told, nil while the person is away. A MINT counts from
+    /// it and never from before it -- minting happens while the person is here (fold-7) -- and the wallet shows the same seconds
+    /// rising while they are on their way (MTCoinSplit.minting).
+    @MainActor private(set) static var hereFrom: Int64?
     /// The app came to the screen, the wallet opened or the tunnel rose: while the person stays here every beat asks the chain --
     /// before the online cut only to read the key's life the chain mints itself (fold-6), so the person's number grows with the chain
     /// and never by the book, which mints nothing after the time cut (MTLocalCoinLedger.priced).
     @MainActor static func beHere() {
         guard presence == nil else { return }
+        hereFrom = nil
         presence = Task { @MainActor in
             while !Task.isCancelled, here {
                 await reconcile()
                 try? await Task.sleep(nanoseconds: presentBeat * 1_000_000_000)
             }
             presence = nil
+            hereFrom = nil
+            MTCoinSplit.shared.beat()
         }
     }
     /// THE CHAIN HOLDS WHAT THE BOOK HOLDS (sections 3-4). A key's first v3 record is its GENESIS: the book as it stands, at most
@@ -4604,7 +4631,7 @@ extension MTCoinTx {
         guard var st = await chain3(me, door: door) else { return nil }
         // what the chain's node folds is told to the wallet's split, after every word of it
         func told(_ s: Chain3?) -> Chain3? {
-            if let s, seat.stands { MTCoinSplit.shared.heard(proven: s.proven, declared: s.declared, opened: s.v3, fromCopy: false, height: s.height, second: s.now) }
+            if let s, seat.stands { MTCoinSplit.shared.heard(proven: s.proven, declared: s.declared, opened: s.v3, fromCopy: false, height: s.height, second: s.now, mintEnd: s.mintEnd) }
             return s
         }
         guard seat.stands else { MontanaTrace.mark("coin_v3", "the seat moved -- nothing laid"); return nil }
@@ -4623,10 +4650,12 @@ extension MTCoinTx {
             // happens if the person is online or behind the VPN»): the node counts of a MINT only what its interval holds of the last
             // mintFresh seconds before it takes it, so while the person is here the phone lays the seconds since the last MINT, never
             // older than the freshness less the road's margin; the node's minute between two MINTs is the pace
+            if here, presence != nil, hereFrom == nil, MTCoinChainRules.onlineCut <= st.now { hereFrom = st.now }
             guard MTCoinChainRules.onlineCut <= st.now, here, st.mintEnd + 60 <= st.now else { return told(st) }
+            let from = hereFrom ?? st.now
             let r = await layOnHead { s in
                 guard seat.stands, 0 < s.height, MTCoinChainRules.onlineCut <= s.now else { return nil }
-                let t1 = s.now, t0 = max(s.mintEnd, t1 - MTCoinChainRules.mintFresh + presentMargin)
+                let t1 = s.now, t0 = max(s.mintEnd, t1 - MTCoinChainRules.mintFresh + presentMargin, from)
                 // the present seconds alone weigh it (fold-8): the life the node credited up to the online cut is not asked again
                 let amount = MTCoinChainRules.present(t0: t0, t1: t1, at: t1 + presentMargin)
                 guard 0 < amount, t0 + 60 <= t1 else { return nil }
@@ -5160,7 +5189,7 @@ enum MTCoinReplica {
             await Task.detached(priority: .utility) { save(verified) }.value
         }
         // the person's own chain as this copy folded it: the wallet's split hears it before the node's word (MTCoinSplit)
-        if f.bad == 0, let mine = f.mine { MTCoinSplit.shared.heard(proven: mine.proven, declared: mine.declared, opened: mine.v3, fromCopy: true, height: mine.height, second: T) }
+        if f.bad == 0, let mine = f.mine { MTCoinSplit.shared.heard(proven: mine.proven, declared: mine.declared, opened: mine.v3, fromCopy: true, height: mine.height, second: T, mintEnd: mine.mintEnd) }
         var signed = 0
         if f.bad == 0, 0 < f.keys, let root = bytes(f.root) {
             var t = UInt64(T).littleEndian
