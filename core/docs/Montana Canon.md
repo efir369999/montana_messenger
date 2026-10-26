@@ -5276,8 +5276,8 @@ public_input(candidacy_self_transfer)
   window                            8 B   offset 0
   record_root                      32 B   offset 8
   naming_half                      32 B   offset 40
-  operator_nullifier               32 B   offset 72
-  node_commit                      32 B   offset 104
+  node_commit                      32 B   offset 72
+  operator_nullifier               32 B   offset 104
   note_root                        32 B   offset 136
   note_nullifier x spend_inputs    32 B each, offsets 168 and 200
   note_commitment x spend_outputs  32 B each, offsets 232 and 264
@@ -5293,6 +5293,8 @@ conditional estimate, not a frozen size: the common-origin circuit and continuit
 fit the geometry. Every size in the prefix comes from the preceding candidacy's integer and
 digest widths and the existing Forms rows. The suite is last in the public input so the
 proof-hash digests begin on limb boundaries; the last limb contains only its two bytes.
+The fields shared with serialization have exactly its order; verifier-owned context is
+inserted without permuting those object fields.
 This is the byte-exact proposed pi/origin input. A remaining completeness gate is the
 adaptive continuity period: Identity compares the active share against `segments_in_force`,
 which Consensus raises under applicant pressure. The present admission input contains no
