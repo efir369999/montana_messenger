@@ -1,0 +1,68 @@
+{
+  "source_pin": "a835c1c3ff4bc95ea3c75e02391d3d69e2e08833",
+  "source_sha256": "6a6770b11adefb4e1f57a42e1e704291618f114bd47e88f117b42ba766a1df2d",
+  "host_role": "L2",
+  "cpu_weight": 1,
+  "memory_max_bytes": 536870912,
+  "tests": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "malformed_or_stale_rejections": 19450,
+    "valid_controls": 2
+  },
+  "checks": [
+    {
+      "name": "format",
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2021",
+        "tests/handshake_boundary.rs"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.06873631477355957,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "-p",
+        "montana-channel-audit",
+        "--check"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.16542553901672363,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "tests",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "--jobs",
+        "1",
+        "--test",
+        "handshake_boundary",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.2233352661132812,
+      "log_sha256": "86e678a86f7b1fff898b622f06460da7011183f2c90367b2c0a11e81808a6c69"
+    }
+  ]
+}

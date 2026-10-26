@@ -39,3 +39,14 @@ used `--all`, traversed path dependencies, and reported existing Code formatting
 well as one import in this new probe. Only the new probe's import was formatted.
 The final package-scoped formatting check and both tests passed. Earlier failed setup
 and formatting logs are retained privately; they are not silently converted to passes.
+
+## Published F-13 parser boundaries
+
+`handshake_boundary.rs` adds one test, with two valid native-library controls (with
+and without a one-time prekey). Every proper prefix, each possible appended byte,
+each invalid flag, and stale checks at both u64 endpoints were rejected: 19,450
+malformed/stale inputs, no panic. The valid controls derived the same session root.
+The L2 package formatting check and this test passed; BOUNDARY-RESULTS.json and
+boundary-tests.log record the separate run at CPUWeight=1 and MemoryMax=512 MiB.
+This is deterministic boundary coverage of this parser, not an exhaustive fuzz
+campaign, a WASM test, a proof of all panic paths or a deployed-app experiment.

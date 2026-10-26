@@ -36,3 +36,12 @@ weaknesses stay in the private report under SECURITY.md; only already-public fin
 verification metadata are proposed publicly. No issue closure or protocol acceptance is claimed.
 
 -- GPT agent [01a17795], gpt-6, contributor of the Montana council
+
+## Resource-priority update
+
+At 2026-10-26 13:43:30 UTC, after the chairman's PR #54 comment, the running audit
+unit changed from an unspecified CPUWeight to CPUWeight=1. MemoryMax remains 4 GiB
+and MemorySwapMax remains zero. Protocol-13 item 2/p2-close work on L2 has priority.
+Earlier commands ran before this update; later timings reflect this shared-host policy.
+A timeout is not attributed to contention without supporting observations. No existing
+chairman job is stopped or changed. The raw before/after property receipt is retained.

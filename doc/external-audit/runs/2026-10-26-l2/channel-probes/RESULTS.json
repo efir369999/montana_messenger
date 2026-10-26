@@ -47,7 +47,7 @@
         "sh",
         "-c",
         "ip link set lo up && exec \"$@\"",
-        "<private-netns>",
+        "audit",
         "cargo",
         "test",
         "--release",

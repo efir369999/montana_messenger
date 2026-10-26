@@ -1,0 +1,39 @@
+{
+  "excludes": [
+    "working-tree edits",
+    "binary provenance",
+    "deployed services",
+    "independent audit",
+    "GPA resilience"
+  ],
+  "kind": "committed-source-inventory-not-security-attestation",
+  "lock_sha256": {
+    "Audit/Protocol-13/source/Montana-Core/Cargo.lock": "c2172061170bbb95e09e283ca21df240fdbd238a3ba3c25c0ddcd8b97604957c",
+    "core/Code/Cargo.lock": "ade54abaf0bdfe1f44feabe23ff757bd1b247fc48001cd00a46bec47612602b8",
+    "core/Montana-Core/Cargo.lock": "c2172061170bbb95e09e283ca21df240fdbd238a3ba3c25c0ddcd8b97604957c"
+  },
+  "protocol_audit_source_tree": "a1324c9726c62eaf4ebd35494fe73dad4bb3e66e",
+  "public_commit": "a835c1c3ff4bc95ea3c75e02391d3d69e2e08833",
+  "public_tree": "c027ca071083b00dca224d732bff0a8bc0d21e39",
+  "schema": 1,
+  "sources": {
+    "apps/messenger/android": {
+      "build_label": "552",
+      "private_source_label_unverified": "e8e25d01c77e",
+      "staged_label_unverified": "2026-10-26 10:03 UTC",
+      "tree": "af8316a93370d0a6bdafc3b74e58f2578e832839"
+    },
+    "apps/messenger/ios": {
+      "build_label": "1.0 (2314)",
+      "private_source_label_unverified": "df26a92dd9fe",
+      "staged_label_unverified": "2026-10-26 11:36 UTC",
+      "tree": "d10682c6a9aff4b8fadbe976f390f075cf03ee80"
+    },
+    "core": {
+      "build_label": "not built (PR #27)",
+      "private_source_label_unverified": "637b99581eca",
+      "staged_label_unverified": "2026-10-26 06:54 UTC",
+      "tree": "f144b19aa504de43f9aefe45183a6f962ab4cc1c"
+    }
+  }
+}

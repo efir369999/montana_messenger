@@ -1,0 +1,30 @@
+reconcile: commit a835c1c3ff4bc95ea3c75e02391d3d69e2e08833
+
+quantity | value | where | standing
+---|---|---|---
+air identifier of the admission | 2d3b183b5b8766f06c289b4bbcb0b9767f6f28fff065fb9295c351b2b071cbac | Audit/Protocol-13/source/docs/Montana Canon.md:4342 | current
+air identifier of the admission | 2d3b183b5b8766f06c289b4bbcb0b9767f6f28fff065fb9295c351b2b071cbac | core/docs/Montana Canon.md:4342 | current
+air identifier of the ballot | a329f7e7ae7656e26147604e0f757ff9cea56facbf953eb30fd01a3f59fe9928 | Audit/Protocol-13/source/docs/Montana Canon.md:4345 | current
+air identifier of the ballot | a329f7e7ae7656e26147604e0f757ff9cea56facbf953eb30fd01a3f59fe9928 | core/docs/Montana Canon.md:4345 | current
+air identifier of the frame | 0c2b70014a8aa0834177472226118a5637c991715f54a0518bafc14e8304fa42 | Audit/Protocol-13/source/docs/Montana Canon.md:4340 | current
+air identifier of the frame | 0c2b70014a8aa0834177472226118a5637c991715f54a0518bafc14e8304fa42 | core/docs/Montana Canon.md:4340 | current
+air identifier of the opening | 34c92be6edfe2e089be14dc59489dd2d1ef3483db4fab5d08abc28eaa0ca18da | Audit/Protocol-13/source/docs/Montana Canon.md:4344 | current
+air identifier of the opening | 34c92be6edfe2e089be14dc59489dd2d1ef3483db4fab5d08abc28eaa0ca18da | core/docs/Montana Canon.md:4344 | current
+air identifier of the presence | a948eeaf8b4b07e7d51763944498a6edc463670f649dfdf351e7b478bb053052 | Audit/Protocol-13/source/docs/Montana Canon.md:4343 | current
+air identifier of the presence | a948eeaf8b4b07e7d51763944498a6edc463670f649dfdf351e7b478bb053052 | core/docs/Montana Canon.md:4343 | current
+air identifier of the ticket | 0c50e4291fede09b20945f9070e50746429b40153911600a690832aab6e65378 | Audit/Protocol-13/source/docs/Montana Canon.md:4341 | current
+air identifier of the ticket | 0c50e4291fede09b20945f9070e50746429b40153911600a690832aab6e65378 | core/docs/Montana Canon.md:4341 | current
+air_hash | fe432f611af37558c7a9176f2117f3da6582fd500b0d6529dddae3513f83936e | Audit/Protocol-13/source/Montana-Core/crates/mt-genesis/src/lib.rs:134 | current
+air_hash | fe432f611af37558c7a9176f2117f3da6582fd500b0d6529dddae3513f83936e | Audit/Protocol-13/source/docs/Montana Canon.md:4693 | current
+air_hash | fe432f611af37558c7a9176f2117f3da6582fd500b0d6529dddae3513f83936e | core/Montana-Core/crates/mt-genesis/src/lib.rs:134 | current
+air_hash | fe432f611af37558c7a9176f2117f3da6582fd500b0d6529dddae3513f83936e | core/docs/Montana Canon.md:4693 | current
+canon_version | 9.5.0 | Audit/Protocol-13/source/Montana-Core/VERSION.md:5 | current
+canon_version | 9.5.0 | Audit/Protocol-13/source/docs/Montana Canon.md:3 | current
+canon_version | 9.5.0 | core/Montana-Core/VERSION.md:5 | current
+canon_version | 9.5.0 | core/docs/Montana Canon.md:3 | current
+genesis_state_hash | b861d944d320104bbbc2d370a2e3a8bd0ac36282fd60397bb54fd11ffc8b8715 | Audit/Protocol-13/source/docs/Montana Canon.md:4740 | current
+genesis_state_hash | b861d944d320104bbbc2d370a2e3a8bd0ac36282fd60397bb54fd11ffc8b8715 | core/docs/Montana Canon.md:4740 | current
+published_parameters | 3794a6b4e543b0d2e4a39c9e30bbccc1910542f2a8b14758305ddd7de1527c7f | Audit/Protocol-13/source/docs/Montana Canon.md:4744 | current
+published_parameters | 3794a6b4e543b0d2e4a39c9e30bbccc1910542f2a8b14758305ddd7de1527c7f | core/docs/Montana Canon.md:4744 | current
+
+reconcile: 10 quantities agree across 24 statements
