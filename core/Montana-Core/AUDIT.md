@@ -1180,15 +1180,18 @@ five ranged witnesses over one shared bit column. A frame redeeming a right is p
 and refused for a wrong moment and for a membership in a tree the frame does not publish — the
 mint of the invented secret, refused by the walk.
 
-**What the frame does not bind, named rather than passed over.** What a right is worth rides into
-the balance in the cells an amount rides in, and the frame proves it consistently — but no rule of
-the right's branch holds that witnessed worth to what a right is worth. Under the credit of one
-coin to every living machine (Consensus, "The right to a window's coin") that worth is a constant
-of the construction, one coin, and no count of a cement enters it, so the obligation is no longer
-the circuit of a window's: it is one constraint of the frame, holding the worth of a right to one
-coin (Registry, VAL-08, stage 15). Until it stands, a frame's proof alone does not price a right —
-`montana-node/tests/issuance_audit.rs` reproduces a right redeemed at two coins — and this line is
-here so the next stage inherits a named obligation instead of discovering a hole.
+**What the frame binds of a right's worth** (issue #14, A2). What a right is worth rides into the
+balance in the cells an amount rides in, and a rule of the frame now holds it to the credit of a
+window: at the seam before the commitment tie of every redemption the layout places
+(`Places::worth_rows`), the right branch of the capacity split carries the Decree's `window_credit`
+in a periodic column, and `right(r) * (amount(r+1) - credit(r)) = 0`
+(`crates/mt-proof/src/circuit/frame.rs`, `bind_the_worth_of_a_right`), of degree two and with no
+column added. A right written at the credit plus one, at the credit minus one or at zero satisfies
+no description (`mt-proof/tests/frame.rs`, `a_right_worth_anything_but_the_credit_satisfies_no_description`),
+and the redemption `montana-node/tests/issuance_audit.rs` once reproduced -- a right redeemed above
+its credit -- is refused before the tree of notes or a balance moves, while the same right still
+redeems at its credit. The identifier of the frame, `air_hash`, the published parameters and the
+Genesis State Hash moved with the rule and were rewritten from computed output.
 
 **A right of a window is taken by a machine the window never witnessed** (issue #14, Gate -1,
 2026-10-24 22:43 UTC). The walk to the tree of admitted machines closed the invented secret and
@@ -2094,7 +2097,7 @@ numbers, which says the method and not the tree is what is missing.
 | places reaching a preimage through the door of one body | 11 in library code under SHA-256, none of them assembling |
 | the same under the proof hash, where the set writes the preimage as a concatenation | 5, of which 3 assemble fields of fixed width, which cannot erase one |
 | kinds a field of a layout may stand under | 5, and a sixth does not compile |
-| tests of the workspace | 699 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
+| tests of the workspace | 700 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
 | crates carrying the gate in their own tests | 15 of 15, by one macro of the harness rather than fifteen readings of one invocation |
 | columns the width of a proof admits, and columns each written circuit **declares** | 64, and 64 / 59 / 30 / 30 / 30 / 63 for the frame, the ticket, the admission, the presence, the opening and the ballot; the width check reads all six registered descriptions |
 | the circuit of the ticket, written and green | the chains of the presence with the ticket's absorption in place of the nullifier's, the digest of the runner's key, and the comparison of thirty-two rows; the window, fold, discharge and reduce circuits left the tree with the relation they served |
