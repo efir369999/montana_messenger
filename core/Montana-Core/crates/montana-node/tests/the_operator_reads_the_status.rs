@@ -75,10 +75,18 @@ fn a_status_read_in_a_loop_never_stops_a_node_from_starting() {
     let at = common::Scratch::named("status-restart");
     drop(Machine::start(&Configuration::at(&at.0, "127.0.0.1:0")).expect("the machine is born"));
     let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    // The restarts begin once the reader has read, so they never all pass before it ran at all.
+    let reading = std::sync::Arc::new(std::sync::Barrier::new(2));
     let reader = {
-        let (data, done) = (at.0.clone(), std::sync::Arc::clone(&done));
+        let (data, done, reading) = (
+            at.0.clone(),
+            std::sync::Arc::clone(&done),
+            std::sync::Arc::clone(&reading),
+        );
         std::thread::spawn(move || {
-            let mut reads = 0u64;
+            let _ = status::read(&data);
+            let mut reads = 1u64;
+            reading.wait();
             while !done.load(std::sync::atomic::Ordering::Acquire) {
                 let _ = status::read(&data);
                 reads += 1;
@@ -86,6 +94,7 @@ fn a_status_read_in_a_loop_never_stops_a_node_from_starting() {
             reads
         })
     };
+    reading.wait();
     let mut refused = Vec::new();
     for restart in 0..RESTARTS {
         match Machine::start(&Configuration::at(&at.0, "127.0.0.1:0")) {
