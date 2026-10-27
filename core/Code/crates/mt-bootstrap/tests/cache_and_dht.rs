@@ -22,10 +22,7 @@ fn cache_save_load_roundtrip_on_disk() {
     let path = std::env::temp_dir().join("mt_bootstrap_cache_roundtrip.bin");
     list.save(&path).unwrap();
     let loaded = SeedList::load(&path).unwrap();
-    assert_eq!(
-        loaded, list,
-        "learned-node cache survives disk byte-exact"
-    );
+    assert_eq!(loaded, list, "learned-node cache survives disk byte-exact");
     std::fs::remove_file(&path).ok();
 }
 

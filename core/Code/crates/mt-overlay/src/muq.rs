@@ -209,7 +209,7 @@ impl HostDeposit {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct ProxyForward {
     pub host_addr: crate::OverlayAddr, // overlay address of the queue-host
-    pub sealed: Vec<u8>,               // HostDeposit sealed with an ML-KEM-768 sealed-box for the host
+    pub sealed: Vec<u8>, // HostDeposit sealed with an ML-KEM-768 sealed-box for the host
 }
 
 impl ProxyForward {

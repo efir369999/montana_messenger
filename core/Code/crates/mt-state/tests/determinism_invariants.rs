@@ -299,11 +299,7 @@ fn record_sizes_positive() {
 fn empty_tables_have_consistent_empty_root() {
     let a = AccountTable::new();
     let b = AccountTable::new();
-    assert_eq!(
-        a.root(),
-        b.root(),
-        "Empty AccountTable roots must match"
-    );
+    assert_eq!(a.root(), b.root(), "Empty AccountTable roots must match");
 
     let n1 = NodeTable::new();
     let n2 = NodeTable::new();

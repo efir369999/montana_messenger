@@ -89,10 +89,7 @@ fn next_d_dead_zone_unchanged() {
     let current_d = 252_000_000u64;
     // dead_zone middle (90%) → unchanged
     let result = next_d(current_d, 900, params);
-    assert_eq!(
-        result, current_d,
-        "next_d in dead zone must be unchanged"
-    );
+    assert_eq!(result, current_d, "next_d in dead zone must be unchanged");
 }
 
 #[test]
@@ -100,10 +97,7 @@ fn next_d_above_high_threshold_increases() {
     let params = genesis_params();
     let current_d = 252_000_000u64;
     let result = next_d(current_d, 1000, params); // 100% > high (95%)
-    assert!(
-        result > current_d,
-        "next_d above high threshold must grow"
-    );
+    assert!(result > current_d, "next_d above high threshold must grow");
 }
 
 #[test]

@@ -45,7 +45,11 @@ static PREFETCH_RUNNING: AtomicBool = AtomicBool::new(false);
 
 fn order_next_seed() {
     // A ready seed already lies there — do not order a second one: one gather per period, not two.
-    if NEXT_SEED.lock().unwrap_or_else(|e| e.into_inner()).is_some() {
+    if NEXT_SEED
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .is_some()
+    {
         return;
     }
     if PREFETCH_RUNNING.swap(true, Ordering::AcqRel) {
@@ -76,7 +80,12 @@ struct Drbg {
 impl Drbg {
     fn instantiate() -> Result<Self, EntropyError> {
         let seed = generate_entropy()?;
-        let mut d = Drbg { key: [0x00; 32], v: [0x01; 32], counter: 0, pid: std::process::id() };
+        let mut d = Drbg {
+            key: [0x00; 32],
+            v: [0x01; 32],
+            counter: 0,
+            pid: std::process::id(),
+        };
         d.update(Some(&seed[..]));
         Ok(d)
     }
@@ -154,7 +163,10 @@ pub fn random_fast(out: &mut [u8]) -> Result<(), EntropyError> {
     if guard.is_none() {
         *guard = Some(Drbg::instantiate()?);
     }
-    guard.as_mut().expect("created on the line above").generate(out)
+    guard
+        .as_mut()
+        .expect("created on the line above")
+        .generate(out)
 }
 
 #[cfg(test)]
@@ -166,7 +178,10 @@ mod tests {
         let (mut a, mut b) = ([0u8; 32], [0u8; 32]);
         random_fast(&mut a).unwrap();
         random_fast(&mut b).unwrap();
-        assert_ne!(a, b, "two consecutive outputs coincided — there is no source");
+        assert_ne!(
+            a, b,
+            "two consecutive outputs coincided — there is no source"
+        );
     }
 
     #[test]
@@ -213,7 +228,9 @@ mod tests {
         }
         // wait for the ready seed, so that the next refresh period takes it at once
         let born = std::time::Instant::now();
-        while PREFETCH_RUNNING.load(Ordering::Acquire) && born.elapsed() < std::time::Duration::from_secs(5) {
+        while PREFETCH_RUNNING.load(Ordering::Acquire)
+            && born.elapsed() < std::time::Duration::from_secs(5)
+        {
             thread::yield_now();
         }
         let mut worst = std::time::Duration::ZERO;
@@ -223,6 +240,9 @@ mod tests {
             random_fast(&mut b).unwrap();
             worst = worst.max(t.elapsed());
         }
-        assert!(worst < std::time::Duration::from_millis(2), "output paid for a gather: {worst:?}");
+        assert!(
+            worst < std::time::Duration::from_millis(2),
+            "output paid for a gather: {worst:?}"
+        );
     }
 }

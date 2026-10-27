@@ -33,8 +33,8 @@ Listed on 2026-10-27 UTC against `main` at `bfee834`. Four of the thirteen
 items are closed by the chairman's comment on their issue: #4 (item 1), #10
 (item 2), #14 (item 3) and #15 (item 4); no other Protocol-13 issue is closed.
 `source/Montana-Core/PROTOCOL-13.json`, and the table of `README.md` written
-from it, mark item 1 closed and items 2, 3 and 4 open: the status file has not
-followed the closures of 26 and 27 October. Every merge and implementation
+from it, mark items 1, 2, 3 and 4 closed, as these comments do, and the
+reports 02, 03 and 04 are rewritten to the closures (issue #23). Every merge and implementation
 commit named below is an ancestor of `main` (`git merge-base --is-ancestor`,
 exit 0). Quotations are from the comment whose id is given.
 
@@ -62,8 +62,8 @@ exit 0). Quotations are from the comment whose id is given.
   (box 3)". The closing comment names the report `02-CANONICAL-PROPOSAL.md` and
   the verdict in PR #58 (comment 6420183989). The report the verdict read is
   the one of `3c418a4` (`git show 3c418a4:Audit/Protocol-13/02-CANONICAL-PROPOSAL.md`);
-  on `main` the file is the copy of `core/Montana-Core/protocol-13/` that
-  `67db3cc` wrote back.
+  `core/Montana-Core/protocol-13/02-CANONICAL-PROPOSAL.md` carries that report
+  again, in the closed form (issue #23).
 - Check, closing comment 6420198473: "on Lauterbourg-3 at `cb4283c`, the 43 test
   binaries of `montana-node` gave rc 0: 100 passed, 1 ignored, 0 failed";
   "`mt-store`, `fmt`, `clippy -D warnings` and `metadata --locked` are rc 0";

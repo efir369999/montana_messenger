@@ -1837,13 +1837,23 @@ mod acceptance_tests {
         let v = chain_visible(&objs);
         let mut wire = v.app_id.to_vec();
         wire.extend_from_slice(&v.batch_root);
-        assert!(!wire.windows(32).any(|w| w == s), "slot visible in the chain");
+        assert!(
+            !wire.windows(32).any(|w| w == s),
+            "slot visible in the chain"
+        );
         assert!(
             !wire.windows(32).any(|w| w == anchor(&c)),
             "anchor visible in the chain"
         );
-        assert!(!wire.windows(4).any(|w| w == b"anna"), "name visible in the chain");
-        assert_eq!(wire.len(), 64, "exactly app_id and the batch root go to the chain");
+        assert!(
+            !wire.windows(4).any(|w| w == b"anna"),
+            "name visible in the chain"
+        );
+        assert_eq!(
+            wire.len(),
+            64,
+            "exactly app_id and the batch root go to the chain"
+        );
     }
 
     /// G-44 continued: the reveal CONTAINS the slot and anchor -- and that is right, because
