@@ -3090,6 +3090,10 @@ nothing else (Consensus, "The sanction of a double answer"): two objects of one 
 - a closing pledge and, in a later attempt, an open pledge on another name standing on none or on an
   attempt before the closing one.
 
+The first two move a lock. The third forfeits no lock and stays a sanction of the window's coin (the
+author's record 296, below): a verifier presented with it as evidence of a forfeit refuses it as
+such, and the part it convicts still loses the coin of `W` and nothing more.
+
 From these objects the verifier reads:
 - of each pledge, its bytes as "The pledge of a part" lays them, its signature under its
   `answering_key`, and its proof under the description of the pledge against its public input;
@@ -3177,8 +3181,8 @@ holds, so its other parts stay unjoined.
   a new network.
 
 **Where the construction stops.** Two choices this set did not make stood between the construction
-and a rule (Q8, Q9), and the author has made the first. Two choices the records do not settle follow
-from it (Q10, Q11).
+and a rule (Q8, Q9), and the author has made both. Two choices the records do not settle follow
+from the first (Q10, Q11).
 - **Which object carries the value under a proof (Q8).** A value no proof binds to the secret is a
   value its signer chooses, and two such values extract nothing. Before the decision a pledge carried
   no proof, and the heavy attestation was the one object of a part that did ("The confirmation of a
@@ -3215,8 +3219,14 @@ from it (Q10, Q11).
   - One line per pair of attempts makes a closing pledge carry a point for every later attempt. But no
     bound caps the attempt below `0xFFFFFFFF`, and a pledge has one length.
 
-  So the third pair needs either a bound on the attempt, which is a new number of the Decree, or it
-  forfeits no lock and stays a sanction of the window's coin. This awaits the author, with Q2.
+  So the third pair needed either a bound on the attempt, which is a new number of the Decree, or to
+  forfeit no lock and stay a sanction of the window's coin. The author's record 296 (decision 291,
+  27.10.2026 17:19 UTC) chose: the third pair does not forfeit the lock and stays a sanction of the
+  window's coin, with no new number of the Decree. So a closing pledge of attempt `u` on one name and
+  an open pledge of a later attempt `t` on another, standing before `u`, forfeit no lock: they convict
+  the part and its right to the coin of `W` (Consensus, "The sanction of a double answer"), and
+  nothing more. No bound on the attempt enters the Decree, and a pledge carries one point, of its own
+  slot. Whether evidence other than the three pairs forfeits a lock is Q2 and still awaits the author.
 - **Where a pledge stands (Q11).** A pledge now takes 528 cells, as a heavy attestation does ("What
   a delivery costs in cells"), and every pledge of a window stands at the window points of that
   window ("The points a round stands at"). A window point read by the `u16` index of a public
@@ -3248,7 +3258,7 @@ Two things are also owed with the construction, derived rather than chosen:
 **Invariants of the evidence of a forfeit:**
 
 - A forfeit moves the lock of the machine whose secret yields the convicted part, and no other lock. Evidence under the part of one machine presented against the lock of another is refused, and that lock stands untouched: a lock bound to another naming half, another `node_commit` or another secret.
-- A machine the evidence does not convict keeps its lock. Such a machine holds a part outside the pair, the part of another window, or a part whose pledges contradict nothing.
+- A machine the evidence does not convict keeps its lock. Such a machine holds a part outside the pair, the part of another window, or a part whose pledges contradict nothing. A machine whose part only the third pair convicts keeps its lock too (record 296): it loses the coin of that window and nothing else.
 - Forged evidence is refused:
   - a pledge whose signature does not verify under its `answering_key`;
   - a pledge whose proof does not verify under the description of the pledge against its public input;
@@ -3256,9 +3266,10 @@ Two things are also owed with the construction, derived rather than chosen:
   - a heavy attestation whose proof of presence does not verify against the root of the electorate of `W`;
   - two objects under two parts, or of two windows;
   - two objects that are not one of the three pairs: a repetition on one name, a light attestation (which pledges nothing), an open pledge of a later attempt standing on the attempt of the closing pledge or after it, or a repeated round nullifier under one beacon.
+- The third pair is refused as evidence of a forfeit, and no lock moves on it (record 296); it stays the sanction of the window's coin that Consensus states.
 - Incomplete evidence is refused, and no verifier completes it from what it holds or hears: a pair lacking either object, either signature, the proof of either pledge, or the heavy attestation of its part in `W`.
 - Evidence presented after the close of the challenge of `W` is refused, as Consensus refuses the pair itself.
-- A lock is consumed once. Every pair under one part of `W` convicts that one part, and the parts of several windows of one machine convict that one machine, so together they forfeit one lock. A forfeit of a lock already forfeited is refused. A lock is consumed by a forfeit or by its release, never by both. When a release may come, and how it is ordered against the challenge of the last window the machine lived, awaits the author.
+- A lock is consumed once. Every first or second pair under one part of `W` convicts that one part, and the parts of several windows of one machine convict that one machine, so together they forfeit one lock. A forfeit of a lock already forfeited is refused. A lock is consumed by a forfeit or by its release, never by both. When a release may come, and how it is ordered against the challenge of the last window the machine lived, awaits the author.
 - A forfeited lock is burned (record 233). It goes to no one: not to the presenter of the evidence, not back to issuance, and to no other lock.
 - The machine whose lock is forfeited is excluded from consensus (record 231). The extracted value joins no other part of that machine, so no verifier can find its later parts by reading them. How a verifier keeps those parts out of every later cement without naming the machine awaits the author (Q3, Q4).
 - A forfeit names no person, no record and no note that funded the lock ([I-6], [I-17]). The pair itself names no one (Consensus, "Observability ledger"). Whether a forfeit may disclose which admitted machine's lock it consumed awaits the author.
