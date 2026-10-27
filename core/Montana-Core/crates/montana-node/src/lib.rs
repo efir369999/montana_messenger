@@ -760,6 +760,35 @@ impl Kept {
             census: attest::LivedCensus::decode(parts[3])?,
         })
     }
+
+    // **The plane a record keeps gives the roots of the proposal it keeps beside it.** Every
+    // proposal a close takes is verified against the roots recomputed from the plane it closes on
+    // (`pulse::take_the_proposal`, `certificate::verify_proposal`), and the close keeps the two
+    // together, so the seven tables of the plane at the window of the proposal give the roots that
+    // proposal carries. A plane or a proposal changed on the disk gives others, and is refused
+    // whole: a machine living on it would hold notes no proposal of the network names and prove
+    // paths nobody else can verify. The proposal compared is the one in the record and not the one
+    // of the archive of proposals, which the close of a machine that took another name rewrites
+    // before its own record stands. The roll and the count are not compared: the plane holds
+    // neither the cement nor the cohort they are recomputed from.
+    pub fn stands_under_its_proposal(&self) -> Result<(), NodeError> {
+        let taken = &self.taken;
+        let carried = [
+            taken.note_root,
+            taken.nullifier_root,
+            taken.record_root,
+            taken.machine_root,
+            taken.admitted_root,
+            taken.credited_root,
+            taken.operations_root,
+        ];
+        if self.plane.tables_of(taken.window)? != carried {
+            return Err(NodeError::Refused {
+                what: "a kept plane whose roots are not those of the proposal kept beside it",
+            });
+        }
+        Ok(())
+    }
 }
 
 // A machine that has been born: its store, the key it answers with, the door it stands at, the
@@ -834,6 +863,28 @@ impl Machine {
     // standing without being told.
     pub fn start(configuration: &Configuration) -> Result<(Self, bool), NodeError> {
         let store = Store::open(&configuration.data).map_err(NodeError::Store)?;
+        // **What the machine held of the value plane stands again**: the plane of the last window it
+        // closed, kept in the record of that close. A note takes its position in the tree of notes,
+        // and a path is proven against that tree — so a plane that lived in memory alone made every
+        // note die with the run that created it, and a person paid held a note their own machine
+        // could no longer prove a path for. What is read here is what this machine wrote, and a
+        // record that does not read back whole is refused rather than half-read. **And the standing
+        // it earned stands again**, from the same record: a machine that forgot the census windows it
+        // lived would vote as a stranger until it had lived them all a second time.
+        //
+        // **What reads back whole is still not trusted.** The plane is held to the proposal the
+        // same record keeps for the window it closed, and a record whose plane gives other roots is
+        // refused before a secret is drawn, a door opened or anything held (issue #19, step K3).
+        // The head and the window closed name proposals the store holds, or the store refused to
+        // open (`StoreError::HeadWithoutItsProposal`, `StoreError::ClosedWithoutItsProposal`).
+        let record = store.window().map_err(NodeError::Store)?;
+        let kept = if record.kept.is_empty() {
+            None
+        } else {
+            let kept = Kept::decode(&record.kept)?;
+            kept.stands_under_its_proposal()?;
+            Some(kept)
+        };
         let born = match store.secret().map_err(NodeError::Store)? {
             Some(_) => false,
             None => {
@@ -863,23 +914,12 @@ impl Machine {
         let retained = mt_genesis::scalar("retained_windows").ok_or(NodeError::Decree {
             row: "retained_windows".to_string(),
         })?;
-        // **What the machine held of the value plane stands again**: the plane of the last window it
-        // closed, kept in the record of that close. A note takes its position in the tree of notes,
-        // and a path is proven against that tree — so a plane that lived in memory alone made every
-        // note die with the run that created it, and a person paid held a note their own machine
-        // could no longer prove a path for. What is read here is what this machine wrote, and a
-        // record that does not read back whole is refused rather than half-read. **And the standing
-        // it earned stands again**, from the same record: a machine that forgot the census windows it
-        // lived would vote as a stranger until it had lived them all a second time.
         let cell_width = mt_wire::cell_bytes().map_err(|_| of_the_decree("cell_bytes"))?;
         let store = Arc::new(store);
         let standing = Standing::loaded(retained, &store, cell_width)?;
-        let record = store.window().map_err(NodeError::Store)?;
-        let (held_value, census) = if record.kept.is_empty() {
-            (state::State::new(), Vec::new())
-        } else {
-            let kept = Kept::decode(&record.kept)?;
-            (kept.plane, kept.census)
+        let (held_value, census) = match kept {
+            None => (state::State::new(), Vec::new()),
+            Some(kept) => (kept.plane, kept.census),
         };
         Ok((
             Self {

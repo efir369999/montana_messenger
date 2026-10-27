@@ -695,7 +695,7 @@ Spec: "the aggregate of signatures of the cemented BundledConfirmation of window
 
 ## DEV-025: lottery target without τ₂ calibration
 
-**Status: closed (commit baca884).** `mt_lottery::calibrate_target` — integer form of the spec (u256 intermediate, saturation, TA4 zero case); binding vectors TA1-TA5 byte-for-byte in the tests. Node: the counter of cemented tickets per τ₂ and the threshold target are persistent (timechain v2), recomputation at the τ₂ boundary in a single state transition, candidacy gate weighted_ticket < target at ticket publication, target in the header and verification by followers.
+**Status: removed (issue #18).** The author's decision on issue #18 (council link 7796) removes the threshold and its calibration from `Code`: `calibrate_target` with TA1-TA5, the τ₂ ticket counter, the persistent target (the clock record is written as v1 again; a v2 record is read without its lottery fields), the candidacy gate and the follower's target cross-check are gone; the header field `target` carries the fixed value `u128::MAX`. Earlier text, kept for history: **closed (commit baca884).** `mt_lottery::calibrate_target` — integer form of the spec (u256 intermediate, saturation, TA4 zero case); binding vectors TA1-TA5 byte-for-byte in the tests. Node: the counter of cemented tickets per τ₂ and the threshold target are persistent (timechain v2), recomputation at the τ₂ boundary in a single state transition, candidacy gate weighted_ticket < target at ticket publication, target in the header and verification by followers.
 
 ## DEV-026 (open): leader equivocation — first valid wins, not reject-both
 

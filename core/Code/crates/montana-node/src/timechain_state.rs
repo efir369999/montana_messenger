@@ -10,20 +10,18 @@ use crate::identity::NodeError;
 
 pub const TIMECHAIN_FILE: &str = "timechain.bin";
 const TIMECHAIN_MAGIC: &[u8; 4] = b"mttc";
-const TIMECHAIN_VERSION: u8 = 2;
-// magic(4) ver(1) pad(3) t_r(32) d(8) last_window(8) lottery_target(16) tau2_reveal_count(8)
-const TIMECHAIN_SIZE: usize = 4 + 1 + 3 + 32 + 8 + 8 + 16 + 8;
-const TIMECHAIN_SIZE_V1: usize = 4 + 1 + 3 + 32 + 8 + 8;
+const TIMECHAIN_VERSION: u8 = 1;
+// magic(4) ver(1) pad(3) t_r(32) d(8) last_window(8)
+const TIMECHAIN_SIZE: usize = 4 + 1 + 3 + 32 + 8 + 8;
+// Version 2 appended lottery_target(16) and tau2_reveal_count(8). The lottery
+// threshold and its counter are removed (issue #18), so a v2 record is read
+// without them and every record is written as v1 again.
+const TIMECHAIN_SIZE_V2: usize = TIMECHAIN_SIZE + 16 + 8;
 
 pub struct TimeChainState {
     pub t_r: Hash32,
     pub current_d: u64,
     pub last_window: u64,
-    /// Current lottery threshold target (u128, spec "Target calibration").
-    /// Genesis: u128::MAX — every active node is a candidate until the first τ₂ boundary.
-    pub lottery_target: u128,
-    /// Counter of cemented tickets in the current τ₂ segment.
-    pub tau2_reveal_count: u64,
 }
 
 pub fn timechain_path(data_dir: &Path) -> PathBuf {
@@ -42,19 +40,24 @@ pub fn load_or_init_timechain(data_dir: &Path) -> Result<TimeChainState, NodeErr
             t_r: genesis_t_r(),
             current_d: params.d0,
             last_window: 0,
-            lottery_target: u128::MAX,
-            tau2_reveal_count: 0,
         });
     }
     let bytes = fs::read(&path)?;
-    if &bytes[0..4] != TIMECHAIN_MAGIC.as_slice() {
-        return Err(NodeError::InvalidMagic);
+    // A record shorter than its magic is refused, not sliced.
+    match bytes.get(0..4) {
+        Some(magic) if magic == TIMECHAIN_MAGIC.as_slice() => {},
+        Some(_) => return Err(NodeError::InvalidMagic),
+        None => {
+            return Err(NodeError::CorruptedSize {
+                expected: TIMECHAIN_SIZE,
+                actual: bytes.len(),
+            })
+        },
     }
-    // v1 (without lottery fields) is read with the genesis field values —
-    // compatibility with the old file; writes are always v2.
-    let (want, ver) = match bytes.get(4) {
-        Some(1) => (TIMECHAIN_SIZE_V1, 1u8),
-        Some(2) => (TIMECHAIN_SIZE, 2u8),
+    // v2 carries the removed lottery fields after the v1 layout; they are not read.
+    let want = match bytes.get(4) {
+        Some(1) => TIMECHAIN_SIZE,
+        Some(2) => TIMECHAIN_SIZE_V2,
         Some(v) => return Err(NodeError::UnsupportedVersion(*v)),
         None => {
             return Err(NodeError::CorruptedSize {
@@ -73,20 +76,10 @@ pub fn load_or_init_timechain(data_dir: &Path) -> Result<TimeChainState, NodeErr
     t_r.copy_from_slice(&bytes[8..40]);
     let current_d = u64::from_le_bytes(bytes[40..48].try_into().unwrap());
     let last_window = u64::from_le_bytes(bytes[48..56].try_into().unwrap());
-    let (lottery_target, tau2_reveal_count) = if ver == 2 {
-        (
-            u128::from_le_bytes(bytes[56..72].try_into().unwrap()),
-            u64::from_le_bytes(bytes[72..80].try_into().unwrap()),
-        )
-    } else {
-        (u128::MAX, 0)
-    };
     Ok(TimeChainState {
         t_r,
         current_d,
         last_window,
-        lottery_target,
-        tau2_reveal_count,
     })
 }
 
@@ -99,8 +92,6 @@ pub fn save_timechain(data_dir: &Path, state: &TimeChainState) -> Result<(), Nod
     buf[8..40].copy_from_slice(&state.t_r);
     buf[40..48].copy_from_slice(&state.current_d.to_le_bytes());
     buf[48..56].copy_from_slice(&state.last_window.to_le_bytes());
-    buf[56..72].copy_from_slice(&state.lottery_target.to_le_bytes());
-    buf[72..80].copy_from_slice(&state.tau2_reveal_count.to_le_bytes());
     let tmp = path.with_extension("bin.tmp");
     fs::write(&tmp, &buf)?;
     fs::rename(&tmp, &path)?;

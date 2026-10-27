@@ -14,7 +14,7 @@ network.
 | R1/R2 signing rules, domain separators | mt-codec, all object codecs | domain tests; cross-checked against production ids (node_id = SHA-256("mt-node"‖0x00‖pk), account_id = SHA-256("mt-account"‖0x00‖suite_le‖pk)) |
 | `SshaReveal` 3381 B, BundledConfirmation 3385 B+, ProposalHeader 3722 B | mt-lottery, mt-consensus | byte offsets re-derived and matched (sig scope 0..413; target u128 LE at 396..412; fallback_depth at 412) |
 | Lottery: weighted_ticket integer form, ln_q64, binding vectors N1–N5 | mt-lottery | vectors pass; live rotation of winners on cohort |
-| Target calibration, vectors TA1–TA5 | mt-lottery::calibrate_target (commit baca884) | 5/5 byte-exact; wired at τ₂ in settle; candidacy gate + header.target cross-check |
+| Target calibration, vectors TA1–TA5 | **removed** (issue #18): `calibrate_target`, its vectors, the τ₂ ticket counter and the candidacy gate are gone | every Active node publishes its ticket; the header field `target` stays in the layout and carries `u128::MAX`, and a follower refuses any other value (start.rs `HEADER_TARGET`) |
 | Two-window pipeline: BC_W carries W−1 reveal hashes; winner_{W−1} cemented at proposal_W; one-window reward lag | montana-node start.rs (commits 6ea9d12, 3e0e523) | live: window 1 cemented with evidence=3, bundles(W−1)=0 at genesis per design |
 | Weighted reveal cementing (Σ chain_length ≥ 67% per hash, not set-union) | start.rs weighted_cemented_hashes | local cohort + live |
 | Lookback proposer = winner_{W−2}; fallback cascade by weighted ticket of W−2; bootstrap for W<2 | start.rs expected_proposer + mt_consensus::fallback_proposer | local cohort: all three nodes cement (46/62/44) |

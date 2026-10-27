@@ -417,7 +417,6 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                     my_node,
                     next_window,
                     &t_r_w,
-                    timechain.lottery_target,
                     network_handle.as_ref().map(|h| &h.broadcast_tx),
                 )?;
             }
@@ -578,7 +577,7 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                         winner_endpoint: [0u8; 32],
                         winner_id: my_node,
                         proposer_node_id: canonical_proposer,
-                        target: timechain.lottery_target,
+                        target: HEADER_TARGET,
                         fallback_depth: my_depth,
                         signature: Signature::from_array([0u8; SIGNATURE_SIZE]),
                     };
@@ -707,7 +706,6 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                         winner_id,
                         &confirmers,
                         candidates_prev.clone(),
-                        cemented.len() as u64,
                         None,
                     )?
                     .expect("leader mode: expected_root=None always commits")
@@ -740,7 +738,7 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                     winner_endpoint,
                     winner_id,
                     proposer_node_id: canonical_proposer,
-                    target: timechain.lottery_target,
+                    target: HEADER_TARGET,
                     fallback_depth: my_depth,
                     signature: Signature::from_array([0u8; SIGNATURE_SIZE]),
                 };
@@ -870,6 +868,12 @@ const SSHA_PROGRESS_CHUNKS: u64 = 10;
 /// the fallback cascade shifts by one position (spec "Fallback cascade").
 /// Retention depth of per-window histories (pools, winners, confirmer sets).
 const HISTORY_BOUND: usize = 64;
+
+/// The header field `target` stays in the signed 3722-byte layout, but the
+/// lottery threshold it carried is removed (issue #18). Every header carries the
+/// former genesis value, under which every ticket was admitted, and a follower
+/// refuses any other value.
+const HEADER_TARGET: u128 = u128::MAX;
 
 fn bound_map<K: Ord + Copy, V>(m: &mut BTreeMap<K, V>) {
     while m.len() > HISTORY_BOUND {
@@ -1152,14 +1156,12 @@ fn candidates_from_pool(
 /// Single state transition when closing window settled_w — shared by the proposer
 /// and followers (determinism): apply_proposal + candidate expiry + selection
 /// event + D adaptation at the τ₂ boundary + per-window histories.
-#[allow(clippy::too_many_arguments)]
 fn settle_and_bookkeep(
     ctx: &mut NetCtx,
     settled_w: u64,
     winner_id: Hash32,
     confirmers: &[mt_state::NodeId],
     candidates_w_minus_1: Vec<mt_lottery::Candidate>,
-    cemented_reveal_count: u64,
     expected_root: Option<Hash32>,
 ) -> Result<Option<Hash32>, NodeError> {
     // DEV-042: the transition is applied to CLONES of the tables; the real state, history
@@ -1209,10 +1211,6 @@ fn settle_and_bookkeep(
     if activated_count > 0 {
         println!("[selection W={settled_w}] activated {activated_count} node(s)");
     }
-    ctx.timechain.tau2_reveal_count = ctx
-        .timechain
-        .tau2_reveal_count
-        .saturating_add(cemented_reveal_count);
     if settled_w > 0 && settled_w % ctx.params.tau2_windows == 0 {
         let median_permille = 1000u32;
         let new_d = next_d(ctx.timechain.current_d, median_permille, ctx.params);
@@ -1223,21 +1221,6 @@ fn settle_and_bookkeep(
             );
             ctx.timechain.current_d = new_d;
         }
-        // Spec "Target calibration": at the τ₂ boundary the threshold target
-        // is recomputed to ~13 candidates per window (binding vectors TA1-TA5).
-        let new_target = mt_lottery::calibrate_target(
-            ctx.timechain.lottery_target,
-            ctx.timechain.tau2_reveal_count,
-            ctx.params.tau2_windows,
-        );
-        if new_target != ctx.timechain.lottery_target {
-            println!(
-                "[target W={settled_w}] {:#x} → {:#x} (tickets in τ₂: {})",
-                ctx.timechain.lottery_target, new_target, ctx.timechain.tau2_reveal_count
-            );
-            ctx.timechain.lottery_target = new_target;
-        }
-        ctx.timechain.tau2_reveal_count = 0;
     }
     if settled_w >= 1 {
         ctx.bc_set_history
@@ -1438,10 +1421,8 @@ fn handle_protocol_message(
                 );
                 return Ok(());
             }
-            if header.target != ctx.timechain.lottery_target {
-                eprintln!(
-                    "[consensus] w={w}: envelope target != local — calibration divergence, skip"
-                );
+            if header.target != HEADER_TARGET {
+                eprintln!("[consensus] w={w}: envelope target != fixed value — skip");
                 return Ok(());
             }
             let Some((bundles_prev, evidence)) = parse_envelope_bundles(&msg.payload) else {
@@ -1529,23 +1510,31 @@ fn handle_protocol_message(
                 &cemented,
                 &ctx.state.nodes,
             );
-            if reveal_entries.len() == cemented.len() {
-                if meta_root(&reveal_entries) != header.included_reveals_root {
-                    eprintln!("[consensus] w={w}: included_reveals_root mismatch — skip");
-                    return Ok(());
-                }
-                if w >= 1 && !candidates_prev.is_empty() {
-                    if let Err(e) = mt_consensus::validate_winner(&header, &candidates_prev) {
-                        eprintln!("[consensus] w={w}: winner mismatch ({e:?}) — skip");
-                        return Ok(());
-                    }
-                }
-            } else {
+            // Incomplete data is not applied (issue #18): while a cemented ticket is
+            // missing from the local pool the envelope goes back to the deferred
+            // queue and is verified again, in full, once the tickets arrive.
+            if reveal_entries.len() != cemented.len() {
                 eprintln!(
-                    "[consensus] w={w}: ticket pool incomplete ({}/{}) — winner accepted by quorum",
+                    "[consensus] w={w}: ticket pool incomplete ({}/{}) — deferred",
                     reveal_entries.len(),
                     cemented.len()
                 );
+                if ctx.pending_msgs.len() < 512
+                    && !ctx.pending_msgs.iter().any(|m| m.payload == msg.payload)
+                {
+                    ctx.pending_msgs.push(msg);
+                }
+                return Ok(());
+            }
+            if meta_root(&reveal_entries) != header.included_reveals_root {
+                eprintln!("[consensus] w={w}: included_reveals_root mismatch — skip");
+                return Ok(());
+            }
+            if w >= 1 && !candidates_prev.is_empty() {
+                if let Err(e) = mt_consensus::validate_winner(&header, &candidates_prev) {
+                    eprintln!("[consensus] w={w}: winner mismatch ({e:?}) — skip");
+                    return Ok(());
+                }
             }
             // Application by a single state transition (transactional, DEV-042).
             if settle_and_bookkeep(
@@ -1554,7 +1543,6 @@ fn handle_protocol_message(
                 header.winner_id,
                 &confirmers,
                 candidates_prev,
-                cemented.len() as u64,
                 Some(header.state_root),
             )?
             .is_none()
@@ -1853,21 +1841,12 @@ fn publish_window_artifacts(
     my_node: mt_state::NodeId,
     w: u64,
     t_r_w: &Hash32,
-    lottery_target: u128,
     broadcast_tx: Option<&tokio::sync::mpsc::UnboundedSender<mt_net::ProtocolMessage>>,
 ) -> Result<(), NodeError> {
     let cba = cba_from(bc_set_history, w.saturating_sub(2));
     let endpoint = compute_endpoint(t_r_w, &cba, &my_node, w);
-    // Spec: "If weighted_ticket_node < target — the node is a candidate and
-    // publishes SSHA_Reveal". The window confirmation is always published.
-    let is_candidate = state
-        .nodes
-        .get(&my_node)
-        .map(|n| {
-            let snapshot = n.chain_length_snapshot.max(1);
-            weighted_ticket_node(&endpoint, n.chain_length, snapshot) < lottery_target
-        })
-        .unwrap_or(false);
+    // The candidacy threshold is removed (issue #18): every Active node
+    // publishes its ticket, as every node did under the genesis target.
     let mut reveal = SshaReveal {
         node_id: my_node,
         window_index: w,
@@ -1877,21 +1856,17 @@ fn publish_window_artifacts(
     let mut scope = Vec::new();
     reveal.encode_signed_scope(&mut scope);
     reveal.signature = sign(&identity.node_sk, &scope).map_err(NodeError::Crypto)?;
-    if is_candidate {
-        validate_reveal(&reveal, &state.nodes, t_r_w, &cba, w)
-            .map_err(|e| NodeError::InvalidArguments(format!("validate_reveal: {e:?}")))?;
-        reveal_pool
-            .entry(w)
-            .or_default()
-            .insert(my_node, reveal.clone());
-        bound_map(reveal_pool);
-        if let Some(tx) = broadcast_tx {
-            let mut payload = Vec::new();
-            reveal.encode(&mut payload);
-            let _ = tx.send(ProtocolMessage::new(MsgType::SshaReveal, w, payload));
-        }
-    } else {
-        eprintln!("[lottery] window {w}: weighted ticket above target — not a candidate");
+    validate_reveal(&reveal, &state.nodes, t_r_w, &cba, w)
+        .map_err(|e| NodeError::InvalidArguments(format!("validate_reveal: {e:?}")))?;
+    reveal_pool
+        .entry(w)
+        .or_default()
+        .insert(my_node, reveal.clone());
+    bound_map(reveal_pool);
+    if let Some(tx) = broadcast_tx {
+        let mut payload = Vec::new();
+        reveal.encode(&mut payload);
+        let _ = tx.send(ProtocolMessage::new(MsgType::SshaReveal, w, payload));
     }
     // Window w confirmation: hashes of the previous window tickets (two-window pipeline).
     let mut bc_reveal_hashes: Vec<Hash32> = if w >= 1 {
@@ -2106,6 +2081,9 @@ pub struct NetworkHandle {
     pub broadcast_tx: tokio::sync::mpsc::UnboundedSender<mt_net::ProtocolMessage>,
     pub incoming_rx: tokio::sync::mpsc::UnboundedReceiver<mt_net::ProtocolMessage>,
 }
+
+#[cfg(test)]
+mod order_tests;
 
 #[cfg(test)]
 mod tests {

@@ -319,6 +319,31 @@ impl State {
                 what: "a plane standing against another tree of admitted machines than its cohort",
             });
         }
+        let [notes, nullifiers, records, machines, admitted, credited, operations] =
+            self.tables_of(window)?;
+        let roll = self.roll(window, parts).id().map_err(NodeError::Object)?;
+        Ok(crate::certificate::Roots {
+            note_root: notes,
+            nullifier_root: nullifiers,
+            record_root: records,
+            machine_root: machines,
+            admitted_root: admitted,
+            credited_root: credited,
+            operations_root: operations,
+            roll,
+            admitted_count: cohort.count(),
+            // The census is carried from the proposal before with the cement of the window, which
+            // the plane does not hold; the pulse writes it beside these roots.
+            census: Vec::new(),
+        })
+    }
+
+    // The roots of the seven tables a proposal of `window` carries, recomputed from this plane
+    // alone and in the order the proposal lays them out: notes, nullifiers, records, machines,
+    // admitted machines, credited rights and operations. The roll and the count are not among them:
+    // the first needs the parts of the cement the window decided and the second the cohort, and a
+    // plane holds neither.
+    pub fn tables_of(&self, window: u64) -> Result<[[u8; 32]; 7], NodeError> {
         let refused = || NodeError::Refused {
             what: "a table of the state its construction cannot hold",
         };
@@ -333,21 +358,15 @@ impl State {
         };
         let operations_root =
             tables::root_of_sequence(Table::Operations, applied).ok_or_else(refused)?;
-        let roll = self.roll(window, parts).id().map_err(NodeError::Object)?;
-        Ok(crate::certificate::Roots {
-            note_root: self.notes_root().bytes(),
+        Ok([
+            self.notes_root().bytes(),
             nullifier_root,
-            record_root: self.records_root().bytes(),
+            self.records_root().bytes(),
             machine_root,
-            admitted_root: self.admitted.bytes(),
-            credited_root: self.credited().bytes(),
+            self.admitted.bytes(),
+            self.credited().bytes(),
             operations_root,
-            roll,
-            admitted_count: cohort.count(),
-            // The census is carried from the proposal before with the cement of the window, which
-            // the plane does not hold; the pulse writes it beside these roots.
-            census: Vec::new(),
-        })
+        ])
     }
 
     // The identifiers of the frames this plane applied in `window`, in the order they applied, and
@@ -375,9 +394,14 @@ impl State {
         }
     }
 
-    // A commitment entering the tree outside a frame: what a window's minting writes, and what a
-    // cohort starts from. It is not a door a frame goes through — a frame goes through the one
-    // below, which verifies first.
+    // A commitment entering the tree outside a frame, with no proof and no nullifier: what the
+    // vectors of this crate build a plane of notes from. It is not a door a frame goes through — a
+    // frame goes through `apply`, which verifies first and spends a nullifier. **No build of the
+    // protocol carries it** (issue #19, step K4): a door that mints a note no nullifier closes
+    // would issue again every time a window is applied again, so it stands under the feature
+    // `witness`, which the tests of this crate alone enable, and every note a machine holds enters
+    // by `apply`.
+    #[cfg(feature = "witness")]
     pub fn witness(&mut self, commitment: &[u8; 32]) -> Result<u64, NodeError> {
         self.notes.push(commitment).map_err(|_| NodeError::Refused {
             what: "a commitment the tree of notes cannot hold",
