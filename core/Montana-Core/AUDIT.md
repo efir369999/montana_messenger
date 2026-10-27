@@ -2093,7 +2093,7 @@ numbers, which says the method and not the tree is what is missing.
 | of those, named as of this tree with the reason each is | the rest, each with the reason it is of this tree and of no document |
 | rows a wrong value would pass | 0 of 69 |
 | headings of a derivation restating a value of the Decree | 19, all compared |
-| rows of the Registry of mechanisms | 100: 38 closed, 62 awaiting a stage, 0 awaiting the artifact — the Registry recounts its own table on every build, and this row is held against that recount rather than counted a second time |
+| rows of the Registry of mechanisms | 101: 38 closed, 63 awaiting a stage, 0 awaiting the artifact — the Registry recounts its own table on every build, and this row is held against that recount rather than counted a second time |
 | domains of the separator registry owned by exactly one row | 101 of 101 |
 | places reaching a preimage through the door of one body | 11 in library code under SHA-256, none of them assembling |
 | the same under the proof hash, where the set writes the preimage as a concatenation | 5, of which 3 assemble fields of fixed width, which cannot erase one |

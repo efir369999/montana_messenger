@@ -589,8 +589,11 @@ of counting it.
 **The pledge.** A machine of the window says, in an attempt, which name of the proposal of the window
 before it stands behind, and on what: a **pledge** carries the window, the attempt, the name, the
 attempt whose quorum it stands on — its `since`, or none — the nullifier of the machine's part in
-the window, and the one-time key of the window, under which it is signed. Canon holds its layout and
-its one length. A pledge whose `since` is its own attempt is a **closing pledge**: it says that its
+the window, the value of the line of its slot at the abscissa of its name, the one-time key of the
+window, and its own proof that the half yielding the part drew that value, and it is signed under
+that key. Canon holds its layout, its one length and what its proof asserts ("The pledge of a
+part"; "The forfeit of a node lock, and the evidence that moves it"). A pledge whose proof does not
+verify is refused. A pledge whose `since` is its own attempt is a **closing pledge**: it says that its
 machine saw the quorum of that attempt reached on that name. A pledge whose `since` is an earlier
 attempt, or none, is an **open pledge**: it says which name its machine stands behind in that
 attempt and which earlier quorum, if any, frees it to. The heavy attestation of a window is the open
@@ -723,7 +726,7 @@ before the closing one. "Finality" carries the argument.
 **Invariants of the agreement:**
 
 - The proposal of a window is decided in the window after it, by the electorate of that window, at its quorum, and by nothing else; the agreement moves no electorate, no quorum, no threshold and no round.
-- A pledge carries the window, the attempt, the name, the attempt it stands on or none, the part-nullifier and the one-time key of the window, under which it is signed; it is valid only where the heavy attestation of its part under that key stands, and the heavy attestation is the one open pledge of attempt zero, standing on none.
+- A pledge carries the window, the attempt, the name, the attempt it stands on or none, the part-nullifier, the value of the line of its slot at the abscissa of its name, the one-time key of the window, under which it is signed, and its own proof of that value, and one whose proof does not verify is refused; it is valid only where the heavy attestation of its part under that key stands, and the heavy attestation is the one open pledge of attempt zero, standing on none.
 - An open pledge counts only where its `since` is none or the open pledges of the attempt it names reach the quorum on its name; a closing pledge counts only where the open pledges of its own attempt reach the quorum on its name; a part counts once per kind and attempt.
 - A name is decided when the closing pledges of one attempt reach the quorum on it; the decision makes the proposal final and closes the window beside the cement of its final beacon.
 - A machine keeps its attempt, its lock, its valid name and every pledge it made before it publishes what they govern, and through a restart; it never signs two open pledges or two closing pledges of one attempt on two names, nor, in an attempt after its lock's, an open pledge on another name standing on none or before its lock's attempt.
@@ -836,7 +839,8 @@ its roll, the heavy attestations of the window after it, the light attestations 
 answering the final beacon its proposal names, the pledges of that window's agreement its decision
 stands on, and the ballots of their parts. Together they are the **certificate** of the window, and
 a device verifies them exactly as the living did — every presence proof against the root of the
-electorate it already holds, every signature under the key the attestation or the pledge carries and
+electorate it already holds, every pledge's proof against its own public input, every signature
+under the key the attestation or the pledge carries and
 every pledge's and every light attestation's key against the heavy attestation of its part, the
 name a light attestation carries against the name its part's heavy attestation pledged, the distinctness of the parts, the
 counting of the agreement — every closing pledge against the quorum of open pledges of its attempt,
@@ -866,7 +870,8 @@ the electorate weighs, the ballots, each a proof of its own machine's votes, and
 weight that no single proof could assert is asserted by every machine for itself.
 
 **What the certificate costs, and who pays it.** A device verifies one presence proof per attesting
-machine of each window it walks, and one signature per pledge — the same work every living machine
+machine of each window it walks, and per pledge one signature and one proof at the presence's
+height — the same work every living machine
 does as the window runs — so
 the cost of catching up over `retained_windows` windows is that many windows of the duty every
 machine already carries. A machine retains the attestations of a window for that long and no longer;
@@ -886,7 +891,7 @@ beside it.
 **Invariants of the certificate of a window:**
 
 - The certificate of a window is its proposal, the heavy attestations of the window after it, the light attestations of that window answering the final beacon its proposal names, the pledges of that window's agreement its decision stands on, and the ballots of their parts; it introduces no object and no signature of its own.
-- A device verifies a certificate as the living verified its parts: every presence proof against the root of the electorate of its window, every signature, every pledge's and every light attestation's key against the heavy attestation of its part and every light attestation's name against the name that heavy attestation pledged, the final beacon answered by an attestation so verified, the distinctness of the parts, the counting of the agreement and the count of the deciding quorum against the count of the electorate, every ballot against the census, the aggregate and the committee of that electorate, the votes against the committee, and the proposal's ticket proof and signature; nothing of it is taken on trust.
+- A device verifies a certificate as the living verified its parts: every presence proof against the root of the electorate of its window, every pledge's proof against its own public input, every signature, every pledge's and every light attestation's key against the heavy attestation of its part and every light attestation's name against the name that heavy attestation pledged, the final beacon answered by an attestation so verified, the distinctness of the parts, the counting of the agreement and the count of the deciding quorum against the count of the electorate, every ballot against the census, the aggregate and the committee of that electorate, the votes against the committee, and the proposal's ticket proof and signature; nothing of it is taken on trust.
 - The heavy attestations, the light attestations answering its final beacon, the ballots and the pledges of a window survive at their points for `retained_windows` windows after the window closes, beside the frames of its rounds and its proposals with their rolls, and nothing else of a round outlives its window.
 - No proof of one length asserts the quorum of a window: the relation that would need one has no prover, and the set names that rather than stating a proof nobody can write.
 - A proposal is final when its certificate verifies — the decision of the window after it stands in it — and the head of the TimeChain is the newest proposal so verified.
@@ -1198,8 +1203,8 @@ the window after it, both final.
    light attestations of that window answering a final beacon, the pledges of that window's agreement
    and the ballots of their parts: the electorate is the admitted
    set and the census `E` carries, the aggregate of the draw is the one `E` carries, every
-   attestation is verified as the living verified it, every pledge and every light attestation under
-   the key of its part's heavy attestation, a light attestation on the name that heavy pledged, every ballot against that census, that aggregate and the committee of that census,
+   attestation is verified as the living verified it, every pledge by its own proof, every pledge and
+   every light attestation under the key of its part's heavy attestation, a light attestation on the name that heavy pledged, every ballot against that census, that aggregate and the committee of that census,
    and the agreement decides `L` — the closing pledges of one attempt on the name of `L` reach the
    quorum, each counted on the quorum of open pledges of its attempt and each open pledge on the
    quorum its `since` names.
@@ -1384,5 +1389,5 @@ An implementation conforms to this document when all of the following hold.
 15. It orders its own running by its ticket — it waits the share of its patience its ticket stands at before it proves its own proposal and takes a verified proposal of its decision that stands meanwhile — and reproduces the frozen vectors of the recomputation of a walked threshold, which the schedule of chains takes.
 16. It joins from an anchor of two consecutive final proposals its operator handed it, walks the retained certificates to the head verifying each whole — every presence proof against the electorate root, every signature, every pledge, the counting of the agreement and the deciding quorum, every ballot and the votes — and the next proposal's link, rules, signature, ticket and cement, takes as the head the newest proposal whose certificate verified, takes every leaf of state against the roots of the head by recomputation, and resolves two proposals of one height by which certificate verifies rather than by how many machines say so.
 17. It counts a machine's standing as the census windows whose cements hold its parts, carries the census from proposal to proposal by the rule of Canon, reads the committee off the standing alone, draws every unit's coin from its own spending half, the census window and the aggregate of the window two before, publishes a ballot only where its standing drew a vote and the electorate is above the floor of the committee, verifies every ballot it gathers against the census, the aggregate and the committee of the electorate, counts a part's ballot once at its largest count, and refuses a beacon whose votes exceed what those ballots cast.
-18. It runs the agreement on what a window decided: it pledges in attempt zero the name it took, counts every open pledge on the quorum its `since` names and every closing pledge on the quorum of open pledges of its attempt, a part once per kind and attempt, closes on a quorum of open pledges of its attempt, proposes in the order of its place, follows the open pledge at the lowest place only where its lock admits it and the name is valid to it, moves to a later attempt on its spans or on pledges beyond the share the quorum leaves, keeps its attempt, its lock, its valid name and its pledges through a restart, and reproduces the frozen vectors of the place.
+18. It runs the agreement on what a window decided: it pledges in attempt zero the name it took, proves the value every pledge it signs carries and counts no pledge whose proof does not verify, counts every open pledge on the quorum its `since` names and every closing pledge on the quorum of open pledges of its attempt, a part once per kind and attempt, closes on a quorum of open pledges of its attempt, proposes in the order of its place, follows the open pledge at the lowest place only where its lock admits it and the name is valid to it, moves to a later attempt on its spans or on pledges beyond the share the quorum leaves, keeps its attempt, its lock, its valid name and its pledges through a restart, and reproduces the frozen vectors of the place.
 19. It names in every proposal the roll of what its window applied, publishes the roll beside the proposal, follows a name it did not take only where a quorum backs it or its roll replays to it, replays the decided roll over the decided state of the window two before where its own name was not decided and applies its open window again over the result, and tells a payer again what its frame took where a replay moves it.

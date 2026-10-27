@@ -193,7 +193,8 @@ taken over the whole of its canonical bytes under `mt-nodereg`.
 **The proofs of consensus** are Consensus's: the proof a proposal carries asserts that the runner's
 ticket cleared and names the key the proposal answers under by its digest, and the proof a
 confirmation carries asserts the presence of a machine of the electorate and names the key it
-answers under by its digest. Neither asserts a suite: the suite an object carries is checked
+answers under by its digest, and the proof a pledge carries asserts the value of the line of its
+slot and names no key. None asserts a suite: the suite an object carries is checked
 natively, by verifying its signature under that suite with the key the proof names. Consensus holds
 the rule; Canon holds only what a signer must know to compute a signed scope.
 
@@ -1182,8 +1183,9 @@ refuses.
 **Derivation.** The certificate of a window is its heavy attestations, the light attestations
 answering its final beacon and the pledges its decision stands on, which already stand at their
 points; retaining them costs what the window cost — one attestation per attesting machine, of the
-length Canon fixes for a confirmation, and its pledges and the light attestations of one round, each
-under a sixtieth of one — for as many windows as the bound names, and the frames and the rolls the
+length Canon fixes for a confirmation, its pledges, each of nearly that length since each carries a
+proof of the presence's length, and the light attestations of one round, each under a sixtieth of
+one — for as many windows as the bound names, and the frames and the rolls the
 same bound keeps for a machine replaying a decided window cost what the window carried. One
 binary order over the open window's own load keeps every device that carries a window in the storage
 class it already stands in, and it is three doublings above the one or two windows an ordinary
@@ -1287,8 +1289,9 @@ sample to land, and a quarter of the standing absent is the margin a committee o
 [I-5] fixes, at any population the profile is calibrated for.
 
 **Derivation.** The chains of a window cost `k` × 110.6 MB of frames — `frames_per_window`
-frames of `frame_len` bytes each — while attestation volume stays flat in `k` at ≈ 230 KB per
-machine, so the volume of a window is `k · 110.6 MB + N · 230 KB` and the share of it one machine
+frames of `frame_len` bytes each — while the volume of attestations and pledges stays flat in `k` at
+≈ 458 KB per machine in a window decided in attempt zero ("The volume the schedule is checked
+against"), so the volume of such a window is `k · 110.6 MB + N · 458 KB` and the share of it one machine
 carries is that total over the population it is carried by. What the envelope is checked against
 is that share and never the total: the frames of a window are divided among whoever carries them,
 so the share falls as the population grows, and eight chains keep one machine's share inside the
@@ -1634,7 +1637,7 @@ size, rather than diverging silently.
 
 Every quantity the sum consumes is therefore frozen in this document, and the family derived from
 it is frozen with it: `proposal_len`, `frame_len`, `candidacy_len`, the one length
-of a confirmation, the count of cells every one of those objects takes, `collect_answer_max` which
+of a confirmation, `pledge_len`, the count of cells every one of those objects takes, `collect_answer_max` which
 stands on the largest of them, and the volume the schedule is checked against. **Conformance over
 that family is achievable now**, and an implementation that reproduces the arithmetic above lands
 on the same bytes as every other. What the artifact settles is the constraint set and the width it
@@ -2568,11 +2571,15 @@ does not holds something else by the same name.
 467 blocks in 39 groups, so 624 cells; a heavy attestation is 391 blocks in 33 groups, so 528
 cells; a candidacy is 467 blocks in 39 groups, so 624 cells; a publication of a channel is 4 blocks
 in one group, so 16 cells; a beacon is 1 block in one group, so 16 cells; a light attestation is 7
-blocks in one group, so 16 cells; a pledge is 7 blocks in one group, so 16 cells; a roll grows with
+blocks in one group, so 16 cells; a pledge is 391 blocks in 33 groups, so 528 cells; a roll grows with
 what it names, and at 273 frames and 124 parts it is 12 724 bytes in 15 blocks of 2 groups, so 32
 cells. The largest of them is what `collect_answer_max` stands on: a roll stands no longer than a
 frame while its entries number at most 12 693, and a round point read by a `u16` index holds the heavy
-attestations of no more than 124 parts. Every count follows from `chunk_bytes`,
+attestations of no more than 124 parts. A window point read by the same index holds, beside one
+proposal and its roll, the pledges of no more than 123 parts at 528 cells each, where at the 16 cells
+of a pledge before the author's record 295 it held those of some four thousand. Where the pledges of
+a larger electorate stand is not settled by this set, and awaits the author (Q11, "The forfeit of a
+node lock, and the evidence that moves it"). Every count follows from `chunk_bytes`,
 `erasure_data` and `erasure_group` and from nothing else.
 
 ### The points a round stands at
@@ -3052,6 +3059,220 @@ deriving the part.
 - A nullifier already present in its window is refused in silence.
 - The moment of taking is the second squeeze of that same absorption, so no third reading of the secret exists anywhere in this construction.
 - All of it is of the proof hash family, for the reason the envelope of a note is: a right is redeemed by a frame and by nothing else, so the one judge of these derivations is a verifier of a proof, and a function the circuit cannot carry would put the redemption of a right beyond proving.
+
+### The forfeit of a node lock, and the evidence that moves it
+
+The author's records 224, 231 and 233 decide three things:
+- a machine is raised by a key that lived τ₂ and by a lock of coins its owner puts up;
+- a violation of the protocol forfeits that lock and excludes the machine from consensus;
+- a forfeited lock is burned.
+
+This section holds the relation between the evidence of a violation and the lock that evidence
+forfeits: what a verifier reads, what binds the evidence to the lock of exactly one machine, and
+what it refuses.
+
+It does not hold the lock itself. None of the following stands in a document of this set yet:
+- the layout of a lock;
+- what binds a lock to a candidacy;
+- its amount as a row of the Decree;
+- its release;
+- the amendment the records require of the Constitution: [I-6], [I-12] and the monetary
+  constitution's "no protocol-level burning".
+
+Until they stand, no lock exists to forfeit, and conformance over this section is unachievable.
+
+**What a verifier reads.** It reads the one evidence this protocol accepts against a machine, and
+nothing else (Consensus, "The sanction of a double answer"): two objects of one window `W` under one
+`part_nullifier`, forming one of the three contradicting pairs Consensus names. The three pairs are:
+- two open pledges of one attempt on two names, two heavy attestations of `W` naming two names among
+  them;
+- two closing pledges of one attempt on two names;
+- a closing pledge and, in a later attempt, an open pledge on another name standing on none or on an
+  attempt before the closing one.
+
+The first two move a lock. The third forfeits no lock and stays a sanction of the window's coin (the
+author's record 296, below): a verifier presented with it as evidence of a forfeit refuses it as
+such, and the part it convicts still loses the coin of `W` and nothing more.
+
+From these objects the verifier reads:
+- of each pledge, its bytes as "The pledge of a part" lays them, its signature under its
+  `answering_key`, and its proof under the description of the pledge against its public input;
+- of the part, the heavy attestation of `W` under that same key, whose proof of presence it verifies
+  against the root of the electorate of `W`;
+- of the window, whether the challenge of `W` is open. The challenge runs from the proposal of `W` to
+  the close of `W + 1` (Consensus, "Finality").
+
+It reads no timing, no silence, no reachability, no account of a neighbour, and no statement of
+whoever presents the pair.
+
+**What binds the evidence to one machine.** `part_nf(W)` takes the spending half of one machine's
+secret and the window, and nothing else ("The nullifier of a machine's part"). The proof of presence
+the heavy attestation carries derives it from a secret whose naming half, of the same absorption,
+stands in the tree of admitted machines. A second secret yielding the same part is a collision of the
+proof hash. The part a pair convicts is therefore the part of exactly one admitted machine. The lock
+that evidence forfeits is the lock that machine's candidacy put up: the candidacy that published the
+naming half of the same absorption of the same secret ("The candidacy of a machine").
+
+**The relation the author chose.** The verifier holds the part, not the secret. A part joins to
+nothing across windows and to no naming half ("The confirmation of a window"; Consensus,
+"Observability ledger"), and the attestation of presence rests on that. The author's record 285
+(decision 282, 27.10.2026 14:11 UTC) chose how a convicted part reaches its machine's lock:
+extractable on equivocation. Each pledge carries a value from which two contradicting pledges of one
+part reveal a lock-opening value, and an honest single pledge stays unlinkable. The relation must
+hold without the convicted machine's cooperation, as the evidence itself is complete without a word
+from anyone (Consensus, "Finality"). As the observability ledger of Consensus stands, it must also
+join no part of another machine, and no other part of the convicted one, to a naming half, a lock or
+a candidacy. It is a new statement of a proof — of the proof a pledge carries (record 295), of the
+proof of a candidacy, and of the proof of presence if Q10 puts the value there — and so a new
+network. The construction below goes as far as this set carries it, and says where it stops.
+Until it lands whole, an implementation forfeits no lock on any evidence. The invariants below are
+what it must meet when it lands, not a rule an implementation can apply today.
+
+**The construction.** It takes no primitive this set lacks. It uses the proof hash, the
+pseudorandomness the table of demands already asks of a nullifier of a right, and the split of one
+absorption of a machine's secret into the half that spends and the half that names ("The nullifier
+of a machine's part").
+- A **slot** of a part is one kind of pledge, open or closing, in one attempt of its window. The heavy
+  attestation is the open slot of attempt zero. A machine following the agreement signs at most one
+  name in a slot (Consensus, "The agreement on what a window decided"); a repetition on one name is
+  lawful.
+- The **lock-opening value** is drawn from the spending half alone, so it is one value for the
+  machine across all its windows. Neither the half, the naming half nor any part is computable from
+  it.
+- The **slope** of a slot is drawn from the spending half, the window as one element, and the slot.
+  Every slot of every window has its own.
+- The **abscissa** of a name is drawn from the name alone. An abscissa of zero is refused.
+- The **value** a pledge carries is the line of its slot at the abscissa of its name: the
+  lock-opening value plus the slope times the abscissa.
+
+**How a verifier extracts it.** Two pledges of one part in one slot on two names carry two points of
+one line at two abscissas. That is exactly the first and the second pair of "The sanction of a double
+answer". With the points (x₁, y₁) and (x₂, y₂), the lock-opening value is the line at abscissa zero,
+(x₂·y₁ − x₁·y₂) / (x₂ − x₁), in the field the line is taken over. A repetition on one name carries one
+point twice and reveals nothing.
+
+**What it opens, and how a verifier checks that.** The candidacy that put up the lock carries a
+commitment to the lock-opening value under the proof hash. The verifier recomputes that commitment
+from the extracted value and compares. The commitment of another candidacy is another value, up to a
+collision of the proof hash. So the extracted value opens exactly the lock of the machine whose
+secret yields the convicted part, and no other. Two questions here await the author:
+- whether a forfeit names that candidacy, or consumes the lock by a nullifier of the value without
+  naming it (Q3);
+- the layout of the lock and its tie to the candidacy (Q6, draft PR #52).
+
+**Why one honest pledge reveals nothing.** Every slot of every window has its own slope, drawn by the
+sponge from the spending half. One point of a line is therefore a value that the pseudorandomness of
+the proof hash makes indistinguishable from random to anyone not holding the half. Two honest pledges
+of one machine stand in two slots, of one window or of two. Their points lie on lines with unrelated
+slopes: each point adds one unknown slope, so the lock-opening value stays hidden, and the points join
+to each other no more than two parts do ([I-17]). This still holds after a forfeit makes the
+lock-opening value public. The other points of the convicted machine still lie on slopes nobody else
+holds, so its other parts stay unjoined.
+
+**What the proofs must newly assert.**
+- The proof that carries the value asserts the following, in the one absorption of the machine's
+  secret whose spending half yields `part_nf(W)`. From that same half and the same element of the
+  window it derives the lock-opening value and the slope of the slot. The value the object carries is
+  that line at the abscissa of the name the object pledges. A pledge carries that proof as its own,
+  under the description of the pledge ("The pledge of a part", "What its proof asserts").
+- The proof of a candidacy asserts that the commitment to the lock-opening value is taken from the
+  spending half of the absorption whose second squeeze is `naming_half`.
+- Each is a new statement of a proof: a new description, a new constraint set, a new `air_hash`, and
+  a new network.
+
+**Where the construction stops.** Two choices this set did not make stood between the construction
+and a rule (Q8, Q9), and the author has made both. Two choices the records do not settle follow
+from the first (Q10, Q11).
+- **Which object carries the value under a proof (Q8).** A value no proof binds to the secret is a
+  value its signer chooses, and two such values extract nothing. Before the decision a pledge carried
+  no proof, and the heavy attestation was the one object of a part that did ("The confirmation of a
+  window"). The author's record 295 (decision 290, 27.10.2026 17:19 UTC) chose: every pledge carries
+  its own proof, which gives a new `pledge_len` and a proof of the presence's length on every pledge.
+  So a pledge carries `line_value` and its proof of it ("The pledge of a part"), and `pledge_len` is
+  339 263 B where it was 5 343 B. Its consequence: two pledges of one part in one slot on two names
+  give the lock-opening value in any attempt, so the first and the second pair forfeit the lock
+  whichever attempt they are made in. A new length of a pledge is a new wire, and the description of
+  the pledge is a new statement of a proof, so this is a new network.
+
+  The record does not settle one object. The first pair of attempt zero is two heavy attestations
+  naming two names, and the heavy attestation is the open slot of attempt zero. It is a confirmation
+  and not a pledge: its layout has no `line_value`, and it already carries a proof, the proof of
+  presence. The options:
+  - the proof of presence also asserts the value of the open slot of attempt zero at the name the
+    confirmation attests, and the confirmation carries `line_value`: one proof, a new statement of the
+    presence, and `confirmation_len` 32 B longer. Whether the presence's blocks still fit
+    `presence_rows_log2` is counted on the written circuit, and if they do not, `PRESENCE_PROOF_LEN`
+    and every length standing on it move, `pledge_len` among them;
+  - the confirmation carries `line_value` and a second proof, under the description of the pledge,
+    beside the proof of presence: the presence unchanged, and `confirmation_len` longer by
+    32 + 333 888 B;
+  - the heavy attestation carries no value, and the first pair of attempt zero stays a sanction of
+    the window's coin alone.
+
+  This awaits the author (Q10). Until it is answered, the first pair of attempt zero forfeits no
+  lock.
+- **The third pair (Q9).** A closing pledge of attempt `u` on one name and an open pledge of a later
+  attempt `t` on another name, standing before `u`, are not two pledges of one slot.
+  - One line per closing attempt would extract from a machine following the agreement. Its open
+    pledges of two later attempts on two names, both standing before an attempt in which it signed no
+    closing pledge, would put two points on that attempt's line.
+  - One line per pair of attempts makes a closing pledge carry a point for every later attempt. But no
+    bound caps the attempt below `0xFFFFFFFF`, and a pledge has one length.
+
+  So the third pair needed either a bound on the attempt, which is a new number of the Decree, or to
+  forfeit no lock and stay a sanction of the window's coin. The author's record 296 (decision 291,
+  27.10.2026 17:19 UTC) chose: the third pair does not forfeit the lock and stays a sanction of the
+  window's coin, with no new number of the Decree. So a closing pledge of attempt `u` on one name and
+  an open pledge of a later attempt `t` on another, standing before `u`, forfeit no lock: they convict
+  the part and its right to the coin of `W` (Consensus, "The sanction of a double answer"), and
+  nothing more. No bound on the attempt enters the Decree, and a pledge carries one point, of its own
+  slot. Whether evidence other than the three pairs forfeits a lock is Q2 and still awaits the author.
+- **Where a pledge stands (Q11).** A pledge now takes 528 cells, as a heavy attestation does ("What
+  a delivery costs in cells"), and every pledge of a window stands at the window points of that
+  window ("The points a round stands at"). A window point read by the `u16` index of a public
+  collection holds the pledges of no more than 123 parts beside one proposal and its roll, so the
+  pledges of a larger electorate cannot all be read where the set puts them. The options:
+  - pledges stand at points of their own, derived from the window and the part, so a point holds the
+    pledges of one part: a new domain with its row of the Registry, and one collection per part a
+    machine holds the heavy attestation of;
+  - the index of a public collection widens past `u16`: a new wire for every collection, and a
+    window point that holds the pledges of the whole electorate;
+  - pledges stand at the round points of their part's heavy attestation, and the bound of a round
+    point falls to the parts whose heavy attestation and pledges fit it together.
+
+  This awaits the author (Q11).
+
+Two things are also owed with the construction, derived rather than chosen:
+- **The width of the abscissa.** A proposer who grinds two names to one abscissa makes their pair
+  extract nothing. The birthday cost of that is 2³² in `proof_field` and 2⁹⁶ in
+  `proof_challenge_field`, both below `proof_security_bits`, so the abscissa must be 256 bits wide.
+  The line is taken over a field of that width, so the value a pledge carries is four elements of
+  `proof_field`, 32 B, the width of a digest of the proof hash; that is the width of `line_value`.
+  Four is the least degree over `proof_field` that reaches that width, as three is the least that
+  reaches the bound of `proof_challenge_field`. The field itself, with the polynomial that defines it,
+  enters the parameters of the scheme with the construction, beside the domains.
+- **The domains** of the lock-opening value, the slope, the abscissa and the commitment. They enter
+  the registry with the construction and not before ("No domain awaits a document"), each with its
+  row of the Registry and its owner.
+
+**Invariants of the evidence of a forfeit:**
+
+- A forfeit moves the lock of the machine whose secret yields the convicted part, and no other lock. Evidence under the part of one machine presented against the lock of another is refused, and that lock stands untouched: a lock bound to another naming half, another `node_commit` or another secret.
+- A machine the evidence does not convict keeps its lock. Such a machine holds a part outside the pair, the part of another window, or a part whose pledges contradict nothing. A machine whose part only the third pair convicts keeps its lock too (record 296): it loses the coin of that window and nothing else.
+- Forged evidence is refused:
+  - a pledge whose signature does not verify under its `answering_key`;
+  - a pledge whose proof does not verify under the description of the pledge against its public input;
+  - a pledge whose key is not the key of the heavy attestation of its part in `W`;
+  - a heavy attestation whose proof of presence does not verify against the root of the electorate of `W`;
+  - two objects under two parts, or of two windows;
+  - two objects that are not one of the three pairs: a repetition on one name, a light attestation (which pledges nothing), an open pledge of a later attempt standing on the attempt of the closing pledge or after it, or a repeated round nullifier under one beacon.
+- The third pair is refused as evidence of a forfeit, and no lock moves on it (record 296); it stays the sanction of the window's coin that Consensus states.
+- Incomplete evidence is refused, and no verifier completes it from what it holds or hears: a pair lacking either object, either signature, the proof of either pledge, or the heavy attestation of its part in `W`.
+- Evidence presented after the close of the challenge of `W` is refused, as Consensus refuses the pair itself.
+- A lock is consumed once. Every first or second pair under one part of `W` convicts that one part, and the parts of several windows of one machine convict that one machine, so together they forfeit one lock. A forfeit of a lock already forfeited is refused. A lock is consumed by a forfeit or by its release, never by both. When a release may come, and how it is ordered against the challenge of the last window the machine lived, awaits the author.
+- A forfeited lock is burned (record 233). It goes to no one: not to the presenter of the evidence, not back to issuance, and to no other lock.
+- The machine whose lock is forfeited is excluded from consensus (record 231). The extracted value joins no other part of that machine, so no verifier can find its later parts by reading them. How a verifier keeps those parts out of every later cement without naming the machine awaits the author (Q3, Q4).
+- A forfeit names no person, no record and no note that funded the lock ([I-6], [I-17]). The pair itself names no one (Consensus, "Observability ledger"). Whether a forfeit may disclose which admitted machine's lock it consumed awaits the author.
 
 ### The post-quantum handshake, in integers
 
@@ -4781,10 +5002,14 @@ demands the width from this row rather than declaring one of its own.
 eligibility strikes 1.1094 times in expectation; 0.6710 of machines publish one heavy
 attestation of 339 289 bytes, and the remaining 0.4384 expected strikes publish light attestations
 of 5 401 bytes — ≈ 230 KB per machine per window, flat in the count of chains, because the crowd of
-a round carries the count of chains and spreads the strikes across them.
+a round carries the count of chains and spreads the strikes across them. Every machine that
+published a heavy attestation pledges too, and since the author's record 295 a pledge is of
+`pledge_len`, 339 263 bytes: in a window its agreement decides in attempt zero, the closing pledge of
+each adds 0.6710 × 339 263 ≈ 228 KB, so ≈ 458 KB per machine per window, and each later attempt adds
+its pledges beside it.
 Frames add 110.6 MB per chain per window, payer-borne, and beacons add `target_rounds` objects of
-`beacon_len` per chain per window — 24 KB, runner-borne — so the payload of a window is
-`k · 110.6 MB + N · 230 KB`. What crosses the wire is that payload times what carriage costs: every
+`beacon_len` per chain per window — 24 KB, runner-borne — so the payload of a window decided in
+attempt zero is `k · 110.6 MB + N · 458 KB`. What crosses the wire is that payload times what carriage costs: every
 object of consensus stands at `consensus_replicas` points, and every envelope crosses at least
 `hop_min` distinct machines. The cap of the schedule is the frozen ceiling of that product per machine, with both
 multipliers in it, and neither is left to be discovered by whoever measures the wire. It caps the
@@ -4792,8 +5017,8 @@ count of chains and never the count of machines. The share
 of that stream one machine carries falls as the population grows — the frames of a window
 spread over every reachable device — so growth lightens carriage, and age adds no duty: what
 a step of the schedule grows is capacity, paid in the shared stream and nowhere at a machine.
-What grows with the population is the count of heavy attestations each living machine
-verifies as they arrive; the envelope and the gate of entry bound that count, and the light
+What grows with the population is the count of heavy attestations and of pledges, each a proof at
+the presence's height, that each living machine verifies as they arrive; the envelope and the gate of entry bound that count, and the light
 majority costs a signature check alone. **The young
 network pays itself while it is everyone who exists:** the length of a window in rounds falls with
 the population below the floor of the crowd and stands at the target above it, so windows pass
@@ -5224,7 +5449,9 @@ order of the rows of a comparison, and the count, in that order.
 
 What a machine of a window publishes in an attempt of the agreement on the proposal of the window
 before. It names no machine: what a reader learns is that some part of the electorate stood behind a
-name in an attempt, on a quorum it names or on none.
+name in an attempt, on a quorum it names or on none. It carries the value of the line of its slot at
+the abscissa of its name, and its own proof of that value (the author's record 295; "The forfeit of
+a node lock, and the evidence that moves it").
 
 ```
 serialize(pledge)
@@ -5233,18 +5460,38 @@ serialize(pledge)
   name                             32 B         the identifier of a proposal of the window before
   since                             4 B   u32   the attempt whose quorum it stands on, or 0xFFFFFFFF for none
   part_nullifier                   32 B         the nullifier of this machine's part in this window
+  line_value                       32 B         the line of this pledge's slot at the abscissa of name
   suite_id                          2 B   u16
   answering_key                  1952 B         the one-time key of this window, under the part domain
+  proof           PRESENCE_PROOF_LEN B          under the description of the pledge, at the presence's height
   signature                      3309 B         over everything above
 
-pledge_len = 8 + 4 + 32 + 4 + 32 + 2 + 1 952 + 3 309 = 5 343 B
+pledge_len = 8 + 4 + 32 + 4 + 32 + 32 + 2 + 1 952 + 333 888 + 3 309 = 339 263 B
 ```
+
+**What its proof asserts.** That the proof holds a secret whose one absorption yields the spending
+half from which `part_nullifier` is the nullifier of the part of `window` ("The nullifier of a
+machine's part"). That from that same half alone it draws the lock-opening value, and from that same
+half, `window` as one element and the slot of this pledge it draws the slope of the slot. The slot is
+the kind of the pledge, closing where `since` equals `attempt` and open otherwise, in `attempt`. And
+that `line_value` is the lock-opening value plus that slope times the abscissa of `name`, in the
+field the line is taken over. It discloses neither half, the lock-opening value nor the slope. Its
+public input is `window`, `attempt`, `name`, `since`, `part_nullifier` and `line_value`, in the
+order this layout carries them. The proof is of this scheme at `presence_rows_log2`, the height of
+the presence, and so of `PRESENCE_PROOF_LEN` bytes, as the record asks. What fits the presence fits
+it: its blocks are the absorption of the secret and the nullifier of the part, as the presence's,
+and three short derivations and the line in place of the walk of the tree of admitted machines and
+of the absorption of the one-time key, whose limbs dominate the count of the presence ("The height of
+the presence, and the length of its proof"). The description of the pledge is a new description, so its identifier joins those
+`air_hash` folds when its artifact is published, and `air_hash` moves.
 
 **Invariants of a pledge:**
 
 - A `since` equal to `attempt` makes a closing pledge, and a `since` below `attempt` or of `0xFFFFFFFF` an open pledge; a pledge whose `since` stands above its attempt and is not `0xFFFFFFFF`, or whose attempt is `0xFFFFFFFF`, is refused where it is read, and so is an open pledge of attempt zero, the heavy attestation being the one open pledge of that attempt.
 - `answering_key` is the one-time key of the window and the key of the confirmation of the same part; a pledge whose part has no confirmation standing under that key stands in escrow, and one whose key is another is refused.
 - `part_nullifier` is the part of the window, so a pledge joins to the confirmation of its own machine and to nothing across windows; Consensus counts a part once per kind and attempt and sanctions three pairs.
+- `line_value` reads as four unsigned eight-byte little-endian words, each below the modulus of the proof field, and bytes that are not one are refused before the proof is verified. It joins the pledge to nothing: the slope of every slot of every window is its own, so one point of a line is indistinguishable from random to anyone not holding the half ("The forfeit of a node lock, and the evidence that moves it").
+- A pledge whose proof does not verify under the description of the pledge against its public input is refused: it enters no quorum and is no evidence. A pledge the agreement counts therefore carries a value its part's half drew, and two of them in one slot on two names give the lock-opening value.
 - Its length is exactly `pledge_len`; a pledge of any other length is refused before it is parsed.
 
 ### The roll of a proposal
