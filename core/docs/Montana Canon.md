@@ -3053,6 +3053,83 @@ deriving the part.
 - The moment of taking is the second squeeze of that same absorption, so no third reading of the secret exists anywhere in this construction.
 - All of it is of the proof hash family, for the reason the envelope of a note is: a right is redeemed by a frame and by nothing else, so the one judge of these derivations is a verifier of a proof, and a function the circuit cannot carry would put the redemption of a right beyond proving.
 
+### The forfeit of a node lock, and the evidence that moves it
+
+The author's records 224, 231 and 233 decide three things:
+- a machine is raised by a key that lived τ₂ and by a lock of coins its owner puts up;
+- a violation of the protocol forfeits that lock and excludes the machine from consensus;
+- a forfeited lock is burned.
+
+This section holds the relation between the evidence of a violation and the lock that evidence
+forfeits: what a verifier reads, what binds the evidence to the lock of exactly one machine, and
+what it refuses.
+
+It does not hold the lock itself. None of the following stands in a document of this set yet:
+- the layout of a lock;
+- what binds a lock to a candidacy;
+- its amount as a row of the Decree;
+- its release;
+- the amendment the records require of the Constitution: [I-6], [I-12] and the monetary
+  constitution's "no protocol-level burning".
+
+Until they stand, no lock exists to forfeit, and conformance over this section is unachievable.
+
+**What a verifier reads.** It reads the one evidence this protocol accepts against a machine, and
+nothing else (Consensus, "The sanction of a double answer"): two objects of one window `W` under one
+`part_nullifier`, forming one of the three contradicting pairs Consensus names. The three pairs are:
+- two open pledges of one attempt on two names, two heavy attestations of `W` naming two names among
+  them;
+- two closing pledges of one attempt on two names;
+- a closing pledge and, in a later attempt, an open pledge on another name standing on none or on an
+  attempt before the closing one.
+
+From these objects the verifier reads:
+- of each pledge, its bytes as "The pledge of a part" lays them, and its signature under its
+  `answering_key`;
+- of the part, the heavy attestation of `W` under that same key, whose proof of presence it verifies
+  against the root of the electorate of `W`;
+- of the window, whether the challenge of `W` is open. The challenge runs from the proposal of `W` to
+  the close of `W + 1` (Consensus, "Finality").
+
+It reads no timing, no silence, no reachability, no account of a neighbour, and no statement of
+whoever presents the pair.
+
+**What binds the evidence to one machine.** `part_nf(W)` takes the spending half of one machine's
+secret and the window, and nothing else ("The nullifier of a machine's part"). The proof of presence
+the heavy attestation carries derives it from a secret whose naming half, of the same absorption,
+stands in the tree of admitted machines. A second secret yielding the same part is a collision of the
+proof hash. The part a pair convicts is therefore the part of exactly one admitted machine. The lock
+that evidence forfeits is the lock that machine's candidacy put up: the candidacy that published the
+naming half of the same absorption of the same secret ("The candidacy of a machine").
+
+**What this document does not yet fix.** The verifier holds the part, not the secret. A part joins to
+nothing across windows and to no naming half ("The confirmation of a window"; Consensus,
+"Observability ledger"), and the attestation of presence rests on that. The relation that takes a
+convicted part to exactly its machine's lock and admission awaits the author. It must hold without
+the convicted machine's cooperation, as the evidence itself is complete without a word from anyone
+(Consensus, "Finality"). As the observability ledger of Consensus stands, it must also join no part
+of another machine, and no other part of the convicted one, to a naming half, a lock or a
+candidacy. Until that relation lands, an
+implementation forfeits no lock on any evidence. The invariants below are what the relation must
+meet when it lands, not a rule an implementation can apply today.
+
+**Invariants of the evidence of a forfeit:**
+
+- A forfeit moves the lock of the machine whose secret yields the convicted part, and no other lock. Evidence under the part of one machine presented against the lock of another is refused, and that lock stands untouched: a lock bound to another naming half, another `node_commit` or another secret.
+- A machine the evidence does not convict keeps its lock. Such a machine holds a part outside the pair, the part of another window, or a part whose pledges contradict nothing.
+- Forged evidence is refused:
+  - a pledge whose signature does not verify under its `answering_key`;
+  - a pledge whose key is not the key of the heavy attestation of its part in `W`;
+  - a heavy attestation whose proof of presence does not verify against the root of the electorate of `W`;
+  - two objects under two parts, or of two windows;
+  - two objects that are not one of the three pairs: a repetition on one name, a light attestation (which pledges nothing), an open pledge of a later attempt standing on the attempt of the closing pledge or after it, or a repeated round nullifier under one beacon.
+- Incomplete evidence is refused, and no verifier completes it from what it holds or hears: a pair lacking either object, either signature, or the heavy attestation of its part in `W`.
+- Evidence presented after the close of the challenge of `W` is refused, as Consensus refuses the pair itself.
+- A lock is consumed once. Every pair under one part of `W` convicts that one part, and the parts of several windows of one machine convict that one machine, so together they forfeit one lock. A forfeit of a lock already forfeited is refused. A lock is consumed by a forfeit or by its release, never by both. When a release may come, and how it is ordered against the challenge of the last window the machine lived, awaits the author.
+- A forfeited lock is burned (record 233). It goes to no one: not to the presenter of the evidence, not back to issuance, and to no other lock.
+- The machine whose lock is forfeited is excluded from consensus (record 231). How a verifier keeps its parts out of every later cement without naming it is part of the relation that awaits the author.
+- A forfeit names no person, no record and no note that funded the lock ([I-6], [I-17]). The pair itself names no one (Consensus, "Observability ledger"). Whether a forfeit may disclose which admitted machine's lock it consumed awaits the author.
+
 ### The post-quantum handshake, in integers
 
 Roles are fixed by the connection: the side that opened it is the initiator. `pk_i` and `pk_r`
