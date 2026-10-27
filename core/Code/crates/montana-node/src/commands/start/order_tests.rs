@@ -621,6 +621,61 @@ fn a_closed_window_issues_its_seconds_to_every_living_node() {
     }
 }
 
+/// Runs one test of this module again in a child process with its stderr not captured, the
+/// local opt-in MONTANA_PRIVATE_DIAGNOSTICS absent or set to 1, and returns that stderr.
+fn stderr_of(test: &str, opt_in: bool) -> String {
+    let mut child = std::process::Command::new(std::env::current_exe().expect("test binary"));
+    child
+        .arg(format!("commands::start::order_tests::{test}"))
+        .args(["--exact", "--nocapture", "--test-threads=1"]);
+    if opt_in {
+        child.env("MONTANA_PRIVATE_DIAGNOSTICS", "1");
+    } else {
+        child.env_remove("MONTANA_PRIVATE_DIAGNOSTICS");
+    }
+    let out = child.output().expect("run the test binary");
+    let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert!(out.status.success(), "{test} failed: {stderr}");
+    stderr
+}
+
+// K7, issue #22. Rejects a default record that names a node or renders an error: the
+// equivocation (keep_equivocation) and the refusal of a non-zero lottery field print only their
+// fixed categories, with no proposer identifier and no error, unless the operator sets
+// MONTANA_PRIVATE_DIAGNOSTICS=1; with it the same runs carry both, so the check sees what it
+// rejects.
+#[test]
+fn the_equivocation_and_retired_field_records_name_no_node_by_default() {
+    let proposer = hex16(&Fixture::new().ticket_order()[0].node_id());
+    let equivocation = format!("equivocation by {proposer}");
+    for (test, public, detail, secret) in [
+        (
+            "a_second_envelope_of_an_applied_window_is_refused_and_the_pair_kept",
+            "[node] equivocation kept",
+            equivocation.as_str(),
+            proposer.as_str(),
+        ),
+        (
+            "a_header_with_a_non_zero_lottery_field_is_refused",
+            "[node] retired header fields refused",
+            "RetiredFieldNotZero — skip",
+            "RetiredFieldNotZero",
+        ),
+    ] {
+        let default = stderr_of(test, false);
+        assert!(default.contains(public), "{test}: no category");
+        assert!(
+            !default.contains(secret),
+            "{test}: default stderr carries `{secret}`"
+        );
+        let opted_in = stderr_of(test, true);
+        assert!(
+            opted_in.contains(detail),
+            "{test}: the opt-in does not print `{detail}`"
+        );
+    }
+}
+
 // R4. Rejects a clock-record decoder that slices before it checks the length:
 // a record shorter than its magic must be refused with an error, not panic.
 #[test]

@@ -971,7 +971,8 @@ fn keep_equivocation(ctx: &mut NetCtx, header: &ProposalHeader, payload: &[u8]) 
     {
         return;
     }
-    eprintln!(
+    crate::private_diagnostic!(
+        "[node] equivocation kept",
         "[consensus] w={w}: equivocation by {} — second envelope refused, the pair kept",
         hex16(&header.proposer_node_id)
     );
@@ -1343,7 +1344,10 @@ fn handle_protocol_message(
             }
             // The fields of the lottery carry zeros (issue #18, S3).
             if let Err(e) = mt_consensus::validate_retired_fields(&header) {
-                eprintln!("[consensus] w={w}: {e:?} — skip");
+                crate::private_diagnostic!(
+                    "[node] retired header fields refused",
+                    "[consensus] w={w}: {e:?} — skip"
+                );
                 return Ok(());
             }
             let Some((bundles_prev, evidence)) = parse_envelope_bundles(&msg.payload) else {
