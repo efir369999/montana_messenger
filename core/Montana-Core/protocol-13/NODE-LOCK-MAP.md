@@ -64,6 +64,10 @@ when it is released, or whether `node_lock` enters the Decree.
   key stands (`Consensus:726`, `Canon:5246`). The heavy attestation carries the proof of presence:
   "the bearer is a machine of the electorate of this window and ... the nullifier and the key derive
   from one secret" (`Canon:5163`).
+  - *C4, 27.10.2026 UTC, the author's record 295 (decision 290):* on this branch a pledge also
+    carries `line_value` (32 B) and its own proof (`PRESENCE_PROOF_LEN`, 333 888 B), so `pledge_len`
+    is 339 263 B (Canon, "The pledge of a part"). The 5 343 B above is main at `bfee834`, which this
+    map reads.
 - **The part.** `part_nf(W) = sponge("mt-part-nf", cells(machine_sk) || W)`, with the spending half
   from the same absorption whose naming half is the admitted leaf (`Canon:2884-2907`,
   `:2973-2975`). One machine yields one value per window, and two machines never collide
