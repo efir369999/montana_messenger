@@ -189,10 +189,11 @@ pub struct Configuration {
     // cohort witnesses itself, so its halves pass between operators exactly as an acquaintance
     // does; a machine handed none of them answers its door and lives no window.
     pub admitted: Vec<[u8; 32]>,
-    // The window to open at, and how many to live. Neither is a value of the protocol: the first
-    // is where an operator starts a machine and the second is when it stops, and a machine given
-    // no count lives until it is stopped.
-    pub from: u64,
+    // Whether the operator opens a network on this machine, and how many windows to live. Neither
+    // is a value of the protocol. Opening is an act of the operator on an empty store and the one
+    // way to window zero; a machine not asked to open lives only from an anchor (Consensus, "The
+    // cold start"). A machine given no count lives until it is stopped.
+    pub open: bool,
     pub windows: Option<u64>,
     // The window whose right is to be redeemed into a note of the wallet below, which the operator
     // read off that window when it closed. The right is worth the window's credit, so nothing else of the
@@ -214,7 +215,7 @@ impl Configuration {
             listen: listen.to_string(),
             acquaintances: Vec::new(),
             admitted: Vec::new(),
-            from: 0,
+            open: false,
             windows: None,
             redeem: None,
             wallet: None,
@@ -1162,6 +1163,19 @@ impl Machine {
     // The last window this machine closed, or none.
     pub fn closed_window(&self) -> Result<Option<u64>, NodeError> {
         self.store.closed().map_err(NodeError::Store)
+    }
+
+    // **Whether this store holds anything of a chain**: a head, a window it closed, the proposal of
+    // the first window or its record of the agreement on it. An operator opens a network only on a
+    // store holding none of them (Consensus, "The cold start"). The bytes are asked for and not
+    // read: a proposal or a record that does not parse is still something this machine wrote, and
+    // a store holding it is not empty. A machine reaches no later window without closing one, so
+    // these four are everything a chain leaves in a store.
+    pub fn holds_a_chain(&self) -> Result<bool, NodeError> {
+        Ok(self.head()?.is_some()
+            || self.closed_window()?.is_some()
+            || self.store.proposal(0).map_err(NodeError::Store)?.is_some()
+            || self.store.agreement(0).map_err(NodeError::Store)?.is_some())
     }
 
     // A window closed: the number that refuses it to be opened again is written first, then its

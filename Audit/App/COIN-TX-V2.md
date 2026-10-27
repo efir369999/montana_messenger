@@ -6,7 +6,7 @@ The author's words 11.10.2026 18:2x-18:5x UTC (No.63): «the whole TimeChain mus
 Version 1 ([COIN-TX-V1.md](COIN-TX-V1.md)) made one transfer binary by a node's word, but two devices of one seed could each sign against
 the same balance before their books met, and a dishonest client could sign two records of the same coins. Version 2 orders every
 record of a coin key in one chain, on one node, and that node takes a record only on top of the chain's head: of two records that
-stand on the same predecessor, one is taken and the other is refused -- its coins never left.
+stand on the same predecessor, one is taken and the other is refused -- its coins never left. Historical for new records (marked 2026-10-27 UTC): from TX_V2_CUT (19.10.2026 21:00 UTC) a v2 record is answered 400 «retired» ([COIN-TX-V3.md](COIN-TX-V3.md):293-294; `apps/messenger/ios/Code/Montana/MTWalletCore.swift:3886`); the current record is v3.
 
 ## Record (5362 bytes, little-endian integers)
 

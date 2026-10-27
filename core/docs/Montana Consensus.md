@@ -1326,9 +1326,22 @@ liveness only when the original authorization and verification requirements are 
 
 ## The cold start
 
-The first window is an empty literal with no operators. The first candidate is admitted by a
-selection event while the set of machines is empty and the continuity gate therefore does not
-apply, and it finalizes its own chain while the committee consists of itself alone.
+The first window is window zero, and it opens on the opening cohort an operator hands its
+machines: the naming halves of the machines admitted to it, every one of them its own among them.
+Its predecessor is the Genesis State Hash, its electorate is that cohort, and its proposal carries
+it, as "The pulse and the close of a window" states for the first two windows of a network; the
+machines of the cohort enter the tree of admitted machines by their naming halves and write no
+commitment (Canon, "The roots of state"). The cohort witnesses itself by the quorum of the pulse
+and by no other rule: no candidate is admitted into an empty set by a selection event, and no
+continuity gate is set aside for one.
+
+**Opening is an explicit act of the operator, on an empty store.** A machine opens window zero only
+when its operator asks it to open and only while it holds nothing of a chain — no head, no window it
+closed, no proposal and no record of the agreement. A machine that holds a chain and is asked to
+open is refused: what it would open is a second window zero of a network it already stands in. A
+machine that holds nothing and is not asked to open opens no window; it enters a network only from
+an anchor, by "The join". Nothing a machine receives tells opening a network from entering one, so
+the operator's act tells them apart, and it is explicit for the reason the anchor is.
 
 ## Observability ledger
 

@@ -18,7 +18,7 @@ Test data was retained.
 These repairs do not form a complete window transaction. Proposal, proof,
 transition tables and closed head still need one authenticated, crash-consistent
 commit in both generations. The native live path has no canonical Proposal to
-include in that transaction yet.
+include in that transaction yet. Historical (marked 2026-10-27 UTC): on `main` the live path takes a verified Proposal before the close (`core/Montana-Core/crates/montana-node/src/pulse.rs:1804`), and the window closes in one writing (`pulse.rs:1814`); item 2, #10, comment 6420198473.
 
 Closure requires deliberate failure at each persistence boundary followed by
 restart: recover exactly the previous or complete next window, never mixed

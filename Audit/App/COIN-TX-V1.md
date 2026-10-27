@@ -7,7 +7,7 @@ transaction, and on any transaction a link that confirms the sending»; «everyt
 A transfer is one record, signed by the sender's seed, laid on the nodes' append-only log. The node's 200 is the moment the coins
 left: the sender's book takes the debit in the same turn, and no answer means nothing moved. The receiver's book finds the record
 by the pair's tag -- on any build that reads it, at any later moment, on any device of its seed after a restore -- and credits it
-once, by its id. A chat letter only tells about it.
+once, by its id. A chat letter only tells about it. Historical for new records (marked 2026-10-27 UTC): from TX_V1_CUT (12.10.2026 21:00 UTC) the node takes no new v1 record ([COIN-TX-V3.md](COIN-TX-V3.md):290); the current record is v3.
 
 ## Record (5330 bytes, little-endian integers)
 

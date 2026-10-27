@@ -138,8 +138,15 @@ target/release/montana-node --data ~/montana --listen 0.0.0.0:9635 \
   --acquaintance 198.51.100.7:9635@<the key that machine answers with> \
   --admitted <this machine's naming half> \
   --admitted <the other machine's naming half> \
-  --from 1000 --windows 1
+  --open --windows 1
 ```
+
+`--open` is the operator opening a network: window zero, on the cohort the halves name, and only on
+a store that holds nothing of a chain; on any other store it is refused before anything is written.
+One that holds nothing and is not asked to open lives no window and says so (Consensus, "The cold
+start"). One started without it on a store holding a chain is set to the window after the last it
+closed, and the pulse refuses that window until it takes the proposals it stands on from its own
+store, which issue #16 carries.
 
 Each machine enters the window, publishes beacons, verifies answers and gathers attestations. It
 closes the window on a beacon carrying a cement at the quorum share of the electorate of the window
