@@ -214,7 +214,7 @@ section states them.
 - A machine's first attestation of a window is heavy and enters the cement; every later one is light and enters only the pulse; a light attestation is valid only where a heavy one under the same answering key stands published for the same window.
 - The cement state of a beacon is the aggregate over the part-nullifiers of the published heavy attestations, whatever name they pledge, each at most once, with the window as its context, beside their count; a beacon whose state is not that pair is refused. Its votes are refused where they exceed what the verified ballots of those parts cast, and taken where they fall short of it, which only delays the close of the version carrying them.
 - A round advances only on a valid attestation; no count, no measure and no clock closes it.
-- A beacon, the attestations answering it and the ballots beside them stand at the points of their round, a proposal and its roll at the points of its window, and a pledge at the points of the window it is made in, so an attester reaches a runner it cannot name and a proposal reaches everyone; Network holds how they travel and Canon derives the points.
+- A beacon, the attestations answering it and the ballots beside them stand at the points of their round, a proposal and its roll at the points of its window, and a pledge at the points of its own part and of the window it is made in, so an attester reaches a runner it cannot name and a proposal reaches everyone; Network holds how they travel and Canon derives the points.
 - A repeated round nullifier under one beacon is refused in silence and is never evidence.
 
 ## The pulse and the close of a window
@@ -598,7 +598,9 @@ machine saw the quorum of that attempt reached on that name. A pledge whose `sin
 attempt, or none, is an **open pledge**: it says which name its machine stands behind in that
 attempt and which earlier quorum, if any, frees it to. The heavy attestation of a window is the open
 pledge of attempt zero, standing on none — the name it attests beside the beacon of its round is the
-name its machine took — and no other open pledge of attempt zero exists. A pledge is valid only
+name its machine took — and no other open pledge of attempt zero exists. It carries the value of the
+line of that slot at the abscissa of that name, and its proof of presence asserts that value, so it
+carries no second proof (the author's record 309; Canon, "The confirmation of a window"). A pledge is valid only
 where a heavy attestation of the same part under the same key stands published for the window, whose
 proof of presence binds the key to a machine of the electorate; until that heavy is seen the pledge
 stands in escrow, as a light attestation does.
@@ -726,7 +728,7 @@ before the closing one. "Finality" carries the argument.
 **Invariants of the agreement:**
 
 - The proposal of a window is decided in the window after it, by the electorate of that window, at its quorum, and by nothing else; the agreement moves no electorate, no quorum, no threshold and no round.
-- A pledge carries the window, the attempt, the name, the attempt it stands on or none, the part-nullifier, the value of the line of its slot at the abscissa of its name, the one-time key of the window, under which it is signed, and its own proof of that value, and one whose proof does not verify is refused; it is valid only where the heavy attestation of its part under that key stands, and the heavy attestation is the one open pledge of attempt zero, standing on none.
+- A pledge carries the window, the attempt, the name, the attempt it stands on or none, the part-nullifier, the value of the line of its slot at the abscissa of its name, the one-time key of the window, under which it is signed, and its own proof of that value, and one whose proof does not verify is refused; it is valid only where the heavy attestation of its part under that key stands, and the heavy attestation is the one open pledge of attempt zero, standing on none, whose value of its slot its proof of presence asserts.
 - An open pledge counts only where its `since` is none or the open pledges of the attempt it names reach the quorum on its name; a closing pledge counts only where the open pledges of its own attempt reach the quorum on its name; a part counts once per kind and attempt.
 - A name is decided when the closing pledges of one attempt reach the quorum on it; the decision makes the proposal final and closes the window beside the cement of its final beacon.
 - A machine keeps its attempt, its lock, its valid name and every pledge it made before it publishes what they govern, and through a restart; it never signs two open pledges or two closing pledges of one attempt on two names, nor, in an attempt after its lock's, an open pledge on another name standing on none or before its lock's attempt.
@@ -973,13 +975,19 @@ and it is the fourth description the network accepts proofs under.
 whose naming half stands in the tree of admitted machines, and that the part-nullifier the
 attestation carries is derived from that same secret and that window — one absorption of the secret
 and no second, for the reason every derivation of this set gives: a circuit reading a secret twice
-is a circuit where the two readings may differ. It asserts nothing about which machine, nothing
-about where in the tree, and nothing about any other window.
+is a circuit where the two readings may differ. Since the author's record 309 it also asserts that
+the value the attestation carries is the line of the open slot of attempt zero, drawn from the half
+of that same secret that spends and from that window, at the abscissa of the name the attestation
+pledges — the one the pledges of later attempts carry under their own proofs (Canon, "The
+confirmation of a window"). It asserts nothing about which machine, nothing about where in the tree,
+and nothing about any other window.
 
 **What it publishes.** The root of the tree of admitted machines it answers against, the digest of
-the answering key under the domain Canon names, the part-nullifier, and the window. The position of the leaf, the secret, the naming half and
-the path stay inside. Two attestations of one machine in two windows share no published value but
-the root, and the root is common to every machine — so nothing joins a machine to itself across
+the answering key under the domain Canon names, the part-nullifier, the window, the name the
+attestation pledges and the value of the line at it. The position of the leaf, the secret, the
+naming half, the path, the lock-opening value and the slope stay inside. Two attestations of one
+machine in two windows share no published value but the root — their values lie on lines of two
+slopes nobody else holds — and the root is common to every machine — so nothing joins a machine to itself across
 windows, which is the property the one-time key exists to hold and which a description publishing
 the leaf would destroy.
 
@@ -995,8 +1003,10 @@ under no others.
 **What it costs, and why the cost is the one already paid.** The statement is one walk of the tree
 of admitted machines and one absorption of a secret squeezed twice — the same walk the admission
 performs and the same two-squeeze derivation a note's key takes. It carries no arithmetic beyond a
-window and a position, both of the widths the Decree fixes, and it stands under the bound on the
-width the whole scheme is derived from. A machine makes one per window, whatever the count of
+window and a position, both of the widths the Decree fixes, and, since record 309, the line of one
+slot — at most four blocks of the proof hash and one product and one sum in the field of the line,
+the presence staying at its height and its length (Canon, "The confirmation of a window") — and it
+stands under the bound on the width the whole scheme is derived from. A machine makes one per window, whatever the count of
 chains, which is the duty the confirmation already bore — and the description stands at a height
 of its own, below the frame's, which Canon derives with the length of its proof beside it: the
 duty of every window is priced by its own statement, not by the tallest circuit of the protocol.
@@ -1011,10 +1021,11 @@ asserts, so that two implementations write one circuit rather than two that agre
 **Invariants of the attestation of presence:**
 
 - A heavy attestation carries a proof under the description of the presence, and an attestation carrying any other proof is refused.
-- The public input of that proof is the root of the tree of admitted machines, the digest of the answering key, the part-nullifier and the window, in that order, and nothing else; a verifier computes that digest from the key the attestation carries and refuses a proof standing against any other.
+- The public input of that proof is the root of the tree of admitted machines, the digest of the answering key, the part-nullifier, the window, the name the attestation pledges and the value of the line it carries, in that order, and nothing else; a verifier computes that digest from the key the attestation carries, takes the name from among the identifiers it attests as the one that is not the beacon of its round, and refuses a proof standing against any other.
+- The value of the line is that of the open slot of attempt zero, drawn from the half that spends and the window, at the abscissa of that name; two heavy attestations of one part naming two names therefore give the lock-opening value of their machine, as two pledges of one slot on two names do (the author's record 309; Canon, "The forfeit of a node lock, and the evidence that moves it").
 - The root it answers against is the root of the electorate — the admitted set the proposal of the window two before carries; a proof against any other root is refused.
 - The part-nullifier comes of the half of the machine's secret that spends, taken with the window under the domain Canon names; that half and the half that names the machine in the tree of admitted machines come of one absorption of the secret, squeezed twice, so a circuit reads the secret once.
-- A light attestation carries no proof and is valid only where a heavy one under the same answering key stands published for the same window, whose proof it inherits.
+- A light attestation carries no proof and no value of the line, and is valid only where a heavy one under the same answering key stands published for the same window, whose proof it inherits.
 
 ## The standing of a machine, and the ballot
 
@@ -1196,8 +1207,9 @@ Canon and is recomputed rather than received, and its anchor: a proposal `E` and
 the window after it, both final.
 
 1. It asks any machine it can reach for the beacons and the heavy and light attestations standing at the round
-   points of the window after `L`, and for the pledges, the proposals and the rolls of the proposals
-   standing at the points of that window; it
+   points of the window after `L`, for the proposals and the rolls of the proposals standing at the
+   points of that window, and for the pledges standing at the points of each part of that window
+   whose heavy attestation it holds; it
    may ask several, and every answer is judged and never trusted.
 2. It verifies the certificate of `L`, which is the heavy attestations of the window after it, the
    light attestations of that window answering a final beacon, the pledges of that window's agreement
@@ -1372,7 +1384,7 @@ the operator's act tells them apart, and it is explicit for the reason the ancho
 
 An implementation conforms to this document when all of the following hold.
 
-1. It advances a round only on a valid attestation — eligibility checked natively against the round threshold over the part-nullifier the attestation carries, the signature under the asserted suite, the proof of presence verified for a heavy attestation against the digest of the key that signed it, and its key's published heavy held for a light one — links every beacon to its predecessor by hash and round zero to the proposal of the window two before, enters each part-nullifier into the cement at first appearance only, whatever name it pledges, and carries the cement as the aggregate and the count, and closes a window only on the decision of its agreement and on a cement reaching the quorum share of the electorate's count, never on a count of rounds, a measure or a clock.
+1. It advances a round only on a valid attestation — eligibility checked natively against the round threshold over the part-nullifier the attestation carries, the signature under the asserted suite, the proof of presence verified for a heavy attestation against the digest of the key that signed it, the name it attests and the value of the line it carries, and its key's published heavy held for a light one — links every beacon to its predecessor by hash and round zero to the proposal of the window two before, enters each part-nullifier into the cement at first appearance only, whatever name it pledges, and carries the cement as the aggregate and the count, and closes a window only on the decision of its agreement and on a cement reaching the quorum share of the electorate's count, never on a count of rounds, a measure or a clock.
 2. It computes eligibility from the nullifier of its part in that window, the cemented aggregate of the window two before and the pair of chain and round, under the domain Canon names, compared unsigned and big-endian; it attests every valid version of a round it sees, and presents one round nullifier per beacon.
 3. It computes the round threshold from the count of admitted machines and the count of chains in force by the rule of Canon — the crowd floored, then the width divided by the admitted, the floor of the crowd applied before the division and the width after it — and reproduces the frozen vectors.
 4. It takes the identifier of a proposal over the fields the window decided, verifies the ticket proof a proposal carries against the root of the electorate, the cemented aggregate of the window two before and the threshold of the draw, recomputes the public facts a proposal carries — the census among them — and retains the heavy attestations, the ballots, the pledges and the frames of a window, and its proposals with the pages of their rolls, at their points for `retained_windows` windows after it closes.
@@ -1389,5 +1401,5 @@ An implementation conforms to this document when all of the following hold.
 15. It orders its own running by its ticket — it waits the share of its patience its ticket stands at before it proves its own proposal and takes a verified proposal of its decision that stands meanwhile — and reproduces the frozen vectors of the recomputation of a walked threshold, which the schedule of chains takes.
 16. It joins from an anchor of two consecutive final proposals its operator handed it, walks the retained certificates to the head verifying each whole — every presence proof against the electorate root, every signature, every pledge, the counting of the agreement and the deciding quorum, every ballot and the votes — and the next proposal's link, rules, signature, ticket and cement, takes as the head the newest proposal whose certificate verified, takes every leaf of state against the roots of the head by recomputation, and resolves two proposals of one height by which certificate verifies rather than by how many machines say so.
 17. It counts a machine's standing as the census windows whose cements hold its parts, carries the census from proposal to proposal by the rule of Canon, reads the committee off the standing alone, draws every unit's coin from its own spending half, the census window and the aggregate of the window two before, publishes a ballot only where its standing drew a vote and the electorate is above the floor of the committee, verifies every ballot it gathers against the census, the aggregate and the committee of the electorate, counts a part's ballot once at its largest count, and refuses a beacon whose votes exceed what those ballots cast.
-18. It runs the agreement on what a window decided: it pledges in attempt zero the name it took, proves the value every pledge it signs carries and counts no pledge whose proof does not verify, counts every open pledge on the quorum its `since` names and every closing pledge on the quorum of open pledges of its attempt, a part once per kind and attempt, closes on a quorum of open pledges of its attempt, proposes in the order of its place, follows the open pledge at the lowest place only where its lock admits it and the name is valid to it, moves to a later attempt on its spans or on pledges beyond the share the quorum leaves, keeps its attempt, its lock, its valid name and its pledges through a restart, and reproduces the frozen vectors of the place.
+18. It runs the agreement on what a window decided: it pledges in attempt zero the name it took, proves the value every pledge it signs carries and the value of its heavy attestation inside its proof of presence, deposits and collects pledges at the points of their parts, and counts no pledge whose proof does not verify, counts every open pledge on the quorum its `since` names and every closing pledge on the quorum of open pledges of its attempt, a part once per kind and attempt, closes on a quorum of open pledges of its attempt, proposes in the order of its place, follows the open pledge at the lowest place only where its lock admits it and the name is valid to it, moves to a later attempt on its spans or on pledges beyond the share the quorum leaves, keeps its attempt, its lock, its valid name and its pledges through a restart, and reproduces the frozen vectors of the place.
 19. It names in every proposal the roll of what its window applied, publishes the roll beside the proposal, follows a name it did not take only where a quorum backs it or its roll replays to it, replays the decided roll over the decided state of the window two before where its own name was not decided and applies its open window again over the result, and tells a payer again what its frame took where a replay moves it.
