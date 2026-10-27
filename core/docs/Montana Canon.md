@@ -3102,16 +3102,101 @@ proof hash. The part a pair convicts is therefore the part of exactly one admitt
 that evidence forfeits is the lock that machine's candidacy put up: the candidacy that published the
 naming half of the same absorption of the same secret ("The candidacy of a machine").
 
-**What this document does not yet fix.** The verifier holds the part, not the secret. A part joins to
+**The relation the author chose.** The verifier holds the part, not the secret. A part joins to
 nothing across windows and to no naming half ("The confirmation of a window"; Consensus,
-"Observability ledger"), and the attestation of presence rests on that. The relation that takes a
-convicted part to exactly its machine's lock and admission awaits the author. It must hold without
-the convicted machine's cooperation, as the evidence itself is complete without a word from anyone
-(Consensus, "Finality"). As the observability ledger of Consensus stands, it must also join no part
-of another machine, and no other part of the convicted one, to a naming half, a lock or a
-candidacy. Until that relation lands, an
-implementation forfeits no lock on any evidence. The invariants below are what the relation must
-meet when it lands, not a rule an implementation can apply today.
+"Observability ledger"), and the attestation of presence rests on that. The author's record 285
+(decision 282, 27.10.2026 14:11 UTC) chose how a convicted part reaches its machine's lock:
+extractable on equivocation. Each pledge carries a value from which two contradicting pledges of one
+part reveal a lock-opening value, and an honest single pledge stays unlinkable. The relation must
+hold without the convicted machine's cooperation, as the evidence itself is complete without a word
+from anyone (Consensus, "Finality"). As the observability ledger of Consensus stands, it must also
+join no part of another machine, and no other part of the convicted one, to a naming half, a lock or
+a candidacy. It is a new statement of the proof of presence and of the proof of a candidacy, and so a
+new network. The construction below goes as far as this set carries it, and says where it stops.
+Until it lands whole, an implementation forfeits no lock on any evidence. The invariants below are
+what it must meet when it lands, not a rule an implementation can apply today.
+
+**The construction.** It takes no primitive this set lacks. It uses the proof hash, the
+pseudorandomness the table of demands already asks of a nullifier of a right, and the split of one
+absorption of a machine's secret into the half that spends and the half that names ("The nullifier
+of a machine's part").
+- A **slot** of a part is one kind of pledge, open or closing, in one attempt of its window. The heavy
+  attestation is the open slot of attempt zero. A machine following the agreement signs at most one
+  name in a slot (Consensus, "The agreement on what a window decided"); a repetition on one name is
+  lawful.
+- The **lock-opening value** is drawn from the spending half alone, so it is one value for the
+  machine across all its windows. Neither the half, the naming half nor any part is computable from
+  it.
+- The **slope** of a slot is drawn from the spending half, the window as one element, and the slot.
+  Every slot of every window has its own.
+- The **abscissa** of a name is drawn from the name alone. An abscissa of zero is refused.
+- The **value** a pledge carries is the line of its slot at the abscissa of its name: the
+  lock-opening value plus the slope times the abscissa.
+
+**How a verifier extracts it.** Two pledges of one part in one slot on two names carry two points of
+one line at two abscissas. That is exactly the first and the second pair of "The sanction of a double
+answer". With the points (x₁, y₁) and (x₂, y₂), the lock-opening value is the line at abscissa zero,
+(x₂·y₁ − x₁·y₂) / (x₂ − x₁), in the field the line is taken over. A repetition on one name carries one
+point twice and reveals nothing.
+
+**What it opens, and how a verifier checks that.** The candidacy that put up the lock carries a
+commitment to the lock-opening value under the proof hash. The verifier recomputes that commitment
+from the extracted value and compares. The commitment of another candidacy is another value, up to a
+collision of the proof hash. So the extracted value opens exactly the lock of the machine whose
+secret yields the convicted part, and no other. Two questions here await the author:
+- whether a forfeit names that candidacy, or consumes the lock by a nullifier of the value without
+  naming it (Q3);
+- the layout of the lock and its tie to the candidacy (Q6, draft PR #52).
+
+**Why one honest pledge reveals nothing.** Every slot of every window has its own slope, drawn by the
+sponge from the spending half. One point of a line is therefore a value that the pseudorandomness of
+the proof hash makes indistinguishable from random to anyone not holding the half. Two honest pledges
+of one machine stand in two slots, of one window or of two. Their points lie on lines with unrelated
+slopes: each point adds one unknown slope, so the lock-opening value stays hidden, and the points join
+to each other no more than two parts do ([I-17]). This still holds after a forfeit makes the
+lock-opening value public. The other points of the convicted machine still lie on slopes nobody else
+holds, so its other parts stay unjoined.
+
+**What the proofs must newly assert.**
+- The proof that carries the value asserts the following, in the one absorption of the machine's
+  secret whose spending half yields `part_nf(W)`. From that same half and the same element of the
+  window it derives the lock-opening value and the slope of the slot. The value the object carries is
+  that line at the abscissa of the name the object pledges.
+- The proof of a candidacy asserts that the commitment to the lock-opening value is taken from the
+  spending half of the absorption whose second squeeze is `naming_half`.
+- Each is a new statement of a proof: a new description, a new constraint set, a new `air_hash`, and
+  a new network.
+
+**Where the construction stops.** Two choices this set does not make stand between the construction
+and a rule.
+- **Which object carries the value under a proof (Q8).** A pledge carries no proof ("The pledge of a
+  part"). The heavy attestation is the one object of a part that does ("The confirmation of a
+  window"). A value no proof binds to the secret is a value its signer chooses, and two such values
+  extract nothing. The options:
+  - every pledge carries its own proof of the statement above, which puts a proof on every pledge and
+    gives a new `pledge_len`;
+  - only the heavy attestation carries the value, which covers only the first pair at attempt zero,
+    two heavy attestations naming two names.
+
+  This awaits the author.
+- **The third pair (Q9).** A closing pledge of attempt `u` on one name and an open pledge of a later
+  attempt `t` on another name, standing before `u`, are not two pledges of one slot.
+  - One line per closing attempt would extract from a machine following the agreement. Its open
+    pledges of two later attempts on two names, both standing before an attempt in which it signed no
+    closing pledge, would put two points on that attempt's line.
+  - One line per pair of attempts makes a closing pledge carry a point for every later attempt. But no
+    bound caps the attempt below `0xFFFFFFFF`, and a pledge has one length.
+
+  So the third pair needs either a bound on the attempt, which is a new number of the Decree, or it
+  forfeits no lock and stays a sanction of the window's coin. This awaits the author, with Q2.
+
+Two things are also owed with the construction, derived rather than chosen:
+- **The width of the abscissa.** A proposer who grinds two names to one abscissa makes their pair
+  extract nothing. The birthday cost of that is 2³² in `proof_field` and 2⁹⁶ in
+  `proof_challenge_field`, both below `proof_security_bits`, so the abscissa must be 256 bits wide.
+- **The domains** of the lock-opening value, the slope, the abscissa and the commitment. They enter
+  the registry with the construction and not before ("No domain awaits a document"), each with its
+  row of the Registry and its owner.
 
 **Invariants of the evidence of a forfeit:**
 
@@ -3127,7 +3212,7 @@ meet when it lands, not a rule an implementation can apply today.
 - Evidence presented after the close of the challenge of `W` is refused, as Consensus refuses the pair itself.
 - A lock is consumed once. Every pair under one part of `W` convicts that one part, and the parts of several windows of one machine convict that one machine, so together they forfeit one lock. A forfeit of a lock already forfeited is refused. A lock is consumed by a forfeit or by its release, never by both. When a release may come, and how it is ordered against the challenge of the last window the machine lived, awaits the author.
 - A forfeited lock is burned (record 233). It goes to no one: not to the presenter of the evidence, not back to issuance, and to no other lock.
-- The machine whose lock is forfeited is excluded from consensus (record 231). How a verifier keeps its parts out of every later cement without naming it is part of the relation that awaits the author.
+- The machine whose lock is forfeited is excluded from consensus (record 231). The extracted value joins no other part of that machine, so no verifier can find its later parts by reading them. How a verifier keeps those parts out of every later cement without naming the machine awaits the author (Q3, Q4).
 - A forfeit names no person, no record and no note that funded the lock ([I-6], [I-17]). The pair itself names no one (Consensus, "Observability ledger"). Whether a forfeit may disclose which admitted machine's lock it consumed awaits the author.
 
 ### The post-quantum handshake, in integers
