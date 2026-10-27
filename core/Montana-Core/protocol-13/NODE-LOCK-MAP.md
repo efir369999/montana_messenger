@@ -68,7 +68,7 @@ when it is released, or whether `node_lock` enters the Decree.
   from the same absorption whose naming half is the admitted leaf (`Canon:2884-2907`,
   `:2973-2975`). One machine yields one value per window, and two machines never collide
   (`Canon:2904`). A second secret yielding the same part is a collision of the proof hash
-  (`Canon:3038`, `:5218`). The part joins to nothing across windows (`Consensus:1342`; `Canon:5247`).
+  (`Canon:3038`, `:5218`). The part joins to nothing across windows (`Consensus:1355`; `Canon:5247`).
 - **Who produces it.** Anyone holding both objects: "self-evident to any machine holding both ... a
   local rule with a global result" (`Consensus:810-812`).
 - **Who verifies it.** Every machine, identically, by the canonical order of the window, never by
@@ -163,7 +163,7 @@ for the author, not for C2:
 - `Consensus:790`, `:830`, conformance `:1369`: nothing of the evidence enters persistent state but
   the absent part, and the evidence is discarded with the close.
 - `Value:208-209`: supply is the sum of what windows added; no term subtracts a burned lock.
-- `Consensus:1343`: the observability ledger says the contradicting pair "names no one".
+- `Consensus:1356`: the observability ledger says the contradicting pair "names no one".
 
 ## 7. Facts C2 rests on
 
@@ -174,5 +174,5 @@ for the author, not for C2:
   squeeze of one absorption of the claimant's secret (`Canon:5286-5287`, `:5300`, `:5302`). That is
   the same absorption whose spending half yields every `part_nf(W)` of that machine (`Canon:2889-2899`).
 - **The gap.** No verifier holding only the part can reach that naming half or lock: the part joins
-  to nothing across windows and to no naming half (`Consensus:1342`; `Canon:5162`, `:5247`). That
+  to nothing across windows and to no naming half (`Consensus:1355`; `Canon:5162`, `:5247`). That
   relation is what record 246 calls open.
