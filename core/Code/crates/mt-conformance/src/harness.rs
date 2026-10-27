@@ -370,15 +370,16 @@ fn behavioral_rows(node_toml: &str, transport_toml: &str, audit_cfg: &str) -> Ve
     let p = genesis_params();
     let mut out = Vec::new();
 
-    // monetary closed-form: supply_moneta(W) = EMISSION_moneta * W, supply(0) = 0
-    let e = p.emission_moneta;
-    let mon_ok = mt_account::supply_moneta(0, p) == 0
-        && mt_account::supply_moneta(1, p) == e
-        && mt_account::supply_moneta(100, p) == e * 100;
+    // monetary (issue #18): one second, one coin — a window credits every living node the
+    // seconds of the window, 86 400 / (tau2 / 14) coins (core/docs Canon, `window_credit` = 60).
+    let coins = mt_account::window_credit_coins(p);
+    let mon_ok = coins == 60
+        && coins * (p.tau2_windows / mt_account::DAYS_OF_A_TAU2) == mt_account::SECONDS_OF_A_DAY
+        && mt_account::window_credit_moneta(p) == u128::from(coins) * mt_account::MONETA_PER_COIN;
     out.push(beh_row(
-        "monetary.supply_moneta_closed_form",
+        "monetary.window_credit_one_coin_per_second",
         mon_ok,
-        format!("supply(0)=0, supply(1)=E, supply(100)=100E (E={})", e),
+        format!("credit = {coins} coins per living node per window"),
     ));
 
     // active predicate: active iff (W - last_confirmation_window) <= 2 * tau2
@@ -622,7 +623,7 @@ hash wordlist_fingerprint 2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2
         let rows = behavioral_rows(clean_node, clean_tr, audit);
         let ids: Vec<&str> = rows.iter().map(|r| r.spec_id.as_str()).collect();
         for want in [
-            "monetary.supply_moneta_closed_form",
+            "monetary.window_credit_one_coin_per_second",
             "consensus.active_predicate_2tau2",
             "fastsync.anchor_window_wire",
             "transport.no_classical_tls_noise",

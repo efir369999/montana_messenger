@@ -15,9 +15,9 @@ use std::env;
 use std::process::ExitCode;
 
 use mt_account::{
-    apply, build_genesis_state, genesis_state_root, op_hash, reward_moneta, supply_moneta,
-    validate_anchor, validate_change_key, validate_transfer, validate_transfer_activation, Anchor,
-    ChangeKey, GenesisState, OpError, Operation, Transfer, TransferActivation,
+    apply, build_genesis_state, genesis_state_root, op_hash, validate_anchor, validate_change_key,
+    validate_transfer, validate_transfer_activation, Anchor, ChangeKey, GenesisState, OpError,
+    Operation, Transfer, TransferActivation,
 };
 use mt_crypto::{keypair_from_seed, sign, PublicKey, SecretKey, KEYPAIR_SEED_SIZE};
 use mt_examples::{hex_full, print_kv, print_note, print_section, print_subsection};
@@ -471,20 +471,23 @@ fn cmd_anchor() -> bool {
 }
 
 fn cmd_emission_schedule(windows: &[u64]) -> bool {
-    print_section("EMISSION SCHEDULE — reward + supply ledger");
+    print_section("EMISSION SCHEDULE — the credit of a window");
     print_note(
-        "spec, section \"Emission\": reward_moneta = EMISSION_moneta = 13 Ɉ const per window. supply_moneta(W) = W × EMISSION_moneta.",
+        "issue #18: one second, one coin. A window credits every living node the seconds of the window, 86 400 / (tau2 / 14) coins; the supply a window adds is the credit times the count of its living.",
     );
 
     let params = genesis_params();
-    let reward = reward_moneta(params);
-    print_kv("EMISSION_moneta (per window)", format!("{reward} nɈ"));
+    let credit = mt_account::window_credit_moneta(params);
+    print_kv(
+        "credit per living node (per window)",
+        format!("{credit} nɈ"),
+    );
 
     let mut all_match = true;
-    print_subsection("Schedule");
+    print_subsection("Schedule (one living node)");
     for &w in windows {
-        let supply = supply_moneta(w, params);
-        let expected = u128::from(w) * reward;
+        let supply = u128::from(w) * credit;
+        let expected = u128::from(w) * 60 * mt_account::MONETA_PER_COIN;
         let ok = supply == expected;
         print_kv(
             &format!("W = {w:8}"),
@@ -498,16 +501,7 @@ fn cmd_emission_schedule(windows: &[u64]) -> bool {
         }
     }
 
-    print_subsection("Linearity sanity");
-    let s_a = supply_moneta(1000, params);
-    let s_b = supply_moneta(2000, params);
-    let diff = s_b - s_a;
-    let expected_diff = u128::from(1000u64) * reward;
-    print_kv("supply(2000) - supply(1000)", format!("{diff} nɈ"));
-    print_kv("expected (1000 × reward)", format!("{expected_diff}"));
-    let lin_ok = diff == expected_diff;
-
-    let pass = all_match && lin_ok && reward > 0;
+    let pass = all_match && credit > 0;
     println!(
         "\n[result] EMISSION-SCHEDULE: {}",
         if pass { "PASS" } else { "FAIL" }

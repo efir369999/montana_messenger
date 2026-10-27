@@ -6,10 +6,10 @@
 
 use mt_account::{
     apply, apply_anchor, apply_change_key, apply_proposal, apply_transfer, build_genesis_state,
-    op_hash, reward_moneta, settle_window, supply_moneta, validate_transfer, Anchor, ChangeKey,
-    Operation, ProposalSettle, Transfer, TransferActivation, ANCHOR_SIZE, CHANGE_KEY_SIZE,
-    GENESIS_SUITE_ID, TRANSFER_ACTIVATION_SIZE, TRANSFER_SIZE, TYPE_ANCHOR, TYPE_CHANGE_KEY,
-    TYPE_TRANSFER, TYPE_TRANSFER_ACTIVATION,
+    op_hash, settle_window, validate_transfer, window_credit_moneta, Anchor, ChangeKey, Operation,
+    ProposalSettle, Transfer, TransferActivation, ANCHOR_SIZE, CHANGE_KEY_SIZE, GENESIS_SUITE_ID,
+    TRANSFER_ACTIVATION_SIZE, TRANSFER_SIZE, TYPE_ANCHOR, TYPE_CHANGE_KEY, TYPE_TRANSFER,
+    TYPE_TRANSFER_ACTIVATION,
 };
 use mt_codec::CanonicalEncode;
 use mt_crypto::{PublicKey, Signature, PUBLIC_KEY_SIZE, SIGNATURE_SIZE};
@@ -347,32 +347,6 @@ fn genesis_tables_are_empty() {
     assert_eq!(g.candidate_pool.len(), 0);
 }
 
-// ---------- reward_moneta + supply_moneta consistency ----------
-
-#[test]
-fn reward_moneta_returns_emission_const() {
-    let p = mt_genesis::genesis_params();
-    assert_eq!(reward_moneta(p), p.emission_moneta);
-}
-
-#[test]
-fn supply_moneta_window_zero_is_zero() {
-    let p = mt_genesis::genesis_params();
-    assert_eq!(supply_moneta(0, p), 0);
-}
-
-#[test]
-fn supply_moneta_grows_linearly() {
-    let p = mt_genesis::genesis_params();
-    let s0 = supply_moneta(0, p);
-    let s10 = supply_moneta(10, p);
-    let s100 = supply_moneta(100, p);
-    assert!(s0 < s10);
-    assert!(s10 < s100);
-    assert_eq!(s10, p.emission_moneta * 10);
-    assert_eq!(s100, p.emission_moneta * 100);
-}
-
 // ---------- apply_proposal determinism ----------
 
 #[test]
@@ -394,8 +368,7 @@ fn apply_proposal_deterministic() {
 
     let input = ProposalSettle {
         window_w: 5,
-        winner_id: node_id,
-        cemented_confirmers: vec![],
+        cemented_confirmers: vec![node_id],
     };
 
     let r1 = apply_proposal(&mut a1, &mut n1, &c1, &input, p);
@@ -416,8 +389,7 @@ fn apply_proposal_emission_changes_balance() {
 
     let input = ProposalSettle {
         window_w: 3,
-        winner_id: node_id,
-        cemented_confirmers: vec![],
+        cemented_confirmers: vec![node_id],
     };
     apply_proposal(
         &mut account_table,
@@ -430,8 +402,8 @@ fn apply_proposal_emission_changes_balance() {
     let balance_after = account_table.get(&account_id).unwrap().balance;
     assert_eq!(
         balance_after,
-        balance_before + p.emission_moneta,
-        "Operator receives EMISSION_moneta"
+        balance_before + window_credit_moneta(p),
+        "the operator of a living node receives the credit of the window"
     );
 }
 

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use mt_account::supply_moneta;
+use mt_account::{window_credit_coins, window_credit_moneta};
 use mt_genesis::genesis_params;
 
 use crate::clock::load_current_window;
@@ -124,15 +124,9 @@ pub fn run(args: StatusArgs) -> Result<(), NodeError> {
         params.candidate_expiry_windows
     );
     println!(
-        "emission per window  : {} nɈ ({} Ɉ)",
-        params.emission_moneta,
-        params.emission_moneta / 1_000_000_000
-    );
-    let total_supply = supply_moneta(current_window, params);
-    println!(
-        "supply (closed-form) : {} nɈ ({} Ɉ) = emission × W",
-        total_supply,
-        total_supply / 1_000_000_000
+        "credit per window    : {} nɈ ({} Ɉ, one per second) to every living node",
+        window_credit_moneta(params),
+        window_credit_coins(params)
     );
 
     let total_balances: u128 = state.accounts.iter().map(|a| a.balance).sum();

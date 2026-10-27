@@ -56,7 +56,12 @@ pub mod domain {
     pub const MERKLE_NODE: &[u8] = b"mt-merkle-node";
     pub const STATE_ROOT: &[u8] = b"mt-state-root";
     pub const TIMECHAIN: &[u8] = b"mt-timechain";
+    // Retired with the lottery (issue #18): no hash of core/Code is taken under it any more;
+    // kept so that no later construction reuses the name.
     pub const LOTTERY: &[u8] = b"mt-lottery";
+    // The ticket that orders the proposers of a window (issue #18): core/docs Canon, registry
+    // of separators, `mt-ticket`; Registry CNS-06 owns it.
+    pub const TICKET: &[u8] = b"mt-ticket";
     pub const BC_AGGREGATE: &[u8] = b"mt-bc-aggregate";
     pub const BC_AGGREGATE_EMPTY: &[u8] = b"mt-bc-aggregate-empty";
     pub const SELECTION: &[u8] = b"mt-selection";
@@ -208,6 +213,12 @@ mod tests {
     }
 
     #[test]
+    fn domain_ticket_ascii() {
+        assert_eq!(domain::TICKET, b"mt-ticket");
+        assert!(!domain::TICKET.starts_with(domain::LOTTERY));
+    }
+
+    #[test]
     fn domain_account_ascii() {
         assert_eq!(domain::ACCOUNT, b"mt-account");
         assert_eq!(domain::ACCOUNT.len(), 10);
@@ -291,7 +302,7 @@ mod tests {
 
     #[test]
     fn all_domains_start_with_mt_dash() {
-        let all: [&[u8]; 32] = [
+        let all: [&[u8]; 33] = [
             domain::OP,
             domain::NODEREG,
             domain::PROPOSAL,
@@ -304,6 +315,7 @@ mod tests {
             domain::STATE_ROOT,
             domain::TIMECHAIN,
             domain::LOTTERY,
+            domain::TICKET,
             domain::BC_AGGREGATE,
             domain::BC_AGGREGATE_EMPTY,
             domain::SELECTION,
@@ -331,7 +343,7 @@ mod tests {
                 "domain does not start with mt-: {d:?}"
             );
         }
-        assert_eq!(all.len(), 32);
+        assert_eq!(all.len(), 33);
     }
 
     // Property-style test: write → read roundtrip for 1000 deterministic u64 values.

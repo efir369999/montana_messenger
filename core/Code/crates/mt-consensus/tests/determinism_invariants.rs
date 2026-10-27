@@ -2,19 +2,17 @@
 // M4 audit prep — proposal header / canonical proposer / control_set /
 // canonical acceptance / finalization. Any non-determinism = consensus fork.
 // The invariants catch regressions if a refactor breaks byte-exact header encode,
-// proposal_hash R2, canonical_proposer ordering, control_set sort, or
+// proposal_hash R2, the proposer order by ticket, control_set sort, or
 // quorum threshold.
 
 use mt_codec::CanonicalEncode;
 use mt_consensus::{
-    canonical_proposer, compute_control_set, fallback_proposer, finalization_status,
-    leader_penalty_excluded_node, proposal_hash, validate_bundles_threshold,
-    validate_included_reveals, validate_proposer_is_canonical, validate_winner, AcceptanceError,
-    ControlObjectRef, ControlSetError, FinalizationStatus, HeaderError, ProposalHeader,
-    NO_PROPOSER, PROPOSAL_HEADER_SIZE,
+    compute_control_set, finalization_status, proposal_hash, proposer_at, proposer_order, ticket,
+    validate_bundles_threshold, validate_proposer_is_canonical, AcceptanceError, ControlObjectRef,
+    ControlSetError, FinalizationStatus, HeaderError, ProposalHeader, NO_PROPOSER,
+    PROPOSAL_HEADER_SIZE,
 };
 use mt_crypto::{Signature, SIGNATURE_SIZE};
-use mt_lottery::{Candidate, WINNER_CLASS_NODE};
 use mt_state::NodeId;
 
 // ---------- Helpers ----------
@@ -103,74 +101,29 @@ fn proposal_hash_changes_on_field_mutation() {
     assert_ne!(proposal_hash(&base), proposal_hash(&m_fallback));
 }
 
-// ---------- canonical_proposer / fallback_proposer (Lookback Leadership) ----------
+// ---------- the proposer of a window: the lowest ticket by the aggregate (issue #18) ----------
 
 #[test]
-fn canonical_proposer_empty_is_no_proposer() {
-    let empty: Vec<Candidate> = vec![];
-    // Genesis cold-start / degraded mode: empty W-2 → no canonical proposer.
-    assert_eq!(canonical_proposer(&empty), NO_PROPOSER);
+fn proposer_empty_electorate_is_no_proposer() {
+    // Genesis cold-start: no electorate → no canonical proposer.
+    assert_eq!(proposer_at(5, &[0x22; 32], &[], 1), NO_PROPOSER);
 }
 
 #[test]
-fn canonical_proposer_picks_first_node_candidate() {
-    let c1 = Candidate {
-        ticket: 100,
-        class: WINNER_CLASS_NODE,
-        id: [0x01; 32],
-    };
-    let c2 = Candidate {
-        ticket: 200,
-        class: WINNER_CLASS_NODE,
-        id: [0x02; 32],
-    };
-    let proposer = canonical_proposer(&[c1, c2]);
-    assert_eq!(proposer, c1.id);
+fn proposer_depth_1_is_the_lowest_ticket_and_depth_2_the_next() {
+    let agg = [0x22; 32];
+    let electorate: Vec<NodeId> = vec![[0x01; 32], [0x02; 32], [0x03; 32]];
+    let mut by_ticket = electorate.clone();
+    by_ticket.sort_by_key(|id| ticket(&agg, id));
+    assert_eq!(proposer_at(5, &agg, &electorate, 1), by_ticket[0]);
+    assert_eq!(proposer_at(5, &agg, &electorate, 2), by_ticket[1]);
+    assert_eq!(proposer_order(&agg, &electorate), by_ticket);
 }
 
 #[test]
-fn fallback_proposer_depth_1_equals_canonical() {
-    let c1 = Candidate {
-        ticket: 100,
-        class: WINNER_CLASS_NODE,
-        id: [0x01; 32],
-    };
-    let c2 = Candidate {
-        ticket: 200,
-        class: WINNER_CLASS_NODE,
-        id: [0x02; 32],
-    };
-    let canonical = canonical_proposer(&[c1, c2]);
-    let fallback_1 = fallback_proposer(&[c1, c2], 1);
-    assert_eq!(canonical, fallback_1);
-}
-
-#[test]
-fn fallback_proposer_depth_2_picks_second() {
-    let c1 = Candidate {
-        ticket: 100,
-        class: WINNER_CLASS_NODE,
-        id: [0x01; 32],
-    };
-    let c2 = Candidate {
-        ticket: 200,
-        class: WINNER_CLASS_NODE,
-        id: [0x02; 32],
-    };
-    let fallback_2 = fallback_proposer(&[c1, c2], 2);
-    assert_eq!(fallback_2, c2.id);
-}
-
-#[test]
-fn fallback_proposer_exhausted_cascade_is_no_proposer() {
-    let c1 = Candidate {
-        ticket: 100,
-        class: WINNER_CLASS_NODE,
-        id: [0x01; 32],
-    };
-    // Only 1 candidate, request fallback_depth 5 — cascade exhausted.
-    let proposer = fallback_proposer(&[c1], 5);
-    assert_eq!(proposer, NO_PROPOSER);
+fn proposer_exhausted_cascade_is_no_proposer() {
+    let electorate: Vec<NodeId> = vec![[0x01; 32]];
+    assert_eq!(proposer_at(5, &[0x22; 32], &electorate, 5), NO_PROPOSER);
 }
 
 // ---------- compute_control_set canonical sort ----------
@@ -254,26 +207,19 @@ fn compute_control_set_input_order_independent() {
 
 #[test]
 fn validate_proposer_canonical_pass_at_depth_1() {
-    let c1 = Candidate {
-        ticket: 100,
-        class: WINNER_CLASS_NODE,
-        id: [0x01; 32],
-    };
-    let header = sample_header(2, c1.id);
-    let result = validate_proposer_is_canonical(&header, &[c1]);
-    assert!(result.is_ok());
+    let agg = [0x22; 32];
+    let electorate: Vec<NodeId> = vec![[0x01; 32], [0x02; 32]];
+    let header = sample_header(2, proposer_at(2, &agg, &electorate, 1));
+    assert!(validate_proposer_is_canonical(&header, &agg, &electorate).is_ok());
 }
 
 #[test]
 fn validate_proposer_canonical_fail_on_wrong_proposer() {
-    let c1 = Candidate {
-        ticket: 100,
-        class: WINNER_CLASS_NODE,
-        id: [0x01; 32],
-    };
-    // Header claims proposer = [0xAA; 32] but the canonical one is c1.id
+    let agg = [0x22; 32];
+    let electorate: Vec<NodeId> = vec![[0x01; 32], [0x02; 32]];
+    // Header claims proposer = [0xAA; 32] but the canonical one is the lowest ticket
     let header = sample_header(2, [0xAA; 32]);
-    let result = validate_proposer_is_canonical(&header, &[c1]);
+    let result = validate_proposer_is_canonical(&header, &agg, &electorate);
     assert!(matches!(result, Err(AcceptanceError::ProposerNotCanonical)));
 }
 
@@ -294,68 +240,6 @@ fn validate_bundles_threshold_below_quorum() {
     ));
 }
 
-// ---------- validate_included_reveals byte-exact equality ----------
-
-#[test]
-fn validate_included_reveals_equal_passes() {
-    let reveals = vec![[0x01; 32], [0x02; 32], [0x03; 32]];
-    assert!(validate_included_reveals(&reveals, &reveals).is_ok());
-}
-
-#[test]
-fn validate_included_reveals_mismatch() {
-    let proposer = vec![[0x01; 32], [0x02; 32]];
-    let cemented = vec![[0x01; 32], [0x03; 32]];
-    assert!(matches!(
-        validate_included_reveals(&proposer, &cemented),
-        Err(AcceptanceError::IncludedRevealsMismatch)
-    ));
-}
-
-// ---------- validate_winner argmin canonical ----------
-
-#[test]
-fn validate_winner_correct_argmin() {
-    let c1 = Candidate {
-        ticket: 200,
-        class: WINNER_CLASS_NODE,
-        id: [0x01; 32],
-    };
-    let c2 = Candidate {
-        ticket: 100,
-        class: WINNER_CLASS_NODE,
-        id: [0x02; 32],
-    };
-    let mut header = sample_header(100, [0x77; 32]);
-    header.winner_id = c2.id; // argmin = c2 (ticket 100)
-    let result = validate_winner(&header, &[c1, c2]);
-    assert!(result.is_ok());
-}
-
-#[test]
-fn validate_winner_wrong_winner_id() {
-    let c1 = Candidate {
-        ticket: 100,
-        class: WINNER_CLASS_NODE,
-        id: [0x02; 32],
-    };
-    let mut header = sample_header(100, [0x77; 32]);
-    header.winner_id = [0xFF; 32]; // wrong
-    assert!(matches!(
-        validate_winner(&header, &[c1]),
-        Err(AcceptanceError::WrongWinner)
-    ));
-}
-
-#[test]
-fn validate_winner_empty_candidates_rejected() {
-    let header = sample_header(100, [0x77; 32]);
-    assert!(matches!(
-        validate_winner(&header, &[]),
-        Err(AcceptanceError::WrongWinner)
-    ));
-}
-
 // ---------- finalization_status ----------
 
 #[test]
@@ -366,15 +250,6 @@ fn finalization_status_cemented_at_quorum() {
 #[test]
 fn finalization_status_rejected_below_quorum() {
     assert_eq!(finalization_status(66, 100), FinalizationStatus::Rejected);
-}
-
-// ---------- leader_penalty_excluded_node ----------
-
-#[test]
-fn leader_penalty_returns_proposer_node_id() {
-    let proposer: NodeId = [0xAB; 32];
-    let header = sample_header(100, proposer);
-    assert_eq!(leader_penalty_excluded_node(&header), proposer);
 }
 
 // ---------- Static API invariants ----------
@@ -391,6 +266,6 @@ fn header_error_acceptance_error_variants_compile() {
     let _: HeaderError = HeaderError::FallbackDepthZero;
     let _: HeaderError = HeaderError::WindowNotMonotone;
     let _: AcceptanceError = AcceptanceError::ProposerNotCanonical;
-    let _: AcceptanceError = AcceptanceError::WrongWinner;
+    let _: AcceptanceError = AcceptanceError::InsufficientBundles;
     let _: ControlSetError = ControlSetError::Mismatch;
 }

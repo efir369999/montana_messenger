@@ -41,7 +41,9 @@ pub struct ProtocolParams {
     pub d0: u64,
     pub reserved_m0: [u8; 8],
     pub tau2_windows: u64,
-    // spec, section "Emission": const emission `reward_moneta(W) = EMISSION_moneta`.
+    // Kept in the Decree layout (its bytes are bound by the Genesis State Hash), and read by no
+    // issuance since issue #18: a window credits one coin for every second of it to every living
+    // node (mt-account `window_credit_moneta`).
     pub emission_moneta: u128,
     pub target_zero: [u8; 32],
     pub confirmation_quorum_num: u8,
