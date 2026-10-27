@@ -1,0 +1,23 @@
+{
+ "comment": "Topology A of RUN.md: five machines of core/Montana-Core on Lauterbourg-2, each in a network namespace of its own, joined by a bridge inside a sixth namespace. Nothing is added to the host's own namespace: no listener, no route, no firewall rule. Four machines open the network; the fifth is born and joins later.",
+ "repo": "https://github.com/efir369999/montana_messenger.git",
+ "run_root": "/srv/mt13",
+ "source": "/srv/mt13/src",
+ "cargo": "/root/.cargo/bin/cargo",
+ "required_commits": [],
+ "hosts": {
+  "l2": {"ssh": ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=20", "-o", "ServerAliveInterval=30", "montana-lauterbourg-2"], "build": true}
+ },
+ "hub": {"host": "l2", "netns": "mt13-hub", "bridge": "mt13br"},
+ "port": 9635,
+ "nodes": [
+  {"name": "a", "host": "l2", "netns": "mt13-a", "address": "10.13.0.1", "admitted": true},
+  {"name": "b", "host": "l2", "netns": "mt13-b", "address": "10.13.0.2", "admitted": true},
+  {"name": "c", "host": "l2", "netns": "mt13-c", "address": "10.13.0.3", "admitted": true},
+  {"name": "d", "host": "l2", "netns": "mt13-d", "address": "10.13.0.4", "admitted": true},
+  {"name": "e", "host": "l2", "netns": "mt13-e", "address": "10.13.0.5", "admitted": false}
+ ],
+ "unit": {"Nice": "10", "MemoryMax": "6G"},
+ "timing": {"poll_s": 60, "window_budget_s": 3600, "hold_s": 1800, "partition_hold_s": 600, "birth_s": 30, "build_s": 7200, "refusal_s": 1800},
+ "targets": {"open_final": 3, "after_recovery": 2, "majority": 2, "after_heal": 1, "after_restart": 1, "join_back": 4}
+}
