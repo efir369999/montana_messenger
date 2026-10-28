@@ -2420,9 +2420,10 @@ test_nullifier = SHA-256("mt-vector-nullifier")
 notice_point(nf = test_nullifier, W = 1000, i = 0) = 9dbba996aa9baa809a74e40940f0c572
 notice_point(nf = test_nullifier, W = 1000, i = 1) = 36a0b66cffbe152974ebec740fffb10e
 notice_point(nf = test_nullifier, W = 1000, i = 2) = 40704a6a8149bee128df9e72d73446d9
-pledge_point(nf = test_nullifier, W = 1000, i = 0) = 44b9a77e5f99debb607efe962bbaab0a
-pledge_point(nf = test_nullifier, W = 1000, i = 1) = 26eeb5f9c4f2f35ae5d5316cfc2d3d1f
-pledge_point(nf = test_nullifier, W = 1000, i = 2) = 3015b6c75ade941e5fcada965acde342
+pledge_point(nf = test_nullifier, W = 1000, b = 0, i = 0) = 8ae0d33e0e43bdc5a0038df8d37a8588
+pledge_point(nf = test_nullifier, W = 1000, b = 0, i = 1) = 9b35a7e1410a156ff878e71bdf486347
+pledge_point(nf = test_nullifier, W = 1000, b = 0, i = 2) = b2f2ce07f6147aabe3255b785f1c2b7d
+pledge_point(nf = test_nullifier, W = 1000, b = 1, i = 0) = 358dd83f06afa82c016323ae173f0d65
 ```
 
 The two rows at `W = 1001` stand on `pipe_secret(W + 1)`, the secret walked one step, so an
@@ -2431,8 +2432,10 @@ The nullifier of the vector stands on neither end of its own bytes and repeats n
 the three indices are given rather than one, so an implementation that read the window from the
 other end, that dropped the index, that took the last sixteen bytes instead of the first, or that
 hashed the domain without the NUL that closes it, reproduces none of the three. The pledge points
-stand on the same nullifier, window and indices as the notice points and differ from them only by
-the domain, so an implementation that took one domain for the other reproduces none of either.
+of band zero stand on the same nullifier, window and indices as the notice points and differ from
+them by the domain and the four bytes of the band, so an implementation that took one domain for the
+other reproduces none of either; the fourth pledge point differs from the first by the band alone, so
+an implementation that dropped the band, or wrote it in another width, reproduces none of the four.
 
 ### How a message crosses a link
 
@@ -2584,7 +2587,8 @@ frame while its entries number at most 12 693, and a round point read by a `u16`
 attestations of no more than 124 parts. A heavy attestation stays 528 cells with the 32 B of
 `line_value` the author's record 309 adds: 339 321 B is 391 blocks, 67 B under a 392nd. A pledge
 point read by the same index holds the pledges of one part of one window, at most 124 of them at 528
-cells each, which is every pledge of that part through the open pledge of attempt 62; a window point
+cells each, which is one band of that part's pledges — in band zero, every pledge through the open
+pledge of attempt 62, and in each band after it the next 124; a window point
 holds one proposal and its roll and no pledge, since the same record moved the pledges off it, where
 they would have held those of no more than 123 parts (Q11, Q12, "The forfeit of a node lock, and
 the evidence that moves it"). Every count follows from `chunk_bytes`, `erasure_data` and
@@ -2601,15 +2605,15 @@ machine stands at each point.
 round_point(W, j, r, i)  = SHA-256("mt-round-point"  || 0x00 || W_8B_LE || j_1B || r_4B_LE || i_1B)[0 .. 16]
 window_point(W, i)       = SHA-256("mt-window-point" || 0x00 || W_8B_LE || i_1B)[0 .. 16]
 notice_point(nf, W, i)    = SHA-256("mt-notice-point"  || 0x00 || nf_32B || W_8B_LE || i_1B)[0 .. 16]
-pledge_point(nf, W, i)    = SHA-256("mt-pledge-point"  || 0x00 || nf_32B || W_8B_LE || i_1B)[0 .. 16]
+pledge_point(nf, W, b, i) = SHA-256("mt-pledge-point"  || 0x00 || nf_32B || W_8B_LE || b_4B_LE || i_1B)[0 .. 16]
                            i = 0 .. consensus_replicas - 1
 ```
 
 A beacon and the attestations answering it stand at the round points of their own round; a frame
 and an operation of the identity plane stand at the round points of the round their canonical slot
 names; a proposal and its roll stand at the window points of the window it closes; a pledge stands
-at the pledge points of its own part and of the window it is made in, `nf` being its
-`part_nullifier` (the author's record 309); and the notice of every
+at the pledge points of its own part, of the window it is made in and of its band, `nf` being its
+`part_nullifier` and `b` the band of its attempt (the author's records 309 and 322); and the notice of every
 nullifier a frame spends stands at the notice points of that nullifier, so that two frames spending
 one note meet at one point whatever slot carried either of them. Value states what a notice is and
 what a reader of such a point may conclude; the point of one is derived here because it is of this
@@ -2621,7 +2625,7 @@ them, taking the union of what they hold.
 
 - The points are a function of the window, the chain, the round and the index alone; nobody chooses them and no machine can place itself at a point of its choosing, because the holder rule stands on commitments fixed before the window opened.
 - The point of a notice is a function of the nullifier, the window and the index alone. Nobody but the owner of a note can compute it before that note is spent — a nullifier is derived from the redemption branch of its owner and from the position the tree assigned, so neither the payer of a note nor any reader of the chain holds what the derivation takes — and once the frame stands the nullifier is public and the point names nobody.
-- The point of a pledge is a function of the part, the window and the index alone, and the part is public in the pledge and in the heavy attestation of the same part, so the point names nobody and joins to nothing across windows, as the part does not. A machine computes the pledge points of a window from the parts of the heavy attestations of that window it holds, deposits its own pledges at the points of its own part, and collects at the points of every part whose heavy attestation it holds; the pledges of a part whose heavy attestation it has not yet seen wait at their points until it has, and none of them would count before it had in any case, a pledge without its heavy standing in escrow. One pledge point holds the pledges of one part, at most 124 objects of 528 cells, and a pledge beyond that bound is refused whole, as every delivery at a full point is; what stands beyond it awaits the author (Q12, "The forfeit of a node lock, and the evidence that moves it").
+- The point of a pledge is a function of the part, the window, the band and the index alone; the part is public in the pledge and in the heavy attestation of the same part, and the band in the attempt and the kind the pledge carries, so the point names nobody and joins to nothing across windows, as the part does not. A machine computes the pledge points of a window from the parts of the heavy attestations of that window it holds, deposits its own pledges at the points of its own part, and collects at the points of every part whose heavy attestation it holds; the pledges of a part whose heavy attestation it has not yet seen wait at their points until it has, and none of them would count before it had in any case, a pledge without its heavy standing in escrow. One pledge point holds the pledges of one part in one band, at most 124 objects of 528 cells, and a delivery beyond that bound is refused whole, as every delivery at a full point is; the pledges of a later attempt stand at the points of their own band, so no pledge an agreement makes is refused for want of room, and a machine collects at the points of a band once its window's agreement reaches an attempt of it (Q12, "The forfeit of a node lock, and the evidence that moves it").
 - **A machine opens what it can do before it opens the door to it.** Every rule of this section is read against something the machine holds — the round it stands in, the window it is at, the count of machines its window admits — and a door opened before that thing is in force refuses the work it was opened for, in the silence every refusal keeps. The neighbour that published in that moment published into nothing and never learns, because the wire tells it nothing; the loss is total and it is invisible from both ends. What follows for an implementation: the window is entered before the door answers, and every bound a door enforces is read when the work arrives and never once when the door was opened.
 - **A point refuses a delivery whole and never its tail.** What a point holds is bounded, and a holder that took the first cells of a delivery and refused the rest would hold a body with a hole in it — which reads back as nothing, so a point filled to its bound stops answering with anything at all, exactly when the round it carries matters most. A holder therefore admits a delivery only where what remains of its bound holds the whole of it, and refuses the whole of it otherwise, in the same silence every other refusal keeps.
 - A deposit at a point of a past round is refused in silence, exactly as under a past tag. The heavy attestations, the ballots and the pledges of a window survive at their points for `retained_windows` windows after the window closes — they are the certificate a device behind walks to the head — and so do the frames of its rounds and its proposals with their rolls, which a machine that took another name replays; nothing else of a round outlives its window.
@@ -3270,19 +3274,21 @@ followed from the first (Q10, Q11), and the author has made both too (record 309
   index wider than `u16`, a new wire for every collection; or the round points of the part's heavy
   attestation, which halves what a round point holds. The author's record 309 (decision 302, answer
   (a), 27.10.2026 19:48 UTC) chose the first (Q11). So:
-  - **The points.** A pledge stands at the pledge points of its part and window,
-    `pledge_point(nf, W, i)` for `i` = 0 .. `consensus_replicas` − 1, where `nf` is its
-    `part_nullifier` and `W` its `window` ("The points a round stands at"). The window points keep the
-    proposal and its roll and nothing else.
+  - **The points.** A pledge stands at the pledge points of its part, window and band,
+    `pledge_point(nf, W, b, i)` for `i` = 0 .. `consensus_replicas` − 1, where `nf` is its
+    `part_nullifier`, `W` its `window` and `b` its band, below ("The points a round stands at"). The
+    window points keep the proposal and its roll and nothing else.
   - **The domain.** `mt-pledge-point`, of the SHA-256 family, a domain of parts in the registry's
-    sense, three values of fixed width: the part-nullifier (32 B), the window (8 B, little-endian)
-    and the index (1 B), 41 B after the separator, the first 16 B of the digest being the point. It
+    sense, four values of fixed width: the part-nullifier (32 B), the window (8 B, little-endian),
+    the band (4 B, little-endian) and the index (1 B), 45 B after the separator, the first 16 B of
+    the digest being the point. It
     enters the registry of separators with this construction, as "No domain awaits a document"
     asks, and its row of the Registry is the row of the points (CNS-17).
-  - **What a point holds.** The pledges of one part of one window, and nothing of another part:
-    read by the `u16` index, at most 124 objects of 528 cells, 65 472 cells. That is the closing
-    pledge of attempt zero, the open and the closing pledge of each of attempts 1 to 61, and the open
-    pledge of attempt 62, for a machine that signs one pledge in a slot. It no longer moves with the
+  - **What a point holds.** The pledges of one part of one window in one band, and nothing of
+    another part: read by the `u16` index, at most 124 objects of 528 cells, 65 472 cells. In band
+    zero that is the closing pledge of attempt zero, the open and the closing pledge of each of
+    attempts 1 to 61, and the open pledge of attempt 62, for a machine that signs one pledge in a
+    slot. It no longer moves with the
     count of the electorate. A window point holds one proposal and its roll, 528 + 32 cells at 273
     frames and 124 parts.
   - **What it costs.** No cell more is deposited: a pledge is still 528 cells at each of
@@ -3291,15 +3297,29 @@ followed from the first (Q10, Q11), and the author has made both too (record 309
     where the window point took 528 / 624 of one per pledge; so a window decided in attempt zero
     costs one such collection per part and replica. It learns the part from that part's heavy
     attestation, so a pledge whose heavy it has not seen is neither found nor counted (it stands in
-    escrow, as before). A domain is one row of the registry and one of the Registry.
-  - **What it names.** The point is a function of the part and the window, both public in the pledge
-    itself, so it names no machine and joins nothing across windows, as the part does not.
-
-  One thing record 309 does not settle: an agreement that runs past attempt 62 of one window makes
-  pledges of a part that its point cannot hold, and a point refuses a delivery whole. Whether those
-  pledges stand at further points of the same domain, keyed also by a band of attempts, or the
-  attempt is bounded by a number of the Decree, or the bound is left to stand, is a choice between
-  behaviours and awaits the author (Q12). Below attempt 62 nothing awaits.
+    escrow, as before). Each band an agreement reaches past zero adds one such collection per part
+    and replica, so the cost of a window grows with the attempts it took and with nothing else. A
+    domain is one row of the registry and one of the Registry.
+  - **What it names.** The point is a function of the part, the window and the band, all public in
+    the pledge itself, so it names no machine and joins nothing across windows, as the part does not.
+- **Past attempt 62 (Q12).** Record 309 left one thing open: an agreement that runs past attempt 62
+  of one window makes pledges of a part that its point cannot hold, and a point refuses a delivery
+  whole. The author's record 322 (decision 321, answer (a), 28.10.2026 20:17 UTC) chose further
+  points of the same domain, keyed also by a band of attempts, with no new number of the Decree. So:
+  - **The band.** A part's pledges take positions in the order the agreement makes them: the closing
+    pledge of attempt `u` stands at position `2u`, the open pledge of attempt `t` at `2t − 1`, and
+    no position is negative, since an open pledge of attempt zero is refused. A pledge stands in
+    band `b = ⌊position / 124⌋`, 124 being what a point read by the `u16` index holds, so band zero is
+    exactly what one point held before and each band after it holds the next 124 positions. The
+    largest attempt, `0xFFFFFFFE`, stands in band 69 273 666, under the four bytes the band takes.
+  - **What it costs and what it moves.** A window decided by attempt 62 stands in band zero alone and
+    costs what it cost before. No pledge an agreement makes is refused for want of room, and no
+    number enters the Decree; the band is derived from the attempt and from the bound of a point.
+    The domain's input is 45 B for every band, band zero included, so the points of band zero move
+    with the width, and the vectors of "How a message crosses a link" are written at the new width.
+  - **The word.** In this set a lock is what a machine puts up in coins to be raised and what a
+    violation forfeits ("The forfeit of a node lock, and the evidence that moves it"); a pledge is
+    the signed word of a part in an attempt and is no lock.
 
 Two things are also owed with the construction, derived rather than chosen:
 - **The width of the abscissa.** A proposer who grinds two names to one abscissa makes their pair
@@ -4158,7 +4178,7 @@ line, which of the two it is writing.
 | `mt-collect` | the right to take mail from a pipe, sealed to the two correspondents for one window |
 | `mt-round-point` | the points a beacon and its attestations stand at |
 | `mt-window-point` | the points a proposal and its roll stand at |
-| `mt-pledge-point` | the points the pledges of one part of one window stand at, over the part, the window and the index |
+| `mt-pledge-point` | the points the pledges of one part of one window stand at, over the part, the window, the band of attempts and the index |
 | `mt-proposer` | the place of a part of a window in an attempt of its agreement, over the part-nullifier, the cemented aggregate and the attempt |
 | `mt-roll` | the identifier of the roll of a proposal |
 | `mt-notice-point` | the points the notice of a spend stands at |
