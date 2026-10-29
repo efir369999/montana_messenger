@@ -1436,6 +1436,7 @@ The number of bytes follows from the field, the security target and the number o
 | `proof_security_bits` | 128 | the level SHA-256 leaves standing after Grover, and the level [I-1] fixes for the whole stack |
 | `proof_field` | `2⁶⁴ − 2³² + 1` | one machine word, and the modulus is named rather than the width: two implementations over two sixty-four-bit primes compute two different proofs. Its multiplication reduces by shifts and additions with no division, and `p − 1 = 2³² · (2³² − 1)` carries a subgroup of order `2³²`, nine doublings above the extended domain this scheme uses |
 | `proof_challenge_field` | `proof_field[X] / (X³ − 7)` | every challenge and every out-of-domain value is drawn here and never from the base field, and the degree is derived rather than chosen. The soundness of the mixing and of the deep composition is the degree of the trace over the size of the field the challenge came from, so the requirement is `|F|^e ≥ 2^(proof_security_bits) · 2^rows_log2`: the base field gives `2⁻⁴⁴` and a quadratic extension `2⁻¹⁰⁸`, both short of the target, while the cubic gives `2⁻¹⁷²`. Seven is a non-residue of this prime |
+| `proof_line_field` | `proof_field[X] / (X⁴ − 7)` | the field a line of a slot is taken over, and nothing else: a lock-opening value, a slope, an abscissa and the value a pledge or a heavy attestation carries are its elements, and the degree is derived rather than chosen ("The forfeit of a node lock, and the evidence that moves it"). An abscissa must be 256 bits wide and four is the least degree that reaches it, so an element is a digest of the proof hash read as it stands. The prime is one more than a multiple of four and seven is no square of it, so `X⁴ − 7` has no factor and every element but zero inverts |
 | `proof_blowup` | 8 | the rate at which the trace is extended; larger blowup buys fewer queries at more proving |
 | `PROOF_LEN` | 404 576 B | derived below from the contents and the parameters |
 | `proof_queries` | 92 | derived below: at blowup 8 and below the Johnson bound the whole soundness error of the scheme — the mixing and the deep composition, the commit phase of the folding and its queries — is at most 2^−128.35, and 91 queries leave it above 2^−128 at every parameter of the bound |
@@ -3329,7 +3330,7 @@ Two things are also owed with the construction, derived rather than chosen:
   is four elements of `proof_field`, 32 B, the width of a digest of the proof hash; that is the
   width of `line_value`. Four is the least degree over `proof_field` that reaches that width, as three is the least that
   reaches the bound of `proof_challenge_field`. The field itself, with the polynomial that defines it,
-  enters the parameters of the scheme with the construction, beside the domains.
+  stands among the parameters of the scheme as `proof_line_field`; the domains enter with the construction.
 - **The domains** of the lock-opening value, the slope, the abscissa and the commitment. They enter
   the registry with the construction and not before ("No domain awaits a document"), each with its
   row of the Registry and its owner.

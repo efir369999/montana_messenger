@@ -4072,6 +4072,7 @@ fn registers() -> Vec<&'static [mt_codec::Constant]> {
         mt_proof::field::FIELD,
         mt_proof::field::FOLD_OF_THE_PRIME,
         mt_proof::ext::EXTENSION,
+        mt_proof::line::LINE,
         mt_proof::params::PARAMETERS,
         mt_proof::poly::DOMAINS,
         mt_proof::poseidon::SHAPE,
