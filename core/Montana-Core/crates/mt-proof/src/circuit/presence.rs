@@ -218,10 +218,7 @@ impl Places {
             (self.key(), KEY_LIMBS),
             (self.opening(), CAPACITY),
             (self.slope(), CAPACITY + 2),
-            (
-                self.abscissa(),
-                crate::poseidon::limbs_of(&[0u8; 32]).len(),
-            ),
+            (self.abscissa(), crate::poseidon::limbs_of(&[0u8; 32]).len()),
         ] {
             out.extend(sponge::padding_boundaries(first, elements));
         }
@@ -707,7 +704,10 @@ mod tests {
         for at in [64, 4 * usize::from(NAME), 4 * usize::from(LINE_VALUE)] {
             let mut moved = public.clone();
             moved[at] ^= 1;
-            assert!(crate::scheme::verify(&held, &moved, &bytes).is_err(), "byte {at}");
+            assert!(
+                crate::scheme::verify(&held, &moved, &bytes).is_err(),
+                "byte {at}"
+            );
         }
 
         // Re-signing the same part at another height cannot re-use its proof.
@@ -774,7 +774,10 @@ mod tests {
         let (_, nullifier, closing) =
             pledge::trace_of(&a_machine().0, AT, 0, &FIRST, 0).expect("the closing pledge");
         assert_eq!(nullifier, digests[1], "the nullifier of the part");
-        assert_ne!(closing, one, "the closing slot of attempt zero is another line");
+        assert_ne!(
+            closing, one,
+            "the closing slot of attempt zero is another line"
+        );
     }
 
     // The name of one presence published with the value of another: the boundaries of the name.

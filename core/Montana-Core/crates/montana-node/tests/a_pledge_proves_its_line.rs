@@ -34,7 +34,7 @@ const PROOF: &str = "a pledge whose proof does not verify";
 
 fn standing(cohort: &Cohort, secret: &[u8; 32]) -> Standing {
     let branch = cohort.branch_of(secret).expect("its own leaf");
-    Standing::of_the_window(secret, WINDOW, &branch.siblings, branch.position)
+    Standing::of_the_window(secret, WINDOW, &NAME, &branch.siblings, branch.position)
         .expect("a machine of the tree proves its presence")
 }
 

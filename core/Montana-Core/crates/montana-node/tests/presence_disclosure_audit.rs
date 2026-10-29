@@ -56,10 +56,11 @@ fn a_verified_presence_discloses_nothing_of_the_spending_half() {
     let cohort = Cohort::of(&[Cohort::half_of(&secret)]).unwrap();
     let branch = cohort.branch_of(&secret).unwrap();
     let standing =
-        Standing::of_the_window(&secret, window, &branch.siblings, branch.position).unwrap();
+        Standing::of_the_window(&secret, window, &[0x22; 32], &branch.siblings, branch.position).unwrap();
     let confirmation = standing.heavy(&secret, [0x11; 32], [0x22; 32]).unwrap();
     verify_heavy(
         &confirmation,
+        &[0x22; 32],
         &cohort.root(),
         &[0x33; 32],
         0,
@@ -98,7 +99,7 @@ fn a_verified_presence_discloses_nothing_of_the_spending_half() {
     // And a second proof of the same presence opens other rows: nothing a verifier reads is a
     // function of the witness alone.
     let again =
-        Standing::of_the_window(&secret, window, &branch.siblings, branch.position).unwrap();
+        Standing::of_the_window(&secret, window, &[0x22; 32], &branch.siblings, branch.position).unwrap();
     assert_ne!(again.presence, standing.presence);
     assert_ne!(lane_cells_of_the_opened_rows(&again.presence), read);
 }

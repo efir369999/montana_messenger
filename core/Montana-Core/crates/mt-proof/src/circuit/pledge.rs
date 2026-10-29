@@ -448,7 +448,12 @@ pub(super) fn loads(marks: usize, firsts: [usize; 3]) -> Vec<Constraint> {
 // The line: `value = opening + slope·abscissa` in `F[X] / (X⁴ − 7)`, coefficient by coefficient,
 // the products at or above the fourth degree folded back by the residue. Each argument is the first
 // of four held columns.
-pub(super) fn the_line(opening: usize, slope: usize, abscissa: usize, value: usize) -> Vec<Constraint> {
+pub(super) fn the_line(
+    opening: usize,
+    slope: usize,
+    abscissa: usize,
+    value: usize,
+) -> Vec<Constraint> {
     let (one, minus) = (F::ONE, F::ONE.negated());
     let folded = F::from_u64_reduced(line::RESIDUE).negated();
     let mut out = Vec::new();

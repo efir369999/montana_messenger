@@ -299,6 +299,7 @@ pub fn verify_certificate(
             }
             crate::attest::verify_heavy(
                 held,
+                &name,
                 &electorate.root,
                 aggregate_two_before,
                 round.beacon.chain,
@@ -971,6 +972,7 @@ mod proofs {
 
     fn heavy_oracle(
         held: &Confirmation,
+        _: &[u8; 32],
         _: &Digest,
         _: &[u8; 32],
         _: u8,

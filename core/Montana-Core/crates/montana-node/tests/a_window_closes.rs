@@ -57,7 +57,7 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
     let mut cement = Cement::new();
     let mut parts: Vec<[u8; 32]> = Vec::new();
     for (secret, (siblings, position)) in secrets.iter().zip(branches.iter()) {
-        let standing = Standing::of_the_window(secret, WINDOW, siblings, *position)
+        let standing = Standing::of_the_window(secret, WINDOW, &previous_proposal, siblings, *position)
             .expect("a machine of the cohort proves its presence");
         assert!(
             standing.eligible(&aggregate, 0, 7, &everything),
@@ -68,7 +68,7 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
             .expect("a heavy attestation stands");
 
         // Verified exactly as a far side verifies it, and never trusted for having been made here.
-        attest::verify_heavy(&heavy, &root, &aggregate, 0, 7, &everything)
+        attest::verify_heavy(&heavy, &previous_proposal, &root, &aggregate, 0, 7, &everything)
             .expect("the attestation of a machine of the cohort verifies");
 
         assert!(
@@ -165,7 +165,7 @@ fn a_proof_lifted_onto_another_key_is_refused() {
     let everything = mt_pulse::U256::from_be_bytes(&[0xFFu8; 32]);
 
     let (siblings, position) = &branches[0];
-    let standing = Standing::of_the_window(&secrets[0], WINDOW, siblings, *position)
+    let standing = Standing::of_the_window(&secrets[0], WINDOW, &[0x55u8; 32], siblings, *position)
         .expect("a machine of the cohort proves its presence");
     let mut heavy = standing
         .heavy(&secrets[0], [0x44u8; 32], [0x55u8; 32])
@@ -183,7 +183,7 @@ fn a_proof_lifted_onto_another_key_is_refused() {
         .to_vec();
 
     assert_eq!(
-        attest::verify_heavy(&heavy, &root, &aggregate, 0, 7, &everything),
+        attest::verify_heavy(&heavy, &[0x55u8; 32], &root, &aggregate, 0, 7, &everything),
         Err(montana_node::NodeError::Refused {
             what: "an attestation whose proof of presence does not verify",
         }),
@@ -196,7 +196,7 @@ fn an_admitted_machine_cannot_resign_an_old_presence_into_another_window() {
     let secret = [0x11u8; 32];
     let (root, branches) = cohort(&[secret]);
     let (siblings, position) = &branches[0];
-    let standing = Standing::of_the_window(&secret, WINDOW, siblings, *position)
+    let standing = Standing::of_the_window(&secret, WINDOW, &[0x55; 32], siblings, *position)
         .expect("the admitted machine proves its presence");
     let mut forged = standing
         .heavy(&secret, [0x44; 32], [0x55; 32])
@@ -212,7 +212,7 @@ fn an_admitted_machine_cannot_resign_an_old_presence_into_another_window() {
         .to_vec();
     let everything = mt_pulse::U256::from_be_bytes(&[0xFF; 32]);
     assert_eq!(
-        attest::verify_heavy(&forged, &root, &[0x33; 32], 0, 7, &everything),
+        attest::verify_heavy(&forged, &[0x55; 32], &root, &[0x33; 32], 0, 7, &everything),
         Err(montana_node::NodeError::Refused {
             what: "an attestation whose proof of presence does not verify",
         }),

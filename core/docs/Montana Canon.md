@@ -4756,7 +4756,7 @@ air_hash = the hash, under the domain of a description's identifier, of the iden
 identifier of the frame     = 01f51109574f2c463fa5bf4da0d43dd314447e10bd79aa17820f0827e65b2562
 identifier of the ticket    = 0c50e4291fede09b20945f9070e50746429b40153911600a690832aab6e65378
 identifier of the admission = df6b61c212011e407d44462c1cd253556c5feccf44246cb201c6c87eb66b4323
-identifier of the presence  = a948eeaf8b4b07e7d51763944498a6edc463670f649dfdf351e7b478bb053052
+identifier of the presence  = 7118d09319ec036384ec1ed4b47c1491481d7934996795dc4ecac3f0f70e747a
 identifier of the opening   = 34c92be6edfe2e089be14dc59489dd2d1ef3483db4fab5d08abc28eaa0ca18da
 identifier of the ballot    = a329f7e7ae7656e26147604e0f757ff9cea56facbf953eb30fd01a3f59fe9928
 identifier of the pledge    = d6b31441516052c28a4be0d23713244f273237a807b42e8564dd82d33f9ab71e
@@ -5112,7 +5112,7 @@ demands the width from this row rather than declaring one of its own.
 | `standing_censuses` — the census windows the standing of a machine is counted over, newest first | 10 |
 | `census_interval`, in windows — derived: τ₂ / standing_censuses, so the censuses span one period of adaptation | τ₂ / 10 = 2 016 |
 | `standing_committee` — the votes the standing of an electorate draws in a window, in expectation, once it is wide enough to be sampled | 6 499 |
-| `air_hash` — the constraint sets the proofs of this network are accepted under | 6246c065cfc2fcf129dd2dde33c4f6de742daba3411e192b8f3eca2e886cdc14 |
+| `air_hash` — the constraint sets the proofs of this network are accepted under | 0fc05c930fca6dbfde9af0bd036dd90afd0f4337ed831d52f92990a2f3c20f06 |
 
 **The volume the schedule is checked against.** Per machine, per window, across its chains:
 eligibility strikes 1.1094 times in expectation; 0.6710 of machines publish one heavy
@@ -5163,11 +5163,11 @@ genesis_state_hash = SHA-256("mt-genesis-state" || 0x00 || parameters
                              || note_root || nullifier_root || record_root || machine_root || admitted_root
                              || credited_root || operations_root)
 
-                   = 1af6e69c448395b5c3870eda1a573544078fc646fa86fdffa4e0f1c5749cf789
+                   = c4088d6b996dca3185a5089510bf3b3f047e5b339f538d713e28d0e954d94906
 
 published_parameters = SHA-256("mt-genesis-state" || 0x00 || the parameters that are published,
                                in the order and the encoding above)
-                     = 70d220f24bf7f8748a013dc56548f9b00493ce4dbe67b6255c3c0d4b62fe0cf8
+                     = a24f1ca2a688919cf660d3384324ce0fd12f37d14de12dfe4bb13d527411de1f
 ```
 
 A chain whose value differs is not a fork of Montana but a different protocol, and honest

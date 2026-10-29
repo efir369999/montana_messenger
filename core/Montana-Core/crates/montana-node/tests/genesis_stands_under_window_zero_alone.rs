@@ -62,7 +62,7 @@ fn opened_at(window: u64) -> Opened {
     let secret = [0x11u8; 32];
     let cohort = Cohort::of(&[Cohort::half_of(&secret)]).expect("a cohort of one");
     let branch = cohort.branch_of(&secret).expect("its own leaf");
-    let standing = Standing::of_the_window(&secret, window, &branch.siblings, branch.position)
+    let standing = Standing::of_the_window(&secret, window, &mt_state::tables::genesis_state_hash().expect("the hash of the network"), &branch.siblings, branch.position)
         .expect("the machine proves its presence");
     let electorate = Electorate::opening(cohort.root(), cohort.count(), window)
         .expect("an opening electorate stands");

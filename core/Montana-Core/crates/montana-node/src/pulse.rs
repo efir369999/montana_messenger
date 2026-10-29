@@ -259,8 +259,15 @@ impl Pulse {
         // Receive public evidence while constructing the expensive presence
         // proof. This changes no closed head and grants no signing authority.
         machine.enter_round(window, chain, 0)?;
-        let standing =
-            Standing::of_the_window(machine_secret, window, &branch.siblings, branch.position)?;
+        // The presence binds the name this machine took of the proposal of the window before: its
+        // heavy attestation attests that name and its line (record 309).
+        let standing = Standing::of_the_window(
+            machine_secret,
+            window,
+            &previous_proposal,
+            &branch.siblings,
+            branch.position,
+        )?;
         // The ballot, where the electorate weighs and this machine's standing drew a vote: drawn
         // once a window, as the presence is, and out of what the machine kept of the census windows
         // it lived.
@@ -466,6 +473,7 @@ impl Pulse {
         }
         if let Err(why) = attest::verify_heavy(
             held,
+            &name,
             admitted_root,
             aggregate,
             self.chain,
@@ -2294,16 +2302,20 @@ fn late_parts_of_a_past_window(
             if held.window != window {
                 continue;
             }
-            if attest::verify_heavy(
-                &held,
-                &facts.electorate.root,
-                &facts.aggregate,
-                OPENING_CHAIN,
-                round,
-                &facts.threshold,
-            )
-            .is_ok()
-            {
+            // The beacon of a past point is not held here, so the name is read as either identifier
+            // the attestation attests.
+            if held.attested.iter().any(|name| {
+                attest::verify_heavy(
+                    &held,
+                    name,
+                    &facts.electorate.root,
+                    &facts.aggregate,
+                    OPENING_CHAIN,
+                    round,
+                    &facts.threshold,
+                )
+                .is_ok()
+            }) {
                 out.push(held.part_nullifier);
             }
         }
