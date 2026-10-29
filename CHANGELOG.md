@@ -2,6 +2,54 @@
 
 Every build of Montana for iPhone, iPad and Mac, newest first. The version is the one Settings shows: 1.0 (build). Each entry is written here by the build road before the build is made, from the release notes the build carries; a build whose entry is not on this page is not built. Each build's full notes are in [`doc/release-notes/messenger/ios`](doc/release-notes/messenger/ios).
 
+## 1.0 (2322) - 2026-10-30
+
+Source commit `186237067ba2`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2322.md).
+
+- A comment on a wall costs no coin and brings none: nothing leaves your wallet when you comment, the wall's owner burns nothing and pays no share to the post's writer. Coins are born only by the network's core, one coin a second.
+- The wallet's «Chats and calls» chains are history: the coins chats, calls and comments minted and burned before stay readable there, and nothing moves them now.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged. A comment's word no longer carries a coin and its name; the coin book no longer has a burn door, and the lines written before are read as history. No new address, key or network road is added.
+
+## 1.0 (2321) - 2026-10-30
+
+Source commit `bf11ab0b1f58`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2321.md).
+
+- The app no longer counts coins of its own: letters in chats, taps on the wallet's coin, the VPN wall's seconds, the wallet's pull and the time away mint nothing on the device. Coins are born only by the network's core, one coin a second.
+- The +1 that rose under a chat's field and at the finger on the wallet's coin is gone, since nothing is credited there.
+- From 30.10.2026 12:00 UTC the app no longer asks the network to mint the seconds you are here, and the wallet no longer shows seconds on their way to such a minting: from that moment the network takes no such record.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged. The device's coin book no longer writes earned lines; the lines written before are read as history. The VPN wall and the wallet's pull still tell the chain that the person is here, as before. From 30.10.2026 12:00 UTC the app lays no minting record on the coin chain. No new address, key or network road is added.
+
+## 1.0 (2319) - 2026-10-29
+
+Source commit `5068b59c0575`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2319.md).
+
+- Calls no longer credit or take coins: a call's seconds mint nothing and burn nothing, and no coin receipt stands under a call. Coins are born only by the network's core, one coin a second.
+- Chess no longer credits or takes coins: no coins for moves, no stakes, no pot and no winnings. Coins are born only by the network's core, one coin a second.
+- The captured pieces beside each player are all drawn at the same size, in the board's own artwork.
+- A first message that arrives as a long letter is shown with its words, and a service message is never shown as a chat bubble.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged. Chess letters no longer carry any coin field; a letter of an earlier build is read without its coin fields. A call writes no coin and lays no burn on the coin chain; the call's row keeps only its name and seconds. No new address, key or network road is added.
+
+## 1.0 (2317) - 2026-10-29
+
+Source commit `3febd62ee04f`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2317.md).
+
+- Chess no longer credits or takes coins: no coins for moves, no stakes, no pot and no winnings. Coins are born only by the network's core, one coin a second.
+- The captured pieces beside each player are all drawn at the same size, in the board's own artwork.
+- A first message that arrives as a long letter is shown with its words, and a service message is never shown as a chat bubble.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged. Chess letters no longer carry any coin field; a letter of an earlier build is read without its coin fields. No new address, key or network road is added.
+
 ## 1.0 (2316) - 2026-10-29
 
 Source commit `f6484629d89a`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2316.md).

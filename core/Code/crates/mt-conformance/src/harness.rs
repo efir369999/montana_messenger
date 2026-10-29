@@ -5,7 +5,7 @@
 // as an Absent row; a value mismatch as Partial. Verdict green iff all Full.
 
 use mt_codec::CanonicalEncode;
-use mt_genesis::{compute_genesis_state_hash, genesis_params, ProtocolParams, PARAMS_ENCODED_SIZE};
+use mt_genesis::{genesis_params, ProtocolParams, PARAMS_ENCODED_SIZE};
 use mt_net::{FastSyncResponseChunk, TableId};
 use mt_state::NodeRecord;
 
@@ -324,9 +324,10 @@ fn genesis_hash_oracle(name: &str) -> Option<[u8; 32]> {
     }
 }
 
+// The expression a window record of the node names its network by (issue #19 K6), so the pin
+// below holds for the node's network too.
 fn code_genesis_state_hash(p: &ProtocolParams) -> [u8; 32] {
-    let root = mt_account::genesis_state_root(&mt_account::build_genesis_state(p));
-    compute_genesis_state_hash(&root, p)
+    mt_account::genesis_state_hash(p)
 }
 
 // Canonical reference identity of the conformance suite: all-zero entropy. Every

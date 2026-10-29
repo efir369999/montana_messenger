@@ -689,6 +689,17 @@ pub fn genesis_state_root(state: &GenesisState) -> Hash32 {
     )
 }
 
+// The Genesis State Hash of the Decree `params`: the empty window-0 tables and the parameters.
+// The one expression of it in this tree: the conformance contract pins it (mt-conformance
+// harness.rs) and a window record names its network by it (issue #19 K6, the Author's decision
+// 331a). mt-genesis cannot hold it, since the tables are built here.
+pub fn genesis_state_hash(params: &ProtocolParams) -> Hash32 {
+    mt_genesis::compute_genesis_state_hash(
+        &genesis_state_root(&build_genesis_state(params)),
+        params,
+    )
+}
+
 // spec, "State transition → apply_proposal" — orchestration steps 2/3.5/3.6/4.
 //
 // Settle (cemented user ops applied via `settle_window`) runs OUTSIDE

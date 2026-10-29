@@ -6,13 +6,18 @@
 // file, the file is flushed, renamed over the record and the directory is flushed; after a
 // failure at any of these steps the record on disk is wholly the old one or wholly the new one.
 //
-// Layout (version 1, little-endian):
-//   magic b"mtwr" 4 | version 1 | reserved 3 | window u64 | t_r 32 | current_d u64
-//   | last_window u64 | state_root of the three tables 32            (the head, 96 bytes)
+// Layout (version 2, little-endian):
+//   magic b"mtwr" 4 | version 2 | reserved 3 | window u64 | t_r 32 | current_d u64
+//   | last_window u64 | state_root of the three tables 32
+//   | genesis_state_hash of the network 32                            (the head, 128 bytes)
 //   | n u64 | n × AccountRecord   | n u64 | n × NodeRecord | n u64 | n × CandidateRecord
 //   | envelope length u64 | envelope
 //   | SHA-256 of every byte before it, 32
 // A record whose checksum, magic, version, lengths or state_root do not hold is refused whole.
+//
+// Issue #19 K6 (the Author's decision 331a): the record names its network by the Genesis State
+// Hash. Version 1 (main 8a6e7bc) is the same without that field, a head of 96 bytes; `decode`
+// refuses it, and `decode_version_1` reads it for the one decision the node makes on it.
 
 use super::{decode_account_record, decode_candidate_record, decode_node_record, FsStore};
 use super::{fault, StoreError};
@@ -28,11 +33,14 @@ use std::io::{Read, Write};
 pub const WINDOW_RECORD_FILE: &str = "window.bin";
 const WINDOW_RECORD_TMP: &str = "window.bin.tmp";
 const MAGIC: &[u8; 4] = b"mtwr";
-const VERSION: u8 = 1;
-const HEAD_SIZE: usize = 96;
+const VERSION: u8 = 2;
+const HEAD_SIZE: usize = 128;
+const VERSION_1: u8 = 1;
+const HEAD_SIZE_1: usize = 96;
 const SUM_SIZE: usize = 32;
 
-/// The head of a record: the window, the clock and the root of the tables it carries.
+/// The head of a record: the window, the clock, the root of the tables it carries and the
+/// network it names.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WindowHead {
     pub window: u64,
@@ -40,10 +48,14 @@ pub struct WindowHead {
     pub current_d: u64,
     pub last_window: u64,
     pub state_root: [u8; 32],
+    pub genesis_state_hash: [u8; 32],
 }
 
 #[derive(Clone, Default)]
 pub struct WindowRecord {
+    /// The network: the Genesis State Hash of the Decree the record was written under. A record
+    /// of version 1 names none; `decode_version_1` leaves it zero.
+    pub genesis_state_hash: [u8; 32],
     /// The last window this node applied.
     pub window: u64,
     /// The clock: the value of `last_window`, the iterations per window, the window it reached.
@@ -73,6 +85,7 @@ impl WindowRecord {
             current_d: self.current_d,
             last_window: self.last_window,
             state_root: self.state_root(),
+            genesis_state_hash: self.genesis_state_hash,
         }
     }
 
@@ -94,6 +107,7 @@ impl WindowRecord {
         buf.extend_from_slice(&self.current_d.to_le_bytes());
         buf.extend_from_slice(&self.last_window.to_le_bytes());
         buf.extend_from_slice(&self.state_root());
+        buf.extend_from_slice(&self.genesis_state_hash);
         buf.extend_from_slice(&(self.accounts.len() as u64).to_le_bytes());
         for rec in self.accounts.iter() {
             rec.encode(&mut buf);
@@ -113,7 +127,18 @@ impl WindowRecord {
         buf
     }
 
+    /// A record of this layout. A record of version 1 is refused: it names no network.
     pub fn decode(bytes: &[u8]) -> Result<Self, StoreError> {
+        Self::decode_as(bytes, VERSION)
+    }
+
+    /// A record of version 1 (main 8a6e7bc), checked whole as `decode` checks one of this
+    /// layout. It names no network: its `genesis_state_hash` is zero until the caller names it.
+    pub fn decode_version_1(bytes: &[u8]) -> Result<Self, StoreError> {
+        Self::decode_as(bytes, VERSION_1)
+    }
+
+    fn decode_as(bytes: &[u8], version: u8) -> Result<Self, StoreError> {
         let refused = |why: &str| StoreError::ParseFailed(format!("window record: {why}"));
         if bytes.len() < SUM_SIZE {
             return Err(StoreError::CorruptedLength(format!(
@@ -127,10 +152,14 @@ impl WindowRecord {
                 "the checksum does not match the body (torn or foreign)",
             ));
         }
-        let head = decode_head(body)?;
+        let head = decode_head(body, version)?;
         let mut r = Reader {
             bytes: body,
-            at: HEAD_SIZE,
+            at: if version == VERSION_1 {
+                HEAD_SIZE_1
+            } else {
+                HEAD_SIZE
+            },
         };
         let mut accounts = AccountTable::new();
         let n = r.u64()?;
@@ -165,6 +194,7 @@ impl WindowRecord {
             return Err(refused("bytes after the envelope"));
         }
         let record = WindowRecord {
+            genesis_state_hash: head.genesis_state_hash,
             window: head.window,
             t_r: head.t_r,
             current_d: head.current_d,
@@ -183,14 +213,20 @@ impl WindowRecord {
     }
 }
 
-fn decode_head(bytes: &[u8]) -> Result<WindowHead, StoreError> {
+// The head of a record of layout `wanted`.
+fn decode_head(bytes: &[u8], wanted: u8) -> Result<WindowHead, StoreError> {
     let mut r = Reader { bytes, at: 0 };
     if r.take(4)? != MAGIC.as_slice() {
         return Err(StoreError::ParseFailed("window record: wrong magic".into()));
     }
     let version_and_reserved = r.take(4)?;
     let version = version_and_reserved[0];
-    if version != VERSION {
+    if version == VERSION_1 && wanted == VERSION {
+        return Err(StoreError::ParseFailed(
+            "window record: version 1 names no network (issue #19 K6)".into(),
+        ));
+    }
+    if version != wanted {
         return Err(StoreError::ParseFailed(format!(
             "window record: unsupported version {version}"
         )));
@@ -205,12 +241,18 @@ fn decode_head(bytes: &[u8]) -> Result<WindowHead, StoreError> {
     let current_d = r.u64()?;
     let last_window = r.u64()?;
     let state_root = r.hash()?;
+    let genesis_state_hash = if version == VERSION_1 {
+        [0u8; 32]
+    } else {
+        r.hash()?
+    };
     Ok(WindowHead {
         window,
         t_r,
         current_d,
         last_window,
         state_root,
+        genesis_state_hash,
     })
 }
 
@@ -296,6 +338,21 @@ impl FsStore {
         Ok(Some(WindowRecord::decode(&fs::read(&path)?)?))
     }
 
+    /// The record, if this store holds one of version 1 (main 8a6e7bc), which names no network.
+    /// A record of another version is none of this; a record of version 1 that does not decode
+    /// is an error.
+    pub fn load_window_record_version_1(&self) -> Result<Option<WindowRecord>, StoreError> {
+        let path = self.path(WINDOW_RECORD_FILE);
+        if !path.exists() {
+            return Ok(None);
+        }
+        let bytes = fs::read(&path)?;
+        if bytes.get(..4) != Some(MAGIC.as_slice()) || bytes.get(4) != Some(&VERSION_1) {
+            return Ok(None);
+        }
+        Ok(Some(WindowRecord::decode_version_1(&bytes)?))
+    }
+
     /// The head of the record, read without its body or checksum: only to tell whether a
     /// running node's memory has moved from its last record, never as the truth of a start.
     pub fn load_window_head(&self) -> Result<Option<WindowHead>, StoreError> {
@@ -305,7 +362,7 @@ impl FsStore {
         }
         let mut head = [0u8; HEAD_SIZE];
         fs::File::open(&path)?.read_exact(&mut head)?;
-        Ok(Some(decode_head(&head)?))
+        Ok(Some(decode_head(&head, VERSION)?))
     }
 }
 
@@ -329,6 +386,7 @@ mod tests {
 
     fn record(window: u64, balance: u128) -> WindowRecord {
         let mut r = WindowRecord {
+            genesis_state_hash: [0x6E; 32],
             window,
             t_r: [window as u8; 32],
             current_d: 1000 + window,
@@ -425,5 +483,76 @@ mod tests {
             b[at] ^= 0x01;
             assert!(WindowRecord::decode(&b).is_err(), "byte {at} flipped");
         }
+    }
+
+    /// The bytes of `r` in the layout of version 1 (main 8a6e7bc): the head without the
+    /// network, summed again.
+    fn version_1(r: &WindowRecord) -> Vec<u8> {
+        let v2 = r.encode();
+        let mut body = v2[..HEAD_SIZE_1].to_vec();
+        body.extend_from_slice(&v2[HEAD_SIZE..v2.len() - SUM_SIZE]);
+        body[4] = VERSION_1;
+        let sum = Sha256::digest(&body);
+        body.extend_from_slice(&sum);
+        body
+    }
+
+    // Issue #19 K6 (e): rejects a record that does not carry its network, or carries it outside
+    // the checksum. The head holds the genesis_state_hash at bytes 96..128, a decode and a read
+    // of the head give it back, and any one of its bytes flipped is refused.
+    #[test]
+    fn a_record_names_its_network_in_its_head_under_the_checksum() {
+        let r = record(5, 20);
+        let bytes = r.encode();
+        assert_eq!(&bytes[96..128], &r.genesis_state_hash[..]);
+        let read = WindowRecord::decode(&bytes).unwrap();
+        assert_eq!(read.genesis_state_hash, r.genesis_state_hash);
+        let p = dir("head");
+        let store = FsStore::open(&p).unwrap();
+        store.commit_window(&r).unwrap();
+        assert_eq!(store.load_window_head().unwrap(), Some(r.head()));
+        for at in 96..128 {
+            let mut b = bytes.clone();
+            b[at] ^= 0x01;
+            assert!(
+                WindowRecord::decode(&b).is_err(),
+                "network byte {at} flipped"
+            );
+        }
+        let _ = fs::remove_dir_all(&p);
+    }
+
+    // Issue #19 K6: rejects a store that takes a record of version 1 as a record of a network.
+    // `decode` refuses it and says why; `decode_version_1` reads its tables whole and names no
+    // network; a record of version 2 is not one of version 1.
+    #[test]
+    fn a_record_of_version_1_names_no_network() {
+        let r = record(0, 20);
+        let v1 = version_1(&r);
+        let err = WindowRecord::decode(&v1).err().expect("version 1 decoded");
+        assert!(
+            format!("{err:?}").contains("version 1 names no network"),
+            "{err:?}"
+        );
+        let read = WindowRecord::decode_version_1(&v1).unwrap();
+        assert_eq!(read.genesis_state_hash, [0u8; 32]);
+        assert_eq!(
+            (read.window, read.state_root(), &read.envelope),
+            (r.window, r.state_root(), &r.envelope)
+        );
+        assert!(WindowRecord::decode_version_1(&r.encode()).is_err());
+        let mut torn = v1.clone();
+        torn[100] ^= 0x01;
+        assert!(WindowRecord::decode_version_1(&torn).is_err());
+
+        let p = dir("v1");
+        let store = FsStore::open(&p).unwrap();
+        fs::write(p.join(WINDOW_RECORD_FILE), &v1).unwrap();
+        assert!(store.load_window_record().is_err());
+        let held = store.load_window_record_version_1().unwrap().unwrap();
+        assert_eq!(held.state_root(), r.state_root());
+        store.commit_window(&r).unwrap();
+        assert!(store.load_window_record_version_1().unwrap().is_none());
+        let _ = fs::remove_dir_all(&p);
     }
 }

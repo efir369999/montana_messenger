@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/mt-names", "crates/mt-account", "crates/mt-codec", "crates/mt-conformance", "crates/mt-consensus", "crates/mt-crypto", "crates/mt-crypto-native", "crates/mt-entry", "crates/mt-examples", "crates/mt-genesis", "crates/montana-node", "crates/mt-lottery", "crates/mt-merkle", "crates/mt-mnemonic", "crates/mt-net", "crates/mt-net-transport", "crates/mt-noise-pq", "crates/mt-timechain", "crates/mt-state",
+members = ["crates/mt-names", "crates/mt-account", "crates/mt-codec", "crates/mt-coin", "crates/mt-conformance", "crates/mt-consensus", "crates/mt-crypto", "crates/mt-crypto-native", "crates/mt-entry", "crates/mt-examples", "crates/mt-genesis", "crates/montana-node", "crates/mt-lottery", "crates/mt-merkle", "crates/mt-mnemonic", "crates/mt-net", "crates/mt-net-transport", "crates/mt-noise-pq", "crates/mt-timechain", "crates/mt-state",
     "crates/mt-sync", "crates/mt-store", "crates/mt-bindings", "crates/mt-messenger-e2e", "crates/mt-overlay", "crates/mt-postman", "crates/mt-rendezvous", "crates/mt-bootstrap", "crates/mt-wake"]
 
 [workspace.package]

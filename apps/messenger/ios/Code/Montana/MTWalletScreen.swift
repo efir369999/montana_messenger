@@ -26,8 +26,6 @@ struct MTWalletPage: View {
     @State private var topOpen = true   // the Top 13 folds away and opens again (the author's word 12.10.2026 10:1x UTC)
     /// THE COIN TURNS ONCE (the author's word 03.10.2026 13:55 UTC: «the coin makes one turn at the opening and at a tap»).
     @State private var coinTurn = 0
-    /// The touches of the coin that minted, each its rising +1 until it fades (MTRisingPlus).
-    @State private var pops: [MTTapPop] = []
     /// THE PULL OF THE PAGE (MTWalletPull): where the coin stands at rest in the list, how far it is drawn, whether it passed the
     /// coin's trigger, and the round the coin completes after the letting go.
     @State private var pullRest: CGFloat?
@@ -35,16 +33,17 @@ struct MTWalletPage: View {
     @State private var pullArmed = false
     @State private var pullReleased: (at: Date, angle: Double)?
     /// THE PERSON'S COINS ARE THE CHAIN'S (fold-7; the author's words 23.10.2026 00:27 UTC: «the phone only mirrors the chain»): once the
-    /// chain has spoken in this run, the available it holds (MTCoinSplit.available); before it, every coin the book holds, and before
-    /// the seed's book lands, the balance a device of the same words told in its tip (04.10 16:34).
+    /// chain has spoken, the available it holds (MTCoinSplit.available) -- in this run, or its last word kept from a run before
+    /// (MTCoinSplit.lastWord, the author's word 29.10.2026 09:28 UTC, link 11329); before it ever spoke, every coin the book holds, and
+    /// before the seed's book lands, the balance a device of the same words told in its tip (04.10 16:34).
     /// THE SECONDS BEFORE THE WINDOW IS FINALIZED RISE ON THE PAGE (the author's words 26.10.2026 09:2x UTC, links 8615 and 8617): the
     /// Time Balance is the available and the person's seconds on their way to the chain (MTCoinSplit.growing), so it moves every second
     /// while the person is here; the line Available beneath stays what the chain holds, and Send is weighed by that alone.
     private var total: Int {
-        if coinSplit.split != nil { return coinSplit.growing }
+        if coinSplit.spoke { return coinSplit.growing }
         return vault.heard ? book.balance : max(book.balance, tipNet.seen ?? 0)
     }
-    private var spendable: Int { coinSplit.split != nil ? coinSplit.available : total }
+    private var spendable: Int { coinSplit.spoke ? coinSplit.available : total }
     /// One of the three sums of the balance: the main one large and white, the others small; the whole row takes the finger and
     /// makes its sum the main one.
     private func balanceSum(_ unit: MTCoinUnit) -> some View {
@@ -106,19 +105,8 @@ struct MTWalletPage: View {
                             // little wider than its border»): the pad reaches past the coin's frame by its rim; the rising capsule stands
                             // where the finger touched, in the coin's own frame.
                             MTCoinTapPad(locked: pantheon.lit, onDown: { pantheon.touched() }, onUp: { pantheon.released() },
-                                         onLongHold: { autoMint.fire() }) { point in
-                                let coins = pantheon.tap()
-                                let r = MTCoinTapPad.rim
-                                if 0 < coins {
-                                    pops.append(MTTapPop(point: CGPoint(x: point.x - r, y: point.y - r), coins: coins))
-                                    // Five rise at once at most (the heat, 04.10): the oldest gives way to the newest finger.
-                                    if 5 < pops.count { pops.removeFirst(pops.count - 5) }
-                                }
-                            }
+                                         onLongHold: { autoMint.fire() }) { _ in pantheon.tap() }
                             .padding(-MTCoinTapPad.rim)
-                            ForEach(pops) { pop in
-                                MTRisingPlus(point: pop.point, coins: pop.coins) { pops.removeAll { $0.id == pop.id } }
-                            }
                         }
                         .frame(width: 120, height: 120)
                         .background(GeometryReader { g in Color.clear.preference(key: MTWalletPullKey.self, value: g.frame(in: .named("walletList")).minY) })
@@ -141,8 +129,8 @@ struct MTWalletPage: View {
                         .accessibilityAddTraits(.isButton)
                         .accessibilityAction { pantheon.tap() }
                         // NO COUNT OF THE TAPS UNDER THE COIN (the author's word 19.10.2026 14:4x UTC: «at taps and swipes on the coin do
-                        // not show 13/13 below; leave the taps, at most +1 a second»): a tap mints the second's one coin at most
-                        // (MTPantheon.tap, MTLocalCoinLedger.priced) and its +1 rises only when it minted.
+                        // not show 13/13 below; leave the taps, at most +1 a second»); since build 2320 a tap mints nothing (decision 375 «a»), so no
+                        // +1 rises at the finger -- the chain's seconds rise at the sides (MTCoinSides).
                         MTLevelProgress(balance: total)
                             .opacity(pantheon.lit || autoMint.on ? 1 : 0)
                             .accessibilityHidden(!(pantheon.lit || autoMint.on))
@@ -282,14 +270,10 @@ struct MTWalletPage: View {
                         Text(verbatim: MTCoinText.count(book.tapped)).monospacedDigit()
                     } label: { Text("Coins from the Pantheon") }
                     LabeledContent {
-                        // USER-DATA: a number, the coins of chess: the moves, the sums won and given up (MTChessCoins)
-                        Text(verbatim: MTCoinText.count(book.played)).monospacedDigit()
-                    } label: { Text("Coins from chess") }
-                    LabeledContent {
                         // USER-DATA: a number, the coins the VPN wall's seconds minted (MTVPNWallMint)
                         Text(verbatim: MTCoinText.count(book.walled)).monospacedDigit()
                     } label: { Text("Coins from the VPN Wall") }
-                    .task { MTVPNWallMint.shared.count() }   // the wallet opened: the wall's seconds since the last count are paid
+                    .task { MTVPNWallMint.count() }   // the wallet opened: the wall's seconds since the last count are paid
                     LabeledContent {
                         // USER-DATA: a number, the coins calls and letters burned (MTCoinBurn)
                         Text(verbatim: MTCoinText.count(book.burned)).monospacedDigit()
@@ -1215,32 +1199,6 @@ struct MTExplorerSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ vc: SFSafariViewController, context: Context) {}
 }
 
-struct MTCallCoinReceipt: View {
-    let coins: Int
-    var body: some View {
-        Button {
-            let url = MTCoinTx.cachedKeyTag.flatMap { URL(string: MTCoinTx.keyLink + $0) } ?? MTCoinTx.explorer
-            MTExplorerSheet.open(url)
-        } label: {
-            HStack(spacing: 5) {
-                MTMintCoin(spinning: false, side: 18)
-                // USER-DATA: only the amount settled for this call and its own time (1 coin = 1 second), never a duration estimate.
-                Text(verbatim: (coins > 0 ? "+" : "") + MTCoinText.count(coins) + " · " + MTCoinText.time(coins, signed: false))
-                    .font(.system(size: 15, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(coins > 0 ? Color.green : (coins < 0 ? Color.red : Color.secondary))
-                    .lineLimit(1).minimumScaleFactor(0.65)
-                Image(systemName: "magnifyingglass").font(.caption).foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 10).padding(.vertical, 5)
-            .background(.thinMaterial, in: Capsule())
-            .frame(minHeight: 44).contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityHint(Text("Open in Explorer"))
-    }
-}
-
 /// THE NEXT BOX FILLS AS A LOAD FILLS (the author's word 04.10.2026 00:48 UTC: «while minting, the system's progress bar of this box to
 /// the next, as the filling of the next box, thin, as iCloud loads; and under it, in the system's way, how much is left to the next
 /// box -- all in the game»): the platform's linear progress from the box the balance fills to the next one, the coins left under it.
@@ -1815,7 +1773,7 @@ struct MTTimeChainsPage: View {
             } header: {
                 Label("Chats and calls", systemImage: "bubble.left.and.bubble.right")
             } footer: {
-                Text("The chains of the coins your chats, calls and comments minted and burned, and the chain of your wall's posts.")
+                Text("The chains of the coins your chats, calls and comments minted and burned before, kept as history: they move no coin now. And the chain of your wall's posts.")
             }
             // THE EXPLORER (the author's word 11.10.2026 17:2x UTC: «on the TimeChain page an Explorer button to open and check a
             // transaction ... everything professional in the TimeChain, for auditors»): the public page that reads a transfer's
@@ -1957,12 +1915,6 @@ struct MTBalanceTitle: ViewModifier {
             }
         }
     }
-}
-
-/// The same balance as one caption, on the plate of an invitation that asks a stake.
-struct MTBalanceCaption: View {
-    @ObservedObject private var split = MTCoinSplit.shared   // the available, the one number of the person's coins (fold-7)
-    var body: some View { MTBalanceTitle.line(split.available).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
 }
 
 extension View {

@@ -179,7 +179,6 @@ struct MTBoardPost: Codable, Identifiable, Hashable {
     var ed: Double? = nil       // the moment its writer last changed the words — never on a page; it moves the wall's version
     var lp: String? = nil       // the link card its writer read; a visitor draws these bytes and opens nothing
     var n: Int? = nil           // its number on its wall, given once at its birth; the short link names it (02.10)
-    var cc: Int? = nil          // the coins its comments brought, on the owner's phone only; every fifth went to its writer (04.10)
     var views: [String]? = nil  // who saw it, on the owner's phone only, each person once -- never on a page, never shown (06.10)
 }
 
@@ -248,14 +247,13 @@ struct MTBoardWord: Codable {
     var vs: [String]? = nil     // «view»: the posts seen, a few at once (06.10)
 }
 
-/// THE COINS OF COMMENTS (the author's words 03.10.2026 23:50 UTC: «20 percent of all coins for comments under a post goes to the
-/// post's author»): a comment costs its writer one coin, carried to the wall's owner; four of every five burn and the fifth goes to
-/// the post's writer. One family of names, so the wallet tells these moves from every other.
+/// THE COINS OF COMMENTS, AS HISTORY (the author's word 29.10.2026 23:10 UTC, council link 12133; decision 383 «a»): a comment
+/// costs no coin and brings none. The builds before 2322 took one from its writer to the wall's owner, burned four of five and paid
+/// the fifth to the post's writer; the names stay only so the wallet reads the lines the books already hold.
 enum MTBoardCoins {
     static let comment = "cmt:"
     static let burn = "cmt-burn:"
     static let pay = "cmt-pay:"
-    static let fifth = 5
     static func owns(_ ref: String) -> Bool { ref.hasPrefix(comment) || ref.hasPrefix(burn) || ref.hasPrefix(pay) }
 }
 
@@ -1006,22 +1004,12 @@ final class MTBoard: ObservableObject {
                 p.comments.append(c)
             }
             if face == nil { lendFaces([conv]) }   // a build that sent no face: the face they published here
-            // THE COMMENT'S COIN (04.10): one coin, taken once by its name, into the post's count -- every fifth to its writer.
-            if w.c == 1, let r = w.r, !r.isEmpty, let id = w.id, mine.contains(where: { q in q.id == id }) {
-                MainActor.assumeIsolated {
-                    if MTCoinBook.ledger.receive(1, from: conv, ref: MTBoardCoins.comment + r, on: "post:" + id) { commentCoin(id, ref: r) }
-                }
-            }
+            // A COMMENT BRINGS NO COIN (decision 383 «a»): an earlier build's «c» and «r» on it are read without them.
             // THE COMMENTER SEES EVERY COMMENT (the author's word 25.09: «comments must come from everyone who commented»):
             // a comment is an act of its writer's, as an ask is, and is answered as an ask is — with the page as it stands.
             if let t = answeredAt[conv], Date().timeIntervalSince(t) < 30 { return }
             answeredAt[conv] = Date()
             sendPage(to: conv, version: Self.spokenVersion(for: conv))
-        // MY FIFTH OF A POST'S COMMENTS (04.10): the wall's owner pays the writer of a post this phone keeps on that wall.
-        case "cpay":
-            if let id = w.id, w.c == 1, let r = w.r, !r.isEmpty, kept[id]?.wall == conv {
-                MainActor.assumeIsolated { _ = MTCoinBook.ledger.receive(1, from: conv, ref: MTBoardCoins.pay + r, on: "post:" + id) }
-            }
         case "del":
             // ONLY THE WALL'S OWNER TAKES A POST OFF THEIR WALL (the author's word 24.09: «only the owner deletes a post
             // on their own page»): a writer's «del» — the builds before the rule still send it — takes nothing down; it
@@ -1288,27 +1276,6 @@ final class MTBoard: ObservableObject {
         UserDefaults.standard.set(viewed, forKey: Self.viewedKey)
     }
 
-    /// ONE COIN A COMMENT BROUGHT TO A POST OF MY WALL (the author's words 03.10.2026 23:50 UTC: «20 percent of all coins for comments
-    /// under a post goes to the post's author»): four of every five burn and the fifth goes to the post's writer -- the owner keeps
-    /// their own -- so the writer holds a fifth of the comments' coins in whole coins. The count lives on the post (cc); each fifth is
-    /// a link of the wall's chain.
-    @MainActor private func commentCoin(_ id: String, ref r: String) {
-        guard let i = mine.firstIndex(where: { q in q.id == id }) else { return }
-        let n = (mine[i].cc ?? 0) + 1
-        mine[i].cc = n
-        let writer = mine[i].author
-        if n % MTBoardCoins.fifth == 0 {
-            if writer.isEmpty {
-                MTTimeChain.note("wall", kind: "keep", coins: 1, ref: MTBoardCoins.pay + r)
-            } else if MTCoinBook.ledger.spend(1, on: "post:" + id, peer: writer, ref: MTBoardCoins.pay + r) {
-                send(MTBoardWord(t: "cpay", id: id, c: 1, r: r), to: writer)
-                MTTimeChain.note("wall", kind: "pay", coins: 1, ref: MTBoardCoins.pay + r)
-            }
-        } else {
-            MTCoinBook.ledger.burn(1, ref: MTBoardCoins.burn + r)
-        }
-        saveMine()
-    }
     /// THE WALL AS A TIMECHAIN (the author's word 03.10.2026 23:38 UTC: «posts too as a timechain, a chain of posts»): every post
     /// born on my wall, every change of its words and every post taken down joins the wall's chain once, by its name -- the post's id
     /// and the digest of what it says, never the words.
@@ -1597,22 +1564,17 @@ struct MTWallWindow: Identifiable {
         kept.comments.append(c)
         kept.commentCount += 1
         _ = Self.chainFile(kept)
-        // A COMMENT COSTS ONE COIN (the author's words 03.10.2026 23:50 UTC): it goes to the wall's owner, who keeps each post's count
-        // and pays its writer every fifth (commentCoin). Never more than the balance holds: a comment is never refused for want of coins.
-        let r = UUID().uuidString
+        // A COMMENT COSTS NO COIN (the author's word 29.10.2026 23:10 UTC, decision 383 «a»): nothing leaves the book, nothing is
+        // carried to the wall's owner.
         guard let wall else {
             mutate(p.id, own: true) { q in var mc = c; mc.ref = ""; q.comments.append(mc) }
-            MainActor.assumeIsolated { commentCoin(p.id, ref: r) }
             return
         }
         if owned[wall] != nil {   // a channel of mine: my comment stands on my channel's post
             mutateOwned(wall, p.id) { q in var mc = c; mc.ref = ""; q.comments.append(mc) }
             return
         }
-        // A channel's comment costs no coin: its owner keeps no book of a channel's comments yet, and a coin to nobody is a coin lost.
-        let paid = MTGroup.isKey(wall) ? false : MainActor.assumeIsolated { MTCoinBook.ledger.spend(1, on: "post:" + p.id, peer: wall, ref: MTBoardCoins.comment + r) }
-        send(MTBoardWord(t: "cmt", id: p.id, at: c.at, tx: c.text, bn: c.by, bg: c.glyph, cid: c.id, fc: c.fc, hh: c.h, pv: c.pv,
-                         c: paid ? 1 : nil, r: paid ? r : nil), to: wall)
+        send(MTBoardWord(t: "cmt", id: p.id, at: c.at, tx: c.text, bn: c.by, bg: c.glyph, cid: c.id, fc: c.fc, hh: c.h, pv: c.pv), to: wall)
         askAfterAct(wall)
         var said = c; said.m = true   // my own, as the owner's next page says it
         patchPost(wall, p.id) { s in s.comments.append(said); s.commentCount += 1 }

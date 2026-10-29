@@ -250,6 +250,127 @@ pub unsafe extern "C" fn mt_verify(
     })
 }
 
+pub const MT_COIN_STATE_LEN: usize = mt_coin::STATE_LEN;
+pub const MT_COIN_SENT_LEN: usize = mt_coin::SENT_LEN;
+
+// The caller hands MT_COIN_STATE_LEN readable bytes (mt_bindings.h); null is refused before.
+unsafe fn coin_state(state: *const u8) -> Option<mt_coin::KeyState> {
+    let mut b = [0u8; MT_COIN_STATE_LEN];
+    b.copy_from_slice(slice::from_raw_parts(state, MT_COIN_STATE_LEN));
+    mt_coin::KeyState::decode(&b)
+}
+
+/// One record folded onto its key's state by the core (COIN-TX-V3 sections 3 and 4) -- the one fold
+/// every chain node takes a coin record by. `sent` is the SEND the record's reference names as the
+/// node's ledger holds it (MT_COIN_SENT_LEN bytes), or null when it holds none; `settled` is 1 when
+/// a RECV or a REFUND has settled that SEND. Returns MT_OK with the new state in `out_state` and,
+/// for a v2 record that spent, its declared part in `out_v2_dec` with `out_v2_set` 1 (else 0); a
+/// refusal's code 1..=18 (its word: `mt_coin_refusal`); MT_ERR_DECODE for an unreadable record or
+/// state.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn mt_coin_step(
+    state: *const u8,
+    rec: *const u8,
+    rec_len: usize,
+    at: u64,
+    sent: *const u8,
+    settled: c_int,
+    out_state: *mut u8,
+    out_v2_dec: *mut u64,
+    out_v2_set: *mut u8,
+) -> c_int {
+    guard(|| {
+        if state.is_null()
+            || rec.is_null()
+            || out_state.is_null()
+            || out_v2_dec.is_null()
+            || out_v2_set.is_null()
+        {
+            return MT_ERR_NULL_PTR;
+        }
+        let Some(s) = coin_state(state) else {
+            return MT_ERR_DECODE;
+        };
+        let Ok(r) = mt_coin::parse(slice::from_raw_parts(rec, rec_len)) else {
+            return MT_ERR_DECODE;
+        };
+        let sent = if sent.is_null() {
+            None
+        } else {
+            let mut b = [0u8; MT_COIN_SENT_LEN];
+            b.copy_from_slice(slice::from_raw_parts(sent, MT_COIN_SENT_LEN));
+            Some(mt_coin::SendFacts::decode(&b))
+        };
+        let book = mt_coin::Named {
+            reference: r.reference,
+            sent,
+            settled: settled == 1,
+        };
+        match mt_coin::step(&s, &r, at, &book) {
+            Ok(f) => {
+                slice::from_raw_parts_mut(out_state, MT_COIN_STATE_LEN)
+                    .copy_from_slice(&f.state.encode());
+                *out_v2_dec = f.v2_dec.unwrap_or(0);
+                *out_v2_set = u8::from(f.v2_dec.is_some());
+                MT_OK
+            },
+            Err(e) => c_int::from(e.code()),
+        }
+    })
+}
+
+/// The state a key's balance is shown at: its chain's own fold at the node's second `now`, never
+/// below the head's own second (COIN-TX-V3 section 4).
+#[no_mangle]
+pub unsafe extern "C" fn mt_coin_at_now(state: *const u8, now: u64, out_state: *mut u8) -> c_int {
+    guard(|| {
+        if state.is_null() || out_state.is_null() {
+            return MT_ERR_NULL_PTR;
+        }
+        let Some(s) = coin_state(state) else {
+            return MT_ERR_DECODE;
+        };
+        slice::from_raw_parts_mut(out_state, MT_COIN_STATE_LEN)
+            .copy_from_slice(&mt_coin::at_now(&s, now).encode());
+        MT_OK
+    })
+}
+
+// The caller hands `capacity` writable bytes (mt_bindings.h).
+unsafe fn put_word(word: &str, out: *mut u8, capacity: usize) -> c_int {
+    if out.is_null() {
+        return MT_ERR_NULL_PTR;
+    }
+    if capacity < word.len() {
+        return MT_ERR_BUFFER_TOO_SMALL;
+    }
+    slice::from_raw_parts_mut(out, word.len()).copy_from_slice(word.as_bytes());
+    word.len() as c_int
+}
+
+/// The word the node's 409 says for a refusal's code, without a terminating zero: its length, or
+/// MT_ERR_DECODE for a code no refusal has.
+#[no_mangle]
+pub unsafe extern "C" fn mt_coin_refusal(code: c_int, out: *mut u8, capacity: usize) -> c_int {
+    guard(|| {
+        match u8::try_from(code)
+            .ok()
+            .and_then(mt_coin::Refusal::from_code)
+        {
+            Some(r) => put_word(r.word(), out, capacity),
+            None => MT_ERR_DECODE,
+        }
+    })
+}
+
+/// The name of the fold's rules (TX_FOLD): a node re-folds every chain when the core it loads names
+/// other rules than the ones its chains were folded by.
+#[no_mangle]
+pub unsafe extern "C" fn mt_coin_fold(out: *mut u8, capacity: usize) -> c_int {
+    guard(|| put_word(mt_coin::TX_FOLD, out, capacity))
+}
+
 /// Creates a fresh identity: health-tested OS entropy → 24-word UTF-8 mnemonic.
 ///
 /// This is the only door through which a Montana identity is born. A client that

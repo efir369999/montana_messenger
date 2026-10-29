@@ -99,17 +99,17 @@ decision 330 (a)):
   running node holds the store, and never reads success for a dead node
   (`crates/montana-node/src/commands/status.rs:144-166`, K4, `5dced56`).
 - **An exhausted cascade.** From window 2 the node prints `STALLED` and
-  appoints nobody (`crates/montana-node/src/commands/start.rs:579-587` and
-  `:975-994`, K6, `e5cc3bc`). The cascade it walks is still clocked, a
+  appoints nobody (`crates/montana-node/src/commands/start.rs:580-588` and
+  `:977-996`, K6, `e5cc3bc`). The cascade it walks is still clocked, a
   property of that generation recorded in `core/Code/AUDIT.md`
   ("Known limitations", item 4).
 - **A quorum shortfall, with its refusals beside it.** The node says
   `included_bundles W < quorum Q; refused N` and
-  `cementing evidence W < quorum Q; refused N` (`start.rs:1654-1668` and
-  `:1678-1686`). `tally` (`start.rs:1031-1056`) adds the weight of the
+  `cementing evidence W < quorum Q; refused N` (`start.rs:1659-1673` and
+  `:1683-1691`). `tally` (`start.rs:1033-1058`) adds the weight of the
   confirmations that pass `validate_bundle` and counts those that fail; a
   refusal adds no weight, is shown beside the shortfall and never stands for
-  it (`shortfall_line`, `start.rs:1058-1060`). The test
+  it (`shortfall_line`, `start.rs:1060-1062`). The test
   `a_refused_confirmation_is_counted_beside_the_shortfall`
   (`commands/start/order_tests.rs:705`) refuses three confirmations, on the
   endpoint, the key and the Node Table, and reads `refused 3`. K5 of issue

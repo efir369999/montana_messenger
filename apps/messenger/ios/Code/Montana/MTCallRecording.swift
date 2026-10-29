@@ -29,15 +29,6 @@ enum MTCallRecordingPolicy {
         guard let theirLevel, let mine else { return false }
         return mine > theirLevel
     }
-    /// THE CALL'S COINS ARE ONE FOR BOTH (the author's word 20.10.2026 19:0x UTC: «the minting of coins for a call must by default be
-    /// the same for both»): whether the call is recorded is read from the two words both phones hold -- each side's switch (rec) and
-    /// level (lv) of the call's caps -- by the one rule each side records by (mayRecord). Recorded by either -- both earn; by neither
-    /// -- both burn. The rule is symmetric in the two sides, so both phones answer the same by construction.
-    static func callRecorded(mySwitch: Bool?, myLevel: Int?, theirSwitch: Bool?, theirLevel: Int?) -> Bool {
-        let iRecord = mySwitch == true && mayRecord(theirSwitch: theirSwitch, theirLevel: theirLevel, mine: myLevel)
-        let theyRecord = theirSwitch == true && mayRecord(theirSwitch: mySwitch, theirLevel: myLevel, mine: theirLevel)
-        return iRecord || theyRecord
-    }
 }
 
 /// THE CALL AS THE PERSON SAW IT (the author's word 16.10.2026 15:27 UTC: «the video call must be recorded as I saw it -- now the
@@ -510,11 +501,9 @@ final class MTCallRecordingVideo: NSObject, RTCVideoRenderer {
         let token = UUID()
         let tape = MTCallTape(id: uuid, manifest: item, timeline: timeline, onAudio: { [weak self] in
             guard let self, self.active[uuid]?.token == token else { return }
-            MTCallMint.mintSecond()
             self.recording.insert(uuid)
         }) { [weak self] in
             guard let self, self.active[uuid]?.token == token else { return }
-            MTCallMint.mintSecond()
             self.recording.remove(uuid)
             MTCallRecordingGate.remove(uuid)
             self.failures.insert(uuid)
@@ -571,7 +560,6 @@ final class MTCallRecordingVideo: NSObject, RTCVideoRenderer {
         track.add(renderer)
     }
     func finish(_ uuid: UUID, deliver: Bool = true) {
-        MTCallMint.mintSecond()
         pending.removeValue(forKey: uuid)
         if pending.isEmpty { askConsent = false }
         MTCallRecordingGate.remove(uuid)

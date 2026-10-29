@@ -22848,102 +22848,6 @@
         }
       }
     },
-    "Pot: %@": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Банк: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "奖池：%@"
-          }
-        }
-      }
-    },
-    "Total stake: %@": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ставка общая: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "总赌注：%@"
-          }
-        }
-      }
-    },
-    "Move pool: %@": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пул ходов: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "走棋奖池：%@"
-          }
-        }
-      }
-    },
-    "Not enough coins for the stake": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не хватает монет на ставку"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "金币不足以支付赌注"
-          }
-        }
-      }
-    },
-    "Stake": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ставка"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "赌注"
-          }
-        }
-      }
-    },
-    "Both players put the stake into the game's pot, and every move adds a coin to it within the same one coin a second. The winner takes the whole pot; a draw gives each their own back.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оба игрока вносят ставку в банк партии, и каждый ход добавляет в него монету в пределах той же одной монеты в секунду. Победитель забирает весь банк; при ничьей каждому возвращается своё."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "双方将赌注放入对局奖池，每一步棋在同一个每秒一枚硬币之内向奖池添加一枚硬币。胜者拿走整个奖池；和棋时各自收回自己的部分。"
-          }
-        }
-      }
-    },
     "The coins are on their way": {
       "localizations": {
         "ru": {
@@ -26258,18 +26162,18 @@
         }
       }
     },
-    "The chains of the coins your chats, calls and comments minted and burned, and the chain of your wall's posts.": {
+    "The chains of the coins your chats, calls and comments minted and burned before, kept as history: they move no coin now. And the chain of your wall's posts.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Цепочки монет, которые ваши чаты, звонки и комментарии начеканили и сожгли, и цепочка постов вашей стены."
+            "value": "Цепочки монет, которые ваши чаты, звонки и комментарии начеканили и сожгли раньше, сохранены как история: теперь они монет не двигают. И цепочка постов вашей стены."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "您的聊天、通话和评论所铸造和燃烧的硬币之链，以及您留言墙帖子的链。"
+            "value": "您的聊天、通话和评论此前所铸造和燃烧的硬币之链，作为历史保留：它们现在不再移动任何硬币。以及您留言墙帖子的链。"
           }
         }
       }

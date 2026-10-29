@@ -386,8 +386,7 @@ struct ScrollDownButton<Label: View>: View {
 }
 
 /// THE RED MINUS AT THE NEWEST END (the author's word 04.10.2026 22:24 UTC: «in the chat the same way, an animation of a red minus
-/// coin»): the coins this chat's bubble or call just paid (MTCoinPaid) rise above the way to the newest in red, as the ribbon's plus
-/// rises under the field (MTMintPop), and fade; with Reduce Motion it stands and fades. It never takes a finger.
+/// coin»): the coins this chat's bubble or call just paid (MTCoinPaid) rise above the way to the newest in red, and fade; with Reduce Motion it stands and fades. It never takes a finger.
 struct MTPayPop: View {
     let chat: String
     @ObservedObject var pin: ChatConversationView.FeedPin
@@ -1205,8 +1204,7 @@ struct ChatConversationView: View {
             return rowCache.messages
         }
         // A step of a chess game is not a row of the feed (29.09): the board reads those letters from the store itself. The letter
-        // that closes a game is (the author's word 06.10.2026 20:2x UTC: «in the chat after the game show the coins' transfer or
-        // top-up»): it wears what the game gave or took (MTChessCoins.net).
+        // that closes a game is (the author's word 06.10.2026 20:2x UTC): it says how the game ended -- and nothing of coins.
         let a = (store.messages[chat.name] ?? []).filter { m in !m.isChessStep || m.chessLetter?.end != nil }
         var sorted = true
         for i in 1..<max(a.count, 1) where ChatStore.before(a[i], a[i - 1]) { sorted = false; break }
@@ -1275,7 +1273,6 @@ struct ChatConversationView: View {
     @State private var chessGame: MTChessPush?   // a game opened from its invitation, on this chat's own stack (29.09)
     @State private var chessPlayed: String?      // the pair's game while it is played (MTChessSend.playedGame): the mark's ring
     @State private var askChess = false          // the platform's question before a new game
-    @State private var chessStake = ""           // the stake typed in that question (the author's word 06.10.2026 20:2x UTC)
     @State private var roomAsk: MTRoomKind?      // a group's call chosen at the top: whom to invite (07.10)
     @State private var roomAskVideo = false
     @State private var groupRefusal: String?     // what the group took from its members, said when this phone tries it (G.5)
@@ -1593,7 +1590,6 @@ struct ChatConversationView: View {
         // THE MONEY FLOW SEEN (the author's words 03.10 16:46 and 16:49): its beginning in the middle of the chat, every minting
         // under the field, on the coin's side.
         .overlay { MTMoneyFlowBegins(tick: flowBegun) }
-        .overlay(alignment: .topTrailing) { if ribbon { MTMintPop().padding(.top, topBarSize.height + pinReserve + 8).padding(.trailing, 16) } }
         .safeAreaInset(edge: .top) { if selectingMsgs { selectionTopBar } }
         .alert("Not enough coins", isPresented: $coinRefused) {
             Button("OK", role: .cancel) {}
@@ -1653,10 +1649,10 @@ struct ChatConversationView: View {
     }
     /// THE ACCEPT, AND ONLY THEN THE BOARD (the author's words 06.10.2026 20:5x UTC: «accept or not -- the buttons in the chat come
     /// before the chess board is shown»; «first the request is confirmed, then the decision»): the invitation's Accept is the one
-    /// door of an acceptance from the chat; a refused one (a stake past the balance) says so and raises no board.
+    /// door of an acceptance from the chat; one the replay refuses raises no board.
     private func acceptGame(_ game: String) {
         guard !chat.isGroup else { return }
-        guard MTChessSend.join(game, in: chat, store: store) != nil else { coinRefused = true; return }
+        guard MTChessSend.join(game, in: chat, store: store) != nil else { return }
         chessGame = MTChessPush(game: game)
     }
 
@@ -2108,8 +2104,9 @@ struct ChatConversationView: View {
     /// THE FEED'S TURN IS OUR MINT COIN (the author's words 02.10 14:03 and 16:55, then 18:29 and 19:24: «make the turn button a
     /// coin; while it is on it spins and coins are minted in the chat -- the fabric of time»): the wall's own coin (MTMintCoin)
     /// on the handset's round. Off: the coin stands on its face and the chat is as it was. On: the coin spins, the feed turns to
-    /// the ribbon of time (the newest letters on top, every stamp with its seal and gematria) and every letter of the pair born
-    /// from now earns its coin (MTChatMint). The ring stands while it is on -- the sign that holds under Reduce Motion too.
+    /// the ribbon of time (the newest letters on top, every stamp with its seal and gematria). The turn mints nothing: only the chain
+    /// mints, 1 coin a second (the author's word 11871, 29.10.2026; MTMoneyFlow). The ring stands while it is on -- the sign that
+    /// holds under Reduce Motion too.
     private func flipMark(_ side: CGFloat) -> some View {
         Button {
             // A HOLD OPENS THE AUTO-REACTIONS, NOT THE TURN (the author's word 06.10.2026 14:3x UTC): the lift that ends it moves nothing.
@@ -2118,7 +2115,6 @@ struct ChatConversationView: View {
             inputFocused = false
             hideKeyboard()
             flows.set(chat.name, !newestFirst)   // this chat's flow alone (04.10)
-            MTChatMint.shared.turned(newestFirst)
             E2E.shared.liveTypingSwitched(on: newestFirst, peer: chat.name)   // live chat lives in this chat's flow alone
             if newestFirst {
                 store.appendMoneyFlow(peer: chat.name); flowBegun += 1   // its row in the chat and its turn on the screen
@@ -2154,8 +2150,6 @@ struct ChatConversationView: View {
     private var coinStands: Bool { !chat.isGroup && MontanaConv.holds(chat.convId ?? chat.name) }
     /// The ribbon of time: the coin of this chat is on.
     private var ribbon: Bool { newestFirst && coinStands }
-    /// A group's or a channel's feed earns while it is open: each letter longer than the floor, by the level (MTChatMint).
-    private var groupMints: Bool { chat.isGroup && MTGroup.isKey(chat.name) }
 
     private var chatCoreM3: some View {
         chatCoreM2
@@ -2163,32 +2157,18 @@ struct ChatConversationView: View {
         .task(id: store.messages[chat.name]?.last?.id) {
             chessPlayed = MTChessSend.playedGame(in: chat, store: store)
         }
-        // THE COIN MINTS WHILE THE RIBBON IS SHOWN (the author's word 02.10 19:37): every change of the letters, and the coin's
-        // own turn, hands this chat's letters to the one tally; it pays each name once and walks only the letters born since.
-        .onChange(of: coinStands || groupMints ? store.messagesRev : -1, initial: true) { _, _ in
-            // EVERY PAIR'S CHAT MINTS, RIBBON OR NOT (the author's word 11.10.2026 18:2x UTC, MTCoinSend.mintLetter): the level's coins a letter.
-            if coinStands { MTChatMint.shared.credit(store.messages[chat.name] ?? [], oneEach: true) }
-            else if groupMints { MTChatMint.shared.credit(store.messages[chat.name] ?? [], longerThan: MTChatMint.groupLetterFloor, in: chat.name) }
-        }
         // WHOM TO INVITE INTO THE GROUP'S CALL (MTRoomMark chose the kind): the sheet hangs on the chat, never inside the bar's item
         .sheet(item: $roomAsk) { k in MTRoomInviteSheet(chat: chat.name, kind: k, video: roomAskVideo, opening: true) }
         // A RIGHT THE GROUP TOOK, OR SLOW MODE'S WAIT (MTGroup.refusal, G.5): the reference's own sentence, the field left as it was
         .alert(groupRefusal ?? "", isPresented: Binding(get: { groupRefusal != nil }, set: { on in if !on { groupRefusal = nil } })) {
             Button("OK", role: .cancel) {}
         }
-        // THE STAKE FROM THE CHAT TOO (the author's word 06.10.2026 20:2x UTC: «from the chat too, when a game is created, the
-        // invitation must say at which stake»): the question takes the stake under the balance; a short balance refuses it.
+        // A NEW GAME FROM THE CHAT: the platform's question, no stake and no balance (the author's word 29.10.2026 19:31 UTC).
         .alert("Start a new game?", isPresented: $askChess) {
-            TextField("Stake", text: $chessStake).keyboardType(.numberPad)
             Button("New game") {
-                let stake = Int(String(chessStake.filter { ch in ch.isASCII && ch.isNumber }.prefix(13))) ?? 0
-                chessStake = ""
-                if let id = MTChessSend.invite(to: chat, seconds: MTChessSend.chatClock, stake: stake, store: store) { chessGame = MTChessPush(game: id) }
-                else if 0 < stake { coinRefused = true }
+                if let id = MTChessSend.invite(to: chat, seconds: MTChessSend.chatClock, store: store) { chessGame = MTChessPush(game: id) }
             }
-            Button("Cancel", role: .cancel) { chessStake = "" }
-        } message: {
-            Text("\(MTCoinText.count(MTCoinSplit.shared.available)) coins")
+            Button("Cancel", role: .cancel) {}
         }
         .confirmationDialog("Call back?", isPresented: Binding(
             get: { callBackVideo != nil }, set: { if !$0 { callBackVideo = nil } }),
@@ -2923,8 +2903,6 @@ struct ChatConversationView: View {
                                    chessOpen: message.chessLetter.map { c in c.kind == .invite && !message.isFromMe
                                        && MTChessSend.awaitsMe(c.game, rows: store.messages[chat.name] ?? []) } ?? false,
                                    onChessDecline: { game in MTChessSend.decline(game, in: chat, store: store) },
-                                   chessNet: message.chessLetter.flatMap { c in c.end == nil ? nil
-                                       : MTChessSend.state(c.game, rows: store.messages[chat.name] ?? []).flatMap(MTChessCoins.net) },
                                    onChessAccept: { game in acceptGame(game) },
                                    chessStatus: message.chessLetter.flatMap { c in c.kind != .invite ? nil
                                        : MTChessSend.state(c.game, rows: store.messages[chat.name] ?? []).flatMap { g in

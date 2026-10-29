@@ -161,8 +161,9 @@ impl Fixture {
             current_d: D,
             last_window: W - 1,
         };
-        let record = crate::window_record::record_of(W - 1, &self.tables(), &clock, Vec::new());
-        crate::window_record::commit(&store, &record).expect("record of W-1");
+        let p = genesis_params();
+        let record = crate::window_record::record_of(W - 1, &self.tables(), &clock, Vec::new(), p);
+        crate::window_record::commit(&store, &record, p).expect("record of W-1");
         dir
     }
 
@@ -587,8 +588,13 @@ fn a_fast_sync_whose_anchor_does_not_name_its_window_and_root_is_refused() {
 
 /// The earlier layout of a node at `current` / `last_cemented` on the fixture's tables.
 fn earlier_layout(f: &Fixture, tag: &str, current: u64, last_cemented: u64) -> PathBuf {
+    earlier_layout_on(&f.tables(), tag, current, last_cemented)
+}
+
+/// The earlier layout of a node at `current` / `last_cemented` on `tables`.
+fn earlier_layout_on(tables: &LocalState, tag: &str, current: u64, last_cemented: u64) -> PathBuf {
     let dir = temp_data_dir(tag);
-    f.tables().save(&dir).expect("tables");
+    tables.save(&dir).expect("tables");
     crate::clock::save_current_window(&dir, current).expect("current_window");
     FsStore::open(&dir)
         .expect("store")
@@ -607,63 +613,297 @@ fn archive_naming(dir: &std::path::Path, w: u64, state_root: Hash32) {
         .expect("archive");
 }
 
+/// A start on `dir` that must be refused: the refusal says `says`, and the store is left as it
+/// was, byte for byte.
+fn refused_and_left(
+    f: &Fixture,
+    dir: &std::path::Path,
+    me: &crate::identity::Identity,
+    says: &[&str],
+) {
+    let before = files(dir);
+    let err = Node::try_start(f, dir, me)
+        .err()
+        .unwrap_or_else(|| panic!("{}: the node started", dir.display()));
+    let said = format!("{err}");
+    for want in says {
+        assert!(
+            said.contains(want),
+            "the refusal does not say {want:?}: {said}"
+        );
+    }
+    assert!(
+        files(dir) == before,
+        "{said}: a refused start wrote to the store"
+    );
+}
+
+/// The bytes of a record of version 2 in the layout of version 1 (main 8a6e7bc): the head
+/// without the network (bytes 96..128), summed again.
+fn as_version_1(v2: &[u8]) -> Vec<u8> {
+    let mut body = v2[..96].to_vec();
+    body.extend_from_slice(&v2[128..v2.len() - 32]);
+    body[4] = 1;
+    let sum = mt_crypto::sha256_raw(&body);
+    body.extend_from_slice(&sum);
+    body
+}
+
+/// A data directory whose record holds `tables` at `window` in the layout of version 1.
+fn store_version_1(tag: &str, window: u64, tables: &LocalState) -> PathBuf {
+    let dir = temp_data_dir(tag);
+    let clock = TimeChainState {
+        t_r: t_r_of(window),
+        current_d: D,
+        last_window: window,
+    };
+    let record =
+        crate::window_record::record_of(window, tables, &clock, Vec::new(), genesis_params());
+    std::fs::write(dir.join(WINDOW_RECORD_FILE), as_version_1(&record.encode()))
+        .expect("a record of version 1");
+    dir
+}
+
+fn genesis_tables() -> LocalState {
+    LocalState {
+        accounts: AccountTable::new(),
+        nodes: NodeTable::new(),
+        candidates: CandidatePool::new(),
+    }
+}
+
 // (d) Rejects a start that takes the earlier layout as it finds it: a store whose
-// current_window and meta_last_cemented name two windows, or whose tables are not the ones the
-// archived envelope of its window names, does not start, says why, and is left as it was. A
-// store that holds one window is migrated once into a record.
+// current_window and meta_last_cemented name two windows does not start, says why, and is left
+// as it was. Issue #19 K6 (d), the Author's decision 331a: a store of the earlier layout above
+// window zero names no network and returns only by a fresh sync, even when the archived
+// envelope of its window names its tables (main 8a6e7bc migrated that one, "one-window"); so
+// does a record of version 1 above window zero. Each is refused, says "re-sync this node", and
+// is left as it was.
 #[test]
-fn an_earlier_layout_holding_two_windows_is_refused_and_one_window_migrates() {
+fn an_earlier_layout_or_a_record_of_version_1_above_window_zero_returns_only_by_re_sync() {
     let f = Fixture::new();
     let me = &f.ids[0];
 
     let dir = earlier_layout(&f, "two-windows", 7, 5);
-    let before = files(&dir);
-    let err = Node::try_start(&f, &dir, me)
-        .err()
-        .expect("two windows started");
-    let said = format!("{err}");
-    assert!(
-        said.contains("current_window.bin names 7")
-            && said.contains("meta_last_cemented.bin names 5"),
-        "the refusal does not name the mismatch: {said}"
+    refused_and_left(
+        &f,
+        &dir,
+        me,
+        &[
+            "current_window.bin names 7",
+            "meta_last_cemented.bin names 5",
+        ],
     );
-    assert!(files(&dir) == before, "a refused start wrote to the store");
     let _ = std::fs::remove_dir_all(&dir);
 
+    let resync = ["it names no network", "re-sync this node"];
     let dir = earlier_layout(&f, "unarchived", W - 1, W - 1);
-    let before = files(&dir);
-    let err = Node::try_start(&f, &dir, me)
-        .err()
-        .expect("unchecked tables started");
-    assert!(format!("{err}").contains("the envelope of that window is not archived"));
-    assert!(files(&dir) == before, "a refused start wrote to the store");
-    let _ = std::fs::remove_dir_all(&dir);
-
-    let dir = earlier_layout(&f, "window-zero", 0, 0);
-    assert_eq!(Node::start(&f, &dir, me).held(), (0, root(&f.tables())));
+    refused_and_left(&f, &dir, me, &resync);
     let _ = std::fs::remove_dir_all(&dir);
 
     let dir = earlier_layout(&f, "foreign-root", W - 1, W - 1);
     archive_naming(&dir, W - 1, [0xEE; 32]);
-    let before = files(&dir);
-    let err = Node::try_start(&f, &dir, me)
-        .err()
-        .expect("foreign tables started");
-    assert!(format!("{err}").contains("the archived envelope of that window names"));
-    assert!(files(&dir) == before, "a refused start wrote to the store");
+    refused_and_left(&f, &dir, me, &resync);
     let _ = std::fs::remove_dir_all(&dir);
 
     let dir = earlier_layout(&f, "one-window", W - 1, W - 1);
     archive_naming(&dir, W - 1, root(&f.tables()));
-    let node = Node::start(&f, &dir, me);
-    assert_eq!(node.held(), (W - 1, root(&f.tables())));
-    let record = WindowRecord::decode(&record_bytes(&dir)).expect("the migrated record");
-    assert_eq!(record.window, W - 1);
-    drop(node);
-    // The record is the truth from now on: the earlier files no longer move the start.
-    crate::clock::save_current_window(&dir, 99).expect("a stray view");
-    assert_eq!(Node::start(&f, &dir, me).held(), (W - 1, root(&f.tables())));
+    refused_and_left(&f, &dir, me, &resync);
     let _ = std::fs::remove_dir_all(&dir);
+
+    for window in [1, W - 1] {
+        let dir = store_version_1("v1-above-zero", window, &f.tables());
+        refused_and_left(
+            &f,
+            &dir,
+            me,
+            &["(version 1) at window", "re-sync this node"],
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+    // Not even on the tables of window zero: above it no table names the network.
+    let bootstrap = LocalState::bootstrap(me, genesis_params());
+    let dir = store_version_1("v1-above-zero-genesis", W - 1, &bootstrap);
+    refused_and_left(&f, &dir, me, &resync);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+// Issue #19 K6: the earlier layout at window zero is a new node. On the tables a machine of
+// this network holds there it starts, and its record names this network; on other tables it
+// does not start and the store is left as it was. The record is the truth from then on: the
+// earlier files no longer move the start.
+#[test]
+fn an_earlier_layout_at_window_zero_starts_only_on_the_tables_of_this_network() {
+    let f = Fixture::new();
+    let me = &f.ids[0];
+    let p = genesis_params();
+    let bootstrap = LocalState::bootstrap(me, p);
+
+    let dir = earlier_layout_on(&bootstrap, "window-zero", 0, 0);
+    assert_eq!(Node::start(&f, &dir, me).held(), (0, root(&bootstrap)));
+    let record = WindowRecord::decode(&record_bytes(&dir)).expect("the record of window zero");
+    assert_eq!(record.genesis_state_hash, mt_account::genesis_state_hash(p));
+    crate::clock::save_current_window(&dir, 99).expect("a stray view");
+    assert_eq!(Node::start(&f, &dir, me).held(), (0, root(&bootstrap)));
+    let _ = std::fs::remove_dir_all(&dir);
+
+    let dir = earlier_layout(&f, "window-zero-other-tables", 0, 0);
+    refused_and_left(
+        &f,
+        &dir,
+        me,
+        &["at window 0: it names no network", "state_root"],
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+// Issue #19 K6 (a): rejects a start on a record of another network (main 8a6e7bc: the record
+// named none, and a store of another Decree's balances started as this network's). A record of
+// version 2 whose genesis_state_hash is the devnet Decree's, at window zero or above it, is
+// refused: the refusal names both hashes, 8 bytes each, and says "another network", and nothing
+// in the data dir changes. A running node does not write over such a record, and no commit
+// writes one.
+#[test]
+fn a_record_of_another_network_is_refused_and_the_store_is_left_as_it_was() {
+    let f = Fixture::new();
+    let me = &f.ids[0];
+    let p = genesis_params();
+    let mut devnet = p.clone();
+    devnet.ssha_entry_windows = 1;
+    devnet.selection_interval = 1;
+    let (ours, theirs) = (
+        mt_account::genesis_state_hash(p),
+        mt_account::genesis_state_hash(&devnet),
+    );
+    assert_ne!(ours, theirs);
+    let (theirs8, ours8) = (hex_lower(&theirs[..8]), hex_lower(&ours[..8]));
+    let named = ["another network", theirs8.as_str(), ours8.as_str()];
+    let foreign = |window: u64, tables: &LocalState| {
+        let clock = TimeChainState {
+            t_r: t_r_of(window),
+            current_d: D,
+            last_window: window,
+        };
+        crate::window_record::record_of(window, tables, &clock, Vec::new(), &devnet)
+    };
+    for (tag, window, tables) in [
+        ("another-network-zero", 0, LocalState::bootstrap(me, p)),
+        ("another-network", W - 1, f.tables()),
+    ] {
+        let dir = temp_data_dir(tag);
+        let record = foreign(window, &tables);
+        assert_eq!(record.genesis_state_hash, theirs);
+        std::fs::write(dir.join(WINDOW_RECORD_FILE), record.encode()).expect("write");
+        refused_and_left(&f, &dir, me, &named);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    let dir = f.store_at_w_minus_1("another-network-turn");
+    let node = Node::start(&f, &dir, me);
+    let record = foreign(W - 1, &f.tables());
+    std::fs::write(dir.join(WINDOW_RECORD_FILE), record.encode()).expect("write");
+    let lifecycle = crate::node_lifecycle::load_or_init_lifecycle(&dir, me, p).expect("lifecycle");
+    let before = files(&dir);
+    let turn = save_progress(
+        &dir,
+        &node.state,
+        &node.timechain,
+        &lifecycle,
+        node.current,
+        p,
+    );
+    assert!(
+        turn.is_err_and(|e| format!("{e}").contains("another network")),
+        "a running node wrote over a record of another network"
+    );
+    assert!(
+        crate::window_record::commit(&node.store, &record, p).is_err(),
+        "a record of another network was committed"
+    );
+    assert!(files(&dir) == before, "the store moved");
+    drop(node);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+// Issue #19 K6 (b): a record of version 1 at window zero on the tables a machine of this
+// network holds there — the genesis tables, with the operator's account (a new node), with the
+// cohort of window zero (an opener) — starts, and is rewritten as version 2 naming this
+// network. Rejects a start that keeps a record naming no network (main 8a6e7bc never names one).
+#[test]
+fn a_record_of_version_1_at_window_zero_on_the_tables_of_this_network_is_named_it() {
+    let f = Fixture::new();
+    let me = &f.ids[0];
+    let p = genesis_params();
+    let mut opened = LocalState::bootstrap(me, p);
+    open_window_zero(&mut opened, me);
+    for (tag, tables) in [
+        ("v1-genesis", genesis_tables()),
+        ("v1-bootstrap", LocalState::bootstrap(me, p)),
+        ("v1-opened", opened),
+    ] {
+        let dir = store_version_1(tag, 0, &tables);
+        assert_eq!(record_bytes(&dir)[4], 1, "{tag}: not a record of version 1");
+        let node = Node::start(&f, &dir, me);
+        assert_eq!(node.held(), (0, root(&tables)), "{tag}");
+        drop(node);
+        let bytes = record_bytes(&dir);
+        assert_eq!(bytes[4], 2, "{tag}: the record was not rewritten");
+        let record = WindowRecord::decode(&bytes).expect("a record of version 2");
+        assert_eq!(
+            record.genesis_state_hash,
+            mt_account::genesis_state_hash(p),
+            "{tag}"
+        );
+        assert_eq!(
+            (record.window, record.state_root()),
+            (0, root(&tables)),
+            "{tag}"
+        );
+        // Named once: the next start reads it as it stands.
+        assert_eq!(
+            Node::start(&f, &dir, me).held(),
+            (0, root(&tables)),
+            "{tag}"
+        );
+        assert!(
+            record_bytes(&dir) == bytes,
+            "{tag}: the second start rewrote the record"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+// Issue #19 K6 (c): a record of version 1 at window zero on other tables (another operator's
+// account, the three active nodes of the fixture, a balance) is refused: it names no network
+// and its tables are not those of this network at window zero. The store is left as it was.
+// Rejects a start that names any record of version 1 this network's.
+#[test]
+fn a_record_of_version_1_at_window_zero_on_other_tables_is_refused() {
+    let f = Fixture::new();
+    let me = &f.ids[0];
+    let p = genesis_params();
+    let mut rich = LocalState::bootstrap(me, p);
+    let mut account = rich
+        .accounts
+        .get(&me.account_id())
+        .expect("own account")
+        .clone();
+    account.balance = 1_000_000;
+    rich.accounts.insert(account);
+    for (tag, tables) in [
+        ("v1-another-operator", LocalState::bootstrap(&f.ids[1], p)),
+        ("v1-fixture", f.tables()),
+        ("v1-rich", rich),
+    ] {
+        let dir = store_version_1(tag, 0, &tables);
+        refused_and_left(
+            &f,
+            &dir,
+            me,
+            &["(version 1) at window 0: it names no network", "state_root"],
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
 
 // (e) Rejects a start on a record it cannot vouch for: a record cut short by one byte, or with
@@ -713,7 +953,16 @@ fn a_turn_commits_what_moved_and_writes_nothing_when_nothing_moved() {
     let lifecycle = crate::node_lifecycle::load_or_init_lifecycle(&dir, me, genesis_params())
         .expect("lifecycle");
     fault::fail_at(None);
-    save_progress(&dir, &node.state, &node.timechain, &lifecycle, node.current).expect("turn");
+    let p = genesis_params();
+    save_progress(
+        &dir,
+        &node.state,
+        &node.timechain,
+        &lifecycle,
+        node.current,
+        p,
+    )
+    .expect("turn");
     assert_eq!(
         fault::done(),
         0,
@@ -731,7 +980,15 @@ fn a_turn_commits_what_moved_and_writes_nothing_when_nothing_moved() {
         registration_window: W,
         expires: W + 100,
     });
-    save_progress(&dir, &node.state, &node.timechain, &lifecycle, node.current).expect("turn");
+    save_progress(
+        &dir,
+        &node.state,
+        &node.timechain,
+        &lifecycle,
+        node.current,
+        p,
+    )
+    .expect("turn");
     assert!(
         record_bytes(&dir) != before,
         "a moved pool was not committed"
@@ -742,11 +999,20 @@ fn a_turn_commits_what_moved_and_writes_nothing_when_nothing_moved() {
     let node = Node::start(&f, &dir, me);
     assert_eq!(node.held(), held, "the pool is lost on a restart");
     // A record of another window under a running node is not written over.
-    let foreign = crate::window_record::record_of(W + 3, &f.tables(), &node.timechain, Vec::new());
-    crate::window_record::commit(&node.store, &foreign).expect("a foreign record");
+    let foreign =
+        crate::window_record::record_of(W + 3, &f.tables(), &node.timechain, Vec::new(), p);
+    crate::window_record::commit(&node.store, &foreign, p).expect("a foreign record");
     let foreign_bytes = record_bytes(&dir);
     assert!(
-        save_progress(&dir, &node.state, &node.timechain, &lifecycle, node.current).is_err(),
+        save_progress(
+            &dir,
+            &node.state,
+            &node.timechain,
+            &lifecycle,
+            node.current,
+            p
+        )
+        .is_err(),
         "a record of another window was written over"
     );
     assert!(record_bytes(&dir) == foreign_bytes && foreign_bytes != moved);

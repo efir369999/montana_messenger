@@ -25,7 +25,7 @@ final class MontanaVPNTunnel: ObservableObject {
     /// read by load(), not announced by the system, and the beat that pays its seconds (MTVPNWallMint) was woken only by the
     /// announcement -- twelve hours of a living tunnel paid nothing. Every turn to connected, read or announced, wakes it here.
     @Published private(set) var status: NEVPNStatus = .invalid {
-        didSet { if status == .connected, oldValue != .connected { MTVPNWallMint.shared.count() } }
+        didSet { if status == .connected, oldValue != .connected { MTVPNWallMint.count() } }
     }
     @Published private(set) var activeName: String = ""
     @Published private(set) var lastError: String = ""

@@ -119,6 +119,7 @@ Per record, in chain order -- first the key's time, then the record's kind:
   until TX_ONLINE_CUT. From TX_ONLINE_CUT (fold-7, fold-8) A is at most the present seconds, t1 - max(t0, at - TX_MINT_FRESH,
   TX_ONLINE_CUT) with TX_MINT_FRESH = 120 (else «stale»), and the allowance is not asked: a MINT counts only what its interval holds
   of the last two minutes before its node took it and after the cut, and the intervals never overlap (t0 at least mint_end).
+  From TX_MINT_STOP (fold-9, section 4) no MINT is taken at all, whatever its interval: 409 «minting stopped».
 - BURN (amount A, dec D; fold-7): taken only when its at is TX_ONLINE_CUT or later (else «not yet»); spent exactly as a SEND -- 1 at
   most A at most proven + declared, D = max(0, A - proven), proven -= A - D, declared -= D -- and it names no one: pair, to, ref and
   t1 are zero, no RECV opens it and no REFUND takes it back (section 5). Its coins leave every chain: the Economy of Time's sink (I-13)
@@ -135,7 +136,7 @@ Per record, in chain order -- first the key's time, then the record's kind:
 The chain's node refuses (409 with a reason word) any record whose fold step fails: a SEND or a v2 record above proven + declared
 («overspend»), a MINT above its allowance («allowance»), a RECV on a SEND that is not this key's or settled («settled»), a REFUND
 before its day or after a RECV («settled»), a second GENESIS («genesis»), a MINT above its present seconds («stale»), a BURN before
-TX_ONLINE_CUT («not yet»). The same fold runs in every replica, on every phone that keeps a copy and in the
+TX_ONLINE_CUT («not yet»), a MINT from TX_MINT_STOP («minting stopped»). The same fold runs in every replica, on every phone that keeps a copy and in the
 Explorer, so a node that took a bad record is caught by everyone who folds after it.
 
 POST /tx-head {"from"} -- 200 {"head", "height", "birth", "mint_end", "proven", "declared", "minted", "now"}, the amounts as decimal
@@ -215,6 +216,18 @@ coins and never a record. The 1 coin a second ceiling stands by the intervals (f
 TX_ONLINE_CUT, a MINT counts its seconds from it on, and two MINTs never share a second (t0 at least mint_end), so a key's whole life
 is not asked and a key that minted above it before TX_TIME_CUT mints its present seconds like any other.
 Every rule of fold-7 is chosen by the record's at, so no record taken before the cut changes its fate at the re-fold to fold-7.
+
+ONLY THE CORE MINTS (fold-9; the author's words 29.10.2026 13:53 and 14:48 UTC, links 11580 and 11639: no client can mint coins for
+itself, physically, as no client can mint bitcoins -- issuance is the core's alone, whatever the client; decisions 362 a and 365 a).
+A MINT is a claim of the phone: the node cannot see a person online, so under fold-7 any client minted 1 coin a second for every
+key it made, and a key is free (GENESIS 0). From TX_MINT_STOP (1793361600, 30.10.2026 12:00 UTC) a node takes no MINT at all
+(«minting stopped», the refusal code 18 of the core's door, after codes 1 .. 17, which keep their places). A GENESIS above 0 is refused
+since TX_V2_CUT and the key's life credits nothing since TX_ONLINE_CUT, so from the stop no record mints: a chain's coins only move
+(SEND, RECV, REFUND) or leave (BURN), and a GENESIS 0 still opens a key with nothing on it. A coin is born only by the right of a
+window of the consensus core (Montana-Core `window_credit`, 60 for a window of 60 s). The rule is chosen by the record's at, so every
+MINT taken before the stop keeps its fate at the re-fold to fold-9. The code is `mt-coin` of `core/Code` (`TX_MINT_STOP`,
+`crates/mt-coin/src/lib.rs:30`; the refusal at `:528`), its test `v16_minting_stops_and_only_the_core_mints`
+(`crates/mt-coin/tests/vectors.rs:850`).
 
 ## 5. Settling a SEND -- one RECV or one REFUND, never both
 
@@ -320,6 +333,12 @@ then the whole network's chains, not only their correspondents': a holder's sign
   and it lays none; a MINT it lays in any case is refused «allowance» and moves nothing. Its SENDs spend the seconds the chain has
   folded, exactly as a later build's do.
 
+- Only the core mints (fold-9, section 4): from TX_MINT_STOP (30.10.2026 12:00 UTC) a node takes no MINT. A node on fold-9 re-folds
+  every chain at its start (the fold's name), and no record taken before the stop changes its fate. A build that still lays MINTs
+  hears «minting stopped» and its book keeps the claim, unproven; its SENDs spend what the chain holds. The stop lies after both
+  chain nodes run fold-9; a node still on fold-8 after the stop would take MINTs the others refuse, and those who fold after it catch
+  it (section 3).
+
 ## 9. Test vectors
 
 Every vector below is checked by the node's own run (coin-node-check.mjs, kept with the node's code, which is not public) against the node's
@@ -419,6 +438,13 @@ functions). Each names the wrong implementation it refuses.
   taken: the time step credits E - (D + 300) first, so O proven m + 299 + (E - D - 300) + 60, mint_end E + 60. Refuses: fold-6 and
   fold-7 (proven m at D + 300, its life 359500 below m), a step that ignores last_at and counts from the cut at every record (m + 799
   at D + 500), and a MINT whose present seconds are not floored at E (the 61 taken, or refused «allowance» by the life's sum).
+- V16 only the core mints (sections 3 and 4, fold-9; TX_MINT_STOP = S; checked by `mt-coin`
+  `v16_minting_stops_and_only_the_core_mints`, `core/Code/crates/mt-coin/tests/vectors.rs:850`). Key K, GENESIS 0 at S - 1000: a MINT
+  of 60 over S - 200 .. S - 140 at S - 130 -- taken; a MINT of 60 over S - 60 .. S at S -- 409 «minting stopped», a MINT of 1 over
+  S + 60 .. S + 120 at S + 125 -- «minting stopped»; K's state stands as after the first MINT, /tx-head at S + 86400 answers the same,
+  and the re-fold of K's chain gives the same. Key N: GENESIS 0 at S + 10 -- taken, N holds nothing; a GENESIS of 1 at S + 20 --
+  «genesis»; a MINT of 60 over S + 10 .. S + 70 at S + 75 -- «minting stopped». Refuses: a fold that still mints from the stop (either
+  MINT taken, or the life credited after it), and one that refuses a MINT taken before the stop (K's chain cut at the re-fold).
 
 ## 10. The graph of the coins' appearance -- the anonymous owner
 

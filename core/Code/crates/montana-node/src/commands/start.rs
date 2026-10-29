@@ -142,9 +142,10 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
     // spec, Genesis Decree: Genesis = empty window 0. The genesis state is empty
     // (no baked active operators); window zero opens on the operator's cohort by
     // --open. The manifest is not hash-bound.
-    // Issue #19 K5: the window record is the truth of the tables, the window and the clock
-    // (a store without one is migrated once, if its earlier files hold one window); the
+    // Issue #19 K5: the window record is the truth of the tables, the window and the clock; the
     // earlier files are rewritten from it as views, so `status` reads the real tables.
+    // Issue #19 K6: the record names this network by its Genesis State Hash, and a store that
+    // names none is taken only at window zero (a store above it returns only by re-sync).
     // Issue #17 K5: an opening writes the cohort into the first record itself, so no record
     // of window zero stands without it.
     let (mut state, mut current, mut timechain) =
@@ -484,7 +485,7 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
         }
 
         if current >= next_window {
-            save_progress(&data_dir, &state, &timechain, &lifecycle, current)?;
+            save_progress(&data_dir, &state, &timechain, &lifecycle, current, params)?;
             continue;
         }
 
@@ -736,7 +737,7 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
             },
         }
 
-        save_progress(&data_dir, &state, &timechain, &lifecycle, current)?;
+        save_progress(&data_dir, &state, &timechain, &lifecycle, current, params)?;
     }
 
     let elapsed = session_start.elapsed();
@@ -848,8 +849,9 @@ fn save_progress(
     timechain: &TimeChainState,
     lifecycle: &NodeLifecycle,
     window: u64,
+    params: &mt_genesis::ProtocolParams,
 ) -> Result<(), NodeError> {
-    crate::window_record::commit_if_moved(data_dir, window, state, timechain)?;
+    crate::window_record::commit_if_moved(data_dir, window, state, timechain, params)?;
     save_lifecycle(data_dir, lifecycle)?;
     Ok(())
 }
@@ -1255,6 +1257,7 @@ fn settle_and_bookkeep(
         (ctx.timechain.t_r, ctx.timechain.last_window)
     };
     let record = mt_store::WindowRecord {
+        genesis_state_hash: mt_account::genesis_state_hash(ctx.params),
         window: settled_w,
         t_r,
         current_d,
@@ -1264,7 +1267,7 @@ fn settle_and_bookkeep(
         candidates: settled.state.candidates,
         envelope: envelope.to_vec(),
     };
-    crate::window_record::commit(ctx.store, &record)?;
+    crate::window_record::commit(ctx.store, &record, ctx.params)?;
     let (state, window, clock, envelope) = crate::window_record::into_parts(record);
     *ctx.state = state;
     if settled.activated_count > 0 {
@@ -1426,7 +1429,9 @@ fn complete_fast_sync(
     window: u64,
     tables: mt_sync::snapshot::TypedTables,
 ) -> Result<(), NodeError> {
+    // Issue #19 K6: the record names this node's network; the snapshot is taken into no other.
     let mut record = mt_store::WindowRecord {
+        genesis_state_hash: mt_account::genesis_state_hash(ctx.params),
         window,
         t_r: ctx.timechain.t_r,
         current_d: ctx.timechain.current_d,
@@ -1455,7 +1460,7 @@ fn complete_fast_sync(
     }
     record.envelope = anchor;
     ctx.state
-        .apply_fast_sync(record, ctx.data_dir, ctx.current, ctx.timechain)?;
+        .apply_fast_sync(record, ctx.data_dir, ctx.current, ctx.timechain, ctx.params)?;
     eprintln!("[m7] fast-sync complete → state replaced, current_window={window}");
     crate::reading::write(
         ctx.data_dir,
