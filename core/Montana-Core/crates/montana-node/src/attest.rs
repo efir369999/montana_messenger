@@ -111,6 +111,9 @@ impl Standing {
             attested,
             part_nullifier: self.part_nullifier,
             round_nullifier: mt_derive::nullifier::round(machine_secret, &beacon_id),
+            // Record 309, beside the plan of #89: the line of the open slot of attempt zero at the
+            // name attested, asserted by the proof of presence. Zeros until the presence asserts it.
+            line_value: [0u8; 32],
             suite_id: mt_net::SUITE,
             answering_key: self.key.as_bytes().to_vec(),
             proof: self.presence.clone(),

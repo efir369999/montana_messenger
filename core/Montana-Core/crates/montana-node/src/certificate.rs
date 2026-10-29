@@ -1069,6 +1069,7 @@ mod proofs {
             attested: vec![one_of(&names), one_of(&names)],
             part_nullifier: PARTS[part],
             round_nullifier: [0; 32],
+            line_value: [0; 32],
             suite_id: 0,
             answering_key: a_bit(),
             proof: a_bit(),
