@@ -31,13 +31,13 @@ the earlier generation, which answers to its own spec target (decision 330
 (a)), and it is recorded in `core/Code/AUDIT.md` ("Known limitations", item 4).
 
 - **The clock.** The silence since the last cement is read on a monotonic clock
-  (`core/Code/crates/montana-node/src/commands/start.rs:568`,
+  (`core/Code/crates/montana-node/src/commands/start.rs:569`,
   `last_cement_at.elapsed()`).
 - **The depth.** `fallback_depth_at` turns it into the depth of the cascade
-  (`start.rs:926-931`, `silence / fallback_secs`, with `fallback_secs` taken
-  from the measured tick at `:379`).
+  (`start.rs:928-933`, `silence / fallback_secs`, with `fallback_secs` taken
+  from the measured tick at `:380`).
 - **The proposer.** The depth chooses which machine may propose
-  (`canonical_proposer_at`, `start.rs:571-572` and `:963-973`).
+  (`canonical_proposer_at`, `start.rs:572-573` and `:965-975`).
 
 A follower checks the proposer at the depth the signed header declares and
 reads no clock (`core/Code/crates/mt-consensus/src/lib.rs:316-332`). In this
@@ -46,8 +46,8 @@ closure requirement above forbids.
 
 K6 of issue #21 (`e5cc3bc`) bounds it. From window 2 an exhausted cascade
 appoints nobody, the node says `STALLED` and does not appoint itself
-(`start.rs:579-587` and `:975-994`; test
-`an_exhausted_cascade_halts_and_never_self_appoints`, `start.rs:2159`), so a
+(`start.rs:580-588` and `:977-996`; test
+`an_exhausted_cascade_halts_and_never_self_appoints`, `start.rs:2164`), so a
 timeout no longer closes a window in a private chain. K6 does not take the
 clock out of the depth.
 

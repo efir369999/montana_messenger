@@ -1,6 +1,6 @@
 {
  "what": "The status of the thirteen protocol requirements as this tree holds them. A session that closes or moves an item edits its row and its report (protocol-13/, beside this file) in the same commit as the work, and publish_protocol13.py writes the public folder Audit/Protocol-13 from that commit: the reports, the table from this file and the source; an item is closed only with an implementation revision, the exact test command and its result in the report of that item.",
- "recorded": "2026-10-28",
+ "recorded": "2026-10-29",
  "items": [
   {
    "item": 1,
@@ -34,8 +34,8 @@
    "item": 5,
    "report": "05-CONTINUITY-AND-REJOIN.md",
    "requirement": "Prove continuity and return after a partition",
-   "status": "open",
-   "summary": "Enforce bitmap shift, period boundaries and required participation inside admission. Replaying other machines' records does not create one's own participation."
+   "status": "partial",
+   "summary": "Partial (the Author's decision 342 (a), record 345). In the node, an opening takes its segment from its own window (state.rs:610-615), and the segments lived, the count in force and the share required are functions with tests (layout.rs:1028, entry.rs:26, :43). A machine whose plane came from the network stakes nothing until the stride changes (decision 332 (b), K7b). Remains for the next generation: the share is checked inside the admission proof, which needs segment, n and share in its public input. Replaying other machines' records does not create one's own participation."
   },
   {
    "item": 6,
@@ -55,8 +55,8 @@
    "item": 8,
    "report": "08-ATOMIC-WINDOW.md",
    "requirement": "Apply and persist the entire window atomically",
-   "status": "open",
-   "summary": "Tables, proof, Proposal archive and head must recover together after rejection, crash or replay, without extra issuance. Partial storage repairs do not establish this transaction."
+   "status": "closed",
+   "summary": "Closed on 2026-10-29 on the chairman's verdict of #19: both generations apply a window as one record and recover the previous or the complete next window after a death at any file operation, a window applied again issues nothing, the record names its network, and only the core mints. K1-K2 PR #48 (88b9f486), K3-K4 PR #70 (3707747), K5 PR #87 (e459a19), Gate 0 PR #82 (dd399280), K6 PR #113 (4a3cc25), only the core mints PR #116 (b6f159d): mt-coin takes no MINT from TX_MINT_STOP (30.10.2026 12:00 UTC), refusal 18. Rings: L3 both-test on the tree core/Code 861dbb53 of main 4a3cc25: cargo test --release --workspace --no-fail-fast END 0, 1398 passed, 0 failed; L2 both-lint: fmt 0, clippy -D warnings 0; CI audit-tools SUCCESS. Outside this closure: the timing tests of mt-mnemonic (sources.rs:649), red in the debug rings on main as well, the deployment of the new mt-coin to the running coin-chain nodes, and the form of GENESIS 0 (question 365)."
   },
   {
    "item": 9,

@@ -117,17 +117,19 @@ impl LocalState {
     // reconstructed state_root against the trusted anchor root of W. Here the snapshot is
     // already trusted. Issue #19 K5: the three tables, the window W, the clock and the anchor's
     // envelope are committed as ONE record; the tables, the window and the clock in memory are
-    // replaced only after that record stands, the views after them.
+    // replaced only after that record stands, the views after them. Issue #19 K6: a record that
+    // does not name the network of `params` is refused and nothing moves.
     pub fn apply_fast_sync(
         &mut self,
         record: mt_store::WindowRecord,
         data_dir: &Path,
         current: &mut u64,
         clock: &mut TimeChainState,
+        params: &ProtocolParams,
     ) -> Result<(), NodeError> {
         let store = FsStore::open(data_dir)
             .map_err(|e| NodeError::InvalidArguments(format!("opening storage: {e:?}")))?;
-        window_record::commit(&store, &record)?;
+        window_record::commit(&store, &record, params)?;
         let (state, window, synced_clock, envelope) = window_record::into_parts(record);
         *self = state;
         *current = window;
@@ -191,6 +193,7 @@ mod tests {
         accounts.insert(sample_account(0xAB));
         accounts.insert(sample_account(0xCD));
         let synced = mt_store::WindowRecord {
+            genesis_state_hash: mt_account::genesis_state_hash(mt_genesis::genesis_params()),
             window: 75_850,
             t_r: [0x5A; 32],
             current_d: 1,
@@ -205,8 +208,9 @@ mod tests {
             last_window: 0,
         };
         let mut current = 7;
+        let p = mt_genesis::genesis_params();
         state
-            .apply_fast_sync(synced, &dir, &mut current, &mut clock)
+            .apply_fast_sync(synced, &dir, &mut current, &mut clock, p)
             .unwrap();
 
         assert_eq!(state.accounts.len(), 2);
@@ -222,6 +226,51 @@ mod tests {
 
         fs::remove_dir_all(&dir).ok();
     }
+
+    // Issue #19 K6: rejects a fast sync that takes a record of another network. The record of a
+    // snapshot that names another genesis_state_hash is refused before anything is written:
+    // the data dir stays empty of a record, and the tables, the window and the clock in memory
+    // stay as they were.
+    #[test]
+    fn apply_fast_sync_refuses_a_record_of_another_network() {
+        let dir = tempdir();
+        let p = mt_genesis::genesis_params();
+        let mut devnet = p.clone();
+        devnet.ssha_entry_windows = 1;
+        let mut accounts = AccountTable::new();
+        accounts.insert(sample_account(0xAB));
+        let foreign = mt_store::WindowRecord {
+            genesis_state_hash: mt_account::genesis_state_hash(&devnet),
+            window: 75_850,
+            accounts,
+            ..mt_store::WindowRecord::default()
+        };
+        let mut state = LocalState {
+            accounts: AccountTable::new(),
+            nodes: NodeTable::new(),
+            candidates: CandidatePool::new(),
+        };
+        let mut clock = TimeChainState {
+            t_r: [0u8; 32],
+            current_d: 1,
+            last_window: 0,
+        };
+        let mut current = 7;
+        let err = state
+            .apply_fast_sync(foreign, &dir, &mut current, &mut clock, p)
+            .expect_err("a record of another network was synced");
+        assert!(format!("{err}").contains("another network"), "{err}");
+        assert_eq!(
+            (current, clock.last_window, state.accounts.len()),
+            (7, 0, 0)
+        );
+        let store = FsStore::open(&dir).unwrap();
+        assert!(store.load_window_record().unwrap().is_none());
+        assert!(!dir.join("accounts.bin").exists());
+
+        fs::remove_dir_all(&dir).ok();
+    }
+
     #[test]
     fn bootstrap_empty_genesis_seeds_only_own_account() {
         use mt_genesis::genesis_params;

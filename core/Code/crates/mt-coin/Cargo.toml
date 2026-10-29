@@ -1,0 +1,12 @@
+[package]
+name = "mt-coin"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# The fold of a coin key's chain (COIN-TX-V3, sections 3 and 4): the one function the chain nodes,
+# every replica, every phone that keeps a copy and the Explorer fold by -- «only the core mints».
+[dependencies]
+sha2 = { workspace = true }

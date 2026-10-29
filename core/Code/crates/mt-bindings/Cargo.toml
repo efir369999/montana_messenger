@@ -20,6 +20,7 @@ mt-messenger-e2e = { path = "../mt-messenger-e2e" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 mt-crypto     = { path = "../mt-crypto" }
+mt-coin       = { path = "../mt-coin" }
 mt-noise-pq   = { path = "../mt-noise-pq" }
 mt-state      = { path = "../mt-state" }
 mt-account    = { path = "../mt-account" }
