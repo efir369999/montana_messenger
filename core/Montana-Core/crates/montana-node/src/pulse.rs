@@ -3390,13 +3390,23 @@ mod the_rhythm {
     fn the_hold_between_askings_is_drawn_within_its_bounds() {
         let holds: Vec<std::time::Duration> = (0..64).map(|_| hold_before_asking_again()).collect();
         for hold in &holds {
-            assert!(*hold >= ASKS_AGAIN_AFTER / 2, "a hold of {hold:?} under its bound");
-            assert!(*hold < ASKS_AGAIN_AFTER * 3 / 2, "a hold of {hold:?} past its bound");
+            assert!(
+                *hold >= ASKS_AGAIN_AFTER / 2,
+                "a hold of {hold:?} under its bound"
+            );
+            assert!(
+                *hold < ASKS_AGAIN_AFTER * 3 / 2,
+                "a hold of {hold:?} past its bound"
+            );
         }
         let mut distinct = holds.clone();
         distinct.sort_unstable();
         distinct.dedup();
-        assert!(distinct.len() > 32, "the holds stood at {} values of 64", distinct.len());
+        assert!(
+            distinct.len() > 32,
+            "the holds stood at {} values of 64",
+            distinct.len()
+        );
     }
 }
 
