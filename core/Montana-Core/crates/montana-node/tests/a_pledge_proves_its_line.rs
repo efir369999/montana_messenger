@@ -3,7 +3,8 @@
 // public input the door computes from the pledge itself. Canon, "The pledge of a part" and its
 // invariants: "A pledge whose proof does not verify under the description of the pledge against its
 // public input is refused: it enters no quorum and is no evidence"; `line_value` bytes "that are not
-// one are refused before the proof is verified". Plan of #89, steps 3-5.
+// one are refused before the proof is verified". Plan of #89, steps 3-5; and two pledges of one slot
+// on two names give the lock-opening value.
 //
 // **The world outside the rules, arranged by this test.** Two machines and a cohort of both, in one
 // window. Each signs under the one-time key of its own part; where the test moves a field of a
@@ -18,6 +19,7 @@
 use montana_node::attest::{verify_pledge, Standing};
 use montana_node::pulse::Cohort;
 use montana_node::NodeError;
+use mt_proof::line::L;
 use mt_state::layout::Pledge;
 use mt_state::Layout;
 
@@ -34,6 +36,14 @@ fn standing(cohort: &Cohort, secret: &[u8; 32]) -> Standing {
     let branch = cohort.branch_of(secret).expect("its own leaf");
     Standing::of_the_window(secret, WINDOW, &branch.siblings, branch.position)
         .expect("a machine of the tree proves its presence")
+}
+
+// The point a pledge publishes: the abscissa of its name and the value of its line there.
+fn point(held: &Pledge) -> (L, L) {
+    (
+        mt_proof::line::abscissa(&held.name).expect("an abscissa"),
+        L::from_bytes(&held.line_value).expect("a value of the field of the line"),
+    )
 }
 
 // The pledge signed again under the one-time key of the part of `secret` in this window.
@@ -72,6 +82,16 @@ fn a_pledge_counts_only_where_its_proof_binds_its_line_to_its_part() {
         .pledge(&FIRST, ATTEMPT, OTHER, ATTEMPT)
         .expect("a pledge stands");
     assert_ne!(elsewhere.line_value, honest.line_value);
+
+    // The two pledges of one slot on two names are two points of one line, and the line at abscissa
+    // zero is the machine's lock-opening value, which neither pledge discloses alone: the evidence
+    // the forfeit of a node lock reads (Canon, "The forfeit of a node lock, and the evidence that
+    // moves it"; the #61 relation).
+    let spending = mt_proof::poseidon::hash_bytes_twice(mt_codec::domain::MT_KEY_HALVES, &FIRST).0;
+    assert_eq!(
+        mt_proof::line::opening_of(point(&honest), point(&elsewhere)),
+        Some(mt_proof::line::opening(&spending))
+    );
     let moved = resigned(
         &FIRST,
         Pledge {
