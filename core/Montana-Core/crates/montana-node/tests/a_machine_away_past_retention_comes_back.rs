@@ -1,11 +1,15 @@
 // A machine away for longer than the retention comes back on a fresh anchor its operator hands it,
-// takes the plane of the head from the network over the wire, and lives on from there.
+// takes the plane of the head from the network over the wire, and waits out the stride of the horizon
+// before it stakes.
 //
 // **What is measured.** Consensus, "The join": "a device away longer than that finds no certificate
 // to walk and takes a fresh anchor from its operator, which is a change of trust and not a
 // verification"; step 5: "It takes the state it needs against the roots of the head ... and it
 // recomputes every root it takes rather than accepting one"; step 6: "It then follows the beacons of
-// the open window as any machine does, and it is a machine of the network from that moment."
+// the open window as any machine does, and it is a machine of the network from that moment." The
+// author's decision 332 (b), constitution record 339: "a machine that took its plan from the network
+// does not put up a stake or a proposal until the stride of the horizon changes; it only follows
+// decided rolls".
 //
 // **The world outside the rules, arranged by this test**, as the test of the way back from its own
 // anchor arranges it: one machine and a cohort of itself lives the first three windows of a network,
@@ -25,7 +29,9 @@
 // taken without its roots recomputed (V2 and V3 of the test of the plane of a head, which this one
 // rests on); a walk that keeps the plane of the head and not the state of the window the network
 // closed on after it — its roots are not those of the proposal awaiting its certificate; and a plane
-// held for the life of the process alone — its roots are not the chain's after a restart.
+// held for the life of the process alone — its roots are not the chain's after a restart; and a
+// machine on that plane that lives the window the network stands at — it would pledge, attest and
+// propose on a rate set with a hole in it (the code of b56f306, before #109).
 
 use montana_node::certificate::Anchor;
 use montana_node::pulse::{self, Cohort};
@@ -47,6 +53,9 @@ const AFTER: u64 = 3;
 const PATIENCE: u32 = 40_000;
 
 const NO_CERTIFICATE: &str = "no certificate to walk; a fresh anchor is a change of trust";
+
+const WAITS: &str =
+    "a machine on a plane of the network stakes and proposes nothing before the stride of the horizon changes";
 
 fn refused(what: &'static str) -> NodeError {
     NodeError::Refused { what }
@@ -110,7 +119,7 @@ fn reached(near: &Machine, far: Machine) -> Machine {
 }
 
 #[test]
-fn a_machine_away_past_the_retention_comes_back_on_a_fresh_anchor_and_lives_on() {
+fn a_machine_away_past_the_retention_comes_back_on_a_fresh_anchor_and_waits_for_the_stride() {
     let at = Scratch::named("past-network");
     let aside = Scratch::named("past-disk");
     let aside_again = Scratch::named("past-disk-again");
@@ -246,22 +255,29 @@ fn a_machine_away_past_the_retention_comes_back_on_a_fresh_anchor_and_lives_on()
         roots_of(&back.value().expect("the plane"), &cohort, head + 1),
         chain
     );
-    let _network = reached(&back, network);
 
-    // **And it lives on from the window the network stands at**, on the proposal the network closed on.
-    let again = pulse::live(&back, &cohort, open, 2, PATIENCE).expect("the machine lives on");
+    // **And it waits out the stride of the horizon** (decision 332 (b)): asked to live the window the
+    // network stands at, it is refused before it writes anything of it — no pledge, no proposal, no
+    // close. The wait to the next stride, its mark across a restart and the following meanwhile are the
+    // test of a machine on a plane of the network that waits for the next stride.
     assert_eq!(
-        again.iter().map(|one| one.window).collect::<Vec<_>>(),
-        vec![open, open + 1]
+        pulse::live(&back, &cohort, open, 1, PATIENCE).map(|_| ()),
+        Err(refused(WAITS))
     );
-    let own = back
-        .proposal_of(open)
-        .expect("the store answers")
-        .expect("the window it lived on");
+    assert_eq!(back.head().expect("the store answers"), Some(head));
     assert_eq!(
-        own.previous,
-        id_of(&closed_on),
-        "the machine come back stands on another proposal than the one the network closed on"
+        back.closed_window().expect("the store answers"),
+        Some(head + 1)
     );
-    assert_eq!(back.head().expect("the store answers"), Some(open));
+    assert!(
+        back.agreement_of(open)
+            .expect("the store answers")
+            .is_none(),
+        "the machine come back pledged in window {open}"
+    );
+    assert!(
+        back.proposal_of(open).expect("the store answers").is_none(),
+        "the machine come back proposed in window {open}"
+    );
+    drop(network);
 }
