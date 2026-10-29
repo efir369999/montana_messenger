@@ -48,7 +48,10 @@ mt_codec::constants! {
     pub const HIGH_HALF: usize = 1, code "the periodic column of this layout marking a row of the high half of the bitmap";
     pub const RESERVED: usize = 2, code "the periodic column of this layout marking a row of a reserved bit of the bitmap";
     pub const TIE: usize = 3, code "the periodic column of this layout marking where the decomposition meets the record";
-    pub const PERIODIC_COUNT: usize = 4, code "the count of the periodic columns this layout adds";
+    /// The row before a bit: the suffix of a mask is read here, at its own row, because the scheme
+    /// reads a periodic column only at the row a rule stands on (`scheme::constraint_at`).
+    pub const BIT_FOLLOWS: usize = 4, code "the periodic column of this layout marking a row of the decomposition whose next row is still a bit";
+    pub const PERIODIC_COUNT: usize = 5, code "the count of the periodic columns this layout adds";
     /// The values of the public input this layer reads, in order, from the place it is given.
     pub const PUBLIC_SEGMENT: usize = 0, code "the place of the current segment among the values of the public input the continuity of an admission reads";
     pub const PUBLIC_IN_FORCE: usize = 1, code "the place of the count in force among them";
@@ -140,9 +143,9 @@ fn carried_bits() -> Option<usize> {
         .filter(|&n| n != 0 && n <= BITMAP_BITS)
 }
 
-// The four columns of the schedule. The bits stand in the rows before the tie, the most significant
+// The five columns of the schedule. The bits stand in the rows before the tie, the most significant
 // first, so the first half of them is the high limb and the first rows above the carried width are
-// the reserved bits.
+// the reserved bits; the last marks every bit but the last, the rows whose next row is still a bit.
 pub fn periodic_columns(rows_log2: u8) -> Option<Vec<Periodic>> {
     let rows = 1usize << rows_log2;
     if rows <= tie() {
@@ -154,6 +157,7 @@ pub fn periodic_columns(rows_log2: u8) -> Option<Vec<Periodic>> {
     columns[HIGH_HALF][..BITMAP_BITS / 2].fill(1);
     columns[RESERVED][..reserved].fill(1);
     columns[TIE][tie()] = 1;
+    columns[BIT_FOLLOWS][..BITMAP_BITS - 1].fill(1);
     Some(
         columns
             .into_iter()
@@ -175,6 +179,7 @@ pub fn constraints(periodic_base: usize, places: &Places) -> Vec<Constraint> {
     let high_half = periodic_base + HIGH_HALF;
     let reserved = periodic_base + RESERVED;
     let tie = periodic_base + TIE;
+    let follows = periodic_base + BIT_FOLLOWS;
     let one = F::ONE;
     let minus = F::ONE.negated();
     let two = F::from_u64_reduced(2);
@@ -196,13 +201,17 @@ pub fn constraints(periodic_base: usize, places: &Places) -> Vec<Constraint> {
     ]));
     // A mask is a suffix of the rows of the bits: set on a row whose next row is still a bit, it is
     // set on that next row. The product is held in a column of its own, which keeps the rule at two.
+    // Whether the next row is a bit is read from a schedule at this row, never from the schedule of
+    // the bits one row on: the trace is judged with a periodic column one row on (`air::cell`), the
+    // proof reads it at the row itself, and the two readings part at the last bit — a true admission
+    // then fails as `CompositionDegree` (PR #118, `admission.rs:528`).
     for (mask, held) in [
         (places.lived, places.lived_held),
         (places.period, places.period_held),
     ] {
         out.push(rule(vec![
             term(one, vec![factor(held, 0, 1)]),
-            term(minus, vec![factor(range, 1, 1), factor(mask, 0, 1)]),
+            term(minus, vec![factor(follows, 0, 1), factor(mask, 0, 1)]),
         ]));
         out.push(rule(vec![
             term(one, vec![factor(held, 0, 1)]),
@@ -357,7 +366,7 @@ pub fn accumulate(columns: &mut [Vec<F>], places: &Places, segment: u32) {
     ] {
         let kept: Vec<F> = (0..rows)
             .map(|row| {
-                if range((row + 1) % rows) {
+                if row + 1 < BITMAP_BITS {
                     columns[mask][row]
                 } else {
                     F::ZERO
@@ -412,7 +421,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_layer_costs_twelve_columns_and_four_schedules() {
+    fn the_layer_costs_twelve_columns_and_five_schedules() {
         let places = Places::after(34);
         assert_eq!(places.width(), 34 + 12);
         let columns = periodic_columns(8).expect("the Decree names the width");
@@ -426,6 +435,12 @@ mod tests {
         );
         assert_eq!(ones(TIE), 1);
         assert_eq!(columns[TIE].values[tie()], 1);
+        // The row before a bit is the schedule of the bits one row on, read at the row itself.
+        let range = &columns[RANGE].values;
+        for (row, &follows) in columns[BIT_FOLLOWS].values.iter().enumerate() {
+            let next = range.get(row + 1).copied().unwrap_or(0);
+            assert_eq!(follows, next, "row {row}");
+        }
         assert!(
             periodic_columns(7).is_none(),
             "the tie stands past the rows of the bits"
@@ -581,20 +596,20 @@ mod tests {
         assert_eq!(record(bitmap, LAST).segments_lived(LAST, in_force), 0);
         let places = places();
         let mut columns = with_record(bitmap, LAST);
-        let mut lifted = 0u32;
-        for row in 0..BITMAP_BITS {
-            let i = BITMAP_BITS - 1 - row;
-            let set = (bitmap >> i) & 1 == 1;
-            let flag = F::from_u64_reduced(u64::from(set));
-            columns[places.bit][row] = flag;
-            columns[places.lived][row] = flag;
-            columns[places.period][row] = flag;
-            lifted += u32::from(set);
+        // Row r carries bit 63 - r of the bitmap, the newest segment last.
+        let set: Vec<bool> = (0..BITMAP_BITS)
+            .map(|row| (bitmap >> (BITMAP_BITS - 1 - row)) & 1 == 1)
+            .collect();
+        let flags: Vec<F> = set
+            .iter()
+            .map(|&s| F::from_u64_reduced(u64::from(s)))
+            .collect();
+        for column in [places.bit, places.lived, places.period] {
+            columns[column][..BITMAP_BITS].copy_from_slice(&flags);
         }
+        let lifted = set.iter().filter(|&&s| s).count() as u32;
         assert_eq!(lifted, in_force);
-        for row in 0..(lifted - gate.required) as usize {
-            columns[places.slack][row] = F::ONE;
-        }
+        columns[places.slack][..(lifted - gate.required) as usize].fill(F::ONE);
         accumulate(&mut columns, &places, gate.segment);
         let description = held();
         assert!(!description.satisfied_by(&columns, &public(&gate)));
