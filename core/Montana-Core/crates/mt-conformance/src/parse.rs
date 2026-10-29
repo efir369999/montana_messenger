@@ -2781,8 +2781,10 @@ pub const DOMAINS_AWAITING_A_VECTOR: &[(&str, &str)] = &[
     // The pulse: the objects a window carries beside its attestations.
     ("mt-nodereg", "the pulse"),
     ("mt-cascade", "the pulse"),
-    // The agreement on what a window decided: the place of a part in an attempt and the identifier
-    // of a roll, frozen with the stage that runs them.
+    // The agreement on what a window decided: the points the pledges of a part stand at past the
+    // attempts of the first band, the place of a part in an attempt and the identifier of a roll,
+    // frozen with the stage that runs them.
+    ("mt-pledge-point", "the agreement on what a window decided"),
     ("mt-proposer", "the agreement on what a window decided"),
     ("mt-roll", "the agreement on what a window decided"),
     // The wire: the two signatures of the handshake and the envelope of a delivery.

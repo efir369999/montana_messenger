@@ -2082,10 +2082,10 @@ numbers, which says the method and not the tree is what is missing.
 | rows of the Decree the library reads | 28 of 54 |
 | of those, rows that decide a width | 9, and one relation tying a tenth to a parameter |
 | implementations of `Layout` | 17, each one declaration, and the register is held against the source |
-| domains of the registry | 101, each one declaration, counted by the harness rather than by a grep |
+| domains of the registry | 102, each one declaration, counted by the harness rather than by a grep |
 | values of the set awaiting a stage | 0 — every one is read by a checker on every build |
-| domains of the registry a run takes a preimage under | 77 of 101 — the gate refuses a domain that is neither taken nor named, so this number is a hundred and one less the twenty-four named and is not a count anybody keeps |
-| of the rest, named with what owes them a vector | 24, and a silent one that is unnamed fails the build |
+| domains of the registry a run takes a preimage under | 77 of 102 — the gate refuses a domain that is neither taken nor named, so this number is a hundred and two less the twenty-five named and is not a count anybody keeps |
+| of the rest, named with what owes them a vector | 25, and a silent one that is unnamed fails the build |
 | prefix pairs among them, closed by the zero and the alphabet | 5 |
 | frozen lines of the set of the shape the coverage pass reads | 278, counted by the pass itself |
 | numerals of the library, every one of them in a register | 168, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
@@ -2094,7 +2094,7 @@ numbers, which says the method and not the tree is what is missing.
 | rows a wrong value would pass | 0 of 69 |
 | headings of a derivation restating a value of the Decree | 19, all compared |
 | rows of the Registry of mechanisms | 101: 38 closed, 63 awaiting a stage, 0 awaiting the artifact — the Registry recounts its own table on every build, and this row is held against that recount rather than counted a second time |
-| domains of the separator registry owned by exactly one row | 101 of 101 |
+| domains of the separator registry owned by exactly one row | 102 of 102 |
 | places reaching a preimage through the door of one body | 11 in library code under SHA-256, none of them assembling |
 | the same under the proof hash, where the set writes the preimage as a concatenation | 5, of which 3 assemble fields of fixed width, which cannot erase one |
 | kinds a field of a layout may stand under | 5, and a sixth does not compile |

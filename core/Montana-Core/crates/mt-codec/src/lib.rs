@@ -334,6 +334,7 @@ registry! {
         MT_COLLECT => "mt-collect",
         MT_ROUND_POINT => "mt-round-point",
         MT_WINDOW_POINT => "mt-window-point",
+        MT_PLEDGE_POINT => "mt-pledge-point",
         MT_PROPOSER => "mt-proposer",
         MT_ROLL => "mt-roll",
         MT_NOTICE_POINT => "mt-notice-point",
