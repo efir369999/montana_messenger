@@ -2106,7 +2106,7 @@ numbers, which says the method and not the tree is what is missing.
 | the prover's time on the ticket, debug profile | the six unit tests of the ticket, two of them proving at the presence's height and one verifying, finish in 61 s together under the debug profile; the whole mt-proof library suite, 134 tests, in 655 s |
 | the admission's circuit, proven and verified end to end | once: the record chain, a walk of two hundred and fifty-six levels by the bits of a key, the halves of the machine's secret, the chain of the right with the record's own limbs held to it — and the root of another state and another window refused |
 | the prover's time on the admission, same profile and machine | near two minutes and a quarter for three hundred and sixty-four permutation blocks against the window's nineteen for twelve boundaries against twenty-seven thousand — the boundary composition measured twice, from both sides |
-| the identifiers of the five descriptions | frozen in the set and recomputed by the gate on every build; their binding is the Decree's own air_hash row |
+| the identifiers of the seven descriptions | frozen in the set and recomputed by the gate on every build; their binding is the Decree's own air_hash row |
 | the Decree | complete: every parameter published, the Genesis State Hash exists, both digests computed by the gate rather than remembered |
 | the population of a split | fixed-parent quorum required at every round; disjoint minorities halt, rejoin recovers only the original quorum; automatic self-selected restart is refused. These arithmetic tests do not authenticate stake or prove runtime finality |
 | what stage twelve still owes | nothing of its plan; what the whole plan still owes past it is its later stages |

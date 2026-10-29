@@ -4928,7 +4928,7 @@ pub fn check_all(md: &str) -> Result<(), String> {
     Ok(())
 }
 
-// The identifiers of the six descriptions the network accepts proofs under, recomputed from the
+// The identifiers of the seven descriptions the network accepts proofs under, recomputed from the
 // running circuits on every build and held against the set — and their binding held against the
 // Decree's own row, so the one parameter that names the constraint sets can never drift from the
 // circuits that are actually accepted.
@@ -4960,6 +4960,9 @@ pub fn check_identifiers(md: &str) -> Result<(), String> {
     let of_ballot = mt_proof::circuit::ballot::description()
         .ok_or_else(|| "the ballot's description stands".to_string())?
         .identifier();
+    let of_pledge = mt_proof::circuit::pledge::description()
+        .ok_or_else(|| "the pledge's description stands".to_string())?
+        .identifier();
     let mut bound = Vec::with_capacity(128);
     for (label, value) in [
         ("identifier of the frame", of_frame),
@@ -4968,6 +4971,7 @@ pub fn check_identifiers(md: &str) -> Result<(), String> {
         ("identifier of the presence", of_presence),
         ("identifier of the opening", of_opening),
         ("identifier of the ballot", of_ballot),
+        ("identifier of the pledge", of_pledge),
     ] {
         let line = body
             .lines()

@@ -4750,7 +4750,8 @@ hash and states what the artifact must contain.
 ```
 air_hash = the hash, under the domain of a description's identifier, of the identifiers of the
            descriptions the network accepts proofs under, in the order the planes stand:
-           the frame, the ticket, the admission, the presence, the opening, the ballot
+           the frame, the ticket, the admission, the presence, the opening, the ballot,
+           the pledge
 
 identifier of the frame     = 01f51109574f2c463fa5bf4da0d43dd314447e10bd79aa17820f0827e65b2562
 identifier of the ticket    = 0c50e4291fede09b20945f9070e50746429b40153911600a690832aab6e65378
@@ -4758,6 +4759,7 @@ identifier of the admission = df6b61c212011e407d44462c1cd253556c5feccf44246cb201
 identifier of the presence  = a948eeaf8b4b07e7d51763944498a6edc463670f649dfdf351e7b478bb053052
 identifier of the opening   = 34c92be6edfe2e089be14dc59489dd2d1ef3483db4fab5d08abc28eaa0ca18da
 identifier of the ballot    = a329f7e7ae7656e26147604e0f757ff9cea56facbf953eb30fd01a3f59fe9928
+identifier of the pledge    = d6b31441516052c28a4be0d23713244f273237a807b42e8564dd82d33f9ab71e
 
 each identifier = the hash, under the same domain, of the canonical description of its
                   constraint set, which is:
@@ -4923,9 +4925,9 @@ description at another height computes another identifier, and `air_hash` refuse
 
 The presence's own height is derived below, with the length that follows from it.
 
-**What the row binds, and in what order.** The value the Decree carries is taken over five
-identifiers — the frame, the ticket, the admission, the presence and the opening — in the order
-the planes stand. Each was written, proven and verified end to end before its identifier was
+**What the row binds, and in what order.** The value the Decree carries is taken over seven
+identifiers — the frame, the ticket, the admission, the presence, the opening, the ballot and the
+pledge — in the order the planes stand. Each was written, proven and verified end to end before its identifier was
 allowed to stand, because an identifier frozen before the thing it names has run is a number that
 measures nothing. The values standing behind `air_hash` — the Genesis State Hash and the digest
 of the published parameters — move when this row moves, and a chain opened on one value is a
@@ -5110,7 +5112,7 @@ demands the width from this row rather than declaring one of its own.
 | `standing_censuses` — the census windows the standing of a machine is counted over, newest first | 10 |
 | `census_interval`, in windows — derived: τ₂ / standing_censuses, so the censuses span one period of adaptation | τ₂ / 10 = 2 016 |
 | `standing_committee` — the votes the standing of an electorate draws in a window, in expectation, once it is wide enough to be sampled | 6 499 |
-| `air_hash` — the constraint sets the proofs of this network are accepted under | 49533d474ed50d1cb5d6174cf2379ba9ee7f68ff603a4b91ef2f95bbff98799c |
+| `air_hash` — the constraint sets the proofs of this network are accepted under | 6246c065cfc2fcf129dd2dde33c4f6de742daba3411e192b8f3eca2e886cdc14 |
 
 **The volume the schedule is checked against.** Per machine, per window, across its chains:
 eligibility strikes 1.1094 times in expectation; 0.6710 of machines publish one heavy
@@ -5142,7 +5144,7 @@ window last the lived length of that window, which is short while the network is
 window adds to the supply is the credit times the count of its living, which is small with it.
 
 **Every parameter of the table is published.** The last to land was the hash binding the constraint
-sets — the identifiers of the six descriptions the network accepts proofs under. These bind
+sets — the identifiers of the seven descriptions the network accepts proofs under. These bind
 exact constraint bytes; they do not establish that every intended relation is implemented. With
 them the whole Decree has an
 encoding, and the Genesis State Hash exists: the value below is what the frozen procedure yields
@@ -5161,11 +5163,11 @@ genesis_state_hash = SHA-256("mt-genesis-state" || 0x00 || parameters
                              || note_root || nullifier_root || record_root || machine_root || admitted_root
                              || credited_root || operations_root)
 
-                   = 3f053286a6e38aca13d690cd15f561a92d6a63c1ff4e47a259644aa562d7e524
+                   = 1af6e69c448395b5c3870eda1a573544078fc646fa86fdffa4e0f1c5749cf789
 
 published_parameters = SHA-256("mt-genesis-state" || 0x00 || the parameters that are published,
                                in the order and the encoding above)
-                     = e913fb4d56f06bc450570e7a83c75fed5f3e7a9fa6a3d1e2426952a3cc34d5d5
+                     = 70d220f24bf7f8748a013dc56548f9b00493ce4dbe67b6255c3c0d4b62fe0cf8
 ```
 
 A chain whose value differs is not a fork of Montana but a different protocol, and honest
@@ -5614,8 +5616,8 @@ the presence, and so of `PRESENCE_PROOF_LEN` bytes, as the record asks. What fit
 it: its blocks are the absorption of the secret and the nullifier of the part, as the presence's,
 and three short derivations and the line in place of the walk of the tree of admitted machines and
 of the absorption of the one-time key, whose limbs dominate the count of the presence ("The height of
-the presence, and the length of its proof"). The description of the pledge is a new description, so its identifier joins those
-`air_hash` folds when its artifact is published, and `air_hash` moves.
+the presence, and the length of its proof"). The description of the pledge is a new description, so its identifier is the seventh
+`air_hash` folds, after the ballot's, and `air_hash` moved with it.
 
 **Invariants of a pledge:**
 
