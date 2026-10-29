@@ -816,7 +816,8 @@ pub struct Machine {
     // it stands at beside those of its window, and it moves as the pulse moves.
     open: OpenRound,
     store: Arc<Store>,
-    answering: Answering,
+    // Shared with the carriers, which answer the flights of an arrival on their own threads.
+    answering: Arc<Answering>,
     door: Door,
     held: Arc<Held>,
     standing: Arc<Standing>,
@@ -943,7 +944,7 @@ impl Machine {
             Self {
                 open: Arc::new(Mutex::new(None)),
                 store,
-                answering,
+                answering: Arc::new(answering),
                 door,
                 held: Arc::new(Held::to_the_ceiling(ceiling)),
                 standing: Arc::new(standing),
@@ -1535,15 +1536,17 @@ impl Machine {
         self.standing.points_standing()
     }
 
-    // Answering one link and handing it to a thread of its own. The door goes back to answering the
-    // moment the link is handed over, so a far side that says nothing holds one thread and never
-    // this machine; and while the ceiling stands full the door is not answered at all, which is the
+    // Taking one connection and handing it to a thread of its own, which answers its flights and
+    // then carries it. The door goes back to taking the moment the connection is handed over, so a
+    // far side that says nothing, in its handshake or after it, holds one thread and never this
+    // machine (#22, K5); and while the ceiling stands full the door is not answered at all, which is the
     // silence the set asks for rather than a reply that would publish the state of this machine.
     pub fn answer_one(&self) -> Result<usize, NodeError> {
         self.held.wait_for_room()?;
-        let link = self.door.answer(&self.answering).map_err(NodeError::Net)?;
-        let closer = link.closer().map_err(NodeError::Net)?;
+        let arrival = self.door.take().map_err(NodeError::Net)?;
+        let closer = arrival.closer().map_err(NodeError::Net)?;
         let standing = self.held.took()?;
+        let answering = Arc::clone(&self.answering);
         let held = Arc::clone(&self.held);
         let open = Arc::clone(&self.open);
         let standing_at_the_points = Arc::clone(&self.standing);
@@ -1553,17 +1556,20 @@ impl Machine {
         let admitted = Arc::clone(&self.admitted);
         let counts = Arc::clone(&self.counts);
         let carrier = std::thread::spawn(move || {
-            let mut link = link;
-            let _carried = carry_until_it_ends(
-                &mut link,
-                &store,
-                &open,
-                &standing_at_the_points,
-                &value,
-                &admitted,
-                &counts,
-                width,
-            );
+            // A far side whose flights do not verify, or that stays silent past the patience,
+            // gives back its slot here, on this thread, and the door never waited for it.
+            if let Ok(mut link) = arrival.answer(&answering) {
+                let _carried = carry_until_it_ends(
+                    &mut link,
+                    &store,
+                    &open,
+                    &standing_at_the_points,
+                    &value,
+                    &admitted,
+                    &counts,
+                    width,
+                );
+            }
             held.release();
         });
         self.keep_carrier(closer, carrier)?;
@@ -2558,6 +2564,53 @@ mod tests {
             std::thread::sleep(std::time::Duration::from_millis(10));
         }
         assert!(freed, "a link that ended did not free its slot");
+    }
+
+    // #22, K5. The named wrong implementation this refuses: a door that runs the four flights on
+    // its own thread. A stranger that opens a connection and says nothing then holds every caller
+    // behind it for the whole patience, and an acquaintance cannot reach the machine at all. Here
+    // the stranger opens first and stays silent, and the acquaintance after it is answered while
+    // the stranger still holds its connection: the stranger took one slot and one thread, no more.
+    #[test]
+    fn a_silent_stranger_holds_one_thread_and_never_the_door() {
+        let far_at = Scratch::named("silent-door");
+        let (far, _) = Machine::start(&Configuration::at(&far_at.0, "127.0.0.1:0"))
+            .expect("the far machine starts");
+        let line = far.acquaintance().expect("an acquaintance is written");
+        let address = read_acquaintance(&line).expect("it reads back").address;
+        let silent = std::net::TcpStream::connect(&address).expect("the stranger connects");
+
+        let near_at = Scratch::named("after-the-silent");
+        let (near, _) = Machine::start(&Configuration::at(&near_at.0, "127.0.0.1:0"))
+            .expect("the near machine starts");
+        let waiting = std::thread::spawn(move || {
+            let stranger = far.answer_one().expect("the stranger's connection is taken");
+            let known = far.answer_one().expect("the acquaintance is answered");
+            (stranger, known, far)
+        });
+        let link = near
+            .reach(&line)
+            .expect("the acquaintance is answered while the stranger is silent");
+        let (stranger, known, far) = waiting.join().expect("the thread stands");
+        assert_eq!((stranger, known), (1, 2), "the machine miscounted its links");
+        assert_ne!(
+            *link.transcript(),
+            [0u8; 32],
+            "a transcript of nothing is no transcript"
+        );
+
+        // And the stranger's slot comes back when it goes, though it never finished a flight.
+        drop(silent);
+        drop(link);
+        let mut freed = false;
+        for _ in 0..200 {
+            if far.holding().0 == 0 {
+                freed = true;
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        assert!(freed, "a stranger that went silent kept its slot");
     }
 
     // The named wrong implementation this refuses: a caller that reaches an acquaintance, reads the
