@@ -1100,8 +1100,10 @@ mod proofs {
             name: one_of(&[LOW, PREVIOUS]),
             since,
             part_nullifier: one_of(&PARTS),
+            line_value: [0u8; 32],
             suite_id: 0,
             answering_key: a_bit(),
+            proof: Vec::new(),
             signature: a_bit(),
         }
     }

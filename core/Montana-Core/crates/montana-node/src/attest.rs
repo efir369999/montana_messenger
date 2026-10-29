@@ -149,8 +149,13 @@ impl Standing {
             name,
             since,
             part_nullifier: self.part_nullifier,
+            // The plan of #89, step 3: the line of this slot at the abscissa of `name`, and
+            // its proof under the description of the pledge. Until that step a pledge
+            // carries zeros there, and no door verifies them yet (step 4).
+            line_value: [0u8; 32],
             suite_id: mt_net::SUITE,
             answering_key: self.key.as_bytes().to_vec(),
+            proof: vec![0u8; mt_state::PRESENCE_PROOF_LEN],
             signature: vec![0u8; mt_codec::size::SIGNATURE],
         };
         let scope = held.signed_scope().map_err(NodeError::Object)?;
