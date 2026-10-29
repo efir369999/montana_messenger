@@ -603,13 +603,23 @@ impl State {
     //
     // **The window and the segment come from the machine and never from the object.** A verifier
     // holds both, and a field restating either would be a second place for them to stand — and a
-    // claimant free to state its own would open a record into a window it never lived to see.
+    // claimant free to state its own would open a record into a window it never lived to see. The
+    // segment is the segment of the window, `floor(window / segment_windows)` (Canon, "The rules
+    // of continuity", rule 1; constitution records 297 and 300). No caller hands it in, so no caller
+    // can open a record against a segment its window does not stand in.
     pub fn apply_opening(
         &mut self,
         opening: &mt_state::layout::Opening,
         window: u64,
-        segment: u32,
     ) -> Result<(), NodeError> {
+        let segment = mt_pulse::standing::segment(window).map_err(|error| match error {
+            mt_pulse::PulseError::CountBeyondWidth => NodeError::Refused {
+                what: "an opening in a window past the segments a record carries",
+            },
+            _ => NodeError::Decree {
+                row: "segment_windows".to_string(),
+            },
+        })?;
         if self.is_spent_right(&opening.open_nullifier) {
             return Err(NodeError::Refused {
                 what: "an opening under a right already spent",

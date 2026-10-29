@@ -1,7 +1,7 @@
 # Audit package
 
 Current protocol closure is tracked separately in [Audit/Protocol-13](Audit/Protocol-13/README.md).
-On 2026-10-14 all 13 acceptance criteria were open; on 2026-10-28, 5 of 13 are closed (items 1 to 4 and 7) and items 5, 6 and 8 to 13 are open, as `core/Montana-Core/PROTOCOL-13.json` and the table of that folder state. Those reports distinguish the published
+As of 2026-10-14, all 13 acceptance criteria remain open. Those reports distinguish the published
 snapshot from candidate repairs and do not convert the historical findings below into closure.
 
 For the proposed third-party review in issue #2, the [commissioning package](doc/external-audit/README.md)
@@ -247,7 +247,7 @@ Where: `core/Montana-Core/AUDIT.md`, lines 96-105, 236-241, 243-249 and 1763.
 
 What: a wallet of the reference implementation answers `this wallet holds no note to pay from`: the first value of the
 network cannot be created, because a right is redeemed inside a frame and a frame needs notes only a redeemed right creates.
-The proof of a window binds every cell of its public input and takes about nineteen minutes in the debug profile. Historical in part (marked 2026-10-27 UTC): "the first value of the network cannot be created" is the tree at source commit `3848245e308b`; on `main` a machine holding one right writes a frame with filler in its other positions and the note it creates is paid away (`core/Montana-Core/crates/mt-proof/src/circuit/frame.rs:1111-1115`, `core/Montana-Core/crates/montana-node/tests/value_enters_the_network.rs:23-98`); an earlier version of that test was in the ring of `4451b21`, which ran every test binary of the workspace, all exit 0 (`Audit/Protocol-13/01-WINDOW-PROOF.md:57`), and a run of the version on `main` (since `c1095eb`) is not recorded here. No deployed application holds a note (section 7), and whether F-8 is closed is not decided here.
+The proof of a window binds every cell of its public input and takes about nineteen minutes in the debug profile.
 
 Why it matters: the shielded notes the whitepaper describes are specified and partly implemented, and carry no value in any
 deployed application (section 7).
@@ -341,7 +341,7 @@ State: open.
 Two different things carry the word coin, and an audit must keep them apart.
 
 The value layer of the set. `core/docs/Montana Value.md` specifies shielded notes, nullifiers and proofs; `core/Montana-Core`
-implements them in part and cannot yet create the first value (F-8). No deployed application holds such a note. Historical in part (marked 2026-10-27 UTC): "cannot yet create the first value" no longer describes `main`, see F-8.
+implements them in part and cannot yet create the first value (F-8). No deployed application holds such a note.
 
 The coins of time of the applications, version 2. Montana for iOS keeps, for each seed, a book of coins on the device; coins
 are minted into that book by the application's rules (`Code/Montana/MTWalletCore.swift`: `MTChatMint` from line 171,
@@ -357,7 +357,7 @@ only as read from the chain's node.
 What version 2 does not close, as the project states it: the node checks no balance, because coins are minted in the seeds'
 books by the application's rules and no supply is proven; a chain's node that is down stops that key's transfers; a node that
 loses its disk loses the records of its keys. Added here: until 2026-10-11 the node did not verify the signature of a record (F-4, closed), and the
-node's code is not in this repository. Montana for Android at build 411 carries no transfer records. Historical (marked 2026-10-27 UTC): this paragraph is version 2 as it ran; from TX_V2_CUT (19.10.2026 21:00 UTC) a node answers a new v2 record 400 «retired» (`Audit/App/COIN-TX-V3.md:293-294`), and the current record is version 3.
+node's code is not in this repository. Montana for Android at build 411 carries no transfer records.
 
 Version 3 (Montana for iOS from build 2193; the nodes since 2026-10-11 21:2x UTC; the specification of the record and of the
 node's rules is `Audit/COIN-TX-V3.md` of the iOS project and is summarised here). Every move of a coin key's balance is a
@@ -375,7 +375,7 @@ a phone that agreed to keep copies for others pulls every chain, verifies and fo
 of a checkpoint (every ten minutes of node time: SHA-256 over each key's last record and count, keys in ascending order) and
 signs it with its coin key; the nodes keep the last signature of each holder. The Explorer at montana.xxx/explorer folds a
 key's whole chain in the browser and shows the root of the newest checkpoint on both nodes with the number of holders whose
-signature over that root it verified. Historical in part (marked 2026-10-27 UTC): these are the rules of version 3 as this section was written (`4f26a3b`, 2026-10-12); the kind BURN (6) was added since, and minting changed: 1 coin a second from TX_SECOND_CUT (19.10.2026 21:00 UTC), the key's seconds credited by the fold itself from TX_TIME_CUT (22.10.2026 21:00 UTC), and from TX_ONLINE_CUT (25.10.2026 21:00 UTC) a MINT of present seconds only. The current record and fold are `Audit/App/COIN-TX-V3.md`, sections 3 and 4 (lines 86-125 and 148-217).
+signature over that root it verified.
 
 What version 3 does not close, by design or not yet: minting is a phone's claim bounded by time, not a proof of a call or a
 letter, and many keys mint in parallel; GENESIS announces and proves nothing, and any key may announce up to its cap before

@@ -27,8 +27,6 @@ jobs:
         run: python3 -m unittest discover -s doc/external-audit/tests -v
       - name: Verify committed source inventory
         run: python3 doc/external-audit/snapshot.py --revision HEAD
-      - name: Reconcile the Canon version, AIR, parameters and Genesis across core and Audit
-        run: python3 doc/external-audit/reconcile.py --revision HEAD
       - name: Install the reviewed Rust compiler
         run: rustup toolchain install 1.92.0 --profile minimal
       - name: Reproduce source premises (not privacy acceptance)

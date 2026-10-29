@@ -23,7 +23,9 @@ mod common;
 use common::{a_candidacy_of, a_record_carrying, an_opening_of};
 
 const WINDOW: u64 = 1_000;
-const SEGMENT: u32 = 7;
+// The segment window 1 000 stands in, floor(1 000 / 1 440) = 0: the machine derives it from the
+// window (Canon, "The rules of continuity", rule 1; constitution records 297 and 300).
+const SEGMENT: u32 = 0;
 const CLAIMANT_MACHINE: [u8; 32] = [0x5A; 32];
 const CLAIMANT_RIGHT: [u8; 32] = [0x22; 32];
 const FOREIGN_RIGHT: [u8; 32] = [0x23; 32];
@@ -37,11 +39,7 @@ fn audit_refuses_a_foreign_record_with_the_claimants_secret_and_an_unrelated_pat
     let foreign = a_record_carrying(&FOREIGN_RIGHT, WINDOW, SEGMENT);
     for (open, record) in [([0x44; 32], &claimants), ([0x45; 32], &foreign)] {
         state
-            .apply_opening(
-                &an_opening_of(&open, record, WINDOW, SEGMENT),
-                WINDOW,
-                SEGMENT,
-            )
+            .apply_opening(&an_opening_of(&open, record, WINDOW, SEGMENT), WINDOW)
             .expect("a record opens");
     }
     let root = state.records_root();
@@ -124,7 +122,6 @@ fn audit_refuses_a_candidacy_lifted_onto_another_commitment() {
         .apply_opening(
             &an_opening_of(&[0x44; 32], &record, WINDOW, SEGMENT),
             WINDOW,
-            SEGMENT,
         )
         .expect("the record opens");
     let root = state.records_root();
