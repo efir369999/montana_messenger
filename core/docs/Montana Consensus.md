@@ -1371,14 +1371,20 @@ proposal, root, frame, message of the wire or quorum carries them.
 
 A window closed, and a shortfall still awaited inside the patience of its wait, are a healthy
 machine and read 0; the waiting reading names its shortfall and is not a stall. A verdict reached
-when the patience of a wait runs out is a stall: it closes nothing and moves no head. A refused proof is not a verdict
+when the patience of a wait runs out is a stall: it closes nothing and moves no head. A shortfall
+whose rounds keep turning starts a new wait at every round, so the patience of one wait never runs
+out on it; once the askings of the whole window reach the patience (`WAITS_UP_TO` on a running
+machine) the reading is the stall of its shortfall -- `no quorum`, code 1, where the data stands --
+and the machine waits on indefinitely, as "The liveness price" requires: the reading gives no
+window up, closes nothing and enters no rule of acceptance (the Author's decision on Gate 0 of
+issue #21, (a), record 357 of the constitution chain, 2026-10-29 12:48 UTC). A refused proof is not a verdict
 and not a state. Every refusal a machine counts is of an object deposited at a public point, and
 anyone may deposit there, so a refusal names no cause of a shortfall. The machine counts its
 refusals and shows the count beside every reading as `refused N`, never in place of the verdict.
 Code 3 is given to no verdict. The verdicts and their codes are `say::Verdict`
 (`core/Montana-Core/crates/montana-node/src/say.rs:24-40`); the readings and the counter are
 `say::PulseStatus` (`say.rs:69-87`, written at `say.rs:159-182`); the verdict is chosen from the
-shortfall alone at `say.rs:253-269` (the Author's decision 334 (a), record 339 of the constitution
+shortfall alone, and the reading of a window that stood the patience is chosen, at `say.rs:250-285` (the Author's decision 334 (a), record 339 of the constitution
 chain, 2026-10-29 09:28 UTC; issue #21).
 
 **Invariants of the way back:**

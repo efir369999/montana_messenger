@@ -250,6 +250,13 @@ impl Counts {
     // A refused public deposit proves no cause of the shortfall. Keep its count beside
     // the verdict: an outsider can increase this count but cannot select the verdict.
     // `waited` askings of `patience` are spent at this wait: it is a wait, not yet a stall.
+    //
+    // **A window that stood the whole patience reads as a stall, and goes on waiting.** A shortfall
+    // whose rounds keep turning starts a new wait at every round, so the patience of one wait never
+    // runs out on it. `asking` counts the askings of the whole window; once it reaches the patience
+    // the reading is the stall of its shortfall and exits with its code, while the machine waits on
+    // indefinitely: nothing is closed, no head moves, no clock enters a rule of acceptance (the
+    // Author's decision on #21 Gate 0, (a); Consensus, "The liveness price").
     pub fn observe(&self, missing: bool, asking: u32, waited: u32, patience: u32) -> Verdict {
         let on = if self.door_lost.load(Ordering::Acquire) {
             Verdict::NoDiagnostics
@@ -258,12 +265,21 @@ impl Counts {
         } else {
             Verdict::NoQuorum
         };
-        self.hold(PulseStatus::Waiting {
-            on,
-            asking,
-            waited,
-            patience,
-            refused: self.refusals(),
+        let refused = self.refusals();
+        self.hold(if asking >= patience {
+            PulseStatus::Stalled {
+                on,
+                asking,
+                refused,
+            }
+        } else {
+            PulseStatus::Waiting {
+                on,
+                asking,
+                waited,
+                patience,
+                refused,
+            }
         });
         on
     }

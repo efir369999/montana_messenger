@@ -6,6 +6,7 @@ use mt_genesis::genesis_params;
 use crate::clock::load_current_window;
 use crate::identity::{default_data_dir, load_identity, NodeError};
 use crate::node_lifecycle::load_or_init_lifecycle;
+use crate::reading::Lack;
 use crate::state::LocalState;
 use crate::timechain_state::load_or_init_timechain;
 
@@ -13,14 +14,46 @@ pub struct StatusArgs {
     pub data_dir: Option<PathBuf>,
 }
 
-pub fn run(args: StatusArgs) -> Result<(), NodeError> {
+/// Issue #21 (the Author's decision on the codes of the earlier core, (a)): the exit code of
+/// `status` is the code of the node's reading -- 0 for a closed window, 1 `no quorum`, 2 `no data`
+/// -- and 4 `no diagnostics` where the node gives no reading: a record of its chain is missing, no
+/// running node holds the store, or this run has read nothing yet. A missing reading never reads
+/// as success. A status writes nothing.
+pub fn run(args: StatusArgs) -> u8 {
     let data_dir = args.data_dir.unwrap_or_else(default_data_dir);
-    let identity = whole_and_held(&data_dir)?;
+    let no_diagnostics = Lack::Diagnostics;
+    if let Err(e) = report(&data_dir) {
+        eprintln!("{}: {e}", no_diagnostics.name());
+        return no_diagnostics.exit_code();
+    }
+    println!();
+    println!("--- reading ---");
+    match crate::reading::read(&data_dir) {
+        Some(reading) if reading.exit_code() == 0 => {
+            println!("{reading}");
+            0
+        },
+        Some(reading) => {
+            eprintln!("{reading}");
+            reading.exit_code()
+        },
+        None => {
+            eprintln!(
+                "{}: this run of the node has read nothing yet",
+                no_diagnostics.name()
+            );
+            no_diagnostics.exit_code()
+        },
+    }
+}
+
+fn report(data_dir: &std::path::Path) -> Result<(), NodeError> {
+    let identity = whole_and_held(data_dir)?;
     let params = genesis_params();
-    let state = LocalState::load_or_bootstrap(&data_dir, &identity, params)?;
-    let current_window = load_current_window(&data_dir)?;
-    let lifecycle = load_or_init_lifecycle(&data_dir, &identity, params)?;
-    let timechain = load_or_init_timechain(&data_dir)?;
+    let state = LocalState::load_or_bootstrap(data_dir, &identity, params)?;
+    let current_window = load_current_window(data_dir)?;
+    let lifecycle = load_or_init_lifecycle(data_dir, &identity, params)?;
+    let timechain = load_or_init_timechain(data_dir)?;
 
     let my_account = identity.account_id();
     let my_node = identity.node_id();

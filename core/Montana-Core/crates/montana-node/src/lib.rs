@@ -2402,6 +2402,32 @@ mod tests {
         );
     }
 
+    // CNS-20 / issue #21 Gate 0 (a): a shortfall whose rounds keep turning starts every wait again at
+    // nought, and still reads as a stall once the askings of its window reach the patience. The wrong
+    // implementations it refuses: a reading bound to the wait of one round, under which such a window
+    // reads exit 0 forever; and a stall that is more than a reading, under which a later close would
+    // not read 0.
+    #[test]
+    fn a_shortfall_whose_rounds_keep_turning_reads_a_stall_once_its_window_stood_the_patience() {
+        let counts = say::Counts::default();
+        assert_eq!(counts.observe(false, 4, 0, 5), say::Verdict::NoQuorum);
+        assert_eq!(counts.status().unwrap().exit_code(), 0);
+        assert_eq!(counts.observe(false, 5, 0, 5), say::Verdict::NoQuorum);
+        let stalled = counts.status().unwrap();
+        assert_eq!(
+            stalled,
+            say::PulseStatus::Stalled {
+                on: say::Verdict::NoQuorum,
+                asking: 5,
+                refused: 0,
+            }
+        );
+        assert_eq!(stalled.exit_code(), 1);
+        assert_eq!(say::PulseStatus::parse(&stalled.to_string()), Some(stalled));
+        counts.closed(9);
+        assert_eq!(counts.status().unwrap().exit_code(), 0);
+    }
+
     // **A point holds its cells on the disk alone, and what was read back holds a ceiling** (issue
     // #63). The wrong implementations refused: a point answering from a copy in memory beside its
     // file, under which a range read here is not the range of the file, and a read-back holding

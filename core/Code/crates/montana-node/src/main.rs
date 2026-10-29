@@ -14,7 +14,17 @@ fn main() -> ExitCode {
     let result = match argv[1].as_str() {
         "init" => parse_init(&argv[2..]).and_then(init::run),
         "inspect" => parse_inspect(&argv[2..]).and_then(inspect::run),
-        "status" => parse_status(&argv[2..]).and_then(status::run),
+        // Issue #21: `status` exits with the code of the node's reading; an argument it cannot
+        // read gives no reading, `no diagnostics`.
+        "status" => {
+            return match parse_status(&argv[2..]) {
+                Ok(args) => ExitCode::from(status::run(args)),
+                Err(e) => {
+                    eprintln!("no diagnostics: {e}");
+                    ExitCode::from(montana_node::reading::Lack::Diagnostics.exit_code())
+                },
+            };
+        },
         "time" => parse_time(&argv[2..]).and_then(time::run),
         "start" => parse_start(&argv[2..]).and_then(start::run),
         "help" | "-h" | "--help" => {

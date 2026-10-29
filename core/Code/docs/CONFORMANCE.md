@@ -29,7 +29,7 @@ network.
 ## Open, tracked in SPEC_DEVIATIONS.md
 
 - DEV-024: cemented_bundle_aggregate hashes confirmer node_ids; spec text says ML-DSA-65 signatures (grinding-resistance gap). Author decision required: amend spec or regenerate primitive + KATs.
-- DEV-026 (closed, issue #18 S4): a second envelope of an applied window is refused and nothing moves (core/docs Consensus:1382, a verified decision is never abandoned); a pair from one proposer is kept as equivocation evidence.
+- DEV-026 (closed, issue #18 S4): a second envelope of an applied window is refused and nothing moves (core/docs Consensus:1455, a verified decision is never abandoned); a pair from one proposer is kept as equivocation evidence.
 - DEV-027 (closed, superseded by DEV-054): genesis window 0 carries no settle ⇒ supply(W) = EMISSION × W. Since issue #18 a window issues the credit times the count of its living, and supply_moneta is removed.
 - DEV-010/011/016: acknowledged operator choices (genesis bootstrap detection, hardware D calibration for the genesis node, manifest-seeded cohort).
 

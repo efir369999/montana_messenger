@@ -152,6 +152,19 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
     if opening {
         println!("[open W=0] window zero opens on the operator's cohort (this machine)");
     }
+    // Issue #21: a run starts with no reading of its own, so `status` never reads an earlier run
+    // as this one; the opening of window zero is this run's first close.
+    if opening {
+        crate::reading::write(
+            &data_dir,
+            crate::reading::Reading::Closed {
+                window: current,
+                refused: 0,
+            },
+        )?;
+    } else {
+        crate::reading::clear(&data_dir)?;
+    }
     let mut lifecycle = load_or_init_lifecycle(&data_dir, &identity, params)?;
     let mut effective_d = args.d_test_override.unwrap_or(timechain.current_d);
 
@@ -582,6 +595,15 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                         eprintln!(
                             "[consensus] w={next_window}: STALLED, no proposer at depth {my_depth} -- the cascade is exhausted or the confirmers of w-2 are not held; this node does not appoint itself"
                         );
+                        // No proposal of the window was delivered: `no data`, code 2.
+                        crate::reading::write(
+                            &data_dir,
+                            crate::reading::Reading::Stalled {
+                                on: crate::reading::Lack::Data,
+                                window: next_window,
+                                refused: 0,
+                            },
+                        )?;
                     }
                     break 'active_arm;
                 };
@@ -994,7 +1016,7 @@ fn acting_proposer(
 }
 
 /// A second envelope of a window this node already applied (issue #18, S4). It is refused and
-/// nothing of the state moves: core/docs Consensus, invariant 13 (Consensus.md:1382), a machine
+/// nothing of the state moves: core/docs Consensus, invariant 13 (Consensus.md:1455), a machine
 /// "never abandons a decision it verified"; of two proposals of one height the chain keeps the one
 /// the agreement of the window after decided (:425-428), never the later arrival. When the second
 /// envelope names the proposer of the applied one, carries another decision (another
@@ -1219,6 +1241,7 @@ fn settle_and_bookkeep(
     settled: Settled,
     envelope: &[u8],
     t_r_w: Hash32,
+    refused: u64,
 ) -> Result<(), NodeError> {
     let mut current_d = ctx.timechain.current_d;
     if settled_w > 0 && settled_w % ctx.params.tau2_windows == 0 {
@@ -1272,6 +1295,13 @@ fn settle_and_bookkeep(
         ctx.state,
         ctx.timechain,
         &envelope,
+    )?;
+    crate::reading::write(
+        ctx.data_dir,
+        crate::reading::Reading::Closed {
+            window: settled_w,
+            refused,
+        },
     )
 }
 
@@ -1370,7 +1400,7 @@ fn cement_as_leader(
     }
     // One commit: the tables, the clock and the envelope of propose_w. The archive view is
     // written from it before the broadcast; after a restart the envelope is re-broadcast.
-    settle_and_bookkeep(ctx, propose_w, &confirmers, settled, &envelope, t_r_w)?;
+    settle_and_bookkeep(ctx, propose_w, &confirmers, settled, &envelope, t_r_w, 0)?;
     ctx.recent_roots.insert(propose_w, post_root);
     bound_map(ctx.recent_roots);
     *ctx.prev_proposal_hash = proposal_hash(&header);
@@ -1427,7 +1457,10 @@ fn complete_fast_sync(
     ctx.state
         .apply_fast_sync(record, ctx.data_dir, ctx.current, ctx.timechain)?;
     eprintln!("[m7] fast-sync complete → state replaced, current_window={window}");
-    Ok(())
+    crate::reading::write(
+        ctx.data_dir,
+        crate::reading::Reading::Closed { window, refused: 0 },
+    )
 }
 
 /// Handling one incoming protocol message. Called from
@@ -1604,6 +1637,14 @@ fn handle_protocol_message(
             // refuses, and recovers through sequential application or fast-sync.
             let Some(aggregate) = held_aggregate(ctx.bc_set_history, w.saturating_sub(2)) else {
                 eprintln!("[consensus] w={w}: confirmers of w-2 not held — skip");
+                crate::reading::write(
+                    ctx.data_dir,
+                    crate::reading::Reading::Stalled {
+                        on: crate::reading::Lack::Data,
+                        window: w,
+                        refused: 0,
+                    },
+                )?;
                 return Ok(());
             };
             let electorate = electorate_at(&ctx.state.nodes, w, ctx.params);
@@ -1641,6 +1682,8 @@ fn handle_protocol_message(
             // (active_cl); no wall-clock and no proposer-based relaxation.
             // Checking included_bundles (confirmations of window w-1).
             let mut confirmers: Vec<mt_state::NodeId> = Vec::new();
+            // The confirmations refused on this envelope, shown beside its reading.
+            let mut refused = 0u64;
             if w >= 1 {
                 let t_r_prev = ctx.t_r_history.get(&(w - 1)).copied().or_else(|| {
                     // After a restart the history may be absent: the unanimous endpoint
@@ -1653,6 +1696,7 @@ fn handle_protocol_message(
                     ctx.t_r_history.entry(w - 1).or_insert(t_r_prev);
                     let prev = tally(&bundles_prev, &ctx.state.nodes, &t_r_prev);
                     confirmers = prev.confirmers;
+                    refused = prev.refused as u64;
                     if mt_consensus::validate_bundles_threshold(prev.weight, active_cl).is_err() {
                         eprintln!(
                             "{}",
@@ -1664,6 +1708,14 @@ fn handle_protocol_message(
                                 prev.refused
                             )
                         );
+                        crate::reading::write(
+                            ctx.data_dir,
+                            crate::reading::Reading::Stalled {
+                                on: crate::reading::Lack::Quorum,
+                                window: w,
+                                refused,
+                            },
+                        )?;
                         return Ok(());
                     }
                 } else if !bundles_prev.is_empty() {
@@ -1676,12 +1728,21 @@ fn handle_protocol_message(
             confirmers.sort();
             // Checking the evidence of window w (weighted).
             let ev = tally(&evidence, &ctx.state.nodes, &header.timechain_value);
+            refused += ev.refused as u64;
             let need_quorum = quorum(active_cl);
             if w >= 1 && ev.weight < need_quorum {
                 eprintln!(
                     "{}",
                     shortfall_line(w, "cementing evidence", ev.weight, need_quorum, ev.refused)
                 );
+                crate::reading::write(
+                    ctx.data_dir,
+                    crate::reading::Reading::Stalled {
+                        on: crate::reading::Lack::Quorum,
+                        window: w,
+                        refused,
+                    },
+                )?;
                 return Ok(());
             }
             // Application by a single state transition (transactional, DEV-042): computed on
@@ -1701,6 +1762,7 @@ fn handle_protocol_message(
                 settled,
                 &msg.payload,
                 header.timechain_value,
+                refused,
             )?;
             ctx.recent_roots.insert(w, header.state_root);
             bound_map(ctx.recent_roots);

@@ -80,7 +80,8 @@ fn open_by_a_machine_the_manifest_does_not_name_is_refused() {
     assert_eq!(files(&dir), before, "a refused --open wrote to the store");
 }
 
-// Issue #21 K4: status reports a running node from the records of its chain, or fails. Refuses the
+// Issue #21 K4: status reports a running node from the records of its chain, or fails with
+// `no diagnostics`, code 4 (the codes of the earlier core, the Author's decision (a)). Refuses the
 // status before K4, which stood a default in for every missing record and exited 0 on a store
 // holding nothing of a chain, and exited 0 on a store no node runs -- the Docker health check
 // is its exit code (docker-compose.yml). A probe writes nothing, and a held store is not
@@ -89,14 +90,14 @@ fn open_by_a_machine_the_manifest_does_not_name_is_refused() {
 fn status_fails_without_the_records_of_a_chain_or_a_running_holder() {
     let (dir, manifest) = machine(OPENER_ENTROPY, OPENER_ENTROPY);
     let (code, stderr) = status(&dir);
-    assert_eq!(code, Some(1), "stderr: {stderr}");
+    assert_eq!(code, Some(4), "stderr: {stderr}");
     assert!(stderr.contains("is missing"), "stderr: {stderr}");
 
     let (code, stderr) = start(&dir, &manifest, &["--open"]);
     assert_eq!(code, Some(0), "stderr: {stderr}");
     let opened = files(&dir);
     let (code, stderr) = status(&dir);
-    assert_eq!(code, Some(1), "stderr: {stderr}");
+    assert_eq!(code, Some(4), "stderr: {stderr}");
     assert!(stderr.contains(NO_RUNNING_HOLDER), "stderr: {stderr}");
 
     // Held as a running start holds it.
@@ -113,8 +114,58 @@ fn status_fails_without_the_records_of_a_chain_or_a_running_holder() {
 
     drop(holder);
     let (code, stderr) = status(&dir);
-    assert_eq!(code, Some(1), "stderr: {stderr}");
+    assert_eq!(code, Some(4), "stderr: {stderr}");
     assert!(stderr.contains(NO_RUNNING_HOLDER), "stderr: {stderr}");
+}
+
+// Issue #21, the codes of the earlier core (the Author's decision (a), record 358): the exit code of
+// status is the code of the node's reading -- 0 a closed window, 1 `no quorum`, 2 `no data` -- and
+// 4 `no diagnostics` where this run has none. Refuses a status that exits 0 on a stall, gives two
+// verdicts one code, reads an absent reading as success, or lets a run stand on the reading of an
+// earlier one.
+#[test]
+fn status_exits_with_the_code_of_the_reading() {
+    use montana_node::reading::{self, Lack, Reading};
+    let (dir, manifest) = machine(OPENER_ENTROPY, OPENER_ENTROPY);
+    let (code, stderr) = start(&dir, &manifest, &["--open"]);
+    assert_eq!(code, Some(0), "stderr: {stderr}");
+    // The opening of window zero is the first close of its run.
+    assert_eq!(
+        reading::read(&dir),
+        Some(Reading::Closed {
+            window: 0,
+            refused: 0
+        })
+    );
+    let holder = montana_node::holder::hold(&dir).expect("the store is held");
+    let (code, stderr) = status(&dir);
+    assert_eq!(code, Some(0), "stderr: {stderr}");
+    for (on, code) in [(Lack::Quorum, 1), (Lack::Data, 2)] {
+        let stalled = Reading::Stalled {
+            on,
+            window: 1,
+            refused: 3,
+        };
+        reading::write(&dir, stalled).unwrap();
+        let (got, stderr) = status(&dir);
+        assert_eq!(got, Some(code), "stderr: {stderr}");
+        assert!(stderr.contains(&stalled.to_string()), "stderr: {stderr}");
+    }
+    reading::clear(&dir).unwrap();
+    let (code, stderr) = status(&dir);
+    assert_eq!(code, Some(4), "stderr: {stderr}");
+    assert!(stderr.contains("no diagnostics"), "stderr: {stderr}");
+
+    // A start does not stand on the reading of an earlier run.
+    drop(holder);
+    let earlier = Reading::Closed {
+        window: 99,
+        refused: 9,
+    };
+    reading::write(&dir, earlier).unwrap();
+    let (code, stderr) = start(&dir, &manifest, &[]);
+    assert_eq!(code, Some(0), "stderr: {stderr}");
+    assert_ne!(reading::read(&dir), Some(earlier));
 }
 
 fn status(dir: &Path) -> (Option<i32>, String) {

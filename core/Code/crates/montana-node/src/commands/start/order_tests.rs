@@ -522,7 +522,7 @@ fn a_header_with_a_non_zero_lottery_field_is_refused() {
 }
 
 // Issue #18, S4: a second envelope of an applied window: refused, state byte-identical, the pair
-// kept. core/docs Consensus:1382, a machine "never abandons a decision it verified"; :1239-1243,
+// kept. core/docs Consensus:1455, a machine "never abandons a decision it verified"; :1239-1243,
 // two decisions that both verify are an equivocation and are kept as its evidence. Rejects a
 // follower that takes the second envelope as the window's decision (re-archives it, moves to it,
 // re-applies it), and one that keeps no evidence of the equivocation.

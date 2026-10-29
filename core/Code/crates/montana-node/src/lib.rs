@@ -11,6 +11,7 @@ pub mod network;
 pub mod node_lifecycle;
 /// User-operations plane. The receiver is OFF by default and does not change state.
 pub mod ops;
+pub mod reading;
 pub mod state;
 pub mod timechain_state;
 /// The window record: the one truth of the window a node applied (issue #19 K5).
