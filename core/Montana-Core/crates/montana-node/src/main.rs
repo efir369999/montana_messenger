@@ -21,11 +21,13 @@ montana-node — a machine of Montana
                          final windows, as their operator handed them over. A machine
                          keeps every proposal it took as one file of <data>/proposals,
                          named by its window in twenty digits; its last final window
-                         is <data>/head, eight bytes, least significant first. That
-                         file and the one before it are an anchor. This machine walks
-                         from it to the head over the machines it reached, verifying
-                         every certificate, before it does anything else; the trust
-                         in the anchor is the trust placed in whoever handed it over.
+                         is the one it names at its start, \"holding the chain to window
+                         <n>\". That file and the one before it are an anchor, and only
+                         they are handed over: the rest of <data> is the machine's own.
+                         This machine walks from it to the head over the machines it
+                         reached, verifying every certificate, before it does anything
+                         else; the trust in the anchor is the trust placed in whoever
+                         handed it over.
   --admitted <half>      the naming half of a machine admitted to the window, in
                          hexadecimal, as its operator handed it over. Given once for
                          every machine of the cohort — this one included — it is what
