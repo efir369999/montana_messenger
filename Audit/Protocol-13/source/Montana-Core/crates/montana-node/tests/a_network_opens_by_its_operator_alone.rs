@@ -27,6 +27,21 @@ use common::Scratch;
 const NO_ANCHOR: &str = "refused: a machine with no anchor opens no window";
 const OPENED_OVER_A_CHAIN: &str = "refused: a network opened on a store that holds a chain";
 
+// **Every test of this file runs alone.** A test that starts the binary forks, and until the child
+// execs it holds a duplicate of every descriptor of this process. One of them can be the lock of the
+// root of a store another test has just dropped: `mt-store`, `Store::open`, where the lock goes with
+// the handle. The next opening of that store is then refused `HeldByAnother` for the instant between
+// the fork and the exec. Seen on Lauterbourg-2 (a640-open3): one run in three parallel, at "the store
+// opens again"; green under --test-threads=1. The lock is right to refuse. What shares one process
+// is the tests, not the machines.
+static ALONE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+fn alone() -> std::sync::MutexGuard<'static, ()> {
+    ALONE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
 // A store with a secret borne and nothing else, and the naming half of the machine it is. A secret
 // is written once and its temporary is kept beside it, which the next opening of the store sweeps;
 // the store is opened once more here, so what a test compares is the store as every start leaves
@@ -90,7 +105,8 @@ fn stopped_inside_window_zero(at: &Path, secret: [u8; 32]) -> [u8; 32] {
     let errand: pulse::Errand<'_> = &ahead;
     assert_eq!(
         pulse::live_doing(&machine, &cohort, 0, 1, 4, Some(errand)).map(|_| ()),
-        Err(NodeError::Refused {
+        Err(NodeError::Stalled {
+            on: montana_node::say::Verdict::NoData,
             what: "a round no beacon ever stood at"
         })
     );
@@ -108,6 +124,7 @@ fn stopped_inside_window_zero(at: &Path, secret: [u8; 32]) -> [u8; 32] {
 // and its store holds a chain it opened alone.
 #[test]
 fn a_machine_holding_nothing_and_not_asked_to_open_is_refused_and_writes_nothing() {
+    let _alone = alone();
     let at = Scratch::named("open-neither");
     let half = borne(&at.0, [0x71; 32]);
     let before = everything_under(&at.0);
@@ -122,11 +139,43 @@ fn a_machine_holding_nothing_and_not_asked_to_open_is_refused_and_writes_nothing
     );
 }
 
+// Refuses the start of ced7d83f, whose refusal of a machine left out of the cohort printed the half
+// it is named by on the terminal (#22, K1): the refusal names the file the half stands in, and the
+// store is left as it was found.
+#[test]
+fn a_machine_left_out_of_the_cohort_is_refused_without_its_half() {
+    let _alone = alone();
+    let at = Scratch::named("open-outside");
+    let half = borne(&at.0, [0x75; 32]);
+    let other = Cohort::half_of(&[0x76; 32]);
+    let before = everything_under(&at.0);
+    let ran = started(&at.0, &other, false);
+    let said = String::from_utf8_lossy(&ran.stderr);
+    assert!(!ran.status.success(), "a machine outside its cohort lived");
+    assert!(
+        said.contains("is not among the 1 named as admitted"),
+        "{said}"
+    );
+    assert!(said.contains(montana_node::private::FILE), "{said}");
+    let shown: String = half.iter().map(|b| format!("{b:02x}")).collect();
+    let printed = format!("{said}{}", String::from_utf8_lossy(&ran.stdout));
+    assert!(
+        !printed.contains(&shown),
+        "the half on a default line: {printed}"
+    );
+    assert_eq!(
+        everything_under(&at.0),
+        before,
+        "a machine refused outside its cohort wrote to its store"
+    );
+}
+
 // Refuses an --open that is not window zero on the cohort handed: the binary of fa8ec28, which does
 // not know the flag and refuses it, and an opening that waits for an anchor, opens another window or
 // carries another tree of admitted machines than the halves the operator named.
 #[test]
 fn an_operator_opens_window_zero_on_the_cohort_handed_over() {
+    let _alone = alone();
     let at = Scratch::named("open-empty");
     let half = borne(&at.0, [0x72; 32]);
     let ran = started(&at.0, &half, true);
@@ -140,6 +189,33 @@ fn an_operator_opens_window_zero_on_the_cohort_handed_over() {
         said.contains("living from window 0 in a cohort of 1"),
         "{said}"
     );
+    // **The default lines name nobody** (#22, K1): no address of this machine, no half it is named
+    // by, no part of a nullifier and no amount reach the terminal; they stand in the owner-only file
+    // of the data directory. Refuses the start of 7e2ac1b's parent, which printed all four.
+    let shown: String = half.iter().map(|b| format!("{b:02x}")).collect();
+    for line in said.lines() {
+        assert!(
+            !line.contains("127.0.0.1"),
+            "an address on a default line: {line}"
+        );
+        assert!(!line.contains(&shown), "the half on a default line: {line}");
+        assert!(!line.contains(" part "), "a part on a default line: {line}");
+        assert!(
+            !line.contains("coin"),
+            "an amount on a default line: {line}"
+        );
+    }
+    let details = at.0.join(montana_node::private::FILE);
+    let mode = std::os::unix::fs::PermissionsExt::mode(
+        &std::fs::metadata(&details)
+            .expect("the owner-only file stands")
+            .permissions(),
+    );
+    assert_eq!(mode & 0o777, 0o600);
+    let kept = std::fs::read_to_string(&details).expect("the file of details reads");
+    assert!(kept.contains("answering at 127.0.0.1:"), "{kept}");
+    assert!(kept.contains(&shown), "{kept}");
+    assert!(kept.contains(" -- part "), "{kept}");
     let (machine, born) =
         Machine::start(&Configuration::at(&at.0, "127.0.0.1:0")).expect("the machine starts");
     assert!(!born);
@@ -163,6 +239,7 @@ fn an_operator_opens_window_zero_on_the_cohort_handed_over() {
 // and a start without --open that takes that record for an anchor and lives window zero again.
 #[test]
 fn an_open_on_a_store_holding_a_chain_is_refused_and_writes_nothing() {
+    let _alone = alone();
     let at = Scratch::named("open-held");
     let half = stopped_inside_window_zero(&at.0, [0x73; 32]);
     let before = everything_under(&at.0);
@@ -196,6 +273,7 @@ fn an_open_on_a_store_holding_a_chain_is_refused_and_writes_nothing() {
 // fa8ec28 lives again on the Genesis State Hash.
 #[test]
 fn the_pulse_opens_window_zero_on_an_empty_store_alone() {
+    let _alone = alone();
     let at = Scratch::named("open-pulse");
     let half = stopped_inside_window_zero(&at.0, [0x74; 32]);
     let before = everything_under(&at.0);

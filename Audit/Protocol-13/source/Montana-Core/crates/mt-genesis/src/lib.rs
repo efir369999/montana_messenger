@@ -123,9 +123,9 @@ pub const PARAMETERS: &[Entry] = &[
     Entry::Hash(
         "air_hash",
         [
-            0x49, 0x53, 0x3d, 0x47, 0x4e, 0xd5, 0x0d, 0x1c, 0xb5, 0xd6, 0x17, 0x4c, 0xf2, 0x37,
-            0x9b, 0xa9, 0xee, 0x7f, 0x68, 0xff, 0x60, 0x3a, 0x4b, 0x91, 0xef, 0x2f, 0x95, 0xbb,
-            0xff, 0x98, 0x79, 0x9c,
+            0xf3, 0x0c, 0x8d, 0xc7, 0x5b, 0x61, 0x60, 0xdf, 0x94, 0xa2, 0xd2, 0xdd, 0x15, 0x02,
+            0x6d, 0x23, 0x87, 0x38, 0xae, 0x54, 0x31, 0x78, 0xd1, 0xde, 0x97, 0x60, 0x60, 0x2c,
+            0xdf, 0x70, 0x17, 0xb8,
         ],
     ),
 ];
@@ -322,6 +322,19 @@ mod tests {
         // the constitutional layer fixes the number.
         assert_eq!(s("window_credit"), 60);
         assert_eq!(s("window_credit") * s("segment_windows"), 86_400);
+    }
+
+    // The ramp of entry (Consensus, "Presence and admission"; constitution records 297 and 300)
+    // leaves `continuity_segments` exactly at the threshold only while the multiplier is the
+    // threshold turned over. It reaches `max_entry_segments` at four times the threshold, and the
+    // bitmap of a record is wide enough for that ceiling. A row moved alone breaks one of these.
+    #[test]
+    fn the_multiplier_of_entry_is_its_threshold_turned_over() {
+        let (num, den) = super::ratio("adaptive_entry_threshold").expect("the Decree names it");
+        assert_eq!(den, num * s("adaptive_entry_multiplier"));
+        assert_eq!((num, den), (1, 100));
+        assert_eq!(s("max_entry_segments"), 4 * s("continuity_segments"));
+        assert!(s("max_entry_segments") <= u64::from(u64::BITS));
     }
 
     #[test]

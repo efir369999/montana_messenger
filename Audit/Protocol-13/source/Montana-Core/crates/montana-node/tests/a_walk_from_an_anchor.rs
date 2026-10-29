@@ -27,7 +27,8 @@
 // reach it (3 × 100 ≥ 4 × 67) and one stands astray — the electorate of the acceptance of item 1.
 
 use montana_node::certificate::{
-    decided_of, verify_certificate, walk, Anchor, Electorate, Predecessor, Roots, Round, Step,
+    decided_of, verify_certificate, walk, walk_to_the_open, Anchor, Electorate, Predecessor, Roots,
+    Round, Step,
 };
 use montana_node::pulse::Cohort;
 use montana_node::runner::Runner;
@@ -240,6 +241,71 @@ fn a_device_walks_from_its_anchor_to_the_head_and_no_further() {
             major,
         ),
         Err(refused("a cement below the quorum share of the electorate"))
+    );
+
+    // The join over the open window of a running network: the newest certificate short of its
+    // quorum is a window still closing, and the walk is taken again without it -- the head stays at
+    // the anchor, the next proposal awaiting its certificate.
+    let the_first = || Step {
+        certificate: &rounds,
+        pledges: &closed,
+        rolls: &rolls,
+        next: std::slice::from_ref(&next),
+    };
+    let (open_head, awaiting) = walk_to_the_open(
+        &anchor,
+        &[
+            the_first(),
+            Step {
+                certificate: &short,
+                pledges: &closed_after,
+                rolls: &[],
+                next: &[],
+            },
+        ],
+        1,
+        &draw,
+        major,
+    )
+    .expect("a window still closing is walked around");
+    assert_eq!(open_head, anchor);
+    assert_eq!(
+        awaiting.map(|held| held.id().expect("an identifier")),
+        Some(next_id)
+    );
+
+    // Refused, and not walked around: the newest certificate carrying a forged attestation. A
+    // retry on every refusal drops the forged window in silence and leaves the device living on from
+    // the window before; only a certificate not whole yet is a window still closing (review 508 of
+    // item 5, the case of a turned byte in the answers of one step).
+    let mut forged_after = answered_after.clone();
+    forged_after[0].signature[0] ^= 1;
+    let forged_rounds = [Round {
+        beacon: &first_after,
+        heavy: &forged_after,
+        light: &[],
+        ballots: &[],
+    }];
+    assert_eq!(
+        walk_to_the_open(
+            &anchor,
+            &[
+                the_first(),
+                Step {
+                    certificate: &forged_rounds,
+                    pledges: &closed_after,
+                    rolls: &[],
+                    next: &[],
+                },
+            ],
+            1,
+            &draw,
+            major,
+        )
+        .map(|_| ()),
+        Err(refused(
+            "an attestation under a signature that does not verify"
+        ))
     );
 
     // Refused: a next proposal whose ticket was drawn against the aggregate the later proposal

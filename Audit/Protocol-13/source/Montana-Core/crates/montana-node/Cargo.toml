@@ -34,7 +34,9 @@ zeroize = { workspace = true }
 # (`pulse::withhold`). No build of the protocol enables it.
 withhold = []
 # The vectors build a plane of notes without a frame (`state::State::witness`), a door that mints a
-# note no nullifier closes. No build of the protocol enables it.
+# note no nullifier closes, and stand a lived record in the tree of records without an action
+# (`state::State::witness_record`), a door that grants continuity nothing earned. No build of the
+# protocol enables it.
 witness = []
 
 [dev-dependencies]

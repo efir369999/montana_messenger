@@ -104,6 +104,30 @@ pub fn pipe_secret_step(secret: &[u8; 32]) -> [u8; 32] {
     hash_of_one(domain::MT_PIPE_RATCHET, secret)
 }
 
+// **The first value of the healed walk of a pipe** (Network, "How a link renews its keys", what it
+// does for a pipe; issue #75). A letter of a pipe offers an ML-KEM-768 encapsulation key `pk_h` its
+// sender drew for that offer alone, and the letter answering it carries `ct_h`, an encapsulation to
+// it, which opens to `ss_h`. `secret` is the value the old walk reaches at the window of the tag the
+// answering letter travelled under, and the healed walk stands from the window after it and walks on
+// by `pipe_secret_step`. Whoever read the old walk and not the fresh decapsulation key reaches none
+// of the healed one.
+pub fn pipe_heal(
+    secret: &[u8; 32],
+    ss_h: &[u8; 32],
+    pk_h: &[u8; size::KEM_PUBLIC_KEY],
+    ct_h: &[u8; size::KEM_CIPHERTEXT],
+) -> [u8; 32] {
+    hash(
+        domain::MT_PIPE_HEAL,
+        &[
+            Part::of(secret),
+            Part::of(ss_h),
+            Part::of(pk_h),
+            Part::of(ct_h),
+        ],
+    )
+}
+
 // The secret of a later window from the secret of an earlier one, one step per window between
 // them. A window before the one the value stands at has no secret derivable from it — that is the
 // property and not a gap — so the answer is nothing rather than a walk backwards nobody defined.
@@ -379,6 +403,38 @@ mod tests {
             "92aa039f4d82a59e12a6e65eacaa998fa06455b63e4aef6405556f9e99e4c666"
         );
         assert_ne!(pipe_secret_step(&distinct), pipe_secret_step(&reversed));
+    }
+
+    // The heal of a pipe, recomputed here from its definition: the domain, the NUL, the value of the
+    // old walk, the shared secret and the two public values of the heal. The named wrong heals answer
+    // elsewhere: the old walk one step on (the window after the answering letter's), the step of the
+    // walk in place of the heal, and the heal without its shared secret.
+    #[test]
+    fn a_heal_folds_the_old_walk_and_its_encapsulation() {
+        use sha2::Digest as _;
+        let old = [0x61u8; 32];
+        let ss_h = [0x62u8; 32];
+        let pk_h = [0x63u8; size::KEM_PUBLIC_KEY];
+        let ct_h = [0x64u8; size::KEM_CIPHERTEXT];
+        let healed = pipe_heal(&old, &ss_h, &pk_h, &ct_h);
+        let mut by_hand = sha2::Sha256::new();
+        by_hand.update(b"mt-pipe-heal");
+        by_hand.update([0x00]);
+        for part in [&old[..], &ss_h, &pk_h, &ct_h] {
+            by_hand.update(part);
+        }
+        assert_eq!(healed, <[u8; 32]>::from(by_hand.finalize()));
+        assert_ne!(
+            healed,
+            pipe_heal(&pipe_secret_step(&old), &ss_h, &pk_h, &ct_h)
+        );
+        assert_ne!(healed, pipe_secret_step(&old));
+        assert_ne!(healed, pipe_heal(&old, &[0u8; 32], &pk_h, &ct_h));
+        // The healed walk walks on by the ordinary step, and stands apart from the old one.
+        assert_ne!(
+            pipe_secret_step(&healed),
+            pipe_secret_step(&pipe_secret_step(&old))
+        );
     }
 }
 
