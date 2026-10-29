@@ -150,11 +150,9 @@ pub fn periodic_columns(rows_log2: u8) -> Option<Vec<Periodic>> {
     }
     let reserved = BITMAP_BITS - carried_bits()?;
     let mut columns = vec![vec![0u64; rows]; PERIODIC_COUNT];
-    for row in 0..BITMAP_BITS {
-        columns[RANGE][row] = 1;
-        columns[HIGH_HALF][row] = u64::from(row < BITMAP_BITS / 2);
-        columns[RESERVED][row] = u64::from(row < reserved);
-    }
+    columns[RANGE][..BITMAP_BITS].fill(1);
+    columns[HIGH_HALF][..BITMAP_BITS / 2].fill(1);
+    columns[RESERVED][..reserved].fill(1);
     columns[TIE][tie()] = 1;
     Some(
         columns
@@ -328,8 +326,7 @@ pub fn write(columns: &mut [Vec<F>], places: &Places, bitmap: u64, last: u32, ga
     let lived_below = i64::from(gate.in_force) + i64::from(last) - i64::from(gate.segment);
     let flag = |set: bool| F::from_u64_reduced(u64::from(set));
     let mut counted = 0u32;
-    for row in 0..BITMAP_BITS {
-        let i = BITMAP_BITS - 1 - row;
+    for (row, i) in (0..BITMAP_BITS).rev().enumerate() {
         let bit = (bitmap >> i) & 1 == 1;
         let lived = (i as i64) < lived_below;
         columns[places.bit][row] = flag(bit);
@@ -340,9 +337,7 @@ pub fn write(columns: &mut [Vec<F>], places: &Places, bitmap: u64, last: u32, ga
     }
     // What the masked bits hold beyond the share stands in as many slack bits; short of it, none
     // stands, and the count does not close.
-    for row in 0..counted.saturating_sub(gate.required) as usize {
-        columns[places.slack][row] = F::ONE;
-    }
+    columns[places.slack][..counted.saturating_sub(gate.required) as usize].fill(F::ONE);
     accumulate(columns, places, gate.segment);
 }
 
@@ -352,17 +347,24 @@ pub fn accumulate(columns: &mut [Vec<F>], places: &Places, segment: u32) {
     let rows = columns[places.bit].len();
     let range = is_bit;
     let high_half = |row: usize| row < BITMAP_BITS / 2;
-    for row in 0..rows {
-        columns[places.counted][row] = columns[places.bit][row].times(columns[places.lived][row]);
-    }
-    for row in 0..rows {
-        let next = range((row + 1) % rows);
-        for (mask, held) in [
-            (places.lived, places.lived_held),
-            (places.period, places.period_held),
-        ] {
-            columns[held][row] = if next { columns[mask][row] } else { F::ZERO };
-        }
+    let counted: Vec<F> = (0..rows)
+        .map(|row| columns[places.bit][row].times(columns[places.lived][row]))
+        .collect();
+    columns[places.counted][..rows].copy_from_slice(&counted);
+    for (mask, held) in [
+        (places.lived, places.lived_held),
+        (places.period, places.period_held),
+    ] {
+        let kept: Vec<F> = (0..rows)
+            .map(|row| {
+                if range((row + 1) % rows) {
+                    columns[mask][row]
+                } else {
+                    F::ZERO
+                }
+            })
+            .collect();
+        columns[held][..rows].copy_from_slice(&kept);
     }
     let two = F::from_u64_reduced(2);
     for column in [places.high, places.low, places.period_sum, places.count] {
