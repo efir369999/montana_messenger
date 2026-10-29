@@ -62,8 +62,8 @@ fn resigned(secret: &[u8; 32], mut held: Pledge) -> Pledge {
 
 #[test]
 fn a_pledge_counts_only_where_its_proof_binds_its_line_to_its_part() {
-    let cohort = Cohort::of(&[Cohort::half_of(&FIRST), Cohort::half_of(&SECOND)])
-        .expect("a cohort of two");
+    let cohort =
+        Cohort::of(&[Cohort::half_of(&FIRST), Cohort::half_of(&SECOND)]).expect("a cohort of two");
     let first = standing(&cohort, &FIRST);
     let second = standing(&cohort, &SECOND);
     let key = first.key.as_bytes().to_vec();

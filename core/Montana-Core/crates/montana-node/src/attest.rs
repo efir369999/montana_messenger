@@ -157,23 +157,19 @@ impl Standing {
         let unprovable = || NodeError::Unprovable {
             what: "the proof of a pledge",
         };
-        let (trace, part, value) = mt_proof::circuit::pledge::trace_of(
-            machine_secret,
-            self.window,
-            attempt,
-            &name,
-            since,
-        )
-        .ok_or_else(unprovable)?;
+        let (trace, part, value) =
+            mt_proof::circuit::pledge::trace_of(machine_secret, self.window, attempt, &name, since)
+                .ok_or_else(unprovable)?;
         // The part the proof names is the part this window stands on, or the secret is another's.
         if part.bytes() != self.part_nullifier {
             return Err(unprovable());
         }
         let public =
             mt_proof::circuit::pledge::public_of(self.window, attempt, &name, since, &part, value);
-        let description = mt_proof::circuit::pledge::description().ok_or(NodeError::Unprovable {
-            what: "the description of a pledge",
-        })?;
+        let description =
+            mt_proof::circuit::pledge::description().ok_or(NodeError::Unprovable {
+                what: "the description of a pledge",
+            })?;
         let proof =
             mt_proof::scheme::prove(&description, &public, &trace).map_err(|_| unprovable())?;
         let mut held = Pledge {
