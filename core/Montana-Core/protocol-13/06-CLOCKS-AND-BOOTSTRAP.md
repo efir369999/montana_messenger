@@ -31,13 +31,13 @@ the earlier generation, which answers to its own spec target (decision 330
 (a)), and it is recorded in `core/Code/AUDIT.md` ("Known limitations", item 4).
 
 - **The clock.** The silence since the last cement is read on a monotonic clock
-  (`core/Code/crates/montana-node/src/commands/start.rs:569`,
+  (`core/Code/crates/montana-node/src/commands/start.rs:582`,
   `last_cement_at.elapsed()`).
 - **The depth.** `fallback_depth_at` turns it into the depth of the cascade
-  (`start.rs:928-933`, `silence / fallback_secs`, with `fallback_secs` taken
-  from the measured tick at `:380`).
+  (`start.rs:952-955`, `silence / fallback_secs`, with `fallback_secs` taken
+  from the measured tick at `:393`).
 - **The proposer.** The depth chooses which machine may propose
-  (`canonical_proposer_at`, `start.rs:572-573` and `:965-975`).
+  (`canonical_proposer_at`, `start.rs:585-586` and `:987-997`).
 
 A follower checks the proposer at the depth the signed header declares and
 reads no clock (`core/Code/crates/mt-consensus/src/lib.rs:316-332`). In this
@@ -46,15 +46,15 @@ closure requirement above forbids.
 
 K6 of issue #21 (`e5cc3bc`) bounds it. From window 2 an exhausted cascade
 appoints nobody, the node says `STALLED` and does not appoint itself
-(`start.rs:580-588` and `:977-996`; test
-`an_exhausted_cascade_halts_and_never_self_appoints`, `start.rs:2164`), so a
+(`start.rs:582-598` and `:1006-1018`; test
+`an_exhausted_cascade_halts_and_never_self_appoints`, `start.rs:2226`), so a
 timeout no longer closes a window in a private chain. K6 does not take the
 clock out of the depth.
 
 The closing scope of this item is therefore stated, not widened. It closes for
 the native core, `core/Montana-Core`, whose verdicts read no clock (the gate
 `check_no_clock_in_the_verdict`,
-`core/Montana-Core/crates/mt-conformance/src/parse.rs:4556`, and the test
+`core/Montana-Core/crates/mt-conformance/src/parse.rs:4650`, and the test
 `crates/montana-node/tests/a_verdict_reads_no_clock.rs`). It closes for
 `core/Code` only with the recorded limit, and never as "across both
 generations". The status line above stands until the chairman's public verdict;
