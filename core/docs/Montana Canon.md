@@ -3372,6 +3372,22 @@ The secret of the first block repeats one byte, so the walk and the key stand a 
 `test_secret`, a value no permutation of which is itself: an implementation reading the secret from
 its other end reproduces the first block and parts from the set here.
 
+A heal of a pipe (Network, "How a link renews its keys"; proposed, issue #75) stands on the value
+the old walk reaches at the window of the answering letter, here `pipe_secret(test_secret, W + 1)`,
+and the healed walk stands from the window after it and walks on by the ordinary step.
+```
+ss_h = 0x22 x 32, pk_h = 0x23 x 1184, ct_h = 0x24 x 1088
+pipe_heal(pipe_secret(test_secret, W + 1))       = 112f58fbae5637bb976ac9c6a85ed9bf5d26669a511de8310387a62419d81adc
+pipe_secret(healed, W + 3)                       = 43ee0cf3597a6d9450483d33820847866be77ad8cf53191102c0ee8dd401f283
+
+negative: the heal of the old walk one step on, at the window after the answering letter
+pipe_heal(pipe_secret(test_secret, W + 2))       = 85169530874db497c0d4f527900ac25eff7fc12ac2d132e7c9984b42836924b5
+```
+
+The negative line is normative: an implementation that heals the value of the window after the
+answering letter rather than the value of its own window produces it, and parts from the
+correspondent that healed the other.
+
 **The right of a machine, and the moment of extinguishing it.** One absorption of the machine's
 secret yields the half that names it and the half that spends; the leaf it stands at is over the
 first, its nullifier over the second, and the moment is the second squeeze of that nullifier's own
@@ -3788,6 +3804,25 @@ k_r2i                     = 08a031d18e42a5793274dcf0943bfe9df730d7c8acf118f7d77a
 The two directional keys differ in every byte though both come from one master, which is the
 separation the two domains buy.
 
+A renewal of the keys of a link (Network, "How a link renews its keys"; proposed, issue #75) folds
+the master above with fresh material of its own, written below in the order of the roles of the
+handshake, and the two keys of the renewed secret are derived from it exactly as from a master.
+```
+renewal of the link above, standing on its master
+renew_pk_i = 0x11 x 1184, renew_pk_r = 0x12 x 1184, renew_ct_i = 0x13 x 1088, renew_ct_r = 0x14 x 1088
+renew_ss_i = 0x15 x 32,   renew_ss_r = 0x16 x 32
+renewed                   = fbc313668e31de22f840098d82a0898e132e469ea66ef675c04e2793047d2c8c
+k_i2r(renewed)            = 69558632b6b191575508ef691f7b583d85b024ad9f88adfb64f12e1166fa078f
+k_r2i(renewed)            = e51abc297e087a4f9aa52bed8069b8b8871ae618031309325421e7c807e8ee88
+
+negative: the fold in the order of the renewal, the responder having offered
+renewed(responder first)  = 790580fc26d88cdcd36c2aff922c9d31da25b0fc079f32fef816b10d11c0e624
+```
+
+The negative line is normative: an implementation that lays the values of whoever offered first,
+rather than those of the side that opened the link, produces it instead of `renewed`, and fails
+the comparison.
+
 ## The registry of domain separators
 
 Some separators carry, inside their frozen bytes, words the prose of this set does not use:
@@ -3865,6 +3900,7 @@ line, which of the two it is writing.
 | `mt-noise-pq-v1-sig-r` | the identity signature of the responder |
 | `mt-noise-pq-v1-sig-i` | the identity signature of the initiator |
 | `mt-noise-pq-v1-transcript` | the transcript exposed as a channel-binding token |
+| `mt-link-renew` | the secret of a link after a renewal of its keys, folded from the secret before it and both encapsulations of the renewal |
 | `mt-lookup-nf` | the nullifier bounding a record to one reach into the space of slots per window |
 | `mt-channel-slot` | the slot a channel occupies, derived from its normalized name |
 | `mt-channel-key` | the key a channel signs its publications under, derived per slot |
@@ -3895,6 +3931,7 @@ line, which of the two it is writing.
 | `mt-relay-path` | the identity of a path, taken over the pipe layer that crosses it unchanged |
 | `mt-pipe-key` | the key sealing the delivery layer of a cell, held by the two correspondents alone |
 | `mt-pipe-ratchet` | the step of the walk by which the secret of a pipe moves from one window to the next |
+| `mt-pipe-heal` | the first value of the healed walk of a pipe, folded from the old walk and the encapsulation of a heal |
 | `mt-collect` | the right to take mail from a pipe, sealed to the two correspondents for one window |
 | `mt-round-point` | the points a beacon and its attestations stand at |
 | `mt-window-point` | the points a proposal, its roll and the pledges of an agreement stand at |

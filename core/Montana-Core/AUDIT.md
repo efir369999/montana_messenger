@@ -2076,18 +2076,18 @@ numbers, which says the method and not the tree is what is missing.
 
 | What | Count |
 |---|---|
-| calls of `hash(` and of the door of one body in library code | 57 |
-| uses of `size::*` | 91 |
-| occurrences of `[u8; 32]` in library code | 214 |
+| calls of `hash(` and of the door of one body in library code | 59 |
+| uses of `size::*` | 95 |
+| occurrences of `[u8; 32]` in library code | 221 |
 | rows of the Decree the library reads | 28 of 54 |
 | of those, rows that decide a width | 9, and one relation tying a tenth to a parameter |
 | implementations of `Layout` | 17, each one declaration, and the register is held against the source |
-| domains of the registry | 101, each one declaration, counted by the harness rather than by a grep |
+| domains of the registry | 103, each one declaration, counted by the harness rather than by a grep |
 | values of the set awaiting a stage | 0 — every one is read by a checker on every build |
-| domains of the registry a run takes a preimage under | 77 of 101 — the gate refuses a domain that is neither taken nor named, so this number is a hundred and one less the twenty-four named and is not a count anybody keeps |
+| domains of the registry a run takes a preimage under | 79 of 103 — the gate refuses a domain that is neither taken nor named, so this number is a hundred and three less the twenty-four named and is not a count anybody keeps |
 | of the rest, named with what owes them a vector | 24, and a silent one that is unnamed fails the build |
 | prefix pairs among them, closed by the zero and the alphabet | 5 |
-| frozen lines of the set of the shape the coverage pass reads | 279, counted by the pass itself |
+| frozen lines of the set of the shape the coverage pass reads | 286, counted by the pass itself |
 | numerals of the library, every one of them in a register | 168, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
 | of those, compared against a place of the set | 69 |
 | of those, named as of this tree with the reason each is | the rest, each with the reason it is of this tree and of no document |
@@ -2098,7 +2098,7 @@ numbers, which says the method and not the tree is what is missing.
 | places reaching a preimage through the door of one body | 11 in library code under SHA-256, none of them assembling |
 | the same under the proof hash, where the set writes the preimage as a concatenation | 5, of which 3 assemble fields of fixed width, which cannot erase one |
 | kinds a field of a layout may stand under | 5, and a sixth does not compile |
-| tests of the workspace | 785 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
+| tests of the workspace | 787 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
 | crates carrying the gate in their own tests | 15 of 15, by one macro of the harness rather than fifteen readings of one invocation |
 | columns the width of a proof admits, and columns each written circuit **declares** | 64, and 64 / 59 / 26 / 30 / 16 / 63 for the frame, the ticket, the admission, the presence, the opening and the ballot; the width check reads all six registered descriptions |
 | the circuit of the ticket, written and green | the chains of the presence with the ticket's absorption in place of the nullifier's, the digest of the runner's key, and the comparison of thirty-two rows; the window, fold, discharge and reduce circuits left the tree with the relation they served |

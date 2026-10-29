@@ -1476,6 +1476,54 @@ pub fn check_wire(md: &str) -> Result<(), String> {
         labeled(&hs, "k_r2i")?,
         &mt_wire::handshake::responder_to_initiator(&master),
     )?;
+    // The renewal of the link of the block (Network, "How a link renews its keys"; NET-25): the fold
+    // of the master and the fresh material of one renewal, the two keys standing on it, and the fold
+    // in the order of the renewal, which is the mistake the negative line freezes.
+    let fresh = labeled(&hs, "renew_pk_i")?;
+    let renew_pk_i = fixed_part(bare_input(fresh))?;
+    let renew_pk_r = fixed_part(input_of(fresh, "renew_pk_r")?)?;
+    let renew_ct_i = fixed_part(input_of(fresh, "renew_ct_i")?)?;
+    let renew_ct_r = fixed_part(input_of(fresh, "renew_ct_r")?)?;
+    let opened = labeled(&hs, "renew_ss_i")?;
+    let renew_ss_i = repeat32(bare_input(opened))?;
+    let renew_ss_r = repeat32(input_of(opened, "renew_ss_r")?)?;
+    let renewed = mt_wire::handshake::renewed(
+        &master,
+        &renew_ss_i,
+        &renew_ss_r,
+        &renew_pk_i,
+        &renew_pk_r,
+        &renew_ct_i,
+        &renew_ct_r,
+    );
+    compare_hash("renewed", labeled(&hs, "renewed")?, &renewed)?;
+    compare_hash(
+        "k_i2r(renewed)",
+        labeled(&hs, "k_i2r(renewed)")?,
+        &mt_wire::handshake::initiator_to_responder(&renewed),
+    )?;
+    compare_hash(
+        "k_r2i(renewed)",
+        labeled(&hs, "k_r2i(renewed)")?,
+        &mt_wire::handshake::responder_to_initiator(&renewed),
+    )?;
+    let responder_first = mt_wire::handshake::renewed(
+        &master,
+        &renew_ss_r,
+        &renew_ss_i,
+        &renew_pk_r,
+        &renew_pk_i,
+        &renew_ct_r,
+        &renew_ct_i,
+    );
+    compare_hash(
+        "renewed(responder first)",
+        labeled(&hs, "renewed(responder first)")?,
+        &responder_first,
+    )?;
+    if responder_first == renewed {
+        return Err("the negative vector of a renewal equals the positive one".to_string());
+    }
 
     // The machine standing at a point, and the ring that wraps.
     let holder_rows = parse_labeled(md, HOLDER_HEADER)?;
@@ -2498,6 +2546,37 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
         labeled(&tag_rows, "pipe_key(pipe_secret(test_secret, W + 1), W + 1)")?,
         &mt_derive::delivery::pipe_key(&walked, tw + 1),
     )?;
+    // The heal of the walk at the window of the answering letter (NET-25), the walk on from it, and
+    // the heal of the window after, which is the mistake the negative line freezes.
+    let heal = labeled(&tag_rows, "ss_h")?;
+    let ss_h = repeat32(bare_input(heal))?;
+    let pk_h = fixed_part(input_of(heal, "pk_h")?)?;
+    let ct_h = fixed_part(input_of(heal, "ct_h")?)?;
+    let healed = mt_derive::tag::pipe_heal(&walked, &ss_h, &pk_h, &ct_h);
+    compare_hash(
+        "pipe_heal(pipe_secret(test_secret, W + 1))",
+        labeled(&tag_rows, "pipe_heal(pipe_secret(test_secret, W + 1))")?,
+        &healed,
+    )?;
+    compare_hash(
+        "pipe_secret(healed, W + 3)",
+        labeled(&tag_rows, "pipe_secret(healed, W + 3)")?,
+        &mt_derive::tag::pipe_secret_step(&healed),
+    )?;
+    let healed_late = mt_derive::tag::pipe_heal(
+        &mt_derive::tag::pipe_secret_step(&walked),
+        &ss_h,
+        &pk_h,
+        &ct_h,
+    );
+    compare_hash(
+        "pipe_heal(pipe_secret(test_secret, W + 2))",
+        labeled(&tag_rows, "pipe_heal(pipe_secret(test_secret, W + 2))")?,
+        &healed_late,
+    )?;
+    if healed_late == healed {
+        return Err("the negative vector of a heal equals the positive one".to_string());
+    }
     // The two named wrong walks: the secret held unchanged, and the secret walked once per unit
     // of height. Each yields the value frozen for it, and neither yields the tag of the window.
     let of_window = mt_derive::tag::tag(&one, tw + 1);

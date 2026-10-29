@@ -148,7 +148,7 @@ The artifact stands published, so no row awaits it; what a row may still await i
 | NET-22 | privacy is not rented | Network, "Privacy is not rented" | — | — | a scenario of privacy standing whole with every external tunnel switched off | stage 18 |
 | NET-23 | the threat model of the wire | Network, "Threat model of the wire" | — | — | the model itself, read against the observability ledger of this document | stage 22 |
 | NET-24 | the walk of the secret of a pipe | Canon, "The integer form of a tag"; Network, "There is no address" | — | `mt-pipe-ratchet` | vectors: "A tag and the labels of its steps" | — |
-| NET-25 | the renewal of the keys of a link and the heal of a pipe; proposed, issue #75, not adopted | Network, "How a link renews its keys" | — | — | a scenario of a link renewed in each window it carries anything, a unit recorded before a renewal left unopened by the keys after it, a link read at one window and lost to that reader at the next renewal, and a pipe healed by a pair of letters with one of them lost | stage 18 |
+| NET-25 | the renewal of the keys of a link and the heal of a pipe; proposed, issue #75, not adopted | Network, "How a link renews its keys" | — | `mt-link-renew`, `mt-pipe-heal` | a scenario of a link renewed in each window it carries anything, a unit recorded before a renewal left unopened by the keys after it, a link read at one window and lost to that reader at the next renewal, and a pipe healed by a pair of letters with one of them lost | stage 18 |
 
 ## App
 
