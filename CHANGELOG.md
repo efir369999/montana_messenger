@@ -4,7 +4,7 @@ Every build of Montana for iPhone, iPad and Mac, newest first. The version is th
 
 ## 1.0 (2322) - 2026-10-30
 
-Source commit `09f6bff2c957`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2322.md).
+Source commit `186237067ba2`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2322.md).
 
 - A comment on a wall costs no coin and brings none: nothing leaves your wallet when you comment, the wall's owner burns nothing and pays no share to the post's writer. Coins are born only by the network's core, one coin a second.
 - The wallet's «Chats and calls» chains are history: the coins chats, calls and comments minted and burned before stay readable there, and nothing moves them now.
