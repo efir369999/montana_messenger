@@ -2347,7 +2347,10 @@ shape before reading fields; an encoder checks that shape before publishing or s
 **Joining.** A device that holds nothing asks for the head, then — from the anchor its operator
 handed it — collects at the points of the windows it walks the proposals and the heavy attestations
 that are their certificates, and then asks for the leaves it needs. Every answer is judged against
-what the asker recomputes and never against who answered; Consensus states the walk.
+what the asker recomputes and never against who answered; Consensus states the walk. The plane of
+the head it reached it takes whole, table by table, as the leaves each table folds and never as a
+root: it asks one table from the first leaf it does not hold, repeats until an answer carries fewer
+leaves than the bound, and folds every root again from what it holds.
 
 ```
 serialize(head_query)
@@ -2366,6 +2369,20 @@ state_query_len = 41 B
 serialize(state_answer)
   proof_len                         4 B   u32   zero when the answerer holds no such leaf
   proof                     proof_len B         a MerkleProof for a sparse root, an AppendProof for an append-only one
+
+serialize(table_query)
+  genesis_state_hash               32 B         the network the asker means, recomputed by itself
+  window                            8 B   u64   the window whose head the asker verified
+  table_index                       1 B         0 notes, 1 nullifiers, 2 records, 3 machines, 4 admitted, 5 credited, 6 operations
+  from                              4 B   u32   the index of the first leaf the asker does not hold
+table_query_len = 45 B
+
+serialize(table_answer)
+  leaf_count                        4 B   u32   zero for a table read to its end and for a plane the answerer does not hold
+  leaves           leaf_count x leaf B          from `from`, in the order the table folds them; a leaf of records is its key
+                                                and its record, 64 B, a leaf of every other table 32 B
+
+table_answer_max(table) = floor((2 + collect_answer_max x cell_bytes - 4) / leaf)
 ```
 
 **Asking what a slot publishes.** One slot at a time, against the nullifier of a reach.
@@ -2393,6 +2410,7 @@ serialize(slot_answer)
 - A `collect_answer` of zero cells is the ordinary answer and is indistinguishable from any other, so asking says nothing about whether anything waits.
 - `cell_count` never exceeds `collect_answer_max`, and an answer declaring more is refused before a cell of it is read. Every other count of this section is bounded by its own construction; this one is bounded by name, because nothing else bounds it and a holder that answered with the width of the field would spend a collector's memory on one reply. A collection whose answer is refused for this reason is repeated at no point: the deposit stands where it stood.
 - A `slot_query` carries exactly one slot; a query carrying a set of slots is refused, and a repeated reach nullifier within one window is refused in silence.
+- A `table_query` names the network as a `head_query` does and one of the seven tables in the order a proposal lays their roots out; a table index past them is refused in silence. A `table_answer` is answered only from the plane of a window the answerer holds whole — the window its last close closed and the one before it — and is otherwise of zero leaves, indistinguishable from a table read to its end. The tree of admitted machines a machine holds as its root alone and answers with zero leaves: its halves pass as an opening cohort's do, and the root and the count the head carries judge them. `leaf_count` never exceeds `table_answer_max`, which keeps every answer within the answer of a collection, the largest message of this wire, and an answer declaring more is refused before a leaf of it is read. Nothing an answer carries is a root: the asker folds every root again from the leaves it holds and compares it with the root the head it verified carries, and a leaf no root covers — the rate set of the horizon, the count of openings — is never taken from an answer.
 - A `head_query` names the network by the hash the asker computed itself, so an answerer of another network is told apart before a byte of its proposal is parsed; a `state_answer` is verified by recomputing the root and comparing it with the root of a proposal already verified, and a proof of length zero is the ordinary answer for a leaf that does not exist.
 - A wake carries a tag or a handle, and a window, and nothing else; a handle is drawn at random by the holder of the letter, lives beside its pipe for that window alone, and resolves nowhere outside the machine that drew it.
 - No message of this section carries an address, a name, a person or a count of anything but its own cells.
@@ -2453,6 +2471,8 @@ message_kind
   2 collect           6 wake_handle     10 state_answer
   3 collect_public    7 head_query      11 slot_query
   4 collect_answer    8 head_answer     12 slot_answer
+                                        13 table_query
+                                        14 table_answer
 ```
 
 **Invariants of the link unit:**
@@ -2606,7 +2626,7 @@ them, taking the union of what they hold.
 - The point of a notice is a function of the nullifier, the window and the index alone. Nobody but the owner of a note can compute it before that note is spent — a nullifier is derived from the redemption branch of its owner and from the position the tree assigned, so neither the payer of a note nor any reader of the chain holds what the derivation takes — and once the frame stands the nullifier is public and the point names nobody.
 - **A machine opens what it can do before it opens the door to it.** Every rule of this section is read against something the machine holds — the round it stands in, the window it is at, the count of machines its window admits — and a door opened before that thing is in force refuses the work it was opened for, in the silence every refusal keeps. The neighbour that published in that moment published into nothing and never learns, because the wire tells it nothing; the loss is total and it is invisible from both ends. What follows for an implementation: the window is entered before the door answers, and every bound a door enforces is read when the work arrives and never once when the door was opened.
 - **A point refuses a delivery whole and never its tail.** What a point holds is bounded, and a holder that took the first cells of a delivery and refused the rest would hold a body with a hole in it — which reads back as nothing, so a point filled to its bound stops answering with anything at all, exactly when the round it carries matters most. A holder therefore admits a delivery only where what remains of its bound holds the whole of it, and refuses the whole of it otherwise, in the same silence every other refusal keeps.
-- A deposit at a point of a past round is refused in silence, exactly as under a past tag. The heavy attestations, the ballots and the pledges of a window survive at their points for `retained_windows` windows after the window closes — they are the certificate a device behind walks to the head — and so do the frames of its rounds and its proposals with their rolls, which a machine that took another name replays; nothing else of a round outlives its window.
+- A deposit at a point of a past round is refused in silence, exactly as under a past tag. The beacons of the rounds of a window, its heavy attestations, the light attestations answering its final beacon, the ballots and the pledges survive at their points for `retained_windows` windows after the window closes — they are the certificate a device behind walks to the head — and so do the frames of its rounds and its proposals with their rolls, which a machine that took another name replays. A holder opens a cell only down to its delivery and cannot tell one object of a point from another, so it keeps every point of the window whole for that time: the light attestations answering the window's other beacons survive with their point and nothing reads them, and nothing of a round outlives the retention.
 - A machine deposits at every replica and collects from every replica; withholding therefore requires every holder of a round to withhold at once, and the objects themselves are self-carrying, so a holder can delay them and can forge none.
 - The right to collect from a point of a round is public, like the right to a publication and unlike the right to mail from a pipe: what stands there names nobody.
 - A holder answers what it holds and keeps no record of who asked or who deposited; the count of collections at a point says what the ledger of the wire already says about answering at all.
@@ -4766,7 +4786,7 @@ demands the width from this row rather than declaring one of its own.
 | `inbound_slots` — the links a device answers, beside the entries it chose | 96 |
 | `target_rounds` — derived: the least count of rounds at which the expected uncovered share of the electorate falls to the complement of the quorum | 284 |
 | `round_floor` — the fewest machines a round of a chain draws in expectation, whatever the population | 50 |
-| `retained_windows` — the windows the heavy attestations and the pledges of a closed window stand at their points for, which is the certificate a device behind walks | 8 |
+| `retained_windows` — the windows the beacons of the rounds of a closed window, its heavy attestations, the light attestations answering its final beacon, the ballots and the pledges stand at their points for, which is the certificate a device behind walks | 8 |
 | `k_max` — the cap of parallel chains | 8 |
 | `k_step`, in windows — one chain added each step of height, to the cap | 96 τ₂ |
 | `cascade_width` — entitled parallel versions per chain | 3 |
@@ -5088,10 +5108,21 @@ stands on and the ballots of their parts, which stand at their points exactly as
 published. A device verifies a certificate as the living
 verified its parts, and Consensus states the procedure.
 
+**The proof a machine writes with a window it closed is the proposal, and never the certificate.**
+When a machine closes a window it writes one record: the tables of its plane at that window, the
+head, the number of the window closed, and as the proof of that transition the bytes of the
+proposal that closed it — `proposal_len` bytes, its `ticket_proof` and its signature among them —
+whose roots are the ones those tables recompute to. The certificate of that window cannot stand in
+the record: it is made of the attestations, the pledges and the ballots of the window after it,
+which do not exist when the window closes, so a record waiting on them would write the tables and
+the head of one window apart. The certificate is what a device walking to the head verifies, from
+the points where its parts are retained, and it enters the record of no machine (the Author's
+decision of 27.10.2026 19:48 UTC, issue #19).
+
 **Invariants of the certificate:**
 
 - A certificate introduces no object, no signature and no key; its parts are a proposal with its roll, the heavy attestations of the window after it, the light attestations of that window answering the final beacon its proposal names, the pledges its decision stands on and the ballots of their parts, each of the layout and the length this document already fixes. A final beacon no verified attestation of the certificate answered closes nothing for a device, as it closes nothing for a machine of the window.
-- The heavy attestations, the light attestations answering its final beacon, the ballots and the pledges of a window, the frames of its rounds and its proposals with their rolls survive at their points for `retained_windows` windows after the window closes; a deposit at a point of a past round is refused, and what stands there is held until the retention ends, and nothing else of a round outlives its window.
+- The beacons of the rounds of a window, its heavy attestations, the light attestations answering its final beacon, the ballots and the pledges, the frames of its rounds and its proposals with their rolls survive at their points for `retained_windows` windows after the window closes; a deposit at a point of a past round is refused, and what stands there is held whole until the retention ends, the light attestations answering the window's other beacons among it and read by nothing; nothing of a round outlives the retention.
 
 ### The frame of a payment
 

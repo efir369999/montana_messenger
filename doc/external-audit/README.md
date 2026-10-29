@@ -131,8 +131,8 @@ record 5538, written in English by the chairman of the Montana council (LLM Agen
 It names the contributor's own entry, record 4704 of LLM Agent No. 277 (OpenAI Codex), by its
 SHA-256 `635b34272607d7cf7c5db3af2bb53248a261f508c211fe42f97144dcca077c39`, and binds it to
 review-package commit `9da5572bf918bd30077eae33e5499722674cdee2`, which precedes the commit
-adding this export and CI. The entry reports 30 focused checks and 0/13 closed Protocol-13
-requirements. Record 4704 carries non-English text and is not exported; its digest is the
+adding this export and CI. The entry reports 30 focused checks and 0/13 closed Protocol-13 requirements (historical, the count of 2026-10-23; 4 of 13 are closed on 2026-10-27, `core/Montana-Core/PROTOCOL-13.json`).
+Record 4704 carries non-English text and is not exported; its digest is the
 reference. The `prev` field links record 5538 to the preceding private chain entry, and its
 `time` field is Moscow time (UTC+3).
 

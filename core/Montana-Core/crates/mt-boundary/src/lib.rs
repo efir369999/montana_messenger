@@ -20,8 +20,11 @@
 // caller reads reasons, because a panic unwinding into another language is undefined behaviour
 // there rather than an error.
 
+use montana_node::certificate::Anchor;
 use montana_node::{pulse, Configuration, Machine, NodeError};
 use montana_wallet::{pay::Payee, Wallet};
+use mt_state::layout::Proposal;
+use mt_state::Layout;
 use std::ffi::{c_char, CStr};
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
@@ -206,18 +209,21 @@ fn the_machine() -> Result<Arc<Machine>, String> {
 // after any answer other than well; it names no peer and no person.
 #[no_mangle]
 pub extern "C" fn mtc_last_said(out: *mut c_char, cap: usize, len: *mut usize) -> i32 {
-    text_door(
-        || {
-            Ok(SAID
-                .lock()
-                .ok()
-                .and_then(|held| held.clone())
-                .unwrap_or_default())
-        },
-        out,
-        cap,
-        len,
-    )
+    let held = match SAID.lock() {
+        Ok(held) => held,
+        Err(_) => return Answer::Broke as i32,
+    };
+    match held.as_deref() {
+        Some(text) => hand_text(text, out, cap, len),
+        None => {
+            // Clear stale caller text without manufacturing a refusal in SAID: a second read
+            // must still report absence, while bad buffers retain the existing boundary errors.
+            match hand_text("", out, cap, len) {
+                code if code == Answer::Well as i32 => Answer::Nothing as i32,
+                code => code,
+            }
+        }
+    }
 }
 
 // Which network this core is of. Two clients disagreeing here are not on one network, whatever
@@ -417,11 +423,26 @@ pub extern "C" fn mtc_machine_reach(line: *const c_char) -> i32 {
 pub extern "C" fn mtc_machine_answer() -> i32 {
     door(|| {
         let machine = the_machine()?;
-        std::thread::spawn(move || {
-            let _ = machine.serve();
-        });
+        machine.answer_in_background();
         Ok(())
     })
+}
+
+// CNS-20: independent of SAID. A successful read of a stall is not a healthy-node verdict.
+#[no_mangle]
+pub extern "C" fn mtc_pulse_status(out: *mut c_char, cap: usize, len: *mut usize) -> i32 {
+    let status = the_machine()
+        .ok()
+        .and_then(|machine| machine.counts().status());
+    let missing =
+        status.is_none_or(|held| held.on() == Some(montana_node::say::Verdict::NoDiagnostics));
+    let text = status.map_or_else(|| "no diagnostics".to_string(), |held| held.to_string());
+    let answer = hand_text(&text, out, cap, len);
+    if missing && answer == Answer::Well as i32 {
+        Answer::Nothing as i32
+    } else {
+        answer
+    }
 }
 
 #[no_mangle]
@@ -431,6 +452,63 @@ pub extern "C" fn mtc_machine_head(window: *mut u64, present: *mut i32) -> i32 {
         wrote(window, head.unwrap_or_default())?;
         wrote(present, i32::from(head.is_some()))
     })
+}
+
+// The join of a device that holds nothing, from the anchor its operator handed it: the bytes of
+// the proposals of two consecutive final windows, the earlier and the later. Consensus, "The join":
+// the anchor is a line of the world outside, as an acquaintance is, and the trust in it is the trust
+// this device places in the operator who started it — so the door takes it as it was handed and
+// judges none of it here. The proposals pass the one door of their layout, and the walk judges the
+// pair and every certificate after it and trusts no answer; what comes back is the window the head
+// stands at. A device walks or lives and never both at once: a walk while the pulse runs is refused,
+// and the pulse is refused while a walk runs. The walk runs on the caller's thread, so a caller
+// asks it from a thread of its own.
+#[no_mangle]
+pub extern "C" fn mtc_machine_join(
+    earlier: *const u8,
+    earlier_len: usize,
+    later: *const u8,
+    later_len: usize,
+    window: *mut u64,
+) -> i32 {
+    door(|| {
+        if window.is_null() {
+            return Err("a place to write to that is nothing".to_string());
+        }
+        let proposal = |from: *const u8, len: usize| -> Result<Proposal, String> {
+            <Proposal as Layout>::parse(&taken(from, len)?).map_err(|e| format!("{e:?}"))
+        };
+        let anchor = Anchor {
+            earlier: proposal(earlier, earlier_len)?,
+            later: proposal(later, later_len)?,
+        };
+        let (machine, running) = of_the_device(|standing| {
+            Ok((Arc::clone(&standing.machine), Arc::clone(&standing.running)))
+        })?;
+        let walking = Walking::begun(&running)?;
+        let head = pulse::join(&machine, &anchor, pulse::WAITS_UP_TO).map_err(|e| format!("{e:?}"));
+        drop(walking);
+        wrote(window, head?.later.window)
+    })
+}
+
+// The device marked as busy for as long as a walk lasts, and marked free again however the walk
+// ends — a walk that refused and a walk that broke leave a device the pulse may begin on.
+struct Walking<'a>(&'a AtomicBool);
+
+impl<'a> Walking<'a> {
+    fn begun(running: &'a AtomicBool) -> Result<Self, String> {
+        running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .map_err(|_| "a pulse or a walk already running".to_string())?;
+        Ok(Self(running))
+    }
+}
+
+impl Drop for Walking<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::SeqCst);
+    }
 }
 
 #[no_mangle]
@@ -537,13 +615,27 @@ pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, wi
                     .to_string(),
             );
         }
-        machine
+        // Taken before the round is entered, so a walk begun in between finds the device busy
+        // rather than a pulse entering a round under it.
+        running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .map_err(|_| "a pulse or a walk already running".to_string())?;
+        let entered = machine
             .enter_round(from, pulse::opening_chain(), 0)
-            .map_err(|e| format!("{e:?}"))?;
-        let asked = *errand
-            .lock()
-            .map_err(|_| "an errand another thread left locked".to_string())?;
-        running.store(true, Ordering::SeqCst);
+            .map_err(|e| format!("{e:?}"))
+            .and_then(|()| {
+                errand
+                    .lock()
+                    .map(|held| *held)
+                    .map_err(|_| "an errand another thread left locked".to_string())
+            });
+        let asked = match entered {
+            Ok(asked) => asked,
+            Err(what) => {
+                running.store(false, Ordering::SeqCst);
+                return Err(what);
+            }
+        };
         std::thread::spawn(move || {
             let work = |machine: &Machine, window: u64| -> Result<(), NodeError> {
                 run_the_errand(machine, &wallet_at, asked, window, &paid)
@@ -805,4 +897,53 @@ pub extern "C" fn mtc_measure_redemption(milliseconds: *mut u64, width: *mut usi
         )?;
         wrote(width, minted.frame.len())
     })
+}
+
+#[cfg(test)]
+mod status_tests {
+    use super::*;
+
+    // CNS-20: rejects a boundary that reads SAID as the pulse cause or loses a real live stall.
+    #[test]
+    fn the_live_pulse_status_is_independent_of_the_last_boundary_error() {
+        let at = std::env::temp_dir().join(format!(
+            "mt-boundary-status-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let dir = std::ffi::CString::new(at.to_str().unwrap()).unwrap();
+        let listen = std::ffi::CString::new("127.0.0.1:0").unwrap();
+        let mut born = 0;
+        assert_eq!(mtc_device_open(dir.as_ptr(), listen.as_ptr(), &mut born), 0);
+        let machine = the_machine().unwrap();
+        let cohort = pulse::Cohort::of(&[machine.naming_half().unwrap()]).unwrap();
+        let errand = |machine: &Machine, _| machine.enter_round(1, 0, 0);
+        assert!(matches!(
+            pulse::live_doing(&machine, &cohort, 0, 1, 1, Some(&errand)),
+            Err(NodeError::Stalled {
+                on: montana_node::say::Verdict::NoData,
+                ..
+            })
+        ));
+        assert_eq!(mtc_machine_reach(std::ptr::null()), -1);
+        let mut out = [0 as c_char; 256];
+        let mut len = 0;
+        assert_eq!(mtc_last_said(out.as_mut_ptr(), out.len(), &mut len), 0);
+        let original = out[..len].to_vec();
+        assert_eq!(mtc_pulse_status(out.as_mut_ptr(), out.len(), &mut len), 0);
+        let status: Vec<u8> = out[..len].iter().map(|byte| *byte as u8).collect();
+        assert_eq!(
+            String::from_utf8(status).unwrap(),
+            machine.counts().status().unwrap().to_string()
+        );
+        assert_eq!(mtc_last_said(out.as_mut_ptr(), out.len(), &mut len), 0);
+        assert_eq!(&out[..len], original.as_slice());
+        drop(machine.counts().watch_door());
+        assert_eq!(mtc_pulse_status(out.as_mut_ptr(), out.len(), &mut len), -2);
+        assert_eq!(mtc_last_said(out.as_mut_ptr(), out.len(), &mut len), 0);
+        assert_eq!(&out[..len], original.as_slice());
+    }
 }

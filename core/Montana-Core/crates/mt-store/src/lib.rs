@@ -363,7 +363,18 @@ pub struct Store {
     // check that the window is not closed — and no door can own the birth of the second writer but
     // this one. The lock goes with the handle, so a store dropped releases it and a process that
     // died holds nothing.
-    _held: fs::File,
+    held: fs::File,
+}
+
+// **A store dropped lets its root go before the drop returns.** The lock belongs to the root's open
+// description, and every process spawned by any thread of this one is forked with a copy of it that
+// it keeps until it becomes its own program. A store that only closed its handle left the lock to the
+// last copy, so a start in the instant such a child stood was refused as held by another (issue #21,
+// the ring a623-p72). Unlocking ends the lock for every copy of the description.
+impl Drop for Store {
+    fn drop(&mut self) {
+        let _ = self.held.unlock();
+    }
 }
 
 impl Store {
@@ -390,7 +401,7 @@ impl Store {
         // would be refused for ever. The lock is held, so every such file in the root is a dead
         // process's; this process holds the root alone.
         sweep_dead_openings(&root)?;
-        let store = Self { root, _held: held };
+        let store = Self { root, held };
         store.check_network()?;
         for earlier in ["head", "closed", "value", "standing"] {
             let at = store.root.join(earlier);

@@ -1,0 +1,8 @@
+nice -n 19 rustfmt --edition 2021 crates/montana-node/src/say.rs crates/montana-node/src/status.rs crates/montana-node/src/pulse.rs crates/montana-node/src/lib.rs crates/montana-node/tests/a_stall_names_its_cause.rs
+fmt rc=0
+nice -n 19 cargo test --locked --offline -p montana-node --test a_stall_names_its_cause --no-run
+build rc=0
+nice -n 19 unshare -n bash -c ip link set lo up && cargo test --locked --offline -p montana-node --test a_stall_names_its_cause -- --test-threads=2
+green rc=0
+nice -n 19 unshare -n bash -c ip link set lo up && cargo test --locked --offline -p montana-node --test a_stall_names_its_cause a_mutated_attestation -- --test-threads=2
+mutation rc=101

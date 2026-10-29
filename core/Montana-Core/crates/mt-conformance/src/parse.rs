@@ -1896,7 +1896,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
     let wire = |value: Result<usize, mt_wire::WireError>| -> Result<usize, String> {
         value.map_err(|e| format!("the wire cannot read the Decree: {e:?}"))
     };
-    let of_the_wire: [(&str, usize, &str); 14] = [
+    let of_the_wire: [(&str, usize, &str); 15] = [
         ("hello_len", mt_wire::handshake::hello_len(), "hello"),
         ("hello_answer_len", mt_wire::handshake::hello_answer_len(), "answer of a hello"),
         ("hello_finish_len", mt_wire::handshake::hello_finish_len(), "finish of a hello"),
@@ -1909,6 +1909,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
         ("head_query_len", mt_wire::message::head_query_len(), "query of a head"),
         ("state_query_len", mt_wire::message::state_query_len(), "query of a leaf"),
         ("slot_query_len", mt_wire::message::slot_query_len(), "query of a slot"),
+        ("table_query_len", mt_wire::message::table_query_len(), "query of a table"),
         ("channel_commit_len", SlotCommit::expected_len(), "commitment over a slot of a channel"),
         ("channel_renew_len", SlotRenew::expected_len(), "renewal of a slot of a channel"),
     ];

@@ -39,3 +39,7 @@ mt-net-transport = { path = "../mt-net-transport" }
 tokio = { version = "=1.44.2", features = ["rt-multi-thread", "macros", "signal", "net", "io-util", "time", "sync"] }
 futures = "=0.3.31"
 tracing = "=0.1.41"
+
+[dev-dependencies]
+# Issue #19 K5: the crash tests arm mt-store's fault hook; a release build never carries it.
+mt-store = { path = "../mt-store", features = ["fault"] }

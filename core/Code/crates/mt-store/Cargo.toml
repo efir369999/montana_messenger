@@ -6,8 +6,13 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+# Issue #19 K5: the fault hook (`mt_store::fault::fail_at`) for crash tests; never a release feature.
+fault = []
+
 [dependencies]
 mt-codec = { path = "../mt-codec" }
 mt-crypto = { path = "../mt-crypto" }
 mt-state = { path = "../mt-state" }
 mt-consensus = { path = "../mt-consensus" }
+sha2 = { workspace = true }

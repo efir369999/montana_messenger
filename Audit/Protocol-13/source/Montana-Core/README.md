@@ -138,8 +138,15 @@ target/release/montana-node --data ~/montana --listen 0.0.0.0:9635 \
   --acquaintance 198.51.100.7:9635@<the key that machine answers with> \
   --admitted <this machine's naming half> \
   --admitted <the other machine's naming half> \
-  --from 1000 --windows 1
+  --open --windows 1
 ```
+
+`--open` is the operator opening a network: window zero, on the cohort the halves name, and only on
+a store that holds nothing of a chain; on any other store it is refused before anything is written.
+One that holds nothing and is not asked to open lives no window and says so (Consensus, "The cold
+start"). One started without it on a store holding a chain is set to the window after the last it
+closed, and the pulse refuses that window until it takes the proposals it stands on from its own
+store, which issue #16 carries.
 
 Each machine enters the window, publishes beacons, verifies answers and gathers attestations. It
 closes the window on a beacon carrying a cement at the quorum share of the electorate of the window
@@ -150,11 +157,11 @@ a proposal only when the cement of the window after it reaches the quorum on it.
 nothing joins from two consecutive final proposals its operator hands it and walks the retained
 certificates to the same head (`montana-node::pulse::join`). The right a machine takes of a window
 is still created locally from the count of the cement and is no evidence of issuance; item 3 of the
-audit list carries it.
+audit list carries it. Historical (marked 2026-10-27 UTC): item 3 is closed (`PROTOCOL-13.json` row 3, e612a55, `protocol-13/03-AUTHORIZED-ISSUANCE.md`).
 
 Round advancement now requires a verified answer. Polling uses a local sleep; exhausting its
 budget returns without advancing the round. This testable property does not establish the missing
-window-finalization property.
+window-finalization property. Historical (marked 2026-10-27 UTC): item 1 is closed (`PROTOCOL-13.json` row 1, `protocol-13/01-WINDOW-PROOF.md`); the run on several hosts is item 13.
 
 The addresses in these examples are transport configuration. Directly listening on a public
 interface exposes that machine's origin; this implementation does not make it anonymous.

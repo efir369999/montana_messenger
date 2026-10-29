@@ -55,7 +55,8 @@ pub async fn run_network_loop(
     )
     .map_err(|e| NodeError::Network(format!("build swarm: {e}")))?;
 
-    eprintln!(
+    crate::private_diagnostic!(
+        "[network] network configured",
         "[network] local_peer_id={local_peer_id} listen={listen_addr} \
          peers_to_dial={cnt}",
         cnt = manifest.peers.len() - 1
@@ -80,7 +81,12 @@ pub async fn run_network_loop(
             .map_err(|e: libp2p::multiaddr::Error| {
                 NodeError::Network(format!("compose multiaddr: {e}"))
             })?;
-        eprintln!("[network] dialing {} ({})", peer.label, dial_target);
+        crate::private_diagnostic!(
+            "[network] dialing peer",
+            "[network] dialing {} ({})",
+            peer.label,
+            dial_target
+        );
         swarm
             .dial(dial_target.clone())
             .map_err(|e| NodeError::Network(format!("dial {}: {e}", peer.label)))?;
@@ -98,14 +104,14 @@ pub async fn run_network_loop(
             ev = swarm.select_next_some() => {
                 match ev {
                     SwarmEvent::NewListenAddr { address, .. } => {
-                        eprintln!("[network] listening on {address}/p2p/{local_peer_id}");
+                        crate::private_diagnostic!("[network] listening","[network] listening on {address}/p2p/{local_peer_id}");
                     }
                     SwarmEvent::ConnectionEstablished { peer_id, endpoint, .. } => {
                         let label = dialed
                             .get(&peer_id)
                             .cloned()
                             .unwrap_or_else(|| "unknown".to_string());
-                        eprintln!(
+                        crate::private_diagnostic!("[network] connection established",
                             "[network] CONNECTION ESTABLISHED peer={peer_id} label={label} \
                              remote={remote}",
                             remote = endpoint.get_remote_address()
@@ -121,13 +127,13 @@ pub async fn run_network_loop(
                     }
                     SwarmEvent::ConnectionClosed { peer_id, cause, .. } => {
                         let label = connected_peers.remove(&peer_id).unwrap_or_default();
-                        eprintln!(
+                        crate::private_diagnostic!("[network] connection closed",
                             "[network] connection closed peer={peer_id} label={label} \
                              cause={cause:?}"
                         );
                     }
                     SwarmEvent::OutgoingConnectionError { peer_id, error, .. } => {
-                        eprintln!(
+                        crate::private_diagnostic!("[network] outgoing connection failed",
                             "[network] outgoing connection ERROR peer={peer_id:?} error={error}"
                         );
                     }
@@ -146,12 +152,12 @@ pub async fn run_network_loop(
                                 .request_response
                                 .send_response(channel, pong)
                             {
-                                eprintln!("[network] send Pong failed: {e:?}");
+                                crate::private_diagnostic!("[network] heartbeat response failed","[network] send Pong failed: {e:?}");
                             }
                         } else {
                             let msg_type_dbg = request.msg_type;
                             if let Err(e) = incoming_tx.send(request.clone()) {
-                                eprintln!("[network] forward {msg_type_dbg:?} failed: {e}");
+                                crate::private_diagnostic!("[network] incoming message forwarding failed","[network] forward {msg_type_dbg:?} failed: {e}");
                             }
                             let ack = ProtocolMessage::new(MsgType::Pong, request.request_id, Vec::new());
                             let _ = swarm.behaviour_mut().request_response.send_response(channel, ack);
@@ -164,12 +170,12 @@ pub async fn run_network_loop(
                             ..
                         },
                     )) if response.msg_type == MsgType::Pong => {
-                        eprintln!(
+                        crate::private_diagnostic!("[network] heartbeat acknowledged",
                             "[network] heartbeat OK peer={peer} request_id={request_id}"
                         );
                     }
-                    SwarmEvent::Behaviour(MontanaBehaviourEvent::RequestResponse(rr_other)) => {
-                        eprintln!("[network] RR other event: {rr_other:?}");
+                    SwarmEvent::Behaviour(MontanaBehaviourEvent::RequestResponse(_rr_other)) => {
+                        eprintln!("[network] request-response event");
                     }
                     _ => {}
                 }
@@ -177,7 +183,7 @@ pub async fn run_network_loop(
             _ = heartbeat.tick() => {
                 for (peer_id, label, addr) in &redial_targets {
                     if !connected_peers.contains_key(peer_id) {
-                        eprintln!("[network] redial {} ({})", label, addr);
+                        crate::private_diagnostic!("[network] redialing peer","[network] redial {} ({})", label, addr);
                         let _ = swarm.dial(addr.clone());
                     }
                 }

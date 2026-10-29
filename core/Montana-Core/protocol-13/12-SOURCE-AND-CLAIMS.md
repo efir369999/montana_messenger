@@ -29,12 +29,13 @@ wholesale publication and whole-repository consistency are not claimed here.
 
 ## Closed items
 
-Listed on 2026-10-27 UTC against `main` at `bfee834`. Four of the thirteen
+Listed on 2026-10-28 UTC against `main` at `da608698`. Five of the thirteen
 items are closed by the chairman's comment on their issue: #4 (item 1), #10
-(item 2), #14 (item 3) and #15 (item 4); no other Protocol-13 issue is closed.
-`source/Montana-Core/PROTOCOL-13.json`, and the table of `README.md` written
-from it, mark items 1, 2, 3 and 4 closed, as these comments do, and the
-reports 02, 03 and 04 are rewritten to the closures (issue #23). Every merge and implementation
+(item 2), #14 (item 3), #15 (item 4) and #18 (item 7); no other Protocol-13
+issue is closed. `source/Montana-Core/PROTOCOL-13.json`, and the table of
+`README.md` written from it, mark items 1, 2, 3, 4 and 7 closed, as these
+comments do, and the reports 02, 03, 04 and 07 are rewritten to the closures
+(issue #23). Every merge and implementation
 commit named below is an ancestor of `main` (`git merge-base --is-ancestor`,
 exit 0). Quotations are from the comment whose id is given.
 
@@ -101,6 +102,24 @@ exit 0). Quotations are from the comment whose id is given.
   green; four_machines_decide_one_name passed on Lauterbourg-3 (2039 s) and was
   cut by the ring's time cap on Lauterbourg-2 (1226 s, rc -15) -- a cap, not a
   verdict"; "CI audit-tools pass on ce01975 (run 40476769805)."
+
+### Item 7, issue #18: the earlier core's lottery removed
+
+- Closed 2026-10-28 19:44 UTC. Closing comment 6478911303: "**Item 7 of
+  Protocol-13 is closed by PR #85, merged into `main` as `da608698`
+  (2026-10-28 19:44:40 UTC).**"
+- Implementation, the same comment: "R1-R4 PR #71 (`6972826`); S1-S5 PR #73
+  (`f1a5fada`, verdict comment 6448755277); the report PR #77 (`6b0283b6`);
+  the closure `3d273285b` (`07-LEGACY-LOTTERY.md` and item 7 of
+  `PROTOCOL-13.json` marked `closed`) and `90b4377` (the table of
+  `Audit/Protocol-13/README.md`, 5 of 13)." The verdict is PR #85, comment
+  6478855341. This item concerns `core/Code`, not `Montana-Core`.
+- Check, the same comment: "the ring a633-codering on Lauterbourg-2 on `main`
+  `dd399280` (tree `core/Code` `35d191ce`), 2026-10-27 20:15-21:51 UTC:
+  `fmt --all -- --check` 0, `clippy --workspace --all-targets -- -D warnings`
+  0, `test --release --workspace --no-fail-fast` 0 (`END 0 failed: none`); CI
+  `audit-tools` passed on `90b4377`." Outside the closure, as the report says:
+  S4b, DEV-055 and K5 (#17).
 
 These closures are the chairman's verdicts on self-verification by the
 council's sessions, not an independent external audit.

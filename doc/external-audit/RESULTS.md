@@ -55,7 +55,7 @@ passed that unit-test target and proceeded to the longer integration proofs.
 The two partial runs above were repeated in full on the project's isolated core test server
 (2026-10-23, Linux x86_64, 4 cores, Rust 1.92.0, OpenSSL 3.5 under `/opt/ossl35`), on the core folder of
 public `main` `f2c2b6fdcce50e4fe27e2a2ebbf22368f627e4a1`, folder tree `4ce3d6705224c8c99db0db1710a70bbde3d04361`
-(the `core` row of `RELEASES.md`). Each workspace ran as
+(the `core` row of `RELEASES.md` at that commit; historical, marked 2026-10-27 UTC: the row names another tree since). Each workspace ran as
 `cargo test --workspace --release --locked --jobs 4 --no-fail-fast` inside its own network namespace
 (`unshare -n`, loopback up), so no test socket was reachable from outside.
 
@@ -69,7 +69,7 @@ The exit 101 of `core/Montana-Core` comes from two integration targets that did 
 Both were stopped by SIGTERM; for `two_hosts_live_a_window` the operator's log records about twenty minutes
 elapsed with its CPU time no longer growing (waiting on a futex). Neither reported a failed assertion. Every other target of both workspaces completed
 with zero failures. These two live-window proofs are therefore **not** passed by this record; their hang is an
-open finding of the reference core, not of this contribution.
+open finding of the reference core, not of this contribution. Historical (marked 2026-10-27 UTC): the ring of the core on `4451b21`, whose tree holds both tests, ran every test binary of the workspace, all exit 0 (`Audit/Protocol-13/01-WINDOW-PROOF.md:57`); both tests changed since (`3e8b6e5`, `c1095eb`), and a run on several hosts is still item 13.
 
 The `Audit readiness tools` GitHub workflow is included after the repository owner's
 OAuth authorization was refreshed with `workflow` scope. It runs the Python checks,

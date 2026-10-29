@@ -8,7 +8,7 @@ The relation of a window and its verifier are implemented in the branch this fol
 from, and the closure of a window is stated as theorems with proofs in that note, checked in part by
 machine (`formal/Window.lean`, section 9). Agreement on what a window decided, the
 construction the author chose (section 6 of [`AGREEMENT.md`](source/Montana-Core/AGREEMENT.md)), is
-implemented and held by the test of four machines. Model checking of the code with Kani is item 2;
+implemented and held by the test of four machines. Model checking of the code with Kani is item 2 (Historical (marked 2026-10-27 UTC): item 2 is closed on its own evidence, `02-CANONICAL-PROPOSAL.md` and `PROTOCOL-13.json` row 2; the Kani harnesses are PR #29, still a draft);
 the run on several hosts is item 13. No production readiness is claimed.
 
 ## Requirement
@@ -74,7 +74,7 @@ The four crates of the row of `9380a76` hold the tests that open network listene
    loss and recovery of quorum, partition and rejoin, is item 13.
 
 Items 2, 3, 9 and 13 depend on this closure. Their finality, issuance and authenticated-joining
-claims remain open while this item is.
+claims remain open while this item is. Historical (marked 2026-10-27 UTC): items 1, 2 and 3 are closed (`PROTOCOL-13.json`, rows 1-3, closed 2026-10-25, 2026-10-26 and 2026-10-27); items 9 and 13 are open on their own evidence (rows 9 and 13).
 
 ## Earlier records of this item
 

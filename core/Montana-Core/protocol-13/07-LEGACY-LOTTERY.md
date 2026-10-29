@@ -1,8 +1,19 @@
 # 7. Remove the earlier core's lottery; keep what stays deterministic
 
-**Status: open.** The removal is merged (PR #73, `main` `f1a5fada`, 2026-10-27). The chairman's verdict
-of #18 is not given; the issue is open ("#18 stays open until its remaining boxes are checked",
-comment 6448755277 on PR #73).
+**Status: closed.** Item 7 is closed on the chairman's verdict of #18 (issue #18, Protocol-13 item 7). The
+removal is merged: R1-R4 in PR #71 (`main` `6972826`, 2026-10-27 14:10 UTC), S1-S5 in PR #73 (`main`
+`f1a5fada`, 2026-10-27 17:24 UTC, verdict comment 6448755277), this report in PR #77 (`main` `6b0283b6`,
+blob `28d7e91a`). The full ring is green on `main` `dd399280` (tree `core/Code` `35d191ce`), ring
+a633-codering on Lauterbourg-2, 2026-10-27 20:15-21:51 UTC: `fmt --all -- --check` exit 0,
+`clippy --workspace --all-targets -- -D warnings` exit 0, `test --release --workspace --no-fail-fast`
+exit 0 (`/srv/montana/a633-codering.out`); CI `audit-tools` SUCCESS on PR #82 (`dd399280`). The earlier
+ring a626 on `f1a5fada` (before PR #76) was red by format, clippy and the timing test `mt-mnemonic`
+`fast.rs:226` under load and is superseded. Self-verification by the council's sessions, not an
+independent external audit.
+
+Historical (marked 2026-10-28 UTC): the status line before this change read "Status: open. The removal is
+merged (PR #73, `main` `f1a5fada`, 2026-10-27). The chairman's verdict of #18 is not given; the issue is
+open ("#18 stays open until its remaining boxes are checked", comment 6448755277 on PR #73)."
 
 This item concerns `Code`, not the native `Montana-Core` proof system. Paths below are under `core/Code/`
 on `f1a5fada`.
@@ -123,8 +134,8 @@ empty, so no mutant was in the tree) and read the same exit codes: `test --relea
 
 ## What remains
 
-- **The chairman's verdict of #18.** Issue #18 is open; the verdict on its remaining boxes is not given.
-- **The full ring** (`test --release --workspace`) is the chairman's; it was not run by the helper.
+- **The chairman's verdict of #18.** Issue #18 is open; the verdict on its remaining boxes is not given. Historical (marked 2026-10-28 UTC): the verdict is the one named in the status line above.
+- **The full ring** (`test --release --workspace`) is the chairman's; it was not run by the helper. Historical (marked 2026-10-28 UTC): the ring ran on `main` `dd399280` (tree `core/Code` `35d191ce`) as a633-codering on Lauterbourg-2 and is green: `fmt` 0, `clippy` 0, `test --release --workspace --no-fail-fast` 0, 2026-10-27 20:15-21:51 UTC.
 - **S4b, recorded and not changed** (comment 6447975036): two proposers of one window at two cascade
   depths. `mt-consensus` `validate_proposer_is_canonical` accepts the depth the signed header declares;
   the proposer's own depth comes from local silence (`start.rs:883` `fallback_depth_at`). Between a depth-1
