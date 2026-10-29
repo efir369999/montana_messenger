@@ -47,7 +47,7 @@ closure requirement above forbids.
 K6 of issue #21 (`e5cc3bc`) bounds it. From window 2 an exhausted cascade
 appoints nobody, the node says `STALLED` and does not appoint itself
 (`start.rs:579-587` and `:975-994`; test
-`an_exhausted_cascade_halts_and_never_self_appoints`, `start.rs:2139`), so a
+`an_exhausted_cascade_halts_and_never_self_appoints`, `start.rs:2159`), so a
 timeout no longer closes a window in a private chain. K6 does not take the
 clock out of the depth.
 

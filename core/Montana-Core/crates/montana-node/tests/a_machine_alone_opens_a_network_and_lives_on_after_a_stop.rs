@@ -12,8 +12,8 @@
 // **The wrong implementations it refuses**, named before the assertions: a pulse that enters its
 // first window of a run with nothing to stand on — the window after a restart names the Genesis
 // State Hash rather than the proposal of the window before, and the head stays where the stop left
-// it; a pulse that opens a window past one it holds no proposal of — it would live that window on
-// the Genesis State Hash rather than refuse it; and a cold start whose first window names anything
+// it; a pulse that opens a window other than the one after the last it closed — it would live that
+// window on proposals it does not hold rather than refuse it; and a cold start whose first window names anything
 // but the Genesis State Hash, or whose machine alone finalizes nothing.
 
 use montana_node::pulse::{self, Cohort};
@@ -78,11 +78,11 @@ fn a_machine_started_again_on_its_store_lives_on_its_own_chain() {
         Machine::start(&Configuration::at(&at.0, "127.0.0.1:0")).expect("the machine starts again");
     assert!(!born, "a restart drew a second secret");
 
-    // Refused: a window past one it holds no proposal of.
+    // Refused: a window other than the one after the last it closed (pulse.rs held_of_the_store).
     assert_eq!(
         pulse::live(&again, &cohort, FROM + 7, 1, PATIENCE).map(|_| ()),
         Err(NodeError::Refused {
-            what: "a window after one this machine holds no proposal of"
+            what: "a window other than the one after the last this machine closed"
         })
     );
 

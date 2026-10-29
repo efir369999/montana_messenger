@@ -1274,6 +1274,16 @@ pub fn live_doing(
             what: OPENED_OVER_A_CHAIN,
         });
     }
+    // A machine on a plane of the network lives no window before the stride of the horizon changes
+    // (`next_stride_after`; the author's decision 332 (b), constitution record 339): it would pledge,
+    // attest and propose against a rate set that lacks the values presented before its anchor. It is
+    // refused before anything of the window is written, and follows meanwhile
+    // (`follow_to_the_next_stride`).
+    if stakes_from(machine)?.is_some_and(|first| from < first) {
+        return Err(NodeError::Refused {
+            what: WAITS_FOR_THE_STRIDE,
+        });
+    }
     let counts = machine.counts();
     let secret = machine.machine_secret()?;
     let mut of_the_machine = [0u8; 32];
@@ -2873,16 +2883,19 @@ fn kept_as_walked(
         .closed_window()?
         .is_none_or(|closed| taken.window > closed);
     if beyond {
-        if let Some((plane, before)) =
+        if let Some((plane, before, taken_at)) =
             state_of_the_walk(machine, anchor, head, taken, cohort, patience)?
         {
-            return machine.close(crate::Closing {
-                head: Some(head.later.clone()),
-                taken: taken.clone(),
-                plane,
-                before,
-                census: None,
-            });
+            return machine.close_marked(
+                crate::Closing {
+                    head: Some(head.later.clone()),
+                    taken: taken.clone(),
+                    plane,
+                    before,
+                    census: None,
+                },
+                taken_at,
+            );
         }
     }
     machine.keep_proposal(&head.later)?;
@@ -2892,6 +2905,10 @@ fn kept_as_walked(
     }
     machine.let_go_of(taken.window)
 }
+
+/// What a walk reaches: the state of the proposal taken, the state of the window before it where the
+/// replay passed that window, and the window of the head a plane of the network was taken at.
+type WalkedState = (State, Option<State>, Option<u64>);
 
 // **The state a walk reaches, replayed and not received.** From the state this machine holds — the
 // decided state of its own head, kept in the record of the last window it closed, or, for a machine
@@ -2904,8 +2921,9 @@ fn kept_as_walked(
 // state to replay from, or one from before the anchor only, and was handed a cohort starts from the
 // plane of the walked head the network offers, judged against the head's roots (`plane_of_the_network`), with the rate set the walk
 // rebuilds beside it (`remember_the_walked_rates`): with no proposal after the head it answers that
-// plane and no state before it, which it never held. Nothing, where it holds no state and was handed
-// no cohort.
+// plane and no state before it, which it never held, and either way the window of that head, which
+// the close keeps as the window the plane was taken at. Nothing, where it holds no state and was
+// handed no cohort.
 fn state_of_the_walk(
     machine: &Machine,
     anchor: &Anchor,
@@ -2913,7 +2931,7 @@ fn state_of_the_walk(
     taken: &Proposal,
     cohort: Option<&Cohort>,
     patience: u32,
-) -> Result<Option<(State, Option<State>)>, NodeError> {
+) -> Result<Option<WalkedState>, NodeError> {
     let known = [
         &anchor.earlier,
         &anchor.later,
@@ -2928,6 +2946,7 @@ fn state_of_the_walk(
         .find(|one| one.window == 0 && one.previous == genesis);
     let empty = machine.head()?.is_none() && machine.closed_window()?.is_none();
     let since = anchor.later.window;
+    let mut taken_at = None;
     // The window the replay starts from beside the proposal its state answers for, and that state.
     // A state of its own from before the anchor stands on windows the walk did not pass, which the
     // retention may have let go of; handed a cohort, the machine takes the plane of the head instead.
@@ -2948,6 +2967,7 @@ fn state_of_the_walk(
                 let head = &head.later;
                 let mut plane = plane_of_the_network(machine, head, cohort)?;
                 remember_the_walked_rates(machine, known, head, since, &mut plane, patience)?;
+                taken_at = Some(head.window);
                 (Some((head.window, Some(head.clone()))), plane)
             }
             None => return Ok(None),
@@ -3017,7 +3037,7 @@ fn state_of_the_walk(
         }
         credited = roll.parts;
     }
-    Ok(Some((state, before)))
+    Ok(Some((state, before, taken_at)))
 }
 
 // **The rate set the walk rebuilds** (decision of the author 298, B = b): no root covers it (Canon,
@@ -3026,8 +3046,11 @@ fn state_of_the_walk(
 // proposal the one the next names — is read from the frames standing at its window, matched to the
 // identifier the roll carries, and its rate nullifiers enter the plane; the frames after the head
 // enter by the replay that applies them. A walk reaches back `retained_windows` and a stride of the
-// horizon `proving_horizon`: the rate nullifiers of a stride's windows before the anchor stand at no
-// point the walk reads, and the plane holds those of the windows walked alone.
+// horizon `proving_horizon`, so the rate nullifiers of the windows before the anchor stand at no point
+// the walk reads and the plane holds those of the windows walked alone. That is why the machine
+// stakes and proposes nothing until the stride of the horizon changes (`next_stride_after`; the
+// author's decision 332 (b), constitution record 339): a rate nullifier of a stride the horizon has
+// left is unprovable, and from the next stride on its rate set holds every value presented.
 fn remember_the_walked_rates(
     machine: &Machine,
     known: &[&Proposal],
@@ -3151,6 +3174,97 @@ pub fn come_back(machine: &Machine, to: u64, patience: u32) -> Result<u64, NodeE
         .ok_or(NodeError::Refused {
             what: "a window past the last one a count carries",
         })
+}
+
+// **A machine on a plane of the network waits for the next stride.** The author's decision 332 (b),
+// constitution record 339: a machine that took its plane from the network "does not put up a stake or
+// a proposal until the stride of the horizon changes; it only follows decided rolls". Its rate set
+// holds the values of the windows it walked alone (`remember_the_walked_rates`), and a rate nullifier
+// is refused only against the standing stride of the window its frame applies in (Canon, "The
+// nullifier of the rate of payment"); so the stride it waits out is the one standing for the head
+// whose plane it took, and the first window it stakes and proposes in is the first after that head
+// whose standing stride is another. By the integer form of the horizon of proving, `standing_stride(W)
+// = (W - proving_lag + 1) / proving_horizon - 1`, defined from the first window it is non-negative at,
+// the standing stride changes at the windows `k x proving_horizon + proving_lag - 1`, k from one, and
+// the wait is at most `proving_horizon` windows.
+pub fn next_stride_after(taken_at: u64) -> Result<u64, NodeError> {
+    let decree = |row: &str| {
+        mt_genesis::scalar(row).ok_or(NodeError::Decree {
+            row: row.to_string(),
+        })
+    };
+    let reach = decree("proving_horizon")?;
+    let lag = decree("proving_lag")?;
+    let changes_at = lag.checked_sub(1).ok_or(NodeError::Decree {
+        row: "proving_lag".to_string(),
+    })?;
+    let strides = taken_at
+        .saturating_sub(changes_at)
+        .checked_div(reach)
+        .ok_or(NodeError::Decree {
+            row: "proving_horizon".to_string(),
+        })?;
+    strides
+        .checked_add(1)
+        .and_then(|k| k.checked_mul(reach))
+        .and_then(|at| at.checked_add(changes_at))
+        .ok_or(NodeError::Refused {
+            what: "a window past the last one a count carries",
+        })
+}
+
+// The first window this machine stakes and proposes in, where it took its plane from the network,
+// and none where it never took one.
+pub fn stakes_from(machine: &Machine) -> Result<Option<u64>, NodeError> {
+    machine
+        .plane_from_the_network()?
+        .map(next_stride_after)
+        .transpose()
+}
+
+// What a machine on a plane of the network is answered when it is asked to live a window before the
+// stride of the horizon changes: it pledges, attests and proposes nothing of it.
+const WAITS_FOR_THE_STRIDE: &str =
+    "a machine on a plane of the network stakes and proposes nothing before the stride of the horizon changes";
+
+// **And until then it follows the decided rolls.** It walks from its own anchor to the head the
+// certificates standing since make final, as a machine that was away walks (`come_back`), and replays
+// the decided roll of every window it walked over the state it holds, every root recomputed: no new
+// wire, and nothing of its own published. It walks again whenever the chain moved, and answers the
+// window it stakes and proposes in once the window after the last it closed is that one or later. A
+// walk that finds the chain where it left it is a wait and no refusal; `patience` of them in a row
+// are. A machine that took no plane from the network, or whose stride already changed, is answered
+// the window it was asked for.
+pub fn follow_to_the_next_stride(
+    machine: &Machine,
+    from: u64,
+    patience: u32,
+) -> Result<u64, NodeError> {
+    let mut still = 0;
+    let mut from = from;
+    loop {
+        match stakes_from(machine)? {
+            Some(first) if from < first => {}
+            _ => return Ok(from),
+        }
+        match come_back(machine, u64::MAX, patience) {
+            Ok(next) => {
+                from = next;
+                still = 0;
+            }
+            Err(NodeError::Refused { what }) if what == NO_CERTIFICATE_TO_WALK => {
+                still += 1;
+                if still >= patience {
+                    return Err(NodeError::Refused {
+                        what:
+                            "a machine waiting for the next stride that saw the chain move nowhere",
+                    });
+                }
+                std::thread::sleep(ASKS_AGAIN_AFTER);
+            }
+            Err(other) => return Err(other),
+        }
+    }
 }
 
 // **A device that walked to a head takes the plane of that head against its roots.** Consensus, "The
@@ -3407,5 +3521,48 @@ mod historical_reads {
         history.end = u32::MAX;
         assert_eq!(history.next(u32::MAX), Some(u32::MAX - 1));
         assert_eq!(history.next(u32::MAX), Some(0));
+    }
+}
+
+#[cfg(test)]
+mod the_next_stride {
+    use super::next_stride_after;
+    use mt_proof::horizon::standing_stride;
+
+    // The first window a machine on a plane of the network stakes in is the first after the head it
+    // took the plane at whose standing stride is another (decision 332 (b)), judged against the
+    // integer form of the horizon itself and not against the arithmetic it is computed by. A wait one
+    // window shorter lands on a window of the same stride; a wait of none, on the head's own.
+    #[test]
+    fn a_machine_on_a_plane_of_the_network_stakes_first_where_the_standing_stride_changes() {
+        let reach = mt_genesis::scalar("proving_horizon").expect("the Decree names it");
+        let lag = mt_genesis::scalar("proving_lag").expect("the Decree names it");
+        let first = reach + lag - 1;
+        let heads = (0..4 * reach + lag).chain([u64::MAX / 2, u64::MAX / 2 + 1]);
+        for head in heads {
+            let stakes = next_stride_after(head).expect("a window");
+            assert!(stakes > head, "head {head}: a wait of none");
+            // A wait spans at most one stride, but before the first stands it runs to the first.
+            assert!(
+                stakes - head <= reach || stakes == first,
+                "head {head}: a wait past a stride"
+            );
+            assert_ne!(
+                standing_stride(stakes),
+                standing_stride(head),
+                "head {head}: staking at {stakes} in the stride of the head"
+            );
+            assert_eq!(
+                standing_stride(stakes - 1),
+                standing_stride(head),
+                "head {head}: the stride changed before {stakes}"
+            );
+        }
+        // Joined in the middle of the first windows, before any stride stands: it waits for the
+        // first, at `proving_horizon + proving_lag - 1`, window 129 by the Decree.
+        assert_eq!(next_stride_after(8), Ok(first));
+        assert_eq!(first, 129);
+        assert_eq!(next_stride_after(first), Ok(first + reach));
+        assert_eq!(next_stride_after(first - 1), Ok(first));
     }
 }

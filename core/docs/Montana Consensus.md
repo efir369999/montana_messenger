@@ -1278,6 +1278,22 @@ windows catches up in `k` windows of that duty. Machines retain the attestations
 walk and takes a fresh anchor from its operator, which is a change of trust and not a verification,
 and the set says so.
 
+**A plane taken from the network waits out its stride.** A device that holds no state to replay from
+takes the plane of the head from the network (step 5), and so holds the rate nullifiers of only the
+windows it walked, while the rate set of Canon lives a whole stride of `proving_horizon` windows. Such a
+device puts up no stake and no proposal until the standing stride of the horizon changes after the
+head whose plane it took: the first window it stakes and proposes in is `k x proving_horizon +
+proving_lag - 1` for the least `k` that puts it past that head, so it waits at most `proving_horizon`
+windows. Until then it follows the decided roll of every window, replayed over the state it holds
+with every root recomputed, and it publishes nothing of its own. There is no new wire and no change of
+Genesis, and the price is up to one stride without its vote. The record of the last window it closed
+names the window of the head it took the plane at, and every close carries that mark forward, so the
+wait holds through a restart. A machine that walked from a state of its own replays every window and
+does not wait. The rule is `pulse::next_stride_after`, `pulse::stakes_from` and
+`pulse::follow_to_the_next_stride` (`core/Montana-Core/crates/montana-node/src/pulse.rs:3166-3255`), and
+the mark is the fifth part of `Kept` (`lib.rs:725-737`). These are the Author's decision 332 (b),
+record 339 of the constitution chain, 2026-10-29 09:28 UTC, issue #16 K7b.
+
 **Two proposals, and no second count.** A device offered two proposals of one height takes the one
 the agreement of the window after decided; where two decisions verify, the two are an equivocation
 and the contradicting pairs of pledges under one part-nullifier are the evidence the sanction of this
@@ -1292,6 +1308,7 @@ resolves by the rule this document already states and never by asking who is mor
 - Every leaf of state a joining device takes is checked against a root the verified head carries, by recomputation; a leaf accepted on the word of whoever answered is a defect.
 - A device asks several machines and judges every answer alone; nothing in the join is decided by how many answers agree.
 - Joining publishes nothing about the joiner but the fact that some device asked, which the ledger of the wire already holds.
+- A device whose plane came from the network stakes and proposes nothing before the standing stride of the horizon changes after the head it took the plane at; until then it only follows the decided rolls, and the mark survives every close and restart.
 
 ## The way back
 

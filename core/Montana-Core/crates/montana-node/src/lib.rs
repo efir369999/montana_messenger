@@ -721,12 +721,19 @@ pub struct Closing {
 // close stands: a machine stopped between the two would otherwise hold its plane beside a proposal
 // whose roots are not its own. Each part is written as its length, eight bytes little-endian, and
 // its bytes; a decided state of no window is a length of nought, which no plane encodes to.
+//
+// **And the window of the head whose plane it took from the network**, where it took one: a fifth
+// part of eight bytes, little-endian, written only then, so a record of a machine that never took
+// one is the four parts it always was. A machine on such a plane holds the rate nullifiers of the
+// windows it walked alone, and it stakes and proposes nothing until the stride of the horizon
+// changes (`pulse::next_stride_after`; the author's decision 332 (b), constitution record 339).
 #[derive(Clone)]
 pub struct Kept {
     pub taken: mt_state::layout::Proposal,
     pub plane: state::State,
     pub before: Option<state::State>,
     pub census: Vec<attest::LivedCensus>,
+    pub from_the_network: Option<u64>,
 }
 
 impl Kept {
@@ -739,7 +746,12 @@ impl Kept {
         };
         let census = Zeroizing::new(attest::LivedCensus::encode(&self.census));
         let mut out = Zeroizing::new(Vec::new());
-        for part in [&taken[..], &plane[..], &before[..], &census[..]] {
+        let at = self.from_the_network.map(u64::to_le_bytes);
+        let mut parts = vec![&taken[..], &plane[..], &before[..], &census[..]];
+        if let Some(at) = &at {
+            parts.push(&at[..]);
+        }
+        for part in parts {
             out.extend_from_slice(&(part.len() as u64).to_le_bytes());
             out.extend_from_slice(part);
         }
@@ -752,7 +764,7 @@ impl Kept {
         };
         let mut rest = bytes;
         let mut parts: Vec<&[u8]> = Vec::new();
-        for _ in 0..4 {
+        while parts.len() < 4 || (parts.len() == 4 && !rest.is_empty()) {
             let eight = rest.get(..8).ok_or_else(short)?;
             let mut width = [0u8; 8];
             width.copy_from_slice(eight);
@@ -766,6 +778,14 @@ impl Kept {
                 what: "a record of a window longer than what it declares",
             });
         }
+        let from_the_network = match parts.get(4) {
+            None => None,
+            Some(at) => Some(u64::from_le_bytes(<[u8; 8]>::try_from(*at).map_err(
+                |_| NodeError::Refused {
+                    what: "a record of a window whose plane of the network names no window",
+                },
+            )?)),
+        };
         Ok(Self {
             taken: <mt_state::layout::Proposal as mt_state::Layout>::parse(parts[0])
                 .map_err(NodeError::Object)?,
@@ -776,6 +796,7 @@ impl Kept {
                 Some(state::State::decode(parts[2])?)
             },
             census: attest::LivedCensus::decode(parts[3])?,
+            from_the_network,
         })
     }
 
@@ -845,6 +866,9 @@ pub struct Machine {
     // The census windows this machine lived and the branch its part walks in each of their cements:
     // its standing, which it proves in a ballot and publishes nowhere.
     census: Arc<Mutex<Vec<attest::LivedCensus>>>,
+    // The window of the head whose plane this machine took from the network, where it took one, as
+    // the record of the last window it closed keeps it.
+    from_the_network: Arc<Mutex<Option<u64>>>,
     // The frames of this machine's own standing at the points of a round, each with what the
     // machine does once the round applies it; and those whose rounds left, told once and told again
     // where a replay moves them, until their window is final.
@@ -935,9 +959,9 @@ impl Machine {
         let cell_width = mt_wire::cell_bytes().map_err(|_| of_the_decree("cell_bytes"))?;
         let store = Arc::new(store);
         let standing = Standing::loaded(retained, &store, cell_width)?;
-        let (held_value, census) = match kept {
-            None => (state::State::new(), Vec::new()),
-            Some(kept) => (kept.plane, kept.census),
+        let (held_value, census, from_the_network) = match kept {
+            None => (state::State::new(), Vec::new(), None),
+            Some(kept) => (kept.plane, kept.census, kept.from_the_network),
         };
         Ok((
             Self {
@@ -955,6 +979,7 @@ impl Machine {
                 ))),
                 counts: Arc::new(say::Counts::default()),
                 census: Arc::new(Mutex::new(census)),
+                from_the_network: Arc::new(Mutex::new(from_the_network)),
                 settling: Arc::new(Mutex::new(Vec::new())),
                 retelling: Arc::new(Mutex::new(Vec::new())),
                 carriers: Mutex::new(Vec::new()),
@@ -970,6 +995,15 @@ impl Machine {
             .lock()
             .map_err(|_| NodeError::Uncountable)?
             .clone())
+    }
+
+    // The window of the head whose plane this machine took from the network, or none where it never
+    // took one: what decides whether it may stake and propose yet (`pulse::stakes_from`).
+    pub fn plane_from_the_network(&self) -> Result<Option<u64>, NodeError> {
+        Ok(*self
+            .from_the_network
+            .lock()
+            .map_err(|_| NodeError::Uncountable)?)
     }
 
     // What this machine holds of the value plane, for as long as the caller holds the guard. A
@@ -1290,6 +1324,18 @@ impl Machine {
     // the close before; a failed flush of the directory is not a rollback, since every reader
     // already reads the new record, and the memory follows it.
     pub fn close(&self, closing: Closing) -> Result<(), NodeError> {
+        self.close_marked(closing, None)
+    }
+
+    // **A close of a walk that took the plane of its head from the network** is the same one writing,
+    // and its record names that head as the window the plane was taken at (`Kept`). Every other close
+    // carries forward what the record before it named, so the mark goes with the machine from the walk
+    // to every window it follows after it, and through a restart.
+    pub(crate) fn close_marked(
+        &self,
+        closing: Closing,
+        taken_at: Option<u64>,
+    ) -> Result<(), NodeError> {
         let Closing {
             head: decided,
             taken,
@@ -1332,6 +1378,7 @@ impl Machine {
             plane,
             before,
             census,
+            from_the_network: taken_at.or(self.plane_from_the_network()?),
         };
         let record = mt_store::WindowRecord {
             head,
@@ -1346,6 +1393,10 @@ impl Machine {
         if written.is_ok() || matches!(&written, Err(StoreError::CommitUncertain { .. })) {
             *self.value()? = kept.plane;
             *self.census.lock().map_err(|_| NodeError::Uncountable)? = kept.census;
+            *self
+                .from_the_network
+                .lock()
+                .map_err(|_| NodeError::Uncountable)? = kept.from_the_network;
         }
         written.map_err(NodeError::Store)?;
         self.drop_agreement(window)
@@ -1375,7 +1426,8 @@ impl Machine {
     // closed on, beside the proposal whose roots it answers for and under the head and the window
     // closed the walk wrote, and held in memory only once the record stands — so it stands again after
     // a restart. The device lived no window: it holds no decided state of the window before, and its
-    // standing is what it already held.
+    // standing is what it already held. The plane came from the network, and the record names its
+    // head as the window it was taken at (`Kept`).
     pub fn hold_the_plane(
         &self,
         head: &mt_state::layout::Proposal,
@@ -1392,6 +1444,7 @@ impl Machine {
             plane,
             before: None,
             census: self.lived_census()?,
+            from_the_network: Some(head.window),
         };
         let record = mt_store::WindowRecord {
             head: standing.head,
@@ -1401,6 +1454,10 @@ impl Machine {
         let written = self.store.commit_window(&record);
         if written.is_ok() || matches!(&written, Err(StoreError::CommitUncertain { .. })) {
             *self.value()? = kept.plane;
+            *self
+                .from_the_network
+                .lock()
+                .map_err(|_| NodeError::Uncountable)? = kept.from_the_network;
         }
         written.map_err(NodeError::Store)
     }

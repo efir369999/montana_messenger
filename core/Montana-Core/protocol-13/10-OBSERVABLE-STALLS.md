@@ -103,13 +103,17 @@ decision 330 (a)):
   `:975-994`, K6, `e5cc3bc`). The cascade it walks is still clocked, a
   property of that generation recorded in `core/Code/AUDIT.md`
   ("Known limitations", item 4).
-- **A quorum shortfall.** The node says `included_bundles {sum} < quorum`
-  and `cementing evidence {ev_sum} < quorum` (`start.rs:1633-1639` and
-  `:1660-1666`). Bundles that fail `validate_bundle` (`start.rs:1622-1632`
-  and `:1650-1659`) are dropped and counted nowhere, so a refusal reads as a
-  quorum shortfall. Under this reading the refusals are to be counted beside
-  the shortfall and never stand for it. That is K5 of issue #21, and it is
-  open.
+- **A quorum shortfall, with its refusals beside it.** The node says
+  `included_bundles W < quorum Q; refused N` and
+  `cementing evidence W < quorum Q; refused N` (`start.rs:1654-1668` and
+  `:1678-1686`). `tally` (`start.rs:1031-1056`) adds the weight of the
+  confirmations that pass `validate_bundle` and counts those that fail; a
+  refusal adds no weight, is shown beside the shortfall and never stands for
+  it (`shortfall_line`, `start.rs:1058-1060`). The test
+  `a_refused_confirmation_is_counted_beside_the_shortfall`
+  (`commands/start/order_tests.rs:705`) refuses three confirmations, on the
+  endpoint, the key and the Node Table, and reads `refused 3`. K5 of issue
+  #21.
 
 Decision 334 (a) does not say whether `core/Code` also gives the codes 1, 2
 and 4. That stands as an open question of #21 K7. The Gate 0 question below
