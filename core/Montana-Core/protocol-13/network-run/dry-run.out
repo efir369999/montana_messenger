@@ -1,5 +1,5 @@
 $ python3 -B core/Montana-Core/protocol-13/network-run/run.py --dry-run --run-id DRYRUN
-Protocol-13 item 13 -- the full network run DRYRUN, 2026-10-29 08:00:07 UTC (DRY RUN)
+Protocol-13 item 13 -- the full network run DRYRUN, 2026-10-29 08:05:45 UTC (DRY RUN)
 Our own reproduction on our own servers; not an independent external audit.
 Every ssh below runs: python3 -I -c "import sys;d=sys.stdin.buffer.read();i=d.index(bytes(8));exec(compile(d[:i],'mt13-remote','exec'),{'DATA':d[i+8:]})"
 with the executor REMOTE of run.py (sha256 8428dc6f14bdb821006a0371505318d1bacb4854e5eb173eaa8ce9876c4cf40f) and the listed operations on its standard input.
@@ -89,19 +89,34 @@ with the executor REMOTE of run.py (sha256 8428dc6f14bdb821006a0371505318d1bacb4
 == S1 birth
   ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
     [l2] timeout --signal=TERM 30 ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/a/data --listen 10.13.0.1:9635
-    EXPECT a is born, prints its acquaintance and its half, and is stopped by timeout (rc 124)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/a/data/private.log
+    EXPECT a is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT a's default lines name neither its address nor its half
   ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
     [l2] timeout --signal=TERM 30 ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/b/data --listen 10.13.0.2:9635
-    EXPECT b is born, prints its acquaintance and its half, and is stopped by timeout (rc 124)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/b/data/private.log
+    EXPECT b is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT b's default lines name neither its address nor its half
   ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
     [l2] timeout --signal=TERM 30 ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/c/data --listen 10.13.0.3:9635
-    EXPECT c is born, prints its acquaintance and its half, and is stopped by timeout (rc 124)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/c/data/private.log
+    EXPECT c is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT c's default lines name neither its address nor its half
   ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
     [l2] timeout --signal=TERM 30 ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/d/data --listen 10.13.0.4:9635
-    EXPECT d is born, prints its acquaintance and its half, and is stopped by timeout (rc 124)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/d/data/private.log
+    EXPECT d is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT d's default lines name neither its address nor its half
   ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
     [l2] timeout --signal=TERM 30 ip netns exec mt13-e /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/e/data --listen 10.13.0.5:9635
-    EXPECT e is born, prints its acquaintance and its half, and is stopped by timeout (rc 124)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/e/data/private.log
+    EXPECT e is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT e's default lines name neither its address nor its half
 
 == S2 windows close
   ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'

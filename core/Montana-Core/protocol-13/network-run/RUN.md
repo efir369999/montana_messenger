@@ -32,28 +32,30 @@ question Q5 for the author.** This run covers `core/Montana-Core` only.
 
 ### 1.2 How a machine starts
 
-`USAGE`, `core/Montana-Core/crates/montana-node/src/main.rs:7-58`:
+`USAGE`, `core/Montana-Core/crates/montana-node/src/main.rs:7-70` (lines read on main `891d065`):
 
 | Flag | Line | What it does |
 |---|---|---|
-| `--data <dir>` | `main.rs:13`, read `:465-468` | the store between starts |
-| `--listen <addr:port>` | `:14`, `:469-472` | where it answers |
-| `--acquaintance <addr:port@key>` | `:15-16`, `:473-476` | dialled at start (`:108-121`). One not reached is dialled again until it answers (`:171-173`, `pulse.rs:939-947`) |
-| `--admitted <half>` | `:17-21`, `:477-480` | the opening cohort, this machine included. Without any, it serves and lives no window (`:133-136`) |
-| `--open` | `:22-25`, `:482-485` | window 0 on an empty store; refused on a store holding a chain (`pulse.rs:963-977`) |
-| `--windows <n>` | `:26-27`, `:494-501` | stop after n windows. The run does not use it |
+| `--data <dir>` | `main.rs:16`, read `:563` | the store between starts |
+| `--listen <addr:port>` | `:17`, `:567` | where it answers |
+| `--acquaintance <addr:port@key>` | `:18-19`, `:571` | dialled at start (`:144-162`). One not reached is dialled again until it answers (`:243-245`, `pulse.rs:939`) |
+| `--admitted <half>` | `:29-33`, `:579` | the opening cohort, this machine included. Without any, it serves and lives no window (`:196-203`) |
+| `--open` | `:34-37`, `:584` | window 0 on an empty store; refused on a store holding a chain (`pulse.rs:963-977`) |
+| `--windows <n>` | `:38-39`, `:596` | stop after n windows. The run does not use it |
 | `--anchor <earlier> --anchor <later>` | `main.rs:11`, `:20`, `:575` | PR #74, merged as `b2531c55`: two consecutive final proposals; the machine walks to the head before anything else and says so (`main.rs:183`) |
 | `--status --data <dir>` | `main.rs:14`, `:96-97`, `:714-742` | PR #72, merged as `c64ad9f1`. Exits 0 for a close or a wait inside the patience, 1 no quorum, 2 no data, 4 no diagnostics (`say.rs:36-38`); a machine with no live process behind its door reads `no diagnostics` (`status.rs:97-131`) |
 
-First start: the machine draws its secret and prints four lines (`main.rs:79-98`): "this machine
-was born", "hand this to another operator: <acquaintance>", the digits to compare by voice, and
-"hand this over too, to stand in one window: <half>".
+First start: the machine draws its secret and prints "this machine was born" (`main.rs:110-112`).
+Since #22 K1 (PR #99, #100) the three details go to the owner-only `<data>/private.log`, each line
+after its UTC second, never to a default line (`main.rs:113-135`, `private.rs:60-84`): "hand this
+to another operator: <acquaintance>", the digits to compare by voice, and "hand this over too, to
+stand in one window: <half>". run.py reads them there (S1).
 
 Without `--open`, a machine on a store that holds a chain lives from `closed + 1`
-(`pulse.rs:963-977`). On `main`, `live_doing` then refuses every window from 2 on, because the
-proposal two windows back exists only in memory (`pulse.rs:1262-1267`; `README.md:146-149` says
-#16 carries the fix). So **a restart past window 1 is refused on today's main**. This is
-prerequisite P1.
+(`pulse.rs:963`). Historical (marked 2026-10-29 UTC): when this was written, `live_doing` refused
+every window from 2 on, because the proposal two windows back existed only in memory, so a restart
+past window 1 was refused. #16 K1 and K2 carried the fix into main (`decided_roll`, `pulse.rs:2070`;
+test `a_machine_started_again_continues_its_chain.rs:51`). This is prerequisite P1, now in main.
 
 ### 1.3 How weight is distributed
 
@@ -110,21 +112,24 @@ each cement counted 3 of 3.
 
 The readers a machine offers:
 
-- The log lines: `pulse.rs:1592` (decided), `:1902`/`:1906` ("window N is final under the
-  proposal ID"), `:1933` ("window N closed after R rounds … the next links to the proposal ID"), and
-  `main.rs:99-102`, `:151-154` (where it begins).
+- The log lines, on main `891d065`: `pulse.rs:1687` (decided), `:2005` ("window N is final under
+  the proposal ID"), `:2040` ("window N closed after R rounds … the next links to the proposal ID"),
+  and `main.rs:136-139`, `:220-223` (where it begins).
 - `--status` (#21, PR #72, in main).
 - The walk's line "walked from window W to the head at window H" (#20, PR #74, `main.rs:183`).
 
 ### 1.5 The in-process tests that already exercise each scenario
 
-| Scenario of item 13 | On main | On a branch or PR, not merged |
+Read on main `891d065` (2026-10-29 UTC). The right column was written while these tests stood on
+branches; all of them are in main now, at the lines named.
+
+| Scenario of item 13 | On main | Came from a branch or PR, now in main |
 |---|---|---|
 | Window closure | `a_window_closes.rs:47`, `three_machines_live_a_window.rs:30`, `two_hosts_live_a_window.rs:34`, `four_machines_decide_one_name.rs:58` | |
-| Quorum lost and recovered | at the quorum without a proposal: `a_quorum_without_a_verified_proposal_closes_nothing.rs:141`, `:226`. At the quorum, head and rights do not move: `a_count_at_the_quorum_moves_neither_head_nor_rights.rs:60`. An answer is required: `a_round_requires_an_answer.rs:9`. **No test stops machines and brings them back** | |
-| Partition and reunion | `four_machines_decide_one_name.rs:58`: two halves parted while window 0 opens, healed after round 0 (`:5-13`) | `a_minority_waits_and_rejoins.rs:215` (`agent-587/issue-16-k3`, `8950b51`): 3:1, the minority waits, then rejoins by walking. **No green run** (#16, K4) |
-| Restart | `a_window_outlives_the_restart_of_every_holder.rs:34`, `a_machine_keeps_what_it_holds.rs:88`, `a_network_opens_by_its_operator_alone.rs:165` | `a_machine_started_again_continues_its_chain.rs:51`, `a_machine_stopped_inside_a_window_resumes_it.rs:41` (both `8950b51`); `a_machine_alone_opens_a_network_and_lives_on_after_a_stop.rs:64` (PR #74) |
-| A new machine joins | `a_walk_from_an_anchor.rs:46`, `a_device_joins_the_running_chain.rs:39` | `a_machine_away_walks_back_from_its_own_anchor.rs:84` (`8950b51`); `a_device_takes_the_plane_of_its_head.rs:76` and `mt-boundary/tests/a_device_joins_through_the_door.rs:77` (PR #74) |
+| Quorum lost and recovered | at the quorum without a proposal: `a_quorum_without_a_verified_proposal_closes_nothing.rs:151`, `:236`. At the quorum, head and rights do not move: `a_count_at_the_quorum_moves_neither_head_nor_rights.rs:60`. An answer is required: `a_round_requires_an_answer.rs:9`. Stopped and brought back: the whole network, `a_network_stopped_whole_resumes.rs:93` (#16 K7a, PR #91). **No test stops part of the electorate and brings it back** | |
+| Partition and reunion | `four_machines_decide_one_name.rs:58`: two halves parted while window 0 opens, healed after round 0 (`:5-13`) | `a_minority_waits_and_rejoins.rs:225` (`agent-587/issue-16-k3`, `8950b51`): 3:1, the minority waits, then rejoins by walking. Green: a636-minority END 0 (#16, K4) |
+| Restart | `a_window_outlives_the_restart_of_every_holder.rs:34`, `a_machine_keeps_what_it_holds.rs:88`, `a_network_opens_by_its_operator_alone.rs:241` | `a_machine_started_again_continues_its_chain.rs:51`, `a_machine_stopped_inside_a_window_resumes_it.rs:41` (both `8950b51`); `a_machine_alone_opens_a_network_and_lives_on_after_a_stop.rs:64` (PR #74) |
+| A new machine joins | `a_walk_from_an_anchor.rs:46`, `a_device_joins_the_running_chain.rs:39` | `a_machine_away_walks_back_from_its_own_anchor.rs:84` (`8950b51`); `a_device_takes_the_plane_of_its_head.rs:77` and `mt-boundary/tests/a_device_joins_through_the_door.rs:77` (PR #74) |
 
 All paths are under `core/Montana-Core/crates/montana-node/tests/` unless named otherwise. None of
 these tests is a network of processes over real links. That is what this run adds.
@@ -132,7 +137,7 @@ these tests is a network of processes over real links. That is what this run add
 ### 1.6 Risks read from the tree
 
 - **R1. A link lost after the start is never dialled again.** `reach_again` runs only for
-  acquaintances not reached at the start (`main.rs:171-173`). It returns after the first success
+  acquaintances not reached at the start (`main.rs:243-245`). It returns after the first success
   (`pulse.rs:939-947`). After a restart, the restarted machine dials the others, but they do not
   dial it back. In the in-process tests the test itself reaches both ways
   (`a_minority_waits_and_rejoins.rs`, "reach one another both ways"). A partition that drops packets
@@ -140,14 +145,17 @@ these tests is a network of processes over real links. That is what this run add
   both sides.
   The partition hold is therefore 600 s (Q3). Whether one-way links carry a window is what S3, S4
   and S6 will show.
-- **R2.** A restart past window 1 is refused on main (§1.2). This is prerequisite P1.
-- **R3. PR #74 does not fit main as it stands.** Historical (marked 2026-10-29 UTC): PR #74 took main
-  and merged as `b2531c55`; the points below describe its branch before that.
-  - Its `USAGE` says the last final window is `<data>/head`, eight bytes. Main's store has no such
-    file: the head is the first mark of `window` (`mt-store/src/lib.rs:18-21`, `:594-613`), and
-    opening refuses a store holding the earlier `head` file (`:395`).
-  - Its `main.rs` context carries `[--from <window>]`, not main's `--open` (`main.rs:11`, `:22-25`).
-    It must take main before it merges.
+- **R2.** Historical (marked 2026-10-29 UTC): a restart past window 1 was refused on main (§1.2);
+  #16 K1/K2 are in main. This is prerequisite P1.
+- **R3. PR #74 and the store's layout.** Written while PR #74 stood on its branch. It merged as
+  `b2531c55` (2026-10-29 UTC). Read again on main `891d065`:
+  - Still true, now on main. `USAGE` says the last final window is `<data>/head`, eight bytes
+    (`main.rs:22-25`). The store has no such file and refuses a root that holds one
+    (`mt-store/src/lib.rs:406-412`, `EarlierLayout`). An operator who builds an anchor from that
+    text looks for a file that is not there. The anchor is two files of `proposals/`, which run.py
+    takes by their window numbers.
+  - Historical (marked 2026-10-29 UTC): the branch carried `[--from <window>]`, while main carries
+    `--open` (`main.rs:12`, `:34-37`, `:584`).
   - run.py reads `proposals/` and the marks of `window` only. It never reads `head`.
 - **R4. Liveness (#65).** On net4, windows took attempt 7-8 and up to 1025 rounds (one window,
   ~14.5 min). The memory of a stalled window grew (#63). The window budget is set at 60 min (Q3).
@@ -231,7 +239,7 @@ checked at every snapshot.
 | Step | Done | Expected | Fails when |
 |---|---|---|---|
 | **S0 prepare** | refuse Lauterbourg-3 and `/opt/montana-core`; refuse a run directory that exists; clone or fetch, check out `--commit`, `cargo build --release --locked -p montana-node` in `core/Montana-Core` (its pinned 1.92.0); install the binary, keep its SHA-256; build the namespaces | HEAD = the commit; each `required_commits` is an ancestor; the build exits 0; `--help` names `--open --admitted --acquaintance --anchor --status`; ping a→b; no default route; quorum of 4 ≥ 2 | any of these. A missing prerequisite exits 2 |
-| **S1 birth** | each of a…e started once with `--data --listen` under `timeout 30` | rc 124, "this machine was born", its acquaintance begins `10.13.0.x:9635@`, its half | any machine not born. Kept: `birth/<n>.out`, `born.json` |
+| **S1 birth** | each of a…e started once with `--data --listen` under `timeout 30`; its `private.log` read | rc 124, "this machine was born"; in `private.log` its acquaintance begins `10.13.0.x:9635@`, and its half; its default lines name neither its address nor its half (#22 K1) | any machine not born. Kept: `birth/<n>.out`, `born.json` |
 | **S2 windows close** | a, b, c, d started with `--open`, the four halves, the other three acquaintances | every head ≥ 2 (windows 0-2 final) within 4 h | the budget runs out, a unit dies, or an invariant fails |
 | **S3 quorum lost by a stop** | stop c and d; hold 30 min | a and b move neither head nor last closed; they keep their proposals; their status is present (rc ≠ 4) and reads no close past the last one. The text (`waiting: no quorum` or another) is kept. c and d, stopped, read `no diagnostics` and exit 4 | any change during the hold; a stopped machine read as anything else |
 | **S3 recovered by a restart** | start c and d on their stores (no `--open`, no anchor) | every head ≥ head before + 2 within 3 h; earlier final proposals unchanged byte for byte | budget, a dead unit, a changed proposal |

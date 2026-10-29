@@ -662,18 +662,29 @@ class Run:
         for n in self.nodes:
             argv = ["timeout", "--signal=TERM", str(self.t["birth_s"])] + self.inside(n) + [self.bin, "--data", self.data(n), "--listen", self.listen(n)]
             res = self.run_on(self.nodes[n]["host"], argv, timeout=self.t["birth_s"] + 30)
+            # The acquaintance, the digits and the half go to the owner-only private.log of the data
+            # directory, never to a default line (#22 K1; main.rs:113-135, private.rs:60-64).
+            kept = self.run_on(self.nodes[n]["host"], ["cat", self.data(n) + "/private.log"])
             if self.dry:
                 self.born[n] = {"half": "<half of %s>" % n, "acquaintance": "<acquaintance of %s>" % n}
-                self.say("    EXPECT %s is born, prints its acquaintance and its half, and is stopped by timeout (rc 124)" % n)
+                self.say("    EXPECT %s is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)" % n)
+                self.say("    EXPECT %s's default lines name neither its address nor its half" % n)
                 continue
             text = res["out"]
-            half = re.search(r"hand this over too, to stand in one window: ([0-9a-f]{64})", text)
-            line = re.search(r"hand this to another operator: (\S+)", text)
-            digits = re.search(r"check these digits with them by voice: (.+)", text)
-            self.write("birth/%s.out" % n, text + "\n--- stderr\n" + res["err"] + "\n--- rc %s\n" % res["rc"])
+            details = kept["out"] if kept and kept.get("rc") == 0 else ""
+            half = re.search(r"hand this over too, to stand in one window: ([0-9a-f]{64})", details)
+            line = re.search(r"hand this to another operator: (\S+)", details)
+            digits = re.search(r"check these digits with them by voice: (.+)", details)
+            self.write("birth/%s.out" % n, text + "\n--- stderr\n" + res["err"] + "\n--- rc %s\n" % res["rc"]
+                       + "--- private.log (rc %s)\n" % (kept or {}).get("rc") + details)
             ok = self.expect(step, "%s is born and names itself" % n,
                              lambda: (res["rc"] == 124 and "this machine was born" in text and half and line,
                                       "rc %s, half %s" % (res["rc"], half.group(1)[:16] if half else None)))
+            if ok:
+                said = text + res["err"]
+                self.expect(step, "%s's default lines name neither its address nor its half" % n,
+                            lambda: (self.listen(n) not in said and half.group(1) not in said,
+                                     "%d bytes of default lines read" % len(said)))
             if ok:
                 self.born[n] = {"half": half.group(1), "acquaintance": line.group(1),
                                 "fingerprint": digits.group(1).strip() if digits else None}
