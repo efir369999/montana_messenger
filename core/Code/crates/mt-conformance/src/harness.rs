@@ -5,7 +5,7 @@
 // as an Absent row; a value mismatch as Partial. Verdict green iff all Full.
 
 use mt_codec::CanonicalEncode;
-use mt_genesis::{genesis_params, PARAMS_ENCODED_SIZE};
+use mt_genesis::{compute_genesis_state_hash, genesis_params, ProtocolParams, PARAMS_ENCODED_SIZE};
 use mt_net::{FastSyncResponseChunk, TableId};
 use mt_state::NodeRecord;
 
@@ -259,9 +259,12 @@ pub fn build_ledger(
     // 3b. Identity-root oracles: the birth of an identity is asserted against the
     //     contract the same way protocol_params are — a chain that starts at the
     //     word list and ends at the account_id a second implementation must
-    //     reproduce byte for byte.
+    //     reproduce byte for byte. The Genesis State Hash is asserted the same way.
     for (name, expected) in &contract.hashes {
-        let actual = identity_hash_oracle(name);
+        let (scope, actual) = match genesis_hash_oracle(name) {
+            Some(got) => ("genesis", Some(got)),
+            None => ("identity", identity_hash_oracle(name)),
+        };
         let (status, detail) = match actual {
             Some(got) if got == *expected => (Status::Full, format!("hash={}", hex32(&got))),
             Some(got) => (
@@ -274,7 +277,7 @@ pub fn build_ledger(
             ),
         };
         rows.push(LedgerRow {
-            spec_id: format!("identity.{}", name),
+            spec_id: format!("{}.{}", scope, name),
             status,
             detail,
         });
@@ -309,6 +312,21 @@ fn hex32(bytes: &[u8; 32]) -> String {
         s.push_str(&format!("{b:02x}"));
     }
     s
+}
+
+// The Genesis State Hash of the Decree in code: the empty window-0 tables and the
+// parameters. The contract pins it, so a moved parameter is an explicit transition
+// of the hash and never a silent one (issue #17 K5).
+fn genesis_hash_oracle(name: &str) -> Option<[u8; 32]> {
+    match name {
+        "genesis_state_hash" => Some(code_genesis_state_hash(genesis_params())),
+        _ => None,
+    }
+}
+
+fn code_genesis_state_hash(p: &ProtocolParams) -> [u8; 32] {
+    let root = mt_account::genesis_state_root(&mt_account::build_genesis_state(p));
+    compute_genesis_state_hash(&root, p)
 }
 
 // Canonical reference identity of the conformance suite: all-zero entropy. Every
@@ -563,6 +581,45 @@ hash wordlist_fingerprint 2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2
             );
         }
         assert!(identity_hash_oracle("not_a_row").is_none());
+    }
+
+    // The contract the conformance-gate binary reads.
+    const CONTRACT: &str = include_str!("../../../conformance/spec-v35.27.0.contract");
+
+    // The Genesis State Hash of the devnet Decree (ssha_entry_windows = 1,
+    // selection_interval = 1), the value the contract records it moved from (issue #17 K5).
+    const DEVNET_GENESIS_STATE_HASH: &str =
+        "c8f6243c6b74f1d77ecad05c4a6e5d1b56012ff455d4b94c8d24fdedf2e19942";
+
+    fn pinned_genesis_state_hash() -> [u8; 32] {
+        let c = parse_contract(CONTRACT).expect("parse contract");
+        c.hashes
+            .iter()
+            .find(|(n, _)| n == "genesis_state_hash")
+            .expect("contract pins genesis_state_hash")
+            .1
+    }
+
+    #[test]
+    fn the_contract_pins_the_genesis_state_hash_of_the_code_decree() {
+        // Rejects a Decree in code that moved without the contract moving with it.
+        assert_eq!(
+            hex32(&code_genesis_state_hash(genesis_params())),
+            hex32(&pinned_genesis_state_hash())
+        );
+        assert!(genesis_hash_oracle("genesis_state_hash").is_some());
+        assert!(genesis_hash_oracle("wordlist_fingerprint").is_none());
+    }
+
+    #[test]
+    fn the_devnet_decree_yields_another_genesis_state_hash() {
+        // Rejects a transition that leaves the hash where the devnet Decree had it.
+        let mut devnet = genesis_params().clone();
+        devnet.ssha_entry_windows = 1;
+        devnet.selection_interval = 1;
+        let moved_from = code_genesis_state_hash(&devnet);
+        assert_eq!(hex32(&moved_from), DEVNET_GENESIS_STATE_HASH);
+        assert_ne!(moved_from, pinned_genesis_state_hash());
     }
 
     #[test]

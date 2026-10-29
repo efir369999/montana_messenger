@@ -16,14 +16,17 @@ does and does not establish is in [`AUDIT.md`](AUDIT.md), section 3.
 |---|---|---|---|---|
 | `apps/messenger/android` | 552 | `e8e25d01c77e` | `af8316a93370d0a6bdafc3b74e58f2578e832839` | 2026-10-26 10:03 UTC |
 | `apps/messenger/ios` | 1.0 (2315) | `1604d008df48` | `1143ed8e26ff3f42016c6a2affe5bc56dcd6823b` | 2026-10-27 10:57 UTC |
-| `core` | not built (PR #68 and Q10, Q11 on main f1a5fada) | `d1e157dea385` | `254562887c485fa6a343011e375622fec18cc1e8` | 2026-10-27 20:05 UTC |
+| `core` | not built (branch agent-639/issue-61-q12 with main f56a419) | `816ea0fa782f` | `948e9e13136513d1545d9f2b14b1eca837290f9d` | 2026-10-29 15:10 UTC |
 <!-- sources:end -->
 
 ## Binaries
 
-Each GitHub release of this repository carries `Montana-Messenger.ipa` (Montana for iPhone, iPad and Mac),
-`Montana-Messenger.apk` (Montana for Android) and `SHA256SUMS.txt`, and its notes name, for each file, the build, its
-SHA-256 and the folder tree of its source; the tag of the release is the commit of this repository whose trees those are.
+Each GitHub release of this repository carries `Montana-Messenger.ipa` (Montana for iPhone, iPad and Mac) and
+`SHA256SUMS.txt`, and its notes name the build of the IPA, its SHA-256 and the folder tree of its source; the tag of the
+release is the commit of this repository whose trees those are. No release carries `Montana-Messenger.apk`: the 75
+releases, `v1.0-2221` (2026-10-16) to `v1.0-2315` (2026-10-27), hold those two files and no other (GitHub API, read
+2026-10-27 UTC). Montana for Android is served by the site: `https://montana.quest/download/android/latest.json` names its
+build, commit and SHA-256.
 The IPA is the export uploaded to the App Store, signed for distribution there: it is published to be read, compared with the
 source or re-signed, and it installs through TestFlight. The APK is signed with the project's Android key and installs on
 Android 8 or later; the key is RSA-4096, the platform's admission for installing a package and not a security property of

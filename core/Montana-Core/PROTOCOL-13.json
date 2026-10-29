@@ -1,41 +1,41 @@
 {
  "what": "The status of the thirteen protocol requirements as this tree holds them. A session that closes or moves an item edits its row and its report (protocol-13/, beside this file) in the same commit as the work, and publish_protocol13.py writes the public folder Audit/Protocol-13 from that commit: the reports, the table from this file and the source; an item is closed only with an implementation revision, the exact test command and its result in the report of that item.",
- "recorded": "2026-10-25",
+ "recorded": "2026-10-28",
  "items": [
   {
    "item": 1,
    "report": "01-WINDOW-PROOF.md",
    "requirement": "A complete window proof and verifier",
    "status": "closed",
-   "summary": "Closed on 2026-10-25. The relation of a window and its verifier are implemented (WINDOW-RELATION.md); the closure of a window is stated as theorems with proofs (WINDOW-THEOREM.md), Lemmas 1-2 and Theorems 1-4 checked by machine in Lean (formal/Window.lean: exit 0, no sorry); the obligations O-1 to O-6 are discharged; agreement on what a window decided (AGREEMENT.md, section 6) is implemented and held by the test of four machines. The ring of the core is green on 4451b21 and the run of O-6 on 033c6b7 (01-WINDOW-PROOF.md, Runs). Outside this closure: the rule that bounds the memory of a stalled window, and the run on six hosts (item 13); model checking of the code with Kani is item 2."
+   "summary": "Closed on 2026-10-25. The relation of a window and its verifier are implemented (WINDOW-RELATION.md); the closure of a window is stated as theorems with proofs (WINDOW-THEOREM.md), Lemmas 1-2 and Theorems 1-4 checked by machine in Lean (formal/Window.lean: exit 0, no sorry); the obligations O-1 to O-6 are discharged; agreement on what a window decided (AGREEMENT.md, section 6) is implemented and held by the test of four machines. The ring of the core is green on 4451b21 and the run of O-6 on 033c6b7 (01-WINDOW-PROOF.md, Runs). Outside this closure: the rule that bounds the memory of a stalled window, and the run on six hosts (item 13); model checking of the code with Kani is item 2 (Historical (marked 2026-10-27 UTC): item 2 is closed on its own evidence, row 2 of this file; the Kani harnesses are PR #29, still a draft)."
   },
   {
    "item": 2,
    "report": "02-CANONICAL-PROPOSAL.md",
    "requirement": "Close only a verified canonical Proposal",
-   "status": "open",
-   "summary": "A participant count may trigger an attempt, but must not advance the closed head or authorize issuance. Recompute the beacon and archive the verified Proposal and its actual identifier."
+   "status": "closed",
+   "summary": "Closed on 2026-10-26 by PR #58, merged as 084273c1 (#10, comment 6420198473). A participant count may trigger an attempt but advances neither the closed head nor the right: the live close takes a verified Proposal under the identifier the machine recomputed, or leaves before the head moves. Held by the live-path test a_quorum_without_a_verified_proposal_closes_nothing and the mutations M1 and M2; on Lauterbourg-3 at cb4283c the 43 test binaries of montana-node gave rc 0 (100 passed, 1 ignored, 0 failed) and mt-store, fmt, clippy -D warnings and metadata --locked rc 0 (02-CANONICAL-PROPOSAL.md, Runs). Outside this closure: the issuance right on redemption (item 3), local finality (item 1) and Kani (PR #29)."
   },
   {
    "item": 3,
    "report": "03-AUTHORIZED-ISSUANCE.md",
    "requirement": "Bind redemption to authorized issuance",
-   "status": "open",
-   "summary": "Bind the window, recipient, amount and one-time redemption. Reject excess value, invented rights and repeated redemption at the verifying node."
+   "status": "closed",
+   "summary": "Closed on 2026-10-27 by PR #60, merged into main as e612a55 (#14, comment 6437743716). A right is bound to its window, recipient, worth and one use: the frame holds a right's worth to window_credit (60 coins, one per second of the window) and the node refuses an oversized right, a right no window credited, a right relayed to another recipient and a second redemption, also after a restart, before any balance moves (issuance_audit.rs, frame.rs). Ring a594-60 on Lauterbourg-3 and ring a594-62 on Lauterbourg-2 green after the AUDIT rows 727 and 729; CI audit-tools passed on ce01975 and on main (03-AUTHORIZED-ISSUANCE.md, Runs; the commands of the rings are not recorded in the verdicts). Outside this closure: the sanction (CNS-10, stage 19), and admission (item 4)."
   },
   {
    "item": 4,
    "report": "04-ADMISSION-ORIGIN.md",
    "requirement": "Bind admission witnesses to one state",
-   "status": "open",
-   "summary": "The identity record, machine key, operator secret and public values must share an authenticated origin. Reject mixed witnesses."
+   "status": "closed",
+   "summary": "Closed on 2026-10-27 by PR #62, merged with PR #60 into main as e612a55 (#15, comment 6437744613). A foreign record walked by another record's path and a path spliced of two states are refused by State::apply_candidacy (admission_one_state.rs, admission_audit.rs), and node_commit and suite_id join the public input of the admission so that a proof stands under no other commitment (F-1, the author's decision 246). a582-p15 at 645cd8c: fmt 0; admission_one_state 2 passed; clippy 0; measurements 3 passed; ring a594-62 and CI audit-tools green (04-ADMISSION-ORIGIN.md, Runs; the commands of the ring and of a583-f1 are not recorded in the verdicts). Outside this closure: the tau2 collateral and slashing (#61), continuity (item 5) and the wire intake of candidacies (stage 19)."
   },
   {
    "item": 5,
    "report": "05-CONTINUITY-AND-REJOIN.md",
    "requirement": "Prove continuity and return after a partition",
-   "status": "open",
-   "summary": "Enforce bitmap shift, period boundaries and required participation inside admission. Replaying other machines' records does not create one's own participation."
+   "status": "partial",
+   "summary": "Partial (the Author's decision 342 (a), record 345). In the node, an opening takes its segment from its own window (state.rs:610-615), and the segments lived, the count in force and the share required are functions with tests (layout.rs:1028, entry.rs:26, :43). A machine whose plane came from the network stakes nothing until the stride changes (decision 332 (b), K7b). Remains for the next generation: the share is checked inside the admission proof, which needs segment, n and share in its public input. Replaying other machines' records does not create one's own participation."
   },
   {
    "item": 6,
@@ -48,8 +48,8 @@
    "item": 7,
    "report": "07-LEGACY-LOTTERY.md",
    "requirement": "Make the earlier core's lottery deterministic",
-   "status": "open",
-   "summary": "Use historical thresholds and weights, correct epoch boundaries and complete reveals; reject conflicting proposals and unannounced private bootstrap."
+   "status": "closed",
+   "summary": "The lottery of the earlier core is removed, not repaired (the author's confirmation of R-1 and decision 279 (b), #18): the threshold, the reveals and the winner are gone from core/Code, the proposer of a window is the lowest ticket by the aggregate of W-2, a window credits one coin per second to each living node, the four lottery fields of the header are zeros and any other value is refused, a second envelope of an applied window and an envelope naming a confirmation twice are refused. Merged as PR #73 (f1a5fada). Closed on the chairman's verdict of #18 (2026-10-28 UTC): the ring a633-codering on main dd399280 (tree core/Code 35d191ce), Lauterbourg-2, 2026-10-27 20:15-21:51 UTC: fmt --all -- --check 0, clippy --workspace --all-targets -- -D warnings 0, test --release --workspace --no-fail-fast 0; CI audit-tools SUCCESS on PR #82 (07-LEGACY-LOTTERY.md, Tests and What remains). Outside this closure: S4b (two proposers of one window at two cascade depths), DEV-055 and K5 (#17)."
   },
   {
    "item": 8,

@@ -66,7 +66,10 @@ impl std::fmt::Display for ManifestError {
                 write!(f, "manifest contains no bootstrap = true peer")
             },
             Self::MultipleBootstrap(n) => {
-                write!(f, "manifest contains {n} bootstrap peers, expected exactly 1")
+                write!(
+                    f,
+                    "manifest contains {n} bootstrap peers, expected exactly 1"
+                )
             },
             Self::EmptyPeers => write!(f, "manifest contains 0 peers, minimum 1"),
             Self::InvalidHexLength {

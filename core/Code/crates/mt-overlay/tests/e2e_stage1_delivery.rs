@@ -101,7 +101,10 @@ fn e2e_full_journey_a_to_b_and_ack_back() {
     match postman.route(conn_b, ack) {
         Route::AckToSender { conn, frame } => {
             assert_eq!(conn, conn_a);
-            assert_eq!(frame.msg_id, msg_id, "A received the ACK for its own message");
+            assert_eq!(
+                frame.msg_id, msg_id,
+                "A received the ACK for its own message"
+            );
         },
         other => panic!("expected AckToSender, got {other:?}"),
     }

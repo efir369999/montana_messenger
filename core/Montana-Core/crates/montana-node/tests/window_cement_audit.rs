@@ -73,7 +73,7 @@ fn two_verifiers_reach_one_cement_from_two_arrival_orders() {
         .iter()
         .map(|secret| {
             let branch = cohort.branch_of(secret).expect("membership");
-            Standing::of_the_window(secret, window, &branch.siblings, branch.position)
+            Standing::of_the_window(secret, window, &parent, &branch.siblings, branch.position)
                 .expect("a machine of the cohort proves its presence")
                 .heavy(secret, beacon_id, parent)
                 .expect("a heavy attestation stands")

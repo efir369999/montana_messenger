@@ -298,10 +298,16 @@ impl State {
         self.notes.path(position)
     }
 
-    // A value a frame presents is refused where it stands already, whichever of the two sets holds
-    // it: a spent note or right, or a rate the horizon holds.
+    // A value a frame presents is refused where it stands already: in the one set of nullifiers, or
+    // in the rate set of the horizon. **The set of nullifiers is one.** It holds the nullifiers of
+    // notes, of rights, of openings and of candidacies, "which no reader tells apart" (Canon, "The
+    // roots of state", "What enters the two sets"), and one root folds it. This plane keeps it as two
+    // lists, `spent` and `nullifiers`, and reads both: a plane offered with an entry in the other list
+    // stands under the same root and refuses the same frames.
     pub fn is_spent(&self, nullifier: &[u8; 32]) -> bool {
-        self.spent.contains(nullifier) || self.rates.contains(nullifier)
+        self.spent.contains(nullifier)
+            || self.nullifiers.contains(nullifier)
+            || self.rates.contains(nullifier)
     }
 
     // The seven roots and the count a proposal of `window` carries, recomputed from this plane and
@@ -319,6 +325,31 @@ impl State {
                 what: "a plane standing against another tree of admitted machines than its cohort",
             });
         }
+        let [notes, nullifiers, records, machines, admitted, credited, operations] =
+            self.tables_of(window)?;
+        let roll = self.roll(window, parts).id().map_err(NodeError::Object)?;
+        Ok(crate::certificate::Roots {
+            note_root: notes,
+            nullifier_root: nullifiers,
+            record_root: records,
+            machine_root: machines,
+            admitted_root: admitted,
+            credited_root: credited,
+            operations_root: operations,
+            roll,
+            admitted_count: cohort.count(),
+            // The census is carried from the proposal before with the cement of the window, which
+            // the plane does not hold; the pulse writes it beside these roots.
+            census: Vec::new(),
+        })
+    }
+
+    // The roots of the seven tables a proposal of `window` carries, recomputed from this plane
+    // alone and in the order the proposal lays them out: notes, nullifiers, records, machines,
+    // admitted machines, credited rights and operations. The roll and the count are not among them:
+    // the first needs the parts of the cement the window decided and the second the cohort, and a
+    // plane holds neither.
+    pub fn tables_of(&self, window: u64) -> Result<[[u8; 32]; 7], NodeError> {
         let refused = || NodeError::Refused {
             what: "a table of the state its construction cannot hold",
         };
@@ -333,20 +364,178 @@ impl State {
         };
         let operations_root =
             tables::root_of_sequence(Table::Operations, applied).ok_or_else(refused)?;
-        let roll = self.roll(window, parts).id().map_err(NodeError::Object)?;
-        Ok(crate::certificate::Roots {
-            note_root: self.notes_root().bytes(),
+        Ok([
+            self.notes_root().bytes(),
             nullifier_root,
-            record_root: self.records_root().bytes(),
+            self.records_root().bytes(),
             machine_root,
-            admitted_root: self.admitted.bytes(),
-            credited_root: self.credited().bytes(),
+            self.admitted.bytes(),
+            self.credited().bytes(),
             operations_root,
-            roll,
-            admitted_count: cohort.count(),
-            // The census is carried from the proposal before with the cement of the window, which
-            // the plane does not hold; the pulse writes it beside these roots.
-            census: Vec::new(),
+        ])
+    }
+
+    // **The leaves of one table of this plane, in the order the table folds them**: what a machine
+    // answers a table query with (Canon, "Joining"). A set goes out ascending, which moves no root of
+    // it and makes two answerers of one plane answer alike; the tree of records goes out as key and
+    // record, ascending by key; an append-only tree goes out in the order its leaves entered, which
+    // is the order of its root. The table of machines is empty while no selection event admitted
+    // one, and the tree of admitted machines is held here as its root alone: its halves pass as an
+    // opening cohort's do (pulse, `Cohort`), and the root and count the head carries judge them.
+    pub fn leaves_of(&self, table: mt_wire::message::TableIndex, window: u64) -> Vec<u8> {
+        use mt_wire::message::TableIndex;
+        let mut out = Vec::new();
+        match table {
+            TableIndex::Notes => {
+                for leaf in self.notes.leaves() {
+                    out.extend_from_slice(&leaf.bytes());
+                }
+            }
+            TableIndex::Nullifiers => {
+                let set: std::collections::BTreeSet<&[u8; 32]> =
+                    self.spent.iter().chain(&self.nullifiers).collect();
+                for value in set {
+                    out.extend_from_slice(value);
+                }
+            }
+            TableIndex::Records => {
+                for (key, held) in &self.records {
+                    out.extend_from_slice(key);
+                    out.extend_from_slice(&held.bytes());
+                }
+            }
+            TableIndex::Machines | TableIndex::Admitted => {}
+            TableIndex::Credited => {
+                for leaf in self.credited.leaves() {
+                    out.extend_from_slice(&leaf.bytes());
+                }
+            }
+            TableIndex::Operations => {
+                for frame in self.operations_of(window) {
+                    out.extend_from_slice(&frame);
+                }
+            }
+        }
+        out
+    }
+
+    // **The leaves a device gathered, laid out as a plane and read through the one door of its
+    // encoding** (`decode`), so a leaf that is not a digest of the family, a set repeating a value
+    // or records out of their order are refused there as a stored plane's would be. Nothing no root
+    // covers comes from the answers: no spent note told apart from a right (the set is one, Canon,
+    // "What enters the two sets"), no rate set and no count of openings. Whether the leaves are the
+    // head's is not asked here; `taken_under` asks it of every root.
+    pub fn encoded_of_leaves(
+        window: u64,
+        admitted: Digest,
+        tables: &[Vec<u8>; 7],
+    ) -> Result<Vec<u8>, NodeError> {
+        let refused = || NodeError::Refused {
+            what: "leaves of a table that are not whole leaves of it",
+        };
+        let [notes, nullifiers, records, machines, _admitted, credited, operations] = tables;
+        if !machines.is_empty() {
+            return Err(NodeError::Refused {
+                what: "a table of machines no selection event wrote",
+            });
+        }
+        let count = |out: &mut Vec<u8>, bytes: &[u8], width: usize| -> Result<(), NodeError> {
+            if !bytes.len().is_multiple_of(width) {
+                return Err(refused());
+            }
+            let n = u32::try_from(bytes.len() / width).map_err(|_| refused())?;
+            out.extend_from_slice(&n.to_le_bytes());
+            out.extend_from_slice(bytes);
+            Ok(())
+        };
+        let mut out = Vec::new();
+        count(&mut out, notes, 32)?;
+        count(&mut out, &[], 32)?;
+        out.extend_from_slice(&admitted.bytes());
+        count(&mut out, records, 64)?;
+        count(&mut out, nullifiers, 32)?;
+        out.extend_from_slice(&0u64.to_le_bytes());
+        out.extend_from_slice(&0u64.to_le_bytes());
+        count(&mut out, &[], 32)?;
+        out.extend_from_slice(&window.to_le_bytes());
+        count(&mut out, operations, 32)?;
+        count(&mut out, credited, 32)?;
+        Ok(out)
+    }
+
+    // **A plane offered to a device that walked to a head, judged against the roots of that head.**
+    // Consensus, "The join": "Every leaf of state a joining device takes is checked against a root the
+    // verified head carries, by recomputation; a leaf accepted on the word of whoever answered is a
+    // defect." Every table is folded again here from the leaves offered, by the folds `roots` above
+    // proposes with, and compared with the root the head carries; the first that differs is refused by
+    // the name of its table, and so is a count of admitted machines other than the head's.
+    //
+    // What comes back holds the leaves those roots stand over and nothing else. The rate set of the
+    // horizon stands in no root (Canon, "The roots of state": a rate nullifier "is no entry of this
+    // one"), and neither does the count of openings of a window nor the frames of a window other than
+    // the head's, so none of them is taken on the word of whoever offered it.
+    pub fn taken_under(
+        &self,
+        head: &mt_state::layout::Proposal,
+        cohort: &crate::pulse::Cohort,
+    ) -> Result<Self, NodeError> {
+        let roots = self.roots(cohort, head.window, &[])?;
+        for (recomputed, carried, what) in [
+            (
+                roots.note_root,
+                head.note_root,
+                "a tree of notes whose root is not the head's",
+            ),
+            (
+                roots.nullifier_root,
+                head.nullifier_root,
+                "a set of nullifiers whose root is not the head's",
+            ),
+            (
+                roots.record_root,
+                head.record_root,
+                "a tree of records whose root is not the head's",
+            ),
+            (
+                roots.machine_root,
+                head.machine_root,
+                "a table of machines whose root is not the head's",
+            ),
+            (
+                roots.admitted_root,
+                head.admitted_root,
+                "a tree of admitted machines whose root is not the head's",
+            ),
+            (
+                roots.credited_root,
+                head.credited_root,
+                "a tree of credited rights whose root is not the head's",
+            ),
+            (
+                roots.operations_root,
+                head.operations_root,
+                "a tree of operations whose root is not the head's",
+            ),
+        ] {
+            if recomputed != carried {
+                return Err(NodeError::Refused { what });
+            }
+        }
+        if roots.admitted_count != head.admitted_count {
+            return Err(NodeError::Refused {
+                what: "a tree of admitted machines whose count is not the head's",
+            });
+        }
+        Ok(Self {
+            notes: self.notes.clone(),
+            spent: self.spent.clone(),
+            admitted: self.admitted,
+            records: self.records.clone(),
+            nullifiers: self.nullifiers.clone(),
+            opened: (0, 0),
+            rates: Vec::new(),
+            operations: (head.window, self.operations_of(head.window)),
+            credited: self.credited.clone(),
         })
     }
 
@@ -375,9 +564,14 @@ impl State {
         }
     }
 
-    // A commitment entering the tree outside a frame: what a window's minting writes, and what a
-    // cohort starts from. It is not a door a frame goes through — a frame goes through the one
-    // below, which verifies first.
+    // A commitment entering the tree outside a frame, with no proof and no nullifier: what the
+    // vectors of this crate build a plane of notes from. It is not a door a frame goes through — a
+    // frame goes through `apply`, which verifies first and spends a nullifier. **No build of the
+    // protocol carries it** (issue #19, step K4): a door that mints a note no nullifier closes
+    // would issue again every time a window is applied again, so it stands under the feature
+    // `witness`, which the tests of this crate alone enable, and every note a machine holds enters
+    // by `apply`.
+    #[cfg(feature = "witness")]
     pub fn witness(&mut self, commitment: &[u8; 32]) -> Result<u64, NodeError> {
         self.notes.push(commitment).map_err(|_| NodeError::Refused {
             what: "a commitment the tree of notes cannot hold",
@@ -396,8 +590,11 @@ impl State {
         mt_proof::records::path_of_leaves(&self.records, key)
     }
 
+    // A right, an opening or a candidacy is refused where the one set of nullifiers holds its
+    // nullifier, in either of the two lists that keep it (see `is_spent`; Canon, "What enters the two
+    // sets").
     pub fn is_spent_right(&self, nullifier: &[u8; 32]) -> bool {
-        self.nullifiers.contains(nullifier)
+        self.spent.contains(nullifier) || self.nullifiers.contains(nullifier)
     }
 
     // An opening applied: the proof verified against what the object publishes and the window being
@@ -634,6 +831,18 @@ impl State {
         }
         self.operations.1.push(id);
         Ok(positions)
+    }
+
+    // **The rate nullifiers of a frame this plane did not apply**, entering the rate set of the
+    // horizon alone: a device that took its plane from the network holds none, since no root covers
+    // one, and the walk hands it the frames the decided rolls of the windows it walked name
+    // (pulse, `remember_the_walked_rates`). A value already held is held once, as the plane encodes.
+    pub fn remember_the_rates_of(&mut self, frame: &Frame) {
+        for spend in &frame.spends {
+            if !self.rates.contains(&spend.rate_nullifier) {
+                self.rates.push(spend.rate_nullifier);
+            }
+        }
     }
 
     // A frame as it stands on the wire, read back and applied. The length a delivery is taken at is

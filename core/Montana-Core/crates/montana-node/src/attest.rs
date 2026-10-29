@@ -29,15 +29,22 @@ pub struct Standing {
     pub part_nullifier: [u8; 32],
     pub key: mt_suite::sign::PublicKey,
     secret_of_the_key: mt_suite::sign::SecretKey,
+    // The name this window's presence attests -- the proposal of the window before its machine
+    // took -- and the line of the open slot of attempt zero at that name (record 309). The proof
+    // binds both, so a heavy attestation is made under this name or not at all.
+    pub name: [u8; 32],
+    pub line_value: [u8; 32],
     pub presence: Vec<u8>,
 }
 
 impl Standing {
     // What a machine draws once per window. The proof is made here and not at every round: it binds
-    // the window and not the round, so one presence serves the window it belongs to.
+    // the window and the name taken of the window before, not the round, so one presence serves the
+    // window it belongs to.
     pub fn of_the_window(
         machine_secret: &[u8; 32],
         window: u64,
+        name: &[u8; 32],
         admitted_siblings: &[mt_proof::poseidon::Digest],
         admitted_position: u64,
     ) -> Result<Self, NodeError> {
@@ -54,17 +61,18 @@ impl Standing {
 
         // The proof of presence: what the network verifies before it lets this machine's part enter
         // a cement.
-        let (trace, digests) = mt_proof::circuit::presence::trace_of(
+        let (trace, digests, line) = mt_proof::circuit::presence::trace_of(
             machine_secret,
             admitted_siblings,
             admitted_position,
             window,
+            name,
             key.as_bytes(),
         )
         .ok_or(NodeError::Unprovable {
             what: "the presence of this machine in this window",
         })?;
-        let public = mt_proof::circuit::presence::public_of(&digests, window);
+        let public = mt_proof::circuit::presence::public_of(&digests, window, name, line);
         let description =
             mt_proof::circuit::presence::description().ok_or(NodeError::Unprovable {
                 what: "the description of a presence",
@@ -80,6 +88,8 @@ impl Standing {
             part_nullifier,
             key,
             secret_of_the_key,
+            name: *name,
+            line_value: line.to_bytes(),
             presence,
         })
     }
@@ -105,12 +115,22 @@ impl Standing {
         beacon_id: [u8; 32],
         previous_proposal: [u8; 32],
     ) -> Result<Confirmation, NodeError> {
+        // The presence was proven for one name; under another its line asserts nothing, so the heavy
+        // attestation of another name is refused here rather than sent to be refused.
+        if previous_proposal != self.name {
+            return Err(NodeError::Refused {
+                what: "a heavy attestation of a name this window's presence was not made for",
+            });
+        }
         let attested = ascending(beacon_id, previous_proposal);
         let held = Confirmation {
             window: self.window,
             attested,
             part_nullifier: self.part_nullifier,
             round_nullifier: mt_derive::nullifier::round(machine_secret, &beacon_id),
+            // Record 309: the line of the open slot of attempt zero at the name attested, asserted by
+            // the proof of presence.
+            line_value: self.line_value,
             suite_id: mt_net::SUITE,
             answering_key: self.key.as_bytes().to_vec(),
             proof: self.presence.clone(),
@@ -141,16 +161,44 @@ impl Standing {
     }
 
     // A pledge of the agreement on the proposal of the window before, under the key this window's
-    // heavy attestation proves.
-    pub fn pledge(&self, attempt: u32, name: [u8; 32], since: u32) -> Result<Pledge, NodeError> {
+    // heavy attestation proves. It carries the line of its slot at the abscissa of `name` and the
+    // proof of the pledge, which binds that value to this machine's part and discloses neither half
+    // (Canon, "The pledge of a part"; plan of #89, step 3).
+    pub fn pledge(
+        &self,
+        machine_secret: &[u8; 32],
+        attempt: u32,
+        name: [u8; 32],
+        since: u32,
+    ) -> Result<Pledge, NodeError> {
+        let unprovable = || NodeError::Unprovable {
+            what: "the proof of a pledge",
+        };
+        let (trace, part, value) =
+            mt_proof::circuit::pledge::trace_of(machine_secret, self.window, attempt, &name, since)
+                .ok_or_else(unprovable)?;
+        // The part the proof names is the part this window stands on, or the secret is another's.
+        if part.bytes() != self.part_nullifier {
+            return Err(unprovable());
+        }
+        let public =
+            mt_proof::circuit::pledge::public_of(self.window, attempt, &name, since, &part, value);
+        let description =
+            mt_proof::circuit::pledge::description().ok_or(NodeError::Unprovable {
+                what: "the description of a pledge",
+            })?;
+        let proof =
+            mt_proof::scheme::prove(&description, &public, &trace).map_err(|_| unprovable())?;
         let mut held = Pledge {
             window: self.window,
             attempt,
             name,
             since,
             part_nullifier: self.part_nullifier,
+            line_value: value.to_bytes(),
             suite_id: mt_net::SUITE,
             answering_key: self.key.as_bytes().to_vec(),
+            proof,
             signature: vec![0u8; mt_codec::size::SIGNATURE],
         };
         let scope = held.signed_scope().map_err(NodeError::Object)?;
@@ -202,8 +250,11 @@ fn ascending(beacon_id: [u8; 32], previous_proposal: [u8; 32]) -> Vec<[u8; 32]> 
 // What a verifier does with a heavy attestation that arrived: the eligibility natively, the
 // signature under the key it carries, and the proof of presence against the root of admitted
 // machines it answers to. A verifier that skipped the proof would take the word of whoever sent it.
+// `name` is the identifier among `attested` that is not the beacon of the round, which the caller
+// reads off the round it holds; the proof is checked at that name and at the `line_value` carried.
 pub fn verify_heavy(
     held: &Confirmation,
+    name: &[u8; 32],
     admitted_root: &mt_proof::poseidon::Digest,
     aggregate: &[u8; 32],
     chain: u8,
@@ -236,8 +287,22 @@ pub fn verify_heavy(
     let key_digest = mt_proof::poseidon::Digest::of_bytes(&digest).ok_or(NodeError::Refused {
         what: "a digest that is no digest of the family",
     })?;
-    let public =
-        mt_proof::circuit::presence::public_of(&[*admitted_root, part, key_digest], held.window);
+    // The name is one the attestation attests, and its line value is an element of the field
+    // before any proof is read (Canon, "Invariants of a confirmation").
+    if !held.attested.contains(name) {
+        return Err(NodeError::Refused {
+            what: "a name the attestation does not attest",
+        });
+    }
+    let line = mt_proof::line::L::from_bytes(&held.line_value).ok_or(NodeError::Refused {
+        what: "a line value that is no element of the field",
+    })?;
+    let public = mt_proof::circuit::presence::public_of(
+        &[*admitted_root, part, key_digest],
+        held.window,
+        name,
+        line,
+    );
     let description = mt_proof::circuit::presence::description().ok_or(NodeError::Unprovable {
         what: "the description of a presence",
     })?;
@@ -275,7 +340,10 @@ pub fn verify_light(
 
 // A pledge of the agreement counts only under the key its part's heavy attestation proved in this
 // window. Consensus, "The agreement on what a window decided": until that heavy is seen the pledge
-// stands in escrow, so the caller holds the proven key and this door judges the rest.
+// stands in escrow, so the caller holds the proven key and this door judges the rest -- the
+// signature, then the proof of the pledge against the public input this door computes from the
+// pledge itself. A pledge whose proof does not verify enters no quorum and is no evidence (Canon,
+// "Invariants of a pledge"; plan of #89, step 4).
 pub fn verify_pledge(held: &Pledge, proven_key: &[u8]) -> Result<(), NodeError> {
     if held.answering_key != proven_key {
         return Err(NodeError::Refused {
@@ -283,7 +351,28 @@ pub fn verify_pledge(held: &Pledge, proven_key: &[u8]) -> Result<(), NodeError> 
         });
     }
     let scope = held.signed_scope().map_err(NodeError::Object)?;
-    verify_signature(held.suite_id, &held.answering_key, &held.signature, &scope)
+    verify_signature(held.suite_id, &held.answering_key, &held.signature, &scope)?;
+    let part =
+        mt_proof::poseidon::Digest::of_bytes(&held.part_nullifier).ok_or(NodeError::Refused {
+            what: "a part-nullifier that is no digest of the family",
+        })?;
+    let value = mt_proof::line::L::from_bytes(&held.line_value).ok_or(NodeError::Refused {
+        what: "a line value that is no element of the field of the line",
+    })?;
+    let public = mt_proof::circuit::pledge::public_of(
+        held.window,
+        held.attempt,
+        &held.name,
+        held.since,
+        &part,
+        value,
+    );
+    let description = mt_proof::circuit::pledge::description().ok_or(NodeError::Unprovable {
+        what: "the description of a pledge",
+    })?;
+    mt_proof::scheme::verify(&description, &public, &held.proof).map_err(|_| NodeError::Refused {
+        what: "a pledge whose proof does not verify",
+    })
 }
 
 fn verify_signature(

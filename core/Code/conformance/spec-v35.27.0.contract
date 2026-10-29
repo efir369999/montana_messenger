@@ -1,5 +1,5 @@
 # Montana Protocol — machine-readable spec contract (single source of truth)
-# Authoritative: "Montana Protocol v35.27.0.md", Genesis Decree -> protocol_params
+# Historical: written against "Montana Protocol v35.27.0.md", which this repository does not hold; the generation checked is spec_version below (VERSION.md:4). Genesis Decree -> protocol_params
 # Parsed by mt-conformance harness; checked byte-exact against code.
 # Lines: `spec_version`, `network_version`, `field <name> <size_bytes> <value|->`,
 #        `kat <name> <value>`. Order of `field` = canonical encode order.
@@ -33,6 +33,12 @@ field genesis_content_data_hash 32 -
 
 # Derived KAT: canonical_encode(protocol_params) length for the empty-window-0 genesis
 kat params_encoded_size 198
+
+# Genesis State Hash = SHA-256("mt-genesis" || genesis_state_root || canonical_encode(protocol_params))
+# over the empty window-0 tables. It moved with ssha_entry_windows 1 -> 20160 and
+# selection_interval 1 -> 336 (issue #17 K5); the devnet Decree gave
+# c8f6243c6b74f1d77ecad05c4a6e5d1b56012ff455d4b94c8d24fdedf2e19942.
+hash genesis_state_hash 1fa530475e4bda2e4041822c023f1b9908444c1103a3974e51012881df9337d8
 
 # Identity root — the birth of a Montana account, asserted the same way as the
 # parameters of the Decree. Reference input: entropy = 32 zero bytes; every row

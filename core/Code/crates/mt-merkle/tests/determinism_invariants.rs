@@ -24,7 +24,11 @@ fn empty_internal_different_levels_different_hashes() {
     let mut prev = empty_internal(0);
     for level in 1..16 {
         let h = empty_internal(level);
-        assert_ne!(prev, h, "empty_internal({}) collides with the previous one", level);
+        assert_ne!(
+            prev, h,
+            "empty_internal({}) collides with the previous one",
+            level
+        );
         prev = h;
     }
 }

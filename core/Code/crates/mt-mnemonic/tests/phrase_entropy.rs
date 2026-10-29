@@ -36,7 +36,11 @@ fn every_born_phrase_carries_the_full_width() {
     for phrase in born_phrases(200) {
         assert_eq!(phrase.split_whitespace().count(), MNEMONIC_WORD_COUNT);
         let entropy = mnemonic_to_entropy(&phrase).expect("own phrase is valid");
-        assert_eq!(entropy_to_mnemonic(&entropy), phrase, "phrase does not decompose into its own root");
+        assert_eq!(
+            entropy_to_mnemonic(&entropy),
+            phrase,
+            "phrase does not decompose into its own root"
+        );
     }
 }
 
@@ -51,7 +55,10 @@ fn born_phrases_never_repeat() {
         first[word_index(p.split_whitespace().next().unwrap()).unwrap() as usize] += 1;
     }
     let top = *first.iter().max().unwrap();
-    assert!(top < 12, "one first word occurred {top} times out of {PHRASES}");
+    assert!(
+        top < 12,
+        "one first word occurred {top} times out of {PHRASES}"
+    );
 }
 
 #[test]
@@ -97,9 +104,16 @@ fn one_flipped_bit_of_the_root_changes_half_the_seed() {
 
         let sa = mnemonic_to_master_seed(&entropy_to_mnemonic(&a)).unwrap();
         let sb = mnemonic_to_master_seed(&entropy_to_mnemonic(&b)).unwrap();
-        let bits: u32 = sa.iter().zip(sb.iter()).map(|(x, y)| (x ^ y).count_ones()).sum();
+        let bits: u32 = sa
+            .iter()
+            .zip(sb.iter())
+            .map(|(x, y)| (x ^ y).count_ones())
+            .sum();
         diffs.push(bits as f64 / (sa.len() as f64 * 8.0));
     }
     let mean = diffs.iter().sum::<f64>() / diffs.len() as f64;
-    assert!((mean - 0.5).abs() < 0.06, "changed {mean:.4} bits instead of half");
+    assert!(
+        (mean - 0.5).abs() < 0.06,
+        "changed {mean:.4} bits instead of half"
+    );
 }

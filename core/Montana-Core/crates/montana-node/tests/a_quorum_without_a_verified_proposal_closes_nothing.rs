@@ -18,7 +18,7 @@
 // the decided cement and the roots it recomputed. There the window closes: the head moves onto the
 // proposal of window 1, window 2 is the last closed, a proposal of window 2 is kept, and the right
 // of window 1 is issued, since a right is issued for the window a close made final and for no other
-// (pulse.rs, the close). Here the pulse refuses after its patience, nothing of the store moves, and
+// (pulse.rs, the close). Here the pulse stalls after its patience, nothing of the store moves, and
 // nothing moves across a restart on the same store either.
 //
 // **And with what a machine that did not prove the decision stands at the points.** The same world,
@@ -32,6 +32,7 @@
 use montana_node::attest::LivedCensus;
 use montana_node::pulse::{self, withhold, Cohort};
 use montana_node::round;
+use montana_node::say::Verdict;
 use montana_node::{Configuration, Machine, NodeError};
 use mt_state::layout::Proposal;
 use mt_state::Layout;
@@ -51,6 +52,15 @@ const HELD_BACK: u64 = 2;
 const PATIENCE: u32 = 2_000;
 
 const NO_PROPOSAL: &str = "a window no proposal of its decision ever stood at";
+
+// The stall its patience ends on: the proposal is the data that never came, and a refused
+// substitute at the points never selects the verdict (issue #21).
+fn stalled() -> NodeError {
+    NodeError::Stalled {
+        on: Verdict::NoData,
+        what: NO_PROPOSAL,
+    }
+}
 
 // What the store of a machine says of its closes: the head, the last window closed, the identifier
 // of the proposal kept for every window lived, and the census windows its standing counts.
@@ -143,7 +153,7 @@ fn a_count_at_the_quorum_with_no_proposal_standing_closes_nothing() {
     let (machine, _) =
         Machine::start(&Configuration::at(&at.0, "127.0.0.1:0")).expect("the machine starts");
     let (lived, then) = live_held_back(&machine, |_, _| {});
-    assert_eq!(lived, Err(NodeError::Refused { what: NO_PROPOSAL }));
+    assert_eq!(lived, Err(stalled()));
     assert_at_the_attempt(&machine, &then, "a count at the quorum");
 
     // And across a restart on the same store: what stands is what stood.
@@ -198,7 +208,12 @@ fn substitutes_of(own: &Proposal) -> Vec<(&'static str, Proposal)> {
     out
 }
 
-// The signatures of the proposals of the window held back standing at its points.
+// The signatures of the proposals of the window held back standing at its points. A body of the
+// proposal's length is not yet a proposal: since record 309 the heavy attestation and the pledge carry
+// a proof of presence as long as the proposal's ticket, so all three pad to one body and each parses
+// as the other (`one_length_is_not_one_kind`). What tells a proposal apart is the field only a
+// proposal carries, the version of the protocol it was made under; read as a proposal, a pledge puts
+// its attempt there and a heavy attestation the head of what it attests.
 fn standing_at_the_window(machine: &Machine) -> Vec<Vec<u8>> {
     let width = Proposal::expected_len();
     let of_proposal = mt_wire::message::body_len(width).expect("the Decree names the cell");
@@ -212,7 +227,10 @@ fn standing_at_the_window(machine: &Machine) -> Vec<Vec<u8>> {
                 continue;
             }
             if let Ok(held) = Proposal::parse(&body[..width]) {
-                if held.window == HELD_BACK && !out.contains(&held.signature) {
+                if held.window == HELD_BACK
+                    && held.protocol_version == mt_state::PROTOCOL_VERSION
+                    && !out.contains(&held.signature)
+                {
                     out.push(held.signature);
                 }
             }
@@ -242,7 +260,7 @@ fn a_substituted_or_unproven_proposal_at_the_points_closes_nothing() {
             }
         }
     });
-    assert_eq!(lived, Err(NodeError::Refused { what: NO_PROPOSAL }));
+    assert_eq!(lived, Err(stalled()));
 
     // Every substitute stood at the points of the window the whole time the machine waited there,
     // and nothing else did.

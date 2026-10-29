@@ -57,8 +57,9 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
     let mut cement = Cement::new();
     let mut parts: Vec<[u8; 32]> = Vec::new();
     for (secret, (siblings, position)) in secrets.iter().zip(branches.iter()) {
-        let standing = Standing::of_the_window(secret, WINDOW, siblings, *position)
-            .expect("a machine of the cohort proves its presence");
+        let standing =
+            Standing::of_the_window(secret, WINDOW, &previous_proposal, siblings, *position)
+                .expect("a machine of the cohort proves its presence");
         assert!(
             standing.eligible(&aggregate, 0, 7, &everything),
             "a threshold of everything admits every machine"
@@ -68,8 +69,16 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
             .expect("a heavy attestation stands");
 
         // Verified exactly as a far side verifies it, and never trusted for having been made here.
-        attest::verify_heavy(&heavy, &root, &aggregate, 0, 7, &everything)
-            .expect("the attestation of a machine of the cohort verifies");
+        attest::verify_heavy(
+            &heavy,
+            &previous_proposal,
+            &root,
+            &aggregate,
+            0,
+            7,
+            &everything,
+        )
+        .expect("the attestation of a machine of the cohort verifies");
 
         assert!(
             cement.add(heavy.part_nullifier),
@@ -165,7 +174,7 @@ fn a_proof_lifted_onto_another_key_is_refused() {
     let everything = mt_pulse::U256::from_be_bytes(&[0xFFu8; 32]);
 
     let (siblings, position) = &branches[0];
-    let standing = Standing::of_the_window(&secrets[0], WINDOW, siblings, *position)
+    let standing = Standing::of_the_window(&secrets[0], WINDOW, &[0x55u8; 32], siblings, *position)
         .expect("a machine of the cohort proves its presence");
     let mut heavy = standing
         .heavy(&secrets[0], [0x44u8; 32], [0x55u8; 32])
@@ -183,7 +192,7 @@ fn a_proof_lifted_onto_another_key_is_refused() {
         .to_vec();
 
     assert_eq!(
-        attest::verify_heavy(&heavy, &root, &aggregate, 0, 7, &everything),
+        attest::verify_heavy(&heavy, &[0x55u8; 32], &root, &aggregate, 0, 7, &everything),
         Err(montana_node::NodeError::Refused {
             what: "an attestation whose proof of presence does not verify",
         }),
@@ -196,7 +205,7 @@ fn an_admitted_machine_cannot_resign_an_old_presence_into_another_window() {
     let secret = [0x11u8; 32];
     let (root, branches) = cohort(&[secret]);
     let (siblings, position) = &branches[0];
-    let standing = Standing::of_the_window(&secret, WINDOW, siblings, *position)
+    let standing = Standing::of_the_window(&secret, WINDOW, &[0x55; 32], siblings, *position)
         .expect("the admitted machine proves its presence");
     let mut forged = standing
         .heavy(&secret, [0x44; 32], [0x55; 32])
@@ -212,9 +221,91 @@ fn an_admitted_machine_cannot_resign_an_old_presence_into_another_window() {
         .to_vec();
     let everything = mt_pulse::U256::from_be_bytes(&[0xFF; 32]);
     assert_eq!(
-        attest::verify_heavy(&forged, &root, &[0x33; 32], 0, 7, &everything),
+        attest::verify_heavy(&forged, &[0x55; 32], &root, &[0x33; 32], 0, 7, &everything),
         Err(montana_node::NodeError::Refused {
             what: "an attestation whose proof of presence does not verify",
         }),
+    );
+}
+
+// K6 of item 5 (issue #16): a machine that replays another machine's heavy attestation takes no
+// part of its own by it. The wrong implementations it refuses, named before the assertions: a
+// cement that counts the machine carrying an attestation rather than the part the attestation
+// proves, and a verifier that lets a carrier write its own part-nullifier over a proof made for
+// another — there the carrier would stand in the cement, and so in the roll the next window
+// credits (`credited_by`, pulse.rs), for a window it never answered.
+#[test]
+fn a_replayed_heavy_gives_the_replayer_no_part_of_its_own() {
+    let secrets = [[0x11u8; 32], [0x22u8; 32]];
+    let (root, branches) = cohort(&secrets);
+    let aggregate = [0x33u8; 32];
+    let everything = mt_pulse::U256::from_be_bytes(&[0xFFu8; 32]);
+    let (beacon_id, previous_proposal) = ([0x44u8; 32], [0x55u8; 32]);
+
+    // The machine that answered, and the one that only carries its answer on.
+    let (siblings, position) = &branches[0];
+    let answering =
+        Standing::of_the_window(&secrets[0], WINDOW, &previous_proposal, siblings, *position)
+            .expect("a machine of the cohort proves its presence");
+    let replayer = mt_derive::nullifier::part(&secrets[1], WINDOW).expect("the replayer's part");
+    assert_ne!(replayer, answering.part_nullifier);
+
+    // Replayed as it is, the attestation verifies as the original and enters the part that made
+    // it, once, however often it is carried; the carrier's part never enters.
+    let mut cement = Cement::new();
+    for _ in 0..3 {
+        let carried = answering
+            .heavy(&secrets[0], beacon_id, previous_proposal)
+            .expect("a heavy attestation stands");
+        attest::verify_heavy(
+            &carried,
+            &previous_proposal,
+            &root,
+            &aggregate,
+            0,
+            7,
+            &everything,
+        )
+        .expect("a replay of a valid attestation verifies as the original");
+        cement.add(carried.part_nullifier);
+    }
+    assert_eq!(cement.count(), 1, "a replay adds no part");
+    assert!(cement.holds(&answering.part_nullifier));
+    assert!(
+        !cement.holds(&replayer),
+        "the carrier of another machine's attestation took a part of its own"
+    );
+
+    // Claimed as its own: the carrier writes its part-nullifier over the proof and signs under its
+    // own key of the window. The public input binds the part and the digest of the key, so the
+    // proof made for the other machine refuses both.
+    let mut claimed = answering
+        .heavy(&secrets[0], beacon_id, previous_proposal)
+        .expect("a heavy attestation stands");
+    claimed.part_nullifier = replayer;
+    let seed = mt_derive::pulse::part_key_seed(&secrets[1], WINDOW);
+    let mut held = [0u8; mt_suite::sign::SEED_BYTES];
+    held.copy_from_slice(&seed[..mt_suite::sign::SEED_BYTES]);
+    let (key, secret_of_the_key) = mt_suite::sign::keypair_from_seed(&held);
+    claimed.answering_key = key.as_bytes().to_vec();
+    claimed.signature =
+        mt_suite::sign::sign(&secret_of_the_key, &claimed.signed_scope().expect("scope"))
+            .expect("the carrier owns its own key")
+            .as_bytes()
+            .to_vec();
+    assert_eq!(
+        attest::verify_heavy(
+            &claimed,
+            &previous_proposal,
+            &root,
+            &aggregate,
+            0,
+            7,
+            &everything
+        ),
+        Err(montana_node::NodeError::Refused {
+            what: "an attestation whose proof of presence does not verify",
+        }),
+        "a carrier took another machine's proof for a part of its own"
     );
 }

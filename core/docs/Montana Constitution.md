@@ -371,6 +371,14 @@ operating system, never the observable behaviour of the protocol: any quantity t
 what is visible on the wire — the moment of sending, an expiry, a lateness threshold — is
 expressed in windows or in rounds.
 
+The waits of a machine's conduct — the span of an attempt and the patience a machine spends
+before it proves its own proposal — may read the machine's local clocks, and no verifier reads
+them. They decide when a machine acts, never what is accepted: no rule of acceptance, no signed
+object and no hash composition carries a wait, and a machine that waited twice as long reaches
+the same decisions later (Consensus, "The threshold of the draw, and the order of the runners"
+and "The agreement on what a window decided"). The span stays counted in the machine's own
+askings; a clock only paces them.
+
 A violation is an automatic mainnet blocker: any dependence of the protocol on external or
 system time turns Montana into not-Montana, losing canonical determinism and the
 independence of the window chain.

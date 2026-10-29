@@ -25,16 +25,16 @@ convicted part reaches a lock.
 
 ## 1. The decisions (outside the tree, the council's chain)
 
-| Record | Time (UTC) | Text (verbatim, Russian) | What it fixes |
+| Record | Time (UTC) | The author's word (English; verbatim in Russian under the record in the council's chain) | What it fixes |
 |---|---|---|---|
-| constitution 224 (answer to 223) | 26.10.2026 15:32:02 | «нет, сам себе не отправляешь а ключ должен прожить т2 окно 14 дней и эти монеты поставить в залог чтобы создать узел - конституцию проверь под эту логику» | a node is raised by a key that lived τ₂ and a lock of coins; the constitution is to be checked against it |
-| constitution 230 (answer to 228) | 26.10.2026 15:33:19 | «не 3 монеты а залог 14 дней в монетах как т2 и слэшинг будет позже при необходимости добавлен» | the lock is τ₂ in coins; slashing "later, if needed" |
-| constitution 231 (answer to 229), council link 8935 | 26.10.2026 15:35:05 | «... это количество за т2 где каждая секунда = 1 монеты он должен заложить и в случает нарушения протокола любого - слэшинг и исклчение узла из консенсуса» | on **any** protocol violation: slashing **and** exclusion of the node from consensus |
-| constitution 233 (answer to 232), council link 8951 | 26.10.2026 15:51:30 | «1) ВЕРНО (1 209 600 монет); 2) верно (узел открывает τ2 + залог, порог 8 для узла снять); 3) сжечь» | amount 1 209 600 coins; the gate is τ₂ plus the lock and nothing else; a slashed lock is **burned** |
-| constitution 238 | 26.10.2026 19:14:35 | a question with three options: move the #15 deadline / close #15 partly with slashing as its own task / other | not a decision on the relation; the author's word on it (council link 9173) was «так сделай все тесты на л2 л3 л1» |
-| constitution 246, council link 9250 | 26.10.2026 20:37:55, "yes" 21:21:31 | F-1 in #15; «залог τ2 и слэшинг (решение 233) -- отдельным ОЗ: криптосвязь доказательства нарушения с залогом открыта (Canon PR #52 «Evidence to lock»)» | the lock and slashing become #61; the evidence-to-lock link is **open** |
+| constitution 224 (answer to 223) | 26.10.2026 15:32:02 | "no, you do not send to yourself: the key must live τ₂, a window of 14 days, and put these coins in a lock to create a node -- check the constitution against this logic" | a node is raised by a key that lived τ₂ and a lock of coins; the constitution is to be checked against it |
+| constitution 230 (answer to 228) | 26.10.2026 15:33:19 | "not 3 coins but a lock of 14 days in coins, as τ₂, and slashing will be added later if needed" | the lock is τ₂ in coins; slashing "later, if needed" |
+| constitution 231 (answer to 229), council link 8935 | 26.10.2026 15:35:05 | "... this amount for τ₂, where every second = 1 coin, he must lock, and on any violation of the protocol -- slashing and exclusion of the node from consensus" | on **any** protocol violation: slashing **and** exclusion of the node from consensus |
+| constitution 233 (answer to 232), council link 8951 | 26.10.2026 15:51:30 | "1) RIGHT (1 209 600 coins); 2) right (a node opens on τ₂ + the lock, remove the threshold 8 for a node); 3) burn" | amount 1 209 600 coins; the gate is τ₂ plus the lock and nothing else; a slashed lock is **burned** |
+| constitution 238 | 26.10.2026 19:14:35 | a question with three options: move the #15 deadline / close #15 partly with slashing as its own task / other | not a decision on the relation; the author's word on it (council link 9173) was "so run all the tests on L2, L3, L1" |
+| constitution 246, council link 9250 | 26.10.2026 20:37:55, "yes" 21:21:31 | F-1 in #15; "the τ₂ lock and slashing (decision 233) -- a separate task: the cryptographic link of the evidence of a violation to the lock is open (Canon PR #52 'Evidence to lock')" | the lock and slashing become #61; the evidence-to-lock link is **open** |
 
-Sources: `/Users/kh./Python/Nothing/Montana/App/Montana-iOS/CouncilWall/constitution.jsonl`, records
+Sources: the council's constitution chain (`constitution.jsonl`, kept on the author's machine, not in this repository), records
 `n` 224, 230, 231, 233, 238, 246. The council links are in `claude_agent.jsonl`, `n` 8935, 8951, 9173 and 9250.
 The chairman's English of 231 and 233 is in PR #52 comments 6420399577 and 6420491388.
 

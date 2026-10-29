@@ -128,7 +128,7 @@ cd "<repo-root>" && wc -l crates/mt-crypto/src/lib.rs crates/mt-crypto-native/sr
 1. M3: `settle_window(account_table, cemented_user_ops, window_w)` — apply cemented user ops to state
 2. M4: `apply_noderegistrations_batch` (Step 1) → `apply_candidate_expiry` (Step 3a) → `apply_selection_event` (Step 3b) — node admission flow
 3. M3: `apply_proposal(account_table, node_table, candidate_pool, input, params)` — Steps 2 (emission) → 3.5 (chain_length++) → 3.6 (checkpoint rotation) → 4 (state_root)
-4. M5: `archive_proposal(header)` → `save_meta_last_cemented(window)` → `save_account_table` / `save_node_table` / `save_candidate_pool` — persist to disk
+4. M5 (issue #19 K5): `commit_window(WindowRecord)` — ONE record `window.bin` (the window, the clock, the three tables, the cemented envelope; SHA-256 over the body), written tmp → fsync → rename → fsync of the directory; memory moves only after it, and start reads it as the truth. `accounts.bin` / `nodes.bin` / `candidates.bin` / `meta_last_cemented.bin` / `meta/current_window.bin` / `proposals/` are views written after it (this replaces the meta-pointer pattern of the paragraph below)
 
 Settle is separated from apply_proposal (M3 design choice); steps 1 / 3a / 3b are delegated to M4 mt-entry. M5 finalization atomicity is achieved through the meta-pointer pattern (if a crash happens between archive and meta — verify_consistency detects it).
 
@@ -300,6 +300,18 @@ Each primitive with secret material has a detailed Security Card in [docs/securi
 2. **Verify NIST KAT** — a dedicated test set for FIPS 204 SigVer has not been added in this session (sign-baseline + sign-NIST KAT byte-exact match indirectly confirms Verify correctness via round-trip, but a direct Verify NIST KAT remains as an enhancement).
 
 3. **ML-KEM-768 Encapsulate/Decapsulate NIST KAT** — the current M1-F scope covers KeyGen only (Encapsulate/Decapsulate will be needed in M6+ application-layer encryption). NIST KAT for encapDecap is already present in the fixtures dir; tests are added when needed.
+
+4. **The cascade of the fallback proposer is clocked: a property of this generation** (the Author's decision 334 (a), record 339 of the constitution chain, 2026-10-29 09:28 UTC; issue #21 K7). This code answers to its own generation, the spec target on line 3 (the Author's decision 330 (a), PR #93), and the clocked cascade stays a property of it. It is recorded here and not removed.
+   - **The clock.** The active arm of `start` reads the silence since its last cement on a monotonic clock, `last_cement_at.elapsed()` (`crates/montana-node/src/commands/start.rs:568`). The instant is set at `:312` and renewed on a cement at `:1345` and `:1691`.
+   - **The depth.** `fallback_depth_at` turns that silence into the depth of the cascade, `1 + silence / fallback_secs` (`start.rs:926-931`). `fallback_secs` is twice the measured duration of the last tick, at least 3 s (`start.rs:379`, the tick measured at `:431`).
+   - **The proposer.** The depth chooses which machine may propose: `canonical_proposer_at` (`start.rs:571-572`, `:963-973`) over `mt_consensus::proposer_at` (`crates/mt-consensus/src/lib.rs:209-224`).
+   - **The followers.** A follower checks the proposer at the depth the signed header declares (`validate_proposer_is_canonical`, `crates/mt-consensus/src/lib.rs:316-332`) and reads no clock. Which machine proposes, though, is decided by the proposer's own clock.
+
+   This differs from the native generation, where a stalled runner is replaced without a timeout (`core/docs/Montana Consensus.md`, "The cascade of the beacon", :525). It also differs from Protocol-13 item 6 (`Audit/Protocol-13/06-CLOCKS-AND-BOOTSTRAP.md`: a timer must not grant consensus authority).
+
+   **What bounds it** (issue #21 K6, `e5cc3bc`). From window 2 on, an exhausted cascade appoints nobody. That holds whether the depth passed the electorate or the node does not hold the confirmers of w-2; in both cases `proposer_at` gives `NO_PROPOSER`. `acting_proposer` then returns none (`start.rs:975-994`), and the node prints `STALLED` once per window and depth and does not appoint itself (`start.rs:579-587`). The test is `an_exhausted_cascade_halts_and_never_self_appoints` (`start.rs:2159`). A clock can still move the role of proposer down the cascade. It can no longer close a window in a private chain once the cascade is exhausted, which before K6 the node did by proposing itself under `NO_PROPOSER`, a header every follower refuses as `UnknownProposer`. Before window 2 the node still proposes itself (`start.rs:989-990`); how a network opens is issue #17's.
+
+   **Closure path:** none in this generation. Protocol-13 item 6 can close for `core/Code` only with this limit recorded, never as clock independence of this runtime (`Audit/Protocol-13/06-CLOCKS-AND-BOOTSTRAP.md`).
 
 ---
 

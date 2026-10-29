@@ -10,7 +10,7 @@
 // enumeration is therefore the same one `identifiers.rs` binds into `air_hash` — the day another
 // description joins that binding, it joins this bound.
 
-use mt_proof::circuit::{admission, ballot, frame, opening, presence, ticket};
+use mt_proof::circuit::{admission, ballot, frame, opening, pledge, presence, ticket};
 
 // Every description the network accepts a proof under, with the width it spends. The list is the
 // one the Decree's `air_hash` binds, so a circuit that reaches the network reaches this test.
@@ -26,6 +26,7 @@ fn every_written_circuit() -> Vec<(&'static str, usize)> {
     let of_presence = presence::description().expect("the presence's description stands");
     let of_opening = opening::description().expect("the opening's description stands");
     let of_ballot = ballot::description().expect("the ballot's description stands");
+    let of_pledge = pledge::description().expect("the pledge's description stands");
     vec![
         ("frame", usize::from(of_frame.trace_width)),
         ("ticket", usize::from(of_ticket.trace_width)),
@@ -33,6 +34,7 @@ fn every_written_circuit() -> Vec<(&'static str, usize)> {
         ("presence", usize::from(of_presence.trace_width)),
         ("opening", usize::from(of_opening.trace_width)),
         ("ballot", usize::from(of_ballot.trace_width)),
+        ("pledge", usize::from(of_pledge.trace_width)),
     ]
 }
 
@@ -42,7 +44,7 @@ fn every_written_circuit_stands_under_the_one_bound() {
     let written = every_written_circuit();
     assert_eq!(
         written.len(),
-        6,
+        7,
         "the circuits `air_hash` binds and the circuits this test reads are one list"
     );
     for (name, width) in written {

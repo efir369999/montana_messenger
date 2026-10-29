@@ -232,7 +232,10 @@ fn apply_anchor_does_not_change_balance() {
     let balance_before = state.get(&[0xAA; 32]).unwrap().balance;
     apply_anchor(&op, &mut state, 5);
     let balance_after = state.get(&[0xAA; 32]).unwrap().balance;
-    assert_eq!(balance_before, balance_after, "Anchor does not change balance");
+    assert_eq!(
+        balance_before, balance_after,
+        "Anchor does not change balance"
+    );
 }
 
 #[test]

@@ -91,11 +91,7 @@ fn cmd_next_d_boundaries() -> bool {
         (950, 1030, "950 = high_permille edge, inclusive → +3%"),
         (980, 1030, "980 — above high, +3%"),
         (900, 1000, "dead zone middle — no change"),
-        (
-            851,
-            1000,
-            "851 — dead zone upper edge (>low), no change",
-        ),
+        (851, 1000, "851 — dead zone upper edge (>low), no change"),
         (850, 970, "850 = low_permille edge, inclusive → -3%"),
         (700, 970, "700 — deep below low, -3%"),
     ];
@@ -282,7 +278,9 @@ fn cmd_state_root_compose() -> bool {
     let composition_ok = lib_root == manual_root;
     print_kv("byte-exact match", format!("{composition_ok}"));
 
-    print_subsection("Determinism: rebuild the tables from scratch → root is byte-for-byte the same");
+    print_subsection(
+        "Determinism: rebuild the tables from scratch → root is byte-for-byte the same",
+    );
     let mut accounts2 = AccountTable::new();
     accounts2.insert(make_account(3, 0x03));
     accounts2.insert(make_account(1, 0x01));

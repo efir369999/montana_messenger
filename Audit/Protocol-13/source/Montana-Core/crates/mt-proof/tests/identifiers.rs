@@ -1,9 +1,9 @@
 // The identifiers of every description the network accepts proofs under, printed from the
 // descriptions themselves so the set freezes what runs and nothing else.
-use mt_proof::circuit::{admission, ballot, frame, opening, presence, ticket};
+use mt_proof::circuit::{admission, ballot, frame, opening, pledge, presence, ticket};
 
 #[test]
-fn the_identifiers_of_the_six_descriptions() {
+fn the_identifiers_of_the_seven_descriptions() {
     let depth = mt_proof::tree_depth();
     let places = frame::Places::of(depth).expect("the Decree names the shape of a frame");
     // The height comes from the constant the gate compares and never from a literal: this test
@@ -29,6 +29,9 @@ fn the_identifiers_of_the_six_descriptions() {
     let of_ballot = ballot::description()
         .expect("the ballot's description stands")
         .identifier();
+    let of_pledge = pledge::description()
+        .expect("the pledge's description stands")
+        .identifier();
     for (name, id) in [
         ("frame", of_frame),
         ("ticket", of_ticket),
@@ -36,6 +39,7 @@ fn the_identifiers_of_the_six_descriptions() {
         ("presence", of_presence),
         ("opening", of_opening),
         ("ballot", of_ballot),
+        ("pledge", of_pledge),
     ] {
         let hex: String = id.iter().map(|b| format!("{b:02x}")).collect();
         println!("identifier of the {name} = {hex}");
@@ -48,13 +52,14 @@ fn the_identifiers_of_the_six_descriptions() {
         of_presence,
         of_opening,
         of_ballot,
+        of_pledge,
     ] {
         bound.extend_from_slice(&id);
     }
     let air = mt_codec::hash_of_one(mt_codec::domain::MT_PROOF_AIR, &bound);
     let hex: String = air.iter().map(|b| format!("{b:02x}")).collect();
-    println!("air_hash over the six, in order = {hex}");
-    // The Decree binds the same six in the same order: a description that reaches the network and
+    println!("air_hash over the seven, in order = {hex}");
+    // The Decree binds the same seven in the same order: a description that reaches the network and
     // not this list would print an air_hash the Decree does not carry.
     let decree = mt_genesis::PARAMETERS
         .iter()

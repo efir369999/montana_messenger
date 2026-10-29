@@ -595,11 +595,18 @@ fn cmd_validation_rejects() -> bool {
     }
 
     // 6. ReceiverAlreadyExists.
-    print_subsection("6. ReceiverAlreadyExists — TransferActivation for an already-existing receiver");
+    print_subsection(
+        "6. ReceiverAlreadyExists — TransferActivation for an already-existing receiver",
+    );
     let op = mk_transfer_activation(alice_id, &alice_sk, &bob_pk, 100, alice_frontier);
     let r = validate_transfer_activation(&op, &state, 5000, 20160);
     let m = matches!(r, Err(OpError::ReceiverAlreadyExists));
-    report("Bob already in AccountTable", "ReceiverAlreadyExists", &r, m);
+    report(
+        "Bob already in AccountTable",
+        "ReceiverAlreadyExists",
+        &r,
+        m,
+    );
     if !m {
         all_correctly_rejected = false;
     }
@@ -663,7 +670,9 @@ fn cmd_validation_rejects() -> bool {
     }
 
     // 10. InvalidBinding.
-    print_subsection("10. InvalidBinding — receiver_id not derived from (suite_id, receiver_pubkey)");
+    print_subsection(
+        "10. InvalidBinding — receiver_id not derived from (suite_id, receiver_pubkey)",
+    );
     let mut op = TransferActivation {
         prev_hash: alice_frontier,
         sender: alice_id,

@@ -405,7 +405,7 @@ silence, no default, no note conjured to make the command succeed. That refusal 
 seen from the outside — a wallet holds notes only where something minted, minting stands on a
 cemented window, a cemented window stands on admitted machines, and admission stands on an object
 the set does not lay out. What the run establishes is that everything up to that point stands on a
-terminal and not only in a test.
+terminal and not only in a test. Historical (marked 2026-10-27 UTC): this is the run of an earlier build. On `main` a right becomes a note and the note is paid away (`crates/montana-node/tests/value_enters_the_network.rs:23`; `crates/mt-proof/src/circuit/frame.rs:1111-1116`: a frame that redeems no note proves against the empty root). Whether F-8 is closed is not decided here.
 
 **The identity plane had a record and the rules of its life, and no object by which a record is
 opened or acts.** Canon laid out thirty-three objects; among them stood neither an opening nor an
@@ -541,7 +541,7 @@ is redeemed inside a frame, and a frame cannot be built without notes that only 
 could have created. Closing it is the same construction the action of a record already uses for its
 successor position: a third form whose values are drawn, with the proof asserting of each position
 that it holds a redemption or a blank without disclosing which. It moves the description of the
-frame, and with it `air_hash` and the Genesis State Hash.
+frame, and with it `air_hash` and the Genesis State Hash. Historical (marked 2026-10-27 UTC): "it is unreachable" (the sentence that begins "That is the first value in the network") is the circuit of an earlier tree. On `main` a right becomes a note and the note is paid away (`crates/montana-node/tests/value_enters_the_network.rs:23`; `crates/mt-proof/src/circuit/frame.rs:1111-1116`, filler beside the right). Whether F-8 is closed is not decided here.
 
 **The window's circuit binds its public input cell by cell, and at the one height that is a proof
 nobody runs.** Its description carries a boundary for every coefficient of every accumulator and of
@@ -2082,23 +2082,23 @@ numbers, which says the method and not the tree is what is missing.
 | rows of the Decree the library reads | 28 of 54 |
 | of those, rows that decide a width | 9, and one relation tying a tenth to a parameter |
 | implementations of `Layout` | 17, each one declaration, and the register is held against the source |
-| domains of the registry | 101, each one declaration, counted by the harness rather than by a grep |
+| domains of the registry | 105, each one declaration, counted by the harness rather than by a grep |
 | values of the set awaiting a stage | 0 — every one is read by a checker on every build |
-| domains of the registry a run takes a preimage under | 77 of 101 — the gate refuses a domain that is neither taken nor named, so this number is a hundred and one less the twenty-four named and is not a count anybody keeps |
-| of the rest, named with what owes them a vector | 24, and a silent one that is unnamed fails the build |
+| domains of the registry a run takes a preimage under | 78 of 105 — the gate refuses a domain that is neither taken nor named, so this number is a hundred and five less the twenty-seven named and is not a count anybody keeps |
+| of the rest, named with what owes them a vector | 27, and a silent one that is unnamed fails the build |
 | prefix pairs among them, closed by the zero and the alphabet | 5 |
-| frozen lines of the set of the shape the coverage pass reads | 278, counted by the pass itself |
-| numerals of the library, every one of them in a register | 168, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
+| frozen lines of the set of the shape the coverage pass reads | 284, counted by the pass itself |
+| numerals of the library, every one of them in a register | 180, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
 | of those, compared against a place of the set | 69 |
 | of those, named as of this tree with the reason each is | the rest, each with the reason it is of this tree and of no document |
 | rows a wrong value would pass | 0 of 69 |
 | headings of a derivation restating a value of the Decree | 19, all compared |
-| rows of the Registry of mechanisms | 100: 38 closed, 62 awaiting a stage, 0 awaiting the artifact — the Registry recounts its own table on every build, and this row is held against that recount rather than counted a second time |
-| domains of the separator registry owned by exactly one row | 101 of 101 |
+| rows of the Registry of mechanisms | 102: 38 closed, 64 awaiting a stage, 0 awaiting the artifact — the Registry recounts its own table on every build, and this row is held against that recount rather than counted a second time |
+| domains of the separator registry owned by exactly one row | 105 of 105 |
 | places reaching a preimage through the door of one body | 11 in library code under SHA-256, none of them assembling |
 | the same under the proof hash, where the set writes the preimage as a concatenation | 5, of which 3 assemble fields of fixed width, which cannot erase one |
 | kinds a field of a layout may stand under | 5, and a sixth does not compile |
-| tests of the workspace | 730 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
+| tests of the workspace | 806 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
 | crates carrying the gate in their own tests | 15 of 15, by one macro of the harness rather than fifteen readings of one invocation |
 | columns the width of a proof admits, and columns each written circuit **declares** | 64, and 64 / 59 / 26 / 30 / 16 / 63 for the frame, the ticket, the admission, the presence, the opening and the ballot; the width check reads all six registered descriptions |
 | the circuit of the ticket, written and green | the chains of the presence with the ticket's absorption in place of the nullifier's, the digest of the runner's key, and the comparison of thirty-two rows; the window, fold, discharge and reduce circuits left the tree with the relation they served |
@@ -2106,7 +2106,8 @@ numbers, which says the method and not the tree is what is missing.
 | the prover's time on the ticket, debug profile | the six unit tests of the ticket, two of them proving at the presence's height and one verifying, finish in 61 s together under the debug profile; the whole mt-proof library suite, 134 tests, in 655 s |
 | the admission's circuit, proven and verified end to end | once: the record chain, a walk of two hundred and fifty-six levels by the bits of a key, the halves of the machine's secret, the chain of the right with the record's own limbs held to it — and the root of another state and another window refused |
 | the prover's time on the admission, same profile and machine | near two minutes and a quarter for three hundred and sixty-four permutation blocks against the window's nineteen for twelve boundaries against twenty-seven thousand — the boundary composition measured twice, from both sides |
-| the identifiers of the five descriptions | frozen in the set and recomputed by the gate on every build; their binding is the Decree's own air_hash row |
+| the identifiers of the seven descriptions | frozen in the set and recomputed by the gate on every build; their binding is the Decree's own air_hash row |
+| the three domains of the line of a slot | `mt-line-opening`, `mt-line-slope` and `mt-line-abscissa` lost the mark of awaiting a vector the day the gate began to rebuild the pledge's description: what is compared is the capacity of each domain inside the identifier of the pledge; the values of `opening`, `slope` and `abscissa` themselves (mt-proof/src/line.rs:160-180) have no frozen vector yet, and that vector is still owed |
 | the Decree | complete: every parameter published, the Genesis State Hash exists, both digests computed by the gate rather than remembered |
 | the population of a split | fixed-parent quorum required at every round; disjoint minorities halt, rejoin recovers only the original quorum; automatic self-selected restart is refused. These arithmetic tests do not authenticate stake or prove runtime finality |
 | what stage twelve still owes | nothing of its plan; what the whole plan still owes past it is its later stages |

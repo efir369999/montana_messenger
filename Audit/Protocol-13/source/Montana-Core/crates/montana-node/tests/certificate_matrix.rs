@@ -69,11 +69,12 @@ fn a_world(secrets: &[[u8; 32]], aggregate: [u8; 32]) -> World {
         ticket_proof: vec![0x00; mt_state::PRESENCE_PROOF_LEN],
         signature: vec![0x5E; mt_codec::size::SIGNATURE],
     };
+    let name = previous.id().expect("an identifier");
     let standings = secrets
         .iter()
         .map(|secret| {
             let branch = cohort.branch_of(secret).expect("its own leaf");
-            Standing::of_the_window(secret, WINDOW, &branch.siblings, branch.position)
+            Standing::of_the_window(secret, WINDOW, &name, &branch.siblings, branch.position)
                 .expect("a machine of the cohort proves its presence")
         })
         .collect();
@@ -141,16 +142,36 @@ impl World {
         self.heavy_on(at, self.previous_id())
     }
 
-    // The heavy attestation of one machine pledging `name` beside the opening beacon.
+    // The heavy attestation of one machine pledging `name` beside the opening beacon. A presence
+    // binds the name it attests (record 309), so a name other than the one the world's standing was
+    // made for is proven afresh.
     fn heavy_on(&self, at: usize, name: [u8; 32]) -> Confirmation {
-        self.standings[at]
+        let fresh;
+        let standing = if self.standings[at].name == name {
+            &self.standings[at]
+        } else {
+            let branch = self
+                .cohort
+                .branch_of(&self.secrets[at])
+                .expect("its own leaf");
+            fresh = Standing::of_the_window(
+                &self.secrets[at],
+                WINDOW,
+                &name,
+                &branch.siblings,
+                branch.position,
+            )
+            .expect("a machine of the cohort proves its presence");
+            &fresh
+        };
+        standing
             .heavy(&self.secrets[at], self.beacon_id(), name)
             .expect("a heavy attestation stands")
     }
 
     fn pledge(&self, at: usize, attempt: u32, name: [u8; 32], since: u32) -> Pledge {
         self.standings[at]
-            .pledge(attempt, name, since)
+            .pledge(&self.secrets[at], attempt, name, since)
             .expect("a pledge stands")
     }
 
@@ -395,11 +416,16 @@ fn the_acceptance_matrix_of_the_relation_through_the_one_entry_point() {
         .cohort
         .branch_of(&stranger_secret)
         .expect("its own leaf");
-    let foreign =
-        Standing::of_the_window(&stranger_secret, WINDOW, &branch.siblings, branch.position)
-            .expect("a stranger proves its presence in its own tree")
-            .heavy(&stranger_secret, world.beacon_id(), world.previous_id())
-            .expect("a heavy attestation stands");
+    let foreign = Standing::of_the_window(
+        &stranger_secret,
+        WINDOW,
+        &world.previous_id(),
+        &branch.siblings,
+        branch.position,
+    )
+    .expect("a stranger proves its presence in its own tree")
+    .heavy(&stranger_secret, world.beacon_id(), world.previous_id())
+    .expect("a heavy attestation stands");
     let mut mixed = heavies.clone();
     mixed[2] = foreign;
     assert_eq!(

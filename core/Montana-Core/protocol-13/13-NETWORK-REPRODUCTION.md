@@ -16,7 +16,7 @@ had not completed after about sixteen minutes and reached approximately
 3.5 GiB resident memory. A bounded diagnostic showed growing rounds with only
 one or two of three heavy participants. The historical-read cursor starved
 early rounds while the tip advanced. A repaired scheduler is being checked.
-The interrupted sweep is not a pass.
+The interrupted sweep is not a pass. Historical (marked 2026-10-27 UTC): this paragraph is the state of the separate-host diagnostic. `three_machines_live_a_window` passed in the ring of `4451b21` (92 test binaries, all exit 0, one host, `01-WINDOW-PROOF.md:57`); that the scheduler was repaired is not recorded in this folder. A run on several hosts stays this item.
 
 Even a repaired three-machine count-based scenario would not close this item.
 The acceptance package must contain actual canonical Proposals, proofs and roots

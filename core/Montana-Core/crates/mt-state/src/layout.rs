@@ -29,6 +29,9 @@ pub enum ObjectError {
     // A pledge standing on an attempt after its own, made in the attempt no count reaches, or open in
     // attempt zero, whose one open pledge is the heavy attestation.
     Since,
+    // A pledge whose `line_value` carries a word at or above the modulus of the proof field: no
+    // element of the field of the line, refused before its proof is verified.
+    LineValue,
     // A roll naming more frames than a window applies, or parts that do not ascend.
     Roll,
 }
@@ -628,7 +631,8 @@ pub fn attested_is_canonical(attested: &[[u8; 32]]) -> bool {
 }
 
 fn attested_of_confirmation(value: &Confirmation) -> Result<(), ObjectError> {
-    ordered(&value.attested)
+    ordered(&value.attested)?;
+    canonical_line_value(&value.line_value)
 }
 
 fn attested_of_light(value: &LightAttestation) -> Result<(), ObjectError> {
@@ -649,6 +653,7 @@ layout! {
         attested: count16([u8; 32]; ATTESTED_COUNT),
         part_nullifier: [u8; 32],
         round_nullifier: [u8; 32],
+        line_value: [u8; 32],
         suite_id: u16,
         answering_key: bytes(size::SIGNING_PUBLIC_KEY),
         proof: bytes(super::PRESENCE_PROOF_LEN),
@@ -745,16 +750,34 @@ fn votes_of_a_ballot(value: &Ballot) -> Result<(), ObjectError> {
 
 layout! {
     /// What a part says in an attempt of the agreement on the proposal of the window before: which
-    /// name it stands behind, and on which quorum. It names no machine.
-    Pledge, "pledge", checked by since_of_a_pledge, {
+    /// name it stands behind, and on which quorum. It names no machine. It carries the line of its
+    /// slot at the abscissa of that name, and the proof that its part's half drew that value.
+    Pledge, "pledge", checked by rules_of_a_pledge, {
         window: u64,
         attempt: u32,
         name: [u8; 32],
         since: u32,
         part_nullifier: [u8; 32],
+        line_value: [u8; 32],
         suite_id: u16,
         answering_key: bytes(size::SIGNING_PUBLIC_KEY),
+        proof: bytes(super::PRESENCE_PROOF_LEN),
     } and a signature
+}
+
+fn rules_of_a_pledge(value: &Pledge) -> Result<(), ObjectError> {
+    since_of_a_pledge(value)?;
+    canonical_line_value(&value.line_value)
+}
+
+// `line_value`, on a pledge and on a confirmation alike, is an element of the field of the line, four
+// canonical words, and nothing else: a word written at or above the modulus is a second spelling of a
+// value, and the proof would be read against a line nobody drew. Refused here, before anything reads
+// the proof.
+fn canonical_line_value(line_value: &[u8; 32]) -> Result<(), ObjectError> {
+    mt_proof::line::L::from_bytes(line_value)
+        .map(|_| ())
+        .ok_or(ObjectError::LineValue)
 }
 
 // A pledge stands on its own attempt (closing), on an earlier one or on none (open). One standing on a
@@ -977,11 +1000,21 @@ layout! {
 
 // ── The committed record of a person ───────────────────────────────────────────────────────────
 
-fn record_continuity(record: &Record) -> Result<(), ObjectError> {
-    let maximum = scalar("max_entry_segments")
+// The width of the bitmap a record holds: `max_entry_segments`, the most segments any gate demands.
+fn continuity_width() -> Option<u32> {
+    scalar("max_entry_segments")
         .and_then(|n| u32::try_from(n).ok())
         .filter(|&n| n != 0 && n <= u64::BITS)
-        .ok_or(ObjectError::RecordContinuity)?;
+}
+
+// The low `count` bits of a bitmap: the segments of a period of `count` ending with the newest.
+fn low_bits(count: u32) -> u64 {
+    let older = u64::BITS.saturating_sub(count);
+    u64::MAX.checked_shr(older).unwrap_or(0)
+}
+
+fn record_continuity(record: &Record) -> Result<(), ObjectError> {
+    let maximum = continuity_width().ok_or(ObjectError::RecordContinuity)?;
     if record.segment_bitmap.checked_shr(maximum).unwrap_or(0) != 0 {
         return Err(ObjectError::RecordContinuity);
     }
@@ -1007,22 +1040,44 @@ layout! {
 }
 
 impl Record {
-    // What a gate compares is the number of segments lived, never a run of them, and the bitmap is
-    // read only after shifting it by the distance from the segment it was written against to the
-    // current one: a bitmap read without the shift measures continuity against a past that has
-    // moved.
-    pub fn segments_lived(&self, current_segment: u32) -> u32 {
+    // What a gate compares is the number of segments lived, never a run of them. The rules of
+    // continuity read it (Canon, "The rules of continuity", rules 2 and 3; constitution records 297
+    // and 300). Bit `i` stands for the segment `last_active_segment - i`, so the newest is bit 0.
+    // The bitmap is shifted left by the distance from the segment it was written against to the
+    // current one, and only the low `in_force` bits are counted: the segments of the period in force,
+    // which ends with the current segment. A bitmap read without the shift measures continuity
+    // against a past that has moved. One read without the mask counts segments lived before the
+    // period began.
+    pub fn segments_lived(&self, current_segment: u32, in_force: u32) -> u32 {
         // Refuse reserved bits before shifting: otherwise an invented bit can
         // enter the permitted region merely by waiting. In-memory constructors
         // have not necessarily passed through the layout decoder.
+        let Some(width) = continuity_width() else {
+            return 0;
+        };
         if record_continuity(self).is_err() || current_segment < self.last_active_segment {
             return 0;
         }
         let distance = current_segment - self.last_active_segment;
-        if distance >= 64 {
-            return 0;
+        // A period wider than the bitmap reads no segment the bitmap could not have kept: an
+        // action drops what passes the width, and a reading does not count it either.
+        let shifted = self.segment_bitmap.checked_shl(distance).unwrap_or(0);
+        (shifted & low_bits(in_force.min(width))).count_ones()
+    }
+
+    // The bitmap and the segment an action applied in `segment` leaves (rule 2). The bitmap shifts
+    // left by the distance from the segment it was written against, bit 0 is set for the segment
+    // acted in, and whatever passes the width of the bitmap leaves it. An action in the segment
+    // already written changes nothing. An action in a segment before it is no lawful transition and
+    // yields nothing, since `last_active_segment` never decreases.
+    pub fn continuity_after_action(&self, segment: u32) -> Option<(u64, u32)> {
+        let width = continuity_width()?;
+        if record_continuity(self).is_err() || segment < self.last_active_segment {
+            return None;
         }
-        (self.segment_bitmap >> distance).count_ones()
+        let distance = segment - self.last_active_segment;
+        let shifted = self.segment_bitmap.checked_shl(distance).unwrap_or(0);
+        Some(((shifted | 1) & low_bits(width), segment))
     }
 }
 
@@ -1054,6 +1109,7 @@ mod tests {
             (ChannelReveal::NAME, ChannelReveal::expected_len()),
             (ChannelPublication::NAME, ChannelPublication::expected_len()),
             (Ballot::NAME, Ballot::expected_len()),
+            (Pledge::NAME, Pledge::expected_len()),
         ];
         for (name, total) in totals {
             assert!(total > 0, "the total of {name} is zero");
@@ -1100,15 +1156,24 @@ mod tests {
         assert_eq!(Ballot::expected_len(), 8 + 32 + 8 + super::super::PROOF_LEN);
         assert_eq!(
             Pledge::expected_len(),
-            8 + 4 + 32 + 4 + 32 + 2 + size::SIGNING_PUBLIC_KEY + size::SIGNATURE
+            8 + 4
+                + 32
+                + 4
+                + 32
+                + 32
+                + 2
+                + size::SIGNING_PUBLIC_KEY
+                + super::super::PRESENCE_PROOF_LEN
+                + size::SIGNATURE
         );
         assert_eq!(
             LightAttestation::expected_len(),
             8 + 2 + 64 + 32 + 32 + 2 + size::SIGNING_PUBLIC_KEY + size::SIGNATURE
         );
+        // The heavy is the light with `line_value` and the proof (record 309).
         assert_eq!(
             Confirmation::expected_len(),
-            LightAttestation::expected_len() + super::super::PRESENCE_PROOF_LEN
+            LightAttestation::expected_len() + 32 + super::super::PRESENCE_PROOF_LEN
         );
         assert_eq!(Beacon::expected_len(), 8 + 1 + 4 + 32 + 32 + 8 + 8);
     }
@@ -1209,6 +1274,7 @@ mod tests {
             attested: vec![[0x10; 32], [0x20; 32]],
             part_nullifier: [0x30; 32],
             round_nullifier: [0x40; 32],
+            line_value: [0x41; 32],
             suite_id: 1,
             answering_key: vec![0xA1; mt_codec::size::SIGNING_PUBLIC_KEY],
             proof: vec![0x00; super::super::PRESENCE_PROOF_LEN],
@@ -1367,10 +1433,55 @@ mod tests {
             name: [0x4E; 32],
             since,
             part_nullifier: [0x30; 32],
+            line_value: [0x31; 32],
             suite_id: 1,
             answering_key: vec![0xA1; mt_codec::size::SIGNING_PUBLIC_KEY],
+            proof: vec![0x5A; super::super::PRESENCE_PROOF_LEN],
             signature: vec![0xF0; mt_codec::size::SIGNATURE],
         }
+    }
+
+    // `line_value` is four canonical words: a word at the modulus, or past it, is refused written
+    // and read, whichever of the four it stands in. The wrong implementation refused: one reading
+    // the words modulo the prime, which takes `P` for zero.
+    #[test]
+    fn a_pledge_carries_its_line_value_in_canonical_words_only() {
+        let p = mt_proof::field::P.to_le_bytes();
+        for at in 0..4 {
+            for word in [p, u64::MAX.to_le_bytes()] {
+                let mut pledge = a_pledge(3, 1);
+                pledge.line_value[at * 8..at * 8 + 8].copy_from_slice(&word);
+                let bytes = pledge.encode();
+                assert_eq!(pledge.bytes(), Err(ObjectError::LineValue), "word {at}");
+                assert_eq!(
+                    Pledge::parse(&bytes),
+                    Err(ObjectError::LineValue),
+                    "word {at}"
+                );
+            }
+        }
+        let mut below = a_pledge(3, 1);
+        below.line_value[..8].copy_from_slice(&(mt_proof::field::P - 1).to_le_bytes());
+        assert!(below.bytes().is_ok() && Pledge::parse(&below.encode()).is_ok());
+    }
+
+    // The same rule on the confirmation, whose `line_value` is the line of the open slot of attempt
+    // zero (record 309): a word at the modulus is refused written and read.
+    #[test]
+    fn a_confirmation_carries_its_line_value_in_canonical_words_only() {
+        let p = mt_proof::field::P.to_le_bytes();
+        for at in 0..4 {
+            let mut held = a_confirmation();
+            held.line_value[at * 8..at * 8 + 8].copy_from_slice(&p);
+            let bytes = held.encode();
+            assert_eq!(held.bytes(), Err(ObjectError::LineValue), "word {at}");
+            assert_eq!(
+                Confirmation::parse(&bytes),
+                Err(ObjectError::LineValue),
+                "word {at}"
+            );
+        }
+        assert!(a_confirmation().bytes().is_ok());
     }
 
     // A pledge stands on its own attempt, an earlier one or none, and never opens attempt zero. The
@@ -1796,13 +1907,10 @@ mod tests {
         );
     }
 
-    #[test]
-    fn the_segments_of_a_record_are_counted_after_the_shift() {
-        // Four segments lived, written against segment ten. Read at segment ten the count is four;
-        // read at twelve, two of them have moved out of the window.
-        let record = Record {
-            segment_bitmap: 0b1111,
-            last_active_segment: 10,
+    fn a_record_of(segment_bitmap: u64, last_active_segment: u32) -> Record {
+        Record {
+            segment_bitmap,
+            last_active_segment,
             opened_window: 0,
             own_height: 0,
             operator_nf: [0; 32],
@@ -1810,12 +1918,72 @@ mod tests {
             suite_id: 1,
             current_pubkey: vec![0; mt_codec::size::SIGNING_PUBLIC_KEY],
             blind: [0; 32],
-        };
-        assert_eq!(record.segments_lived(10), 4);
-        assert_eq!(record.segments_lived(12), 2);
-        assert_eq!(record.segments_lived(14), 0);
+        }
+    }
+
+    #[test]
+    fn the_segments_of_a_record_are_counted_after_the_shift() {
+        // Four segments lived, written against segment ten: bit 0 is segment ten and bit 3 is
+        // segment seven (rule 2, records 297 and 300). With fourteen in force they all count until
+        // the period, which ends with the current segment, leaves segment seven behind at twenty-one.
+        let record = a_record_of(0b1111, 10);
+        assert_eq!(record.segments_lived(10, 14), 4);
+        assert_eq!(record.segments_lived(20, 14), 4);
+        assert_eq!(record.segments_lived(21, 14), 3);
+        assert_eq!(record.segments_lived(23, 14), 1);
+        assert_eq!(record.segments_lived(24, 14), 0);
         // A bitmap read without the shift would answer four at every segment, which is the defect
-        // the shift exists to prevent.
-        assert_ne!(record.segments_lived(12), record.segments_lived(10));
+        // the shift exists to prevent. The old reader shifted right, read the low bits as the oldest,
+        // and answered nought at twenty.
+        assert_ne!(record.segments_lived(24, 14), record.segments_lived(10, 14));
+        // A segment before the one the bitmap is written against reads nothing.
+        assert_eq!(record.segments_lived(9, 14), 0);
+    }
+
+    #[test]
+    fn segments_lived_before_the_period_in_force_do_not_count() {
+        // Ten segments lived, the newest of them twenty segments before the segment written against
+        // (bits 20 to 29), as Agent 492 reported of the old reader: with fourteen in force none
+        // count, and with the whole width in force all ten do (rule 3, records 297 and 300).
+        let record = a_record_of(0b11_1111_1111 << 20, 100);
+        assert_eq!(record.segments_lived(100, 14), 0);
+        assert_eq!(record.segments_lived(100, 25), 5);
+        assert_eq!(record.segments_lived(100, 56), 10);
+        // A period wider than the bitmap counts nothing the bitmap could not have kept: at segment
+        // 127 the record's segments are 71 to 80, and 71 lies past the width of fifty-six.
+        assert_eq!(record.segments_lived(127, 64), 9);
+        assert_eq!(record.segments_lived(100, 0), 0);
+    }
+
+    #[test]
+    fn an_action_writes_its_segment_into_bit_nought() {
+        // Segments ten, nine and seven lived (rule 2, records 297 and 300).
+        let record = a_record_of(0b1011, 10);
+        // An action in the segment already written changes nothing.
+        assert_eq!(record.continuity_after_action(10), Some((0b1011, 10)));
+        // Two segments on, the bitmap shifts left by two and segment twelve takes bit 0.
+        assert_eq!(record.continuity_after_action(12), Some((0b10_1101, 12)));
+        // A segment before the one written against is no lawful transition.
+        assert_eq!(record.continuity_after_action(9), None);
+        // Far enough on, every older segment has passed the width and only the new one stands.
+        assert_eq!(record.continuity_after_action(10 + 56), Some((1, 66)));
+        assert_eq!(record.continuity_after_action(10 + 64), Some((1, 74)));
+        assert_eq!(
+            record.continuity_after_action(u32::MAX),
+            Some((1, u32::MAX))
+        );
+        // A full bitmap stays full: the oldest segment leaves as the newest enters, and the
+        // successor stands inside the width the layout holds a record to.
+        let width = continuity_width().expect("the Decree names it");
+        let full = a_record_of(low_bits(width), 10);
+        let (bitmap, last) = full.continuity_after_action(11).expect("lawful");
+        assert_eq!((bitmap, last), (low_bits(width), 11));
+        assert!(a_record_of(bitmap, last).bytes().is_ok());
+        // What an action writes is what a gate reads: segment twelve and the three before it.
+        let (bitmap, last) = record.continuity_after_action(12).expect("lawful");
+        let next = a_record_of(bitmap, last);
+        assert_eq!(next.segments_lived(12, 14), 4);
+        assert_eq!(next.segments_lived(12, 1), 1);
+        assert_eq!(next.segments_lived(12, 3), 2);
     }
 }

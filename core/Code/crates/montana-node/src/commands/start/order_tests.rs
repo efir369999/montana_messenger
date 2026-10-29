@@ -261,6 +261,7 @@ struct Follower {
     equivocations: Equivocations,
     fast_sync: Option<mt_sync::FastSyncClient>,
     fast_sync_deadline: Option<Instant>,
+    fast_sync_anchor: Option<Vec<u8>>,
     last_cement_at: Instant,
     prev_proposal_hash: Hash32,
     data_dir: PathBuf,
@@ -271,7 +272,8 @@ impl Follower {
     fn new(f: &Fixture, tag: &str) -> Self {
         let data_dir = temp_data_dir(tag);
         let store = FsStore::open(&data_dir).expect("store");
-        let timechain = load_or_init_timechain(&data_dir).expect("genesis clock");
+        let timechain =
+            crate::timechain_state::load_or_init_timechain(&data_dir).expect("genesis clock");
         let mut t_r_history = BTreeMap::new();
         t_r_history.insert(W - 1, T_R_PREV);
         t_r_history.insert(W, T_R_W);
@@ -295,6 +297,7 @@ impl Follower {
             equivocations: BTreeMap::new(),
             fast_sync: None,
             fast_sync_deadline: None,
+            fast_sync_anchor: None,
             last_cement_at: Instant::now(),
             prev_proposal_hash: [0u8; 32],
             data_dir,
@@ -320,6 +323,7 @@ impl Follower {
             equivocations: &mut self.equivocations,
             fast_sync: &mut self.fast_sync,
             fast_sync_deadline: &mut self.fast_sync_deadline,
+            fast_sync_anchor: &mut self.fast_sync_anchor,
             last_cement_at: &mut self.last_cement_at,
             prev_proposal_hash: &mut self.prev_proposal_hash,
             fast_sync_lag_threshold: FAST_SYNC_LAG_THRESHOLD,
@@ -621,6 +625,61 @@ fn a_closed_window_issues_its_seconds_to_every_living_node() {
     }
 }
 
+/// Runs one test of this module again in a child process with its stderr not captured, the
+/// local opt-in MONTANA_PRIVATE_DIAGNOSTICS absent or set to 1, and returns that stderr.
+fn stderr_of(test: &str, opt_in: bool) -> String {
+    let mut child = std::process::Command::new(std::env::current_exe().expect("test binary"));
+    child
+        .arg(format!("commands::start::order_tests::{test}"))
+        .args(["--exact", "--nocapture", "--test-threads=1"]);
+    if opt_in {
+        child.env("MONTANA_PRIVATE_DIAGNOSTICS", "1");
+    } else {
+        child.env_remove("MONTANA_PRIVATE_DIAGNOSTICS");
+    }
+    let out = child.output().expect("run the test binary");
+    let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert!(out.status.success(), "{test} failed: {stderr}");
+    stderr
+}
+
+// K7, issue #22. Rejects a default record that names a node or renders an error: the
+// equivocation (keep_equivocation) and the refusal of a non-zero lottery field print only their
+// fixed categories, with no proposer identifier and no error, unless the operator sets
+// MONTANA_PRIVATE_DIAGNOSTICS=1; with it the same runs carry both, so the check sees what it
+// rejects.
+#[test]
+fn the_equivocation_and_retired_field_records_name_no_node_by_default() {
+    let proposer = hex16(&Fixture::new().ticket_order()[0].node_id());
+    let equivocation = format!("equivocation by {proposer}");
+    for (test, public, detail, secret) in [
+        (
+            "a_second_envelope_of_an_applied_window_is_refused_and_the_pair_kept",
+            "[node] equivocation kept",
+            equivocation.as_str(),
+            proposer.as_str(),
+        ),
+        (
+            "a_header_with_a_non_zero_lottery_field_is_refused",
+            "[node] retired header fields refused",
+            "RetiredFieldNotZero — skip",
+            "RetiredFieldNotZero",
+        ),
+    ] {
+        let default = stderr_of(test, false);
+        assert!(default.contains(public), "{test}: no category");
+        assert!(
+            !default.contains(secret),
+            "{test}: default stderr carries `{secret}`"
+        );
+        let opted_in = stderr_of(test, true);
+        assert!(
+            opted_in.contains(detail),
+            "{test}: the opt-in does not print `{detail}`"
+        );
+    }
+}
+
 // R4. Rejects a clock-record decoder that slices before it checks the length:
 // a record shorter than its magic must be refused with an error, not panic.
 #[test]
@@ -629,11 +688,45 @@ fn a_clock_record_shorter_than_its_magic_is_refused() {
     let path = crate::timechain_state::timechain_path(&dir);
     std::fs::create_dir_all(path.parent().expect("meta dir")).expect("meta dir");
     std::fs::write(&path, b"mt").expect("write");
-    let got = std::panic::catch_unwind(|| load_or_init_timechain(&dir).is_err());
+    let got =
+        std::panic::catch_unwind(|| crate::timechain_state::load_or_init_timechain(&dir).is_err());
     let _ = std::fs::remove_dir_all(&dir);
     assert_eq!(
         got.ok(),
         Some(true),
         "a 2-byte clock record must be an error"
     );
+}
+
+// Issue #21 K5, the Author's decision 334 (a): a refused confirmation adds no weight to the
+// quorum and is counted beside the shortfall, never in its place. Rejects the code before K5,
+// which dropped a refusal and counted it nowhere, so the operator read a plain shortfall.
+#[test]
+fn a_refused_confirmation_is_counted_beside_the_shortfall() {
+    let f = Fixture::new();
+    let good = f.confirmation(&f.a, W, T_R_W);
+    // Refused on the endpoint, on the signature and on the Node Table.
+    let wrong_endpoint = f.confirmation(&f.b, W, T_R_PREV);
+    let mut wrong_key = f.confirmation(&f.p, W, T_R_W);
+    wrong_key.node_id = f.b.node_id();
+    let stranger = f.confirmation(&f.follower, W, T_R_W);
+    let t = tally(
+        &[good.clone(), wrong_endpoint, wrong_key, stranger],
+        &f.nodes,
+        &T_R_W,
+    );
+    assert_eq!(t.weight, 10, "only the valid confirmation weighs");
+    assert_eq!(t.confirmers, vec![f.a.node_id()]);
+    assert_eq!(t.refused, 3);
+    let line = shortfall_line(W, "cementing evidence", t.weight, quorum(30), t.refused);
+    assert_eq!(
+        line,
+        format!(
+            "[consensus] w={W}: cementing evidence 10 \u{3c} quorum {}; refused 3 — skip",
+            quorum(30)
+        )
+    );
+    // Without a refusal the count reads zero, and the weight is the same.
+    let clean = tally(&[good], &f.nodes, &T_R_W);
+    assert_eq!((clean.weight, clean.refused), (10, 0));
 }

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::identity::{
     default_data_dir, save_identity, Identity, NodeError, IDENTITY_FILE_MODE, IDENTITY_FILE_SIZE,
@@ -9,6 +9,7 @@ pub struct InitArgs {
     pub mnemonic: Option<String>,
     pub entropy_hex: Option<String>,
     pub force: bool,
+    pub recovery_file: Option<PathBuf>,
 }
 
 pub fn run(args: InitArgs) -> Result<(), NodeError> {
@@ -20,7 +21,8 @@ pub fn run(args: InitArgs) -> Result<(), NodeError> {
                 "specify either --mnemonic or --entropy, not both".into(),
             ))
         },
-        (Some(m), None) => Identity::from_mnemonic(m.trim())?,
+        (Some(m), None) => Identity::from_mnemonic(m.trim())
+            .map_err(|_| NodeError::InvalidArguments("invalid recovery phrase".into()))?,
         (None, Some(hex)) => {
             let entropy = parse_entropy_hex(hex)?;
             Identity::from_entropy(&entropy)?
@@ -34,43 +36,28 @@ pub fn run(args: InitArgs) -> Result<(), NodeError> {
         },
     };
 
-    let path = save_identity(&data_dir, &identity, args.force)?;
-
-    println!("=== montana-node init ===");
-    println!();
-    println!("data-dir         : {}", data_dir.display());
-    println!("identity         : {}", path.display());
-    println!("file size        : {IDENTITY_FILE_SIZE} bytes");
-    println!("mode             : {IDENTITY_FILE_MODE:o} (owner only)");
-    println!();
-    println!("--- mnemonic (24 words — write down in a safe place) ---");
-    emit_mnemonic(&identity.mnemonic);
-    println!();
-    println!("--- terminal identifiers ---");
-    println!("account_id       : {}", hex_lower(&identity.account_id()));
-    println!("node_id          : {}", hex_lower(&identity.node_id()));
-    println!(
-        "master_seed_fp   : {} (8-byte fingerprint, not secret)",
-        hex_lower(&identity.master_seed_fingerprint())
-    );
-    // The operator builds the genesis-manifest from THIS line, so the printed identifier
-    // is the one the node presents on the network: derived from node_pk (ML-DSA-65),
-    // the same one Noise_PQ XX presents. Previously the transport libp2p key was printed, and
-    // every incoming call to such a node was rejected for an identifier mismatch.
-    match mt_net_transport::derive_peer_id(&identity.node_pk) {
-        Ok(pid) => println!("network_peer_id  : {pid}  (Noise_PQ XX — set in genesis-manifest)"),
-        Err(e) => println!("network_peer_id  : <output error: {e}>"),
+    let path = crate::identity::identity_path(&data_dir);
+    if path.exists() && !args.force {
+        return Err(NodeError::IdentityAlreadyExists(path));
     }
-    println!();
-    println!("Secret keys (account_sk/node_sk/mlkem_sk) saved in identity.bin");
-    println!("and are not printed. For backup use the mnemonic above.");
+    std::fs::create_dir_all(&data_dir)?;
+    let recovery = args
+        .recovery_file
+        .unwrap_or_else(|| data_dir.join("mnemonic.txt"));
+    // Preserve recovery before changing identity.bin, including a forced replacement.
+    // A failure leaves the private artifact for inspection; it never enables overwrite.
+    write_recovery(&recovery, &identity.mnemonic)?;
+    save_identity(&data_dir, &identity, args.force)?;
+
+    println!("identity initialized; recovery phrase saved to the private recovery file");
+    println!("file size: {IDENTITY_FILE_SIZE} bytes; identity mode: {IDENTITY_FILE_MODE:o}");
 
     Ok(())
 }
 
 fn parse_entropy_hex(s: &str) -> Result<[u8; 32], NodeError> {
     let clean: String = s.chars().filter(|c| !c.is_whitespace()).collect();
-    if clean.len() != 64 {
+    if clean.len() != 64 || !clean.is_ascii() {
         return Err(NodeError::InvalidEntropyHex);
     }
     let mut out = [0u8; 32];
@@ -85,47 +72,32 @@ fn parse_entropy_hex(s: &str) -> Result<[u8; 32], NodeError> {
     Ok(out)
 }
 
-fn hex_lower(bytes: &[u8]) -> String {
-    let mut s = String::with_capacity(bytes.len() * 2);
-    for b in bytes {
-        s.push_str(&format!("{b:02x}"));
-    }
-    s
+#[cfg(unix)]
+fn write_recovery(path: &Path, mnemonic: &str) -> Result<(), NodeError> {
+    use std::io::Write;
+    use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o400)
+        .open(path)?;
+    file.set_permissions(std::fs::Permissions::from_mode(0o400))?;
+    file.write_all(mnemonic.as_bytes())?;
+    file.write_all(b"\n")?;
+    file.sync_all()?;
+    let parent = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    std::fs::File::open(parent)?.sync_all()?;
+    Ok(())
 }
 
-// The phrase goes to the operator's terminal directly. With `montana-node init > install.log`
-// the standard stream goes to a file, and the identity root settles on disk in the clear —
-// where nobody will erase it any more.
-fn emit_mnemonic(mnemonic: &str) {
-    let grid = mnemonic_grid(mnemonic);
-
-    #[cfg(unix)]
-    {
-        use std::io::Write;
-        if let Ok(mut tty) = std::fs::OpenOptions::new().write(true).open("/dev/tty") {
-            if tty.write_all(grid.as_bytes()).is_ok() && tty.flush().is_ok() {
-                println!("  (24 words went to the operator terminal; they are not in this stream)");
-                return;
-            }
-        }
-    }
-
-    print!("{grid}");
-    println!("  WARNING: this output is not a terminal — the phrase is now inside this stream.");
-    println!("  Treat the stream as secret and erase it once the words are copied down.");
-}
-
-fn mnemonic_grid(mnemonic: &str) -> String {
-    let words: Vec<&str> = mnemonic.split(' ').collect();
-    let mut out = String::with_capacity(words.len() * 18);
-    for (i, w) in words.iter().enumerate() {
-        out.push_str(&format!("  [{:>2}] {:<10}", i + 1, w));
-        if (i + 1) % 4 == 0 {
-            out.push('\n');
-        }
-    }
-    if words.len() % 4 != 0 {
-        out.push('\n');
-    }
-    out
+#[cfg(not(unix))]
+fn write_recovery(_path: &Path, _mnemonic: &str) -> Result<(), NodeError> {
+    Err(NodeError::InvalidArguments(
+        "private recovery output requires an owner-only filesystem implementation on this platform"
+            .into(),
+    ))
 }

@@ -4,7 +4,7 @@ fn main() {
     fn hex(bytes: &[u8]) -> String {
         bytes.iter().map(|b| format!("{b:02x}")).collect()
     }
-    use mt_proof::circuit::{admission, ballot, frame, opening, presence, ticket};
+    use mt_proof::circuit::{admission, ballot, frame, opening, pledge, presence, ticket};
     let places = frame::Places::of(mt_proof::tree_depth()).expect("frame shape");
     let descriptions = [
         (
@@ -16,6 +16,7 @@ fn main() {
         ("presence", presence::description().expect("presence")),
         ("opening", opening::description().expect("opening")),
         ("ballot", ballot::description().expect("ballot")),
+        ("pledge", pledge::description().expect("pledge")),
     ];
     let mut bound = Vec::new();
     for (name, description) in descriptions {

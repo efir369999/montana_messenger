@@ -76,14 +76,19 @@ pub fn heavies(
     let mut standings = Vec::new();
     for secret in secrets {
         let branch = cohort.branch_of(secret).expect("its own leaf");
-        let standing = Standing::of_the_window(secret, window, &branch.siblings, branch.position)
-            .expect("a machine of the tree proves its presence");
+        let standing =
+            Standing::of_the_window(secret, window, &previous, &branch.siblings, branch.position)
+                .expect("a machine of the tree proves its presence");
         heavy.push(
             standing
                 .heavy(secret, beacon.id().expect("an identifier"), previous)
                 .expect("a heavy attestation stands"),
         );
-        pledges.push(standing.pledge(0, previous, 0).expect("a pledge stands"));
+        pledges.push(
+            standing
+                .pledge(secret, 0, previous, 0)
+                .expect("a pledge stands"),
+        );
         standings.push(standing);
     }
     (heavy, pledges, standings)

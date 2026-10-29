@@ -12,6 +12,57 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+mod window;
+pub use window::{WindowHead, WindowRecord, WINDOW_RECORD_FILE};
+
+// Issue #19 K5: a fault hook for tests. Every file operation of a write calls `fault::step`;
+// armed with `fail_at(Some(k))`, the k-th operation of this thread fails and so does every one
+// after it (the process is dead) until the hook is armed again. Only test builds and the
+// `fault` feature (a dev-dependency) carry it; elsewhere `step` is an empty function.
+#[cfg(any(test, feature = "fault"))]
+pub mod fault {
+    use std::cell::Cell;
+    use std::io;
+
+    thread_local! {
+        static AT: Cell<Option<u32>> = const { Cell::new(None) };
+        static DONE: Cell<u32> = const { Cell::new(0) };
+    }
+
+    /// Arms the hook (`None` disarms it) and counts the file operations from zero.
+    pub fn fail_at(k: Option<u32>) {
+        AT.with(|a| a.set(k));
+        DONE.with(|d| d.set(0));
+    }
+
+    /// The file operations counted since the hook was last armed.
+    pub fn done() -> u32 {
+        DONE.with(|d| d.get())
+    }
+
+    pub fn step() -> io::Result<()> {
+        let n = DONE.with(|d| {
+            d.set(d.get().saturating_add(1));
+            d.get()
+        });
+        match AT.with(|a| a.get()) {
+            Some(k) if n >= k => Err(io::Error::new(
+                io::ErrorKind::Other,
+                format!("fault hook: file operation {n} fails (armed at {k})"),
+            )),
+            _ => Ok(()),
+        }
+    }
+}
+
+#[cfg(not(any(test, feature = "fault")))]
+pub mod fault {
+    #[inline(always)]
+    pub fn step() -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
 // ============ Phase A: FsStore — filesystem-backed KV ============
 
 #[derive(Debug)]
@@ -109,7 +160,9 @@ impl FsStore {
     fn write_atomic(&self, name: &str, data: &[u8]) -> Result<(), StoreError> {
         let final_path = self.path(name);
         let tmp_path = self.path(&format!("{name}.tmp"));
+        fault::step()?;
         fs::write(&tmp_path, data)?;
+        fault::step()?;
         fs::rename(&tmp_path, &final_path)?;
         Ok(())
     }
@@ -122,7 +175,9 @@ impl FsStore {
             .file_name()
             .ok_or_else(|| StoreError::ParseFailed("path has no file name".into()))?;
         let tmp_path = parent.join(format!("{}.tmp", file_name.to_string_lossy()));
+        fault::step()?;
         fs::write(&tmp_path, data)?;
+        fault::step()?;
         fs::rename(&tmp_path, final_path)?;
         Ok(())
     }

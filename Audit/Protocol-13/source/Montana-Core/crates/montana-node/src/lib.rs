@@ -22,11 +22,14 @@ pub mod certificate;
 #[cfg(kani)]
 mod kani_decree;
 pub mod pay;
+pub mod private;
 pub mod pulse;
 pub mod round;
 pub mod runner;
 pub mod say;
 pub mod state;
+#[cfg(unix)]
+pub mod status;
 
 use mt_codec::size;
 use mt_net::{Acquaintance, Answering, Door, Link, NetError};
@@ -45,24 +48,39 @@ pub enum NodeError {
     // the block it produced failed a test of health. A machine born on a broken source looks
     // ordinary and is guessable, and nothing later reveals that — so it is refused, never warned
     // about.
-    Unborn { said: String },
+    Unborn {
+        said: String,
+    },
     // An acquaintance written in a shape this tree does not read.
-    Unreadable { what: String },
+    Unreadable {
+        what: String,
+    },
     // A row of the Decree this machine reads and the Decree does not carry.
-    Decree { row: String },
+    Decree {
+        row: String,
+    },
     // The count of the links this machine holds became unreadable, which is a machine that can no
     // longer hold itself to the ceiling the set fixes. It stops rather than answering past it.
     Uncountable,
     // What this machine could not prove or could not build of its own standing. It names what was
     // being made and never a value of it: a machine that cannot prove its presence answers nothing
     // rather than answering with something a verifier would refuse.
-    Unprovable { what: &'static str },
+    Unprovable {
+        what: &'static str,
+    },
     // What arrived and was refused. The reason reaches this operator and never the sender: every
     // refusal of a far side is silence, and what carries a reason is the local end alone.
-    Refused { what: &'static str },
+    Refused {
+        what: &'static str,
+    },
     // The round's context is known, but its cement cannot yet be reconstructed
     // from verified heavy attestations. More data may resolve this; no clock can.
     UnreconciledCement,
+    // CNS-20: a local waiting budget ended, granting no authority to close.
+    Stalled {
+        on: say::Verdict,
+        what: &'static str,
+    },
     // An object of another shape than its layout gives.
     Object(mt_state::ObjectError),
 }
@@ -189,10 +207,11 @@ pub struct Configuration {
     // cohort witnesses itself, so its halves pass between operators exactly as an acquaintance
     // does; a machine handed none of them answers its door and lives no window.
     pub admitted: Vec<[u8; 32]>,
-    // The window to open at, and how many to live. Neither is a value of the protocol: the first
-    // is where an operator starts a machine and the second is when it stops, and a machine given
-    // no count lives until it is stopped.
-    pub from: u64,
+    // Whether the operator opens a network on this machine, and how many windows to live. Neither
+    // is a value of the protocol. Opening is an act of the operator on an empty store and the one
+    // way to window zero; a machine not asked to open lives only from an anchor (Consensus, "The
+    // cold start"). A machine given no count lives until it is stopped.
+    pub open: bool,
     pub windows: Option<u64>,
     // The window whose right is to be redeemed into a note of the wallet below, which the operator
     // read off that window when it closed. The right is worth the window's credit, so nothing else of the
@@ -214,7 +233,7 @@ impl Configuration {
             listen: listen.to_string(),
             acquaintances: Vec::new(),
             admitted: Vec::new(),
-            from: 0,
+            open: false,
             windows: None,
             redeem: None,
             wallet: None,
@@ -759,6 +778,35 @@ impl Kept {
             census: attest::LivedCensus::decode(parts[3])?,
         })
     }
+
+    // **The plane a record keeps gives the roots of the proposal it keeps beside it.** Every
+    // proposal a close takes is verified against the roots recomputed from the plane it closes on
+    // (`pulse::take_the_proposal`, `certificate::verify_proposal`), and the close keeps the two
+    // together, so the seven tables of the plane at the window of the proposal give the roots that
+    // proposal carries. A plane or a proposal changed on the disk gives others, and is refused
+    // whole: a machine living on it would hold notes no proposal of the network names and prove
+    // paths nobody else can verify. The proposal compared is the one in the record and not the one
+    // of the archive of proposals, which the close of a machine that took another name rewrites
+    // before its own record stands. The roll and the count are not compared: the plane holds
+    // neither the cement nor the cohort they are recomputed from.
+    pub fn stands_under_its_proposal(&self) -> Result<(), NodeError> {
+        let taken = &self.taken;
+        let carried = [
+            taken.note_root,
+            taken.nullifier_root,
+            taken.record_root,
+            taken.machine_root,
+            taken.admitted_root,
+            taken.credited_root,
+            taken.operations_root,
+        ];
+        if self.plane.tables_of(taken.window)? != carried {
+            return Err(NodeError::Refused {
+                what: "a kept plane whose roots are not those of the proposal kept beside it",
+            });
+        }
+        Ok(())
+    }
 }
 
 // A machine that has been born: its store, the key it answers with, the door it stands at, the
@@ -833,6 +881,28 @@ impl Machine {
     // standing without being told.
     pub fn start(configuration: &Configuration) -> Result<(Self, bool), NodeError> {
         let store = Store::open(&configuration.data).map_err(NodeError::Store)?;
+        // **What the machine held of the value plane stands again**: the plane of the last window it
+        // closed, kept in the record of that close. A note takes its position in the tree of notes,
+        // and a path is proven against that tree — so a plane that lived in memory alone made every
+        // note die with the run that created it, and a person paid held a note their own machine
+        // could no longer prove a path for. What is read here is what this machine wrote, and a
+        // record that does not read back whole is refused rather than half-read. **And the standing
+        // it earned stands again**, from the same record: a machine that forgot the census windows it
+        // lived would vote as a stranger until it had lived them all a second time.
+        //
+        // **What reads back whole is still not trusted.** The plane is held to the proposal the
+        // same record keeps for the window it closed, and a record whose plane gives other roots is
+        // refused before a secret is drawn, a door opened or anything held (issue #19, step K3).
+        // The head and the window closed name proposals the store holds, or the store refused to
+        // open (`StoreError::HeadWithoutItsProposal`, `StoreError::ClosedWithoutItsProposal`).
+        let record = store.window().map_err(NodeError::Store)?;
+        let kept = if record.kept.is_empty() {
+            None
+        } else {
+            let kept = Kept::decode(&record.kept)?;
+            kept.stands_under_its_proposal()?;
+            Some(kept)
+        };
         let born = match store.secret().map_err(NodeError::Store)? {
             Some(_) => false,
             None => {
@@ -862,23 +932,12 @@ impl Machine {
         let retained = mt_genesis::scalar("retained_windows").ok_or(NodeError::Decree {
             row: "retained_windows".to_string(),
         })?;
-        // **What the machine held of the value plane stands again**: the plane of the last window it
-        // closed, kept in the record of that close. A note takes its position in the tree of notes,
-        // and a path is proven against that tree — so a plane that lived in memory alone made every
-        // note die with the run that created it, and a person paid held a note their own machine
-        // could no longer prove a path for. What is read here is what this machine wrote, and a
-        // record that does not read back whole is refused rather than half-read. **And the standing
-        // it earned stands again**, from the same record: a machine that forgot the census windows it
-        // lived would vote as a stranger until it had lived them all a second time.
         let cell_width = mt_wire::cell_bytes().map_err(|_| of_the_decree("cell_bytes"))?;
         let store = Arc::new(store);
         let standing = Standing::loaded(retained, &store, cell_width)?;
-        let record = store.window().map_err(NodeError::Store)?;
-        let (held_value, census) = if record.kept.is_empty() {
-            (state::State::new(), Vec::new())
-        } else {
-            let kept = Kept::decode(&record.kept)?;
-            (kept.plane, kept.census)
+        let (held_value, census) = match kept {
+            None => (state::State::new(), Vec::new()),
+            Some(kept) => (kept.plane, kept.census),
         };
         Ok((
             Self {
@@ -1159,9 +1218,40 @@ impl Machine {
         attempt::Record::decode(&standing)
     }
 
+    // **The decided state of the head this machine holds**, from the record of the last window it
+    // closed: the state that record keeps of the window before the one it closed, where that window
+    // is the head. It is what a machine that walked back replays the windows it missed over. None
+    // where the record keeps no such state or the head is not the window before the one closed.
+    pub fn decided_state_of_the_head(&self) -> Result<Option<(u64, state::State)>, NodeError> {
+        let record = self.store.window().map_err(NodeError::Store)?;
+        if record.kept.is_empty() {
+            return Ok(None);
+        }
+        let kept = Kept::decode(&record.kept)?;
+        match (record.head, record.closed, kept.before) {
+            (Some(head), Some(closed), Some(before)) if head.checked_add(1) == Some(closed) => {
+                Ok(Some((head, before)))
+            }
+            _ => Ok(None),
+        }
+    }
+
     // The last window this machine closed, or none.
     pub fn closed_window(&self) -> Result<Option<u64>, NodeError> {
         self.store.closed().map_err(NodeError::Store)
+    }
+
+    // **Whether this store holds anything of a chain**: a head, a window it closed, the proposal of
+    // the first window or its record of the agreement on it. An operator opens a network only on a
+    // store holding none of them (Consensus, "The cold start"). The bytes are asked for and not
+    // read: a proposal or a record that does not parse is still something this machine wrote, and
+    // a store holding it is not empty. A machine reaches no later window without closing one, so
+    // these four are everything a chain leaves in a store.
+    pub fn holds_a_chain(&self) -> Result<bool, NodeError> {
+        Ok(self.head()?.is_some()
+            || self.closed_window()?.is_some()
+            || self.store.proposal(0).map_err(NodeError::Store)?.is_some()
+            || self.store.agreement(0).map_err(NodeError::Store)?.is_some())
     }
 
     // A window closed: the number that refuses it to be opened again is written first, then its
@@ -1259,6 +1349,60 @@ impl Machine {
         }
         written.map_err(NodeError::Store)?;
         self.drop_agreement(window)
+    }
+
+    // **What this machine holds of the plane of a window**: the plane the last close left, for the
+    // window that close closed, and the decided state of the window before, for that one — what a
+    // machine has to answer a device that walked to its head and asks for the tables of the head.
+    // Nothing for any other window: a machine keeps no plane further back.
+    pub fn plane_of(&self, window: u64) -> Result<Option<state::State>, NodeError> {
+        let record = self.store.window().map_err(NodeError::Store)?;
+        if record.kept.is_empty() {
+            return Ok(None);
+        }
+        let kept = Kept::decode(&record.kept)?;
+        Ok(if kept.taken.window == window {
+            Some(kept.plane)
+        } else if kept.taken.window.checked_sub(1) == Some(window) {
+            kept.before
+        } else {
+            None
+        })
+    }
+
+    // **A device that walked to a head holds the plane of that head**, judged before it reaches here
+    // (pulse::take_the_plane). It is kept in the record of the window as a close keeps the plane it
+    // closed on, beside the proposal whose roots it answers for and under the head and the window
+    // closed the walk wrote, and held in memory only once the record stands — so it stands again after
+    // a restart. The device lived no window: it holds no decided state of the window before, and its
+    // standing is what it already held.
+    pub fn hold_the_plane(
+        &self,
+        head: &mt_state::layout::Proposal,
+        plane: state::State,
+    ) -> Result<(), NodeError> {
+        let standing = self.store.window().map_err(NodeError::Store)?;
+        if standing.head != Some(head.window) {
+            return Err(NodeError::Refused {
+                what: "a plane of another window than the head this machine holds",
+            });
+        }
+        let kept = Kept {
+            taken: head.clone(),
+            plane,
+            before: None,
+            census: self.lived_census()?,
+        };
+        let record = mt_store::WindowRecord {
+            head: standing.head,
+            closed: standing.closed,
+            kept: kept.encode()?,
+        };
+        let written = self.store.commit_window(&record);
+        if written.is_ok() || matches!(&written, Err(StoreError::CommitUncertain { .. })) {
+            *self.value()? = kept.plane;
+        }
+        written.map_err(NodeError::Store)
     }
 
     // Reaching an acquaintance. A machine answering with another key is not the machine the
@@ -1519,6 +1663,75 @@ impl Machine {
         message::point_ceiling(admitted).map_err(|_| of_the_decree("cell_bytes"))
     }
 
+    // **The plane of `window` as each machine this one reached offers it**, every table read whole
+    // over the link it was asked on, laid out by `State::encoded_of_leaves` with the tree of admitted
+    // machines this device stands against. Each offer is judged alone by its caller against the roots
+    // of a head it verified (pulse::take_the_plane); how many offers agree decides nothing (Consensus,
+    // "The join"). A link that answers with another kind, malformed bytes or past the reach of a
+    // count offers nothing.
+    pub fn planes_offered(
+        &self,
+        window: u64,
+        admitted: mt_proof::poseidon::Digest,
+    ) -> Result<Vec<Vec<u8>>, NodeError> {
+        let Some(network) = mt_state::tables::genesis_state_hash() else {
+            return Err(NodeError::Refused {
+                what: "a network whose Genesis State Hash this build cannot compute",
+            });
+        };
+        let mut offers = Vec::new();
+        let mut held = self.reached.lock().map_err(|_| NodeError::Uncountable)?;
+        'links: for one in held.iter_mut() {
+            let mut tables: [Vec<u8>; 7] = Default::default();
+            for table in message::TableIndex::ALL {
+                let Ok(bound) = message::table_answer_max(table) else {
+                    continue 'links;
+                };
+                let gathered = &mut tables[usize::from(table.byte())];
+                let mut from: u32 = 0;
+                loop {
+                    let query = message::encode_table_query(&network, window, table, from);
+                    if one.link.send(Kind::TableQuery, &query).is_err() {
+                        continue 'links;
+                    }
+                    let Ok((kind, arrived)) = one.link.receive() else {
+                        continue 'links;
+                    };
+                    if kind != Kind::TableAnswer || arrived.len() < 4 {
+                        continue 'links;
+                    }
+                    let mut four = [0u8; 4];
+                    four.copy_from_slice(&arrived[..4]);
+                    let declared = u32::from_le_bytes(four) as usize;
+                    let width = declared
+                        .saturating_mul(table.leaf_bytes())
+                        .saturating_add(4);
+                    if arrived.len() < width {
+                        continue 'links;
+                    }
+                    let Ok(leaves) = message::parse_table_answer(table, &arrived[..width]) else {
+                        continue 'links;
+                    };
+                    gathered.extend_from_slice(&leaves);
+                    if declared < bound {
+                        break;
+                    }
+                    let Some(next) = u32::try_from(declared)
+                        .ok()
+                        .and_then(|n| from.checked_add(n))
+                    else {
+                        continue 'links;
+                    };
+                    from = next;
+                }
+            }
+            if let Ok(plane) = state::State::encoded_of_leaves(window, admitted, &tables) {
+                offers.push(plane);
+            }
+        }
+        Ok(offers)
+    }
+
     // How many acquaintances this machine holds a link to. What an operator reads; what nothing
     // publishes, since it names no peer.
     pub fn reached(&self) -> usize {
@@ -1726,12 +1939,27 @@ impl Machine {
             })
     }
 
+    // Both operator interfaces share the same watcher, including a panic of the door thread.
+    pub fn answer_in_background(
+        self: &Arc<Self>,
+    ) -> std::thread::JoinHandle<Result<(), NodeError>> {
+        let machine = Arc::clone(self);
+        let watch = self.counts.watch_door();
+        std::thread::spawn(move || {
+            let _watch = watch;
+            machine.serve()
+        })
+    }
+
     // Answering links until the machine is stopped.
     pub fn serve(&self) -> Result<(), NodeError> {
         loop {
             // A handshake that failed took no slot and is no reason to stop: the next caller may be
             // whoever this machine is waiting for.
-            let _ = self.answer_one();
+            match self.answer_one() {
+                Ok(_) | Err(NodeError::Net(_)) => {}
+                Err(error) => return Err(error),
+            }
         }
     }
 }
@@ -1777,6 +2005,7 @@ fn carry_until_it_ends(
             Kind::Collect => answer_with_nothing(link),
             Kind::HeadQuery => answer_the_head(link, store, &message),
             Kind::StateQuery => answer_the_state(link, value, &message),
+            Kind::TableQuery => answer_the_table(link, store, &message),
             // An answer nobody asked for, and the messages a machine of this stage does not serve:
             // read, counted and dropped, because a reply saying "not for me" is information about
             // this machine that a stranger asked for and did not earn.
@@ -1936,6 +2165,58 @@ fn answer_the_state(
     link.send(Kind::StateAnswer, &message::encode_state_answer(&answer))
 }
 
+// **A table of a plane this machine holds whole, from the leaf the asker names.** The plane is the
+// one the last close kept, of the window it closed or of the window before it, read from the record
+// of the window and never from memory, which moves under a frame; any other window, another network
+// or a table read to its end is answered with zero leaves, which the asker does not tell apart.
+fn answer_the_table(link: &mut Link, store: &Store, message: &[u8]) -> Result<(), NetError> {
+    let width = message::table_query_len();
+    if message.len() < width {
+        return Ok(());
+    }
+    let Ok((asked, window, table, from)) = message::parse_table_query(&message[..width]) else {
+        return Ok(());
+    };
+    let Some(ours) = mt_state::tables::genesis_state_hash() else {
+        return Ok(());
+    };
+    if asked != ours {
+        return Ok(());
+    }
+    let Ok(bound) = message::table_answer_max(table) else {
+        return Ok(());
+    };
+    let one = table.leaf_bytes();
+    let leaves = plane_held(store, window)
+        .map(|plane| plane.leaves_of(table, window))
+        .unwrap_or_default();
+    let start = (from as usize).saturating_mul(one).min(leaves.len());
+    let end = start
+        .saturating_add(bound.saturating_mul(one))
+        .min(leaves.len());
+    let Ok(answer) = message::encode_table_answer(table, &leaves[start..end]) else {
+        return Ok(());
+    };
+    link.send(Kind::TableAnswer, &answer)
+}
+
+// The plane the record of the window keeps for `window`: the plane of the window the last close
+// closed, or the decided state of the window before it, and nothing for any other.
+fn plane_held(store: &Store, window: u64) -> Option<state::State> {
+    let record = store.window().ok()?;
+    if record.kept.is_empty() {
+        return None;
+    }
+    let kept = Kept::decode(&record.kept).ok()?;
+    if kept.taken.window == window {
+        Some(kept.plane)
+    } else if kept.taken.window.checked_sub(1) == Some(window) {
+        kept.before
+    } else {
+        None
+    }
+}
+
 fn answer_the_head(link: &mut Link, store: &Store, message: &[u8]) -> Result<(), NetError> {
     let width = message::head_query_len();
     if message.len() < width {
@@ -2006,6 +2287,57 @@ mod tests {
     }
 
     // Scratch artifacts are retained for inspection; tests never remove existing files.
+
+    // CNS-20: rejects a terminal door error swallowed by the serving loop or by its caller.
+    #[test]
+    fn a_dead_door_reaches_the_verdict_and_cannot_be_erased_by_the_pulse() {
+        let at = Scratch::named("dead-door");
+        let machine = Arc::new(
+            Machine::start(&Configuration::at(&at.0, "127.0.0.1:0"))
+                .unwrap()
+                .0,
+        );
+        let held = Arc::clone(&machine.held);
+        assert!(std::thread::spawn(move || {
+            let _held = held.standing.lock().unwrap();
+            panic!("corrupt this test's link counter");
+        })
+        .join()
+        .is_err());
+        assert_eq!(
+            machine.answer_in_background().join().unwrap(),
+            Err(NodeError::Uncountable)
+        );
+        let counts = machine.counts();
+        assert_eq!(
+            counts.status().unwrap().on(),
+            Some(say::Verdict::NoDiagnostics)
+        );
+        assert_eq!(counts.observe(true, 7, 0, 1), say::Verdict::NoDiagnostics);
+        assert_eq!(counts.status().unwrap().exit_code(), 4);
+    }
+
+    // CNS-20: a panic must take the same path as an ordinary terminal door error.
+    #[test]
+    fn an_unwinding_door_leaves_no_diagnostics() {
+        let counts = Arc::new(say::Counts::default());
+        counts.observe(false, 3, 0, 1);
+        let watch = counts.watch_door();
+        assert!(std::thread::spawn(move || {
+            let _watch = watch;
+            panic!("this test's door unwinds");
+        })
+        .join()
+        .is_err());
+        assert_eq!(
+            counts.status(),
+            Some(say::PulseStatus::Stalled {
+                on: say::Verdict::NoDiagnostics,
+                asking: 3,
+                refused: 0,
+            })
+        );
+    }
 
     // **A point holds its cells on the disk alone, and what was read back holds a ceiling** (issue
     // #63). The wrong implementations refused: a point answering from a copy in memory beside its

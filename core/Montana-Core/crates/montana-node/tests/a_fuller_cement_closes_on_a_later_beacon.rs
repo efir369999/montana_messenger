@@ -65,7 +65,7 @@ fn a_machine_holding_one_heavy_more_advances_past_the_quorum_beacon_and_closes_o
         .iter()
         .map(|secret| {
             let branch = cohort.branch_of(secret).expect("its own leaf");
-            Standing::of_the_window(secret, WINDOW, &branch.siblings, branch.position)
+            Standing::of_the_window(secret, WINDOW, &previous, &branch.siblings, branch.position)
                 .expect("a machine of the cohort proves its presence")
         })
         .collect();

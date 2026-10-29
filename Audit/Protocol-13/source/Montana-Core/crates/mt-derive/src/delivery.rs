@@ -56,6 +56,27 @@ pub fn notice_point(nullifier: &[u8; 32], window: u64, index: u8) -> [u8; POINT_
     ))
 }
 
+// The point the pledges of one part of one window stand at, in one band of attempts (records 309
+// and 322): the part, the window, the band and the index, at the widths the set fixes — thirty-two,
+// eight, four and one. Every input is public in the pledge itself, so the point names no machine
+// and joins nothing across windows, as the part does not.
+pub fn pledge_point(
+    part_nullifier: &[u8; 32],
+    window: u64,
+    band: u32,
+    index: u8,
+) -> [u8; POINT_BYTES] {
+    head16(hash(
+        domain::MT_PLEDGE_POINT,
+        &[
+            Part::of(part_nullifier),
+            Part::of(&window.to_le_bytes()),
+            Part::of(&band.to_le_bytes()),
+            Part::of(&[index]),
+        ],
+    ))
+}
+
 pub fn window_point(window: u64, index: u8) -> [u8; POINT_BYTES] {
     head16(hash(
         domain::MT_WINDOW_POINT,

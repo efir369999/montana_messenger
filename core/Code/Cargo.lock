@@ -2303,6 +2303,7 @@ dependencies = [
  "mt-consensus",
  "mt-crypto",
  "mt-state",
+ "sha2 0.10.9",
 ]
 
 [[package]]
