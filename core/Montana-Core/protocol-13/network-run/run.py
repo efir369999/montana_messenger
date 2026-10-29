@@ -32,7 +32,7 @@ DECIDED_LEN = 750                 # mt-state/src/lib.rs:39
 PROPOSAL_DOMAIN = b"mt-proposal\x00"  # mt-codec/src/lib.rs:88-94, :254
 QUORUM = (67, 100)                # mt-genesis/src/lib.rs:91, compared by multiplying (mt-pulse/src/close.rs:20-31)
 RETAINED = 8                      # mt-genesis/src/lib.rs:114
-MARKS_LEN = 18                    # two marks of one byte and eight (mt-store/src/lib.rs:601, :934-958)
+MARKS_LEN = 18                    # two marks of one byte and eight (mt-store/src/lib.rs:612, :945-969)
 
 # Lauterbourg-3 carries Kani by the author's word, and the live cohort net4 keeps its store under
 # /opt/montana-core on Moscow, Amsterdam and Lauterbourg: the run touches neither.
@@ -55,7 +55,7 @@ WALKED_LINE = re.compile(r"walked from window (\d+) to the head at window (\d+)"
 
 # The executor on the far host: reads a list of operations and answers one JSON line. It reads a
 # store and never writes one: of `window` it reads the two marks alone, since the rest of that
-# record carries the machine's standing and is read as a secret (mt-store/src/lib.rs:644-658); it
+# record carries the machine's standing and is read as a secret (mt-store/src/lib.rs:655-669); it
 # never opens `identity`; of `points` and `agreement-*` it reports names and sizes.
 REMOTE = r'''
 import base64, hashlib, json, os, subprocess
@@ -409,7 +409,7 @@ class Run:
         def finals_have_one_name():
             # A machine of the opening cohort holds every window from zero; a machine that joined
             # holds them from its anchor. mt-store removes dead temporaries, agreements and points,
-            # never a proposal (mt-store/src/lib.rs:230-243, :628-637, :865-880).
+            # never a proposal (mt-store/src/lib.rs:230-243, :639-648, :876-891).
             seen, bad = {}, []
             for n, s in snap.items():
                 head = s["marks"].get("head")
