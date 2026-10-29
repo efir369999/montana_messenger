@@ -3548,11 +3548,37 @@ enum MontanaWakePush {
                 Task {
                     await fetchBox()
                     try? await Task.sleep(nanoseconds: 400_000_000)   // the tombstone drain has time to apply
+                    // A LONG FIRST LETTER IS NEVER LAID AS ITS REFERENCE (29.10.2026, issue #23 link 147 and PR #119 of Android 95: an
+                    // iPhone on 2316 drew «SM:…» as a bubble): the extension could not fetch the cargo, the reference was laid as «New
+                    // message», and healUnresolvedRows later wrote the words into the row -- the same-pair question, always long beside
+                    // the encapsulation, became a bubble and was never answered. The pipe is born above; the letter takes the one
+                    // long-letter road of every other pushed letter: landed -- posted with its words; waiting -- back into the box as
+                    // an ordinary letter of this pipe, for its own hour; buried -- gone.
+                    var words = t
+                    if t.hasPrefix(letterBlobMark) {
+                        switch await takeLongLetter(conv: ref, mid: m, text: t) {
+                        case .landed(let full):
+                            words = full
+                        case .waiting:
+                            await MainActor.run {
+                                inboxDrop([m])
+                                stashLongLetter(conv: ref, mid: m, text: t)
+                                _ = inboxTaken.remove(m)
+                            }
+                            return
+                        case .buried:
+                            await MainActor.run { inboxDrop([m]) }
+                            return
+                        }
+                    }
+                    let landed = words
                     await MainActor.run {
                         if MontanaDeliveryEngine.shared.store?.deletedChats.contains(ref) == true {
                             MontanaTrace.mark("rdv_hatch_dead", "ref=\(String(ref.prefix(10))) the tombstone made it — the chat is not shown")
                         } else {
-                            NotificationCenter.default.post(name: .montanaIncoming, object: nil, userInfo: ui2)
+                            var shown = ui2
+                            shown["text"] = landed
+                            NotificationCenter.default.post(name: .montanaIncoming, object: nil, userInfo: shown)
                         }
                         inboxDrop([m])   // the road ended — the letter leaves the box
                     }
