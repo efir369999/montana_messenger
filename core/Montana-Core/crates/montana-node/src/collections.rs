@@ -17,6 +17,28 @@ pub use std::collections::{BTreeMap, BTreeSet};
 #[cfg(kani)]
 pub use ordered::{BTreeMap, BTreeSet};
 
+// A crate beyond this one takes the standard map, and never this module's: `mt_proof::records` reads
+// the records of a machine as one. Every build of a machine hands over its own, borrowed; the model
+// checker hands over a standard map of the same entries in the same order, so the root and the path
+// it reads are the node's.
+#[cfg(not(kani))]
+pub fn standard<K: Clone, V: Clone>(
+    map: &BTreeMap<K, V>,
+) -> std::borrow::Cow<'_, std::collections::BTreeMap<K, V>> {
+    std::borrow::Cow::Borrowed(map)
+}
+
+#[cfg(kani)]
+pub fn standard<K: Ord + Clone, V: Clone>(
+    map: &BTreeMap<K, V>,
+) -> std::borrow::Cow<'_, std::collections::BTreeMap<K, V>> {
+    std::borrow::Cow::Owned(
+        map.iter()
+            .map(|(key, value)| (key.clone(), value.clone()))
+            .collect(),
+    )
+}
+
 #[cfg(any(kani, test))]
 pub mod ordered {
     use std::borrow::Borrow;

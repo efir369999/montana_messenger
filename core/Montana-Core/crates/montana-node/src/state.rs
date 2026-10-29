@@ -579,7 +579,7 @@ impl State {
     }
 
     pub fn records_root(&self) -> Digest {
-        mt_proof::records::root_of_leaves(&self.records)
+        mt_proof::records::root_of_leaves(&crate::collections::standard(&self.records))
     }
 
     pub fn records_held(&self) -> usize {
@@ -587,7 +587,7 @@ impl State {
     }
 
     pub fn path_of_a_record(&self, key: &[u8; 32]) -> Option<Vec<Digest>> {
-        mt_proof::records::path_of_leaves(&self.records, key)
+        mt_proof::records::path_of_leaves(&crate::collections::standard(&self.records), key)
     }
 
     // A right, an opening or a candidacy is refused where the one set of nullifiers holds its
