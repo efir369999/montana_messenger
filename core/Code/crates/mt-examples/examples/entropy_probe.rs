@@ -59,7 +59,10 @@ fn main() {
     println!("share of one bits:          {ones_share:.6}   expected 0.5");
     println!("most frequent value:        p = {pmax:.6}");
     println!("min-entropy (MCV, SP 800-90B): {min_entropy_per_byte:.4} bits/byte of 8");
-    println!("   → per block:              {:.1} bits of 256", min_entropy_per_byte * 32.0);
+    println!(
+        "   → per block:              {:.1} bits of 256",
+        min_entropy_per_byte * 32.0
+    );
     println!("repeated blocks:            {dup} of {BLOCKS}");
     println!("longest run in a block:     {max_run} bytes (rejection threshold 8)");
 
@@ -106,8 +109,12 @@ fn main() {
         let mb = mnemonic_to_master_seed(&entropy_to_mnemonic(&b)).unwrap();
         seed_diff.push(bit_diff(&ma, &mb) as f64 / (ma.len() as f64 * 8.0));
 
-        let ka = keypair_from_seed(&mldsa_seed_for_role(&ma, domain::ACCOUNT_KEY)).unwrap().0;
-        let kb = keypair_from_seed(&mldsa_seed_for_role(&mb, domain::ACCOUNT_KEY)).unwrap().0;
+        let ka = keypair_from_seed(&mldsa_seed_for_role(&ma, domain::ACCOUNT_KEY))
+            .unwrap()
+            .0;
+        let kb = keypair_from_seed(&mldsa_seed_for_role(&mb, domain::ACCOUNT_KEY))
+            .unwrap()
+            .0;
         let ia = derive_account_id(1, ka.as_bytes());
         let ib = derive_account_id(1, kb.as_bytes());
         id_diff.push(bit_diff(&ia, &ib) as f64 / (ia.len() as f64 * 8.0));
@@ -130,7 +137,10 @@ fn main() {
         let extra = sha256_raw(&i.to_le_bytes());
         mixed.insert(*mt_mnemonic::combine_entropy(&dead, &extra));
     }
-    println!("distinct roots with a zero system block: {} of 1000", mixed.len());
+    println!(
+        "distinct roots with a zero system block: {} of 1000",
+        mixed.len()
+    );
 }
 
 fn bit_diff(a: &[u8], b: &[u8]) -> u32 {

@@ -1,0 +1,60 @@
+   Compiling typenum v1.20.1
+   Compiling zeroize v1.8.1
+   Compiling cfg-if v1.0.4
+   Compiling libc v0.2.189
+   Compiling const-oid v0.10.2
+   Compiling cpufeatures v0.3.0
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling version_check v0.9.5
+   Compiling hax-lib v0.3.7
+   Compiling hybrid-array v0.4.14
+   Compiling generic-array v0.14.7
+   Compiling mt-genesis v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-genesis)
+   Compiling libcrux-intrinsics v0.0.8
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling rand_core v0.10.1
+   Compiling libcrux-sha3 v0.0.10
+   Compiling crypto-common v0.1.7
+   Compiling rand v0.10.2
+   Compiling inout v0.1.4
+   Compiling subtle v2.6.1
+   Compiling cpufeatures v0.2.17
+   Compiling universal-hash v0.5.1
+   Compiling cipher v0.4.4
+   Compiling digest v0.11.3
+   Compiling syn v2.0.119
+   Compiling sha2 v0.11.0
+   Compiling libcrux-ml-kem v0.0.10
+   Compiling libcrux-ml-dsa v0.0.10
+   Compiling opaque-debug v0.3.1
+   Compiling poly1305 v0.8.0
+   Compiling chacha20 v0.9.1
+   Compiling aead v0.5.2
+   Compiling getrandom v0.2.15
+   Compiling libcrux-platform v0.0.3
+   Compiling keccak v0.2.1
+   Compiling chacha20poly1305 v0.10.1
+   Compiling sha3 v0.11.0
+   Compiling mt-codec v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-codec)
+   Compiling mt-merkle v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-merkle)
+   Compiling mt-proof v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-proof)
+   Compiling mt-seed v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-seed)
+   Compiling hax-lib-macros v0.3.7
+   Compiling libcrux-macros v0.0.3
+   Compiling mt-derive v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-derive)
+   Compiling libcrux-secrets v0.0.6
+   Compiling libcrux-traits v0.0.8
+   Compiling mt-state v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-state)
+   Compiling mt-suite v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-suite)
+   Compiling mt-wire v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-wire)
+   Compiling mt-store v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-store)
+   Compiling montana-wallet v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/montana-wallet)
+   Compiling mt-net v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-net)
+   Compiling mt-pulse v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-pulse)
+   Compiling montana-node v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/montana-node)
+   Compiling mt-conformance v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-conformance)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 41s
+  Executable tests/a_stall_names_its_cause.rs (/srv/montana/gpt-01a1793a-f1-target/debug/deps/a_stall_names_its_cause-a96b3f21125c90aa)

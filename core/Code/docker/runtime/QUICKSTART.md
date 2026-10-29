@@ -15,22 +15,24 @@ docker compose up -d --build
 stage: `rust:1.95-bookworm` builder → `debian:trixie-slim` runtime, ~5–10 min on
 first build) and starts the container with a persistent `montana-data` volume.
 
-The node starts in **singleton bootstrap mode** — it works out of the box with
-zero external dependencies: it runs its own genesis TimeChain and cements a
-Proposal every window. On first launch it generates a 24-word recovery mnemonic
-and writes its initialization output, including the recovery mnemonic, to
-`/var/lib/montana/mnemonic.txt`. The file is created with mode `0400` before
-initialization; the container's standard output, standard error and controlling
+The node needs a `genesis-manifest.json` next to `docker-compose.yml` (see
+"The genesis manifest" below): there is no single mode without a manifest, and
+the entrypoint refuses to start without one. On first launch it generates a 24-word recovery mnemonic
+and writes it directly to `/var/lib/montana/mnemonic.txt`. The CLI creates this
+file exclusively with mode `0400` before writing the phrase; the container's standard output, standard error and controlling
 terminal do not receive the phrase. Initialization failure stops startup and preserves the private output
-for inspection. An existing recovery file is never overwritten. Save it offline:
+for inspection in a separate `0400` file, `/var/lib/montana/init.log`. Existing
+recovery and initialization-log files are never overwritten. Save recovery offline:
 
 ```bash
 docker exec montana-node cat /var/lib/montana/mnemonic.txt
 ```
 
 The entrypoint sends no unsolicited node report to the project site. This does
-not remove earlier disclosures or establish transport anonymity. Runtime logs
-of the node binary are outside this bootstrap change.
+not remove earlier disclosures or establish transport anonymity. The direct `init` command uses the same private recovery writer. Its optional
+`--recovery-file PATH` names a new file; even `--force` never overwrites that
+file. The direct CLI refuses platforms without its owner-only filesystem
+implementation. Other runtime privacy boundaries are described in the K7 review.
 
 ## Verify
 
@@ -45,22 +47,18 @@ docker compose logs -f
 `status` prints `current_window`, `phase`, the Noise_PQ XX network `peer_id`,
 and table sizes. A climbing `current_window` confirms the node is live.
 
-## Join an existing mesh
+## The genesis manifest
 
-The container reaches singleton consensus on its own. To instead **join** a
-running cohort, the node needs a `genesis-manifest.json` listing peers with
-**real dialable addresses**. The manifest checked into the repository
+The node needs a `genesis-manifest.json` listing peers with **real dialable
+addresses**. The manifest checked into the repository
 (`Code/scripts/genesis-manifest.json`) is a schema example: its multiaddrs are
 `<placeholder>` tokens, not routable endpoints.
 
-Provide a manifest with real peers, then mount it:
-
 1. Write your `genesis-manifest.json` next to `docker-compose.yml`.
-2. In `docker-compose.yml`, uncomment the manifest volume line and the
-   `MONTANA_GENESIS_MANIFEST` environment line.
+2. `docker-compose.yml` mounts it at `/etc/montana/genesis-manifest.json`.
 3. Recreate: `docker compose up -d`.
 
-When a manifest is present the entrypoint switches to cross-machine mode:
+The entrypoint starts the node in cross-machine mode:
 `start --listen /ip4/0.0.0.0/tcp/8444 --genesis-manifest <path>`, dials the
 listed peers over Noise_PQ XX (ML-KEM-768 + ML-DSA-65 + ChaCha20-Poly1305), and
 multiplexes streams with Yamux. Set `MONTANA_MANIFEST_SHA256` to a pinned hash
@@ -73,18 +71,19 @@ to refuse start on manifest drift.
 - After the required sequential SHA-256 chain length plus the next selection
   event it transitions to `Active` and participates in the lottery.
 
-The genesis cohort starts as a singleton bootstrap proposer
-(`protocol_params.n_seed = 0`, `genesis_active_operators` empty); additional
-nodes are discovery peers that earn `Active` status through the protocol, not a
-hardcoded active set.
+A network opens by its operator's explicit act: the machine the manifest names as
+its bootstrap peer starts once with `MONTANA_OPEN=1` on an empty store, and opens
+window zero on itself. There is no self-admission into an empty set; a node with
+an empty store that is not asked to open does not start.
 
 ## Environment reference (entrypoint)
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `MONTANA_LISTEN` | `/ip4/0.0.0.0/tcp/8444` | libp2p listen multiaddr |
-| `MONTANA_GENESIS_MANIFEST` | `/etc/montana/genesis-manifest.json` | manifest path; absent ⇒ singleton |
+| `MONTANA_GENESIS_MANIFEST` | `/etc/montana/genesis-manifest.json` | manifest path; absent ⇒ the node does not start |
 | `MONTANA_MANIFEST_SHA256` | _(unset)_ | refuse start unless manifest sha matches |
+| `MONTANA_OPEN` | _(unset)_ | `1` = open a network: window zero on an empty store, as the manifest's bootstrap peer |
 | `MONTANA_MNEMONIC` | _(unset)_ | fixed identity; otherwise generated once per volume |
 
 ## Build the image directly (no compose)
@@ -95,7 +94,9 @@ cd montana_messenger/core
 docker build -t montana-node:local -f Code/docker/runtime/Dockerfile.node .
 docker volume create montana-data
 docker run -d --name montana-node --network host --restart unless-stopped \
-  -v montana-data:/var/lib/montana montana-node:local
+  -v montana-data:/var/lib/montana \
+  -v "$PWD/genesis-manifest.json:/etc/montana/genesis-manifest.json:ro" \
+  montana-node:local
 ```
 
 The build context is the `core/` folder (the BIP-39 wordlist is compiled in

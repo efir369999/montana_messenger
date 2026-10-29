@@ -1,0 +1,13 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running tests/a_stall_names_its_cause.rs (/srv/montana/gpt-01a1793a-f1-target/debug/deps/a_stall_names_its_cause-a96b3f21125c90aa)
+
+running 4 tests
+test a_mutated_attestation_does_not_replace_the_missing_data_verdict ... ok
+test a_mutated_attestation_does_not_replace_the_no_quorum_verdict has been running for over 60 seconds
+test no_data_is_named_when_no_beacon_can_be_collected ... ok
+test no_quorum_is_named_when_closing_pledges_are_withheld has been running for over 60 seconds
+test a_mutated_attestation_does_not_replace_the_no_quorum_verdict ... ok
+test no_quorum_is_named_when_closing_pledges_are_withheld ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 179.36s
+

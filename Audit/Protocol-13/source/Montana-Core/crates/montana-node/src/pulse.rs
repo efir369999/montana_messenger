@@ -952,6 +952,33 @@ pub fn opening_chain() -> u8 {
     OPENING_CHAIN
 }
 
+// **The window a machine handed a cohort begins at, and whether it begins at all.** Consensus, "The
+// cold start": opening is an explicit act of the operator on an empty store, and a machine that
+// holds nothing and is not asked to open opens no window. So `open` on a store holding nothing is
+// window zero; `open` on a store holding a chain is refused, since it would be a second window zero
+// of a network this machine already stands in; a store holding nothing and not asked to open is
+// refused, since it holds no anchor; and a store holding a chain begins after the last window it
+// closed, from its own anchor. A store that holds a chain and closed no window was stopped inside
+// the first one and holds no anchor either. Every refusal comes before anything is written.
+pub fn first_window(machine: &Machine, open: bool) -> Result<u64, NodeError> {
+    match (open, machine.holds_a_chain()?) {
+        (true, false) => Ok(0),
+        (true, true) => Err(NodeError::Refused {
+            what: OPENED_OVER_A_CHAIN,
+        }),
+        (false, false) => Err(NodeError::Refused { what: NO_ANCHOR }),
+        (false, true) => match machine.closed_window()? {
+            Some(closed) => closed.checked_add(1).ok_or(NodeError::Refused {
+                what: "a window past the last one a count carries",
+            }),
+            None => Err(NodeError::Refused { what: NO_ANCHOR }),
+        },
+    }
+}
+
+const OPENED_OVER_A_CHAIN: &str = "a network opened on a store that holds a chain";
+const NO_ANCHOR: &str = "a machine with no anchor opens no window";
+
 // The bodies standing at every point of one round, taken as the two kinds a round carries. What
 // tells them apart is the width a body comes back at, which differs between the two objects and is
 // derived from the Decree rather than declared here.
@@ -1182,6 +1209,13 @@ pub fn live_doing(
     patience: u32,
     errand: Option<Errand<'_>>,
 ) -> Result<Vec<Lived>, NodeError> {
+    // Window zero is opened on an empty store and on no other (Consensus, "The cold start"), whoever
+    // calls the pulse: before anything of the window is written.
+    if from == 0 && machine.holds_a_chain()? {
+        return Err(NodeError::Refused {
+            what: OPENED_OVER_A_CHAIN,
+        });
+    }
     let counts = machine.counts();
     let secret = machine.machine_secret()?;
     let mut of_the_machine = [0u8; 32];

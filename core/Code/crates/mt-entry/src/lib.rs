@@ -680,9 +680,8 @@ mod tests {
 
     #[test]
     fn is_selection_window_at_intervals() {
-        // devnet TEST CONFIG: selection_interval=1 → every non-zero window is a
-        // selection window (production selection_interval=336). Window 0 is always
-        // excluded (genesis). Verify the formula against params.selection_interval.
+        // selection_interval=336 (production). Window 0 is always excluded
+        // (genesis). Verify the formula against params.selection_interval.
         let p = mt_genesis::genesis_params();
         let si = p.selection_interval;
         assert!(!is_selection_window(0, p)); // Genesis exclusion

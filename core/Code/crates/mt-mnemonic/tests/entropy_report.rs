@@ -23,25 +23,50 @@ fn entropy_report() {
         println!("{}  {}", if f.alive { "ALIVE" } else { "DEAD " }, f.name);
         println!("        what it is:       {}", f.what);
         println!("        bytes taken:      {}", f.bytes);
-        println!("        distinct chunks:  {} (8-byte chunks)", f.distinct_chunks);
+        println!(
+            "        distinct chunks:  {} (8-byte chunks)",
+            f.distinct_chunks
+        );
         println!("        distinct bytes:   {} of 256", f.distinct_bytes);
-        println!("        most frequent:    {} of {} ({}%)", f.max_repeat, f.samples,
-                 if f.samples > 0 { 100 * f.max_repeat / f.samples } else { 100 });
+        println!(
+            "        most frequent:    {} of {} ({}%)",
+            f.max_repeat,
+            f.samples,
+            if f.samples > 0 {
+                100 * f.max_repeat / f.samples
+            } else {
+                100
+            }
+        );
         println!("        liveness rule:    {}\n", f.alive_rule);
         if f.alive {
             alive += 1;
         }
     }
-    println!("live sources: {alive} of {}, at least {MIN_LIVE_SOURCES} required", facts.len());
+    println!(
+        "live sources: {alive} of {}, at least {MIN_LIVE_SOURCES} required",
+        facts.len()
+    );
     println!("identical measurements count as the ABSENCE of a source, named by its name");
-    assert!(alive >= MIN_LIVE_SOURCES, "fewer live sources than the threshold on this machine");
+    assert!(
+        alive >= MIN_LIVE_SOURCES,
+        "fewer live sources than the threshold on this machine"
+    );
 
     println!("\n════════ COMBINING ════════\n");
-    println!("tape:     domain \"mt-entropy-mix\" ‖ 0x00 ‖ (label ‖ length ‖ bytes) of each source");
+    println!(
+        "tape:     domain \"mt-entropy-mix\" ‖ 0x00 ‖ (label ‖ length ‖ bytes) of each source"
+    );
     println!("fold:     SHA-256 over the whole tape → {ENTROPY_LEN} bytes of root");
-    println!("property: the result is unpredictable as long as AT LEAST ONE summand is unpredictable");
+    println!(
+        "property: the result is unpredictable as long as AT LEAST ONE summand is unpredictable"
+    );
     let (root, report) = generate_entropy_reporting().expect("enough sources");
-    println!("verdict of this combination: alive {} of {}", report.count(), facts.len());
+    println!(
+        "verdict of this combination: alive {} of {}",
+        report.count(),
+        facts.len()
+    );
 
     println!("\n════════ RELEASE HEALTH CHECKS ════════\n");
     println!("long repeat:          P(run >= 8 identical) <= 32*2^-56");
@@ -51,14 +76,26 @@ fn entropy_report() {
     println!("at such probabilities a trigger is a BREAKAGE, not a fluctuation — the response is a refusal");
     let mut sample = [0u8; ENTROPY_LEN];
     sample.copy_from_slice(&root[..]);
-    println!("this release passed the checks: {}", health_check(&sample).is_ok());
+    println!(
+        "this release passed the checks: {}",
+        health_check(&sample).is_ok()
+    );
 
     println!("\n════════ HOW MANY BITS ════════\n");
-    println!("root:               {} bytes * 8 = {} bits", ENTROPY_LEN, ENTROPY_LEN * 8);
+    println!(
+        "root:               {} bytes * 8 = {} bits",
+        ENTROPY_LEN,
+        ENTROPY_LEN * 8
+    );
     println!("wordlist:           {WORDLIST_SIZE} = 2^{bits_per_word}, so a word carries {bits_per_word} bits");
-    println!("phrase:             {MNEMONIC_WORD_COUNT} words * {bits_per_word} = {} bits",
-             MNEMONIC_WORD_COUNT * bits_per_word);
-    println!("of which checksum:  {}", MNEMONIC_WORD_COUNT * bits_per_word - ENTROPY_LEN * 8);
+    println!(
+        "phrase:             {MNEMONIC_WORD_COUNT} words * {bits_per_word} = {} bits",
+        MNEMONIC_WORD_COUNT * bits_per_word
+    );
+    println!(
+        "of which checksum:  {}",
+        MNEMONIC_WORD_COUNT * bits_per_word - ENTROPY_LEN * 8
+    );
     println!("PHRASE ENTROPY:     {} bits", ENTROPY_LEN * 8);
     println!("brute force:        2^{}", ENTROPY_LEN * 8);
 
@@ -84,11 +121,19 @@ fn entropy_report() {
     println!("most frequent word:    {top} times, share {p_max:.5}");
     println!("min-entropy per word:  {min_entropy:.2} bits of {bits_per_word}");
     println!("  what is measured: the most-common-value estimate (NIST SP 800-90B, sec. 6.3.1)");
-    println!("  why below {bits_per_word}: on a finite sample the estimate ALWAYS underestimates —");
+    println!(
+        "  why below {bits_per_word}: on a finite sample the estimate ALWAYS underestimates —"
+    );
     println!("  the most frequent word out of {WORDLIST_SIZE} with expectation {expected:.1} fluctuates upward,");
     println!("  and the estimate catches a source failure rather than confirming the ideal");
 
-    let chi2: f64 = counts.iter().map(|c| { let d = *c as f64 - expected; d * d / expected }).sum();
+    let chi2: f64 = counts
+        .iter()
+        .map(|c| {
+            let d = *c as f64 - expected;
+            d * d / expected
+        })
+        .sum();
     let df = (WORDLIST_SIZE - 1) as f64;
     let sigma = (2.0 * df).sqrt();
     println!("uniformity:            chi-squared {chi2:.1} with expectation {df:.0} +- {sigma:.1} (threshold 5 sigma)");
@@ -102,13 +147,22 @@ fn entropy_report() {
     let mut b = a;
     b[0] ^= 1;
     let sb = mnemonic_to_master_seed(&entropy_to_mnemonic(&b)).unwrap();
-    let bits: u32 = sa.iter().zip(sb.iter()).map(|(x, y)| (x ^ y).count_ones()).sum();
-    println!("avalanche:             one flipped root bit changes {:.1}% of master-seed bits",
-             100.0 * bits as f64 / (sa.len() as f64 * 8.0));
+    let bits: u32 = sa
+        .iter()
+        .zip(sb.iter())
+        .map(|(x, y)| (x ^ y).count_ones())
+        .sum();
+    println!(
+        "avalanche:             one flipped root bit changes {:.1}% of master-seed bits",
+        100.0 * bits as f64 / (sa.len() as f64 * 8.0)
+    );
 
     println!("\n════════ HONEST CEILING ════════\n");
     println!("unpredictability is NOT proven by this: a generator with a known seed would give the same numbers.");
     println!("what is proven is the absence of breakage and of entropy loss on the way from the root to the phrase.\n");
 
-    assert!(alive >= MIN_LIVE_SOURCES, "fewer live sources than required");
+    assert!(
+        alive >= MIN_LIVE_SOURCES,
+        "fewer live sources than required"
+    );
 }

@@ -20,11 +20,10 @@ use mt_state::compute_state_root;
 use mt_store::FsStore;
 use mt_timechain::{cemented_bundle_aggregate, next_d, ssha_step};
 
-use crate::clock::{load_current_window, save_current_window};
 use crate::identity::{default_data_dir, load_identity, NodeError};
 use crate::node_lifecycle::{load_or_init_lifecycle, save_lifecycle, NodeLifecycle, NodePhase};
 use crate::state::LocalState;
-use crate::timechain_state::{load_or_init_timechain, save_timechain, TimeChainState};
+use crate::timechain_state::TimeChainState;
 
 static STOP: AtomicBool = AtomicBool::new(false);
 
@@ -66,12 +65,58 @@ pub struct StartArgs {
     /// the node behaves exactly as before it appeared — it assembles no batches, builds no index,
     /// answers no requests.
     pub enable_names: bool,
+    /// Open a network: window zero on the operator's cohort, on a store holding nothing
+    /// of a chain. Without it an empty store does not start (issue #17 K5).
+    pub open: bool,
 }
 
+/// issue #17 K5: the single mode without a manifest is dropped.
+pub const NO_MANIFEST_REFUSED: &str =
+    "start requires --listen and --genesis-manifest: there is no single mode without a manifest";
+/// issue #17 K5: the test-only D override is refused in a release build.
+pub const D_TEST_OVERRIDE_REFUSED: &str =
+    "--d-test-override is refused in a release build: D = params.d0 (Genesis Decree)";
+/// issue #17 K5, the author's decision 287: an empty store opens no window unasked.
+pub const NO_ANCHOR_REFUSED: &str =
+    "a machine with no anchor opens no window: an empty store starts only with --open";
+/// A second window zero of a network this store already stands in.
+pub const OPENED_OVER_A_CHAIN: &str = "--open is refused on a store that holds a chain";
+/// The cohort of window zero is the manifest's bootstrap peer.
+pub const OPENER_NOT_BOOTSTRAP: &str =
+    "--open is refused: the genesis manifest does not name this machine as its bootstrap peer";
+
 pub fn run(args: StartArgs) -> Result<(), NodeError> {
-    let data_dir = args.data_dir.unwrap_or_else(default_data_dir);
+    // The release refusal holds here too, so no caller of the library runs on an overridden D.
+    if args.d_test_override.is_some() && !cfg!(debug_assertions) {
+        return Err(NodeError::InvalidArguments(D_TEST_OVERRIDE_REFUSED.into()));
+    }
+    // A node starts only in the cross-machine mode, before it reads its identity or store.
+    let Some(manifest_path) = args.genesis_manifest.as_deref() else {
+        return Err(NodeError::InvalidArguments(NO_MANIFEST_REFUSED.into()));
+    };
+    if args.listen_multiaddr.is_none() {
+        return Err(NodeError::InvalidArguments(NO_MANIFEST_REFUSED.into()));
+    }
+    let data_dir = args.data_dir.clone().unwrap_or_else(default_data_dir);
     let identity = load_identity(&data_dir)?;
+    // Issue #21 K4: the running node holds its data directory for the life of the process, so a
+    // status tells a running node from a store nobody runs, and a second start on it is refused.
+    let _holder = crate::holder::hold(&data_dir)?;
     let params = genesis_params();
+
+    // Window zero opens only by the operator's explicit --open on a store holding nothing
+    // of a chain; otherwise the node does not start (issue #17 K5, the author's decision
+    // 287; Consensus, "The cold start"). Decided before the network starts or anything is
+    // written, so a refusal leaves the store as it was.
+    let opening = match (args.open, holds_a_chain(&data_dir)?) {
+        (true, false) => true,
+        (true, true) => return Err(NodeError::InvalidArguments(OPENED_OVER_A_CHAIN.into())),
+        (false, false) => return Err(NodeError::InvalidArguments(NO_ANCHOR_REFUSED.into())),
+        (false, true) => false,
+    };
+    if opening && !is_the_bootstrap_peer(&identity, manifest_path)? {
+        return Err(NodeError::InvalidArguments(OPENER_NOT_BOOTSTRAP.into()));
+    }
 
     // Cross-machine M8: spawn a network thread with its own tokio runtime.
     // The network event loop is separate from the consensus loop (SSHA compute) —
@@ -95,17 +140,18 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
     }
 
     // spec, Genesis Decree: Genesis = empty window 0. The genesis state is empty
-    // (no baked active operators); a node self-admits via the existing admission
-    // path. The manifest is discovery-only and is not hash-bound.
-    let mut state = LocalState::load_or_bootstrap(&data_dir, &identity, params)?;
-    // Persist the seeded genesis state immediately so a separate `status`
-    // invocation reads the real bootstrapped tables instead of re-bootstrapping
-    // an incomplete view.
-    if !data_dir.join("accounts.bin").exists() {
-        state.save(&data_dir)?;
+    // (no baked active operators); window zero opens on the operator's cohort by
+    // --open. The manifest is not hash-bound.
+    // Issue #19 K5: the window record is the truth of the tables, the window and the clock
+    // (a store without one is migrated once, if its earlier files hold one window); the
+    // earlier files are rewritten from it as views, so `status` reads the real tables.
+    // Issue #17 K5: an opening writes the cohort into the first record itself, so no record
+    // of window zero stands without it.
+    let (mut state, mut current, mut timechain) =
+        crate::window_record::open(&data_dir, &identity, params, opening)?;
+    if opening {
+        println!("[open W=0] window zero opens on the operator's cohort (this machine)");
     }
-    let mut current = load_current_window(&data_dir)?;
-    let mut timechain = load_or_init_timechain(&data_dir)?;
     let mut lifecycle = load_or_init_lifecycle(&data_dir, &identity, params)?;
     let mut effective_d = args.d_test_override.unwrap_or(timechain.current_d);
 
@@ -131,10 +177,8 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
         .unwrap_or(0);
 
     // Genesis = empty window 0: no baked bootstrap node. A node is considered already
-    // active only if its node_id is present in NodeTable (it was admitted
-    // in a previous session and the state is loaded from disk). A fresh node is a
-    // candidate: self-admit via the standard admission path (selection_slots(0)=1
-    // admits the first candidate when the Active set is empty).
+    // active only if its node_id is present in NodeTable: it opened window zero by
+    // --open, or it was admitted in a previous session and the state is loaded from disk.
     let already_active = state.nodes.contains(&my_node);
 
     // Phase Bootstrap = first boot. Already active (in NodeTable) → Active.
@@ -164,16 +208,32 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
 
     println!("=== montana-node start — Montana node ===");
     println!();
-    println!("data-dir         : {}", data_dir.display());
-    println!("account_id       : {}", hex16(&my_account));
-    println!("node_id          : {}", hex16(&my_node));
+    crate::private_diagnostic!(
+        "[node] data directory selected",
+        "data-dir         : {}",
+        data_dir.display()
+    );
+    crate::private_diagnostic!(
+        "[node] account identity loaded",
+        "account_id       : {}",
+        hex16(&my_account)
+    );
+    crate::private_diagnostic!(
+        "[node] node identity loaded",
+        "node_id          : {}",
+        hex16(&my_node)
+    );
     println!("phase            : {:?}", lifecycle.phase);
     println!("current_window   : {current}");
     println!(
         "D                : {} SHA-256 iterations / window",
         effective_d
     );
-    println!("T_r              : {}", hex16(&timechain.t_r));
+    crate::private_diagnostic!(
+        "[node] timechain value loaded",
+        "T_r              : {}",
+        hex16(&timechain.t_r)
+    );
     println!(
         "balance start    : {} nɈ ({} Ɉ)",
         initial_balance,
@@ -232,6 +292,9 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
     }
     let mut fast_sync: Option<mt_sync::FastSyncClient> = None;
     let mut fast_sync_deadline: Option<Instant> = None;
+    // Issue #19 K5: the cemented envelope the fast-sync anchor root was taken from; the
+    // record of the synced window carries it.
+    let mut fast_sync_anchor: Option<Vec<u8>> = None;
     // M7 fast-sync: recent cemented bootstrap state_roots (window -> root),
     // the trusted set a reconstructed snapshot root must match.
     let mut recent_roots: BTreeMap<u64, Hash32> = BTreeMap::new();
@@ -239,6 +302,9 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
     // Per-window consensus histories (bounded by HISTORY_BOUND windows).
     let mut bc_set_history: BTreeMap<u64, Vec<mt_state::NodeId>> = BTreeMap::new();
     let mut own_bc_cache: BTreeMap<u64, BundledConfirmation> = BTreeMap::new();
+    // The window and cascade depth this node last reported a halt at, so the line is said once
+    // per halt and not on every turn of the loop (issue #21 K6).
+    let mut halted_at: Option<(u64, u8)> = None;
     let mut pending_msgs: Vec<ProtocolMessage> = Vec::new();
     // Issue #18, S4: two envelopes of one applied window from one proposer, kept as the
     // evidence of an equivocation.
@@ -306,6 +372,7 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                     equivocations: &mut equivocations,
                     fast_sync: &mut fast_sync,
                     fast_sync_deadline: &mut fast_sync_deadline,
+                    fast_sync_anchor: &mut fast_sync_anchor,
                     last_cement_at: &mut last_cement_at,
                     prev_proposal_hash: &mut prev_proposal_hash,
                     fast_sync_lag_threshold,
@@ -353,7 +420,10 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                     if let Some(ref mut handle) = network_handle {
                         let mut ctx = net_ctx!();
                         if let Err(e) = drain_network(&mut ctx, handle) {
-                            eprintln!("[drain] mid-iteration: {e:?}");
+                            crate::private_diagnostic!(
+                                "[node] incoming message processing failed",
+                                "[drain] mid-iteration: {e:?}"
+                            );
                         }
                     }
                 },
@@ -472,7 +542,8 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                     lifecycle.nodereg_hash = nodereg_hash(&nr);
                     lifecycle.registration_window = next_window;
                     lifecycle.phase = NodePhase::Registered;
-                    println!(
+                    crate::private_diagnostic!(
+                        "[node] registration recorded",
                         "[register W={next_window}] nodereg_hash={} | ssha_chain_length={}",
                         hex16(&lifecycle.nodereg_hash),
                         lifecycle.candidate_progress
@@ -480,58 +551,39 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                 }
             },
             NodePhase::Registered => {
-                // Cold-start self-admission: with an empty Active set (genesis, no
-                // Active operator at all) a registered node itself conducts the
-                // selection_event at the selection window. selection_slots(0)=1
-                // admits it (the only candidate) → Node Table; then the
-                // Active arm drives the windows itself (its own BC gives quorum at active=0/1).
-                // If the Active set is NOT empty — the node waits for ordinary admission
-                // by the existing Active (a no-op here). This is the bootstrap of the first node
-                // of a solo chain; admission-as-cemented-proposal for multi-node is
-                // a separate path (see the critic's cold-start finding).
-                if state.nodes.is_empty()
-                    && !state.candidates.is_empty()
-                    && next_window % params.selection_interval == 0
-                {
-                    let cba_w_minus_2 = cba_from(&bc_set_history, next_window.saturating_sub(2));
-                    let t_r_w = *t_r_history.get(&next_window).unwrap_or(&timechain.t_r);
-                    let admitted = apply_selection_event(
-                        &mut state.candidates,
-                        &mut state.nodes,
-                        &mut state.accounts,
-                        &t_r_w,
-                        &cba_w_minus_2,
-                        0,
-                        next_window,
-                        params,
-                    );
-                    if state.nodes.contains(&my_node) {
-                        lifecycle.phase = NodePhase::Active;
-                        last_cement_at = Instant::now();
-                        println!(
-                            "[cold-start W={next_window}] self-admit \u{2192} Active (admitted={})",
-                            admitted.len()
-                        );
-                    }
-                }
+                // A registered node waits for its admission by the Active set (a no-op
+                // here). There is no cold-start self-admission into an empty set: window
+                // zero opens only on the operator's cohort, by --open (issue #17 K5,
+                // the author's decision 287; Consensus, "The cold start").
             },
             NodePhase::Active => 'active_arm: {
                 // Legitimate proposer of window next_window: the lowest ticket by the
                 // aggregate of next_window-2 (issue #18); on silence — the cascade over the
-                // same order. With no canonical proposer the node keeps the behaviour it had
-                // before issue #18 (it proposes, and its header carries NO_PROPOSER); how a
-                // network with no electorate opens is issue #17's (decision 280), not this rule's.
+                // same order. Before window 2 there is no canonical proposer and the node keeps
+                // the behaviour it had before issue #18 (it proposes, and its header carries
+                // NO_PROPOSER); how a network opens is issue #17's (decision 280). From window
+                // 2 on, no canonical proposer means the cascade is exhausted or the confirmers
+                // of next_window-2 are not held: the node halts there and says so, and never
+                // appoints itself (issue #21 K6).
                 let silence = last_cement_at.elapsed().as_secs();
                 let (acting, my_depth, canonical_proposer) = {
                     let ctx = net_ctx!();
                     let depth = fallback_depth_at(silence, ctx.fallback_secs);
                     let canonical = canonical_proposer_at(&ctx, next_window, depth);
-                    let acting = if canonical == mt_consensus::NO_PROPOSER {
-                        my_node
-                    } else {
-                        canonical
-                    };
-                    (acting, depth, canonical)
+                    (
+                        acting_proposer(next_window, canonical, my_node),
+                        depth,
+                        canonical,
+                    )
+                };
+                let Some(acting) = acting else {
+                    if halted_at != Some((next_window, my_depth)) {
+                        halted_at = Some((next_window, my_depth));
+                        eprintln!(
+                            "[consensus] w={next_window}: STALLED, no proposer at depth {my_depth} -- the cascade is exhausted or the confirmers of w-2 are not held; this node does not appoint itself"
+                        );
+                    }
+                    break 'active_arm;
                 };
                 if acting != my_node {
                     break 'active_arm;
@@ -627,116 +679,36 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
                     break 'active_arm;
                 }
 
-                // Cementing: evidence = confirmations of window propose_w,
-                // included_bundles = confirmations of window propose_w-1.
-                let evidence = bc_accumulator.get(&propose_w).cloned().unwrap_or_default();
-                let prev_w = propose_w.saturating_sub(1);
-                let bundles_prev: Vec<BundledConfirmation> = if propose_w >= 1 {
-                    bc_accumulator
-                        .get(&prev_w)
-                        .map(|m| m.values().cloned().collect())
-                        .unwrap_or_default()
-                } else {
-                    Vec::new()
-                };
-                let confirmers: Vec<mt_state::NodeId> =
-                    bundles_prev.iter().map(|b| b.node_id).collect();
-                let included_bundles_root = meta_root(
-                    &bundles_prev
-                        .iter()
-                        .map(|b| (b.node_id, bundle_hash(b)))
-                        .collect::<Vec<_>>(),
-                );
-                // Single state transition (the same as for followers).
-                let post_root = {
+                // Cementing: the window is committed once with its envelope before anything
+                // of it leaves the node (issue #19 K5); a failed commit stops the node.
+                let cemented = {
                     let mut ctx = net_ctx!();
-                    settle_and_bookkeep(&mut ctx, propose_w, &confirmers, None)?
-                        .expect("leader mode: expected_root=None always commits")
-                };
-                let recomputed = compute_state_root(
-                    &state.nodes.root(),
-                    &state.candidates.root(),
-                    &state.accounts.root(),
-                );
-                if recomputed != post_root {
-                    panic!(
-                        "state_root self-verify failed: {:02x?}.. ≠ {:02x?}..",
-                        &post_root[..4],
-                        &recomputed[..4]
-                    );
-                }
-
-                let mut header = ProposalHeader {
-                    prev_proposal_hash,
-                    window_index: propose_w,
-                    protocol_version: 1,
-                    control_root: empty_internal(TREE_DEPTH),
-                    node_root: state.nodes.root(),
-                    candidate_root: state.candidates.root(),
-                    account_root: state.accounts.root(),
-                    state_root: post_root,
-                    timechain_value: t_r_w,
-                    included_bundles_root,
-                    included_reveals_root: [0u8; 32],
-                    winner_endpoint: [0u8; 32],
-                    winner_id: [0u8; 32],
-                    proposer_node_id: canonical_proposer,
-                    target: 0,
-                    fallback_depth: my_depth,
-                    signature: Signature::from_array([0u8; SIGNATURE_SIZE]),
-                };
-                let mut header_scope = Vec::new();
-                header.encode_signed_scope(&mut header_scope);
-                header.signature =
-                    sign(&identity.node_sk, &header_scope).map_err(NodeError::Crypto)?;
-
-                // Envelope: [header 3722][u16 n1][BC of window w-1][u16 n2][BC of window w].
-                let mut envelope_payload: Vec<u8> =
-                    Vec::with_capacity(3722 + 4 + 3500 * (bundles_prev.len() + evidence.len()));
-                header.encode(&mut envelope_payload);
-                envelope_payload.extend_from_slice(&(bundles_prev.len() as u16).to_le_bytes());
-                for bc in &bundles_prev {
-                    bc.encode(&mut envelope_payload);
-                }
-                envelope_payload.extend_from_slice(&(evidence.len() as u16).to_le_bytes());
-                for bc in evidence.values() {
-                    bc.encode(&mut envelope_payload);
-                }
-                // Archive before broadcast: a cemented envelope must survive a
-                // process crash — after a restart it is re-broadcast from the archive.
-                if let Err(e) = store.archive_proposal_envelope(propose_w, &envelope_payload) {
-                    eprintln!(
-                        "[archive] FAILED to write envelope w={propose_w} to {}/proposals: {e:?}",
-                        data_dir.display()
-                    );
-                }
-                if let Some(ref handle) = network_handle {
-                    let envelope = ProtocolMessage::new(
-                        MsgType::Proposal,
+                    cement_as_leader(
+                        &mut ctx,
+                        &identity,
                         propose_w,
-                        envelope_payload.clone(),
-                    );
+                        t_r_w,
+                        canonical_proposer,
+                        my_depth,
+                    )?
+                };
+                if let Some(ref handle) = network_handle {
+                    let envelope =
+                        ProtocolMessage::new(MsgType::Proposal, propose_w, cemented.envelope);
                     if let Err(e) = handle.broadcast_tx.send(envelope) {
-                        eprintln!(
+                        crate::private_diagnostic!(
+                            "[node] broadcast failed",
                             "[consensus] broadcast CEMENTED Proposal w={propose_w} failed: {e}"
                         );
                     } else {
                         eprintln!(
                             "[consensus] broadcast CEMENTED Proposal window={propose_w} → peers (bundles={}, evidence={})",
-                            bundles_prev.len(),
-                            evidence.len()
+                            cemented.bundles, cemented.evidence
                         );
                     }
                 }
-                recent_roots.insert(propose_w, post_root);
-                bound_map(&mut recent_roots);
-                prev_proposal_hash = proposal_hash(&header);
-                last_proposer_cement.insert(my_node, propose_w);
-                last_cement_at = Instant::now();
-                let living: std::collections::BTreeSet<&mt_state::NodeId> =
-                    confirmers.iter().collect();
                 session_emitted = session_emitted.saturating_add(
-                    mt_account::window_credit_moneta(params) * living.len() as u128,
+                    mt_account::window_credit_moneta(params) * cemented.living as u128,
                 );
                 session_windows += 1;
             },
@@ -774,6 +746,80 @@ pub fn run(args: StartArgs) -> Result<(), NodeError> {
     Ok(())
 }
 
+/// The records of a chain in a data dir: the three tables, the window record, the clock, the time
+/// chain and the lifecycle record. identity.bin is not a chain. `status` reads every one of them.
+pub fn chain_records(data_dir: &std::path::Path) -> [std::path::PathBuf; 7] {
+    [
+        data_dir.join("accounts.bin"),
+        data_dir.join("nodes.bin"),
+        data_dir.join("candidates.bin"),
+        data_dir.join(mt_store::WINDOW_RECORD_FILE),
+        crate::clock::current_window_path(data_dir),
+        crate::timechain_state::timechain_path(data_dir),
+        crate::node_lifecycle::lifecycle_path(data_dir),
+    ]
+}
+
+/// Whether a data dir holds anything of a chain: one of its records (chain_records) or an
+/// archived proposal. Read by presence alone, so a record that no longer parses still counts.
+pub fn holds_a_chain(data_dir: &std::path::Path) -> Result<bool, NodeError> {
+    if chain_records(data_dir).iter().any(|p| p.exists()) {
+        return Ok(true);
+    }
+    let proposals = data_dir.join("proposals");
+    Ok(proposals.is_dir() && std::fs::read_dir(&proposals)?.next().is_some())
+}
+
+// The cohort of window zero is the manifest's bootstrap peer: the manifest names exactly
+// one (mt-genesis manifest.rs) and carries the ids of a peer, not its public key, so the
+// opener admits itself alone and only when the manifest names it.
+fn is_the_bootstrap_peer(
+    identity: &crate::identity::Identity,
+    manifest_path: &std::path::Path,
+) -> Result<bool, NodeError> {
+    let text = std::fs::read_to_string(manifest_path)?;
+    let manifest = mt_genesis::GenesisManifest::parse(&text)
+        .map_err(|e| NodeError::Network(format!("parse manifest: {e}")))?;
+    let node = hex_lower(&identity.node_id());
+    let account = hex_lower(&identity.account_id());
+    Ok(manifest
+        .bootstrap_peer()
+        .is_some_and(|p| p.node_id_hex == node && p.account_id_hex == account))
+}
+
+// Window zero on the operator's cohort: the opener enters the Node Table at window zero
+// and its operator account becomes a node operator, as a selection event records an
+// admission, with no selection event and no SSHA entry (Consensus, "The cold start").
+pub(crate) fn open_window_zero(state: &mut LocalState, identity: &crate::identity::Identity) {
+    state.nodes.insert(mt_state::NodeRecord {
+        node_id: identity.node_id(),
+        node_pubkey: *identity.node_pk.as_bytes(),
+        suite_id: identity.suite_id as u16,
+        operator_account_id: identity.account_id(),
+        start_window: 0,
+        chain_length: 1,
+        chain_length_snapshot: 0,
+        chain_length_checkpoints: [0; 6],
+        last_confirmation_window: 0,
+    });
+    if let Some(account) = state.accounts.get(&identity.account_id()) {
+        let mut operator = account.clone();
+        operator.is_node_operator = true;
+        state.accounts.insert(operator);
+    }
+}
+
+fn hex_lower(bytes: &[u8]) -> String {
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        s.push_str(&format!("{b:02x}"));
+    }
+    s
+}
+
+// The end of a turn. A window is committed by its own settle; what moved in memory without
+// one (the node's own registration in the pool, a turn of the clock) is committed here as the
+// record of window `window`, with its views. The lifecycle record is the node's own.
 fn save_progress(
     data_dir: &std::path::Path,
     state: &LocalState,
@@ -781,9 +827,7 @@ fn save_progress(
     lifecycle: &NodeLifecycle,
     window: u64,
 ) -> Result<(), NodeError> {
-    state.save(data_dir)?;
-    save_current_window(data_dir, window)?;
-    save_timechain(data_dir, timechain)?;
+    crate::window_record::commit_if_moved(data_dir, window, state, timechain)?;
     save_lifecycle(data_dir, lifecycle)?;
     Ok(())
 }
@@ -854,6 +898,7 @@ struct NetCtx<'a> {
     equivocations: &'a mut Equivocations,
     fast_sync: &'a mut Option<mt_sync::FastSyncClient>,
     fast_sync_deadline: &'a mut Option<Instant>,
+    fast_sync_anchor: &'a mut Option<Vec<u8>>,
     last_cement_at: &'a mut Instant,
     prev_proposal_hash: &'a mut Hash32,
     fast_sync_lag_threshold: u64,
@@ -927,6 +972,27 @@ fn canonical_proposer_at(ctx: &NetCtx, w: u64, fallback_depth: u8) -> mt_state::
     }
 }
 
+/// Who acts as the proposer of window w, given its canonical proposer (issue #21 K6). Before
+/// window 2 there is none, and the node proposes itself as it did before issue #18 (how a network
+/// opens is issue #17's). From window 2 on a canonical proposer exists by the rule, so NO_PROPOSER
+/// there is a halt -- the cascade passed the electorate, or this node does not hold the
+/// confirmers of w-2 -- and nobody acts: a node that appointed itself would cement, on the
+/// confirmations every active node publishes, a header no follower accepts (validate_header
+/// refuses NO_PROPOSER as UnknownProposer), a window closed in a private chain by a timeout.
+fn acting_proposer(
+    w: u64,
+    canonical: mt_state::NodeId,
+    my_node: mt_state::NodeId,
+) -> Option<mt_state::NodeId> {
+    if canonical != mt_consensus::NO_PROPOSER {
+        Some(canonical)
+    } else if w < 2 {
+        Some(my_node)
+    } else {
+        None
+    }
+}
+
 /// A second envelope of a window this node already applied (issue #18, S4). It is refused and
 /// nothing of the state moves: core/docs Consensus, invariant 13 (Consensus.md:1382), a machine
 /// "never abandons a decision it verified"; of two proposals of one height the chain keeps the one
@@ -949,7 +1015,8 @@ fn keep_equivocation(ctx: &mut NetCtx, header: &ProposalHeader, payload: &[u8]) 
     {
         return;
     }
-    eprintln!(
+    crate::private_diagnostic!(
+        "[node] equivocation kept",
         "[consensus] w={w}: equivocation by {} — second envelope refused, the pair kept",
         hex16(&header.proposer_node_id)
     );
@@ -1052,20 +1119,20 @@ fn meta_root(entries: &[(mt_state::NodeId, Hash32)]) -> Hash32 {
     tree.root()
 }
 
-/// Single state transition when closing window settled_w — shared by the proposer
-/// and followers (determinism): apply_proposal + candidate expiry + selection
-/// event + D adaptation at the τ₂ boundary + per-window histories.
-fn settle_and_bookkeep(
-    ctx: &mut NetCtx,
-    settled_w: u64,
-    confirmers: &[mt_state::NodeId],
-    expected_root: Option<Hash32>,
-) -> Result<Option<Hash32>, NodeError> {
-    // DEV-042: the transition is applied to CLONES of the tables; the real state, history
-    // and disk are mutated only if post_root matched expected_root. On
-    // divergence the node does NOT panic — it returns Ok(None), the window is rejected,
-    // the state is restored via fast-sync. One diverging envelope
-    // does not kill the node and does not bring down the network.
+/// The transition of window settled_w, computed and not yet applied: the tables after it,
+/// the state_root the proposal names and the count the selection event activated.
+struct Settled {
+    state: LocalState,
+    post_root: Hash32,
+    activated_count: usize,
+}
+
+/// The pure transition of window settled_w — shared by the proposer and followers
+/// (determinism): apply_proposal + candidate expiry + selection event. DEV-042: it is applied
+/// to CLONES of the tables; nothing of ctx and nothing on disk moves (issue #19 K5). On a
+/// divergence from the header the follower drops it and the window is rejected, the state is
+/// restored via fast-sync: one diverging envelope does not kill the node.
+fn settle_window(ctx: &NetCtx, settled_w: u64, confirmers: &[mt_state::NodeId]) -> Settled {
     let mut accounts = ctx.state.accounts.clone();
     let mut nodes = ctx.state.nodes.clone();
     let mut candidates = ctx.state.candidates.clone();
@@ -1096,28 +1163,67 @@ fn settle_and_bookkeep(
         );
         activated_count = activated.len();
     }
-    if let Some(exp) = expected_root {
-        if post_root != exp {
-            return Ok(None);
-        }
+    Settled {
+        state: LocalState {
+            accounts,
+            nodes,
+            candidates,
+        },
+        post_root,
+        activated_count,
     }
-    ctx.state.accounts = accounts;
-    ctx.state.nodes = nodes;
-    ctx.state.candidates = candidates;
-    if activated_count > 0 {
-        println!("[selection W={settled_w}] activated {activated_count} node(s)");
-    }
+}
+
+/// Single state transition when closing window settled_w — shared by the proposer
+/// and followers: the settled tables, D adaptation at the τ₂ boundary and the clock value
+/// t_r_w of the window go into ONE record with the cemented envelope (issue #19 K5). Memory
+/// and the per-window histories move only after that record stands; a failed commit is an
+/// error and moves nothing. The earlier files are written after it, as views.
+fn settle_and_bookkeep(
+    ctx: &mut NetCtx,
+    settled_w: u64,
+    confirmers: &[mt_state::NodeId],
+    settled: Settled,
+    envelope: &[u8],
+    t_r_w: Hash32,
+) -> Result<(), NodeError> {
+    let mut current_d = ctx.timechain.current_d;
     if settled_w > 0 && settled_w % ctx.params.tau2_windows == 0 {
         let median_permille = 1000u32;
-        let new_d = next_d(ctx.timechain.current_d, median_permille, ctx.params);
-        if new_d != ctx.timechain.current_d {
-            println!(
-                "[next_d W={settled_w}] D: {} → {}",
-                ctx.timechain.current_d, new_d
-            );
-            ctx.timechain.current_d = new_d;
-        }
+        current_d = next_d(ctx.timechain.current_d, median_permille, ctx.params);
     }
+    // Canonical clock value of the cemented window — a lagging clock catches up.
+    let (t_r, last_window) = if ctx.timechain.last_window < settled_w {
+        (t_r_w, settled_w)
+    } else {
+        (ctx.timechain.t_r, ctx.timechain.last_window)
+    };
+    let record = mt_store::WindowRecord {
+        window: settled_w,
+        t_r,
+        current_d,
+        last_window,
+        accounts: settled.state.accounts,
+        nodes: settled.state.nodes,
+        candidates: settled.state.candidates,
+        envelope: envelope.to_vec(),
+    };
+    crate::window_record::commit(ctx.store, &record)?;
+    let (state, window, clock, envelope) = crate::window_record::into_parts(record);
+    *ctx.state = state;
+    if settled.activated_count > 0 {
+        println!(
+            "[selection W={settled_w}] activated {} node(s)",
+            settled.activated_count
+        );
+    }
+    if clock.current_d != ctx.timechain.current_d {
+        println!(
+            "[next_d W={settled_w}] D: {} → {}",
+            ctx.timechain.current_d, clock.current_d
+        );
+    }
+    *ctx.timechain = clock;
     if settled_w >= 1 {
         ctx.bc_set_history
             .insert(settled_w - 1, confirmers.to_vec());
@@ -1125,12 +1231,170 @@ fn settle_and_bookkeep(
     bound_map(ctx.bc_set_history);
     ctx.bc_accumulator.remove(&settled_w.saturating_sub(1));
     bound_map(ctx.bc_accumulator);
-    *ctx.current = settled_w;
-    save_current_window(ctx.data_dir, settled_w)?;
-    ctx.store
-        .save_meta_last_cemented(settled_w)
-        .map_err(|e| NodeError::InvalidArguments(format!("save_meta_last_cemented: {e:?}")))?;
-    Ok(Some(post_root))
+    *ctx.current = window;
+    crate::window_record::write_views(
+        ctx.store,
+        ctx.data_dir,
+        window,
+        ctx.state,
+        ctx.timechain,
+        &envelope,
+    )
+}
+
+/// What the proposer's cement of a window hands back to its loop: the envelope to broadcast,
+/// its two list lengths, and the count of the living the window credited.
+struct Cemented {
+    envelope: Vec<u8>,
+    bundles: usize,
+    evidence: usize,
+    living: usize,
+}
+
+/// The proposer closes window propose_w (issue #19 K5): the transition is computed without a
+/// write, the header is built and signed from it, the envelope assembled, and then the window
+/// is committed ONCE with that envelope, before anything of it leaves the node.
+/// Evidence = confirmations of window propose_w, included_bundles = those of propose_w-1.
+fn cement_as_leader(
+    ctx: &mut NetCtx,
+    identity: &crate::identity::Identity,
+    propose_w: u64,
+    t_r_w: Hash32,
+    canonical_proposer: mt_state::NodeId,
+    my_depth: u8,
+) -> Result<Cemented, NodeError> {
+    let evidence = ctx
+        .bc_accumulator
+        .get(&propose_w)
+        .cloned()
+        .unwrap_or_default();
+    let prev_w = propose_w.saturating_sub(1);
+    let bundles_prev: Vec<BundledConfirmation> = if propose_w >= 1 {
+        ctx.bc_accumulator
+            .get(&prev_w)
+            .map(|m| m.values().cloned().collect())
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+    let confirmers: Vec<mt_state::NodeId> = bundles_prev.iter().map(|b| b.node_id).collect();
+    let included_bundles_root = meta_root(
+        &bundles_prev
+            .iter()
+            .map(|b| (b.node_id, bundle_hash(b)))
+            .collect::<Vec<_>>(),
+    );
+    // Single state transition (the same as for followers), not yet committed.
+    let settled = settle_window(ctx, propose_w, &confirmers);
+    let post_root = settled.post_root;
+    let recomputed = compute_state_root(
+        &settled.state.nodes.root(),
+        &settled.state.candidates.root(),
+        &settled.state.accounts.root(),
+    );
+    if recomputed != post_root {
+        panic!(
+            "state_root self-verify failed: {:02x?}.. ≠ {:02x?}..",
+            &post_root[..4],
+            &recomputed[..4]
+        );
+    }
+
+    let mut header = ProposalHeader {
+        prev_proposal_hash: *ctx.prev_proposal_hash,
+        window_index: propose_w,
+        protocol_version: 1,
+        control_root: empty_internal(TREE_DEPTH),
+        node_root: settled.state.nodes.root(),
+        candidate_root: settled.state.candidates.root(),
+        account_root: settled.state.accounts.root(),
+        state_root: post_root,
+        timechain_value: t_r_w,
+        included_bundles_root,
+        included_reveals_root: [0u8; 32],
+        winner_endpoint: [0u8; 32],
+        winner_id: [0u8; 32],
+        proposer_node_id: canonical_proposer,
+        target: 0,
+        fallback_depth: my_depth,
+        signature: Signature::from_array([0u8; SIGNATURE_SIZE]),
+    };
+    let mut header_scope = Vec::new();
+    header.encode_signed_scope(&mut header_scope);
+    header.signature = sign(&identity.node_sk, &header_scope).map_err(NodeError::Crypto)?;
+
+    // Envelope: [header 3722][u16 n1][BC of window w-1][u16 n2][BC of window w].
+    let mut envelope: Vec<u8> =
+        Vec::with_capacity(3722 + 4 + 3500 * (bundles_prev.len() + evidence.len()));
+    header.encode(&mut envelope);
+    envelope.extend_from_slice(&(bundles_prev.len() as u16).to_le_bytes());
+    for bc in &bundles_prev {
+        bc.encode(&mut envelope);
+    }
+    envelope.extend_from_slice(&(evidence.len() as u16).to_le_bytes());
+    for bc in evidence.values() {
+        bc.encode(&mut envelope);
+    }
+    // One commit: the tables, the clock and the envelope of propose_w. The archive view is
+    // written from it before the broadcast; after a restart the envelope is re-broadcast.
+    settle_and_bookkeep(ctx, propose_w, &confirmers, settled, &envelope, t_r_w)?;
+    ctx.recent_roots.insert(propose_w, post_root);
+    bound_map(ctx.recent_roots);
+    *ctx.prev_proposal_hash = proposal_hash(&header);
+    ctx.last_proposer_cement.insert(ctx.my_node, propose_w);
+    *ctx.last_cement_at = Instant::now();
+    let living: std::collections::BTreeSet<&mt_state::NodeId> = confirmers.iter().collect();
+    Ok(Cemented {
+        envelope,
+        bundles: bundles_prev.len(),
+        evidence: evidence.len(),
+        living: living.len(),
+    })
+}
+
+/// A verified snapshot of window `window` applied (issue #19 K5): the three tables, the
+/// window, the clock of the anchor and the cemented envelope the anchor root was taken from
+/// are ONE record; memory moves only after it stands. The proof of the head is that envelope
+/// (the Author's decisions 301/303, issue #19): when the anchor is not the envelope of
+/// `window` naming the snapshot's state_root, the sync is refused — nothing is written,
+/// memory stays, the caller has dropped the client, and the next cemented window retries.
+fn complete_fast_sync(
+    ctx: &mut NetCtx,
+    window: u64,
+    tables: mt_sync::snapshot::TypedTables,
+) -> Result<(), NodeError> {
+    let mut record = mt_store::WindowRecord {
+        window,
+        t_r: ctx.timechain.t_r,
+        current_d: ctx.timechain.current_d,
+        last_window: ctx.timechain.last_window,
+        accounts: tables.accounts,
+        nodes: tables.nodes,
+        candidates: tables.candidates,
+        envelope: Vec::new(),
+    };
+    // #2: align the local clock to the synced window's canonical t_r so forward grinding
+    // matches the chain.
+    if let Some(t_r) = ctx.t_r_history.get(&window).copied() {
+        record.t_r = t_r;
+        record.last_window = window;
+    }
+    let anchor = ctx.fast_sync_anchor.take().unwrap_or_default();
+    let names_it = parse_header(&anchor)
+        .is_some_and(|h| h.window_index == window && h.state_root == record.state_root());
+    if !names_it {
+        eprintln!(
+            "[m7] fast-sync of window {window} refused: no anchor envelope names that window and \
+             its state_root, a head without its proof is not committed — drop client, retry on \
+             next cemented"
+        );
+        return Ok(());
+    }
+    record.envelope = anchor;
+    ctx.state
+        .apply_fast_sync(record, ctx.data_dir, ctx.current, ctx.timechain)?;
+    eprintln!("[m7] fast-sync complete → state replaced, current_window={window}");
+    Ok(())
 }
 
 /// Handling one incoming protocol message. Called from
@@ -1234,7 +1498,10 @@ fn handle_protocol_message(
                         *ctx.fast_sync_deadline =
                             Some(Instant::now() + std::time::Duration::from_secs(10));
                     },
-                    Err(e) => eprintln!("[m7] FastSyncRequest broadcast failed: {e}"),
+                    Err(e) => crate::private_diagnostic!(
+                        "[node] broadcast failed",
+                        "[m7] FastSyncRequest broadcast failed: {e}"
+                    ),
                 }
                 // EXT-SYNC-01: persist the observed anchor root for window w so
                 // FastSyncClient::finalize can match the incoming snapshot. The
@@ -1242,6 +1509,7 @@ fn handle_protocol_message(
                 // sequential apply (line below), so without this it self-blocks.
                 ctx.recent_roots.insert(w, header.state_root);
                 bound_map(ctx.recent_roots);
+                *ctx.fast_sync_anchor = Some(msg.payload.clone());
                 // #2: stash the anchor's canonical t_r(w) so finalize can set
                 // the synced clock instead of re-grinding from a stale window.
                 ctx.t_r_history.insert(w, header.timechain_value);
@@ -1286,7 +1554,10 @@ fn handle_protocol_message(
             if let Err(e) =
                 mt_consensus::validate_header(&header, &ctx.state.nodes, *ctx.current, 1, 1)
             {
-                eprintln!("[consensus] header w={w} rejected: {e:?}");
+                crate::private_diagnostic!(
+                    "[node] proposal header refused",
+                    "[consensus] header w={w} rejected: {e:?}"
+                );
                 return Ok(());
             }
             // Proposer legitimacy is EXCLUSIVELY a deterministic check
@@ -1306,7 +1577,8 @@ fn handle_protocol_message(
             if let Err(e) =
                 mt_consensus::validate_proposer_is_canonical(&header, &aggregate, &electorate)
             {
-                eprintln!(
+                crate::private_diagnostic!(
+                    "[node] node identity loaded",
                     "[consensus] w={w}: leader {} not canonical ({e:?}) — skip",
                     hex16(&header.proposer_node_id)
                 );
@@ -1314,7 +1586,10 @@ fn handle_protocol_message(
             }
             // The fields of the lottery carry zeros (issue #18, S3).
             if let Err(e) = mt_consensus::validate_retired_fields(&header) {
-                eprintln!("[consensus] w={w}: {e:?} — skip");
+                crate::private_diagnostic!(
+                    "[node] retired header fields refused",
+                    "[consensus] w={w}: {e:?} — skip"
+                );
                 return Ok(());
             }
             let Some((bundles_prev, evidence)) = parse_envelope_bundles(&msg.payload) else {
@@ -1389,34 +1664,33 @@ fn handle_protocol_message(
                 );
                 return Ok(());
             }
-            // Application by a single state transition (transactional, DEV-042).
-            if settle_and_bookkeep(ctx, w, &confirmers, Some(header.state_root))?.is_none() {
+            // Application by a single state transition (transactional, DEV-042): computed on
+            // clones, checked against the header, then committed once with this envelope and
+            // the clock value of the window (issue #19 K5).
+            let settled = settle_window(ctx, w, &confirmers);
+            if settled.post_root != header.state_root {
                 eprintln!(
                     "[consensus] w={w}: state_root divergence — window rejected, recovery via fast-sync"
                 );
                 return Ok(());
             }
+            settle_and_bookkeep(
+                ctx,
+                w,
+                &confirmers,
+                settled,
+                &msg.payload,
+                header.timechain_value,
+            )?;
             ctx.recent_roots.insert(w, header.state_root);
             bound_map(ctx.recent_roots);
             ctx.t_r_history.insert(w, header.timechain_value);
             bound_map(ctx.t_r_history);
-            if ctx.timechain.last_window < w {
-                // Canonical clock value from the quorum envelope — catch up.
-                ctx.timechain.t_r = header.timechain_value;
-                ctx.timechain.last_window = w;
-            }
-            // The archive is observability, not consensus: a write failure is logged
-            // loudly (with the path), the node continues working.
-            if let Err(e) = ctx.store.archive_proposal_envelope(w, &msg.payload) {
-                eprintln!(
-                    "[archive] FAILED to write envelope w={w} to {}/proposals: {e:?}",
-                    ctx.data_dir.display()
-                );
-            }
             *ctx.prev_proposal_hash = proposal_hash(&header);
             ctx.last_proposer_cement.insert(header.proposer_node_id, w);
             *ctx.last_cement_at = Instant::now();
-            eprintln!(
+            crate::private_diagnostic!(
+                "[node] proposal applied",
                 "[consensus] applied cemented Proposal w={w} (confirmers={})",
                 confirmers.len()
             );
@@ -1464,7 +1738,10 @@ fn handle_protocol_message(
                 );
             },
             Err(e) => {
-                eprintln!("[m7] FastSyncRequest decode failed: {e:?}");
+                crate::private_diagnostic!(
+                    "[node] message decode failed",
+                    "[m7] FastSyncRequest decode failed: {e:?}"
+                );
             },
         },
         MsgType::FastSyncResponse => {
@@ -1493,22 +1770,11 @@ fn handle_protocol_message(
                         Ok(mt_sync::AcceptOutcome::Complete) => {
                             match client.finalize(ctx.recent_roots) {
                                 Ok((window, tables)) => {
-                                    ctx.state.apply_fast_sync(tables, ctx.data_dir, window)?;
-                                    *ctx.current = window;
-                                    save_current_window(ctx.data_dir, window)?;
-                                    // #2: align the local clock to the synced window's
-                                    // canonical t_r so forward grinding matches the chain.
-                                    if let Some(tr) = ctx.t_r_history.get(&window).copied() {
-                                        ctx.timechain.t_r = tr;
-                                        ctx.timechain.last_window = window;
-                                        save_timechain(ctx.data_dir, ctx.timechain)?;
-                                    }
+                                    complete_fast_sync(ctx, window, tables)?;
                                     *ctx.fast_sync_deadline = None;
-                                    eprintln!(
-                                    "[m7] fast-sync complete → state replaced, current_window={window}"
-                                );
                                 },
-                                Err(e) => eprintln!(
+                                Err(e) => crate::private_diagnostic!(
+                                    "[node] fast-sync finalization refused",
                                     "[m7] fast-sync finalize rejected: {e:?} — retry on next lag"
                                 ),
                             }
@@ -1517,12 +1783,16 @@ fn handle_protocol_message(
                             eprintln!("[m7] fast-sync chunk {received}/{total}");
                             *ctx.fast_sync = Some(client);
                         },
-                        Err(e) => eprintln!(
+                        Err(e) => crate::private_diagnostic!(
+                            "[node] fast-sync chunk refused",
                             "[m7] fast-sync chunk rejected: {e:?} — discard, retry on next lag"
                         ),
                     },
                     Err(reason) => {
-                        eprintln!("[m7] FastSyncResponse {reason}");
+                        crate::private_diagnostic!(
+                            "[node] fast-sync response refused",
+                            "[m7] FastSyncResponse {reason}"
+                        );
                         *ctx.fast_sync = Some(client);
                     },
                 }
@@ -1551,7 +1821,8 @@ fn handle_protocol_message(
                         .entry(bw)
                         .or_default()
                         .insert(node_id, bc);
-                    eprintln!(
+                    crate::private_diagnostic!(
+                        "[node] node identity loaded",
                         "[bc] accepted confirmation from {} for window {bw}",
                         hex16(&node_id)
                     );
@@ -1570,20 +1841,25 @@ fn handle_protocol_message(
                                 ));
                             }
                         }
-                        eprintln!(
+                        crate::private_diagnostic!(
+                            "[node] node identity loaded",
                             "[consensus] peer {} behind (window {bw} <= {}), re-served envelopes",
                             hex16(&node_id),
                             *ctx.current
                         );
                     }
                 } else {
-                    eprintln!(
+                    crate::private_diagnostic!(
+                        "[node] node identity loaded",
                         "[bc] confirmation {} w={bw} failed validation",
                         hex16(&bc.node_id)
                     );
                 }
             },
-            Err(e) => eprintln!("[bc] decode failed: {e:?}"),
+            Err(e) => crate::private_diagnostic!(
+                "[node] message decode failed",
+                "[bc] decode failed: {e:?}"
+            ),
         },
         _ => {},
     }
@@ -1759,7 +2035,7 @@ fn spawn_network_thread(
     let (incoming_tx, incoming_rx) =
         tokio::sync::mpsc::unbounded_channel::<mt_net::ProtocolMessage>();
 
-    eprintln!(
+    crate::private_diagnostic!("[node] starting network thread",
         "[main] spawning network thread, local_peer_id={local_peer_id},          listen={listen_addr}, peers={n}",
         n = manifest.peers.len()
     );
@@ -1774,7 +2050,10 @@ fn spawn_network_thread(
             {
                 Ok(rt) => rt,
                 Err(e) => {
-                    eprintln!("[network] failed to start tokio runtime: {e}");
+                    crate::private_diagnostic!(
+                        "[node] network runtime initialization failed",
+                        "[network] failed to start tokio runtime: {e}"
+                    );
                     return;
                 },
             };
@@ -1788,7 +2067,10 @@ fn spawn_network_thread(
                 broadcast_rx,
                 incoming_tx,
             )) {
-                eprintln!("[network] event loop exited with error: {e}");
+                crate::private_diagnostic!(
+                    "[node] network event loop failed",
+                    "[network] event loop exited with error: {e}"
+                );
             }
         })
         .map_err(|e| NodeError::Network(format!("spawn network thread: {e}")))?;
@@ -1812,10 +2094,13 @@ pub struct NetworkHandle {
 mod order_tests;
 
 #[cfg(test)]
+mod window_commit_tests;
+
+#[cfg(test)]
 mod tests {
     use super::resolve_fast_sync_lag_threshold as resolve;
     use super::FAST_SYNC_LAG_THRESHOLD as DEFAULT;
-    use super::{electorate_at, held_aggregate};
+    use super::{acting_proposer, electorate_at, held_aggregate};
     use mt_consensus::{proposer_at, validate_proposer_is_canonical, NO_PROPOSER};
     use std::collections::BTreeMap;
 
@@ -1844,6 +2129,36 @@ mod tests {
         let mut forged = stub_proposer_header([0x42; 32]);
         forged.window_index = 1;
         assert!(validate_proposer_is_canonical(&forged, &agg, &[]).is_err());
+    }
+
+    // Issue #21 K6: from window 2 on, an exhausted cascade halts and no node appoints itself.
+    // Refuses the code before K6, which acted as this node whenever the canonical proposer was
+    // NO_PROPOSER, and so cemented, on the confirmations every active node publishes, a header
+    // that validate_header refuses on every follower (UnknownProposer).
+    #[test]
+    fn an_exhausted_cascade_halts_and_never_self_appoints() {
+        let me = [0x11; 32];
+        let other = [0x22; 32];
+        let history = BTreeMap::new();
+        let agg = held_aggregate(&history, 0).expect("genesis aggregate");
+        let electorate = [me, other];
+        // Depth 3 passes an electorate of two: no canonical proposer, and nobody acts.
+        let exhausted = proposer_at(2, &agg, &electorate, 3);
+        assert_eq!(exhausted, NO_PROPOSER);
+        assert_eq!(acting_proposer(2, exhausted, me), None);
+        assert_eq!(acting_proposer(2, exhausted, other), None);
+        // No aggregate of w-2 held, or no electorate, past window 2: the same halt.
+        assert_eq!(acting_proposer(9, NO_PROPOSER, me), None);
+        // Inside the electorate the cascade names one member, whoever asks.
+        for depth in 1..=2 {
+            let canonical = proposer_at(2, &agg, &electorate, depth);
+            assert!(electorate.contains(&canonical));
+            assert_eq!(acting_proposer(2, canonical, me), Some(canonical));
+            assert_eq!(acting_proposer(2, canonical, other), Some(canonical));
+        }
+        // Before window 2 the opening keeps its behaviour (issue #17, decision 280).
+        assert_eq!(acting_proposer(0, NO_PROPOSER, me), Some(me));
+        assert_eq!(acting_proposer(1, NO_PROPOSER, me), Some(me));
     }
 
     // Issue #18: the aggregate of a window past genesis is read only from the confirmers this

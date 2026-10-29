@@ -92,7 +92,9 @@ pub fn self_test() -> Result<(), EntropyError> {
         return Err(EntropyError::SelfTestFailed);
     }
     // Mixing must depend on every summand.
-    if combine_entropy(b"a-source", b"b-source")[..] == combine_entropy(b"b-source", b"a-source")[..] {
+    if combine_entropy(b"a-source", b"b-source")[..]
+        == combine_entropy(b"b-source", b"a-source")[..]
+    {
         return Err(EntropyError::SelfTestFailed);
     }
     // The machine's sources must give different output for the same system block:
@@ -121,8 +123,6 @@ pub fn generate_entropy_reporting(
     }
     Ok((mixed, report))
 }
-
-
 
 // Mixing of independent sources. No input is required to be good: the result is
 // unpredictable as long as AT LEAST ONE of them is unpredictable, and this is the only way
@@ -335,11 +335,6 @@ mod tests {
             combine_entropy(b"a", b"bc")[..]
         );
     }
-
-
-
-
-
 
     #[test]
     fn repeat_of_previous_block_is_refused() {

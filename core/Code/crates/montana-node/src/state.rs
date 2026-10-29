@@ -8,6 +8,8 @@ use mt_state::{
 use mt_store::FsStore;
 
 use crate::identity::{Identity, NodeError};
+use crate::timechain_state::TimeChainState;
+use crate::window_record;
 
 pub struct LocalState {
     pub accounts: AccountTable,
@@ -110,27 +112,27 @@ impl LocalState {
         Ok(())
     }
 
-    // Applying a verified fast-sync snapshot: the caller passes
-    // TypedTables only after FastSyncClient::finalize has checked the
-    // reconstructed state_root against the trusted anchor root of window W. Here the snapshot
-    // is already trusted — replace the three consensus tables and record
-    // meta_last_cemented = W (the recovery point after a restart).
+    // Applying a verified fast-sync snapshot: the caller passes the record of window W (its
+    // tables from the snapshot) only after FastSyncClient::finalize has checked the
+    // reconstructed state_root against the trusted anchor root of W. Here the snapshot is
+    // already trusted. Issue #19 K5: the three tables, the window W, the clock and the anchor's
+    // envelope are committed as ONE record; the tables, the window and the clock in memory are
+    // replaced only after that record stands, the views after them.
     pub fn apply_fast_sync(
         &mut self,
-        tables: mt_sync::snapshot::TypedTables,
+        record: mt_store::WindowRecord,
         data_dir: &Path,
-        anchor_window: u64,
+        current: &mut u64,
+        clock: &mut TimeChainState,
     ) -> Result<(), NodeError> {
-        self.accounts = tables.accounts;
-        self.nodes = tables.nodes;
-        self.candidates = tables.candidates;
-        self.save(data_dir)?;
         let store = FsStore::open(data_dir)
             .map_err(|e| NodeError::InvalidArguments(format!("opening storage: {e:?}")))?;
-        store
-            .save_meta_last_cemented(anchor_window)
-            .map_err(|e| NodeError::InvalidArguments(format!("save_meta_last_cemented: {e:?}")))?;
-        Ok(())
+        window_record::commit(&store, &record)?;
+        let (state, window, synced_clock, envelope) = window_record::into_parts(record);
+        *self = state;
+        *current = window;
+        *clock = synced_clock;
+        window_record::write_views(&store, data_dir, window, self, clock, &envelope)
     }
 }
 
@@ -188,17 +190,32 @@ mod tests {
         let mut accounts = AccountTable::new();
         accounts.insert(sample_account(0xAB));
         accounts.insert(sample_account(0xCD));
-        let tables = mt_sync::snapshot::TypedTables {
+        let synced = mt_store::WindowRecord {
+            window: 75_850,
+            t_r: [0x5A; 32],
+            current_d: 1,
+            last_window: 75_850,
             accounts,
-            nodes: NodeTable::new(),
-            candidates: CandidatePool::new(),
+            ..mt_store::WindowRecord::default()
         };
 
-        state.apply_fast_sync(tables, &dir, 75_850).unwrap();
+        let mut clock = TimeChainState {
+            t_r: [0u8; 32],
+            current_d: 1,
+            last_window: 0,
+        };
+        let mut current = 7;
+        state
+            .apply_fast_sync(synced, &dir, &mut current, &mut clock)
+            .unwrap();
 
         assert_eq!(state.accounts.len(), 2);
+        assert_eq!(current, 75_850);
+        assert_eq!((clock.t_r, clock.last_window), ([0x5A; 32], 75_850));
 
         let store = FsStore::open(&dir).unwrap();
+        let record = store.load_window_record().unwrap().unwrap();
+        assert_eq!((record.window, record.accounts.len()), (75_850, 2));
         assert_eq!(store.load_meta_last_cemented().unwrap(), Some(75_850));
         assert_eq!(store.load_account_table().unwrap().len(), 2);
         assert!(store.load_node_table().unwrap().is_empty());

@@ -128,7 +128,7 @@ cd "<repo-root>" && wc -l crates/mt-crypto/src/lib.rs crates/mt-crypto-native/sr
 1. M3: `settle_window(account_table, cemented_user_ops, window_w)` — apply cemented user ops to state
 2. M4: `apply_noderegistrations_batch` (Step 1) → `apply_candidate_expiry` (Step 3a) → `apply_selection_event` (Step 3b) — node admission flow
 3. M3: `apply_proposal(account_table, node_table, candidate_pool, input, params)` — Steps 2 (emission) → 3.5 (chain_length++) → 3.6 (checkpoint rotation) → 4 (state_root)
-4. M5: `archive_proposal(header)` → `save_meta_last_cemented(window)` → `save_account_table` / `save_node_table` / `save_candidate_pool` — persist to disk
+4. M5 (issue #19 K5): `commit_window(WindowRecord)` — ONE record `window.bin` (the window, the clock, the three tables, the cemented envelope; SHA-256 over the body), written tmp → fsync → rename → fsync of the directory; memory moves only after it, and start reads it as the truth. `accounts.bin` / `nodes.bin` / `candidates.bin` / `meta_last_cemented.bin` / `meta/current_window.bin` / `proposals/` are views written after it (this replaces the meta-pointer pattern of the paragraph below)
 
 Settle is separated from apply_proposal (M3 design choice); steps 1 / 3a / 3b are delegated to M4 mt-entry. M5 finalization atomicity is achieved through the meta-pointer pattern (if a crash happens between archive and meta — verify_consistency detects it).
 

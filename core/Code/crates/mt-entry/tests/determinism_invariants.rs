@@ -187,8 +187,8 @@ fn selection_slots_at_least_one() {
 
 #[test]
 fn is_selection_window_at_interval() {
-    // [C-1] SSOT: selection_interval is read from ProtocolParams (devnet TEST
-    // CONFIG = 1; production = 336). Window 0 is always excluded (genesis).
+    // [C-1] SSOT: selection_interval is read from ProtocolParams (production
+    // = 336). Window 0 is always excluded (genesis).
     let p = mt_genesis::genesis_params();
     let si = p.selection_interval;
     assert!(!is_selection_window(0, p)); // window 0 is a special case (no selection)

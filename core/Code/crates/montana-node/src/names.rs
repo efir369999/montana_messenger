@@ -268,11 +268,18 @@ mod tests {
         let nonce = 810_487u64.to_le_bytes();
         assert_eq!(s.accept(sl, &eph, &nonce, vec![9, 9], 100), Ok(()));
         assert_eq!(s.held_count(), 1);
-        assert!(s.drain_for(&sl, 102).is_empty(), "the expired one is dropped");
+        assert!(
+            s.drain_for(&sl, 102).is_empty(),
+            "the expired one is dropped"
+        );
         assert_eq!(s.held_count(), 0);
 
         assert_eq!(s.accept(sl, &eph, &nonce, vec![9, 9], 100), Ok(()));
-        assert_eq!(s.drain_for(&sl, 101).len(), 1, "within the deadline — handed out");
+        assert_eq!(
+            s.drain_for(&sl, 101).len(),
+            1,
+            "within the deadline — handed out"
+        );
     }
 
     /// An unsolved puzzle is rejected before any queueing.
@@ -297,7 +304,11 @@ mod tests {
         let nonce = 810_487u64.to_le_bytes();
         let _ = s.accept(mine, &eph, &nonce, vec![1], 5);
         assert!(s.drain_for(&other, 5).is_empty());
-        assert_eq!(s.held_count(), 1, "the foreign request stays with its own owner");
+        assert_eq!(
+            s.held_count(),
+            1,
+            "the foreign request stays with its own owner"
+        );
     }
 }
 
