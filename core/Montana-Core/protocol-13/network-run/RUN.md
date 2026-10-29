@@ -42,8 +42,8 @@ question Q5 for the author.** This run covers `core/Montana-Core` only.
 | `--admitted <half>` | `:17-21`, `:477-480` | the opening cohort, this machine included. Without any, it serves and lives no window (`:133-136`) |
 | `--open` | `:22-25`, `:482-485` | window 0 on an empty store; refused on a store holding a chain (`pulse.rs:963-977`) |
 | `--windows <n>` | `:26-27`, `:494-501` | stop after n windows. The run does not use it |
-| `--anchor <earlier> --anchor <later>` | **not in main** | added by PR #74 (`agent-608/issue-20-join`, `d2610af`): two consecutive final proposals; the machine walks to the head before anything else (`pulse::join`, `pulse.rs:2608`) |
-| `--status --data <dir>` | **not in main** | added by PR #72 (`agent-609/issue-21`). Exits 0 for a close or a wait inside the patience, 1/2/4 for a stall or no diagnostics |
+| `--anchor <earlier> --anchor <later>` | `main.rs:11`, `:20`, `:575` | PR #74, merged as `b2531c55`: two consecutive final proposals; the machine walks to the head before anything else and says so (`main.rs:183`) |
+| `--status --data <dir>` | `main.rs:14`, `:96-97`, `:714-742` | PR #72, merged as `c64ad9f1`. Exits 0 for a close or a wait inside the patience, 1 no quorum, 2 no data, 4 no diagnostics (`say.rs:36-38`); a machine with no live process behind its door reads `no diagnostics` (`status.rs:97-131`) |
 
 First start: the machine draws its secret and prints four lines (`main.rs:79-98`): "this machine
 was born", "hand this to another operator: <acquaintance>", the digits to compare by voice, and
@@ -113,8 +113,8 @@ The readers a machine offers:
 - The log lines: `pulse.rs:1592` (decided), `:1902`/`:1906` ("window N is final under the
   proposal ID"), `:1933` ("window N closed after R rounds … the next links to the proposal ID"), and
   `main.rs:99-102`, `:151-154` (where it begins).
-- `--status` after #21 (PR #72).
-- The walk's line "walked from window W to the head at window H" after #20 (PR #74).
+- `--status` (#21, PR #72, in main).
+- The walk's line "walked from window W to the head at window H" (#20, PR #74, `main.rs:183`).
 
 ### 1.5 The in-process tests that already exercise each scenario
 
@@ -141,7 +141,8 @@ these tests is a network of processes over real links. That is what this run add
   The partition hold is therefore 600 s (Q3). Whether one-way links carry a window is what S3, S4
   and S6 will show.
 - **R2.** A restart past window 1 is refused on main (§1.2). This is prerequisite P1.
-- **R3. PR #74 does not fit main as it stands.**
+- **R3. PR #74 does not fit main as it stands.** Historical (marked 2026-10-29 UTC): PR #74 took main
+  and merged as `b2531c55`; the points below describe its branch before that.
   - Its `USAGE` says the last final window is `<data>/head`, eight bytes. Main's store has no such
     file: the head is the first mark of `window` (`mt-store/src/lib.rs:18-21`, `:594-613`), and
     opening refuses a store holding the earlier `head` file (`:395`).
@@ -160,8 +161,8 @@ these tests is a network of processes over real links. That is what this run add
 |---|---|---|---|
 | P1 | a restart lives on its own two stored proposals; a machine stopped inside a window resumes it | #16 K1, K2 (`agent-587/issue-16-k3`) | S3, S6 fail without it |
 | P2 | a machine away walks back from an anchor; a minority rejoins by verifying | #16 K3, K4 | S4 fails without it |
-| P3 | `--anchor` on the command line | #20, PR #74 | S0 refuses a binary whose `--help` lacks it |
-| P4 | `--status` | #21, PR #72 | S0 refuses a binary whose `--help` lacks it |
+| P3 | `--anchor` on the command line | #20, PR #74 (in main, `b2531c55`) | S0 refuses a binary whose `--help` lacks it |
+| P4 | `--status` | #21, PR #72 (in main, `c64ad9f1`) | S0 refuses a binary whose `--help` lacks it |
 | P5 | a window closes as one transition | #19 K1-K4 (in main) | invariants |
 | P6 | liveness of a decided window (#65); memory (#63) | #65, #63 | window budgets |
 | P7 | #17 (no clock or test bypass reaches the network), #18 (earlier core), #22 (anonymity) | #17, #18, #22 | not exercised here. #17 matters: the run uses the Decree as built, with no test override |
@@ -232,9 +233,9 @@ checked at every snapshot.
 | **S0 prepare** | refuse Lauterbourg-3 and `/opt/montana-core`; refuse a run directory that exists; clone or fetch, check out `--commit`, `cargo build --release --locked -p montana-node` in `core/Montana-Core` (its pinned 1.92.0); install the binary, keep its SHA-256; build the namespaces | HEAD = the commit; each `required_commits` is an ancestor; the build exits 0; `--help` names `--open --admitted --acquaintance --anchor --status`; ping a→b; no default route; quorum of 4 ≥ 2 | any of these. A missing prerequisite exits 2 |
 | **S1 birth** | each of a…e started once with `--data --listen` under `timeout 30` | rc 124, "this machine was born", its acquaintance begins `10.13.0.x:9635@`, its half | any machine not born. Kept: `birth/<n>.out`, `born.json` |
 | **S2 windows close** | a, b, c, d started with `--open`, the four halves, the other three acquaintances | every head ≥ 2 (windows 0-2 final) within 4 h | the budget runs out, a unit dies, or an invariant fails |
-| **S3 quorum lost by a stop** | stop c and d; hold 30 min | a and b move neither head nor last closed; they keep their proposals; their status is present (rc ≠ 4) and reads no close past the last one. The text (`waiting: no quorum` or another) is kept | any change during the hold |
+| **S3 quorum lost by a stop** | stop c and d; hold 30 min | a and b move neither head nor last closed; they keep their proposals; their status is present (rc ≠ 4) and reads no close past the last one. The text (`waiting: no quorum` or another) is kept. c and d, stopped, read `no diagnostics` and exit 4 | any change during the hold; a stopped machine read as anything else |
 | **S3 recovered by a restart** | start c and d on their stores (no `--open`, no anchor) | every head ≥ head before + 2 within 3 h; earlier final proposals unchanged byte for byte | budget, a dead unit, a changed proposal |
-| **S4 partition 3:1** | cut {a,b,c} \| {d} | a, b, c reach head + 2; d moves nothing and keeps no new proposal | the majority stalls, or the minority moves |
+| **S4 partition 3:1** | cut {a,b,c} \| {d} | a, b, c reach head + 2; d moves nothing and keeps no new proposal; d's status is present (rc ≠ 4), its text kept | the majority stalls, the minority moves, or it reads no diagnostics |
 | **S4 reunion by verifying** | stop c (so no window closes without d); heal; stop d; restart d with `--anchor` = its own proposals (head-1, head) | d walks ("walked from window …" in its log) and a window closes on a, b, d. Its proposal counts cement 3 on all three, so d's presence counted. Then c restarts the same way and all four reach one more final window | budget, cement ≠ 3, no walk line, a second name |
 | **S5 partition 2:2** | cut {a,b} \| {c,d}; hold 10 min | no machine moves head or last closed | any close |
 | **S5 the parts meet** | heal, restart nothing | every head ≥ head before + 1 within 2 h; earlier finals unchanged | budget, a second name |
@@ -356,7 +357,9 @@ Each question gives the options and a recommendation. None of them is decided he
 - No verifier independent of the node checks `ticket_proof` or the signatures. The node's own walk
   (S7) is the verifier the run uses. run.py recomputes names, links, roots and cement counts from
   the bytes.
-- After a join, e is not checked to follow later heads (Q6). The four readings of #21 are recorded
-  in each snapshot but not asserted one by one.
+- After a join, e is not checked to follow later heads (Q6). The readings of #21 are recorded in
+  each snapshot. Asserted: `no diagnostics` (exit 4) on a stopped machine (S3), and a present reading
+  on a machine short of the quorum (S3, S4). Which of `no quorum` and `no data` a living machine
+  reads is kept, not presumed; `proof refused` is no verdict in the new core (`say.rs:21-23`).
 - Topology B is written but not exercised, even dry. `core/Code` is not covered (Q5).
 - `13-NETWORK-REPRODUCTION.md` and `PROTOCOL-13.json` are unchanged: item 13 stays open.

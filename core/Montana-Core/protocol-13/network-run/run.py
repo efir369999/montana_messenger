@@ -149,6 +149,12 @@ def utc(t=None):
     return time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(t))
 
 
+def stopped_reads_nothing(st):
+    # The last line a status query writes starts with its verdict (main.rs:72-78).
+    last = (st["out"].splitlines() or [""])[-1]
+    return st["rc"] == 4 and last.startswith("no diagnostics"), "rc %s: %s" % (st["rc"], st["out"][:160])
+
+
 def quorum_of(count):
     # The least cement that reaches the share: cement * 100 >= 67 * count, as close.rs compares it.
     num, den = QUORUM
@@ -709,6 +715,11 @@ class Run:
                         lambda x=x: (sorted(during[x]["proposals"]) == sorted(before[x]["proposals"]), sorted(during[x]["proposals"])[-3:]))
             self.expect(step, "%s's status is a reading, not missing diagnostics, and names no new close" % x,
                         lambda x=x: no_new_close(x))
+        for x in (c, d):
+            # A stopped machine has no process behind its door, so its operator reads `no diagnostics`
+            # and exit 4 (status.rs:97-131, main.rs:72-78): one reading of #21, induced on purpose.
+            self.expect(step, "%s, stopped, reads no diagnostics and exits 4" % x,
+                        lambda x=x: stopped_reads_nothing(during[x]["status"]))
         self.start([c, d])
         top = None if self.dry else max(during[x]["marks"]["head"] for x in (a, b))
         target = None if self.dry else top + self.k["after_recovery"]
@@ -748,6 +759,10 @@ class Run:
         self.expect(step, "the minority moved nothing while parted",
                     lambda: (self.still(parted, [d]) == self.still(before, [d]) and sorted(parted[d]["proposals"]) == sorted(before[d]["proposals"]),
                              "%s: %r" % (d, self.still(parted, [d]))))
+        # The minority lives on alone: its status is a reading of the wait or the stall (#21),
+        # never missing diagnostics; which one it reads is kept in the snapshot, not presumed.
+        self.expect(step, "the minority's status is a reading, not missing diagnostics",
+                    lambda: (parted[d]["status"]["rc"] != 4, "rc %s: %s" % (parted[d]["status"]["rc"], parted[d]["status"]["out"][:160])))
         # The parts meet. The third of the majority stops, so no window closes without the fourth,
         # and the fourth comes back by walking from its own anchor.
         self.stop([c])

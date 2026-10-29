@@ -1,5 +1,5 @@
 $ python3 -B core/Montana-Core/protocol-13/network-run/run.py --dry-run --run-id DRYRUN
-Protocol-13 item 13 -- the full network run DRYRUN, 2026-10-27 18:27:06 UTC (DRY RUN)
+Protocol-13 item 13 -- the full network run DRYRUN, 2026-10-29 08:00:07 UTC (DRY RUN)
 Our own reproduction on our own servers; not an independent external audit.
 Every ssh below runs: python3 -I -c "import sys;d=sys.stdin.buffer.read();i=d.index(bytes(8));exec(compile(d[:i],'mt13-remote','exec'),{'DATA':d[i+8:]})"
 with the executor REMOTE of run.py (sha256 8428dc6f14bdb821006a0371505318d1bacb4854e5eb173eaa8ce9876c4cf40f) and the listed operations on its standard input.
@@ -161,6 +161,8 @@ with the executor REMOTE of run.py (sha256 8428dc6f14bdb821006a0371505318d1bacb4
     EXPECT a's status is a reading, not missing diagnostics, and names no new close
     EXPECT b keeps the proposals it held
     EXPECT b's status is a reading, not missing diagnostics, and names no new close
+    EXPECT c, stopped, reads no diagnostics and exits 4
+    EXPECT d, stopped, reads no diagnostics and exits 4
   ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
     [l2] systemd-run --unit mt13-dryrun-c --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/c/node.log -p StandardError=append:/srv/mt13/DRYRUN/c/node.log -- ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/c/data --listen 10.13.0.3:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of d>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>'
     [l2] systemd-run --unit mt13-dryrun-d --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/d/node.log -p StandardError=append:/srv/mt13/DRYRUN/d/node.log -- ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/d/data --listen 10.13.0.4:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of c>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>'
@@ -241,6 +243,7 @@ with the executor REMOTE of run.py (sha256 8428dc6f14bdb821006a0371505318d1bacb4
     [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
     [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
     EXPECT the minority moved nothing while parted
+    EXPECT the minority's status is a reading, not missing diagnostics
   ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
     [l2] systemctl stop mt13-dryrun-c
   ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
