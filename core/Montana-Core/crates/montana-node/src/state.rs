@@ -578,6 +578,16 @@ impl State {
         })
     }
 
+    // A record entered into the tree of records without an opening. The vectors need a record that
+    // has lived segments, and only an action marks one, and the node applies no action yet (AUDIT.md,
+    // the identity plane); so this door stands a lived record where an opening would stand a fresh
+    // one. It grants continuity no action earned, and no build of the protocol enables it.
+    #[cfg(feature = "witness")]
+    pub fn witness_record(&mut self, record: &[u8]) {
+        let leaf = mt_proof::records::leaf(record);
+        self.records.insert(leaf.bytes(), leaf);
+    }
+
     pub fn records_root(&self) -> Digest {
         mt_proof::records::root_of_leaves(&self.records)
     }
@@ -676,6 +686,48 @@ impl State {
         mt_proof::horizon::stride_span(stride)?.1.checked_sub(1)
     }
 
+    // The gate a candidacy of `window` is verified against: the segment of the window, the count of
+    // segments in force by the ramp of Consensus, and the share of that count a record must have
+    // lived (Canon, "The candidacy of a machine"; constitution records 297, 300 and 370).
+    //
+    // **The count comes from the machine and never from the object**, the way the root does:
+    // `active` is the `admitted_count` of the proposal the root is taken from. Where nothing is
+    // active the ramp divides by nought and gives no count, and no candidacy applies there.
+    //
+    // **The ramp reads no pending candidacies yet.** No proposal carries their count, and what
+    // makes one expire is not stated; on the author's decision 371 (record 372) the count stands at
+    // nought, so `n` stands at the floor of the ramp, `continuity_segments`, the lowest the ramp
+    // ever gives. The count and its expiry come with their own box (AUDIT.md, K5).
+    pub fn gate_of_a_candidacy(
+        window: u64,
+        active: u64,
+    ) -> Result<mt_proof::circuit::continuity::Gate, NodeError> {
+        // The deviation of decision 371, held here and in AUDIT.md and nowhere else: no register
+        // carries it, because it is no number of the protocol but the absence of one.
+        let pending: u64 = 0;
+        let decree = |row: &str| NodeError::Decree {
+            row: row.to_string(),
+        };
+        let segment = mt_pulse::standing::segment(window).map_err(|error| match error {
+            mt_pulse::PulseError::CountBeyondWidth => NodeError::Refused {
+                what: "a candidacy in a window past the segments a record carries",
+            },
+            _ => decree("segment_windows"),
+        })?;
+        let in_force = mt_pulse::entry::n_in_force(pending, active)
+            .map_err(|_| decree("continuity_segments"))?
+            .ok_or(NodeError::Refused {
+                what: "a candidacy where no machine is admitted, for which the gate gives no count",
+            })?;
+        let required = mt_pulse::entry::required_segments(in_force)
+            .map_err(|_| decree("continuity_required"))?;
+        Ok(mt_proof::circuit::continuity::Gate {
+            segment,
+            in_force,
+            required,
+        })
+    }
+
     // A candidacy applied: the window its own, the right refused if already spent, the proof
     // verified against the root of records the verifier holds of the one proposal the set names
     // for the window, and only then the right spent.
@@ -693,6 +745,7 @@ impl State {
         candidacy: &mt_state::layout::Candidacy,
         window: u64,
         record_root: &Digest,
+        active: u64,
     ) -> Result<(), NodeError> {
         candidacy.bytes().map_err(|_| NodeError::Refused {
             what: "a candidacy outside its canonical shape",
@@ -707,6 +760,7 @@ impl State {
                 what: "a candidacy under a right already spent",
             });
         }
+        let gate = Self::gate_of_a_candidacy(window, active)?;
         let naming = Digest::of_bytes(&candidacy.naming_half).ok_or(NodeError::Refused {
             what: "a naming half that is not a digest of the family",
         })?;
@@ -722,6 +776,7 @@ impl State {
             &naming,
             &candidacy.node_commit,
             &right,
+            &gate,
             candidacy.suite_id,
         );
         let description =

@@ -3442,16 +3442,19 @@ is assembled from. The wrong implementations these refuse: one placing `operator
 after `own_height`, or writing the branch itself into the record in place of its sponge, parts at
 the commitment and at the root over it; one taking the naming half of a second absorption of the
 secret in place of the second squeeze of one parts at the half; one ordering the public input
-otherwise, or leaving the machine's commitment or the suite out of it, parts at its digest.
+otherwise, or leaving the machine's commitment, the gate or the suite out of it, parts at its digest.
+The gate is what a verifier computes: the segment of the window (rule 1 of the rules of
+continuity), the count in force the vector names, and the share of it rounding upward — so one
+taking the segment of another window, or rounding the share downward, parts at the digest too.
 
 ```
-machine_secret = 0x5A x 32, operator_secret = 0x22 x 32, window = 1000, node_commit = 0x66 x 32, suite_id = 1
+machine_secret = 0x5A x 32, operator_secret = 0x22 x 32, window = 1000, node_commit = 0x66 x 32, suite_id = 1, in_force = 14
 record = segment_bitmap 11, last_active_segment 7, opened_window 990, own_height 4, operator_nf of operator_secret, fabric_root 0x11 x 32, suite_id 1, current_pubkey 0x44 x 1952, blind 0x33 x 32
 operator_nullifier of the candidacy = aeea4d6acef552552144f4decd573616b555b73b0ddee09b37659870a2898fc0
 record_commit of the candidacy      = e795f229b47d3a835faef33f30e1e8d581eea2bbf75e41940e5213c4e686d543
 record_root of the candidacy        = 397e75dc054ebcebed04cd7107bffa17a8502639955e33b5ebb1b8169494bac2
 naming_half of the candidacy        = 34f171bc0471f01de0765a81708f5daaec4117ca0610e2e89f43a7ff9e7b9755
-SHA-256(public input)               = df4a8b89d020b8bb07d24272a9f607a5245728ca958be140df6d95631dbdb9da
+SHA-256(public input)               = 959a4020abbe1c15a95fe326a14b19ff7b54a44492d9f3c1af6af41ed0f26232
 ```
 
 **The birth of a seed, end to end.**
@@ -4479,7 +4482,7 @@ air_hash = the hash, under the domain of a description's identifier, of the iden
 
 identifier of the frame     = 01f51109574f2c463fa5bf4da0d43dd314447e10bd79aa17820f0827e65b2562
 identifier of the ticket    = 0c50e4291fede09b20945f9070e50746429b40153911600a690832aab6e65378
-identifier of the admission = df6b61c212011e407d44462c1cd253556c5feccf44246cb201c6c87eb66b4323
+identifier of the admission = 2cad26c3256d6323f06d80afd3afe70384c19e93fbbd6e796f418697b4c30495
 identifier of the presence  = a948eeaf8b4b07e7d51763944498a6edc463670f649dfdf351e7b478bb053052
 identifier of the opening   = 34c92be6edfe2e089be14dc59489dd2d1ef3483db4fab5d08abc28eaa0ca18da
 identifier of the ballot    = a329f7e7ae7656e26147604e0f757ff9cea56facbf953eb30fd01a3f59fe9928
@@ -4832,7 +4835,7 @@ demands the width from this row rather than declaring one of its own.
 | `standing_censuses` — the census windows the standing of a machine is counted over, newest first | 10 |
 | `census_interval`, in windows — derived: τ₂ / standing_censuses, so the censuses span one period of adaptation | τ₂ / 10 = 2 016 |
 | `standing_committee` — the votes the standing of an electorate draws in a window, in expectation, once it is wide enough to be sampled | 6 499 |
-| `air_hash` — the constraint sets the proofs of this network are accepted under | 49533d474ed50d1cb5d6174cf2379ba9ee7f68ff603a4b91ef2f95bbff98799c |
+| `air_hash` — the constraint sets the proofs of this network are accepted under | f30c8dc75b6160df94a2d2dd15026d238738ae543178d1de9760602cdf7017b8 |
 
 **The volume the schedule is checked against.** Per machine, per window, across its chains:
 eligibility strikes 1.1094 times in expectation; 0.6710 of machines publish one heavy
@@ -4879,11 +4882,11 @@ genesis_state_hash = SHA-256("mt-genesis-state" || 0x00 || parameters
                              || note_root || nullifier_root || record_root || machine_root || admitted_root
                              || credited_root || operations_root)
 
-                   = 3f053286a6e38aca13d690cd15f561a92d6a63c1ff4e47a259644aa562d7e524
+                   = fd3b7df915d18e6dffb5ef2e95297df1d2f39e0cc9cb3cf6465dcf3b3ffb471d
 
 published_parameters = SHA-256("mt-genesis-state" || 0x00 || the parameters that are published,
                                in the order and the encoding above)
-                     = e913fb4d56f06bc450570e7a83c75fed5f3e7a9fa6a3d1e2426952a3cc34d5d5
+                     = 4ca7824d594dda36bf1a45df23860019701d2672bcc1e1ffe23ae1018ed75ff0
 ```
 
 A chain whose value differs is not a fork of Montana but a different protocol, and honest
@@ -5393,9 +5396,10 @@ candidacy_len = 8 + 32 + 32 + 32 + 2 + PROOF_LEN = 404 682 B
 - `naming_half` is the half that names the machine, and it is what a selection event writes into the tree of admitted machines, whose leaf Canon folds over exactly that value — so what a candidacy publishes and what an admission records are one value. Without it an event would hold a commitment and be asked to write a half, and no rule would say how one becomes the other.
 - Publishing it discloses nothing a machine does not disclose by being admitted: that tree is public and its leaf is that half. A candidacy that is not admitted publishes it too, and no later admission can be joined to that attempt — the right it spent is one-time, so there is no second candidacy under it and no success for a failure to be linked to.
 - The proof asserts that the record, the right and the half come of one admissible state: a record standing in the tree of records under the root the verifier takes for this window, the `operator_nf` that record carries equal to `operator_nullifier` and to the sponge of a branch the claimant holds, and `naming_half` the second squeeze of one absorption of a secret the claimant holds. A claimant cannot spend one person's right to seat another person's machine, cannot pair a record with a right it does not carry, and cannot publish a half whose secret it does not hold.
-- The public input is `window ‖ record_root ‖ naming_half ‖ node_commit ‖ operator_nullifier ‖ suite_id`, 138 B, each value in its own bytes. `window`, `node_commit` and `suite_id` bind no cell of the trace: they enter the transcript every proof opens with, and a proof stands under no other value of any of them. `window` is the field of this object, and a verifier applying another window refuses the candidacy before it verifies anything. `record_root` is no field of this object: it is the root of the tree of records the proposal of the standing stride's last window carries, the stride standing for `window` by the integer form of the horizon of proving, taken by the verifier from that one proposal — the same rule by which a frame walks a right against the root of admitted machines. Before the first stride stands no root does, and no candidacy applies.
+- The public input is `window ‖ record_root ‖ naming_half ‖ node_commit ‖ operator_nullifier ‖ segment ‖ n ‖ required ‖ suite_id`, 150 B, each value in its own bytes; `segment`, `n` and `required` are u32 each, little-endian. `window`, `node_commit` and `suite_id` bind no cell of the trace: they enter the transcript every proof opens with, and a proof stands under no other value of any of them. `window` is the field of this object, and a verifier applying another window refuses the candidacy before it verifies anything. `record_root` is no field of this object: it is the root of the tree of records the proposal of the standing stride's last window carries, the stride standing for `window` by the integer form of the horizon of proving, taken by the verifier from that one proposal — the same rule by which a frame walks a right against the root of admitted machines. Before the first stride stands no root does, and no candidacy applies.
 - The proof asserts the lived continuity the gate of entry demands of this window, out of that same record, disclosing neither the record nor its history: `lived(record, segment(window), n)` reaches the share of `n` by the rules of continuity, where `n` is the count in force Consensus states (records 297, 300).
-- **The count in force comes from the verifier, never from the object** (records 297, 300). `n` is no field of this object. The verifier recomputes it from the same proposal `record_root` is taken from, by the ramp of Consensus, and lays it into the public input beside `segment(window)`, the way it lays `record_root`. The object, `candidacy_len` and the identifier of a candidacy keep every byte they have. A field carrying `n` would add bytes to every candidacy and to the preimage of its identifier, and the verifier would still have to compare that field against its own recomputation, so it would be a second place for one value to stand. Either way the public input carries the same value, so this choice changes the fewest bytes. Until the admission circuit asserts the share, the public input stays the 138 B above. The encoding of the two values in it is fixed with that circuit in the next generation of K5, and so is the `air_hash` that binds it. Each value must stand on a limb of its own, so that the circuit binds it to one cell the way the opening binds `segment` and `window`. The public input is read in limbs of four bytes, so a value appended after the 2 B `suite_id` would straddle two limbs.
+- **The count in force comes from the verifier, never from the object** (records 297, 300). `n` is no field of this object. The verifier recomputes it from the same proposal `record_root` is taken from, by the ramp of Consensus, and lays it into the public input beside `segment(window)`, the way it lays `record_root`. The object, `candidacy_len` and the identifier of a candidacy keep every byte they have. A field carrying `n` would add bytes to every candidacy and to the preimage of its identifier, and the verifier would still have to compare that field against its own recomputation, so it would be a second place for one value to stand. Either way the public input carries the same value, so this choice changes the fewest bytes. The verifier lays `segment(window)`, `n` and `required = ceil(n x continuity_required)` after `operator_nullifier` and before `suite_id` (record 370): the 136 B before them are thirty-four limbs of four bytes, so each of the three stands on a limb of its own and the circuit binds it to one cell, the way the opening binds `segment` and `window`; appended after the 2 B `suite_id` they would straddle two limbs. The `air_hash` of the admission and the Genesis State Hash move with them.
+- **How the circuit reads the share.** The sixty-four bits of `segment_bitmap` stand one to a row, the most significant first, in the rows before the record's absorption, and meet the record's three limbs of continuity on the row the absorption writes them. Beside each bit stand two masks, each a suffix of the rows: `period`, counting to `n`, and `lived`, counting to `n + last_active_segment - segment` and lying inside `period` -- so `last_active_segment` stands at or before `segment` and the distance at or below `n`. The bits under `lived` sum to `required` plus a sum of slack bits, so at least `required` segments are lived; a bit at or above `max_entry_segments` is refused; and the bitmap is recomposed in two halves of thirty-two bits, each held to its own limb, so no pattern wraps the field into a smaller bitmap (`mt-proof/src/circuit/continuity.rs`).
 - It carries no signature and no key, and an implementation that adds one names a machine for the whole of its life.
 
 ### The three objects of a name

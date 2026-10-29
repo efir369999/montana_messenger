@@ -13,25 +13,21 @@ use montana_node::state::State;
 use mt_state::Layout;
 
 mod common;
-use common::{a_candidacy_of, a_record_carrying, an_opening_of};
+use common::{a_candidacy_of, a_lived_record_carrying, a_record_carrying, an_opening_of, ACTIVE};
 
-const WINDOW: u64 = 1_000;
-// The segment window 1 000 stands in, floor(1 000 / 1 440) = 0: the machine derives it from the
-// window (Canon, "The rules of continuity", rule 1; constitution records 297 and 300).
-const SEGMENT: u32 = 0;
+const WINDOW: u64 = 21_160;
+// The segment window 21 160 stands in, floor(21 160 / 1 440) = 14: the machine derives it from the
+// window (Canon, "The rules of continuity", rule 1; constitution records 297 and 300). A claimant's
+// record lives the fourteen segments up to it, so the gate of entry stands met.
+const SEGMENT: u32 = 14;
 const MACHINE: [u8; 32] = [0x5A; 32];
 const RIGHT: [u8; 32] = [0x22; 32];
 
 #[test]
 fn a_record_raises_one_machine_and_its_right_is_spent_once() {
     let mut state = State::new();
-    let record = a_record_carrying(&RIGHT, WINDOW, SEGMENT);
-    state
-        .apply_opening(
-            &an_opening_of(&[0x44; 32], &record, WINDOW, SEGMENT),
-            WINDOW,
-        )
-        .expect("the claimant's record opens");
+    let record = a_lived_record_carrying(&RIGHT, WINDOW);
+    state.witness_record(&record);
     // The tree as it stood before another person's record entered it: a root of a state this
     // machine no longer holds.
     let before = state.clone();
@@ -45,7 +41,9 @@ fn a_record_raises_one_machine_and_its_right_is_spent_once() {
     // A candidacy proven against the earlier tree does not stand against the root held now.
     let stale = a_candidacy_of(&before, &record, &MACHINE, &RIGHT, WINDOW);
     assert!(
-        state.apply_candidacy(&stale, WINDOW, &root).is_err(),
+        state
+            .apply_candidacy(&stale, WINDOW, &root, ACTIVE)
+            .is_err(),
         "a candidacy proven against a root the verifier does not hold was applied"
     );
     assert!(!state.is_spent_right(&stale.operator_nullifier));
@@ -65,15 +63,17 @@ fn a_record_raises_one_machine_and_its_right_is_spent_once() {
     let bytes = honest.bytes().expect("a candidacy is written");
     let read = mt_state::layout::Candidacy::parse(&bytes).expect("and reads back");
     assert!(
-        state.apply_candidacy(&read, WINDOW + 1, &root).is_err(),
+        state
+            .apply_candidacy(&read, WINDOW + 1, &root, ACTIVE)
+            .is_err(),
         "a candidacy of another window was applied"
     );
     state
-        .apply_candidacy(&read, WINDOW, &root)
+        .apply_candidacy(&read, WINDOW, &root, ACTIVE)
         .expect("a true candidacy applies");
     assert!(state.is_spent_right(&read.operator_nullifier));
     assert!(
-        state.apply_candidacy(&read, WINDOW, &root).is_err(),
+        state.apply_candidacy(&read, WINDOW, &root, ACTIVE).is_err(),
         "a right already spent raised a machine twice"
     );
 
@@ -83,7 +83,9 @@ fn a_record_raises_one_machine_and_its_right_is_spent_once() {
     assert_ne!(second.naming_half, read.naming_half);
     assert_eq!(second.operator_nullifier, read.operator_nullifier);
     assert!(
-        state.apply_candidacy(&second, WINDOW, &root).is_err(),
+        state
+            .apply_candidacy(&second, WINDOW, &root, ACTIVE)
+            .is_err(),
         "one record raised a second machine"
     );
 
@@ -92,7 +94,9 @@ fn a_record_raises_one_machine_and_its_right_is_spent_once() {
         State::decode(&state.encode().expect("the plane is written")).expect("and reads back");
     assert!(restored.is_spent_right(&read.operator_nullifier));
     assert!(
-        restored.apply_candidacy(&second, WINDOW, &root).is_err(),
+        restored
+            .apply_candidacy(&second, WINDOW, &root, ACTIVE)
+            .is_err(),
         "a right spent before a restart was spent again after it"
     );
 }

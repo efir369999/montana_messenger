@@ -2174,6 +2174,19 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
     let candidacy_machine = input32(candidacy_inputs, "node_commit")?;
     let candidacy_suite = u16::try_from(number(input_of(candidacy_inputs, "suite_id")?)?)
         .map_err(|_| "the suite of the vector of a candidacy is no u16".to_string())?;
+    // The gate a verifier computes and takes from no candidacy: the segment of the window, the count
+    // of segments in force and the share of it (Canon, "The candidacy of a machine"; constitution
+    // records 297, 300 and 370). The count is the vector's input; the other two are derived as a
+    // verifier derives them, so an implementation deriving either otherwise parts at the digest.
+    let candidacy_in_force = u32::try_from(number(input_of(candidacy_inputs, "in_force")?)?)
+        .map_err(|_| "the count in force of the vector of a candidacy is no u32".to_string())?;
+    let candidacy_gate = mt_proof::circuit::continuity::Gate {
+        segment: mt_pulse::standing::segment(candidacy_window)
+            .map_err(|e| format!("the window of the vector of a candidacy has no segment: {e:?}"))?,
+        in_force: candidacy_in_force,
+        required: mt_pulse::entry::required_segments(candidacy_in_force)
+            .map_err(|e| format!("the share of the vector of a candidacy: {e:?}"))?,
+    };
     let right = mt_derive::nullifier::operator(&candidacy_right);
     let record = record_of_the_vector(labeled(&candidacy_rows, "record")?, &right)?;
     let serialized = mt_state::Layout::bytes(&record)
@@ -2214,6 +2227,7 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
         &as_digest(&naming)?,
         &candidacy_machine,
         &as_digest(&right)?,
+        &candidacy_gate,
         candidacy_suite,
     );
     compare_hash(
@@ -4161,6 +4175,7 @@ fn registers() -> Vec<&'static [mt_codec::Constant]> {
         mt_proof::circuit::ballot::BALLOT,
         mt_proof::circuit::capacity::CAPACITIES,
         mt_proof::circuit::admission::ADMISSION,
+        mt_proof::circuit::continuity::CONTINUITY,
         mt_proof::circuit::presence::PRESENCE,
         mt_proof::circuit::opening::OPENING,
         mt_proof::circuit::lane::LANE,

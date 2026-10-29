@@ -20,12 +20,11 @@ use mt_proof::air::BoundaryValue;
 use mt_proof::circuit::admission;
 
 mod common;
-use common::{a_candidacy_of, a_record_carrying, an_opening_of};
+use common::{a_candidacy_of, a_lived_record_carrying, the_gate_of, ACTIVE};
 
-const WINDOW: u64 = 1_000;
-// The segment window 1 000 stands in, floor(1 000 / 1 440) = 0: the machine derives it from the
-// window (Canon, "The rules of continuity", rule 1; constitution records 297 and 300).
-const SEGMENT: u32 = 0;
+// A window of segment floor(21 160 / 1 440) = 14, the first from which a record can have lived the
+// fourteen segments the gate of entry counts (Canon, "The rules of continuity", rule 1).
+const WINDOW: u64 = 21_160;
 const CLAIMANT_MACHINE: [u8; 32] = [0x5A; 32];
 const CLAIMANT_RIGHT: [u8; 32] = [0x22; 32];
 const FOREIGN_RIGHT: [u8; 32] = [0x23; 32];
@@ -35,13 +34,12 @@ const SUITE: u16 = 1;
 #[test]
 fn audit_refuses_a_foreign_record_with_the_claimants_secret_and_an_unrelated_path() {
     let mut state = State::new();
-    let claimants = a_record_carrying(&CLAIMANT_RIGHT, WINDOW, SEGMENT);
-    let foreign = a_record_carrying(&FOREIGN_RIGHT, WINDOW, SEGMENT);
-    for (open, record) in [([0x44; 32], &claimants), ([0x45; 32], &foreign)] {
-        state
-            .apply_opening(&an_opening_of(&open, record, WINDOW, SEGMENT), WINDOW)
-            .expect("a record opens");
-    }
+    // Both records lived: the attacker borrows a record whose continuity meets the gate, so what
+    // refuses it is the binding of the record's right, and not its history.
+    let claimants = a_lived_record_carrying(&CLAIMANT_RIGHT, WINDOW);
+    let foreign = a_lived_record_carrying(&FOREIGN_RIGHT, WINDOW);
+    state.witness_record(&claimants);
+    state.witness_record(&foreign);
     let root = state.records_root();
 
     // The unrelated membership path: the foreign record alone in a tree the attacker made.
@@ -55,6 +53,7 @@ fn audit_refuses_a_foreign_record_with_the_claimants_secret_and_an_unrelated_pat
         &unrelated,
         &CLAIMANT_MACHINE,
         &CLAIMANT_RIGHT,
+        &the_gate_of(WINDOW),
     )
     .expect("an attacker writes it");
     assert_ne!(digests[0], root, "the made tree is the state's own");
@@ -64,6 +63,7 @@ fn audit_refuses_a_foreign_record_with_the_claimants_secret_and_an_unrelated_pat
         &digests[1],
         &MIXED_MACHINE,
         &digests[2],
+        &the_gate_of(WINDOW),
         SUITE,
     );
     let held = admission::description().expect("the description stands");
@@ -88,7 +88,9 @@ fn audit_refuses_a_foreign_record_with_the_claimants_secret_and_an_unrelated_pat
         proof,
     };
     assert!(
-        state.apply_candidacy(&mixed, WINDOW, &root).is_err(),
+        state
+            .apply_candidacy(&mixed, WINDOW, &root, ACTIVE)
+            .is_err(),
         "the node applied a foreign record with the claimant's secret and an unrelated path"
     );
     assert!(
@@ -106,7 +108,7 @@ fn audit_refuses_a_foreign_record_with_the_claimants_secret_and_an_unrelated_pat
     );
     assert_eq!(honest.operator_nullifier, mixed.operator_nullifier);
     state
-        .apply_candidacy(&honest, WINDOW, &root)
+        .apply_candidacy(&honest, WINDOW, &root, ACTIVE)
         .expect("the honest admission verifies");
     assert!(state.is_spent_right(&honest.operator_nullifier));
 }
@@ -117,13 +119,8 @@ fn audit_refuses_a_foreign_record_with_the_claimants_secret_and_an_unrelated_pat
 #[test]
 fn audit_refuses_a_candidacy_lifted_onto_another_commitment() {
     let mut state = State::new();
-    let record = a_record_carrying(&CLAIMANT_RIGHT, WINDOW, SEGMENT);
-    state
-        .apply_opening(
-            &an_opening_of(&[0x44; 32], &record, WINDOW, SEGMENT),
-            WINDOW,
-        )
-        .expect("the record opens");
+    let record = a_lived_record_carrying(&CLAIMANT_RIGHT, WINDOW);
+    state.witness_record(&record);
     let root = state.records_root();
     let honest = a_candidacy_of(&state, &record, &CLAIMANT_MACHINE, &CLAIMANT_RIGHT, WINDOW);
     let mut lifted = honest.clone();
@@ -136,7 +133,9 @@ fn audit_refuses_a_candidacy_lifted_onto_another_commitment() {
         (&other_suite, "a candidacy relayed under another suite"),
     ] {
         assert!(
-            state.apply_candidacy(relayed, WINDOW, &root).is_err(),
+            state
+                .apply_candidacy(relayed, WINDOW, &root, ACTIVE)
+                .is_err(),
             "the node applied {what}"
         );
         assert!(
@@ -145,7 +144,7 @@ fn audit_refuses_a_candidacy_lifted_onto_another_commitment() {
         );
     }
     state
-        .apply_candidacy(&honest, WINDOW, &root)
+        .apply_candidacy(&honest, WINDOW, &root, ACTIVE)
         .expect("the honest candidacy applies");
     assert!(state.is_spent_right(&honest.operator_nullifier));
 }
