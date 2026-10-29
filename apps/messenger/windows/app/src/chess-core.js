@@ -1,7 +1,7 @@
 // CHESS, THE RULES AND THE LETTERS (iOS MTChessRules, MTChessWire, MTChessGame): one owner of the rules, independent of the
 // screen, the transport and the clock; a game is replayed from the pair's letters alone, so both machines hold one board.
-// THE GAME'S POT (iOS MTChessCoins, the author's words 06.10.2026): a game invited from the pot's word on names in every move the
-// coins it mints into the pot and in its invitation the stake each side puts; both machines count one pot from the letters.
+// NO COINS IN A CHESS LETTER (iOS MTChessWire, the author's word 29.10.2026 19:31 UTC): a move names no coin, an invitation no
+// stake; a letter of an earlier build that carries them is read without them, so nothing of coins rides or is counted in a game.
 
 const BACK = ["r", "n", "b", "q", "k", "b", "n", "r"];
 export const other = (side) => (side === "white" ? "black" : "white");
@@ -198,7 +198,7 @@ const unb64 = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/
 /** The letter's text: «♟ » and the title, then the link with the letter's JSON (iOS text(title:)). */
 export function letterText(l, title) {
   const o = {};
-  for (const k of ["game", "id", "parent", "kind", "at", "move", "seconds", "offerDraw", "spent", "coins", "end", "stake"]) if (l[k] != null) o[k] = l[k];
+  for (const k of ["game", "id", "parent", "kind", "at", "move", "seconds", "offerDraw", "spent", "end"]) if (l[k] != null) o[k] = l[k];
   return "♟ " + title + "\n" + LINK + b64(JSON.stringify(o));
 }
 
@@ -215,8 +215,7 @@ export function parseLetter(text) {
   if (l.move != null && (typeof l.move !== "string" || l.move.length > 5)) return null;
   if (l.spent != null && !(onTurn(l) && Number.isInteger(l.spent) && l.spent >= 0 && l.spent <= LONGEST_TURN)) return null;
   if (l.end != null && (l.kind === "invite" || l.kind === "accept" || !(l.end.moves >= 0 && l.end.moves <= 10000))) return null;
-  if (l.coins != null && !(l.kind === "move" && Number.isInteger(l.coins) && l.coins >= 0 && l.coins <= MOST_COINS)) return null;
-  if (l.stake != null && !(l.kind === "invite" && Number.isInteger(l.stake) && l.stake >= 1 && l.stake <= MOST_COINS)) return null;
+  delete l.coins; delete l.stake;   // an earlier build's pot fields, read without them (iOS MTChessWire: no coins in a letter)
   if (l.kind === "invite") {
     if (l.id !== l.game || l.parent !== "" || !TIME_CONTROLS.includes(l.seconds) || l.move != null || l.offerDraw != null) return null;
   } else {
@@ -226,10 +225,6 @@ export function parseLetter(text) {
   }
   return l;
 }
-
-/** The most a move or a stake may name, and the pot's word, 06.10.2026 16:10:00 UTC: a game invited from it on has a pot. */
-export const MOST_COINS = 1_000_000_000_000;
-export const POT_SINCE = 1_791_303_000_000;
 
 // ── THE GAME (iOS MTChessGame) ─────────────────────────────────────────────────────────────────────────────────
 export const finished = (status) => status !== "invited" && status !== "playing";
@@ -244,10 +239,8 @@ export function replay(entries, game) {
   let g = {
     id: game, whiteIsMine: root.mine, seconds: root.letter.seconds, status: "invited", position: new Position(), moves: [], notation: [],
     last: root.letter, whiteMs: root.letter.seconds * 1000, blackMs: root.letter.seconds * 1000, drawOfferedBy: null,
-    repetitions: {}, waitingForHistory: false, accepted: false,
-    pooled: root.letter.at >= POT_SINCE, stake: 0, mintedMine: 0, mintedTheirs: 0,
+    repetitions: {}, waitingForHistory: false,
   };
-  g.stake = g.pooled ? root.letter.stake || 0 : 0;
   g.repetitions[g.position.repetitionKey] = 1;
   const unique = new Map();
   for (const e of relevant) {
@@ -296,7 +289,7 @@ export function apply(g, entry) {
   if (ev.kind === "end") { n.status = "ended"; n.last = ev; return n; }
   if (g.status === "invited") {
     if (!((actor === "black" && (ev.kind === "accept" || ev.kind === "decline")) || (actor === "white" && ev.kind === "decline"))) return null;
-    n.status = ev.kind === "accept" ? "playing" : "declined"; n.accepted = ev.kind === "accept"; n.last = ev; return n;
+    n.status = ev.kind === "accept" ? "playing" : "declined"; n.last = ev; return n;
   }
   if (g.status !== "playing") return null;
   if (ev.kind === "resign") {
@@ -328,7 +321,6 @@ export function apply(g, entry) {
   if (!m || !word || !after) return null;
   if (g.seconds > 0) { if (actor === "white") n.whiteMs = time; else n.blackMs = time; }
   n.position = after; n.moves.push(m); n.notation.push(word);
-  if (g.pooled) { if (entry.mine) n.mintedMine += ev.coins || 0; else n.mintedTheirs += ev.coins || 0; }
   n.drawOfferedBy = ev.offerDraw === true ? actor : null;
   n.last = ev;
   const key = after.repetitionKey;
@@ -356,22 +348,9 @@ export function remaining(g, side, elapsed) {
 const fresh = () => crypto.randomUUID().toLowerCase();
 
 /** The invitation of a new game (iOS MTChessSend.invite): I play white; seconds -- the clock, 0 for none. */
-export function invitation(seconds, at = Date.now(), stake = 0) {
+export function invitation(seconds, at = Date.now()) {
   const id = fresh();
-  const l = { game: id, id, parent: "", kind: "invite", at, seconds };
-  if (stake > 0) l.stake = Math.min(Math.floor(stake), MOST_COINS);
-  return l;
-}
-
-/** THIS SIDE'S SHARE OF A FINISHED POT (iOS MTChessCoins.share): the winner mints every coin of the moves and takes both stakes;
- *  the loser takes nothing; a draw, a declined, ended or replaced game gives each side its own moves' coins and its own stake back. */
-export function share(g) {
-  if (!g || !g.pooled || !finished(g.status)) return null;
-  const won = g.status === "whiteWon" ? g.whiteIsMine : g.status === "blackWon" ? !g.whiteIsMine : null;
-  const mineIn = g.whiteIsMine || g.accepted ? g.stake : 0, theirsIn = !g.whiteIsMine || g.accepted ? g.stake : 0;
-  if (won === true) return { minted: g.mintedMine + g.mintedTheirs, back: mineIn + theirsIn, put: mineIn };
-  if (won === false) return { minted: 0, back: 0, put: mineIn };
-  return { minted: g.mintedMine, back: mineIn, put: mineIn };
+  return { game: id, id, parent: "", kind: "invite", at, seconds };
 }
 
 /** THE LETTER OF AN ACTION, JUDGED BEFORE IT LEAVES (iOS action): null when the replay would refuse it; a letter on its
@@ -382,7 +361,6 @@ export function action(g, kind, { at = Date.now(), move = null, offeringDraw = f
   if (move) ev.move = move;
   if (kind === "move") ev.offerDraw = !!offeringDraw;
   if (g.seconds !== 0 && onTurn(ev) && spent != null) ev.spent = Math.min(Math.max(0, Math.round(spent)), LONGEST_TURN);
-  if (kind === "move" && g.pooled) ev.coins = 1;   // the second's one coin into the pot (iOS MTChessCoins.moveCoins, point 11)
   const next = apply(g, { letter: ev, mine });   // the training game's engine acts as the side that is not mine
   if (!next) return null;
   if (finished(next.status)) ev.end = ending(next, mine === g.whiteIsMine ? "white" : "black", kind);

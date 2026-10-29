@@ -2866,37 +2866,6 @@ fn route_now() -> String {
     String::new()
 }
 
-/// THE STAKE LEAVES THE BOOK INTO THE GAME'S POT (iOS MTChessCoins.put): a stake already put is not put twice; a short balance
-/// refuses it.
-#[tauri::command]
-async fn chess_stake(m: State<'_, Messenger>, chat: String, game: String, stake: i64) -> Result<bool, ()> {
-    if stake <= 0 || game.len() != 36 || groups::is_group(&chat) {
-        return Ok(stake == 0);
-    }
-    let pot = format!("chess-pot:{game}");
-    if stake <= coins::on_target(&m.vault, &pot) {
-        return Ok(true);
-    }
-    Ok(coins::moved(&m.vault, "spend", stake, &format!("chess-stake:{game}"), Some(&chat), Some(&pot)))
-}
-
-/// THE POT PAID AT THE END (iOS MTChessCoins.pay): this side's share booked once, by the game's names -- the moves' coins minted
-/// through the second's one coin, the stakes coming back; what the game gave or took (iOS net).
-#[tauri::command]
-async fn chess_settle(m: State<'_, Messenger>, chat: String, game: String, minted: i64, back: i64, put: i64) -> Result<i64, ()> {
-    if game.len() != 36 || groups::is_group(&chat) || minted < 0 || back < 0 || put < 0 {
-        return Err(());
-    }
-    let pot = format!("chess-pot:{game}");
-    if minted > 0 && coins::mint_named(&m.vault, minted, &pot, None) > 0 {
-        trace_line(&format!("chess_coin pot minted game={}", &game[..8]));
-    }
-    if back > 0 && coins::moved(&m.vault, "receive", back, &format!("chess-back:{game}"), Some(&chat), None) {
-        trace_line(&format!("chess_coin back={back} game={}", &game[..8]));
-    }
-    Ok(coins::booked(&m.vault, "earn", &pot) + back - put)
-}
-
 /// COINS ON A CORRESPONDENT'S LETTER (iOS MTCoinSend.react): false when the balance is short.
 #[tauri::command]
 async fn chat_coin(app: AppHandle, chat: String, mid: String, coins: i64) -> Result<bool, ()> {
@@ -4716,8 +4685,6 @@ pub fn run() {
             protocol_core,
             coin_rate_set,
             coin_moves_all,
-            chess_stake,
-            chess_settle,
             auto_react,
             coins_shown,
             levels_set,

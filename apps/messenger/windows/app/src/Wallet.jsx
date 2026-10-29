@@ -944,7 +944,7 @@ export default function WalletPane({ person, onOpenChat, bar }) {
   const sum = (u) => (u === "time" ? timeOf(total) : u === "coins" ? coinsOf(total) : `${montana(total)} ${st.ticker}`);
   // the wall's two rows are the bare numbers (iOS String(...)), every count of the book parts its thousands (MTCoinText.count)
   const rows = [["Minting now", String(st.wall?.now ?? 0)], ["Rights from the wall", String(st.wall?.rights ?? 0)],
-                ["Coins from chats", count(st.counts.earned)], ["Coins from the Pantheon", count(st.counts.tapped)], ["Coins from chess", count(st.counts.played)],
+                ["Coins from chats", count(st.counts.earned)], ["Coins from the Pantheon", count(st.counts.tapped)],
                 ["Coins from the VPN Wall", count(st.counts.walled ?? 0)], ["Coins burned", count(st.counts.burned)], ["Coins received", count(st.counts.received)],
                 ["Coins sent", count(st.counts.sent)], ["Coins on reactions", count(st.counts.spent)]];
   // THE COIN TURNS WHILE IT MINTS (iOS): at the taps' speed while the Pantheon burns, at least once a second while the auto minting

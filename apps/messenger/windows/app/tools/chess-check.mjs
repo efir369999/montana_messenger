@@ -1,7 +1,7 @@
 // THE CHESS CORE, CHECKED (src/chess-core.js, the port of iOS MTChessRules/MTChessWire/MTChessGame): the rules on known
 // positions and a game replayed from the letters of both sides, as each of two machines holds them.
 // usage: node tools/chess-check.mjs
-import { Position, parseMove, uci, letterText, parseLetter, invitation, action, games, replay, index, share } from "../src/chess-core.js";
+import { Position, parseMove, uci, letterText, parseLetter, invitation, action, games, replay, index, LINK } from "../src/chess-core.js";
 
 let failed = 0;
 const ok = (cond, what) => { if (!cond) { failed++; console.log("FAIL " + what); } else console.log("ok   " + what); };
@@ -65,29 +65,26 @@ ok(any && start.legalMoves().some((m) => uci(m) === uci(any)), "the weakest leve
 const scholar = play(start, "e2e4", "e7e5", "f1c4", "b8c6", "d1h5", "g8f6");
 const mateIn1 = reply(scholar, 8);
 ok(mateIn1 && uci(mateIn1) === "h5f7", "level 8 finds Qxf7#");
-// THE GAME'S POT (iOS MTChessCoins): a game invited now has a pot -- the invitation names the stake, every move its one coin;
-// the winner takes the whole pot, the loser nothing, a draw gives each its own back
+// NO COINS IN A GAME (iOS MTChessWire, the author's word 29.10.2026 19:31 UTC): an invitation names no stake, a move no coin;
+// an earlier build's letter that carries them is read without them, and the game replays the same
 {
-  const pinv = invitation(600, Date.now(), 5);
-  ok(pinv.stake === 5 && parseLetter(letterText(pinv, "Шахматы")).stake === 5, "the invitation names its stake");
-  const book = [{ letter: pinv, mine: true }];
+  const ninv = invitation(600, Date.now());
+  ok(ninv.stake === undefined && parseLetter(letterText({ ...ninv, stake: 5 }, "Шахматы")).stake === undefined, "an invitation names no stake");
+  const old = (l) => "♟ Шахматы\n" + LINK + Buffer.from(JSON.stringify(l)).toString("base64").replace(/\+/g, "-").replace(/\//g, "_");
+  const read = parseLetter(old({ ...ninv, stake: 5 }));
+  ok(read && read.stake === undefined && read.game === ninv.game, "an earlier build's stake is read without it");
+  const book = [{ letter: read, mine: true }];
   const step = (kind, white, extra = {}) => {
-    const g = replay(book, pinv.game);
+    const g = replay(book, ninv.game);
     const l = action(g, kind, { at: g.last.at + 1, mine: white, ...extra });
-    if (l) book.push({ letter: parseLetter(letterText(l, "Шахматы")), mine: white });
+    if (l) book.push({ letter: parseLetter(old({ ...l, coins: kind === "move" ? 1 : undefined })), mine: white });
     return l;
   };
   step("accept", false);
-  for (const [word, white] of [["f2f3", true], ["e7e5", false], ["g2g4", true], ["d8h4", false]]) ok(step("move", white, { move: word })?.coins === 1, `${word} names its coin`);
-  const pg = replay(book, pinv.game);
-  ok(pg.pooled && pg.stake === 5 && pg.mintedMine === 2 && pg.mintedTheirs === 2, "both machines count one pot");
-  const lost = share(pg);   // white is mine and black mated: I lose
-  ok(lost && lost.minted === 0 && lost.back === 0 && lost.put === 5, "the loser takes nothing of the pot");
-  const won = share({ ...pg, whiteIsMine: false });
-  ok(won && won.minted === 4 && won.back === 10 && won.put === 5, "the winner takes every move's coin and both stakes");
-  const drawn = share({ ...pg, status: "drawn" });
-  ok(drawn && drawn.minted === 2 && drawn.back === 5, "a draw gives each its own back");
-  ok(share({ ...pg, status: "playing" }) === null, "a pot is paid only at the end");
+  for (const [word, white] of [["f2f3", true], ["e7e5", false], ["g2g4", true], ["d8h4", false]]) ok(step("move", white, { move: word }) && !("coins" in book[book.length - 1].letter), `${word} is read without its old coin`);
+  ok(book.slice(2).every((e) => e.letter.kind === "move") && action(replay(book.slice(0, 2), ninv.game), "move", { move: "e2e4" }).coins === undefined, "a move names no coin");
+  const pg = replay(book, ninv.game);
+  ok(pg.status === "blackWon" && !["pooled", "stake", "mintedMine", "mintedTheirs", "accepted"].some((k) => k in pg), "the game counts no pot");
 }
 console.log(failed ? `${failed} failed` : "all passed");
 process.exit(failed ? 1 : 0);
