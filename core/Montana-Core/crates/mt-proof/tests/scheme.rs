@@ -422,7 +422,9 @@ fn a_periodic_column_one_row_on_is_refused() {
         with_schedule(1).check(),
         Err(mt_proof::air::AirError::PeriodicOneRowOn { column: 2 })
     );
-    with_schedule(0).check().expect("a periodic column at its own row");
+    with_schedule(0)
+        .check()
+        .expect("a periodic column at its own row");
 }
 
 // The selector, which is what a trace of many gadgets cannot do without: a constraint that holds
