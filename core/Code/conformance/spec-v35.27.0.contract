@@ -1,5 +1,5 @@
 # Montana Protocol — machine-readable spec contract (single source of truth)
-# Authoritative: "Montana Protocol v35.27.0.md", Genesis Decree -> protocol_params
+# Historical: written against "Montana Protocol v35.27.0.md", which this repository does not hold; the generation checked is spec_version below (VERSION.md:4). Genesis Decree -> protocol_params
 # Parsed by mt-conformance harness; checked byte-exact against code.
 # Lines: `spec_version`, `network_version`, `field <name> <size_bytes> <value|->`,
 #        `kat <name> <value>`. Order of `field` = canonical encode order.
