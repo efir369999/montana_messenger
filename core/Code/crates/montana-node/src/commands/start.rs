@@ -1026,6 +1026,39 @@ fn keep_equivocation(ctx: &mut NetCtx, header: &ProposalHeader, payload: &[u8]) 
     bound_map(ctx.equivocations);
 }
 
+/// What a list of confirmations brings to a quorum: the chain-length weight of those that
+/// pass `validate_bundle`, who they are, and how many were refused.
+struct Tally {
+    weight: u64,
+    confirmers: Vec<mt_state::NodeId>,
+    refused: usize,
+}
+
+/// Issue #21 K5, the Author's decision 334 (a): a refused confirmation adds no weight and is
+/// counted beside the shortfall, never in place of it. Before K5 a refusal was dropped and
+/// counted nowhere, so a window refused on bad bundles read as a plain quorum shortfall.
+fn tally(list: &[BundledConfirmation], nodes: &mt_state::NodeTable, endpoint: &Hash32) -> Tally {
+    let mut t = Tally {
+        weight: 0,
+        confirmers: Vec::new(),
+        refused: 0,
+    };
+    for bc in list {
+        if validate_bundle(bc, nodes, endpoint).is_ok() {
+            t.weight += nodes.get(&bc.node_id).map(|n| n.chain_length).unwrap_or(0);
+            t.confirmers.push(bc.node_id);
+        } else {
+            t.refused += 1;
+        }
+    }
+    t
+}
+
+/// The operator's line for a quorum shortfall, with the refusals beside it (issue #21 K5).
+fn shortfall_line(w: u64, what: &str, weight: u64, need: u64, refused: usize) -> String {
+    format!("[consensus] w={w}: {what} {weight} < quorum {need}; refused {refused} — skip")
+}
+
 /// Whether a list of confirmations names one node more than once.
 fn names_a_node_twice(list: &[BundledConfirmation]) -> bool {
     let mut seen = std::collections::BTreeSet::new();
@@ -1618,22 +1651,18 @@ fn handle_protocol_message(
                 });
                 if let Some(t_r_prev) = t_r_prev {
                     ctx.t_r_history.entry(w - 1).or_insert(t_r_prev);
-                    let mut sum = 0u64;
-                    for bc in &bundles_prev {
-                        if validate_bundle(bc, &ctx.state.nodes, &t_r_prev).is_ok() {
-                            sum += ctx
-                                .state
-                                .nodes
-                                .get(&bc.node_id)
-                                .map(|n| n.chain_length)
-                                .unwrap_or(0);
-                            confirmers.push(bc.node_id);
-                        }
-                    }
-                    if mt_consensus::validate_bundles_threshold(sum, active_cl).is_err() {
+                    let prev = tally(&bundles_prev, &ctx.state.nodes, &t_r_prev);
+                    confirmers = prev.confirmers;
+                    if mt_consensus::validate_bundles_threshold(prev.weight, active_cl).is_err() {
                         eprintln!(
-                            "[consensus] w={w}: included_bundles {sum} < quorum {} — skip",
-                            quorum(active_cl)
+                            "{}",
+                            shortfall_line(
+                                w,
+                                "included_bundles",
+                                prev.weight,
+                                quorum(active_cl),
+                                prev.refused
+                            )
                         );
                         return Ok(());
                     }
@@ -1646,21 +1675,12 @@ fn handle_protocol_message(
             }
             confirmers.sort();
             // Checking the evidence of window w (weighted).
-            let mut ev_sum = 0u64;
-            for bc in &evidence {
-                if validate_bundle(bc, &ctx.state.nodes, &header.timechain_value).is_ok() {
-                    ev_sum += ctx
-                        .state
-                        .nodes
-                        .get(&bc.node_id)
-                        .map(|n| n.chain_length)
-                        .unwrap_or(0);
-                }
-            }
+            let ev = tally(&evidence, &ctx.state.nodes, &header.timechain_value);
             let need_quorum = quorum(active_cl);
-            if w >= 1 && ev_sum < need_quorum {
+            if w >= 1 && ev.weight < need_quorum {
                 eprintln!(
-                    "[consensus] w={w}: cementing evidence {ev_sum} < quorum {need_quorum} — skip"
+                    "{}",
+                    shortfall_line(w, "cementing evidence", ev.weight, need_quorum, ev.refused)
                 );
                 return Ok(());
             }

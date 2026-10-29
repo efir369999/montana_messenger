@@ -17,7 +17,9 @@ Closure requires the actually used network and operator interfaces to
 distinguish insufficient quorum, missing authenticated data, proof rejection
 and unavailable diagnostics. A reachable but stalled peer must remain visibly
 stalled. Missing status must not display success. Time since progress is an
-observation only and cannot authorize a successor or lower the quorum.
+observation only and cannot authorize a successor or lower the quorum. By the
+Author's decision 334 (a), proof rejection in this list is a counter and not a
+state ("Item 10 read as three verdicts and a counter", below).
 
 The website already distinguishes checkpoint reconstruction and signatures from
 finality and authorized issuance. That correction does not supply the missing
@@ -57,6 +59,66 @@ The verdicts are therefore `no quorum` (exit 1), `no data` (exit 2) and
 `no diagnostics` (exit 4). Exit 3 is retired and given to no other verdict.
 Proof rejection is still distinguishable, as the count beside the verdict, but
 never as the cause of a shortfall.
+
+## Item 10 read as three verdicts and a counter (decision 334 (a))
+
+The Author's decision 334 (a) (record 339 of the constitution chain,
+2026-10-29 09:28 UTC) settles how the closure requirement above is read.
+Proof rejection is not a fourth state of a machine or of the network. It is a
+counter. Item 10 asks for three operator verdicts, each with its exit code, and
+a refusal count shown beside every reading. Consensus, "The way back", names
+them under "The liveness price", and item 20 of its conformance set holds an
+implementation to them (Registry, CNS-20). The codes 1, 2 and 4 are operator
+signals and not values of the protocol.
+
+The native core, `core/Montana-Core`:
+
+- The verdicts and their codes: `crates/montana-node/src/say.rs:24-40`,
+  `no quorum` 1, `no data` 2, `no diagnostics` 4. Code 3 is retired.
+- The three readings and the counter `refused N`: `say.rs:69-87`, written at
+  `say.rs:159-182` and read back at `say.rs:121-156`.
+- The verdict is chosen from the shortfall alone, never from a refusal:
+  `say.rs:253-269`.
+- The status read takes no lock and reads a missing endpoint as
+  `no diagnostics`: `crates/montana-node/src/status.rs:97-131`.
+- The exit code of the binary: `crates/montana-node/src/main.rs:74-84` and
+  `:716-744`.
+- Tests:
+  - `crates/montana-node/tests/a_stall_names_its_cause.rs:9`, `:26`, `:49`,
+    `:85`;
+  - `the_operator_reads_the_status.rs:17`, `:73`;
+  - `the_status_tells_a_close_a_wait_and_a_stall_apart.rs:67`;
+  - `a_timeout_closes_nothing.rs:8`;
+  - the unit test `the_last_error_line_starts_with_the_verdict`
+    (`main.rs:750`).
+
+The earlier core, `core/Code`, answers to its own generation (the Author's
+decision 330 (a)):
+
+- **No diagnostics.** `status` fails when a record file is missing or no
+  running node holds the store, and never reads success for a dead node
+  (`crates/montana-node/src/commands/status.rs:144-166`, K4, `5dced56`).
+- **An exhausted cascade.** From window 2 the node prints `STALLED` and
+  appoints nobody (`crates/montana-node/src/commands/start.rs:579-587` and
+  `:975-994`, K6, `e5cc3bc`). The cascade it walks is still clocked, a
+  property of that generation recorded in `core/Code/AUDIT.md`
+  ("Known limitations", item 4).
+- **A quorum shortfall, with its refusals beside it.** The node says
+  `included_bundles W < quorum Q; refused N` and
+  `cementing evidence W < quorum Q; refused N` (`start.rs:1654-1668` and
+  `:1678-1686`). `tally` (`start.rs:1031-1056`) adds the weight of the
+  confirmations that pass `validate_bundle` and counts those that fail; a
+  refusal adds no weight, is shown beside the shortfall and never stands for
+  it (`shortfall_line`, `start.rs:1058-1060`). The test
+  `a_refused_confirmation_is_counted_beside_the_shortfall`
+  (`commands/start/order_tests.rs:705`) refuses three confirmations, on the
+  endpoint, the key and the Node Table, and reads `refused 3`. K5 of issue
+  #21.
+
+Decision 334 (a) does not say whether `core/Code` also gives the codes 1, 2
+and 4. That stands as an open question of #21 K7. The Gate 0 question below
+(wait forever or give up after `WAITS_UP_TO`) is not answered by this
+decision either.
 
 ## Three readings: closed, waiting, stalled
 

@@ -324,6 +324,19 @@ mod tests {
         assert_eq!(s("window_credit") * s("segment_windows"), 86_400);
     }
 
+    // The ramp of entry (Consensus, "Presence and admission"; constitution records 297 and 300)
+    // leaves `continuity_segments` exactly at the threshold only while the multiplier is the
+    // threshold turned over. It reaches `max_entry_segments` at four times the threshold, and the
+    // bitmap of a record is wide enough for that ceiling. A row moved alone breaks one of these.
+    #[test]
+    fn the_multiplier_of_entry_is_its_threshold_turned_over() {
+        let (num, den) = super::ratio("adaptive_entry_threshold").expect("the Decree names it");
+        assert_eq!(den, num * s("adaptive_entry_multiplier"));
+        assert_eq!((num, den), (1, 100));
+        assert_eq!(s("max_entry_segments"), 4 * s("continuity_segments"));
+        assert!(s("max_entry_segments") <= u64::from(u64::BITS));
+    }
+
     #[test]
     fn the_encoding_is_little_endian_and_in_order() {
         let bytes = encode_published();

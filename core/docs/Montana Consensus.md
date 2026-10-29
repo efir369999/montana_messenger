@@ -924,6 +924,31 @@ cannot be bought or parallelized. Where the pressure of pending candidates excee
 of the active set, the required continuity rises by the multiplier Canon fixes, to a bounded
 maximum — so that a rush of applicants raises the price in time rather than in money.
 
+**The ramp of entry** (decision 292, answer 4b; constitution records 297 and 300). The count of
+segments in force at the gate of entry is
+
+```
+n = min(max_entry_segments,
+        max(continuity_segments,
+            ceil(continuity_segments x pending x adaptive_entry_multiplier / active)))
+```
+
+with the multiplications before the division and the division rounding upward. `active` is the
+`admitted_count` of a proposal. `pending` is the count of candidacies applied and neither admitted
+by a selection event nor expired, as they stand once that proposal has applied. Both are measured in
+one proposal: the proposal of the last window of the stride standing for the candidacy's window,
+the one whose `record_root` the candidacy is verified against (Canon, "The candidacy of a machine").
+A claimant therefore knows `n` before it proves. Every verifier recomputes `n` from the state it
+holds, and the candidacy states no `n`. Because `adaptive_entry_threshold_den /
+adaptive_entry_threshold_num = adaptive_entry_multiplier`, the ramp leaves `continuity_segments`
+exactly where `pending / active` reaches the threshold of 1/100, and it reaches `max_entry_segments`
+at four times the threshold. Each of the three numbers acts by its name: the threshold is where the
+ramp begins, the multiplier is its slope, and `max_entry_segments` is its ceiling. No Decree row
+moves. `n` is the `segments_in_force` of Identity, and the record of a candidacy passes when it lived
+at least `ceil(n x 2 / 3)` of the `n` segments ending with the current one (Canon, "The rules of
+continuity"). Where `active` is zero, the formula divides by zero. The count there awaits the
+Author's decision and is not stated here.
+
 **The commitment that stands for a machine.** A machine is represented in every consensus
 structure by a commitment derived, under the domain Canon names for it, from the public key it
 answers with, the suite that key belongs to, and a blinding factor of its own. That commitment
@@ -1236,6 +1261,22 @@ windows catches up in `k` windows of that duty. Machines retain the attestations
 walk and takes a fresh anchor from its operator, which is a change of trust and not a verification,
 and the set says so.
 
+**A plane taken from the network waits out its stride.** A device that holds no state to replay from
+takes the plane of the head from the network (step 5), and so holds the rate nullifiers of only the
+windows it walked, while the rate set of Canon lives a whole stride of `proving_horizon` windows. Such a
+device puts up no stake and no proposal until the standing stride of the horizon changes after the
+head whose plane it took: the first window it stakes and proposes in is `k x proving_horizon +
+proving_lag - 1` for the least `k` that puts it past that head, so it waits at most `proving_horizon`
+windows. Until then it follows the decided roll of every window, replayed over the state it holds
+with every root recomputed, and it publishes nothing of its own. There is no new wire and no change of
+Genesis, and the price is up to one stride without its vote. The record of the last window it closed
+names the window of the head it took the plane at, and every close carries that mark forward, so the
+wait holds through a restart. A machine that walked from a state of its own replays every window and
+does not wait. The rule is `pulse::next_stride_after`, `pulse::stakes_from` and
+`pulse::follow_to_the_next_stride` (`core/Montana-Core/crates/montana-node/src/pulse.rs:3166-3255`), and
+the mark is the fifth part of `Kept` (`lib.rs:725-737`). These are the Author's decision 332 (b),
+record 339 of the constitution chain, 2026-10-29 09:28 UTC, issue #16 K7b.
+
 **Two proposals, and no second count.** A device offered two proposals of one height takes the one
 the agreement of the window after decided; where two decisions verify, the two are an equivocation
 and the contradicting pairs of pledges under one part-nullifier are the evidence the sanction of this
@@ -1250,6 +1291,7 @@ resolves by the rule this document already states and never by asking who is mor
 - Every leaf of state a joining device takes is checked against a root the verified head carries, by recomputation; a leaf accepted on the word of whoever answered is a defect.
 - A device asks several machines and judges every answer alone; nothing in the join is decided by how many answers agree.
 - Joining publishes nothing about the joiner but the fact that some device asked, which the ledger of the wire already holds.
+- A device whose plane came from the network stakes and proposes nothing before the standing stride of the horizon changes after the head it took the plane at; until then it only follows the decided rolls, and the mark survives every close and restart.
 
 ## The way back
 
@@ -1314,6 +1356,30 @@ remain halted indefinitely. Progress additionally needs delivery of the necessar
 an eligible proposer and a verified certificate; obtaining the numeric quorum alone is not progress.
 Monitoring reports these conditions and authorizes no transition. Reconnection restores
 liveness only when the original authorization and verification requirements are met.
+
+What monitoring reports to an operator is three verdicts, and each carries an exit code of the
+operator's status read. The codes are operator signals and not values of the protocol: no
+proposal, root, frame, message of the wire or quorum carries them.
+
+- `no quorum`, code 1: the data the window waits on stands, and the pledges or the cement on it
+  fall short of the quorum share.
+- `no data`, code 2: a beacon, an attestation or a proposal the window waits on was not delivered
+  to the machine.
+- `no diagnostics`, code 4: the machine gives no reading. It made none in this run, its
+  diagnostic door is gone, or no running machine holds its store. A missing reading never reads
+  as success.
+
+A window closed, and a shortfall still awaited inside the patience of its wait, are a healthy
+machine and read 0; the waiting reading names its shortfall and is not a stall. A verdict reached
+when the patience of a wait runs out is a stall: it closes nothing and moves no head. A refused proof is not a verdict
+and not a state. Every refusal a machine counts is of an object deposited at a public point, and
+anyone may deposit there, so a refusal names no cause of a shortfall. The machine counts its
+refusals and shows the count beside every reading as `refused N`, never in place of the verdict.
+Code 3 is given to no verdict. The verdicts and their codes are `say::Verdict`
+(`core/Montana-Core/crates/montana-node/src/say.rs:24-40`); the readings and the counter are
+`say::PulseStatus` (`say.rs:69-87`, written at `say.rs:159-182`); the verdict is chosen from the
+shortfall alone at `say.rs:253-269` (the Author's decision 334 (a), record 339 of the constitution
+chain, 2026-10-29 09:28 UTC; issue #21).
 
 **Invariants of the way back:**
 
@@ -1387,3 +1453,4 @@ An implementation conforms to this document when all of the following hold.
 17. It counts a machine's standing as the census windows whose cements hold its parts, carries the census from proposal to proposal by the rule of Canon, reads the committee off the standing alone, draws every unit's coin from its own spending half, the census window and the aggregate of the window two before, publishes a ballot only where its standing drew a vote and the electorate is above the floor of the committee, verifies every ballot it gathers against the census, the aggregate and the committee of the electorate, counts a part's ballot once at its largest count, and refuses a beacon whose votes exceed what those ballots cast.
 18. It runs the agreement on what a window decided: it pledges in attempt zero the name it took, counts every open pledge on the quorum its `since` names and every closing pledge on the quorum of open pledges of its attempt, a part once per kind and attempt, closes on a quorum of open pledges of its attempt, proposes in the order of its place, follows the open pledge at the lowest place only where its lock admits it and the name is valid to it, moves to a later attempt on its spans or on pledges beyond the share the quorum leaves, keeps its attempt, its lock, its valid name and its pledges through a restart, and reproduces the frozen vectors of the place.
 19. It names in every proposal the roll of what its window applied, publishes the roll beside the proposal, follows a name it did not take only where a quorum backs it or its roll replays to it, replays the decided roll over the decided state of the window two before where its own name was not decided and applies its open window again over the result, and tells a payer again what its frame took where a replay moves it.
+20. It tells its operator, of a window it has not closed, one of the three verdicts of "The way back" with its code — `no quorum` 1, `no data` 2, `no diagnostics` 4 — and reads 0 for a window closed or a shortfall awaited inside its patience. It chooses the verdict from the shortfall it observes and never from a refusal. It counts refusals and shows the count beside the reading as `refused N`, never as a verdict or a state. It reads a missing reading as `no diagnostics` and never as success. No verdict, code or count enters a proposal, a root, the wire or a quorum, and a stall closes nothing.

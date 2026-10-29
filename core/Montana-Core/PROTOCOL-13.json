@@ -34,8 +34,8 @@
    "item": 5,
    "report": "05-CONTINUITY-AND-REJOIN.md",
    "requirement": "Prove continuity and return after a partition",
-   "status": "open",
-   "summary": "Enforce bitmap shift, period boundaries and required participation inside admission. Replaying other machines' records does not create one's own participation."
+   "status": "partial",
+   "summary": "Partial (the Author's decision 342 (a), record 345). In the node, an opening takes its segment from its own window (state.rs:610-615), and the segments lived, the count in force and the share required are functions with tests (layout.rs:1028, entry.rs:26, :43). A machine whose plane came from the network stakes nothing until the stride changes (decision 332 (b), K7b). Remains for the next generation: the share is checked inside the admission proof, which needs segment, n and share in its public input. Replaying other machines' records does not create one's own participation."
   },
   {
    "item": 6,

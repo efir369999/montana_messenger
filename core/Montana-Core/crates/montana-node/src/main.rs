@@ -218,6 +218,19 @@ fn run() -> Result<(), String> {
     // and no window at all for a machine holding nothing that was not asked to open (Consensus,
     // "The cold start").
     let from = montana_node::pulse::first_window(&machine, configuration.open).map_err(said)?;
+    // A machine whose plane came from the network stakes and proposes nothing until the stride of the
+    // horizon changes, and follows the decided rolls until then (the author's decision 332 (b),
+    // constitution record 339).
+    let waited = from;
+    let from = montana_node::pulse::follow_to_the_next_stride(
+        &machine,
+        from,
+        montana_node::pulse::WAITS_UP_TO,
+    )
+    .map_err(said)?;
+    if from != waited {
+        println!("followed the decided rolls to window {from}, past the change of the stride of the horizon");
+    }
     stand()?;
     println!(
         "living from window {from} in a cohort of {}",

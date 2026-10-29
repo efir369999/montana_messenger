@@ -697,3 +697,36 @@ fn a_clock_record_shorter_than_its_magic_is_refused() {
         "a 2-byte clock record must be an error"
     );
 }
+
+// Issue #21 K5, the Author's decision 334 (a): a refused confirmation adds no weight to the
+// quorum and is counted beside the shortfall, never in its place. Rejects the code before K5,
+// which dropped a refusal and counted it nowhere, so the operator read a plain shortfall.
+#[test]
+fn a_refused_confirmation_is_counted_beside_the_shortfall() {
+    let f = Fixture::new();
+    let good = f.confirmation(&f.a, W, T_R_W);
+    // Refused on the endpoint, on the signature and on the Node Table.
+    let wrong_endpoint = f.confirmation(&f.b, W, T_R_PREV);
+    let mut wrong_key = f.confirmation(&f.p, W, T_R_W);
+    wrong_key.node_id = f.b.node_id();
+    let stranger = f.confirmation(&f.follower, W, T_R_W);
+    let t = tally(
+        &[good.clone(), wrong_endpoint, wrong_key, stranger],
+        &f.nodes,
+        &T_R_W,
+    );
+    assert_eq!(t.weight, 10, "only the valid confirmation weighs");
+    assert_eq!(t.confirmers, vec![f.a.node_id()]);
+    assert_eq!(t.refused, 3);
+    let line = shortfall_line(W, "cementing evidence", t.weight, quorum(30), t.refused);
+    assert_eq!(
+        line,
+        format!(
+            "[consensus] w={W}: cementing evidence 10 \u{3c} quorum {}; refused 3 — skip",
+            quorum(30)
+        )
+    );
+    // Without a refusal the count reads zero, and the weight is the same.
+    let clean = tally(&[good], &f.nodes, &T_R_W);
+    assert_eq!((clean.weight, clean.refused), (10, 0));
+}

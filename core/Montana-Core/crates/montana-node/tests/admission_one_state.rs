@@ -24,17 +24,15 @@ mod common;
 use common::{a_candidacy_of, a_record_carrying, an_opening_of};
 
 const WINDOW: u64 = 1_000;
-const SEGMENT: u32 = 7;
+// The segment window 1 000 stands in, floor(1 000 / 1 440) = 0: the machine derives it from the
+// window (Canon, "The rules of continuity", rule 1; constitution records 297 and 300).
+const SEGMENT: u32 = 0;
 const MACHINE: [u8; 32] = [0x5A; 32];
 const OWN_RIGHT: [u8; 32] = [0x22; 32];
 
 fn opened(state: &mut State, open: u8, record: &[u8]) {
     state
-        .apply_opening(
-            &an_opening_of(&[open; 32], record, WINDOW, SEGMENT),
-            WINDOW,
-            SEGMENT,
-        )
+        .apply_opening(&an_opening_of(&[open; 32], record, WINDOW, SEGMENT), WINDOW)
         .expect("a record opens");
 }
 
