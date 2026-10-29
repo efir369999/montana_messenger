@@ -139,6 +139,37 @@ fn a_machine_holding_nothing_and_not_asked_to_open_is_refused_and_writes_nothing
     );
 }
 
+// Refuses the start of ced7d83f, whose refusal of a machine left out of the cohort printed the half
+// it is named by on the terminal (#22, K1): the refusal names the file the half stands in, and the
+// store is left as it was found.
+#[test]
+fn a_machine_left_out_of_the_cohort_is_refused_without_its_half() {
+    let _alone = alone();
+    let at = Scratch::named("open-outside");
+    let half = borne(&at.0, [0x75; 32]);
+    let other = Cohort::half_of(&[0x76; 32]);
+    let before = everything_under(&at.0);
+    let ran = started(&at.0, &other, false);
+    let said = String::from_utf8_lossy(&ran.stderr);
+    assert!(!ran.status.success(), "a machine outside its cohort lived");
+    assert!(
+        said.contains("is not among the 1 named as admitted"),
+        "{said}"
+    );
+    assert!(said.contains(montana_node::private::FILE), "{said}");
+    let shown: String = half.iter().map(|b| format!("{b:02x}")).collect();
+    let printed = format!("{said}{}", String::from_utf8_lossy(&ran.stdout));
+    assert!(
+        !printed.contains(&shown),
+        "the half on a default line: {printed}"
+    );
+    assert_eq!(
+        everything_under(&at.0),
+        before,
+        "a machine refused outside its cohort wrote to its store"
+    );
+}
+
 // Refuses an --open that is not window zero on the cohort handed: the binary of fa8ec28, which does
 // not know the flag and refuses it, and an opening that waits for an anchor, opens another window or
 // carries another tree of admitted machines than the halves the operator named.

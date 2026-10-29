@@ -193,11 +193,13 @@ fn run() -> Result<(), String> {
     }
     let cohort = montana_node::pulse::Cohort::of(&configuration.admitted).map_err(said)?;
     let half = machine.naming_half().map_err(said)?;
+    // The refusal names where the half stands and not the half (#22, K1): a refused start writes
+    // nothing, so the owner-only file is not stood here, and a start without --admitted writes it.
     if !cohort.holds(&half) {
         return Err(format!(
-            "this machine is not among the {} named as admitted; hand its own half over too: {}",
+            "this machine is not among the {} named as admitted; hand its own half over too: a start without --admitted writes it to {} of the data directory",
             cohort.count(),
-            hex(&half)
+            montana_node::private::FILE
         ));
     }
     // Where this machine begins, decided before it enters anything: window zero only where its
