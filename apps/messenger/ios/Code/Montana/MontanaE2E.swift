@@ -1329,9 +1329,9 @@ final class E2E {
     func notePeerSeen(_ peer: String) {
         DispatchQueue.main.async { self.store?.noteSeen(peer, at: MontanaWakePush.nodeNow(), by: "call") }
     }
-    func logCall(peer: String, video: Bool, incoming: Bool, durationSec: Int, missed: Bool, credit: MTCallCredit? = nil) {
+    func logCall(peer: String, video: Bool, incoming: Bool, durationSec: Int, missed: Bool, call: String? = nil) {
         DispatchQueue.main.async { [weak self] in
-            self?.store?.appendCallLog(peer: peer, video: video, incoming: incoming, dur: durationSec, missed: missed, credit: credit)
+            self?.store?.appendCallLog(peer: peer, video: video, incoming: incoming, dur: durationSec, missed: missed, call: call)
         }
     }
 

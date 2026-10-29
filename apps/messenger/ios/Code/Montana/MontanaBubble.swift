@@ -568,9 +568,6 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                     .environment(\.colorScheme, .dark)
                     .frame(maxWidth: bubbleCeiling, alignment: drawnMine ? .trailing : .leading)
                     .modifier(MTShareBeside(on: post != nil, action: onShare))
-                if let call = callInfoOf(message.text), !call.missed, let coins = call.coins {
-                    MTCallCoinReceipt(coins: coins)
-                }
                 if ladder {
                     // THE LADDER UNDER THE BUBBLE (the author's word 08.09): three dots along the
                     // bottom — sent, delivered, read — each lit the moment its rung is reached, and

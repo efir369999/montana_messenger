@@ -537,8 +537,8 @@ enum MTPiLevels {
 
 /// THE BURNS OF THE BUILDS BEFORE (the author's words 03.10.2026 21:51-22:01 UTC): up to build 2111 a call burned its seconds and a
 /// letter one coin. The author's words 04.10.2026 22:21-22:31 UTC turned the burn into a payment to the person -- «the one who calls
-/// pays the one called, the one who writes pays the one written to» (MTCoinSend.pay; a call mints its seconds to both since 07.10.2026,
-/// MTCallMint). The names stay to read
+/// pays the one called, the one who writes pays the one written to» (MTCoinSend.pay); a call moves no coin (the author's word 29.10.2026 19:31 UTC).
+/// The names stay to read
 /// the burns the books already hold.
 enum MTCoinBurn {
     static let callPrefix = "call:"
@@ -561,29 +561,18 @@ enum MTCoinBalance {
 /// THE PEOPLE IN THE APP HEAR MY BALANCE MOVE (the author's words 04.10.2026 00:03 and 01:19 UTC: «the update instant, as by a web
 /// socket»): a move of the book says the balance again to the correspondents in the app now, in the app word (E2E.coinBeacon) --
 /// one round in two seconds however fast the coins come, so a minute of minting is thirty rounds to the people online, not one a coin.
-/// A TALKING CALL TELLS AT THE PULL'S PACE (12.10.2026, the critic's finding 10 of helper 65): a call mints every second, so the
-/// two-second round ran for the whole call -- the app word to every person in the app every two seconds, four node posts each where
-/// no live channel stood (the iPhone 17 07:49Z). The author's word of 04.10 stands -- «the update instant, as by a web socket», the
-/// balance moves for the pair -- bounded by his own word of the same day for the wallet's pull, «at most once in fifteen seconds»
-/// (MTWalletPull.tellPairs): while a call talks the round waits fifteen seconds, and the call's end tells the last balance at once.
 @MainActor enum MTCoinTell {
     static let pace: UInt64 = 2
-    static let callPace: UInt64 = 15
     private static var due: Task<Void, Never>?
     static func moved() {
         guard due == nil else { return }
-        let wait = MontanaCall.shared.mintsTalk ? callPace : pace
+        let wait = pace
         due = Task { @MainActor in
             try? await Task.sleep(nanoseconds: wait * 1_000_000_000)
             guard !Task.isCancelled else { return }
             due = nil
             tell()
         }
-    }
-    /// The call ended: the round that waited goes now, with the last balance.
-    static func callEnded() {
-        due?.cancel(); due = nil
-        tell()
     }
     private static func tell() {
         guard let store = ChatStore.live else { return }
@@ -727,7 +716,7 @@ enum MTCoinBalance {
     /// for him»; it replaces the hundred levels a long text minted, 05.10): every bubble of a chat whose flow is on -- words, a
     /// picture, a voice, a file, of either side -- mints the level's coins on this phone, once by its name (MTChatMint.credit,
     /// oneEach; the second's one coin, MTCoinBook.price); a coin letter, a chess step and a row of the phone's own mint
-    /// nothing. In an ordinary chat a bubble of mine burns one (MTCoinSend.pay). A call follows its chat the same way (MTCallMint).
+    /// nothing. In an ordinary chat a bubble of mine burns one (MTCoinSend.pay). A call moves no coin (the author's word 29.10.2026).
     @Published private(set) var turns = 0
     nonisolated static func isOn(_ conv: String) -> Bool { !conv.isEmpty && UserDefaults.standard.bool(forKey: "moneyFlow." + conv) }   // a conversation's own key (SeedScope.dataPrefixes)
     func on(_ conv: String) -> Bool { Self.isOn(conv) }
@@ -1635,71 +1624,6 @@ enum MTLevelAccess {
     }
 }
 
-/// The author's word 14.10.2026: recording earns; without recording the same rate burns.
-/// Each person's local recording decides the sign, and the ledger owns the shared level/music
-/// multiplier. Recording transitions settle elapsed seconds before changing that sign.
-struct MTCallCredit {
-    let call: String
-    let coins: Int
-}
-
-@MainActor enum MTCallMint {
-    nonisolated static let refPrefix = "callmint:"   // read by the history's fold off the screen's thread (MTTimeChain.source)
-    nonisolated static let burnPrefix = "call:"
-    static var wanted: Bool { !MontanaCall.shared.talkWindows.isEmpty || MTGroupRoom.shared.talkElapsed != nil }
-    /// THE SECONDS ARE THE CALL'S CLOCK, NOT THE BEAT'S (12.10.2026, the author's word 08:5x UTC: «for calls coins must be credited
-    /// to both correspondents by their level for every second»): a beat minted one second, and a beat is a second plus its own
-    /// work -- B9F26F54 minted 2169 seconds of the 2223 it talked 07:24-08:01Z, while the iPhone 17 at the other end minted 2224.
-    /// Each beat mints the seconds the call has talked since the last second it minted. The first beat of a call in this run
-    /// counts from one second back: a run that came back into a talking call must not mint the seconds the run before it minted.
-    private static var minted: [String: Int] = [:]
-    private static var finished: [String] = []
-    static func begin() { begin(MontanaCall.shared.talkElapsed) }
-    static func begin(_ elapsed: (call: String, seconds: Int)?) {
-        guard let t = elapsed else { return }
-        if minted[t.call] == nil { minted[t.call] = 0 }
-    }
-    static func mintSecond() {
-        for elapsed in MontanaCall.shared.talkWindows { mintSecond(elapsed) }
-        mintSecond(MTGroupRoom.shared.talkElapsed)
-    }
-    private static func mintSecond(_ elapsed: (call: String, seconds: Int)?) {
-        guard let t = elapsed else { return }
-        let base = minted[t.call] ?? max(0, t.seconds - 1)
-        let fresh = t.seconds - base
-        guard 0 < fresh else {
-            return
-        }
-        minted[t.call] = t.seconds
-        // ONE SIGN FOR BOTH (MTCallRecordingPolicy.callRecorded, 20.10.2026 22:0x): a call of two is read from both sides' words; a
-        // recording started by this hand earns too; a parked call and a room keep this phone's own recording
-        let recording = (MontanaCall.shared.recordedForBoth(t.call) ?? false) || MTCallRecording.shared.isRecording(t.call)
-        let coins: Int
-        if recording {
-            coins = MTCoinBook.ledger.mintInWindow(MTCoinBook.price * fresh, prefix: refPrefix + t.call + ":", seconds: fresh)
-        } else {
-            coins = -MTCoinBook.ledger.burnInWindow(MTCoinBook.price * fresh, prefix: burnPrefix + t.call + ":", seconds: fresh)
-            // the chain's balance is the person's, not the book's: the whole price is owed to the chain whatever the book could burn
-            if MTCoinChainRules.onlineCut <= Int64(MTTimeChain.now()) { MTCoinTx.owe(burn: MTCoinBook.price * fresh) }
-        }
-        MontanaTrace.markFolded("call_coins", "coins=\(coins) seconds=\(fresh) recording=\(recording ? 1 : 0)", window: 60)
-    }
-    /// Settle the last whole second before the call clock is cleared. Read the amount the
-    /// book actually credited, including changes of level and music during the call.
-    static func finish() -> MTCallCredit? { finish(MontanaCall.shared.talkElapsed) }
-    static func finish(_ elapsed: (call: String, seconds: Int)?) -> MTCallCredit? {
-        guard let t = elapsed else { return nil }
-        mintSecond(t)
-        let earned = MTCoinBook.ledger.closeMintWindow(refPrefix + t.call + ":")
-        let burned = MTCoinBook.ledger.closeMintWindow(burnPrefix + t.call + ":")
-        let coins = earned + burned
-        MTCoinTx.burnNow()   // the call's last seconds go to the chain at its end, not a window later
-        if !finished.contains(t.call) { finished.append(t.call) }
-        while finished.count > 8 { minted.removeValue(forKey: finished.removeFirst()) }
-        return MTCallCredit(call: t.call, coins: coins)
-    }
-}
-
 /// THE PULL SWITCHES THE AUTO MINTING ON (the author's words 04.10.2026 00:52 and 01:18 UTC: «pulling the wallet's page, as the time
 /// panel does, calls the coin for a forced refresh of the tops and the activation of the auto minting once a second»; «at such a
 /// refresh switch the auto minting on: every second coins by the box's level»): a pull let go past the coin's trigger mints at once
@@ -1758,11 +1682,9 @@ struct MTCallCredit {
         beating = Task { @MainActor in
             while !Task.isCancelled {
                 let vpn = MTVPNWallMint.shared.wanted
-                let call = MTCallMint.wanted
-                guard MTWalletPull.shared.on || vpn || call else { break }
+                guard MTWalletPull.shared.on || vpn else { break }
                 if vpn { MTVPNWallMint.shared.ask() } else { MTVPNWallMint.shared.settle() }
                 if MTWalletPull.shared.on { MTWalletPull.shared.mintSecond() }
-                if call { MTCallMint.mintSecond() }
                 MTCoinSplit.shared.beat()
                 try? await Task.sleep(nanoseconds: UInt64(MTCoinFlash.gather * 1_000_000_000))
                 MTCoinFlash.shared.rise()
@@ -1808,7 +1730,7 @@ enum MTTimeChain {
         if r.hasPrefix(MTPantheon.refPrefix) { return "pantheon" }
         if r.hasPrefix(MTVPNWallMint.refPrefix) { return "vpnwall" }
         if r.hasPrefix(MTVPNPay.refPrefix) { return "vpnpay" }
-        if r.hasPrefix(MTCallMint.refPrefix) { return "calls" }
+        if MTCoinLegacy.call(r) { return "calls" }
         if MTCoinLegacy.timer(r) { return "timer" }
         if MTBoardCoins.owns(r) { return "comments" }
         switch kind {
@@ -2691,10 +2613,10 @@ struct MTCoinEntry: Codable, Hashable, Identifiable {
     @discardableResult func burnInWindow(_ coins: Int, prefix: String, seconds: Int) -> Int
     /// Close this source's current window and return its signed booked amount, without moving coins again.
     func closeMintWindow(_ prefix: String) -> Int
-    /// Coins already counted elsewhere, minted once under their name: a chess game's pot at its end (MTChessCoins.pay), whose
-    /// moves named their coins at their makers' levels. The coins this call added; none when the name was minted before.
+    /// Coins already counted elsewhere, minted once under their name (chess and calls write none since 29.10.2026). The coins
+    /// this call added; none when the name was minted before.
     @discardableResult func mint(_ coins: Int, ref: String, peer: String?) -> Int
-    /// Coins burned by a service used (a call's seconds, a letter through a node not one's own): never more than the balance
+    /// Coins burned by a service used (a letter through a node not one's own): never more than the balance
     /// holds, never a refusal of the service; the count burned.
     @discardableResult func burn(_ coins: Int, ref: String) -> Int
     /// Coins given on a letter or a post; refused (false) when the balance is short or the name was taken.
@@ -2774,6 +2696,8 @@ enum MTCoinLegacy {
     nonisolated static let chessNames = ["chess:", "chess-won:", "chess-lost:", "chess-pot:", "chess-stake:", "chess-back:"]
     nonisolated static func chess(_ ref: String) -> Bool { chessNames.contains { ref.hasPrefix($0) } }
     nonisolated static func timer(_ ref: String) -> Bool { ref.hasPrefix("timer:") }   // COMPAT-LOCAL: a name of this phone's own book, never a word on the wire
+    /// A call's seconds minted by the builds before (the author's word 29.10.2026 19:31 UTC: «and at a call too»); a call writes no coin.
+    nonisolated static func call(_ ref: String) -> Bool { ref.hasPrefix("callmint:") }   // COMPAT-LOCAL: a name of this phone's own book, never a word on the wire
 }
 
 /// The app's one book of coins, today (see MTCoinLedger for the seam).
@@ -2785,9 +2709,7 @@ enum MTCoinBook {
     /// THE PRICE OF A SECOND, THE ONE OWNER OF THE FUNCTION «1 COIN = 1 SECOND» (point 11; the author's words 05.10.2026 11:17 UTC:
     /// «a second = 1 coin everywhere»; 19.10.2026 12:3x: «the ceiling, the invariant -- nothing else can mint or accelerate it»;
     /// 13:4x: «one owner of the function 1 coin = 1 second, and that is all»): one coin, the most a second mints, every door
-    /// together (MTLocalCoinLedger.priced) -- a person's hour is 3 600 coins and their personal rate is read by it (MTHourWorth, MTPersonalRate);
-    /// a second of a connected call mints it times each side's level in a Money Flow chat and burns it on each side in an ordinary
-    /// one (MTCallMint, 07.10.2026 18:3x-18:4x UTC).
+    /// together (MTLocalCoinLedger.priced) -- a person's hour is 3 600 coins and their personal rate is read by it (MTHourWorth, MTPersonalRate).
     static let price = 1
     /// THE TICKER OF THE MONTANA TIME COIN (the constitution of the chain, point 12, the author's word 04.10.2026 14:31 UTC): one
     /// symbol in every language, beside the balance.
@@ -3178,10 +3100,7 @@ struct MTCoinCounts {
         let whole = coins
         guard 0 < whole else { return 0 }
         if !burning && !MTCoinBook.fits(whole, beside: balance) { return 0 }
-        // A connected call owns every elapsed second (14.10.2026): other minting must
-        // not consume its earnings. MTCallMint advances each call's paid second once.
-        // A CALL SHARES THE SECOND (19.10.2026, point 11 as the ceiling): its seconds take the second's one coin like every other
-        // minting -- a call beside the VPN or the pull once minted two coins a second.
+        // ONE COIN A SECOND, EVERY DOOR TOGETHER (19.10.2026, point 11 as the ceiling): two doors at once once minted two coins a second.
         let c = burning ? min(whole, max(0, balance)) : priced(whole, seconds: seconds)
         guard 0 < c else { return 0 }
         let signed = burning ? -c : c
@@ -4457,7 +4376,6 @@ enum MTCoinTx {
                 }
             }
         }
-        await burnOwed()   // what an ended process owed the chain for its calls
         await scan(why: "launch")
     }
     @MainActor private static var scanning = false
@@ -4814,88 +4732,6 @@ extension MTCoinTx {
         save(onceFile, ["n": o])
     }
     private static let onceFile = "coin3-once.json"
-    /// AN UNRECORDED CALL BURNS ON THE CHAIN (the author's words 23.10.2026 00:27 and 00:37 UTC: every spend is a record of the chain,
-    /// the phone only its mirror): from the online cut, the first second the node takes a BURN (V14), the seconds MTCallMint burns are
-    /// owed in the person's folder and laid as one BURN on my chain's head -- once a window while the call talks and at its end. The
-    /// BURN waits on disk until its node's word decides it, and the owed falls only by a BURN taken, so no second burns twice; what
-    /// the chain does not hold is burnt as far as it holds, as the book's burn stops at its balance.
-    private static let burnFile = "coin3-burn.json"
-    private static func burnURL() -> URL? { MTTimeChainPlace.dir()?.appendingPathComponent("tx-burn.rec") }
-    @MainActor private static var owedLive = 0
-    @MainActor private static var burnDue = false
-    @MainActor private static var burning = false
-    @MainActor static func owe(burn coins: Int) {
-        guard 0 < coins, coins <= Int.max / 2 - owedLive else { return }
-        owedLive += coins
-        guard !burnDue else { return }
-        burnDue = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double(MTCoinChainRules.window)) {
-            MainActor.assumeIsolated {
-                burnDue = false
-                Task { @MainActor in await burnOwed() }
-            }
-        }
-    }
-    @MainActor static func burnNow() {
-        guard 0 < owedLive || 0 < owedBurn() else { return }
-        Task { @MainActor in await burnOwed() }
-    }
-    private static func owedBurn() -> Int { (load(burnFile)["owed"] as? Int) ?? 0 }
-    private static func keepOwed(_ owed: Int, covers: Int? = nil) {
-        var o: [String: Any] = ["owed": max(0, owed)]
-        if let covers { o["covers"] = covers }
-        save(burnFile, o)
-    }
-    @MainActor static func burnOwed() async {
-        let seat = MTCoinSeat()
-        if 0 < owedLive {
-            keepOwed(owedBurn() + owedLive, covers: load(burnFile)["covers"] as? Int)
-            owedLive = 0
-        }
-        guard !burning else { return }
-        burning = true
-        defer { burning = false }
-        let fm = FileManager.default
-        // a BURN an ended process or a lost answer left: its node's word first, the owed it covered falls only if the node took it
-        if let u = burnURL(), let rec = try? Data(contentsOf: u) {
-            guard let me = myKeyTag, let door = chainDoor(me) else { return }
-            var word = Word.left
-            if (await ask(door + "/tx-get", ["id": name(rec)])).code != 200 { word = await lay(rec) }
-            if word == .behind, (await ask(door + "/tx-get", ["id": name(rec)])).code == 200 { word = .left }
-            guard seat.stands else { return }
-            let covers = (load(burnFile)["covers"] as? Int) ?? 0
-            switch word {
-            case .left: keepOwed(owedBurn() - covers)
-            case .notLeft, .behind: keepOwed(owedBurn())
-            case .unknown: return
-            }
-            try? fm.removeItem(at: u)
-            MontanaTrace.mark("coin_v3", "burn settled word=\(word) covers=\(covers)")
-        }
-        let owing = owedBurn()
-        guard 0 < owing, MTCoinChainRules.onlineCut <= Int64(Date().timeIntervalSince1970) else { return }
-        var amount: Int64 = 0
-        let r = await layOnHead { s in
-            guard seat.stands, s.v3, MTCoinChainRules.onlineCut <= s.now else { return nil }
-            amount = min(Int64(owing), s.proven + s.declared)
-            guard 0 < amount,
-                  let rec = build3(.burn, amount: UInt64(amount), prev: s.head, nonce: fresh(), a: UInt64(max(0, amount - s.proven))) else { return nil }
-            if let u = burnURL() { try? rec.write(to: u, options: .atomic) }
-            keepOwed(owedBurn(), covers: owing)
-            return rec
-        }
-        MontanaTrace.mark("coin_v3", "burn code=\(r.code) word=\(r.word) amount=\(amount) owed=\(owing)")
-        guard r.rec != nil, seat.stands else { return }
-        switch r.code {
-        case 200:
-            keepOwed(owedBurn() - owing)
-            if let u = burnURL() { try? fm.removeItem(at: u) }
-        case -1: return   // the answer was lost: the record waits for its node's word
-        default:
-            keepOwed(owedBurn())
-            if let u = burnURL() { try? fm.removeItem(at: u) }
-        }
-    }
     enum Send3 { case sent(String), pending, notApplicable(String), failed }
     private static let noReceiverKey = "no receiver key"   // NOT-UI: the trace's reason, and the one the send page names
     /// SENDS (version 3): the receiver's key known (their about word), my chain announced and holding the sum, the record names

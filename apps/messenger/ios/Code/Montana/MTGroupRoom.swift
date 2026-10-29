@@ -791,9 +791,9 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         guard let r = live else { return }
         MainActor.assumeIsolated {
             MTCallRecording.shared.finish(r.uuid)
-            if let credit = MTCallMint.finish(talkElapsed) {
+            if let talk = talkElapsed {
                 ChatStore.live?.appendCallLog(peer: r.chat, video: r.cameraOn || r.screen || r.pairs.values.contains { $0.camera },
-                    incoming: false, dur: talkElapsed?.seconds ?? 0, missed: false, credit: credit)
+                    incoming: false, dur: talk.seconds, missed: false, call: talk.call)
             }
         }
         MTCallAudioOwner.shared.release(r.uuid)
@@ -1302,7 +1302,6 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
             r.wasAlone = false
             if r.connectedAt == nil {
                 r.connectedAt = Date()
-                MainActor.assumeIsolated { MTCallMint.begin(talkElapsed); MTMintBeat.run() }
             }
             tune(p, r)
             tellState(to: p)

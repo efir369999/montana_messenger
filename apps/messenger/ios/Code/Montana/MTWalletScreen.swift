@@ -1212,32 +1212,6 @@ struct MTExplorerSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ vc: SFSafariViewController, context: Context) {}
 }
 
-struct MTCallCoinReceipt: View {
-    let coins: Int
-    var body: some View {
-        Button {
-            let url = MTCoinTx.cachedKeyTag.flatMap { URL(string: MTCoinTx.keyLink + $0) } ?? MTCoinTx.explorer
-            MTExplorerSheet.open(url)
-        } label: {
-            HStack(spacing: 5) {
-                MTMintCoin(spinning: false, side: 18)
-                // USER-DATA: only the amount settled for this call and its own time (1 coin = 1 second), never a duration estimate.
-                Text(verbatim: (coins > 0 ? "+" : "") + MTCoinText.count(coins) + " · " + MTCoinText.time(coins, signed: false))
-                    .font(.system(size: 15, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(coins > 0 ? Color.green : (coins < 0 ? Color.red : Color.secondary))
-                    .lineLimit(1).minimumScaleFactor(0.65)
-                Image(systemName: "magnifyingglass").font(.caption).foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 10).padding(.vertical, 5)
-            .background(.thinMaterial, in: Capsule())
-            .frame(minHeight: 44).contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityHint(Text("Open in Explorer"))
-    }
-}
-
 /// THE NEXT BOX FILLS AS A LOAD FILLS (the author's word 04.10.2026 00:48 UTC: «while minting, the system's progress bar of this box to
 /// the next, as the filling of the next box, thin, as iCloud loads; and under it, in the system's way, how much is left to the next
 /// box -- all in the game»): the platform's linear progress from the box the balance fills to the next one, the coins left under it.

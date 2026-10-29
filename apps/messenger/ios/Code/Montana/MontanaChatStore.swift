@@ -2929,18 +2929,18 @@ class ChatStore: ObservableObject {
     }
 
     // Call log: creates the chat if missing, adds a call entry.
-    func appendCallLog(peer pipe: String, video: Bool, incoming: Bool, dur: Int, missed: Bool, credit: MTCallCredit? = nil) {
+    func appendCallLog(peer pipe: String, video: Bool, incoming: Bool, dur: Int, missed: Bool, call: String? = nil) {
         let peer = MTSamePair.root(pipe)   // a call on a folded pipe leaves its row in the conversation (24.09)
         var payload: [String: Any] = ["v": video, "inc": incoming, "dur": dur, "miss": missed]
-        if let credit {
-            guard !(messages[peer] ?? []).contains(where: { callInfoOf($0.text)?.call == credit.call }) else { return }
-            payload["call"] = credit.call; payload["minted"] = credit.coins
+        if let call {
+            guard !(messages[peer] ?? []).contains(where: { callInfoOf($0.text)?.call == call }) else { return }
+            payload["call"] = call
         }
         guard let d = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: d, encoding: .utf8) else { return }
         // ONE ROW PER CALL (the author's word 17.09): the same call reported by two doors within a
         // minute and a half — the call lane and the missed-call letter — lands once.
-        if credit == nil, let last = messages[peer]?.last, let li = callInfoOf(last.text), li.call == nil,
+        if call == nil, let last = messages[peer]?.last, let li = callInfoOf(last.text), li.call == nil,
            li.video == video, li.incoming == incoming, li.missed == missed,
            Date().timeIntervalSince1970 - last.createdAt < 90 {
             MontanaTrace.mark("call_log", "dup peer=\(String(peer.prefix(10))) — the same call, once"); return
@@ -2953,8 +2953,7 @@ class ChatStore: ObservableObject {
         bump(peer)
         Task { @MainActor in self.noteListState(peer, last: self.lastLetter(peer)) }   // the list record follows the newest (stage 9, 17.09)
         MontanaTrace.mark("call_log", "append peer=\(String(peer.prefix(10))) n=\(messages[peer]?.count ?? 0)")
-        // A CALL'S SECONDS MINT TO BOTH WHILE IT TALKS (the author's word 07.10.2026 15:5x UTC, MTCallMint): the caller no longer pays
-        // the one called at its end (the word of 05.10) -- that payment would take back from the caller the seconds both are credited.
+        // A CALL MOVES NO COIN (the author's word 29.10.2026 19:31 UTC): no second of it mints, burns or pays.
         // A missed call is the calls page's alone (the author's word 17.09): counted from the log
         // rows just placed, not the chat's unread mark — the icon follows at once.
         if incoming && missed { recalcBadge() }

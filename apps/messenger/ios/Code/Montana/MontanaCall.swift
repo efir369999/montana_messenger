@@ -637,7 +637,7 @@ final class MontanaCall: NSObject {
     /// `rang` — the far phone said «ringing» during this call. It decides whether a miss of MINE
     /// needs a loud word on their screen: a phone that rang has already told its person and written
     /// its own row (13.09, the author's three notifications for one call).
-    var onCallLog: ((_ peer: String, _ video: Bool, _ incoming: Bool, _ durationSec: Int, _ missed: Bool, _ declined: Bool, _ seed: String?, _ rang: Bool, _ refused: Bool, _ credit: MTCallCredit?) -> Void)?
+    var onCallLog: ((_ peer: String, _ video: Bool, _ incoming: Bool, _ durationSec: Int, _ missed: Bool, _ declined: Bool, _ seed: String?, _ rang: Bool, _ refused: Bool, _ call: String?) -> Void)?
     /// THE ONE DOOR FOR A CALLER'S NAME AND FACE (12.09, the author's word «by SSOT»): a call word
     /// — wake, ring letter or signal — carries the caller's name, and the book learns it HERE,
     /// in the branch that ACCEPTS the word as an incoming call, never at the doors. A word this
@@ -991,11 +991,10 @@ final class MontanaCall: NSObject {
             end.epoch = pk.seed.map { String($0.base64EncodedString().prefix(16)) }
             sendSignal?(pk.peer, end)
         }
-        let elapsed = parkedTalkElapsed
-        MainActor.assumeIsolated {
-            if let credit = MTCallMint.finish(elapsed) {
+        if let talk = parkedTalkElapsed {
+            MainActor.assumeIsolated {
                 ChatStore.live?.appendCallLog(peer: pk.peer, video: pk.video, incoming: !pk.initiator,
-                    dur: elapsed?.seconds ?? 0, missed: false, credit: credit)
+                    dur: talk.seconds, missed: false, call: talk.call)
             }
         }
         parked = nil
@@ -1316,8 +1315,6 @@ final class MontanaCall: NSObject {
     // log/duration
     private var startedAt: Date?
     private(set) var connectedAt: Date?
-    /// A call stands connected, placed or answered: each of its seconds mints one coin on this side (MTCallMint, 07.10.2026).
-    var mintsTalk: Bool { connectedAt != nil }
     var recordingReservedIDs: Set<String> {
         var seeds = [callSeed, parked?.seed].compactMap { $0 }
         if let held = Self.heldAtLaunch, let seed = Data(base64Encoded: held.seed) { seeds.append(seed) }
@@ -1341,18 +1338,7 @@ final class MontanaCall: NSObject {
             recorder.video(remoteVideoTrack, uuid: uuid, source: "video-remote")
         }
     }
-    /// The call in hand's one sign of coins for both phones (MTCallRecordingPolicy.callRecorded); nil for any other call.
-    func recordedForBoth(_ call: String) -> Bool? {
-        guard talkElapsed?.call == call else { return nil }
-        return MTCallRecordingPolicy.callRecorded(mySwitch: MTCallRecording.automatic, myLevel: MTLevelAccess.level,
-                                                  theirSwitch: peerRecordSwitch, theirLevel: peerLevel)
-    }
-    /// The second of talk now (MTCallMint): the call's peer, a name of this call alone and a name of this call's second.
-    var talkSecond: (peer: String, call: String, ref: String)? {
-        guard let p = peer, let t = talkElapsed else { return nil }
-        return (p, t.call, t.call + ":" + String(t.seconds))
-    }
-    /// The call in hand's name and the whole seconds it has talked (MTCallMint counts the seconds by this clock, 12.10.2026).
+    /// The call in hand's name and the whole seconds it has talked: its row in the chat keeps both, once by the name.
     var talkElapsed: (call: String, seconds: Int)? {
         guard let c = connectedAt, peer != nil else { return nil }
         let call = callSeed.map(MTCallName.name) ?? callUUID?.uuidString ?? String(Int(c.timeIntervalSince1970 * 1000))
@@ -1362,7 +1348,6 @@ final class MontanaCall: NSObject {
         guard let p = parked, let since = p.connectedAt else { return nil }
         return (p.seed.map(MTCallName.name) ?? p.uuid.uuidString, max(0, Int(Date().timeIntervalSince(since))))
     }
-    var talkWindows: [(call: String, seconds: Int)] { [talkElapsed, parkedTalkElapsed].compactMap { $0 } }
 
     // speakerphone
     private(set) var speakerOn = false
@@ -3901,10 +3886,9 @@ final class MontanaCall: NSObject {
         finishingTimeline?.mark("call.cleanup.begin")
         ended = true
         if let uuid = callUUID { MainActor.assumeIsolated { MTCallRecording.shared.finish(uuid); MTCallRecording.shared.forbid(uuid, false) } }
-        let credit = MainActor.assumeIsolated { MTCallMint.finish() }
+        let talked = talkElapsed?.call   // the call's name: its row lands once
         weaveClosed(callEpoch, peer: peer, connected: connectedAt != nil)   // the fabric weighs a call of two that connected (MTWeave)
         weaves[""] = nil
-        if let credit { finishingTimeline?.mark("call.mint.settled", "coins=\(credit.coins)") }
         // No door may leave the summary without a reason. A door that did not name itself is
         // named by the state it came through — a fact, not a guess.
         if endReason == "-" { endReason = "unnamed-\(state)" }
@@ -3945,7 +3929,6 @@ final class MontanaCall: NSObject {
         endReportedUUID = nil
         let teardownStart = Date()
         let talkDur = connectedAt != nil ? Date().timeIntervalSince(connectedAt!) : 0
-        if connectedAt != nil { Task { @MainActor in MTCoinTell.callEnded() } }   // the call's last balance, told once at its end
         tlog("⑨ cleanup start — talk \(String(format: "%.1f", talkDur))s")
         // call log before reset
         if let p = peer, let started = startedAt {
@@ -3964,7 +3947,7 @@ final class MontanaCall: NSObject {
             let rang = peerRinging || connectedAt != nil
             // A BIRTH THE SYSTEM REFUSED IS NO CALL OF THEIRS TO MISS (25.09): the far phone gets the row, quietly.
             let refused = endReason.hasPrefix("callkit-")
-            DispatchQueue.main.async { self.onCallLog?(p, v, incoming, dur, missed, declined, seed, rang, refused, credit) }
+            DispatchQueue.main.async { self.onCallLog?(p, v, incoming, dur, missed, declined, seed, rang, refused, talked) }
         } else {
             MontanaTrace.mark("call_log", "SKIP peer-nil=\(peer == nil ? 1 : 0) started-nil=\(startedAt == nil ? 1 : 0)")
         }
@@ -5630,8 +5613,6 @@ final class MontanaCall: NSObject {
         if born || s == "idle" { MontanaAudioRoute.read(born ? "call born" : "call idle") }
         self.onStateChange?(s, self.peer)
         if first {
-            MainActor.assumeIsolated { MTCallMint.begin() }
-            Task { @MainActor in MTMintBeat.run() }   // both sides mint the talk (MTCallMint, 07.10.2026)
             self.powerStart = MontanaPower.snapshot()   // every call, a voice call too: the ladder's tick ran only for video
             self.pictureSeen = [:]
             self.autoSpeakerOnVideo()
@@ -6976,8 +6957,8 @@ enum MontanaCallWiring {
         MTVPNRecoveryHooks.callBusy = { MontanaCall.isBusy }
         MTVPNRecoveryHooks.diary = { MontanaTrace.markChanged("vpn_ui", $0, every: 60) }
         MTVPNRecoveryHooks.markStop = { await MontanaVPNTunnel.shared.markRecoveryStop() }
-        c.onCallLog = { peer, video, incoming, dur, missed, declined, seed, rang, refused, credit in
-            E2E.shared.logCall(peer: peer, video: video, incoming: incoming, durationSec: dur, missed: missed, credit: credit)
+        c.onCallLog = { peer, video, incoming, dur, missed, declined, seed, rang, refused, call in
+            E2E.shared.logCall(peer: peer, video: video, incoming: incoming, durationSec: dur, missed: missed, call: call)
             if !missed { E2E.shared.notePeerSeen(peer) }   // 15.7: a call that connected is the freshest proof
             // Banner is OURS (iOS posts none for third-party CallKit misses);
             // the system Phone app gets the red Recents entry via the CallKit .unanswered report.

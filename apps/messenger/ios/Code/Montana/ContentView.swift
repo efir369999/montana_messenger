@@ -4065,7 +4065,6 @@ struct MTCallInfo {
     let dur: Int
     let missed: Bool
     let call: String?
-    let coins: Int?
 }
 private final class MTCallInfoKept { let v: MTCallInfo?; init(_ v: MTCallInfo?) { self.v = v } }
 private let callInfoKept: NSCache<NSString, MTCallInfoKept> = { let c = NSCache<NSString, MTCallInfoKept>(); c.countLimit = 4096; return c }()
@@ -4096,10 +4095,9 @@ func callInfoOf(_ text: String) -> MTCallInfo? {
     var v: MTCallInfo? = nil
     if let d = String(text.dropFirst(callMark.count)).data(using: .utf8),
        let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any] {
-        let coins = o["minted"] as? Int
         v = MTCallInfo(video: (o["v"] as? Bool) ?? false, incoming: (o["inc"] as? Bool) ?? false,
              dur: (o["dur"] as? Int) ?? 0, missed: (o["miss"] as? Bool) ?? false,
-             call: o["call"] as? String, coins: coins)
+             call: o["call"] as? String)
     }
     callInfoKept.setObject(MTCallInfoKept(v), forKey: text as NSString)
     return v
