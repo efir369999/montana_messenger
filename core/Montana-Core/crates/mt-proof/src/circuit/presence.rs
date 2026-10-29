@@ -606,6 +606,8 @@ mod tests {
         {
             permutation::write_block(trace, Places.slope() + at, state).expect("fits");
         }
+        // The rules of the pair speak at every row, so the left of the pair follows the ring.
+        path::write_pairs(trace);
         let slope = L::of_digest(&crate::poseidon::hash_elements(
             domain::MT_LINE_SLOPE,
             elements,

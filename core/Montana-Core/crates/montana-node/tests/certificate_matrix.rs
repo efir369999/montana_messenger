@@ -150,9 +150,18 @@ impl World {
         let standing = if self.standings[at].name == name {
             &self.standings[at]
         } else {
-            let branch = self.cohort.branch_of(&self.secrets[at]).expect("its own leaf");
-            fresh = Standing::of_the_window(&self.secrets[at], WINDOW, &name, &branch.siblings, branch.position)
-                .expect("a machine of the cohort proves its presence");
+            let branch = self
+                .cohort
+                .branch_of(&self.secrets[at])
+                .expect("its own leaf");
+            fresh = Standing::of_the_window(
+                &self.secrets[at],
+                WINDOW,
+                &name,
+                &branch.siblings,
+                branch.position,
+            )
+            .expect("a machine of the cohort proves its presence");
             &fresh
         };
         standing
@@ -407,11 +416,16 @@ fn the_acceptance_matrix_of_the_relation_through_the_one_entry_point() {
         .cohort
         .branch_of(&stranger_secret)
         .expect("its own leaf");
-    let foreign =
-        Standing::of_the_window(&stranger_secret, WINDOW, &world.previous_id(), &branch.siblings, branch.position)
-            .expect("a stranger proves its presence in its own tree")
-            .heavy(&stranger_secret, world.beacon_id(), world.previous_id())
-            .expect("a heavy attestation stands");
+    let foreign = Standing::of_the_window(
+        &stranger_secret,
+        WINDOW,
+        &world.previous_id(),
+        &branch.siblings,
+        branch.position,
+    )
+    .expect("a stranger proves its presence in its own tree")
+    .heavy(&stranger_secret, world.beacon_id(), world.previous_id())
+    .expect("a heavy attestation stands");
     let mut mixed = heavies.clone();
     mixed[2] = foreign;
     assert_eq!(

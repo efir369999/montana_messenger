@@ -57,8 +57,9 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
     let mut cement = Cement::new();
     let mut parts: Vec<[u8; 32]> = Vec::new();
     for (secret, (siblings, position)) in secrets.iter().zip(branches.iter()) {
-        let standing = Standing::of_the_window(secret, WINDOW, &previous_proposal, siblings, *position)
-            .expect("a machine of the cohort proves its presence");
+        let standing =
+            Standing::of_the_window(secret, WINDOW, &previous_proposal, siblings, *position)
+                .expect("a machine of the cohort proves its presence");
         assert!(
             standing.eligible(&aggregate, 0, 7, &everything),
             "a threshold of everything admits every machine"
@@ -68,8 +69,16 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
             .expect("a heavy attestation stands");
 
         // Verified exactly as a far side verifies it, and never trusted for having been made here.
-        attest::verify_heavy(&heavy, &previous_proposal, &root, &aggregate, 0, 7, &everything)
-            .expect("the attestation of a machine of the cohort verifies");
+        attest::verify_heavy(
+            &heavy,
+            &previous_proposal,
+            &root,
+            &aggregate,
+            0,
+            7,
+            &everything,
+        )
+        .expect("the attestation of a machine of the cohort verifies");
 
         assert!(
             cement.add(heavy.part_nullifier),
