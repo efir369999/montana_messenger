@@ -581,20 +581,20 @@ mod tests {
         assert_eq!(record(bitmap, LAST).segments_lived(LAST, in_force), 0);
         let places = places();
         let mut columns = with_record(bitmap, LAST);
-        let mut lifted = 0u32;
-        for row in 0..BITMAP_BITS {
-            let i = BITMAP_BITS - 1 - row;
-            let set = (bitmap >> i) & 1 == 1;
-            let flag = F::from_u64_reduced(u64::from(set));
-            columns[places.bit][row] = flag;
-            columns[places.lived][row] = flag;
-            columns[places.period][row] = flag;
-            lifted += u32::from(set);
+        // Row r carries bit 63 - r of the bitmap, the newest segment last.
+        let set: Vec<bool> = (0..BITMAP_BITS)
+            .map(|row| (bitmap >> (BITMAP_BITS - 1 - row)) & 1 == 1)
+            .collect();
+        let flags: Vec<F> = set
+            .iter()
+            .map(|&s| F::from_u64_reduced(u64::from(s)))
+            .collect();
+        for column in [places.bit, places.lived, places.period] {
+            columns[column][..BITMAP_BITS].copy_from_slice(&flags);
         }
+        let lifted = set.iter().filter(|&&s| s).count() as u32;
         assert_eq!(lifted, in_force);
-        for row in 0..(lifted - gate.required) as usize {
-            columns[places.slack][row] = F::ONE;
-        }
+        columns[places.slack][..(lifted - gate.required) as usize].fill(F::ONE);
         accumulate(&mut columns, &places, gate.segment);
         let description = held();
         assert!(!description.satisfied_by(&columns, &public(&gate)));
