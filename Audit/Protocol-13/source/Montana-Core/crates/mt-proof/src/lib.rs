@@ -40,6 +40,7 @@ pub mod ext;
 pub mod fabric;
 pub mod field;
 pub mod horizon;
+pub mod line;
 pub mod notes;
 pub mod params;
 pub mod poly;

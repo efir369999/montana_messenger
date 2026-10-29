@@ -85,10 +85,17 @@ fn only_a_verified_answer_to_this_beacon_moves_the_round() {
     // second is refused, and the cement moves by neither (Consensus, "The sanction of a double
     // answer"). A part of another machine naming another name enters the cement whatever it
     // pledges; the pulse tests of the agreement carry that case.
-    let unrelated = pulse
-        .standing
-        .heavy(&secret, beacon.id().unwrap(), [0x43; 32])
-        .unwrap();
+    // The presence binds the name it attests (record 309): the second name is a presence of its own.
+    let unrelated = montana_node::attest::Standing::of_the_window(
+        &secret,
+        12,
+        &[0x43; 32],
+        &branch.siblings,
+        branch.position,
+    )
+    .unwrap()
+    .heavy(&secret, beacon.id().unwrap(), [0x43; 32])
+    .unwrap();
     assert_eq!(
         pulse.gather(&unrelated, &cohort.root(), &aggregate, &beacon, &threshold),
         Err(montana_node::NodeError::Refused {
@@ -221,6 +228,7 @@ fn a_late_heavy_enters_the_windows_cement_without_closing_another_round() {
     let late = montana_node::attest::Standing::of_the_window(
         &secrets[1],
         12,
+        &previous,
         &branch.siblings,
         branch.position,
     )

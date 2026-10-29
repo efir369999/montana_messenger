@@ -5,7 +5,7 @@
  *
  *   0  the work was done
  *  -1  refused, and the reason stands in `mtc_last_said`
- *  -2  a pointer that is nothing was handed where a value was asked for
+ *  -2  a required pointer is absent, or mtc_last_said has no diagnostic to read
  *  -3  a buffer smaller than what it must hold; the length written says how much is needed
  *  -4  a door broke rather than answering
  *
@@ -25,7 +25,8 @@
 extern "C" {
 #endif
 
-/* The reason the last door refused. */
+/* The reason the last door refused. With no diagnostic, returns -2 and clears valid text outputs.
+ * Reading absence or using an invalid output buffer does not create or replace a diagnostic. */
 int32_t mtc_last_said(char *out, size_t cap, size_t *len);
 
 /* Which network this core is of: thirty-two bytes. */
@@ -67,6 +68,13 @@ int32_t mtc_machine_head(uint64_t *window, int32_t *present);
 int32_t mtc_machine_links(size_t *held, size_t *ceiling, size_t *reached);
 int32_t mtc_machine_account(char *out, size_t cap, size_t *len);
 
+/* The join of a device that holds nothing: the bytes of the two consecutive final proposals its
+ * operator handed it, the earlier and the later, each at the length stated beside it. The walk
+ * judges every certificate from there and writes the window the head stands at. It runs on the
+ * caller's thread, and it is refused while the pulse runs as the pulse is while a walk does. */
+int32_t mtc_machine_join(const uint8_t *earlier, size_t earlier_len, const uint8_t *later,
+                         size_t later_len, uint64_t *window);
+
 /* What the machine does of its own inside the window it lives, asked before the pulse begins. A
  * right is worth one coin whatever its cement counted; the count is read only to refuse a window
  * whose cement named nobody. */
@@ -77,6 +85,11 @@ int32_t mtc_errand_pay(const uint8_t *half, const uint8_t *note_pk, const uint8_
  * window lived is read with the coin it credited this machine: one where its part stood in the
  * cement, nought where it did not. */
 int32_t mtc_pulse_begin(const uint8_t *halves, size_t count, uint64_t from, uint64_t windows);
+/* CNS-20. The local reading, independent of last_said: "closed window W; ...", a wait inside the
+ * patience "waiting: <verdict>; ...", or a stall "<verdict>; asking N; refused R".
+ * 0 means text read, not healthy consensus; -2 means no diagnostics.
+ * No status query overwrites last_said. */
+int32_t mtc_pulse_status(char *out, size_t cap, size_t *len);
 int32_t mtc_pulse_running(int32_t *out);
 int32_t mtc_pulse_lived(size_t *out);
 int32_t mtc_pulse_lived_at(size_t at, uint64_t *window, uint32_t *rounds, size_t *living,

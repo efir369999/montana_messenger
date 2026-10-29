@@ -371,8 +371,10 @@ mod tests {
             name,
             since,
             part_nullifier: part(at),
+            line_value: [0u8; 32],
             suite_id: 1,
             answering_key: vec![0xA1; mt_codec::size::SIGNING_PUBLIC_KEY],
+            proof: vec![0x5A; mt_state::PRESENCE_PROOF_LEN],
             signature: vec![0xF0; mt_codec::size::SIGNATURE],
         }
     }

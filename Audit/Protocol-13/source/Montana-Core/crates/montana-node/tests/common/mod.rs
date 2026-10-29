@@ -13,6 +13,7 @@
 use montana_wallet::pay::Payee;
 use std::path::PathBuf;
 
+pub mod stall;
 pub mod walk;
 
 // Each run creates a fresh directory and retains it for failure inspection.

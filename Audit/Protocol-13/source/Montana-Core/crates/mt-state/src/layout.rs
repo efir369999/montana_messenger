@@ -29,6 +29,9 @@ pub enum ObjectError {
     // A pledge standing on an attempt after its own, made in the attempt no count reaches, or open in
     // attempt zero, whose one open pledge is the heavy attestation.
     Since,
+    // A pledge whose `line_value` carries a word at or above the modulus of the proof field: no
+    // element of the field of the line, refused before its proof is verified.
+    LineValue,
     // A roll naming more frames than a window applies, or parts that do not ascend.
     Roll,
 }
@@ -628,7 +631,8 @@ pub fn attested_is_canonical(attested: &[[u8; 32]]) -> bool {
 }
 
 fn attested_of_confirmation(value: &Confirmation) -> Result<(), ObjectError> {
-    ordered(&value.attested)
+    ordered(&value.attested)?;
+    canonical_line_value(&value.line_value)
 }
 
 fn attested_of_light(value: &LightAttestation) -> Result<(), ObjectError> {
@@ -649,6 +653,7 @@ layout! {
         attested: count16([u8; 32]; ATTESTED_COUNT),
         part_nullifier: [u8; 32],
         round_nullifier: [u8; 32],
+        line_value: [u8; 32],
         suite_id: u16,
         answering_key: bytes(size::SIGNING_PUBLIC_KEY),
         proof: bytes(super::PRESENCE_PROOF_LEN),
@@ -745,16 +750,34 @@ fn votes_of_a_ballot(value: &Ballot) -> Result<(), ObjectError> {
 
 layout! {
     /// What a part says in an attempt of the agreement on the proposal of the window before: which
-    /// name it stands behind, and on which quorum. It names no machine.
-    Pledge, "pledge", checked by since_of_a_pledge, {
+    /// name it stands behind, and on which quorum. It names no machine. It carries the line of its
+    /// slot at the abscissa of that name, and the proof that its part's half drew that value.
+    Pledge, "pledge", checked by rules_of_a_pledge, {
         window: u64,
         attempt: u32,
         name: [u8; 32],
         since: u32,
         part_nullifier: [u8; 32],
+        line_value: [u8; 32],
         suite_id: u16,
         answering_key: bytes(size::SIGNING_PUBLIC_KEY),
+        proof: bytes(super::PRESENCE_PROOF_LEN),
     } and a signature
+}
+
+fn rules_of_a_pledge(value: &Pledge) -> Result<(), ObjectError> {
+    since_of_a_pledge(value)?;
+    canonical_line_value(&value.line_value)
+}
+
+// `line_value`, on a pledge and on a confirmation alike, is an element of the field of the line, four
+// canonical words, and nothing else: a word written at or above the modulus is a second spelling of a
+// value, and the proof would be read against a line nobody drew. Refused here, before anything reads
+// the proof.
+fn canonical_line_value(line_value: &[u8; 32]) -> Result<(), ObjectError> {
+    mt_proof::line::L::from_bytes(line_value)
+        .map(|_| ())
+        .ok_or(ObjectError::LineValue)
 }
 
 // A pledge stands on its own attempt (closing), on an earlier one or on none (open). One standing on a
@@ -1054,6 +1077,7 @@ mod tests {
             (ChannelReveal::NAME, ChannelReveal::expected_len()),
             (ChannelPublication::NAME, ChannelPublication::expected_len()),
             (Ballot::NAME, Ballot::expected_len()),
+            (Pledge::NAME, Pledge::expected_len()),
         ];
         for (name, total) in totals {
             assert!(total > 0, "the total of {name} is zero");
@@ -1100,15 +1124,24 @@ mod tests {
         assert_eq!(Ballot::expected_len(), 8 + 32 + 8 + super::super::PROOF_LEN);
         assert_eq!(
             Pledge::expected_len(),
-            8 + 4 + 32 + 4 + 32 + 2 + size::SIGNING_PUBLIC_KEY + size::SIGNATURE
+            8 + 4
+                + 32
+                + 4
+                + 32
+                + 32
+                + 2
+                + size::SIGNING_PUBLIC_KEY
+                + super::super::PRESENCE_PROOF_LEN
+                + size::SIGNATURE
         );
         assert_eq!(
             LightAttestation::expected_len(),
             8 + 2 + 64 + 32 + 32 + 2 + size::SIGNING_PUBLIC_KEY + size::SIGNATURE
         );
+        // The heavy is the light with `line_value` and the proof (record 309).
         assert_eq!(
             Confirmation::expected_len(),
-            LightAttestation::expected_len() + super::super::PRESENCE_PROOF_LEN
+            LightAttestation::expected_len() + 32 + super::super::PRESENCE_PROOF_LEN
         );
         assert_eq!(Beacon::expected_len(), 8 + 1 + 4 + 32 + 32 + 8 + 8);
     }
@@ -1209,6 +1242,7 @@ mod tests {
             attested: vec![[0x10; 32], [0x20; 32]],
             part_nullifier: [0x30; 32],
             round_nullifier: [0x40; 32],
+            line_value: [0x41; 32],
             suite_id: 1,
             answering_key: vec![0xA1; mt_codec::size::SIGNING_PUBLIC_KEY],
             proof: vec![0x00; super::super::PRESENCE_PROOF_LEN],
@@ -1367,10 +1401,55 @@ mod tests {
             name: [0x4E; 32],
             since,
             part_nullifier: [0x30; 32],
+            line_value: [0x31; 32],
             suite_id: 1,
             answering_key: vec![0xA1; mt_codec::size::SIGNING_PUBLIC_KEY],
+            proof: vec![0x5A; super::super::PRESENCE_PROOF_LEN],
             signature: vec![0xF0; mt_codec::size::SIGNATURE],
         }
+    }
+
+    // `line_value` is four canonical words: a word at the modulus, or past it, is refused written
+    // and read, whichever of the four it stands in. The wrong implementation refused: one reading
+    // the words modulo the prime, which takes `P` for zero.
+    #[test]
+    fn a_pledge_carries_its_line_value_in_canonical_words_only() {
+        let p = mt_proof::field::P.to_le_bytes();
+        for at in 0..4 {
+            for word in [p, u64::MAX.to_le_bytes()] {
+                let mut pledge = a_pledge(3, 1);
+                pledge.line_value[at * 8..at * 8 + 8].copy_from_slice(&word);
+                let bytes = pledge.encode();
+                assert_eq!(pledge.bytes(), Err(ObjectError::LineValue), "word {at}");
+                assert_eq!(
+                    Pledge::parse(&bytes),
+                    Err(ObjectError::LineValue),
+                    "word {at}"
+                );
+            }
+        }
+        let mut below = a_pledge(3, 1);
+        below.line_value[..8].copy_from_slice(&(mt_proof::field::P - 1).to_le_bytes());
+        assert!(below.bytes().is_ok() && Pledge::parse(&below.encode()).is_ok());
+    }
+
+    // The same rule on the confirmation, whose `line_value` is the line of the open slot of attempt
+    // zero (record 309): a word at the modulus is refused written and read.
+    #[test]
+    fn a_confirmation_carries_its_line_value_in_canonical_words_only() {
+        let p = mt_proof::field::P.to_le_bytes();
+        for at in 0..4 {
+            let mut held = a_confirmation();
+            held.line_value[at * 8..at * 8 + 8].copy_from_slice(&p);
+            let bytes = held.encode();
+            assert_eq!(held.bytes(), Err(ObjectError::LineValue), "word {at}");
+            assert_eq!(
+                Confirmation::parse(&bytes),
+                Err(ObjectError::LineValue),
+                "word {at}"
+            );
+        }
+        assert!(a_confirmation().bytes().is_ok());
     }
 
     // A pledge stands on its own attempt, an earlier one or none, and never opens attempt zero. The

@@ -1896,7 +1896,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
     let wire = |value: Result<usize, mt_wire::WireError>| -> Result<usize, String> {
         value.map_err(|e| format!("the wire cannot read the Decree: {e:?}"))
     };
-    let of_the_wire: [(&str, usize, &str); 14] = [
+    let of_the_wire: [(&str, usize, &str); 15] = [
         ("hello_len", mt_wire::handshake::hello_len(), "hello"),
         ("hello_answer_len", mt_wire::handshake::hello_answer_len(), "answer of a hello"),
         ("hello_finish_len", mt_wire::handshake::hello_finish_len(), "finish of a hello"),
@@ -1909,6 +1909,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
         ("head_query_len", mt_wire::message::head_query_len(), "query of a head"),
         ("state_query_len", mt_wire::message::state_query_len(), "query of a leaf"),
         ("slot_query_len", mt_wire::message::slot_query_len(), "query of a slot"),
+        ("table_query_len", mt_wire::message::table_query_len(), "query of a table"),
         ("channel_commit_len", SlotCommit::expected_len(), "commitment over a slot of a channel"),
         ("channel_renew_len", SlotRenew::expected_len(), "renewal of a slot of a channel"),
     ];
@@ -3222,6 +3223,22 @@ pub fn check_delivery(md: &str) -> Result<(), String> {
                 ),
             )?;
         }
+        if let Some(rest) = label.strip_prefix("pledge_point(") {
+            let call = rest.trim_end_matches(')');
+            let nullifier = hex32(labeled(&rows, "test_nullifier")?)?;
+            compare16(
+                label,
+                value,
+                mt_derive::delivery::pledge_point(
+                    &nullifier,
+                    number(input_of(call, "W")?)?,
+                    u32::try_from(number(input_of(call, "b")?)?)
+                        .map_err(|e| format!("a band beyond four bytes: {e}"))?,
+                    u8::try_from(number(input_of(call, "i")?)?)
+                        .map_err(|e| format!("an index beyond a byte: {e}"))?,
+                ),
+            )?;
+        }
         if let Some(rest) = label.strip_prefix("window_point(") {
             let call = rest.trim_end_matches(')');
             compare16(
@@ -4070,6 +4087,7 @@ fn registers() -> Vec<&'static [mt_codec::Constant]> {
         mt_proof::field::FIELD,
         mt_proof::field::FOLD_OF_THE_PRIME,
         mt_proof::ext::EXTENSION,
+        mt_proof::line::LINE,
         mt_proof::params::PARAMETERS,
         mt_proof::poly::DOMAINS,
         mt_proof::poseidon::SHAPE,
@@ -4082,6 +4100,7 @@ fn registers() -> Vec<&'static [mt_codec::Constant]> {
         mt_proof::circuit::capacity::CAPACITIES,
         mt_proof::circuit::admission::ADMISSION,
         mt_proof::circuit::presence::PRESENCE,
+        mt_proof::circuit::pledge::PLEDGE,
         mt_proof::circuit::opening::OPENING,
         mt_proof::circuit::lane::LANE,
         mt_proof::circuit::frame::FRAME,
@@ -4905,7 +4924,7 @@ pub fn check_all(md: &str) -> Result<(), String> {
     Ok(())
 }
 
-// The identifiers of the six descriptions the network accepts proofs under, recomputed from the
+// The identifiers of the seven descriptions the network accepts proofs under, recomputed from the
 // running circuits on every build and held against the set — and their binding held against the
 // Decree's own row, so the one parameter that names the constraint sets can never drift from the
 // circuits that are actually accepted.
@@ -4937,6 +4956,9 @@ pub fn check_identifiers(md: &str) -> Result<(), String> {
     let of_ballot = mt_proof::circuit::ballot::description()
         .ok_or_else(|| "the ballot's description stands".to_string())?
         .identifier();
+    let of_pledge = mt_proof::circuit::pledge::description()
+        .ok_or_else(|| "the pledge's description stands".to_string())?
+        .identifier();
     let mut bound = Vec::with_capacity(128);
     for (label, value) in [
         ("identifier of the frame", of_frame),
@@ -4945,6 +4967,7 @@ pub fn check_identifiers(md: &str) -> Result<(), String> {
         ("identifier of the presence", of_presence),
         ("identifier of the opening", of_opening),
         ("identifier of the ballot", of_ballot),
+        ("identifier of the pledge", of_pledge),
     ] {
         let line = body
             .lines()

@@ -49,7 +49,8 @@ fn a_refused_proposal_leaves_the_previous_credit_root_across_restart() {
     assert!(
         matches!(
             result,
-            Err(NodeError::Refused {
+            Err(NodeError::Stalled {
+                on: montana_node::say::Verdict::NoData,
                 what: "a window no proposal of its decision ever stood at"
             })
         ),
