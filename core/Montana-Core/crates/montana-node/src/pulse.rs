@@ -17,6 +17,7 @@ use crate::attest::{self, Standing};
 use crate::certificate::{
     self, verify_proposal, Anchor, Decided, Electorate, Held, Predecessor, Roots,
 };
+use crate::collections::{BTreeMap, BTreeSet};
 use crate::runner::Runner;
 use crate::state::State;
 use crate::{round, Machine, NodeError};
@@ -27,7 +28,6 @@ use mt_state::layout::{
 use mt_state::Layout;
 use mt_wire::message::{self, Kind, POINT_BYTES};
 use sha2::{Digest, Sha256};
-use crate::collections::{BTreeMap, BTreeSet};
 
 // Where a machine stands in the tree of admitted machines. The two travel together because they
 // are one thing — what this machine is in that tree — and a door taking them apart would be a door

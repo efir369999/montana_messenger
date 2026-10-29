@@ -14,6 +14,7 @@
 // state: the living recompute the roots of a proposal from what they hold, and a device behind takes
 // them as the certificate that makes the proposal final attests them.
 
+use crate::collections::{BTreeMap, BTreeSet};
 use crate::NodeError;
 use mt_proof::poseidon::Digest;
 use mt_pulse::standing::Committee;
@@ -21,7 +22,6 @@ use mt_state::layout::{
     Ballot, Beacon, Census, Confirmation, LightAttestation, Pledge, Proposal, Roll,
 };
 use mt_state::Layout;
-use crate::collections::{BTreeMap, BTreeSet};
 
 // The electorate of a window: the admitted set the proposal of the window two before carries, root
 // and count, and the census its standing is counted over, with the committee that standing draws.

@@ -9,8 +9,8 @@
 // and a test holds each rule without a wire. The conduct of a machine — when it pledges, how long it
 // waits — stands in the pulse, where waiting is.
 
-use std::cmp::Reverse;
 use crate::collections::{BTreeMap, BTreeSet};
+use std::cmp::Reverse;
 
 use mt_state::layout::{Confirmation, Pledge};
 use mt_state::STANDS_ON_NONE;

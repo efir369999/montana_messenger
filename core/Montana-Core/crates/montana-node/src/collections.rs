@@ -101,7 +101,9 @@ pub mod ordered {
             self.entries.iter().map(|(_, value)| value)
         }
 
-        pub fn values_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut V> + ExactSizeIterator {
+        pub fn values_mut(
+            &mut self,
+        ) -> impl DoubleEndedIterator<Item = &mut V> + ExactSizeIterator {
             self.entries.iter_mut().map(|(_, value)| value)
         }
 

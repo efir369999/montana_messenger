@@ -32,11 +32,11 @@ pub mod state;
 #[cfg(unix)]
 pub mod status;
 
+use crate::collections::BTreeMap;
 use mt_codec::size;
 use mt_net::{Acquaintance, Answering, Door, Link, NetError};
 use mt_store::{Store, StoreError, SECRET_BYTES};
 use mt_wire::message::{self, Kind, POINT_BYTES};
-use crate::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex};
 use zeroize::Zeroizing;

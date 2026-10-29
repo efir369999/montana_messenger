@@ -20,10 +20,10 @@
 // whose holders are out of reach.
 
 use crate::agreement::{Book, Electorate, Kind, Name, Part};
+use crate::collections::BTreeMap;
 use crate::NodeError;
 use mt_state::layout::Pledge;
 use mt_state::{Layout, STANDS_ON_NONE};
-use crate::collections::BTreeMap;
 
 pub use mt_pulse::SPAN_OF_ATTEMPT_ZERO;
 
