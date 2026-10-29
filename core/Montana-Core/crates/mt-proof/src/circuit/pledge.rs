@@ -358,35 +358,11 @@ fn assembled(wires: &[usize]) -> Option<Description> {
 fn constraints(marks: usize, held: &Held) -> Vec<Constraint> {
     let one = F::ONE;
     let minus = F::ONE.negated();
-    let mut out = Vec::new();
-    for column in held.first..held.width() {
-        out.push(Constraint {
-            degree: 1,
-            terms: vec![
-                term(one, vec![factor(column, 1, 1)]),
-                term(minus, vec![factor(column, 0, 1)]),
-            ],
-        });
-    }
-    // At the last row of a chain the ring holds its digest, and the held element is that digest.
-    for (mark, first) in [
-        (marks, held.opening(0)),
-        (marks + 1, held.slope(0)),
-        (marks + 2, held.abscissa(0)),
-    ] {
-        for cell in 0..CAPACITY {
-            out.push(Constraint {
-                degree: 2,
-                terms: vec![
-                    term(one, vec![factor(mark, 0, 1), factor(first + cell, 0, 1)]),
-                    term(
-                        minus,
-                        vec![factor(mark, 0, 1), factor(ring_column(cell), 0, 1)],
-                    ),
-                ],
-            });
-        }
-    }
+    let mut out = holds(held.first..held.width());
+    out.extend(loads(
+        marks,
+        [held.opening(0), held.slope(0), held.abscissa(0)],
+    ));
     // The kind: `(since − attempt)·kind = 0` and `kind − 1 + (since − attempt)·inverse = 0`. Where
     // `since` is the attempt the second forces the kind to one; anywhere else the first forces it to
     // zero, and the inverse is what lets the second hold.
@@ -423,13 +399,63 @@ fn constraints(marks: usize, held: &Held) -> Vec<Constraint> {
             term(minus, vec![factor(marks, 0, 1), factor(kind, 0, 1)]),
         ],
     });
-    // The line: `value = opening + slope·abscissa` in `F[X] / (X⁴ − 7)`, coefficient by coefficient,
-    // the products at or above the fourth degree folded back by the residue.
+    out.extend(the_line(
+        held.opening(0),
+        held.slope(0),
+        held.abscissa(0),
+        held.value(0),
+    ));
+    out
+}
+
+// Each held column is itself one row on: one value across every row a rule reaches. The presence
+// holds its line by the same rule (record 309).
+pub(super) fn holds(columns: std::ops::Range<usize>) -> Vec<Constraint> {
+    columns
+        .map(|column| Constraint {
+            degree: 1,
+            terms: vec![
+                term(F::ONE, vec![factor(column, 1, 1)]),
+                term(F::ONE.negated(), vec![factor(column, 0, 1)]),
+            ],
+        })
+        .collect()
+}
+
+// At the last row of a chain the ring holds its digest, and the held element is that digest: the
+// opening, the slope and the abscissa, each under its own mark — the three periodic columns from
+// `marks` on — and each a digest wide from the column given.
+pub(super) fn loads(marks: usize, firsts: [usize; 3]) -> Vec<Constraint> {
+    let (one, minus) = (F::ONE, F::ONE.negated());
+    let mut out = Vec::new();
+    for (mark, first) in (marks..).zip(firsts) {
+        for cell in 0..CAPACITY {
+            out.push(Constraint {
+                degree: 2,
+                terms: vec![
+                    term(one, vec![factor(mark, 0, 1), factor(first + cell, 0, 1)]),
+                    term(
+                        minus,
+                        vec![factor(mark, 0, 1), factor(ring_column(cell), 0, 1)],
+                    ),
+                ],
+            });
+        }
+    }
+    out
+}
+
+// The line: `value = opening + slope·abscissa` in `F[X] / (X⁴ − 7)`, coefficient by coefficient,
+// the products at or above the fourth degree folded back by the residue. Each argument is the first
+// of four held columns.
+pub(super) fn the_line(opening: usize, slope: usize, abscissa: usize, value: usize) -> Vec<Constraint> {
+    let (one, minus) = (F::ONE, F::ONE.negated());
     let folded = F::from_u64_reduced(line::RESIDUE).negated();
+    let mut out = Vec::new();
     for at in 0..CAPACITY {
         let mut terms = vec![
-            term(one, vec![factor(held.value(at), 0, 1)]),
-            term(minus, vec![factor(held.opening(at), 0, 1)]),
+            term(one, vec![factor(value + at, 0, 1)]),
+            term(minus, vec![factor(opening + at, 0, 1)]),
         ];
         for i in 0..CAPACITY {
             for j in 0..CAPACITY {
@@ -442,7 +468,7 @@ fn constraints(marks: usize, held: &Held) -> Vec<Constraint> {
                 };
                 terms.push(term(
                     coefficient,
-                    vec![factor(held.slope(i), 0, 1), factor(held.abscissa(j), 0, 1)],
+                    vec![factor(slope + i, 0, 1), factor(abscissa + j, 0, 1)],
                 ));
             }
         }
@@ -551,6 +577,7 @@ pub fn public_of(
 
 #[cfg(test)]
 mod tests {
+    use super::super::trial::{broken, fill};
     use super::*;
 
     const SECRET: [u8; 32] = [0x5A; 32];
@@ -579,29 +606,6 @@ mod tests {
         poseidon::limbs_of(&public_of(AT, attempt, name, since, nullifier, value))
     }
 
-    // What a trace breaks under a description, by name: every rule that fails at some row it
-    // reaches, and every boundary that does not bind.
-    fn broken(held: &Description, trace: &[Vec<F>], public: &[F]) -> (Vec<usize>, Vec<usize>) {
-        let reached = held.live_rows() - 1;
-        let mut rules = Vec::new();
-        for at in 0..held.constraints.len() {
-            for row in 0..reached {
-                if !held.evaluate(trace, at, row).is_zero() {
-                    rules.push(at);
-                    break;
-                }
-            }
-        }
-        let mut boundaries = Vec::new();
-        for (at, boundary) in held.boundaries.iter().enumerate() {
-            let got = trace[usize::from(boundary.column)][boundary.row as usize];
-            if crate::scheme::resolve(boundary.value, public) != Some(got) {
-                boundaries.push(at);
-            }
-        }
-        (rules, boundaries)
-    }
-
     // Where the rules of the held columns stand: the holds, the loads, the two rules of the slot,
     // the slot entering the slope, and the four rules of the line, last of all.
     fn slot_rules(held: &Description) -> [usize; 2] {
@@ -615,12 +619,6 @@ mod tests {
 
     fn line_rules(held: &Description) -> std::ops::Range<usize> {
         held.constraints.len() - CAPACITY..held.constraints.len()
-    }
-
-    fn fill(trace: &mut [Vec<F>], first: usize, value: L) {
-        for (cell, coefficient) in value.coefficients().iter().enumerate() {
-            trace[first + cell].fill(*coefficient);
-        }
     }
 
     fn slope_elements(spending: &Digest, slot: u64) -> Vec<F> {
@@ -703,8 +701,9 @@ mod tests {
         let depth = crate::tree_depth();
         let siblings = crate::admitted::empty_internals(depth)[..depth].to_vec();
         let key = vec![0xA1u8; mt_codec::size::SIGNING_PUBLIC_KEY];
-        let (_, presence) = super::super::presence::trace_of(&SECRET, &siblings, 0, AT, &key)
-            .expect("the presence of the same part");
+        let (_, presence, _) =
+            super::super::presence::trace_of(&SECRET, &siblings, 0, AT, &FIRST, &key)
+                .expect("the presence of the same part");
         for (attempt, since) in [(3, 3), (3, u32::MAX)] {
             let (_, _, nullifier, one) = pledged(attempt, since, &FIRST);
             let (_, _, _, two) = pledged(attempt, since, &SECOND);

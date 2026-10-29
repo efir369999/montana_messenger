@@ -26,6 +26,43 @@ pub mod sponge;
 pub mod ticket;
 pub mod value;
 
+// How the tests of a circuit that holds a line read a forgery: every rule a trace breaks at some
+// row it reaches and every boundary it does not bind, by number, and a held element written across
+// its four columns. One place, so the pledge and the presence judge a forgery the same way.
+#[cfg(test)]
+pub(crate) mod trial {
+    use crate::air::Description;
+    use crate::field::F;
+    use crate::line::L;
+
+    pub fn broken(held: &Description, trace: &[Vec<F>], public: &[F]) -> (Vec<usize>, Vec<usize>) {
+        let reached = held.live_rows() - 1;
+        let mut rules = Vec::new();
+        for at in 0..held.constraints.len() {
+            for row in 0..reached {
+                if !held.evaluate(trace, at, row).is_zero() {
+                    rules.push(at);
+                    break;
+                }
+            }
+        }
+        let mut boundaries = Vec::new();
+        for (at, boundary) in held.boundaries.iter().enumerate() {
+            let got = trace[usize::from(boundary.column)][boundary.row as usize];
+            if crate::scheme::resolve(boundary.value, public) != Some(got) {
+                boundaries.push(at);
+            }
+        }
+        (rules, boundaries)
+    }
+
+    pub fn fill(trace: &mut [Vec<F>], first: usize, value: L) {
+        for (cell, coefficient) in value.coefficients().iter().enumerate() {
+            trace[first + cell].fill(*coefficient);
+        }
+    }
+}
+
 use crate::field::F;
 use crate::poseidon::{self, WIDTH};
 
