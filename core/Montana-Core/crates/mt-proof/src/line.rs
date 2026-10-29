@@ -16,7 +16,8 @@
 // the field of the challenges closes on, where it is no cube.
 
 use crate::field::F;
-use crate::poseidon::Digest;
+use crate::poseidon::{self, Digest};
+use mt_codec::domain;
 
 mt_codec::constants! {
     LINE:
@@ -144,6 +145,40 @@ pub fn opening_of(first: (L, L), second: (L, L)) -> Option<L> {
     let ((x1, y1), (x2, y2)) = (first, second);
     let run = x2.minus(x1).inverse()?;
     Some(x2.times(y1).minus(x1.times(y2)).times(run))
+}
+
+// The slot of an object of a part in its window, as the one element the slope is drawn over:
+// `2·attempt + kind`, the kind one for a closing pledge. The open slot of attempt zero, the heavy
+// attestation, is slot zero, and every other slot is one more than the position of its pledge in
+// its band (Canon, "Past attempt 62"), which an open pledge of attempt zero would make negative.
+pub fn slot(attempt: u32, closing: bool) -> u64 {
+    2 * u64::from(attempt) + u64::from(closing)
+}
+
+// The lock-opening value of a machine, from the spending half of its secret alone: one value across
+// every window it lives (Canon, "The construction").
+pub fn opening(spending: &Digest) -> L {
+    let digest = poseidon::hash_elements(domain::MT_LINE_OPENING, spending.elements());
+    L::of_digest(&digest)
+}
+
+// The slope of one slot of one window, over the spending half, the window as one element and the
+// slot as one: every slot of every window has its own. A window or a slot at or above the modulus
+// is no element and draws nothing, as it draws no nullifier of a part.
+pub fn slope(spending: &Digest, window: u64, slot: u64) -> Option<L> {
+    let mut elements = Vec::with_capacity(spending.elements().len() + 2);
+    elements.extend_from_slice(spending.elements());
+    elements.push(F::try_from_u64(window)?);
+    elements.push(F::try_from_u64(slot)?);
+    let digest = poseidon::hash_elements(domain::MT_LINE_SLOPE, &elements);
+    Some(L::of_digest(&digest))
+}
+
+// The abscissa of a name, from the name alone, over its eight limbs. An abscissa of zero is refused:
+// the line there is the lock-opening value itself, so a pledge on such a name would publish it.
+pub fn abscissa(name: &[u8; 32]) -> Option<L> {
+    let at = L::of_digest(&poseidon::hash_bytes(domain::MT_LINE_ABSCISSA, name));
+    (!at.is_zero()).then_some(at)
 }
 
 // `p⁴ − k` in four words, least significant first. `p²` stands under `2¹²⁸`, so its square is taken
@@ -300,6 +335,101 @@ mod tests {
             let second = (x2, line_at(opening, slope_two, x2));
             assert_ne!(opening_of(first, second), Some(opening));
         }
+    }
+
+    // The spending half of a secret, as the nullifier of a part takes it.
+    fn spending_of(secret: &[u8; 32]) -> Digest {
+        poseidon::hash_bytes_twice(domain::MT_KEY_HALVES, secret).0
+    }
+
+    fn pledged(secret: &[u8; 32], window: u64, slot: u64, name: &[u8; 32]) -> (L, L) {
+        let spending = spending_of(secret);
+        let x = abscissa(name).expect("an abscissa of a name");
+        let y = line_at(
+            opening(&spending),
+            slope(&spending, window, slot).expect("a slope of a slot"),
+            x,
+        );
+        (x, y)
+    }
+
+    // The derivations end to end: two objects of one part in one slot on two names give the
+    // lock-opening value of that machine, and the value is the machine's in every window.
+    #[test]
+    fn two_names_in_one_slot_give_the_opening_of_their_machine() {
+        let secret = [0x5Au8; 32];
+        let other = [0xA5u8; 32];
+        let (first, second) = ([0x11u8; 32], [0x22u8; 32]);
+        let mine = opening(&spending_of(&secret));
+        assert_ne!(mine, opening(&spending_of(&other)));
+        for (window, at) in [
+            (0, slot(0, false)),
+            (7, slot(3, true)),
+            (1_000, slot(62, false)),
+        ] {
+            let one = pledged(&secret, window, at, &first);
+            let two = pledged(&secret, window, at, &second);
+            assert_eq!(opening_of(one, two), Some(mine));
+            // A repetition on one name is one point twice and reveals nothing.
+            assert_eq!(opening_of(one, one), None);
+        }
+    }
+
+    // Two slots are two lines: the open and the closing pledge of one attempt, two attempts, or one
+    // slot of two windows give a value that is not the opening.
+    #[test]
+    fn two_slots_of_one_machine_give_no_opening() {
+        let secret = [0x5Au8; 32];
+        let mine = opening(&spending_of(&secret));
+        let (first, second) = ([0x11u8; 32], [0x22u8; 32]);
+        for ((w1, s1), (w2, s2)) in [
+            ((5, slot(1, false)), (5, slot(1, true))),
+            ((5, slot(1, true)), (5, slot(2, true))),
+            ((5, slot(0, false)), (6, slot(0, false))),
+        ] {
+            let one = pledged(&secret, w1, s1, &first);
+            let two = pledged(&secret, w2, s2, &second);
+            assert_ne!(opening_of(one, two), Some(mine));
+        }
+    }
+
+    // The slot is the position of its pledge in the band plus one, the heavy attestation zero, and
+    // no two objects of a window share one.
+    #[test]
+    fn every_slot_of_a_window_is_its_own_and_the_heavy_attestation_is_zero() {
+        assert_eq!(slot(0, false), 0);
+        assert_eq!(slot(0, true), 1);
+        for attempt in [1u32, 2, 61, 62, 63, 0xFFFF_FFFE] {
+            let a = u64::from(attempt);
+            // Closing: position 2u, plus one. Open: position 2t - 1, plus one.
+            assert_eq!(slot(attempt, true), 2 * a + 1);
+            assert_eq!(slot(attempt, false), 2 * a);
+        }
+        assert!(slot(0xFFFF_FFFE, true) < crate::field::P);
+        let spending = spending_of(&[0x5Au8; 32]);
+        assert_ne!(
+            slope(&spending, 5, slot(1, false)),
+            slope(&spending, 5, slot(1, true))
+        );
+        assert_ne!(slope(&spending, 5, 1), slope(&spending, 6, 1));
+        // A window or a slot that is no element draws no slope.
+        assert_eq!(slope(&spending, crate::field::P, 0), None);
+        assert_eq!(slope(&spending, 0, crate::field::P), None);
+    }
+
+    // Each derivation is its own domain: the same cells under the nullifier of a part, or under the
+    // domain of the slope, are other values, and so is a name under the domain of the opening.
+    #[test]
+    fn the_three_derivations_stand_under_three_domains() {
+        let spending = spending_of(&[0x5Au8; 32]);
+        let name = spending.bytes();
+        let under = |d| L::of_digest(&poseidon::hash_elements(d, spending.elements()));
+        assert_eq!(opening(&spending), under(domain::MT_LINE_OPENING));
+        assert_ne!(opening(&spending), under(domain::MT_PART_NF));
+        assert_ne!(opening(&spending), under(domain::MT_LINE_SLOPE));
+        let named = poseidon::hash_bytes(domain::MT_LINE_OPENING, &name);
+        assert_ne!(abscissa(&name), Some(L::of_digest(&named)));
+        assert!(abscissa(&name).is_some());
     }
 
     #[test]

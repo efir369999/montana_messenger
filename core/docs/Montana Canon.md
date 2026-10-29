@@ -3163,6 +3163,27 @@ of a machine's part").
 - The **value** a pledge carries is the line of its slot at the abscissa of its name: the
   lock-opening value plus the slope times the abscissa.
 
+Each of the three is one sponge of the proof hash under a domain of its own, and its digest is read
+as an element of `proof_line_field` as it stands:
+
+```
+opening        = sponge("mt-line-opening", cells(machine_sk))
+slope(W, s)    = sponge("mt-line-slope", cells(machine_sk) || element(W) || element(s))
+abscissa(name) = sponge("mt-line-abscissa", limbs(name))
+s              = 2·attempt + kind
+value          = opening + slope(W, s) · abscissa(name)
+```
+
+`machine_sk` is the spending half of the one absorption of the machine's secret, the half
+`part_nf(W)` takes ("The nullifier of a machine's part"), and `element(W)` and `element(s)` are each
+one element of `proof_field`, for the reason the window is one there. `name` is the identifier the
+object pledges, 32 B, absorbed as its eight limbs. `kind` is one for a closing pledge and zero for an
+open one, and the slot is one element. The open slot of attempt zero, the heavy attestation, is slot
+zero; the closing pledge of attempt `u` is slot `2u + 1` and the open pledge of attempt `t` is slot
+`2t`, one more than the position of each in its band ("Past attempt 62", below). So every slot of a
+window has its own `s`, and the largest attempt stays below the modulus. An abscissa that is the zero
+of the field is refused where the name is read, and the object with it.
+
 **How a verifier extracts it.** Two pledges of one part in one slot on two names carry two points of
 one line at two abscissas. That is exactly the first and the second pair of "The sanction of a double
 answer". With the points (x₁, y₁) and (x₂, y₂), the lock-opening value is the line at abscissa zero,
@@ -3333,7 +3354,10 @@ Two things are also owed with the construction, derived rather than chosen:
   stands among the parameters of the scheme as `proof_line_field`; the domains enter with the construction.
 - **The domains** of the lock-opening value, the slope, the abscissa and the commitment. They enter
   the registry with the construction and not before ("No domain awaits a document"), each with its
-  row of the Registry and its owner.
+  row of the Registry and its owner. The first three entered with the derivations above:
+  `mt-line-opening`, `mt-line-slope` and `mt-line-abscissa`, of the `proof_hash` family, owned by the
+  row of this section. The commitment enters with the layout of the lock and its tie to the candidacy
+  (Q6).
 
 **Invariants of the evidence of a forfeit:**
 
@@ -4197,8 +4221,11 @@ line, which of the two it is writing.
 | `mt-record-node` | an internal node of the tree of records |
 | `mt-horizon-leaf` | a leaf of the horizon of proving: the note root at that position of its stride |
 | `mt-horizon-node` | an internal node of the horizon of proving |
+| `mt-line-opening` | the lock-opening value of a machine, drawn from the spending half of its secret |
+| `mt-line-slope` | the slope of the line of one slot of one window, over the spending half, the window and the slot |
+| `mt-line-abscissa` | the abscissa of a name on the line of a slot, drawn from the name alone |
 
-**The domains of the `proof_hash` family, and there are thirty-one.** They are computed by the
+**The domains of the `proof_hash` family, and there are thirty-four.** They are computed by the
 doors of the proof hash; every other domain of the registry is computed by SHA-256, and either
 function under a domain of the other family is a defect. The list is exact by the boundary the
 primitives section draws — what a verifier of a proof judges, and the nullifiers and digests a
@@ -4237,6 +4264,9 @@ capacity("mt-cement-leaf")      = the first four limbs of SHA-256("mt-cement-lea
 capacity("mt-cement-node")      = the first four limbs of SHA-256("mt-cement-node" || 0x00)
 capacity("mt-credit-leaf")      = the first four limbs of SHA-256("mt-credit-leaf" || 0x00)
 capacity("mt-credit-node")      = the first four limbs of SHA-256("mt-credit-node" || 0x00)
+capacity("mt-line-opening")     = the first four limbs of SHA-256("mt-line-opening" || 0x00)
+capacity("mt-line-slope")       = the first four limbs of SHA-256("mt-line-slope" || 0x00)
+capacity("mt-line-abscissa")    = the first four limbs of SHA-256("mt-line-abscissa" || 0x00)
 ```
 
 ### No domain awaits a document

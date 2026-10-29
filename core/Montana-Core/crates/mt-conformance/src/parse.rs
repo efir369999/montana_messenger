@@ -2789,6 +2789,11 @@ pub const DOMAINS_AWAITING_A_VECTOR: &[(&str, &str)] = &[
     ("mt-noise-pq-v1-sig-r", "the wire"),
     ("mt-noise-pq-v1-sig-i", "the wire"),
     ("mt-delivery", "the wire"),
+    // The forfeit of a node lock: the three derivations of the line of a slot, frozen with the
+    // description of the pledge that proves them.
+    ("mt-line-opening", "the forfeit of a node lock"),
+    ("mt-line-slope", "the forfeit of a node lock"),
+    ("mt-line-abscissa", "the forfeit of a node lock"),
 ];
 
 // An entry names a label whole, or as a prefix ending at a boundary: the character after the

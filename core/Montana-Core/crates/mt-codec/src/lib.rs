@@ -352,6 +352,9 @@ registry! {
         MT_RECORD_NODE => "mt-record-node",
         MT_HORIZON_LEAF => "mt-horizon-leaf",
         MT_HORIZON_NODE => "mt-horizon-node",
+        MT_LINE_OPENING => "mt-line-opening",
+        MT_LINE_SLOPE => "mt-line-slope",
+        MT_LINE_ABSCISSA => "mt-line-abscissa",
 }
 
 // Where a number of this tree stands in the set, and what it is compared against. A constant is
