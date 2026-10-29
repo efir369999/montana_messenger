@@ -1443,8 +1443,6 @@ class ChatStore: ObservableObject {
             $0.videoFile == file || $0.imageFile == file || $0.audioFile == file || $0.docFile == file
         }) else { return }
         messages[chat]?[i].msgId = "mid:\(mid)"
-        // A MEDIA LETTER MINTS WHEN IT IS NAMED (MTCoinSend.mintLetter): it was born without its wire name.
-        if let row = messages[chat]?[i] { MTCoinSend.mintLetter(row, in: chat) }
     }
 
     // ── THE DELIVERY LADDER: ONE DOOR, ONE ORDER ([C-1]) ─────────────────────────────────
@@ -4876,9 +4874,6 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             let row = placed
             Task { @MainActor in MTAutoReact.landed(row, in: chat, store: self) }
         }
-        // EVERY LETTER OF A PAIR MINTS ITS LEVEL'S COINS, MINE AND MY CORRESPONDENT'S (the author's word 11.10.2026 18:2x UTC,
-        // MTCoinSend.mintLetter) -- a turn after its landing, so the letter stands before the coins it mints.
-        do { let row = placed; Task { @MainActor in MTCoinSend.mintLetter(row, in: chat) } }
         // THE ROW IS ON DISK BEFORE ANYONE IS TOLD IT EXISTS (the journal, 16.09): the receipt, the
         // list record and the emptying of the landing box all stand behind this line.
         MontanaMainProbe.step("journal") { _ = MTRowJournal.put(chat, placed) }
@@ -7028,8 +7023,6 @@ enum SeedScope {
         "peerFaceOwned",   // the digests of the faces the correspondents themselves sent (ChatStore.faceOwned, 04.10): this person's
         "faceHealCards",   // the card link last read for each correspondent's face (ChatStore.healFacesFromCards, 18.10): this person's
         MontanaArchive.forgottenKey,   // the erased conversations' folders whose marks are gone (MontanaArchive.deleteChatFolder, 18.10)
-        "chatCoinSince",   // the moment this person's chat coin came on (MTChatMint): the person's, as the tally in Montana/Coins is (04.10)
-        MTVPNWallMint.paidKey,   // the tunnel's living seconds this person was paid (MTVPNWallMint): the person's, armed anew at a lift (04.10)
         "coinBoard.told",   // the balances this person's correspondents told (MTCoinBoard, 03.10): learned for this person, told again
         "coinBoard.levels",   // the Global Levels this person's correspondents told (MTCoinBoard, 11.10): learned for this person
         "mt.account.keys", "mt.twin.ref", "mt.node.identity", "mt.node.kem", "pipeSecrets",

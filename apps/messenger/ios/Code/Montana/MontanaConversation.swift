@@ -386,8 +386,7 @@ struct ScrollDownButton<Label: View>: View {
 }
 
 /// THE RED MINUS AT THE NEWEST END (the author's word 04.10.2026 22:24 UTC: «in the chat the same way, an animation of a red minus
-/// coin»): the coins this chat's bubble or call just paid (MTCoinPaid) rise above the way to the newest in red, as the ribbon's plus
-/// rises under the field (MTMintPop), and fade; with Reduce Motion it stands and fades. It never takes a finger.
+/// coin»): the coins this chat's bubble or call just paid (MTCoinPaid) rise above the way to the newest in red, and fade; with Reduce Motion it stands and fades. It never takes a finger.
 struct MTPayPop: View {
     let chat: String
     @ObservedObject var pin: ChatConversationView.FeedPin
@@ -1591,7 +1590,6 @@ struct ChatConversationView: View {
         // THE MONEY FLOW SEEN (the author's words 03.10 16:46 and 16:49): its beginning in the middle of the chat, every minting
         // under the field, on the coin's side.
         .overlay { MTMoneyFlowBegins(tick: flowBegun) }
-        .overlay(alignment: .topTrailing) { if ribbon { MTMintPop().padding(.top, topBarSize.height + pinReserve + 8).padding(.trailing, 16) } }
         .safeAreaInset(edge: .top) { if selectingMsgs { selectionTopBar } }
         .alert("Not enough coins", isPresented: $coinRefused) {
             Button("OK", role: .cancel) {}
@@ -2116,7 +2114,6 @@ struct ChatConversationView: View {
             inputFocused = false
             hideKeyboard()
             flows.set(chat.name, !newestFirst)   // this chat's flow alone (04.10)
-            MTChatMint.shared.turned(newestFirst)
             E2E.shared.liveTypingSwitched(on: newestFirst, peer: chat.name)   // live chat lives in this chat's flow alone
             if newestFirst {
                 store.appendMoneyFlow(peer: chat.name); flowBegun += 1   // its row in the chat and its turn on the screen
@@ -2152,21 +2149,12 @@ struct ChatConversationView: View {
     private var coinStands: Bool { !chat.isGroup && MontanaConv.holds(chat.convId ?? chat.name) }
     /// The ribbon of time: the coin of this chat is on.
     private var ribbon: Bool { newestFirst && coinStands }
-    /// A group's or a channel's feed earns while it is open: each letter longer than the floor, by the level (MTChatMint).
-    private var groupMints: Bool { chat.isGroup && MTGroup.isKey(chat.name) }
 
     private var chatCoreM3: some View {
         chatCoreM2
         // The ring follows the pair's letters: read again when a letter lands in this chat, never on another pass.
         .task(id: store.messages[chat.name]?.last?.id) {
             chessPlayed = MTChessSend.playedGame(in: chat, store: store)
-        }
-        // THE COIN MINTS WHILE THE RIBBON IS SHOWN (the author's word 02.10 19:37): every change of the letters, and the coin's
-        // own turn, hands this chat's letters to the one tally; it pays each name once and walks only the letters born since.
-        .onChange(of: coinStands || groupMints ? store.messagesRev : -1, initial: true) { _, _ in
-            // EVERY PAIR'S CHAT MINTS, RIBBON OR NOT (the author's word 11.10.2026 18:2x UTC, MTCoinSend.mintLetter): the level's coins a letter.
-            if coinStands { MTChatMint.shared.credit(store.messages[chat.name] ?? [], oneEach: true) }
-            else if groupMints { MTChatMint.shared.credit(store.messages[chat.name] ?? [], longerThan: MTChatMint.groupLetterFloor, in: chat.name) }
         }
         // WHOM TO INVITE INTO THE GROUP'S CALL (MTRoomMark chose the kind): the sheet hangs on the chat, never inside the bar's item
         .sheet(item: $roomAsk) { k in MTRoomInviteSheet(chat: chat.name, kind: k, video: roomAskVideo, opening: true) }
