@@ -23,7 +23,7 @@ use crate::agreement::{Book, Electorate, Kind, Name, Part};
 use crate::NodeError;
 use mt_state::layout::Pledge;
 use mt_state::{Layout, STANDS_ON_NONE};
-use std::collections::BTreeMap;
+use crate::collections::BTreeMap;
 
 pub use mt_pulse::SPAN_OF_ATTEMPT_ZERO;
 

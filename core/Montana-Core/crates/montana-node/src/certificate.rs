@@ -21,7 +21,7 @@ use mt_state::layout::{
     Ballot, Beacon, Census, Confirmation, LightAttestation, Pledge, Proposal, Roll,
 };
 use mt_state::Layout;
-use std::collections::{BTreeMap, BTreeSet};
+use crate::collections::{BTreeMap, BTreeSet};
 
 // The electorate of a window: the admitted set the proposal of the window two before carries, root
 // and count, and the census its standing is counted over, with the committee that standing draws.
@@ -870,7 +870,7 @@ pub(crate) fn walk_to_the_pending(
         // a proposal under another name decided something else, and that certificate would refuse it
         // one step on.
         let after = steps.get(at + 1);
-        let attested: Option<std::collections::BTreeSet<[u8; 32]>> = after.map(|after| {
+        let attested: Option<BTreeSet<[u8; 32]>> = after.map(|after| {
             after
                 .certificate
                 .iter()
@@ -1023,7 +1023,6 @@ pub fn walk_to_the_open(
 mod proofs {
     use super::*;
     use mt_state::layout::Confirmation;
-    use std::collections::BTreeSet;
 
     // Window zero, the one window the Genesis State Hash stands under.
     const WINDOW: u64 = 0;

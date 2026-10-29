@@ -19,6 +19,7 @@ pub mod agreement;
 pub mod attempt;
 pub mod attest;
 pub mod certificate;
+pub mod collections;
 #[cfg(kani)]
 mod kani_decree;
 pub mod pay;
@@ -35,7 +36,7 @@ use mt_codec::size;
 use mt_net::{Acquaintance, Answering, Door, Link, NetError};
 use mt_store::{Store, StoreError, SECRET_BYTES};
 use mt_wire::message::{self, Kind, POINT_BYTES};
-use std::collections::BTreeMap;
+use crate::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex};
 use zeroize::Zeroizing;
@@ -354,7 +355,7 @@ struct AtAPoint {
     window: u64,
     count: usize,
     begun: Vec<[u8; POINT_BYTES]>,
-    digests: std::collections::BTreeSet<[u8; 32]>,
+    digests: crate::collections::BTreeSet<[u8; 32]>,
 }
 
 // What one point last read back as: the window it belonged to, the count of cells that produced the
@@ -484,7 +485,7 @@ impl Standing {
                     window,
                     count: 0,
                     begun: Vec::new(),
-                    digests: std::collections::BTreeSet::new(),
+                    digests: crate::collections::BTreeSet::new(),
                 });
                 // A point lives one window, and its file is the one under that window: a file of
                 // the same point under another window is not of it.
@@ -556,7 +557,7 @@ impl Standing {
             window,
             count: 0,
             begun: Vec::new(),
-            digests: std::collections::BTreeSet::new(),
+            digests: crate::collections::BTreeSet::new(),
         });
         // **A cell already standing is not held twice.** A machine reads a point over and over
         // while it stands at a round, and what it reads it writes at its own point so that it is
@@ -691,7 +692,7 @@ struct Reached {
 struct RemotePoint {
     window: u64,
     read: u16,
-    acknowledged: std::collections::BTreeSet<[u8; 32]>,
+    acknowledged: crate::collections::BTreeSet<[u8; 32]>,
     asked: u32,
     pushes_again_at: u32,
     backoff: u32,
@@ -1816,7 +1817,7 @@ impl Machine {
                 let known = one.taken.entry(*point).or_insert_with(|| RemotePoint {
                     window,
                     read: 0,
-                    acknowledged: std::collections::BTreeSet::new(),
+                    acknowledged: crate::collections::BTreeSet::new(),
                     asked: 0,
                     pushes_again_at: 0,
                     backoff: 0,
@@ -1905,7 +1906,7 @@ impl Machine {
     ) -> Result<Vec<Vec<u8>>, NodeError> {
         use sha2::{Digest as _, Sha256};
         let mut cells: Vec<Vec<u8>> = Vec::new();
-        let mut seen: std::collections::BTreeSet<[u8; 32]> = std::collections::BTreeSet::new();
+        let mut seen: crate::collections::BTreeSet<[u8; 32]> = crate::collections::BTreeSet::new();
         {
             let mut held = self.reached.lock().map_err(|_| NodeError::Uncountable)?;
             for one in held.iter_mut() {

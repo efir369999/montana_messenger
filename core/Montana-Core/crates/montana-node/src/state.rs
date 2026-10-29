@@ -23,7 +23,7 @@ pub struct State {
     admitted: Digest,
     // The records of the identity plane, by the key each stands at — which is its own commitment,
     // so a record stands where nothing about its holder places it.
-    records: std::collections::BTreeMap<[u8; 32], Digest>,
+    records: crate::collections::BTreeMap<[u8; 32], Digest>,
     // The rights already spent, of every kind: a nullifier present is a nullifier refused.
     nullifiers: Vec<[u8; 32]>,
     // How many records this window has opened, against the ceiling the Decree fixes.
@@ -51,7 +51,7 @@ impl State {
             notes: mt_proof::notes::Tree::new(mt_proof::tree_depth()),
             spent: Vec::new(),
             admitted: mt_proof::admitted::empty_root(),
-            records: std::collections::BTreeMap::new(),
+            records: crate::collections::BTreeMap::new(),
             nullifiers: Vec::new(),
             opened: (0, 0),
             rates: Vec::new(),
@@ -168,7 +168,7 @@ impl State {
         let distinct_values = |at: &mut usize| -> Result<Vec<[u8; 32]>, NodeError> {
             let held = count(at, 32)?;
             let mut values = Vec::with_capacity(held);
-            let mut seen = std::collections::BTreeSet::new();
+            let mut seen = crate::collections::BTreeSet::new();
             for _ in 0..held {
                 let value = of_bytes(take(32, at)?);
                 if !seen.insert(value) {
@@ -189,7 +189,7 @@ impl State {
         let spent = distinct_values(&mut at)?;
         let admitted = of_digest(take(32, &mut at)?)?;
         let records_held = count(&mut at, 64)?;
-        let mut records = std::collections::BTreeMap::new();
+        let mut records = crate::collections::BTreeMap::new();
         let mut previous_key = None;
         for _ in 0..records_held {
             let key = of_bytes(take(32, &mut at)?);
@@ -392,7 +392,7 @@ impl State {
                 }
             }
             TableIndex::Nullifiers => {
-                let set: std::collections::BTreeSet<&[u8; 32]> =
+                let set: crate::collections::BTreeSet<&[u8; 32]> =
                     self.spent.iter().chain(&self.nullifiers).collect();
                 for value in set {
                     out.extend_from_slice(value);
@@ -744,7 +744,7 @@ impl State {
             });
         }
         let id = frame.id().map_err(NodeError::Object)?;
-        let mut taken = std::collections::BTreeSet::new();
+        let mut taken = crate::collections::BTreeSet::new();
         for spend in &frame.spends {
             for nullifier in spend
                 .nullifiers
@@ -818,7 +818,7 @@ impl State {
             .map_err(|_| NodeError::Refused {
                 what: "a frame whose complete commitments cannot enter the tree",
             })?;
-        let rates: std::collections::BTreeSet<[u8; 32]> = frame
+        let rates: crate::collections::BTreeSet<[u8; 32]> = frame
             .spends
             .iter()
             .map(|spend| spend.rate_nullifier)

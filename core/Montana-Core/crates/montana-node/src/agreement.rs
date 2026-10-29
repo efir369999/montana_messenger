@@ -10,7 +10,7 @@
 // waits — stands in the pulse, where waiting is.
 
 use std::cmp::Reverse;
-use std::collections::{BTreeMap, BTreeSet};
+use crate::collections::{BTreeMap, BTreeSet};
 
 use mt_state::layout::{Confirmation, Pledge};
 use mt_state::STANDS_ON_NONE;
