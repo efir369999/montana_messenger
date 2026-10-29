@@ -166,7 +166,7 @@ pub struct Pulse {
     reconciled_at: BTreeMap<[u8; 32], u64>,
     // The votes the verified ballots of the cement's parts cast, each part's at its largest, and the
     // ballots already judged, by the digest of their bytes: a proof is not cheaper the second time.
-    ballots: BTreeMap<[u8; 32], u64>,
+    ballots: mt_pulse::ordered::Map<[u8; 32], u64>,
     judged: BTreeSet<[u8; 32]>,
     // This machine's own ballot of the window, and whether it has stood at the points yet.
     ballot: Option<Ballot>,
@@ -287,7 +287,7 @@ impl Pulse {
             past_predecessors: BTreeMap::new(),
             order: Vec::new(),
             reconciled_at: BTreeMap::new(),
-            ballots: BTreeMap::new(),
+            ballots: mt_pulse::ordered::Map::new(),
             judged: BTreeSet::new(),
             ballot,
             ballot_stood: false,

@@ -15,3 +15,7 @@ mt-suite = { workspace = true }
 mt-state = { workspace = true }
 mt-conformance = { path = "../mt-conformance" }
 sha2 = { workspace = true }
+
+# The sorted vectors of `ordered` stand under cfg(kani), which `cargo kani` sets and no build does.
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }

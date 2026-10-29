@@ -16,12 +16,12 @@
 
 use crate::NodeError;
 use mt_proof::poseidon::Digest;
+use mt_pulse::ordered::{Map, Set};
 use mt_pulse::standing::Committee;
 use mt_state::layout::{
     Ballot, Beacon, Census, Confirmation, LightAttestation, Pledge, Proposal, Roll,
 };
 use mt_state::Layout;
-use std::collections::{BTreeMap, BTreeSet};
 
 // The electorate of a window: the admitted set the proposal of the window two before carries, root
 // and count, and the census its standing is counted over, with the committee that standing draws.
@@ -175,8 +175,8 @@ pub struct Closure {
     pub cement_aggregate: [u8; 32],
     pub cement_count: u64,
     pub parts: Vec<[u8; 32]>,
-    pub votes: BTreeMap<[u8; 32], u64>,
-    pub answered: BTreeSet<[u8; 32]>,
+    pub votes: Map<[u8; 32], u64>,
+    pub answered: Set<[u8; 32]>,
 }
 
 impl Closure {
@@ -285,8 +285,8 @@ pub fn verify_certificate(
             }
         })?;
     let mut cement = mt_pulse::cement::Cement::new();
-    let mut keys: BTreeMap<[u8; 32], Vec<u8>> = BTreeMap::new();
-    let mut answered: BTreeSet<[u8; 32]> = BTreeSet::new();
+    let mut keys: Map<[u8; 32], Vec<u8>> = Map::new();
+    let mut answered: Set<[u8; 32]> = Set::new();
     let mut book = crate::agreement::Book::of_the_window(window);
     for round in rounds {
         if round.beacon.window != window {
@@ -368,7 +368,7 @@ pub fn verify_certificate(
     // once, at the largest count a ballot of it carries. A ballot that does not verify casts nothing
     // and refuses nothing — the votes it claimed are simply not there — so whoever answered a walk
     // cannot stop it by handing in a forged one.
-    let mut votes: BTreeMap<[u8; 32], u64> = BTreeMap::new();
+    let mut votes: Map<[u8; 32], u64> = Map::new();
     for round in rounds {
         for ballot in round.ballots {
             if !cement.holds(&ballot.part_nullifier) {
@@ -481,7 +481,7 @@ pub fn decided_of(
     closure: &Closure,
     electorate: &Electorate,
 ) -> Result<Decided, NodeError> {
-    let mut by_id: BTreeMap<[u8; 32], &Beacon> = BTreeMap::new();
+    let mut by_id: Map<[u8; 32], &Beacon> = Map::new();
     for round in rounds {
         by_id.insert(round.beacon.id().map_err(NodeError::Object)?, round.beacon);
     }
@@ -1023,7 +1023,6 @@ pub fn walk_to_the_open(
 mod proofs {
     use super::*;
     use mt_state::layout::Confirmation;
-    use std::collections::BTreeSet;
 
     // Window zero, the one window the Genesis State Hash stands under.
     const WINDOW: u64 = 0;
@@ -1257,7 +1256,7 @@ mod proofs {
             }
         }
         // The cement, its count and (C4).
-        let cement: BTreeSet<[u8; 32]> = heavy.iter().map(|held| held.part_nullifier).collect();
+        let cement: Set<[u8; 32]> = heavy.iter().map(|held| held.part_nullifier).collect();
         assert_eq!(closure.window, WINDOW);
         assert_eq!(closure.parts, cement.iter().copied().collect::<Vec<_>>());
         assert_eq!(closure.cement_count, cement.len() as u64);

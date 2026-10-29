@@ -9,8 +9,8 @@
 // and a test holds each rule without a wire. The conduct of a machine — when it pledges, how long it
 // waits — stands in the pulse, where waiting is.
 
+use mt_pulse::ordered::{Map, Set};
 use std::cmp::Reverse;
-use std::collections::{BTreeMap, BTreeSet};
 
 use mt_state::layout::{Confirmation, Pledge};
 use mt_state::STANDS_ON_NONE;
@@ -32,11 +32,11 @@ pub enum Kind {
 pub struct Electorate<'a> {
     pub count: u64,
     pub committee: u64,
-    pub votes: &'a BTreeMap<Part, u64>,
+    pub votes: &'a Map<Part, u64>,
 }
 
 impl Electorate<'_> {
-    fn reached(&self, parts: &BTreeSet<Part>) -> bool {
+    fn reached(&self, parts: &Set<Part>) -> bool {
         let votes: u128 = parts
             .iter()
             .map(|part| u128::from(*self.votes.get(part).unwrap_or(&0)))
@@ -159,9 +159,9 @@ fn rank((name, since): (Name, u32)) -> (Name, Reverse<u32>) {
 #[derive(Default)]
 pub struct Book {
     window: u64,
-    heavy_first: BTreeMap<Part, (Place, Name)>,
-    first: BTreeMap<(Kind, u32), BTreeMap<Part, (Name, u32)>>,
-    said: BTreeMap<Part, Vec<Pledge>>,
+    heavy_first: Map<Part, (Place, Name)>,
+    first: Map<(Kind, u32), Map<Part, (Name, u32)>>,
+    said: Map<Part, Vec<Pledge>>,
     pub contradictions: Vec<Contradiction>,
 }
 
@@ -230,13 +230,13 @@ impl Book {
     // Every attempt and name the counted open pledges reach the quorum on, attempt by attempt from
     // zero: an open pledge standing on an attempt counts only where that attempt's quorum on its own
     // name is already in the set, and an attempt it stands on is always an earlier one.
-    pub fn open_quorums(&self, electorate: &Electorate<'_>) -> BTreeSet<(u32, Name)> {
-        let mut reached: BTreeSet<(u32, Name)> = BTreeSet::new();
+    pub fn open_quorums(&self, electorate: &Electorate<'_>) -> Set<(u32, Name)> {
+        let mut reached: Set<(u32, Name)> = Set::new();
         for ((kind, attempt), parts) in &self.first {
             if *kind != Kind::Open {
                 continue;
             }
-            let mut by_name: BTreeMap<Name, BTreeSet<Part>> = BTreeMap::new();
+            let mut by_name: Map<Name, Set<Part>> = Map::new();
             for (part, (name, since)) in parts {
                 if *since == STANDS_ON_NONE || reached.contains(&(*since, *name)) {
                     by_name.entry(*name).or_default().insert(*part);
@@ -259,7 +259,7 @@ impl Book {
             if *kind != Kind::Closing {
                 continue;
             }
-            let mut by_name: BTreeMap<Name, BTreeSet<Part>> = BTreeMap::new();
+            let mut by_name: Map<Name, Set<Part>> = Map::new();
             for (part, (name, _)) in parts {
                 if quorums.contains(&(*attempt, *name)) {
                     by_name.entry(*name).or_default().insert(*part);
@@ -285,7 +285,7 @@ impl Book {
     // The latest attempt after `attempt` whose pledges come from more than `T - Q` distinct parts: an
     // attempt a machine behind is drawn into.
     pub fn drawn_into(&self, attempt: u32, electorate: &Electorate<'_>) -> Option<u32> {
-        let mut by_attempt: BTreeMap<u32, BTreeSet<Part>> = BTreeMap::new();
+        let mut by_attempt: Map<u32, Set<Part>> = Map::new();
         for ((_, at), parts) in &self.first {
             if *at > attempt {
                 by_attempt
@@ -405,7 +405,7 @@ mod tests {
         }
     }
 
-    fn four(votes: &BTreeMap<Part, u64>) -> Electorate<'_> {
+    fn four(votes: &Map<Part, u64>) -> Electorate<'_> {
         Electorate {
             count: 4,
             committee: 0,
@@ -493,7 +493,7 @@ mod tests {
     #[test]
     fn a_part_closing_on_two_names_counts_under_the_lesser_in_every_order() {
         const W: Name = [0x57; 32];
-        let votes = BTreeMap::new();
+        let votes = Map::new();
         let electorate = four(&votes);
         for (other, decided) in [(Y, Some((X, 0))), (W, None)] {
             let pledges = [
@@ -530,7 +530,7 @@ mod tests {
     // under which the pledge on attempt zero stands and counts nothing.
     #[test]
     fn of_two_open_pledges_on_one_name_the_one_standing_on_none_stands() {
-        let votes = BTreeMap::new();
+        let votes = Map::new();
         let electorate = four(&votes);
         let pledges = [
             pledge(4, 1, X, STANDS_ON_NONE),
@@ -560,7 +560,7 @@ mod tests {
     // heavy attestations of both names together toward one quorum.
     #[test]
     fn a_split_heavy_vote_is_decided_by_a_later_attempt() {
-        let votes = BTreeMap::new();
+        let votes = Map::new();
         let electorate = four(&votes);
         let mut book = Book::of_the_window(7);
         book.heavy(Place::default(), part(1), X);
@@ -588,7 +588,7 @@ mod tests {
     // pledge on whatever attempt it names.
     #[test]
     fn a_pledge_counts_only_on_the_quorum_it_names() {
-        let votes = BTreeMap::new();
+        let votes = Map::new();
         let electorate = four(&votes);
         let mut book = Book::of_the_window(7);
         for at in 1..=3 {
@@ -636,7 +636,7 @@ mod tests {
     // machines and a quorum of three, two parts draw and one does not.
     #[test]
     fn a_machine_is_drawn_forward_by_more_than_the_faulty_can_fill() {
-        let votes = BTreeMap::new();
+        let votes = Map::new();
         let electorate = four(&votes);
         let mut book = Book::of_the_window(7);
         book.pledge(pledge(1, 3, X, STANDS_ON_NONE));
@@ -651,7 +651,7 @@ mod tests {
     // of a later attempt on a quorum its lock may be past.
     #[test]
     fn a_valid_name_is_the_newest_open_quorum() {
-        let votes = BTreeMap::new();
+        let votes = Map::new();
         let electorate = four(&votes);
         let mut book = Book::of_the_window(7);
         assert_eq!(book.valid_name(&electorate), None);
@@ -910,7 +910,7 @@ mod every_book {
             let rows: Vec<_> = (0..threads)
                 .map(|t| {
                     s.spawn(move || {
-                        let votes = BTreeMap::new();
+                        let votes = Map::new();
                         let electorate = Electorate {
                             count: PARTS as u64,
                             committee: 0,
@@ -1122,7 +1122,7 @@ mod proofs {
         let mut second = first;
         second[FAULTY] = any_script();
         first[FAULTY] = any_script();
-        let votes = BTreeMap::new();
+        let votes = Map::new();
         let electorate = Electorate {
             count: PARTS as u64,
             committee: 0,
