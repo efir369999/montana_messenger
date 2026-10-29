@@ -914,12 +914,33 @@ pub struct Lived {
     pub proposal: [u8; 32],
 }
 
-// How long a machine holds still before asking its acquaintances again what stands at a point.
+// How long a machine holds still, on the mean, before asking its acquaintances again what stands at
+// a point, and the unit its askings are counted in; each hold itself is drawn (below).
 //
 // **It measures nothing of the protocol.** A round closes when an answer arrives and not when a
 // clock says so; this is only how often a machine asks. Nothing of consensus turns on its length,
 // and a machine that asked twice as often or half as often would cement the same windows.
 const ASKS_AGAIN_AFTER: std::time::Duration = std::time::Duration::from_millis(25);
+
+// **The rhythm is drawn, and the unit is not** (#22, K5). A machine holding still for one fixed
+// interval between askings would publish it: the gaps between its askings, seen on the wire, are a
+// mark of this implementation and, held over hours, of this machine. Each hold is drawn afresh from
+// the machine's own randomness, evenly between a half and one and a half of `ASKS_AGAIN_AFTER`, so
+// its mean is the same and its gaps carry nothing. The askings are still counted off the time stood
+// in units of `ASKS_AGAIN_AFTER` (`askings_since`): that unit is the one every honest machine counts
+// the spans of the agreement in, and a unit drawn per machine would part them again. A generator
+// that does not answer leaves the hold at the unit itself, which costs this machine its cover for
+// one asking and never its liveness.
+fn hold_before_asking_again() -> std::time::Duration {
+    let span = u64::try_from(ASKS_AGAIN_AFTER.as_micros()).unwrap_or(u64::MAX);
+    match mt_wire::draw::block::<8>() {
+        Ok(drawn) => {
+            let within = u64::from_le_bytes(*drawn) % span;
+            ASKS_AGAIN_AFTER / 2 + std::time::Duration::from_micros(within)
+        }
+        Err(_) => ASKS_AGAIN_AFTER,
+    }
+}
 
 pub use mt_pulse::WAITS_UP_TO;
 
@@ -938,7 +959,7 @@ use mt_pulse::{
 // since what a machine asks over is read from what it holds at the moment it asks.
 pub fn reach_again(machine: std::sync::Arc<Machine>, line: String) {
     std::thread::spawn(move || loop {
-        std::thread::sleep(ASKS_AGAIN_AFTER * REACHES_AGAIN_EVERY);
+        std::thread::sleep(hold_before_asking_again() * REACHES_AGAIN_EVERY);
         if machine.reach_and_hold(&line).is_ok() {
             println!("connection restored");
             return;
@@ -1424,7 +1445,7 @@ pub fn live_doing(
                 if waited >= patience {
                     return Err(counts.exhausted(on, "a round no beacon ever stood at"));
                 }
-                std::thread::sleep(ASKS_AGAIN_AFTER);
+                std::thread::sleep(hold_before_asking_again());
             };
             // **Every machine gathers, and not the runner alone.** A window is finalized on
             // confirmations reaching the quorum, and a machine that waited to be told would be
@@ -1752,7 +1773,7 @@ pub fn live_doing(
                         counts.line()
                     );
                 }
-                std::thread::sleep(ASKS_AGAIN_AFTER);
+                std::thread::sleep(hold_before_asking_again());
             };
             // Two versions of one round are resolved by the smaller identifier, which is the rule
             // the set states for two clearings of one height: among the versions this machine
@@ -1855,7 +1876,7 @@ pub fn live_doing(
                         "a decided proposal that never stood at the points with its roll",
                     ));
                 }
-                std::thread::sleep(ASKS_AGAIN_AFTER);
+                std::thread::sleep(hold_before_asking_again());
             };
             let (plane, positions) = applied_again(machine, window, &adopted.state, patience)?;
             let link: String = decided_name.iter().map(|b| format!("{b:02x}")).collect();
@@ -2542,7 +2563,7 @@ fn take_the_proposal(
         return Ok(found);
     }
     for _ in 0..carries_after(machine_secret, held.aggregate_two_before) {
-        std::thread::sleep(ASKS_AGAIN_AFTER);
+        std::thread::sleep(hold_before_asking_again());
         if let Some(found) =
             standing_proposal(machine, window, &expected, held, roots, &mut refused)?
         {
@@ -2594,7 +2615,7 @@ fn take_the_proposal(
         if waited >= patience {
             return Err(counts.exhausted(on, "a window no proposal of its decision ever stood at"));
         }
-        std::thread::sleep(ASKS_AGAIN_AFTER);
+        std::thread::sleep(hold_before_asking_again());
     }
 }
 
@@ -3470,6 +3491,37 @@ pub fn take_from(
     mt_wire::publish::object_of(point, window, &cells, length).map_err(|_| NodeError::Refused {
         what: "cells of a point that do not read back as one delivery",
     })
+}
+
+#[cfg(test)]
+mod the_rhythm {
+    use super::{hold_before_asking_again, ASKS_AGAIN_AFTER};
+
+    // #22, K5. The named wrong implementation: a machine holding still for one constant between
+    // askings, whose gaps on the wire are its mark. The holds are drawn within their bounds and no
+    // run of them is one value.
+    #[test]
+    fn the_hold_between_askings_is_drawn_within_its_bounds() {
+        let holds: Vec<std::time::Duration> = (0..64).map(|_| hold_before_asking_again()).collect();
+        for hold in &holds {
+            assert!(
+                *hold >= ASKS_AGAIN_AFTER / 2,
+                "a hold of {hold:?} under its bound"
+            );
+            assert!(
+                *hold < ASKS_AGAIN_AFTER * 3 / 2,
+                "a hold of {hold:?} past its bound"
+            );
+        }
+        let mut distinct = holds.clone();
+        distinct.sort_unstable();
+        distinct.dedup();
+        assert!(
+            distinct.len() > 32,
+            "the holds stood at {} values of 64",
+            distinct.len()
+        );
+    }
 }
 
 #[cfg(test)]

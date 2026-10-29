@@ -412,14 +412,41 @@ impl Door {
         Ok(self.0.local_addr().map_err(socket)?.to_string())
     }
 
+    // Taking a connection and answering it on one thread, for a caller that answers one link at a
+    // time and holds nothing else at the door.
     pub fn answer(&self, answering: &Answering) -> Result<Link, NetError> {
-        let (mut stream, _) = self.0.accept().map_err(socket)?;
+        self.take()?.answer(answering)
+    }
+
+    // Taking a connection is all the door's own thread does. The four flights run on whichever
+    // thread answers the arrival, so a far side that opens a connection and says nothing holds that
+    // thread and never the door, and every caller after it is answered while it is silent (#22, K5).
+    pub fn take(&self) -> Result<Arrival, NetError> {
+        let (stream, _) = self.0.accept().map_err(socket)?;
         stream.set_nodelay(true).map_err(socket)?;
         stream.set_write_timeout(Some(patience())).map_err(socket)?;
         // The four flights stand under the same patience as a message: a far side that opens a
         // connection and says nothing holds a thread of this machine and nothing else, and only for
         // as long as this.
         wait_with_patience(&stream)?;
+        Ok(Arrival(stream))
+    }
+}
+
+// A connection the door took and nobody has answered yet.
+pub struct Arrival(TcpStream);
+
+impl Arrival {
+    // Its end, held apart from it as a link's is: a machine stopped while the far side is still in
+    // its flights ends the socket under the thread answering it.
+    pub fn closer(&self) -> Result<Closer, NetError> {
+        let stream = self.0.try_clone().map_err(socket)?;
+        Ok(Closer { stream })
+    }
+
+    // The second and fourth flights, and a channel once the third has verified.
+    pub fn answer(self, answering: &Answering) -> Result<Link, NetError> {
+        let mut stream = self.0;
 
         let hello = Hello::parse(&read_flight(&mut stream, handshake::hello_len())?)
             .map_err(NetError::Handshake)?;
