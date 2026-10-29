@@ -330,12 +330,6 @@ async function beat() {
   }
   // a voice that came into the room while it is recorded joins the recording
   if (E.tape) E.pairs.forEach((p) => E.tape.feed(p.stream, p.seat + ":" + p.gen));
-  // THE ROOM'S SECONDS ARE COINS (iOS MTCallMint, MTGroupRoom.talkElapsed): each second a voice is linked, a recorded room mints its
-  // seconds and one not recorded burns them -- Rust takes the seconds it has not taken yet
-  if ([...E.pairs.values()].some((p) => p.linked)) {
-    E.talked = (E.talked || 0) + 1;
-    invoke("call_coins", { call: "room:" + E.live.id, seconds: E.talked, recording: !!E.tape }).catch(() => {});
-  }
   // the voices measured: who speaks now
   for (const p of E.pairs.values()) {
     if (!p.pc) continue;
@@ -452,7 +446,6 @@ export function leave(tellGroup = true) {
   closeAfterWords();
   if (tellGroup) invoke("room_do", { act: "leave" }).catch(() => {});
   E.live = null;
-  E.talked = 0;
   emit();
 }
 export function endForEveryone() {
@@ -461,7 +454,6 @@ export function endForEveryone() {
   closeAfterWords();
   invoke("room_do", { act: "end" }).catch(() => {});
   E.live = null;
-  E.talked = 0;
   emit();
 }
 export function ownerMute(seat) { const p = E.pairs.get(seat); if (p && E.live?.owner === E.live?.me) command(p, "mute"); }
