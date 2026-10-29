@@ -402,6 +402,29 @@ fn a_factor_at_a_further_row_than_the_shape_carries_is_refused() {
     }
 }
 
+// A periodic column one row on. The trace is judged with it one row on and the composition reads
+// it at the point itself, so a true trace of such a description failed only at the end of proving,
+// as a composition above its degree (PR #118: the suffix rule of the continuity's masks). It is
+// refused where a description becomes one; the same column at its own row stands.
+#[test]
+fn a_periodic_column_one_row_on_is_refused() {
+    let with_schedule = |shift: u8| {
+        let mut held = description();
+        held.periodic.push(mt_proof::air::Periodic {
+            period_log2: 1,
+            values: vec![1, 0],
+        });
+        held.constraints[0].terms[0].factors[0].column = held.trace_width;
+        held.constraints[0].terms[0].factors[0].shift = shift;
+        held
+    };
+    assert_eq!(
+        with_schedule(1).check(),
+        Err(mt_proof::air::AirError::PeriodicOneRowOn { column: 2 })
+    );
+    with_schedule(0).check().expect("a periodic column at its own row");
+}
+
 // The selector, which is what a trace of many gadgets cannot do without: a constraint that holds
 // inside a block and not across the seam between blocks. The trace below counts inside a block of
 // four rows and starts over at each seam — a transition that would be false at every fourth row
