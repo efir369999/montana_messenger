@@ -19,6 +19,8 @@
 // ready: an output takes it without waiting, and "dead" is pronounced only when a gather proven
 // by three windows returned a refusal.
 
+#[cfg(test)]
+use std::cell::Cell;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::thread;
@@ -43,6 +45,21 @@ type Seed = Zeroizing<[u8; 32]>;
 static NEXT_SEED: Mutex<Option<Result<Seed, EntropyError>>> = Mutex::new(None);
 static PREFETCH_RUNNING: AtomicBool = AtomicBool::new(false);
 
+// Under test a gather is counted on the thread that ran it, and the gathering thread passes a gate
+// before it gathers: a test holds the gate and reads whether an output ever gathered on its own thread.
+#[cfg(test)]
+thread_local! {
+    static GATHERS_HERE: Cell<u32> = const { Cell::new(0) };
+}
+#[cfg(test)]
+static GATE: Mutex<()> = Mutex::new(());
+
+fn gather() -> Result<Seed, EntropyError> {
+    #[cfg(test)]
+    GATHERS_HERE.with(|g| g.set(g.get() + 1));
+    generate_entropy()
+}
+
 fn order_next_seed() {
     // A ready seed already lies there — do not order a second one: one gather per period, not two.
     if NEXT_SEED
@@ -58,13 +75,15 @@ fn order_next_seed() {
     let spawned = thread::Builder::new()
         .name("mt-entropy-reseed".into())
         .spawn(|| {
-            let seed = generate_entropy();
+            #[cfg(test)]
+            let _gate = GATE.lock().unwrap_or_else(|e| e.into_inner());
+            let seed = gather();
             *NEXT_SEED.lock().unwrap_or_else(|e| e.into_inner()) = Some(seed);
             PREFETCH_RUNNING.store(false, Ordering::Release);
         });
     if spawned.is_err() {
         // No thread was granted — gather here and now, as before; a rarity, not the path.
-        let seed = generate_entropy();
+        let seed = gather();
         *NEXT_SEED.lock().unwrap_or_else(|e| e.into_inner()) = Some(seed);
         PREFETCH_RUNNING.store(false, Ordering::Release);
     }
@@ -79,7 +98,7 @@ struct Drbg {
 
 impl Drbg {
     fn instantiate() -> Result<Self, EntropyError> {
-        let seed = generate_entropy()?;
+        let seed = gather()?;
         let mut d = Drbg {
             key: [0x00; 32],
             v: [0x01; 32],
@@ -115,7 +134,7 @@ impl Drbg {
         let pid = std::process::id();
         if pid != self.pid {
             // A new process — a new seed, here and now: it has no foreign thread yet.
-            let seed = generate_entropy()?;
+            let seed = gather()?;
             self.update(Some(&seed[..]));
             self.counter = 0;
             self.pid = pid;
@@ -215,34 +234,42 @@ mod tests {
         }
     }
 
-    // The vector catches an implementation that gathers the seed on the output thread: for it the 4096th output
-    // costs as much as a full gather (milliseconds and timer sleeps), for this one — microseconds,
-    // because the seed was ordered in advance. The threshold is a hundredth of a gather: a gather on this machine is not
-    // shorter than two milliseconds (256 measurements of 256 clock steps), an output is not longer than a hundred
-    // microseconds.
+    // The vector catches an implementation that gathers the seed on the output thread or waits for it.
+    // The gathering thread is held at its gate, so after at most one seed gathered past the gate before
+    // the hold the counter climbs past the refresh point with no seed ready, and the outputs go on; a
+    // gather that an output ran on its own thread is counted there. No clock is read: the old threshold of
+    // two milliseconds measured the host, not the code (an output with no gather beside it took 25-240 ms
+    // on Lauterbourg-2, 29.10.2026). An output that waited for the held gather would not return; one that
+    // gathered at the refresh point resets the counter and never stands past it.
     #[test]
     fn the_reseeding_draw_never_pays_for_the_gather() {
-        for _ in 0..(RESEED_AFTER + 64) {
-            let mut b = [0u8; 16];
+        let mut b = [0u8; 16];
+        random_fast(&mut b).unwrap();
+        let before = GATHERS_HERE.with(Cell::get);
+        let held = GATE.lock().unwrap_or_else(|e| e.into_inner());
+        let mut past = false;
+        for _ in 0..RESEED_HARD_CAP {
             random_fast(&mut b).unwrap();
+            let counter = DRBG
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .as_ref()
+                .expect("instantiated by the first output")
+                .counter;
+            if counter >= RESEED_AFTER + 64 {
+                past = true;
+                break;
+            }
         }
-        // wait for the ready seed, so that the next refresh period takes it at once
-        let born = std::time::Instant::now();
-        while PREFETCH_RUNNING.load(Ordering::Acquire)
-            && born.elapsed() < std::time::Duration::from_secs(5)
-        {
-            thread::yield_now();
-        }
-        let mut worst = std::time::Duration::ZERO;
-        for _ in 0..(RESEED_AFTER + 64) {
-            let mut b = [0u8; 16];
-            let t = std::time::Instant::now();
-            random_fast(&mut b).unwrap();
-            worst = worst.max(t.elapsed());
-        }
+        drop(held);
+        assert_eq!(
+            GATHERS_HERE.with(Cell::get),
+            before,
+            "an output gathered the seed on its own thread"
+        );
         assert!(
-            worst < std::time::Duration::from_millis(2),
-            "output paid for a gather: {worst:?}"
+            past,
+            "the outputs never stood past the refresh point while the gather was held"
         );
     }
 }
