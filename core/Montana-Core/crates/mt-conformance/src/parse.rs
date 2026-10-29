@@ -2781,10 +2781,8 @@ pub const DOMAINS_AWAITING_A_VECTOR: &[(&str, &str)] = &[
     // The pulse: the objects a window carries beside its attestations.
     ("mt-nodereg", "the pulse"),
     ("mt-cascade", "the pulse"),
-    // The agreement on what a window decided: the points the pledges of a part stand at past the
-    // attempts of the first band, the place of a part in an attempt and the identifier of a roll,
-    // frozen with the stage that runs them.
-    ("mt-pledge-point", "the agreement on what a window decided"),
+    // The agreement on what a window decided: the place of a part in an attempt and the identifier
+    // of a roll, frozen with the stage that runs them.
     ("mt-proposer", "the agreement on what a window decided"),
     ("mt-roll", "the agreement on what a window decided"),
     // The wire: the two signatures of the handshake and the envelope of a delivery.
@@ -3219,6 +3217,22 @@ pub fn check_delivery(md: &str) -> Result<(), String> {
                 mt_derive::delivery::notice_point(
                     &nullifier,
                     number(input_of(call, "W")?)?,
+                    u8::try_from(number(input_of(call, "i")?)?)
+                        .map_err(|e| format!("an index beyond a byte: {e}"))?,
+                ),
+            )?;
+        }
+        if let Some(rest) = label.strip_prefix("pledge_point(") {
+            let call = rest.trim_end_matches(')');
+            let nullifier = hex32(labeled(&rows, "test_nullifier")?)?;
+            compare16(
+                label,
+                value,
+                mt_derive::delivery::pledge_point(
+                    &nullifier,
+                    number(input_of(call, "W")?)?,
+                    u32::try_from(number(input_of(call, "b")?)?)
+                        .map_err(|e| format!("a band beyond four bytes: {e}"))?,
                     u8::try_from(number(input_of(call, "i")?)?)
                         .map_err(|e| format!("an index beyond a byte: {e}"))?,
                 ),
