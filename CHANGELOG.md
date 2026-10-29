@@ -2,6 +2,18 @@
 
 Every build of Montana for iPhone, iPad and Mac, newest first. The version is the one Settings shows: 1.0 (build). Each entry is written here by the build road before the build is made, from the release notes the build carries; a build whose entry is not on this page is not built. Each build's full notes are in [`doc/release-notes/messenger/ios`](doc/release-notes/messenger/ios).
 
+## 1.0 (2317) - 2026-10-29
+
+Source commit `3febd62ee04f`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2317.md).
+
+- Chess no longer credits or takes coins: no coins for moves, no stakes, no pot and no winnings. Coins are born only by the network's core, one coin a second.
+- The captured pieces beside each player are all drawn at the same size, in the board's own artwork.
+- A first message that arrives as a long letter is shown with its words, and a service message is never shown as a chat bubble.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged. Chess letters no longer carry any coin field; a letter of an earlier build is read without its coin fields. No new address, key or network road is added.
+
 ## 1.0 (2316) - 2026-10-29
 
 Source commit `f6484629d89a`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2316.md).
