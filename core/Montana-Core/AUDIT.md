@@ -2087,7 +2087,7 @@ numbers, which says the method and not the tree is what is missing.
 | domains of the registry a run takes a preimage under | 78 of 105 — the gate refuses a domain that is neither taken nor named, so this number is a hundred and five less the twenty-seven named and is not a count anybody keeps |
 | of the rest, named with what owes them a vector | 27, and a silent one that is unnamed fails the build |
 | prefix pairs among them, closed by the zero and the alphabet | 5 |
-| frozen lines of the set of the shape the coverage pass reads | 282, counted by the pass itself |
+| frozen lines of the set of the shape the coverage pass reads | 283, counted by the pass itself |
 | numerals of the library, every one of them in a register | 177, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
 | of those, compared against a place of the set | 69 |
 | of those, named as of this tree with the reason each is | the rest, each with the reason it is of this tree and of no document |
