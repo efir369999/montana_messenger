@@ -2088,7 +2088,7 @@ numbers, which says the method and not the tree is what is missing.
 | of the rest, named with what owes them a vector | 24, and a silent one that is unnamed fails the build |
 | prefix pairs among them, closed by the zero and the alphabet | 5 |
 | frozen lines of the set of the shape the coverage pass reads | 286, counted by the pass itself |
-| numerals of the library, every one of them in a register | 169, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
+| numerals of the library, every one of them in a register | 179, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
 | of those, compared against a place of the set | 69 |
 | of those, named as of this tree with the reason each is | the rest, each with the reason it is of this tree and of no document |
 | rows a wrong value would pass | 0 of 69 |
