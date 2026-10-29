@@ -30,17 +30,21 @@ use crate::line::{self, L};
 use crate::poseidon::{self, Digest, CAPACITY, RATE, WIDTH};
 use mt_codec::{domain, Domain};
 
-// Where each field of the public input stands, in limbs of four bytes, in the order the layout of a
-// pledge carries them: `window`, `attempt`, `name`, `since`, `part_nullifier`, `line_value`.
-const WINDOW: u16 = 0;
-const ATTEMPT: u16 = 2;
-const NAME: u16 = 3;
-const SINCE: u16 = 11;
-const PART_NULLIFIER: u16 = 12;
-const LINE_VALUE: u16 = 20;
-
-// The held columns: four elements of the line, a digest wide each, and the four cells of the slot.
-const HELD: usize = 4 * CAPACITY + 4;
+mt_codec::constants! {
+    PLEDGE:
+    /// Where each field of the public input stands, in limbs of four bytes, in the order the layout
+    /// of a pledge carries them: `window`, `attempt`, `name`, `since`, `part_nullifier`,
+    /// `line_value`.
+    const WINDOW: u16 = 0, code "the first limb of the window in the public input of a pledge";
+    const ATTEMPT: u16 = 2, code "the limb of the attempt in the public input of a pledge, after the two of the window";
+    const NAME: u16 = 3, code "the first of the eight limbs of the name in the public input of a pledge";
+    const SINCE: u16 = 11, code "the limb of `since` in the public input of a pledge, after the eight of the name";
+    const PART_NULLIFIER: u16 = 12, code "the first of the eight limbs of the nullifier of the part in the public input of a pledge";
+    const LINE_VALUE: u16 = 20, code "the first limb of the value of the line in the public input of a pledge, after the eight of the nullifier";
+    /// The held columns: four elements of the line, a digest wide each, and the four cells of the
+    /// slot.
+    const HELD: usize = 4 * CAPACITY + 4, code "the held columns of a pledge: the opening, the slope, the abscissa and the value of the line, a digest wide each, and the four cells of the slot";
+}
 
 // How the blocks of a pledge stand. Block zero is idle so every chain has a seam before it.
 #[derive(Clone, Copy, Debug)]
@@ -375,7 +379,10 @@ fn constraints(marks: usize, held: &Held) -> Vec<Constraint> {
                 degree: 2,
                 terms: vec![
                     term(one, vec![factor(mark, 0, 1), factor(first + cell, 0, 1)]),
-                    term(minus, vec![factor(mark, 0, 1), factor(ring_column(cell), 0, 1)]),
+                    term(
+                        minus,
+                        vec![factor(mark, 0, 1), factor(ring_column(cell), 0, 1)],
+                    ),
                 ],
             });
         }
@@ -383,7 +390,8 @@ fn constraints(marks: usize, held: &Held) -> Vec<Constraint> {
     // The kind: `(since − attempt)·kind = 0` and `kind − 1 + (since − attempt)·inverse = 0`. Where
     // `since` is the attempt the second forces the kind to one; anywhere else the first forces it to
     // zero, and the inverse is what lets the second hold.
-    let (attempt, since, kind, inverse) = (held.attempt(), held.since(), held.kind(), held.inverse());
+    let (attempt, since, kind, inverse) =
+        (held.attempt(), held.since(), held.kind(), held.inverse());
     out.push(Constraint {
         degree: 2,
         terms: vec![
@@ -480,7 +488,10 @@ pub fn trace_of(
             places.opening(),
             sponge::chain(domain::MT_LINE_OPENING, spending.elements()),
         ),
-        (places.slope(), sponge::chain(domain::MT_LINE_SLOPE, &sloped)),
+        (
+            places.slope(),
+            sponge::chain(domain::MT_LINE_SLOPE, &sloped),
+        ),
         (
             places.abscissa(),
             sponge::chain(domain::MT_LINE_ABSCISSA, &name_limbs),
@@ -646,7 +657,10 @@ mod tests {
         // The slot enters the slope at the row the opening is loaded at, so one mark serves both.
         assert_eq!(places.loads()[0], places.seam_before(places.slope()));
         assert_eq!(usize::from(held.trace_width), columns().width());
-        assert_eq!(public_of(0, 0, &FIRST, 0, &Digest::ZERO, L::ZERO).len(), 4 * 28);
+        assert_eq!(
+            public_of(0, 0, &FIRST, 0, &Digest::ZERO, L::ZERO).len(),
+            4 * 28
+        );
     }
 
     #[test]
@@ -664,7 +678,13 @@ mod tests {
     #[test]
     fn the_honest_trace_names_what_it_breaks() {
         let held = description().expect("the description stands");
-        for (attempt, since) in [(0, 0), (3, 3), (3, 1), (62, u32::MAX), (0xFFFF_FFFE, u32::MAX)] {
+        for (attempt, since) in [
+            (0, 0),
+            (3, 3),
+            (3, 1),
+            (62, u32::MAX),
+            (0xFFFF_FFFE, u32::MAX),
+        ] {
             let (trace, public, _, _) = pledged(attempt, since, &FIRST);
             assert_eq!(
                 broken(&held, &trace, &public),
@@ -689,8 +709,8 @@ mod tests {
             let (_, _, nullifier, one) = pledged(attempt, since, &FIRST);
             let (_, _, _, two) = pledged(attempt, since, &SECOND);
             assert_eq!(nullifier, presence[1], "the nullifier of the part");
-            let slope = line::slope(&spending, AT, line::slot(attempt, since == attempt))
-                .expect("a slope");
+            let slope =
+                line::slope(&spending, AT, line::slot(attempt, since == attempt)).expect("a slope");
             let (x1, x2) = (
                 line::abscissa(&FIRST).expect("an abscissa"),
                 line::abscissa(&SECOND).expect("an abscissa"),
@@ -730,7 +750,11 @@ mod tests {
         let (mut trace, _, nullifier, _) = pledged(3, 3, &FIRST);
         trace[columns().kind()].fill(F::ZERO);
         let slot = line::slot(3, false);
-        let value = reslope(&mut trace, &slope_elements(&spending_of(&SECRET), slot), &FIRST);
+        let value = reslope(
+            &mut trace,
+            &slope_elements(&spending_of(&SECRET), slot),
+            &FIRST,
+        );
         let public = limbs(3, 3, &FIRST, &nullifier, value);
         assert_eq!(
             broken(&held, &trace, &public),
@@ -748,7 +772,11 @@ mod tests {
         trace[held_columns.kind()].fill(F::ONE);
         trace[held_columns.inverse()].fill(F::ZERO);
         let slot = line::slot(3, true);
-        let value = reslope(&mut trace, &slope_elements(&spending_of(&SECRET), slot), &FIRST);
+        let value = reslope(
+            &mut trace,
+            &slope_elements(&spending_of(&SECRET), slot),
+            &FIRST,
+        );
         let public = limbs(3, u32::MAX, &FIRST, &nullifier, value);
         assert_eq!(
             broken(&held, &trace, &public),
@@ -762,7 +790,11 @@ mod tests {
         let held = description().expect("the description stands");
         let (mut trace, _, nullifier, _) = pledged(3, 3, &FIRST);
         let slot = line::slot(4, true);
-        let value = reslope(&mut trace, &slope_elements(&spending_of(&SECRET), slot), &FIRST);
+        let value = reslope(
+            &mut trace,
+            &slope_elements(&spending_of(&SECRET), slot),
+            &FIRST,
+        );
         let public = limbs(3, 3, &FIRST, &nullifier, value);
         assert_eq!(
             broken(&held, &trace, &public),
@@ -833,7 +865,11 @@ mod tests {
         let held = description().expect("the description stands");
         let (mut trace, _, nullifier, _) = pledged(3, 3, &FIRST);
         let stranger = spending_of(&[0xB7; 32]);
-        let value = reslope(&mut trace, &slope_elements(&stranger, line::slot(3, true)), &FIRST);
+        let value = reslope(
+            &mut trace,
+            &slope_elements(&stranger, line::slot(3, true)),
+            &FIRST,
+        );
         let public = limbs(3, 3, &FIRST, &nullifier, value);
         let mutant = assembled(&Places.lane_wires()[..2]).expect("the mutant stands");
         assert_eq!(broken(&mutant, &trace, &public), (Vec::new(), Vec::new()));

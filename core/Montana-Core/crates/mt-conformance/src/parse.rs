@@ -4104,6 +4104,7 @@ fn registers() -> Vec<&'static [mt_codec::Constant]> {
         mt_proof::circuit::capacity::CAPACITIES,
         mt_proof::circuit::admission::ADMISSION,
         mt_proof::circuit::presence::PRESENCE,
+        mt_proof::circuit::pledge::PLEDGE,
         mt_proof::circuit::opening::OPENING,
         mt_proof::circuit::lane::LANE,
         mt_proof::circuit::frame::FRAME,
