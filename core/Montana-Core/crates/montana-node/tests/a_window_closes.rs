@@ -244,8 +244,9 @@ fn a_replayed_heavy_gives_the_replayer_no_part_of_its_own() {
 
     // The machine that answered, and the one that only carries its answer on.
     let (siblings, position) = &branches[0];
-    let answering = Standing::of_the_window(&secrets[0], WINDOW, siblings, *position)
-        .expect("a machine of the cohort proves its presence");
+    let answering =
+        Standing::of_the_window(&secrets[0], WINDOW, &previous_proposal, siblings, *position)
+            .expect("a machine of the cohort proves its presence");
     let replayer = mt_derive::nullifier::part(&secrets[1], WINDOW).expect("the replayer's part");
     assert_ne!(replayer, answering.part_nullifier);
 
@@ -256,8 +257,16 @@ fn a_replayed_heavy_gives_the_replayer_no_part_of_its_own() {
         let carried = answering
             .heavy(&secrets[0], beacon_id, previous_proposal)
             .expect("a heavy attestation stands");
-        attest::verify_heavy(&carried, &root, &aggregate, 0, 7, &everything)
-            .expect("a replay of a valid attestation verifies as the original");
+        attest::verify_heavy(
+            &carried,
+            &previous_proposal,
+            &root,
+            &aggregate,
+            0,
+            7,
+            &everything,
+        )
+        .expect("a replay of a valid attestation verifies as the original");
         cement.add(carried.part_nullifier);
     }
     assert_eq!(cement.count(), 1, "a replay adds no part");
@@ -285,7 +294,15 @@ fn a_replayed_heavy_gives_the_replayer_no_part_of_its_own() {
             .as_bytes()
             .to_vec();
     assert_eq!(
-        attest::verify_heavy(&claimed, &root, &aggregate, 0, 7, &everything),
+        attest::verify_heavy(
+            &claimed,
+            &previous_proposal,
+            &root,
+            &aggregate,
+            0,
+            7,
+            &everything
+        ),
         Err(montana_node::NodeError::Refused {
             what: "an attestation whose proof of presence does not verify",
         }),
