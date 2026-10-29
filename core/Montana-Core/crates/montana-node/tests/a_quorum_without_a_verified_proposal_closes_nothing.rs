@@ -198,7 +198,12 @@ fn substitutes_of(own: &Proposal) -> Vec<(&'static str, Proposal)> {
     out
 }
 
-// The signatures of the proposals of the window held back standing at its points.
+// The signatures of the proposals of the window held back standing at its points. A body of the
+// proposal's length is not yet a proposal: since record 309 the heavy attestation and the pledge carry
+// a proof of presence as long as the proposal's ticket, so all three pad to one body and each parses
+// as the other (`one_length_is_not_one_kind`). What tells a proposal apart is the field only a
+// proposal carries, the version of the protocol it was made under; read as a proposal, a pledge puts
+// its attempt there and a heavy attestation the head of what it attests.
 fn standing_at_the_window(machine: &Machine) -> Vec<Vec<u8>> {
     let width = Proposal::expected_len();
     let of_proposal = mt_wire::message::body_len(width).expect("the Decree names the cell");
@@ -212,7 +217,10 @@ fn standing_at_the_window(machine: &Machine) -> Vec<Vec<u8>> {
                 continue;
             }
             if let Ok(held) = Proposal::parse(&body[..width]) {
-                if held.window == HELD_BACK && !out.contains(&held.signature) {
+                if held.window == HELD_BACK
+                    && held.protocol_version == mt_state::PROTOCOL_VERSION
+                    && !out.contains(&held.signature)
+                {
                     out.push(held.signature);
                 }
             }

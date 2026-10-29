@@ -76,12 +76,19 @@ fn the_presence_asserts_the_line_at_the_name_it_attests() {
     moved.line_value[0] ^= 1;
     assert_eq!(door(&signed_again(moved), &NAME), refused(UNPROVEN));
 
-    // Bytes that are no element of the field are refused before the proof.
+    // Bytes that are no element of the field are no confirmation of this protocol: the rule of the
+    // layout refuses them where they are written, so nobody can sign them, and the door refuses
+    // them at the scope, before the signature and before the proof (Canon, "Invariants of a
+    // confirmation").
     let mut outside = heavy.clone();
     outside.line_value = [0xff; 32];
     assert_eq!(
-        door(&signed_again(outside), &NAME),
-        refused("a line value that is no element of the field")
+        outside.signed_scope(),
+        Err(mt_state::ObjectError::LineValue)
+    );
+    assert_eq!(
+        door(&outside, &NAME),
+        Err(NodeError::Object(mt_state::ObjectError::LineValue))
     );
 
     // The standing answers only the name its presence was made for.
