@@ -2104,8 +2104,9 @@ struct ChatConversationView: View {
     /// THE FEED'S TURN IS OUR MINT COIN (the author's words 02.10 14:03 and 16:55, then 18:29 and 19:24: «make the turn button a
     /// coin; while it is on it spins and coins are minted in the chat -- the fabric of time»): the wall's own coin (MTMintCoin)
     /// on the handset's round. Off: the coin stands on its face and the chat is as it was. On: the coin spins, the feed turns to
-    /// the ribbon of time (the newest letters on top, every stamp with its seal and gematria) and every letter of the pair born
-    /// from now earns its coin (MTChatMint). The ring stands while it is on -- the sign that holds under Reduce Motion too.
+    /// the ribbon of time (the newest letters on top, every stamp with its seal and gematria). The turn mints nothing: only the chain
+    /// mints, 1 coin a second (the author's word 11871, 29.10.2026; MTMoneyFlow). The ring stands while it is on -- the sign that
+    /// holds under Reduce Motion too.
     private func flipMark(_ side: CGFloat) -> some View {
         Button {
             // A HOLD OPENS THE AUTO-REACTIONS, NOT THE TURN (the author's word 06.10.2026 14:3x UTC): the lift that ends it moves nothing.

@@ -1773,7 +1773,7 @@ struct MTTimeChainsPage: View {
             } header: {
                 Label("Chats and calls", systemImage: "bubble.left.and.bubble.right")
             } footer: {
-                Text("The chains of the coins your chats, calls and comments minted and burned, and the chain of your wall's posts.")
+                Text("The chains of the coins your chats, calls and comments minted and burned before, kept as history: they move no coin now. And the chain of your wall's posts.")
             }
             // THE EXPLORER (the author's word 11.10.2026 17:2x UTC: «on the TimeChain page an Explorer button to open and check a
             // transaction ... everything professional in the TimeChain, for auditors»): the public page that reads a transfer's

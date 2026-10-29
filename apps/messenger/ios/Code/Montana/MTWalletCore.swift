@@ -570,18 +570,14 @@ enum MTCoinBalance {
 }
 
 /// THE MONEY FLOW IS A CHAT'S OWN (the author's word 04.10.2026 09:23 UTC: «if my chat is turned with one correspondent, it concerns
-/// only the chat with them, not all -- part the states»). The flow's coin turned one switch for the whole phone: the moment one chat
-/// turned, every chat stood turned, spoke its live words and minted. Now each conversation keeps its own -- the turn of its feed,
-/// its live words both ways, its minting. Read from any thread; the screens observe the change.
+/// only the chat with them, not all -- part the states»). Each conversation keeps its own turn of the feed and its live words both
+/// ways. Read from any thread; the screens observe the change.
 @MainActor final class MTMoneyFlow: ObservableObject {
     static let shared = MTMoneyFlow()
-    /// A BUBBLE OF THE FLOW IS ONE COIN TIMES THE LEVEL (the author's words 07.10.2026 18:3x and 18:4x UTC: «one coin for one
-    /// message bubble -- any bubble: +1 in the money flow and -1 in an ordinary chat»; «the minting in the money flow's chats is one
-    /// coin multiplied by the level: for the 7th level 7 coins a message and 7 coins a second of talk; a level 1 on the call -- x1
-    /// for him»; it replaces the hundred levels a long text minted, 05.10): every bubble of a chat whose flow is on -- words, a
-    /// picture, a voice, a file, of either side -- mints the level's coins on this phone, once by its name (MTChatMint.credit,
-    /// oneEach; the second's one coin, MTCoinBook.price); a coin letter, a chess step and a row of the phone's own mint
-    /// nothing. In an ordinary chat a bubble of mine burns one (MTCoinSend.pay). A call moves no coin (the author's word 29.10.2026).
+    /// THE FLOW MINTS NOTHING (the author's word 11871, 29.10.2026: «only the rule of the constitution, 1 coin is 1 second, by the
+    /// core»; decision 375 «a»): from 22.10.2026 21:00 UTC only the chain mints, and since build 2320 no bubble of a flow's chat
+    /// asks the book; the coins its bubbles earned before stand in the book as history (MTChatMint). A call moves no coin (the
+    /// author's word 29.10.2026).
     @Published private(set) var turns = 0
     nonisolated static func isOn(_ conv: String) -> Bool { !conv.isEmpty && UserDefaults.standard.bool(forKey: "moneyFlow." + conv) }   // a conversation's own key (SeedScope.dataPrefixes)
     func on(_ conv: String) -> Bool { Self.isOn(conv) }
@@ -2364,9 +2360,8 @@ struct MTCoinEntry: Codable, Hashable, Identifiable {
     var entries: [MTCoinEntry] { get }
     // NO DOOR OF THE BOOK MINTS (the author's decision 375 «a», build 2320): earn, mint and the window of τ1 are gone -- only the
     // chain mints, 1 coin is 1 second (the word 11871); the old earned lines stand in the book as history.
-    /// Coins burned by a service used (a letter through a node not one's own): never more than the balance
-    /// holds, never a refusal of the service; the count burned.
-    @discardableResult func burn(_ coins: Int, ref: String) -> Int
+    // NO DOOR OF THE BOOK BURNS (decision 383 «a», build 2322): a comment's four of five were the last burn; the old burned lines
+    // stand in the book as history.
     /// Coins given on a letter or a post; refused (false) when the balance is short or the name was taken.
     func spend(_ coins: Int, on target: String, peer: String, ref: String) -> Bool
     /// Coins sent to a person in a coin letter; refused (false) when the balance is short or the name was taken.
@@ -2896,16 +2891,6 @@ struct MTCoinCounts {
             // Born only where none stands: a book that stands but would not open is never written over.
             try? data.write(to: file, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         }
-    }
-
-    @discardableResult func burn(_ coins: Int, ref: String) -> Int {
-        let c = min(coins, balance)
-        guard 0 < c, !ref.isEmpty, !taken.contains("burn:" + ref) else { return 0 }
-        let e = MTCoinEntry(k: .burn, c: c, ref: ref, at: MTTimeChain.now())
-        guard take(e) else { return 0 }
-        keep([e])
-        MontanaTrace.markFolded("coin_burn", "coins=\(c) balance=\(balance)", window: 60)
-        return c
     }
 
     func spend(_ coins: Int, on target: String, peer: String, ref: String) -> Bool {
