@@ -1,0 +1,509 @@
+$ python3 -B core/Montana-Core/protocol-13/network-run/run.py --dry-run --run-id DRYRUN
+Protocol-13 item 13 -- the full network run DRYRUN, 2026-10-29 08:05:45 UTC (DRY RUN)
+Our own reproduction on our own servers; not an independent external audit.
+Every ssh below runs: python3 -I -c "import sys;d=sys.stdin.buffer.read();i=d.index(bytes(8));exec(compile(d[:i],'mt13-remote','exec'),{'DATA':d[i+8:]})"
+with the executor REMOTE of run.py (sha256 8428dc6f14bdb821006a0371505318d1bacb4854e5eb173eaa8ce9876c4cf40f) and the listed operations on its standard input.
+
+== S0 prepare
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] test '!' -e /srv/mt13/DRYRUN
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] test -d /srv/mt13/src/.git
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] git clone --quiet --no-checkout https://github.com/efir369999/montana_messenger.git /srv/mt13/src
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] git -C /srv/mt13/src fetch --quiet origin
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] git -C /srv/mt13/src checkout --quiet --detach '<commit of main carrying #16-#22>'
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] git -C /srv/mt13/src rev-parse HEAD
+    EXPECT the source stands at the commit asked
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] /root/.cargo/bin/cargo build --release --locked -p montana-node   (cwd /srv/mt13/src/core/Montana-Core)
+    EXPECT the release binary builds
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] install -D -m 0755 /srv/mt13/src/core/Montana-Core/target/release/montana-node /srv/mt13/DRYRUN/bin/montana-node
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] sha256 /srv/mt13/DRYRUN/bin/montana-node
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] /srv/mt13/DRYRUN/bin/montana-node --help
+    EXPECT the binary knows --open
+    EXPECT the binary knows --admitted
+    EXPECT the binary knows --acquaintance
+    EXPECT the binary knows --anchor
+    EXPECT the binary knows --status
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] ip netns add mt13-hub
+    [l2] ip -n mt13-hub link set lo up
+    [l2] ip -n mt13-hub link add mt13br type bridge
+    [l2] ip -n mt13-hub link set mt13br up
+    [l2] ip netns add mt13-a
+    [l2] ip link add mt13-a0 netns mt13-a type veth peer name mt13-a1 netns mt13-hub
+    [l2] ip -n mt13-a link set lo up
+    [l2] ip -n mt13-a addr add 10.13.0.1/24 dev mt13-a0
+    [l2] ip -n mt13-a link set mt13-a0 up
+    [l2] ip -n mt13-hub link set mt13-a1 master mt13br
+    [l2] ip -n mt13-hub link set mt13-a1 up
+    [l2] ip netns add mt13-b
+    [l2] ip link add mt13-b0 netns mt13-b type veth peer name mt13-b1 netns mt13-hub
+    [l2] ip -n mt13-b link set lo up
+    [l2] ip -n mt13-b addr add 10.13.0.2/24 dev mt13-b0
+    [l2] ip -n mt13-b link set mt13-b0 up
+    [l2] ip -n mt13-hub link set mt13-b1 master mt13br
+    [l2] ip -n mt13-hub link set mt13-b1 up
+    [l2] ip netns add mt13-c
+    [l2] ip link add mt13-c0 netns mt13-c type veth peer name mt13-c1 netns mt13-hub
+    [l2] ip -n mt13-c link set lo up
+    [l2] ip -n mt13-c addr add 10.13.0.3/24 dev mt13-c0
+    [l2] ip -n mt13-c link set mt13-c0 up
+    [l2] ip -n mt13-hub link set mt13-c1 master mt13br
+    [l2] ip -n mt13-hub link set mt13-c1 up
+    [l2] ip netns add mt13-d
+    [l2] ip link add mt13-d0 netns mt13-d type veth peer name mt13-d1 netns mt13-hub
+    [l2] ip -n mt13-d link set lo up
+    [l2] ip -n mt13-d addr add 10.13.0.4/24 dev mt13-d0
+    [l2] ip -n mt13-d link set mt13-d0 up
+    [l2] ip -n mt13-hub link set mt13-d1 master mt13br
+    [l2] ip -n mt13-hub link set mt13-d1 up
+    [l2] ip netns add mt13-e
+    [l2] ip link add mt13-e0 netns mt13-e type veth peer name mt13-e1 netns mt13-hub
+    [l2] ip -n mt13-e link set lo up
+    [l2] ip -n mt13-e addr add 10.13.0.5/24 dev mt13-e0
+    [l2] ip -n mt13-e link set mt13-e0 up
+    [l2] ip -n mt13-hub link set mt13-e1 master mt13br
+    [l2] ip -n mt13-hub link set mt13-e1 up
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] mkdir -p /srv/mt13/DRYRUN/a/data /srv/mt13/DRYRUN/a/handoff
+    [l2] mkdir -p /srv/mt13/DRYRUN/b/data /srv/mt13/DRYRUN/b/handoff
+    [l2] mkdir -p /srv/mt13/DRYRUN/c/data /srv/mt13/DRYRUN/c/handoff
+    [l2] mkdir -p /srv/mt13/DRYRUN/d/data /srv/mt13/DRYRUN/d/handoff
+    [l2] mkdir -p /srv/mt13/DRYRUN/e/data /srv/mt13/DRYRUN/e/handoff
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] ip netns exec mt13-a ping -c 2 -W 2 10.13.0.2
+    EXPECT the machines reach one another
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] ip netns exec mt13-a ip route
+    EXPECT a machine's namespace has no way out
+    EXPECT no single machine reaches the quorum alone
+
+== S1 birth
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] timeout --signal=TERM 30 ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/a/data --listen 10.13.0.1:9635
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/a/data/private.log
+    EXPECT a is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT a's default lines name neither its address nor its half
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] timeout --signal=TERM 30 ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/b/data --listen 10.13.0.2:9635
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/b/data/private.log
+    EXPECT b is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT b's default lines name neither its address nor its half
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] timeout --signal=TERM 30 ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/c/data --listen 10.13.0.3:9635
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/c/data/private.log
+    EXPECT c is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT c's default lines name neither its address nor its half
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] timeout --signal=TERM 30 ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/d/data --listen 10.13.0.4:9635
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/d/data/private.log
+    EXPECT d is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT d's default lines name neither its address nor its half
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] timeout --signal=TERM 30 ip netns exec mt13-e /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/e/data --listen 10.13.0.5:9635
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] cat /srv/mt13/DRYRUN/e/data/private.log
+    EXPECT e is born, keeps its acquaintance and its half in private.log, and is stopped by timeout (rc 124)
+    EXPECT e's default lines name neither its address nor its half
+
+== S2 windows close
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemd-run --unit mt13-dryrun-a --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/a/node.log -p StandardError=append:/srv/mt13/DRYRUN/a/node.log -- ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/a/data --listen 10.13.0.1:9635 --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of c>' --acquaintance '<acquaintance of d>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>' --open
+    [l2] systemd-run --unit mt13-dryrun-b --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/b/node.log -p StandardError=append:/srv/mt13/DRYRUN/b/node.log -- ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/b/data --listen 10.13.0.2:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of c>' --acquaintance '<acquaintance of d>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>' --open
+    [l2] systemd-run --unit mt13-dryrun-c --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/c/node.log -p StandardError=append:/srv/mt13/DRYRUN/c/node.log -- ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/c/data --listen 10.13.0.3:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of d>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>' --open
+    [l2] systemd-run --unit mt13-dryrun-d --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/d/node.log -p StandardError=append:/srv/mt13/DRYRUN/d/node.log -- ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/d/data --listen 10.13.0.4:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of c>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>' --open
+  WAIT up to 14400 s, polling every 60 s: every admitted machine holds window 2 final
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/b/data
+    [l2] marks /srv/mt13/DRYRUN/c/data
+    [l2] marks /srv/mt13/DRYRUN/d/data
+    EXPECT windows 0..2 are final on all four
+  SNAPSHOT snapshots/01-open: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+
+== S3 quorum lost by a stop, recovered by a restart
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemctl stop mt13-dryrun-c
+    [l2] systemctl stop mt13-dryrun-d
+  SNAPSHOT snapshots/02-two-stopped: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    EXPECT c and d are stopped
+  HOLD 1800 s, polling every 60 s: two of four close nothing and move no head
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/b/data
+    EXPECT two of four close nothing and move no head
+  SNAPSHOT snapshots/03-held-without-quorum: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    EXPECT a keeps the proposals it held
+    EXPECT a's status is a reading, not missing diagnostics, and names no new close
+    EXPECT b keeps the proposals it held
+    EXPECT b's status is a reading, not missing diagnostics, and names no new close
+    EXPECT c, stopped, reads no diagnostics and exits 4
+    EXPECT d, stopped, reads no diagnostics and exits 4
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemd-run --unit mt13-dryrun-c --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/c/node.log -p StandardError=append:/srv/mt13/DRYRUN/c/node.log -- ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/c/data --listen 10.13.0.3:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of d>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>'
+    [l2] systemd-run --unit mt13-dryrun-d --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/d/node.log -p StandardError=append:/srv/mt13/DRYRUN/d/node.log -- ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/d/data --listen 10.13.0.4:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of c>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>'
+  WAIT up to 10800 s, polling every 60 s: every machine holds window <head before + 2> final
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/b/data
+    [l2] marks /srv/mt13/DRYRUN/c/data
+    [l2] marks /srv/mt13/DRYRUN/d/data
+    EXPECT the quorum is back and 2 more windows are final on all four
+  SNAPSHOT snapshots/04-recovered: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    EXPECT the proposals of every window final before the step stand byte for byte
+
+== S4 a partition 3:1, the majority goes on, the minority waits and rejoins by verifying
+  SNAPSHOT snapshots/05-before-cut: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] ip netns exec mt13-a nft 'add table inet mt13'
+    [l2] ip netns exec mt13-a nft 'add chain inet mt13 out { type filter hook output priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-a nft 'add chain inet mt13 in { type filter hook input priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-a nft 'add rule inet mt13 out ip daddr { 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-a nft 'add rule inet mt13 out ip daddr { 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-a nft 'add rule inet mt13 in ip saddr { 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-a nft 'add rule inet mt13 in ip saddr { 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-b nft 'add table inet mt13'
+    [l2] ip netns exec mt13-b nft 'add chain inet mt13 out { type filter hook output priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-b nft 'add chain inet mt13 in { type filter hook input priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-b nft 'add rule inet mt13 out ip daddr { 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-b nft 'add rule inet mt13 out ip daddr { 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-b nft 'add rule inet mt13 in ip saddr { 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-b nft 'add rule inet mt13 in ip saddr { 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-c nft 'add table inet mt13'
+    [l2] ip netns exec mt13-c nft 'add chain inet mt13 out { type filter hook output priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-c nft 'add chain inet mt13 in { type filter hook input priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-c nft 'add rule inet mt13 out ip daddr { 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-c nft 'add rule inet mt13 out ip daddr { 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-c nft 'add rule inet mt13 in ip saddr { 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-c nft 'add rule inet mt13 in ip saddr { 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-d nft 'add table inet mt13'
+    [l2] ip netns exec mt13-d nft 'add chain inet mt13 out { type filter hook output priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-d nft 'add chain inet mt13 in { type filter hook input priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-d nft 'add rule inet mt13 out ip daddr { 10.13.0.1, 10.13.0.2, 10.13.0.3 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-d nft 'add rule inet mt13 out ip daddr { 10.13.0.1, 10.13.0.2, 10.13.0.3 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-d nft 'add rule inet mt13 in ip saddr { 10.13.0.1, 10.13.0.2, 10.13.0.3 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-d nft 'add rule inet mt13 in ip saddr { 10.13.0.1, 10.13.0.2, 10.13.0.3 } tcp sport 9635 drop'
+  WAIT up to 10800 s, polling every 60 s: a, b, c hold 2 more windows final
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/b/data
+    [l2] marks /srv/mt13/DRYRUN/c/data
+    [l2] marks /srv/mt13/DRYRUN/d/data
+    EXPECT the majority of three closes without the fourth
+  SNAPSHOT snapshots/06-parted: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    EXPECT the minority moved nothing while parted
+    EXPECT the minority's status is a reading, not missing diagnostics
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemctl stop mt13-dryrun-c
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] ip netns exec mt13-a nft 'delete table inet mt13'
+    [l2] ip netns exec mt13-b nft 'delete table inet mt13'
+    [l2] ip netns exec mt13-c nft 'delete table inet mt13'
+    [l2] ip netns exec mt13-d nft 'delete table inet mt13'
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemctl stop mt13-dryrun-d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] put /srv/mt13/DRYRUN/d/handoff/anchor-<head of d - 1> (proposal of window <head of d - 1> from d)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] put /srv/mt13/DRYRUN/d/handoff/anchor-<head of d - 1> + 1 (proposal of window <head of d - 1> + 1 from d)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemd-run --unit mt13-dryrun-d --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/d/node.log -p StandardError=append:/srv/mt13/DRYRUN/d/node.log -- ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/d/data --listen 10.13.0.4:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of c>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>' --anchor '/srv/mt13/DRYRUN/d/handoff/anchor-<head of d - 1>' --anchor '/srv/mt13/DRYRUN/d/handoff/anchor-<head of d - 1> + 1'
+  WAIT up to 10800 s, polling every 60 s: d walks to the head and a window closes on a, b, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/b/data
+    [l2] marks /srv/mt13/DRYRUN/d/data
+    EXPECT the fourth is of the chain again
+  SNAPSHOT snapshots/07-met: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    EXPECT the first window after the meeting has cement_count 3 on a, b and d (c stopped)
+    EXPECT d's log says 'walked from window W to the head at window H'
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemctl stop mt13-dryrun-c
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] put /srv/mt13/DRYRUN/c/handoff/anchor-<head of c - 1> (proposal of window <head of c - 1> from c)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] put /srv/mt13/DRYRUN/c/handoff/anchor-<head of c - 1> + 1 (proposal of window <head of c - 1> + 1 from c)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemd-run --unit mt13-dryrun-c --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/c/node.log -p StandardError=append:/srv/mt13/DRYRUN/c/node.log -- ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/c/data --listen 10.13.0.3:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of d>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>' --anchor '/srv/mt13/DRYRUN/c/handoff/anchor-<head of c - 1>' --anchor '/srv/mt13/DRYRUN/c/handoff/anchor-<head of c - 1> + 1'
+  WAIT up to 10800 s, polling every 60 s: all four hold one more window final
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/b/data
+    [l2] marks /srv/mt13/DRYRUN/c/data
+    [l2] marks /srv/mt13/DRYRUN/d/data
+    EXPECT all four live on together
+  SNAPSHOT snapshots/08-four-again: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    EXPECT the proposals of every window final before the step stand byte for byte
+
+== S5 a partition 2:2, neither half closes; the parts meet and the same window closes
+  SNAPSHOT snapshots/09-before-even-cut: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] ip netns exec mt13-a nft 'add table inet mt13'
+    [l2] ip netns exec mt13-a nft 'add chain inet mt13 out { type filter hook output priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-a nft 'add chain inet mt13 in { type filter hook input priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-a nft 'add rule inet mt13 out ip daddr { 10.13.0.3, 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-a nft 'add rule inet mt13 out ip daddr { 10.13.0.3, 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-a nft 'add rule inet mt13 in ip saddr { 10.13.0.3, 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-a nft 'add rule inet mt13 in ip saddr { 10.13.0.3, 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-b nft 'add table inet mt13'
+    [l2] ip netns exec mt13-b nft 'add chain inet mt13 out { type filter hook output priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-b nft 'add chain inet mt13 in { type filter hook input priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-b nft 'add rule inet mt13 out ip daddr { 10.13.0.3, 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-b nft 'add rule inet mt13 out ip daddr { 10.13.0.3, 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-b nft 'add rule inet mt13 in ip saddr { 10.13.0.3, 10.13.0.4 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-b nft 'add rule inet mt13 in ip saddr { 10.13.0.3, 10.13.0.4 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-c nft 'add table inet mt13'
+    [l2] ip netns exec mt13-c nft 'add chain inet mt13 out { type filter hook output priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-c nft 'add chain inet mt13 in { type filter hook input priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-c nft 'add rule inet mt13 out ip daddr { 10.13.0.1, 10.13.0.2 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-c nft 'add rule inet mt13 out ip daddr { 10.13.0.1, 10.13.0.2 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-c nft 'add rule inet mt13 in ip saddr { 10.13.0.1, 10.13.0.2 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-c nft 'add rule inet mt13 in ip saddr { 10.13.0.1, 10.13.0.2 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-d nft 'add table inet mt13'
+    [l2] ip netns exec mt13-d nft 'add chain inet mt13 out { type filter hook output priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-d nft 'add chain inet mt13 in { type filter hook input priority 0 ; policy accept ; }'
+    [l2] ip netns exec mt13-d nft 'add rule inet mt13 out ip daddr { 10.13.0.1, 10.13.0.2 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-d nft 'add rule inet mt13 out ip daddr { 10.13.0.1, 10.13.0.2 } tcp sport 9635 drop'
+    [l2] ip netns exec mt13-d nft 'add rule inet mt13 in ip saddr { 10.13.0.1, 10.13.0.2 } tcp dport 9635 drop'
+    [l2] ip netns exec mt13-d nft 'add rule inet mt13 in ip saddr { 10.13.0.1, 10.13.0.2 } tcp sport 9635 drop'
+  HOLD 600 s, polling every 60 s: neither half closes a window or moves a head
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/b/data
+    [l2] marks /srv/mt13/DRYRUN/c/data
+    [l2] marks /srv/mt13/DRYRUN/d/data
+    EXPECT neither half closes a window or moves a head
+  SNAPSHOT snapshots/10-even-held: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] ip netns exec mt13-a nft 'delete table inet mt13'
+    [l2] ip netns exec mt13-b nft 'delete table inet mt13'
+    [l2] ip netns exec mt13-c nft 'delete table inet mt13'
+    [l2] ip netns exec mt13-d nft 'delete table inet mt13'
+  WAIT up to 7200 s, polling every 60 s: all four hold 1 more window(s) final, nothing restarted
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/b/data
+    [l2] marks /srv/mt13/DRYRUN/c/data
+    [l2] marks /srv/mt13/DRYRUN/d/data
+    EXPECT the quorum is recovered when the parts meet
+  SNAPSHOT snapshots/11-even-met: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    EXPECT the proposals of every window final before the step stand byte for byte
+
+== S6 the whole network stops and starts again on its stores
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemctl stop mt13-dryrun-a
+    [l2] systemctl stop mt13-dryrun-b
+    [l2] systemctl stop mt13-dryrun-c
+    [l2] systemctl kill --signal=SIGKILL mt13-dryrun-d
+    [l2] systemctl stop mt13-dryrun-d
+  SNAPSHOT snapshots/12-all-stopped: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    EXPECT all four are stopped (d by SIGKILL)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemd-run --unit mt13-dryrun-a --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/a/node.log -p StandardError=append:/srv/mt13/DRYRUN/a/node.log -- ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/a/data --listen 10.13.0.1:9635 --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of c>' --acquaintance '<acquaintance of d>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>'
+    [l2] systemd-run --unit mt13-dryrun-b --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/b/node.log -p StandardError=append:/srv/mt13/DRYRUN/b/node.log -- ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/b/data --listen 10.13.0.2:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of c>' --acquaintance '<acquaintance of d>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>'
+    [l2] systemd-run --unit mt13-dryrun-c --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/c/node.log -p StandardError=append:/srv/mt13/DRYRUN/c/node.log -- ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/c/data --listen 10.13.0.3:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of d>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>'
+    [l2] systemd-run --unit mt13-dryrun-d --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/d/node.log -p StandardError=append:/srv/mt13/DRYRUN/d/node.log -- ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/d/data --listen 10.13.0.4:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of c>' --admitted '<half of a>' --admitted '<half of b>' --admitted '<half of c>' --admitted '<half of d>'
+  WAIT up to 7200 s, polling every 60 s: all four hold 1 more window(s) final after the restart
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/b/data
+    [l2] marks /srv/mt13/DRYRUN/c/data
+    [l2] marks /srv/mt13/DRYRUN/d/data
+    EXPECT the network lives on from where it stopped
+  SNAPSHOT snapshots/13-all-restarted: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    EXPECT the proposals of every window final before the step stand byte for byte
+
+== S7 a new machine joins from an anchor; a forged anchor is refused
+  SNAPSHOT snapshots/14-before-join: a, b, c, d
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] put /srv/mt13/DRYRUN/e/handoff/anchor-<head of a - 4> (proposal of window <head of a - 4> from a)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] put /srv/mt13/DRYRUN/e/handoff/anchor-<head of a - 4> + 1 (proposal of window <head of a - 4> + 1 from a)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] put /srv/mt13/DRYRUN/e/handoff/forged-anchor-<head of a - 4> (the earlier proposal as it is)
+    [l2] put /srv/mt13/DRYRUN/e/handoff/forged-anchor-<head of a - 4> + 1 (the later proposal, byte 44 (note_root[0]) xor 1)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] timeout --signal=TERM 1800 ip netns exec mt13-e /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/e/data --listen 10.13.0.5:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of c>' --acquaintance '<acquaintance of d>' --anchor '/srv/mt13/DRYRUN/e/handoff/forged-anchor-<head of a - 4>' --anchor '/srv/mt13/DRYRUN/e/handoff/forged-anchor-<head of a - 4> + 1'
+    EXPECT the forged anchor is refused: rc neither 0 nor 124, and e keeps no proposal and no window record
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemd-run --unit mt13-dryrun-e --collect --quiet -p Nice=10 -p MemoryMax=6G -p StandardOutput=append:/srv/mt13/DRYRUN/e/node.log -p StandardError=append:/srv/mt13/DRYRUN/e/node.log -- ip netns exec mt13-e /srv/mt13/DRYRUN/bin/montana-node --data /srv/mt13/DRYRUN/e/data --listen 10.13.0.5:9635 --acquaintance '<acquaintance of a>' --acquaintance '<acquaintance of b>' --acquaintance '<acquaintance of c>' --acquaintance '<acquaintance of d>' --anchor '/srv/mt13/DRYRUN/e/handoff/anchor-<head of a - 4>' --anchor '/srv/mt13/DRYRUN/e/handoff/anchor-<head of a - 4> + 1'
+  WAIT up to 3600 s, polling every 60 s: e walks to the head of the network
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] marks /srv/mt13/DRYRUN/a/data
+    [l2] marks /srv/mt13/DRYRUN/e/data
+    EXPECT the new machine reaches the head
+  SNAPSHOT snapshots/15-joined: a, b, c, d, e
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] snapshot /srv/mt13/DRYRUN/e/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    [l2] ip netns exec mt13-e /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/e/data   (inside the snapshot)
+    EXPECT e's proposals from the anchor to its head are byte-identical names of a's
+    EXPECT e's log says 'walked from window W to the head at window H' with H = e's head
+
+== finish
+  SNAPSHOT snapshots/16-last: a, b, c, d, e
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] snapshot /srv/mt13/DRYRUN/a/data
+    [l2] snapshot /srv/mt13/DRYRUN/b/data
+    [l2] snapshot /srv/mt13/DRYRUN/c/data
+    [l2] snapshot /srv/mt13/DRYRUN/d/data
+    [l2] snapshot /srv/mt13/DRYRUN/e/data
+    [l2] ip netns exec mt13-a /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/a/data   (inside the snapshot)
+    [l2] ip netns exec mt13-b /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/b/data   (inside the snapshot)
+    [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
+    [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
+    [l2] ip netns exec mt13-e /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/e/data   (inside the snapshot)
+  ssh -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 montana-lauterbourg-2 'python3 -I -c <executor>'
+    [l2] systemctl stop mt13-dryrun-a
+    [l2] systemctl stop mt13-dryrun-b
+    [l2] systemctl stop mt13-dryrun-c
+    [l2] systemctl stop mt13-dryrun-d
+    [l2] systemctl stop mt13-dryrun-e
+
+DRY RUN: nothing was run; 16 snapshots and every command of them printed above.
+--- exit 0
