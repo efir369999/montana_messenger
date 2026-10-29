@@ -1421,7 +1421,11 @@ mod tests {
                 pledge.line_value[at * 8..at * 8 + 8].copy_from_slice(&word);
                 let bytes = pledge.encode();
                 assert_eq!(pledge.bytes(), Err(ObjectError::LineValue), "word {at}");
-                assert_eq!(Pledge::parse(&bytes), Err(ObjectError::LineValue), "word {at}");
+                assert_eq!(
+                    Pledge::parse(&bytes),
+                    Err(ObjectError::LineValue),
+                    "word {at}"
+                );
             }
         }
         let mut below = a_pledge(3, 1);
@@ -1439,7 +1443,11 @@ mod tests {
             held.line_value[at * 8..at * 8 + 8].copy_from_slice(&p);
             let bytes = held.encode();
             assert_eq!(held.bytes(), Err(ObjectError::LineValue), "word {at}");
-            assert_eq!(Confirmation::parse(&bytes), Err(ObjectError::LineValue), "word {at}");
+            assert_eq!(
+                Confirmation::parse(&bytes),
+                Err(ObjectError::LineValue),
+                "word {at}"
+            );
         }
         assert!(a_confirmation().bytes().is_ok());
     }
