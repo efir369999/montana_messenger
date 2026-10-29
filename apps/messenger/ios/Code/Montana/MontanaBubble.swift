@@ -209,8 +209,6 @@ struct MessageBubble: View, Equatable {
     /// The invitation waits for this phone's answer (MTChessSend.awaitsMe): its two buttons stand under it.
     var chessOpen = false
     var onChessDecline: (String) -> Void = { _ in }
-    /// What the game this letter closes gave or took from this phone (MTChessCoins.net); nil where it holds no pot.
-    var chessNet: Int? = nil
     /// The Accept under an invitation that waits for this phone: the one door of an acceptance from the chat (MTChessSend.join).
     var onChessAccept: (String) -> Void = { _ in }
     /// An invitation answered: the game's state in its words (accepted and played, declined, over); nil while it waits.
@@ -321,7 +319,7 @@ struct MessageBubble: View, Equatable {
             && l.message.docFile == r.message.docFile
             && l.tail == r.tail
             && l.speaker == r.speaker && l.quoteAuthor == r.quoteAuthor
-            && l.chessOpen == r.chessOpen && l.chessNet == r.chessNet && l.chessStatus == r.chessStatus
+            && l.chessOpen == r.chessOpen && l.chessStatus == r.chessStatus
             && l.members.map(\.id) == r.members.map(\.id)
             && l.members.map(\.text) == r.members.map(\.text)
             && l.members.map(\.deliveryStatus) == r.members.map(\.deliveryStatus)
@@ -694,11 +692,10 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
 
     @ObservedObject private var fold = MTFilterFold.shared   // the filter's fold, opened for the letter by the person's tap
     private static let burgundy = Color(red: 0.50, green: 0.0, blue: 0.13)
-    /// THE GAME'S LETTER IN THE CHAT (the author's words 06.10.2026 20:2x UTC: «in the invitation, at once, the stake -- as chess and
-    /// coins, beautifully -- and below two buttons: the blue system Accept and the red burgundy Decline the game at a stake»; «after
-    /// the game show the coins' transfer or top-up»): the invitation says who plays which colour with the clock (29.09) and its
-    /// stake under our coin; while it waits for this phone's answer the two buttons stand under it; the letter that closes a game
-    /// wears what the game gave or took. A tap elsewhere opens the game.
+    /// THE GAME'S LETTER IN THE CHAT (the author's words 06.10.2026 20:2x UTC: «below two buttons: the blue system Accept and the
+    /// red burgundy Decline»): the invitation says who plays which colour with the clock (29.09); while it waits for this phone's
+    /// answer the two buttons stand under it. No stake and no coins (the author's word 29.10.2026 19:31 UTC). A tap elsewhere opens
+    /// the game.
     private func chessBubble(_ chess: MTChessLetter) -> some View {
         VStack(alignment: .trailing, spacing: 6) {
             HStack(spacing: 10) {
@@ -711,19 +708,6 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                          : String(localized: "Open game", bundle: MTLanguage.bundle)).font(.subheadline)
                 }
                 Spacer(minLength: 0)
-            }
-            if chess.kind == .invite, let stake = chess.stake, 0 < stake {
-                HStack(spacing: 6) {
-                    MTMintCoin(spinning: false, side: 22)
-                    // USER-DATA: the invitation's stake, whole
-                    Text(verbatim: MTCoinText.count(stake)).font(.title3.bold().monospacedDigit())
-                    Spacer(minLength: 0)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(Text("stake \(MTCoinText.count(stake))"))
-            }
-            if let chessNet, chessNet != 0 {
-                HStack { MTCoinDelta(coins: chessNet); Spacer(minLength: 0) }
             }
             // THE ANSWER STANDS ON THE INVITATION (the author's word 06.10.2026 20:5x UTC: «decline records the decision, sends the
             // answer, and the bubble records it as declined too»): both phones read the same replay, so both bubbles say it.

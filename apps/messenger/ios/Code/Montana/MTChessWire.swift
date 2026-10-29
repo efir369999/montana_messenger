@@ -63,19 +63,9 @@ struct MTChessLetter: Codable, Equatable, Sendable {
     var spent: Int64? = nil
     /// THE LETTER THAT ENDS THE GAME SAYS HOW (29.09, MTChessEnd): set by the sender's replay, read by the banner doors.
     var end: MTChessEnd? = nil
-    /// THE COINS A MOVE MINTS INTO THE GAME'S POT (the author's words 06.10.2026 16:0x-16:1x UTC: «every move x1000 to the level
-    /// -- it forms the winner's common pool of the game»): its maker's minting level times a thousand, named by the maker's phone
-    /// so both phones count one pot (MTChessCoins). Absent in the letters of earlier builds and of games before the pot.
-    var coins: Int? = nil
-    /// THE STAKE OF THE INVITATION (the same word: «one may set one's own stake in the offer to play»): the coins each side puts
-    /// into the pot -- the inviter as the invitation leaves, the guest as the acceptance does. Absent: no stake.
-    var stake: Int? = nil
-    /// The most a move or a stake may name: far past any level's thousand, so a count is bounded before it is summed.
-    static let mostCoins = 1_000_000_000_000
-    /// The author's word of the pot, 06.10.2026 16:10:00 UTC, in the replay's milliseconds: a game invited from it on has a pot;
-    /// one invited before keeps the coins of before (MTChessCoins).
-    static let potSince: Int64 = 1_791_303_000_000
-    var pooled: Bool { kind == .invite && Self.potSince <= at }
+    // NO COINS IN A CHESS LETTER (the author's word 29.10.2026 19:31 UTC): the pot's fields of the builds before -- a move's
+    // "coins", an invitation's "stake" -- are no longer written, and a letter of an earlier build that carries them is read
+    // without them (the decoder passes a key it does not know), so nothing of coins rides or is counted in a game.
 
     func text(title: String) -> String? {
         guard let data = try? JSONEncoder().encode(self) else { return nil }
@@ -97,9 +87,7 @@ struct MTChessLetter: Codable, Equatable, Sendable {
               (0...32_503_680_000_000).contains(letter.at),
               letter.move == nil || (letter.move?.utf8.count ?? 0) <= 5,
               letter.spent == nil || letter.onTurn && (0...longestTurn).contains(letter.spent ?? -1),
-              letter.end == nil || letter.kind != .invite && letter.kind != .accept && (0...10_000).contains(letter.end?.moves ?? -1),
-              letter.coins == nil || letter.kind == .move && (0...mostCoins).contains(letter.coins ?? -1),
-              letter.stake == nil || letter.kind == .invite && (1...mostCoins).contains(letter.stake ?? -1)
+              letter.end == nil || letter.kind != .invite && letter.kind != .accept && (0...10_000).contains(letter.end?.moves ?? -1)
         else { return nil }
         if letter.kind == .invite {
             guard letter.id == letter.game, letter.parent.isEmpty,

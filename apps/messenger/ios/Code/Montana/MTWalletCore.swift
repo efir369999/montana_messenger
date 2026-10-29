@@ -1804,12 +1804,12 @@ enum MTTimeChain {
     }
     /// The same reading with the channels said by the caller: a fold off the screen's thread asks no live group (MTCoinHistory).
     static func source(ref r: String, kind: MTCoinEntry.Kind, peer: String?, channel: (String) -> Bool) -> String {
-        if MTChessCoins.owns(r) { return "chess" }   // the moves, the wins and losses before the pot, the pot and its stakes (06.10)
+        if MTCoinLegacy.chess(r) { return "chess" }   // the book's chess lines of the builds before (MTCoinLegacy)
         if r.hasPrefix(MTPantheon.refPrefix) { return "pantheon" }
         if r.hasPrefix(MTVPNWallMint.refPrefix) { return "vpnwall" }
         if r.hasPrefix(MTVPNPay.refPrefix) { return "vpnpay" }
         if r.hasPrefix(MTCallMint.refPrefix) { return "calls" }
-        if r.hasPrefix(MTChessTimer.refPrefix) { return "timer" }
+        if MTCoinLegacy.timer(r) { return "timer" }
         if MTBoardCoins.owns(r) { return "comments" }
         switch kind {
         case .earn:
@@ -2767,6 +2767,15 @@ enum MTTimeChainPlace {
     }
 }
 
+/// THE BOOK'S CHESS LINES OF THE BUILDS BEFORE (COMPAT-LOCAL; the author's word 29.10.2026 19:31 UTC: «in chess there must be no
+/// crediting of coins»): chess and its Timer write no coin; the names their lines carried in the book of the builds before are read
+/// here only so a person's history keeps telling where those coins came from. Nothing here writes or moves a coin.
+enum MTCoinLegacy {
+    nonisolated static let chessNames = ["chess:", "chess-won:", "chess-lost:", "chess-pot:", "chess-stake:", "chess-back:"]
+    nonisolated static func chess(_ ref: String) -> Bool { chessNames.contains { ref.hasPrefix($0) } }
+    nonisolated static func timer(_ ref: String) -> Bool { ref.hasPrefix("timer:") }   // COMPAT-LOCAL: a name of this phone's own book, never a word on the wire
+}
+
 /// The app's one book of coins, today (see MTCoinLedger for the seam).
 enum MTCoinBook {
     @MainActor static var ledger: any MTCoinLedger { MTLocalCoinLedger.shared.whole }
@@ -2904,8 +2913,8 @@ struct MTCoinCounts {
     var earned = 0
     /// The coins the Pantheon on Fire's taps minted (MTPantheon), counted apart: «coins from chats» counts the chats alone.
     var tapped = 0
-    /// The coins of chess (MTChessCoins): a move's coin, a won game's sum taken, a lost game's sum given -- counted apart, so
-    /// the received and the reactions rows count people and reactions alone.
+    /// The coins of chess in the book's lines of the builds before (MTCoinLegacy) -- counted apart, so the received and the
+    /// reactions rows count people and reactions alone; chess writes no coin any more.
     var played = 0
     /// The coins the VPN wall minted by its seconds (MTVPNWallMint), counted apart.
     var walled = 0
@@ -2923,8 +2932,8 @@ struct MTCoinCounts {
     @MainActor mutating func add(_ e: MTCoinEntry) {
         switch e.k {
         case .earn: earn(e.c, ref: e.ref)
-        case .receive: if e.ref.hasPrefix(MTChessCoins.wonPrefix) { played = Self.plus(played, e.c) } else { received = Self.plus(received, e.c) }
-        case .spend: if e.ref.hasPrefix(MTChessCoins.lostPrefix) { played = Self.plus(played, -e.c) } else { spent = Self.plus(spent, e.c) }
+        case .receive: if MTCoinLegacy.chess(e.ref) { played = Self.plus(played, e.c) } else { received = Self.plus(received, e.c) }
+        case .spend: if MTCoinLegacy.chess(e.ref) { played = Self.plus(played, -e.c) } else { spent = Self.plus(spent, e.c) }
         case .send: sent = Self.plus(sent, e.c)
         case .burn: burned = Self.plus(burned, e.c)
         }
@@ -2932,7 +2941,7 @@ struct MTCoinCounts {
     /// The game an earning came from, by its name: the Pantheon's taps, chess and its Timer, the VPN wall, the chats.
     @MainActor mutating func earn(_ c: Int, ref: String) {
         if ref.hasPrefix(MTPantheon.refPrefix) { tapped = Self.plus(tapped, c) }
-        else if ref.hasPrefix(MTChessCoins.movePrefix) || ref.hasPrefix(MTChessTimer.refPrefix) { played = Self.plus(played, c) }   // the Timer is chess too (04.10)
+        else if MTCoinLegacy.chess(ref) || MTCoinLegacy.timer(ref) { played = Self.plus(played, c) }   // the Timer is chess too (04.10)
         else if ref.hasPrefix(MTVPNWallMint.refPrefix) { walled = Self.plus(walled, c) }
         else { earned = Self.plus(earned, c) }
     }
@@ -4068,10 +4077,39 @@ enum MTCoinChainRules {
         let now = Date().timeIntervalSince1970
         if split?.proven != proven || split?.declared != declared || split?.height != height || split?.mintEnd != mintEnd {
             split = Split(proven: proven, declared: declared, fromCopy: fromCopy, at: now, height: height, second: second, mintEnd: mintEnd)
+            keep(coins: proven &+ declared, height: height)
         }
         if flying.contains(where: { _, f in f.height < height }) { flying = flying.filter { _, f in height <= f.height } }
         told()
         MontanaTrace.markFolded("coin_split", "proven=\(proven) declared=\(declared) copy=\(fromCopy ? 1 : 0)", window: 600)
+    }
+    /// THE CHAIN'S LAST WORD OUTLIVES THE RUN (the author's word 29.10.2026 09:28 UTC, link 11329: «1.5 million coins were written
+    /// off and the balance was 7.9 million, now it is less -- this is not admissible»): Andrey's phone 13498CA8 opened the wallet at
+    /// 06:55 UTC on LTE, its road to the chain's node failed (coin_replica code=-1, handshake_timeout), and the page showed the book,
+    /// 6 567 126, while the chain held 7 900 616 with no record after the MINT of 27.10 -- a debit the chain never had. The last state
+    /// the chain told for the seated key stands in the person's folder (MTCoinPlace, moved with the seat) and speaks until the chain
+    /// speaks in this run; the book only before the chain ever spoke for this key. It spends nothing by itself: every send is weighed
+    /// again by the chain's own word (send3), and no other road sends after the v2 cut (sendResult).
+    private struct LastWord: Codable { let key: String; let coins: Int64; let height: Int; let at: TimeInterval }
+    private static let lastName = "chain-last-word.json"   // NOT-UI: the file's name in the person's folder
+    private var last: (generation: Int, word: LastWord?)?
+    private var lastWord: LastWord? {
+        let g = MTCoinBook.generation
+        if let l = last, l.generation == g { return l.word }
+        var word: LastWord?
+        if let u = MTCoinPlace.file(Self.lastName), let d = try? Data(contentsOf: u),
+           let w = try? JSONDecoder().decode(LastWord.self, from: d), w.key == MTCoinTx.myKeyTag { word = w }
+        last = (g, word)
+        return word
+    }
+    /// Whether the chain ever spoke for the seated key -- in this run or in one before it.
+    var spoke: Bool { split != nil || lastWord != nil }
+    private func keep(coins: Int64, height: Int) {
+        guard let key = MTCoinTx.myKeyTag, let u = MTCoinPlace.file(Self.lastName) else { return }
+        let w = LastWord(key: key, coins: coins, height: height, at: Date().timeIntervalSince1970)
+        guard let d = try? JSONEncoder().encode(w) else { return }
+        try? d.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        last = (MTCoinBook.generation, w)
     }
     /// THE SENDS ON THEIR WAY TO THE CHAIN (fold-7; the author's words 23.10.2026 00:27 UTC: «the phone only mirrors the chain»): a SEND
     /// laid on the head of height h stands in every state of a height above h, or never will -- another record took its place on that
@@ -4085,12 +4123,13 @@ enum MTCoinChainRules {
     /// THE AVAILABLE, ONE NUMBER EVERYWHERE (the author's word 16.10.2026 14:19 UTC: «on the coins page do not show Proven, Declared,
     /// More wait to be minted below -- it is enough to show how much is available with one owner, so that a transfer from the chat
     /// and from any place shows only the available»): what the person's chain holds for its one owner, proven and declared, less the
-    /// sends on their way to it; before the chain has spoken in this run, the book. The book no longer caps it (fold-7, the author's
+    /// sends on their way to it; before the chain has spoken in this run, its last word (lastWord), and the book only when it never
+    /// spoke for this key. The book no longer caps it (fold-7, the author's
     /// words 23.10.2026 00:37 UTC: «minting is a separate entity»): the book mints nothing after the time cut (MTLocalCoinLedger.priced),
     /// so as a ceiling it would freeze the number while the chain mints. The wallet, the chat's coin plate, the send page, the chess
     /// stake and the word about oneself show it, and a transfer is weighed by it (MTCoinSend.transferResult).
     var available: Int {
-        guard let s = split else { return MTLocalCoinLedger.shared.balance }
+        guard let s = split else { return lastWord.map { w in Int(clamping: max(0, w.coins)) } ?? MTLocalCoinLedger.shared.balance }
         let away = flying.values.reduce(Int64(0)) { sum, f in s.height <= f.height ? sum &+ f.coins : sum }
         let lived = MTCoinChainRules.since(s.second, to: s.second &+ Int64(max(0, Date().timeIntervalSince1970 - s.at)))
         return Int(clamping: max(0, s.proven &+ s.declared &+ lived &- away))
@@ -4545,7 +4584,12 @@ extension MTCoinTx {
     struct Chain3 { let head: String; let height: Int; let birth: Int64; let mintEnd: Int64; let proven: Int64; let declared: Int64; let v3: Bool; let now: Int64; let minted: Int64? }
     static func chain3(_ me: String, door: String) async -> Chain3? {
         let h = await ask(door + "/tx-head", ["from": me])
-        guard h.code == 200, let o = h.obj, let head = o["head"] as? String, head.count == 64 else { return nil }
+        guard h.code == 200, let o = h.obj, let head = o["head"] as? String, head.count == 64 else {
+            // THE ROAD THAT FAILED IS SAID (link 11336, 29.10.2026): a silent nil left the diary of 13498CA8 with no word of why the
+            // chain never answered; the node and the code are told, folded over ten minutes, never the key.
+            MontanaTrace.markFolded("coin_chain3", "code=\(h.code) unreached=\(h.unreached ? 1 : 0) node=\(chainNode(ofDoor: door) ?? "?")", window: 600)
+            return nil
+        }
         func n(_ k: String) -> Int64 {
             if let s = o[k] as? String { return Int64(s) ?? 0 }
             return (o[k] as? NSNumber)?.int64Value ?? 0

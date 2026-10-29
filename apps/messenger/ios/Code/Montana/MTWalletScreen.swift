@@ -35,16 +35,17 @@ struct MTWalletPage: View {
     @State private var pullArmed = false
     @State private var pullReleased: (at: Date, angle: Double)?
     /// THE PERSON'S COINS ARE THE CHAIN'S (fold-7; the author's words 23.10.2026 00:27 UTC: «the phone only mirrors the chain»): once the
-    /// chain has spoken in this run, the available it holds (MTCoinSplit.available); before it, every coin the book holds, and before
-    /// the seed's book lands, the balance a device of the same words told in its tip (04.10 16:34).
+    /// chain has spoken, the available it holds (MTCoinSplit.available) -- in this run, or its last word kept from a run before
+    /// (MTCoinSplit.lastWord, the author's word 29.10.2026 09:28 UTC, link 11329); before it ever spoke, every coin the book holds, and
+    /// before the seed's book lands, the balance a device of the same words told in its tip (04.10 16:34).
     /// THE SECONDS BEFORE THE WINDOW IS FINALIZED RISE ON THE PAGE (the author's words 26.10.2026 09:2x UTC, links 8615 and 8617): the
     /// Time Balance is the available and the person's seconds on their way to the chain (MTCoinSplit.growing), so it moves every second
     /// while the person is here; the line Available beneath stays what the chain holds, and Send is weighed by that alone.
     private var total: Int {
-        if coinSplit.split != nil { return coinSplit.growing }
+        if coinSplit.spoke { return coinSplit.growing }
         return vault.heard ? book.balance : max(book.balance, tipNet.seen ?? 0)
     }
-    private var spendable: Int { coinSplit.split != nil ? coinSplit.available : total }
+    private var spendable: Int { coinSplit.spoke ? coinSplit.available : total }
     /// One of the three sums of the balance: the main one large and white, the others small; the whole row takes the finger and
     /// makes its sum the main one.
     private func balanceSum(_ unit: MTCoinUnit) -> some View {
@@ -281,10 +282,6 @@ struct MTWalletPage: View {
                         // USER-DATA: a number, the coins the Pantheon on Fire's taps minted
                         Text(verbatim: MTCoinText.count(book.tapped)).monospacedDigit()
                     } label: { Text("Coins from the Pantheon") }
-                    LabeledContent {
-                        // USER-DATA: a number, the coins of chess: the moves, the sums won and given up (MTChessCoins)
-                        Text(verbatim: MTCoinText.count(book.played)).monospacedDigit()
-                    } label: { Text("Coins from chess") }
                     LabeledContent {
                         // USER-DATA: a number, the coins the VPN wall's seconds minted (MTVPNWallMint)
                         Text(verbatim: MTCoinText.count(book.walled)).monospacedDigit()
@@ -1957,12 +1954,6 @@ struct MTBalanceTitle: ViewModifier {
             }
         }
     }
-}
-
-/// The same balance as one caption, on the plate of an invitation that asks a stake.
-struct MTBalanceCaption: View {
-    @ObservedObject private var split = MTCoinSplit.shared   // the available, the one number of the person's coins (fold-7)
-    var body: some View { MTBalanceTitle.line(split.available).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
 }
 
 extension View {

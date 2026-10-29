@@ -30,19 +30,6 @@ struct MTChessGame: Sendable {
     private(set) var repetitions: [String: Int] = [:]
     private(set) var waitingForHistory = false
     private(set) var acceptedIDs: Set<String> = []
-    /// THE GAME'S POT (the author's words 06.10.2026 16:0x-16:1x UTC): the stake the invitation names, whether the guest accepted
-    /// it, and the coins the accepted moves minted -- this phone's moves and the correspondent's apart -- read from the letters,
-    /// so both phones hold one pot (MTChessCoins.settle). A game invited before the pot keeps the coins of before.
-    private(set) var pooled = false
-    private(set) var stake = 0
-    private(set) var accepted = false
-    private(set) var mintedMine = 0
-    private(set) var mintedTheirs = 0
-    /// What stands in the pot now: the inviter's stake, the guest's once accepted, and every coin the moves minted.
-    /// The pot's two parts, shown on either side of it (the author's word 06.10 20:1x): the stakes put in, the coins the moves minted.
-    var stakes: Int { stake * (accepted ? 2 : 1) }
-    var movesPool: Int { mintedMine + mintedTheirs }
-    var pot: Int { movesPool + stakes }
     var mySide: MTChessSide { whiteIsMine ? .white : .black }
     var canClaimDraw: Bool { position.halfmoves >= 100 || (repetitions[position.repetitionKey] ?? 0) >= 3 }
     /// The side whose clock runs: the side to move, while a game under a clock is being played; none otherwise.
@@ -54,7 +41,6 @@ struct MTChessGame: Sendable {
               root.letter.id == game, root.letter.parent.isEmpty,
               let duration = root.letter.seconds, MTChessLetter.timeControls.contains(duration) else { return nil }
         id = game; whiteIsMine = root.mine; seconds = duration
-        pooled = root.letter.pooled; stake = pooled ? root.letter.stake ?? 0 : 0
         last = root.letter; whiteMs = Int64(duration) * 1000; blackMs = whiteMs
         acceptedIDs = [game]
         repetitions[position.repetitionKey] = 1
@@ -186,7 +172,6 @@ struct MTChessGame: Sendable {
             guard actor == .black && (event.kind == .accept || event.kind == .decline)
                     || actor == .white && event.kind == .decline else { return false }
             status = event.kind == .accept ? .playing : .declined
-            accepted = event.kind == .accept
             last = event; return true
         }
         guard status == .playing else { return false }
@@ -223,7 +208,6 @@ struct MTChessGame: Sendable {
         position = next; positions.append(next); moves.append(move); notation.append(word)
         drawOfferedBy = event.offerDraw == true ? actor : nil
         last = event
-        if pooled { if entry.mine { mintedMine += event.coins ?? 0 } else { mintedTheirs += event.coins ?? 0 } }
         let key = position.repetitionKey
         repetitions[key, default: 0] += 1
         if position.legalMoves().isEmpty {

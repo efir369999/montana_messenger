@@ -3820,6 +3820,20 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
                     guard let i = self.messages[chat]?.firstIndex(where: { $0.id == row.id }) else { return }
                     switch taken {
                     case .landed(let full):
+                        // A SERVICE WORD IS NEVER A ROW (29.10.2026, issue #23 link 147 of Android 95): a reference laid as «New
+                        // message» may land the same-pair question or any other word of the machinery; written into the row it was
+                        // drawn as a bubble and never answered. The row leaves, and the word goes through the one door every word
+                        // passes (append), under the row's own name.
+                        if full.hasPrefix("\u{200B}\u{200B}") || isControlMarker(full) || mtUnknownServiceWord(full),
+                           var word = self.messages[chat]?[i] {
+                            word.text = full
+                            MTRowJournal.drop(chat, mid: row.mid)
+                            self.dropRows(chat) { r in r.id == row.id }
+                            _ = self.append(chat, word)
+                            self.save(blocking: false)
+                            MontanaTrace.mark("lb_heal", mid: row.id, "a service word -- the row leaves, the word goes through the door")
+                            return
+                        }
                         self.messages[chat]?[i].text = full
                         if let m = self.messages[chat]?[i] { self.archiveRow(chat, m) }
                         MontanaTrace.mark("lb_heal", "ok bytes=\(full.utf8.count)")
@@ -4870,8 +4884,6 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         // list record and the emptying of the landing box all stand behind this line.
         MontanaMainProbe.step("journal") { _ = MTRowJournal.put(chat, placed) }
         MontanaMainProbe.step("archive") { archiveRow(chat, placed) }
-        // A CHESS LETTER SETTLES ITS GAME'S COINS (the author's word 03.10 22:35, MTChessCoins): mine and theirs alike, each once.
-        if placed.chessLetter != nil { MTChessCoins.settle(chat: chat, rows: messages[chat] ?? []) }
         // A receipt certifies a ROW (P-41): the funeral and stickers are the named exceptions.
         if !isControlMarker(m.text) || m.text.hasPrefix(convDelMark) || m.text.hasPrefix(stickerMark) {
             MontanaMainProbe.step("receipt") { _ = sendDeliveryReceipt(chat, msgId: m.msgId, isFromMe: m.isFromMe, text: m.text) }

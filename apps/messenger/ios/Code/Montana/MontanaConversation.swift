@@ -1205,8 +1205,7 @@ struct ChatConversationView: View {
             return rowCache.messages
         }
         // A step of a chess game is not a row of the feed (29.09): the board reads those letters from the store itself. The letter
-        // that closes a game is (the author's word 06.10.2026 20:2x UTC: «in the chat after the game show the coins' transfer or
-        // top-up»): it wears what the game gave or took (MTChessCoins.net).
+        // that closes a game is (the author's word 06.10.2026 20:2x UTC): it says how the game ended -- and nothing of coins.
         let a = (store.messages[chat.name] ?? []).filter { m in !m.isChessStep || m.chessLetter?.end != nil }
         var sorted = true
         for i in 1..<max(a.count, 1) where ChatStore.before(a[i], a[i - 1]) { sorted = false; break }
@@ -1275,7 +1274,6 @@ struct ChatConversationView: View {
     @State private var chessGame: MTChessPush?   // a game opened from its invitation, on this chat's own stack (29.09)
     @State private var chessPlayed: String?      // the pair's game while it is played (MTChessSend.playedGame): the mark's ring
     @State private var askChess = false          // the platform's question before a new game
-    @State private var chessStake = ""           // the stake typed in that question (the author's word 06.10.2026 20:2x UTC)
     @State private var roomAsk: MTRoomKind?      // a group's call chosen at the top: whom to invite (07.10)
     @State private var roomAskVideo = false
     @State private var groupRefusal: String?     // what the group took from its members, said when this phone tries it (G.5)
@@ -1653,10 +1651,10 @@ struct ChatConversationView: View {
     }
     /// THE ACCEPT, AND ONLY THEN THE BOARD (the author's words 06.10.2026 20:5x UTC: «accept or not -- the buttons in the chat come
     /// before the chess board is shown»; «first the request is confirmed, then the decision»): the invitation's Accept is the one
-    /// door of an acceptance from the chat; a refused one (a stake past the balance) says so and raises no board.
+    /// door of an acceptance from the chat; one the replay refuses raises no board.
     private func acceptGame(_ game: String) {
         guard !chat.isGroup else { return }
-        guard MTChessSend.join(game, in: chat, store: store) != nil else { coinRefused = true; return }
+        guard MTChessSend.join(game, in: chat, store: store) != nil else { return }
         chessGame = MTChessPush(game: game)
     }
 
@@ -2176,19 +2174,12 @@ struct ChatConversationView: View {
         .alert(groupRefusal ?? "", isPresented: Binding(get: { groupRefusal != nil }, set: { on in if !on { groupRefusal = nil } })) {
             Button("OK", role: .cancel) {}
         }
-        // THE STAKE FROM THE CHAT TOO (the author's word 06.10.2026 20:2x UTC: «from the chat too, when a game is created, the
-        // invitation must say at which stake»): the question takes the stake under the balance; a short balance refuses it.
+        // A NEW GAME FROM THE CHAT: the platform's question, no stake and no balance (the author's word 29.10.2026 19:31 UTC).
         .alert("Start a new game?", isPresented: $askChess) {
-            TextField("Stake", text: $chessStake).keyboardType(.numberPad)
             Button("New game") {
-                let stake = Int(String(chessStake.filter { ch in ch.isASCII && ch.isNumber }.prefix(13))) ?? 0
-                chessStake = ""
-                if let id = MTChessSend.invite(to: chat, seconds: MTChessSend.chatClock, stake: stake, store: store) { chessGame = MTChessPush(game: id) }
-                else if 0 < stake { coinRefused = true }
+                if let id = MTChessSend.invite(to: chat, seconds: MTChessSend.chatClock, store: store) { chessGame = MTChessPush(game: id) }
             }
-            Button("Cancel", role: .cancel) { chessStake = "" }
-        } message: {
-            Text("\(MTCoinText.count(MTCoinSplit.shared.available)) coins")
+            Button("Cancel", role: .cancel) {}
         }
         .confirmationDialog("Call back?", isPresented: Binding(
             get: { callBackVideo != nil }, set: { if !$0 { callBackVideo = nil } }),
@@ -2923,8 +2914,6 @@ struct ChatConversationView: View {
                                    chessOpen: message.chessLetter.map { c in c.kind == .invite && !message.isFromMe
                                        && MTChessSend.awaitsMe(c.game, rows: store.messages[chat.name] ?? []) } ?? false,
                                    onChessDecline: { game in MTChessSend.decline(game, in: chat, store: store) },
-                                   chessNet: message.chessLetter.flatMap { c in c.end == nil ? nil
-                                       : MTChessSend.state(c.game, rows: store.messages[chat.name] ?? []).flatMap(MTChessCoins.net) },
                                    onChessAccept: { game in acceptGame(game) },
                                    chessStatus: message.chessLetter.flatMap { c in c.kind != .invite ? nil
                                        : MTChessSend.state(c.game, rows: store.messages[chat.name] ?? []).flatMap { g in
