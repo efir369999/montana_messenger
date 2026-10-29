@@ -19,6 +19,7 @@ pub mod moment;
 pub mod opening;
 pub mod path;
 pub mod permutation;
+pub mod pledge;
 pub mod presence;
 pub mod redemption;
 pub mod sponge;
