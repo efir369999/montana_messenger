@@ -2584,7 +2584,9 @@ mod tests {
         let (near, _) = Machine::start(&Configuration::at(&near_at.0, "127.0.0.1:0"))
             .expect("the near machine starts");
         let waiting = std::thread::spawn(move || {
-            let stranger = far.answer_one().expect("the stranger's connection is taken");
+            let stranger = far
+                .answer_one()
+                .expect("the stranger's connection is taken");
             let known = far.answer_one().expect("the acquaintance is answered");
             (stranger, known, far)
         });
@@ -2592,7 +2594,11 @@ mod tests {
             .reach(&line)
             .expect("the acquaintance is answered while the stranger is silent");
         let (stranger, known, far) = waiting.join().expect("the thread stands");
-        assert_eq!((stranger, known), (1, 2), "the machine miscounted its links");
+        assert_eq!(
+            (stranger, known),
+            (1, 2),
+            "the machine miscounted its links"
+        );
         assert_ne!(
             *link.transcript(),
             [0u8; 32],
