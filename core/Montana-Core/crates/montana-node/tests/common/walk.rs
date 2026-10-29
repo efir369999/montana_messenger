@@ -83,7 +83,11 @@ pub fn heavies(
                 .heavy(secret, beacon.id().expect("an identifier"), previous)
                 .expect("a heavy attestation stands"),
         );
-        pledges.push(standing.pledge(0, previous, 0).expect("a pledge stands"));
+        pledges.push(
+            standing
+                .pledge(secret, 0, previous, 0)
+                .expect("a pledge stands"),
+        );
         standings.push(standing);
     }
     (heavy, pledges, standings)

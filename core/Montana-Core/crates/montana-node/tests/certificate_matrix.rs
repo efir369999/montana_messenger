@@ -150,7 +150,7 @@ impl World {
 
     fn pledge(&self, at: usize, attempt: u32, name: [u8; 32], since: u32) -> Pledge {
         self.standings[at]
-            .pledge(attempt, name, since)
+            .pledge(&self.secrets[at], attempt, name, since)
             .expect("a pledge stands")
     }
 

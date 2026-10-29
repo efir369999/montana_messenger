@@ -144,21 +144,48 @@ impl Standing {
     }
 
     // A pledge of the agreement on the proposal of the window before, under the key this window's
-    // heavy attestation proves.
-    pub fn pledge(&self, attempt: u32, name: [u8; 32], since: u32) -> Result<Pledge, NodeError> {
+    // heavy attestation proves. It carries the line of its slot at the abscissa of `name` and the
+    // proof of the pledge, which binds that value to this machine's part and discloses neither half
+    // (Canon, "The pledge of a part"; plan of #89, step 3).
+    pub fn pledge(
+        &self,
+        machine_secret: &[u8; 32],
+        attempt: u32,
+        name: [u8; 32],
+        since: u32,
+    ) -> Result<Pledge, NodeError> {
+        let unprovable = || NodeError::Unprovable {
+            what: "the proof of a pledge",
+        };
+        let (trace, part, value) = mt_proof::circuit::pledge::trace_of(
+            machine_secret,
+            self.window,
+            attempt,
+            &name,
+            since,
+        )
+        .ok_or_else(unprovable)?;
+        // The part the proof names is the part this window stands on, or the secret is another's.
+        if part.bytes() != self.part_nullifier {
+            return Err(unprovable());
+        }
+        let public =
+            mt_proof::circuit::pledge::public_of(self.window, attempt, &name, since, &part, value);
+        let description = mt_proof::circuit::pledge::description().ok_or(NodeError::Unprovable {
+            what: "the description of a pledge",
+        })?;
+        let proof =
+            mt_proof::scheme::prove(&description, &public, &trace).map_err(|_| unprovable())?;
         let mut held = Pledge {
             window: self.window,
             attempt,
             name,
             since,
             part_nullifier: self.part_nullifier,
-            // The plan of #89, step 3: the line of this slot at the abscissa of `name`, and
-            // its proof under the description of the pledge. Until that step a pledge
-            // carries zeros there, and no door verifies them yet (step 4).
-            line_value: [0u8; 32],
+            line_value: value.to_bytes(),
             suite_id: mt_net::SUITE,
             answering_key: self.key.as_bytes().to_vec(),
-            proof: vec![0u8; mt_state::PRESENCE_PROOF_LEN],
+            proof,
             signature: vec![0u8; mt_codec::size::SIGNATURE],
         };
         let scope = held.signed_scope().map_err(NodeError::Object)?;
@@ -283,7 +310,10 @@ pub fn verify_light(
 
 // A pledge of the agreement counts only under the key its part's heavy attestation proved in this
 // window. Consensus, "The agreement on what a window decided": until that heavy is seen the pledge
-// stands in escrow, so the caller holds the proven key and this door judges the rest.
+// stands in escrow, so the caller holds the proven key and this door judges the rest -- the
+// signature, then the proof of the pledge against the public input this door computes from the
+// pledge itself. A pledge whose proof does not verify enters no quorum and is no evidence (Canon,
+// "Invariants of a pledge"; plan of #89, step 4).
 pub fn verify_pledge(held: &Pledge, proven_key: &[u8]) -> Result<(), NodeError> {
     if held.answering_key != proven_key {
         return Err(NodeError::Refused {
@@ -291,7 +321,28 @@ pub fn verify_pledge(held: &Pledge, proven_key: &[u8]) -> Result<(), NodeError> 
         });
     }
     let scope = held.signed_scope().map_err(NodeError::Object)?;
-    verify_signature(held.suite_id, &held.answering_key, &held.signature, &scope)
+    verify_signature(held.suite_id, &held.answering_key, &held.signature, &scope)?;
+    let part =
+        mt_proof::poseidon::Digest::of_bytes(&held.part_nullifier).ok_or(NodeError::Refused {
+            what: "a part-nullifier that is no digest of the family",
+        })?;
+    let value = mt_proof::line::L::from_bytes(&held.line_value).ok_or(NodeError::Refused {
+        what: "a line value that is no element of the field of the line",
+    })?;
+    let public = mt_proof::circuit::pledge::public_of(
+        held.window,
+        held.attempt,
+        &held.name,
+        held.since,
+        &part,
+        value,
+    );
+    let description = mt_proof::circuit::pledge::description().ok_or(NodeError::Unprovable {
+        what: "the description of a pledge",
+    })?;
+    mt_proof::scheme::verify(&description, &public, &held.proof).map_err(|_| NodeError::Refused {
+        what: "a pledge whose proof does not verify",
+    })
 }
 
 fn verify_signature(

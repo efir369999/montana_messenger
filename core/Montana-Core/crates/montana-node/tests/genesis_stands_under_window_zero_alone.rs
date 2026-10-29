@@ -96,7 +96,9 @@ fn opened_at(window: u64) -> Opened {
     let light = standing
         .light(&secret, last.id().expect("an identifier"), genesis)
         .expect("a light attestation stands");
-    let pledge = standing.pledge(0, genesis, 0).expect("a pledge stands");
+    let pledge = standing
+        .pledge(&secret, 0, genesis, 0)
+        .expect("a pledge stands");
     let heavies = [heavy];
     let lights = [light];
     let rounds = [

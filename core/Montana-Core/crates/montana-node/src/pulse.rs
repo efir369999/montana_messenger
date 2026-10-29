@@ -738,7 +738,8 @@ impl Pulse {
         if let Some(made) = self.record.made_in(kind, attempt) {
             return made.bytes().map_err(NodeError::Object);
         }
-        let pledge = self.standing.pledge(attempt, name, since)?;
+        let secret = machine.machine_secret()?;
+        let pledge = self.standing.pledge(&secret, attempt, name, since)?;
         let bytes = pledge.bytes().map_err(NodeError::Object)?;
         if kind == agreement::Kind::Closing {
             self.record.lock = Some((name, attempt));
