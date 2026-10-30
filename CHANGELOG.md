@@ -2,9 +2,20 @@
 
 Every build of Montana for iPhone, iPad and Mac, newest first. The version is the one Settings shows: 1.0 (build). Each entry is written here by the build road before the build is made, from the release notes the build carries; a build whose entry is not on this page is not built. Each build's full notes are in [`doc/release-notes/messenger/ios`](doc/release-notes/messenger/ios).
 
+## 1.0 (2324) - 2026-10-30
+
+Source commit `d20b2d66826d`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2324.md).
+
+- When your contact's phone renews the secret of your private conversation, yours follows: it takes the renewal letters, checks them and opens the messages sealed under the new key. This phone does not start a renewal of its own yet.
+- The offer to update is now a small notice over the screen instead of a full page: it hides by itself after nine seconds, or close it with the cross in its top right corner. A touch on it opens the update.
+
+**Security and anonymity**
+
+- The heal of a pipe (issue #75, Montana Network) is received and opened as the Canon defines it: the phone checks its computation of the renewed keys against the Canon's frozen vectors at start and opens nothing under a computation that disagrees. It sends no heal of its own until the devices of one seed carry one heal between them (the Author's decision 416 a). No new address, server, key kind or network road is added.
+
 ## 1.0 (2323) - 2026-10-30
 
-Source commit `829d29f2d5a4`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2323.md).
+Source commit `a007fbba7fbf`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2323.md).
 
 - When your contact's phone renews the secret of your private conversation, yours follows: it takes the renewal letters, checks them and opens the messages sealed under the new key. This phone does not start a renewal of its own yet.
 
