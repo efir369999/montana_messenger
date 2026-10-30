@@ -1833,6 +1833,9 @@ impl Machine {
         let mut held = self.reached.lock().map_err(|_| NodeError::Uncountable)?;
         let mut carried = 0usize;
         for one in held.iter_mut() {
+            // The link is told the window it carries, so a link whose secret was set in an earlier
+            // window renews before the first deposit (Network, "When a link renews").
+            one.link.learn_window(window);
             // A machine that stopped answering is one line of an operator's morning and not a
             // reason to stop publishing to the others.
             if cells
@@ -1888,6 +1891,9 @@ impl Machine {
                 }
                 known.asked = known.asked.saturating_add(1);
                 self.counts.raise(&self.counts.collections_asked);
+                // Told the window of the point: windows only advance in a link, so a reading of an
+                // earlier round renews nothing.
+                one.link.learn_window(window);
                 let Ok(cells) = pulse::collect_from(&mut one.link, point, known.read) else {
                     continue;
                 };
