@@ -933,7 +933,7 @@ const ASKS_AGAIN_AFTER: std::time::Duration = std::time::Duration::from_millis(2
 // pauses, so a machine whose pauses were drawn short counts the same span as a neighbour whose
 // pauses were drawn long, and the two still enter an attempt together. A generator that does not
 // answer leaves the mean: it hides nothing and breaks nothing, and everything the machine seals
-// fails on that generator first. Sixteen bytes are drawn though two are read, because the draw
+// fails on that same generator. Sixteen bytes are drawn though two are read, because the draw
 // refuses a block equal to the one before it, and two bytes repeat by chance once in 65 536 draws.
 fn drawn_pause(mean: std::time::Duration) -> std::time::Duration {
     let Ok(block) = mt_wire::draw::block::<16>() else {
