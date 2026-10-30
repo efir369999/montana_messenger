@@ -95,24 +95,29 @@ enum MTWalletCore {
     @Published private(set) var reached: Int?
     private var held = Set<Int>()
     private var joining = false
+    /// Whether the door of the join is done with: the device holds a head, or the build carries no anchor to walk from. Until
+    /// then every opening of the wallet walks again, even with every machine already held -- a walk refused once is not the end.
+    private var walked = false
 
-    /// The node opened once and every machine of the genesis it does not hold yet reached, off the main thread.
+    /// The node opened once, every machine of the genesis it does not hold yet reached, and the head walked to, off the main thread.
     func join() {
-        guard !joining, held.count < Self.genesis.count else { return }
+        guard !joining, held.count < Self.genesis.count || !walked else { return }
         joining = true
         let missing = Self.genesis.indices.filter { i in !held.contains(i) }
+        let holding = !held.isEmpty
         Task.detached(priority: .utility) {
-            let got = Self.reach(missing)
+            let got = Self.reach(missing, holding: holding)
             await MTNetworkNode.shared.joined(got)
         }
     }
-    private func joined(_ got: [Int]?) {
+    private func joined(_ got: (reached: [Int], walked: Bool)?) {
         joining = false
         guard let got else { return }
-        held.formUnion(got)
+        held.formUnion(got.reached)
+        walked = got.walked
         reached = held.count
     }
-    nonisolated private static func reach(_ missing: [Int]) -> [Int]? {
+    nonisolated private static func reach(_ missing: [Int], holding: Bool) -> (reached: [Int], walked: Bool)? {
         #if MONTANA_PROTOCOL_CORE
         guard let dir else { return nil }
         var standing: Int32 = 0
@@ -136,10 +141,41 @@ enum MTWalletCore {
             MontanaTrace.mark("core_node", "reach \(i) rc=\(rc) \(said(rc))")
             if rc == 0 { got.append(i) }
         }
-        return got
+        return (got, holding || !got.isEmpty ? walk() : false)
         #else
         return nil
         #endif
+    }
+    /// THE DOOR OF THE JOIN (#136; the author's decisions 450 and 452 "a"): a phone that holds nothing walks to the head of the
+    /// chain it reached, from the anchor its operator handed it -- the proposals of two consecutive final windows, carried in the
+    /// build as anchor-earlier.proposal and anchor-later.proposal. The trust in them is the trust in the operator who built this
+    /// phone (mt-boundary lib.rs:457-465); the walk judges every certificate after them and trusts no answer. A phone that holds a
+    /// head already walks nothing, and a build without an anchor walks nothing. The walk runs on the caller's thread: this is the
+    /// detached one `join` began, never the main one. It answers whether the door is done with: a head held, or no anchor to walk from.
+    nonisolated private static func walk() -> Bool {
+        #if MONTANA_PROTOCOL_CORE
+        var head: UInt64 = 0, present: Int32 = 0
+        guard mtc_machine_head(&head, &present) == 0 else { return false }
+        guard present == 0 else { return true }
+        guard let earlier = anchor("anchor-earlier"), let later = anchor("anchor-later") else {
+            MontanaTrace.mark("core_node", "join: no anchor in the build")
+            return true
+        }
+        var window: UInt64 = 0
+        let rc = earlier.withUnsafeBytes { e in
+            later.withUnsafeBytes { l in
+                mtc_machine_join(e.bindMemory(to: UInt8.self).baseAddress, e.count,
+                                 l.bindMemory(to: UInt8.self).baseAddress, l.count, &window)
+            }
+        }
+        MontanaTrace.mark("core_node", rc == 0 ? "join rc=0 head=\(window)" : "join rc=\(rc) \(said(rc))")
+        return rc == 0
+        #else
+        return true
+        #endif
+    }
+    nonisolated private static func anchor(_ name: String) -> Data? {
+        Bundle.main.url(forResource: name, withExtension: "proposal").flatMap { try? Data(contentsOf: $0) }
     }
     nonisolated private static func said(_ rc: Int32) -> String {
         #if MONTANA_PROTOCOL_CORE
