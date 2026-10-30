@@ -56,6 +56,12 @@ pub fn path_max() -> Result<usize, WireError> {
     scalar("path_max")
 }
 
+// The units a side seals under one sending key of a link before it offers a renewal, whatever the
+// window: the ceiling of a link whose chain has stalled.
+pub fn rekey_units() -> Result<usize, WireError> {
+    scalar("rekey_units")
+}
+
 // What a seal of a step and a label of a step take: the same width, which the set fixes once.
 // The register of the serializations this crate holds, written once and compared with the set by
 // the gate: a layout of the wire the set lays out and this tree does not hold is named as awaiting
@@ -79,6 +85,9 @@ pub const NAMES: &[&str] = &[
     "slot_answer",
     "table_query",
     "table_answer",
+    "renew_offer",
+    "renew_answer",
+    "renew_finish",
 ];
 
 pub const SEAL_BYTES: usize = size::STEP_SEAL;

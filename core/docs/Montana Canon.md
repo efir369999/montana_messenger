@@ -2405,6 +2405,25 @@ serialize(slot_answer)
   published            published_len B          the contact root of a name, or the key of a channel
 ```
 
+**Renewing the keys of a link** (Network, "How a link renews its keys"; adopted, issue #75). Three
+messages of the link, each of one length, carrying the encapsulation keys and the encapsulations of
+one renewal and nothing else: no window, no count and no index of the renewal crosses the wire.
+
+```
+serialize(renew_offer)
+  kem_key                        1184 B         an ML-KEM-768 encapsulation key drawn for this renewal alone
+renew_offer_len = 1 184 B
+
+serialize(renew_answer)
+  kem_ct                         1088 B         the encapsulation to the key of the offer
+  kem_key                        1184 B         an encapsulation key the answering side drew for this renewal alone
+renew_answer_len = 2 272 B
+
+serialize(renew_finish)
+  kem_ct                         1088 B         the encapsulation to the key of the answer
+renew_finish_len = 1 088 B
+```
+
 **Invariants of the messages of the wire:**
 
 - **Silence bounds the wire and never the account a machine keeps of itself.** Every refusal above is silent to whoever offered it, because an answer naming the reason publishes the state of this machine to whoever asked. A machine's own account is not the wire: it may write, for the operator who runs it, every one of its own doings — how many cells it held and how many it refused and under which of the rules, how many objects it published and pushed and to how many acquaintances, how many collections it asked and how many cells came back, how many attestations entered its cement and how many did not and why. An implementation that keeps no such account is an implementation whose operator must guess at every divergence, and a network of blind machines is one nobody can repair.
@@ -2421,6 +2440,7 @@ serialize(slot_answer)
 - A `head_query` names the network by the hash the asker computed itself, so an answerer of another network is told apart before a byte of its proposal is parsed; a `state_answer` is verified by recomputing the root and comparing it with the root of a proposal already verified, and a proof of length zero is the ordinary answer for a leaf that does not exist.
 - A wake carries a tag or a handle, and a window, and nothing else; a handle is drawn at random by the holder of the letter, lives beside its pipe for that window alone, and resolves nowhere outside the machine that drew it.
 - No message of this section carries an address, a name, a person or a count of anything but its own cells.
+- The three messages of a renewal carry public key material of ML-KEM-768 and nothing else, each of one length; a renewal message of another length is refused in silence, like every malformed message, and the renewal it belongs to does not complete.
 
 **The vectors of the messages.**
 
@@ -2480,7 +2500,13 @@ message_kind
   4 collect_answer    8 head_answer     12 slot_answer
                                         13 table_query
                                         14 table_answer
+                                        15 renew_offer
+                                        16 renew_answer
+                                        17 renew_finish
 ```
+
+Kinds 15 to 17 are the three messages of a renewal of the keys of a link (Network, "How a link
+renews its keys"; adopted, issue #75): a reader takes them inside the link and never hands them on.
 
 **Invariants of the link unit:**
 
@@ -4996,6 +5022,7 @@ derived from it.
 | `cell_bytes` — the one length of everything that crosses the wire | 1 232 |
 | `erasure_group` — cells per group of a delivery, of which a quarter is parity | 16 |
 | `path_max` — slots in the seal array of a cell, and therefore the reach of one delivery | 15 |
+| `rekey_units` — units a side seals under one sending key of a link before it offers a renewal (Network, "How a link renews its keys") | 8 388 608 |
 
 ## Layouts
 

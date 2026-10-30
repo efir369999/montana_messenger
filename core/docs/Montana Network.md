@@ -266,7 +266,8 @@ key over an unbounded volume. A side therefore also offers a renewal when the un
 under its current sending key reach `rekey_units`, a ceiling that enters the Decree of Canon with
 the code of stage 18 (2^23 units, derived in `core/docs/protocol-13/75-RFC-GPA.md`). The count is
 the sender's own, of what it sealed: it never crosses the wire and is never compared with the other
-side's, so nothing can diverge on it.
+side's, so nothing can diverge on it. A key that has sealed twice `rekey_units` without a completed
+renewal ends its link: an offer nobody answers holds no key over a volume without bound.
 
 **Two offers that cross.** If both sides offer in one window, the offer of the side that opened the
 link stands: the other side erases the key it drew, answers that offer, and its own offer is
@@ -316,7 +317,7 @@ offer. This text does not yet order them, and the rule that does is before the A
 
 - The secret of a link begins as the master of its handshake, and the directional keys are derived from it under the domains of the handshake; a link that never renewed carries exactly the keys of its handshake.
 - A renewal folds both shared secrets and all four public values in the order of the roles of the handshake, under a domain of its own; a renewal from one side's material alone is a defect that hands the link to whoever supplied it.
-- A link renews at most once in a window, before a message its side is about to send or when its own count of sealed units reaches `rekey_units`, and never on its own account.
+- A link renews before a message its side is about to send, and never on its own account: at most once in a window by the rule of the window, and again whenever its own count of units sealed under one sending key reaches `rekey_units`, which in a stalled window may be more than once.
 - No count, index or window of a renewal crosses the wire: its three messages are messages of the link, of the one shape, their kind inside the seal.
 - Every previous secret, key, drawn decapsulation key and shared secret is erased once the renewal completes and the first unit opens under the new key; a value kept past that is a defect.
 - A unit that opens under neither key ends the link in silence.
