@@ -193,7 +193,8 @@ pub struct Pulse {
     replay_tried: BTreeMap<Name, u32>,
 }
 
-// How many askings a machine has stood since `since`: its waiting in units of `ASKS_AGAIN_AFTER`.
+// How many askings a machine has stood since `since`: its waiting in units of `ASKS_AGAIN_AFTER`,
+// the mean of its pauses and not any one of them (`drawn_pause`).
 fn askings_since(since: std::time::Instant) -> u32 {
     let unit = ASKS_AGAIN_AFTER.as_millis().max(1);
     u32::try_from(since.elapsed().as_millis() / unit).unwrap_or(u32::MAX)
@@ -919,7 +920,34 @@ pub struct Lived {
 // **It measures nothing of the protocol.** A round closes when an answer arrives and not when a
 // clock says so; this is only how often a machine asks. Nothing of consensus turns on its length,
 // and a machine that asked twice as often or half as often would cement the same windows.
+//
+// It is the mean of a machine's pauses and not their beat: each pause is drawn (`drawn_pause`).
 const ASKS_AGAIN_AFTER: std::time::Duration = std::time::Duration::from_millis(25);
+
+// **How long one pause lasts, drawn afresh each time.** A machine that asked on a fixed beat would
+// mark every link it holds with that beat, and an observer of the wire would tell a node from any
+// other traffic by the spacing of its askings alone (#22, K5). So each pause is drawn from the
+// machine's own generator, uniformly over half to one and a half of `mean`, and its mean is `mean`.
+// Nothing of consensus turns on it, as `ASKS_AGAIN_AFTER` says; and the count of askings the
+// agreement runs on is the time stood in units of the mean (`askings_since`), not the count of
+// pauses, so a machine whose pauses were drawn short counts the same span as a neighbour whose
+// pauses were drawn long, and the two still enter an attempt together. A generator that does not
+// answer leaves the mean: it hides nothing and breaks nothing, and everything the machine seals
+// fails on that generator first. Sixteen bytes are drawn though two are read, because the draw
+// refuses a block equal to the one before it, and two bytes repeat by chance once in 65 536 draws.
+fn drawn_pause(mean: std::time::Duration) -> std::time::Duration {
+    let Ok(block) = mt_wire::draw::block::<16>() else {
+        return mean;
+    };
+    let share = u128::from(u16::from_be_bytes([block[0], block[1]]));
+    let above = u64::try_from((mean.as_nanos() * share) >> u16::BITS).unwrap_or(u64::MAX);
+    mean / 2 + std::time::Duration::from_nanos(above)
+}
+
+// One pause between two askings.
+fn hold_still() {
+    std::thread::sleep(drawn_pause(ASKS_AGAIN_AFTER));
+}
 
 pub use mt_pulse::WAITS_UP_TO;
 
@@ -938,7 +966,7 @@ use mt_pulse::{
 // since what a machine asks over is read from what it holds at the moment it asks.
 pub fn reach_again(machine: std::sync::Arc<Machine>, line: String) {
     std::thread::spawn(move || loop {
-        std::thread::sleep(ASKS_AGAIN_AFTER * REACHES_AGAIN_EVERY);
+        std::thread::sleep(drawn_pause(ASKS_AGAIN_AFTER * REACHES_AGAIN_EVERY));
         if machine.reach_and_hold(&line).is_ok() {
             println!("connection restored");
             return;
@@ -1391,7 +1419,7 @@ pub fn live_doing(
         let mut history = HistoricalRounds::default();
         // The count of this machine's askings in this window: the clock the spans of the agreement
         // run on, which is conduct and enters no rule of acceptance. An asking is the unit of this
-        // machine's waiting, `ASKS_AGAIN_AFTER`, and the count is read off how long the machine has
+        // machine's waiting, the mean pause `ASKS_AGAIN_AFTER`, and the count is read off how long the machine has
         // stood in the window in those units rather than off the turns of its loop: a machine
         // turning rounds or reading a whole window at every turn would count a span in minutes
         // while its neighbour standing still counted it in seconds, and the honest machines would
@@ -1424,7 +1452,7 @@ pub fn live_doing(
                 if waited >= patience {
                     return Err(counts.exhausted(on, "a round no beacon ever stood at"));
                 }
-                std::thread::sleep(ASKS_AGAIN_AFTER);
+                hold_still();
             };
             // **Every machine gathers, and not the runner alone.** A window is finalized on
             // confirmations reaching the quorum, and a machine that waited to be told would be
@@ -1752,7 +1780,7 @@ pub fn live_doing(
                         counts.line()
                     );
                 }
-                std::thread::sleep(ASKS_AGAIN_AFTER);
+                hold_still();
             };
             // Two versions of one round are resolved by the smaller identifier, which is the rule
             // the set states for two clearings of one height: among the versions this machine
@@ -1855,7 +1883,7 @@ pub fn live_doing(
                         "a decided proposal that never stood at the points with its roll",
                     ));
                 }
-                std::thread::sleep(ASKS_AGAIN_AFTER);
+                hold_still();
             };
             let (plane, positions) = applied_again(machine, window, &adopted.state, patience)?;
             let link: String = decided_name.iter().map(|b| format!("{b:02x}")).collect();
@@ -2542,7 +2570,7 @@ fn take_the_proposal(
         return Ok(found);
     }
     for _ in 0..carries_after(machine_secret, held.aggregate_two_before) {
-        std::thread::sleep(ASKS_AGAIN_AFTER);
+        hold_still();
         if let Some(found) =
             standing_proposal(machine, window, &expected, held, roots, &mut refused)?
         {
@@ -2594,7 +2622,7 @@ fn take_the_proposal(
         if waited >= patience {
             return Err(counts.exhausted(on, "a window no proposal of its decision ever stood at"));
         }
-        std::thread::sleep(ASKS_AGAIN_AFTER);
+        hold_still();
     }
 }
 
@@ -3247,7 +3275,7 @@ pub fn follow_to_the_next_stride(
                             "a machine waiting for the next stride that saw the chain move nowhere",
                     });
                 }
-                std::thread::sleep(ASKS_AGAIN_AFTER);
+                hold_still();
             }
             Err(other) => return Err(other),
         }
@@ -3551,5 +3579,27 @@ mod the_next_stride {
         assert_eq!(first, 129);
         assert_eq!(next_stride_after(first), Ok(first + reach));
         assert_eq!(next_stride_after(first - 1), Ok(first));
+    }
+}
+
+#[cfg(test)]
+mod the_pause {
+    use super::{drawn_pause, ASKS_AGAIN_AFTER};
+
+    // A pause is drawn within half to one and a half of the mean, and the pauses do not keep a beat:
+    // the named wrong implementation is the fixed pause of 25 ms, every one of which would be equal.
+    #[test]
+    fn a_pause_is_drawn_about_its_mean_and_keeps_no_beat() {
+        let mean = ASKS_AGAIN_AFTER;
+        let pauses: Vec<_> = (0..64).map(|_| drawn_pause(mean)).collect();
+        for pause in &pauses {
+            assert!(*pause >= mean / 2, "{pause:?} under half the mean");
+            assert!(*pause < mean * 3 / 2, "{pause:?} past one and a half of the mean");
+        }
+        assert!(pauses.iter().any(|pause| *pause != pauses[0]), "a fixed beat");
+        // The pause of a redial is drawn the same way about its own mean.
+        let redial = mean * 400;
+        let drawn = drawn_pause(redial);
+        assert!(drawn >= redial / 2 && drawn < redial * 3 / 2);
     }
 }
