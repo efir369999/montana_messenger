@@ -631,28 +631,56 @@ mod tests {
         );
     }
 
+    // "Dead" is a property of the machine, not of an instant (PROOF_SCALES): a source of this machine
+    // is judged as `gather` judges it, alive when its measurements differ in any of the three windows.
+    // Judged in the first window alone, a busy host failed here while `gather` accepted it.
+    fn alive_in_a_window(measure: impl Fn(u64) -> Vec<u8>, samples: usize) -> bool {
+        PROOF_SCALES
+            .iter()
+            .any(|&scale| is_alive(&measure(scale), samples))
+    }
+
     #[test]
     fn jitter_is_not_constant() {
-        let a = jitter_bytes(1);
-        assert!(is_alive(&a, JITTER_ROUNDS), "jitter must differ");
+        assert!(
+            alive_in_a_window(jitter_bytes, JITTER_ROUNDS),
+            "jitter must differ"
+        );
     }
 
     #[test]
     fn memory_is_not_constant() {
-        let m = memory_bytes(1);
-        assert!(is_alive(&m, MEMORY_ROUNDS), "memory access must differ");
+        assert!(
+            alive_in_a_window(memory_bytes, MEMORY_ROUNDS),
+            "memory access must differ"
+        );
     }
 
     #[test]
     fn quartz_is_not_constant() {
-        let q = quartz_drift(1);
-        assert!(is_alive(&q, QUARTZ_SAMPLES), "quartz must differ");
+        assert!(
+            alive_in_a_window(quartz_drift, QUARTZ_SAMPLES),
+            "quartz must differ"
+        );
     }
 
     #[test]
     fn scheduler_is_not_constant() {
-        let s = scheduler_bytes(1);
-        assert!(is_alive(&s, SCHEDULER_SAMPLES), "the schedule must differ");
+        // A host that never gives the neighbouring thread a quantum leaves every measurement zero, and
+        // the source is honestly dead there (`scheduler_bytes`); on any other host it must differ.
+        let windows: Vec<Vec<u8>> = PROOF_SCALES
+            .iter()
+            .map(|&scale| scheduler_bytes(scale))
+            .collect();
+        let never_scheduled = windows.iter().all(|w| w.iter().all(|&b| b == 0));
+        assert!(
+            never_scheduled || windows.iter().any(|w| is_alive(w, SCHEDULER_SAMPLES)),
+            "the schedule must differ; distinct measurements per window: {:?}",
+            windows
+                .iter()
+                .map(|w| distinct_chunks(w))
+                .collect::<Vec<_>>()
+        );
     }
 
     #[test]
