@@ -4,7 +4,7 @@ Every build of Montana for iPhone, iPad and Mac, newest first. The version is th
 
 ## 1.0 (2325) - 2026-10-30
 
-Source commit `5179a9cbd00f`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2325.md).
+Source commit `eea45ab8b3b4`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2325.md).
 
 - The Time Balance rises again every second while you are in the network: the app is open or the Montana VPN is live. The available balance moves only when the core confirms the seconds at the close of a window.
 - The core inside the app now carries the door through which a phone that holds nothing joins the running chain from two consecutive final proposals and checks every certificate itself. The app does not open this door yet.
