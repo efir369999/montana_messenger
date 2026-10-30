@@ -8,8 +8,8 @@ Network, adopted on 2026-10-29 (decision 333 = (b), record 338), and its wire co
 #125); the iOS client receives and opens a heal (decision 416 = (a)). A machine check of crossing
 heals (`docs/issue-75/paper/check_lemma5.py` of the iOS repository) found that the client's rule for
 letting go of an unopened answer loses the pipe when an offer of an earlier window arrives late; it
-cannot happen while sending a heal is off (decision 416), and its fix waits on the Author (record
-438). Requirements 2 and 4 are
+cannot happen while sending a heal is off (decision 416); by the Author's decision 439 = (b) on record
+438 it stays a named limit, and its correction is a condition of turning sending on. Requirements 2 and 4 are
 refused below, each with the norm that forbids it. This file itself is not normative: the
 section of Network and its form in Canon are. Line references below were read on the branch named
 next and may since have moved.**
