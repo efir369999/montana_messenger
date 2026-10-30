@@ -304,14 +304,19 @@ below names that. A pipe heals by the same construction carried in its own lette
 - A letter of a pipe may carry a **heal offer**: an ML-KEM-768 encapsulation key its sender drew for that offer alone.
 - The letter that answers it carries an encapsulation to that key. From the window after the one whose tag the answering letter travelled under, the pipe stands on a **healed walk**: its first value is the hash, under a domain of its own that Canon names (`mt-pipe-heal`), of the value the old walk reaches at the window of the answering letter, the shared secret and the two public values of the heal; it walks on by the ordinary rule, and every quantity of a window is derived from it as from any value of a walk.
 - The offering side holds the healed walk once it opens the answering letter, and sends under it from the first window the healed walk stands at. The answering side keeps sending under the old walk until it opens a letter under the healed one, then sends under the healed walk alone and erases the old one. The offering side collects under both walks until it opens a letter of the answering side under the healed walk, and then erases the old one.
-- A side holds at most one heal of its own pending, and an offer answered by nothing is replaced by its next offer: a lost letter costs a heal and never a pipe.
+- A side holds at most one heal of its own pending. The answering letter names the offer it answers by the last 32 bytes of that offer's encapsulation key (its ρ, already inside the offer; no new domain). The offering side opens an answer only with the key of the offer it names and drops any other: ML-KEM never refuses a ciphertext, so an answer opened with another key would put the offering side on a walk the answering side does not hold. An offer answered by nothing in its window is replaced by the first letter its side sends in a later window, and the key drawn for it is erased; a late answer to it names a key no longer held and is dropped. A lost letter costs a heal and never a pipe (the Author's decision, constitution record 409; the iOS client counts these windows in UTC days, record 400).
 - An attacker that read the old walk at some moment reads the offer and the answer, and loses the pipe from the healed walk on, provided it did not alter them and the offer was drawn after the moment it read. Until the offering side next writes, the answering side's letters stay under the old walk and readable to it; that residue is named and not closed. An attacker that read the old walk and also stands on the path of the pipe's letters can strip the offer from each of them and re-seal the rest, so no heal happens and it keeps reading; offers that go unanswered tell a side nothing it can act on, and that case is named and not closed.
 
-A correspondent offers a heal in the first letter it sends in a window while no heal of its own is
-pending (the Author's decision, constitution record 356). When both correspondents write in one
-window, two heals are in flight at once, each side having offered before it opened the other's
-offer. This text does not yet order them, and the rule that does is before the Author
-(constitution record 391).
+A correspondent offers a heal in the first letter it sends in a window while it holds one walk and
+awaits no answer to an offer of its own drawn in that window (the Author's decisions, constitution
+records 356, 392 and 409); an offer of an earlier window is not awaited but replaced, as above.
+A pipe has at most one heal in flight. When both correspondents write in one window, their offers
+cross, each side having offered before it opened the other's. Of two crossing offers, the one whose
+encapsulation key is lower in byte order stands. The side whose offer did not stand erases the key
+it drew and answers the standing offer as its answering side, as the offer of the side that opened
+a link stands when two renewals of that link cross. The side whose offer stands answers nothing to
+the other offer. Both sides compare the same two keys, so they agree on one heal and one healed
+walk without a further letter.
 
 **Invariants of a renewal:**
 
@@ -322,6 +327,7 @@ offer. This text does not yet order them, and the rule that does is before the A
 - Every previous secret, key, drawn decapsulation key and shared secret is erased once the renewal completes and the first unit opens under the new key; a value kept past that is a defect.
 - A unit that opens under neither key ends the link in silence.
 - A heal of a pipe derives the healed walk from the old walk at the window of the answering letter, and each side erases the old walk only on opening a letter of the other side under the healed one.
+- A pipe has at most one heal in flight: a side offers only while it holds one walk and awaits no answer to its own offer of the same window; an offer unanswered in its window is replaced in a later one and its key erased; an answer names its offer by ρ, and an answer to any other offer is dropped unopened; of two crossing offers the one with the lower encapsulation key in byte order stands, and the side that drew the other erases it; two healed walks from one old walk are a defect.
 
 **What this adds to the ledger and the conformance set.** Two rows of the observability ledger,
 *that a link renewed in a window* and *that a pipe healed*, and item 23 of the conformance set.
@@ -795,6 +801,9 @@ External tunnels serve the circumvention of censorship and may hide a network ad
 are **not** a source of privacy: switched off, they take none of it away. A construction that
 needed them would have no privacy of its own.
 
+Nor does this text claim that traffic of Montana cannot be recognized as Montana's. The
+observability ledger names that limit; hiding the protocol itself is what external tunnels are for.
+
 ## Threat model of the wire
 
 | Adversary | What they get |
@@ -833,6 +842,7 @@ needed them would have no privacy of its own.
 | that a device went on or off, and that mail arrived near that moment | closed: the link of a sleeping device is held by the reachable side out of the transit it carries anyway, so switching on and off is not an event of the network and intersection by presence has nothing to intersect |
 | the machine a cell is being carried toward | **deliberately observable to a hop**: routing cannot move a cell toward a target without naming the target. It names a machine and never a party, many pipes of many strangers share one holder in one window, and nothing of the sender, the recipient or the letter follows from it |
 | that a machine answers at an address | **a named physical prohibition**: accepting a connection is observable at the wire; what it does not reveal is whose it is or whether it is a machine, since a first flight not made to its static key is answered by no byte and held exactly as an unfinished one is. **One limit is named**: a side that keeps sending past a whole first flight is read no further than the largest message of this wire, and then the connection ends — the bound that keeps a stranger from holding a thread without end, observable only to a side that sends that much |
+| that a line carries Montana | **a named limit, not claimed** (the Author's decision, constitution record 394): every unit that crosses the wire is one length, `cell_bytes` = 1 232 bytes (Canon:955), and a handshake is an ML-KEM-768 exchange of fixed lengths, so an observer who inspects packets can tell that a line carries Montana. That is all it learns: nothing of what is carried, by whom or for whom. Hiding the protocol itself is left to external tunnels ("Privacy is not rented"); a transport shaped like other traffic would be a decision of its own |
 | that an address is a machine, to whoever holds its acquaintance | **deliberately observable to that holder, and named**: the acquaintance is what lets a first flight open, so whoever was handed one can confirm the machine it names. The acquaintances of the opening machines travel inside every client, so those machines stay confirmable by anybody until their lines leave the client |
 | the identity key of an initiator, to whoever later takes the responder's machine secret | **a named limit**: the key crosses sealed under the encapsulation to the responder's static key, so a taker of that machine's secret who recorded first flights opens the identity keys of their initiators. The channel keys do not follow: they fold both encapsulations drawn for the handshake alone, which the taking does not open |
 | that a recorded first flight is replayed to its machine | **observable to the replayer, and named**: the machine opens it and answers with fresh values, and the replayer, holding no signature key of the initiator, finishes nothing; what it learns is that the address is the machine the flight was made to, which the recording already showed it |
