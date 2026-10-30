@@ -409,14 +409,15 @@ impl Link {
         self.seal(kind, message)
     }
 
-    // **No key carries more than the ceiling and one message.** A side whose renewal is under way
-    // seals under the key it holds until the renewal completes, and a side that only sends never
-    // reads the message that completes it. So a side at the ceiling with a renewal under way reads
-    // before it seals again: the messages of the renewal are taken in, and any other message is held
-    // for the caller. The far side has been sent the renewal and owes its message, so the wait is
-    // bounded by the patience of a message begun, and what is held by the largest message this wire
-    // carries: a far side that keeps this side waiting longer, or sends more than that, ends the
-    // link, and a new handshake replaces it.
+    // **No sending key carries more than the ceiling, two messages, an offer and a finish.** The
+    // message that crosses the ceiling, the offer and the message behind it still go under the key
+    // a side holds, and a side whose renewal is under way seals under it until the renewal
+    // completes, while a side that only sends never reads the message that completes it. So a side
+    // at the ceiling with a renewal under way reads before it seals again: the messages of the
+    // renewal are taken in, and any other message is held for the caller. The far side has been
+    // sent the renewal and owes its message, so the wait is bounded by the patience of a message
+    // begun, and what is held by the largest message this wire carries: a far side that keeps this
+    // side waiting longer, or sends more than that, ends the link, and a new handshake replaces it.
     fn settle(&mut self) -> Result<(), NetError> {
         let bound = link::pieces_max()
             .map_err(wire)?
@@ -1028,8 +1029,8 @@ mod tests {
     }
 
     // The bound at the ceiling: a side that only sends, with its renewal under way, reads before it
-    // seals past the ceiling, so its old key carries the ceiling and one message; a message of the
-    // far side read on the way reaches the caller in its turn.
+    // seals past the ceiling, so its old key carries the ceiling, the offer, the message behind it
+    // and the finish; a message of the far side read on the way reaches the caller in its turn.
     #[test]
     fn a_side_that_only_sends_settles_its_renewal_before_it_seals_past_the_ceiling() {
         let (mut opened, mut answered) = met();
