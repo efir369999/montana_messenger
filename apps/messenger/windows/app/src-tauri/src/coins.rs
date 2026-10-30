@@ -668,37 +668,14 @@ pub fn set_auto_react(vault: &Vault, conv: &str, coins: i64) {
     vault.set(AUTO, all.to_string().as_bytes());
 }
 
-/// Every name a coin of chess moves under (iOS MTChessCoins.owns): the wallet's source of chess.
+/// Every name a coin of chess moved under in the builds before (iOS MTCoinLegacy): the wallet still names that history's source;
+/// nothing books under them now (the author's word 29.10.2026 19:31 UTC: no coins in chess).
 pub fn is_chess(r: &str) -> bool {
     ["chess:", "chess-won:", "chess-lost:", "chess-pot:", "chess-stake:", "chess-back:"].iter().any(|p| r.starts_with(p))
 }
-/// The coins standing on a target (iOS coins(on:)): a pot's stakes already put.
+/// The coins standing on a target (iOS coins(on:)): a wall post's coins.
 pub fn on_target(vault: &Vault, on: &str) -> i64 {
     with(vault, |b| b.on_target.get(on).copied().unwrap_or(0))
-}
-/// A NAMED MINT IS THE SECOND'S COIN TOO (iOS MTLocalCoinLedger.mint, point 11 as the ceiling): once by its name, through the
-/// second's one coin. The coins booked.
-pub fn mint_named(vault: &Vault, coins: i64, refr: &str, peer: Option<&str>) -> i64 {
-    with(vault, |b| {
-        if coins <= 0 || refr.is_empty() || b.taken.contains(&format!("earn:{refr}")) {
-            return 0;
-        }
-        let c = priced(b, coins, 1);
-        if c <= 0 {
-            return 0;
-        }
-        let e = Entry { k: "earn".into(), c, refr: refr.to_string(), peer: peer.map(str::to_string), on: None, at: now() };
-        if take(b, e) {
-            flashed(b, refr, c, peer.is_some_and(|p| p.starts_with("grp:")));
-            c
-        } else {
-            0
-        }
-    })
-}
-/// The coins a move of this name booked (0 when none).
-pub fn booked(vault: &Vault, k: &str, refr: &str) -> i64 {
-    with(vault, |b| b.entries.iter().find(|e| e.k == k && e.refr == refr).map(|e| e.c).unwrap_or(0))
 }
 
 /// THE LEVELS OF π (iOS MTPiLevels.place): how many prefixes of π's nineteen digits the balance reaches.
@@ -862,7 +839,6 @@ mod tests {
         test_second(Some(crate::cointx::TIME_CUT));
         assert_eq!(earn(&v, &[(format!("mid:t{born}-C"), born + 2)], None), 0);
         assert_eq!(in_window(&v, 1, PULL, 1, false), 0);
-        assert_eq!(mint_named(&v, 5, "named:x", None), 0);
         let held = balance(&v);
         assert_eq!(in_window(&v, 7, "burn:x:", 7, true), 7);
         assert_eq!(balance(&v), held - 7);

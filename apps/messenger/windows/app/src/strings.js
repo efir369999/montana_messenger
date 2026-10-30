@@ -1143,8 +1143,6 @@ const RU = {
   "Every letter mints a coin": "Каждое письмо чеканит монету",
   "Coins on each new letter": "Монеты на каждое новое письмо",
   "Paid by itself as a reaction on every letter the person writes from now on, while your coins last.": "Платится само реакцией на каждое письмо, которое человек напишет с этой минуты, пока хватает ваших монет.",
-  "Stake": "Ставка",
-  "Pot": "Банк",
 
   // the chats' list: the rows' swipes and the selection (MontanaChatsList.swift 786-805, 1471-1493)
   "Audio call": "Аудиозвонок",
@@ -1172,7 +1170,6 @@ const RU = {
   "Tap the pencil to change the order or delete folders.": "Нажмите на карандаш, чтобы изменить порядок папок или удалить их.",
   "You have changed the filter. Discard changes?": "Вы изменили папку. Отменить изменения?",
   "Discard": "Отменить",
-  "Both players put the stake into the game's pot, and every move adds a coin to it within the same one coin a second. The winner takes the whole pot; a draw gives each their own back.": "Оба игрока кладут ставку в банк партии, и каждый ход добавляет в него монету в пределах той же одной монеты в секунду. Победитель забирает весь банк; при ничьей каждому возвращается своё.",
   // a page that waits for its program (the freeze of the panel's first slot, 25.10.2026; Windows' own: iOS reads these at once) and a
   // linked post this computer does not hold (iOS's words, MontanaFirstContact.swift 1941, the phone a computer here)
   "Could not be read.": "Не удалось прочитать.",

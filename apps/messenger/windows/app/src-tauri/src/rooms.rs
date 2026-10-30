@@ -802,7 +802,6 @@ pub fn leave(d: &Desk) {
 fn leave_in(d: &Desk, st: &mut State, _why: &str, tell_group: bool) {
     let Some(r) = st.live.take() else { return };
     close_lanes(&d.twin);
-    crate::wallet::burn_now(d.vault);   // the room's last seconds go to the chain as it is left (iOS MTGroupRoom → MTCallMint.finish)
     let now = now_s();
     let others = r.people.keys().filter(|k| **k != r.me).count();
     // A STREAM ENDS WITH ITS OWNER; the last one out ends the room

@@ -79,9 +79,6 @@ const learnCaps = (s, w) => {
 /** THE CORRESPONDENT'S SWITCH HOLDS BY LEVEL (iOS MTCallRecordingPolicy.mayRecord, the author's word 20.10.2026 20:2x MSK): their
  *  switch off, only a strictly higher level records; an unknown level holds. A build that says nothing forbids nothing. */
 const mayRecord = (theirSwitch, theirLevel, myLevel) => theirSwitch !== false || (theirLevel != null && myLevel != null && myLevel > theirLevel);
-/** THE CALL'S COINS ARE ONE FOR BOTH (iOS callRecorded, 20.10.2026 22:0x MSK): recorded by either side by the one rule -- both earn;
- *  by neither -- both burn. */
-const callRecorded = (s) => (mine.rec && mayRecord(s.peerRec, s.peerLv, mine.lv)) || (s.peerRec === true && mayRecord(mine.rec, mine.lv, s.peerLv));
 const LIFE_MS = 90000;
 // THE BREAK IN A CALL (iOS MontanaCall 1190-1205): «disconnected» is the machine's suspicion, «failed» its verdict; a break is
 // declared when the suspicion holds; the caller asks for fresh checks at once, the callee after a lead, never over an ask
@@ -208,8 +205,6 @@ export default function CallLayer({ person, pillHidden = false }) {
     const c = live.current;
     if (!c || c.phase === "end") return;
     const s = st.current;
-    const talked = c.phase === "talk" && s.connectedAt ? Math.floor((Date.now() - s.connectedAt) / 1000) : 0;
-    const recorded = !!s.tape || callRecorded(s);
     if (tell) await post(c, [word(c, "call-end")]);
     if (s.tape) stopTape(s, c);   // the call's end ends its recording, and the recording goes where it goes
     clearTimeout(s.timer); clearInterval(s.iceTimer); clearTimeout(s.grace); clearInterval(s.restartTimer); clearTimeout(s.deadline);
@@ -221,10 +216,9 @@ export default function CallLayer({ person, pillHidden = false }) {
     setSharing(false);
     const secs = s.connectedAt ? Math.round((Date.now() - s.connectedAt) / 1000) : 0;
     const missed = !s.connectedAt && !(c.incoming && s.answered);
-    // the call's last whole second settles before the clock is cleared, and the end lays its burn at once (iOS MTCallMint.finish)
-    const settled = talked > 0 ? invoke("call_coins", { call: c.epoch, seconds: talked, recording: recorded }).catch(() => {}) : Promise.resolve();
-    settled.then(() => invoke("call_end", { chat: c.chat, seed: c.seed, video: !!c.video || !!s.hadVideo, incoming: !!c.incoming, seconds: secs,
-                                            missed, heard: Math.floor(s.weave?.heard || 0) }));
+    // A CALL MOVES NO COIN (the author's word 29.10.2026 19:31 UTC; iOS 21c95645): the end tells only its row
+    invoke("call_end", { chat: c.chat, seed: c.seed, video: !!c.video || !!s.hadVideo, incoming: !!c.incoming, seconds: secs,
+                         missed, heard: Math.floor(s.weave?.heard || 0) });
     st.current = {};
     setCall({ ...c, phase: "end", status: reason === "no-path" ? t("The call found no way") : t("Call ended") });
     setTimeout(() => setCall((x) => (x?.phase === "end" ? null : x)), 1800);
@@ -1172,15 +1166,6 @@ export default function CallLayer({ person, pillHidden = false }) {
     setSharing(false);
     if (c && c.phase !== "end") await post(c, [word(c, "call-screen-off", { video: !s.audioBeforeShare })]);
   };
-
-  // THE CALL'S SECONDS ARE COINS (iOS MTCallMint, the author's word 14.10.2026): a recorded call mints them, one not recorded
-  // burns them -- each tick names the seconds talked, and Rust takes the ones not taken yet
-  useEffect(() => {
-    const c = call, s = st.current;
-    if (!c || c.phase !== "talk" || !s.connectedAt) return;
-    const secs = Math.floor((now - s.connectedAt) / 1000);
-    if (secs > 0) invoke("call_coins", { call: c.epoch, seconds: secs, recording: !!s.tape || callRecorded(s) }).catch(() => {});
-  }, [now]);
 
   useEffect(() => {
     const stops = [];

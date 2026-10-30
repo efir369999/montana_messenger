@@ -4,7 +4,7 @@ import { t } from "./strings.js";
 import { Glyph } from "./TopBar.jsx";
 import { Face, SAVED, chatName, useChanged } from "./Chats.jsx";
 import { Page, Section } from "./Settings.jsx";
-import { TIME_CONTROLS, action, canClaimDraw, finished, games, invitation, letterText, mySide, parseLetter, remaining, replay, running, score, share, square, uci } from "./chess-core.js";
+import { TIME_CONTROLS, action, canClaimDraw, finished, games, invitation, letterText, mySide, parseLetter, remaining, replay, running, score, square, uci } from "./chess-core.js";
 import { LEVELS } from "./chess-engine.js";
 
 /** THE CHAT'S CLOCK FOR A NEW GAME (iOS MTChessSend.chatClock): ten minutes a side, offered first. */
@@ -71,10 +71,6 @@ const think = (g, level) => new Promise((done) => {
   worker.postMessage({ id, level, state: { board: p.board, turn: p.turn, castling: [...p.castling], enPassant: p.enPassant, halfmoves: p.halfmoves, ply: p.ply } });
 });
 
-/** THE POT AND WHAT THE GAME GAVE OR TOOK (iOS MTChessCoins.net), one line. */
-const potLine = (g, net) => `${t("Pot")}: ${g.stake * (g.accepted ? 2 : 1) + g.mintedMine + g.mintedTheirs}`
-  + (net != null && finished(g.status) ? ` · ${net >= 0 ? "+" : "−"}${Math.abs(net)}` : "");
-
 /** A GAME ON ITS BOARD (iOS MTChessGameScreen): with a correspondent -- the pair's one game, replayed from its letters on every
  *  change -- or with the computer; my side at the foot; a tap on my piece shows where it goes, a tap there makes the move;
  *  the clocks, the draw, the resignation, the end; a new game once this one is over. Only the invitation stands in the chat. */
@@ -87,8 +83,6 @@ export function ChessBoard({ chat, name, onClose, computer = false }) {
   const [problem, setProblem] = useState(null);
   const [now, setNow] = useState(Date.now());
   const [newClock, setNewClock] = useState(CHAT_CLOCK);
-  const [stake, setStake] = useState("");      // the coins each side puts into the pot (iOS MTChessNewGame's stake)
-  const [nets, setNets] = useState({});        // a finished pot's game: what it gave or took (iOS MTChessCoins.net)
   const [level, setLevel] = useState(() => keptComputer()?.level || 3);
   const [white, setWhite] = useState(true);
   const [thinking, setThinking] = useState(false);
@@ -98,15 +92,6 @@ export function ChessBoard({ chat, name, onClose, computer = false }) {
   useChanged(() => (computer ? undefined : look()));
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
   const pair = computer ? null : letters ? games(letters) : null;
-  // THE POT PAID AT THE END (iOS MTChessCoins.pay): each machine books its own side once, by the game's names
-  useEffect(() => {
-    if (!pair) return;
-    for (const pg of pair.games) {
-      const s = share(pg);
-      if (s) invoke("chess_settle", { chat, game: pg.id, minted: s.minted, back: s.back, put: s.put })
-        .then((net) => setNets((x) => (x[pg.id] === net ? x : { ...x, [pg.id]: net }))).catch(() => {});
-    }
-  }, [letters]);
   const g = computer ? computerGame(kept) : pair?.game || null;
   const me = g ? mySide(g) : "white";
   const commit = (l, mine) => {
@@ -121,10 +106,6 @@ export function ChessBoard({ chat, name, onClose, computer = false }) {
     if (!l) { setProblem(t("Not sent")); return; }
     if (computer) commit(l, true);
     else {
-      // THE STAKE LEAVES THE BOOK INTO THE POT before the letter does: the inviter's with the invitation, the guest's with the
-      // acceptance (iOS MTChessCoins.put); a short balance refuses the letter
-      const put = l.kind === "invite" ? l.stake || 0 : l.kind === "accept" && g?.pooled ? g.stake : 0;
-      if (put > 0 && !(await invoke("chess_stake", { chat, game: l.game, stake: put }).catch(() => false))) { setProblem(t("Not enough coins")); return; }
       const ok = await invoke("chat_send", { chat, text: letterText(l, t("Chess")) }).then(() => true).catch(() => false);
       if (!ok) setProblem(t("Not sent"));
       look();
@@ -254,11 +235,7 @@ export function ChessBoard({ chat, name, onClose, computer = false }) {
               <button key={c} role="radio" aria-checked={c === newClock} className={"slow-step" + (c === newClock ? " on" : "")} onClick={() => setNewClock(c)}>{control(c)}</button>
             ))}
           </div>
-          <label className="set-row"><span className="row-title">{t("Stake")}</span>
-            <input className="auto-coins" inputMode="numeric" placeholder="0" value={stake} aria-label={t("Stake")}
-                   onChange={(e) => setStake(e.target.value.replace(/\D/g, "").slice(0, 13))} /></label>
-          <button className="set-row accent" onClick={() => send(invitation(newClock, Date.now(), Number(stake || 0)))}><span className="row-title" style={{ color: "var(--blue)" }}>{t("Invite a correspondent")}</span></button>
-          <div className="post-note">{t("Both players put the stake into the game's pot, and every move adds a coin to it within the same one coin a second. The winner takes the whole pot; a draw gives each their own back.")}</div>
+          <button className="set-row accent" onClick={() => send(invitation(newClock))}><span className="row-title" style={{ color: "var(--blue)" }}>{t("Invite a correspondent")}</span></button>
         </Section>
       )}
       {computer && (
@@ -272,9 +249,6 @@ export function ChessBoard({ chat, name, onClose, computer = false }) {
           </div>
           <button className="set-row accent" onClick={start}><span className="row-title" style={{ color: "var(--blue)" }}>{t("Play the computer")}</span></button>
         </Section>
-      )}
-      {g && g.pooled && (g.stake > 0 || g.mintedMine + g.mintedTheirs > 0) && (
-        <div className="post-note" role="status">{potLine(g, nets[g.id])}</div>
       )}
       {g && g.notation.length > 0 && (
         <Section head={t("Moves")}>

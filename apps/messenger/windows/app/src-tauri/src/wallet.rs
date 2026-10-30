@@ -319,84 +319,8 @@ pub fn split() -> Option<(i64, i64, i64)> {
     SPLIT.lock().unwrap().map(|(p, d, h, ..)| (p, d, h))
 }
 
-/// AN UNRECORDED CALL BURNS ON THE CHAIN (iOS MTCoinTx.owe, fold-7): from the online cut, the first second the node takes a BURN, the
-/// seconds a call burns are owed in the person's folder and laid as one BURN on my chain's head (burn_owed).
-pub fn owe_burn(vault: &Vault, coins_: i64) {
-    if coins_ <= 0 || crate::wire::now_ms() / 1000 < cointx::ONLINE_CUT {
-        return;
-    }
-    let mut s = state(vault);
-    s["burn"]["owed"] = json!(s["burn"]["owed"].as_i64().unwrap_or(0).saturating_add(coins_));
-    save(vault, &s);
-    BURN_DUE.lock().unwrap().get_or_insert(crate::wire::now_ms() + cointx::WINDOW * 1000);
-}
-/// When the owed goes (iOS owe → burnDue, burnNow): a window after the first second owed while a call talks, at once at its end.
-static BURN_DUE: Mutex<Option<i64>> = Mutex::new(None);
-/// The call's last seconds go to the chain at its end, not a window later (iOS MTCoinTx.burnNow).
-pub fn burn_now(vault: &Vault) {
-    let s = state(vault);
-    if s["burn"]["owed"].as_i64().unwrap_or(0) > 0 || s["burn"]["rec"].is_string() {
-        *BURN_DUE.lock().unwrap() = Some(0);
-    }
-}
-/// Whether the owed is due now; asked, it is taken.
-pub fn burn_due() -> bool {
-    let mut due = BURN_DUE.lock().unwrap();
-    if due.is_some_and(|t| t <= crate::wire::now_ms()) {
-        *due = None;
-        return true;
-    }
-    false
-}
-
-/// THE OWED LAID AS ONE BURN (iOS burnOwed): a BURN an ended run or a lost answer left goes first to its node's word -- the owed it
-/// covered falls only if the node took it, so no second burns twice; then what is owed, as far as the chain holds it, as the book's
-/// burn stops at its balance. The record is kept before it goes and waits for its node's word when the answer is lost.
-pub fn burn_owed(vault: &Vault, h: &Hands) {
-    let me = h.from();
-    let Some(door) = cointx::chain_door(&me) else { return };
-    let mut s = state(vault);
-    if let Some(rec) = s["burn"]["rec"].as_str().and_then(crate::wire::unb64) {
-        let mut left = ask(&door, "/tx-get", &json!({ "id": cointx::name(&rec) })).0 == 200;
-        if !left {
-            let (code, _) = ask(&door, "/tx-put", &json!({ "rec": crate::wire::b64(&rec) }));
-            if code == -1 {
-                return; // no word yet: the record waits
-            }
-            left = code == 200;
-        }
-        let (owed, covers) = (s["burn"]["owed"].as_i64().unwrap_or(0), s["burn"]["covers"].as_i64().unwrap_or(0));
-        s["burn"] = json!({ "owed": if left { (owed - covers).max(0) } else { owed } });
-        save(vault, &s);
-        mark(&format!("burn settled left={left} covers={covers}"));
-    }
-    let owing = s["burn"]["owed"].as_i64().unwrap_or(0);
-    if owing <= 0 || crate::wire::now_ms() / 1000 < cointx::ONLINE_CUT {
-        return;
-    }
-    let (code, word, rec) = lay_on_head(h, &|c| {
-        if !c.v3 || c.now < cointx::ONLINE_CUT {
-            return None;
-        }
-        let amount = owing.min(c.proven + c.declared);
-        if amount <= 0 {
-            return None;
-        }
-        let rec = cointx::build3(h, Kind::Burn, amount as u64, birth_ms(), &c.head, &nonce(), &[0; 32], &[0; 32], ZERO, (amount - c.proven).max(0) as u64, 0)?;
-        let mut s = state(vault);
-        s["burn"] = json!({ "owed": s["burn"]["owed"].as_i64().unwrap_or(owing), "covers": owing, "rec": crate::wire::b64(&rec) });
-        save(vault, &s);
-        Some(rec)
-    });
-    mark(&format!("burn code={code} word={word} owed={owing}"));
-    if rec.is_none() || code == -1 {
-        return; // nothing laid, or the answer was lost: the record waits for its node's word
-    }
-    let mut s = state(vault);
-    let owed = s["burn"]["owed"].as_i64().unwrap_or(0);
-    s["burn"] = json!({ "owed": if code == 200 { (owed - owing).max(0) } else { owed } });
-    save(vault, &s);
-}
+// A CALL MOVES NO COIN (the author's word 29.10.2026 19:31 UTC, council link 11871; iOS 21c95645 «Calls move no coin»): the
+// call's chain burn (owe, burn_now, burn_owed) is gone; an owed left in the folder by the builds before is read by nothing.
 
 fn state(vault: &Vault) -> Value {
     vault.get(STATE).and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_else(|| json!({ "k": {}, "told": {}, "open": [] }))
@@ -743,21 +667,6 @@ mod tests {
             silent.push(door);
         }
         panic!("no chain node answers: {silent:?}");
-    }
-
-    /// THE CALL'S END LAYS ITS BURN AT ONCE (iOS burnNow): nothing owed, nothing is due; owed, the end makes it due now, and once
-    #[test]
-    fn a_call_end_makes_the_owed_burn_due_at_once() {
-        let (v, dir, _) = throwaway();
-        burn_now(&v);
-        assert!(!burn_due(), "nothing owed, nothing due");
-        let mut s = state(&v);
-        s["burn"]["owed"] = json!(5);
-        save(&v, &s);
-        burn_now(&v);
-        assert!(burn_due(), "the owed goes at the call's end");
-        assert!(!burn_due(), "and only once");
-        let _ = std::fs::remove_dir_all(dir);
     }
 
     /// THROUGH THE NODES, TWO THROWAWAY KEYS (test identities only, the owner's word 21.10.2026 19:0x): each chain opens with its

@@ -1287,11 +1287,6 @@ fn coin_walk(app: AppHandle) {
             if tick % beat == 5 {
                 wallet::reconcile(&m.vault, h, false);
             }
-            // what an ended run owed for its calls, once the walk stands; then a talking call's seconds once a window and at its end
-            // (iOS launch → burnOwed, owe, burnNow)
-            if tick == 35 || wallet::burn_due() {
-                wallet::burn_owed(&m.vault, h);
-            }
             // the auto-reactions named by the letters' landings: each a SEND under its letter (iOS autoGive)
             for (r, mid, c) in wallet::auto_take() {
                 let paid = m.desk(&p).is_some_and(|d| d.give(&r, &mid, c, &format!("auto:mid:{mid}"), Some(h)));
@@ -1396,36 +1391,6 @@ async fn coin_rate_set(m: State<'_, Messenger>, amount: f64, per: String, code: 
         m.vault.set(RATE, b"");
     }
     Ok(())
-}
-
-/// A CALL'S SECONDS (iOS MTCallMint.mintSecond): the seconds a talking call has talked since the last it named -- minted while this
-/// side records it, burned while it does not (the author's word 14.10.2026), each call in a window of its own.
-static CALL_SECONDS: std::sync::Mutex<Vec<(String, i64)>> = std::sync::Mutex::new(Vec::new());
-#[tauri::command]
-async fn call_coins(m: State<'_, Messenger>, call: String, seconds: i64, recording: bool) -> Result<i64, ()> {
-    let fresh = {
-        let mut all = CALL_SECONDS.lock().unwrap();
-        let base = all.iter().find(|(c, _)| *c == call).map(|(_, s)| *s).unwrap_or((seconds - 1).max(0));
-        let fresh = seconds - base;
-        all.retain(|(c, _)| *c != call);
-        all.push((call.clone(), seconds.max(base)));
-        while all.len() > 8 {
-            all.remove(0);
-        }
-        fresh
-    };
-    if fresh <= 0 {
-        return Ok(0);
-    }
-    let prefix = format!("{}{call}:", if recording { coins::CALL_MINT } else { coins::CALL_BURN });
-    let out = coins::in_window(&m.vault, coins::PRICE * fresh, &prefix, fresh, !recording);
-    if !recording {
-        // the chain's balance is the person's, not the book's: the whole price is owed to the chain whatever the book could burn
-        // (iOS MTCallMint, fold-7)
-        wallet::owe_burn(&m.vault, coins::PRICE * fresh);
-    }
-    trace_line(&format!("coins call={} seconds={fresh} recording={recording} coins={out}", call.chars().take(12).collect::<String>()));
-    Ok(out)
 }
 
 /// THE PANTHEON ON FIRE of this process's person (iOS MTPantheon.shared).
@@ -2826,7 +2791,6 @@ async fn call_end(app: AppHandle, chat: String, seed: String, video: bool, incom
         }
         calls::bury(&m.vault, &seed);
         calls::unhold(&m.vault, Some(&seed));
-        wallet::burn_now(&m.vault);   // the call's last seconds go to the chain at its end (iOS MTCallMint.finish → burnNow)
         if row != Some(false) {
             calls::log_row(&m.book, &chat, video, incoming, seconds, missed);
         }
@@ -2900,37 +2864,6 @@ fn route_now() -> String {
     }
     #[cfg(not(windows))]
     String::new()
-}
-
-/// THE STAKE LEAVES THE BOOK INTO THE GAME'S POT (iOS MTChessCoins.put): a stake already put is not put twice; a short balance
-/// refuses it.
-#[tauri::command]
-async fn chess_stake(m: State<'_, Messenger>, chat: String, game: String, stake: i64) -> Result<bool, ()> {
-    if stake <= 0 || game.len() != 36 || groups::is_group(&chat) {
-        return Ok(stake == 0);
-    }
-    let pot = format!("chess-pot:{game}");
-    if stake <= coins::on_target(&m.vault, &pot) {
-        return Ok(true);
-    }
-    Ok(coins::moved(&m.vault, "spend", stake, &format!("chess-stake:{game}"), Some(&chat), Some(&pot)))
-}
-
-/// THE POT PAID AT THE END (iOS MTChessCoins.pay): this side's share booked once, by the game's names -- the moves' coins minted
-/// through the second's one coin, the stakes coming back; what the game gave or took (iOS net).
-#[tauri::command]
-async fn chess_settle(m: State<'_, Messenger>, chat: String, game: String, minted: i64, back: i64, put: i64) -> Result<i64, ()> {
-    if game.len() != 36 || groups::is_group(&chat) || minted < 0 || back < 0 || put < 0 {
-        return Err(());
-    }
-    let pot = format!("chess-pot:{game}");
-    if minted > 0 && coins::mint_named(&m.vault, minted, &pot, None) > 0 {
-        trace_line(&format!("chess_coin pot minted game={}", &game[..8]));
-    }
-    if back > 0 && coins::moved(&m.vault, "receive", back, &format!("chess-back:{game}"), Some(&chat), None) {
-        trace_line(&format!("chess_coin back={back} game={}", &game[..8]));
-    }
-    Ok(coins::booked(&m.vault, "earn", &pot) + back - put)
 }
 
 /// COINS ON A CORRESPONDENT'S LETTER (iOS MTCoinSend.react): false when the balance is short.
@@ -4632,7 +4565,6 @@ pub fn run() {
             wallet_tap,
             wallet_touch,
             wallet_pull,
-            call_coins,
             coin_send,
             coin_send_own,
             home_node_state,
@@ -4753,8 +4685,6 @@ pub fn run() {
             protocol_core,
             coin_rate_set,
             coin_moves_all,
-            chess_stake,
-            chess_settle,
             auto_react,
             coins_shown,
             levels_set,
