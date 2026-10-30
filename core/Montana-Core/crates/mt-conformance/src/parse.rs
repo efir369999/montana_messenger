@@ -1445,27 +1445,47 @@ pub fn check_wire(md: &str) -> Result<(), String> {
         return Err("wire divergence: the group of the vector reconstructs to other blocks".to_string());
     }
 
-    // The four flights and the two directional keys.
+    // The four flights: the key of the first flight's seal, the transcript, the master and the four
+    // keys that come of it.
     let hs = parse_labeled(md, HANDSHAKE_HEADER)?;
     let named = labeled(&hs, "suite_id")?;
     let suite_id = u16::try_from(leading_number(bare_input(named))?)
         .map_err(|e| format!("a suite beyond two bytes: {e}"))?;
     let id_pk_i = fixed_part(input_of(named, "id_pk_i")?)?;
     let id_pk_r = fixed_part(input_of(named, "id_pk_r")?)?;
-    let keys = labeled(&hs, "pk_i")?;
-    let pk_i = fixed_part(bare_input(keys))?;
+    let keys = labeled(&hs, "pk_s")?;
+    let pk_s = fixed_part(bare_input(keys))?;
+    let pk_i = fixed_part(input_of(keys, "pk_i")?)?;
     let pk_r = fixed_part(input_of(keys, "pk_r")?)?;
-    let ct_i = fixed_part(input_of(keys, "ct_i")?)?;
-    let ct_r = fixed_part(input_of(keys, "ct_r")?)?;
-    let secrets = labeled(&hs, "ss_i")?;
-    let ss_i = repeat32(bare_input(secrets))?;
+    let cts = labeled(&hs, "ct_s")?;
+    let ct_s = fixed_part(bare_input(cts))?;
+    let ct_r = fixed_part(input_of(cts, "ct_r")?)?;
+    let ct_i = fixed_part(input_of(cts, "ct_i")?)?;
+    let secrets = labeled(&hs, "ss_s")?;
+    let ss_s = repeat32(bare_input(secrets))?;
     let ss_r = repeat32(input_of(secrets, "ss_r")?)?;
+    let ss_i = repeat32(input_of(secrets, "ss_i")?)?;
+    compare_hash(
+        "k_hello",
+        labeled(&hs, "k_hello")?,
+        &mt_wire::handshake::hello_key(&ss_s, suite_id, &pk_s, &pk_i, &ct_s),
+    )?;
     let transcript = mt_wire::handshake::transcript(
-        suite_id, &id_pk_i, &id_pk_r, &pk_i, &pk_r, &ct_i, &ct_r,
+        suite_id, &id_pk_i, &id_pk_r, &pk_s, &pk_i, &pk_r, &ct_s, &ct_r, &ct_i,
     );
     compare_hash("transcript", labeled(&hs, "transcript")?, &transcript)?;
-    let master = mt_wire::handshake::master(&ss_i, &ss_r, &transcript);
+    let master = mt_wire::handshake::master(&ss_s, &ss_r, &ss_i, &transcript);
     compare_hash("master", labeled(&hs, "master")?, &master)?;
+    compare_hash(
+        "k_seal_i",
+        labeled(&hs, "k_seal_i")?,
+        &mt_wire::handshake::initiator_seal(&master),
+    )?;
+    compare_hash(
+        "k_seal_r",
+        labeled(&hs, "k_seal_r")?,
+        &mt_wire::handshake::responder_seal(&master),
+    )?;
     compare_hash(
         "k_i2r",
         labeled(&hs, "k_i2r")?,
@@ -2845,6 +2865,7 @@ pub const DOMAINS_AWAITING_A_VECTOR: &[(&str, &str)] = &[
     ("mt-seed", "the birth of a person"),
     ("mt-account-key", "the birth of a person"),
     ("mt-node-key", "the birth of a person"),
+    ("mt-node-kem", "the birth of a person"),
     ("mt-note-key", "the birth of a person"),
     ("mt-nf-key", "the birth of a person"),
     ("mt-note-pk", "the birth of a person"),

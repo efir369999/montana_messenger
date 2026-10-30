@@ -23,19 +23,32 @@ Identity. Windows and quorum — Consensus. Why any of it must hold — Constitu
 Everything below rests on a secret two devices hold and nobody else does, so this is where that
 secret begins.
 
-Two devices that have never spoken agree on one by a post-quantum key agreement: each sends a
-key encapsulation to the other under ML-KEM-768, each opens what it received, and the two
-resulting values are folded together with the transcript of the exchange into a master secret
-under the domain Canon names for it. From that master secret two directional keys are derived,
-one for each direction of the handshake, so a value that protects what one side sends never
-protects what the other sends.
+Two devices that have never spoken agree on one by a post-quantum key agreement. The side that
+opens the connection holds an acquaintance of the other — an address, the key it answers with and a
+static ML-KEM-768 key — and makes a first encapsulation to that static key; then each sends a key
+encapsulation to the other under ML-KEM-768 drawn for this handshake alone, each opens what it
+received, and the three resulting values are folded together with the transcript of the exchange
+into a master secret under the domain Canon names for it. From that master secret two directional
+keys are derived, one for each direction of the handshake, so a value that protects what one side
+sends never protects what the other sends.
 
 **Both sides prove who they are, and neither says who they are to anyone else.** Each signs the
 transcript with its ML-DSA identity key, and the signature covers the key material of the
 exchange, so an attacker who relays the messages of two honest devices cannot place itself in
-the middle: the transcripts it would have to sign are not the ones it holds. The identity keys
-are exchanged inside the encapsulation, never in the open, so an observer of the wire learns
-neither key.
+the middle: the transcripts it would have to sign are not the ones it holds. The identity key of
+the side that opened crosses only sealed under a key of the first encapsulation, the identity key
+of the other side never crosses because the acquaintance already holds it, and both signatures
+cross sealed under keys of the master, so an observer of the wire learns neither key and can test
+no signature against a key it suspects.
+
+**A machine answers only whoever was handed its acquaintance.** A first flight that was not made to
+its static key opens to nothing, and the machine writes not one byte: it holds the connection the
+way it holds a first flight left unfinished, reading and discarding until the far side ends it or
+falls silent for the patience, and only then lets it go. Ending the connection at the last unit of
+a refused flight would answer a probe by its own length — one unit short held, the full count
+closed at once — so the refusal is not allowed to be sooner than an unfinished flight. A side
+scanning addresses learns that something accepts a connection there, which is what it learns of a
+closed device, and not that it is a machine.
 
 **The transcript is the binding, and it is exposed on purpose.** Both sides compute the same
 value from the exchange, and each signature covers it, so a handshake whose transcript the two
@@ -52,10 +65,11 @@ retroactively would open every letter that ever crossed it.
 
 **Invariants of the exchange:**
 
-- Every secret of a handshake derives from both encapsulations and the transcript; a derivation from one side's material alone is a defect that hands the handshake to whoever supplied it.
+- Every secret of a handshake derives from all three encapsulations and the transcript; a derivation from one side's material alone is a defect that hands the handshake to whoever supplied it.
 - The two directions carry different keys, derived under different domains.
 - Both identity signatures cover the transcript, and a handshake whose signature does not verify is abandoned in silence rather than answered.
-- The identity keys travel inside the encapsulation and never in the open.
+- The identity keys travel inside the encapsulation and never in the open: the initiator's sealed under the first encapsulation, the responder's not at all, and both signatures sealed.
+- A first flight that does not open under the static key of the machine it reached is answered by no byte.
 - The transcript value the two sides compare is the same value or the handshake is not theirs.
 
 ## There is no address
@@ -794,7 +808,7 @@ needed them would have no privacy of its own.
 | an observer of both ends of one delivery | the correlation of envelopes, at a price set by the delay profile and the volume carried — the single case the transport invariant does not close |
 | an adversary who tears connections | nothing: the set of entries is a function of the period, not of events |
 | an adversary who delays traffic in a pattern | loss rather than a watermark, and loss is repaired by the erasure code |
-| an adversary scanning for participants | the fact that some machine answers at some address, and no way to tell whether it is a machine |
+| an adversary scanning for participants | the fact that something accepts a connection at some address, and then silence: a first flight not made to the static key of that machine is answered by no byte, which is what a closed device gives, so there is no way to tell whether it is a machine |
 | that a device is at its ceiling of links | closed: a refusal is silence and reads exactly as an address where nothing listens |
 | that a link carried nothing in a window | **observable to the device holding it, and to nobody else**: it is the one fact the release stands on, it names no person and no machine, and it leaves the device with the window it was read in |
 | whoever takes a device, or a copy of its storage | every pipe of that device from the window of the taking on, and nothing before it: the secret of a pipe walks one way and the earlier values are erased, so a cell recorded earlier stays sealed. **What follows the taking is named rather than closed**: the walk alone does not heal, so the pipe is read from that window until the correspondents complete a heal the taker did not alter or strip ("How a link renews its keys") or establish a new secret; a taker that keeps the device keeps reading, and a device is its holder's to guard |
@@ -818,7 +832,10 @@ needed them would have no privacy of its own.
 | that a device serves this tenant | **a named physical prohibition**: a machine serving a tenant receives that tenant's bytes by the definition of serving, and being served while invisible to the server cannot both hold. What it does not learn is what is carried; and where the device is the tenant's own, there is no second party left to know |
 | that a device went on or off, and that mail arrived near that moment | closed: the link of a sleeping device is held by the reachable side out of the transit it carries anyway, so switching on and off is not an event of the network and intersection by presence has nothing to intersect |
 | the machine a cell is being carried toward | **deliberately observable to a hop**: routing cannot move a cell toward a target without naming the target. It names a machine and never a party, many pipes of many strangers share one holder in one window, and nothing of the sender, the recipient or the letter follows from it |
-| that a machine answers at an address | **a named physical prohibition**: answering is observable at the wire; what it does not reveal is whose it is or whether it is a machine |
+| that a machine answers at an address | **a named physical prohibition**: accepting a connection is observable at the wire; what it does not reveal is whose it is or whether it is a machine, since a first flight not made to its static key is answered by no byte and held exactly as an unfinished one is. **One limit is named**: a side that keeps sending past a whole first flight is read no further than the largest message of this wire, and then the connection ends — the bound that keeps a stranger from holding a thread without end, observable only to a side that sends that much |
+| that an address is a machine, to whoever holds its acquaintance | **deliberately observable to that holder, and named**: the acquaintance is what lets a first flight open, so whoever was handed one can confirm the machine it names. The acquaintances of the opening machines travel inside every client, so those machines stay confirmable by anybody until their lines leave the client |
+| the identity key of an initiator, to whoever later takes the responder's machine secret | **a named limit**: the key crosses sealed under the encapsulation to the responder's static key, so a taker of that machine's secret who recorded first flights opens the identity keys of their initiators. The channel keys do not follow: they fold both encapsulations drawn for the handshake alone, which the taking does not open |
+| that a recorded first flight is replayed to its machine | **observable to the replayer, and named**: the machine opens it and answers with fresh values, and the replayer, holding no signature key of the initiator, finishes nothing; what it learns is that the address is the machine the flight was made to, which the recording already showed it |
 | that some record asked what a slot publishes in a window | **deliberately observable to the answering machine**: it sees a slot and a nullifier that names nobody, and learns neither who asked nor whether anything followed |
 | that a person claimed no name | closed: claiming is an act and not claiming is not, so nothing is published either way; a correspondence begun by acquaintance is indistinguishable from one begun by a name, and no quantity marks a record as nameless |
 | that a contact point of a claimed name was used | **claimed by the person, not created by the protocol**: the point exists only where a name was published by a deliberate act, it is computable by anyone who knows that name, and it yields no address, no record, no other name and no evidence that a deposit was collected. What is deposited there is a request and never a letter, so no correspondence crosses it and nothing of one — content, size or moment — is observable at it. Requests enter the canonical slot like all others, so their number and moment carry no signal |
