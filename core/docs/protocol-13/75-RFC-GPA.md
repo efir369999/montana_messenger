@@ -1,8 +1,16 @@
 # 75. RFC: GPA resistance, padding, post-quantum forward secrecy, queue resynchronization
 
-**Status: open (council point 1). Requirement 3 is answered by the section "How a link renews its
-keys" of Network, which the Author adopted on 2026-10-29 (decision 333 = (b), record 338); its code
-follows at stage 18, after the network run of issue #24. This file itself is not normative: the
+**Status: answered (council point 1, closed with TestFlight build 2324 of the iOS client).
+Requirement 1: the [I-16] game is written, its KIND case is proved (Theorem 1), and the Author
+restated [I-16] as Claim C3′ (decision 436 = (a)); the bound `ε` for REL and ORIG is the measurement
+of stage 22 under #22. Requirement 3 is answered by the section "How a link renews its keys" of
+Network, adopted on 2026-10-29 (decision 333 = (b), record 338), and its wire code is merged (PR
+#125); the iOS client receives and opens a heal (decision 416 = (a)). A machine check of crossing
+heals (`docs/issue-75/paper/check_lemma5.py` of the iOS repository) found that the client's rule for
+letting go of an unopened answer loses the pipe when an offer of an earlier window arrives late; it
+cannot happen while sending a heal is off (decision 416), and its fix waits on the Author (record
+438). Requirements 2 and 4 are
+refused below, each with the norm that forbids it. This file itself is not normative: the
 section of Network and its form in Canon are. Line references below were read on the branch named
 next and may since have moved.**
 
