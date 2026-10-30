@@ -1419,8 +1419,9 @@ pub fn live_doing(
         let mut history = HistoricalRounds::default();
         // The count of this machine's askings in this window: the clock the spans of the agreement
         // run on, which is conduct and enters no rule of acceptance. An asking is the unit of this
-        // machine's waiting, the mean pause `ASKS_AGAIN_AFTER`, and the count is read off how long the machine has
-        // stood in the window in those units rather than off the turns of its loop: a machine
+        // machine's waiting, the mean pause `ASKS_AGAIN_AFTER`, and the count is read off how long
+        // the machine has stood in the window in those units rather than off the turns of its loop
+        // or the count of its pauses, which are drawn (`drawn_pause`): a machine
         // turning rounds or reading a whole window at every turn would count a span in minutes
         // while its neighbour standing still counted it in seconds, and the honest machines would
         // never enter an attempt together (seen on four machines, 23.10.2026).
@@ -3586,8 +3587,8 @@ mod the_next_stride {
 mod the_pause {
     use super::{drawn_pause, ASKS_AGAIN_AFTER};
 
-    // A pause is drawn within half to one and a half of the mean, and the pauses do not keep a beat:
-    // the named wrong implementation is the fixed pause of 25 ms, every one of which would be equal.
+    // A pause is drawn within half to one and a half of the mean, and the pauses keep no beat: the
+    // named wrong implementation is the fixed pause of 25 ms, every one of which would be equal.
     #[test]
     fn a_pause_is_drawn_about_its_mean_and_keeps_no_beat() {
         let mean = ASKS_AGAIN_AFTER;
