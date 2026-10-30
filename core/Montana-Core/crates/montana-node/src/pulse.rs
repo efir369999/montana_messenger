@@ -3595,9 +3595,15 @@ mod the_pause {
         let pauses: Vec<_> = (0..64).map(|_| drawn_pause(mean)).collect();
         for pause in &pauses {
             assert!(*pause >= mean / 2, "{pause:?} under half the mean");
-            assert!(*pause < mean * 3 / 2, "{pause:?} past one and a half of the mean");
+            assert!(
+                *pause < mean * 3 / 2,
+                "{pause:?} past one and a half of the mean"
+            );
         }
-        assert!(pauses.iter().any(|pause| *pause != pauses[0]), "a fixed beat");
+        assert!(
+            pauses.iter().any(|pause| *pause != pauses[0]),
+            "a fixed beat"
+        );
         // The pause of a redial is drawn the same way about its own mean.
         let redial = mean * 400;
         let drawn = drawn_pause(redial);
