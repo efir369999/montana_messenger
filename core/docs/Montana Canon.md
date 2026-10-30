@@ -4992,6 +4992,7 @@ derived from it.
 | `cell_bytes` — the one length of everything that crosses the wire | 1 232 |
 | `erasure_group` — cells per group of a delivery, of which a quarter is parity | 16 |
 | `path_max` — slots in the seal array of a cell, and therefore the reach of one delivery | 15 |
+| `rekey_units` — units a side seals under one sending key of a link before it offers a renewal (Network, "How a link renews its keys") | 8 388 608 |
 
 ## Layouts
 

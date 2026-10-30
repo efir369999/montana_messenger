@@ -229,6 +229,11 @@ pub struct Link {
     // new one: the far side seals under it until it has taken the renewal in.
     previous_receiving: Option<Key>,
     renewal: Renewal,
+    // The units this side has sealed under its current sending key, and the ceiling at which it
+    // offers a renewal whatever the window (`rekey_units` of the Decree). The count is this side's
+    // own, of what it sealed, and never crosses the wire, so nothing can diverge on it.
+    sealed: usize,
+    ceiling: usize,
     // The latest window whoever runs this side has told it, and the window the secret of the link
     // was set in. A link reads no clock and no chain: the window is told to it, and the first window
     // it is told stands for the window of its handshake.
@@ -318,10 +323,11 @@ impl Closer {
 }
 
 impl Link {
-    fn standing(stream: TcpStream, channel: Channel, opened_it: bool) -> Self {
+    fn standing(stream: TcpStream, channel: Channel, opened_it: bool) -> Result<Self, NetError> {
+        let ceiling = mt_wire::rekey_units().map_err(wire)?;
         let secret = Zeroizing::new(*channel.master());
         let (sending, receiving) = directional(&secret, opened_it);
-        Self {
+        Ok(Self {
             stream,
             transcript: *channel.transcript(),
             opened_it,
@@ -330,9 +336,11 @@ impl Link {
             receiving,
             previous_receiving: None,
             renewal: Renewal::Idle,
+            sealed: 0,
+            ceiling,
             window: None,
             set_in: None,
-        }
+        })
     }
 
     // What a caller compares out of band to know it reached the machine it meant. The transcript
@@ -356,14 +364,16 @@ impl Link {
         }
     }
 
-    // A renewal is due when this side is in a window later than the one its secret was set in and no
-    // renewal of either side is under way: a link renews once in a window.
+    // A renewal is due when no renewal of either side is under way and this side is in a window
+    // later than the one its secret was set in, or has sealed `rekey_units` units under its sending
+    // key: a link renews once in a window, and a window that stalls holds no key over a volume
+    // without bound.
     fn due(&self) -> bool {
         let later = match (self.set_in, self.window) {
             (Some(set), Some(now)) => now > set,
             _ => false,
         };
-        later && matches!(self.renewal, Renewal::Idle)
+        (later || self.sealed >= self.ceiling) && matches!(self.renewal, Renewal::Idle)
     }
 
     // A message crosses as the pieces its own count names, each sealed into a unit of the one
@@ -375,15 +385,20 @@ impl Link {
             let label = mt_wire::draw::label().map_err(wire)?;
             let unit = link::seal_unit(&self.sending, &label, piece).map_err(wire)?;
             write_whole(&mut self.stream, &unit)?;
+            self.sealed = self.sealed.saturating_add(1);
         }
         Ok(())
     }
 
-    // A message of a caller, sent under the keys the link holds and renewing nothing: a side that
-    // has not been told its window cannot know a renewal is due.
+    // A message of a caller, sent under the keys the link holds. A side that has not been told its
+    // window cannot know the window has moved, but it knows its own count: at the ceiling it offers
+    // before the message exactly as it would in a later window.
     pub fn send(&mut self, kind: Kind, message: &[u8]) -> Result<(), NetError> {
         if of_a_renewal(kind) {
             return Err(NetError::RenewalOutOfTurn);
+        }
+        if self.due() {
+            self.offer()?;
         }
         self.seal(kind, message)
     }
@@ -397,10 +412,7 @@ impl Link {
             return Err(NetError::RenewalOutOfTurn);
         }
         self.learn_window(window);
-        if self.due() {
-            self.offer()?;
-        }
-        self.seal(kind, message)
+        self.send(kind, message)
     }
 
     fn offer(&mut self) -> Result<(), NetError> {
@@ -619,6 +631,7 @@ impl Link {
         let (sending, receiving) = directional(&next, self.opened_it);
         self.secret = next;
         self.sending = sending;
+        self.sealed = 0;
         self.previous_receiving = Some(std::mem::replace(&mut self.receiving, receiving));
         self.set_in = self.window;
     }
@@ -694,7 +707,7 @@ pub fn dial(to: &Acquaintance, answering: &Answering) -> Result<Link, NetError> 
         &confirm,
     )
     .map_err(NetError::Handshake)?;
-    Ok(Link::standing(stream, channel, true))
+    Link::standing(stream, channel, true)
 }
 
 // A machine reachable from outside answers links it did not choose. What it answers with is the
@@ -753,7 +766,7 @@ impl Door {
                 .map_err(NetError::Handshake)?,
         };
         write_flight(&mut stream, &confirm.encode())?;
-        Ok(Link::standing(stream, channel, false))
+        Link::standing(stream, channel, false)
     }
 }
 
@@ -925,6 +938,47 @@ mod tests {
         let unit = link::seal_unit(&old, &label, &pieces[0]).expect("sealed");
         write_whole(&mut opened.stream, &unit).expect("written");
         assert!(answered.receive().is_err());
+    }
+
+    // The ceiling: a side that is never told a window still renews once it has sealed `rekey_units`
+    // units under one sending key, and its count begins again under the new key.
+    #[test]
+    fn a_side_at_the_ceiling_renews_without_a_window_and_counts_again() {
+        let (mut opened, mut answered) = met();
+        assert_eq!(
+            opened.ceiling,
+            mt_wire::rekey_units().expect("the Decree names it")
+        );
+        opened.ceiling = 3;
+        let first = *opened.secret;
+        // A query is one unit, so three of them reach the ceiling and nothing renews before it.
+        for n in 0..3 {
+            opened
+                .send(Kind::StateQuery, &query(n))
+                .expect("it crosses");
+            answered.receive().expect("it arrives");
+        }
+        assert!(at_rest(&opened) && opened.sealed == 3);
+        // The next message goes behind an offer, under the keys the link holds.
+        opened
+            .send(Kind::StateQuery, &query(3))
+            .expect("it crosses");
+        assert!(has_offered(&opened));
+        answered.receive().expect("it arrives");
+        assert!(awaits_finish(&answered));
+        answered
+            .send(Kind::StateQuery, &query(4))
+            .expect("it crosses");
+        opened.receive().expect("it arrives");
+        assert_ne!(*opened.secret, first);
+        assert_eq!(opened.sealed, 0);
+        opened
+            .send(Kind::StateQuery, &query(5))
+            .expect("it crosses");
+        answered.receive().expect("it arrives");
+        agree(&opened, &answered);
+        assert_eq!(opened.sealed, 1);
+        assert!(at_rest(&opened) && at_rest(&answered));
     }
 
     #[test]
