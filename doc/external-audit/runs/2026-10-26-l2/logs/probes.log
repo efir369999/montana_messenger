@@ -1,0 +1,58 @@
+   Compiling version_check v0.9.5
+   Compiling libc v0.2.186
+   Compiling cfg-if v1.0.4
+   Compiling typenum v1.20.1
+   Compiling shlex v1.3.0
+   Compiling cpufeatures v0.2.17
+   Compiling cc v1.2.16
+   Compiling generic-array v0.14.7
+   Compiling zeroize v1.8.1
+   Compiling subtle v2.6.1
+   Compiling opaque-debug v0.3.1
+   Compiling ahash v0.7.8
+   Compiling once_cell v1.21.4
+   Compiling openssl-src v300.5.5+3.5.5
+   Compiling inout v0.1.4
+   Compiling block-buffer v0.10.4
+   Compiling mt-codec v1.2.0 (/srv/montana/audit-issue2-552/source/core/Code/crates/mt-codec)
+   Compiling parking_lot_core v0.8.6
+   Compiling instant v0.1.13
+   Compiling scopeguard v1.2.0
+   Compiling mt-crypto-native v1.2.0 (/srv/montana/audit-issue2-552/source/core/Code/crates/mt-crypto-native)
+   Compiling smallvec v1.15.1
+   Compiling libm v0.2.16
+   Compiling getrandom v0.2.15
+   Compiling rand_core v0.6.4
+   Compiling crypto-common v0.1.7
+   Compiling lock_api v0.4.14
+   Compiling universal-hash v0.5.1
+   Compiling digest v0.10.7
+   Compiling cipher v0.4.4
+   Compiling sha2 v0.10.9
+   Compiling poly1305 v0.8.0
+   Compiling chacha20 v0.9.1
+   Compiling aead v0.5.2
+   Compiling chacha20poly1305 v0.10.1
+   Compiling hashbrown v0.12.3
+   Compiling reed-solomon-erasure v6.0.0
+   Compiling parking_lot v0.11.2
+   Compiling lru v0.7.8
+   Compiling spin v0.9.8
+   Compiling mt-mnemonic v1.2.0 (/srv/montana/audit-issue2-552/source/core/Code/crates/mt-mnemonic)
+   Compiling mt-crypto v1.2.0 (/srv/montana/audit-issue2-552/source/core/Code/crates/mt-crypto)
+   Compiling mt-merkle v1.2.0 (/srv/montana/audit-issue2-552/source/core/Code/crates/mt-merkle)
+   Compiling mt-messenger-e2e v1.2.0 (/srv/montana/audit-issue2-552/source/core/Code/crates/mt-messenger-e2e)
+   Compiling mt-state v1.2.0 (/srv/montana/audit-issue2-552/source/core/Code/crates/mt-state)
+   Compiling mt-overlay v1.2.0 (/srv/montana/audit-issue2-552/source/core/Code/crates/mt-overlay)
+   Compiling montana-audit-premises v0.1.0 (/srv/montana/audit-issue2-552/source/doc/external-audit/probes)
+    Finished `release` profile [optimized] target(s) in 2m 47s
+     Running tests/premises.rs (/srv/montana/audit-issue2-552/target-probes/release/deps/premises-dfb313c0d1a38d92)
+
+running 4 tests
+test authenticated_sealing_preserves_the_plaintext_length_difference ... ok
+test bucket_padding_is_not_a_single_wire_width ... ok
+test one_time_fetch_nonce_is_distinct_from_the_queue_identifier ... ok
+test a_queue_identifier_accepts_multiple_distinct_authorized_messages ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

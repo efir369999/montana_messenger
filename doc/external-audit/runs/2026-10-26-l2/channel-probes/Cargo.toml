@@ -1,0 +1,13 @@
+[package]
+name = "montana-channel-audit"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.92"
+publish = false
+
+[workspace]
+
+[dev-dependencies]
+mt-noise-pq = { path = "../../../../../core/Code/crates/mt-noise-pq" }
+mt-crypto = { path = "../../../../../core/Code/crates/mt-crypto" }
+mt-messenger-e2e = { path = "../../../../../core/Code/crates/mt-messenger-e2e" }

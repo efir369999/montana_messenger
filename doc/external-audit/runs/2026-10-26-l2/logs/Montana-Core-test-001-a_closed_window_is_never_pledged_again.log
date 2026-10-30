@@ -1,0 +1,6 @@
+
+running 1 test
+test a_window_this_machine_closed_is_refused_running_and_after_a_restart ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 38.77s
+

@@ -1,0 +1,65 @@
+{
+  "source_pin": "a835c1c3ff4bc95ea3c75e02391d3d69e2e08833",
+  "host_role": "L2 isolated audit",
+  "rust": "1.92.0",
+  "tests": {
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 0
+  },
+  "files_sha256": {
+    "Cargo.toml": "efd4c4856f6fb5ad4366f26b632ca311e10545410bf3ecbfbbf723de71ff7696",
+    "Cargo.lock": "58106f0e551740b118fff54423238ab965d2d67e52d8ee6762eca2ea1d5f0c78",
+    "tests/channel.rs": "de2c428e9f76510097414b5d3835acf8cb8837c662defd4287ef622844cf35be"
+  },
+  "registry_versions_added_to_pinned_Code_lock": [],
+  "checks": [
+    {
+      "name": "format-probe",
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2021",
+        "tests/channel.rs"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "fmt-probe",
+      "command": [
+        "cargo",
+        "fmt",
+        "-p",
+        "montana-channel-audit",
+        "--check"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "tests-formatted",
+      "command": [
+        "unshare",
+        "-n",
+        "--",
+        "sh",
+        "-c",
+        "ip link set lo up && exec \"$@\"",
+        "audit",
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "--jobs",
+        "2",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "log_sha256": "27d82c6b2d65dd96b159c27f35dc840df748148e48bf15af916016720526241a"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+test_agreement_exits_zero (test_reconcile.ReconcileTests.test_agreement_exits_zero) ... ok
+test_an_unstated_quantity_fails (test_reconcile.ReconcileTests.test_an_unstated_quantity_fails) ... ok
+test_byte_array_reads_as_its_hex (test_reconcile.ReconcileTests.test_byte_array_reads_as_its_hex) ... ok
+test_command_line_exit_codes (test_reconcile.ReconcileTests.test_command_line_exit_codes) ... ok
+test_historical_mark_on_the_line_removes_the_value (test_reconcile.ReconcileTests.test_historical_mark_on_the_line_removes_the_value) ... ok
+test_historical_word_elsewhere_in_the_document_does_not_remove_a_value (test_reconcile.ReconcileTests.test_historical_word_elsewhere_in_the_document_does_not_remove_a_value) ... ok
+test_one_flipped_digit_anywhere_fails_and_names_its_place (test_reconcile.ReconcileTests.test_one_flipped_digit_anywhere_fails_and_names_its_place) ... ok
+test_three_genesis_values_are_all_named (test_reconcile.ReconcileTests.test_three_genesis_values_are_all_named) ... ok
+test_values_outside_the_compared_documents_are_ignored (test_reconcile.ReconcileTests.test_values_outside_the_compared_documents_are_ignored) ... ok
+test_working_tree_edits_are_not_read (test_reconcile.ReconcileTests.test_working_tree_edits_are_not_read) ... ok
+test_duplicate_markers_fail (test_snapshot.SnapshotTests.test_duplicate_markers_fail) ... ok
+test_duplicate_row_fails (test_snapshot.SnapshotTests.test_duplicate_row_fails) ... ok
+test_invalid_hash_fails (test_snapshot.SnapshotTests.test_invalid_hash_fails) ... ok
+test_local_edits_are_not_misrepresented_as_committed_inputs (test_snapshot.SnapshotTests.test_local_edits_are_not_misrepresented_as_committed_inputs) ... ok
+test_missing_lock_fails (test_snapshot.SnapshotTests.test_missing_lock_fails) ... ok
+test_missing_revision_fails (test_snapshot.SnapshotTests.test_missing_revision_fails) ... ok
+test_missing_row_fails (test_snapshot.SnapshotTests.test_missing_row_fails) ... ok
+test_option_is_not_executed_as_revision (test_snapshot.SnapshotTests.test_option_is_not_executed_as_revision) ... ok
+test_reproducible_inventory_uses_public_commit_and_all_trees (test_snapshot.SnapshotTests.test_reproducible_inventory_uses_public_commit_and_all_trees) ... ok
+test_reversed_markers_fail (test_snapshot.SnapshotTests.test_reversed_markers_fail) ... ok
+test_stale_tree_fails (test_snapshot.SnapshotTests.test_stale_tree_fails) ... ok
+test_unknown_folder_fails (test_snapshot.SnapshotTests.test_unknown_folder_fails) ... ok
+test_both_lag_directions (test_traffic.TrafficTests.test_both_lag_directions) ... ok
+test_constant_flows_are_inconclusive (test_traffic.TrafficTests.test_constant_flows_are_inconclusive) ... ok
+test_duplicate_candidate_names_are_not_silently_overwritten (test_traffic.TrafficTests.test_duplicate_candidate_names_are_not_silently_overwritten) ... ok
+test_flat_ingress_is_inconclusive (test_traffic.TrafficTests.test_flat_ingress_is_inconclusive) ... ok
+test_invalid_counts_rejected (test_traffic.TrafficTests.test_invalid_counts_rejected) ... ok
+test_known_pearson_values (test_traffic.TrafficTests.test_known_pearson_values) ... ok
+test_lag_cannot_rank_tiny_overlaps (test_traffic.TrafficTests.test_lag_cannot_rank_tiny_overlaps) ... ok
+test_missing_truth_or_single_candidate_rejected (test_traffic.TrafficTests.test_missing_truth_or_single_candidate_rejected) ... ok
+test_one_constant_candidate_cannot_be_silently_dropped (test_traffic.TrafficTests.test_one_constant_candidate_cannot_be_silently_dropped) ... ok
+test_positive_control_recovers_delayed_flow (test_traffic.TrafficTests.test_positive_control_recovers_delayed_flow) ... ok
+test_reversing_time_is_not_the_positive_control (test_traffic.TrafficTests.test_reversing_time_is_not_the_positive_control) ... ok
+test_schema_rejects_unexpected_fields (test_traffic.TrafficTests.test_schema_rejects_unexpected_fields) ... ok
+test_short_or_unequal_windows_rejected (test_traffic.TrafficTests.test_short_or_unequal_windows_rejected) ... ok
+test_ties_are_fractional_not_alphabetic_winners (test_traffic.TrafficTests.test_ties_are_fractional_not_alphabetic_winners) ... ok
+
+----------------------------------------------------------------------
+Ran 36 tests in 9.867s
+
+OK

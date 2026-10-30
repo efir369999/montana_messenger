@@ -1,0 +1,7 @@
+{
+  "at_utc": "2026-10-26T13:43:30.335842+00:00",
+  "reason": "Chairman PR54 comment: item2 p2-close has priority; own audit waits under contention",
+  "before": "CPUWeight=[not set]\nMemoryMax=4294967296\nMemorySwapMax=0\n",
+  "exit": 0,
+  "after": "CPUWeight=1\nMemoryMax=4294967296\nMemorySwapMax=0\n"
+}

@@ -1,0 +1,17 @@
+
+running 6 tests
+test a_second_implementation_seals_and_opens_what_this_tree_does ... differential | ChaCha20-Poly1305 | chacha20poly1305 vs python cryptography | sealing and opening agreed
+ok
+test liboqs_and_this_tree_draw_one_key_and_reach_one_secret_from_one_seed ... differential | ML-KEM-768 | libcrux-ml-kem vs liboqs 0.16.0 (mlkem-native) | key, ciphertext and secret agreed byte for byte from one seed and one randomness; each opened the other's
+ok
+test liboqs_and_this_tree_verify_each_other_and_refuse_the_doctored ... differential | ML-DSA-65 | libcrux-ml-dsa vs liboqs 0.16.0 (mldsa-native) | each verified the other's signature and refused the doctored
+ok
+test openssl_verifies_what_this_tree_signs ... differential | ML-DSA-65 | libcrux-ml-dsa vs OpenSSL 3.5.4 30 Sep 2025 (Library: OpenSSL 3.5.4 30 Sep 2025) | signature verified, doctored refused
+ok
+test this_tree_and_openssl_land_on_one_shared_secret ... differential | ML-KEM-768 | libcrux-ml-kem vs OpenSSL 3.5.4 30 Sep 2025 (Library: OpenSSL 3.5.4 30 Sep 2025) | shared secret agreed
+ok
+test two_implementations_write_one_key_and_one_signature_from_one_seed ... differential | ML-DSA-65 | libcrux-ml-dsa vs OpenSSL 3.5.4 30 Sep 2025 (Library: OpenSSL 3.5.4 30 Sep 2025) | key and signature agreed byte for byte from one seed
+ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.69s
+

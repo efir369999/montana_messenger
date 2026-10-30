@@ -1,0 +1,9 @@
+
+running 4 tests
+test a_cell_of_another_width_a_repeat_and_a_point_at_its_ceiling ... ok
+test a_machine_holding_no_window_stands_at_no_point ... ok
+test the_points_of_two_rounds_do_not_meet ... ok
+test what_is_deposited_at_the_points_of_a_window_stands_at_them ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 37.58s
+
