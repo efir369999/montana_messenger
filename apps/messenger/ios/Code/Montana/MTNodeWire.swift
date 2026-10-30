@@ -170,6 +170,31 @@ enum MTNodeWire {
         while fields.count <= authorFields { fields.append("") }
         return fields
     }
+    // ── THE NINTH FIELD CARRIES A HEAL OF THE PIPE (issue #75, slice C2b; the Author's decision 401 = a, constitution record 408;
+    // Agent 769 [47eded96], claude-opus-5-5, 30.10.2026 UTC) ── an offer (pk_h) or an answer (ct_h with the ρ of the offer it
+    // answers, record 409) rides after the author as base64 of a kind byte and its parts (MTPipeHealPart). The envelope keeps
+    // its 2 048 bytes and the node sees nothing new; an older build reads eight fields and none of this. A body with no room
+    // for it rides without it -- the named limit: a letter with a long text, a quote or a card carries no heal that time.
+    static let healFields = authorFields + 1   // the fields before the heal: the seven, then the author
+    static func withHeal(_ body: Data, field: Data) -> Data {
+        var b = body
+        if let last = b.last, last != 0 { b.append(0) }
+        var closed = b.reduce(0) { n, x in x == 0 ? n + 1 : n }
+        while closed < healFields { b.append(0); closed += 1 }
+        guard closed == healFields else { return body }
+        b.append(contentsOf: field.base64EncodedString().utf8); b.append(0)
+        return b.count <= envelopeSize ? b : body
+    }
+    /// The heal a letter carries in its ninth field, kind byte first; nil when it carries none.
+    static func letterHeal(_ plain: Data) -> Data? {
+        var rest = plain[plain.startIndex...]
+        for _ in 0..<healFields {
+            guard let z = rest.firstIndex(of: 0) else { return nil }
+            rest = rest[rest.index(after: z)...]
+        }
+        let field = rest.prefix { $0 != 0 }
+        return field.isEmpty ? nil : Data(base64Encoded: Data(field))
+    }
     /// The phone's ONE elected door first (1638, the author's word: one live node per phone):
     /// written by the app, read by every process that knocks without the live list.
     static func electedFirst(_ list: [String]) -> [String] {
@@ -281,14 +306,23 @@ enum MTNodeWire {
     /// deep (one hash and one open per minute — twelve milliseconds for the whole day), because a
     /// seal is never made after the node took it. One owner for the app and the landing door.
     static let openBackMinutes: UInt64 = 1440
-    static func openBoxed(_ sealed: Data, secret: MTPipeKey, at: UInt64) -> (plain: Data, back: Int)? {
+    /// Every key of a minute the pipe gives is tried (MTPipeKey.bodyKeys, the healed walk's first while a heal is in flight): the
+    /// opener learns the walk that opened and the minute the letter was sealed in, which the heal hears (MTPipeBook.healRead).
+    static func openBoxed(_ sealed: Data, secret: MTPipeKey, at: UInt64)
+        -> (plain: Data, back: Int, walk: MTPipeHealing.Walk, window: UInt64)? {
         let w0 = at / 60
+        func open(_ w: UInt64) -> (plain: Data, back: Int, walk: MTPipeHealing.Walk, window: UInt64)? {
+            for k in secret.bodyKeys(window: w) {
+                if let p = openBlob(key: k.key, sealed: sealed) { return (p, Int(w0) - Int(w), k.walk, w) }
+            }
+            return nil
+        }
         for w in [w0, w0 &- 1, w0 &+ 1] {   // the common case first: sealed and taken in one breath
-            if let p = openBlob(key: secret.bodyKey(window: w), sealed: sealed) { return (p, Int(w0) - Int(w)) }
+            if let o = open(w) { return o }
         }
         var w = w0 &- 2
         for _ in 2...openBackMinutes {
-            if let p = openBlob(key: secret.bodyKey(window: w), sealed: sealed) { return (p, Int(w0) - Int(w)) }
+            if let o = open(w) { return o }
             w = w &- 1
         }
         return nil

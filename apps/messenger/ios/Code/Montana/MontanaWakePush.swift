@@ -801,6 +801,8 @@ enum MontanaWakePush {
 
     /// The conversation's daily tag: both sides derive it from the shared pipe secret with no contact.
     static func convW(_ secret: MTPipeKey, window: UInt64) -> String { secret.convW(day: window) }
+    /// The labels of a day this side reads under: the healed walk's and the old one's while a heal is in flight (MTPipeKey.convWs).
+    static func convWs(_ secret: MTPipeKey, window: UInt64) -> [String] { secret.convWs(day: window) }
 
     static func dayWindow() -> UInt64 { UInt64(Date().timeIntervalSince1970) / 86400 }
 
@@ -983,8 +985,7 @@ enum MontanaWakePush {
             // (measured 26.08: one token at exactly 8192 rows, a receipt's wake answered 404).
             let ahead: UInt64 = MTPipeBook.first(for: pipe) == nil ? windowsAhead : 1
             for w in (w0 - 1)...(w0 + ahead) {
-                let cw = convW(secret, window: w)
-                subs.append(["conv": cw, "sid": mySubId(cw)])
+                for cw in convWs(secret, window: w) { subs.append(["conv": cw, "sid": mySubId(cw)]) }
             }
         }
         // THE SLOTS THIS PHONE KEEPS RING IT (MTKeeping, the author's word 08.10.2026 19:4x UTC: the restore by silent pushes): a
@@ -1035,8 +1036,7 @@ enum MontanaWakePush {
         for pipe in MTPipeBook.all() where refused.contains(pipe) {
             guard let secret = MTPipeBook.key(for: pipe) else { continue }
             for w in (w0 - 1)...(w0 + windowsAhead) {
-                let cw = convW(secret, window: w)
-                blockedPairs.append(["conv": cw, "sid": mySubId(cw)])
+                for cw in convWs(secret, window: w) { blockedPairs.append(["conv": cw, "sid": mySubId(cw)]) }
             }
         }
         // A DOOR THAT DOES NOT ANSWER RESTS (20.09, the critic): a registration to a door that
@@ -1388,8 +1388,7 @@ enum MontanaWakePush {
     /// pipe walk and format as the extension's. Returns (conversation, mid, text).
     static func openLetterEnvelope(_ sealed: Data) -> (conv: String, mid: String, text: String)? {
         for conv in MTPipeBook.all() {
-            guard let secret = MTPipeBook.key(for: conv),
-                  let plain = MTPipe.openBody(sealed, sharedSecret: secret),
+            guard let plain = MTPipeBook.open(sealed, conv: conv),   // the heal hears which walk opened it
                   let sep = plain.firstIndex(of: 0) else { continue }
             let mid = String(data: plain[..<sep], encoding: .utf8) ?? ""
             let tail = plain[plain.index(after: sep)...]
@@ -2654,10 +2653,12 @@ enum MontanaWakePush {
                 // THE SEED'S OWN PIPE NAMES EACH DEVICE APART (11.10.2026, No.60): the store yields no letter to the sid that laid
                 // it, so a device asks under its own name there (MontanaArchive.twinSid) -- its own letters stay for the others.
                 let own = conv == MontanaArchive.twinPipe
+                // A heal in flight: the box is read under both walks' labels (MTPipeKey.convWs).
                 for w in MTNodeWire.boxDays(around: w0) {
-                    let cw = MontanaWakePush.convW(secret, window: w)
-                    secretOf[cw] = secret; chatOf[cw] = conv
-                    subs.append(cw); sids.append(own ? MontanaArchive.twinSid(cw) : MontanaWakePush.subId(cw, ref: owner))
+                    for cw in MontanaWakePush.convWs(secret, window: w) {
+                        secretOf[cw] = secret; chatOf[cw] = conv
+                        subs.append(cw); sids.append(own ? MontanaArchive.twinSid(cw) : MontanaWakePush.subId(cw, ref: owner))
+                    }
                 }
             }
         }
@@ -2794,6 +2795,9 @@ enum MontanaWakePush {
                     } else {
                         let f = parseLetterFields(plain)
                         guard !f[0].isEmpty, !f[1].isEmpty, let chat = chatOf[cw] else { continue }
+                        // The heal hears the walk that opened and the ninth field, by the letter's own minute (a pipe outside the book
+                        // -- a slot kept, the seed's own -- holds no heal and is passed over there).
+                        MTPipeBook.healRead(plain, opened: opened.walk, for: chat, window: opened.window)
                         if let buries, await buries(chat, f[0]) {
                             if let m = l["m"] as? String, !m.isEmpty { confirmed.append([m, MontanaArchive.deviceSid(cw)]) }
                             continue
@@ -3157,8 +3161,7 @@ enum MontanaWakePush {
             // (measured 26.08: one token at exactly 8192 rows, a receipt's wake answered 404).
             let ahead: UInt64 = MTPipeBook.first(for: pipe) == nil ? windowsAhead : 1
             for w in (w0 - 1)...(w0 + ahead) {
-                let cw = convW(secret, window: w)
-                subs.append(["conv": cw, "sid": mySubId(cw)])
+                for cw in convWs(secret, window: w) { subs.append(["conv": cw, "sid": mySubId(cw)]) }
             }
         }
         guard !subs.isEmpty else { return }
@@ -3903,9 +3906,10 @@ enum MontanaWakePush {
         for conv in MTPipeBook.all() {
             guard MontanaConv.holds(conv), let secret = MTPipeBook.key(for: conv) else { continue }
             for w in (w0 - 1)...w0 {
-                let cw = convW(secret, window: w)
-                chatOf[cw] = conv
-                q.append(["conv": cw, "from_id": mySubId(cw)])
+                for cw in convWs(secret, window: w) {
+                    chatOf[cw] = conv
+                    q.append(["conv": cw, "from_id": mySubId(cw)])
+                }
             }
         }
         guard !q.isEmpty else { return }
@@ -3932,8 +3936,7 @@ enum MontanaWakePush {
         }
         var words = 0, stamps = 0
         for (chat, w) in best {
-            guard let secret = MTPipeBook.key(for: chat), let sealed = Data(base64Encoded: w.env),
-                  let plain = MTPipe.openBody(sealed, sharedSecret: secret),
+            guard let sealed = Data(base64Encoded: w.env), let plain = MTPipeBook.open(sealed, conv: chat),
                   let sep = plain.firstIndex(of: 0) else { continue }
             let afterPeer = plain[plain.index(after: sep)...]
             guard let sep2 = afterPeer.firstIndex(of: 0),
@@ -4118,6 +4121,7 @@ enum MontanaWakePush {
                     }
                     let f = parseLetterFields(opened.plain)
                     guard !f[0].isEmpty, !f[1].isEmpty, !ChatStore.refusesNow(conv) else { continue }
+                    MTPipeBook.healRead(opened.plain, opened: opened.walk, for: conv, window: opened.window)
                     MontanaTrace.mark("sig_apply", "lane=letter mid=\(String(f[0].prefix(8))) from=\(String(conv.prefix(10)))")
                     restash(["c": conv, "m": f[0], "t": f[1], "n": f[2], "g": f[3], "qt": f[4], "qm": f[5], "lp": f[6],
                              "own": secret.authorHolds(f[7], person: MTLetterAuthor.key, mid: f[0], text: f[1]) ? "1" : "",
