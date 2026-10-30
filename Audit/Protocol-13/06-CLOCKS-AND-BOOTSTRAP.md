@@ -54,7 +54,7 @@ clock out of the depth.
 The closing scope of this item is therefore stated, not widened. It closes for
 the native core, `core/Montana-Core`, whose verdicts read no clock (the gate
 `check_no_clock_in_the_verdict`,
-`core/Montana-Core/crates/mt-conformance/src/parse.rs:4650`, and the test
+`core/Montana-Core/crates/mt-conformance/src/parse.rs:4674`, and the test
 `crates/montana-node/tests/a_verdict_reads_no_clock.rs`). It closes for
 `core/Code` only with the recorded limit, and never as "across both
 generations". The status line above stands until the chairman's public verdict;
