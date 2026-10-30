@@ -130,8 +130,8 @@ message_kind  15 renew_offer   16 renew_answer   17 renew_finish   (beside 1-14:
 The ceiling, for the Decree: `rekey_units` = 8 388 608 (2^23) units sealed under one sending key.
 
 - **Why the window decides.** The derivation sizes a count and reads no clock. The commodity link of [I-5] is symmetric gigabit (Constitution:150-155). A window is nominally sixty seconds: `window_credit` = 60, "one for every second of it" (Canon:4735). In one such window a gigabit link carries 10^9 x 60 / 8 / 1 232 = 6 087 662 units. 2^22 = 4 194 304 is below that and 2^23 is the first power of two above it. So in a chain that advances, the window renews a commodity link first, and the ceiling binds only when the chain stalls or on a faster link.
-- **Exposure in a stall.** At most 2^23 x 1 232 = 10 334 765 056 bytes per direction stay under one key.
-- **Nonce safety.** Nonces are drawn at random, 96 bits wide (Canon:2438, 2505). Under one key the chance of a repeated nonce after `q` units is at most `q^2 / 2^97`, which is 2^-51 at the ceiling.
+- **Exposure in a stall.** A renewal is offered at 2^23 units, so while the far side answers at most 2^23 x 1 232 = 10 334 765 056 bytes per direction stay under one key. A key that has sealed 2^24 units without a completed renewal refuses every further message of a caller and its link ends, so with a far side that never answers at most 2^24 x 1 232 = 20 669 530 112 bytes do, beside the at most three messages of the renewal itself, which are never refused for the count.
+- **Nonce safety.** Nonces are drawn at random, 96 bits wide (Canon:2438, 2505). Under one key the chance of a repeated nonce after `q` units is at most `q^2 / 2^97`, which is 2^-51 at the ceiling and 2^-49 at twice the ceiling, where a key ends its link.
 - **Cost.** A renewal at the ceiling adds 5 units per 2^23, which is 6 x 10^-7.
 
 ### What a renewal and a heal cost

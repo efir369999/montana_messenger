@@ -70,6 +70,10 @@ pub enum NetError {
     // ends rather than taking a key from it: the three messages travel inside the link, in their one
     // order, and nowhere else.
     RenewalOutOfTurn,
+    // A sending key that has sealed twice its ceiling: this side offered at `rekey_units` and the
+    // far side has not completed a renewal in as many units again. The link ends rather than one
+    // key covering a volume without bound (Network, "And when the chain does not advance").
+    KeyExhausted,
 }
 
 // A far side that has begun a message and stopped holds nothing of this machine but the thread
@@ -379,8 +383,20 @@ impl Link {
     // A message crosses as the pieces its own count names, each sealed into a unit of the one
     // width under the sending key this side holds. The label of every unit is drawn, so a unit
     // carrying a message and a cell carrying a delivery are one shape to anybody watching.
+    //
+    // A key seals at most twice `rekey_units` units of its callers' messages: an offer goes out at
+    // the ceiling, and a far side that has not completed the renewal within as many units again
+    // leaves this side no key it may go on sealing under. The whole message is refused before its
+    // first unit, so no message ends halfway on the wire. The messages of a renewal are never
+    // refused for the count: a key carries at most one offer, one answer and one finish, since any
+    // other ends the link, and refusing them would end the link at the moment it renews.
     fn seal(&mut self, kind: Kind, message: &[u8]) -> Result<(), NetError> {
         let pieces = link::pieces(kind.byte(), message).map_err(wire)?;
+        if !of_a_renewal(kind)
+            && self.sealed.saturating_add(pieces.len()) > self.ceiling.saturating_mul(2)
+        {
+            return Err(NetError::KeyExhausted);
+        }
         for piece in &pieces {
             let label = mt_wire::draw::label().map_err(wire)?;
             let unit = link::seal_unit(&self.sending, &label, piece).map_err(wire)?;
@@ -979,6 +995,34 @@ mod tests {
         agree(&opened, &answered);
         assert_eq!(opened.sealed, 1);
         assert!(at_rest(&opened) && at_rest(&answered));
+    }
+
+    // The named wrong implementation: a side whose offer goes unanswered and that keeps sealing
+    // under one key past its ceiling. A far side that never reads leaves the offer standing, and the
+    // link refuses the message that would take the key past twice its ceiling.
+    #[test]
+    fn a_key_whose_offer_goes_unanswered_seals_no_more_than_twice_its_ceiling() {
+        let (mut opened, _silent) = met();
+        opened.ceiling = 3;
+        let mut sent = 0u64;
+        let refused = loop {
+            match opened.send(Kind::StateQuery, &query(sent)) {
+                Ok(()) => sent += 1,
+                Err(error) => break error,
+            }
+            assert!(sent < 100, "the key seals without bound");
+        };
+        assert_eq!(refused, NetError::KeyExhausted);
+        assert!(has_offered(&opened));
+        assert!(opened.sealed <= 2 * opened.ceiling);
+        assert!(opened.sealed > opened.ceiling);
+        // Nothing is sealed once refused: the next message is refused as well and the count stands.
+        let count = opened.sealed;
+        assert_eq!(
+            opened.send(Kind::StateQuery, &query(sent)).err(),
+            Some(NetError::KeyExhausted)
+        );
+        assert_eq!(opened.sealed, count);
     }
 
     #[test]

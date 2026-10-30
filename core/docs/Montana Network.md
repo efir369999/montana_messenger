@@ -252,7 +252,8 @@ key over an unbounded volume. A side therefore also offers a renewal when the un
 under its current sending key reach `rekey_units`, a ceiling that enters the Decree of Canon with
 the code of stage 18 (2^23 units, derived in `core/docs/protocol-13/75-RFC-GPA.md`). The count is
 the sender's own, of what it sealed: it never crosses the wire and is never compared with the other
-side's, so nothing can diverge on it.
+side's, so nothing can diverge on it. A key that has sealed twice `rekey_units` without a completed
+renewal ends its link: an offer nobody answers holds no key over a volume without bound.
 
 **Two offers that cross.** If both sides offer in one window, the offer of the side that opened the
 link stands: the other side erases the key it drew, answers that offer, and its own offer is
