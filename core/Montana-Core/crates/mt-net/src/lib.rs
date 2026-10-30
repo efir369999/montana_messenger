@@ -33,7 +33,7 @@ use mt_wire::handshake::{
 use mt_wire::link;
 use mt_wire::message::Kind;
 use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream, ToSocketAddrs};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::time::Duration;
 use zeroize::Zeroizing;
 
@@ -69,6 +69,9 @@ pub enum NetError {
     // A piece naming a kind the set does not write. The link ends rather than the bytes being read
     // as something they are not.
     UnknownKind { carried: u8 },
+    // An address that is not an IP literal and a port. It carries nothing of what was given, so the
+    // refusal names no address on a line an operator's terminal keeps.
+    NotALiteral,
 }
 
 // A far side that has begun a message and stopped holds nothing of this machine but the thread
@@ -95,6 +98,17 @@ fn socket(e: std::io::Error) -> NetError {
 
 fn wire(e: mt_wire::WireError) -> NetError {
     NetError::Wire(e)
+}
+
+// An address as an IP literal and a port, read without the resolver. A name handed to the system's
+// resolver is a question put to a server of names on the open network -- which machine this one is
+// about to reach, or to stand as -- asked before the first flight and outside every seal of this
+// wire. So a name is refused here, before any lookup and before a socket opens (the Author's
+// decision G-4 (a) of #22, 29.10.2026).
+fn literal(address: &str) -> Result<SocketAddr, NetError> {
+    address
+        .parse::<SocketAddr>()
+        .map_err(|_| NetError::NotALiteral)
 }
 
 // Exactly this many bytes, or the far side stopped mid-unit. A short read is not a shorter object
@@ -397,14 +411,7 @@ fn ephemeral_kem() -> Result<(kem::PublicKey, kem::SecretKey), NetError> {
 // own answering key crosses only sealed, under a key of the encapsulation to the static key the line
 // names, and the responder's never crosses: the line already holds it.
 pub fn dial(to: &Acquaintance, answering: &Answering) -> Result<Link, NetError> {
-    let address = to
-        .address
-        .to_socket_addrs()
-        .map_err(socket)?
-        .next()
-        .ok_or_else(|| NetError::Socket {
-            said: "the address names no socket".to_string(),
-        })?;
+    let address = literal(&to.address)?;
     let mut stream = TcpStream::connect(address).map_err(socket)?;
     stream.set_nodelay(true).map_err(socket)?;
     stream.set_write_timeout(Some(patience())).map_err(socket)?;
@@ -483,7 +490,7 @@ pub struct Door(TcpListener);
 
 impl Door {
     pub fn open(address: &str) -> Result<Self, NetError> {
-        Ok(Self(TcpListener::bind(address).map_err(socket)?))
+        Ok(Self(TcpListener::bind(literal(address)?).map_err(socket)?))
     }
 
     // Where this door actually stands. An operator asking for port zero is told which one the
