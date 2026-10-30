@@ -941,8 +941,22 @@ pub(crate) fn walk_to_the_pending(
                     ahead = closure_after;
                     break;
                 }
+                // **A step says one refusal whatever order its candidates came in.** A candidate
+                // refused only because the certificate after it is not whole yet is the one a walk
+                // without the newest step can still take, so that refusal is said over any other: a
+                // copy of the decision under its name with a final beacon outside the certificate,
+                // offered first, would otherwise refuse a device its join by the order the copies
+                // reached a point (a_minority_waits_and_rejoins.rs:460, issue #16). The walk taken
+                // again verifies every candidate as this one did, so nothing refused here is taken
+                // by being said second.
                 Err(why) => {
-                    refusal.get_or_insert(why);
+                    let over = match &refusal {
+                        None => true,
+                        Some(held) => not_whole_yet(&why) && !not_whole_yet(held),
+                    };
+                    if over {
+                        refusal = Some(why);
+                    }
                 }
             }
         }
