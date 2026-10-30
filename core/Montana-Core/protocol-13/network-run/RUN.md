@@ -249,7 +249,7 @@ checked at every snapshot.
 | **S5 the parts meet** | heal, restart nothing | every head ≥ head before + 1 within 2 h; earlier finals unchanged | budget, a second name |
 | **S6 restart of the whole network** | stop a, b, c (SIGTERM) and d (SIGKILL); start all four on their stores | all stopped; then every head ≥ before + 1 within 2 h; every proposal final before stands byte for byte | budget, a changed proposal |
 | **S7 forged anchor** | e (born, empty store, not admitted) started with a's proposals (head-4, head-3), the later with byte 44 (`note_root[0]`) turned | refused: rc neither 0 nor 124 within 30 min; e's store holds no proposal and no marks | accepted, hung, or anything written |
-| **S7 a new machine joins** | e started with the honest anchor and the four acquaintances | e's head ≥ a's head at the start of the step; e's proposals from the anchor to its head carry a's names; its log ends the walk at its head | budget, a different name, no walk line |
+| **S7 a new machine joins** | e started with the honest anchor and the four acquaintances | e's head ≥ a's head at the start of the step; e's proposals after the anchor (the anchor's two are handed in, not walked) to its head carry a's names and the first links to the anchor's later proposal; its log ends the walk at its head | budget, a different name, no walk line |
 | **finish** | a last snapshot; every unit stopped; stores, logs and namespaces stay until `--teardown` | | |
 
 When an expectation fails, the steps after it are not run (`--keep-going` runs them). The last

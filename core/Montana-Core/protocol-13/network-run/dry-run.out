@@ -482,7 +482,7 @@ with the executor REMOTE of run.py (sha256 8428dc6f14bdb821006a0371505318d1bacb4
     [l2] ip netns exec mt13-c /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/c/data   (inside the snapshot)
     [l2] ip netns exec mt13-d /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/d/data   (inside the snapshot)
     [l2] ip netns exec mt13-e /srv/mt13/DRYRUN/bin/montana-node --status --data /srv/mt13/DRYRUN/e/data   (inside the snapshot)
-    EXPECT e's proposals from the anchor to its head are byte-identical names of a's
+    EXPECT e's proposals after the anchor to its head carry a's names, the first linked to the anchor
     EXPECT e's log says 'walked from window W to the head at window H' with H = e's head
 
 == finish

@@ -886,13 +886,23 @@ class Run:
         self.waited(step, "the new machine reaches the head", out)
         joined = self.snapshot("joined", self.admitted + [e])
         if self.dry:
-            self.say("    EXPECT e's proposals from the anchor to its head are byte-identical names of a's")
+            self.say("    EXPECT e's proposals after the anchor to its head carry a's names, the first linked to the anchor")
             self.say("    EXPECT e's log says 'walked from window W to the head at window H' with H = e's head")
             return
         def same_chain():
+            # The anchor's two proposals are handed in, not walked: e keeps the chain from the window after them
+            # (pulse.rs, "The join"). Every window e walked carries a's name, and the first of them links to the
+            # anchor's later proposal by its identifier.
             he = joined[e]["marks"]["head"]
-            bad = [w for w in range(earlier, he + 1) if joined[e]["proposals"].get(w, {}).get("parsed", {}).get("id") != joined[a]["proposals"].get(w, {}).get("parsed", {}).get("id")]
-            return not bad, "windows %d..%d one name on %s and %s" % (earlier, he, e, a) if not bad else "differ at %r" % bad
+            first = earlier + 2
+            name = lambda n, w: joined[n]["proposals"].get(w, {}).get("parsed", {}).get("id")
+            if he is None or he < first:
+                return False, "e walked no window past its anchor (head %r)" % he
+            bad = [w for w in range(first, he + 1) if name(e, w) is None or name(e, w) != name(a, w)]
+            linked = joined[e]["proposals"].get(first, {}).get("parsed", {}).get("previous") == name(a, earlier + 1)
+            if bad or not linked:
+                return False, "differ at %r, window %d links to the anchor: %s" % (bad, first, linked)
+            return True, "windows %d..%d one name on %s and %s, window %d links to the anchor's window %d" % (first, he, e, a, first, earlier + 1)
         self.expect(step, "the new machine holds the network's chain", same_chain)
         walked = WALKED_LINE.findall(self.logged(e))
         self.expect(step, "the walk is in the new machine's log and ends at its head",
