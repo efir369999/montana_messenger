@@ -39,9 +39,9 @@ code that computes it.
 
 | Count | Value |
 |---|---|
-| rows | 100 |
+| rows | 101 |
 | closed — nothing awaited | 38 |
-| awaiting a stage of the plan | 62 |
+| awaiting a stage of the plan | 63 |
 | awaiting the artifact `air_hash` | 0 |
 
 The artifact stands published, so no row awaits it; what a row may still await is its stage.
@@ -68,8 +68,8 @@ The artifact stands published, so no row awaits it; what a row may still await i
 | CNS-16 | the commitment of a machine | Consensus, "What a machine commits about itself"; Canon, "The commitment standing for a machine" | — | `mt-node-commit`, `mt-node-key` | vectors: "The commitment standing for a machine" | — |
 | CNS-17 | the three points of a round | Canon, "The points a round stands at" | `consensus_replicas` | `mt-round-point`, `mt-window-point` | the derivation and the ring rule | stage 13 |
 | CNS-18 | the right to a window's coin | Consensus, "The right to a window's coin" | — | — | VAL-08, where the right and what redeems it stand; CNS-28, where what it is worth stands | — |
-| CNS-19 | the cold start | Consensus, "The cold start" | — | — | a scenario of the first window closing itself | stage 14 |
-| CNS-20 | the way back | Consensus, "The way back"; Canon, "The close of a window, and the slots an event offers" | `finality_rule` | — | the derivation; vectors: "Vectors of the way back"; a scenario of overlapping Byzantine signers, halted partitions and rejoining under the fixed parent quorum | — |
+| CNS-19 | the cold start | Consensus, "The cold start" | — | — | a scenario of the operator's cohort opening window zero by an explicit act on an empty store, and of a machine that holds nothing and is not asked to open opening no window | stage 14 |
+| CNS-20 | the way back | Consensus, "The way back"; Canon, "The close of a window, and the slots an event offers" | `finality_rule` | — | the derivation; vectors: "Vectors of the way back"; a scenario of overlapping Byzantine signers, halted partitions and rejoining under the fixed parent quorum; item 20 of the conformance set of Consensus, the three operator verdicts `no quorum` 1, `no data` 2 and `no diagnostics` 4, which are operator signals and not values of the protocol, with refusals counted beside them as `refused N` and never as a state (the Author's decision 334 (a), record 339): the tests `a_stall_names_its_cause`, `the_status_tells_a_close_a_wait_and_a_stall_apart`, `the_operator_reads_the_status`, `a_timeout_closes_nothing` and `a_patience_run_out_closes_nothing_and_a_restart_goes_on` of the node | — |
 | CNS-21 | the attestation of presence | Consensus, "The attestation of presence"; Canon, "The arithmetization, and how the set is bound to it" | — | `mt-part-key-digest` | the description written, proven and verified end to end at the height of its own duty, its length derived beside it, and `air_hash` recomputed over the six | stage 13 |
 | CNS-22 | presence witnessed and never self-declared | Consensus, "Presence is witnessed and never self-declared" | — | — | a scenario of a machine outside the cement taking no coin | stage 13 |
 | CNS-24 | the canonical order | Consensus, "The canonical order" | — | — | a scenario of one coordinate carrying one meaning for every participant and recomputed from the chain alone, and of a machine that has not seen the network holding no current window | stage 13 |
@@ -148,6 +148,7 @@ The artifact stands published, so no row awaits it; what a row may still await i
 | NET-22 | privacy is not rented | Network, "Privacy is not rented" | — | — | a scenario of privacy standing whole with every external tunnel switched off | stage 18 |
 | NET-23 | the threat model of the wire | Network, "Threat model of the wire" | — | — | the model itself, read against the observability ledger of this document | stage 22 |
 | NET-24 | the walk of the secret of a pipe | Canon, "The integer form of a tag"; Network, "There is no address" | — | `mt-pipe-ratchet` | vectors: "A tag and the labels of its steps" | — |
+| NET-25 | the renewal of the keys of a link and the heal of a pipe; proposed, issue #75, not adopted | Network, "How a link renews its keys" | — | `mt-link-renew`, `mt-pipe-heal` | a scenario of a link renewed in each window it carries anything, a unit recorded before a renewal left unopened by the keys after it, a link read at one window and lost to that reader at the next renewal, and a pipe healed by a pair of letters with one of them lost | stage 18 |
 
 ## App
 

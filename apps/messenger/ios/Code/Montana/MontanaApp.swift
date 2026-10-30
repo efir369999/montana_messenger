@@ -1616,7 +1616,7 @@ final class MontanaTelemetry {
             "identity=\(MontanaSeed.hasSeed ? 1 : 0) bundle=\(Bundle.main.bundleIdentifier ?? "?")")
         DispatchQueue.global(qos: .utility).async {
             MontanaTrace.mark("audit_canon",
-                "pipe=\(MTPipe.agreesWithCanon() ? 1 : 0) knock=\(MontanaFirstContact.agreesWithCanon() ? 1 : 0)")
+                "pipe=\(MTPipe.agreesWithCanon() ? 1 : 0) knock=\(MontanaFirstContact.agreesWithCanon() ? 1 : 0) heal=\(MTPipeHealKeys.agree() ? 1 : 0)")
         }
         MontanaNetWitness.start()
     }

@@ -1166,14 +1166,15 @@ final class MontanaPhoneNode: ObservableObject {
     /// Open the letter body with the pipe secret and parse it. One place for both transports: the wire
     /// and radio ask it instead of each writing its own parsing.
     static func openBody(_ sealed: Data, conv: String) -> (mid: String, text: String, name: String?, glyph: String?, qt: String?, qm: String?, lp: String?)? {
-        guard let secret = MTPipeBook.key(for: conv) else { return nil }
+        // The book opens it and the heal hears which walk did (MTPipeBook.open, issue #75).
+        guard let body = MTPipeBook.open(sealed, conv: conv) else { return nil }
         // First contact is NOT closed here. Closing = the peer HAS MOVED TO THE PIPE label, and there is
         // one proof -- a word of theirs sealed under the pipe, read at the one door every such word
         // lands at (MontanaDeliveryEngine.receive). Opening THEIR letter with MY key proves only my knowledge of the secret: closing the
         // contact here made the device erase the point the peer is still knocking at if my answer never
         // reached them -- and the acquaintance froze forever (precedent 18:32: T1 accepted the first
         // letter in an avalanche, the answer drowned, T2 kept knocking at an erased point).
-        let opened = openBody(sealed, secret: secret)
+        let opened = fields(body)
         // THE NAME RENEWS WITH LIFE (12.09): the first word of a peer in an hour makes my name go
         // to them again, and by reciprocity theirs comes back — a book that lost a name (the
         // echo of 1480 wrote the caller's own) heals on the next exchange, on any road, with no
@@ -1184,12 +1185,14 @@ final class MontanaPhoneNode: ObservableObject {
     /// The letter's author field as it rode (MTNodeWire.authorTag): kept beside a correspondent's row, so a correspondence given
     /// back names its writer by the writer's own key (MTKeeping.takeGiven). Opened with the pipe's secret as the body is.
     static func author(of sealed: Data, conv: String) -> String? {
-        guard let secret = MTPipeBook.key(for: conv), let body = MTPipe.openBody(sealed, sharedSecret: secret) else { return nil }
+        guard let body = MTPipeBook.open(sealed, conv: conv) else { return nil }
         let f = MTNodeWire.letterFields(body)
         return MTNodeWire.authorFields < f.count && !f[MTNodeWire.authorFields].isEmpty ? f[MTNodeWire.authorFields] : nil
     }
     static func openBody(_ sealed: Data, secret: MTPipeKey) -> (mid: String, text: String, name: String?, glyph: String?, qt: String?, qm: String?, lp: String?)? {
-        guard let body = MTPipe.openBody(sealed, sharedSecret: secret) else { return nil }
+        MTPipe.openBody(sealed, sharedSecret: secret).flatMap(fields)
+    }
+    private static func fields(_ body: Data) -> (mid: String, text: String, name: String?, glyph: String?, qt: String?, qm: String?, lp: String?)? {
         // mid |0| text |0| name |0| glyph |0| quote |0| quote mid |0| link card --
         // every tail is optional: an old body of two fields reads as before. The cut goes by zeros,
         // not "everything after the first zero": otherwise the name would be sewn onto the letter text.

@@ -1,7 +1,8 @@
 # The security cards of the socket under the wire
 
 One card per bearer of secret material. This crate adds the socket underneath `mt-wire` and the
-order of reading above it; the keys it holds are the pair a machine answers the wire with and the
+order of reading above it; the keys it holds are the pair a machine answers the wire with, the static encapsulation pair it
+is reached by, and the
 two directional keys of a session.
 
 ---
@@ -20,6 +21,20 @@ two directional keys of a session.
 | Logging surface | a search of the crate returns no `println!`; the errors it answers with name a socket, a length or a refusal and never a byte of a key |
 | **Open** | the pages holding the key are not locked against swap |
 | Closure path | as in the suite: `mlock` asks for `unsafe`, which this crate forbids at its head, or a dependency that carries it; until then **an encrypted swap is assumed and stated** |
+
+## The static encapsulation pair a machine is reached by
+
+| | |
+|---|---|
+| Secret material | the ML-KEM-768 secret key of this machine, whose public half the acquaintance names; derived from the machine own secret under `mt-node-kem` and from nothing else |
+| Who holds it | the machine, in its own memory, for as long as it stands |
+| Site of construction | `src/lib.rs`, `Answering::of_machine` — the expansion is `mt-seed::answering_kem_seed`, and the seed it hands to the scheme stands in `Zeroizing` and never leaves the function |
+| Site of destruction | the `Drop` of `mt_suite::kem::SecretKey`, which wipes |
+| Construction copies | one seed, wiped at the end of the function; the key itself is moved into the pair and never copied |
+| What is shown | the public half alone, through `kem_public()`. There is no door to the secret half |
+| What it opens | the first flight of every handshake this machine answers: `Door::answer` decapsulates `static_ct` with it, and a flight whose sealed key does not open under what that yields ends the connection with no byte written |
+| **Named limit** | whoever later takes this secret and recorded first flights opens the answering keys of their initiators; the channel keys do not follow, since they fold the two encapsulations drawn for the handshake alone |
+| **Open** | the pages holding the key are not locked against swap, as for the pair above |
 
 ## The two directional keys of a session
 

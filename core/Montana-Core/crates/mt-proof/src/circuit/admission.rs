@@ -31,10 +31,16 @@
 // for no other. The machine's commitment and its suite stand there the same way: no cell holds
 // them, and the transcript every proof opens with does, so a proof seen under one `node_commit`
 // stands under no other and a relay cannot lift a candidacy onto a machine of its own.
-// Continuity remains open in AUDIT.md: no field of the record but its right is read.
+//
+// **And the record has lived.** The bitmap and the segment it is written against — the first three
+// limbs of the record, in its first block — are read by the layer of continuity (`continuity.rs`)
+// against the three values the verifier lays after the digests: the segment of the window, the count
+// in force and the share of it. A record that did not live the share of the period in force, one
+// written against a segment after the current one, and one carrying a reserved bit are refused by
+// the statement itself (constitution record 370).
 
 use super::permutation::ring_column;
-use super::{capacity, path, permutation, sponge};
+use super::{capacity, continuity, path, permutation, sponge};
 use crate::air::{Boundary, BoundaryValue, Description};
 use crate::poseidon::{CAPACITY, RATE};
 use mt_codec::domain;
@@ -125,10 +131,15 @@ impl Places {
         path::level_rows(self.record_nodes(), self.record_depth())
     }
 
+    // The columns of the continuity, after those of the walk.
+    pub fn continuity(&self) -> continuity::Places {
+        continuity::Places::after(path::TRACE_WIDTH)
+    }
+
     // The public input, in the order the set gives it: the window, then the root of records, the
     // naming half, the machine's commitment and the right, each of thirty-two bytes, then the
-    // suite. The window, the commitment and the suite bind no cell: they are limbs the transcript
-    // of the proof opens with.
+    // segment, the count in force and the share of four bytes each, then the suite. The window, the
+    // commitment and the suite bind no cell: they are limbs the transcript of the proof opens with.
     // The three digests at the ends of their chains, and the eight limbs of the record's right held
     // where they enter the absorption — the first block of the record for the first two of them,
     // the second for the rest — to the limbs of the right the public input carries.
@@ -160,6 +171,11 @@ impl Places {
                 value: BoundaryValue::Public((right + at) as u16),
             });
         }
+        // The three values of the gate stand after the last digest.
+        out.extend(continuity::boundaries(
+            &self.continuity(),
+            window + 2 * (SLOT_RIGHT + 1) * CAPACITY,
+        ));
         // The length delimiter and zero padding are constraints of the statement.
         out.extend(sponge::padding_boundaries(self.record(), RECORD_LIMBS));
         out.extend(sponge::padding_boundaries(self.halves(), secret_limbs()));
@@ -187,13 +203,13 @@ fn secret_limbs() -> usize {
 }
 
 // The assembled shape: the permutation base at the admission's height, the carries, the squeeze,
-// the walk and the capacity wiring.
+// the walk, the capacity wiring and the continuity.
 pub fn description() -> Option<Description> {
     let places = Places;
     let rows_log2 = crate::params::ROWS_LOG2;
     let mut held = permutation::description()?;
     held.rows_log2 = rows_log2;
-    let width = path::TRACE_WIDTH;
+    let width = places.continuity().width();
     crate::circuit::widen(&mut held, width);
     let base = width + held.periodic.len();
     let carry = base;
@@ -212,31 +228,38 @@ pub fn description() -> Option<Description> {
     ));
     held.periodic
         .extend(capacity::periodic_columns(rows_log2, &places.opens()));
+    let gate_at = width + held.periodic.len();
+    held.periodic
+        .extend(continuity::periodic_columns(rows_log2)?);
 
     held.constraints.extend(sponge::capacity_carries(carry));
     held.constraints.extend(sponge::rate_carries(squeeze));
     held.constraints.extend(path::constraints(walk));
     held.constraints.extend(capacity::constraints(opens_at));
+    held.constraints
+        .extend(continuity::constraints(gate_at, &places.continuity()));
     held.boundaries.extend(places.boundaries());
     Some(held)
 }
 
-// The trace of an admission: the record and its walk, the halves of the machine's secret, and the
-// branch that holds the right. What comes back is the three digests the public input carries beside
-// the window — the root the walk answers, the naming half and the right — as this trace computes
-// them; a verifier takes the root from the proposal the set names and never from here.
+// The trace of an admission: the record and its walk, the halves of the machine's secret, the
+// branch that holds the right, and the continuity of the record against the gate. What comes back
+// is the three digests the public input carries beside the window — the root the walk answers, the
+// naming half and the right — as this trace computes them; a verifier takes the root from the
+// proposal the set names and the gate from its own state, and never either from here.
 pub fn trace_of(
     record: &[u8],
     key: &[u8; 32],
     record_siblings: &[crate::poseidon::Digest],
     machine_secret: &[u8; 32],
     operator_secret: &[u8; 32],
+    gate: &continuity::Gate,
 ) -> Option<(Vec<Vec<crate::field::F>>, [crate::poseidon::Digest; 3])> {
     use crate::field::F;
     use crate::poseidon::{self, CAPACITY as CAP, WIDTH};
     let places = Places;
     let rows = 1usize << crate::params::ROWS_LOG2;
-    let mut columns = vec![vec![F::ZERO; rows]; path::TRACE_WIDTH];
+    let mut columns = vec![vec![F::ZERO; rows]; places.continuity().width()];
 
     // The record chain: the serialized record absorbed limb by limb under the record leaf domain.
     let limbs = poseidon::limbs_of(record);
@@ -248,6 +271,12 @@ pub fn trace_of(
         permutation::write_block(&mut columns, places.record() + at, state)?;
     }
     let record_leaf = poseidon::hash_elements(domain::MT_RECORD_LEAF, &limbs);
+
+    // The continuity, read from the limbs the record chain absorbs and from nothing else.
+    use super::opening::{LIMB_BITMAP_HIGH, LIMB_BITMAP_LOW, LIMB_LAST_SEGMENT};
+    let bitmap = limbs[LIMB_BITMAP_LOW].as_u64() | (limbs[LIMB_BITMAP_HIGH].as_u64() << 32);
+    let last = u32::try_from(limbs[LIMB_LAST_SEGMENT].as_u64()).ok()?;
+    continuity::write(&mut columns, &places.continuity(), bitmap, last, gate);
 
     // The record walk, by the bits of the key, least significant first — the convention of the
     // sparse tree. This mirrors the walk writer only because a position of sixty-four bits cannot
@@ -319,22 +348,25 @@ pub fn trace_of(
 
 // The public input of an admission, in the order the set gives it: the window the candidacy is
 // published in, the root of records of the proposal the set names for that window, the naming
-// half, the commitment of the machine, the right, and the suite. A verifier lays it from the
-// window it applies, the root it holds and the four fields of the object, and from nothing else.
+// half, the commitment of the machine, the right, the gate, and the suite. A verifier lays it from
+// the window it applies, the root it holds, the gate it computes and the four fields of the object,
+// and from nothing else.
 pub fn public_of(
     window: u64,
     record_root: &crate::poseidon::Digest,
     naming_half: &crate::poseidon::Digest,
     node_commit: &[u8; 32],
     operator_nullifier: &crate::poseidon::Digest,
+    gate: &continuity::Gate,
     suite_id: u16,
 ) -> Vec<u8> {
-    let mut out = Vec::with_capacity(8 + 4 * 32 + 2);
+    let mut out = Vec::with_capacity(8 + 4 * 32 + 4 * continuity::PUBLIC_COUNT + 2);
     out.extend_from_slice(&window.to_le_bytes());
     out.extend_from_slice(&record_root.bytes());
     out.extend_from_slice(&naming_half.bytes());
     out.extend_from_slice(node_commit);
     out.extend_from_slice(&operator_nullifier.bytes());
+    out.extend_from_slice(&gate.bytes());
     out.extend_from_slice(&suite_id.to_le_bytes());
     out
 }
@@ -346,12 +378,26 @@ mod tests {
 
     const WINDOW: u64 = 1_000;
 
+    // A record that lived fourteen segments up to segment seven, read at segment nine against the
+    // floor of the ramp: twelve of the fourteen segments in force are lived, and ten are demanded.
+    const LIVED: u64 = 0x3FFF;
+    const LAST: u32 = 7;
+    const GATE: continuity::Gate = continuity::Gate {
+        segment: 9,
+        in_force: 14,
+        required: 10,
+    };
+
     // A record of the layout the set fixes, carrying the right of `operator_secret`. The bytes are
     // laid here by hand because this crate stands below the one that owns that layout.
     fn a_record(operator_secret: &[u8; 32]) -> Vec<u8> {
+        a_record_of(operator_secret, LIVED)
+    }
+
+    fn a_record_of(operator_secret: &[u8; 32], bitmap: u64) -> Vec<u8> {
         let mut out = Vec::new();
-        out.extend_from_slice(&0b1011u64.to_le_bytes()); // segment_bitmap
-        out.extend_from_slice(&7u32.to_le_bytes()); // last_active_segment
+        out.extend_from_slice(&bitmap.to_le_bytes()); // segment_bitmap
+        out.extend_from_slice(&LAST.to_le_bytes()); // last_active_segment
         out.extend_from_slice(&990u64.to_le_bytes()); // opened_window
         out.extend_from_slice(&4u32.to_le_bytes()); // own_height
         out.extend_from_slice(
@@ -380,12 +426,17 @@ mod tests {
     const SUITE: u16 = 1;
 
     fn public_at(digests: &[Digest; 3], window: u64) -> Vec<u8> {
+        public_under(digests, window, &GATE)
+    }
+
+    fn public_under(digests: &[Digest; 3], window: u64, gate: &continuity::Gate) -> Vec<u8> {
         public_of(
             window,
             &digests[0],
             &digests[1],
             &NODE_COMMIT,
             &digests[2],
+            gate,
             SUITE,
         )
     }
@@ -428,7 +479,7 @@ mod tests {
             .filter(|b| matches!(b.value, BoundaryValue::Public(_)))
             .count();
         assert_eq!(words, 3 * CAPACITY);
-        assert_eq!(limbs, secret_limbs());
+        assert_eq!(limbs, secret_limbs() + continuity::PUBLIC_COUNT);
         for boundary in &held {
             assert!((boundary.row as usize) < (1 << crate::params::ROWS_LOG2));
         }
@@ -444,8 +495,8 @@ mod tests {
     fn an_admission_from_one_state_is_proven_and_verified_end_to_end() {
         let record = a_record(&RIGHT);
         let (key, siblings, root) = the_tree_of(&record);
-        let (trace, digests) =
-            trace_of(&record, &key, &siblings, &MACHINE, &RIGHT).expect("a written admission");
+        let (trace, digests) = trace_of(&record, &key, &siblings, &MACHINE, &RIGHT, &GATE)
+            .expect("a written admission");
         assert_eq!(digests[0], root, "the root of records");
         assert_eq!(
             digests[1],
@@ -494,6 +545,7 @@ mod tests {
             &digests[1],
             &NODE_COMMIT,
             &digests[2],
+            &GATE,
             SUITE,
         );
         assert!(crate::scheme::verify(&held, &elsewhere, &bytes).is_err());
@@ -515,6 +567,7 @@ mod tests {
                 &digests[1],
                 &lifted,
                 &digests[2],
+                &GATE,
                 SUITE,
             ),
             public_of(
@@ -523,12 +576,75 @@ mod tests {
                 &digests[1],
                 &NODE_COMMIT,
                 &digests[2],
+                &GATE,
                 SUITE + 1,
             ),
         ] {
             assert!(held.satisfied_by(&trace, &poseidon::limbs_of(&other)));
             assert!(crate::scheme::verify(&held, &other, &bytes).is_err());
         }
+
+        // Another gate: a later segment, another count in force, a greater share. Each is a cell's
+        // boundary, so the trace no longer satisfies and the proof does not verify. The named wrong
+        // implementation: a public input that leaves the gate out, under which a proof made against
+        // a gate of the claimant's choosing stands for every gate.
+        for gate in [
+            continuity::Gate {
+                segment: GATE.segment + 1,
+                ..GATE
+            },
+            continuity::Gate {
+                in_force: GATE.in_force + 1,
+                ..GATE
+            },
+            continuity::Gate {
+                required: GATE.required + 1,
+                ..GATE
+            },
+        ] {
+            let other = public_under(&digests, WINDOW, &gate);
+            assert!(!held.satisfied_by(&trace, &poseidon::limbs_of(&other)));
+            assert!(crate::scheme::verify(&held, &other, &bytes).is_err());
+        }
+    }
+
+    // A record that did not live the share is refused, with every chain computed truly and the
+    // gate the verifier lays: three segments lived of the fourteen in force, ten demanded. The named
+    // wrong implementation: the circuit before constitution record 370, which read no field of the
+    // record but its right and admitted this record.
+    #[test]
+    fn a_record_short_of_the_share_is_refused() {
+        let record = a_record_of(&RIGHT, 0b1011);
+        let (key, siblings, _) = the_tree_of(&record);
+        let (trace, digests) = trace_of(&record, &key, &siblings, &MACHINE, &RIGHT, &GATE)
+            .expect("an honest trace of an unlived record");
+        assert!(!description()
+            .expect("the description stands")
+            .satisfied_by(&trace, &public_of_the(&digests, WINDOW)));
+    }
+
+    // The bits the continuity counts are the record's own: a trace of an unlived record whose layer
+    // of continuity is written from a lived bitmap is refused where the halves meet the record's
+    // limbs. The named wrong implementation: a decomposition standing beside the record chain with
+    // no cell in common, which counted a bitmap the record does not carry.
+    #[test]
+    fn the_bits_counted_are_the_bits_of_the_record() {
+        let record = a_record_of(&RIGHT, 0b1011);
+        let (key, siblings, _) = the_tree_of(&record);
+        let (mut trace, digests) = trace_of(&record, &key, &siblings, &MACHINE, &RIGHT, &GATE)
+            .expect("an honest trace of an unlived record");
+        continuity::write(&mut trace, &Places.continuity(), LIVED, LAST, &GATE);
+        assert!(!description()
+            .expect("the description stands")
+            .satisfied_by(&trace, &public_of_the(&digests, WINDOW)));
+    }
+
+    // The decomposition stands in the idle block before the record and meets it at the first row
+    // of its absorption, where its three limbs stand before the permutation moves them.
+    #[test]
+    fn the_continuity_meets_the_record_at_its_first_row() {
+        assert!(continuity::BITMAP_BITS <= permutation::period());
+        assert_eq!(Places.record() * permutation::period(), continuity::tie());
     }
 
     // The counterexample of the audit at the relation: a foreign record — one carrying another
@@ -541,8 +657,8 @@ mod tests {
     fn a_foreign_record_does_not_carry_the_claimants_right() {
         let foreign = a_record(&[0x23; 32]);
         let (key, siblings, _) = the_tree_of(&foreign);
-        let (trace, digests) =
-            trace_of(&foreign, &key, &siblings, &MACHINE, &RIGHT).expect("an attacker writes it");
+        let (trace, digests) = trace_of(&foreign, &key, &siblings, &MACHINE, &RIGHT, &GATE)
+            .expect("an attacker writes it");
         let held = description().expect("the description stands");
         assert!(
             !held.satisfied_by(&trace, &public_of_the(&digests, WINDOW)),
@@ -567,7 +683,7 @@ mod tests {
         let record = a_record(&RIGHT);
         let (key, siblings, _) = the_tree_of(&record);
         let (trace, mut digests) =
-            trace_of(&record, &key, &siblings, &MACHINE, &RIGHT).expect("an honest trace");
+            trace_of(&record, &key, &siblings, &MACHINE, &RIGHT, &GATE).expect("an honest trace");
         digests[2] = poseidon::hash_bytes(domain::MT_OPERATOR_NF, &[0x24; 32]);
         assert!(!description()
             .expect("the description stands")
@@ -584,8 +700,8 @@ mod tests {
         let record = a_record(&RIGHT);
         let (key, siblings, _) = the_tree_of(&record);
         let stranger = [0xB7u8; 32];
-        let (trace, mut digests) =
-            trace_of(&record, &key, &siblings, &stranger, &RIGHT).expect("an attacker writes it");
+        let (trace, mut digests) = trace_of(&record, &key, &siblings, &stranger, &RIGHT, &GATE)
+            .expect("an attacker writes it");
         digests[1] = poseidon::hash_bytes_twice(domain::MT_KEY_HALVES, &MACHINE).1;
         assert!(
             !description()
@@ -605,7 +721,7 @@ mod tests {
         let record = a_record(&RIGHT);
         let (key, siblings, _) = the_tree_of(&record);
         let (mut trace, mut digests) =
-            trace_of(&record, &key, &siblings, &MACHINE, &RIGHT).expect("an honest trace");
+            trace_of(&record, &key, &siblings, &MACHINE, &RIGHT, &GATE).expect("an honest trace");
         let places = Places;
         let halves = sponge::chain_twice(domain::MT_KEY_HALVES, &poseidon::limbs_of(&MACHINE));
         let mut chosen = *halves.last().expect("a chain holds a block");
@@ -640,7 +756,7 @@ mod tests {
         let record = a_record(&RIGHT);
         let (key, siblings, _) = the_tree_of(&record);
         let (mut trace, mut digests) =
-            trace_of(&record, &key, &siblings, &MACHINE, &RIGHT).expect("an honest trace");
+            trace_of(&record, &key, &siblings, &MACHINE, &RIGHT, &GATE).expect("an honest trace");
         let description = description().unwrap();
         assert!(description.satisfied_by(&trace, &public_of_the(&digests, WINDOW)));
         let mut longer = crate::poseidon::limbs_of(&RIGHT);

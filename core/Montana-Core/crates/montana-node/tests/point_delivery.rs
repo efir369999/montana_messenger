@@ -100,3 +100,40 @@ fn collected_evidence_reaches_another_inbound_only_holder() {
         machines[2].objects_at_the_point(&point, 18).unwrap()
     );
 }
+
+// One link carries the points of three windows. The node tells its links the window of every
+// point it publishes at and collects from, so the second and the third window each open behind a
+// renewal of the link (Network, "When a link renews"): an offer before the first deposit, the
+// answer and the finish taken in by the reads of the collection. A renewal that broke would end
+// the link, and the next window would reach nothing.
+#[test]
+fn one_link_carries_three_windows_and_renews_between_them() {
+    let near_at = Scratch::named("renew-near");
+    let far_at = Scratch::named("renew-far");
+    let (near, _) = Machine::start(&Configuration::at(&near_at.0, "127.0.0.1:0")).unwrap();
+    let (far, _) = Machine::start(&Configuration::at(&far_at.0, "127.0.0.1:0")).unwrap();
+    connect(&near, &far);
+    for window in [17u64, 18, 19] {
+        near.enter_round(window, 0, 0).unwrap();
+        far.enter_round(window, 0, 0).unwrap();
+        let point = round::points_of_round(window, 0, 0).unwrap()[0];
+        let object = [window as u8; 64];
+        assert_eq!(
+            near.publish_at_the_point(&point, window, &object).unwrap(),
+            1,
+            "the link did not carry the deposits of window {window}"
+        );
+        assert!(
+            until(|| {
+                near.objects_at_the_point(&point, window).unwrap();
+                !far.objects_at_the_point(&point, window).unwrap().is_empty()
+            }),
+            "the far side did not take in the object of window {window}"
+        );
+        assert_eq!(
+            near.objects_at_the_point(&point, window).unwrap(),
+            far.objects_at_the_point(&point, window).unwrap()
+        );
+    }
+    assert_eq!(near.reached(), 1, "the link ended across a renewal");
+}

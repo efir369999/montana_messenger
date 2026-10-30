@@ -1445,27 +1445,47 @@ pub fn check_wire(md: &str) -> Result<(), String> {
         return Err("wire divergence: the group of the vector reconstructs to other blocks".to_string());
     }
 
-    // The four flights and the two directional keys.
+    // The four flights: the key of the first flight's seal, the transcript, the master and the four
+    // keys that come of it.
     let hs = parse_labeled(md, HANDSHAKE_HEADER)?;
     let named = labeled(&hs, "suite_id")?;
     let suite_id = u16::try_from(leading_number(bare_input(named))?)
         .map_err(|e| format!("a suite beyond two bytes: {e}"))?;
     let id_pk_i = fixed_part(input_of(named, "id_pk_i")?)?;
     let id_pk_r = fixed_part(input_of(named, "id_pk_r")?)?;
-    let keys = labeled(&hs, "pk_i")?;
-    let pk_i = fixed_part(bare_input(keys))?;
+    let keys = labeled(&hs, "pk_s")?;
+    let pk_s = fixed_part(bare_input(keys))?;
+    let pk_i = fixed_part(input_of(keys, "pk_i")?)?;
     let pk_r = fixed_part(input_of(keys, "pk_r")?)?;
-    let ct_i = fixed_part(input_of(keys, "ct_i")?)?;
-    let ct_r = fixed_part(input_of(keys, "ct_r")?)?;
-    let secrets = labeled(&hs, "ss_i")?;
-    let ss_i = repeat32(bare_input(secrets))?;
+    let cts = labeled(&hs, "ct_s")?;
+    let ct_s = fixed_part(bare_input(cts))?;
+    let ct_r = fixed_part(input_of(cts, "ct_r")?)?;
+    let ct_i = fixed_part(input_of(cts, "ct_i")?)?;
+    let secrets = labeled(&hs, "ss_s")?;
+    let ss_s = repeat32(bare_input(secrets))?;
     let ss_r = repeat32(input_of(secrets, "ss_r")?)?;
+    let ss_i = repeat32(input_of(secrets, "ss_i")?)?;
+    compare_hash(
+        "k_hello",
+        labeled(&hs, "k_hello")?,
+        &mt_wire::handshake::hello_key(&ss_s, suite_id, &pk_s, &pk_i, &ct_s),
+    )?;
     let transcript = mt_wire::handshake::transcript(
-        suite_id, &id_pk_i, &id_pk_r, &pk_i, &pk_r, &ct_i, &ct_r,
+        suite_id, &id_pk_i, &id_pk_r, &pk_s, &pk_i, &pk_r, &ct_s, &ct_r, &ct_i,
     );
     compare_hash("transcript", labeled(&hs, "transcript")?, &transcript)?;
-    let master = mt_wire::handshake::master(&ss_i, &ss_r, &transcript);
+    let master = mt_wire::handshake::master(&ss_s, &ss_r, &ss_i, &transcript);
     compare_hash("master", labeled(&hs, "master")?, &master)?;
+    compare_hash(
+        "k_seal_i",
+        labeled(&hs, "k_seal_i")?,
+        &mt_wire::handshake::initiator_seal(&master),
+    )?;
+    compare_hash(
+        "k_seal_r",
+        labeled(&hs, "k_seal_r")?,
+        &mt_wire::handshake::responder_seal(&master),
+    )?;
     compare_hash(
         "k_i2r",
         labeled(&hs, "k_i2r")?,
@@ -1944,7 +1964,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
     let wire = |value: Result<usize, mt_wire::WireError>| -> Result<usize, String> {
         value.map_err(|e| format!("the wire cannot read the Decree: {e:?}"))
     };
-    let of_the_wire: [(&str, usize, &str); 15] = [
+    let of_the_wire: [(&str, usize, &str); 18] = [
         ("hello_len", mt_wire::handshake::hello_len(), "hello"),
         ("hello_answer_len", mt_wire::handshake::hello_answer_len(), "answer of a hello"),
         ("hello_finish_len", mt_wire::handshake::hello_finish_len(), "finish of a hello"),
@@ -1958,6 +1978,9 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
         ("state_query_len", mt_wire::message::state_query_len(), "query of a leaf"),
         ("slot_query_len", mt_wire::message::slot_query_len(), "query of a slot"),
         ("table_query_len", mt_wire::message::table_query_len(), "query of a table"),
+        ("renew_offer_len", mt_wire::message::renew_offer_len(), "offer of a renewal"),
+        ("renew_answer_len", mt_wire::message::renew_answer_len(), "answer of a renewal"),
+        ("renew_finish_len", mt_wire::message::renew_finish_len(), "finish of a renewal"),
         ("channel_commit_len", SlotCommit::expected_len(), "commitment over a slot of a channel"),
         ("channel_renew_len", SlotRenew::expected_len(), "renewal of a slot of a channel"),
     ];
@@ -2174,6 +2197,19 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
     let candidacy_machine = input32(candidacy_inputs, "node_commit")?;
     let candidacy_suite = u16::try_from(number(input_of(candidacy_inputs, "suite_id")?)?)
         .map_err(|_| "the suite of the vector of a candidacy is no u16".to_string())?;
+    // The gate a verifier computes and takes from no candidacy: the segment of the window, the count
+    // of segments in force and the share of it (Canon, "The candidacy of a machine"; constitution
+    // records 297, 300 and 370). The count is the vector's input; the other two are derived as a
+    // verifier derives them, so an implementation deriving either otherwise parts at the digest.
+    let candidacy_in_force = u32::try_from(number(input_of(candidacy_inputs, "in_force")?)?)
+        .map_err(|_| "the count in force of the vector of a candidacy is no u32".to_string())?;
+    let candidacy_gate = mt_proof::circuit::continuity::Gate {
+        segment: mt_pulse::standing::segment(candidacy_window)
+            .map_err(|e| format!("the window of the vector of a candidacy has no segment: {e:?}"))?,
+        in_force: candidacy_in_force,
+        required: mt_pulse::entry::required_segments(candidacy_in_force)
+            .map_err(|e| format!("the share of the vector of a candidacy: {e:?}"))?,
+    };
     let right = mt_derive::nullifier::operator(&candidacy_right);
     let record = record_of_the_vector(labeled(&candidacy_rows, "record")?, &right)?;
     let serialized = mt_state::Layout::bytes(&record)
@@ -2214,6 +2250,7 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
         &as_digest(&naming)?,
         &candidacy_machine,
         &as_digest(&right)?,
+        &candidacy_gate,
         candidacy_suite,
     );
     compare_hash(
@@ -2842,6 +2879,7 @@ pub const DOMAINS_AWAITING_A_VECTOR: &[(&str, &str)] = &[
     ("mt-seed", "the birth of a person"),
     ("mt-account-key", "the birth of a person"),
     ("mt-node-key", "the birth of a person"),
+    ("mt-node-kem", "the birth of a person"),
     ("mt-note-key", "the birth of a person"),
     ("mt-nf-key", "the birth of a person"),
     ("mt-note-pk", "the birth of a person"),
@@ -4161,6 +4199,7 @@ fn registers() -> Vec<&'static [mt_codec::Constant]> {
         mt_proof::circuit::ballot::BALLOT,
         mt_proof::circuit::capacity::CAPACITIES,
         mt_proof::circuit::admission::ADMISSION,
+        mt_proof::circuit::continuity::CONTINUITY,
         mt_proof::circuit::presence::PRESENCE,
         mt_proof::circuit::opening::OPENING,
         mt_proof::circuit::lane::LANE,

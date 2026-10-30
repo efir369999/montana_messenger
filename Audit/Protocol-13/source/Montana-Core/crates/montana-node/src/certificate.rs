@@ -205,6 +205,20 @@ pub struct Round<'a> {
     pub ballots: &'a [Ballot],
 }
 
+// What a certificate not whole yet is refused with: a cement or votes short of their share, or an
+// agreement that has not decided. The certificate of the open window of a running network is such
+// a one while its attestations and pledges still arrive, and so is one whose forged pledges or
+// ballots were dropped, since a forged one says nothing; a forged attestation, beacon or proposal is
+// refused by its own name and is none of these.
+const BELOW_THE_QUORUM: &str = "a cement below the quorum share of the electorate";
+const BELOW_THE_COMMITTEE: &str = "votes below the quorum share of the committee";
+const UNDECIDED: &str = "a certificate whose agreement does not decide the proposal it finalizes";
+
+fn not_whole_yet(refused: &NodeError) -> bool {
+    matches!(refused, NodeError::Refused { what }
+        if [BELOW_THE_QUORUM, BELOW_THE_COMMITTEE, UNDECIDED].contains(what))
+}
+
 // The count of a cement against the quorum share of the electorate, by the integer rule of Canon.
 fn reaches_the_quorum(count: u64, electorate: &Electorate) -> Result<(), NodeError> {
     let reached = mt_pulse::close::closes(u128::from(count), u128::from(electorate.count), 0)
@@ -215,7 +229,7 @@ fn reaches_the_quorum(count: u64, electorate: &Electorate) -> Result<(), NodeErr
         Ok(())
     } else {
         Err(NodeError::Refused {
-            what: "a cement below the quorum share of the electorate",
+            what: BELOW_THE_QUORUM,
         })
     }
 }
@@ -234,7 +248,7 @@ fn reaches_the_committee(votes: u64, electorate: &Electorate) -> Result<(), Node
         Ok(())
     } else {
         Err(NodeError::Refused {
-            what: "votes below the quorum share of the committee",
+            what: BELOW_THE_COMMITTEE,
         })
     }
 }
@@ -388,9 +402,7 @@ pub fn verify_certificate(
         votes: &votes,
     };
     if book.decided(&agreement).map(|(name, _)| name) != Some(previous_id) {
-        return Err(NodeError::Refused {
-            what: "a certificate whose agreement does not decide the proposal it finalizes",
-        });
+        return Err(NodeError::Refused { what: UNDECIDED });
     }
     let cement_aggregate = cement.aggregate(window).map_err(|_| NodeError::Refused {
         what: "a cement the aggregation refuses",
@@ -717,6 +729,37 @@ fn judge(proposal: &Proposal, held: &Held<'_>, roots: Option<&Roots>) -> Result<
             what: "a proposal under an unsupported suite",
         });
     }
+    let key = signed_by_its_runner(proposal)?;
+    // The ticket: the electorate root, the digest of the key this proposal answers under, the
+    // aggregate of the window two before and the threshold of the draw, in the order Canon states;
+    // a proof lifted from another runner's proposal fails at the digest.
+    let digest =
+        Digest::of_bytes(&mt_derive::pulse::runner_digest(key)).ok_or(NodeError::Refused {
+            what: "a digest that is no digest of the family",
+        })?;
+    let public = mt_proof::circuit::ticket::public_of(
+        &[electorate.root, digest],
+        aggregate_two_before,
+        &draw_threshold.to_be_bytes(),
+    );
+    let description = mt_proof::circuit::ticket::description().ok_or(NodeError::Unprovable {
+        what: "the description of a ticket",
+    })?;
+    mt_proof::scheme::verify(&description, &public, &proposal.ticket_proof).map_err(|_| {
+        NodeError::Refused {
+            what: "a proposal whose ticket proof does not verify",
+        }
+    })?;
+    Ok(())
+}
+
+// Whether the runner whose key a proposal carries signed every byte of it but the signature, and the
+// key it signed under. The door judges it of every proposal it is handed, and a machine judges it of
+// the proposals it reads back from its own store: a byte that turned since it was kept is a proposal
+// nobody signed.
+pub(crate) fn signed_by_its_runner(
+    proposal: &Proposal,
+) -> Result<&[u8; mt_codec::size::SIGNING_PUBLIC_KEY], NodeError> {
     let key: &[u8; mt_codec::size::SIGNING_PUBLIC_KEY] = proposal
         .runner_pubkey
         .as_slice()
@@ -740,27 +783,7 @@ fn judge(proposal: &Proposal, held: &Held<'_>, roots: Option<&Roots>) -> Result<
     .map_err(|_| NodeError::Refused {
         what: "a proposal under a signature that does not verify",
     })?;
-    // The ticket: the electorate root, the digest of the key this proposal answers under, the
-    // aggregate of the window two before and the threshold of the draw, in the order Canon states;
-    // a proof lifted from another runner's proposal fails at the digest.
-    let digest =
-        Digest::of_bytes(&mt_derive::pulse::runner_digest(key)).ok_or(NodeError::Refused {
-            what: "a digest that is no digest of the family",
-        })?;
-    let public = mt_proof::circuit::ticket::public_of(
-        &[electorate.root, digest],
-        aggregate_two_before,
-        &draw_threshold.to_be_bytes(),
-    );
-    let description = mt_proof::circuit::ticket::description().ok_or(NodeError::Unprovable {
-        what: "the description of a ticket",
-    })?;
-    mt_proof::scheme::verify(&description, &public, &proposal.ticket_proof).map_err(|_| {
-        NodeError::Refused {
-            what: "a proposal whose ticket proof does not verify",
-        }
-    })?;
-    Ok(())
+    Ok(key)
 }
 
 // Two consecutive final proposals: what an operator hands a joining device, and what a device that
@@ -796,6 +819,21 @@ pub fn walk(
     draw_threshold: &mt_pulse::U256,
     implemented_major: u16,
 ) -> Result<Anchor, NodeError> {
+    walk_to_the_pending(anchor, steps, chains, draw_threshold, implemented_major)
+        .map(|(head, _)| head)
+}
+
+// The walk, and beside the head the proposal of the window after it that the last step judged whole
+// but for the certificate that would make it final: the proposal awaiting its certificate, where the
+// walk took one. It is no head and nothing is taken against its roots; it is the name a machine that
+// walked pledges in the window after it, as a machine that closed that window took it.
+pub(crate) fn walk_to_the_pending(
+    anchor: &Anchor,
+    steps: &[Step<'_>],
+    chains: u64,
+    draw_threshold: &mt_pulse::U256,
+    implemented_major: u16,
+) -> Result<(Anchor, Option<Proposal>), NodeError> {
     let mut earlier = anchor.earlier.clone();
     let mut later = anchor.later.clone();
     if earlier.window.checked_add(1) != Some(later.window)
@@ -913,13 +951,47 @@ pub fn walk(
             // attested name the head is where the walk stands.
             return match refusal {
                 Some(why) => Err(why),
-                None => Ok(head),
+                None => Ok((head, None)),
             };
         };
         earlier = later;
         later = next.clone();
     }
-    Ok(head)
+    // Where the walk took a proposal after the head, `later` is that proposal; where it took none,
+    // `later` is the head itself.
+    let pending = (later.window != head.later.window).then_some(later);
+    Ok((head, pending))
+}
+
+// The walk of a join (Consensus, "The join"). The newest window standing may be the open window of a
+// running network, whose certificate is not whole yet: the proposal before it awaits its certificate,
+// and a walk refused only for that -- a cement, votes or an agreement short -- is taken again without
+// the newest step, so the head is the newest proposal a whole certificate made final. Any other
+// refusal is the refusal of the join: a forged attestation is not dropped in silence for the device to
+// live on from the window before. What the second walk takes it verified whole; what it cannot take
+// is refused as the first was.
+pub fn walk_to_the_open(
+    anchor: &Anchor,
+    steps: &[Step<'_>],
+    chains: u64,
+    draw_threshold: &mt_pulse::U256,
+    implemented_major: u16,
+) -> Result<(Anchor, Option<Proposal>), NodeError> {
+    let walked = walk_to_the_pending(anchor, steps, chains, draw_threshold, implemented_major);
+    match (walked, steps.split_last()) {
+        (Err(refused), Some((_, before_the_newest)))
+            if !before_the_newest.is_empty() && not_whole_yet(&refused) =>
+        {
+            walk_to_the_pending(
+                anchor,
+                before_the_newest,
+                chains,
+                draw_threshold,
+                implemented_major,
+            )
+        }
+        (walked, _) => walked,
+    }
 }
 
 // Lemma 2 of WINDOW-THEOREM.md: every certificate this door accepts satisfies Pi_cert. The presence

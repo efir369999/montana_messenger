@@ -29,6 +29,10 @@ struct MTPipeKey: Hashable, Sendable {
         let value: Data
         let root: Data, rank: Data, fingerprint: Data, faceBid: Data, faceKey: Data, pair: Data, ref: Data
     }
+    /// The heal in flight on this pipe (issue #75, slice C2b-2): which walk a letter goes under and which a letter opens under.
+    /// Never part of a form a store seals: the book keeps it beside the pipe (MTPipeBook, «pipeHeal») and attaches it on every
+    /// reading (healing(_:)); a heal done is no longer carried -- the pipe stands on the healed walk itself (rebased()).
+    private var healing: MTPipeHealing? = nil
 
     init(_ secret: Data) { self.secret = secret; floor = nil }
     private init(floor: Floor) { secret = Data(); self.floor = floor }
@@ -88,8 +92,10 @@ struct MTPipeKey: Hashable, Sendable {
         if let floor, floor.day >= f { return self }
         let k = kept()
         guard let ref = refBytes, let bid = Self.unhex(k.faceBid), bid.count == 32 else { return self }
-        return MTPipeKey(floor: Floor(day: f, value: walked(f), root: rootKey, rank: sameRank, fingerprint: k.fingerprint,
-                                      faceBid: bid, faceKey: k.faceKey, pair: k.pair, ref: ref))
+        var floored = MTPipeKey(floor: Floor(day: f, value: walked(f), root: rootKey, rank: sameRank, fingerprint: k.fingerprint,
+                                             faceBid: bid, faceKey: k.faceKey, pair: k.pair, ref: ref))
+        floored.healing = healing
+        return floored
     }
 
     /// Whether the walk already erased the established secret here: the pipe holds its floor.
@@ -114,26 +120,46 @@ struct MTPipeKey: Hashable, Sendable {
         return o > s ? other : self
     }
 
-    /// The letter body key of a minute: the seal key under the pipe secret of that minute's day.
+    /// The letter body key of a minute a letter is sealed in: the seal key under the walk this side sends under on that minute's
+    /// day -- the healed one when the heal in flight says so (MTPipeHealing.sendsHealed), else the pipe's own.
     func bodyKey(window: UInt64) -> [UInt8] {
-        MTNodeWire.sealKey(stepSecret: walked(window / MTNodeWire.minutesPerDay), window: window)
+        MTNodeWire.sealKey(stepSecret: sendWalk(window / MTNodeWire.minutesPerDay), window: window)
     }
-    /// The conversation's daily label at the node: both sides derive it from the pipe secret of that day.
+    /// The keys a letter sealed in a minute may open under, the healed walk's first, each with the walk it stands on: the opener
+    /// tells the heal which one opened (MTPipeBook.healRead). One key, the pipe's own, while no heal is in flight.
+    func bodyKeys(window: UInt64) -> [(walk: MTPipeHealing.Walk, key: [UInt8])] {
+        openWalks(window / MTNodeWire.minutesPerDay).map { ($0.walk, MTNodeWire.sealKey(stepSecret: $0.value, window: window)) }
+    }
+    /// The conversation's daily label at the node, as this side deposits under it: both sides derive it from the walk of that day.
     func convW(day: UInt64) -> String {
-        MTNodeWire.convTag(daySecret: walked(day), window: day)
+        MTNodeWire.convTag(daySecret: sendWalk(day), window: day)
     }
-    /// The tag of a pipe in a window: where a letter is deposited on the live wire, the radio and the direct road. Over the
-    /// established secret before tagWalkDay, as every build has laid it; from it over the walked value of the window's day.
+    /// The labels of a day this side reads a box under: the healed walk's first while a heal is in flight, then the pipe's own.
+    func convWs(day: UInt64) -> [String] {
+        openWalks(day).map { MTNodeWire.convTag(daySecret: $0.value, window: day) }
+    }
+    /// The tag of a pipe in a window: where a letter is deposited on the live wire, the radio and the direct road. Over the healed
+    /// walk once this side sends under it; else over the established secret before tagWalkDay, as every build has laid it, and
+    /// from it over the walked value of the window's day.
     func tag(window: UInt64) -> Data {
+        let day = window / MTNodeWire.minutesPerDay
+        if let h = healing, h.sendsHealed(day: day), let v = h.heal.walked(day) { return MTNodeWire.tag(sharedSecret: v, window: window) }
+        return ownTag(window: window)
+    }
+    private func ownTag(window: UInt64) -> Data {
         let day = window / MTNodeWire.minutesPerDay
         return MTNodeWire.tag(sharedSecret: day >= Self.tagWalkDay || !holdsOrigin ? walked(day) : secret, window: window)
     }
-    /// The tags a receiver accepts in a window: the tag of the window and, on Y and Y + 1, the one an earlier build laid over the
-    /// established secret.
+    /// The tags a receiver accepts in a window: the healed walk's while a heal is in flight; then, while the old walk is held, the
+    /// tag of the window and, on Y and Y + 1, the one an earlier build laid over the established secret.
     func tags(window: UInt64) -> [Data] {
-        let day = window / MTNodeWire.minutesPerDay, now = tag(window: window)
-        guard holdsOrigin, day >= Self.tagWalkDay, day < Self.eraseDay else { return [now] }
-        return [now, MTNodeWire.tag(sharedSecret: secret, window: window)]
+        let day = window / MTNodeWire.minutesPerDay
+        let walks = openWalks(day)
+        let healed = walks.filter { $0.walk == .healed }.map { MTNodeWire.tag(sharedSecret: $0.value, window: window) }
+        guard walks.contains(where: { $0.walk == .old }) else { return healed }
+        let now = ownTag(window: window)
+        guard holdsOrigin, day >= Self.tagWalkDay, day < Self.eraseDay else { return healed + [now] }
+        return healed + [now, MTNodeWire.tag(sharedSecret: secret, window: window)]
     }
 
     // ── THE ROOT OF A CONVERSATION (21.10.2026, the author's word at 12:2x UTC: «yes») ──────────────────────────────────────────
@@ -427,7 +453,8 @@ struct MTPipeKey: Hashable, Sendable {
               floored.kept() == k.kept(), floored.reference == k.reference, floored.sameRank == k.sameRank,
               MTPipeKey(sealed: floored.sealedForm) == floored, floored.floored(day: e + 1) == floored
         else { return false }
-        return true
+        // The heal of a pipe (issue #75, slice C1), its own vectors below.
+        return healAgreesWithCanon()
     }
 }
 
@@ -526,3 +553,432 @@ struct MTPipeKept: Codable, Equatable {
     let pair: Data          // HMAC-SHA-256(secret, "mt-coin-pair-v1"): the coin pair's tag (MTCoinTx.pairTag)
     let ref: String?        // MTPipeKey.reference; absent from a record kept before it was born here
 }
+
+// BEGIN MTPipeKey heal (issue #75, slice C1 of the client box)
+// ── THE HEAL OF A PIPE (Network, «How a link renews its keys», what it does for a pipe; issue #75; Canon, «A heal of a pipe»;
+// Agent 758 [b00c7045], claude-opus-5-5, 30.10.2026 UTC, the Author's word 12903) ─────────────────────────────────────────────
+// Slice C1 of the client box: the fold and the crossing rule, pure functions of the values a pair of letters carries.
+// Slice C2a (Agent 760 [d1ac7076], claude-opus-5-5, 30.10.2026 UTC; the Author's decision 398 = a, constitution record 400): the
+// healed walk stands on this client's day walk -- the fold takes the value the old walk reaches on the UTC day of the answering
+// letter, and the healed walk stands from the next UTC day; what each side sends under and erases (Network, the third and fourth
+// points of the heal). The letters that carry an offer and an answer come in C2b.
+// NAMED LIMIT OF THIS CLIENT (decision 398 = a): the Network heals by the window, this client by the day. The residue Network names
+// -- the answering side's letters stay under the old walk until the offering side next writes -- lasts here at least to the end
+// of the answering letter's UTC day, since the healed walk cannot stand before the next day.
+extension MTPipeKey {
+    /// The size of a heal offer, an ML-KEM-768 encapsulation key (MT_MLKEM_PUBKEY_SIZE), and of its answer, an encapsulation
+    /// to it (MT_MLKEM_CIPHERTEXT_SIZE).
+    static let healOfferSize = 1184
+    static let healAnswerSize = 1088
+
+    /// The first value of a healed walk: SHA-256("mt-pipe-heal" ‖ 0x00 ‖ old ‖ ss_h ‖ pk_h ‖ ct_h). old is the value the old
+    /// walk reaches at the answering letter's own step, never the step after it (Canon's negative line); pk_h the encapsulation
+    /// key the offering side drew for that offer alone; ct_h the encapsulation the answering letter carries and ss_h what it
+    /// opens to. Whoever read the old walk and not the fresh decapsulation key reaches none of the healed walk. nil for a part
+    /// of another size: no heal stands on a cut value.
+    static func healed(old: Data, ss: Data, pk: Data, ct: Data) -> Data? {
+        guard old.count == 32, ss.count == 32, pk.count == healOfferSize, ct.count == healAnswerSize else { return nil }
+        return MTNodeWire.domained("mt-pipe-heal", [old, ss, pk, ct])
+    }
+
+    /// CROSSING HEALS (decision 391 = a): at most one heal of a pipe in flight; when the two sides' offers cross, the offer
+    /// whose encapsulation key is the lower in byte order stands and the other is dropped. Both sides decide alike from the two
+    /// keys alone, with no letter about it. Whether my offer stands against theirs; one key met twice is no crossing (false).
+    static func offerStands(mine: Data, theirs: Data) -> Bool {
+        mine != theirs && mine.lexicographicallyPrecedes(theirs)
+    }
+
+    /// The frozen vectors of the heal (Canon, «A heal of a pipe»): over pipe_secret(test_secret, W + 1), the value the old walk
+    /// reaches one step past its start, the healed walk's first value and its next step, and the named wrong heal of the value
+    /// one step on. It rejects a heal of the step after the answering letter (85169530...), a heal over a part of another size,
+    /// and a crossing decided by anything but the byte order of the two keys (a little-endian or a length-first comparison
+    /// parts on the fourth pair). Derived from the formula in Python apart from this code (council links 12887 and 12907).
+    static func healAgreesWithCanon() -> Bool {
+        func hex(_ d: Data) -> String { d.map { String(format: "%02x", $0) }.joined() }
+        func step(_ d: Data) -> Data { MTNodeWire.domained("mt-pipe-ratchet", [d]) }
+        let testSecret = Data(SHA256.hash(data: Data("mt-vector-pipe-secret".utf8)))   // LOCAL-HASH-OK: Canon's test value
+        let old = step(testSecret)
+        let ss = Data(repeating: 0x22, count: 32)
+        let pk = Data(repeating: 0x23, count: healOfferSize)
+        let ct = Data(repeating: 0x24, count: healAnswerSize)
+        let low = Data([0x01]) + Data(repeating: 0xff, count: healOfferSize - 1)
+        let high = Data([0x02]) + Data(repeating: 0x00, count: healOfferSize - 1)
+        guard hex(testSecret) == "a225e0b87df8a5568331badccfa4b217aaee3c7077b6021a52fab89d8856ef56",
+              hex(old) == "92aa039f4d82a59e12a6e65eacaa998fa06455b63e4aef6405556f9e99e4c666",
+              let heal = healed(old: old, ss: ss, pk: pk, ct: ct),
+              hex(heal) == "112f58fbae5637bb976ac9c6a85ed9bf5d26669a511de8310387a62419d81adc",
+              hex(step(heal)) == "43ee0cf3597a6d9450483d33820847866be77ad8cf53191102c0ee8dd401f283",
+              healed(old: step(old), ss: ss, pk: pk, ct: ct).map(hex)
+                  == "85169530874db497c0d4f527900ac25eff7fc12ac2d132e7c9984b42836924b5",
+              healed(old: old, ss: ss, pk: pk.prefix(healOfferSize - 1), ct: ct) == nil,
+              healed(old: old, ss: ss, pk: pk, ct: ct + Data([0])) == nil,
+              offerStands(mine: pk, theirs: Data(repeating: 0x24, count: healOfferSize)),
+              !offerStands(mine: Data(repeating: 0x24, count: healOfferSize), theirs: pk),
+              !offerStands(mine: pk, theirs: pk),
+              offerStands(mine: low, theirs: high), !offerStands(mine: high, theirs: low)
+        else { return false }
+        return healByDayAgreesWithCanon()
+    }
+
+    /// The heal of this pipe answered by a letter laid on `day` (the UTC day whose tag the answering letter travelled under): the
+    /// fold over the value the old walk reaches on that day itself, never the day after (Canon's negative line). nil for a part
+    /// of another size, or for a day behind the floor -- the walk gives back no day it erased.
+    func heal(answeredOn day: UInt64, ss: Data, pk: Data, ct: Data) -> MTPipeHeal? {
+        // Before the anchor the walk stands still (walkAnchorDay) while a healed walk steps each day: no heal stands there.
+        guard day >= Self.walkAnchorDay else { return nil }
+        if let floor, Self.steps(day) < Self.steps(floor.day) { return nil }
+        return Self.healed(old: walked(day), ss: ss, pk: pk, ct: ct).map { MTPipeHeal(day: day, first: $0) }
+    }
+
+    /// The heal by the day (C2a), over the Canon's own vectors with its window read as this client's day: the old walk on the
+    /// day after the anchor is pipe_secret(test_secret, W + 1); healed on that day it gives 112f58fb... standing on the next
+    /// day and 43ee0cf3... one day on; healed one day late it gives the named wrong value 85169530.... Then the two sides of
+    /// Network's heal: the offering side sends under the healed walk from the day after the answer, the answering side under
+    /// the old walk until it opens a letter under the healed one; each erases the old walk only on such a letter.
+    static func healByDayAgreesWithCanon() -> Bool {
+        func hex(_ d: Data) -> String { d.map { String(format: "%02x", $0) }.joined() }
+        let testSecret = Data(SHA256.hash(data: Data("mt-vector-pipe-secret".utf8)))   // LOCAL-HASH-OK: Canon's test value
+        let k = MTPipeKey(testSecret)
+        let a = walkAnchorDay
+        let ss = Data(repeating: 0x22, count: 32)
+        let pk = Data(repeating: 0x23, count: healOfferSize)
+        let ct = Data(repeating: 0x24, count: healAnswerSize)
+        guard let h = k.heal(answeredOn: a + 1, ss: ss, pk: pk, ct: ct),
+              hex(h.first) == "112f58fbae5637bb976ac9c6a85ed9bf5d26669a511de8310387a62419d81adc",
+              h.walked(a + 1) == nil, h.walked(a) == nil,
+              h.walked(a + 2).map(hex) == "112f58fbae5637bb976ac9c6a85ed9bf5d26669a511de8310387a62419d81adc",
+              h.walked(a + 3).map(hex) == "43ee0cf3597a6d9450483d33820847866be77ad8cf53191102c0ee8dd401f283",
+              k.heal(answeredOn: a + 2, ss: ss, pk: pk, ct: ct).map({ hex($0.first) })
+                  == "85169530874db497c0d4f527900ac25eff7fc12ac2d132e7c9984b42836924b5",
+              k.heal(answeredOn: a + 1, ss: ss, pk: pk.prefix(healOfferSize - 1), ct: ct) == nil
+        else { return false }
+        var offering = MTPipeHealing(side: .offering, heal: h)
+        var answering = MTPipeHealing(side: .answering, heal: h)
+        guard !offering.sendsHealed(day: a + 1), offering.sendsHealed(day: a + 2),
+              !answering.sendsHealed(day: a + 2), !answering.sendsHealed(day: a + 9),
+              offering.opens(day: a + 2) == [.healed, .old], answering.opens(day: a + 1) == [.old],
+              answering.opens(day: a + 2) == [.healed, .old]
+        else { return false }
+        answering.opened(.old); offering.opened(.old)
+        guard answering.holdsOld, offering.holdsOld else { return false }
+        answering.opened(.healed)
+        guard !answering.holdsOld, answering.sendsHealed(day: a + 2), answering.opens(day: a + 2) == [.healed],
+              answering.opens(day: a + 1) == []
+        else { return false }
+        offering.opened(.healed)
+        return !offering.holdsOld && offering.opens(day: a + 3) == [.healed]
+    }
+}
+
+/// A heal of a pipe by this client's day (Agent 760 [d1ac7076], claude-opus-5-5, 30.10.2026 UTC; decision 398 = a): the day of the
+/// answering letter and the healed walk's first value, standing on the day after it and walking on by the ordinary step.
+struct MTPipeHeal: Hashable, Sendable, Codable {
+    let day: UInt64
+    let first: Data
+    /// The healed walk on a day: nil on the answering letter's day and before it, where the old walk stands; one step a day
+    /// after the first, as the old walk steps, bounded as the old walk is (maxWalk).
+    func walked(_ on: UInt64) -> Data? {
+        guard on > day else { return nil }
+        var value = first, at = day + 1
+        while at < on, at - day <= MTPipeKey.maxWalk { value = MTNodeWire.domained("mt-pipe-ratchet", [value]); at += 1 }
+        return value
+    }
+}
+
+/// What each side of a heal sends under and opens under (Network, «How a link renews its keys», the heal's third and fourth
+/// points): the offering side sends under the healed walk from the first day it stands; the answering side keeps sending under
+/// the old walk until it opens a letter under the healed one. Each collects under both walks until it opens a letter of the
+/// other side under the healed one, and then erases the old walk -- never before: a lost letter costs a heal and never a pipe.
+struct MTPipeHealing: Hashable, Sendable, Codable {
+    enum Side: Hashable, Sendable, Codable { case offering, answering }
+    enum Walk: Hashable, Sendable, Codable { case healed, old }
+    let side: Side
+    let heal: MTPipeHeal
+    private(set) var holdsOld = true
+    init(side: Side, heal: MTPipeHeal) { self.side = side; self.heal = heal }
+    /// Whether a letter laid on `day` goes under the healed walk.
+    func sendsHealed(day: UInt64) -> Bool {
+        guard day > heal.day else { return false }
+        return side == .offering || !holdsOld
+    }
+    /// The walks a letter received on `day` may open under, the healed one first.
+    func opens(day: UInt64) -> [Walk] {
+        (day > heal.day ? [Walk.healed] : []) + (holdsOld ? [Walk.old] : [])
+    }
+    /// A letter of the other side opened under a walk: under the healed one the old walk is erased here.
+    mutating func opened(_ walk: Walk) { if walk == .healed { holdsOld = false } }
+}
+
+// ── THE LETTERS OF A HEAL (issue #75, slice C2b; the Author's decisions 401 = a and 402 = a, constitution records 408 and 409;
+// Agent 769 [47eded96], claude-opus-5-5, 30.10.2026 UTC, the Author's word 13109: #75 active) ─────────────────────────────────────
+// What one side of a pipe carries in the ninth field of its letters (MTNodeWire.withHeal) and what it does with what it reads there.
+// An offer rides in the first letter of the UTC day that has room for it, else in the next letter of that day; an answer the same
+// way. The answer names its offer by ρ, the last 32 bytes of pk_h (FIPS 203: ek = t ‖ ρ, already inside the offer, no new hash
+// domain); the offering side opens an answer only with the key of the offer it names and drops any other, since ML-KEM never refuses
+// a ciphertext. An unanswered offer is replaced by the first letter of the next UTC day. At most one heal in flight (391 = a): a side
+// offers only while it holds one walk and owes no answer, and of two crossing offers the lower key in byte order stands.
+/// The ninth field of a letter: an offer, or an answer that names its offer.
+enum MTPipeHealPart: Equatable {
+    case offer(pk: Data)
+    case answer(ct: Data, rho: Data)
+    static let offerKind: UInt8 = 1, answerKind: UInt8 = 2, rhoSize = 32
+    /// ρ of an encapsulation key: its last 32 bytes.
+    static func rho(_ pk: Data) -> Data { Data(pk.suffix(rhoSize)) }
+    var field: Data {
+        switch self {
+        case .offer(let pk): return Data([Self.offerKind]) + pk
+        case .answer(let ct, let rho): return Data([Self.answerKind]) + ct + rho
+        }
+    }
+    /// nil for a kind not known here or parts of another size: an older or newer field is passed over, never half read.
+    init?(field: Data) {
+        guard let kind = field.first else { return nil }
+        let rest = Data(field.dropFirst())
+        switch kind {
+        case Self.offerKind where rest.count == MTPipeKey.healOfferSize: self = .offer(pk: rest)
+        case Self.answerKind where rest.count == MTPipeKey.healAnswerSize + Self.rhoSize:
+            self = .answer(ct: Data(rest.prefix(MTPipeKey.healAnswerSize)), rho: Data(rest.suffix(Self.rhoSize)))
+        default: return nil
+        }
+    }
+}
+
+/// The three ML-KEM-768 operations of a heal, given from outside: the app passes MTPipeHealKeys (MTPipe.swift, the app alone).
+struct MTPipeHealKEM {
+    let offer: () -> (pk: Data, sk: Data)?
+    let answer: (Data) -> (ct: Data, ss: Data)?
+    let open: (Data, Data) -> Data?   // (ct, sk) -> ss
+}
+
+/// One side of one pipe's heals: its own offer awaiting an answer, the answer it owes to the other side's offer, and the heal in
+/// flight. Kept per pipe by the app; it holds a decapsulation key and a shared secret, so it is kept as the pipe's secret is.
+struct MTPipeHealSide: Codable, Equatable {
+    struct Offer: Codable, Equatable { let pk: Data; let sk: Data; let day: UInt64; var rode: Bool }
+    struct Owed: Codable, Equatable { let pk: Data; let ct: Data; let ss: Data }
+    var offer: Offer?
+    var owed: Owed?
+    var healing: MTPipeHealing?
+    /// The other side's offer this side answered last: another road's copy of that one letter is never answered again.
+    var answered: Data?
+    /// The pipe was rebased on a healed walk (MTPipeKey.rebased): its floor is a heal's, not the walk's erasure, so it never
+    /// counts as the first floor the clock guard asks about (MTFloorGuard, rule 4).
+    var rebased = false
+    /// One walk held: no heal in flight, or its old walk erased.
+    var holdsOneWalk: Bool { !(healing?.holdsOld ?? false) }
+
+    /// What a letter laid on `day` carries: the answer owed, else this side's offer of the day -- drawn on the day's first letter,
+    /// replacing one left unanswered from an earlier day, and carried until a letter of the day had room for it. nil: nothing.
+    mutating func carry(on day: UInt64, kem: MTPipeHealKEM) -> MTPipeHealPart? {
+        if let owed { return .answer(ct: owed.ct, rho: MTPipeHealPart.rho(owed.pk)) }
+        guard holdsOneWalk else { return nil }
+        if offer.map({ $0.day < day }) ?? true {
+            offer = kem.offer().map { Offer(pk: $0.pk, sk: $0.sk, day: day, rode: false) }
+        }
+        guard let offer, offer.day == day, !offer.rode else { return nil }
+        return .offer(pk: offer.pk)
+    }
+
+    /// The letter laid on `day` left with `part` in its ninth field. An answer that left starts this side's heal as the answering
+    /// side, folded over `pipe`, the walk the pipe stands on.
+    mutating func sent(_ part: MTPipeHealPart, on day: UInt64, pipe: MTPipeKey) {
+        switch part {
+        case .offer(let pk): if offer?.pk == pk { offer?.rode = true }
+        case .answer(let ct, _):
+            guard let owed, owed.ct == ct else { return }
+            healing = pipe.heal(answeredOn: day, ss: owed.ss, pk: owed.pk, ct: owed.ct).map { MTPipeHealing(side: .answering, heal: $0) }
+            self.owed = nil
+        }
+    }
+
+    /// A letter of the other side, whose tag stood on `day`, read with `part` in its ninth field -- after the walk it opened under
+    /// was told to the heal in flight (MTPipeHealing.opened). An offer: a heal of the other side that never got this side's answer
+    /// is let go; a crossing offer of its own that stands keeps it; else it is answered. An answer: opened only when it names the
+    /// offer of this side that rode; then this side heals as the offering one.
+    mutating func received(_ part: MTPipeHealPart, on day: UInt64, pipe: MTPipeKey, kem: MTPipeHealKEM) {
+        switch part {
+        case .offer(let pk):
+            // One letter reaches a side by several roads (the lane, the box, the radio): an offer that rides once is never sent
+            // again (carry), so the same key read twice is the same letter, and the heal it began is not let go.
+            if pk == answered || pk == owed?.pk { return }
+            if let h = healing, h.holdsOld {
+                // The other side offers only while it holds one walk: it never opened this side's answer.
+                guard h.side == .answering else { return }
+                healing = nil
+            }
+            if let mine = offer, mine.rode, MTPipeKey.offerStands(mine: mine.pk, theirs: pk) { return }
+            offer = nil
+            owed = kem.answer(pk).map { Owed(pk: pk, ct: $0.ct, ss: $0.ss) }
+            if owed != nil { answered = pk }
+        case .answer(let ct, let rho):
+            guard let mine = offer, mine.rode, MTPipeHealPart.rho(mine.pk) == rho, let ss = kem.open(ct, mine.sk),
+                  let h = pipe.heal(answeredOn: day, ss: ss, pk: mine.pk, ct: ct)
+            else { return }
+            healing = MTPipeHealing(side: .offering, heal: h)
+            offer = nil
+        }
+    }
+
+    /// The letters of a heal agree, run with the KEM given: the ninth field rides in a 2 048-byte envelope after the author and an
+    /// older reader's eight fields stand unchanged; a long letter rides without it; a whole heal by letters gives both sides one
+    /// walk; a late answer to an offer replaced the next day is dropped (record 409); of two crossing offers the lower stands; an
+    /// answer never opened is let go when the other side offers again; no offer while two walks are held.
+    static func agrees(kem: MTPipeHealKEM) -> Bool {
+        let pipe = MTPipeKey(Data(repeating: 0x5A, count: 32))
+        let d = MTPipeKey.walkAnchorDay + 1
+        let head = Data("m1\u{0}hi\u{0}Ann\u{0}A\u{0}".utf8)
+        let long = Data(("m2\u{0}" + String(repeating: "x", count: 600) + "\u{0}Ann\u{0}A\u{0}").utf8)
+        var o = MTPipeHealSide(), a = MTPipeHealSide()
+        guard case .offer(let pk)? = o.carry(on: d, kem: kem) else { return false }
+        let letter = MTNodeWire.withHeal(MTNodeWire.withAuthor(head, tag: "QUFBQUFBQUFBQUFBQUFBQQ=="), field: MTPipeHealPart.offer(pk: pk).field)
+        guard letter.count <= MTNodeWire.envelopeSize, let padded = MTNodeWire.padEnvelope(letter),
+              let read = MTNodeWire.letterHeal(padded), MTPipeHealPart(field: read) == .offer(pk: pk),
+              MTNodeWire.letterFields(padded) == ["m1", "hi", "Ann", "A", "", "", "", "QUFBQUFBQUFBQUFBQUFBQQ=="],
+              MTNodeWire.withHeal(long, field: MTPipeHealPart.offer(pk: pk).field) == long,
+              MTNodeWire.letterHeal(MTNodeWire.padEnvelope(head) ?? Data()) == nil,
+              MTPipeHealPart(field: Data([MTPipeHealPart.offerKind]) + pk.dropLast()) == nil,
+              MTPipeHealPart(field: Data([9]) + pk) == nil
+        else { return false }
+        // A whole heal: the offer rides, is answered, the answer rides and is opened; both fold one walk.
+        o.sent(.offer(pk: pk), on: d, pipe: pipe)
+        guard o.carry(on: d, kem: kem) == nil else { return false }
+        a.received(.offer(pk: pk), on: d, pipe: pipe, kem: kem)
+        guard let answer = a.carry(on: d, kem: kem), case .answer(_, let rho) = answer,
+              MTPipeHealPart(field: answer.field) == answer, rho == MTPipeHealPart.rho(pk)
+        else { return false }
+        a.sent(answer, on: d, pipe: pipe)
+        // The offer's letter read again by another road: the heal it began stands, nothing is owed anew.
+        let begun = a
+        a.received(.offer(pk: pk), on: d, pipe: pipe, kem: kem)
+        guard a == begun, a.healing?.holdsOld == true else { return false }
+        o.received(answer, on: d, pipe: pipe, kem: kem)
+        guard let ho = o.healing, let ha = a.healing, ho.side == .offering, ha.side == .answering, ho.heal == ha.heal,
+              o.offer == nil, a.owed == nil, o.carry(on: d + 1, kem: kem) == nil, a.carry(on: d + 1, kem: kem) == nil
+        else { return false }
+        o.received(answer, on: d, pipe: pipe, kem: kem)
+        guard o.healing == ho else { return false }
+        o.healing?.opened(.healed)
+        guard case .offer? = o.carry(on: d + 2, kem: kem) else { return false }
+        // Record 409: an offer nobody answered is replaced by the next day's first letter; the late answer to it is dropped.
+        var p = MTPipeHealSide(), q = MTPipeHealSide()
+        guard case .offer(let p1)? = p.carry(on: d, kem: kem) else { return false }
+        p.sent(.offer(pk: p1), on: d, pipe: pipe)
+        guard case .offer(let p2)? = p.carry(on: d + 1, kem: kem), p2 != p1 else { return false }
+        p.sent(.offer(pk: p2), on: d + 1, pipe: pipe)
+        q.received(.offer(pk: p1), on: d, pipe: pipe, kem: kem)
+        guard let late = q.carry(on: d + 1, kem: kem) else { return false }
+        p.received(late, on: d + 1, pipe: pipe, kem: kem)
+        guard p.healing == nil, p.offer?.pk == p2 else { return false }
+        // The answer the offering side never opened is let go when it offers again, and the new offer is answered.
+        q.sent(late, on: d + 1, pipe: pipe)
+        guard q.healing?.holdsOld == true else { return false }
+        q.received(.offer(pk: p2), on: d + 1, pipe: pipe, kem: kem)
+        guard q.healing == nil, q.owed?.pk == p2 else { return false }
+        // Crossing (391 = a): the lower key stands, its side keeps its offer, the other answers it.
+        var x = MTPipeHealSide(), y = MTPipeHealSide()
+        guard case .offer(let kx)? = x.carry(on: d, kem: kem), case .offer(let ky)? = y.carry(on: d, kem: kem), kx != ky else { return false }
+        x.sent(.offer(pk: kx), on: d, pipe: pipe); y.sent(.offer(pk: ky), on: d, pipe: pipe)
+        x.received(.offer(pk: ky), on: d, pipe: pipe, kem: kem); y.received(.offer(pk: kx), on: d, pipe: pipe, kem: kem)
+        let (low, high) = MTPipeKey.offerStands(mine: kx, theirs: ky) ? (x, y) : (y, x)
+        guard low.offer != nil, low.owed == nil, high.offer == nil, high.owed?.pk == low.offer?.pk else { return false }
+        // The side survives being kept.
+        guard let kept = try? JSONEncoder().encode(o), (try? JSONDecoder().decode(MTPipeHealSide.self, from: kept)) == o else { return false }
+        return MTPipeKey.healWiredAgrees(kem: kem)
+    }
+}
+
+// ── THE HEAL WIRED INTO THE PIPE (issue #75, slice C2b-2; Agent 772 [17daf7e8], claude-opus-5-5, 30.10.2026 UTC, the Author's word
+// 13109: #75 active) ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// The heal stays inside the pipe's one owner: the book attaches the heal in flight to the pipe it hands out, and the pipe derives
+// every key of a letter -- the seal, the tag, the daily label -- under the walk the heal names. Sending follows sendsHealed; opening
+// tries every walk of opens(day:), the healed first, and says which walk opened. A heal done (the old walk erased on a letter of
+// the other side under the healed one) is no heal carried: the pipe is rebased on the healed walk as a floor on the day after the
+// answering letter -- the floor's value on that day is the healed walk's first value, and the floor walks on by the same step -- so
+// no new form is sealed and the established secret and the old walk leave as a floor drops them.
+// NAMED LIMIT: two keys of one pipe stay one pipe only as samePipe says; a whole secret met again after a heal (a card letter
+// delivered twice) is no longer one pipe with the rebased one, and the book keeps the rebased one.
+extension MTPipeKey {
+    /// The pipe with the heal in flight the book keeps beside it; nil: none.
+    func healing(_ h: MTPipeHealing?) -> MTPipeKey { var k = self; k.healing = h; return k }
+    /// The heal in flight this pipe was handed out with.
+    var healInFlight: MTPipeHealing? { healing }
+
+    /// The walk a letter laid on `day` goes under.
+    private func sendWalk(_ day: UInt64) -> Data {
+        if let h = healing, h.sendsHealed(day: day), let v = h.heal.walked(day) { return v }
+        return walked(day)
+    }
+    /// The walks a letter of `day` may open under, the healed first; the pipe's own alone while no heal is in flight.
+    private func openWalks(_ day: UInt64) -> [(walk: MTPipeHealing.Walk, value: Data)] {
+        guard let h = healing else { return [(.old, walked(day))] }
+        return h.opens(day: day).compactMap { w in
+            w == .healed ? h.heal.walked(day).map { (w, $0) } : (w, walked(day))
+        }
+    }
+
+    /// The pipe standing on the healed walk once the old walk is erased here: a floor on the day after the answering letter whose
+    /// value is the healed walk's first, with the quantities kept for good. nil while the old walk is held, or for a pipe that is
+    /// not whole.
+    func rebased() -> MTPipeKey? {
+        guard let h = healing, !h.holdsOld, isWhole else { return nil }
+        let k = kept()
+        guard let ref = refBytes, let bid = Self.unhex(k.faceBid), bid.count == 32 else { return nil }
+        return MTPipeKey(floor: Floor(day: h.heal.day + 1, value: h.heal.first, root: rootKey, rank: sameRank, fingerprint: k.fingerprint,
+                                      faceBid: bid, faceKey: k.faceKey, pair: k.pair, ref: ref))
+    }
+
+    /// Two keys of one pipe heal by letters (withHeal, padEnvelope, letterHeal), the KEM given: on the day after the answer the
+    /// offering side seals, deposits and labels under the healed walk and the answering side opens it, the answering side still
+    /// under the old walk and the offering side opens that; the answering side opens a healed letter and is rebased, then the
+    /// offering side; both stand on one floor, derive alike, keep their form, and the old walk opens nothing on either.
+    static func healWiredAgrees(kem: MTPipeHealKEM) -> Bool {
+        let pipe = MTPipeKey(Data(repeating: 0x5B, count: 32))
+        let d = walkAnchorDay + 1, mpd = MTNodeWire.minutesPerDay, w = (d + 1) * mpd + 7, late = (d + 5) * mpd + 3
+        func carried(_ part: MTPipeHealPart) -> MTPipeHealPart? {
+            let body = MTNodeWire.withHeal(MTNodeWire.withAuthor(Data("m\u{0}t\u{0}".utf8), tag: "QUFBQUFBQUFBQUFBQUFBQQ=="), field: part.field)
+            return MTNodeWire.padEnvelope(body).flatMap(MTNodeWire.letterHeal).flatMap(MTPipeHealPart.init(field:))
+        }
+        var o = MTPipeHealSide(), a = MTPipeHealSide()
+        guard let offer = o.carry(on: d, kem: kem), let got = carried(offer) else { return false }
+        o.sent(offer, on: d, pipe: pipe)
+        a.received(got, on: d, pipe: pipe, kem: kem)
+        guard let answer = a.carry(on: d, kem: kem), let back = carried(answer) else { return false }
+        a.sent(answer, on: d, pipe: pipe)
+        o.received(back, on: d, pipe: pipe, kem: kem)
+        let ko = pipe.healing(o.healing), ka = pipe.healing(a.healing)
+        guard ko.healInFlight != nil, ka.healInFlight != nil,
+              // the answer's own day: both still under the old walk
+              ko.bodyKey(window: d * mpd + 9) == pipe.bodyKey(window: d * mpd + 9),
+              ka.bodyKey(window: d * mpd + 9) == pipe.bodyKey(window: d * mpd + 9),
+              // the day after: the offering side under the healed walk, the answering side opens it under the healed
+              ko.bodyKey(window: w) != pipe.bodyKey(window: w),
+              ka.bodyKeys(window: w).first.map({ $0.walk == .healed && $0.key == ko.bodyKey(window: w) }) == true,
+              ka.tags(window: w).first == ko.tag(window: w), ka.convWs(day: d + 1).first == ko.convW(day: d + 1),
+              // the answering side still under the old walk, the offering side opens it under the old
+              ka.bodyKey(window: w) == pipe.bodyKey(window: w),
+              ko.bodyKeys(window: w).contains(where: { $0.walk == .old && $0.key == ka.bodyKey(window: w) }),
+              ko.tags(window: w).contains(ka.tag(window: w)), ko.convWs(day: d + 1).contains(ka.convW(day: d + 1)),
+              ka.rebased() == nil, ko.rebased() == nil
+        else { return false }
+        // The answering side opens the offering side's healed letter: its old walk is erased, it is rebased.
+        a.healing?.opened(.healed)
+        guard let ra = pipe.healing(a.healing).rebased(), ra.isFloored, !ra.holdsOrigin, ra.healInFlight == nil,
+              ra.bodyKey(window: w) == ko.bodyKey(window: w), ra.bodyKeys(window: w).count == 1,
+              ra.tags(window: w) == [ko.tag(window: w)], ra.convWs(day: d + 1) == [ko.convW(day: d + 1)],
+              !ra.bodyKeys(window: w).contains(where: { $0.key == pipe.bodyKey(window: w) })
+        else { return false }
+        // The offering side opens the answering side's first healed letter: both stand on one floor.
+        o.healing?.opened(.healed)
+        guard let ro = pipe.healing(o.healing).rebased(), ro == ra,
+              ro.bodyKey(window: late) == ra.bodyKey(window: late), ro.bodyKey(window: late) != pipe.bodyKey(window: late),
+              ro.tag(window: late) != pipe.tag(window: late), ro.convW(day: d + 5) != pipe.convW(day: d + 5),
+              ro.kept() == pipe.kept(), ro.reference == pipe.reference, ro.sameRank == pipe.sameRank,
+              MTPipeKey(sealed: ro.sealedForm) == ro, ro.floored(day: eraseDay + 9).bodyKey(window: (eraseDay + 9) * mpd)
+                == ra.bodyKey(window: (eraseDay + 9) * mpd),
+              // a heal folded on a day before the anchor, where the walk stands still, stands nowhere
+              pipe.heal(answeredOn: walkAnchorDay - 1, ss: Data(count: 32), pk: Data(count: healOfferSize),
+                        ct: Data(count: healAnswerSize)) == nil
+        else { return false }
+        return true
+    }
+}
+// END MTPipeKey heal

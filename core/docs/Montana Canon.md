@@ -1888,10 +1888,12 @@ ML-KEM key its owner seals their own stored content to. A machine's secret is no
 machine and not to the person, and Consensus states why the two are never one.
 
 A machine derives its answering key the same way and from its own secret, which is no branch of
-any person's seed:
+any person's seed, and beside it the static ML-KEM-768 pair a first flight to it is encapsulated to,
+under a domain of its own, so neither key says anything of the other:
 
 ```
 answering_sk = HKDF-Expand(machine_secret, "mt-node-key", 32)
+static_kem   = ML-KEM-768.KeyGen(HKDF-Expand(machine_secret, "mt-node-kem", 64))    pk_s, sk_s
 ```
 
 **Invariants of the branches:**
@@ -2257,36 +2259,41 @@ Cells carry deliveries; these carry everything else that crosses between two mac
 one length or one length rule, each is refused in silence when malformed, and none names anybody.
 
 **The handshake, in four flights.** Roles are those of the derivation above: the side that opened
-the connection is the initiator.
+the connection is the initiator. The initiator holds the acquaintance of the responder — its
+address, its answering key `id_pk_r` and its static key `pk_s` — and no answering key crosses in the
+open.
 
 ```
 serialize(hello)              from the initiator
   suite_id                          2 B   u16
   kem_key                        1184 B         pk_i
-  answering_key                  1952 B         the ML-DSA key of this device, under the node domain
-hello_len = 3 138 B
+  static_ct                      1088 B         ct_s, produced to pk_s
+  sealed_key                     1968 B         id_pk_i sealed under k_hello, 1952 B and a tag of 16 B
+hello_len = 4 242 B
 
-serialize(hello_answer)       from the responder
+serialize(hello_answer)       from the responder, only once sealed_key opened
   suite_id                          2 B   u16
   kem_key                        1184 B         pk_r
   kem_ct                         1088 B         ct_r, produced to pk_i
-  answering_key                  1952 B
-hello_answer_len = 4 226 B
+hello_answer_len = 2 274 B
 
-serialize(hello_finish)       from the initiator, who now holds all four values of the transcript
+serialize(hello_finish)       from the initiator, who now holds every value of the transcript
   kem_ct                         1088 B         ct_i, produced to pk_r
-  signature                      3309 B         sig_i
-hello_finish_len = 4 397 B
+  sealed_signature               3325 B         sig_i sealed under k_seal_i
+hello_finish_len = 4 413 B
 
 serialize(hello_confirm)      from the responder
-  signature                      3309 B         sig_r
-hello_confirm_len = 3 309 B
+  sealed_signature               3325 B         sig_r sealed under k_seal_r
+hello_confirm_len = 3 325 B
 ```
 
 **Invariants of the handshake flights:**
 
 The field order and widths above are normative. A decoder refuses a length outside the declared
 shape before reading fields; an encoder checks that shape before publishing or signing bytes.
+
+- A responder whose first flight does not assemble, does not parse, or whose `sealed_key` does not open under the `k_hello` it computed writes no byte and holds the connection as it holds an unfinished flight: it reads and discards, under the patience between two reads, until the far side ends the connection, falls silent for the patience, or has sent the largest message of the wire past the flight, and then lets it go. A side that was not handed the acquaintance learns of the address what it learns of a closed device, and not by the length it sent.
+- Each seal is ChaCha20-Poly1305 under a key that seals that one part and nothing else, with the nonce of twelve zero bytes and no associated data; a key that makes one seal needs no drawn nonce, and every key here is fresh for every handshake because `pk_i` is.
 
 **Depositing and collecting.** A deposit places one cell at a point; a collection takes what
 stands there. The right to take mail from a pipe is sealed to the collector by a value only the
@@ -2398,6 +2405,25 @@ serialize(slot_answer)
   published            published_len B          the contact root of a name, or the key of a channel
 ```
 
+**Renewing the keys of a link** (Network, "How a link renews its keys"; adopted, issue #75). Three
+messages of the link, each of one length, carrying the encapsulation keys and the encapsulations of
+one renewal and nothing else: no window, no count and no index of the renewal crosses the wire.
+
+```
+serialize(renew_offer)
+  kem_key                        1184 B         an ML-KEM-768 encapsulation key drawn for this renewal alone
+renew_offer_len = 1 184 B
+
+serialize(renew_answer)
+  kem_ct                         1088 B         the encapsulation to the key of the offer
+  kem_key                        1184 B         an encapsulation key the answering side drew for this renewal alone
+renew_answer_len = 2 272 B
+
+serialize(renew_finish)
+  kem_ct                         1088 B         the encapsulation to the key of the answer
+renew_finish_len = 1 088 B
+```
+
 **Invariants of the messages of the wire:**
 
 - **Silence bounds the wire and never the account a machine keeps of itself.** Every refusal above is silent to whoever offered it, because an answer naming the reason publishes the state of this machine to whoever asked. A machine's own account is not the wire: it may write, for the operator who runs it, every one of its own doings — how many cells it held and how many it refused and under which of the rules, how many objects it published and pushed and to how many acquaintances, how many collections it asked and how many cells came back, how many attestations entered its cement and how many did not and why. An implementation that keeps no such account is an implementation whose operator must guess at every divergence, and a network of blind machines is one nobody can repair.
@@ -2414,6 +2440,7 @@ serialize(slot_answer)
 - A `head_query` names the network by the hash the asker computed itself, so an answerer of another network is told apart before a byte of its proposal is parsed; a `state_answer` is verified by recomputing the root and comparing it with the root of a proposal already verified, and a proof of length zero is the ordinary answer for a leaf that does not exist.
 - A wake carries a tag or a handle, and a window, and nothing else; a handle is drawn at random by the holder of the letter, lives beside its pipe for that window alone, and resolves nowhere outside the machine that drew it.
 - No message of this section carries an address, a name, a person or a count of anything but its own cells.
+- The three messages of a renewal carry public key material of ML-KEM-768 and nothing else, each of one length; a renewal message of another length is refused in silence, like every malformed message, and the renewal it belongs to does not complete.
 
 **The vectors of the messages.**
 
@@ -2473,7 +2500,13 @@ message_kind
   4 collect_answer    8 head_answer     12 slot_answer
                                         13 table_query
                                         14 table_answer
+                                        15 renew_offer
+                                        16 renew_answer
+                                        17 renew_finish
 ```
+
+Kinds 15 to 17 are the three messages of a renewal of the keys of a link (Network, "How a link
+renews its keys"; adopted, issue #75): a reader takes them inside the link and never hands them on.
 
 **Invariants of the link unit:**
 
@@ -3075,24 +3108,38 @@ deriving the part.
 
 ### The post-quantum handshake, in integers
 
-Roles are fixed by the connection: the side that opened it is the initiator. `pk_i` and `pk_r`
-are the ML-KEM-768 encapsulation keys of the two sides, `ct_i` the ciphertext the initiator
-produced to `pk_r` and `ct_r` the one the responder produced to `pk_i`, and `ss_i` and `ss_r`
-the shared secrets those ciphertexts open to. `id_sk_i` and `id_sk_r` are the answering keys
-of the two devices — the ML-DSA key each derives from its own secret under the node domain above,
-and the only key either signs a handshake with; a device that signs a handshake with a branch of
-a person's seed binds a handshake to a person and is a defect.
+Roles are fixed by the connection: the side that opened it is the initiator. `pk_s` is the static
+ML-KEM-768 key of the responder that its acquaintance names, `ct_s` the ciphertext the initiator
+produced to it and `ss_s` what it opens to; `pk_i` and `pk_r` are the ML-KEM-768 encapsulation keys
+the two sides draw for this handshake alone, `ct_r` the ciphertext the responder produced to `pk_i`
+and `ct_i` the one the initiator produced to `pk_r`, and `ss_r` and `ss_i` the shared secrets those
+open to. `id_sk_i` and `id_sk_r` are the answering keys of the two devices — the ML-DSA key each
+derives from its own secret under the node domain above, and the only key either signs a handshake
+with; a device that signs a handshake with a branch of a person's seed binds a handshake to a person
+and is a defect.
 
 ```
-transcript = SHA-256("mt-noise-pq-v1-transcript" || 0x00 || suite_id_2B_LE || id_pk_i || id_pk_r
-                     || pk_i || pk_r || ct_i || ct_r)
-master     = SHA-256("mt-noise-pq-v1-master"     || 0x00 || ss_i || ss_r || transcript)
+k_hello    = SHA-256("mt-noise-pq-v2-hello"      || 0x00 || ss_s || suite_id_2B_LE || pk_s || pk_i || ct_s)
+sealed_key = ChaCha20-Poly1305(k_hello, nonce 0x00 x 12, id_pk_i)
+
+transcript = SHA-256("mt-noise-pq-v2-transcript" || 0x00 || suite_id_2B_LE || id_pk_i || id_pk_r
+                     || pk_s || pk_i || pk_r || ct_s || ct_r || ct_i)
+master     = SHA-256("mt-noise-pq-v2-master"     || 0x00 || ss_s || ss_r || ss_i || transcript)
+k_seal_i   = SHA-256("mt-noise-pq-v2-seal-i"     || 0x00 || master)
+k_seal_r   = SHA-256("mt-noise-pq-v2-seal-r"     || 0x00 || master)
 k_i2r      = SHA-256("mt-noise-pq-v1-i2r"        || 0x00 || master)
 k_r2i      = SHA-256("mt-noise-pq-v1-r2i"        || 0x00 || master)
 
 sig_i = ML-DSA-65.Sign(id_sk_i, "mt-noise-pq-v1-sig-i" || 0x00 || transcript)
 sig_r = ML-DSA-65.Sign(id_sk_r, "mt-noise-pq-v1-sig-r" || 0x00 || transcript)
+sealed_signature of hello_finish  = ChaCha20-Poly1305(k_seal_i, nonce 0x00 x 12, sig_i)
+sealed_signature of hello_confirm = ChaCha20-Poly1305(k_seal_r, nonce 0x00 x 12, sig_r)
 ```
+
+`id_pk_r` never crosses: the initiator holds it from the acquaintance, and `sig_r` proves the
+responder holds its secret. Neither signature crosses in the open, so whoever holds a candidate key
+cannot test a recorded handshake against it. The responder seals `sig_r` before it opens `sig_i` and
+writes it only once `sig_i` verified.
 
 **What the transcript covers, and why each part of it is there.** A signature proves possession of
 the key that made it and nothing about which key was meant. If the answering keys stood outside the
@@ -3107,8 +3154,9 @@ pair naming two is refused before a key is derived from either.
 **Invariants of the handshake:**
 
 - The order of folding is fixed by role and not by arrival, so both sides compute one master from one exchange.
-- The transcript covers the suite and the answering key of each side, so a channel names the two keys it belongs to and a signature over it cannot be carried under another name.
-- Both shared secrets enter the master, so a channel is secure if either encapsulation was.
+- The transcript covers the suite, the answering key of each side and the static key the acquaintance names, so a channel names the keys it belongs to and a signature over it cannot be carried under another name.
+- All three shared secrets enter the master, so a channel is secure if any one of the three encapsulations was.
+- A responder answers a first flight only once `sealed_key` opened under its static key, so an address answers nobody who was not handed its acquaintance.
 - The two directional keys come from the master under distinct domains, so a key protecting one direction never protects the other.
 - Each signature covers the transcript, and the two signatures take distinct domains, so neither can be replayed as the other.
 - A side that cannot verify the other's signature over the transcript it computed carries nothing.
@@ -3442,16 +3490,19 @@ is assembled from. The wrong implementations these refuse: one placing `operator
 after `own_height`, or writing the branch itself into the record in place of its sponge, parts at
 the commitment and at the root over it; one taking the naming half of a second absorption of the
 secret in place of the second squeeze of one parts at the half; one ordering the public input
-otherwise, or leaving the machine's commitment or the suite out of it, parts at its digest.
+otherwise, or leaving the machine's commitment, the gate or the suite out of it, parts at its digest.
+The gate is what a verifier computes: the segment of the window (rule 1 of the rules of
+continuity), the count in force the vector names, and the share of it rounding upward — so one
+taking the segment of another window, or rounding the share downward, parts at the digest too.
 
 ```
-machine_secret = 0x5A x 32, operator_secret = 0x22 x 32, window = 1000, node_commit = 0x66 x 32, suite_id = 1
+machine_secret = 0x5A x 32, operator_secret = 0x22 x 32, window = 1000, node_commit = 0x66 x 32, suite_id = 1, in_force = 14
 record = segment_bitmap 11, last_active_segment 7, opened_window 990, own_height 4, operator_nf of operator_secret, fabric_root 0x11 x 32, suite_id 1, current_pubkey 0x44 x 1952, blind 0x33 x 32
 operator_nullifier of the candidacy = aeea4d6acef552552144f4decd573616b555b73b0ddee09b37659870a2898fc0
 record_commit of the candidacy      = e795f229b47d3a835faef33f30e1e8d581eea2bbf75e41940e5213c4e686d543
 record_root of the candidacy        = 397e75dc054ebcebed04cd7107bffa17a8502639955e33b5ebb1b8169494bac2
 naming_half of the candidacy        = 34f171bc0471f01de0765a81708f5daaec4117ca0610e2e89f43a7ff9e7b9755
-SHA-256(public input)               = df4a8b89d020b8bb07d24272a9f607a5245728ca958be140df6d95631dbdb9da
+SHA-256(public input)               = 959a4020abbe1c15a95fe326a14b19ff7b54a44492d9f3c1af6af41ed0f26232
 ```
 
 **The birth of a seed, end to end.**
@@ -3793,16 +3844,20 @@ one frozen earlier over a repeated byte, which a reversed seed cannot tell apart
 
 ```
 suite_id = 1, id_pk_i = 0x0A x 1952, id_pk_r = 0x0B x 1952
-pk_i = 0x01 x 1184, pk_r = 0x02 x 1184, ct_i = 0x03 x 1088, ct_r = 0x04 x 1088
-ss_i = 0x05 x 32,   ss_r = 0x06 x 32
-transcript                = ed9ca2f7898c073ed4d62159b3219c9b3e1bdb9f4527c7564ee77d611338bbf2
-master                    = 0e0518c8ad43bd274b49c8c98d2c8321dad8adde9bb7a065f5f6c10bd2ca50ef
-k_i2r                     = 271ff1e9b997151f5925fa83e8b846c0c503ae8222d07b8d3b31acc62a5296c2
-k_r2i                     = 08a031d18e42a5793274dcf0943bfe9df730d7c8acf118f7d77ae8e1ea9845aa
+pk_s = 0x01 x 1184, pk_i = 0x02 x 1184, pk_r = 0x03 x 1184
+ct_s = 0x04 x 1088, ct_r = 0x05 x 1088, ct_i = 0x06 x 1088
+ss_s = 0x07 x 32,   ss_r = 0x08 x 32,   ss_i = 0x09 x 32
+k_hello                   = 620860cfc1f2858310ce01592016abd8b5bac93e1ee2a3e351d8d2714b9b0f50
+transcript                = c6a11287143bc6df3efe7183ee92eff918f303662dbac804cf415771bdd05970
+master                    = 23a67d016c5565287e67f7a0889780a1528bdd52cb9c861fa8d9cefe12939217
+k_seal_i                  = 17df587c80fd72b2c7dacc4f952d12361834e8e493d17b7bdd5eccb1358e54fc
+k_seal_r                  = d0136b9d143e3918fd5ee26a69fb00da4eb358ee508981bfbdd904ec5f1852f4
+k_i2r                     = 96099cfb93a13dd963f8685913cb700342c5c9a9d651f84f61215ed71d026c44
+k_r2i                     = 429df34deb7edf6ad11a68858bfdaabc90779f6d349de2b44db0aeccfefbe352
 ```
 
-The two directional keys differ in every byte though both come from one master, which is the
-separation the two domains buy.
+The four keys of the master differ in every byte though all come from one master, which is the
+separation the four domains buy.
 
 A renewal of the keys of a link (Network, "How a link renews its keys"; adopted, issue #75) folds
 the master above with fresh material of its own, written below in the order of the roles of the
@@ -3811,12 +3866,12 @@ handshake, and the two keys of the renewed secret are derived from it exactly as
 renewal of the link above, standing on its master
 renew_pk_i = 0x11 x 1184, renew_pk_r = 0x12 x 1184, renew_ct_i = 0x13 x 1088, renew_ct_r = 0x14 x 1088
 renew_ss_i = 0x15 x 32,   renew_ss_r = 0x16 x 32
-renewed                   = fbc313668e31de22f840098d82a0898e132e469ea66ef675c04e2793047d2c8c
-k_i2r(renewed)            = 69558632b6b191575508ef691f7b583d85b024ad9f88adfb64f12e1166fa078f
-k_r2i(renewed)            = e51abc297e087a4f9aa52bed8069b8b8871ae618031309325421e7c807e8ee88
+renewed                   = abc0686ef4a1903708bccc0d81b9e08eb88cb28af87e5239448837b3dcf28331
+k_i2r(renewed)            = 8609fad3b07ac9c4321c8a8fc5f8ead0b0c1b5d4d8ae392feab55bcbebf0d8eb
+k_r2i(renewed)            = 1985e5a7d9e0060ec1ecce87c7c7df1e3d389823338d1b966c22b77686bf7535
 
 negative: the fold in the order of the renewal, the responder having offered
-renewed(responder first)  = 790580fc26d88cdcd36c2aff922c9d31da25b0fc079f32fef816b10d11c0e624
+renewed(responder first)  = e97c1f6aa0510561225238d64065985b3815a9b05036a502bb50b56f91e2802b
 ```
 
 The negative line is normative: an implementation that lays the values of whoever offered first,
@@ -3873,6 +3928,7 @@ line, which of the two it is writing.
 | `mt-seed` | the salt of the derivation from a mnemonic |
 | `mt-account-key` | the signing branch of the derivation from a master seed |
 | `mt-node-key` | the answering key of a machine, derived from the machine's own secret |
+| `mt-node-kem` | the static encapsulation pair of a machine, which its acquaintance names, derived from the machine's own secret |
 | `mt-note-key` | the payment-secret branch of the derivation |
 | `mt-nf-key` | the redemption branch, separate from the payment secret |
 | `mt-key-halves` | the two halves of a secret that spends: the half that spends and the half that names, in that order |
@@ -3894,12 +3950,15 @@ line, which of the two it is writing.
 | `mt-operator-nf` | the one-time right to raise a machine |
 | `mt-part-nf` | the nullifier of a machine's part in one window: first appearance enters the cement, and equivocation in the agreement of the window is caught by it |
 | `mt-open-nf` | the one-time right of a person to open their record |
-| `mt-noise-pq-v1-master` | the master key of the post-quantum handshake |
+| `mt-noise-pq-v2-hello` | the key the initiator's answering key is sealed under in the first flight |
+| `mt-noise-pq-v2-master` | the master key of the post-quantum handshake |
 | `mt-noise-pq-v1-i2r` | the directional key, initiator to responder |
 | `mt-noise-pq-v1-r2i` | the directional key, responder to initiator |
 | `mt-noise-pq-v1-sig-r` | the identity signature of the responder |
 | `mt-noise-pq-v1-sig-i` | the identity signature of the initiator |
-| `mt-noise-pq-v1-transcript` | the transcript exposed as a channel-binding token |
+| `mt-noise-pq-v2-seal-i` | the key the initiator's signature is sealed under |
+| `mt-noise-pq-v2-seal-r` | the key the responder's signature is sealed under |
+| `mt-noise-pq-v2-transcript` | the transcript exposed as a channel-binding token |
 | `mt-link-renew` | the secret of a link after a renewal of its keys, folded from the secret before it and both encapsulations of the renewal |
 | `mt-lookup-nf` | the nullifier bounding a record to one reach into the space of slots per window |
 | `mt-channel-slot` | the slot a channel occupies, derived from its normalized name |
@@ -4479,7 +4538,7 @@ air_hash = the hash, under the domain of a description's identifier, of the iden
 
 identifier of the frame     = 01f51109574f2c463fa5bf4da0d43dd314447e10bd79aa17820f0827e65b2562
 identifier of the ticket    = 0c50e4291fede09b20945f9070e50746429b40153911600a690832aab6e65378
-identifier of the admission = df6b61c212011e407d44462c1cd253556c5feccf44246cb201c6c87eb66b4323
+identifier of the admission = 4d9868fd6f83a6b0d69f6c790e9cb25ea4f4db101b5ad6633ec7d310c4e1aa39
 identifier of the presence  = a948eeaf8b4b07e7d51763944498a6edc463670f649dfdf351e7b478bb053052
 identifier of the opening   = 34c92be6edfe2e089be14dc59489dd2d1ef3483db4fab5d08abc28eaa0ca18da
 identifier of the ballot    = a329f7e7ae7656e26147604e0f757ff9cea56facbf953eb30fd01a3f59fe9928
@@ -4832,7 +4891,7 @@ demands the width from this row rather than declaring one of its own.
 | `standing_censuses` — the census windows the standing of a machine is counted over, newest first | 10 |
 | `census_interval`, in windows — derived: τ₂ / standing_censuses, so the censuses span one period of adaptation | τ₂ / 10 = 2 016 |
 | `standing_committee` — the votes the standing of an electorate draws in a window, in expectation, once it is wide enough to be sampled | 6 499 |
-| `air_hash` — the constraint sets the proofs of this network are accepted under | 49533d474ed50d1cb5d6174cf2379ba9ee7f68ff603a4b91ef2f95bbff98799c |
+| `air_hash` — the constraint sets the proofs of this network are accepted under | 44b36542b8cfa0aa4dd474f0142af2b02d9f7d55387368bbd189a67c27b92a32 |
 
 **The volume the schedule is checked against.** Per machine, per window, across its chains:
 eligibility strikes 1.1094 times in expectation; 0.6710 of machines publish one heavy
@@ -4879,11 +4938,11 @@ genesis_state_hash = SHA-256("mt-genesis-state" || 0x00 || parameters
                              || note_root || nullifier_root || record_root || machine_root || admitted_root
                              || credited_root || operations_root)
 
-                   = 3f053286a6e38aca13d690cd15f561a92d6a63c1ff4e47a259644aa562d7e524
+                   = 9e9621e269674a505798e4d9c1adc3921e6723a5ab9bff3bcd364d78e8b80a5b
 
 published_parameters = SHA-256("mt-genesis-state" || 0x00 || the parameters that are published,
                                in the order and the encoding above)
-                     = e913fb4d56f06bc450570e7a83c75fed5f3e7a9fa6a3d1e2426952a3cc34d5d5
+                     = 211f2eb51141830f18d301978ee4a93bca28ef3c389de5bed988dc07538f7e59
 ```
 
 A chain whose value differs is not a fork of Montana but a different protocol, and honest
@@ -4966,6 +5025,7 @@ derived from it.
 | `cell_bytes` — the one length of everything that crosses the wire | 1 232 |
 | `erasure_group` — cells per group of a delivery, of which a quarter is parity | 16 |
 | `path_max` — slots in the seal array of a cell, and therefore the reach of one delivery | 15 |
+| `rekey_units` — units a side seals under one sending key of a link before it offers a renewal (Network, "How a link renews its keys") | 8 388 608 |
 
 ## Layouts
 
@@ -5393,9 +5453,10 @@ candidacy_len = 8 + 32 + 32 + 32 + 2 + PROOF_LEN = 404 682 B
 - `naming_half` is the half that names the machine, and it is what a selection event writes into the tree of admitted machines, whose leaf Canon folds over exactly that value — so what a candidacy publishes and what an admission records are one value. Without it an event would hold a commitment and be asked to write a half, and no rule would say how one becomes the other.
 - Publishing it discloses nothing a machine does not disclose by being admitted: that tree is public and its leaf is that half. A candidacy that is not admitted publishes it too, and no later admission can be joined to that attempt — the right it spent is one-time, so there is no second candidacy under it and no success for a failure to be linked to.
 - The proof asserts that the record, the right and the half come of one admissible state: a record standing in the tree of records under the root the verifier takes for this window, the `operator_nf` that record carries equal to `operator_nullifier` and to the sponge of a branch the claimant holds, and `naming_half` the second squeeze of one absorption of a secret the claimant holds. A claimant cannot spend one person's right to seat another person's machine, cannot pair a record with a right it does not carry, and cannot publish a half whose secret it does not hold.
-- The public input is `window ‖ record_root ‖ naming_half ‖ node_commit ‖ operator_nullifier ‖ suite_id`, 138 B, each value in its own bytes. `window`, `node_commit` and `suite_id` bind no cell of the trace: they enter the transcript every proof opens with, and a proof stands under no other value of any of them. `window` is the field of this object, and a verifier applying another window refuses the candidacy before it verifies anything. `record_root` is no field of this object: it is the root of the tree of records the proposal of the standing stride's last window carries, the stride standing for `window` by the integer form of the horizon of proving, taken by the verifier from that one proposal — the same rule by which a frame walks a right against the root of admitted machines. Before the first stride stands no root does, and no candidacy applies.
+- The public input is `window ‖ record_root ‖ naming_half ‖ node_commit ‖ operator_nullifier ‖ segment ‖ n ‖ required ‖ suite_id`, 150 B, each value in its own bytes; `segment`, `n` and `required` are u32 each, little-endian. `window`, `node_commit` and `suite_id` bind no cell of the trace: they enter the transcript every proof opens with, and a proof stands under no other value of any of them. `window` is the field of this object, and a verifier applying another window refuses the candidacy before it verifies anything. `record_root` is no field of this object: it is the root of the tree of records the proposal of the standing stride's last window carries, the stride standing for `window` by the integer form of the horizon of proving, taken by the verifier from that one proposal — the same rule by which a frame walks a right against the root of admitted machines. Before the first stride stands no root does, and no candidacy applies.
 - The proof asserts the lived continuity the gate of entry demands of this window, out of that same record, disclosing neither the record nor its history: `lived(record, segment(window), n)` reaches the share of `n` by the rules of continuity, where `n` is the count in force Consensus states (records 297, 300).
-- **The count in force comes from the verifier, never from the object** (records 297, 300). `n` is no field of this object. The verifier recomputes it from the same proposal `record_root` is taken from, by the ramp of Consensus, and lays it into the public input beside `segment(window)`, the way it lays `record_root`. The object, `candidacy_len` and the identifier of a candidacy keep every byte they have. A field carrying `n` would add bytes to every candidacy and to the preimage of its identifier, and the verifier would still have to compare that field against its own recomputation, so it would be a second place for one value to stand. Either way the public input carries the same value, so this choice changes the fewest bytes. Until the admission circuit asserts the share, the public input stays the 138 B above. The encoding of the two values in it is fixed with that circuit in the next generation of K5, and so is the `air_hash` that binds it. Each value must stand on a limb of its own, so that the circuit binds it to one cell the way the opening binds `segment` and `window`. The public input is read in limbs of four bytes, so a value appended after the 2 B `suite_id` would straddle two limbs.
+- **The count in force comes from the verifier, never from the object** (records 297, 300). `n` is no field of this object. The verifier recomputes it from the same proposal `record_root` is taken from, by the ramp of Consensus, and lays it into the public input beside `segment(window)`, the way it lays `record_root`. The object, `candidacy_len` and the identifier of a candidacy keep every byte they have. A field carrying `n` would add bytes to every candidacy and to the preimage of its identifier, and the verifier would still have to compare that field against its own recomputation, so it would be a second place for one value to stand. Either way the public input carries the same value, so this choice changes the fewest bytes. The verifier lays `segment(window)`, `n` and `required = ceil(n x continuity_required)` after `operator_nullifier` and before `suite_id` (record 370): the 136 B before them are thirty-four limbs of four bytes, so each of the three stands on a limb of its own and the circuit binds it to one cell, the way the opening binds `segment` and `window`; appended after the 2 B `suite_id` they would straddle two limbs. The `air_hash` of the admission and the Genesis State Hash move with them.
+- **How the circuit reads the share.** The sixty-four bits of `segment_bitmap` stand one to a row, the most significant first, in the rows before the record's absorption, and meet the record's three limbs of continuity on the row the absorption writes them. Beside each bit stand two masks, each a suffix of the rows: `period`, counting to `n`, and `lived`, counting to `n + last_active_segment - segment` and lying inside `period` -- so `last_active_segment` stands at or before `segment` and the distance at or below `n`. The bits under `lived` sum to `required` plus a sum of slack bits, so at least `required` segments are lived; a bit at or above `max_entry_segments` is refused; and the bitmap is recomposed in two halves of thirty-two bits, each held to its own limb, so no pattern wraps the field into a smaller bitmap (`mt-proof/src/circuit/continuity.rs`).
 - It carries no signature and no key, and an implementation that adds one names a machine for the whole of its life.
 
 ### The three objects of a name

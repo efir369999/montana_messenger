@@ -62,6 +62,13 @@ pub enum AirError {
     RowBeyondTheShape {
         shift: u8,
     },
+    // A periodic column named one row on. The trace is judged with it one row on (`cell`), and the
+    // composition reads a periodic column at the point itself (`scheme::constraint_at`): two
+    // readings of one artifact, under which a true trace proves nothing. A schedule wanted one row
+    // on is a schedule of its own, shifted where it is laid (`continuity::BIT_FOLLOWS`).
+    PeriodicOneRowOn {
+        column: u16,
+    },
     Length {
         needed: usize,
         remaining: usize,
@@ -198,6 +205,11 @@ impl Description {
                     if u64::from(factor.shift) > 1 {
                         return Err(AirError::RowBeyondTheShape {
                             shift: factor.shift,
+                        });
+                    }
+                    if factor.shift != 0 && factor.column >= self.trace_width {
+                        return Err(AirError::PeriodicOneRowOn {
+                            column: factor.column,
                         });
                     }
                     sum += u32::from(factor.power);
