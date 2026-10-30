@@ -292,11 +292,15 @@ below names that. A pipe heals by the same construction carried in its own lette
 - A side holds at most one heal of its own pending, and an offer answered by nothing is replaced by its next offer: a lost letter costs a heal and never a pipe.
 - An attacker that read the old walk at some moment reads the offer and the answer, and loses the pipe from the healed walk on, provided it did not alter them and the offer was drawn after the moment it read. Until the offering side next writes, the answering side's letters stay under the old walk and readable to it; that residue is named and not closed. An attacker that read the old walk and also stands on the path of the pipe's letters can strip the offer from each of them and re-seal the rest, so no heal happens and it keeps reading; offers that go unanswered tell a side nothing it can act on, and that case is named and not closed.
 
-A correspondent offers a heal in the first letter it sends in a window while no heal of its own is
-pending (the Author's decision, constitution record 356). When both correspondents write in one
-window, two heals are in flight at once, each side having offered before it opened the other's
-offer. This text does not yet order them, and the rule that does is before the Author
-(constitution record 391).
+A correspondent offers a heal in the first letter it sends in a window while it holds one walk and
+awaits no answer to an offer of its own (the Author's decisions, constitution records 356 and 392).
+A pipe has at most one heal in flight. When both correspondents write in one window, their offers
+cross, each side having offered before it opened the other's. Of two crossing offers, the one whose
+encapsulation key is lower in byte order stands. The side whose offer did not stand erases the key
+it drew and answers the standing offer as its answering side, as the offer of the side that opened
+a link stands when two renewals of that link cross. The side whose offer stands answers nothing to
+the other offer. Both sides compare the same two keys, so they agree on one heal and one healed
+walk without a further letter.
 
 **Invariants of a renewal:**
 
@@ -307,6 +311,7 @@ offer. This text does not yet order them, and the rule that does is before the A
 - Every previous secret, key, drawn decapsulation key and shared secret is erased once the renewal completes and the first unit opens under the new key; a value kept past that is a defect.
 - A unit that opens under neither key ends the link in silence.
 - A heal of a pipe derives the healed walk from the old walk at the window of the answering letter, and each side erases the old walk only on opening a letter of the other side under the healed one.
+- A pipe has at most one heal in flight: a side offers only while it holds one walk and awaits no answer to its own offer, and of two crossing offers the one with the lower encapsulation key in byte order stands, and the side that drew the other erases it; two healed walks from one old walk are a defect.
 
 **What this adds to the ledger and the conformance set.** Two rows of the observability ledger,
 *that a link renewed in a window* and *that a pipe healed*, and item 23 of the conformance set.
@@ -780,6 +785,9 @@ External tunnels serve the circumvention of censorship and may hide a network ad
 are **not** a source of privacy: switched off, they take none of it away. A construction that
 needed them would have no privacy of its own.
 
+Nor does this text claim that traffic of Montana cannot be recognized as Montana's. The
+observability ledger names that limit; hiding the protocol itself is what external tunnels are for.
+
 ## Threat model of the wire
 
 | Adversary | What they get |
@@ -818,6 +826,7 @@ needed them would have no privacy of its own.
 | that a device went on or off, and that mail arrived near that moment | closed: the link of a sleeping device is held by the reachable side out of the transit it carries anyway, so switching on and off is not an event of the network and intersection by presence has nothing to intersect |
 | the machine a cell is being carried toward | **deliberately observable to a hop**: routing cannot move a cell toward a target without naming the target. It names a machine and never a party, many pipes of many strangers share one holder in one window, and nothing of the sender, the recipient or the letter follows from it |
 | that a machine answers at an address | **a named physical prohibition**: answering is observable at the wire; what it does not reveal is whose it is or whether it is a machine |
+| that a line carries Montana | **a named limit, not claimed** (the Author's decision, constitution record 394): every unit that crosses the wire is one length, `cell_bytes` = 1 232 bytes (Canon:955), and a handshake is an ML-KEM-768 exchange of fixed lengths, so an observer who inspects packets can tell that a line carries Montana. That is all it learns: nothing of what is carried, by whom or for whom. Hiding the protocol itself is left to external tunnels ("Privacy is not rented"); a transport shaped like other traffic would be a decision of its own |
 | that some record asked what a slot publishes in a window | **deliberately observable to the answering machine**: it sees a slot and a nullifier that names nobody, and learns neither who asked nor whether anything followed |
 | that a person claimed no name | closed: claiming is an act and not claiming is not, so nothing is published either way; a correspondence begun by acquaintance is indistinguishable from one begun by a name, and no quantity marks a record as nameless |
 | that a contact point of a claimed name was used | **claimed by the person, not created by the protocol**: the point exists only where a name was published by a deliberate act, it is computable by anyone who knows that name, and it yields no address, no record, no other name and no evidence that a deposit was collected. What is deposited there is a request and never a letter, so no correspondence crosses it and nothing of one — content, size or moment — is observable at it. Requests enter the canonical slot like all others, so their number and moment carry no signal |
