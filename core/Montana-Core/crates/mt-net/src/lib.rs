@@ -16,9 +16,11 @@
 // length in the open would be a marker of size.
 //
 // **A machine is reached by an acquaintance handed over out of band.** There is no directory and
-// none can be assembled: what one operator passes another is one address and the key that machine
-// answers with, and a handshake reaching a machine that answers with another key ends in silence.
-// An address is held by whoever holds it; the key is what an acquaintance is.
+// none can be assembled: what one operator passes another is one address, the key that machine
+// answers with and the static key a first flight is encapsulated to. A first flight not made to that
+// static key opens to nothing and is answered by no byte, so whoever was not handed the line cannot
+// tell a machine from a closed device; a handshake reaching a machine that answers with another key
+// ends in silence. An address is held by whoever holds it; the two keys are what an acquaintance is.
 
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
@@ -26,7 +28,7 @@
 use mt_codec::size;
 use mt_suite::{kem, sign};
 use mt_wire::handshake::{
-    self, Channel, HandshakeError, Hello, HelloAnswer, HelloConfirm, HelloFinish,
+    self, Channel, HandshakeError, Hello, HelloAnswer, HelloConfirm, HelloFinish, Keys,
 };
 use mt_wire::link;
 use mt_wire::message::Kind;
@@ -59,7 +61,8 @@ pub enum NetError {
     Truncated { expected: usize, found: usize },
     // The handshake refused. The far side is told nothing of it — the connection is dropped.
     Handshake(HandshakeError),
-    // A machine answering with a key other than the one the acquaintance names.
+    // A machine whose fourth flight does not open or does not verify under the key the acquaintance
+    // names: another machine at that address, or none.
     NotTheMachineNamed,
     // A value the wire could not draw, or a unit it could not seal or open.
     Wire(mt_wire::WireError),
@@ -174,21 +177,25 @@ fn read_flight(stream: &mut TcpStream, length: usize) -> Result<Vec<u8>, NetErro
     Ok(assembled[..length].to_vec())
 }
 
-// What one operator hands another: one address and the key that machine answers with. Nothing else
-// is needed and nothing else exists — a first connection comes from the world, and what it yields
-// is one handshake and never a map.
+// What one operator hands another: one address, the key that machine answers with, and the static
+// key a first flight to it is encapsulated to. Nothing else is needed and nothing else exists — a
+// first connection comes from the world, and what it yields is one handshake and never a map.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Acquaintance {
     pub address: String,
     pub answering_key: [u8; size::SIGNING_PUBLIC_KEY],
+    pub kem_key: [u8; size::KEM_PUBLIC_KEY],
 }
 
-// The pair a machine answers the wire with, drawn from its own secret and from nothing else, so
-// the same machine on another start answers with the same key. The seed it is drawn from is held
-// in a wiping wrapper and never leaves this function.
+// The two pairs a machine answers the wire with, both drawn from its own secret and from nothing
+// else, under two domains, so the same machine on another start answers with the same keys and
+// neither key says anything of the other. The seeds they are drawn from are held in wiping wrappers
+// and never leave this function.
 pub struct Answering {
     public: sign::PublicKey,
     secret: sign::SecretKey,
+    kem_public: kem::PublicKey,
+    kem_secret: kem::SecretKey,
 }
 
 impl Answering {
@@ -197,11 +204,25 @@ impl Answering {
         let mut seed = Zeroizing::new([0u8; sign::SEED_BYTES]);
         seed.copy_from_slice(&expanded[..sign::SEED_BYTES]);
         let (public, secret) = sign::keypair_from_seed(&seed);
-        Self { public, secret }
+        let expanded = mt_seed::answering_kem_seed(machine_secret);
+        let mut seed = Zeroizing::new([0u8; kem::SEED_BYTES]);
+        seed.copy_from_slice(&expanded[..kem::SEED_BYTES]);
+        let (kem_public, kem_secret) = kem::keypair_from_seed(&seed);
+        Self {
+            public,
+            secret,
+            kem_public,
+            kem_secret,
+        }
     }
 
     pub fn public(&self) -> &sign::PublicKey {
         &self.public
+    }
+
+    // The static key the acquaintance of this machine names beside its answering key.
+    pub fn kem_public(&self) -> &kem::PublicKey {
+        &self.kem_public
     }
 }
 
@@ -329,7 +350,9 @@ fn ephemeral_kem() -> Result<(kem::PublicKey, kem::SecretKey), NetError> {
 }
 
 // The side that opens a connection is the initiator. It runs the first and third flights, and it
-// carries a channel only once the fourth has verified.
+// carries a channel only once the fourth has opened and verified under the key the line names. Its
+// own answering key crosses only sealed, under a key of the encapsulation to the static key the line
+// names, and the responder's never crosses: the line already holds it.
 pub fn dial(to: &Acquaintance, answering: &Answering) -> Result<Link, NetError> {
     let address = to
         .address
@@ -345,51 +368,61 @@ pub fn dial(to: &Acquaintance, answering: &Answering) -> Result<Link, NetError> 
     wait_with_patience(&stream)?;
 
     let (kem_public, kem_secret) = ephemeral_kem()?;
+    let line = kem::PublicKey::from_bytes(to.kem_key);
+    let (ct_s, ss_s) = kem::encapsulate(&line).map_err(|_| wire(mt_wire::WireError::Undrawn))?;
+    let hello_key = handshake::hello_key(
+        ss_s.as_bytes(),
+        SUITE,
+        &to.kem_key,
+        kem_public.as_bytes(),
+        ct_s.as_bytes(),
+    );
     let hello = Hello {
         suite_id: SUITE,
         kem_key: *kem_public.as_bytes(),
-        answering_key: *answering.public.as_bytes(),
+        static_ct: *ct_s.as_bytes(),
+        sealed_key: handshake::seal_key(hello_key, answering.public.as_bytes())
+            .map_err(NetError::Handshake)?,
     };
     write_flight(&mut stream, &hello.encode())?;
 
     let answer = HelloAnswer::parse(&read_flight(&mut stream, handshake::hello_answer_len())?)
         .map_err(NetError::Handshake)?;
-    if answer.answering_key != to.answering_key {
-        return Err(NetError::NotTheMachineNamed);
-    }
-
     let ss_r = kem::decapsulate(&kem_secret, &kem::Ciphertext::from_bytes(answer.kem_ct));
     let their_kem = kem::PublicKey::from_bytes(answer.kem_key);
     let (ct_i, ss_i) =
         kem::encapsulate(&their_kem).map_err(|_| wire(mt_wire::WireError::Undrawn))?;
 
-    let transcript = handshake::transcript(
-        SUITE,
-        &hello.answering_key,
-        &answer.answering_key,
-        &hello.kem_key,
-        &answer.kem_key,
+    let keys = Keys::of(
+        &hello,
+        &answer,
+        answering.public.as_bytes(),
+        &to.answering_key,
+        &to.kem_key,
         ct_i.as_bytes(),
-        &answer.kem_ct,
-    );
+        [ss_s.as_bytes(), ss_r.as_bytes(), ss_i.as_bytes()],
+    )
+    .map_err(NetError::Handshake)?;
+    let signature = handshake::sign_initiator(&answering.secret, keys.transcript())
+        .map_err(NetError::Handshake)?;
     let finish = HelloFinish {
         kem_ct: *ct_i.as_bytes(),
-        signature: handshake::sign_initiator(&answering.secret, &transcript)
+        sealed_signature: keys
+            .seal_initiator(&signature)
             .map_err(NetError::Handshake)?,
     };
     write_flight(&mut stream, &finish.encode())?;
 
     let confirm = HelloConfirm::parse(&read_flight(&mut stream, handshake::hello_confirm_len())?)
         .map_err(NetError::Handshake)?;
-    let channel = handshake::initiator_channel(
-        &hello,
-        &answer,
-        ct_i.as_bytes(),
-        ss_i.as_bytes(),
-        ss_r.as_bytes(),
-        &confirm,
-    )
-    .map_err(NetError::Handshake)?;
+    // A fourth flight that does not open or does not verify under the key the line names is another
+    // machine, or none, at that address.
+    let channel = keys
+        .initiator_channel(&to.answering_key, &confirm)
+        .map_err(|e| match e {
+            HandshakeError::Unopened | HandshakeError::Unverified => NetError::NotTheMachineNamed,
+            other => NetError::Handshake(other),
+        })?;
     Ok(Link {
         stream,
         channel,
@@ -398,7 +431,9 @@ pub fn dial(to: &Acquaintance, answering: &Answering) -> Result<Link, NetError> 
 }
 
 // A machine reachable from outside answers links it did not choose. What it answers with is the
-// second and fourth flights, and it carries a channel only once the third has verified.
+// second and fourth flights, and it carries a channel only once the third has verified. **A first
+// flight that does not open under its static key is answered by no byte**: the connection ends, and
+// a side that was not handed the line learns of this address what it learns of a closed device.
 pub struct Door(TcpListener);
 
 impl Door {
@@ -423,6 +458,22 @@ impl Door {
 
         let hello = Hello::parse(&read_flight(&mut stream, handshake::hello_len())?)
             .map_err(NetError::Handshake)?;
+        let ss_s = kem::decapsulate(
+            &answering.kem_secret,
+            &kem::Ciphertext::from_bytes(hello.static_ct),
+        );
+        let hello_key = handshake::hello_key(
+            ss_s.as_bytes(),
+            hello.suite_id,
+            answering.kem_public.as_bytes(),
+            &hello.kem_key,
+            &hello.static_ct,
+        );
+        // The gate: a first flight that does not open ends here, and the stream is dropped without
+        // one byte written to it.
+        let their_key =
+            handshake::open_key(hello_key, &hello.sealed_key).map_err(NetError::Handshake)?;
+
         let (kem_public, kem_secret) = ephemeral_kem()?;
         let their_kem = kem::PublicKey::from_bytes(hello.kem_key);
         let (ct_r, ss_r) =
@@ -431,27 +482,34 @@ impl Door {
             suite_id: hello.suite_id,
             kem_key: *kem_public.as_bytes(),
             kem_ct: *ct_r.as_bytes(),
-            answering_key: *answering.public.as_bytes(),
         };
         write_flight(&mut stream, &answer.encode())?;
 
         let finish = HelloFinish::parse(&read_flight(&mut stream, handshake::hello_finish_len())?)
             .map_err(NetError::Handshake)?;
         let ss_i = kem::decapsulate(&kem_secret, &kem::Ciphertext::from_bytes(finish.kem_ct));
-        let channel = handshake::responder_channel(
+        let keys = Keys::of(
             &hello,
             &answer,
-            &finish,
-            ss_i.as_bytes(),
-            ss_r.as_bytes(),
+            &their_key,
+            answering.public.as_bytes(),
+            answering.kem_public.as_bytes(),
+            &finish.kem_ct,
+            [ss_s.as_bytes(), ss_r.as_bytes(), ss_i.as_bytes()],
         )
         .map_err(NetError::Handshake)?;
-
-        let transcript = *channel.transcript();
+        // The fourth flight is sealed before the third is read and crosses only after it verified,
+        // since reading the third consumes the keys both seals come of.
+        let signature = handshake::sign_responder(&answering.secret, keys.transcript())
+            .map_err(NetError::Handshake)?;
         let confirm = HelloConfirm {
-            signature: handshake::sign_responder(&answering.secret, &transcript)
+            sealed_signature: keys
+                .seal_responder(&signature)
                 .map_err(NetError::Handshake)?,
         };
+        let channel = keys
+            .responder_channel(&their_key, &finish)
+            .map_err(NetError::Handshake)?;
         write_flight(&mut stream, &confirm.encode())?;
         Ok(Link {
             stream,

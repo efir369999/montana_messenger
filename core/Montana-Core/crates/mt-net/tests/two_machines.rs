@@ -3,11 +3,13 @@
 // thirteenth stage stands on and what the set demands of the wire:
 //
 // a handshake reaches the machine an operator named, and a machine answering with another key is
-// not that machine however well it holds the address; and **there is one size on the wire and no
+// not that machine however well it holds the address; a side that was not handed the line is
+// answered by no byte at all; and **there is one size on the wire and no
 // second** — the flights of a handshake cross as units of the same width as everything after them,
 // so an observer counting bytes learns the same nothing from a handshake as from a letter.
 
 use mt_net::{dial, Acquaintance, Answering, Door, NetError};
+use mt_wire::handshake::HandshakeError;
 use mt_wire::message;
 
 fn machine(secret: u8) -> Answering {
@@ -31,11 +33,13 @@ fn door_answering(
 fn met(near: u8, far: u8) -> (mt_net::Link, mt_net::Link) {
     let answering_side = machine(far);
     let far_key = *answering_side.public().as_bytes();
+    let far_kem = *answering_side.kem_public().as_bytes();
     let (address, waiting) = door_answering(answering_side);
     let opened = dial(
         &Acquaintance {
             address,
             answering_key: far_key,
+            kem_key: far_kem,
         },
         &machine(near),
     )
@@ -107,23 +111,56 @@ fn a_message_of_many_pieces_arrives_whole() {
 #[test]
 fn a_machine_answering_with_another_key_is_not_the_one_the_acquaintance_names() {
     let far = machine(0xC3);
+    let far_kem = *far.kem_public().as_bytes();
     let (address, answering) = door_answering(far);
     // The acquaintance names a key this machine does not answer with — whoever holds the address,
-    // it is not the machine the operator meant.
+    // it is not the machine the operator meant. That key is inside the transcript the initiator
+    // computes, so the two sides hold two masters: the third flight opens to nothing at the far
+    // side, which ends the connection without a fourth, and the initiator carries no link.
+    assert!(dial(
+        &Acquaintance {
+            address,
+            answering_key: *machine(0xEE).public().as_bytes(),
+            kem_key: far_kem,
+        },
+        &machine(0xD4),
+    )
+    .is_err());
+    // And the far side carries nothing: it never verified anybody.
+    assert_eq!(
+        answering.join().expect("the thread stands").err(),
+        Some(NetError::Handshake(HandshakeError::Unopened))
+    );
+}
+
+// **A door says nothing to a side that was not handed the line** (#22). Its first flight is made to
+// a static key that is not this machine's; it opens to nothing, and the connection ends with not one
+// byte written: what the stranger reads is the silence a closed device gives.
+#[test]
+fn a_side_without_the_line_is_answered_by_no_byte() {
+    let far = machine(0xC5);
+    let far_key = *far.public().as_bytes();
+    let (address, answering) = door_answering(far);
+    let width = mt_wire::cell_bytes().expect("named");
     assert_eq!(
         dial(
             &Acquaintance {
                 address,
-                answering_key: *machine(0xEE).public().as_bytes(),
+                answering_key: far_key,
+                kem_key: *machine(0xEF).kem_public().as_bytes(),
             },
-            &machine(0xD4),
+            &machine(0xD6),
         )
         .err(),
-        Some(NetError::NotTheMachineNamed)
+        Some(NetError::Truncated {
+            expected: width,
+            found: 0
+        })
     );
-    // And the far side carries nothing: the initiator left before the third flight, so the
-    // responder never verified anybody.
-    assert!(answering.join().expect("the thread stands").is_err());
+    assert_eq!(
+        answering.join().expect("the thread stands").err(),
+        Some(NetError::Handshake(HandshakeError::Unopened))
+    );
 }
 
 // The property the set states in as many words: there is one size on this wire and no second. A
@@ -162,6 +199,7 @@ fn every_byte_of_a_handshake_crosses_in_units_of_the_one_width() {
         &Acquaintance {
             address,
             answering_key: *machine(0x77).public().as_bytes(),
+            kem_key: *machine(0x77).kem_public().as_bytes(),
         },
         &machine(0x88),
     );

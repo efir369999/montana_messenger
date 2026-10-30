@@ -1888,10 +1888,12 @@ ML-KEM key its owner seals their own stored content to. A machine's secret is no
 machine and not to the person, and Consensus states why the two are never one.
 
 A machine derives its answering key the same way and from its own secret, which is no branch of
-any person's seed:
+any person's seed, and beside it the static ML-KEM-768 pair a first flight to it is encapsulated to,
+under a domain of its own, so neither key says anything of the other:
 
 ```
 answering_sk = HKDF-Expand(machine_secret, "mt-node-key", 32)
+static_kem   = ML-KEM-768.KeyGen(HKDF-Expand(machine_secret, "mt-node-kem", 64))    pk_s, sk_s
 ```
 
 **Invariants of the branches:**
@@ -2257,36 +2259,41 @@ Cells carry deliveries; these carry everything else that crosses between two mac
 one length or one length rule, each is refused in silence when malformed, and none names anybody.
 
 **The handshake, in four flights.** Roles are those of the derivation above: the side that opened
-the connection is the initiator.
+the connection is the initiator. The initiator holds the acquaintance of the responder — its
+address, its answering key `id_pk_r` and its static key `pk_s` — and no answering key crosses in the
+open.
 
 ```
 serialize(hello)              from the initiator
   suite_id                          2 B   u16
   kem_key                        1184 B         pk_i
-  answering_key                  1952 B         the ML-DSA key of this device, under the node domain
-hello_len = 3 138 B
+  static_ct                      1088 B         ct_s, produced to pk_s
+  sealed_key                     1968 B         id_pk_i sealed under k_hello, 1952 B and a tag of 16 B
+hello_len = 4 242 B
 
-serialize(hello_answer)       from the responder
+serialize(hello_answer)       from the responder, only once sealed_key opened
   suite_id                          2 B   u16
   kem_key                        1184 B         pk_r
   kem_ct                         1088 B         ct_r, produced to pk_i
-  answering_key                  1952 B
-hello_answer_len = 4 226 B
+hello_answer_len = 2 274 B
 
-serialize(hello_finish)       from the initiator, who now holds all four values of the transcript
+serialize(hello_finish)       from the initiator, who now holds every value of the transcript
   kem_ct                         1088 B         ct_i, produced to pk_r
-  signature                      3309 B         sig_i
-hello_finish_len = 4 397 B
+  sealed_signature               3325 B         sig_i sealed under k_seal_i
+hello_finish_len = 4 413 B
 
 serialize(hello_confirm)      from the responder
-  signature                      3309 B         sig_r
-hello_confirm_len = 3 309 B
+  sealed_signature               3325 B         sig_r sealed under k_seal_r
+hello_confirm_len = 3 325 B
 ```
 
 **Invariants of the handshake flights:**
 
 The field order and widths above are normative. A decoder refuses a length outside the declared
 shape before reading fields; an encoder checks that shape before publishing or signing bytes.
+
+- A responder whose `sealed_key` does not open under the `k_hello` it computed writes no byte and ends the connection: a side that was not handed the acquaintance learns of the address what it learns of a closed device.
+- Each seal is ChaCha20-Poly1305 under a key that seals that one part and nothing else, with the nonce of twelve zero bytes and no associated data; a key that makes one seal needs no drawn nonce, and every key here is fresh for every handshake because `pk_i` is.
 
 **Depositing and collecting.** A deposit places one cell at a point; a collection takes what
 stands there. The right to take mail from a pipe is sealed to the collector by a value only the
@@ -3075,24 +3082,38 @@ deriving the part.
 
 ### The post-quantum handshake, in integers
 
-Roles are fixed by the connection: the side that opened it is the initiator. `pk_i` and `pk_r`
-are the ML-KEM-768 encapsulation keys of the two sides, `ct_i` the ciphertext the initiator
-produced to `pk_r` and `ct_r` the one the responder produced to `pk_i`, and `ss_i` and `ss_r`
-the shared secrets those ciphertexts open to. `id_sk_i` and `id_sk_r` are the answering keys
-of the two devices — the ML-DSA key each derives from its own secret under the node domain above,
-and the only key either signs a handshake with; a device that signs a handshake with a branch of
-a person's seed binds a handshake to a person and is a defect.
+Roles are fixed by the connection: the side that opened it is the initiator. `pk_s` is the static
+ML-KEM-768 key of the responder that its acquaintance names, `ct_s` the ciphertext the initiator
+produced to it and `ss_s` what it opens to; `pk_i` and `pk_r` are the ML-KEM-768 encapsulation keys
+the two sides draw for this handshake alone, `ct_r` the ciphertext the responder produced to `pk_i`
+and `ct_i` the one the initiator produced to `pk_r`, and `ss_r` and `ss_i` the shared secrets those
+open to. `id_sk_i` and `id_sk_r` are the answering keys of the two devices — the ML-DSA key each
+derives from its own secret under the node domain above, and the only key either signs a handshake
+with; a device that signs a handshake with a branch of a person's seed binds a handshake to a person
+and is a defect.
 
 ```
-transcript = SHA-256("mt-noise-pq-v1-transcript" || 0x00 || suite_id_2B_LE || id_pk_i || id_pk_r
-                     || pk_i || pk_r || ct_i || ct_r)
-master     = SHA-256("mt-noise-pq-v1-master"     || 0x00 || ss_i || ss_r || transcript)
+k_hello    = SHA-256("mt-noise-pq-v2-hello"      || 0x00 || ss_s || suite_id_2B_LE || pk_s || pk_i || ct_s)
+sealed_key = ChaCha20-Poly1305(k_hello, nonce 0x00 x 12, id_pk_i)
+
+transcript = SHA-256("mt-noise-pq-v2-transcript" || 0x00 || suite_id_2B_LE || id_pk_i || id_pk_r
+                     || pk_s || pk_i || pk_r || ct_s || ct_r || ct_i)
+master     = SHA-256("mt-noise-pq-v2-master"     || 0x00 || ss_s || ss_r || ss_i || transcript)
+k_seal_i   = SHA-256("mt-noise-pq-v2-seal-i"     || 0x00 || master)
+k_seal_r   = SHA-256("mt-noise-pq-v2-seal-r"     || 0x00 || master)
 k_i2r      = SHA-256("mt-noise-pq-v1-i2r"        || 0x00 || master)
 k_r2i      = SHA-256("mt-noise-pq-v1-r2i"        || 0x00 || master)
 
 sig_i = ML-DSA-65.Sign(id_sk_i, "mt-noise-pq-v1-sig-i" || 0x00 || transcript)
 sig_r = ML-DSA-65.Sign(id_sk_r, "mt-noise-pq-v1-sig-r" || 0x00 || transcript)
+sealed_signature of hello_finish  = ChaCha20-Poly1305(k_seal_i, nonce 0x00 x 12, sig_i)
+sealed_signature of hello_confirm = ChaCha20-Poly1305(k_seal_r, nonce 0x00 x 12, sig_r)
 ```
+
+`id_pk_r` never crosses: the initiator holds it from the acquaintance, and `sig_r` proves the
+responder holds its secret. Neither signature crosses in the open, so whoever holds a candidate key
+cannot test a recorded handshake against it. The responder seals `sig_r` before it opens `sig_i` and
+writes it only once `sig_i` verified.
 
 **What the transcript covers, and why each part of it is there.** A signature proves possession of
 the key that made it and nothing about which key was meant. If the answering keys stood outside the
@@ -3107,8 +3128,9 @@ pair naming two is refused before a key is derived from either.
 **Invariants of the handshake:**
 
 - The order of folding is fixed by role and not by arrival, so both sides compute one master from one exchange.
-- The transcript covers the suite and the answering key of each side, so a channel names the two keys it belongs to and a signature over it cannot be carried under another name.
-- Both shared secrets enter the master, so a channel is secure if either encapsulation was.
+- The transcript covers the suite, the answering key of each side and the static key the acquaintance names, so a channel names the keys it belongs to and a signature over it cannot be carried under another name.
+- All three shared secrets enter the master, so a channel is secure if any one of the three encapsulations was.
+- A responder answers a first flight only once `sealed_key` opened under its static key, so an address answers nobody who was not handed its acquaintance.
 - The two directional keys come from the master under distinct domains, so a key protecting one direction never protects the other.
 - Each signature covers the transcript, and the two signatures take distinct domains, so neither can be replayed as the other.
 - A side that cannot verify the other's signature over the transcript it computed carries nothing.
@@ -3793,16 +3815,20 @@ one frozen earlier over a repeated byte, which a reversed seed cannot tell apart
 
 ```
 suite_id = 1, id_pk_i = 0x0A x 1952, id_pk_r = 0x0B x 1952
-pk_i = 0x01 x 1184, pk_r = 0x02 x 1184, ct_i = 0x03 x 1088, ct_r = 0x04 x 1088
-ss_i = 0x05 x 32,   ss_r = 0x06 x 32
-transcript                = ed9ca2f7898c073ed4d62159b3219c9b3e1bdb9f4527c7564ee77d611338bbf2
-master                    = 0e0518c8ad43bd274b49c8c98d2c8321dad8adde9bb7a065f5f6c10bd2ca50ef
-k_i2r                     = 271ff1e9b997151f5925fa83e8b846c0c503ae8222d07b8d3b31acc62a5296c2
-k_r2i                     = 08a031d18e42a5793274dcf0943bfe9df730d7c8acf118f7d77ae8e1ea9845aa
+pk_s = 0x01 x 1184, pk_i = 0x02 x 1184, pk_r = 0x03 x 1184
+ct_s = 0x04 x 1088, ct_r = 0x05 x 1088, ct_i = 0x06 x 1088
+ss_s = 0x07 x 32,   ss_r = 0x08 x 32,   ss_i = 0x09 x 32
+k_hello                   = 620860cfc1f2858310ce01592016abd8b5bac93e1ee2a3e351d8d2714b9b0f50
+transcript                = c6a11287143bc6df3efe7183ee92eff918f303662dbac804cf415771bdd05970
+master                    = 23a67d016c5565287e67f7a0889780a1528bdd52cb9c861fa8d9cefe12939217
+k_seal_i                  = 17df587c80fd72b2c7dacc4f952d12361834e8e493d17b7bdd5eccb1358e54fc
+k_seal_r                  = d0136b9d143e3918fd5ee26a69fb00da4eb358ee508981bfbdd904ec5f1852f4
+k_i2r                     = 96099cfb93a13dd963f8685913cb700342c5c9a9d651f84f61215ed71d026c44
+k_r2i                     = 429df34deb7edf6ad11a68858bfdaabc90779f6d349de2b44db0aeccfefbe352
 ```
 
-The two directional keys differ in every byte though both come from one master, which is the
-separation the two domains buy.
+The four keys of the master differ in every byte though all come from one master, which is the
+separation the four domains buy.
 
 A renewal of the keys of a link (Network, "How a link renews its keys"; adopted, issue #75) folds
 the master above with fresh material of its own, written below in the order of the roles of the
@@ -3811,12 +3837,12 @@ handshake, and the two keys of the renewed secret are derived from it exactly as
 renewal of the link above, standing on its master
 renew_pk_i = 0x11 x 1184, renew_pk_r = 0x12 x 1184, renew_ct_i = 0x13 x 1088, renew_ct_r = 0x14 x 1088
 renew_ss_i = 0x15 x 32,   renew_ss_r = 0x16 x 32
-renewed                   = fbc313668e31de22f840098d82a0898e132e469ea66ef675c04e2793047d2c8c
-k_i2r(renewed)            = 69558632b6b191575508ef691f7b583d85b024ad9f88adfb64f12e1166fa078f
-k_r2i(renewed)            = e51abc297e087a4f9aa52bed8069b8b8871ae618031309325421e7c807e8ee88
+renewed                   = abc0686ef4a1903708bccc0d81b9e08eb88cb28af87e5239448837b3dcf28331
+k_i2r(renewed)            = 8609fad3b07ac9c4321c8a8fc5f8ead0b0c1b5d4d8ae392feab55bcbebf0d8eb
+k_r2i(renewed)            = 1985e5a7d9e0060ec1ecce87c7c7df1e3d389823338d1b966c22b77686bf7535
 
 negative: the fold in the order of the renewal, the responder having offered
-renewed(responder first)  = 790580fc26d88cdcd36c2aff922c9d31da25b0fc079f32fef816b10d11c0e624
+renewed(responder first)  = e97c1f6aa0510561225238d64065985b3815a9b05036a502bb50b56f91e2802b
 ```
 
 The negative line is normative: an implementation that lays the values of whoever offered first,
@@ -3873,6 +3899,7 @@ line, which of the two it is writing.
 | `mt-seed` | the salt of the derivation from a mnemonic |
 | `mt-account-key` | the signing branch of the derivation from a master seed |
 | `mt-node-key` | the answering key of a machine, derived from the machine's own secret |
+| `mt-node-kem` | the static encapsulation pair of a machine, which its acquaintance names, derived from the machine's own secret |
 | `mt-note-key` | the payment-secret branch of the derivation |
 | `mt-nf-key` | the redemption branch, separate from the payment secret |
 | `mt-key-halves` | the two halves of a secret that spends: the half that spends and the half that names, in that order |
@@ -3894,12 +3921,15 @@ line, which of the two it is writing.
 | `mt-operator-nf` | the one-time right to raise a machine |
 | `mt-part-nf` | the nullifier of a machine's part in one window: first appearance enters the cement, and equivocation in the agreement of the window is caught by it |
 | `mt-open-nf` | the one-time right of a person to open their record |
-| `mt-noise-pq-v1-master` | the master key of the post-quantum handshake |
+| `mt-noise-pq-v2-hello` | the key the initiator's answering key is sealed under in the first flight |
+| `mt-noise-pq-v2-master` | the master key of the post-quantum handshake |
 | `mt-noise-pq-v1-i2r` | the directional key, initiator to responder |
 | `mt-noise-pq-v1-r2i` | the directional key, responder to initiator |
 | `mt-noise-pq-v1-sig-r` | the identity signature of the responder |
 | `mt-noise-pq-v1-sig-i` | the identity signature of the initiator |
-| `mt-noise-pq-v1-transcript` | the transcript exposed as a channel-binding token |
+| `mt-noise-pq-v2-seal-i` | the key the initiator's signature is sealed under |
+| `mt-noise-pq-v2-seal-r` | the key the responder's signature is sealed under |
+| `mt-noise-pq-v2-transcript` | the transcript exposed as a channel-binding token |
 | `mt-link-renew` | the secret of a link after a renewal of its keys, folded from the secret before it and both encapsulations of the renewal |
 | `mt-lookup-nf` | the nullifier bounding a record to one reach into the space of slots per window |
 | `mt-channel-slot` | the slot a channel occupies, derived from its normalized name |
