@@ -79,6 +79,9 @@ pub const NAMES: &[&str] = &[
     "slot_answer",
     "table_query",
     "table_answer",
+    "renew_offer",
+    "renew_answer",
+    "renew_finish",
 ];
 
 pub const SEAL_BYTES: usize = size::STEP_SEAL;

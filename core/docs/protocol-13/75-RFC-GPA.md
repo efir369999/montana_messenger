@@ -124,7 +124,7 @@ serialize(renew_answer)   kem_ct  1 088 B   to the offer's key
                           kem_key 1 184 B                          2 272 B   2 units
 serialize(renew_finish)   kem_ct  1 088 B   to the answer's key    1 088 B   1 unit
 
-message_kind  13 renew_offer   14 renew_answer   15 renew_finish   (beside 1-12, Canon:2451-2455)
+message_kind  15 renew_offer   16 renew_answer   17 renew_finish   (beside 1-14: 13 and 14 are table_query and table_answer)
 ```
 
 The ceiling, for the Decree: `rekey_units` = 8 388 608 (2^23) units sealed under one sending key.
