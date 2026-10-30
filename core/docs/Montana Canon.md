@@ -3372,7 +3372,7 @@ The secret of the first block repeats one byte, so the walk and the key stand a 
 `test_secret`, a value no permutation of which is itself: an implementation reading the secret from
 its other end reproduces the first block and parts from the set here.
 
-A heal of a pipe (Network, "How a link renews its keys"; proposed, issue #75) stands on the value
+A heal of a pipe (Network, "How a link renews its keys"; adopted, issue #75) stands on the value
 the old walk reaches at the window of the answering letter, here `pipe_secret(test_secret, W + 1)`,
 and the healed walk stands from the window after it and walks on by the ordinary step.
 ```
@@ -3807,7 +3807,7 @@ k_r2i                     = 08a031d18e42a5793274dcf0943bfe9df730d7c8acf118f7d77a
 The two directional keys differ in every byte though both come from one master, which is the
 separation the two domains buy.
 
-A renewal of the keys of a link (Network, "How a link renews its keys"; proposed, issue #75) folds
+A renewal of the keys of a link (Network, "How a link renews its keys"; adopted, issue #75) folds
 the master above with fresh material of its own, written below in the order of the roles of the
 handshake, and the two keys of the renewed secret are derived from it exactly as from a master.
 ```

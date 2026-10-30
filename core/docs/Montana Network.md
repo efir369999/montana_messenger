@@ -8,7 +8,8 @@ invariant real, and it is written from that invariant rather than from any earli
 
 ## Scope
 
-**In scope.** The pipe and its tag; the holder a tag chooses; the label of a step; the right that governs
+**In scope.** The pipe and its tag; the holder a tag chooses; the label of a step; the renewal of the
+keys of a link and the heal of a pipe; the right that governs
 injection, collection and carriage; the cell; the canonical slot; deferred collection;
 rendezvous for a stream; a channel and how a publication reaches whoever reads it;
 the path and its owners; what a hop knows; discovery without a map;
@@ -192,12 +193,14 @@ exist, so the set names none, and an implementation carries what its acquaintanc
 
 ## How a link renews its keys
 
-**Status: proposed (issue #75).** The Author has not adopted this section. Nothing in it is in
-force, no implementation is required to follow it, and nothing else in this document, in Canon or
-in the conformance set below has been changed to match it. The council's answer to the RFC of
-issue #75, the integer form proposed for Canon, the proposed ceiling with its derivation, the cost
-in units and the code that would follow stand in `core/docs/protocol-13/75-RFC-GPA.md`, which is
-not part of the set.
+**Status: adopted (issue #75).** The Author adopted this section and its form in Canon on
+2026-10-29 (decision 333 = (b), constitution record 338), together with the heal of a pipe in band,
+and fixed when a heal is offered (constitution record 356). The text is in force. The code that runs
+a renewal on a link and a heal in a client follows at stage 18, after the full network run of
+issue #24, so the wire does not change under the runs in progress; until it lands no implementation
+meets item 23 of the conformance set, and the Registry says so at NET-25. The council's answer to
+the RFC of issue #75, the derivation of the ceiling, the cost in units and the plan of the code
+stand in `core/docs/protocol-13/75-RFC-GPA.md`, which is not part of the set.
 
 A link keeps today the two directional keys its handshake gave it for as long as it stands, so
 whoever reads those keys out of a machine reads every unit of that link — the ones recorded before
@@ -221,7 +224,7 @@ keys the link holds when it is sent:
 - a **finish**, carrying an encapsulation to the answering side's key.
 
 Each side opens what was encapsulated to it, and the new secret of the link is the hash, under a
-domain of its own that Canon names on adoption, of the previous secret, both shared secrets and the
+domain of its own that Canon names (`mt-link-renew`), of the previous secret, both shared secrets and the
 four public values of the renewal, folded in the order of the roles of the handshake — the values
 of the side that opened the link first — and never in the order of the renewal, so both sides
 compute one value whichever of them offered. Both encapsulations enter, as both enter the master
@@ -246,7 +249,8 @@ delivery advance at one rate.
 
 **And when the chain does not advance.** A window can stall, and a stalled window must not leave one
 key over an unbounded volume. A side therefore also offers a renewal when the units it has sealed
-under its current sending key reach `rekey_units`, a ceiling Canon fixes on adoption. The count is
+under its current sending key reach `rekey_units`, a ceiling that enters the Decree of Canon with
+the code of stage 18 (2^23 units, derived in `core/docs/protocol-13/75-RFC-GPA.md`). The count is
 the sender's own, of what it sealed: it never crosses the wire and is never compared with the other
 side's, so nothing can diverge on it.
 
@@ -283,12 +287,16 @@ The walk of the secret of a pipe gives it forward secrecy and no healing, and th
 below names that. A pipe heals by the same construction carried in its own letters:
 
 - A letter of a pipe may carry a **heal offer**: an ML-KEM-768 encapsulation key its sender drew for that offer alone.
-- The letter that answers it carries an encapsulation to that key. From the window after the one whose tag the answering letter travelled under, the pipe stands on a **healed walk**: its first value is the hash, under a domain of its own that Canon names on adoption, of the value the old walk reaches at the window of the answering letter, the shared secret and the two public values of the heal; it walks on by the ordinary rule, and every quantity of a window is derived from it as from any value of a walk.
+- The letter that answers it carries an encapsulation to that key. From the window after the one whose tag the answering letter travelled under, the pipe stands on a **healed walk**: its first value is the hash, under a domain of its own that Canon names (`mt-pipe-heal`), of the value the old walk reaches at the window of the answering letter, the shared secret and the two public values of the heal; it walks on by the ordinary rule, and every quantity of a window is derived from it as from any value of a walk.
 - The offering side holds the healed walk once it opens the answering letter, and sends under it from the first window the healed walk stands at. The answering side keeps sending under the old walk until it opens a letter under the healed one, then sends under the healed walk alone and erases the old one. The offering side collects under both walks until it opens a letter of the answering side under the healed walk, and then erases the old one.
 - A side holds at most one heal of its own pending, and an offer answered by nothing is replaced by its next offer: a lost letter costs a heal and never a pipe.
-- An attacker that read the old walk at some moment reads the offer and the answer, and loses the pipe from the healed walk on, provided it did not alter them and the offer was drawn after the moment it read. Until the offering side next writes, the answering side's letters stay under the old walk and readable to it; that residue is named and not closed.
+- An attacker that read the old walk at some moment reads the offer and the answer, and loses the pipe from the healed walk on, provided it did not alter them and the offer was drawn after the moment it read. Until the offering side next writes, the answering side's letters stay under the old walk and readable to it; that residue is named and not closed. An attacker that read the old walk and also stands on the path of the pipe's letters can strip the offer from each of them and re-seal the rest, so no heal happens and it keeps reading; offers that go unanswered tell a side nothing it can act on, and that case is named and not closed.
 
-When a correspondent offers a heal is left to the Author beside the answer to the RFC.
+A correspondent offers a heal in the first letter it sends in a window while no heal of its own is
+pending (the Author's decision, constitution record 356). When both correspondents write in one
+window, two heals are in flight at once, each side having offered before it opened the other's
+offer. This text does not yet order them, and the rule that does is before the Author
+(constitution record 391).
 
 **Invariants of a renewal:**
 
@@ -300,20 +308,8 @@ When a correspondent offers a heal is left to the Author beside the answer to th
 - A unit that opens under neither key ends the link in silence.
 - A heal of a pipe derives the healed walk from the old walk at the window of the answering letter, and each side erases the old walk only on opening a letter of the other side under the healed one.
 
-**What this adds to the ledger and the conformance set, on adoption.** Two rows of the ledger:
-*that a link renewed in a window* — deliberately observable to an observer of that line, and named:
-a link that carries anything in a window carries a renewal in it, a fixed count of units each way
-with one round trip between them; the units are of the one shape and their kind rides inside the
-seal, so which units they are is not readable, and what the renewal marks is that the link carried
-something in that window, which that observer holds already. *That a pipe healed* — closed: the
-offer and the answer ride inside the inner seal of letters, and the tags of a healed walk join to
-the tags of the old one no more than any two tags do; what the holder of a pipe sees is a letter
-larger by an encapsulation key or an encapsulation, and the size of one letter is already
-deliberately observable to it. And one item of the conformance set: an implementation renews the
-keys of a link as this section states, folds both encapsulations in the order of the roles, renews
-once per window before a message or at the ceiling, erases what the renewal replaced, ends a link
-on a unit that opens under neither key, and heals a pipe by a pair of letters without breaking it
-when a letter is lost.
+**What this adds to the ledger and the conformance set.** Two rows of the observability ledger,
+*that a link renewed in a window* and *that a pipe healed*, and item 23 of the conformance set.
 
 ## The path
 
@@ -800,7 +796,7 @@ needed them would have no privacy of its own.
 | an adversary scanning for participants | the fact that some machine answers at some address, and no way to tell whether it is a machine |
 | that a device is at its ceiling of links | closed: a refusal is silence and reads exactly as an address where nothing listens |
 | that a link carried nothing in a window | **observable to the device holding it, and to nobody else**: it is the one fact the release stands on, it names no person and no machine, and it leaves the device with the window it was read in |
-| whoever takes a device, or a copy of its storage | every pipe of that device from the window of the taking on, and nothing before it: the secret of a pipe walks one way and the earlier values are erased, so a cell recorded earlier stays sealed. **What follows the taking is named rather than closed**: the walk does not heal, so the pipe is read from that window until the correspondents establish a new secret, and a device is its holder's to guard |
+| whoever takes a device, or a copy of its storage | every pipe of that device from the window of the taking on, and nothing before it: the secret of a pipe walks one way and the earlier values are erased, so a cell recorded earlier stays sealed. **What follows the taking is named rather than closed**: the walk alone does not heal, so the pipe is read from that window until the correspondents complete a heal the taker did not alter or strip ("How a link renews its keys") or establish a new secret; a taker that keeps the device keeps reading, and a device is its holder's to guard |
 
 ## Observability ledger
 
@@ -830,6 +826,8 @@ needed them would have no privacy of its own.
 | that some record read a channel | **deliberately observable to the machine at that point**: it sees a point of one window and a collection, and learns neither who collected, nor which other channels they follow, nor whether the body was reconstructed. The point joins to no other window, so two collections of one reader are not joinable |
 | which channels one record follows | closed: a reach carries no index and joins to no other reach, and no subscription is held anywhere, so the set a reader follows exists on a device and in no other place |
 | how many readers a channel has | closed: nothing counts them — a publisher deposits once whatever the number, and no party holds a list to count |
+| that a link renewed in a window | **deliberately observable to an observer of that line, and named**: a link that carries anything in a window carries a renewal in it, a fixed count of units each way with one round trip between them; the units are of the one shape and their kind rides inside the seal, so which units they are is not readable, and what the renewal marks is that the link carried something in that window, which that observer holds already |
+| that a pipe healed | closed: the offer and the answer ride inside the inner seal of letters, and the tags of a healed walk join to the tags of the old one no more than any two tags do; what the holder of a pipe sees is a letter larger by an encapsulation key or an encapsulation, and the size of one letter is already deliberately observable to it |
 
 ## Conformance set
 
@@ -857,3 +855,4 @@ An implementation conforms to this document when all of the following hold.
 20. It holds at most `inbound_slots` links it did not open, serves a deposit at a point of a window or of a round without taking a slot for it, refuses a further handshake at that ceiling in silence, releases a link that carried nothing across a whole window, counts neither its own entries against that ceiling nor releases them by that rule, divides the budget of a window equally across every link it holds, and drops what exceeds a share without an answer and without remembering it.
 21. It deposits at every point Canon derives — a beacon and an attestation at the points of their round, a frame and an operation of the identity plane at the points of the round their slot names, a proposal and its roll at the points of its window, a pledge at the points of the window it is made in — collects from every one of them and takes the union, treats the right to collect there as public, and floods nothing to anybody.
 22. It walks the secret of a pipe one step per window under the domain Canon names, derives the tag, the right to collect and the key of the inner seal of a window from the value of that window alone, holds the value of the earliest window it still accepts a cell at and erases every earlier one, and reproduces the frozen vectors of the walk.
+23. It renews the keys of a link as "How a link renews its keys" states, folds both encapsulations in the order of the roles of the handshake, renews once per window before a message or at the ceiling, erases what the renewal replaced, ends a link on a unit that opens under neither key, heals a pipe by a pair of letters without breaking it when a letter is lost, and reproduces the frozen vectors of the renewal and of the heal.

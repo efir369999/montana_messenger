@@ -26,8 +26,6 @@ struct MTWalletPage: View {
     @State private var topOpen = true   // the Top 13 folds away and opens again (the author's word 12.10.2026 10:1x UTC)
     /// THE COIN TURNS ONCE (the author's word 03.10.2026 13:55 UTC: «the coin makes one turn at the opening and at a tap»).
     @State private var coinTurn = 0
-    /// The touches of the coin that minted, each its rising +1 until it fades (MTRisingPlus).
-    @State private var pops: [MTTapPop] = []
     /// THE PULL OF THE PAGE (MTWalletPull): where the coin stands at rest in the list, how far it is drawn, whether it passed the
     /// coin's trigger, and the round the coin completes after the letting go.
     @State private var pullRest: CGFloat?
@@ -107,19 +105,8 @@ struct MTWalletPage: View {
                             // little wider than its border»): the pad reaches past the coin's frame by its rim; the rising capsule stands
                             // where the finger touched, in the coin's own frame.
                             MTCoinTapPad(locked: pantheon.lit, onDown: { pantheon.touched() }, onUp: { pantheon.released() },
-                                         onLongHold: { autoMint.fire() }) { point in
-                                let coins = pantheon.tap()
-                                let r = MTCoinTapPad.rim
-                                if 0 < coins {
-                                    pops.append(MTTapPop(point: CGPoint(x: point.x - r, y: point.y - r), coins: coins))
-                                    // Five rise at once at most (the heat, 04.10): the oldest gives way to the newest finger.
-                                    if 5 < pops.count { pops.removeFirst(pops.count - 5) }
-                                }
-                            }
+                                         onLongHold: { autoMint.fire() }) { _ in pantheon.tap() }
                             .padding(-MTCoinTapPad.rim)
-                            ForEach(pops) { pop in
-                                MTRisingPlus(point: pop.point, coins: pop.coins) { pops.removeAll { $0.id == pop.id } }
-                            }
                         }
                         .frame(width: 120, height: 120)
                         .background(GeometryReader { g in Color.clear.preference(key: MTWalletPullKey.self, value: g.frame(in: .named("walletList")).minY) })
@@ -142,8 +129,8 @@ struct MTWalletPage: View {
                         .accessibilityAddTraits(.isButton)
                         .accessibilityAction { pantheon.tap() }
                         // NO COUNT OF THE TAPS UNDER THE COIN (the author's word 19.10.2026 14:4x UTC: «at taps and swipes on the coin do
-                        // not show 13/13 below; leave the taps, at most +1 a second»): a tap mints the second's one coin at most
-                        // (MTPantheon.tap, MTLocalCoinLedger.priced) and its +1 rises only when it minted.
+                        // not show 13/13 below; leave the taps, at most +1 a second»); since build 2320 a tap mints nothing (decision 375 «a»), so no
+                        // +1 rises at the finger -- the chain's seconds rise at the sides (MTCoinSides).
                         MTLevelProgress(balance: total)
                             .opacity(pantheon.lit || autoMint.on ? 1 : 0)
                             .accessibilityHidden(!(pantheon.lit || autoMint.on))
@@ -286,7 +273,7 @@ struct MTWalletPage: View {
                         // USER-DATA: a number, the coins the VPN wall's seconds minted (MTVPNWallMint)
                         Text(verbatim: MTCoinText.count(book.walled)).monospacedDigit()
                     } label: { Text("Coins from the VPN Wall") }
-                    .task { MTVPNWallMint.shared.count() }   // the wallet opened: the wall's seconds since the last count are paid
+                    .task { MTVPNWallMint.count() }   // the wallet opened: the wall's seconds since the last count are paid
                     LabeledContent {
                         // USER-DATA: a number, the coins calls and letters burned (MTCoinBurn)
                         Text(verbatim: MTCoinText.count(book.burned)).monospacedDigit()
@@ -1786,7 +1773,7 @@ struct MTTimeChainsPage: View {
             } header: {
                 Label("Chats and calls", systemImage: "bubble.left.and.bubble.right")
             } footer: {
-                Text("The chains of the coins your chats, calls and comments minted and burned, and the chain of your wall's posts.")
+                Text("The chains of the coins your chats, calls and comments minted and burned before, kept as history: they move no coin now. And the chain of your wall's posts.")
             }
             // THE EXPLORER (the author's word 11.10.2026 17:2x UTC: «on the TimeChain page an Explorer button to open and check a
             // transaction ... everything professional in the TimeChain, for auditors»): the public page that reads a transfer's

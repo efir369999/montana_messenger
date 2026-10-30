@@ -2418,7 +2418,7 @@ struct MainTabView: View {
             askWhatIsUnasked()
         }
         .onChange(of: scenePhase) { _, p in
-            if p == .active { MTVPNWallMint.shared.count() }   // the VPN wall's seconds are counted at the return (03.10)
+            if p == .active { MTVPNWallMint.count() }   // the VPN wall's seconds are counted at the return (03.10)
             if p == .active { MTNotifyAllowed.shared.read("active") }   // the person may have changed it in Settings (06.10)
             if p == .active { MTCoinVault.shared.soon("active", after: 1) }   // the seed's other devices, gathered at the return (04.10)
             if p == .active { Task { await MTTimeChainTip.shared.gather(why: "active") } }   // their tips first, in one round trip (04.10 16:34)

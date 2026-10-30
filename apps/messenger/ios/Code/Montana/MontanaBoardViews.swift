@@ -1282,33 +1282,6 @@ final class MTCoinDial {
     }
 }
 
-/// +1, THE COIN TURNING ONCE (the author's word 03.10.2026 13:46 UTC): every letter the money flow mints rises under the bar --
-/// our coin making one turn beside the number minted -- and fades. The count is the tally's (MTChatMint), never this view's.
-struct MTMintPop: View {
-    @ObservedObject private var mint = MTChatMint.shared
-    @State private var rise: CGFloat = 0
-    @State private var shown: Double = 0
-    @Environment(\.accessibilityReduceMotion) private var still   // the +1 stands and fades; it does not rise
-    var body: some View {
-        HStack(spacing: 6) {
-            MTMintCoin(side: 28, turn: mint.minted)
-            // USER-DATA: the count of coins the newest letters minted
-            Text(verbatim: "+" + String(mint.lastBatch)).font(.headline.monospacedDigit()).foregroundStyle(.primary)
-        }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(.ultraThinMaterial, in: Capsule())
-        .offset(y: rise)
-        .opacity(shown)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onChange(of: mint.minted) { _, _ in
-            rise = 0; shown = 1
-            if !still { withAnimation(.easeOut(duration: 1.3)) { rise = -28 } }
-            withAnimation(.easeIn(duration: 0.4).delay(1.0)) { shown = 0 }
-        }
-    }
-}
-
 /// THE SIDES' COINS (MTCoinFlash, the author's words 03.10.2026 21:11 UTC): at every minting in front of the person our coin
 /// rises at the left and the right edge with the count, makes its turn and fades; with Reduce Motion the coins stand and fade.
 /// It never takes a finger.
@@ -1523,40 +1496,6 @@ struct MTCoinTapPad: UIViewRepresentable {
                 feel.impactOccurred()
             }
         }
-    }
-}
-
-/// One touch's coin, as the crediting's sign (the author's word 04.10 00:18): «+1» rises from the point the finger touched and
-/// fades; with Reduce Motion it fades where it stands.
-struct MTTapPop: Identifiable {
-    let id = UUID()
-    let point: CGPoint
-    var coins = 1               // the coin the touch minted (MTCoinBook.price, the second's one)
-}
-struct MTRisingPlus: View {
-    let point: CGPoint
-    var coins = 1
-    let done: () -> Void
-    @State private var up = false
-    @Environment(\.accessibilityReduceMotion) private var still
-    var body: some View {
-        // THE CHATS' CREDITING, AT THE FINGER (the author's word 04.10 00:19: «the taps' animation around, as the crediting in the chats»):
-        // the chat's capsule (MTMintPop) -- our coin turning beside the count -- rising from the point the finger touched.
-        HStack(spacing: 4) {
-            MTMintCoin(side: 18, turn: 1)
-            // USER-DATA: the coins a touch minted, the box's number of them
-            Text(verbatim: "+" + MTCoinText.count(coins)).font(.subheadline.weight(.bold).monospacedDigit()).foregroundStyle(.primary)
-        }
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(.ultraThinMaterial, in: Capsule())
-            .position(x: point.x, y: point.y - (up && !still ? 56 : 0))
-            .opacity(up ? 0 : 1)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .onAppear {
-                withAnimation(.easeOut(duration: 0.8)) { up = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { done() }
-            }
     }
 }
 
