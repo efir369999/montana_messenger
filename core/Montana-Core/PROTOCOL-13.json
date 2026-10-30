@@ -1,6 +1,6 @@
 {
  "what": "The status of the thirteen protocol requirements as this tree holds them. A session that closes or moves an item edits its row and its report (protocol-13/, beside this file) in the same commit as the work, and publish_protocol13.py writes the public folder Audit/Protocol-13 from that commit: the reports, the table from this file and the source; an item is closed only with an implementation revision, the exact test command and its result in the report of that item.",
- "recorded": "2026-10-29",
+ "recorded": "2026-10-30",
  "items": [
   {
    "item": 1,
@@ -41,8 +41,8 @@
    "item": 6,
    "report": "06-CLOCKS-AND-BOOTSTRAP.md",
    "requirement": "Remove clock authority and implicit private bootstrap",
-   "status": "open",
-   "summary": "The same protocol state must have the same validity under changed clocks or machine speed in both generations. Test settings must not silently become network settings."
+   "status": "closed",
+   "summary": "Closed on 2026-10-30 on the chairman's verdict of #17, for core/Montana-Core; core/Code with the recorded limit of decision 334 (a), not across both generations. The verdict reads no clock (K3 e6c1d7bf: one verdict under clocks x1/x3/x1000, gate check_no_clock_in_the_verdict parse.rs:4674), Genesis only under window 0 (K1 242dce79), a network opens by --open on an empty store (K0 PR #69 f4cd115), the waits of conduct read local clocks and no verifier does (C-3 PR #96 ac6347c6), test parameters refused in a release build of core/Code (K5 PR #96 ac6347c6), citations on main (PR #130 94dcb2a). Rings: L3 k776-m118p on 66aa47c: fmt 0, clippy -D warnings 0, test binaries 120 rc 0 (136 suites, 823 passed, 0 failed), doc tests rc 0; L3 k759-code17 on core/Code tree 4b8cff73: fmt 0, clippy 0, 1397 passed, 1 failed (mt-mnemonic sources.rs:655, a flap of the host by decision 404 (a)). Outside this closure: the clocked cascade of core/Code (decision 334 (a), core/Code/AUDIT.md Known limitations item 4) and the mt-mnemonic source tests (decision 404 (c))."
   },
   {
    "item": 7,
