@@ -189,6 +189,15 @@ pub fn read_acquaintance(line: &str) -> Result<Acquaintance, NodeError> {
             what: "an acquaintance carries an address".to_string(),
         });
     }
+    // The address is an IP literal and a port. A name is refused here, at reading, rather than at the
+    // first dial: a machine handed one would ask its system's resolver which machine it is about to
+    // reach (the Author's decision G-4 (a) of #22). The refusal repeats no part of the line.
+    if address.parse::<std::net::SocketAddr>().is_err() {
+        return Err(NodeError::Unreadable {
+            what: "an acquaintance names its machine by an IP literal and a port, never by a name"
+                .to_string(),
+        });
+    }
     Ok(Acquaintance {
         address: address.to_string(),
         answering_key,
@@ -2481,13 +2490,26 @@ mod tests {
         let read = read_acquaintance(&line).expect("it reads back");
         assert_eq!(read.address, "198.51.100.7:8443");
         assert_eq!(read.answering_key, key);
-        // An address holding an at-sign of its own is read from the last one, so a route with a
-        // user in it does not take the key's place.
-        let with_at = write_acquaintance("operator@198.51.100.7:8443", &key);
+        // An IPv6 literal reads back as it was written.
+        let six = write_acquaintance("[2001:db8::7]:8443", &key);
         assert_eq!(
-            read_acquaintance(&with_at).expect("it reads back").address,
-            "operator@198.51.100.7:8443"
+            read_acquaintance(&six).expect("it reads back").address,
+            "[2001:db8::7]:8443"
         );
+        // A name is refused at reading, before any lookup (G-4 (a) of #22), and so is an address
+        // holding an at-sign of its own: it is read from the last one, and what stands before it is
+        // no literal.
+        for named in [
+            "localhost:8443",
+            "node.example:8443",
+            "operator@198.51.100.7:8443",
+            "198.51.100.7",
+        ] {
+            assert!(
+                read_acquaintance(&write_acquaintance(named, &key)).is_err(),
+                "{named} is no IP literal and a port"
+            );
+        }
         assert!(read_acquaintance("198.51.100.7:8443").is_err());
         assert!(read_acquaintance("@").is_err());
         assert!(
