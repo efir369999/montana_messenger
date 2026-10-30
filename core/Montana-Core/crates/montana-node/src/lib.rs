@@ -9,8 +9,9 @@
 // machine that already stood cannot become a second machine wearing its name.
 //
 // **An acquaintance is of the world outside, and this protocol holds none of it.** What one
-// operator hands another is an address and the key that machine answers with. The address is a
-// route and the protocol names no route; what makes it an acquaintance is the key.
+// operator hands another is an address, the key that machine answers with and the static key a
+// first flight to it is made to. The address is a route and the protocol names no route; what makes
+// it an acquaintance is the two keys.
 
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
@@ -155,35 +156,51 @@ fn inbound_slots() -> Result<u64, NodeError> {
     })
 }
 
-// The acquaintance an operator writes down and hands over: the address, an at-sign, and the key
-// that machine answers with in hexadecimal. One line, two values, and no third — there is no
-// directory and none can be assembled, so this is the whole of what a first connection is made of.
-pub fn write_acquaintance(address: &str, answering_key: &[u8; size::SIGNING_PUBLIC_KEY]) -> String {
-    let key: String = answering_key.iter().map(|b| format!("{b:02x}")).collect();
-    format!("{address}@{key}")
+// The acquaintance an operator writes down and hands over: the address, an at-sign, the key that
+// machine answers with in hexadecimal, an at-sign, and the static key a first flight to it is made
+// to, in hexadecimal. One line, three values, and no fourth — there is no directory and none can be
+// assembled, so this is the whole of what a first connection is made of. Whoever was not handed the
+// line gets silence from the machine it names (#22).
+pub fn write_acquaintance(
+    address: &str,
+    answering_key: &[u8; size::SIGNING_PUBLIC_KEY],
+    kem_key: &[u8; size::KEM_PUBLIC_KEY],
+) -> String {
+    let hex = |bytes: &[u8]| -> String { bytes.iter().map(|b| format!("{b:02x}")).collect() };
+    format!("{address}@{}@{}", hex(answering_key), hex(kem_key))
 }
 
-pub fn read_acquaintance(line: &str) -> Result<Acquaintance, NodeError> {
-    let (address, key) = line.rsplit_once('@').ok_or_else(|| NodeError::Unreadable {
-        what: "an acquaintance is an address, an at-sign and a key".to_string(),
-    })?;
-    if key.len() != size::SIGNING_PUBLIC_KEY * 2 {
+// One key of a line, of the width the set fixes for it.
+fn key_of<const N: usize>(text: &str, what: &str) -> Result<[u8; N], NodeError> {
+    if text.len() != N * 2 {
         return Err(NodeError::Unreadable {
             what: format!(
-                "a key of {} hexadecimal characters, and this one has {}",
-                size::SIGNING_PUBLIC_KEY * 2,
-                key.len()
+                "{what} of {} hexadecimal characters, and this one has {}",
+                N * 2,
+                text.len()
             ),
         });
     }
-    let mut answering_key = [0u8; size::SIGNING_PUBLIC_KEY];
-    for (at, slot) in answering_key.iter_mut().enumerate() {
-        *slot = u8::from_str_radix(&key[at * 2..at * 2 + 2], 16).map_err(|_| {
-            NodeError::Unreadable {
-                what: "a key of hexadecimal characters".to_string(),
-            }
-        })?;
+    let mut key = [0u8; N];
+    for (at, slot) in key.iter_mut().enumerate() {
+        *slot = text
+            .get(at * 2..at * 2 + 2)
+            .and_then(|pair| u8::from_str_radix(pair, 16).ok())
+            .ok_or_else(|| NodeError::Unreadable {
+                what: format!("{what} of hexadecimal characters"),
+            })?;
     }
+    Ok(key)
+}
+
+pub fn read_acquaintance(line: &str) -> Result<Acquaintance, NodeError> {
+    let unreadable = || NodeError::Unreadable {
+        what: "an acquaintance is an address, an at-sign, a key, an at-sign and a key".to_string(),
+    };
+    let (rest, kem) = line.rsplit_once('@').ok_or_else(unreadable)?;
+    let (address, key) = rest.rsplit_once('@').ok_or_else(unreadable)?;
+    let answering_key = key_of(key, "an answering key")?;
+    let kem_key = key_of(kem, "a static key")?;
     if address.is_empty() {
         return Err(NodeError::Unreadable {
             what: "an acquaintance carries an address".to_string(),
@@ -201,6 +218,7 @@ pub fn read_acquaintance(line: &str) -> Result<Acquaintance, NodeError> {
     Ok(Acquaintance {
         address: address.to_string(),
         answering_key,
+        kem_key,
     })
 }
 
@@ -1175,13 +1193,14 @@ impl Machine {
         Ok(took.len())
     }
 
-    // The line an operator hands to another operator. It names where this machine stands and the
-    // key it answers with, and nothing else exists to name.
+    // The line an operator hands to another operator. It names where this machine stands, the key it
+    // answers with and the static key a first flight to it is made to, and nothing else exists to name.
     pub fn acquaintance(&self) -> Result<String, NodeError> {
         let address = self.door.address().map_err(NodeError::Net)?;
         Ok(write_acquaintance(
             &address,
             self.answering.public().as_bytes(),
+            self.answering.kem_public().as_bytes(),
         ))
     }
 
@@ -2486,18 +2505,20 @@ mod tests {
     #[test]
     fn an_acquaintance_is_written_and_read_back_and_a_malformed_one_is_refused() {
         let key = [0x5Au8; size::SIGNING_PUBLIC_KEY];
-        let line = write_acquaintance("198.51.100.7:8443", &key);
+        let kem = [0xC3u8; size::KEM_PUBLIC_KEY];
+        let line = write_acquaintance("198.51.100.7:8443", &key, &kem);
         let read = read_acquaintance(&line).expect("it reads back");
         assert_eq!(read.address, "198.51.100.7:8443");
         assert_eq!(read.answering_key, key);
+        assert_eq!(read.kem_key, kem);
         // An IPv6 literal reads back as it was written.
-        let six = write_acquaintance("[2001:db8::7]:8443", &key);
+        let six = write_acquaintance("[2001:db8::7]:8443", &key, &kem);
         assert_eq!(
             read_acquaintance(&six).expect("it reads back").address,
             "[2001:db8::7]:8443"
         );
         // A name is refused at reading, before any lookup (G-4 (a) of #22), and so is an address
-        // holding an at-sign of its own: it is read from the last one, and what stands before it is
+        // holding an at-sign of its own: it is read from the last two, and what stands before them is
         // no literal.
         for named in [
             "localhost:8443",
@@ -2506,15 +2527,23 @@ mod tests {
             "198.51.100.7",
         ] {
             assert!(
-                read_acquaintance(&write_acquaintance(named, &key)).is_err(),
+                read_acquaintance(&write_acquaintance(named, &key, &kem)).is_err(),
                 "{named} is no IP literal and a port"
             );
         }
         assert!(read_acquaintance("198.51.100.7:8443").is_err());
         assert!(read_acquaintance("@").is_err());
-        assert!(
-            read_acquaintance(&format!("a@{}", "zz".repeat(size::SIGNING_PUBLIC_KEY))).is_err()
-        );
+        assert!(read_acquaintance("@@").is_err());
+        // A line of the old shape, with the answering key alone, names no static key and is refused.
+        let mut old = String::from("a@");
+        old.push_str(&"5a".repeat(size::SIGNING_PUBLIC_KEY));
+        assert!(read_acquaintance(&old).is_err());
+        let zz = "zz".repeat(size::SIGNING_PUBLIC_KEY);
+        let c3 = "c3".repeat(size::KEM_PUBLIC_KEY);
+        assert!(read_acquaintance(&format!("a@{zz}@{c3}")).is_err());
+        // Keys swapped in place are of the wrong widths and are refused rather than read.
+        let a5 = "5a".repeat(size::SIGNING_PUBLIC_KEY);
+        assert!(read_acquaintance(&format!("a@{c3}@{a5}")).is_err());
     }
 
     #[test]

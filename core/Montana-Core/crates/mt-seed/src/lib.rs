@@ -299,6 +299,13 @@ pub fn answering_key(machine_secret: &[u8; 32]) -> Zeroizing<Vec<u8>> {
     hkdf_expand(machine_secret, domain::MT_NODE_KEY.as_str().as_bytes(), 32)
 }
 
+// Beside it, the seed of the machine's static encapsulation pair: what an acquaintance names so that a
+// first flight opens only for whoever was handed the line (#22, G-1 (b)). Two expansions under two
+// domains of one secret, so neither key says anything of the other.
+pub fn answering_kem_seed(machine_secret: &[u8; 32]) -> Zeroizing<Vec<u8>> {
+    hkdf_expand(machine_secret, domain::MT_NODE_KEM.as_str().as_bytes(), 64)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

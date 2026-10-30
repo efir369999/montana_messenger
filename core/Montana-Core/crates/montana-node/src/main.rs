@@ -16,10 +16,11 @@ montana-node — a machine of Montana
   --data <directory>     where this machine keeps what it holds between starts
   --listen <address>     where it answers, as an IP literal and a port
   --acquaintance <line>  a machine to reach, as its operator handed it over:
-                         an IP literal and a port, an at-sign and the key it answers
-                         with. A name is refused before any lookup, here and in
-                         --listen: the system's resolver would be asked which machine
-                         this one reaches
+                         an IP literal and a port, an at-sign, the key it answers
+                         with, an at-sign and its static key; a machine not handed
+                         the line answers it with silence. A name is refused before
+                         any lookup, here and in --listen: the system's resolver
+                         would be asked which machine this one reaches
   --anchor <file>        given twice, the earlier first: the proposals of two consecutive
                          final windows, as their operator handed them over. A machine
                          keeps every proposal it took as one file of <data>/proposals,
