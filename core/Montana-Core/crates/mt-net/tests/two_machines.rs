@@ -177,3 +177,31 @@ fn every_byte_of_a_handshake_crosses_in_units_of_the_one_width() {
         "the first flight occupies the units its own length gives"
     );
 }
+
+// The Author's decision G-4 (a) of #22: a machine is named by an IP literal and a port, and a name is
+// refused before any lookup. The door below is reachable as "localhost", so a tree that handed names
+// to the resolver would reach it; this one opens no socket and the door sees nobody.
+#[test]
+fn a_name_is_refused_before_any_lookup_and_reaches_nobody() {
+    let door = std::net::TcpListener::bind("127.0.0.1:0").expect("a door opens");
+    let port = door.local_addr().expect("it stands").port();
+    door.set_nonblocking(true).expect("it waits for nobody");
+    assert_eq!(
+        dial(
+            &Acquaintance {
+                address: format!("localhost:{port}"),
+                answering_key: *machine(0x31).public().as_bytes(),
+            },
+            &machine(0x32),
+        )
+        .err(),
+        Some(NetError::NotALiteral)
+    );
+    assert_eq!(
+        door.accept().map(|_| ()).map_err(|e| e.kind()),
+        Err(std::io::ErrorKind::WouldBlock),
+        "nothing reached the door"
+    );
+    // And a door is opened at a literal alone.
+    assert_eq!(Door::open("localhost:0").err(), Some(NetError::NotALiteral));
+}
