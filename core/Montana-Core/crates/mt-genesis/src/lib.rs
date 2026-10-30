@@ -141,6 +141,10 @@ pub const FORMS: &[Entry] = &[
     Entry::Scalar("cell_bytes", 1_232),
     Entry::Scalar("erasure_group", 16),
     Entry::Scalar("path_max", 15),
+    // The units a side seals under one sending key of a link before it offers a renewal (Network,
+    // "How a link renews its keys"): the window renews a link first, and this binds when the chain
+    // stalls. A count each side keeps of its own units and never sends, so a boundary may move it.
+    Entry::Scalar("rekey_units", 8_388_608),
 ];
 
 // The parameters, encoded. There is no encoding of an incomplete Decree: what a chain opens on is

@@ -124,7 +124,7 @@ The artifact stands published, so no row awaits it; what a row may still await i
 
 | id | mechanism | anchors | derivations | domains | proven by | awaits |
 |---|---|---|---|---|---|---|
-| NET-01 | the post-quantum handshake | Network, "Where a shared secret comes from"; Canon, "The post-quantum handshake, in integers" | — | `mt-noise-pq-v1-master`, `mt-noise-pq-v1-i2r`, `mt-noise-pq-v1-r2i`, `mt-noise-pq-v1-sig-r`, `mt-noise-pq-v1-sig-i`, `mt-noise-pq-v1-transcript` | vectors: "The post-quantum handshake", with the normative negative | — |
+| NET-01 | the post-quantum handshake | Network, "Where a shared secret comes from"; Canon, "The post-quantum handshake, in integers" | — | `mt-node-kem`, `mt-noise-pq-v2-hello`, `mt-noise-pq-v2-master`, `mt-noise-pq-v2-seal-i`, `mt-noise-pq-v2-seal-r`, `mt-noise-pq-v1-i2r`, `mt-noise-pq-v1-r2i`, `mt-noise-pq-v1-sig-r`, `mt-noise-pq-v1-sig-i`, `mt-noise-pq-v2-transcript` | vectors: "The post-quantum handshake", with the normative negative | — |
 | NET-02 | the tag of a window | Network, "There is no address"; Canon, "The integer form of a tag" | — | `mt-tag` | vectors: "A tag and the labels of its steps" | — |
 | NET-03 | the holder rule | Network, "Which machine holds a tag"; Canon, "The holder of a tag" | — | — | vectors: "The holder of a tag" | stage 18 |
 | NET-04 | the ring entries and the path | Network, "The path"; Canon, "The seal of a step and the placement of a sender" | `path_max` | `mt-relay-seal`, `mt-relay-path`, `mt-owner-key` | vectors: "The seal of a step, and the placement of a sender" | stage 18 |

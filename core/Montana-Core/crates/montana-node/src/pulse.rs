@@ -3451,6 +3451,7 @@ pub fn publish_at(
         mt_wire::publish::cells_of(point, window, object).map_err(|_| NodeError::Refused {
             what: "an object no delivery of this wire carries",
         })?;
+    link.learn_window(window);
     for cell in &cells {
         deposit_at(link, point, cell)?;
     }

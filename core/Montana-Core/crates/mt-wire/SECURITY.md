@@ -16,11 +16,11 @@ secret is a change to the card in the same commit.
 |---|---|
 | Secret material | two directional keys, 32 B each; the transcript, 32 B, which is public and stands beside them |
 | Who holds them | the two devices that ran the four flights, each in its own memory. A carrier between them holds a sealed box and the keys of a session reach no third party at any point of the handshake |
-| Site of construction | `src/handshake.rs`, `of_transcript` — a private function, reached through `initiator_channel` and `responder_channel` and through no other path this crate exports |
+| Site of construction | `src/handshake.rs`, `Keys::channel` — a private function, reached through `Keys::initiator_channel` and `Keys::responder_channel`, each only after the other side's sealed signature opened and verified, and through no other path this crate exports |
 | Site of destruction | `src/handshake.rs`, `impl Drop for Channel` — all three fields `zeroize()` |
-| Construction copies | one: the master is derived into a local and the two keys are written straight into the fields of the channel |
+| Construction copies | one: the master is held in `Keys`, which wipes it on drop (`impl Drop for Keys`, all of its fields `zeroize()`), and the two keys are written straight from it into the fields of the channel |
 | Transfer | by reference through three accessors; the type carries neither `Clone` nor `Copy`, so a second copy has to be written by hand to exist |
-| What holds the keys behind a verification | the three fields are private, the constructing function is private, and both exported doors call `verify` on the far side's signature over the transcript each computed itself before they build one. A caller who cannot verify receives `Err` and no channel: the prohibition is the privacy of the fields plus the order inside those two doors, and it is checkable at `src/handshake.rs` lines 277 and 328 |
+| What holds the keys behind a verification | the three fields are private, the constructing function is private, and both exported doors call `verify` on the far side's signature over the transcript each computed itself before they build one. A caller who cannot verify receives `Err` and no channel: the prohibition is the privacy of the fields plus the order inside those two doors, and it is checkable at `src/handshake.rs` lines 511 and 523 |
 | Branching on secret bytes | none in this crate; what a caller compares is the transcript, which is public |
 | `PartialEq` on the bearer | written by hand as absent, so this crate exposes no comparison of key material to be timed |
 | Logging surface | `Debug` is written by hand and prints a fixed string; a search of the crate for `println!` over a key returns nothing as of this commit |
