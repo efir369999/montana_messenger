@@ -1,7 +1,10 @@
 # 75. RFC: GPA resistance, padding, post-quantum forward secrecy, queue resynchronization
 
-**Status: open (council point 11). Requirement 3 is answered by a proposed section of Network,
-which the Author has not adopted. Nothing in this file is normative and nothing in it is in force.**
+**Status: open (council point 1). Requirement 3 is answered by the section "How a link renews its
+keys" of Network, which the Author adopted on 2026-10-29 (decision 333 = (b), record 338); its code
+follows at stage 18, after the network run of issue #24. This file itself is not normative: the
+section of Network and its form in Canon are. Line references below were read on the branch named
+next and may since have moved.**
 
 This is the council's answer to the RFC of issue #75, requirement by requirement. It was written
 on 2026-10-27 UTC on the branch `agent-632/issue-75-pcs`, cut from `main` at `826aa8b`. It builds on
