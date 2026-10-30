@@ -41,9 +41,82 @@ filler, which Constitution:401-406 forbids. A claim of resistance to the global 
 is refused too: the both-ends case is a named physical prohibition, and "no construction supplies
 volume that nobody carries" (Constitution:420-423).
 
-**What remains open.** Where the game is written (inside the set or beside it), and whether it is
-closed by a proof, by the measurement of stage 22, or by both. Neither is possible against code
-that does not yet route by tags. This stays with Protocol-13 item 11 (#22) and with this point.
+### The [I-16] game, written by the council (Q7)
+
+Written on 2026-10-30 UTC by the chairman on the Author's word of that day (council link 13380): the
+council does its own part and does not wait on the reviewers, so decision 390 = (c) no longer holds
+the wording back. Lines of Network and Canon cited here were read on `main` at `a95210b`; lines of the Constitution are those of the amended text in this change. The game is stated over the specification, not over the code: the routing by
+tags it is about is not running (`montana-node/src/lib.rs:1614-1631`). The full statement, with its
+references, is `docs/issue-75/03-transport-game.md` of the iOS tree; what follows is what the council
+proves and what it does not.
+
+**The game `G^X(A, P)`.** A network of honest machines runs Network and Canon over an advancing
+chain. Traffic the adversary does not choose comes from a background `D_bg` (variant `G_bg`), or
+the adversary chooses all of it (variant `G_adv`). The adversary names two scenarios `σ_0`, `σ_1` of
+a challenge type `X`, the challenger draws `b` and runs `σ_b`. On every point of the set `P` (links
+and access lines) the adversary sees every cell -- its bytes, its canonical slot, its direction --
+and may delay, drop, reorder or inject cells there; it corrupts no machine. It outputs `b'`, and
+`Adv` is the absolute value of `2·Pr[b' = b] - 1`. In both scenarios every honest device sends and
+receives the same number of letters, of the same length, in the same windows. `P` is **admissible**
+when it holds both ends of no delivery of either scenario -- the exclusion of Constitution:392-396
+and nothing more. Challenge types: **KIND** (one delivery, same ends, same length, same class of
+carriage: a payment in one world, a letter in the other -- [I-16] requirement 1), **REL** (`u_0 → v_0`
+and `u_1 → v_1` against `u_0 → v_1` and `u_1 → v_0`), **ORIG** (a machine originates in one world and
+relays a delivery of the same length in the other).
+
+**Theorem 1 (KIND; proved).** For every set `P`, admissible or not, and every adversary making `q`
+observations and `q'` injections, `Adv ≤ 2q·Adv^{ind$} + q'·Adv^{int}`, where the two terms are the
+advantages against the confidentiality and the integrity of the one cipher Canon names,
+ChaCha20-Poly1305 (Canon:33). Outside the delivery's own cells the bound assumes that what the
+recipient does after opening is the same for both kinds; a reaction that depends on the kind (a
+transfer it then announces to the chain, say) is a trace of its own and is counted against [I-16]
+requirement 1, not hidden by this theorem.
+
+*Proof.* Everything the adversary sees of a cell other than its sealed bytes is the same function
+of the window, the pair and the length in both worlds. Its length is `cell_bytes` = 1 232 B for
+every cell (Canon:955, :5025; Network:835). Its moment is the canonical slot, derived from the window
+and the sender's ephemeral identity (Network:473-480), never from the content. Its open fields are
+the target commitment, a function of the pipe and the window, and the label of its step, which
+takes nothing of the delivery (Network:403-404, :867). Its path is the path of the pair, because a
+payment has no transport of its own (Constitution:404-407). So the two views differ only in the
+plaintexts under the seals: the routing layer and the delivery layer, each ChaCha20-Poly1305
+(Canon:2152-2154, :2236) with a nonce drawn afresh for every cell (Canon:2250), no field telling one
+kind of content from another (Canon:2254), re-sealed at every step (Network:406). Replace the sealed bytes of the observed cells one by one with uniform strings of the
+same length: each of the `q` steps, for each of the two layers, changes the adversary's success by at
+most `Adv^{ind$}`, and at the end the view does not depend on `b`. An injected or altered cell of
+another length is discarded in silence (Canon:2249); one of the right length that does not open ends
+the link, and a new handshake replaces it (Network:280-281). Both reactions are the same in both
+worlds unless the cell forges a seal, which bounds the injection term by `q'·Adv^{int}`. ∎
+
+**Proposition 1 (both ends; proved).** In `G_adv`, with `P = ends(d)` and an otherwise empty
+workload, the scenarios `u → v` and `u → v'` are told apart with advantage 1. *Proof.* Without
+synthetic filler (Constitution:414-416) a delivery to `v` brings at least one cell onto `line(v)`
+within its horizon, and none arrives there in the other world; consensus cells on that line do not
+depend on `b`. ∎ This is the case the invariant names and does not close (Constitution:392-396,
+:430-433); it is why the RFC's claim of resistance to the global passive adversary is refused.
+
+**Proposition 2 (interior observer, adversary-chosen workload; a finding, shown as a sketch).**
+In `G_adv` with type REL, let `P` be every link except the access lines of `v_0` and `v_1`, let their
+first machines differ and be known to the adversary, and let the workload be otherwise empty. `P`
+is admissible. The adversary follows the volume of `u_0` hop by hop to the holder of its tag and the
+collection of each recipient from its first machine to a holder, and pairs them; re-sealing hides
+bytes, not volume (Constitution:422-425). Its advantage is close to 1. The sketch in full is
+`docs/issue-75/03-transport-game.md` section 5. **Consequence:** read word for word, [I-16] claims
+indistinguishability for every set short of both ends, and when the adversary chooses the workload
+no design without synthetic filler can give it. The invariant's own third requirement says the
+same in prose: the protocol sets "the price of the correlation and not its impossibility"
+(Constitution:434).
+
+**What the council proposes in its place (Claim C3′).** In `G_bg`, for every polynomial adversary
+and every admissible `P`, `Adv ≤ ε(D_bg, profile, ℓ) + negl(λ)`, where `ε` is set by the honest
+volume on the links of `P`, the delay profile and the path length `ℓ`, and falls toward 0 as that
+volume grows; for KIND, `ε = 0` by Theorem 1. Bounding `ε` for REL and ORIG is the measurement of
+stage 22 (`core/Montana-Core/ROADMAP.md:1217-1230`), which belongs to #22 (decision 386 = (b)).
+**Adopted.** The Author decided Q7 = (a) on 2026-10-30 at 17:2x UTC (council link 13395,
+constitution record 436 deciding 435). The second sentence of [I-16] now reads as C3′
+(Constitution:387-392): an observer short of both ends cannot determine what an object is, and its
+advantage on origin, destination and relay is bounded by the honest volume, the delay profile and
+the path length.
 
 ## Requirement 2. Adaptive, stochastic traffic padding
 
@@ -241,3 +314,10 @@ Each question is stated as options with a recommendation. None of them is decide
   Recommendation: (a) with (i). The cost falls only on letters that are sent anyway, and the exposure after a taking is bounded by the conversation's own rhythm.
 - **Q5. The step label.** Should it stand on the renewed secret of the link rather than on the handshake's? Recommendation: leave it to #22, where the random label of the code already stands.
 - **Q6. Adoption.** Should the draft move into the in-force text of Network, with the Canon form, the ledger rows, the conformance item and stage 18 of the plan in one change? Or should it stay proposed until the transport routes by tags (Registry:129-134)? Recommendation: adopt the text and the Canon form together. The code follows the list above.
+- **Q7. The wording of [I-16].**
+  - (a) Restate the invariant's second sentence as Claim C3′ above: for any set of points that does not hold both ends of a delivery, an observer's advantage in telling what an object is, who sent it, for whom it is, or whether a machine is its origin or a relay is bounded by the honest volume it does not control, the delay profile and the path length, and is nil for what the object is.
+  - (b) Keep the present words and name Proposition 2 as a limit in the observability ledger (Network:830-836).
+
+  Recommendation: (a). Proposition 2 shows the present words cannot be proved; (a) claims what Theorem 1 proves and what stage 22 can measure.
+
+  **Decided: (a)**, by the Author on 2026-10-30 at 17:2x UTC (council link 13395, constitution record 436).
