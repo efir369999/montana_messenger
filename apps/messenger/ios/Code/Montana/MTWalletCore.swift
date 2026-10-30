@@ -3671,8 +3671,9 @@ enum MTCoinChainRules {
         let t0 = max(s.mintEnd, now - MTCoinChainRules.mintFresh + MTCoinTx.presentMargin, from)
         return Int(clamping: max(0, now - t0))
     }
-    /// What the wallet's Time Balance shows: the available and the seconds on their way to it.
-    var growing: Int { available + (split == nil ? 0 : minting) }
+    /// What the wallet's Time Balance shows: the available and the seconds on their way to it -- before the coin chain's stop the
+    /// seconds a MINT would name, from it the seconds in the network the core has not confirmed yet (MTPresenceWait).
+    var growing: Int { available + (split == nil ? 0 : minting) + MTPresenceWait.seconds }
     /// The number the readers off the main actor hear (MTCoinBalance): the available, told at every move of the book and the chain.
     /// Before the chain has spoken the available is the book's, so its views hear every move of the book here.
     private var shown: Int?
@@ -3687,12 +3688,83 @@ enum MTCoinChainRules {
     /// The seconds on their way rise by the same beat (minting), and when they leave -- the person away, or the MINT landed -- the
     /// figure is told again without a rise.
     func beat() {
-        guard split != nil, let before = shown else { return }
+        guard spoke else { return }
+        guard let before = shown else { shown = growing; objectWillChange.send(); return }
         let now = growing
         guard before != now else { return }
         objectWillChange.send()
         told()
         if before < now { MTCoinFlash.shared.born(now - before, ref: MTWalletPull.refPrefix) }
+    }
+}
+
+/// THE SECONDS IN THE NETWORK WAIT FOR THE CORE (the author's decision 443 = (b), link 13549, 30.10.2026 19:25 UTC: «the core confirms
+/// after the window's finalization, and the balance shows the crediting every second, while the available changes only after the
+/// core's confirmation by the fact of finalization»; «the stop of minting was about everything except in the network»; links 13528 and
+/// 13531: build 2324 showed no crediting every second). From the coin chain's stop (MTCoinChainRules.mintStop) its nodes take no MINT,
+/// so the seconds the person is here -- the app in front of them or the living tunnel (MTCoinTx.here) -- are counted on this phone and
+/// rise in the Time Balance (MTCoinSplit.growing), never in the available, and nothing spends them: only the core makes coins of them.
+/// Kept in the person's folder (MTCoinPlace), folded at every beat of presence, so a stay that ends or a run that dies loses at most
+/// one beat, and a seat moved takes its own. The open stay lives in memory alone: a run killed never counts the time it was dead.
+@MainActor enum MTPresenceWait {
+    private struct Kept: Codable { let key: String; var seconds: Int64 }
+    private static let name = "presence-waiting.json"   // NOT-UI: the file's name in the person's folder
+    private static var kept: Kept?
+    private static var from: (key: String, at: TimeInterval)?
+    private static var watching = false
+    /// The first second counted: before the stop a MINT named these seconds (MTCoinSplit.minting).
+    nonisolated static let start = TimeInterval(MTCoinChainRules.mintStop)
+    private static func load(_ key: String) -> Kept {
+        if let k = kept, k.key == key { return k }
+        var k = Kept(key: key, seconds: 0)
+        if let u = MTCoinPlace.file(name), let d = try? Data(contentsOf: u),
+           let w = try? JSONDecoder().decode(Kept.self, from: d), w.key == key { k = w }
+        kept = k
+        return k
+    }
+    private static func save(_ k: Kept) {
+        kept = k
+        guard let u = MTCoinPlace.file(name), let d = try? JSONEncoder().encode(k) else { return }
+        try? d.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+    /// The seconds waiting for the core: the kept ones and the open stay's.
+    static var seconds: Int {
+        guard let key = MTCoinTx.myKeyTag else { return 0 }
+        let open = from.map { f in f.key == key ? max(0, Date().timeIntervalSince1970 - f.at) : 0 } ?? 0
+        return Int(clamping: load(key).seconds &+ Int64(open))
+    }
+    /// The person came: a stay opens, never before the stop.
+    static func open() {
+        watch()
+        guard from == nil, let key = MTCoinTx.myKeyTag else { return }
+        let now = Date().timeIntervalSince1970
+        guard start <= now else { return }
+        from = (key, now)
+    }
+    /// The open stay's seconds join the kept ones, and the stay goes on from now.
+    static func fold() {
+        guard let f = from else { return }
+        let now = Date().timeIntervalSince1970
+        var k = load(f.key)
+        k.seconds &+= Int64(max(0, now - f.at))
+        save(k)
+        from = (f.key, now)
+    }
+    /// The person left: the stay's seconds are kept and it closes.
+    static func close() {
+        fold()
+        from = nil
+    }
+    /// The app leaving the screen ends the stay at once unless the tunnel keeps the person here; the presence's beat would end it
+    /// up to a beat later (MTCoinTx.presentBeat).
+    private static func watch() {
+        guard !watching else { return }
+        watching = true
+        for n in [UIApplication.didEnterBackgroundNotification, UIApplication.willTerminateNotification] {
+            NotificationCenter.default.addObserver(forName: n, object: nil, queue: .main) { _ in
+                Task { @MainActor in if !MTCoinTx.here { close() } }
+            }
+        }
     }
 }
 
@@ -4171,13 +4243,19 @@ extension MTCoinTx {
     /// before the online cut only to read the key's life the chain mints itself (fold-6), so the person's number grows with the chain
     /// and never by the book, which mints nothing after the time cut (MTLocalCoinLedger.priced).
     @MainActor static func beHere() {
+        // A stay the app's leaving closed reopens on its return at once, even inside a beat that still sleeps: the beat already
+        // running would not open it again, and every second until that beat ended would rise nowhere (MTPresenceWait.watch).
+        if here { MTPresenceWait.open() }
         guard presence == nil else { return }
         hereFrom = nil
         presence = Task { @MainActor in
+            MTPresenceWait.open()   // the seconds in the network wait for the core from here (decision 443)
             while !Task.isCancelled, here {
                 await reconcile()
+                MTPresenceWait.fold()
                 try? await Task.sleep(nanoseconds: presentBeat * 1_000_000_000)
             }
+            MTPresenceWait.close()
             presence = nil
             hereFrom = nil
             MTCoinSplit.shared.beat()
