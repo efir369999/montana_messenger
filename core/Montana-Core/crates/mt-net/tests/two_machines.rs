@@ -134,14 +134,39 @@ fn a_machine_answering_with_another_key_is_not_the_one_the_acquaintance_names() 
 }
 
 // **A door says nothing to a side that was not handed the line** (#22). Its first flight is made to
-// a static key that is not this machine's; it opens to nothing, and the connection ends with not one
-// byte written: what the stranger reads is the silence a closed device gives.
+// a static key that is not this machine's; it opens to nothing, and the door writes not one byte —
+// nor does it end the connection on that flight, since ending it at the last unit would tell a probe
+// by its own length that a machine read it. A relay between the two watches the door: after the
+// whole first flight it is silent and still open, and it lets go only once the far side does.
 #[test]
 fn a_side_without_the_line_is_answered_by_no_byte() {
+    use std::io::{Read, Write};
     let far = machine(0xC5);
     let far_key = *far.public().as_bytes();
-    let (address, answering) = door_answering(far);
+    let (door_address, answering) = door_answering(far);
     let width = mt_wire::cell_bytes().expect("named");
+    let flight =
+        width * mt_wire::handshake::units_of(mt_wire::handshake::hello_len()).expect("named");
+
+    let relay = std::net::TcpListener::bind("127.0.0.1:0").expect("a relay opens");
+    let address = relay.local_addr().expect("it stands").to_string();
+    let watching = std::thread::spawn(move || {
+        let (mut near, _) = relay.accept().expect("the stranger arrives");
+        let mut door = std::net::TcpStream::connect(&door_address).expect("the door is reached");
+        let mut first = vec![0u8; flight];
+        near.read_exact(&mut first)
+            .expect("the first flight arrives whole");
+        door.write_all(&first).expect("it crosses");
+        door.set_read_timeout(Some(std::time::Duration::from_secs(1)))
+            .expect("a bound");
+        let mut one = [0u8; 1];
+        let heard = door.read(&mut one).map_err(|e| e.kind());
+        // The stranger gives up, and the relay ends both sides as it would.
+        let _ = door.shutdown(std::net::Shutdown::Both);
+        let _ = near.shutdown(std::net::Shutdown::Both);
+        heard
+    });
+
     assert_eq!(
         dial(
             &Acquaintance {
@@ -157,10 +182,50 @@ fn a_side_without_the_line_is_answered_by_no_byte() {
             found: 0
         })
     );
+    let heard = watching.join().expect("the relay stands");
+    assert!(
+        matches!(
+            heard,
+            Err(std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut)
+        ),
+        "after a whole first flight it could not open the door gave {heard:?} rather than silence"
+    );
     assert_eq!(
         answering.join().expect("the thread stands").err(),
         Some(NetError::Handshake(HandshakeError::Unopened))
     );
+}
+
+// **A probe of the whole length of a first flight is held as one a byte short is** (#22). Bytes of
+// that length which are no flight do not assemble, parse or open; the door neither answers nor
+// closes on them, and lets go only when the probe ends the connection — and even then says nothing.
+#[test]
+fn a_probe_of_the_whole_length_of_a_first_flight_is_neither_answered_nor_closed() {
+    use std::io::{Read, Write};
+    let (address, answering) = door_answering(machine(0xC7));
+    let flight = mt_wire::cell_bytes().expect("named")
+        * mt_wire::handshake::units_of(mt_wire::handshake::hello_len()).expect("named");
+    let mut probe = std::net::TcpStream::connect(&address).expect("the door is reached");
+    probe.write_all(&vec![0xA5u8; flight]).expect("it crosses");
+    probe
+        .set_read_timeout(Some(std::time::Duration::from_secs(1)))
+        .expect("a bound");
+    let mut one = [0u8; 1];
+    let heard = probe.read(&mut one).map_err(|e| e.kind());
+    assert!(
+        matches!(
+            heard,
+            Err(std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut)
+        ),
+        "a probe of the length of a first flight was given {heard:?} rather than silence"
+    );
+    probe
+        .shutdown(std::net::Shutdown::Write)
+        .expect("the probe gives up");
+    assert!(answering.join().expect("the thread stands").is_err());
+    // The door has returned, so its end is already closed and the end is read at once, under the
+    // bound already set: a socket whose far side closed may refuse a new bound on some systems.
+    assert_eq!(probe.read(&mut one).map_err(|e| e.kind()), Ok(0));
 }
 
 // The property the set states in as many words: there is one size on this wire and no second. A

@@ -148,20 +148,30 @@ fn write_flight(stream: &mut TcpStream, flight: &[u8]) -> Result<(), NetError> {
 }
 
 // The units of one flight, of the count its own length gives — a reader knows the flight it is
-// waiting for, so the count is read from the set rather than from the wire. What comes back is the
-// flight at the length its layout fixes, the padding of the last piece discarded.
-fn read_flight(stream: &mut TcpStream, length: usize) -> Result<Vec<u8>, NetError> {
+// waiting for, so the count is read from the set rather than from the wire. What this reads is the
+// units and nothing of what they hold: a socket that ends or stops inside them is told apart here
+// from units that arrived whole and say nothing, which `assemble_flight` decides.
+fn read_flight_units(stream: &mut TcpStream, length: usize) -> Result<Vec<Vec<u8>>, NetError> {
     let width = mt_wire::cell_bytes().map_err(wire)?;
     let units = handshake::units_of(length).map_err(wire)?;
+    let mut held = Vec::with_capacity(units);
+    for _ in 0..units {
+        held.push(read_exactly(stream, width)?);
+    }
+    Ok(held)
+}
+
+// What units read whole assemble to: the flight at the length its layout fixes, the padding of the
+// last piece discarded.
+fn assemble_flight(units: &[Vec<u8>], length: usize) -> Result<Vec<u8>, NetError> {
     // A piece is of the width the framing of this wire gives it; what stands after it inside the
     // unit is the padding that makes every unit one size, and handing that to the reassembly would
     // offer it a piece of a width it does not admit.
     let piece = link::FRAMING_BYTES + mt_wire::piece_bytes().map_err(wire)?;
-    let mut pieces = Vec::with_capacity(units);
-    for _ in 0..units {
-        let unit = read_exactly(stream, width)?;
-        pieces.push(unit[mt_wire::LABEL_BYTES..mt_wire::LABEL_BYTES + piece].to_vec());
-    }
+    let pieces: Vec<Vec<u8>> = units
+        .iter()
+        .map(|unit| unit[mt_wire::LABEL_BYTES..mt_wire::LABEL_BYTES + piece].to_vec())
+        .collect();
     let (_, assembled) = link::reassemble(&pieces)
         .map_err(wire)?
         .ok_or(NetError::Truncated {
@@ -175,6 +185,39 @@ fn read_flight(stream: &mut TcpStream, length: usize) -> Result<Vec<u8>, NetErro
         });
     }
     Ok(assembled[..length].to_vec())
+}
+
+fn read_flight(stream: &mut TcpStream, length: usize) -> Result<Vec<u8>, NetError> {
+    assemble_flight(&read_flight_units(stream, length)?, length)
+}
+
+// **A refused first flight ends the way an unfinished one does.** A door that dropped the connection
+// the moment the last unit of a flight it could not open arrived would answer a probe by the length
+// it sent — one unit short is held for the whole patience, the full count is closed at once — and
+// that difference is the machine. So what follows a refusal is read and discarded, under the same
+// patience between two reads as inside a flight, until the far side ends the connection or falls
+// silent for that patience: a side that stops is let go exactly when it would have been let go
+// inside a flight. A side that keeps sending is read no further than the largest message this wire
+// carries, which is as far as a reader inside a message ever reads. Nothing is written either way.
+fn hold_silent(stream: &mut TcpStream) {
+    let ceiling = match (mt_wire::cell_bytes(), link::pieces_max()) {
+        (Ok(width), Ok(units)) => width.saturating_mul(units),
+        _ => return,
+    };
+    if wait_with_patience(stream).is_err() {
+        return;
+    }
+    let mut sink = [0u8; 4096];
+    let mut discarded = 0usize;
+    while discarded < ceiling {
+        let room = sink.len().min(ceiling - discarded);
+        match stream.read(&mut sink[..room]) {
+            Ok(0) => return,
+            Ok(n) => discarded += n,
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+            Err(_) => return,
+        }
+    }
 }
 
 // What one operator hands another: one address, the key that machine answers with, and the static
@@ -432,8 +475,10 @@ pub fn dial(to: &Acquaintance, answering: &Answering) -> Result<Link, NetError> 
 
 // A machine reachable from outside answers links it did not choose. What it answers with is the
 // second and fourth flights, and it carries a channel only once the third has verified. **A first
-// flight that does not open under its static key is answered by no byte**: the connection ends, and
-// a side that was not handed the line learns of this address what it learns of a closed device.
+// flight that does not open under its static key is answered by no byte**: the connection is held
+// silent until the far side ends it or falls silent for one patience, exactly as a flight left
+// unfinished is, so a side that was not handed the line cannot tell by its own length whether it
+// reached a machine.
 pub struct Door(TcpListener);
 
 impl Door {
@@ -456,23 +501,37 @@ impl Door {
         // as long as this.
         wait_with_patience(&stream)?;
 
-        let hello = Hello::parse(&read_flight(&mut stream, handshake::hello_len())?)
-            .map_err(NetError::Handshake)?;
-        let ss_s = kem::decapsulate(
-            &answering.kem_secret,
-            &kem::Ciphertext::from_bytes(hello.static_ct),
-        );
-        let hello_key = handshake::hello_key(
-            ss_s.as_bytes(),
-            hello.suite_id,
-            answering.kem_public.as_bytes(),
-            &hello.kem_key,
-            &hello.static_ct,
-        );
-        // The gate: a first flight that does not open ends here, and the stream is dropped without
+        // The units are read first and apart from what they hold: a socket that ends inside them
+        // has ended, and nothing is held for it.
+        let units = read_flight_units(&mut stream, handshake::hello_len())?;
+        let opened = (|| -> Result<_, NetError> {
+            let hello = Hello::parse(&assemble_flight(&units, handshake::hello_len())?)
+                .map_err(NetError::Handshake)?;
+            let ss_s = kem::decapsulate(
+                &answering.kem_secret,
+                &kem::Ciphertext::from_bytes(hello.static_ct),
+            );
+            let hello_key = handshake::hello_key(
+                ss_s.as_bytes(),
+                hello.suite_id,
+                answering.kem_public.as_bytes(),
+                &hello.kem_key,
+                &hello.static_ct,
+            );
+            let their_key =
+                handshake::open_key(hello_key, &hello.sealed_key).map_err(NetError::Handshake)?;
+            Ok((hello, ss_s, their_key))
+        })();
+        // The gate: a first flight that does not assemble, does not parse or does not open ends
+        // here, and the stream is held silent the way an unfinished flight is, then dropped without
         // one byte written to it.
-        let their_key =
-            handshake::open_key(hello_key, &hello.sealed_key).map_err(NetError::Handshake)?;
+        let (hello, ss_s, their_key) = match opened {
+            Ok(opened) => opened,
+            Err(refused) => {
+                hold_silent(&mut stream);
+                return Err(refused);
+            }
+        };
 
         let (kem_public, kem_secret) = ephemeral_kem()?;
         let their_kem = kem::PublicKey::from_bytes(hello.kem_key);

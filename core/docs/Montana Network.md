@@ -42,9 +42,13 @@ cross sealed under keys of the master, so an observer of the wire learns neither
 no signature against a key it suspects.
 
 **A machine answers only whoever was handed its acquaintance.** A first flight that was not made to
-its static key opens to nothing, and the machine ends the connection without writing one byte: a
-side scanning addresses learns that something accepts a connection there, which is what it learns
-of a closed device, and not that it is a machine.
+its static key opens to nothing, and the machine writes not one byte: it holds the connection the
+way it holds a first flight left unfinished, reading and discarding until the far side ends it or
+falls silent for the patience, and only then lets it go. Ending the connection at the last unit of
+a refused flight would answer a probe by its own length — one unit short held, the full count
+closed at once — so the refusal is not allowed to be sooner than an unfinished flight. A side
+scanning addresses learns that something accepts a connection there, which is what it learns of a
+closed device, and not that it is a machine.
 
 **The transcript is the binding, and it is exposed on purpose.** Both sides compute the same
 value from the exchange, and each signature covers it, so a handshake whose transcript the two
@@ -827,7 +831,7 @@ needed them would have no privacy of its own.
 | that a device serves this tenant | **a named physical prohibition**: a machine serving a tenant receives that tenant's bytes by the definition of serving, and being served while invisible to the server cannot both hold. What it does not learn is what is carried; and where the device is the tenant's own, there is no second party left to know |
 | that a device went on or off, and that mail arrived near that moment | closed: the link of a sleeping device is held by the reachable side out of the transit it carries anyway, so switching on and off is not an event of the network and intersection by presence has nothing to intersect |
 | the machine a cell is being carried toward | **deliberately observable to a hop**: routing cannot move a cell toward a target without naming the target. It names a machine and never a party, many pipes of many strangers share one holder in one window, and nothing of the sender, the recipient or the letter follows from it |
-| that a machine answers at an address | **a named physical prohibition**: accepting a connection is observable at the wire; what it does not reveal is whose it is or whether it is a machine, since a first flight not made to its static key is answered by no byte |
+| that a machine answers at an address | **a named physical prohibition**: accepting a connection is observable at the wire; what it does not reveal is whose it is or whether it is a machine, since a first flight not made to its static key is answered by no byte and held exactly as an unfinished one is. **One limit is named**: a side that keeps sending past a whole first flight is read no further than the largest message of this wire, and then the connection ends — the bound that keeps a stranger from holding a thread without end, observable only to a side that sends that much |
 | that an address is a machine, to whoever holds its acquaintance | **deliberately observable to that holder, and named**: the acquaintance is what lets a first flight open, so whoever was handed one can confirm the machine it names. The acquaintances of the opening machines travel inside every client, so those machines stay confirmable by anybody until their lines leave the client |
 | the identity key of an initiator, to whoever later takes the responder's machine secret | **a named limit**: the key crosses sealed under the encapsulation to the responder's static key, so a taker of that machine's secret who recorded first flights opens the identity keys of their initiators. The channel keys do not follow: they fold both encapsulations drawn for the handshake alone, which the taking does not open |
 | that a recorded first flight is replayed to its machine | **observable to the replayer, and named**: the machine opens it and answers with fresh values, and the replayer, holding no signature key of the initiator, finishes nothing; what it learns is that the address is the machine the flight was made to, which the recording already showed it |

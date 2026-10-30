@@ -2292,7 +2292,7 @@ hello_confirm_len = 3 325 B
 The field order and widths above are normative. A decoder refuses a length outside the declared
 shape before reading fields; an encoder checks that shape before publishing or signing bytes.
 
-- A responder whose `sealed_key` does not open under the `k_hello` it computed writes no byte and ends the connection: a side that was not handed the acquaintance learns of the address what it learns of a closed device.
+- A responder whose first flight does not assemble, does not parse, or whose `sealed_key` does not open under the `k_hello` it computed writes no byte and holds the connection as it holds an unfinished flight: it reads and discards, under the patience between two reads, until the far side ends the connection, falls silent for the patience, or has sent the largest message of the wire past the flight, and then lets it go. A side that was not handed the acquaintance learns of the address what it learns of a closed device, and not by the length it sent.
 - Each seal is ChaCha20-Poly1305 under a key that seals that one part and nothing else, with the nonce of twelve zero bytes and no associated data; a key that makes one seal needs no drawn nonce, and every key here is fresh for every handshake because `pk_i` is.
 
 **Depositing and collecting.** A deposit places one cell at a point; a collection takes what
