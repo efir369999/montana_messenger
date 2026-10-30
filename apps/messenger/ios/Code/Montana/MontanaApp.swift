@@ -33,7 +33,6 @@ struct MontanaApp: App {
     @State private var chooseLink: String?   // an invitation waiting for the person to choose the Montana app that opens it
     @State private var diagAsk = false   // the diagnostics yes, asked at the install and at every update (MontanaDiagConsent)
     @AppStorage("AppLanguage") private var appLang = ""   // "" = follow system
-    @ObservedObject private var release = MTReleaseState.shared   // the least build the network admits (MTUpdateRequired)
     init() {
         // Before any screen: an installation that has just appeared must not inherit a person.
         MontanaInstall.forgetLeftoverSeed { SeedScope.forget() }
@@ -66,11 +65,10 @@ struct MontanaApp: App {
                     .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                         Task { await askDiagnosticsWhenFree() }
                     }
-                    // THE UPDATE THAT CANNOT BE PUT OFF (the author's words 19.10.2026 19:2x UTC): a build below the least the
-                    // network admits sees the update page over everything, at the launch and at every return; it cannot be swiped away.
-                    .fullScreenCover(isPresented: Binding(get: { release.required != nil }, set: { _ in })) {
-                        if let r = release.required { MTUpdateRequired(release: r).environment(\.locale, appLocale) }
-                    }
+                    // THE UPDATE IS A NOTICE, NOT A WALL (the author's word 30.10.2026 17:38 UTC, council link 13412, replacing
+                    // the page of 19.10.2026 19:2x UTC): a build below the least the network admits sees a banner over the screen
+                    // at the launch and at every return; it hides by itself after 9 seconds or by its cross in the top right corner.
+                    .overlay(alignment: .top) { MTUpdateBanner().environment(\.locale, appLocale) }
                     .montanaRoot()
                     .environment(\.locale, appLocale)   // drives SwiftUI Text localization to the chosen language
                 .id(langTick)   // redraw the whole tree on language change (live)
@@ -1961,40 +1959,87 @@ enum MTVoipReport {
     }
 }
 
-/// THE UPDATE THAT CANNOT BE PUT OFF (the author's words 19.10.2026 19:2x UTC: «on every build, at opening, a forced update to the new
-/// build»; «our build is Montana Core v1.0»): the release document (MTClientRelease) names the least build the network admits and the
-/// level of the core; a build below the least sees this page over everything, with the one way out -- the update's link. The page
-/// cannot be swiped away (MontanaApp). A build that knows no page (before 2252) is held by the node alone: from the second's cut it
-/// takes no MINT above one coin a second (COIN-TX-V3 section 4). The words come from the catalogue; the core's level is the
-/// document's own name.
-struct MTUpdateRequired: View {
-    let release: MTClientRelease
+/// THE UPDATE IS A NOTICE, NOT A WALL (the author's word 30.10.2026 17:38 UTC, council link 13412: «the offered update page as a
+/// notification window that can be closed, not a solid black screen; a native system window over the screen that hides by itself
+/// after 9 seconds or closes by a cross in the top right corner»). The release document (MTClientRelease) still names the least
+/// build the network admits and the level of the core; a build below the least sees this banner over the screen at the launch and
+/// at every return, and a touch on it opens the update's link. A build that knows no banner (before 2252) is held by the node
+/// alone: from the second's cut it takes no MINT above one coin a second (COIN-TX-V3 section 4). The words come from the
+/// catalogue; the core's level is the document's own name.
+struct MTUpdateBanner: View {
+    @ObservedObject private var release = MTReleaseState.shared
+    @State private var shown = false
+    @State private var hiding: Task<Void, Never>?
+    static let standing: UInt64 = 9_000_000_000   // nine seconds (the author's word 13412)
+
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            Image(systemName: "arrow.down.app.fill")   // TOUCH-OK: a picture, the button stands below
-                .font(.system(size: 72, weight: .regular))
-                .foregroundStyle(.primary)
-            Text("Update Montana").font(.title2.weight(.semibold))
-            Text(String(localized: "\(release.core) needs build \(release.least). This build is \(MontanaRelease.ownBuild).", bundle: MTLanguage.bundle))
-                .font(.body).foregroundStyle(.secondary)
-            Text("Install the new build to go on.").font(.body).foregroundStyle(.secondary)
-            Spacer()
-            Button {
-                if let url = URL(string: release.url) { UIApplication.shared.open(url) }
-            } label: {
-                Image(systemName: "arrow.down.circle.fill")
-                    .font(.system(size: 56, weight: .regular))
+        ZStack(alignment: .top) {
+            if shown, let r = release.required {
+                card(r)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 6)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: shown)
+        .onAppear { show() }
+        .onChange(of: release.required?.least) { _, _ in show() }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in show() }
+    }
+
+    private func show() {
+        hiding?.cancel()
+        guard release.required != nil else { shown = false; return }
+        shown = true
+        hiding = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: Self.standing)
+            if !Task.isCancelled { shown = false }
+        }
+    }
+
+    private func close() {
+        hiding?.cancel()
+        shown = false
+    }
+
+    private func card(_ r: MTClientRelease) -> some View {
+        Button {
+            close()
+            if let url = URL(string: r.url) { UIApplication.shared.open(url) }
+        } label: {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "arrow.down.app.fill")
+                    .font(.system(size: 30, weight: .regular))
                     .foregroundStyle(.primary)
-                    .frame(width: 88, height: 88)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Update Montana").font(.headline).foregroundStyle(.primary)
+                    Text(String(localized: "\(r.core) needs build \(r.least). This build is \(MontanaRelease.ownBuild).", bundle: MTLanguage.bundle))
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    Text("Install the new build to go on.").font(.subheadline).foregroundStyle(.secondary)
+                }
+                .multilineTextAlignment(.leading)
+                Spacer(minLength: 0)
+            }
+            .padding(.leading, 16)
+            .padding(.trailing, 40)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Update Montana"))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(alignment: .topTrailing) {
+            Button(action: close) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel(Text("Update Montana"))
-            Spacer().frame(height: 48)
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Close"))
         }
-        .multilineTextAlignment(.center)
-        .padding(.horizontal, 32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 8)
+        .gesture(DragGesture(minimumDistance: 12).onEnded { g in if g.translation.height < -16 { close() } })
     }
 }

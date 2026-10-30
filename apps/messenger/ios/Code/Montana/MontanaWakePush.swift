@@ -5280,7 +5280,7 @@ struct MTClientRelease: Codable, Equatable {
     let channel: String
     /// THE LEAST BUILD THE NETWORK ADMITS AND THE LEVEL OF THE CORE (the author's words 19.10.2026 19:2x UTC: «on every build, at
     /// opening, a forced update to the new build»; «our build is Montana Core v1.0»): the release document names them (min, core);
-    /// a build below the least sees the update page over everything (MTUpdateRequired). A document without them admits every build.
+    /// a build below the least sees the update banner over the screen (MTUpdateBanner). A document without them admits every build.
     let least: Int
     let core: String
 
@@ -5316,7 +5316,7 @@ struct MTClientRelease: Codable, Equatable {
         guard let r = latest, r.build > MontanaRelease.ownBuild else { return nil }
         return URL(string: r.url)
     }
-    /// The release this build must take before anything else: the network admits no build below its least (MTUpdateRequired).
+    /// The release this build must take before anything else: the network admits no build below its least (MTUpdateBanner).
     var required: MTClientRelease? {
         guard let r = latest, MontanaRelease.ownBuild < r.least else { return nil }
         return r
