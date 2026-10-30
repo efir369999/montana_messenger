@@ -2398,7 +2398,7 @@ serialize(slot_answer)
   published            published_len B          the contact root of a name, or the key of a channel
 ```
 
-**Renewing the keys of a link** (Network, "How a link renews its keys"; proposed, issue #75). Three
+**Renewing the keys of a link** (Network, "How a link renews its keys"; adopted, issue #75). Three
 messages of the link, each of one length, carrying the encapsulation keys and the encapsulations of
 one renewal and nothing else: no window, no count and no index of the renewal crosses the wire.
 
@@ -2499,7 +2499,7 @@ message_kind
 ```
 
 Kinds 15 to 17 are the three messages of a renewal of the keys of a link (Network, "How a link
-renews its keys"; proposed, issue #75): a reader takes them inside the link and never hands them on.
+renews its keys"; adopted, issue #75): a reader takes them inside the link and never hands them on.
 
 **Invariants of the link unit:**
 
