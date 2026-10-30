@@ -4,7 +4,7 @@ Every build of Montana for iPhone, iPad and Mac, newest first. The version is th
 
 ## 1.0 (2323) - 2026-10-30
 
-Source commit `a007fbba7fbf`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2323.md).
+Source commit `829d29f2d5a4`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2323.md).
 
 - When your contact's phone renews the secret of your private conversation, yours follows: it takes the renewal letters, checks them and opens the messages sealed under the new key. This phone does not start a renewal of its own yet.
 
