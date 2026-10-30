@@ -146,7 +146,7 @@ enum MTWalletCore {
         return nil
         #endif
     }
-    /// THE DOOR OF THE JOIN (#136; the author's decisions 450 and 452 «а»): a phone that holds nothing walks to the head of the
+    /// THE DOOR OF THE JOIN (#136; the author's decisions 450 and 452 "a"): a phone that holds nothing walks to the head of the
     /// chain it reached, from the anchor its operator handed it -- the proposals of two consecutive final windows, carried in the
     /// build as anchor-earlier.proposal and anchor-later.proposal. The trust in them is the trust in the operator who built this
     /// phone (mt-boundary lib.rs:457-465); the walk judges every certificate after them and trusts no answer. A phone that holds a
