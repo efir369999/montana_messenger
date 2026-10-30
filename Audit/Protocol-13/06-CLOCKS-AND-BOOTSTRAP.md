@@ -1,6 +1,23 @@
 # 6. Remove clock authority and implicit private bootstrap
 
-**Status: open across both protocol generations.**
+**Status: closed for `core/Montana-Core`; for `core/Code` with the recorded limit of decision 334 (a).** Item 6 is closed on
+the chairman's verdict of #17 (issue #17, Protocol-13 item 6, comment issuecomment-6528920596). It is not closed "across both generations":
+- K1 (`core/Montana-Core`): Genesis only under window 0 (`certificate.rs:154`) -- `242dce79`, in main.
+- K3 (`core/Montana-Core`): the verdict reads no clock -- one verdict under clocks x1/x3/x1000 and budgets x1/+1/x1000;
+  the gate `check_no_clock_in_the_verdict` (`mt-conformance/src/parse.rs:4674`) and the test
+  `montana-node/tests/a_verdict_reads_no_clock.rs` -- `e6c1d7bf`, in main.
+- K0 (`core/Montana-Core`): a network opens by `--open` on an empty store, never by an implicit `--from` -- PR #69 (`f4cd115`).
+- C-3: the waits of conduct may read local clocks and no verifier reads them (`Montana Constitution.md` I-15; Registry
+  CNS-19) -- PR #96 (`ac6347c6`).
+- K5 (`core/Code`): production values in `mt-genesis`; `--d-test-override` refused in a release build; no start without
+  `--genesis-manifest` -- PR #96 (`ac6347c6`).
+- The limit (`core/Code`): the clocked cascade moves proposer eligibility (section below); bounded by #21 K6 (`e5cc3bc`) --
+  an exhausted cascade appoints nobody and says `STALLED`.
+- Citations brought to main -- PR #130 (`94dcb2a`).
+- Rings: L3 `k776-m118p` on `66aa47c` (`core/Montana-Core`, the core tree of main after #130): `cargo fmt --all -- --check` 0,
+  `cargo clippy --workspace --all-targets -- -D warnings` 0, the test binaries 120 rc 0 (136 suites, 823 passed, 0 failed), doc tests rc 0; L3 `k759-code17` on the
+  `core/Code` tree `4b8cff73`: fmt 0, clippy 0, `cargo test --release --workspace --no-fail-fast` 1397 passed, 1 failed
+  (`mt-mnemonic` `sources.rs:655`, a flap of the host by decision 404 (a); its tests are their own issue by 404 (c)).
 
 The native candidate removes round-dependent quorum lowering and self-selected
 restart authority. Exhausting a polling budget returns an error; it cannot
