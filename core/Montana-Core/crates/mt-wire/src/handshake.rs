@@ -305,18 +305,21 @@ pub fn responder_message(transcript: &[u8; 32]) -> Vec<u8> {
     signed_message(domain::MT_NOISE_PQ_V1_SIG_R, transcript)
 }
 
-// What a side holds once the four flights have run: the transcript both computed and the two
-// directional keys. Its fields are its own, and the only ways to make one are the two doors below,
-// each of which verifies the signature of the other side over the transcript it computed itself
-// before it answers. **A side that cannot verify carries nothing**, and the type is what holds it
+// What a side holds once the four flights have run: the transcript both computed, the master and
+// the two directional keys derived from it. The master is what the secret of a link begins as
+// (Network, "How a link renews its keys"), so a link takes it from here and walks it one way.
+// Its fields are its own, and the only ways to make one are the two doors below, each of which
+// verifies the signature of the other side over the transcript it computed itself before it
+// answers. **A side that cannot verify carries nothing**, and the type is what holds it
 // to that: there is no arrangement of legal calls that yields the keys of an unverified channel.
 pub struct Channel {
     transcript: [u8; 32],
+    master: [u8; 32],
     initiator_to_responder: [u8; 32],
     responder_to_initiator: [u8; 32],
 }
 
-// What this holds are the two keys of a session, so it shows nothing, compares nothing and wipes
+// What this holds are the keys of a session, so it shows nothing, compares nothing and wipes
 // itself. A derived `Debug` would print both keys into whatever a test, a log or the message of a
 // panic goes to; a derived `PartialEq` would compare key material in a time that depends on where
 // the first difference stands; and a derived `Clone` would put a second copy where nothing wipes
@@ -331,6 +334,7 @@ impl core::fmt::Debug for Channel {
 impl Drop for Channel {
     fn drop(&mut self) {
         self.transcript.zeroize();
+        self.master.zeroize();
         self.initiator_to_responder.zeroize();
         self.responder_to_initiator.zeroize();
     }
@@ -339,6 +343,12 @@ impl Drop for Channel {
 impl Channel {
     pub fn transcript(&self) -> &[u8; 32] {
         &self.transcript
+    }
+
+    // The master of the handshake, which the secret of a link begins as. A link copies it into a
+    // wiping wrapper and lets the channel go, so no key of the handshake outlives its first renewal.
+    pub fn master(&self) -> &[u8; 32] {
+        &self.master
     }
 
     pub fn initiator_to_responder(&self) -> &[u8; 32] {
@@ -356,6 +366,7 @@ fn of_transcript(transcript: [u8; 32], ss_i: &[u8; 32], ss_r: &[u8; 32]) -> Chan
         transcript,
         initiator_to_responder: initiator_to_responder(&master),
         responder_to_initiator: responder_to_initiator(&master),
+        master,
     }
 }
 
