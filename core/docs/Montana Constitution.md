@@ -383,12 +383,14 @@ A violation is an automatic mainnet blocker: any dependence of the protocol on e
 system time turns Montana into not-Montana, losing canonical determinism and the
 independence of the window chain.
 
-**[I-16] Transport indistinguishability.** The path an object takes discloses nothing that
-its content conceals. For any object the network carries — a payment, a message, a chunk of
-media, a unit of consensus data — an observer of the wire at one point, and at any set of
-points that does not hold both ends of the same delivery, cannot determine what the object is,
-who originated it, for whom it is destined, or whether a given machine is its origin or a
-relay. An observer holding both ends is the one case the invariant does not close: there the
+**[I-16] Transport indistinguishability.** The path an object takes discloses nothing that its
+content conceals. For any object the network carries — a payment, a message, a chunk of media, a
+unit of consensus data — an observer of the wire at one point, and at any set of points that
+does not hold both ends of the same delivery, cannot determine what the object is; its advantage
+in telling who originated it, for whom it is destined, or whether a given machine is its origin
+or a relay is bounded by the honest volume on the points it observes, by the delay profile and
+by the length of the path, and falls toward nothing as that volume grows. An observer holding
+both ends is the one case the invariant does not close: there the
 correlation of envelopes remains possible, its price is set by the delay profile and the
 volume carried, and the prohibition behind it is physical and named in the third requirement.
 Nothing weaker than both ends buys it. Cryptography

@@ -45,7 +45,7 @@ volume that nobody carries" (Constitution:420-423).
 
 Written on 2026-10-30 UTC by the chairman on the Author's word of that day (council link 13380): the
 council does its own part and does not wait on the reviewers, so decision 390 = (c) no longer holds
-the wording back. Lines cited here were read on `main` at `a95210b`. The game is stated over the specification, not over the code: the routing by
+the wording back. Lines of Network and Canon cited here were read on `main` at `a95210b`; lines of the Constitution are those of the amended text in this change. The game is stated over the specification, not over the code: the routing by
 tags it is about is not running (`montana-node/src/lib.rs:1614-1631`). The full statement, with its
 references, is `docs/issue-75/03-transport-game.md` of the iOS tree; what follows is what the council
 proves and what it does not.
@@ -58,7 +58,7 @@ and access lines) the adversary sees every cell -- its bytes, its canonical slot
 and may delay, drop, reorder or inject cells there; it corrupts no machine. It outputs `b'`, and
 `Adv` is the absolute value of `2·Pr[b' = b] - 1`. In both scenarios every honest device sends and
 receives the same number of letters, of the same length, in the same windows. `P` is **admissible**
-when it holds both ends of no delivery of either scenario -- the exclusion of Constitution:391-394
+when it holds both ends of no delivery of either scenario -- the exclusion of Constitution:392-396
 and nothing more. Challenge types: **KIND** (one delivery, same ends, same length, same class of
 carriage: a payment in one world, a letter in the other -- [I-16] requirement 1), **REL** (`u_0 → v_0`
 and `u_1 → v_1` against `u_0 → v_1` and `u_1 → v_0`), **ORIG** (a machine originates in one world and
@@ -78,7 +78,7 @@ every cell (Canon:955, :5025; Network:835). Its moment is the canonical slot, de
 and the sender's ephemeral identity (Network:473-480), never from the content. Its open fields are
 the target commitment, a function of the pipe and the window, and the label of its step, which
 takes nothing of the delivery (Network:403-404, :867). Its path is the path of the pair, because a
-payment has no transport of its own (Constitution:402-405). So the two views differ only in the
+payment has no transport of its own (Constitution:404-407). So the two views differ only in the
 plaintexts under the seals: the routing layer and the delivery layer, each ChaCha20-Poly1305
 (Canon:2152-2154, :2236) with a nonce drawn afresh for every cell (Canon:2250), no field telling one
 kind of content from another (Canon:2254), re-sealed at every step (Network:406). Replace the sealed bytes of the observed cells one by one with uniform strings of the
@@ -90,29 +90,33 @@ worlds unless the cell forges a seal, which bounds the injection term by `q'·Ad
 
 **Proposition 1 (both ends; proved).** In `G_adv`, with `P = ends(d)` and an otherwise empty
 workload, the scenarios `u → v` and `u → v'` are told apart with advantage 1. *Proof.* Without
-synthetic filler (Constitution:412-414) a delivery to `v` brings at least one cell onto `line(v)`
+synthetic filler (Constitution:414-416) a delivery to `v` brings at least one cell onto `line(v)`
 within its horizon, and none arrives there in the other world; consensus cells on that line do not
-depend on `b`. ∎ This is the case the invariant names and does not close (Constitution:391-394,
-:428-431); it is why the RFC's claim of resistance to the global passive adversary is refused.
+depend on `b`. ∎ This is the case the invariant names and does not close (Constitution:392-396,
+:430-433); it is why the RFC's claim of resistance to the global passive adversary is refused.
 
 **Proposition 2 (interior observer, adversary-chosen workload; a finding, shown as a sketch).**
 In `G_adv` with type REL, let `P` be every link except the access lines of `v_0` and `v_1`, let their
 first machines differ and be known to the adversary, and let the workload be otherwise empty. `P`
 is admissible. The adversary follows the volume of `u_0` hop by hop to the holder of its tag and the
 collection of each recipient from its first machine to a holder, and pairs them; re-sealing hides
-bytes, not volume (Constitution:420-423). Its advantage is close to 1. The sketch in full is
+bytes, not volume (Constitution:422-425). Its advantage is close to 1. The sketch in full is
 `docs/issue-75/03-transport-game.md` section 5. **Consequence:** read word for word, [I-16] claims
 indistinguishability for every set short of both ends, and when the adversary chooses the workload
 no design without synthetic filler can give it. The invariant's own third requirement says the
 same in prose: the protocol sets "the price of the correlation and not its impossibility"
-(Constitution:432).
+(Constitution:434).
 
 **What the council proposes in its place (Claim C3′).** In `G_bg`, for every polynomial adversary
 and every admissible `P`, `Adv ≤ ε(D_bg, profile, ℓ) + negl(λ)`, where `ε` is set by the honest
 volume on the links of `P`, the delay profile and the path length `ℓ`, and falls toward 0 as that
 volume grows; for KIND, `ε = 0` by Theorem 1. Bounding `ε` for REL and ORIG is the measurement of
 stage 22 (`core/Montana-Core/ROADMAP.md:1217-1230`), which belongs to #22 (decision 386 = (b)).
-Whether the words of [I-16] change to C3′ is the Author's alone (Q7 below); this file amends nothing.
+**Adopted.** The Author decided Q7 = (a) on 2026-10-30 at 17:2x UTC (council link 13395,
+constitution record 436 deciding 435). The second sentence of [I-16] now reads as C3′
+(Constitution:387-392): an observer short of both ends cannot determine what an object is, and its
+advantage on origin, destination and relay is bounded by the honest volume, the delay profile and
+the path length.
 
 ## Requirement 2. Adaptive, stochastic traffic padding
 
@@ -315,3 +319,5 @@ Each question is stated as options with a recommendation. None of them is decide
   - (b) Keep the present words and name Proposition 2 as a limit in the observability ledger (Network:830-836).
 
   Recommendation: (a). Proposition 2 shows the present words cannot be proved; (a) claims what Theorem 1 proves and what stage 22 can measure.
+
+  **Decided: (a)**, by the Author on 2026-10-30 at 17:2x UTC (council link 13395, constitution record 436).
