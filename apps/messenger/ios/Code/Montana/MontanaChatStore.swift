@@ -7028,6 +7028,7 @@ enum SeedScope {
         "mt.account.keys", "mt.twin.ref", "mt.node.identity", "mt.node.kem", "pipeSecrets",
         "pipeKept",   // what each pipe keeps of its secret for good (MTPipeKept, 22.10): the secrets' own, gone with them
         "pipeFloorGuard",   // the clock guard of this book's first floor, M, H and Hc (MTPipeBook, decision 188, 25.10): the book's own
+        "pipeHeal",   // each pipe's side of its heals, the decapsulation key and the heal in flight (MTPipeBook, issue #75, 30.10): the pipes' own
         "mt.history.folders", "mt.history.heads.form", "mt.history.nameheads", "mt.history.pushed",
         "archiveSecretHeadsPurged",   // this person's archive had its old secret heads taken out (MontanaArchive.dropSecretHeads, 25.10)
         "mt.history.boxed", "mt.history.twinSeen",   // the history laid for this seed's other devices, and theirs filed here (11.10)

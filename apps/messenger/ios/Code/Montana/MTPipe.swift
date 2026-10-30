@@ -63,9 +63,15 @@ enum MTPipe {
     /// Open a letter body. The accepted windows are the same as for the label: clocks drift, and a
     /// letter sealed on a minute boundary must open for the one whose minute has already turned.
     static func openBody(_ sealed: Data, sharedSecret: MTPipeKey, at: Date = Date()) -> Data? {
+        openWalked(sealed, sharedSecret: sharedSecret, at: at)?.plain
+    }
+    /// The same opening, telling which walk opened and the minute the letter was sealed in: every key of a minute the pipe gives
+    /// (MTPipeKey.bodyKeys), the healed walk's first while a heal is in flight -- what the heal hears (MTPipeBook.healRead).
+    static func openWalked(_ sealed: Data, sharedSecret: MTPipeKey, at: Date = Date())
+        -> (plain: Data, walk: MTPipeHealing.Walk, window: UInt64)? {
         for w in windows(at: at) {
-            if let p = MontanaDirect.open(key: sharedSecret.bodyKey(window: w), sealed) {
-                return p
+            for k in sharedSecret.bodyKeys(window: w) {
+                if let p = MontanaDirect.open(key: k.key, sealed) { return (p, k.walk, w) }
             }
         }
         return nil
@@ -73,7 +79,8 @@ enum MTPipe {
 
     /// A letter read from the node box: the node names the minute it took the letter, the seal
     /// wears the sender's minute — the walk goes back from the node's (MTNodeWire, the one owner).
-    static func openBoxed(_ sealed: Data, sharedSecret: MTPipeKey, at: UInt64) -> (plain: Data, back: Int)? {
+    static func openBoxed(_ sealed: Data, sharedSecret: MTPipeKey, at: UInt64)
+        -> (plain: Data, back: Int, walk: MTPipeHealing.Walk, window: UInt64)? {
         MTNodeWire.openBoxed(sealed, secret: sharedSecret, at: at)
     }
 
@@ -194,6 +201,64 @@ enum MTPipe {
         return true
     }
 }
+
+
+// BEGIN MTPipe heal keys (issue #75, slice C2b of the client box)
+// ── THE KEYS OF A HEAL (Network, «How a link renews its keys», the heal's first and second points; issue #75; Agent 761 [7b60b5d7],
+// claude-opus-5-5, 30.10.2026 UTC, the Author's word 12934) ──────────────────────────────────────────────────────────────────────
+// The offering side draws a fresh ML-KEM-768 pair and sends its encapsulation key; the answering side encapsulates to it and sends
+// the ciphertext back; both fold the shared secret over the old walk (MTPipeKey.heal). The decapsulation key and the shared secret
+// stay in memory on the side that drew them and never ride. These stand in the app alone: the extensions carry no ML-KEM and send no
+// offer. Where the offer and the answer ride (decision 401 = a, record 408) and what becomes of an offer left unanswered (402 = a,
+// record 409) stand in MTPipeHealSide (MTPipeKey.swift), which takes these three as its KEM.
+enum MTPipeHealKeys {
+    /// A fresh offer: the encapsulation key that rides (MTPipeKey.healOfferSize) and the decapsulation key kept until the answer.
+    static func offer() -> (pk: Data, sk: Data)? {
+        let seed = montanaRandom(Int(MT_MLKEM_SEED_LEN))
+        var pk = [UInt8](repeating: 0, count: Int(MT_MLKEM_PUBKEY_SIZE))
+        var sk = [UInt8](repeating: 0, count: Int(MT_MLKEM_SECKEY_SIZE))
+        let rc = seed.withUnsafeBytes { sb in mt_mlkem_keypair_from_seed(sb.bindMemory(to: UInt8.self).baseAddress, &pk, &sk) }
+        return rc == 0 && pk.count == MTPipeKey.healOfferSize ? (Data(pk), Data(sk)) : nil
+    }
+    /// The answer to an offer: the ciphertext that rides back (MTPipeKey.healAnswerSize) and the shared secret the heal folds.
+    /// nil for an offer of another size.
+    static func answer(to pk: Data) -> (ct: Data, ss: Data)? {
+        guard pk.count == MTPipeKey.healOfferSize else { return nil }
+        var ct = [UInt8](repeating: 0, count: Int(MT_MLKEM_CT_SIZE))
+        var ss = [UInt8](repeating: 0, count: Int(MT_MLKEM_SS_SIZE))
+        let rc = pk.withUnsafeBytes { pb in mt_mlkem_encaps(pb.bindMemory(to: UInt8.self).baseAddress, &ct, &ss) }
+        return rc == 0 && ct.count == MTPipeKey.healAnswerSize ? (Data(ct), Data(ss)) : nil
+    }
+    /// The offering side opens an answer with the decapsulation key it kept: the shared secret. ML-KEM never refuses a ciphertext
+    /// (FIPS 203, implicit rejection): one made to another key opens to a secret of noise, so an answer is opened only with the key
+    /// of the offer it names by ρ (constitution record 409, MTPipeHealSide.received). nil for parts of another size.
+    static func open(_ ct: Data, sk: Data) -> Data? {
+        guard ct.count == MTPipeKey.healAnswerSize, sk.count == Int(MT_MLKEM_SECKEY_SIZE) else { return nil }
+        var ss = [UInt8](repeating: 0, count: Int(MT_MLKEM_SS_SIZE))
+        let rc = sk.withUnsafeBytes { kb in ct.withUnsafeBytes { cb in
+            mt_mlkem_decaps(kb.bindMemory(to: UInt8.self).baseAddress, cb.bindMemory(to: UInt8.self).baseAddress, &ss)
+        } }
+        return rc == 0 ? Data(ss) : nil
+    }
+    /// The two sides of one heal agree: an answer opened with the offer's own key gives the answering side's secret, the heal both
+    /// fold on the answering letter's day is one walk, another answer to the same offer is another heal, and parts of another
+    /// size are refused. Run where the app checks its quantities (MTPipe.agreesWithCanon).
+    static func agree() -> Bool {
+        guard let o = offer(), let a = answer(to: o.pk), let b = answer(to: o.pk), let s = open(a.ct, sk: o.sk), s == a.ss,
+              answer(to: o.pk.prefix(MTPipeKey.healOfferSize - 1)) == nil, open(a.ct.prefix(MTPipeKey.healAnswerSize - 1), sk: o.sk) == nil
+        else { return false }
+        let pipe = MTPipeKey(Data(repeating: 0x5A, count: 32))
+        let day = MTPipeKey.walkAnchorDay + 1
+        guard let offering = pipe.heal(answeredOn: day, ss: s, pk: o.pk, ct: a.ct),
+              let answering = pipe.heal(answeredOn: day, ss: a.ss, pk: o.pk, ct: a.ct),
+              let other = pipe.heal(answeredOn: day, ss: b.ss, pk: o.pk, ct: b.ct)
+        else { return false }
+        return offering == answering && other != offering && MTPipeHealSide.agrees(kem: kem)
+    }
+    /// The real ML-KEM-768 for the letters of a heal (MTPipeHealSide, slice C2b).
+    static let kem = MTPipeHealKEM(offer: offer, answer: { answer(to: $0) }, open: { open($0, sk: $1) })
+}
+// END MTPipe heal keys
 
 
 // What a correspondence derives from its secret once and for good (MTPipeKept) is made by the secret's one owner, MTPipeKey.
@@ -358,7 +423,9 @@ enum MTPipeBook {
             guardLock.lock(); floorDayNow = d; guardLock.unlock()
             return d
         }
-        let floored = book.values.contains { $0.isFloored }
+        // A floor a heal laid (rebased) is no erasure by the walk: it never answers rule 4 for the book's first floor.
+        let heals = healLoad() ?? [:]
+        let floored = book.contains { conv, k in k.isFloored && !(heals[conv]?.rebased ?? false) }
         let read = guardRead()
         guardLock.lock()
         var g = guardState ?? read ?? MTFloorGuard()
@@ -400,7 +467,7 @@ enum MTPipeBook {
 
     /// The pipe of a correspondence as its one owner holds it: a reference that answers what the pipe derives -- the key of a
     /// minute, the label of a day, the tag of a window, an item's blind and author field -- and hands out no byte of the secret.
-    static func key(for conv: String) -> MTPipeKey? { load()[conv] }
+    static func key(for conv: String) -> MTPipeKey? { load()[conv].map { $0.healing(healLoad()?[conv]?.healing) } }
 
     // -- what a correspondence keeps of its secret for good -------------------
     // THE PERMANENT DERIVATIVES ARE BORN WITH THE PIPE (22.10.2026, OZ 3 phase 2 step 1). The walk erases the established
@@ -466,11 +533,128 @@ enum MTPipeBook {
         keptStore(m)
     }
 
+    // ── THE HEALS OF THE PIPES, SEALED BESIDE THE BOOK (issue #75, slice C2b-2; Agent 772 [17daf7e8], claude-opus-5-5, 30.10.2026
+    // UTC, the Author's word 13109) ── each pipe's side of its heals (MTPipeHealSide: its offer with the decapsulation key, the
+    // answer it owes with that answer's shared secret, the heal in flight) is sealed under the device key beside the book, one of
+    // the seat's keys (SeedScope.seatKeys), as the pipe's secret is: never in the archive, never in the extensions' mirror. The
+    // book hands every pipe out with its heal in flight (key(for:), the tag index); a heal done rebases the pipe in the book.
+    // A record that lies on the disk and does not open now is not replaced, and nothing rides: no offer leaves whose
+    // decapsulation key is not sealed first.
+    private static let healKey = "pipeHeal"
+    /// One heal step at a time: letters open on every road at once, and each step reads, changes and seals the whole record.
+    private static let healLock = NSLock()
+    private static var healCache: [String: MTPipeHealSide]?
+
+    /// nil: the record lies on the disk and does not open now.
+    private static func healLoad() -> [String: MTPipeHealSide]? {
+        cacheLock.lock(); let hit = healCache; cacheLock.unlock()
+        if let hit { return hit }
+        let m: [String: MTPipeHealSide]
+        if UserDefaults.standard.data(forKey: healKey) == nil {
+            m = [:]
+        } else {
+            guard let d = MontanaLocalVault.getDecrypted(healKey),
+                  let read = try? JSONDecoder().decode([String: MTPipeHealSide].self, from: d) else {
+                MontanaTrace.mark("pipes_heal_unreadable", "")
+                return nil
+            }
+            m = read
+        }
+        cacheLock.lock()
+        if healCache == nil { healCache = m }
+        let now = healCache ?? m
+        cacheLock.unlock()
+        return now
+    }
+
+    @discardableResult
+    private static func healStore(_ m: [String: MTPipeHealSide]) -> Bool {
+        guard let d = try? JSONEncoder().encode(m), MontanaLocalVault.setEncrypted(healKey, d) else {
+            MontanaTrace.mark("pipes_heal_write_refused", "n=\(m.count)")
+            return false
+        }
+        cacheLock.lock(); healCache = m; cacheLock.unlock()
+        return true
+    }
+
+    private static func forgetHeal(_ conv: String) {
+        guard var m = healLoad(), m.removeValue(forKey: conv) != nil else { return }
+        healStore(m)
+    }
+
+    /// A heal done here (its old walk erased) rebases the pipe in the book, and the archive's head with it; the heal is let go
+    /// only once the book sealed the rebased pipe -- until then the pipe is handed out with it and sends and opens under the
+    /// healed walk alone. Whether no heal done waits on the book.
+    @discardableResult
+    private static func rebase(_ conv: String, _ side: inout MTPipeHealSide) -> Bool {
+        guard let h = side.healing, !h.holdsOld else { return true }
+        var m = load()
+        guard let pipe = m[conv], let r = pipe.healing(h).rebased() else { return false }
+        m[conv] = r
+        guard store(m) else { return false }
+        side.healing = nil; side.rebased = true
+        dropIndex()
+        if r.reference == conv { MontanaArchive.writeHead(convRef: conv, legacy: []) }
+        MontanaTrace.mark("pipe_healed", "")
+        return true
+    }
+
+    /// What the next letter of a correspondence, sealed in `window`, carries in its ninth field: the answer owed, else this side's
+    /// offer of the day (MTPipeHealSide.carry, the real ML-KEM-768), sealed here before it may ride. nil: nothing to carry, a
+    /// pipe not held whole, a heal done that the book has not sealed yet, or a record that does not open or does not seal now.
+    static func healCarry(for conv: String, window: UInt64) -> MTPipeHealPart? {
+        healLock.lock(); defer { healLock.unlock() }
+        guard MontanaDeviceKey.key != nil, let pipe = load()[conv], pipe.isWhole, var m = healLoad() else { return nil }
+        var side = m[conv] ?? MTPipeHealSide()
+        let before = side
+        guard rebase(conv, &side) else { return nil }
+        let part = side.carry(on: window / MTNodeWire.minutesPerDay, kem: MTPipeHealKeys.kem)
+        if side != before { m[conv] = side; guard healStore(m) else { return nil } }
+        return part
+    }
+
+    /// The letter sealed in `window` left with `part` in its ninth field: an offer rode; an answer that left starts this side's
+    /// heal as the answering one, folded over the walk the book holds the pipe on.
+    static func healSent(_ part: MTPipeHealPart, for conv: String, window: UInt64) {
+        healLock.lock(); defer { healLock.unlock() }
+        guard let pipe = load()[conv], var m = healLoad(), var side = m[conv] else { return }
+        let before = side
+        side.sent(part, on: window / MTNodeWire.minutesPerDay, pipe: pipe)
+        guard side != before else { return }
+        m[conv] = side; healStore(m); dropIndex()
+    }
+
+    /// A letter of the other side sealed in `window` opened under `walk` (MTPipe.openBody, MTNodeWire.openBoxed), its plain text in
+    /// hand: the heal in flight hears which walk opened (a healed one erases the old walk and rebases the pipe), then the ninth
+    /// field is read (MTPipeHealSide.received). `window` is the letter's own minute, never the device clock.
+    static func healRead(_ plain: Data, opened walk: MTPipeHealing.Walk, for conv: String, window: UInt64) {
+        let part = MTNodeWire.letterHeal(plain).flatMap(MTPipeHealPart.init(field:))
+        guard part != nil || walk == .healed else { return }   // a letter of the old walk with no heal changes nothing
+        healLock.lock(); defer { healLock.unlock() }
+        guard MontanaDeviceKey.key != nil, load()[conv] != nil, var m = healLoad() else { return }
+        var side = m[conv] ?? MTPipeHealSide()
+        let before = side
+        side.healing?.opened(walk)
+        rebase(conv, &side)
+        if let part, let pipe = load()[conv] {
+            side.received(part, on: window / MTNodeWire.minutesPerDay, pipe: pipe, kem: MTPipeHealKeys.kem)
+        }
+        if side != before { m[conv] = side; healStore(m); dropIndex() }
+    }
+
+    /// A letter of a correspondence opened under the pipe the book hands out, and heard by the heal: the one opening the app's
+    /// roads read a pipe's letter by (the wire, the radio, the direct road, the lane, the push).
+    static func open(_ sealed: Data, conv: String, at: Date = Date()) -> Data? {
+        guard let pipe = key(for: conv), let o = MTPipe.openWalked(sealed, sharedSecret: pipe, at: at) else { return nil }
+        healRead(o.plain, opened: o.walk, for: conv, window: o.window)
+        return o.plain
+    }
+
     /// The identity left: the book in memory leaves with it. The disk copy is sealed under the
     /// device key that SeedScope resets, so only the cache could have carried the previous
     /// person's pipes into the next person's book — and re-sealed them there on the first write.
     static func forgetAll() {
-        cacheLock.lock(); cache = nil; keptCache = nil; cacheHeld = false; cacheLock.unlock()
+        cacheLock.lock(); cache = nil; keptCache = nil; healCache = nil; cacheHeld = false; cacheLock.unlock()
         guardLock.lock(); guardState = nil; heldTold = nil; floorDayNow = 0; guardLock.unlock()   // the guard is the seat's, as the book
         dropIndex()
     }
@@ -493,6 +677,7 @@ enum MTPipeBook {
         var m = load()
         if m.removeValue(forKey: conv) != nil { store(m) }
         forgetKept(conv)
+        forgetHeal(conv)
         unmarkDying(conv)
         forgetFirst(conv)
         forgetRoot(conv)                       // the meeting point does not outlive the pipe
@@ -878,7 +1063,9 @@ enum MTPipeBook {
         indexLock.lock(); defer { indexLock.unlock() }
         if let i = index, i.window == w { return i.map }
         var map: [Data: String] = [:]
-        for (conv, pipe) in load() {
+        let heals = healLoad() ?? [:]
+        for (conv, raw) in load() {
+            let pipe = raw.healing(heals[conv]?.healing)   // a heal in flight: the healed walk's tags first, the old walk's after
             for k in MTPipe.windows(around: w) { for t in pipe.tags(window: k) { map[t] = conv } }   // Y, Y + 1: the earlier tag too
         }
         index = (w, map)
