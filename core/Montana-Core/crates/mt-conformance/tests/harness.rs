@@ -204,18 +204,20 @@ fn a_changed_ratio_breaks_the_build_with_both_ratios() {
 }
 
 #[test]
-fn a_changed_emission_row_breaks_the_build_with_both_schedules() {
+fn a_changed_window_credit_breaks_the_build_with_both_values() {
     let md = canon();
-    let line = row_line(&md, "emission_schedule");
-    let (doctored, old_mint, new_mint) = bump_last_number(&line);
-    let Some(mt_genesis::Entry::Schedule(_, rows)) = mt_genesis::get("emission_schedule") else {
-        panic!("the Decree holds the schedule");
-    };
-    assert_eq!(old_mint, rows[0].1);
+    let line = row_line(&md, "window_credit");
+    let (doctored, old, new) = bump_last_number(&line);
+    // One coin for every second of a window to every machine living in it: the constitutional
+    // layer fixes the number, and the set and the code hold the same one.
+    assert_eq!(old, 60);
+    assert_eq!(Some(old), mt_genesis::scalar("window_credit"));
     let err = check_all(&doctored_canon(&md, &line, &doctored)).expect_err("the gate must refuse");
-    assert!(err.contains("emission_schedule"), "{err}");
-    assert!(err.contains(&old_mint.to_string()), "{err}");
-    assert!(err.contains(&new_mint.to_string()), "{err}");
+    assert!(err.contains("window_credit"), "{err}");
+    assert!(
+        err.contains(&format!("the set holds {new}, the code holds {old}")),
+        "{err}"
+    );
 }
 
 #[test]

@@ -36,6 +36,16 @@ pub fn is_census(window: u64) -> Result<bool, PulseError> {
     Ok(window.is_multiple_of(interval()?))
 }
 
+// The segment of a window: the run of `segment_windows` windows it falls in, counted from window
+// nought and aligned as the census windows are (Canon, "The rules of continuity", rule 1;
+// constitution records 297 and 300). A segment is a count of windows and never a reading of a
+// clock, so no segment passes while no window does. A segment past the width a record carries it
+// in is refused rather than wrapped.
+pub fn segment(window: u64) -> Result<u32, PulseError> {
+    let windows = mt_genesis::divisor("segment_windows").ok_or(PulseError::DecreeIncomplete)?;
+    u32::try_from(window / windows).map_err(|_| PulseError::CountBeyondWidth)
+}
+
 // The census windows of a window, newest first: the census windows at or before it, one per
 // interval, as many as a standing counts. A census that would stand before window nought stands
 // nowhere, and its place reads nought — the root a proposal carries there is the root of the empty
@@ -128,6 +138,28 @@ mod tests {
         assert_eq!(at[0], 3 * interval);
         assert!(is_census(3 * interval).expect("computes"));
         assert!(!is_census(3 * interval + 5).expect("computes"));
+    }
+
+    // A segment is an aligned run of `segment_windows` windows from window nought: its first and
+    // its last window share it, and the window after its last opens the next. The named wrong
+    // implementations round upward (window one would stand in segment one) and count from one
+    // (window nought would stand in segment one); both move the segment an opening binds.
+    #[test]
+    fn a_segment_is_an_aligned_run_of_windows_from_window_nought() {
+        let windows = mt_genesis::scalar("segment_windows").expect("named");
+        assert_eq!(windows, 1_440);
+        assert_eq!(segment(0), Ok(0));
+        assert_eq!(segment(1), Ok(0));
+        assert_eq!(segment(windows - 1), Ok(0));
+        assert_eq!(segment(windows), Ok(1));
+        assert_eq!(segment(2 * windows - 1), Ok(1));
+        assert_eq!(segment(2 * windows), Ok(2));
+        assert_eq!(segment(7 * windows + 5), Ok(7));
+        assert_eq!(segment(u64::MAX), Err(PulseError::CountBeyondWidth));
+        let last = u64::from(u32::MAX) * windows;
+        assert_eq!(segment(last), Ok(u32::MAX));
+        assert_eq!(segment(last + windows - 1), Ok(u32::MAX));
+        assert_eq!(segment(last + windows), Err(PulseError::CountBeyondWidth));
     }
 
     // At a census window the window's own cement enters first and the oldest leaves; elsewhere the

@@ -1,7 +1,7 @@
-// The tables of the state and the six roots a proposal carries, and the hash that binds the
+// The tables of the state and the seven roots a proposal carries, and the hash that binds the
 // parameters of the Decree to the state they open. The set states the roots and their order beside
-// the parameters: the notes, the admitted machines and the operations under the append-only
-// construction, the nullifiers, the records and the machine state under the sparse one.
+// the parameters: the notes, the admitted machines, the credited rights and the operations under the
+// append-only construction, the nullifiers, the records and the machine state under the sparse one.
 //
 // The Genesis State Hash is computed here rather than in the harness that checks it. A gate that
 // computed the value it compares would be comparing itself.
@@ -30,36 +30,47 @@ pub enum Table {
     Records,
     Machines,
     Admitted,
+    // The parts of the cements of the windows before, each credited by the proposal of the window
+    // after its own: the leaf a right of a window walks to.
+    Credited,
     Operations,
 }
 
 impl Table {
     // The order a proposal carries them in, which is the order the Genesis State Hash binds.
-    pub const ALL: [Table; 6] = [
+    pub const ALL: [Table; 7] = [
         Table::Notes,
         Table::Nullifiers,
         Table::Records,
         Table::Machines,
         Table::Admitted,
+        Table::Credited,
         Table::Operations,
     ];
 
     pub fn is_append_only(self) -> bool {
-        matches!(self, Table::Notes | Table::Admitted | Table::Operations)
+        matches!(
+            self,
+            Table::Notes | Table::Admitted | Table::Credited | Table::Operations
+        )
     }
 
     // A table a circuit walks folds under the proof hash: the tree of notes, the tree of admitted
-    // machines and the tree of records. The rest fold under the Merkle domains and SHA-256. **A
-    // domain of one family under the doors of the other is a defect the set names as such**, so
-    // this predicate and the pair below are one answer and never two.
+    // machines, the tree of credited rights and the tree of records. The rest fold under the Merkle
+    // domains and SHA-256. **A domain of one family under the doors of the other is a defect the set
+    // names as such**, so this predicate and the pair below are one answer and never two.
     pub fn is_of_the_proof_hash(self) -> bool {
-        matches!(self, Table::Notes | Table::Admitted | Table::Records)
+        matches!(
+            self,
+            Table::Notes | Table::Admitted | Table::Credited | Table::Records
+        )
     }
 
     pub fn leaf_domain(self) -> Domain {
         match self {
             Table::Notes => domain::MT_NOTE_LEAF,
             Table::Admitted => domain::MT_ADMITTED_LEAF,
+            Table::Credited => domain::MT_CREDIT_LEAF,
             Table::Records => domain::MT_RECORD_LEAF,
             _ => domain::MT_MERKLE_LEAF,
         }
@@ -69,6 +80,7 @@ impl Table {
         match self {
             Table::Notes => domain::MT_NOTE_NODE,
             Table::Admitted => domain::MT_ADMITTED_NODE,
+            Table::Credited => domain::MT_CREDIT_NODE,
             Table::Records => domain::MT_RECORD_NODE,
             _ => domain::MT_MERKLE_NODE,
         }
@@ -81,6 +93,7 @@ impl Table {
         match self {
             Table::Notes => mt_proof::notes::empty_root().bytes(),
             Table::Admitted => mt_proof::admitted::empty_root().bytes(),
+            Table::Credited => mt_proof::credited::empty_root().bytes(),
             Table::Records => mt_proof::records::empty_root().bytes(),
             _ => {
                 let levels = if self.is_append_only() {
@@ -142,9 +155,9 @@ pub fn root_of_sequence<'a>(
     Some(tree.root())
 }
 
-// The six empty roots in the order a proposal carries them.
-pub fn genesis_roots() -> [[u8; 32]; 6] {
-    let mut out = [[0u8; 32]; 6];
+// The seven empty roots in the order a proposal carries them.
+pub fn genesis_roots() -> [[u8; 32]; 7] {
+    let mut out = [[0u8; 32]; 7];
     for (slot, table) in out.iter_mut().zip(Table::ALL.iter()) {
         *slot = table.empty_root();
     }
@@ -152,7 +165,7 @@ pub fn genesis_roots() -> [[u8; 32]; 6] {
 }
 
 // The hash that binds the parameters to the state they open. It is a function of the parameters
-// and of the six empty roots and of nothing else — no manifest, no address, no moment — so two
+// and of the seven empty roots and of nothing else — no manifest, no address, no moment — so two
 // machines given the same Decree compute one value and a chain whose value differs is a different
 // protocol rather than a fork of this one.
 //
@@ -165,7 +178,7 @@ pub fn genesis_state_hash() -> Option<[u8; 32]> {
     let roots = genesis_roots();
     // The block of parameters is of a width the Decree gives rather than a type, so it enters at
     // that width and an encoding disagreeing with the rows is refused here rather than hashed.
-    // The six roots follow it as a run of one width, in the order the set names them.
+    // The seven roots follow it as a run of one width, in the order the set names them.
     Some(
         Preimage::under(domain::MT_GENESIS_STATE)
             .declared(&parameters, mt_genesis::encoded_len()?)
@@ -213,14 +226,19 @@ mod tests {
     }
 
     #[test]
-    fn the_two_constructions_hold_three_tables_and_three() {
+    fn the_two_constructions_hold_four_tables_and_three() {
         let append: Vec<Table> = Table::ALL
             .into_iter()
             .filter(|t| t.is_append_only())
             .collect();
         assert_eq!(
             append,
-            vec![Table::Notes, Table::Admitted, Table::Operations]
+            vec![
+                Table::Notes,
+                Table::Admitted,
+                Table::Credited,
+                Table::Operations
+            ]
         );
         let sparse: Vec<Table> = Table::ALL
             .into_iter()

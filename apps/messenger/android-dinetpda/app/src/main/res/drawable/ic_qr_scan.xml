@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS qrcode.viewfinder: the four corners of a finder around a small code -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.8" android:strokeLineCap="round" android:fillColor="#00000000"
+      android:pathData="M3,8V5a2,2 0,0 1,2 -2h3M16,3h3a2,2 0,0 1,2 2v3M21,16v3a2,2 0,0 1,-2 2h-3M8,21H5a2,2 0,0 1,-2 -2v-3"/>
+  <path android:fillColor="@android:color/white" android:pathData="M7,7h4v4H7zM13,7h4v4h-4zM7,13h4v4H7zM13,13h2v2h-2zM15,15h2v2h-2z"/>
+</vector>

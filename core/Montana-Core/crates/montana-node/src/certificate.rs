@@ -16,12 +16,12 @@
 
 use crate::NodeError;
 use mt_proof::poseidon::Digest;
+use mt_pulse::ordered::{Map, Set};
 use mt_pulse::standing::Committee;
 use mt_state::layout::{
     Ballot, Beacon, Census, Confirmation, LightAttestation, Pledge, Proposal, Roll,
 };
 use mt_state::Layout;
-use std::collections::{BTreeMap, BTreeSet};
 
 // The electorate of a window: the admitted set the proposal of the window two before carries, root
 // and count, and the census its standing is counted over, with the committee that standing draws.
@@ -175,8 +175,8 @@ pub struct Closure {
     pub cement_aggregate: [u8; 32],
     pub cement_count: u64,
     pub parts: Vec<[u8; 32]>,
-    pub votes: BTreeMap<[u8; 32], u64>,
-    pub answered: BTreeSet<[u8; 32]>,
+    pub votes: Map<[u8; 32], u64>,
+    pub answered: Set<[u8; 32]>,
 }
 
 impl Closure {
@@ -205,6 +205,20 @@ pub struct Round<'a> {
     pub ballots: &'a [Ballot],
 }
 
+// What a certificate not whole yet is refused with: a cement or votes short of their share, or an
+// agreement that has not decided. The certificate of the open window of a running network is such
+// a one while its attestations and pledges still arrive, and so is one whose forged pledges or
+// ballots were dropped, since a forged one says nothing; a forged attestation, beacon or proposal is
+// refused by its own name and is none of these.
+const BELOW_THE_QUORUM: &str = "a cement below the quorum share of the electorate";
+const BELOW_THE_COMMITTEE: &str = "votes below the quorum share of the committee";
+const UNDECIDED: &str = "a certificate whose agreement does not decide the proposal it finalizes";
+
+fn not_whole_yet(refused: &NodeError) -> bool {
+    matches!(refused, NodeError::Refused { what }
+        if [BELOW_THE_QUORUM, BELOW_THE_COMMITTEE, UNDECIDED].contains(what))
+}
+
 // The count of a cement against the quorum share of the electorate, by the integer rule of Canon.
 fn reaches_the_quorum(count: u64, electorate: &Electorate) -> Result<(), NodeError> {
     let reached = mt_pulse::close::closes(u128::from(count), u128::from(electorate.count), 0)
@@ -215,7 +229,7 @@ fn reaches_the_quorum(count: u64, electorate: &Electorate) -> Result<(), NodeErr
         Ok(())
     } else {
         Err(NodeError::Refused {
-            what: "a cement below the quorum share of the electorate",
+            what: BELOW_THE_QUORUM,
         })
     }
 }
@@ -234,7 +248,7 @@ fn reaches_the_committee(votes: u64, electorate: &Electorate) -> Result<(), Node
         Ok(())
     } else {
         Err(NodeError::Refused {
-            what: "votes below the quorum share of the committee",
+            what: BELOW_THE_COMMITTEE,
         })
     }
 }
@@ -271,8 +285,8 @@ pub fn verify_certificate(
             }
         })?;
     let mut cement = mt_pulse::cement::Cement::new();
-    let mut keys: BTreeMap<[u8; 32], Vec<u8>> = BTreeMap::new();
-    let mut answered: BTreeSet<[u8; 32]> = BTreeSet::new();
+    let mut keys: Map<[u8; 32], Vec<u8>> = Map::new();
+    let mut answered: Set<[u8; 32]> = Set::new();
     let mut book = crate::agreement::Book::of_the_window(window);
     for round in rounds {
         if round.beacon.window != window {
@@ -354,7 +368,7 @@ pub fn verify_certificate(
     // once, at the largest count a ballot of it carries. A ballot that does not verify casts nothing
     // and refuses nothing — the votes it claimed are simply not there — so whoever answered a walk
     // cannot stop it by handing in a forged one.
-    let mut votes: BTreeMap<[u8; 32], u64> = BTreeMap::new();
+    let mut votes: Map<[u8; 32], u64> = Map::new();
     for round in rounds {
         for ballot in round.ballots {
             if !cement.holds(&ballot.part_nullifier) {
@@ -388,9 +402,7 @@ pub fn verify_certificate(
         votes: &votes,
     };
     if book.decided(&agreement).map(|(name, _)| name) != Some(previous_id) {
-        return Err(NodeError::Refused {
-            what: "a certificate whose agreement does not decide the proposal it finalizes",
-        });
+        return Err(NodeError::Refused { what: UNDECIDED });
     }
     let cement_aggregate = cement.aggregate(window).map_err(|_| NodeError::Refused {
         what: "a cement the aggregation refuses",
@@ -418,8 +430,9 @@ fn pledged_name(attested: &[[u8; 32]], beacon: &[u8; 32]) -> Option<[u8; 32]> {
 
 // What a window decided of its cement: the beacon it closed on and the pair that beacon carried,
 // with the votes the beacon carried as the evidence of the close. Consensus, "The beacon a window
-// closes on": a proposal carries the pair, the share of every living machine divides the mint by
-// its count, and the draw of the window two on reads its aggregate; the votes enter no proposal.
+// closes on": a proposal carries the pair, its count is the coins the window credits, one to every
+// living machine, and the draw of the window two on reads its aggregate; the votes enter no
+// proposal.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Decided {
     pub window: u64,
@@ -468,7 +481,7 @@ pub fn decided_of(
     closure: &Closure,
     electorate: &Electorate,
 ) -> Result<Decided, NodeError> {
-    let mut by_id: BTreeMap<[u8; 32], &Beacon> = BTreeMap::new();
+    let mut by_id: Map<[u8; 32], &Beacon> = Map::new();
     for round in rounds {
         by_id.insert(round.beacon.id().map_err(NodeError::Object)?, round.beacon);
     }
@@ -573,6 +586,8 @@ pub struct Roots {
     pub record_root: [u8; 32],
     pub machine_root: [u8; 32],
     pub admitted_root: [u8; 32],
+    // The tree of credited rights once the proposal has credited the cement of the window before.
+    pub credited_root: [u8; 32],
     pub operations_root: [u8; 32],
     // The identifier of the roll: the frames applied, in their order, and the parts of the cement,
     // ascending. Canon, "The roll of a proposal".
@@ -609,6 +624,7 @@ pub fn decided_identifier(held: &Held<'_>, roots: &Roots) -> Result<[u8; 32], No
         record_root: roots.record_root,
         machine_root: roots.machine_root,
         admitted_root: roots.admitted_root,
+        credited_root: roots.credited_root,
         operations_root: roots.operations_root,
         roll: roots.roll,
         admitted_count: roots.admitted_count,
@@ -686,6 +702,7 @@ fn judge(proposal: &Proposal, held: &Held<'_>, roots: Option<&Roots>) -> Result<
             proposal.record_root,
             proposal.machine_root,
             proposal.admitted_root,
+            proposal.credited_root,
             proposal.operations_root,
             proposal.roll,
             proposal.admitted_count,
@@ -696,6 +713,7 @@ fn judge(proposal: &Proposal, held: &Held<'_>, roots: Option<&Roots>) -> Result<
             roots.record_root,
             roots.machine_root,
             roots.admitted_root,
+            roots.credited_root,
             roots.operations_root,
             roots.roll,
             roots.admitted_count,
@@ -711,6 +729,37 @@ fn judge(proposal: &Proposal, held: &Held<'_>, roots: Option<&Roots>) -> Result<
             what: "a proposal under an unsupported suite",
         });
     }
+    let key = signed_by_its_runner(proposal)?;
+    // The ticket: the electorate root, the digest of the key this proposal answers under, the
+    // aggregate of the window two before and the threshold of the draw, in the order Canon states;
+    // a proof lifted from another runner's proposal fails at the digest.
+    let digest =
+        Digest::of_bytes(&mt_derive::pulse::runner_digest(key)).ok_or(NodeError::Refused {
+            what: "a digest that is no digest of the family",
+        })?;
+    let public = mt_proof::circuit::ticket::public_of(
+        &[electorate.root, digest],
+        aggregate_two_before,
+        &draw_threshold.to_be_bytes(),
+    );
+    let description = mt_proof::circuit::ticket::description().ok_or(NodeError::Unprovable {
+        what: "the description of a ticket",
+    })?;
+    mt_proof::scheme::verify(&description, &public, &proposal.ticket_proof).map_err(|_| {
+        NodeError::Refused {
+            what: "a proposal whose ticket proof does not verify",
+        }
+    })?;
+    Ok(())
+}
+
+// Whether the runner whose key a proposal carries signed every byte of it but the signature, and the
+// key it signed under. The door judges it of every proposal it is handed, and a machine judges it of
+// the proposals it reads back from its own store: a byte that turned since it was kept is a proposal
+// nobody signed.
+pub(crate) fn signed_by_its_runner(
+    proposal: &Proposal,
+) -> Result<&[u8; mt_codec::size::SIGNING_PUBLIC_KEY], NodeError> {
     let key: &[u8; mt_codec::size::SIGNING_PUBLIC_KEY] = proposal
         .runner_pubkey
         .as_slice()
@@ -734,27 +783,7 @@ fn judge(proposal: &Proposal, held: &Held<'_>, roots: Option<&Roots>) -> Result<
     .map_err(|_| NodeError::Refused {
         what: "a proposal under a signature that does not verify",
     })?;
-    // The ticket: the electorate root, the digest of the key this proposal answers under, the
-    // aggregate of the window two before and the threshold of the draw, in the order Canon states;
-    // a proof lifted from another runner's proposal fails at the digest.
-    let digest =
-        Digest::of_bytes(&mt_derive::pulse::runner_digest(key)).ok_or(NodeError::Refused {
-            what: "a digest that is no digest of the family",
-        })?;
-    let public = mt_proof::circuit::ticket::public_of(
-        &[electorate.root, digest],
-        aggregate_two_before,
-        &draw_threshold.to_be_bytes(),
-    );
-    let description = mt_proof::circuit::ticket::description().ok_or(NodeError::Unprovable {
-        what: "the description of a ticket",
-    })?;
-    mt_proof::scheme::verify(&description, &public, &proposal.ticket_proof).map_err(|_| {
-        NodeError::Refused {
-            what: "a proposal whose ticket proof does not verify",
-        }
-    })?;
-    Ok(())
+    Ok(key)
 }
 
 // Two consecutive final proposals: what an operator hands a joining device, and what a device that
@@ -790,6 +819,21 @@ pub fn walk(
     draw_threshold: &mt_pulse::U256,
     implemented_major: u16,
 ) -> Result<Anchor, NodeError> {
+    walk_to_the_pending(anchor, steps, chains, draw_threshold, implemented_major)
+        .map(|(head, _)| head)
+}
+
+// The walk, and beside the head the proposal of the window after it that the last step judged whole
+// but for the certificate that would make it final: the proposal awaiting its certificate, where the
+// walk took one. It is no head and nothing is taken against its roots; it is the name a machine that
+// walked pledges in the window after it, as a machine that closed that window took it.
+pub(crate) fn walk_to_the_pending(
+    anchor: &Anchor,
+    steps: &[Step<'_>],
+    chains: u64,
+    draw_threshold: &mt_pulse::U256,
+    implemented_major: u16,
+) -> Result<(Anchor, Option<Proposal>), NodeError> {
     let mut earlier = anchor.earlier.clone();
     let mut later = anchor.later.clone();
     if earlier.window.checked_add(1) != Some(later.window)
@@ -907,13 +951,47 @@ pub fn walk(
             // attested name the head is where the walk stands.
             return match refusal {
                 Some(why) => Err(why),
-                None => Ok(head),
+                None => Ok((head, None)),
             };
         };
         earlier = later;
         later = next.clone();
     }
-    Ok(head)
+    // Where the walk took a proposal after the head, `later` is that proposal; where it took none,
+    // `later` is the head itself.
+    let pending = (later.window != head.later.window).then_some(later);
+    Ok((head, pending))
+}
+
+// The walk of a join (Consensus, "The join"). The newest window standing may be the open window of a
+// running network, whose certificate is not whole yet: the proposal before it awaits its certificate,
+// and a walk refused only for that -- a cement, votes or an agreement short -- is taken again without
+// the newest step, so the head is the newest proposal a whole certificate made final. Any other
+// refusal is the refusal of the join: a forged attestation is not dropped in silence for the device to
+// live on from the window before. What the second walk takes it verified whole; what it cannot take
+// is refused as the first was.
+pub fn walk_to_the_open(
+    anchor: &Anchor,
+    steps: &[Step<'_>],
+    chains: u64,
+    draw_threshold: &mt_pulse::U256,
+    implemented_major: u16,
+) -> Result<(Anchor, Option<Proposal>), NodeError> {
+    let walked = walk_to_the_pending(anchor, steps, chains, draw_threshold, implemented_major);
+    match (walked, steps.split_last()) {
+        (Err(refused), Some((_, before_the_newest)))
+            if !before_the_newest.is_empty() && not_whole_yet(&refused) =>
+        {
+            walk_to_the_pending(
+                anchor,
+                before_the_newest,
+                chains,
+                draw_threshold,
+                implemented_major,
+            )
+        }
+        (walked, _) => walked,
+    }
 }
 
 // Lemma 2 of WINDOW-THEOREM.md: every certificate this door accepts satisfies Pi_cert. The presence
@@ -931,11 +1009,20 @@ pub fn walk(
 // door it refuses: one that lets a second answering key stand under one part (C3), one that counts a
 // ballot outside the cement or below the largest of its part (C5), one that hands the agreement a
 // pledge under a key the part never proved (C6).
+//
+// The lemma is checked class by class, the class being the parts the three heavy attestations name:
+// each was drawn by `one_of(&PARTS)`, an index below three, so the twenty-seven triples of indices
+// part the input and their union is the whole of it. Within a class the parts are constants, so the
+// cement, the answering keys and the book of the door hold their attestations at places the model
+// checker reads off rather than searches. Two functions the harness never reaches are stubbed so the
+// cryptography behind them is not compiled into it: `verify_light`, as the round carries no light
+// attestation, and `Proposal::id`, as the window stands on the Genesis State Hash; each stub fails
+// the harness were it reached. What the first would verify reaches `Closure::answered` alone and no
+// assertion reads it.
 #[cfg(kani)]
 mod proofs {
     use super::*;
     use mt_state::layout::Confirmation;
-    use std::collections::BTreeSet;
 
     // Window zero, the one window the Genesis State Hash stands under.
     const WINDOW: u64 = 0;
@@ -989,6 +1076,26 @@ mod proofs {
         }
     }
 
+    fn no_light(
+        _: &LightAttestation,
+        _: &[u8],
+        _: &[u8; 32],
+        _: u8,
+        _: u32,
+        _: &mt_pulse::U256,
+    ) -> Result<(), NodeError> {
+        kani::assert(
+            false,
+            "the round of the harness carries no light attestation",
+        );
+        Err(refused())
+    }
+
+    fn no_proposal(_: &Proposal) -> Result<[u8; 32], mt_state::ObjectError> {
+        kani::assert(false, "the harness stands on the Genesis State Hash");
+        Ok([0; 32])
+    }
+
     fn beacon_id(beacon: &Beacon) -> Result<[u8; 32], mt_state::ObjectError> {
         Ok(beacon.previous)
     }
@@ -1026,12 +1133,12 @@ mod proofs {
         vec![u8::from(kani::any::<bool>())]
     }
 
-    fn any_heavy() -> Confirmation {
+    fn any_heavy(part: usize) -> Confirmation {
         let names = [LOW, BEACON, PREVIOUS];
         Confirmation {
             window: this_or_next(),
             attested: vec![one_of(&names), one_of(&names)],
-            part_nullifier: one_of(&PARTS),
+            part_nullifier: PARTS[part],
             round_nullifier: [0; 32],
             suite_id: 0,
             answering_key: a_bit(),
@@ -1078,18 +1185,9 @@ mod proofs {
         }
     }
 
-    #[kani::proof]
-    #[kani::unwind(9)]
-    #[kani::stub(crate::attest::verify_heavy, heavy_oracle)]
-    #[kani::stub(crate::attest::verify_ballot, ballot_oracle)]
-    #[kani::stub(crate::attest::verify_pledge, pledge_oracle)]
-    #[kani::stub(mt_state::layout::Beacon::id, beacon_id)]
-    #[kani::stub(mt_state::tables::genesis_state_hash, genesis_name)]
-    #[kani::stub(mt_pulse::retarget::round_threshold, any_threshold)]
-    #[kani::stub(mt_pulse::cement::Cement::aggregate, fixed_aggregate)]
-    #[kani::stub(mt_genesis::ratio, crate::kani_decree::ratio)]
-    #[kani::stub(mt_genesis::scalar, crate::kani_decree::scalar)]
-    fn an_accepted_certificate_satisfies_the_predicate() {
+    // The lemma on the class `parts`: the heavy attestations name PARTS[parts[0]], PARTS[parts[1]]
+    // and PARTS[parts[2]], everything else drawn as before.
+    fn an_accepted_certificate_satisfies_the_predicate(parts: [usize; 3]) {
         let expected: u64 = kani::any();
         kani::assume(expected < 3);
         let electorate = Electorate {
@@ -1111,7 +1209,11 @@ mod proofs {
             cement_count: 0,
             cement_votes: 0,
         };
-        let heavy = [any_heavy(), any_heavy(), any_heavy()];
+        let heavy = [
+            any_heavy(parts[0]),
+            any_heavy(parts[1]),
+            any_heavy(parts[2]),
+        ];
         let ballots = [any_ballot(), any_ballot()];
         let pledges = [any_pledge(), any_pledge()];
         let rounds = [Round {
@@ -1154,7 +1256,7 @@ mod proofs {
             }
         }
         // The cement, its count and (C4).
-        let cement: BTreeSet<[u8; 32]> = heavy.iter().map(|held| held.part_nullifier).collect();
+        let cement: Set<[u8; 32]> = heavy.iter().map(|held| held.part_nullifier).collect();
         assert_eq!(closure.window, WINDOW);
         assert_eq!(closure.parts, cement.iter().copied().collect::<Vec<_>>());
         assert_eq!(closure.cement_count, cement.len() as u64);
@@ -1211,5 +1313,69 @@ mod proofs {
             book.decided(&agreement).map(|(name, _)| name),
             Some(PREVIOUS)
         );
+    }
+
+    // One harness per class. No loop of a class runs more than three times -- three attestations, two
+    // ballots, two pledges, and no map or set of the door or of the book above three keys -- so each
+    // is unwound to four; a comparison of 32 bytes is a loop of `memcmp` the command line unwinds to
+    // thirty-three.
+    macro_rules! classes {
+        ($($name:ident: $parts:expr;)*) => {$(
+            #[kani::proof]
+            #[kani::unwind(4)]
+            #[kani::stub(crate::attest::verify_heavy, heavy_oracle)]
+            #[kani::stub(crate::attest::verify_light, no_light)]
+            #[kani::stub(crate::attest::verify_ballot, ballot_oracle)]
+            #[kani::stub(crate::attest::verify_pledge, pledge_oracle)]
+            #[kani::stub(mt_state::layout::Beacon::id, beacon_id)]
+            #[kani::stub(mt_state::layout::Proposal::id, no_proposal)]
+            #[kani::stub(mt_state::tables::genesis_state_hash, genesis_name)]
+            #[kani::stub(mt_pulse::retarget::round_threshold, any_threshold)]
+            #[kani::stub(mt_pulse::cement::Cement::aggregate, fixed_aggregate)]
+            #[kani::stub(mt_genesis::ratio, crate::kani_decree::ratio)]
+            #[kani::stub(mt_genesis::scalar, crate::kani_decree::scalar)]
+            fn $name() {
+                an_accepted_certificate_satisfies_the_predicate($parts);
+            }
+        )*};
+    }
+
+    classes! {
+        // One part: a cement below the quorum of an electorate of two, which no door accepts unless
+        // its agreement too counts a quorum of one; these classes complete the input.
+        an_accepted_certificate_satisfies_the_predicate_on_1_1_1: [0, 0, 0];
+        an_accepted_certificate_satisfies_the_predicate_on_2_2_2: [1, 1, 1];
+        an_accepted_certificate_satisfies_the_predicate_on_3_3_3: [2, 2, 2];
+        // Two parts, the first two attestations of one part (the second cover stands here): the door
+        // that lets a second key stand under a part, counts a ballot of the part outside the cement or
+        // one below the largest of its part, or hands the agreement a pledge under a key never proved.
+        an_accepted_certificate_satisfies_the_predicate_on_1_1_2: [0, 0, 1];
+        an_accepted_certificate_satisfies_the_predicate_on_1_1_3: [0, 0, 2];
+        an_accepted_certificate_satisfies_the_predicate_on_2_2_1: [1, 1, 0];
+        an_accepted_certificate_satisfies_the_predicate_on_2_2_3: [1, 1, 2];
+        an_accepted_certificate_satisfies_the_predicate_on_3_3_1: [2, 2, 0];
+        an_accepted_certificate_satisfies_the_predicate_on_3_3_2: [2, 2, 1];
+        // Two parts, the repeated part in the third attestation: the same doors, the second key met
+        // after another part entered the cement.
+        an_accepted_certificate_satisfies_the_predicate_on_1_2_1: [0, 1, 0];
+        an_accepted_certificate_satisfies_the_predicate_on_1_2_2: [0, 1, 1];
+        an_accepted_certificate_satisfies_the_predicate_on_1_3_1: [0, 2, 0];
+        an_accepted_certificate_satisfies_the_predicate_on_1_3_3: [0, 2, 2];
+        an_accepted_certificate_satisfies_the_predicate_on_2_1_1: [1, 0, 0];
+        an_accepted_certificate_satisfies_the_predicate_on_2_1_2: [1, 0, 1];
+        an_accepted_certificate_satisfies_the_predicate_on_2_3_2: [1, 2, 1];
+        an_accepted_certificate_satisfies_the_predicate_on_2_3_3: [1, 2, 2];
+        an_accepted_certificate_satisfies_the_predicate_on_3_1_1: [2, 0, 0];
+        an_accepted_certificate_satisfies_the_predicate_on_3_1_3: [2, 0, 2];
+        an_accepted_certificate_satisfies_the_predicate_on_3_2_2: [2, 1, 1];
+        an_accepted_certificate_satisfies_the_predicate_on_3_2_3: [2, 1, 2];
+        // Three parts: the door that does not count its cement against the electorate, and closes on
+        // a cement larger than it.
+        an_accepted_certificate_satisfies_the_predicate_on_1_2_3: [0, 1, 2];
+        an_accepted_certificate_satisfies_the_predicate_on_1_3_2: [0, 2, 1];
+        an_accepted_certificate_satisfies_the_predicate_on_2_1_3: [1, 0, 2];
+        an_accepted_certificate_satisfies_the_predicate_on_2_3_1: [1, 2, 0];
+        an_accepted_certificate_satisfies_the_predicate_on_3_1_2: [2, 0, 1];
+        an_accepted_certificate_satisfies_the_predicate_on_3_2_1: [2, 1, 0];
     }
 }

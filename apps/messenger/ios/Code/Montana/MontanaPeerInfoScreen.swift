@@ -395,7 +395,7 @@ struct MontanaPeerInfoScreen: View {
         return out
     }
 
-    /// A CHANNEL'S PAGE (MTChannelPage, the author's words 17.10.2026 18:4x MSK: «channels ... 1 to 1»): its own head, buttons and rows.
+    /// A CHANNEL'S PAGE (MTChannelPage, the author's words 17.10.2026 15:4x UTC: «channels ... 1 to 1»): its own head, buttons and rows.
     private var isChannelPage: Bool { MTPeerKind(chat: chat) == .group && MTGroup.shared.kind(chat.name) == .channel }
     /// A group's page, not a channel's: the reference's group page draws it (MTGroupPage), a channel keeps its own road.
     private var isGroupPage: Bool { MTPeerKind(chat: chat) == .group && MTGroup.shared.kind(chat.name) == .group }
@@ -915,7 +915,7 @@ struct MontanaPeerInfoScreen: View {
         }
     }
 
-    /// THE TRANSFERS WITH THIS PERSON (the author's word 12.10.2026 15:2x MSK: «on the correspondent's page add after the wall a section of
+    /// THE TRANSFERS WITH THIS PERSON (the author's word 12.10.2026 12:2x UTC: «on the correspondent's page add after the wall a section of
     /// transactions, to see only what was sent to and received from the correspondent»): the coins sent to them and received from them,
     /// newest first, cut by day as every pane is, each on the bar's own glass; a transfer opens its record in the Explorer inside the app,
     /// a coin letter its transaction's page. Read from the one fold of the coins (MTCoinHistory), never from the book here.

@@ -37,7 +37,7 @@ fun contactRow(act: MainActivity, ch: Chat): View {
         minimumHeight = dp(72)
         addView(FrameLayout(c).apply {
             clipChildren = false
-            addView(c.peerFace(ch.ref, ch.shown, 48), FrameLayout.LayoutParams(dp(48), dp(48)))
+            addView(c.chatFace(ch.ref, ch.shown, 48), FrameLayout.LayoutParams(dp(48), dp(48)))
             if (word?.second == true) addView(presenceBadge(c), FrameLayout.LayoutParams(dp(13), dp(13), Gravity.BOTTOM or Gravity.END))
         }, lp(dp(48), dp(48)).apply { marginEnd = dp(16) })
         addView(c.vstack(Gravity.NO_GRAVITY) {
@@ -63,7 +63,7 @@ private fun contactMenu(act: MainActivity, ch: Chat, held: View?) {
     val ref = ch.ref
     val deeds = mutableListOf(
         Deed(R.string.ct_write, R.drawable.ic_compose) { act.push { close -> conversationPage(act, ref, close) } },
-        Deed(R.string.ct_profile, R.drawable.ic_person) { act.push { close -> peerInfoPage(act, ref, close) } },
+        Deed(R.string.ct_profile, R.drawable.ic_person) { act.push { close -> peerInfoPage(act, ref, close).pushedMark("profile") } },
         Deed(R.string.ct_audio_call, R.drawable.ic_peer_phone) { act.callOut(ref) },
         Deed(R.string.ct_video_call, R.drawable.ic_peer_video) { act.callOut(ref, video = true) },
         if (ChatMarks.isContactArchived(ref)) Deed(R.string.cl_unarchive, R.drawable.ic_unarchive) { ChatMarks.toggleContactArchive(ref) }
@@ -73,6 +73,18 @@ private fun contactMenu(act: MainActivity, ch: Chat, held: View?) {
     deeds += if (PeerSafety.isBlocked(ref)) Deed(R.string.pi_unblock, R.drawable.ic_set_lock) { PeerSafety.setBlocked(ref, false); Book.edit(ref) {} }
              else Deed(R.string.pi_block, R.drawable.ic_set_lock, red = true) { askBlock(act, ref) { Book.edit(ref) {} } }   // the lists hear the book
     holdMenu(act, held, deeds, personPlate(act, ref))
+}
+
+/**
+ * A PAGE PUSHED OVER THE CONTACTS SAYS WHEN IT IS ON THE SCREEN AND WHEN IT LEAVES IT (iOS MTPushedMark, ContentView.swift
+ * 2822-2833 at 2155; atom 17a19adc6214): «contacts_page archive=on/off», «profile=on/off» -- a page that came and never said
+ * «off» is a page left standing on the stack.
+ */
+private fun View.pushedMark(what: String): View = apply {
+    addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: View) { android.util.Log.d("Montana", "contacts_page $what=on") }
+        override fun onViewDetachedFromWindow(v: View) { android.util.Log.d("Montana", "contacts_page $what=off") }
+    })
 }
 
 /**
@@ -99,18 +111,24 @@ private fun contactLine(act: MainActivity, ch: Chat): View {
  * pull-down summons the archive row, a pull-up folds it»): it stands while it is summoned and there is an archive, riding in from the
  * top in 0.3 s; `reveal` is the page's hand on it.
  */
-private class ContactRows(val view: android.widget.LinearLayout, val reveal: (Boolean) -> Unit)
+private class ContactRows(val view: android.widget.LinearLayout, val reveal: (Boolean) -> Unit) {
+    /** The archive row stands over the list or leaves it (iOS archiveShown, read by the column and by the list alike). */
+    var onHead: (Boolean) -> Unit = {}
+}
 
 private fun contactRows(act: MainActivity, archived: Boolean): ContactRows {
     val c: Context = act
     val rows = c.vstack(Gravity.NO_GRAVITY)
     var revealed = false
+    var out: ContactRows? = null
     fun fill() {
         rows.removeAllViews()
+        var head = false
         if (!archived) {
             val n = ChatMarks.contactArchiveCount()
             if (revealed && n > 0) {
-                rows.addView(archiveEntry(act, n) { act.push { close -> settingsPage(act, c.getString(R.string.cl_archive), close) { addView(contactRows(act, archived = true).view, lp()) } } }, lp())
+                head = true
+                rows.addView(archiveEntry(act, n) { act.push { close -> settingsPage(act, c.getString(R.string.cl_archive), close) { addView(contactRows(act, archived = true).view, lp()) }.pushedMark("archive") } }, lp())
                 rows.addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = c.dp(82) })
             }
         }
@@ -123,6 +141,7 @@ private fun contactRows(act: MainActivity, archived: Boolean): ContactRows {
             rows.addView(contactLine(act, ch), lp())
             rows.addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = c.dp(82) })
         }
+        out?.onHead(head)
     }
     fill()
     val again: () -> Unit = { act.onMain { fill() } }
@@ -130,7 +149,7 @@ private fun contactRows(act: MainActivity, archived: Boolean): ContactRows {
         override fun onViewAttachedToWindow(v: View) { Book.listen(again); ChatMarks.listen(again); Presence.listen(again); fill() }
         override fun onViewDetachedFromWindow(v: View) { Book.unlisten(again); ChatMarks.unlisten(again); Presence.unlisten(again) }
     })
-    return ContactRows(rows) reveal@{ on ->
+    out = ContactRows(rows) reveal@{ on ->
         if (on == revealed || (on && ChatMarks.contactArchiveCount() == 0)) return@reveal
         val head = if (revealed) rows.getChildAt(0) else null
         if (on) {
@@ -142,10 +161,12 @@ private fun contactRows(act: MainActivity, archived: Boolean): ContactRows {
             }
         } else if (head != null) {
             revealed = false
+            out?.onHead(false)   // the rows' top washes again as the row leaves (iOS fade(animated: true) at the fold)
             head.animate().translationY(-c.dp(72).toFloat()).alpha(0f).setDuration(300).setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
                 .withEndAction { fill() }.start()
         } else { revealed = false; fill() }
     }
+    return out!!
 }
 
 /**
@@ -163,5 +184,14 @@ fun contactsList(act: MainActivity): View {
         })
         setOnScrollChangeListener { _, _, y, _, _ -> if (act.dp(25) < y) rows.reveal(false) }
     }
-    return CoinPull(act, scroll).apply { onPull = { pull -> if (25f < pull) rows.reveal(true) } }
+    // THE ROWS RUN ON TO THE SCREEN'S EDGES, AS THE CHATS' (iOS ContactsTabView: MontanaTimePanelList, MTChatListFrame
+    // page: "contacts", ContentView.swift:2862-2880; atoms 17a19adc6214, 3678e78b9465): the chats page's one EdgeSink mask without
+    // the folders' tabs -- past the bar's room the rows sink into the page's ground, and below into the screen's edge; while the
+    // archive row stands they stop at the list's top (headFloats), while the search holds the list at the page's bottom (pinned).
+    var self: View? = null
+    return EdgeSink(act, top = { scroll.paddingTop + act.dp(34) }, bottom = { self?.height ?: 0 }, edgeTop = { scroll.paddingTop }).apply {
+        self = this; page = "contacts"; tag = EdgeSink.TAG
+        rows.onHead = { up = !it }
+        addView(CoinPull(act, scroll).apply { onPull = { pull -> if (25f < pull) rows.reveal(true) } }, FrameLayout.LayoutParams(MATCH, MATCH))
+    }
 }

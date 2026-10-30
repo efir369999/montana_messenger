@@ -1,0 +1,53 @@
+[package]
+name = "montana-desktop"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Montana for Windows: the Rust core (mt_bindings.dll, the C ABI iOS calls) under a Tauri 2 window"
+
+[lib]
+name = "montana_desktop"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.1", features = ["tray-icon"] }
+serde = { version = "1", features = ["derive"] }
+sha2 = "=0.10.9"
+serde_json = "1"
+lofty = "=0.25.4"
+base64 = "=0.22.1"
+# the QR of the link (Project Nayuki, MIT; no dependencies of its own)
+qrcodegen = "=1.8.0"
+# the banner of a new letter (Tauri's own plugin, MIT OR Apache-2.0): Windows toasts
+tauri-plugin-notification = "=2.7.0"
+# raw DEFLATE of the presence words (the lane compresses as iOS .zlib does: RFC 1951, no header); already in Tauri's graph
+miniz_oxide = "=0.8.9"
+# the copy's frames (.mtbak v2: ChaCha20-Poly1305 with associated data, HKDF-SHA-256) -- the versions the core itself pins
+chacha20poly1305 = "=0.10.1"
+hkdf = "=0.12.4"
+# the seed's coin book on the nodes (iOS MTCoinVault: the moves' JSON packed by LZFSE, Apple's format) -- pure Rust, MIT OR Apache-2.0
+lzfse_rust = "=0.2.1"
+# your node put up from here (iOS MTSSHRun over NIOSSH): the machine's own SSH door, pure Rust on ring -- Apache-2.0
+russh = { version = "=0.64.1", default-features = false, features = ["ring", "flate2", "rsa"] }
+tokio = { version = "=1.54.0", features = ["time"] }
+
+[target.'cfg(windows)'.dependencies]
+# Windows Hello (the device's PIN, face or finger) before the 24 words show, as iOS asks the passcode; the version Tauri pulls in
+windows = { version = "=0.62.2", features = ["Security_Credentials_UI", "Win32_System_WinRT", "Win32_Foundation", "Foundation", "Win32_Media_MediaFoundation", "Win32_System_Com", "Networking_Connectivity", "Win32_UI_Shell", "Win32_UI_Shell_Common", "ApplicationModel_DataTransfer", "Win32_Graphics_Imaging", "Win32_System_Com_StructuredStorage", "Win32_System_Variant", "Storage", "Storage_Streams", "Foundation_Collections", "UI_Notifications"] }
+windows-future = "=0.3.2"
+windows-collections = "=0.3.2"
+# the web view's own permission requests answered by the app for its own page (microphone, camera): Tauri's version
+webview2-com = "=0.39.1"
+windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_Security_Cryptography", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_Globalization", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Win32_Networking_WinHttp", "Win32_System_SystemInformation", "Win32_System_LibraryLoader"] }
+# The protocol core (core/Montana-Core, its boundary mt-boundary unchanged) is montana_core.dll beside the program, built by
+# app/protocol-core and loaded at run time: a build without it says the core is unavailable, as an iOS simulator does.
+# The core is not a Rust dependency here: it is built in its own workspace, with its own pinned versions, into
+# mt_bindings.dll, and called through its C ABI -- the doors iOS (MontanaBindings.xcframework) and Android (JNI) use.
+# The keys and the 24 words stay inside the core and this side; they never reach the window.
+
+[profile.release]
+codegen-units = 1
+lto = true

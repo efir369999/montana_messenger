@@ -330,7 +330,7 @@ enum MontanaBackup {
     /// phone: the shelf created at 00:25 and empty. The sweep now cannot touch the file being built,
     /// wherever a future hand puts the call — the rule lives in the sweep, not in the order of lines.
     private static var building: String? = nil
-    /// THE SHARES AND THE CARGO OF A DEAD PROCESS LEAVE TOO (the author's word 18.10.2026 10:2x MSK: «on T1 Montana weighs 20 GB and I
+    /// THE SHARES AND THE CARGO OF A DEAD PROCESS LEAVE TOO (the author's word 18.10.2026 07:2x UTC: «on T1 Montana weighs 20 GB and I
     /// cannot see what weighs so much»; T1 measured: 9.0 GB of «.keep» on this shelf). A copy cut for the keepers (MTKeeping.hand) and
     /// the history laid for the twin (MontanaArchive) are removed by a defer when their hand returns -- and a hand laying sixteen
     /// shares of a copy of gigabytes runs for hours, so a process the system took left them here for good. At a launch no hand runs
@@ -580,7 +580,7 @@ enum MontanaBackup {
         for p in placed { total += ((try? fm.attributesOfItem(atPath: p.url.path)[.size] as? Int) ?? nil) ?? 0 }
         let feed = SeedScope.feedNow().map { without(scope.people, json: $0) }
         total += feed?.count ?? 0
-        // THE ROOM ANSWERS BEFORE THE WORK, AS THE SHELF DOES (the author's words 18.10.2026 14:1x-14:4x MSK: «on T1 check why my
+        // THE ROOM ANSWERS BEFORE THE WORK, AS THE SHELF DOES (the author's words 18.10.2026 11:1x-11:4x UTC: «on T1 check why my
         // phone heats up -- a deep closure at the root»; «at launch T1 lags at first»; «the chats lag»). The size of the copy was
         // counted here before a byte was sealed, and the disk was asked for room only by running out of it: T1 began fourteen
         // copies on 17.10 and four more by 11:00Z on 18.10 -- nine and four of them sealed for 13 to 36 s until the system said
@@ -813,7 +813,7 @@ enum MontanaBackup {
     private static func seedCard(_ scope: Scope) -> Card? {
         var out: [String: String] = [:]
         var skipped = 0
-        // THE LIST TRAVELS WITH EVERY COPY (the author's word 17.10.2026 16:0x MSK: «groups and channels did not come back»): a
+        // THE LIST TRAVELS WITH EVERY COPY (the author's word 17.10.2026 13:0x UTC: «groups and channels did not come back»): a
         // copy that left a conversation -- or only a KIND of attachment -- out used to leave both shelves behind, and the list
         // was rebuilt from the archive's folders on the other side; a group and a channel have no folder, so they came back as
         // feeds without a row. The shelves are records like any other: a left-out conversation's row leaves them by its convId

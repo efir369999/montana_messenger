@@ -40,7 +40,7 @@ VAULT_TLS_CERT = os.environ.get("VAULT_TLS_CERT", "")
 VAULT_TLS_KEY = os.environ.get("VAULT_TLS_KEY", "")
 RE_VTOKEN = re.compile(r"^[0-9a-f]{64}$")
 RE_VNAME = re.compile(r"^montana-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}-[0-9a-f]{16}\.mtbak$")
-# THE PIECES OF ONE'S OWN (the author's word 18.10.2026 20:1x MSK: «make my Lauterbourg node my personal storage, so I clear the
+# THE PIECES OF ONE'S OWN (the author's word 18.10.2026 17:1x UTC: «make my Lauterbourg node my personal storage, so I clear the
 # cache in the app and it weighs nothing, and even after deleting the app I come back and load everything from my own node»).
 # Beside the copies of a shelf lie the sealed pieces of every file its owner keeps: the very pieces the doors carry for a week,
 # kept here until the owner takes them away. The node sees a name and sealed bytes and nothing else; the name is the phone's own

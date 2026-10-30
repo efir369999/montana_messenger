@@ -1,0 +1,46 @@
+# Build output, installers and secrets never enter the repository (CONTRIBUTING.md; issue #30, section 1).
+
+# the front end: packages, the built page, Vite's cache
+node_modules/
+dist/
+build/
+.vite/
+
+# Rust: the shared target folder is apps/messenger/windows/target (../.gitignore); a target made inside a crate as well
+target/
+src-tauri/gen/
+
+# installers, packages and archives
+bundle/
+*.exe
+*.msi
+*.msix
+*.appx
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+
+# libraries built from the core and their debug files
+*.dll
+*.lib
+*.exp
+*.pdb
+
+# logs
+*.log
+
+# keys, certificates and local environment files
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# the 24 words of an identity and its copies (.mtbak), as a check may leave them
+*.words
+*.mtbak

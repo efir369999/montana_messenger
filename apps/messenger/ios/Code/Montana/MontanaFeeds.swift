@@ -75,7 +75,7 @@ enum MTWallpaper {
     /// Indigo keeps the name it was born with: phones store «aurora» and correspondents receive «n:aurora».
     static let indigo = "aurora"
     static let burgundy = "burgundy"
-    /// THE GOLD GROUND IS GONE WHOLE (the author's words 23.10.2026 02:09 and 12:50 MSK: «remove the gold colour from the build
+    /// THE GOLD GROUND IS GONE WHOLE (the author's words 22.10.2026 23:09 and 23.10.2026 09:50 UTC: «remove the gold colour from the build
     /// as our colour»; «I meant only the page's gold ground -- remove the gold completely»): it is no choice, no default and no
     /// picture any more. A choice stored or a ground told by a correspondent under its name wears the default ground.
     static let retired: Set<String> = ["gold"]
@@ -399,7 +399,7 @@ enum MTWallpaper {
     }
 }
 /// THE CUSTOM BUBBLES' PICTURE GROUND LIVES IN A SEALED FILE, NOT IN THE SETTINGS (the critic B-6; the author's words 11.10.2026
-/// 20:1x MSK: «check the whole architecture of the chats' time chains, so there are no holes by the constitution», 21:5x: «carry
+/// 17:1x UTC: «check the whole architecture of the chats' time chains, so there are no holes by the constitution», 18:5x: «carry
 /// out all 13»). An older build kept the picture raw in the settings («cbBgPhoto», 0.6 MB on T1), and every write of any setting
 /// carried it to the system's preferences service. No build sets it any more; a look that still wears it keeps it: the value is
 /// read from the settings once, sealed under the device key into this device's own folder, and the key leaves.

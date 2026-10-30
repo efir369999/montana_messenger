@@ -14,16 +14,21 @@
 // would stand at the last window lived rather than the one before it; two machines taking two
 // proposals of one decision — their identifiers differ; a holder that lets the certificates of a
 // window go with the window — the walk finds nothing to verify and stays at its anchor; and a walk
-// trusting a forged anchor — refused at the first certificate.
+// trusting a forged anchor — refused at the first certificate; and a machine that closes a window
+// without its closing pledge standing at the window's points — the agreement of every certificate
+// the walk reads decides nothing, and the walk refuses the first.
 
 use montana_node::certificate::Anchor;
 use montana_node::pulse::{self, Cohort};
 use montana_node::{Configuration, Machine};
+use mt_state::Layout;
 
 mod common;
 use common::Scratch;
 
-const FROM: u64 = 3_000;
+// The window the network opens at: zero, the one window the Genesis State Hash stands under
+// (Consensus, "Invariants of the TimeChain").
+const FROM: u64 = 0;
 const WINDOWS: u64 = 4;
 
 // How many askings a machine spends at one round before giving it up: of the operator alone, sized
@@ -141,7 +146,9 @@ fn a_device_that_held_nothing_walks_to_the_head_two_machines_left() {
         Some(FROM + WINDOWS - 2)
     );
 
-    // Refused: a forged anchor, linked to itself and to nothing of the chain.
+    // Refused: a forged anchor, linked to itself and to nothing of the chain. Its attestations and its
+    // pledges stand, since the forgery moved no root they answer to, but what they decide is the
+    // chain's own proposal and not the forged one.
     let mut forged_earlier = anchor.earlier.clone();
     forged_earlier.cement_aggregate[0] ^= 1;
     let mut forged_later = anchor.later.clone();
@@ -153,8 +160,53 @@ fn a_device_that_held_nothing_walks_to_the_head_two_machines_left() {
     assert_eq!(
         pulse::join(&joining, &forged, PATIENCE).map(|_| ()),
         Err(montana_node::NodeError::Refused {
-            what: "an attestation outside this beacon and the proposal it finalizes"
+            what: "a certificate whose agreement does not decide the proposal it finalizes"
         })
     );
+    // Refused before any change: the head of the joining device stands where the honest walk left
+    // it, and no proposal of the forged pair was kept in its place (Protocol-13 item 2).
+    assert_eq!(
+        joining.head().expect("the store answers"),
+        Some(FROM + WINDOWS - 2)
+    );
+    assert_eq!(
+        joining
+            .proposal_of(FROM + WINDOWS - 2)
+            .expect("the store answers")
+            .map(|held| held.id().expect("an identifier")),
+        Some(mine[(WINDOWS - 2) as usize].proposal),
+        "a forged proposal took the place of the kept one"
+    );
     drop(far);
+
+    // **The verified Proposal, its identifier and the head survive a restart** (Protocol-13 item 2):
+    // the dialler is started again on its store and holds every proposal it kept, byte for byte,
+    // under the same head.
+    let kept: Vec<Option<mt_state::layout::Proposal>> = (0..WINDOWS)
+        .map(|at| near.proposal_of(FROM + at).expect("the store answers"))
+        .collect();
+    let head_before = near.head().expect("the store answers");
+    drop(near);
+    let (again, born) = Machine::start(&Configuration::at(&near_at.0, "127.0.0.1:0"))
+        .expect("the dialler starts again");
+    assert!(!born, "a restart drew a second secret");
+    assert_eq!(again.head().expect("the store answers"), head_before);
+    for (at, was) in kept.iter().enumerate() {
+        let now = again
+            .proposal_of(FROM + at as u64)
+            .expect("the store answers");
+        assert_eq!(
+            now.as_ref().map(|held| held.bytes().expect("bytes")),
+            was.as_ref().map(|held| held.bytes().expect("bytes")),
+            "a proposal kept for window {} changed across a restart",
+            FROM + at as u64
+        );
+    }
+    // And a window at or below the head is never pledged again by the restarted machine.
+    assert_eq!(
+        again.enter_round(FROM + WINDOWS - 1, 0, 0),
+        Err(montana_node::NodeError::Refused {
+            what: "a round of a window this machine already closed"
+        })
+    );
 }

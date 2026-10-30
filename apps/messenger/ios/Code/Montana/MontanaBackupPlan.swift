@@ -244,7 +244,7 @@ struct CopyChatsPage: View {
 
 /// THE ATTACHMENTS OF A COPY — by kind, each with its count and weight on this device. A row opens
 /// the kind's own files; the mark on the row says whether the copy takes that kind.
-/// WHAT THIS PHONE HOLDS, MEASURED ON ITS DISK (the author's word 18.10.2026 10:2x MSK: «on T1 Montana weighs 20 GB, and I cannot see
+/// WHAT THIS PHONE HOLDS, MEASURED ON ITS DISK (the author's word 18.10.2026 07:2x UTC: «on T1 Montana weighs 20 GB, and I cannot see
 /// what weighs so much nor how to clean it; Data and Storage shows other numbers, the backup's»). T1 18.10.2026 measured: Application
 /// Support 20.6 GB -- Montana 10.6 (the media, the videos of walls opened among them), MontanaBackup 9.0 (the shares of a copy a killed
 /// hand left), MontanaKeeping 1.0 -- and 6.9 GB of hard links to the media in tmp. The page counted only what the backup takes. One
@@ -256,7 +256,7 @@ struct MTDiskUse {
     var walls: Int64 = 0      // the walls' pictures brought to be seen (MTBoardLook), a gigabyte at most by its own trim
     var shelf: Int64 = 0      // copies and their shares waiting on the shelf (MontanaBackup)
     var kept: Int64 = 0       // the shares this phone keeps for the people who write to it (MTKeeping)
-    // «History and the rest» named, each part where it lies (the author's word 18.10.2026 23:3x MSK: «I must manage every point of the
+    // «History and the rest» named, each part where it lies (the author's word 18.10.2026 20:3x UTC: «I must manage every point of the
     // cache fully -- History shows 7 GB and I cannot see what or how»; T1 measured: 7.4 GB were viewer links left in tmp, MTDocLink)
     var opened: Int64 = 0     // the links a viewer was handed that outlived their document (MTDocLink.left)
     var history: Int64 = 0    // the letters, the chats' rows and the chains of time
@@ -349,7 +349,7 @@ struct CopyFilesPage: View {
     let kind: MontanaBackup.Kind
     @Binding var plan: CopyPlan
     @State private var asking: String? = nil
-    // MANY AT ONCE (the author's word 18.10.2026 10:2x MSK: «in the management make a convenient mass way to select everything and
+    // MANY AT ONCE (the author's word 18.10.2026 07:2x UTC: «in the management make a convenient mass way to select everything and
     // delete, for example all videos»): the platform's selection -- the marks turn to choosing, every file of the kind is chosen by
     // one glyph, and the chosen leave by one confirmation.
     @State private var choosing = false

@@ -1,10 +1,10 @@
 // The boundary a client written in another language stands on: the birth of a person, the wallet,
-// the machine, its pulse and the mint of a window, offered as doors rather than reimplemented.
+// the machine, its pulse and the coin a window credits, offered as doors rather than reimplemented.
 //
 // **Nothing here computes.** Every value that crosses this line was derived by the crate that owns
 // the mechanism; a door reads its arguments, calls that crate and writes back what came. A number
 // of its own would be a second place for a value the set already fixes, so this file declares none
-// — not a width, not a share, not a length of a proof.
+// — not a width, not the worth of a right, not a length of a proof.
 //
 // **One device is one machine and one person.** A telephone holds one of each, so what stands here
 // stands once and the doors take no handle: a second opening is refused rather than shadowing the
@@ -20,8 +20,11 @@
 // caller reads reasons, because a panic unwinding into another language is undefined behaviour
 // there rather than an error.
 
+use montana_node::certificate::Anchor;
 use montana_node::{pulse, Configuration, Machine, NodeError};
 use montana_wallet::{pay::Payee, Wallet};
+use mt_state::layout::Proposal;
+use mt_state::Layout;
 use std::ffi::{c_char, CStr};
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
@@ -68,7 +71,7 @@ struct Handed {
 // where the terminal runs it: after the round is entered and before anything of it is attested.
 #[derive(Clone, Copy, Default)]
 struct Errand {
-    redeem: Option<(u64, usize)>,
+    redeem: Option<u64>,
     pay: Option<([u8; 32], [u8; 32], u128)>,
 }
 
@@ -78,7 +81,7 @@ struct Row {
     window: u64,
     rounds: u32,
     living: usize,
-    share: u64,
+    worth: u64,
     accepted_in: u64,
 }
 
@@ -206,18 +209,21 @@ fn the_machine() -> Result<Arc<Machine>, String> {
 // after any answer other than well; it names no peer and no person.
 #[no_mangle]
 pub extern "C" fn mtc_last_said(out: *mut c_char, cap: usize, len: *mut usize) -> i32 {
-    text_door(
-        || {
-            Ok(SAID
-                .lock()
-                .ok()
-                .and_then(|held| held.clone())
-                .unwrap_or_default())
-        },
-        out,
-        cap,
-        len,
-    )
+    let held = match SAID.lock() {
+        Ok(held) => held,
+        Err(_) => return Answer::Broke as i32,
+    };
+    match held.as_deref() {
+        Some(text) => hand_text(text, out, cap, len),
+        None => {
+            // Clear stale caller text without manufacturing a refusal in SAID: a second read
+            // must still report absence, while bad buffers retain the existing boundary errors.
+            match hand_text("", out, cap, len) {
+                code if code == Answer::Well as i32 => Answer::Nothing as i32,
+                code => code,
+            }
+        }
+    }
 }
 
 // Which network this core is of. Two clients disagreeing here are not on one network, whatever
@@ -417,11 +423,26 @@ pub extern "C" fn mtc_machine_reach(line: *const c_char) -> i32 {
 pub extern "C" fn mtc_machine_answer() -> i32 {
     door(|| {
         let machine = the_machine()?;
-        std::thread::spawn(move || {
-            let _ = machine.serve();
-        });
+        machine.answer_in_background();
         Ok(())
     })
+}
+
+// CNS-20: independent of SAID. A successful read of a stall is not a healthy-node verdict.
+#[no_mangle]
+pub extern "C" fn mtc_pulse_status(out: *mut c_char, cap: usize, len: *mut usize) -> i32 {
+    let status = the_machine()
+        .ok()
+        .and_then(|machine| machine.counts().status());
+    let missing =
+        status.is_none_or(|held| held.on() == Some(montana_node::say::Verdict::NoDiagnostics));
+    let text = status.map_or_else(|| "no diagnostics".to_string(), |held| held.to_string());
+    let answer = hand_text(&text, out, cap, len);
+    if missing && answer == Answer::Well as i32 {
+        Answer::Nothing as i32
+    } else {
+        answer
+    }
 }
 
 #[no_mangle]
@@ -431,6 +452,63 @@ pub extern "C" fn mtc_machine_head(window: *mut u64, present: *mut i32) -> i32 {
         wrote(window, head.unwrap_or_default())?;
         wrote(present, i32::from(head.is_some()))
     })
+}
+
+// The join of a device that holds nothing, from the anchor its operator handed it: the bytes of
+// the proposals of two consecutive final windows, the earlier and the later. Consensus, "The join":
+// the anchor is a line of the world outside, as an acquaintance is, and the trust in it is the trust
+// this device places in the operator who started it — so the door takes it as it was handed and
+// judges none of it here. The proposals pass the one door of their layout, and the walk judges the
+// pair and every certificate after it and trusts no answer; what comes back is the window the head
+// stands at. A device walks or lives and never both at once: a walk while the pulse runs is refused,
+// and the pulse is refused while a walk runs. The walk runs on the caller's thread, so a caller
+// asks it from a thread of its own.
+#[no_mangle]
+pub extern "C" fn mtc_machine_join(
+    earlier: *const u8,
+    earlier_len: usize,
+    later: *const u8,
+    later_len: usize,
+    window: *mut u64,
+) -> i32 {
+    door(|| {
+        if window.is_null() {
+            return Err("a place to write to that is nothing".to_string());
+        }
+        let proposal = |from: *const u8, len: usize| -> Result<Proposal, String> {
+            <Proposal as Layout>::parse(&taken(from, len)?).map_err(|e| format!("{e:?}"))
+        };
+        let anchor = Anchor {
+            earlier: proposal(earlier, earlier_len)?,
+            later: proposal(later, later_len)?,
+        };
+        let (machine, running) = of_the_device(|standing| {
+            Ok((Arc::clone(&standing.machine), Arc::clone(&standing.running)))
+        })?;
+        let walking = Walking::begun(&running)?;
+        let head = pulse::join(&machine, &anchor, pulse::WAITS_UP_TO).map_err(|e| format!("{e:?}"));
+        drop(walking);
+        wrote(window, head?.later.window)
+    })
+}
+
+// The device marked as busy for as long as a walk lasts, and marked free again however the walk
+// ends — a walk that refused and a walk that broke leave a device the pulse may begin on.
+struct Walking<'a>(&'a AtomicBool);
+
+impl<'a> Walking<'a> {
+    fn begun(running: &'a AtomicBool) -> Result<Self, String> {
+        running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .map_err(|_| "a pulse or a walk already running".to_string())?;
+        Ok(Self(running))
+    }
+}
+
+impl Drop for Walking<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::SeqCst);
+    }
 }
 
 #[no_mangle]
@@ -456,18 +534,25 @@ pub extern "C" fn mtc_machine_account(out: *mut c_char, cap: usize, len: *mut us
 }
 
 // The right of a window turned into a note, asked before the pulse begins and done inside the
-// window that right is accepted in. The window it is the right of, and how many machines its cement
-// named, are what the operator read off that window when it closed: the machine cannot ask anybody
-// for them and nothing it holds implies them.
+// window that right is accepted in. The window it is the right of is what the operator read off
+// that window when it closed: the machine cannot ask anybody for it and nothing it holds implies it.
+//
+// **The count of the cement prices nothing now.** A right is worth the window's credit whatever its cement
+// counted (Consensus, "The right to a window's coin"). The door still takes the count, so the
+// clients standing on it do not move with the rule, and it reads it for one thing only: a window
+// whose cement named nobody issued no right, and asking to redeem one is refused here.
 #[no_mangle]
 pub extern "C" fn mtc_errand_redeem(of_the_window: u64, living: usize) -> i32 {
     door(|| {
+        if living == 0 {
+            return Err("a window whose cement named nobody issued no right".to_string());
+        }
         of_the_device(|standing| {
             let mut errand = standing
                 .errand
                 .lock()
                 .map_err(|_| "an errand another thread left locked".to_string())?;
-            errand.redeem = Some((of_the_window, living));
+            errand.redeem = Some(of_the_window);
             Ok(())
         })
     })
@@ -497,7 +582,7 @@ pub extern "C" fn mtc_errand_pay(half: *const u8, note_pk: *const u8, amount: *c
 
 // The pulse of this machine: it enters the window, stands at the points of its rounds, answers
 // every beacon it sees, gathers what verifies into its cement and closes the window when the cement
-// reaches the share — taking the right that window mints. It runs on a thread of its own, and what
+// reaches the share — taking the right to the coin that window credits. It runs on a thread of its own, and what
 // it lived is read by the doors below.
 #[no_mangle]
 pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, windows: u64) -> i32 {
@@ -530,17 +615,30 @@ pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, wi
                     .to_string(),
             );
         }
-        machine
+        // Taken before the round is entered, so a walk begun in between finds the device busy
+        // rather than a pulse entering a round under it.
+        running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .map_err(|_| "a pulse or a walk already running".to_string())?;
+        let entered = machine
             .enter_round(from, pulse::opening_chain(), 0)
-            .map_err(|e| format!("{e:?}"))?;
-        let asked = *errand
-            .lock()
-            .map_err(|_| "an errand another thread left locked".to_string())?;
-        running.store(true, Ordering::SeqCst);
+            .map_err(|e| format!("{e:?}"))
+            .and_then(|()| {
+                errand
+                    .lock()
+                    .map(|held| *held)
+                    .map_err(|_| "an errand another thread left locked".to_string())
+            });
+        let asked = match entered {
+            Ok(asked) => asked,
+            Err(what) => {
+                running.store(false, Ordering::SeqCst);
+                return Err(what);
+            }
+        };
         std::thread::spawn(move || {
-            let of_the_cohort = &cohort;
             let work = |machine: &Machine, window: u64| -> Result<(), NodeError> {
-                run_the_errand(machine, of_the_cohort, &wallet_at, asked, window, &paid)
+                run_the_errand(machine, &wallet_at, asked, window, &paid)
             };
             match pulse::live_doing(
                 &machine,
@@ -552,14 +650,14 @@ pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, wi
             ) {
                 Ok(rows) => {
                     if let Ok(mut held) = lived.lock() {
-                        // A window whose cement does not hold this machine's part minted it nothing,
-                        // and its row says so with a share of nought.
+                        // A window whose cement does not hold this machine's part credited it
+                        // nothing, and its row says so with a worth of nought.
                         for one in rows {
                             held.push(Row {
                                 window: one.window,
                                 rounds: one.rounds,
                                 living: one.living,
-                                share: one.right.as_ref().map_or(0, |right| right.share),
+                                worth: one.right.as_ref().map_or(0, |right| right.worth),
                                 accepted_in: one
                                     .right
                                     .as_ref()
@@ -583,7 +681,6 @@ pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, wi
 // slot names and a machine releases those points the moment its window closes.
 fn run_the_errand(
     machine: &Machine,
-    cohort: &pulse::Cohort,
     wallet_at: &std::path::Path,
     asked: Errand,
     window: u64,
@@ -592,7 +689,7 @@ fn run_the_errand(
     if asked.redeem.is_none() && asked.pay.is_none() {
         return Ok(());
     }
-    if let Some((of_the_window, living)) = asked.redeem {
+    if let Some(of_the_window) = asked.redeem {
         let rate = *mt_wire::draw::block::<32>().map_err(|e| NodeError::Unreadable {
             what: format!("nothing to draw from: {e:?}"),
         })?;
@@ -600,9 +697,7 @@ fn run_the_errand(
         // is the wallet, so nothing is handed back here.
         machine.redeem_into(
             wallet_at,
-            cohort,
             of_the_window,
-            living,
             window,
             pulse::opening_chain(),
             0,
@@ -719,14 +814,15 @@ pub extern "C" fn mtc_pulse_lived(out: *mut usize) -> i32 {
 }
 
 // One window of what was lived, read by its place. Every value of it is a count and none names a
-// machine.
+// machine. The fourth is what the window credited this machine: the window's credit where its part stood in
+// the cement, nought where it did not.
 #[no_mangle]
 pub extern "C" fn mtc_pulse_lived_at(
     at: usize,
     window: *mut u64,
     rounds: *mut u32,
     living: *mut usize,
-    share: *mut u64,
+    worth: *mut u64,
     accepted_in: *mut u64,
 ) -> i32 {
     door(|| {
@@ -740,7 +836,7 @@ pub extern "C" fn mtc_pulse_lived_at(
         wrote(window, row.window)?;
         wrote(rounds, row.rounds)?;
         wrote(living, row.living)?;
-        wrote(share, row.share)?;
+        wrote(worth, row.worth)?;
         wrote(accepted_in, row.accepted_in)
     })
 }
@@ -765,15 +861,18 @@ pub extern "C" fn mtc_measure_redemption(milliseconds: *mut u64, width: *mut usi
             note_pk: person.payment_key(),
         };
         let secret = *mt_wire::draw::block::<32>().map_err(|e| format!("{e:?}"))?;
-        let cohort =
-            pulse::Cohort::of(&[pulse::Cohort::half_of(&secret)]).map_err(|e| format!("{e:?}"))?;
-        let branch = cohort
-            .branch_of(&secret)
-            .ok_or_else(|| "a machine that stands in no cohort".to_string())?;
-        let living =
-            usize::try_from(cohort.count()).map_err(|_| "a cohort past counting".to_string())?;
-        let right =
-            montana_node::attest::right_of(&secret, 0, living).map_err(|e| format!("{e:?}"))?;
+        // The tree of credited rights a window of this machine alone leaves: its part of window
+        // nought at position nought, and the walk to it.
+        let part = mt_derive::nullifier::part(&secret, 0)
+            .ok_or_else(|| "a secret whose halves are no digest of the family".to_string())?;
+        let mut credited = mt_proof::credited::Tree::new(mt_proof::tree_depth());
+        credited
+            .credit(&[part])
+            .map_err(|_| "a tree of one credited part".to_string())?;
+        let siblings = credited
+            .path(0)
+            .ok_or_else(|| "the position just credited".to_string())?;
+        let right = montana_node::attest::right_of(&secret, 0).map_err(|e| format!("{e:?}"))?;
         let rate = *mt_wire::draw::block::<32>().map_err(|e| format!("{e:?}"))?;
         let root = montana_node::state::State::new().notes_root();
         let began = std::time::Instant::now();
@@ -781,14 +880,14 @@ pub extern "C" fn mtc_measure_redemption(milliseconds: *mut u64, width: *mut usi
             .redeem(
                 &secret,
                 right.window,
-                u128::from(right.share),
-                &branch.siblings,
-                branch.position,
+                u128::from(right.worth),
+                &siblings,
+                0,
                 &own,
                 right.accepted_in,
                 &rate,
                 &root,
-                &cohort.root(),
+                &credited.root(),
             )
             .map_err(|e| format!("{e:?}"))?;
         let spent = began.elapsed();
@@ -798,4 +897,53 @@ pub extern "C" fn mtc_measure_redemption(milliseconds: *mut u64, width: *mut usi
         )?;
         wrote(width, minted.frame.len())
     })
+}
+
+#[cfg(test)]
+mod status_tests {
+    use super::*;
+
+    // CNS-20: rejects a boundary that reads SAID as the pulse cause or loses a real live stall.
+    #[test]
+    fn the_live_pulse_status_is_independent_of_the_last_boundary_error() {
+        let at = std::env::temp_dir().join(format!(
+            "mt-boundary-status-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let dir = std::ffi::CString::new(at.to_str().unwrap()).unwrap();
+        let listen = std::ffi::CString::new("127.0.0.1:0").unwrap();
+        let mut born = 0;
+        assert_eq!(mtc_device_open(dir.as_ptr(), listen.as_ptr(), &mut born), 0);
+        let machine = the_machine().unwrap();
+        let cohort = pulse::Cohort::of(&[machine.naming_half().unwrap()]).unwrap();
+        let errand = |machine: &Machine, _| machine.enter_round(1, 0, 0);
+        assert!(matches!(
+            pulse::live_doing(&machine, &cohort, 0, 1, 1, Some(&errand)),
+            Err(NodeError::Stalled {
+                on: montana_node::say::Verdict::NoData,
+                ..
+            })
+        ));
+        assert_eq!(mtc_machine_reach(std::ptr::null()), -1);
+        let mut out = [0 as c_char; 256];
+        let mut len = 0;
+        assert_eq!(mtc_last_said(out.as_mut_ptr(), out.len(), &mut len), 0);
+        let original = out[..len].to_vec();
+        assert_eq!(mtc_pulse_status(out.as_mut_ptr(), out.len(), &mut len), 0);
+        let status: Vec<u8> = out[..len].iter().map(|byte| *byte as u8).collect();
+        assert_eq!(
+            String::from_utf8(status).unwrap(),
+            machine.counts().status().unwrap().to_string()
+        );
+        assert_eq!(mtc_last_said(out.as_mut_ptr(), out.len(), &mut len), 0);
+        assert_eq!(&out[..len], original.as_slice());
+        drop(machine.counts().watch_door());
+        assert_eq!(mtc_pulse_status(out.as_mut_ptr(), out.len(), &mut len), -2);
+        assert_eq!(mtc_last_said(out.as_mut_ptr(), out.len(), &mut len), 0);
+        assert_eq!(&out[..len], original.as_slice());
+    }
 }

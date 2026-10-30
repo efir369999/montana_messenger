@@ -3,7 +3,6 @@
 
 use mt_codec::{domain, write_bytes, write_u128, write_u32, write_u64, write_u8, CanonicalEncode};
 use mt_crypto::{hash, suite_id_from_u16, verify, Hash32, PublicKey, Signature, SuiteId};
-use mt_lottery::{Candidate, WINNER_CLASS_NODE};
 use mt_state::{NodeId, NodeTable};
 
 // Header layout per spec v31.0.0 (winner_class byte removed; lottery is single-class,
@@ -133,7 +132,16 @@ pub fn validate_header(
     if header.protocol_version > local_max_supported_version {
         return Err(HeaderError::ProtocolVersionUnsupported);
     }
-    // proposer lookup + suite check + signature
+    verify_header_signature(header, node_table)
+}
+
+// (a) + (b) alone: the proposer is in the Node Table under ML-DSA-65 and the signature
+// verifies over the signed scope. A header of a window already applied is checked by this
+// alone (issue #18, S4): its window is no longer the next one.
+pub fn verify_header_signature(
+    header: &ProposalHeader,
+    node_table: &NodeTable,
+) -> Result<(), HeaderError> {
     let proposer = node_table
         .get(&header.proposer_node_id)
         .ok_or(HeaderError::UnknownProposer)?;
@@ -150,54 +158,69 @@ pub fn validate_header(
     Ok(())
 }
 
-// ============ Phase B: Lookback Leadership ============
-
-// spec, "Winner determination (Lookback Leadership)":
-//   proposer_W = winner_{W-2} (canonically from proposal_{W-1}).
-//   proposer = the nearest node-candidate by weighted_ticket — the first Candidate with
-//   class=Node in the sorted candidates of W-2.
+// ============ Phase B: the proposer of a window (issue #18) ============
 //
-// **Empty W-2 cemented set — there is no canonical leader.**
+// The author's decision 279 (constitution chain record 288) removes the lottery and carries
+// over the rule of core/Montana-Core: the lowest ticket by the aggregate. core/docs, Consensus,
+// "The runner's draw": every machine of the electorate draws its ticket from "the cemented
+// aggregate of the window two before the one being drawn", the threshold of the draw is the width
+// (Canon, "The threshold of the draw"), so no machine is excluded and the ticket only orders the
+// runners, and "the machine whose ticket is lowest usually carries the decision first and alone"
+// (Consensus, "The threshold of the draw, and the order of the runners").
 //
-// Genesis = empty window 0: there is no baked bootstrap node. When
-// sorted_candidates_w_minus_2 is empty or contains no
-// `WINNER_CLASS_NODE` (genesis cold-start before the first cemented
-// candidate, or degraded mode when all confirmers are offline at once)
-// — there is no canonical leader, NO_PROPOSER (zero NodeId) is returned.
+// What core/Code carries over is the rule, not the construction (docs/SPEC_DEVIATIONS.md,
+// DEV-055). core/Montana-Core draws the ticket from the machine's secret and proves its clearing
+// in zero knowledge; core/Code has no such proof, so a ticket a follower can check is drawn from
+// what every verifier holds: the aggregate and the node_id. Its order is therefore public one
+// window ahead, as the lottery's was. The aggregate is mt-timechain
+// `cemented_bundle_aggregate(W-2, cemented confirmers of W-2)`, the confirmers being those the
+// proposal of W-1 included.
 //
-// Solo cold-start is closed through the existing admission path: a single node
-// with a zero Active set self-admits (selection_slots(0)=1) and
-// cements its own chain (quorum(1)=1); its own proposal is
-// the chain. Recognizing NO_PROPOSER and submitting its own proposal is
-// the responsibility of the caller (the node knows its own node_id).
+//   ticket(W, node)  = SHA-256("mt-ticket" || 0x00 || aggregate(W-2) || node_id)
+//   order(W)         = the electorate of W, ascending by (ticket, node_id), compared unsigned
+//                      and big-endian over the full width
+//   proposer(W, d)   = order(W)[d-1]; d = fallback_depth, 1 = the lowest ticket
+//
+// The cascade of fallback_depth is the existing liveness rule of core/Code (DEV-023, DEV-043),
+// walked over this order instead of over the lottery's candidates of W-2.
+//
+// Before window 2, with no electorate, or past the cascade there is no canonical proposer, and
+// NO_PROPOSER (zero NodeId) is returned. No node stands in the Node Table under it, so
+// validate_header refuses every header that names it. How a network with no electorate opens
+// is not decided by this rule (the author's decision 280, issue #17).
 pub const NO_PROPOSER: NodeId = [0u8; 32];
 
-pub fn canonical_proposer(sorted_candidates_w_minus_2: &[Candidate]) -> NodeId {
-    // Extract the first node-candidate from the sorted list (minimal weighted_ticket among nodes)
-    for c in sorted_candidates_w_minus_2 {
-        if c.class == WINNER_CLASS_NODE {
-            return c.id;
-        }
-    }
-    // No node candidates in cemented set W-2 — there is no canonical leader.
-    NO_PROPOSER
+pub fn ticket(aggregate_w_minus_2: &Hash32, node_id: &NodeId) -> Hash32 {
+    hash(domain::TICKET, &[aggregate_w_minus_2, node_id])
 }
 
-// spec, "Fallback cascade":
-//   fallback_1 = second_min(weighted_ticket) of window W-2, fallback_2 = third_min, etc.
-// fallback_depth 1 = canonical proposer, 2 = first fallback, etc.
-pub fn fallback_proposer(sorted_candidates_w_minus_2: &[Candidate], fallback_depth: u8) -> NodeId {
-    let mut skip = (fallback_depth as usize).saturating_sub(1);
-    for c in sorted_candidates_w_minus_2 {
-        if c.class == WINNER_CLASS_NODE {
-            if skip == 0 {
-                return c.id;
-            }
-            skip -= 1;
-        }
+// The electorate of W in the order of its tickets. Each node counts once whatever order, and
+// however many times, it was handed in.
+pub fn proposer_order(aggregate_w_minus_2: &Hash32, electorate: &[NodeId]) -> Vec<NodeId> {
+    let mut keyed: Vec<(Hash32, NodeId)> = electorate
+        .iter()
+        .map(|id| (ticket(aggregate_w_minus_2, id), *id))
+        .collect();
+    keyed.sort_unstable();
+    keyed.dedup();
+    keyed.into_iter().map(|(_, id)| id).collect()
+}
+
+// fallback_depth 1 = the lowest ticket, 2 = the next, and so on; a cascade past the electorate,
+// or a window before 2, has no canonical proposer.
+pub fn proposer_at(
+    window: u64,
+    aggregate_w_minus_2: &Hash32,
+    electorate: &[NodeId],
+    fallback_depth: u8,
+) -> NodeId {
+    if window < 2 || fallback_depth == 0 {
+        return NO_PROPOSER;
     }
-    // Cascade exhausted — there is no canonical leader.
-    NO_PROPOSER
+    proposer_order(aggregate_w_minus_2, electorate)
+        .get(usize::from(fallback_depth) - 1)
+        .copied()
+        .unwrap_or(NO_PROPOSER)
 }
 
 // ============ Phase C: control_set formula ============
@@ -262,28 +285,46 @@ pub fn validate_control_set(
 
 // ============ Phase D: Canonical acceptance validation ============
 
-// spec, "Canonical acceptance" (line 1114):
-//   (a) proposer = winner_{W-2}
+// Canonical acceptance of the proposal of window W, as core/Code checks it after issue #18:
+//   (a) proposer = proposer_at(W, aggregate(W-2), electorate(W), fallback_depth)
 //   (b) included_bundles ≥ 67% active_chain_length
-//   (c) included_reveals = cemented set SSHA_Reveals of window W-1
-//   (d) winner_{W-1} = argmin of (cemented reveals ∪ account_candidates)
-//   (e) state_root is correct (independent recomputation — delegated to mt-account::apply_proposal)
+//   (c) state_root is correct (independent recomputation — delegated to mt-account::apply_proposal)
+//   (d) target, included_reveals_root, winner_endpoint and winner_id are zero
+// The former (c) included_reveals and (d) winner_{W-1} = argmin are removed with the lottery.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AcceptanceError {
     ProposerNotCanonical,
     InsufficientBundles,
-    IncludedRevealsMismatch,
-    WrongWinner,
+    RetiredFieldNotZero,
 }
 
-// (a) proposer canonical check.
+// The four fields of the lottery stay in the signed 3722-byte layout and carry zeros (issue #18,
+// the author's decision 279: "the fields target/reveals_root/winner in the header -- zeros, with
+// no change of the wire"). A header in which any of them is not zero is refused: nothing in
+// core/Code gives them a value, so a value there is a header no honest proposer wrote.
+pub fn validate_retired_fields(header: &ProposalHeader) -> Result<(), AcceptanceError> {
+    if header.target != 0
+        || header.included_reveals_root != [0u8; 32]
+        || header.winner_endpoint != [0u8; 32]
+        || header.winner_id != [0u8; 32]
+    {
+        return Err(AcceptanceError::RetiredFieldNotZero);
+    }
+    Ok(())
+}
+
+// (a) proposer canonical check, at the fallback_depth the signed header declares.
 pub fn validate_proposer_is_canonical(
     header: &ProposalHeader,
-    sorted_candidates_w_minus_2: &[Candidate],
+    aggregate_w_minus_2: &Hash32,
+    electorate: &[NodeId],
 ) -> Result<(), AcceptanceError> {
-    // When fallback_depth > 1 proposer = fallback_N, not canonical.
-    // Validation: the proposer matches fallback_proposer(depth).
-    let expected = fallback_proposer(sorted_candidates_w_minus_2, header.fallback_depth);
+    let expected = proposer_at(
+        header.window_index,
+        aggregate_w_minus_2,
+        electorate,
+        header.fallback_depth,
+    );
     if header.proposer_node_id != expected {
         return Err(AcceptanceError::ProposerNotCanonical);
     }
@@ -303,70 +344,13 @@ pub fn validate_bundles_threshold(
     }
 }
 
-// (c) included_reveals == cemented set SSHA_Reveals W-1 (canonical).
-// Compare via sorted Vec equality — caller sorts both before call.
-pub fn validate_included_reveals(
-    proposer_reveal_hashes: &[Hash32],
-    cemented_reveal_hashes: &[Hash32],
-) -> Result<(), AcceptanceError> {
-    // Both are canonical sorted (by lex asc per spec "Canonical ordering" lines 2520-2521).
-    if proposer_reveal_hashes == cemented_reveal_hashes {
-        Ok(())
-    } else {
-        Err(AcceptanceError::IncludedRevealsMismatch)
-    }
-}
-
-// (d) winner_{W-1} == argmin by canonical rule of (cemented reveals ∪ account candidates).
-//
-// **Caller contract (M4-MED-2):**
-//
-// This function **strictly rejects** any winner_id if the cemented set of window W-1
-// is empty (i.e. there is no SSHA_Reveal from a node-candidate). This is correct for
-// **post-genesis** windows: in steady state the network always has ≥1 candidate
-// in W-1; an empty cemented set = either all nodes offline at once (degenerate
-// scenario, network in degraded mode), or an attacker submits a fabricated proposal.
-//
-// **For genesis cold-start** (the first windows where the cemented W-1 candidates are empty
-// because the network has not yet accumulated SSHA_Reveals) the caller MUST skip
-// `validate_winner`: with an empty W-2 cemented set `canonical_proposer` returns
-// `NO_PROPOSER`, and a single node submits its own proposal (self-admit
-// via selection_slots(0)=1, self-cement via quorum(1)=1). The genesis bypass is the
-// caller responsibility (the mt-account orchestrator knows window_index and may skip
-// validate_winner for windows where the cemented W-1 set is empty by design).
-//
-// We do not introduce a separate `validate_winner_genesis_aware` — it would complicate the API
-// without structural benefit (the caller knows window_index and the canonical
-// fallback path anyway). The contract documentation in this comment is authoritative.
-pub fn validate_winner(
-    header: &ProposalHeader,
-    sorted_candidates_w_minus_1: &[Candidate],
-) -> Result<(), AcceptanceError> {
-    let expected = mt_lottery::determine_winner(sorted_candidates_w_minus_1);
-    match expected {
-        Some(w) => {
-            if w.class == WINNER_CLASS_NODE && header.winner_id == w.id {
-                Ok(())
-            } else {
-                Err(AcceptanceError::WrongWinner)
-            }
-        },
-        None => {
-            // Empty W-1 cemented set: post-genesis this is either degraded mode
-            // (all nodes offline), or an attacker fabricated proposal — both
-            // cases reject. Genesis bootstrap — the caller skips validate_winner
-            // (see the doc above).
-            Err(AcceptanceError::WrongWinner)
-        },
-    }
-}
-
 // ============ Phase E: Finalization flow ============
 
 // spec, "Window closure" + "Finalization" (lines 1045-1049):
 //   If 67% of active_chain_length sign proposal_W → cemented.
-//   Winner_{W-1} receives reward(W-1). Winner_{W-1} becomes proposer_{W+1}.
 //   If < 67% → proposal rejected, fallback cascade.
+// (The winner and its reward are removed by issue #18: every living node of W-1 is credited
+// and the proposer of a window is proposer_at above.)
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FinalizationStatus {
     Cemented,
@@ -382,13 +366,6 @@ pub fn finalization_status(
     } else {
         FinalizationStatus::Rejected
     }
-}
-
-// spec line 1333 "Leader penalty on rejection":
-//   the endpoint of the proposer whose proposal was rejected is excluded from the lottery pool of window W.
-// Helper: returns the node_id for exclusion (the caller uses it in the lottery candidate filter).
-pub fn leader_penalty_excluded_node(header: &ProposalHeader) -> NodeId {
-    header.proposer_node_id
 }
 
 #[cfg(test)]
@@ -732,72 +709,104 @@ mod tests {
         assert_eq!(calc, PROPOSAL_HEADER_SIZE);
     }
 
-    // ============ Phase B: Lookback Leadership ============
+    // ============ Phase B: the proposer of a window (issue #18) ============
 
-    use mt_lottery::{Candidate, WINNER_CLASS_NODE};
+    fn hex(bytes: &[u8]) -> String {
+        bytes.iter().map(|b| format!("{b:02x}")).collect()
+    }
 
-    fn node_cand(ticket: u128, id_byte: u8) -> Candidate {
-        Candidate {
-            ticket,
-            class: WINNER_CLASS_NODE,
-            id: [id_byte; 32],
+    fn ids(bytes: &[u8]) -> Vec<NodeId> {
+        bytes.iter().map(|b| [*b; 32]).collect()
+    }
+
+    // The ticket against an independent oracle: Python hashlib,
+    // sha256(b"mt-ticket" + b"\x00" + bytes([0x22]) * 32 + bytes([0x33]) * 32).
+    // Rejects a ticket under another domain, without the separator byte, or over its inputs in
+    // another order.
+    #[test]
+    fn the_ticket_is_the_frozen_value() {
+        assert_eq!(
+            hex(&ticket(&[0x22; 32], &[0x33; 32])),
+            "031819bb8ae6922c06505d97e36a946ef73aa1bcc53669362bf4b2c8f8fa1d1e"
+        );
+    }
+
+    // Rejects a proposer that is anything but the lowest ticket by the aggregate (the first
+    // lottery candidate of W-2, the first node by id, the highest ticket).
+    #[test]
+    fn the_proposer_is_the_lowest_ticket() {
+        let agg = [0x5A; 32];
+        let electorate = ids(&[0x11, 0x22, 0x33, 0x44]);
+        let lowest = *electorate
+            .iter()
+            .min_by_key(|id| ticket(&agg, id))
+            .expect("four nodes");
+        assert_eq!(proposer_at(7, &agg, &electorate, 1), lowest);
+        let order = proposer_order(&agg, &electorate);
+        assert_eq!(order[0], lowest);
+        assert!(order
+            .windows(2)
+            .all(|pair| ticket(&agg, &pair[0]) < ticket(&agg, &pair[1])));
+    }
+
+    // Issue #18, S1: a window's proposer is the same on every order the electorate arrived in,
+    // and a node handed in twice counts once. Rejects an order taken from arrival (the first
+    // seen, the last seen) or one that a repeated node shifts.
+    #[test]
+    fn the_proposer_is_the_same_on_every_order_of_the_electorate() {
+        let agg = [0xC3; 32];
+        let base = ids(&[0x01, 0x02, 0x03, 0x04]);
+        let expected: Vec<NodeId> = proposer_order(&agg, &base);
+        let mut orders: Vec<Vec<NodeId>> = vec![Vec::new()];
+        for id in &base {
+            let mut next = Vec::new();
+            for o in &orders {
+                for pos in 0..=o.len() {
+                    let mut p = o.clone();
+                    p.insert(pos, *id);
+                    next.push(p);
+                }
+            }
+            orders = next;
+        }
+        assert_eq!(orders.len(), 24);
+        for o in &orders {
+            assert_eq!(proposer_order(&agg, o), expected, "order {o:?}");
+            let mut twice = o.clone();
+            twice.push(o[0]);
+            assert_eq!(proposer_order(&agg, &twice), expected, "repeat {twice:?}");
+            for depth in 1..=4u8 {
+                assert_eq!(
+                    proposer_at(9, &agg, o, depth),
+                    expected[usize::from(depth) - 1]
+                );
+            }
         }
     }
 
+    // The aggregate enters the ticket: two aggregates give two tickets for one node.
     #[test]
-    fn proposer_empty_candidates_is_no_proposer() {
-        // Genesis cold-start / degraded mode: empty W-2 set → no canonical proposer.
-        assert_eq!(canonical_proposer(&[]), NO_PROPOSER);
+    fn the_ticket_moves_with_the_aggregate_and_the_node() {
+        assert_ne!(
+            ticket(&[0x01; 32], &[0x11; 32]),
+            ticket(&[0x02; 32], &[0x11; 32])
+        );
+        assert_ne!(
+            ticket(&[0x01; 32], &[0x11; 32]),
+            ticket(&[0x01; 32], &[0x12; 32])
+        );
     }
 
     #[test]
-    fn proposer_is_first_node_candidate() {
-        let cands = vec![
-            node_cand(100, 0x11),
-            node_cand(200, 0x22),
-            node_cand(300, 0x33),
-        ];
-        let p = canonical_proposer(&cands);
-        assert_eq!(p, [0x11; 32]);
-    }
-
-    #[test]
-    fn fallback_depth_1_is_canonical() {
-        let cands = vec![
-            node_cand(100, 0x11),
-            node_cand(200, 0x22),
-            node_cand(300, 0x33),
-        ];
-        let canon = canonical_proposer(&cands);
-        let fallback_1 = fallback_proposer(&cands, 1);
-        assert_eq!(canon, fallback_1);
-        assert_eq!(fallback_1, [0x11; 32]);
-    }
-
-    #[test]
-    fn fallback_depth_2_is_second_node() {
-        let cands = vec![
-            node_cand(100, 0x11),
-            node_cand(200, 0x22),
-            node_cand(300, 0x33),
-        ];
-        let f2 = fallback_proposer(&cands, 2);
-        assert_eq!(f2, [0x22; 32]);
-    }
-
-    // spec: lottery is single-class, candidates are only nodes; fallback_skips_accounts removed as obsolete.
-
-    #[test]
-    fn fallback_exhausted_is_no_proposer() {
-        let cands = vec![node_cand(100, 0x11), node_cand(200, 0x22)];
-        let f100 = fallback_proposer(&cands, 100);
-        assert_eq!(f100, NO_PROPOSER);
-    }
-
-    #[test]
-    fn fallback_empty_candidates_is_no_proposer() {
-        assert_eq!(fallback_proposer(&[], 5), NO_PROPOSER);
-        assert_eq!(fallback_proposer(&[], 1), NO_PROPOSER);
+    fn no_proposer_before_window_two_with_no_electorate_or_past_the_cascade() {
+        let agg = [0x5A; 32];
+        let electorate = ids(&[0x11, 0x22]);
+        assert_eq!(proposer_at(0, &agg, &electorate, 1), NO_PROPOSER);
+        assert_eq!(proposer_at(1, &agg, &electorate, 1), NO_PROPOSER);
+        assert_eq!(proposer_at(5, &agg, &[], 1), NO_PROPOSER);
+        assert_eq!(proposer_at(5, &agg, &electorate, 3), NO_PROPOSER);
+        assert_eq!(proposer_at(5, &agg, &electorate, 0), NO_PROPOSER);
+        assert_ne!(proposer_at(5, &agg, &electorate, 2), NO_PROPOSER);
     }
 
     // ============ Phase C: control_set ============
@@ -906,40 +915,80 @@ mod tests {
     // ============ Phase D: Canonical acceptance ============
 
     #[test]
-    fn validate_proposer_canonical_depth_1() {
-        let cands = vec![node_cand(100, 0x11), node_cand(200, 0x22)];
-        let (pk, sk) = keypair();
-        let (node_id, rec) = make_node(*pk.as_bytes());
-        let _ = (node_id, rec, pk, sk);
-        let mut h = stub_header([0x11; 32]); // matches first node candidate
-        h.fallback_depth = 1;
-        assert_eq!(validate_proposer_is_canonical(&h, &cands), Ok(()));
-    }
-
-    #[test]
-    fn validate_proposer_rejects_mismatch() {
-        let cands = vec![node_cand(100, 0x11), node_cand(200, 0x22)];
-        let mut h = stub_header([0x99; 32]); // doesn't match
+    fn validate_proposer_accepts_the_lowest_ticket_at_depth_1() {
+        let agg = [0x5A; 32];
+        let electorate = ids(&[0x11, 0x22, 0x33]);
+        let mut h = stub_header(proposer_at(100, &agg, &electorate, 1));
         h.fallback_depth = 1;
         assert_eq!(
-            validate_proposer_is_canonical(&h, &cands),
-            Err(AcceptanceError::ProposerNotCanonical)
+            validate_proposer_is_canonical(&h, &agg, &electorate),
+            Ok(())
         );
+        h.fallback_depth = 2;
+        h.proposer_node_id = proposer_at(100, &agg, &electorate, 2);
+        assert_eq!(
+            validate_proposer_is_canonical(&h, &agg, &electorate),
+            Ok(())
+        );
+    }
+
+    // Rejects acceptance of a proposer other than the one the ticket names at the declared depth.
+    #[test]
+    fn validate_proposer_rejects_any_other_node() {
+        let agg = [0x5A; 32];
+        let electorate = ids(&[0x11, 0x22, 0x33]);
+        let canonical = proposer_at(100, &agg, &electorate, 1);
+        for other in electorate.iter().filter(|id| **id != canonical) {
+            let mut h = stub_header(*other);
+            h.fallback_depth = 1;
+            assert_eq!(
+                validate_proposer_is_canonical(&h, &agg, &electorate),
+                Err(AcceptanceError::ProposerNotCanonical)
+            );
+        }
     }
 
     #[test]
     fn validate_proposer_no_proposer_on_empty() {
-        // Genesis cold-start: empty W-2 set → expected proposer = NO_PROPOSER.
+        // Genesis cold-start: empty electorate → expected proposer = NO_PROPOSER.
         // A header claiming NO_PROPOSER as its proposer validates; any real id rejects.
+        let agg = [0u8; 32];
         let mut h = stub_header(NO_PROPOSER);
         h.fallback_depth = 1;
-        assert_eq!(validate_proposer_is_canonical(&h, &[]), Ok(()));
+        assert_eq!(validate_proposer_is_canonical(&h, &agg, &[]), Ok(()));
         let mut h2 = stub_header([0x11; 32]);
         h2.fallback_depth = 1;
         assert_eq!(
-            validate_proposer_is_canonical(&h2, &[]),
+            validate_proposer_is_canonical(&h2, &agg, &[]),
             Err(AcceptanceError::ProposerNotCanonical)
         );
+    }
+
+    // Issue #18, S3. Rejects a follower that reads, or lets through, a value in a field of the
+    // lottery: each of the four, set to anything but zero, is refused; all four zero pass.
+    #[test]
+    fn a_header_with_a_non_zero_lottery_field_is_refused() {
+        let mut zero = stub_header([0x55; 32]);
+        zero.target = 0;
+        zero.included_reveals_root = [0u8; 32];
+        zero.winner_endpoint = [0u8; 32];
+        zero.winner_id = [0u8; 32];
+        assert_eq!(validate_retired_fields(&zero), Ok(()));
+        let edits: [fn(&mut ProposalHeader); 5] = [
+            |h| h.target = 1,
+            |h| h.target = u128::MAX,
+            |h| h.included_reveals_root[31] = 1,
+            |h| h.winner_endpoint[0] = 1,
+            |h| h.winner_id[16] = 0x80,
+        ];
+        for edit in edits {
+            let mut h = zero.clone();
+            edit(&mut h);
+            assert_eq!(
+                validate_retired_fields(&h),
+                Err(AcceptanceError::RetiredFieldNotZero)
+            );
+        }
     }
 
     #[test]
@@ -960,57 +1009,6 @@ mod tests {
         assert_eq!(validate_bundles_threshold(100, 100), Ok(()));
     }
 
-    #[test]
-    fn validate_included_reveals_matching() {
-        let reveals = vec![[0x11; 32], [0x22; 32], [0x33; 32]];
-        assert_eq!(validate_included_reveals(&reveals, &reveals), Ok(()));
-    }
-
-    #[test]
-    fn validate_included_reveals_missing() {
-        let proposer = vec![[0x11; 32], [0x22; 32]];
-        let cemented = vec![[0x11; 32], [0x22; 32], [0x33; 32]];
-        assert_eq!(
-            validate_included_reveals(&proposer, &cemented),
-            Err(AcceptanceError::IncludedRevealsMismatch)
-        );
-    }
-
-    #[test]
-    fn validate_included_reveals_extra() {
-        let proposer = vec![[0x11; 32], [0x22; 32], [0x99; 32]];
-        let cemented = vec![[0x11; 32], [0x22; 32]];
-        assert_eq!(
-            validate_included_reveals(&proposer, &cemented),
-            Err(AcceptanceError::IncludedRevealsMismatch)
-        );
-    }
-
-    #[test]
-    fn validate_winner_matches_argmin() {
-        let cands = vec![node_cand(100, 0x11), node_cand(200, 0x22)];
-        let mut h = stub_header([0x55; 32]);
-        h.winner_id = [0x11; 32];
-        assert_eq!(validate_winner(&h, &cands), Ok(()));
-    }
-
-    #[test]
-    fn validate_winner_mismatch_id() {
-        let cands = vec![node_cand(100, 0x11)];
-        let mut h = stub_header([0x55; 32]);
-        h.winner_id = [0x99; 32]; // wrong id
-        assert_eq!(
-            validate_winner(&h, &cands),
-            Err(AcceptanceError::WrongWinner)
-        );
-    }
-
-    #[test]
-    fn validate_winner_empty_candidates() {
-        let h = stub_header([0x55; 32]);
-        assert_eq!(validate_winner(&h, &[]), Err(AcceptanceError::WrongWinner));
-    }
-
     // ============ Phase E: Finalization ============
 
     #[test]
@@ -1026,11 +1024,5 @@ mod tests {
     #[test]
     fn finalization_cemented_above_quorum() {
         assert_eq!(finalization_status(100, 100), FinalizationStatus::Cemented);
-    }
-
-    #[test]
-    fn leader_penalty_returns_proposer() {
-        let h = stub_header([0xDE; 32]);
-        assert_eq!(leader_penalty_excluded_node(&h), [0xDE; 32]);
     }
 }

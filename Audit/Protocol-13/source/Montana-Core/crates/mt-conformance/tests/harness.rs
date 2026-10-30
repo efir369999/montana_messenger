@@ -204,18 +204,20 @@ fn a_changed_ratio_breaks_the_build_with_both_ratios() {
 }
 
 #[test]
-fn a_changed_emission_row_breaks_the_build_with_both_schedules() {
+fn a_changed_window_credit_breaks_the_build_with_both_values() {
     let md = canon();
-    let line = row_line(&md, "emission_schedule");
-    let (doctored, old_mint, new_mint) = bump_last_number(&line);
-    let Some(mt_genesis::Entry::Schedule(_, rows)) = mt_genesis::get("emission_schedule") else {
-        panic!("the Decree holds the schedule");
-    };
-    assert_eq!(old_mint, rows[0].1);
+    let line = row_line(&md, "window_credit");
+    let (doctored, old, new) = bump_last_number(&line);
+    // One coin for every second of a window to every machine living in it: the constitutional
+    // layer fixes the number, and the set and the code hold the same one.
+    assert_eq!(old, 60);
+    assert_eq!(Some(old), mt_genesis::scalar("window_credit"));
     let err = check_all(&doctored_canon(&md, &line, &doctored)).expect_err("the gate must refuse");
-    assert!(err.contains("emission_schedule"), "{err}");
-    assert!(err.contains(&old_mint.to_string()), "{err}");
-    assert!(err.contains(&new_mint.to_string()), "{err}");
+    assert!(err.contains("window_credit"), "{err}");
+    assert!(
+        err.contains(&format!("the set holds {new}, the code holds {old}")),
+        "{err}"
+    );
 }
 
 #[test]
@@ -1113,6 +1115,33 @@ fn a_heading_that_disagrees_with_its_row_breaks_the_build_with_both_values() {
     assert!(err.contains(&held.to_string()), "{err}");
 }
 
+// A parameter of the proof scheme stands in the table of the scheme and not in the Decree, and its
+// heading is held against the code that proves. The wrong implementation this refuses: one that
+// lets a heading the Decree does not hold pass unread, under which the count of queries a section
+// derives moves away from the count every proof is drawn with and the build stays green.
+#[test]
+fn a_heading_of_the_proof_scheme_that_disagrees_with_the_prover_breaks_the_build() {
+    let md = canon();
+    let heading = md
+        .lines()
+        .find(|line| line.starts_with("### `proof_queries`"))
+        .expect("the set derives the count of queries under its own heading")
+        .to_string();
+    let held = mt_proof::params::QUERIES as u64;
+    assert_eq!(
+        mt_genesis::scalar("proof_queries"),
+        None,
+        "the Decree does not name it"
+    );
+    let doctored = heading.replace(&format_number(held), &format_number(held + 1));
+    assert_ne!(doctored, heading, "the heading states the value of its row");
+    let err = check_derivation_headings(&md.replace(&heading, &doctored))
+        .expect_err("the gate must refuse a heading that disagrees with the prover");
+    assert!(err.contains("proof_queries"), "{err}");
+    assert!(err.contains(&(held + 1).to_string()), "{err}");
+    assert!(err.contains(&held.to_string()), "{err}");
+}
+
 // The spelling the set writes large numbers in: groups of three, separated by a space.
 fn format_number(value: u64) -> String {
     let digits = value.to_string();
@@ -1225,6 +1254,34 @@ fn every_numeral_of_the_sources_stands_in_a_register() {
     // denominator: what is counted is the declarations of the sources, not the rows somebody
     // remembered to write.
     check_every_numeral_is_registered().expect("no numeral of this tree stands outside a register");
+}
+
+// No module of the verdict reads a clock, and the gate that holds it reads a clock wherever one is
+// named. The named wrong implementations: a door that waits on `Instant` or `std::thread::sleep`
+// before it judges — its name and its line come back; and a gate that read the comments, the tests
+// or the proofs of a source, or a longer identifier holding the name — it would refuse a tree whose
+// library reads no clock.
+#[test]
+fn a_clock_read_by_a_module_of_the_verdict_breaks_the_build() {
+    check_no_clock_in_the_verdict().expect("no module of the verdict reads a clock");
+    let reading = "use std::time::Instant;\nfn judge() {\n    let at = Instant::now();\n    std::thread::sleep(at.elapsed());\n    let _ = std::time::SystemTime::now();\n}\n";
+    assert_eq!(
+        clocks_read_by(reading),
+        vec![
+            (1, "std::time"),
+            (1, "Instant"),
+            (3, "Instant"),
+            (4, "sleep"),
+            (5, "std::time"),
+            (5, "SystemTime"),
+        ]
+    );
+    let silent = "// an Instant of the protocol is a round\nfn asleep_count(instantly: u64) -> u64 { instantly }\n#[cfg(test)]\nmod tests {\n    use std::time::Instant;\n}\n";
+    assert!(
+        clocks_read_by(silent).is_empty(),
+        "{:?}",
+        clocks_read_by(silent)
+    );
 }
 
 // And the rows of the tables are read as the lines of the blocks are.

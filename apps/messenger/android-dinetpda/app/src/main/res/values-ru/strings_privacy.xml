@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The privacy page (iOS PrivacyView, MontanaSettings.swift:1702-1946; Localizable.xcstrings ru). -->
+<resources>
+    <string name="pr_photos">Фото</string>
+    <string name="pr_full_access">Полный доступ</string>
+    <string name="pr_limited_access">Ограниченный доступ</string>
+    <string name="pr_none">Нет</string>
+    <string name="pr_show_coins">Показывать мои монеты</string>
+    <string name="pr_show_coins_sub">Ваше имя и монеты стоят в топе Montana для всех, и собеседники видят ваши монеты. Выключено — вас нет в топе.</string>
+    <string name="pr_delete_account">Удалить аккаунт</string>
+    <string name="pr_delete_account_q">Удалить аккаунт?</string>
+    <string name="pr_delete_account_msg">Ваш аккаунт удаляется: это устройство стирает вашу личность из 24 слов, а ваше публичное имя уходит с узлов Montana. История остаётся здесь запечатанной и открывается снова только теми же 24 словами — на этом устройстве или на другом, где уже есть копия. Никто не хранит слова за вас: сначала запишите их: Настройки → Приватность → Сид-фраза. Удаление приложения стирает и историю.</string>
+    <string name="pr_delete_account_coins">На этом аккаунте %1$s монет. Они остаются за его 24 словами и вернутся только с ними.</string>
+</resources>

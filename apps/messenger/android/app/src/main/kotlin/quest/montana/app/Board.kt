@@ -1942,6 +1942,7 @@ class FeedPane(private val act: MainActivity) : FrameLayout(act) {
         }, LayoutParams(MATCH, MATCH))
         addView(empty, LayoutParams(WRAP, WRAP, Gravity.CENTER))
         addView(write, PageCorner.params(c))
+        ListFrame.attach(this, "feed", corner = write)
     }
     /** The bar stands: the posts keep room under it and the write button steps above it, as the music's plus. */
     fun reserve(on: Boolean) {

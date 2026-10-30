@@ -55,23 +55,31 @@ fn commitment_of(held: &Held) -> Digest {
     poseidon::hash_elements(domain::MT_NOTE_CM, &elements)
 }
 
-fn admitted_of_one(machine_secret: &[u8; 32]) -> (Digest, Vec<Digest>) {
-    let naming = poseidon::hash_bytes_twice(domain::MT_KEY_HALVES, machine_secret).1;
-    let leaf = mt_proof::admitted::leaf_of(&naming);
-    let empties = mt_proof::admitted::empty_internals(depth());
-    let mut current = leaf;
-    let mut siblings = Vec::new();
-    for empty in empties.iter().take(depth()) {
-        siblings.push(*empty);
-        current = mt_proof::admitted::node(&current, empty);
-    }
-    (current, siblings)
+// The tree of credited rights as the proposal of the window after `window` leaves it when that
+// window's cement held this machine alone: its part at position zero, and the path it walks.
+fn credited_of_one(machine_secret: &[u8; 32], window: u64) -> (Digest, Vec<Digest>) {
+    let part = mt_derive::nullifier::part(machine_secret, window).expect("a secret of the family");
+    let mut tree = mt_proof::credited::Tree::new(depth());
+    assert!(tree.credit(&[part]).is_ok(), "a tree of one part");
+    (tree.root(), tree.path(0).expect("the position written"))
+}
+
+// What a right is worth: the window's credit, one coin for every second of a window (the Decree's
+// `window_credit`; Consensus, "The right to a window's coin").
+fn credit() -> u128 {
+    u128::from(mt_genesis::scalar("window_credit").expect("the Decree names the credit"))
 }
 
 fn a_real_frame() -> (Frame, Places, Digest, Digest) {
     let places = Places::of(depth()).expect("the Decree names the shape of a frame");
     let amounts: [[u128; 4]; 3] = [
-        [5_000_000_000, 3_000_000_000, 6_000_000_000, 2_000_000_000],
+        // The first position of the first spend is a right, worth the window's credit.
+        [
+            credit(),
+            3_000_000_000,
+            2_000_000_000 + credit(),
+            1_000_000_000,
+        ],
         [13_000_000_000, 1, 1, 13_000_000_000],
         [1 << 40, 1 << 20, 1 << 20, 1 << 40],
     ];
@@ -105,11 +113,11 @@ fn a_real_frame() -> (Frame, Places, Digest, Digest) {
     for held in consumed.iter_mut() {
         held.siblings = paths[held.position as usize].clone();
     }
-    // The first redemption of the frame consumes a right: the machine's membership in the tree
-    // of admitted machines, its share riding the cells an amount rides in, its moment computed.
+    // The first redemption of the frame consumes a right: the part of its window in the tree of
+    // credited rights, its one coin riding the cells an amount rides in, its moment computed.
     let machine_secret = [0x77u8; 32];
-    let (admitted_root, admitted_siblings) = admitted_of_one(&machine_secret);
     let due = 1000u64;
+    let (credited_root, credited_siblings) = credited_of_one(&machine_secret, due);
     let window = mt_derive::nullifier::claim_window(&machine_secret, due)
         .expect("the Decree names the spread");
     let spends: Vec<Spend> = (0..3)
@@ -146,10 +154,10 @@ fn a_real_frame() -> (Frame, Places, Digest, Digest) {
         machine_secret,
         window: due,
         value: amounts[0][0],
-        siblings: admitted_siblings,
+        siblings: credited_siblings,
         position: 0,
     });
-    (Frame { spends, window }, places, root, admitted_root)
+    (Frame { spends, window }, places, root, credited_root)
 }
 
 // A machine that holds one right and nothing else. Five of its six positions have nothing to put
@@ -158,13 +166,18 @@ fn a_real_frame() -> (Frame, Places, Digest, Digest) {
 // what the named wrong implementation cannot build: a circuit knowing only a note and a right
 // leaves that machine unable to compose a frame at all, so nothing minted ever becomes spendable.
 fn a_first_frame() -> (Frame, Places, Digest, Digest) {
+    a_first_frame_worth(credit())
+}
+
+// The same machine's frame with the right written at a worth of the caller's choosing, and the
+// coin it pays out at that same worth, so the balance of the spend holds whatever is written.
+fn a_first_frame_worth(worth: u128) -> (Frame, Places, Digest, Digest) {
     let places = Places::of(depth()).expect("the Decree names the shape of a frame");
     let machine_secret = [0x77u8; 32];
-    let (admitted_root, admitted_siblings) = admitted_of_one(&machine_secret);
     let due = 1000u64;
+    let (credited_root, credited_siblings) = credited_of_one(&machine_secret, due);
     let window = mt_derive::nullifier::claim_window(&machine_secret, due)
         .expect("the Decree names the spread");
-    let share = 13_000_000_000u128;
     let mut spends: Vec<Spend> = (0..3)
         .map(|spend| Spend {
             consumed: (0..2)
@@ -178,9 +191,9 @@ fn a_first_frame() -> (Frame, Places, Digest, Digest) {
                     )
                     .1
                     .bytes(),
-                    // Only the first spend pays out: it carries the whole share, the rest create
-                    // nothing, and the shape says nothing about which did which.
-                    value: if spend == 0 && at == 0 { share } else { 0 },
+                    // Only the first spend pays out: it carries the coin, the rest create nothing,
+                    // and the shape says nothing about which did which.
+                    value: if spend == 0 && at == 0 { worth } else { 0 },
                     note_pk: [0x60 + (spend * 2 + at) as u8; 32],
                     rcm: [0x90 + (spend * 2 + at) as u8; 32],
                 })
@@ -194,8 +207,8 @@ fn a_first_frame() -> (Frame, Places, Digest, Digest) {
     spends[0].consumed[0] = Consumed::Right(HeldRight {
         machine_secret,
         window: due,
-        value: share,
-        siblings: admitted_siblings,
+        value: worth,
+        siblings: credited_siblings,
         position: 0,
     });
     // The root of the tree of notes as it stands when nothing has been witnessed yet: the first
@@ -204,17 +217,17 @@ fn a_first_frame() -> (Frame, Places, Digest, Digest) {
         Frame { spends, window },
         places,
         notes::empty_root(),
-        admitted_root,
+        credited_root,
     )
 }
 
 #[test]
 fn the_first_value_of_the_network_is_a_right_redeemed_beside_filler() {
-    let (frame, places, root, admitted_root) = a_first_frame();
+    let (frame, places, root, credited_root) = a_first_frame();
     let held = frame::description(&places, ROWS_LOG2).expect("a lawful height");
-    let (trace, _) = frame::trace_of(&places, &frame, &admitted_root, ROWS_LOG2)
+    let (trace, _) = frame::trace_of(&places, &frame, &credited_root, ROWS_LOG2)
         .expect("a machine holding one right writes a frame");
-    let public = frame::public_of(&frame, &places, &root, &admitted_root).expect("a public input");
+    let public = frame::public_of(&frame, &places, &root, &credited_root).expect("a public input");
     assert!(
         held.satisfied_by(&trace, &poseidon::limbs_of(&public)),
         "a frame of one right and filler does not satisfy its own description"
@@ -223,10 +236,31 @@ fn the_first_value_of_the_network_is_a_right_redeemed_beside_filler() {
     assert_eq!(mt_proof::scheme::verify(&held, &public, &bytes), Ok(()));
 }
 
+// THE FRAME PRICES A RIGHT (Protocol-13 item 3, issue #14 A2): a right written one coin above the
+// window's credit, its spend balanced at that worth, satisfies no description — before the rule
+// of a right's worth this very frame satisfied it, and its coin became spendable (the finding of
+// `montana-node/tests/issuance_audit.rs`). One coin below is refused alike.
+#[test]
+fn a_right_worth_anything_but_the_credit_satisfies_no_description() {
+    for worth in [credit() + 1, credit() - 1, 0] {
+        let (frame, places, root, credited_root) = a_first_frame_worth(worth);
+        let held = frame::description(&places, ROWS_LOG2).expect("a lawful height");
+        let (trace, _) = frame::trace_of(&places, &frame, &credited_root, ROWS_LOG2)
+            .expect("a frame of any worth is written");
+        let public =
+            frame::public_of(&frame, &places, &root, &credited_root).expect("a public input");
+        assert!(
+            !held.satisfied_by(&trace, &poseidon::limbs_of(&public)),
+            "a right written at {worth}, not at the credit {}, satisfies its description",
+            credit()
+        );
+    }
+}
+
 #[test]
 fn a_real_frame_is_proven_verified_and_measured() {
-    let (frame, places, root, admitted_root) = a_real_frame();
-    assert_eq!(places.blocks(), 330, "the blocks the set counts");
+    let (frame, places, root, credited_root) = a_real_frame();
+    assert_eq!(places.blocks(), 336, "the blocks the set counts");
     let rows = 1usize << ROWS_LOG2;
     assert!(
         places.blocks() * mt_proof::circuit::permutation::period() <= rows,
@@ -242,12 +276,12 @@ fn a_real_frame_is_proven_verified_and_measured() {
     );
 
     let (trace, reached) =
-        frame::trace_of(&places, &frame, &admitted_root, ROWS_LOG2).expect("a written frame");
+        frame::trace_of(&places, &frame, &credited_root, ROWS_LOG2).expect("a written frame");
     assert_eq!(
         reached, root,
-        "every note proves against one root, and the right against the tree of machines"
+        "every note proves against one root, and the right against the tree of credited rights"
     );
-    let public = frame::public_of(&frame, &places, &root, &admitted_root).expect("a public input");
+    let public = frame::public_of(&frame, &places, &root, &credited_root).expect("a public input");
     let bytes = mt_proof::scheme::prove(&held, &public, &trace).expect("a true frame proves");
     assert_eq!(mt_proof::scheme::verify(&held, &public, &bytes), Ok(()));
 

@@ -41,7 +41,9 @@ pub struct ProtocolParams {
     pub d0: u64,
     pub reserved_m0: [u8; 8],
     pub tau2_windows: u64,
-    // spec, section "Emission": const emission `reward_moneta(W) = EMISSION_moneta`.
+    // Kept in the Decree layout (its bytes are bound by the Genesis State Hash), and read by no
+    // issuance since issue #18: a window credits one coin for every second of it to every living
+    // node (mt-account `window_credit_moneta`).
     pub emission_moneta: u128,
     pub target_zero: [u8; 32],
     pub confirmation_quorum_num: u8,
@@ -113,11 +115,12 @@ pub fn genesis_params() -> &'static ProtocolParams {
         participation_dead_zone_high: 95,
         d_adjustment_rate_num: 3,
         d_adjustment_rate_den: 100,
-        // TEST CONFIG (devnet, spec 2387): a candidate enters within 1 window.
-        // PRODUCTION = 20_160 (= τ₂). Decoupled from tau2_windows in required_ssha_length.
-        ssha_entry_windows: 1,
-        // TEST CONFIG: admission to Active every window. PRODUCTION = 336.
-        selection_interval: 1,
+        // Production (spec 2387): a candidate enters after τ₂ windows of SSHA. Decoupled
+        // from tau2_windows in required_ssha_length. The devnet value 1 is gone (issue #17 K5):
+        // the Genesis State Hash moved with it, see conformance/spec-v35.27.0.contract.
+        ssha_entry_windows: 20_160,
+        // Production: admission to Active every 336 windows (τ₂ / 60).
+        selection_interval: 336,
         admission_divisor: 130,
         candidate_expiry_windows: 60_480,
         adaptive_ssha_threshold: 1,
@@ -162,11 +165,10 @@ mod tests {
         assert_eq!(p.participation_dead_zone_high, 95);
         assert_eq!(p.d_adjustment_rate_num, 3);
         assert_eq!(p.d_adjustment_rate_den, 100);
-        // devnet TEST CONFIG: ssha_entry_windows=1, selection_interval=1
-        // (production = 20_160 / 336). Calibration values are author-chosen and
-        // decoupled from tau2_windows in required_ssha_length / is_selection_window.
-        assert_eq!(p.ssha_entry_windows, 1);
-        assert_eq!(p.selection_interval, 1);
+        // Production values (issue #17 K5): decoupled from tau2_windows in
+        // required_ssha_length / is_selection_window, equal to the spec Decree.
+        assert_eq!(p.ssha_entry_windows, 20_160);
+        assert_eq!(p.selection_interval, 336);
         assert_eq!(p.admission_divisor, 130);
         assert_eq!(p.candidate_expiry_windows, 60_480);
         assert_eq!(p.adaptive_ssha_threshold, 1);
@@ -177,10 +179,10 @@ mod tests {
     }
 
     #[test]
-    fn ssha_entry_is_devnet_one_window() {
-        // devnet TEST CONFIG: a candidate enters in 1 window (production = τ₂).
+    fn ssha_entry_is_tau2() {
+        // Rejects the devnet Decree where a candidate entered in 1 window.
         let p = genesis_params();
-        assert_eq!(p.ssha_entry_windows, 1);
+        assert_eq!(p.ssha_entry_windows, p.tau2_windows);
     }
 
     #[test]
@@ -197,11 +199,10 @@ mod tests {
 
     #[test]
     fn selection_interval_divides_tau2() {
-        // devnet TEST CONFIG: selection_interval=1 divides τ₂; ratio = τ₂
-        // (production selection_interval=336 → ratio 60).
+        // selection_interval=336 divides τ₂ sixty times.
         let p = genesis_params();
         assert_eq!(p.tau2_windows % p.selection_interval, 0);
-        assert_eq!(p.tau2_windows / p.selection_interval, p.tau2_windows);
+        assert_eq!(p.tau2_windows / p.selection_interval, 60);
     }
 
     #[test]

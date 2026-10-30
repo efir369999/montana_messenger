@@ -370,7 +370,7 @@ enum MontanaNotify {
         }
         keptToldAt[chat] = Date()
         let content = UNMutableNotificationContent()
-        // THE WORD SAYS WHAT A LEVEL IS (the author's word 16.10.2026 18:29 MSK: «the system notification must briefly explain the
+        // THE WORD SAYS WHAT A LEVEL IS (the author's word 16.10.2026 15:29 UTC: «the system notification must briefly explain the
         // essence of Montana's levels»): the fact, then the rule that made it.
         let body = String(format: String(localized: "Their phone keeps the message you deleted for everyone. In Montana levels open functions: from level %lld a person can forbid deletion on their phone.", bundle: MTLanguage.bundle), MTLevelAccess.Feature.keepDeleted.level)
         decorate(content, from: from, chat: chat, body: body, countUnread: false)
@@ -407,7 +407,7 @@ enum MontanaNotify {
             plate.interruptionLevel = .active
             plate.sound = (MontanaKeychain.get("notifSound")?.first ?? 1) == 1 ? .default : nil
         }
-        // THE GROUP WEARS ITS OWN FACE HERE TOO (the author's word 17.10.2026 16:0x MSK: «the notifications' thumbnails for groups
+        // THE GROUP WEARS ITS OWN FACE HERE TOO (the author's word 17.10.2026 13:0x UTC: «the notifications' thumbnails for groups
         // and channels»): this banner left as a bare plate with the app's icon, while the extension's twin of the same letter wore
         // a face. The group's face is mirrored by its key (ChatStore.mirrorFaceToShared); a group without one wears the list's circle.
         let content = sendersFace(plate, from: chat)
@@ -420,8 +420,8 @@ enum MontanaNotify {
         }
     }
 
-    /// A DELETED LETTER OR CONVERSATION LEAVES NO BANNER BEHIND (the critic R-4, 11.10.2026; the author's word 11.10.2026 20:1x
-    /// MSK: «check the whole architecture of the chats' time chains, so there are no holes by the constitution»): only the opening
+    /// A DELETED LETTER OR CONVERSATION LEAVES NO BANNER BEHIND (the critic R-4, 11.10.2026; the author's word 11.10.2026 17:1x
+    /// UTC: «check the whole architecture of the chats' time chains, so there are no holes by the constitution»): only the opening
     /// of a chat took its banners down (markRead), so a letter its writer erased for everyone, or a conversation erased at either
     /// end, still stood on the lock screen in its own words. A banner names its chat (userInfo «chat», the thread) and its letter
     /// (userInfo «mid», the extension's and the call's; the app's own by its identifier: the name, «group-» and «pin-» forms).

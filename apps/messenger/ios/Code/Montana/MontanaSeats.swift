@@ -357,7 +357,7 @@ final class MTSeats: ObservableObject {
         guard let rec = record(seat.id), !rec.words.isEmpty, let values = shelfValues(seat.id) else { return nil }
         let twin = shelfOpen(values, "mt.twin.ref").flatMap { String(data: $0, encoding: .utf8) } ?? ""
         return MTShelfPost.Person(id: seat.id, name: seat.name, glyph: seat.glyph, twin: twin, words: rec.words,
-                                  pipes: shelfBook(values, "pipeSecrets").merging(shelfSealed(metFile(seat.id), metBinding)) { a, _ in a },
+                                  pipes: MTPipeKey.book(shelfOpen(values, "pipeSecrets")).merging(metPipes(seat.id)) { a, _ in a },
                                   invites: shelfBook(values, "rdvCards").merging(shelfBook(values, "rdvPermanent")) { a, _ in a },
                                   cardKeys: shelfBook(values, "cardKeys"),
                                   outbox: rec.chain["mt.outbox.key"].flatMap { k in
@@ -376,10 +376,18 @@ final class MTSeats: ObservableObject {
         guard let raw = try? Data(contentsOf: url), let plain = MontanaLocalVault.open(raw, binding) else { return nil }
         return try? JSONDecoder().decode(T.self, from: plain)
     }
-    private static func shelfSealed(_ url: URL, _ binding: Data) -> [String: Data] { shelfSealed(url, binding, as: [String: Data].self) ?? [:] }
+    /// The pipes a person on the shelf was met by, read by their one owner's form (MTPipeKey.book).
+    private static func metPipes(_ id: String) -> [String: MTPipeKey] {
+        guard let raw = try? Data(contentsOf: metFile(id)) else { return [:] }
+        return MTPipeKey.book(MontanaLocalVault.open(raw, metBinding))
+    }
     private static func shelfInbox(_ id: String) -> [[String: String]] { shelfSealed(inboxFile(id), inboxBinding, as: [[String: String]].self) ?? [] }
     private static func shelfSeal<T: Encodable>(_ value: T, _ url: URL, _ binding: Data) -> Bool {
-        guard let plain = try? JSONEncoder().encode(value), let sealed = MontanaLocalVault.seal(plain, binding) else { return false }
+        guard let plain = try? JSONEncoder().encode(value) else { return false }
+        return shelfWrite(plain, url, binding)
+    }
+    private static func shelfWrite(_ plain: Data, _ url: URL, _ binding: Data) -> Bool {
+        guard let sealed = MontanaLocalVault.seal(plain, binding) else { return false }
         return (try? sealed.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil
     }
     /// Rows a person on the shelf received go into their inbox on the shelf. Refused while a move runs or once the person is
@@ -397,18 +405,19 @@ final class MTSeats: ObservableObject {
         }
     }
     /// A pipe a person on the shelf was met by, kept beside their store until their lift.
-    static func meetOnShelf(_ id: String, ref: String, secret: Data) -> Bool {
+    static func meetOnShelf(_ id: String, ref: String, secret: MTPipeKey) -> Bool {
         // MAIN-SAFE-SYNC: called only from the shelf's own detached task (MTShelfPost.answer), never from the main thread.
         shelfIO.sync {
             let b = book()
             guard b.step == nil, b.active != id else { return false }
-            var m = shelfSealed(metFile(id), metBinding)
+            var m = metPipes(id)
             if let have = m[ref] { return have == secret }
             m[ref] = secret
-            return shelfSeal(m, metFile(id), metBinding)
+            guard let plain = MTPipeKey.form(m) else { return false }
+            return shelfWrite(plain, metFile(id), metBinding)
         }
     }
-    /// THE PAIR OF TWO PERSONS OF THIS PHONE (the author's word 11.10.2026 17:13 MSK, No.62: «with several accounts, an option in a
+    /// THE PAIR OF TWO PERSONS OF THIS PHONE (the author's word 11.10.2026 14:13 UTC, No.62: «with several accounts, an option in a
     /// transfer to send to oneself on another account»): the person seated meets a person on the shelf here, on the phone that holds
     /// both -- an encapsulation to the shelf person's card, accepted by that card's own key -- so the pipe is born in the seated
     /// book and among the pipes the shelf person was met by, with no node in the meeting. It rides the box like every pipe, rings
@@ -421,14 +430,14 @@ final class MTSeats: ObservableObject {
             return nil
         }
         let theirs = Set(p.pipes.values)
-        if let have = MTPipeBook.all().first(where: { c in MTPipeBook.secret(for: c).map { s in theirs.contains(s) } ?? false }) {
+        if let have = MTPipeBook.all().first(where: { c in MTPipeBook.key(for: c).map { s in theirs.contains(s) } ?? false }) {
             return have
         }
         for body in p.invites.values where 1184 <= body.count {
             let root = Data(body.prefix(1184))
             guard let sk = p.cardKeys[root.base64urlNoPad], let met = MontanaFirstContact.meet(contactRoot: root) else { continue }
-            guard let secret = MontanaFirstContact.accept(ciphertext: met.ciphertext, contactSecret: sk, contactRoot: root),
-                  MTPipeBook.secret(for: met.reference) == secret, meetOnShelf(id, ref: met.reference, secret: secret) else {
+            guard let secret = MontanaFirstContact.accept(ciphertext: met.ciphertext, contactSecret: sk, contactRoot: root).map(MTPipeKey.init),
+                  MTPipeBook.key(for: met.reference) == secret, meetOnShelf(id, ref: met.reference, secret: secret) else {
                 MTPipeBook.forget(met.reference)
                 continue
             }
@@ -443,14 +452,14 @@ final class MTSeats: ObservableObject {
     static func landShelf() {
         shelfIO.async {
             guard let id = book().active else { return }
-            // THE PIPES THE PERSON WAS MET BY WHILE WAITING ARE BORN IN THEIR OWN BOOK (the author's word 11.10.2026 19:0x MSK: «at
-            // 18:51 I sent an internal transfer of 4 million in Business, they did not come»). T1, 15:51:48Z: the person seated paid
+            // THE PIPES THE PERSON WAS MET BY WHILE WAITING ARE BORN IN THEIR OWN BOOK (the author's word 11.10.2026 16:0x UTC: «at
+            // 15:51 I sent an internal transfer of 4 million in Business, they did not come»). T1, 15:51:48Z: the person seated paid
             // a person on the shelf on the pipe born on this phone (pairWithShelf), which stood only among the shelf's met pipes; the
             // receiver was seated seven seconds later and never listened on it -- a pipe met by a card is born at the lift by its
             // first letter's row, a pipe born here had no such row. Every met pipe is born now at the lift and at every pickup.
-            let met = shelfSealed(metFile(id), metBinding)
+            let met = metPipes(id)
             if !met.isEmpty {
-                let born = met.values.filter { secret in MTPipeBook.establish(secret: secret) != nil }.count
+                let born = met.values.filter { pipe in MTPipeBook.establish(pipe: pipe) != nil }.count
                 if born == met.count { try? FileManager.default.removeItem(at: metFile(id)) }
                 MontanaTrace.mark("shelf_met", "seat=" + id + " pipes=" + String(born) + " of " + String(met.count))
                 if 0 < born { MontanaWakePush.registerConvs() }
@@ -681,7 +690,7 @@ final class MTSeats: ObservableObject {
 
 
 // ════════════════════════════════════════════════════════════ THE PERSONS ON THE SHELF ARE ALIVE (the author's words 07.10.2026
-// 19:1x-19:2x MSK: «so the extra accounts are dead until I enter them -- a critical error, and on our TimeChain it is solved already
+// 16:1x-16:2x UTC: «so the extra accounts are dead until I enter them -- a critical error, and on our TimeChain it is solved already
 // -- make the same one system by our constitution»; «carry it to the end and close the construction -- we are a decentralised
 // ecosystem with a constitution of 13 points»). Nothing of the person seated is read or written here: every key comes from the shelf
 // (tools/mt-live-seats-check.py). ════════════════════════════════════════════════════════════
@@ -690,7 +699,7 @@ enum MTShelfPost {
         let id: String, name: String, glyph: String
         var twin: String
         let words: String
-        let pipes: [String: Data]      // a correspondence's reference -> its secret: their book and the pipes met on the shelf
+        let pipes: [String: MTPipeKey] // a correspondence's reference -> its pipe: their book and the pipes met on the shelf
         let invites: [String: Data]    // an invitation of their cards -> the card's body (the first 1184 bytes are its root)
         let cardKeys: [String: Data]   // a card's root -> its secret key
         let outbox: [MTOutbox.Item]    // their own queue, parked with them
@@ -721,7 +730,7 @@ enum MTShelfPost {
         if !p.twin.isEmpty { return p.twin }
         if let t = lock.withLock({ twins[p.id] }) { return t }
         guard let master = MontanaQueueKeys.masterSeed(p.words), let owner = MTPipe.ownerSecret(masterSeed: master),
-              let ref = MTPipeBook.reference(of: owner) else { return "" }
+              let ref = MTPipeKey(owner).reference else { return "" }
         lock.withLock { twins[p.id] = ref }
         return ref
     }
@@ -797,7 +806,7 @@ enum MTShelfPost {
     /// -- the extension opened it with the seated person's key and laid it as the other's (17:00:24Z: T1's own wall page came back
     /// as the second account's, every post twice in the feed). The phone holds both ends of such a pipe: the shelf's pickup and
     /// the lift carry it, no ring. seatedHolds answers from the seated person's own book, asked by its owner (registerRound).
-    static func wakePairs(_ w0: UInt64, seatedHolds: (Data) -> Bool) -> [[String: String]] {
+    static func wakePairs(_ w0: UInt64, seatedHolds: (MTPipeKey) -> Bool) -> [[String: String]] {
         var pairs: [[String: String]] = []
         var ears: [MTNodeWire.ShelfEar] = []
         for person in MTSeats.shelfPeople() {
@@ -823,14 +832,14 @@ enum MTShelfPost {
 
     /// A first letter to the person's card, opened with the card's own key and proven by its confirmation -- the pipe is kept
     /// on the shelf until the lift, where the landing door gives it birth in the person's own book.
-    private static func meet(_ row: [String: String], for p: Person) -> (ref: String, secret: Data)? {
+    private static func meet(_ row: [String: String], for p: Person) -> (ref: String, secret: MTPipeKey)? {
         guard let inv = row["i"], let k = row["k"], let ct = Data(base64Encoded: k), ct.count == 1088,
               let body = p.invites[inv], body.count >= 1184 else { return nil }
         let root = body.prefix(1184)
         guard let sk = p.cardKeys[root.base64urlNoPad],
-              let secret = MontanaFirstContact.accept(ciphertext: ct, contactSecret: sk, contactRoot: Data(root)),
-              MontanaFirstContact.sameConfirm(row["cf"] ?? "", MontanaFirstContact.firstConfirm(secret: secret, ct: ct)),
-              let ref = MTPipeBook.reference(of: secret) else {
+              let secret = MontanaFirstContact.accept(ciphertext: ct, contactSecret: sk, contactRoot: Data(root)).map(MTPipeKey.init),
+              MontanaFirstContact.sameConfirm(row["cf"] ?? "", secret.firstConfirm(ct: ct)),
+              let ref = secret.reference else {
             MontanaTrace.mark("shelf_meet", "seat=\(p.id) refused")
             return nil
         }

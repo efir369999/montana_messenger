@@ -1,0 +1,943 @@
+/* THE CHATS (iOS 2251: MontanaChatsList 2136-2303, ContentView 4321-4688, MontanaConversation, MontanaBubble, MontanaShapes) */
+:root {
+  --gray5: #2c2c2e;                  /* systemGray5, dark: their bubbles */
+  --dot-off: #4d4d4d;                /* Color(white: 0.30) */
+  --scan-fill: #1f1f1f;              /* Color(white: 0.12) */
+  --glass-field: rgba(255, 255, 255, 0.28);
+  --side: 20px;                      /* 12 + the search field's inset */
+}
+.rows { flex: 1; overflow: auto; }
+/* the panel folded: the search's own hairline under the logo (MTRowHairline: white 0.14, 0.5 high, 29 from the leading edge, 20 under
+   the head), a tap on it unfolds both */
+.row-hairline { display: block; width: 100%; height: 20.5px; padding: 0; border: 0; cursor: pointer; flex: none;
+                background: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.14)) no-repeat 29px 100% / calc(100% - 29px) 0.5px; }
+/* the coin of the pull over the list's top, under the head (MontanaCoinSpinner: 8 under the top) */
+.list-spin { position: absolute; top: calc(var(--head, 0px) + 8px); left: 0; right: 0; display: flex; justify-content: center; z-index: 3; pointer-events: none; }
+/* THE ROWS RUN ON UNDER THE LIST'S HEAD (iOS MTChatListFrame.fadeStops over MTEdgeWash's numbers): they rest at the head's foot
+   (--head, measured) and scroll on beneath it; above the foot they sink into the ground -- 1 - 0.75 over the wash's 80, then 0.25
+   to the window's top; at the foot of the window from 20 above it, by the wash's 60. The head's controls stand over them. */
+.list > .rows, .list > .feed-pane { margin-top: calc(-1 * var(--head, 0px)); padding-top: var(--head, 0px);
+                -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0, rgba(0, 0, 0, 0.25) max(0px, calc(var(--head, 0px) - 80px)),
+                  #000 var(--head, 0px), #000 calc(100% - 20px), rgba(0, 0, 0, 0.75) 100%);
+                mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0, rgba(0, 0, 0, 0.25) max(0px, calc(var(--head, 0px) - 80px)),
+                  #000 var(--head, 0px), #000 calc(100% - 20px), rgba(0, 0, 0, 0.75) 100%); }
+.list > .feed-pane { padding-top: calc(var(--head, 0px) + 6px); }   /* the Wall of Thoughts keeps its own 6 under the head */
+.feed-pane > .search { padding: 4px 0 0; }   /* the list's first row: the pane's own sides and gap stand around it */
+/* every part of the head stands over the rows that run beneath it -- the time panel, the search, the folders, a pane's own
+   head (the music's sources) -- so a click on it is its own, not the rows' */
+.list > :has(~ .rows), .list > :has(~ .feed-pane) { position: relative; z-index: 1; }
+/* THE PAGES TURN UNDER THE FINGER (iOS MTPaneSlide, MTTabPan): the page under the bar moves by the stroke's offset (--turn, set by
+   turn.js) and the neighbour stands a width away on its side (.ghost, --side); the bar, the coin, the player and the arrow stay; the
+   list keeps its vertical scroll to the finger and gives the sideways stroke to the page (touch-action) */
+.list { touch-action: pan-y; }
+.list > .time-panel { position: relative; z-index: 5; }
+.split.turning > .list > :not(.time-panel):not(.list-spin):not(.player-float):not(.to-top):not(.ghost):not(.core-failed) { transform: translateX(var(--turn, 0px)); }
+.list.ghost { position: absolute; inset: 0; height: auto; z-index: 2; border-right: 0; pointer-events: none;
+              transform: translateX(calc(var(--turn, 0px) + var(--side, 1) * 100%)); }
+.split.turning .bar-puck { transition: none; }
+html.stroking, html.stroking * { user-select: none; -webkit-user-select: none; }
+.row { cursor: pointer; }
+.row.active { background: rgba(118, 118, 128, 0.24); }
+.row:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.top { height: 22px; gap: 5px; }
+.bottom { height: 20px; }
+.no-results { color: var(--gray); text-align: center; padding: 24px; }
+.face { background: #000; border: 1px solid rgba(255, 255, 255, 0.35); overflow: hidden; }
+.face img { object-fit: contain; display: block; }
+.self-face { border-radius: 50%; background: #000; color: #fff; font-weight: 700; display: grid; place-items: center;
+             border: 1px solid rgba(255, 255, 255, 0.35); flex: none; }
+.dots { display: inline-flex; gap: 5px; align-items: center; flex: none; }
+.dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--dot-off); display: block; }
+.dots i.on { background: var(--green); }
+.failed-mark { width: 10px; height: 10px; border-radius: 50%; background: var(--red); color: #fff; font-size: 8px; font-weight: 800;
+               display: inline-grid; place-items: center; flex: none; line-height: 1; }
+/* THE PAGES' CORNER (iOS mtPageAction, MTPageCorner): the bar tier's square plate of 60, 16 from the right edge, lifted by a row's 72 less
+   half the plate (42) and by the player's room */
+.compose-door { position: absolute; right: 16px; bottom: 42px; width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--glass-rim);
+                background: var(--glass); display: grid; place-items: center; cursor: pointer; }
+.list { position: relative; }
+/* the arrow back to the top (iOS MTToTopButton): 44 on the glass, on the corner button's vertical line and 16 over it; it comes and
+   goes in 0.2 s, from 0.6 of its size, and takes no touch while it is away */
+/* the arrow over the corner (MTChatListContainer.placeTop): its centre on the corner's axis (16 + 30), 16 over the corner's room (42 + 60) */
+.to-top { position: absolute; right: 24px; bottom: 118px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--glass-rim);
+          background: var(--glass); display: grid; place-items: center; padding: 0; cursor: pointer; z-index: 2;
+          opacity: 0; transform: scale(0.6); pointer-events: none; transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out; }
+.to-top.on { opacity: 1; transform: none; pointer-events: auto; }
+
+/* the card on the empty list: MontanaQRCard (spacing 16, padding 20/8) around MontanaCodeView (spacing 14, padding 20) */
+.qr-card { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 50px 8px 20px; }
+.qr-title { font-size: 20px; font-weight: 700; }
+.code-view { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 20px 0; }
+.caption { color: var(--gray); font-size: 12px; text-align: center; padding: 0 24px; }
+.qr-tile { position: relative; padding: 16px; background: #fff; border-radius: 22px; }
+.qr { width: 258px; height: 258px; display: block; }
+.qr-pending { display: grid; place-items: center; }
+.qr-logo { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 9px; background: #fff;
+           display: grid; place-items: center; }
+.qr-logo img { width: 44px; height: 44px; border-radius: 7px; object-fit: cover; }
+.segmented { display: flex; padding: 2px; border-radius: 9px; background: rgba(118, 118, 128, 0.24); align-self: stretch; margin: 0 36px; }
+.segmented button { flex: 1; height: 28px; border: 0; border-radius: 7px; background: none; color: #fff; font: inherit; font-size: 13px;
+                    font-weight: 500; cursor: pointer; }
+.segmented button.on { background: #636366; font-weight: 600; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12); }
+.card-link { color: #fff; font: 600 16px/1.3 ui-monospace, "Cascadia Mono", Consolas, monospace; text-decoration: underline;
+             text-align: center; padding: 0 20px; overflow-wrap: anywhere; user-select: text; cursor: text; max-width: 100%; }
+.copy-link { display: flex; align-items: center; gap: 5px; background: none; border: 0; color: #fff; font: inherit; font-size: 12px;
+             font-weight: 700; cursor: pointer; }
+.copy-link.done { color: var(--green); }
+.card-doors { display: flex; gap: 10px; align-self: stretch; padding: 0 36px; }
+.card-door { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 0; border: 0; border-radius: 11px;
+             font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.card-door.share { background: #fff; color: #000; }
+.card-door.scan { background: var(--scan-fill); color: #fff; }
+.card-door:disabled { opacity: 0.4; cursor: default; }
+.spinner.dark { border-color: rgba(0, 0, 0, 0.2); border-top-color: #000; }
+
+/* the scan sheet, Windows' form of ScanMeetingView: a pasted link */
+.meet { width: min(440px, 92vw); border-radius: 14px; background: #1c1c1e; padding: 0 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.meet-bar { position: relative; height: 52px; display: grid; place-items: center; }
+.meet-close { position: absolute; left: -6px; top: 6px; width: 40px; height: 40px; border: 0; background: none; color: #fff; cursor: pointer;
+              display: grid; place-items: center; }
+.meet-title { font-size: 17px; font-weight: 600; }
+.meet-field { width: 100%; height: 44px; border-radius: 22px; border: 1px solid var(--glass-field); background: var(--glass); color: var(--ink);
+              font: inherit; font-size: 15px; padding: 0 16px; outline: none; }
+.meet-hint { color: #fff; font-size: 13px; text-align: center; padding: 8px 10px; border-radius: 10px; background: rgba(0, 0, 0, 0.6); }
+.meet-go { flex: none; }
+
+/* the conversation */
+.chat { min-width: 0; }
+.list { min-height: 0; overflow: hidden; height: 100%; }
+@media (min-width: 701px) { .chat { display: flex; height: 100%; min-height: 0; } }
+.talk { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%; position: relative; }
+.talk-bar { flex: none; display: flex; align-items: center; gap: 6px; padding: 4px 8px; }   /* iOS chatRow(round: 44, gap: 6) */
+.glass-mark { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--glass-rim); background: var(--glass); cursor: pointer;
+              display: grid; place-items: center; flex: none; }
+.title-bubble { flex: 1 1 auto; min-width: 96px; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 14px 0 4px;
+                border-radius: 22px; border: 1px solid var(--glass-rim); background: var(--glass); }
+.title-name { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed { flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 7px; }
+.feed-item { display: flex; flex-direction: column; gap: 7px; }
+.feed-empty { margin: auto; text-align: center; display: flex; flex-direction: column; gap: 6px; padding: 24px; }
+.feed-empty-title { font-size: 17px; font-weight: 700; }
+.feed-empty-text { color: var(--gray); font-size: 15px; }
+/* the calls' day row (iOS CallsTabView dayMark): caption2 in gray on white 0.15, the long octagon (a capsule in the native skin),
+   4 above and below, centred, no separator */
+.calls-day { display: flex; justify-content: center; padding: 4px 0; }
+.calls-day span { padding: 5px 12px; border-radius: 999px; background: #262626; color: var(--gray); font-size: 11px; line-height: 13px; }
+/* the calls' selection bar (iOS CallsTabView.selectionBar): the cross on the left, the bin for the chosen and the bin for all on
+   the right, 10 apart, 12 at the sides, 8 above and 6 below; each a square plate of 42 (MontanaOctagon.height) on the glass,
+   the glyph 18 in white; the bin for the chosen at half while nothing is chosen */
+.calls-select-bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px 6px; position: relative; z-index: 1; }
+.calls-bar-gap { flex: 1; }
+.calls-bar-button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--glass-rim); background: var(--glass);
+                    display: grid; place-items: center; cursor: pointer; padding: 0; }
+.calls-bar-button:disabled { opacity: 0.5; cursor: default; }
+.day-pill { align-self: center; margin: 4px 0; padding: 5px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-rim);
+            font-size: 11px; color: var(--ink); }
+.unread-line { margin: 0 -12px; padding: 5px; text-align: center; color: var(--gray); font-size: 11px; background: var(--scan-fill); }
+.bubble-row { display: flex; flex-direction: column; gap: 3px; }
+.bubble-row.apart { margin-top: 8px; }
+.bubble-row.mine { align-items: flex-end; padding-left: 38px; }
+.bubble-row.theirs { align-items: flex-start; padding-right: 38px; }
+.bubble { max-width: 80%; padding: 6px 12px; border-radius: 18px; font-size: 17px; line-height: 22px; color: #fff;
+          white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
+.mine .bubble { background: var(--mine-fill, var(--blue)); color: var(--mine-text, #fff); box-shadow: var(--mine-rim, none); }
+.theirs .bubble { background: var(--peer-fill, var(--gray5)); color: var(--peer-text, #fff); box-shadow: var(--peer-rim, none); }
+.meta { float: right; display: inline-flex; align-items: center; gap: 4px; margin: 8px 0 -6px 10px; font-size: 11px; line-height: 13px;
+        color: rgba(255, 255, 255, 0.82); }
+.ladder { display: flex; align-items: center; gap: 5px; padding-right: 4px; font-size: 12px; font-weight: 600; color: #fff; }
+.talk-problem { color: var(--red); font-size: 13px; padding: 4px 16px; }
+.talk-note { color: var(--gray); font-size: 13px; padding: 4px 16px; font-variant-numeric: tabular-nums; }
+/* THE COMPOSE ROW (iOS ChatInputBar): every plate is the tier of 36, the bar 16 from the sides and 8 above and below, 10 between;
+   folded -- the down arrow, the words, the media key; open -- the words the whole width, 6 under them the row of keys */
+.compose { flex: none; display: flex; align-items: flex-end; gap: 10px; padding: 8px 16px; }
+.compose.open { padding-bottom: 0; }
+.compose-box { position: relative; flex: 1; min-width: 0; display: flex; }
+.compose-field { flex: 1; min-width: 0; min-height: 36px; max-height: calc(13 * 22px + 15px); resize: none; border-radius: 18px;
+                 border: 1px solid var(--glass-field); background: var(--glass); color: var(--ink); caret-color: var(--ink); font: inherit;
+                 font-size: 17px; line-height: 21px; padding: 7.5px 46px 7.5px 16px; outline: none; field-sizing: content; }
+.compose.open .compose-field { padding-right: 16px; }
+.compose-row { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 16px 8px; }
+.glyph-up { display: inline-flex; transform: rotate(180deg); }
+/* the media key (iOS MTComposeMark): the asset drawn at 36, its picture 1.33 within the circle; pressed, 0.94 */
+.media-key { flex: none; width: 36px; height: 36px; border: 0; padding: 0; border-radius: 50%; overflow: hidden; background: none; cursor: pointer;
+             touch-action: none; display: grid; place-items: center; transition: transform 0.12s ease-out; }
+.media-key img { width: 36px; height: 36px; transform: scale(1.33); pointer-events: none; display: block; }
+.media-key:active { transform: scale(0.94); }
+.compose-field::placeholder { color: var(--gray); }
+.send { width: 36px; height: 36px; border: 0; padding: 0; background: none; cursor: pointer; flex: none; }
+.send img { width: 36px; height: 36px; display: block; }
+
+@media (max-width: 700px) {
+  .split[data-open="1"] .list { display: none; }
+  /* THE CHAT RISES OVER THE LIST (iOS openChat: withAnimation(.easeOut(duration: 0.25))), sliding in from the right edge */
+  .split[data-open="1"] .chat { display: flex; height: 100%; min-height: 0; animation: chat-rise 0.25s ease-out; }
+}
+@keyframes chat-rise { from { transform: translateX(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .split[data-open="1"] .chat { animation: none; } }
+
+/* the letter's menu (MontanaMessageMenu): the answers in a capsule over the rows; the rows on glass, a destructive one red */
+.menu-shade { position: fixed; inset: 0; z-index: 20; }
+.letter-menu { position: fixed; width: 240px; display: flex; flex-direction: column; gap: 8px; }
+.answers-row { display: flex; gap: 2px; padding: 6px 8px; border-radius: 999px; background: rgba(44, 44, 46, 0.97); border: 1px solid var(--glass-rim);
+               width: max-content; max-width: 340px; flex-wrap: wrap; }
+.answers-row button { width: 34px; height: 34px; border: 0; border-radius: 50%; background: none; font-size: 22px; cursor: pointer; padding: 0; }
+.answers-row button:hover, .answers-row button.on { background: rgba(255, 255, 255, 0.16); }
+.menu-rows { border-radius: 14px; background: rgba(44, 44, 46, 0.97); border: 1px solid var(--glass-rim); overflow: hidden; }
+.menu-row { width: 100%; height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border: 0;
+            border-bottom: 0.5px solid var(--separator); background: none; color: #fff; font: inherit; font-size: 17px; cursor: pointer; }
+.menu-row:last-child { border-bottom: 0; }
+.menu-row:hover { background: rgba(255, 255, 255, 0.08); }
+.menu-row.red { color: var(--red); }
+.menu-ask { color: var(--gray); font-size: 13px; text-align: center; padding: 10px; border-bottom: 0.5px solid var(--separator); }
+
+/* a reply inside the bubble (MontanaBubble 1716-1756): the 3 pt bar, the author 12 bold, one line of the words 12 */
+.quote { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; margin: 2px 0 4px; padding: 0 0 0 9px;
+         border: 0; border-left: 3px solid rgba(255, 255, 255, 0.6); background: none; color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.theirs .quote { border-left-color: #fff; }
+.quote-who { font-size: 12px; font-weight: 700; }
+.quote-words { font-size: 12px; color: rgba(255, 255, 255, 0.85); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.theirs .quote-words { color: var(--gray); }
+.edited { font-size: 9px; }
+.flash { animation: flash 0.9s ease-out; }
+@keyframes flash { from { filter: brightness(1.6); } to { filter: none; } }
+.answers { display: flex; gap: 4px; }
+.answer { padding: 4px 9px; border-radius: 999px; border: 0; background: #383838; color: #fff; font-size: 16px; cursor: default; }
+.answer.mine { background: #4d4d4d; cursor: pointer; }
+.sticker { font-size: 96px; line-height: 1.1; position: relative; user-select: text; }
+.sticker .meta { float: none; position: absolute; right: 0; bottom: 0; margin: 0; padding: 1px 6px; border-radius: 8px; background: rgba(0, 0, 0, 0.5); }
+.media-plate { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.media-note { flex-basis: 100%; font-size: 12px; color: rgba(255, 255, 255, 0.7); }
+
+/* the reply or edit over the field */
+/* the plates over the field (iOS barPlate): the bar's plate of 36 -- the glyph 14, the title caption2 and the words footnote in one
+   line, in the accent's colour (white on the dark ground) -- and its square close of 36; 16 from the sides, 8 above and below */
+.compose-quote { flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 16px 0; }
+.compose-plate { flex: 1; min-width: 0; height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 18px;
+                 border: 1px solid var(--glass-rim); background: var(--glass); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.compose-plate-words { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.compose-plate-words b { font-size: 11px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.compose-plate-words span { font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-note { display: flex; justify-content: center; padding: 16px 0; }
+
+/* the chat's deletion: the platform's action sheet */
+.action-sheet { width: min(420px, 94vw); display: flex; flex-direction: column; gap: 8px; align-self: end; margin-bottom: 24px;
+                animation: action-rise 0.35s cubic-bezier(0.2, 0.9, 0.2, 1) backwards; }
+.sheet-shade:has(.action-sheet) { place-items: end center; z-index: 60; animation: shade-in 0.2s ease-out; }   /* over a page's bar and switches, as an alert's shade */
+/* the platform's action sheet rises from below the window while the shade darkens (UIAlertController, .actionSheet) */
+@keyframes action-rise { from { transform: translateY(calc(100% + 24px)); } }
+@media (prefers-reduced-motion: reduce) { .action-sheet, .sheet-shade:has(.action-sheet) { animation: none; } }
+.action-group { border-radius: 14px; background: rgba(44, 44, 46, 0.97); overflow: hidden; }
+.action-title { color: var(--gray); font-size: 13px; text-align: center; padding: 14px 16px; border-bottom: 0.5px solid var(--separator); }
+.action-title b { display: block; font-weight: 600; margin-bottom: 2px; }   /* a sheet's title over its message */
+.action { width: 100%; height: 56px; border: 0; border-bottom: 0.5px solid var(--separator); background: none; color: var(--blue);
+          font: inherit; font-size: 20px; cursor: pointer; }
+.action-group .action:last-child { border-bottom: 0; }
+.action.red { color: var(--red); }
+.action.cancel { border-radius: 14px; background: rgba(44, 44, 46, 0.97); font-weight: 600; border: 0; }
+
+/* a letter's file (iOS MediaBubble): the picture at its shape in the bubble's corners, a film behind its poster, a voice with
+   its player, a file as a plate */
+.media-bubble { padding: 0; overflow: hidden; }
+.media-bubble.k-doc, .media-bubble.k-aud { padding: 6px 12px; }
+.media-bubble .meta { float: none; position: absolute; right: 8px; bottom: 6px; margin: 0; padding: 1px 6px; border-radius: 8px; background: rgba(0, 0, 0, 0.45); }
+.media-bubble.k-doc .meta, .media-bubble.k-aud .meta { position: static; float: right; background: none; padding: 0; margin: 8px 0 -6px 10px; }
+.media-bubble:has(.media-cap) .meta { position: static; float: none; display: flex; justify-content: flex-end; background: none; padding: 0; margin: -4px 12px 6px; }
+.bubble { position: relative; }
+.media-cap { display: block; padding: 6px 12px 6px; text-align: left; }
+.media-bubble .quote { margin: 6px 12px 4px; width: auto; }
+.media-pic { position: relative; display: block; max-width: 340px; min-width: 120px; cursor: pointer; }
+.media-pic img, .media-pic video { display: block; max-width: 340px; max-height: 420px; width: 100%; object-fit: cover; }
+.media-pic img.blur { filter: blur(8px); transform: scale(1.06); min-height: 160px; }
+.media-pic.round { width: 240px; height: 240px; border-radius: 50%; overflow: hidden; }
+.media-pic.round img, .media-pic.round video { width: 240px; height: 240px; max-height: none; }
+.media-blank { width: 240px; height: 180px; display: grid; place-items: center; background: #1c1c1e; color: var(--gray); }
+.play { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
+        background: rgba(0, 0, 0, 0.55); color: #fff; display: grid; place-items: center; font-size: 22px; }
+.media-status { position: absolute; left: 8px; top: 8px; display: flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 10px;
+                background: rgba(0, 0, 0, 0.55); font-size: 12px; color: #fff; }
+.media-status.red { color: #fff; background: rgba(255, 69, 58, 0.85); }
+/* the copy's pages (iOS CopyChatsPage, CopyKindsPage, CopyFilesPage, CopyFileView): a face of 36, the accent's mark, the round mark of
+   44, the file's icon of 44 with its extension, the file drawn inside the page */
+.copy-face { width: 36px; height: 36px; flex: none; border-radius: 50%; background: #3a3a3c; color: #fff; display: grid; place-items: center;
+             font-weight: 600; font-size: 15px; }
+.copy-mark { display: grid; place-items: center; flex: none; }
+.set-row.copy-file { padding-left: 4px; gap: 4px; }
+.copy-round { width: 44px; height: 44px; flex: none; border: 0; background: none; display: grid; place-items: center; cursor: pointer; }
+.copy-round:disabled { opacity: 0.35; cursor: default; }
+.copy-ring { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--gray); display: grid; place-items: center; box-sizing: border-box; }
+.copy-ring.on { background: var(--blue); border-color: var(--blue); }
+.copy-ring.on.red { background: var(--red); border-color: var(--red); }
+.copy-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; border: 0; background: none; color: #fff; font: inherit;
+             text-align: left; cursor: pointer; padding: 0; }
+.copy-icon { width: 44px; height: 44px; flex: none; border-radius: 8px; background: #48484a; display: flex; flex-direction: column;
+             align-items: center; justify-content: center; gap: 1px; }
+.copy-icon small { font-size: 9px; font-weight: 600; color: rgba(255, 255, 255, 0.8); }
+.copy-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.copy-who.none { color: var(--gray); }
+.copy-view { min-height: 60vh; display: grid; place-items: center; padding: 16px; }
+.copy-view img, .copy-view video { max-width: 100%; max-height: 70vh; border-radius: 12px; }
+.copy-none { color: var(--gray); text-align: center; padding: 0 32px; }
+
+/* a file of mine on its way (iOS MessageBubble.progressPill, mediaProgressOverlay): the pill top-left over a dim on a plate, in the
+   line beneath a round note or a voice; the capsule is the native skin's MontanaLongOctagon */
+.ride-dim { position: absolute; inset: 0; z-index: 2; padding: 8px; background: rgba(0, 0, 0, 0.2); display: flex;
+            align-items: flex-start; justify-content: flex-start; cursor: default; }
+.ride-pill { display: inline-flex; align-items: center; gap: 7px; max-width: 300px; padding: 5px 8px; border-radius: 999px;
+             background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 11px; font-weight: 600; line-height: 1; white-space: nowrap; }
+.ride-pill svg { flex: none; }
+.ride-word { overflow: hidden; text-overflow: ellipsis; }
+.ride-cross { width: 20px; height: 20px; flex: none; border-radius: 999px; background: rgba(0, 0, 0, 0.55); display: grid; place-items: center; }
+.ride-arc { transition: stroke-dashoffset 0.3s linear; }
+.ride-line { display: flex; justify-content: flex-start; margin-top: 4px; }
+.media-doc-icon { position: relative; }
+.ride-doc { position: absolute; left: 2px; top: 2px; }
+.ride-doc-word { font-weight: 600; opacity: 1; }
+/* THE VOICE'S CAPSULE (iOS MessageBubble voice, MTVoiceRound, MTVoicePill): the capsule is the letter's own fill, 54 tall, the round of
+   glass 40 with the quiet prism sheen and the thin rim, the wave 28 tall, the time in the footnote's digits; under it, on the feed, the
+   microphone with the length and the stamp in pills of dim glass */
+.bubble.media-bubble.k-aud { background: none; box-shadow: none; padding: 0; display: grid; grid-template-columns: auto auto 1fr; align-items: center;
+                             gap: 8px 4px; }
+.mine .bubble.media-bubble.k-aud { grid-template-columns: 1fr auto auto; }
+.voice-capsule { flex: 0 0 auto; display: flex; align-items: center; gap: 5px; min-height: 54px; padding: 0 14px 0 10px; border-radius: 18px;
+                 cursor: pointer; outline: none; max-width: 100%; }
+.mine .voice-capsule { background: var(--mine-fill, var(--blue)); color: var(--mine-text, #fff); box-shadow: var(--mine-rim, none); }
+.theirs .voice-capsule { background: var(--peer-fill, var(--gray5)); color: var(--peer-text, #fff); box-shadow: var(--peer-rim, none); }
+.voice-capsule:focus-visible { box-shadow: 0 0 0 2px var(--blue); }
+.bubble.media-bubble.k-aud > .voice-capsule { grid-column: 1 / -1; justify-self: start; }   /* the capsule as wide as what it holds */
+.mine .bubble.media-bubble.k-aud > .voice-capsule { justify-self: end; }
+.mine .bubble.media-bubble.k-aud > .voice-pill { grid-column: 2; }
+.mine .bubble.media-bubble.k-aud > .meta { grid-column: 3; }
+.voice-round { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; margin: 0 2px;
+               background: conic-gradient(rgba(0, 255, 255, 0.22), rgba(191, 90, 242, 0.22), rgba(255, 55, 95, 0.22), rgba(0, 255, 255, 0.22)), rgba(255, 255, 255, 0.14);
+               box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.35); }
+.voice-wave { flex: none; display: block; touch-action: none; }
+.voice-time { font-size: 13px; opacity: 0.85; white-space: nowrap; }
+.voice-pill, .media-bubble.k-aud > .meta { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; line-height: 13px; color: #fff;
+                                           padding: 3px 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.38); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.18);
+                                           float: none; margin: 0; position: static; white-space: nowrap; }
+.media-bubble.k-aud > .media-status { position: static; background: none; padding: 0; }
+.media-doc { display: flex; align-items: center; gap: 10px; border: 0; background: none; color: #fff; font: inherit; text-align: left;
+             cursor: pointer; padding: 2px 0; max-width: 300px; }
+.media-doc-icon { width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.18); display: grid; place-items: center; flex: none; }
+.media-doc-words { display: flex; flex-direction: column; min-width: 0; }
+.media-doc-name { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.media-doc-size { font-size: 12px; color: rgba(255, 255, 255, 0.7); }
+.spinner.small { width: 12px; height: 12px; border-width: 2px; }
+.glass-mark.small { width: 36px; height: 36px; }
+.talk.dropping { outline: 2px dashed var(--blue); outline-offset: -6px; }
+
+.face-photo { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.self-face { overflow: hidden; }
+.self-face.pressable { cursor: pointer; }
+
+/* the person's own marks on a row: the pin, the muted count, the manual unread dot; the archive's row and the way back */
+.pinned { display: inline-grid; place-items: center; transform: rotate(45deg); }
+.marked { width: 11px; height: 11px; border-radius: 50%; background: var(--blue); flex: none; }
+.archive-face { background: rgba(255, 255, 255, 0.15); border: 0; display: grid; place-items: center; }
+.archive-back { display: flex; align-items: center; gap: 4px; margin: 4px 12px; padding: 6px 4px; border: 0; background: none; color: var(--blue);
+                font: inherit; font-size: 17px; cursor: pointer; }
+
+/* presence: the green dot on a face (MTPresenceBadge: 9 pt on a material ring), the line under the chat's name */
+.face-wrap { position: relative; flex: none; }
+.live-dot { position: absolute; right: 0; bottom: 0; width: 13px; height: 13px; border-radius: 50%; background: var(--green);
+            border: 2px solid #1c1c1e; }
+.title-words { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.title-seen { display: flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(235, 235, 245, 0.6); white-space: nowrap; }
+.seen-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); flex: none; }
+.seen-dot.live { background: var(--green); }
+
+/* blocking: the no-sign under the row's time, the pill, the bar in place of the field */
+.time { position: relative; }
+.nosign { position: absolute; right: 0; top: 18px; }
+.blocked-pill { padding: 4px 12px; border-radius: 999px; background: rgba(255, 69, 58, 0.18); color: var(--red); font-size: 13px; font-weight: 600; }
+.blocked-bar { justify-content: center; align-items: center; gap: 14px; }
+.unblock { border: 0; border-radius: 999px; padding: 8px 16px; background: var(--glass); color: var(--blue); font: inherit; font-size: 15px; cursor: pointer; }
+.tick-mark { color: var(--blue); font-weight: 700; }
+
+/* a forward: its label over the words; the picker; the letters the search found */
+.forwarded { display: block; font-size: 12px; color: rgba(255, 255, 255, 0.75); margin: 2px 0 2px; }
+.forwarded::before { content: "↪ "; }
+.meet.forward { max-height: 80vh; }
+.forward-rows { overflow: auto; display: flex; flex-direction: column; max-height: 50vh; }
+.forward-row { display: flex; align-items: center; gap: 12px; padding: 8px 4px; border: 0; background: none; color: #fff; font: inherit;
+               font-size: 16px; cursor: pointer; text-align: left; border-radius: 8px; }
+.forward-row:hover { background: rgba(255, 255, 255, 0.06); }
+.found-head { color: var(--gray); font-size: 13px; text-transform: uppercase; padding: 14px var(--side) 4px; }
+
+/* the emoji key in the field and its panel (iOS: face.smiling inside the field, the panel under it) */
+.compose { position: relative; }
+/* the emoji key inside the folded field (iOS: face.smiling 20 at the field's trailing edge, 11 in and 7.5 up) */
+.emoji-key { position: absolute; right: 11px; bottom: 7.5px; width: 21px; height: 21px; border: 0; padding: 0; background: none; cursor: pointer;
+             display: grid; place-items: center; }
+.emoji-panel { flex: none; margin: 0 16px; border-radius: 14px; background: rgba(44, 44, 46, 0.97); border: 1px solid var(--glass-rim);
+               display: flex; flex-direction: column; max-height: 260px; }
+.emoji-tabs { display: flex; gap: 6px; padding: 8px 10px 4px; }
+.emoji-tabs button { border: 0; border-radius: 999px; padding: 4px 12px; background: none; color: var(--gray); font: inherit; font-size: 13px; cursor: pointer; }
+.emoji-tabs button.on { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.emoji-grid { overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); padding: 4px 8px 10px; }
+.emoji-grid button { height: 38px; border: 0; border-radius: 8px; background: none; font-size: 24px; cursor: pointer; }
+.emoji-grid.big { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+.emoji-grid.big button { height: 64px; font-size: 44px; }
+.emoji-grid button:hover { background: rgba(255, 255, 255, 0.08); }
+
+/* the voice being recorded: over the field, a red dot and the time, cancel or send */
+.rec-bar { position: absolute; inset: 8px 16px; display: flex; align-items: center; gap: 10px; padding: 0 4px 0 16px; border-radius: 18px;
+           background: var(--glass); border: 1px solid var(--glass-field); }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); animation: glow 1s ease-in-out infinite alternate; }
+.rec-time { font-variant-numeric: tabular-nums; font-size: 17px; }
+/* while held: what letting go does (iOS «Release to send», red «Release to cancel», subheadline) and the lock's way up */
+.rec-hint { font-size: 15px; color: var(--ink); }
+.rec-hint.red { color: var(--red); }
+.rec-lock { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--glass); animation: lock-up 1.2s ease-in-out infinite; }
+@keyframes lock-up { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* the pinned letter over the feed */
+.pinned-bar { flex: none; display: flex; align-items: center; gap: 10px; margin: 0 12px 4px; padding: 6px 12px; border-radius: 12px;
+              border: 1px solid var(--glass-rim); background: var(--glass); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.pinned-line { width: 3px; align-self: stretch; border-radius: 2px; background: var(--blue); }
+.pinned-words { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 13px; }
+.pinned-words b { color: var(--blue); font-weight: 600; }
+.pinned-words span { color: var(--gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* groups: the face, the speaker over a run, the event rows, the page */
+.group-face { background: #1c1c1e; display: grid; place-items: center; }
+.speaker { display: block; font-size: 14px; font-weight: 600; margin: 0 0 1px; }
+.event-row { align-self: center; max-width: 80%; text-align: center; font-size: 13px; color: var(--event-ink); padding: 4px 12px;
+             border-radius: 999px; background: var(--glass); margin: 4px 0; }
+.title-bubble.pressable { cursor: pointer; }
+.pick-search { margin: 0 0 14px; }
+.pick-row { cursor: pointer; }
+.pick-tick { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--gray); display: grid; place-items: center; font-size: 14px; font-weight: 800; }
+.pick-tick.on { background: #fff; border-color: #fff; color: #000; }
+.member { gap: 10px; }
+.member-name { flex: 1; font-weight: 600; }
+.role { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.role.owner { color: #956ac8; background: rgba(149, 106, 200, 0.2); }
+.role.admin { color: #49a355; background: rgba(73, 163, 85, 0.2); }
+.set-field.rename { text-align: center; font-size: 20px; font-weight: 700; border-radius: 12px; background: var(--glass); }
+.compose-menu { right: 18px; bottom: 80px; left: auto; top: auto; }
+
+/* the call: the whole window, the name and the line, the keys in a row (iOS call screen) */
+/* the call folded into the app (iOS minimized): the screen stays, unseen and untouched, its voice playing; the pill stands at the
+   window's foot -- the green capsule (footnote bold, padded 14 and 8) and the red round of 32 */
+.call-screen.folded { visibility: hidden; pointer-events: none; }
+.call-pill-row { position: fixed; left: 0; right: 0; bottom: 64px; z-index: 61; display: flex; justify-content: center; align-items: center; gap: 8px; pointer-events: none; }
+.call-pill, .call-pill-end { pointer-events: auto; border: 0; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45); }
+.call-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 8px 14px; border-radius: 999px; background: #30d158; color: #fff; font-size: 13px; }
+.call-pill-end { width: 32px; height: 32px; border-radius: 50%; background: #ff453a; display: grid; place-items: center; margin: 6px; }
+.call-pill-end svg { transform: rotate(135deg); }
+.call-back { position: absolute; top: 12px; left: 12px; z-index: 3; background: rgba(60, 60, 67, 0.55); }
+.call-screen { position: fixed; inset: 0; z-index: 60; background: linear-gradient(#1c1c1e, #000); display: flex; flex-direction: column;
+               align-items: center; justify-content: space-between; padding: 64px 24px 48px; }
+.call-remote { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; background: #000; }
+.call-remote video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.call-remote.screen video { object-fit: contain; }
+.call-taping { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 15px; color: #ff453a; font-weight: 600; }
+.call-held { margin-top: 2px; font-size: 17px; font-weight: 700; color: #fff; }
+.call-ask { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 10px 16px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); color: #fff; font-size: 15px; }
+.call-ask button { border: none; border-radius: 999px; padding: 7px 14px; font-weight: 700; cursor: pointer; }
+.call-ask-yes { background: var(--green); color: #000; }
+.call-ask-no { background: var(--red); color: #fff; }
+.call-sharing { margin-top: 2px; font-size: 17px; font-weight: 700; color: var(--blue); }
+.call-local { position: absolute; right: 16px; top: 16px; width: 160px; border-radius: 12px; z-index: 1; background: #000; }
+.call-head { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.call-kind { display: flex; align-items: center; gap: 6px; color: #fff; font-size: 15px; }
+.call-name { font-size: 40px; font-weight: 600; text-align: center; }
+.call-line { font-size: 17px; color: rgba(235, 235, 245, 0.75); font-variant-numeric: tabular-nums; }
+.call-keys { display: flex; gap: 36px; }
+.call-key { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 76px; border: 0; background: none; color: #fff; font: inherit;
+            font-size: 13px; cursor: pointer; }
+.call-key > svg, .call-key > span:first-child { box-sizing: content-box; }
+.call-key svg { width: 28px; height: 28px; padding: 22px; border-radius: 50%; background: rgba(255, 255, 255, 0.18); }
+.call-key.on svg { background: #fff; color: #000; }
+.call-key.red svg { background: var(--red); transform: rotate(135deg); }
+.call-key.green svg { background: var(--green); }
+.talk-bar { position: relative; }
+.call-mark { flex: none; }
+.call-menu { right: 16px; top: 64px; left: auto; }
+
+/* a channel (iOS MontanaChannel): the intro's picture and words, the subscriber's bar, the eye and the signature under a post */
+.channel-intro { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 64px 32px 24px; text-align: center; }
+.channel-intro-title { font-size: 22px; font-weight: 700; }
+.channel-intro-text { color: var(--gray); font-size: 16px; max-width: 360px; }
+.primary-wide { margin-top: 48px; width: 100%; max-width: 360px; min-height: 50px; border: 0; border-radius: 12px; background: var(--blue);
+                color: #fff; font: inherit; font-size: 17px; font-weight: 600; cursor: pointer; }
+.group-about { max-width: 420px; text-align: center; white-space: pre-wrap; }
+.subscriber-bar { justify-content: center; }
+.mute-wide { flex: 1; max-width: 520px; min-height: 44px; border-radius: 22px; border: 1px solid var(--glass-rim); background: var(--glass);
+             color: var(--ink); font: inherit; font-size: 17px; font-weight: 600; cursor: pointer; }
+.meta .views { display: inline-flex; align-items: center; gap: 3px; margin-right: 6px; }
+.meta .eye { opacity: 0.85; }
+.meta .signature { margin-right: 6px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the chosen letters (iOS selection): the count above, a round mark beside each letter, the three deeds below */
+.talk-bar.hidden { display: none; }
+.select-top { justify-content: space-between; padding-left: 18px; }
+.select-count { font-size: 15px; font-weight: 600; }
+.bubble-row.picking { cursor: pointer; position: relative; padding-left: 40px; }
+.pick-mark { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 11px;
+             border: 1.5px solid rgba(235,235,245,0.5); display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; }
+.pick-mark.on { background: var(--blue); border-color: var(--blue); }
+.select-bar { justify-content: space-around; }
+.select-tool { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; color: var(--blue);
+               font: inherit; font-size: 11px; cursor: pointer; min-width: 80px; }
+.select-tool.red { color: #ff3b30; }
+
+/* a link's card under its letter (iOS MTLinkPreview), the plate over the field, a link in the words */
+.link-card { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; padding: 6px 10px; border: 0; border-left: 3px solid var(--blue);
+             border-radius: 6px; background: rgba(255,255,255,0.06); color: inherit; font: inherit; text-align: left; cursor: pointer; max-width: 100%; }
+.link-card-site { color: var(--blue); font-size: 13px; font-weight: 600; }
+.link-card-title { font-size: 14px; font-weight: 600; }
+.link-card-words { font-size: 13px; opacity: 0.85; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.letter-link { color: #64b5ff; text-decoration: underline; overflow-wrap: anywhere; }
+.bubble-row.mine .letter-link { color: #fff; }
+
+/* the plate of «@» over a group's field (iOS MTMentionCompose) */
+.mention-plate { display: flex; flex-direction: column; margin: 0 12px 6px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-rim); overflow: hidden; }
+.mention-row { padding: 9px 14px; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 600; text-align: left; cursor: pointer; }
+.mention-row:hover { background: rgba(255,255,255,0.06); }
+
+/* a channel's comments (iOS: «Leave a Comment» under a post, its thread over the feed) */
+.comments-foot { align-self: flex-start; margin: 2px 0 0 6px; border: 0; background: none; color: var(--blue); font: inherit; font-size: 13px; cursor: pointer; }
+.thread { position: absolute; left: 50%; top: 8%; transform: translateX(-50%); width: min(560px, 92vw); max-height: 84%; display: flex; flex-direction: column;
+          border-radius: 16px; background: #1c1c1e; border: 1px solid var(--glass-rim); overflow: hidden; }
+.thread-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; font-weight: 700; }
+.thread-post { padding: 8px 14px; display: flex; flex-direction: column; gap: 2px; border-bottom: 1px solid var(--glass-rim); }
+.thread-list { flex: 1; overflow: auto; padding: 8px 14px; display: flex; flex-direction: column; gap: 8px; }
+.thread-row { display: flex; flex-direction: column; padding: 6px 10px; border-radius: 12px; background: rgba(255,255,255,0.06); max-width: 85%; }
+.thread-row.mine { align-self: flex-end; background: rgba(10,132,255,0.35); }
+.thread-field { display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--glass-rim); }
+
+/* the folders' tabs over the list (iOS MTFolderTabs): names in a strip, each with its badge, the chosen one on its lens */
+/* the folders' strip (iOS MTFolderTabs): the time panel's own plate, 44 high at its side margins, the names 4 from its edge, 6
+   between them, each 10 within and 44 at least; the chosen name on the panel's puck, sliding in 0.25 s */
+.folder-tabs { position: relative; display: flex; align-items: center; gap: 6px; overflow-x: auto; height: var(--bar-height); margin: 2px 12px;
+               padding: 0 18px; border-radius: calc(var(--bar-height) / 2); background: var(--glass); border: 1px solid var(--glass-rim);
+               scrollbar-width: none; flex: none; box-sizing: border-box; }   /* the panel's plate: 60 high, 14 + 4 within its sides */
+.folder-tab { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 44px;
+              min-height: 36px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: var(--ink); font: inherit; font-size: 14px;
+              font-weight: 500; white-space: nowrap; cursor: pointer; flex: none; }
+.folder-puck { position: absolute; top: 11px; bottom: 11px; left: 0; border-radius: 999px; background: var(--puck); pointer-events: none;
+               transition: transform 0.25s ease-in-out, width 0.25s ease-in-out; }
+@media (prefers-reduced-motion: reduce) { .folder-puck { transition: none; } }
+.folder-count { min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #8e8e93; font-size: 14px; line-height: 18px; text-align: center; }
+.menu-divider { height: 8px; background: rgba(0, 0, 0, 0.22); }   /* the platform menu's group divider (iOS Divider in a contextMenu) */
+/* a folder with no chats (iOS: folder 44 secondary, «Folder is empty.» headline, the words subheadline secondary; 8 apart, 32 in) */
+.folder-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 32px; text-align: center; color: var(--gray); }
+.folder-empty b { font-size: 17px; font-weight: 600; color: var(--ink); }
+.folder-empty span { font-size: 15px; }
+.folder-count.loud { background: var(--blue); }
+
+/* a person's presence under the name in «Контакты»: blue while they are here */
+.preview.live-word { color: var(--blue); }
+.preview .draft-word { color: var(--red); }
+
+/* A GROUP'S ROOM (iOS MTRoomBar, MTRoomScreen, MTRoomInviteSheet) */
+.room-bar { display: flex; align-items: center; gap: 12px; margin: 4px 8px 0; padding: 8px 12px; min-height: 52px; border-radius: 16px;
+            background: var(--glass, rgba(40, 40, 44, 0.92)); border: 1px solid rgba(255, 255, 255, 0.08); color: #fff; text-align: left; cursor: pointer; }
+.room-bar-dot { width: 36px; height: 36px; border-radius: 50%; background: #2fb35a; display: flex; align-items: center; justify-content: center; flex: none; }
+.room-bar-words { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.room-bar-words b { font-size: 14px; }
+.room-bar-words span { font-size: 12px; color: var(--gray, #9a9a9e); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-mark.ringed { box-shadow: 0 0 0 2px #2fb35a; }
+.call-mark.on { box-shadow: inset 0 0 0 1.5px var(--blue); }   /* the platform's blue ring inside the round (iOS MTBarRoundMark ringed) */
+.knight-mark { width: 22px; height: 22px; object-fit: contain; display: block; pointer-events: none; }   /* iOS MTChessIcon in MTBarRoundMark(side: 22) */
+.room-pill { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 8px;
+             padding: 8px 16px; border-radius: 999px; background: #2fb35a; color: #fff; font-weight: 600; border: none; cursor: pointer; }
+.room-note { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 70; padding: 8px 14px; border-radius: 999px;
+             background: rgba(40, 40, 44, 0.95); color: #fff; font-size: 13px; font-weight: 600; }
+.room-note.inline { position: static; transform: none; margin: 8px auto; width: fit-content; }
+.room-screen { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 24px 24px 40px; gap: 8px; }
+.room-screen .call-keys { justify-content: center; }
+.room-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 12px; width: 100%; box-sizing: border-box; }
+.call-key.red.leave svg { transform: none; }
+.room-title { display: flex; flex-direction: column; color: #fff; }
+.room-title span { font-size: 12px; color: rgba(255, 255, 255, 0.55); }
+.room-tiles { flex: 1; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding: 12px 4px; align-content: start; width: 100%; box-sizing: border-box; }
+.room-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px; border-radius: 18px;
+             background: rgba(255, 255, 255, 0.06); color: #fff; border: 2px solid transparent; }
+.room-tile.speaking { border-color: #2fb35a; }
+.room-tile.big { grid-column: 1 / -1; min-height: 360px; }
+.room-pic { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; background: #000; }
+.room-pic video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.room-pic.screen video { object-fit: contain; }
+.room-pic.mine video { transform: scaleX(-1); }
+.room-pic ~ .room-face { visibility: hidden; }
+.room-pic ~ .room-tile-name, .room-pic ~ .room-tile-status { position: relative; text-shadow: 0 1px 3px #000; }
+.room-tile.ringing { opacity: 0.6; }
+.room-tile.invite { cursor: pointer; justify-content: center; border: 1px dashed rgba(255, 255, 255, 0.25); }
+.room-tile-name { font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-tile-status { font-size: 12px; color: rgba(255, 255, 255, 0.55); }
+.room-tile-more { position: absolute; top: 6px; right: 8px; background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+.room-tile-menu { position: absolute; top: 30px; right: 8px; z-index: 5; display: flex; flex-direction: column; background: #2a2a2e; border-radius: 12px; overflow: hidden; }
+.room-tile-menu button { padding: 10px 14px; background: none; border: none; color: #fff; text-align: left; cursor: pointer; }
+.room-tile-menu button.red { color: #ff6b6b; }
+.room-face { width: 36px; height: 36px; border-radius: 50%; background: #6b6b70; color: #fff; display: flex; align-items: center; justify-content: center;
+             font-weight: 600; flex: none; }
+.room-face.big { width: 64px; height: 64px; font-size: 26px; }
+.room-invite { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(420px, 92vw); max-height: 80vh; overflow: auto;
+               background: #1f1f23; border-radius: 18px; padding: 8px 0 12px; color: #fff; }
+.room-invite-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; }
+.room-person { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 16px; min-height: 44px; background: none; border: none; color: #fff;
+               text-align: left; cursor: pointer; }
+.room-person .grow { flex: 1; }
+.room-person .tick { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); flex: none; }
+.room-person .tick.on { background: #0a84ff; border-color: #0a84ff; }
+.room-invite-foot { padding: 8px 16px 0; font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+/* the round video note being recorded (iOS MontanaVideoNoteCamera): the circle over the feed, the bar under it */
+.note-shade { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: rgba(0, 0, 0, 0.72); }
+.note-round { width: 300px; height: 300px; border-radius: 50%; object-fit: cover; transform: scaleX(-1); background: #000; }
+.note-bar { position: static; width: min(420px, 90%); }
+/* the stickers' panel (iOS MontanaStickerScreens): my set, the sets of others, the emoji drawn large */
+.sticker-panel { display: flex; flex-direction: column; max-height: 340px; overflow: auto; padding-bottom: 6px; }
+.sticker-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px 2px; font-size: 13px; color: var(--gray); }
+.sticker-head b { color: #fff; font-weight: 600; }
+.sticker-head button { border: 0; border-radius: 999px; padding: 3px 10px; background: rgba(255, 255, 255, 0.1); color: #fff; font: inherit; font-size: 12px; cursor: pointer; }
+.sticker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 4px; padding: 2px 8px; }
+.sticker-grid button { height: 72px; border: 0; border-radius: 10px; background: none; padding: 4px; cursor: pointer; }
+.sticker-grid button:hover { background: rgba(255, 255, 255, 0.08); }
+.sticker-grid img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.sticker-grid .row-caption { grid-column: 1 / -1; padding: 6px 4px; }
+/* the house's moving pictures: the panel's search and tiles; a GIF letter in its bubble, a house sticker bare */
+.gif-panel { display: flex; flex-direction: column; max-height: 320px; }
+.gif-head { display: flex; gap: 6px; padding: 4px 10px; }
+.gif-head input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 6px 10px; background: rgba(255, 255, 255, 0.08); color: #fff; font: inherit; }
+.gif-head button { border: 0; border-radius: 999px; padding: 4px 10px; background: none; color: var(--gray); font: inherit; font-size: 13px; cursor: pointer; }
+.gif-head button.on { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.gif-grid { overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 4px; padding: 4px 8px 10px; }
+.gif-grid button { border: 0; border-radius: 8px; padding: 0; overflow: hidden; background: rgba(255, 255, 255, 0.05); cursor: pointer; max-height: 140px; }
+.gif-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media-pic.gif img { display: block; max-width: 280px; max-height: 280px; }
+.media-pic.gif.bare { background: none; }
+.bubble.media-bubble.bare { background: none; border: 0; box-shadow: none; padding: 0; }
+.bubble.media-bubble.bare .media-pic { min-width: 0; }
+.bubble.media-bubble.bare .media-pic img { width: auto; height: auto; max-width: 192px; max-height: 192px; object-fit: contain; }
+.bubble.media-bubble.bare.k-img .media-pic { background: none; cursor: pointer; }
+.media-pic.gif.bare img { width: auto; height: auto; max-width: 160px; max-height: 160px; object-fit: contain; }
+/* the second line over a call and the call parked aside (iOS second line, parkCurrent) */
+.call-second { flex-wrap: wrap; justify-content: center; }
+.call-parked { color: var(--gray); font-size: 15px; }
+/* a secret shared (iOS MTSecretLetter) and the passwords' page (iOS MTPasswordsPage) */
+.bubble.secret-card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.secret-title { font-weight: 600; }
+.secret-save { border: 0; border-radius: 999px; padding: 5px 12px; background: rgba(255, 255, 255, 0.16); color: #fff; font: inherit; font-size: 14px; cursor: pointer; }
+.pw-pane { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+.pw-pane.locked { align-items: center; justify-content: center; text-align: center; gap: 14px; }
+.pw-unlock, .pw-head button, .pw-kinds button, .pw-deeds button, .pw-row button, .pw-field button { border: 0; border-radius: 999px; padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.1); color: #fff; font: inherit; font-size: 14px; cursor: pointer; }
+.pw-unlock { background: var(--blue); }
+.pw-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 17px; }
+.pw-head button:disabled { opacity: 0.4; cursor: default; }
+.pw-kinds { display: flex; gap: 6px; }
+.pw-kinds button.on { background: rgba(255, 255, 255, 0.24); }
+.pw-row { display: flex; gap: 8px; align-items: center; }
+.pw-row .set-field { flex: 1; }
+.pw-field { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.pw-field .row-caption { width: 110px; flex: none; }
+.pw-value { flex: 1; overflow-wrap: anywhere; user-select: text; }
+.pw-code { flex: 1; font-size: 22px; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+.pw-code small { margin-left: 10px; font-size: 12px; color: var(--gray); }
+.pw-deeds { display: flex; gap: 8px; }
+.pw-deeds .red { color: var(--red); }
+.pw-section { display: flex; flex-direction: column; }
+/* the filter's fold (iOS filterFolds): the letter's own plate, its words hidden until the tap */
+.bubble.filter-fold { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 0; cursor: pointer; font: inherit; color: inherit; text-align: left; }
+/* THE CARD'S PICTURE (iOS MTLinkPreview: wide across under the words, small as a square beside them) */
+.link-card .link-card-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.link-card.small { flex-direction: row; align-items: flex-start; gap: 10px; }
+.link-card-thumb { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; flex: none; }
+.link-card-picture { width: 100%; max-height: 240px; border-radius: 8px; object-fit: cover; margin-top: 6px; }
+
+/* THE LETTER THAT ARRIVES (iOS MTLetterMotion: rise about 0.9 of its height on the feed's spring); the system's reduced motion stands
+   over it. The rise moves the row's own place (top), not a drawn transform: the accessibility tree follows a place, so the letter
+   stands where a reader of the screen -- and a hand guided by one -- finds it */
+.feed-item.rising .bubble-row { position: relative; animation: letter-rise var(--letter-ms, 900ms) var(--letter-ease, ease-out) both; }
+@keyframes letter-rise { from { top: 1.6em; opacity: 0.2; } to { top: 0; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .feed-item.rising .bubble-row { animation: none; } }
+/* THE BADGES OF A FACE (iOS MTAvatarBadgePair): over the face's top edge, the coins left, the level right */
+.face-wrap { position: relative; }
+.face-badges { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 2px; font-weight: 600;
+               font-variant-numeric: tabular-nums; line-height: 1; pointer-events: none; white-space: nowrap; z-index: 2; }
+.face-coins { display: inline-flex; align-items: center; padding: 0 3px; border-radius: 999px; background: rgba(60, 60, 67, 0.75);
+              color: #fff; backdrop-filter: blur(8px); }
+.face-level { display: inline-flex; align-items: center; justify-content: center; padding: 0 4px; border-radius: 999px; color: #fff; }
+/* COINS ON A LETTER (iOS MontanaMessageMenu onCoin): the row, then π's boxes scrolled sideways */
+.menu-coins { border-bottom: 0.5px solid rgba(255, 255, 255, 0.12); }
+.coin-mark { color: #ffd60a; font-weight: 700; }
+.coin-boxes { display: flex; gap: 6px; overflow-x: auto; padding: 0 14px 9px; scrollbar-width: none; }
+.coin-boxes button { flex: none; border: 0; border-radius: 999px; padding: 6px 10px; background: #4d4d4d; color: #fff; font: inherit;
+                     font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; }
+.coin-boxes button:disabled { opacity: 0.4; cursor: default; }
+/* THE MINT COIN (iOS MTMintCoin): gold, our sign on its face; it spins while it mints, one turn when it is told to */
+.mint-coin { display: inline-block; flex: none; position: relative; }
+.mint-coin-body { position: absolute; inset: 0; transform-style: preserve-3d; }
+.mint-coin-body img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; backface-visibility: hidden;
+                      pointer-events: none; user-select: none; }
+.mint-coin-back { transform: rotateY(180deg); }
+.mint-coin-body.spinning { animation: coin-turn 1.4s linear infinite; }
+.mint-coin-body.turning { animation: coin-turn 1.1s ease-in-out 1; }
+@media (prefers-reduced-motion: reduce) { .mint-coin-body.spinning, .mint-coin-body.turning { animation: none; } }
+.flow-mark.on { box-shadow: inset 0 0 0 1.5px var(--blue); }   /* the marks' round wears the platform's blue ring (iOS MTBarRoundMark) */
+/* THE MONEY FLOW (iOS MTMoneyFlow): the feed turned, the newest letters on top and the field over them */
+.talk.flow > * { order: 1; }
+.talk.flow > header, .talk.flow > .pinned-bar { order: 0; }
+/* THE FLOW'S FIELD ABOVE, ITS KEYS BELOW (iOS ChatInputBar parts .field / .row): the field under the head, the plates under the field,
+   the feed, then the emoji panel and the row of keys at the foot */
+.talk.flow > .compose { order: 1; }
+.talk.flow > .compose-quote { order: 2; }
+.talk.flow > .feed, .talk.flow > .player-dock { order: 3; }
+.talk.flow > .emoji-panel { order: 4; }
+.talk.flow > .compose-row { order: 5; }
+/* the minting's rings (iOS minting: ribbon): the field and every key wear the platform's blue 1.5; the send, the media key and the
+   coin stand 44/36 larger */
+.talk.flow .compose-field { box-shadow: inset 0 0 0 1.5px var(--blue); }
+.talk.flow .compose-row .glass-mark, .talk.flow .compose-key { box-shadow: inset 0 0 0 1.5px var(--blue); }
+.talk.flow .media-key, .talk.flow .send { transform: scale(1.222); }
+/* a row stands upright in either order (iOS feedRow: the date pill above its letter, the rotated list's rows turned back) */
+/* the coin, large, makes one turn in the middle under its name and leaves (iOS MTMoneyFlowBegins) */
+.flow-begins { position: absolute; left: 50%; top: 45%; z-index: 30; display: flex; flex-direction: column; align-items: center; gap: 12px;
+               padding: 28px; border-radius: 28px; background: rgba(40, 40, 40, 0.72); backdrop-filter: blur(20px); font-size: 22px;
+               pointer-events: none; transform: translate(-50%, -50%); animation: flow-begins 1.75s ease both; }
+@keyframes flow-begins { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                         80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } }
+/* the row of the flow's beginning: the chess invitation's card, the coin turning once as it appears */
+.flow-card { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.flow-card-row { display: flex; align-items: center; gap: 10px; align-self: stretch; }
+.flow-card-words { display: flex; flex-direction: column; gap: 3px; }
+.flow-card-words b { font-size: 17px; }
+.flow-card-words span { font-size: 15px; opacity: 0.82; }
+.flow-card .meta { float: none; margin: 0; }
+/* their live words (iOS LiveDraftBubble): a bubble of theirs, lighter, the caret where they hold it */
+.live-draft { opacity: 0.82; background: #212121; border: 1px solid rgba(255, 255, 255, 0.35); }
+.live-caret { opacity: 0.9; }
+.live-card { opacity: 0.92; }
+/* the letter's seal and its gematria at the stamp (iOS MTLetterSeal) */
+.meta .gem { font-variant-numeric: tabular-nums; }
+.meta .seal { font-family: ui-monospace, Consolas, monospace; }
+
+/* THE ONE MINI PLAYER (iOS MTMiniFace, MTPlayerPlate, MontanaPlayerBar): as tall as the message field (36), in the bar's own dress --
+   the round keys and the capsule plate on the glass, 10 apart; the plate fills with a transparent grey as the file plays, the name
+   centred, the side room 64 at its right; the playing track's thin blue ring (systemBlue, a point) on every key and the plate; the
+   bar floats over the rows' bottom, 8 above and below its tier (iOS MTInputField.barPad), the rows showing through */
+.mini-face { display: flex; align-items: center; gap: 10px; }
+.mini-key.ringed, .mini-plate-ring.ringed .mini-plate { box-shadow: 0 0 0 1px #0a84ff; border-color: transparent; }
+.mini-plate-ring { flex: 1; min-width: 0; }
+.mini-plate { position: relative; height: 36px; border-radius: 18px; border: 1px solid var(--glass-rim); background: var(--glass); overflow: hidden;
+              display: flex; align-items: center; cursor: pointer; touch-action: none; user-select: none; outline: none; }
+.mini-plate:focus-visible { box-shadow: 0 0 0 2px var(--blue); }
+.mini-plate.still { cursor: inherit; }
+.mini-fill { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(255, 255, 255, 0.16); pointer-events: none; }
+.mini-name { position: relative; flex: 1; min-width: 0; padding: 0 2px 0 12px; text-align: center; font-size: 15px; font-weight: 600; color: var(--ink);
+             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+/* THE RUNNING LINE (iOS MTMarquee): clipped to its room, the name twice 48 apart while it runs; a name that fits stands still */
+.marquee { display: block; overflow: hidden; white-space: nowrap; text-overflow: clip; }
+.marquee.centred { text-align: center; }
+.marquee-strip { display: inline-flex; gap: 48px; will-change: transform; }
+.mini-name.marquee { text-align: left; }
+.mini-name.marquee.centred { text-align: center; }
+.mini-side { position: relative; flex: none; width: 64px; text-align: center; font-size: 15px; font-weight: 600; color: var(--bar-glyph); pointer-events: none; }
+.player-bar { padding: 8px 16px; }
+/* THE BIG PLAYER (iOS MTPlayerHead): 15 at the sides, 8 between the plates; the plate on the glass card (26); the cover 57 (10); the
+   name and what was just said under it; the line of the time; the three at the middle 30 apart (52 each, the play 36, the others 28),
+   the playlist's place at the left; the sound's line 44 tall; five round keys of glass 44 spread evenly, lit in the platform's blue */
+.player-bar.unfolded { padding: 8px 15px; }
+.player-head { display: flex; flex-direction: column; gap: 8px; transform-origin: 50% 100%; animation: head-rise 0.36s cubic-bezier(0.32, 1.06, 0.48, 1) both; }
+.player-bar.folding .player-head { animation: head-fold 0.26s cubic-bezier(0.4, 0, 0.6, 1) both; }
+@keyframes head-rise { from { transform: scale(0.9); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes head-fold { from { transform: none; opacity: 1; } to { transform: scale(0.9); opacity: 0; } }
+.player-bar:not(.unfolded) .mini-face { animation: mini-in 0.2s ease-out both; }
+@keyframes mini-in { from { opacity: 0; } to { opacity: 1; } }
+.head-plate { display: flex; flex-direction: column; padding: 14px 14px 8px; border-radius: 26px; background: var(--glass); border: 1px solid var(--glass-rim);
+              backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.head-top { display: flex; align-items: center; gap: 12px; }
+.cover-key { padding: 0; border: 0; background: none; cursor: pointer; flex: none; overflow: hidden; }
+.head-words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; cursor: pointer; outline: none; }
+.head-title { font-size: 17px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; height: 22px; line-height: 22px; }
+.head-said { font-size: 15px; font-weight: 600; color: #0a84ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.head-by { font-size: 17px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.waving { display: inline-flex; align-items: center; gap: 2px; height: 17px; flex: none; }
+.waving i { width: 2.5px; border-radius: 2px; background: var(--ink-2); display: block; }
+.waving.on i { animation: waving 0.9s ease-in-out infinite alternate; background: var(--ink); }
+@keyframes waving { from { transform: scaleY(0.35); } to { transform: scaleY(1); } }
+.clock-line { display: flex; align-items: center; gap: 10px; padding-top: 12px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.clock-track { flex: 1; height: 44px; display: flex; align-items: center; cursor: pointer; touch-action: none; outline: none; }
+.clock-rail { position: relative; display: block; width: 100%; height: 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.2); overflow: hidden; }
+.clock-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: rgba(255, 255, 255, 0.72); }
+.head-controls { position: relative; display: flex; align-items: center; justify-content: space-between; height: 60px; padding-top: 4px; }
+.head-three { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 30px; }
+.head-control { width: 52px; height: 52px; display: grid; place-items: center; border: 0; background: none; cursor: pointer; }
+.head-place { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; gap: 3px; border: 0; background: none; color: var(--ink-2);
+              font-size: 13px; font-weight: 600; cursor: pointer; }
+.volume-line { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 44px; }
+.volume-line input { flex: 1; accent-color: #fff; height: 44px; cursor: pointer; }
+.head-keys { display: flex; justify-content: space-evenly; align-items: center; }
+.head-key { color: var(--ink); }
+.head-key.lit { color: #0a84ff; }
+.head-filter { position: relative; }
+.source-menu { position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%); }
+.cover-stage { display: block; height: 33vh; padding: 0; border: 0; background: none; cursor: pointer; align-self: flex-start;
+               transform-origin: 0 100%; animation: cover-rise 0.36s cubic-bezier(0.32, 1.08, 0.48, 1) both; }
+.cover-stage.lowering { animation: cover-fall 0.26s cubic-bezier(0.4, 0, 0.6, 1) both; }
+@keyframes cover-rise { from { transform: scale(0.15); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes cover-fall { from { transform: none; opacity: 1; } to { transform: scale(0.15); opacity: 0; } }
+.cover-stage img { height: 100%; aspect-ratio: 1; border-radius: 7.4vh; display: block; }
+/* THE QUEUE'S OWN PAGE (iOS MTQueuePage): a sheet over the app, the playing track in the middle */
+.queue-page { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: min(560px, 100%); max-height: 80vh; display: flex; flex-direction: column;
+              background: var(--page, #1c1c1e); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4); }
+.queue-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
+.queue-title { flex: 1; text-align: center; font-weight: 600; }
+.queue-from { padding: 4px 20px 6px; font-size: 13px; color: var(--gray); text-transform: uppercase; }
+.queue-rows { overflow: auto; padding: 0 8px 16px; }
+.queue-row { display: flex; align-items: center; }
+.queue-play { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 4px 8px; border: 0; background: none; color: var(--ink);
+              font: inherit; cursor: pointer; text-align: left; }
+.queue-row.on .queue-name { color: #0a84ff; font-weight: 600; }
+.queue-words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.queue-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-by { font-size: 15px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-n { font-size: 13px; color: var(--gray); }
+.queue-out { width: 36px; height: 36px; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.player-float { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; }
+/* the rows keep the bar's room at their foot, the page's own buttons stand over it (iOS playerReserve, mtPageAction(reserve:)) */
+.list.playing > .rows, .list.playing > .feed-pane, .list.playing .gallery, .list.playing .rows.tracks { padding-bottom: calc(var(--player, 52px) + 8px); }
+.list.playing > .compose-door { bottom: calc(var(--player, 52px) + 42px); }
+.list.playing > .to-top { bottom: calc(var(--player, 52px) + 118px); }
+.player-dock { position: relative; height: 0; z-index: 3; }
+.player-dock > .player-bar { position: absolute; left: 0; right: 0; bottom: 0; }
+.talk.playing > .feed { padding-bottom: 64px; }
+.player-foot { position: sticky; bottom: 0; z-index: 3; margin: 0 -16px; }
+.track-row { display: block; width: 100%; padding: 0 12px; border: 0; background: none; cursor: pointer; text-align: left; outline: none; }
+.track-row:focus-visible .mini-plate { box-shadow: 0 0 0 2px var(--blue); }
+.track-row .mini-face { pointer-events: none; }
+.rows.tracks.mini { gap: 16px; padding-left: 0; padding-right: 0; }   /* the top stays the list's own: the rows rest at the head's foot */
+
+/* SELECTING (iOS chatRowCell): the circle 22 left of the row, 10 before the face */
+.pick-circle { display: grid; place-items: center; flex: none; margin-right: calc(10px - var(--gap)); }
+/* THE MENU ABOUT A PERSON (iOS MTPersonMenu): the cloud 12 from the window's leading side -- the person's plate (the face 44, 12 to the
+   name at the body's 17, 14 within it across and 8 down, corners 16, a 0.1 white rim), 12 below it the deeds' plate 250 wide, its rows
+   the menus' own (MTMenuRow: 16, 14 across and 11 down, the glyph right at 0.8); it rises from 0.94 on a spring and leaves in 0.15 s */
+.person-menu { position: fixed; display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+               transform-origin: left center; animation: person-menu-in 0.32s cubic-bezier(0.34, 1.36, 0.64, 1) both; }
+.person-menu.gone { animation: person-menu-out 0.15s ease-out both; }
+@keyframes person-menu-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes person-menu-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.94); } }
+.person-face { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1);
+               background: rgba(128, 128, 128, 0.14); backdrop-filter: var(--ultrathin); max-width: calc(100vw - 24px); }
+.person-name { font-size: 17px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.person-menu .menu-rows { width: 250px; border-radius: 16px; }
+.person-menu .menu-row { height: auto; padding: 11px 14px; font-size: 16px; border-bottom-color: rgba(142, 142, 147, 0.3); }
+.person-menu .menu-row svg { opacity: 0.8; }
+.person-menu .menu-row.red svg { opacity: 1; }
+/* THE ARCHIVE'S ROW (iOS archiveRow): «Archive» and its count, 3 apart, the chevron at the line's end */
+.archive-words { gap: 3px; }
+.archive-face { background: rgb(38, 38, 38); border: 1px solid rgba(255, 255, 255, 0.45); }   /* Color(white: 0.15), the 0.45 rim */
+/* A ROW'S SWIPES: the platform's tiles under the chats' rows -- the row's height, one glass (white 0.6 at 0.32), the glyph white; the
+   archive's capsules 52 × 46, 7 apart, their colour at 0.55 with a 0.9 rim */
+.swipe-box { position: relative; overflow: hidden; touch-action: pan-y; }
+/* the rows keep no ground of their own (the page's shows through them): the tiles stand only in the room the row has left (--sx) */
+.swipe-slide { position: relative; z-index: 1; }
+.swipe-tiles { position: absolute; top: 0; bottom: 0; display: flex; align-items: stretch; overflow: hidden; }
+.swipe-tiles.lead { left: 0; width: max(0px, var(--sx, 0px)); }
+.swipe-tiles.trail { right: 0; width: max(0px, calc(-1 * var(--sx, 0px))); justify-content: flex-end; }
+.swipe-tile { flex: none; }
+.swipe-tile { width: 74px; border: 0; padding: 0; display: grid; place-items: center; cursor: pointer; background: rgba(153, 153, 153, 0.32); }
+.swipe-box.capsule .swipe-tiles { align-items: center; gap: 7px; padding: 0 7px; }
+.swipe-tile.capsule { width: 52px; height: 46px; border-radius: 23px; background: color-mix(in srgb, var(--tile) 55%, transparent);
+                      border: 1px solid color-mix(in srgb, var(--tile) 90%, transparent); }
+/* THE SELECTION'S BAR (iOS selectionBar): the cross's square plate and three capsules of the glass 42 high, 10 apart, 12 at the sides,
+   8 above and 6 below; the words at the subheadline's 15, white, «Delete» red; at half while nothing is chosen */
+.chats-select-bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px 6px; position: relative; z-index: 1; flex: none; }
+.select-pill { flex: 1 1 0; min-width: 0; height: 42px; border-radius: 21px; border: 1px solid var(--glass-rim); background: var(--glass);
+               color: #fff; font: inherit; font-size: 15px; cursor: pointer; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.select-pill.red { color: var(--red); }
+.select-pill:disabled { opacity: 0.5; cursor: default; }
+/* THE FOLDERS' PAGES (iOS MTFolderSettingsPage, MTFolderEditPage, MTFolderChatPicker): a kind's circle in its tint (32 on the folder's
+   page, 40 in the picker), the add line's blue mark in a 32 frame, the folder's chevron (footnote semibold, tertiary), the editing's
+   red minus, its «Delete» and the handle; the line's swipe uncovers the platform's red «Delete» */
+.kind-circle { display: grid; place-items: center; border-radius: 50%; flex: none; }
+.mark-room { width: 32px; height: 32px; display: grid; place-items: center; flex: none; }
+.row-chevron { display: grid; place-items: center; flex: none; }
+.row-caption.footnote { font-size: 13px; margin-top: 2px; }
+.row-title.one-line { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.minus-mark { border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: pointer; flex: none; }
+.minus-room { width: 22px; flex: none; }
+.delete-key { border: 0; background: var(--red); color: #fff; font: inherit; font-size: 15px; padding: 0 14px; align-self: stretch; margin: -8px -16px -8px 0; cursor: pointer; }
+.move-handle { display: grid; place-items: center; cursor: grab; touch-action: none; flex: none; padding: 4px; }
+.swipe-tile.red { background: var(--red); width: auto; min-width: 74px; padding: 0 16px; }
+.swipe-word { color: #fff; font-size: 15px; }
+/* THE PLATFORM'S SEARCH BAR (iOS MTSearchField): the field 36 high, its fill, the magnifier and «Search» in the secondary grey, the clear
+   key (xmark.circle.fill) while a word stands; the search's cross beside it while the search is active -- a round of the bar's glass
+   on the finger's 44, xmark 15 */
+.search { display: flex; align-items: center; gap: 8px; }
+.search-field { position: relative; flex: 1; min-width: 0; }
+.search .search-field input { padding-left: 30px; padding-right: 30px; }
+.search-field input::-webkit-search-cancel-button { display: none; -webkit-appearance: none; }
+.search-glass { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: rgba(235, 235, 245, 0.6); pointer-events: none; }
+.search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border: 0; padding: 0; background: none;
+                display: grid; place-items: center; color: rgba(235, 235, 245, 0.6); cursor: pointer; }
+.search-cancel { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 1px solid var(--glass-rim); background: var(--glass);
+                 display: grid; place-items: center; cursor: pointer; padding: 0; }
+/* THE SEARCH'S RESULTS (iOS searchResults): the inset groups 8 off the list's sides, the header the caption's 12 grey; a line 8 above and
+   below, 12 at its sides on the glass row plate -- the face 46, 12 to the words: the name at the subheadline's 15 bold, under it 3 down
+   the presence at the caption's 12 or a letter's two lines in grey, the hour at the caption2's 11 grey on the right */
+.search-results { padding: 4px 8px 16px; }
+.results-sect { margin-bottom: 18px; }
+.results-sect .sect-head { font-size: 12px; padding: 0 12px 6px; }
+.result-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; border-bottom: 0.5px solid transparent; }
+.result-row:hover { background: rgba(255, 255, 255, 0.05); }
+.result-words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.result-name { font-size: 15px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result-sub { font-size: 12px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result-text { font-size: 12px; color: var(--gray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.result-time { font-size: 11px; color: var(--gray); flex: none; align-self: center; }
+.nothing-found { color: var(--gray); text-align: center; padding: 18px; font-size: 17px; }
+/* the empty archive (iOS ArchivedChatsView: Text("Archive is empty") grey at the page's middle) */
+.archive-empty { color: var(--gray); font-size: 17px; text-align: center; padding: 30vh 16px 0; }
+/* THE HANDSETS BESIDE A NAME (iOS CallInlineHandset): a circle of 26 in green or red, the glyph 12 bold white (phone.down: the handset
+   turned), the finger's 44 around it without moving the line */
+.handset { position: relative; flex: none; width: 26px; height: 26px; margin: -2px 0; padding: 0; border: 0; background: none; cursor: pointer; }
+.handset::after { content: ""; position: absolute; inset: -9px; }
+.handset-face { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; }
+.handset.green .handset-face { background: var(--green); }
+.handset.red .handset-face { background: var(--red); }
+.handset.red .handset-face svg { transform: rotate(135deg); }
+.room-row-mark { display: inline-grid; place-items: center; flex: none; }
+.row .top .name.chat-name { flex: 0 1 auto; }
+/* THE FACE SHEET'S HEAD (iOS MontanaFaceSheet): the face 72, 12 to the question at the subheadline's 15 and to the note at the footnote's
+   13 grey, centred, 20 at the sides and the top, 16 below */
+.face-sheet-head { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 20px 16px; border-bottom: 0.5px solid rgba(255, 255, 255, 0.12); }
+.face-sheet-question { font-size: 15px; color: var(--ink); text-align: center; }
+.face-sheet-note { font-size: 13px; color: var(--gray); text-align: center; }
+/* THE ROW'S THUMBNAIL (iOS MTLetterThumb, 20): the voice's round of glass under an angular rainbow at 0.22 with a 0.35 rim, the round
+   note's window, a poster cut to its corners, else the quiet plate (white 0.16) */
+.row-thumb { flex: none; display: grid; place-items: center; overflow: hidden; }
+.row-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.row-thumb.voice-round { border-radius: 50%; border: 0.5px solid rgba(255, 255, 255, 0.35);
+  background: conic-gradient(rgba(0, 255, 255, 0.22), rgba(175, 82, 222, 0.22), rgba(255, 45, 85, 0.22), rgba(0, 255, 255, 0.22)), var(--glass); }
+.row-thumb.note-round { border-radius: 50%; background: #000; border: 0.5px solid rgba(255, 255, 255, 0.35); }
+.row-thumb.plate { background: rgb(41, 41, 41); }
+.code-view.expands { cursor: pointer; }
+a.card-link { cursor: pointer; display: block; }
+/* WHILE SEARCHING THE LIST STANDS STILL (iOS pinTop): the field keeps the head's foot, the results scroll in their own frame under it */
+.rows.searching { overflow: hidden; display: flex; flex-direction: column; }
+.rows.searching > .search-results { flex: 1; min-height: 0; overflow: auto; }
+.rows.searching > .search { flex: none; }
+/* THE ARCHIVE'S PAGE (iOS ArchivedChatsView): pushed over the chats from the right (0.35 s), its bar the way back and «Archive»; each row
+   on its plate of the bar's glass (MTRowBubble: 12 within across, 8 down, 16 off the page's sides), no line between two */
+.archive-bar { position: relative; z-index: 5; animation: page-push-in 0.35s cubic-bezier(0.2, 0.9, 0.2, 1) backwards; }
+.rows.archive-list { animation: page-push-in 0.35s cubic-bezier(0.2, 0.9, 0.2, 1) backwards; }
+.rows.archive-list .swipe-box { margin: 0 16px; }
+.rows.archive-list .swipe-slide { background: var(--glass); }
+.rows.archive-list .row { height: 74px; padding: 0 12px; }
+.rows.archive-list .row::after { display: none; }
+@media (prefers-reduced-motion: reduce) { .archive-bar, .rows.archive-list { animation: none; } }
+/* THE GROUP'S AND THE CHANNEL'S STEPS (iOS MTGroupPickStep tokens, MTFacePicker, MTGroupNameStep): the chosen as capsules over the list
+   (subheadline, 10 across, 32 high, secondary at 0.25), the face picker of 60 beside the name, 14 apart */
+.pick-tokens { display: flex; gap: 6px; overflow-x: auto; padding: 6px 12px; scrollbar-width: none; }
+.pick-token { flex: none; min-height: 32px; padding: 0 10px; border: 0; border-radius: 16px; background: rgba(142, 142, 147, 0.25); color: var(--ink);
+              font: inherit; font-size: 15px; cursor: pointer; white-space: nowrap; }
+.face-name-row { gap: 14px; }
+.face-name-row .set-field { flex: 1; border-bottom: 0; }
+.face-picker { width: 60px; height: 60px; flex: none; border-radius: 50%; border: 0; padding: 0; overflow: hidden; display: grid; place-items: center;
+               background: rgba(118, 118, 128, 0.24); cursor: pointer; }
+.row-answer { font-size: 15px; line-height: 1; flex: none; }

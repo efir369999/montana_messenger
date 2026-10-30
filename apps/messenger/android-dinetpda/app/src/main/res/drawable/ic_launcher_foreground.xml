@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The iOS app icon (AppIconGold, the golden sign on black) in the adaptive icon's visible 72dp of 108dp,
+     so the launcher's mask cuts the same picture iOS shows, and no white plate is added under it. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/app_icon_art"
+    android:inset="18dp" />

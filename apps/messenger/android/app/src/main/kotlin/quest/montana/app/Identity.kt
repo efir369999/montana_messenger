@@ -127,6 +127,9 @@ object MontanaSeed {
         Channels.forget()
         Names.forget()   // the name's record and its blinding factor are the person's: they leave with the seed (iOS SeedScope)
         Names.wipeBook()
+        LetterAuthor.forget()   // the author's key is the person's: it leaves with the words
+        PersonChain.forget()   // the person's seconds and their level leave with the words
+        Twin.forget()   // the seed's own pipe's queue and its memory are the person's (iOS SeedScope: mt.twin.asked, mt.twin.mirrored)
     }
 
     /**
@@ -148,6 +151,51 @@ object MontanaSeed {
             DeviceVault.set(TWIN, ref.toByteArray(Charsets.UTF_8))
             return ref
         }
+}
+
+/**
+ * THE PERSON'S AUTHOR KEY ON THIS PHONE (iOS MTLetterAuthor, MontanaQueueAddressing.swift:131-169): author_key = the role seed
+ * «mt-letter-author» of the master seed, derived from the words once off the main thread (the master costs 2^20 stretching),
+ * held in memory for the words seated and kept in the vault beside them (iOS wakeMyAuthor). Asked before it stands, it answers
+ * with the kept one and starts the derivation; a letter born in that instant rides unsigned, as every letter of an older build
+ * does. The pickup waits for it (await): a letter of mine told before the key stood would land as the correspondent's. A tag
+ * drifting from its vectors (Wire.authorAgreesWithCanon) leaves the key absent: nothing is signed and nothing is told mine.
+ */
+object LetterAuthor {
+    private const val KEPT = "mt.letter.author"
+    private val lock = Any()
+    private val derive = Any()
+    @Volatile private var held: Pair<String, ByteArray>? = null
+    @Volatile private var warming = false
+    private val canon by lazy { Wire.authorAgreesWithCanon().also { if (!it) Log.e("Montana", "letter_author: the tag disagrees with its vectors -- nothing is signed") } }
+
+    val key: ByteArray?
+        get() {
+            val m = MontanaSeed.mnemonic ?: return null
+            if (!canon) return null
+            val words = Wire.hex(Wire.sha(m.toByteArray()))
+            held?.let { (w, k) -> if (w == words) return k }
+            synchronized(lock) { if (!warming) { warming = true; Thread { try { make(m, words) } finally { warming = false } }.start() } }
+            return DeviceVault.get(KEPT)?.takeIf { it.size == 32 }
+        }
+
+    fun await(): ByteArray? {
+        val m = MontanaSeed.mnemonic ?: return null
+        if (!canon) return null
+        return make(m, Wire.hex(Wire.sha(m.toByteArray())))
+    }
+
+    private fun make(m: String, words: String): ByteArray? = synchronized(derive) {
+        held?.let { (w, k) -> if (w == words) return k }
+        val master = MtBindings.nativeMnemonicToMasterSeed(m)
+        val k = master?.let { MtBindings.nativeRoleSeed(it, "mt-letter-author") }
+        master?.fill(0)
+        if (k != null && MontanaSeed.mnemonic == m) { held = words to k; DeviceVault.set(KEPT, k) }
+        Log.d("Montana", "letter_author key=" + (if (k == null) "0" else "1"))
+        k
+    }
+
+    fun forget() { held = null; DeviceVault.delete(KEPT) }
 }
 
 /**
@@ -208,6 +256,7 @@ object Prefs {
         set(v) { p.edit().putBoolean("mt.notify.asked", v).apply() }
 
     /** The appearance's own settings, under the iOS UserDefaults keys (bubbleStyle, cbMineFill1, noteQuality…). */
+    fun has(key: String): Boolean = p.contains(key)
     fun str(key: String, def: String): String = p.getString(key, def) ?: def
     fun setStr(key: String, v: String) { p.edit().putString(key, v).apply() }
     fun dbl(key: String, def: Double): Double = if (p.contains(key)) p.getFloat(key, def.toFloat()).toDouble() else def

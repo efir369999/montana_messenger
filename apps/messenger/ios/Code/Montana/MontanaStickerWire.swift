@@ -25,7 +25,7 @@ enum MontanaStickerWire {
 
     /// The passport of a sticker letter, sent right behind it and named by the SAME letter the
     /// picture rides under (store.letterMidFor) -- the two meet on the other side by that name.
-    /// A GROUP'S STICKER CARRIES ITS PASSPORT TOO (the author's word 17.10.2026 22:3x MSK: «everything as in chats, one to one»): a
+    /// A GROUP'S STICKER CARRIES ITS PASSPORT TOO (the author's word 17.10.2026 19:3x UTC: «everything as in chats, one to one»): a
     /// group's key is no pipe, so the passport rides the group's own word (MTGroup.carryPassport) to everyone the phone carries to,
     /// and it names no address -- in a group a person is known by seat alone; the set is asked of the pipe the passport came by.
     @MainActor

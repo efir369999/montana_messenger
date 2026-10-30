@@ -1140,7 +1140,9 @@ encapsulation to the contact root of its slot, carrying a request and never a le
 collection for a device that was away, and the waking of one that sleeps. With them the stream,
 whose path is built once and held while its point rotates every window like everything else, and the
 budget a device spends on a stranger, divided equally across its links so that a full device answers
-nothing. There is no map here and none is built: a first connection comes from the world, and a door
+nothing. And the renewal of the keys of a link in every window it carries anything, with the heal of
+a pipe by a pair of letters (Network, "How a link renews its keys"; NET-25), written only after the
+full network run of issue #24. There is no map here and none is built: a first connection comes from the world, and a door
 tells only about itself.
 
 **Done when.** A stranger who knows only a claimed name reaches its holder, and the two carry an

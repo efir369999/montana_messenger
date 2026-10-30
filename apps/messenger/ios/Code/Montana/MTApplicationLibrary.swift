@@ -8,7 +8,7 @@ extension MTApplication {
         case .calls: return 1
         case .chats, .groups, .channels: return 2   // the chats' tile, until the author gives the groups and the channels their own
         case .feed: return 4
-        case .wallet: return -1   // the platform's wallet glyph in every style (the author's word 18.10.2026 10:3x MSK: «system, as the wallet, everywhere»)
+        case .wallet: return -1   // the platform's wallet glyph in every style (the author's word 18.10.2026 07:3x UTC: «system, as the wallet, everywhere»)
         case .card: return 6
         case .music: return 7
         case .gallery: return 8

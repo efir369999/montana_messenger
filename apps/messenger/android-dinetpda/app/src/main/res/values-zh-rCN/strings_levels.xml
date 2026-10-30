@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The levels and what they open (iOS MTLevelAccess, MontanaNotify.presentKept; Localizable.xcstrings zh-Hans). -->
+<resources>
+    <string name="kept_body">你为所有人删除的消息仍保留在对方的手机上。在 Montana，等级会开放功能：从第 %d 级起，可以禁止在自己的手机上删除消息。</string>
+    <string name="la_title">按等级开放</string>
+    <string name="la_global">全局等级 %1$d</string>
+    <string name="la_global_footer">你的等级随你在 Montana 的时间和持有的硬币增长。每个等级都会开放 Montana 的新功能。</string>
+    <string name="la_keep">禁止在我的手机上删除</string>
+    <string name="la_keep_caption">对方为所有人删除的消息会保留在这部手机上，对方的手机会收到通知。</string>
+    <string name="la_level">等级 %1$d</string>
+    <string name="la_opens">在第 %1$d 级开放。你的等级是 %2$d。</string>
+    <string name="la_node_caption">通过本应用将您自己的机器接入 Montana 网络：在这里设置，整部手机的副本会发送到它。在任何等级都可以取回您的副本。</string>
+    <string name="la_shield_title">这部手机上禁止删除</string>
+    <string name="la_shield_rule">在 Montana，等级会开放功能：从第 %1$d 级起，可以禁止在自己的手机上删除消息。你的等级是 %2$d。</string>
+    <string name="set_save_words">保存 24 个词</string>
+    <string name="set_save_words_footer">请写下并保管好这 24 个词：在新手机上，你的身份和已保存的历史记录只能凭它们打开。</string>
+    <string name="set_privacy_policy">隐私政策</string>
+</resources>

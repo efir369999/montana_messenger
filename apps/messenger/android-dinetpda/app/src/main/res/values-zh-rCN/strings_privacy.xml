@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The privacy page (iOS PrivacyView, MontanaSettings.swift:1702-1946; Localizable.xcstrings zh-Hans). -->
+<resources>
+    <string name="pr_photos">照片</string>
+    <string name="pr_full_access">完全访问</string>
+    <string name="pr_limited_access">有限访问</string>
+    <string name="pr_none">无</string>
+    <string name="pr_show_coins">显示我的硬币</string>
+    <string name="pr_show_coins_sub">你的名字和硬币会出现在所有人可见的 Montana 排行榜中，联系人也能看到你的硬币。关闭后，你不在排行榜中。</string>
+    <string name="pr_delete_account">删除账户</string>
+    <string name="pr_delete_account_q">删除账户？</string>
+    <string name="pr_delete_account_msg">你的账户将被删除：此设备会抹去你的 24 词身份，你的公开名称也会从 Montana 的节点中移除。你的历史记录会加密留在这里，只有用同样的 24 个词才能再次打开——在此设备上，或在已持有副本的另一台设备上。没有人替你保管这些词：请先写下来：设置 → 隐私 → 助记词。删除应用也会抹去历史记录。</string>
+    <string name="pr_delete_account_coins">此账户持有 %1$s 枚硬币。它们留在其 24 个助记词中，只有凭这些助记词才能取回。</string>
+</resources>

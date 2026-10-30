@@ -127,7 +127,7 @@ enum MontanaNodeSetup {
 
     /// Puts the door up on the machine and brings back the digest of its certificate, 64 hex.
     static func run(host: String, user: String, password: String) async throws -> String {
-        // A MACHINE JOINS MONTANA'S NETWORK FROM LEVEL 8 (MTLevelAccess.ownNode, the author's word 17.10.2026 18:1x MSK).
+        // A MACHINE JOINS MONTANA'S NETWORK FROM LEVEL 8 (MTLevelAccess.ownNode, the author's word 17.10.2026 15:1x UTC).
         guard MTLevelAccess.opens(.ownNode) else { throw MTSSHError.belowLevel(MTLevelAccess.Feature.ownNode.level) }
         guard let d = door(), let sc = script() else { throw MTSSHError.channel }
         let put = try await MTSSHRun.run(host: host, user: user, password: password,

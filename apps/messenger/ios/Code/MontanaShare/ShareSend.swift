@@ -94,19 +94,6 @@ enum ShareSend {
     }
     /// The name my letters carry: the byline of a post written in the sheet.
     static var myName: String { keychainString("wakeMyName") }
-    private static func pipeSecret(for conv: String) -> Data? {
-        guard let d = MontanaKeychain.get("nsePipeSecrets"),
-              let m = try? JSONDecoder().decode([String: Data].self, from: d) else { return nil }
-        if let s = m[conv] { return s }
-        // The pipe may live under a local name (ref) while the share grid keys by the chat
-        // key — the NSE walks the alias dictionary for exactly this; the sender must too.
-        if let ad = MontanaKeychain.get("nsePipeAlias"),
-           let alias = try? JSONDecoder().decode([String: String].self, from: ad) {
-            if let ref = alias.first(where: { $0.value == conv })?.key, let s = m[ref] { return s }
-            if let chat = alias[conv], let s = m[chat] { return s }
-        }
-        return nil
-    }
 
     /// Ring the host across processes: a Darwin note a RUNNING app hears at once and picks
     /// up the pending share — the sender's bubble must not wait for the next activation.
@@ -170,7 +157,9 @@ enum ShareSend {
         // An older build's retired letter is never sent again (MTRetired.letter).
         guard !MTRetired.letter(text) else { diag("send SKIP a retired letter"); return false }
         let doors = doors()
-        guard let secret = pipeSecret(for: peer) else {
+        // The pipe is read through its one owner (MTPipeKey.mirrored): the share grid keys by the chat key, the alias walks to a
+        // pipe filed under a local name, the same walk the landing door takes.
+        guard let secret = MTPipeKey.mirrored(for: peer) else {
             diag("send SKIP no-secret peer=\(String(peer.prefix(10))) doors=\(doors.count)")
             return false
         }

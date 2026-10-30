@@ -1,7 +1,7 @@
 import SwiftUI
 
 // ════════════════════════════════════════════════════════════
-// A GROUP'S PAGE AS THE REFERENCE LAYS IT (the author's words 17.10.2026 18:4x-18:5x MSK: «channels and groups fully as in the
+// A GROUP'S PAGE AS THE REFERENCE LAYS IT (the author's words 17.10.2026 15:4x-15:5x UTC: «channels and groups fully as in the
 // reference folder, 1 to 1»; «we do not need our own kinds of pages inside groups and channels -- everything as in the reference»):
 // the head's count, the people's rows and the invite link's page. The group's state and its words stay MTGroup's; this file only
 // draws them, and the page (MontanaPeerInfoScreen) asks it for a group alone -- a channel keeps its own road.

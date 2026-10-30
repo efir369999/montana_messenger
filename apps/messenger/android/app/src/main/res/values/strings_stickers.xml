@@ -5,4 +5,11 @@
     <string name="stickers_empty">Your stickers will appear here. Make one from a photo with +</string>
     <string name="sticker_make">Make a sticker</string>
     <string name="sticker_delete_q">Delete this sticker?</string>
+    <!-- The field's panel (Picker.kt, iOS EmojiInputPanel) -->
+    <string name="picker_gif">GIF</string>
+    <string name="search_emoji">Search emoji</string>
+    <string name="search_stickers">Search stickers</string>
+    <string name="search_gifs">Search GIFs</string>
+    <string name="gifs_none">No moving pictures yet</string>
+    <string name="powered_by_giphy">Powered by GIPHY</string>
 </resources>

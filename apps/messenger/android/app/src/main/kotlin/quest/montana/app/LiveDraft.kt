@@ -42,8 +42,12 @@ object LiveDraft {
     /** The field as it stands; an empty text ends the draft (and is always said, whatever the switch). */
     fun say(ref: String, text: String, caret: Int = -1, replyMid: String = "", checkpoint: Boolean = false) {
         val ending = text.isEmpty()
-        if (!ending && !on) return
-        if (PeerSafety.isBlocked(ref)) return
+        // THE GATE OF THE LIVE WORD, NAMED WHEN IT CLOSES (iOS draft_gate, MontanaConversation.swift:4342-4351 at 2155; atom
+        // 4a13e35a76e9): a closed gate looked exactly like a broken feature -- nothing on their screen, nothing in the record.
+        // Android's own gates are the «Live chat» switch and the block (iOS's are the money flow and the peer near). Folded:
+        // a minute of typing leaves one line, not two hundred.
+        if (!ending && !on) { Diary.folded("draft_gate", "live=off to=" + ref.take(10), 30_000, ref); return }
+        if (PeerSafety.isBlocked(ref)) { if (!ending) Diary.folded("draft_gate", "blocked=1 to=" + ref.take(10), 30_000, ref); return }
         if (!checkpoint && said[ref] == text) return        // the wire already says exactly this
         if (ending && said[ref] == null) return              // nothing of mine stands there
         said[ref] = text
@@ -112,11 +116,16 @@ object LiveDraft {
         j.optString("rl").takeIf { Meeting.invite(it) != null }?.let { PeerLinks.note(ref, it, j.optDouble("rb", System.currentTimeMillis() / 1000.0)) }
         if (j.optInt("rq") == 1) MainThread.post { sayLink(ref, force = true) }
         val state = j.has("rl") || j.has("rq") || j.has("ab") || j.has("al")   // a word of state, never a keystroke (iOS draftStateKeys)
-        if (!on) return false
+        // THE REFUSAL IS NAMED (iOS draft_gate / draft_shown, MontanaE2E.swift:1059-1080 at 2155; atom 4a13e35a76e9): the word
+        // arriving was written down, the word SHOWN was not, nor the reason a word showed nothing. Folded by the peer.
+        if (!on) { if (!state && j.optString("t").isNotEmpty()) Diary.folded("draft_gate", "live=off from=" + ref.take(10), 60_000, ref); return false }
         val text = j.optString("t")
         // WORDS THAT ALREADY BECAME A LETTER ARE NOT A DRAFT (iOS draft_ghost): a word equal to a letter of theirs just landed
         val landed = text.isNotEmpty() && Book.chat(SamePair.root(ref))?.msgs?.takeLast(5)?.any { !it.mine && it.text == text } == true
-        if (text.isEmpty() || landed) shown.remove(ref) else shown[ref] = Draft(text, j.optInt("c", -1), j.optString("rm"))
+        if (text.isEmpty() || landed) shown.remove(ref) else {
+            shown[ref] = Draft(text, j.optInt("c", -1), j.optString("rm"))
+            Diary.folded("draft_shown", "len=" + text.length + " from=" + ref.take(10), 5_000, ref)
+        }
         changed()
         val fresh = n == 0L || NodeClock.now() - n <= 7_000   // the draft's «n» is the node's already (iOS 1087: nodeNow - n <= typingWordLife)
         return text.isNotEmpty() && !landed && !j.has("ck") && !state && fresh
@@ -141,6 +150,13 @@ object PeerLinks {
     /** The last link they handed, whatever its day: the face their card wears on the node outlives the card's day (iOS
      * MTPeerLinks.any, MontanaE2E.swift:61, atom 796a76a34ae0). */
     fun any(ref: String): String? = all().optJSONObject(ref)?.optString("l")?.ifEmpty { null }
+    /** A link whose card wears this seed's own face is mine, noted off the shared pipe (iOS MTPeerLinks.forget, 80a9490f). */
+    @Synchronized fun forget(ref: String) {
+        val o = all()
+        if (o.remove(ref) == null) return
+        DeviceVault.set(KEY, o.toString().toByteArray(Charsets.UTF_8))
+        android.util.Log.d("Montana", "link_forget conv=" + ref.take(10) + " own card")
+    }
     fun wipe() = DeviceVault.delete(KEY)
     /** The links and the moments they were born, for a copy (iOS MTPeerLinks, MontanaE2E.swift 46-57: two sealed maps by conversation, «peerRdvLinks» and «.b»). */
     fun carried(): Pair<Map<String, String>, Map<String, Double>> {

@@ -1,8 +1,8 @@
 import SwiftUI
 import PhotosUI
 
-/// THE CHANNEL IS BORN IN THREE STEPS (the author's words 05.10.2026 19:0x MSK: «3. Channel -- see the mechanics in the reference
-/// tree»; 19:1x «real delivery to a channel from the phone»): what a channel is, then its face, name and description, then the
+/// THE CHANNEL IS BORN IN THREE STEPS (the author's words 05.10.2026 16:0x UTC: «3. Channel -- see the mechanics in the reference
+/// tree»; 16:1x «real delivery to a channel from the phone»): what a channel is, then its face, name and description, then the
 /// subscribers, each chosen by a tick. A channel is a group whose owner alone posts; its posts ride the pipe of each subscriber
 /// from this phone, so only a person this phone holds a pipe with can subscribe (MTGroupPickStep.reachable).
 struct MTChannelIntroStep: View {
@@ -12,7 +12,7 @@ struct MTChannelIntroStep: View {
 
     var body: some View {
         NavigationStack {
-            // THE REFERENCE'S INTRODUCTION (the author's words 17.10.2026 18:4x MSK: «1 to 1»): the picture, «What is a Channel?», its
+            // THE REFERENCE'S INTRODUCTION (the author's words 17.10.2026 15:4x UTC: «1 to 1»): the picture, «What is a Channel?», its
             // one sentence, and «Create Channel» at the foot.
             VStack(spacing: 18) {
                 Spacer()
@@ -178,7 +178,7 @@ struct MTFacePicker: View {
 // A CHANNEL'S FEED, AS THE REFERENCE DRAWS IT
 // ════════════════════════════════════════════════════════════
 //
-// The author's words 17.10.2026 18:4x MSK: «channels and groups entirely as in the reference folder, 1 to 1», «and the posts too,
+// The author's words 17.10.2026 15:4x UTC: «channels and groups entirely as in the reference folder, 1 to 1», «and the posts too,
 // everything exactly as there», «we do not need our own kinds of pages inside groups and channels». A channel is a chat's feed:
 // its posts stand one under another as letters do, every post drawn as one received -- the owner's own included -- with the
 // channel's name at the head of a run, the eye and its number in the stamp and a round beside it that hands the post on.
@@ -487,7 +487,7 @@ enum MTChannelWallFold {
     }
 }
 
-/// A CHANNEL'S PAGE, AS THE REFERENCE LAYS IT (the author's words 17.10.2026 18:4x-18:5x MSK: «channels ... 1 to 1», «we do not need our
+/// A CHANNEL'S PAGE, AS THE REFERENCE LAYS IT (the author's words 17.10.2026 15:4x-15:5x UTC: «channels ... 1 to 1», «we do not need our
 /// own kinds of pages inside channels»): the head's count and the buttons, said once here; the page (MontanaPeerInfoScreen) asks it
 /// for a channel alone, as it asks MTGroupPage for a group.
 enum MTChannelPage {

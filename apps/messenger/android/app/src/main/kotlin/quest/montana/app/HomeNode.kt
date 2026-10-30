@@ -119,6 +119,8 @@ object HomeNodeWatch {
     @Volatile var fetching: Double? = null; private set
     @Volatile var restoring: Double? = null; private set
     @Volatile private var busy = false
+    /** A copy goes to the node or comes from it now: the shelf is not swept under it. */
+    val working: Boolean get() = busy
     /** Told on every move of a share; the page that shows the bar sets it. */
     @Volatile var onChange: (() -> Unit)? = null
     private fun said() { onChange?.invoke() }
@@ -186,7 +188,10 @@ object HomeNodeWatch {
         sealing = 0.0; said()
         var file: File? = null
         try {
-            val made = MontanaBackup.create(ctx) { f -> sealing = f; said() }
+            // WHAT THE PERSON LEFT OUT STAYS OUT (iOS HomeNodeWatch.send: inv.scope(CopyPlan.load())), and THE COPY STAYS LIGHT (18.10):
+            // a file the node already keeps in pieces is not sealed into it again
+            val scope = CopyInventory.gather(ctx).scope(CopyPlan.load()).plus(HomeBook.kept())
+            val made = MontanaBackup.create(ctx, scope) { f -> sealing = f; said() }
             sealing = null; said()
             if (made !is CopyResult.Made) return done(made)
             val f = made.file.also { file = it }
@@ -336,7 +341,7 @@ object HomeNodeWatch {
  * THE NODE'S CERTIFICATE, TRUSTED BY ITS DIGEST ALONE (iOS MTNodeTrust): a node put up by address has no name and no
  * authority; the digest the set-up brought back is the whole trust. Without a pin the platform's own judgement stands.
  */
-private object NodeTrust {
+internal object NodeTrust {
     fun apply(c: HttpsURLConnection) {
         val pin = MontanaHomeNode.pin
         if (pin.isEmpty()) return

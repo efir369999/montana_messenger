@@ -11,6 +11,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
 import android.widget.ScrollView
 
 // ─────────────────────────── a group is born (iOS MTGroupPickStep, MTGroupNameStep) ───────────────────────────
@@ -63,6 +64,18 @@ private fun pickRow(c: Context, ch: Chat, on: Boolean, onTap: () -> Unit): View 
     pressable(onTap)
 }
 
+/** A chosen person as a token (iOS b4cf7d10, the reference's token field): the name on a capsule, 32 high in a 44 reach; a tap lets it go. */
+private fun token(c: Context, ch: Chat, onTap: () -> Unit): View = FrameLayout(c).apply {
+    addView(c.text(ch.shown.ifBlank { c.getString(R.string.peer) }, 15f, Color.WHITE).apply {   // USER-DATA: a person's name
+        singleLineEllipsis()
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(c.dp(10), 0, c.dp(10), 0)
+        background = c.rounded(Color.argb(38, 235, 235, 245), 16)
+    }, FrameLayout.LayoutParams(WRAP, c.dp(32), Gravity.CENTER_VERTICAL))
+    minimumHeight = c.dp(44)
+    pressable(onTap)
+}
+
 /**
  * THE FIRST STEP — THE PEOPLE (iOS MTGroupPickStep, the author's word 05.10.2026: «choose Contacts to add to the group»): each
  * chosen by a tick, the search over them, the tick that goes on to the name. `onCreated` — the group's key, once it is born.
@@ -73,26 +86,42 @@ fun groupPickPage(act: MainActivity, onClose: () -> Unit, onCreated: (String) ->
     val people = reachable(adding)
     val chosen = linkedSetOf<String>()
     val rows = c.vstack(Gravity.NO_GRAVITY)
+    val tokens = c.hstack { gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), 0, dp(16), 0) }
+    // THE CHOSEN AS TOKENS OVER THE LIST (iOS b4cf7d10, the checklist's A.1), in the order they were chosen
+    val tokenPlate = c.plate { addView(HorizontalScrollView(c).apply { isHorizontalScrollBarEnabled = false; addView(tokens) }, lp()) }
     var query = ""
     lateinit var bar: StepBar
-    fun fill() {
+    lateinit var fill: () -> Unit
+    fun toggle(ref: String) {
+        if (!chosen.remove(ref)) chosen.add(ref)
+        bar.ready(adding == null || chosen.isNotEmpty())
+        fill()
+    }
+    fill = {
+        tokens.removeAllViews()
+        chosen.mapNotNull { ref -> people.firstOrNull { it.ref == ref } }.forEachIndexed { i, ch ->
+            tokens.addView(token(c, ch) { toggle(ch.ref) }, lp(WRAP, WRAP).apply { if (i > 0) marginStart = c.dp(6) })
+        }
+        tokenPlate.visibility = if (chosen.isEmpty()) View.GONE else View.VISIBLE
         rows.removeAllViews()
         val q = query.trim()
         people.filter { q.isEmpty() || it.shown.contains(q, ignoreCase = true) }.forEachIndexed { i, ch ->
             if (i > 0) rows.addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = c.dp(68) })
-            rows.addView(pickRow(c, ch, ch.ref in chosen) {
-                if (!chosen.remove(ch.ref)) chosen.add(ch.ref)
-                bar.ready(chosen.isNotEmpty())
-                fill()
-            }, lp())
+            rows.addView(pickRow(c, ch, ch.ref in chosen) { toggle(ch.ref) }, lp())
         }
     }
-    bar = StepBar(c, c.getString(R.string.gr_choose), back = false, onLead = onClose) {
+    // the reference's own titles (iOS b4cf7d10): a new group, or the people added to one -- a channel's, its subscribers
+    val title = when {
+        adding == null -> R.string.gr_new
+        Groups.isChannel(adding) -> R.string.gr_add_subscribers
+        else -> R.string.gr_add_members
+    }
+    bar = StepBar(c, c.getString(title), back = false, onLead = onClose) {
         val picked = people.filter { it.ref in chosen }
         if (adding != null) { Groups.add(adding, picked.map { it.ref }); onClose() }
         else act.push { back -> groupNamePage(act, picked, back) { key -> back(); onClose(); onCreated(key) } }
     }
-    bar.ready(false)
+    bar.ready(adding == null)   // a new group may begin with nobody yet (A.2); adding asks for someone to add
     val search = EditText(c).apply {
         hint = c.getString(R.string.search)
         setTextColor(Color.WHITE); setHintTextColor(MT.gray)
@@ -111,6 +140,7 @@ fun groupPickPage(act: MainActivity, onClose: () -> Unit, onCreated: (String) ->
             setPadding(dp(16), 0, dp(16), dp(32))
             addView(search, lp())
             gap(12)
+            addView(tokenPlate, lp().apply { bottomMargin = dp(12) })
             addView(c.plate { addView(rows, lp()) }, lp())
             addView(c.text(c.getString(R.string.gr_pick_note), 12f, MT.gray).apply { setPadding(dp(16), dp(8), dp(16), 0) }, lp())
         })
@@ -181,8 +211,12 @@ private fun groupNamePage(act: MainActivity, members: List<Chat>, onBack: () -> 
                     addView(name, lp(0, WRAP, 1f))
                 }, lp())
             }, lp())
-            addView(c.text(c.getString(R.string.gr_people), 13f, MT.gray).apply { setPadding(dp(16), dp(22), dp(16), dp(6)) }, lp())
-            addView(c.plate { addView(people, lp()) }, lp())
+            // the people counted over them (iOS b4cf7d10: «N members»), and nothing when the group begins with nobody
+            if (members.isNotEmpty()) {
+                addView(c.text(c.resources.getQuantityString(R.plurals.gr_members, members.size, members.size), 13f, MT.gray)
+                    .apply { setPadding(dp(16), dp(22), dp(16), dp(6)) }, lp())
+                addView(c.plate { addView(people, lp()) }, lp())
+            }
         })
     }
     // the name's field takes the keys at once (iOS typing = true on appear)

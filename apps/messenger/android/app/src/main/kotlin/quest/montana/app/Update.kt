@@ -9,9 +9,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
+import android.graphics.Color
+import android.view.Gravity
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
@@ -33,7 +39,8 @@ object Update {
     private const val EVERY = 60 * 60 * 1000L
     const val ACTION = "quest.montana.app.UPDATE"
 
-    class Site(val number: Long, val version: String, val file: String, val sha256: String, val size: Long)
+    class Site(val number: Long, val version: String, val file: String, val sha256: String, val size: Long,
+               val notes: JSONArray = JSONArray(), val l10n: JSONObject? = null)
 
     @Volatile private var busy = false
 
@@ -53,15 +60,24 @@ object Update {
         val file = j.optString("file")
         val sha = j.optString("sha256")
         if (!Regex("[A-Za-z0-9._-]+[.]apk").matches(file) || !Regex("[0-9a-f]{64}").matches(sha)) return null
-        Site(j.optLong("build"), j.optString("name").substringBefore(" "), file, sha, j.optLong("size"))
+        // what changed, as the publishing road wrote it, and in the languages it brought (iOS MTClientRelease notes, l10n)
+        Site(j.optLong("build"), j.optString("name").substringBefore(" "), file, sha, j.optLong("size"),
+            j.optJSONArray("notes") ?: JSONArray(), j.optJSONObject("l"))
     }.getOrNull()
 
     /** Asked when the app comes to the front and on each box round, at most once an hour: a newer build rings once. */
     fun look(c: Context, force: Boolean = false) {
         val now = System.currentTimeMillis()
-        if (!force && now - (Prefs.str("mt.update.lookedAt", "0").toLongOrNull() ?: 0L) < EVERY) return
+        // a build that never told the Montana room of itself asks at once (the room's row for the build now running)
+        val roomTold = (Prefs.str("mt.release.row", "0").toLongOrNull() ?: 0L) >= own(c)
+        if (!force && roomTold && now - (Prefs.str("mt.update.lookedAt", "0").toLongOrNull() ?: 0L) < EVERY) return
         Prefs.setStr("mt.update.lookedAt", now.toString())
         val s = newest() ?: return
+        // THE ROOM HEARS THE BUILD (iOS MTReleaseState.deliver: release.build >= ownBuild): the newest and the one running alike, once
+        if (own(c) <= s.number) {
+            if (Book.appendRelease(s.number, s.version, s.notes, s.l10n, SITE)) Log.d("Montana", "release told build=" + s.number)
+            Prefs.setStr("mt.release.row", s.number.toString())
+        }
         if (s.number <= own(c)) { if (!busy) clear(c); return }
         if (Prefs.str("mt.update.told", "") == s.number.toString()) return
         Prefs.setStr("mt.update.told", s.number.toString())
@@ -217,5 +233,96 @@ class UpdateDone : BroadcastReceiver() {
             return
         }
         Update.done(c, status, i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE))
+    }
+}
+
+/**
+ * A NEW BUILD'S WORD, AS THE MONTANA ROOM KEEPS IT (iOS releaseInfoOf, releaseLanguages, ContentView.swift:4066-4085): the build, the
+ * version, what changed, the site. What changed speaks the phone's language when the road brought that language, else as the road
+ * wrote it; the row keeps every language, so a phone switched later reads its own.
+ */
+object Release {
+    class Info(val build: Long, val version: String, val notes: List<String>, val url: String)
+
+    fun of(t: String): Info? {
+        if (!t.startsWith(Marks.RELEASE)) return null
+        val o = runCatching { JSONObject(t.removePrefix(Marks.RELEASE)) }.getOrNull() ?: return null
+        if (!o.has("b")) return null
+        fun list(a: JSONArray?) = (0 until (a?.length() ?: 0)).mapNotNull { a!!.optString(it).trim().ifEmpty { null } }
+        val own = list(o.optJSONObject("l")?.optJSONArray(java.util.Locale.getDefault().language))
+        return Info(o.optLong("b"), o.optString("v"), own.ifEmpty { list(o.optJSONArray("n")) }, o.optString("u"))
+    }
+
+    /** Every language a row carries (null -- a row born before the translations rode). */
+    fun languages(t: String): JSONObject? = runCatching { JSONObject(t.removePrefix(Marks.RELEASE)).optJSONObject("l") }.getOrNull()
+
+    /** The scroll's head and the row's words in the list (iOS: «New version» and the build). */
+    fun title(c: Context, i: Info) = c.getString(R.string.release_new) + " " + (if (i.version.isEmpty()) "" else i.version + " ") + "(" + i.build + ")"
+    fun words(c: Context, i: Info) = c.getString(R.string.release_new) + " " + i.build
+
+    /** The changes a rolled scroll shows; one change more is shown whole -- a fold that hides one line hides nothing. */
+    private const val ROLLED = 2
+
+    /**
+     * THE ROOM'S LETTER IS A SCROLL (iOS MTReleaseScroll, MontanaBubble.swift:3595-3680): the app's glass icon and the version at its
+     * head, the room's crowned name under them, a fading rule, the changes as points; past three the chevron unrolls the rest in
+     * place; the one act is the path's door, «Update», which brings the newest from the site (Update.take). The plate is the room's
+     * own: a dark fall from white 0.22 to 0.09 under the accent's rim.
+     */
+    fun body(c: Context, m: Msg, into: LinearLayout) {
+        val i = of(m.text) ?: return
+        into.background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
+            intArrayOf(Color.argb(235, 56, 56, 56), Color.argb(235, 23, 23, 23))).apply { cornerRadius = c.dp(18).toFloat(); setStroke(c.dp(1), Color.WHITE) }
+        into.setPadding(c.dp(14), c.dp(14), c.dp(14), c.dp(9))
+        val col = c.vstack(Gravity.NO_GRAVITY) {}
+        col.addView(c.hstack {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(ImageView(c).apply {
+                setImageResource(R.drawable.app_icon_glass_art); scaleType = ImageView.ScaleType.CENTER_CROP
+                outlineProvider = object : android.view.ViewOutlineProvider() {
+                    override fun getOutline(v: android.view.View, o: android.graphics.Outline) = o.setRoundRect(0, 0, v.width, v.height, v.dp(9).toFloat())
+                }
+                clipToOutline = true
+            }, LinearLayout.LayoutParams(c.dp(40), c.dp(40)).apply { marginEnd = c.dp(10) })
+            addView(c.vstack(Gravity.NO_GRAVITY) {
+                addView(c.text(title(c, i), 17f, Color.WHITE, bold = true), LinearLayout.LayoutParams(WRAP, WRAP))   // USER-DATA: the build's version and number
+                addView(c.text(Book.MONTANA_TITLE, 13f, Color.argb(173, 255, 255, 255)), LinearLayout.LayoutParams(WRAP, WRAP).apply { topMargin = c.dp(2) })   // a name, not a word
+            }, LinearLayout.LayoutParams(0, WRAP, 1f))
+        }, LinearLayout.LayoutParams(MATCH, WRAP))
+        col.addView(android.view.View(c).apply {
+            background = android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(Color.TRANSPARENT, Color.argb(153, 255, 255, 255), Color.TRANSPARENT))
+        }, LinearLayout.LayoutParams(MATCH, c.dp(1)).apply { topMargin = c.dp(10); bottomMargin = c.dp(10) })
+        val points = c.vstack(Gravity.NO_GRAVITY) {}
+        val folds = i.notes.size > ROLLED + 1
+        var open = false
+        fun lay() {
+            points.removeAllViews()
+            for (n in if (folds && !open) i.notes.take(ROLLED) else i.notes) points.addView(c.hstack {
+                gravity = Gravity.TOP
+                addView(android.view.View(c).apply { background = android.graphics.drawable.GradientDrawable().apply { shape = android.graphics.drawable.GradientDrawable.OVAL; setColor(Color.WHITE) } },
+                    LinearLayout.LayoutParams(c.dp(5), c.dp(5)).apply { topMargin = c.dp(8); marginEnd = c.dp(9) })
+                addView(c.text(n, 15f, Color.argb(237, 255, 255, 255)), LinearLayout.LayoutParams(0, WRAP, 1f))   // USER-DATA: what changed, as the road wrote it
+            }, LinearLayout.LayoutParams(MATCH, WRAP).apply { bottomMargin = c.dp(7) })
+        }
+        lay()
+        col.addView(points, LinearLayout.LayoutParams(MATCH, WRAP))
+        if (folds) {
+            val chevron = c.icon(R.drawable.ic_chevron_down, Color.argb(204, 255, 255, 255), 14)
+            col.addView(FrameLayout(c).apply {
+                addView(chevron, FrameLayout.LayoutParams(c.dp(14), c.dp(14), Gravity.CENTER))
+                contentDescription = c.getString(R.string.release_expand)
+                pressable {
+                    open = !open; lay(); chevron.rotation = if (open) 180f else 0f
+                    contentDescription = c.getString(if (open) R.string.release_collapse else R.string.release_expand)
+                }
+            }, LinearLayout.LayoutParams(MATCH, c.dp(44)))
+        }
+        col.addView(PathDoor(c, c.getString(R.string.update_now)) {
+            Log.d("Montana", "release tap build=" + i.build)
+            (c as? Activity)?.let { Update.take(it) }
+        }, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = c.dp(3) })
+        // the scroll is as wide as its head: a column that wraps would measure each point once at its own width and keep that height
+        into.addView(col, LinearLayout.LayoutParams(c.dp(250), WRAP))
     }
 }

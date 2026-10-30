@@ -118,27 +118,6 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
         addView(c.text(versionFooter(c), 11f, MT.withAlpha(MT.gray, 0.7f), center = true))
     }
 
-    private fun chooseCarried(all: List<MontanaBackupID.Carried>) {
-        // USER-DATA: the moment a record was written, and how many devices wrote it
-        val fmt = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT)
-        val lines = all.map { fmt.format(java.util.Date(it.at)) + if (it.devices > 1) " · ×${it.devices}" else "" }
-        android.app.AlertDialog.Builder(act)
-            .setTitle(R.string.which_identity)
-            .setItems(lines.toTypedArray()) { _, i -> openCarried(all[i].words) }
-            .show()
-    }
-
-    /** The seed the account carries opens this phone (iOS openCarried); the copy of the history comes with the network. */
-    private fun openCarried(words: String) {
-        if (creating) return
-        creating = true
-        act.background {
-            val keys = SeedKeys.from(words)
-            val stored = keys != null && MontanaSeed.enter(keys)
-            act.onMain { creating = false; if (stored) onDone() else go(0) }
-        }
-    }
-
     // ── 0: the door (the author's design, iOS 29.09; iOS keeps the Montana door alone) ──
     private fun doors() = page {
         val c = context
@@ -324,21 +303,6 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
             }
         }
         addView(restore, lp())
-        // THE ACCOUNT ALREADY HOLDS A SEED (iOS recover 2357-2387): beside the words, a clear door; more than one — the person
-        // chooses. The account is asked while the page stands, every three seconds: its record comes after the sign-in.
-        val carried = PathDoor(c, c.getString(R.string.continue_backup)) {
-            val all = MontanaBackupID.held()
-            if (all.size == 1) openCarried(all[0].words) else if (all.isNotEmpty()) chooseCarried(all)
-        }.apply { visibility = View.GONE }
-        addView(carried, lp().apply { topMargin = dp(16) })
-        val ask = object : Runnable {
-            override fun run() {
-                if (!carried.isAttachedToWindow) return
-                carried.visibility = if (MontanaBackupID.held().isEmpty()) View.GONE else View.VISIBLE
-                carried.postDelayed(this, 3000)
-            }
-        }
-        carried.post(ask)
         spacer()
     }
 

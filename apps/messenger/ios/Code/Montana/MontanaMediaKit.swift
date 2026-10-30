@@ -536,7 +536,7 @@ enum MontanaVideo {
         let inst = AVMutableVideoCompositionInstruction()
         inst.timeRange = CMTimeRange(start: .zero, duration: asset.duration)
         let layer = AVMutableVideoCompositionLayerInstruction(assetTrack: vTrack)
-        // THE PICTURE STANDS UPRIGHT IN ITS PIXELS (the author's word 18.10.2026 00:3x MSK: a vertical video from a phone came
+        // THE PICTURE STANDS UPRIGHT IN ITS PIXELS (the author's word 17.10.2026 21:3x UTC: a vertical video from a phone came
         // crooked): the track's turn is applied and then moved back onto the canvas by the box it lands in, so a source whose
         // turn carries no translation of its own (or a wrong one) is not rendered off the frame, and what leaves is upright
         // pixels with no turn left for any receiver to read.
@@ -946,7 +946,7 @@ extension MontanaVideo {
             guard (try? await comp.insertTimeRange(r, of: a, at: cursor)) != nil else { return nil }
             cursor = CMTimeAdd(cursor, a.duration)
         }
-        // THE TURN RIDES THE STITCH (the author's word 18.10.2026 00:3x MSK: a vertical video from a phone came crooked): every
+        // THE TURN RIDES THE STITCH (the author's word 17.10.2026 21:3x UTC: a vertical video from a phone came crooked): every
         // piece the system export wrote keeps the source's turn in its track's preferredTransform -- it rotates no pixels --
         // and a composition's track starts at no turn, so a vertical film longer than two pieces left lying on its side. The
         // pieces are of one source and carry one turn; the stitched track takes it.
@@ -1159,7 +1159,7 @@ extension MontanaMedia {
 // Thumbnail for MediaRef (inline preview in the ratchet, ≤ THUMB_MAX 16 KiB).
 extension UIImage {
     func mediaThumbnail(maxDim: CGFloat = 96, maxBytes: Int = 1_200) -> Data? {   // mini-thumb (blur-up placeholder); full preview loads from the blob
-        // THE PREVIEW'S PIXELS ARE OURS, NOT THE PLATFORM'S GUESS (the author's word 17.10.2026 15:5x MSK, the iPhone 17: «media
+        // THE PREVIEW'S PIXELS ARE OURS, NOT THE PLATFORM'S GUESS (the author's word 17.10.2026 12:5x UTC, the iPhone 17: «media
         // does not load»). The platform's renderer is never opaque by default, and in its automatic range a wide-colour picture --
         // every camera photo is Display P3 -- or an HDR one is drawn in 16-bit float. The see-through test asked the RENDERER's
         // output, so every photo took the sticker's PNG road, and in 16 bits its last rung of 32 pixels still weighed 4.5-5.4 KB

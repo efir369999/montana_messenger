@@ -2,7 +2,7 @@ import AVFoundation
 import Foundation
 import Speech
 
-/// THE VOICE READ AS TEXT, ON THIS PHONE (the author's word 21.10.2026 12:15 MSK: «voice transcription natively, by the system:
+/// THE VOICE READ AS TEXT, ON THIS PHONE (the author's word 21.10.2026 09:15 UTC: «voice transcription natively, by the system:
 /// iOS 26+ SpeechAnalyzer, the best way; before 26 SFSpeechRecognizer -- the URL request, on the device when it can, punctuation,
 /// the contacts' names and the chat's frequent words as context»). The platform's own recogniser reads the voice's file where it
 /// lies. ON THE DEVICE ONLY: the server recogniser would carry a private voice to a third party, and privacy has no degrees -- a

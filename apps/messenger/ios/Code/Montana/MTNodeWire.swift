@@ -38,70 +38,55 @@ enum MTNodeWire {
     static func hexHash(_ m: Data) -> String {
         SHA256.hash(data: m).map { String(format: "%02x", $0) }.joined()   // LOCAL-HASH-OK: canon owner
     }
+    /// The one composition of the set: `SHA-256(domain || 0x00 || parts…)` (MTPipe.domained names it for the app). It stands
+    /// here so the pipe's one owner (MTPipeKey), compiled into the extensions too, derives by the same bytes.
+    static func domained(_ domain: String, _ parts: [Data]) -> Data {
+        var m = Data(domain.utf8)   // LOCAL-HASH-OK: canon owner
+        m.append(0x00)
+        for p in parts { m.append(p) }
+        return Data(SHA256.hash(data: m))
+    }
+    static func windowLE(_ w: UInt64) -> Data {
+        var v = w.littleEndian
+        return withUnsafeBytes(of: &v) { Data($0) }
+    }
+    /// The tag of a pipe: SHA-256("mt-tag" ‖ 0x00 ‖ shared_secret ‖ W_8B_LE)[0..16] (MTPipe.tag, held by its canon vectors).
+    static func tag(sharedSecret: Data, window: UInt64) -> Data {
+        domained("mt-tag", [sharedSecret, windowLE(window)]).prefix(16)
+    }
+    /// The material the thirty digits of a safety number are read from (MTPipe.fingerprint): `h = SHA-256("mt-safety" || 0x00 ||
+    /// h)` repeated fingerprintIterations times, all thirty-two bytes of it.
+    static let fingerprintIterations = 5200
+    static func fingerprintMaterial(_ key: Data) -> Data {
+        var h = key
+        for _ in 0 ..< fingerprintIterations { h = domained("mt-safety", [h]) }
+        return h
+    }
+    /// The key confirmation of a first letter: SHA-256("mt-first-conf" ‖ 0x00 ‖ secret ‖ ct)[0..16] in base64url without padding
+    /// (MontanaFirstContact.firstConfirm, P-56).
+    static func firstConfirm(secret: Data, ct: Data) -> String {
+        domained("mt-first-conf", [secret, ct]).prefix(16).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+    }
+
     /// The raw seal key of the set: SHA-256("mt-pipe-key" ‖ 0x00 ‖ step_secret ‖ W_8B_LE) — held by the canon vectors.
     static func sealKey(stepSecret: Data, window: UInt64) -> [UInt8] {
         var m = Data("mt-pipe-key".utf8); m.append(0); m.append(stepSecret)   // LOCAL-HASH-OK: canon owner
         var w = window.littleEndian; withUnsafeBytes(of: &w) { m.append(contentsOf: $0) }
         return Array(SHA256.hash(data: m))   // LOCAL-HASH-OK: canon owner, held by the vectors
     }
-    /// The letter body key of a minute: the seal key under the pipe secret of that minute's day.
-    static func bodyKey(secret: Data, window: UInt64) -> [UInt8] {
-        sealKey(stepSecret: pipeSecret(secret, day: window / minutesPerDay), window: window)
-    }
-    /// The conversation's daily tag: both sides derive it from the pipe secret of that day.
-    static func convW(_ secret: Data, window: UInt64) -> String {
-        convTag(daySecret: pipeSecret(secret, day: window), window: window)
-    }
     /// The canon's daily tag over the day's secret: SHA-256("mt-wake-conv" ‖ 0x00 ‖ day_secret ‖ W_8B_LE) -- held by the canon
     /// vectors (MontanaWakePush.agreesWithCanon, the node's test_node_wake.py) apart from the walk that feeds it, as sealKey is
-    /// for bodyKey. Their day 29737 lies past walkAnchorDay: read through convW it walked 8983 steps, the wake canon failed and
-    /// every wake road stood (2266-2267, never delivered).
+    /// for the body key. Their day 29737 lies past MTPipeKey.walkAnchorDay: read through the walk it took 8983 steps, the wake
+    /// canon failed and every wake road stood (2266-2267, never delivered).
     static func convTag(daySecret: Data, window: UInt64) -> String {
         var m = Data("mt-wake-conv".utf8); m.append(0); m.append(daySecret)   // LOCAL-HASH-OK: canon owner
         var w = window.littleEndian; withUnsafeBytes(of: &w) { m.append(contentsOf: $0) }
         return hexHash(m)
     }
-
-    /// THE PIPE SECRET WALKS WITH THE CLIENT'S DAY (21.10.2026, the author's word at 12:00: the day; Canon, "The secret a tag
-    /// stands on walks with the window"). pipe_secret(D + 1) = SHA-256("mt-pipe-ratchet" ‖ 0x00 ‖ pipe_secret(D)), one step a
-    /// day, standing still through walkAnchorDay: up to that day every key is byte for byte the one the earlier builds and
-    /// Android derive, so they still meet, and from the day after each day stands one hash further down a one-way walk. The
-    /// client counts its own day, not the Canon's window: its box keeps days (boxDays) and its seal minutes, and one anchor for
-    /// every pipe brings both sides to one value without a letter about it. A day read off a node's time is clamped to maxWalk
-    /// steps, so a forged time costs a bounded walk and opens nothing.
-    static let walkAnchorDay: UInt64 = 20754   // 28.10.2026 UTC
+    // THE PIPE SECRET WALKS WITH THE CLIENT'S DAY (21.10.2026): the walk, the conversation's root and the item keys live with the
+    // secret itself in its one owner, MTPipeKey (24.10.2026) -- no function of this file takes a pipe's bytes but through it.
     static let minutesPerDay: UInt64 = 1440
-    /// THE ROOT OF A CONVERSATION (21.10.2026, the author's word at 15:2x MSK: «yes»): SHA-256("mt-conv-root" ‖ 0x00 ‖ the
-    /// established secret). What a pair derives afresh for every item -- the blind of a coin SEND and the author field of a
-    /// letter -- stands on the root from the day after walkAnchorDay, never on the established secret, so the walk can erase
-    /// that secret. The root opens no letter: it is one hash in a domain of its own, and nothing of the walk is derived from it.
-    static func convRoot(_ secret: Data) -> Data {
-        var m = Data("mt-conv-root".utf8); m.append(0); m.append(secret)   // LOCAL-HASH-OK: canon owner
-        return Data(SHA256.hash(data: m))
-    }
-    /// The key an item laid today stands on: the root past the anchor, the established secret up to it, so a phone and an
-    /// earlier build blind and sign alike until the walk begins.
-    static func itemKey(_ secret: Data, day: UInt64 = dayWindow()) -> Data { day > walkAnchorDay ? convRoot(secret) : secret }
-    /// The keys a received item may stand on, the root first: the sender's day is its own clock, so the receiver tries both
-    /// while it still holds the established secret; no third party computes either.
-    static func itemKeys(_ secret: Data) -> [Data] { [convRoot(secret), secret] }
-    static let maxWalk: UInt64 = 36_600
-    private static let walkLock = NSLock()
-    private static var walked: [Data: (steps: UInt64, value: Data)] = [:]
-    static func pipeSecret(_ secret: Data, day: UInt64) -> Data {
-        let steps = min(day > walkAnchorDay ? day - walkAnchorDay : 0, maxWalk)
-        if steps == 0 { return secret }
-        walkLock.lock(); defer { walkLock.unlock() }
-        var at: UInt64 = 0, value = secret
-        if let c = walked[secret], c.steps <= steps { at = c.steps; value = c.value }
-        while at < steps {
-            var m = Data("mt-pipe-ratchet".utf8); m.append(0); m.append(value)   // LOCAL-HASH-OK: canon owner
-            value = Data(SHA256.hash(data: m)); at += 1
-        }
-        if walked.count >= 256 { walked.removeAll() }
-        walked[secret] = (steps, value)
-        return value
-    }
     /// The daily tag of a handed-out invite (F-2: the first-letter wake).
     static func rdvConvW(_ invite: Data, window: UInt64) -> String {
         var m = Data("mt-rdv-wake".utf8); m.append(0); m.append(invite)   // LOCAL-HASH-OK: canon owner
@@ -121,7 +106,7 @@ enum MTNodeWire {
     /// shape; the landing door became the third writer, so the shape moved here (SSOT-CONSOLIDATE, 18.09).
     static let envelopeSize = 2048
     static func letterHead(mid: String, text: String, name: String, glyph: String,
-                           quoteText: String? = nil, quoteMid: String? = nil, author: Data? = nil, secret: Data? = nil) -> Data {
+                           quoteText: String? = nil, quoteMid: String? = nil, author: Data? = nil, secret: MTPipeKey? = nil) -> Data {
         var body = Data(mid.utf8); body.append(0); body.append(contentsOf: text.utf8); body.append(0)
         body.append(contentsOf: name.utf8); body.append(0)
         body.append(contentsOf: glyph.utf8); body.append(0)
@@ -133,14 +118,14 @@ enum MTNodeWire {
         }
         // A head that carries no card is signed here by its author (withAuthor); the app's road signs after the card's tail.
         guard let secret else { return body }
-        return withAuthor(body, key: author, secret: secret, mid: mid, text: text)
+        return secret.withAuthor(body, person: author, mid: mid, text: text)
     }
     /// One size for every envelope — the node cannot tell letter lengths apart. Larger — nil.
     static func padEnvelope(_ body: Data) -> Data? {
         guard body.count <= envelopeSize else { return nil }
         var b = body; b.append(Data(count: envelopeSize - body.count)); return b
     }
-    // ── THE LETTER'S AUTHOR IS THE PERSON, NOT THE DEVICE (the author's words 11.10.2026 16:4x and 17:13 MSK, No.61-62: «the
+    // ── THE LETTER'S AUTHOR IS THE PERSON, NOT THE DEVICE (the author's words 11.10.2026 13:4x and 14:13 UTC, No.61-62: «the
     // avatar is determined by the seed phrase, the whole chain of time»; «the whole architecture is built by the chain of the
     // person and restored by it»). A pipe's secret is held by every device of one person and by the correspondent, and a letter
     // named no author: T3 on T1's words announced its face to 36 correspondents, the same words reached T1 on the same pipes,
@@ -148,8 +133,8 @@ enum MTNodeWire {
     // under a branch of the master seed only the person's devices derive, over the pipe's secret, the letter's name and its
     // words, cut to sixteen bytes. Every device of the person reads its own letter as its own, whatever road brought it; the
     // correspondent holds sixteen bytes it can neither open nor make; an older build reads seven fields and none of this.
-    // Past walkAnchorDay the field stands on the conversation's root (itemKey), not on the pipe's secret, so the walk can
-    // erase that secret; a reader tries the root first, then the secret while it still holds it (itemKeys).
+    // Past MTPipeKey.walkAnchorDay the field stands on the conversation's root (the item key), not on the pipe's secret, so the
+    // walk can erase that secret; a reader tries the root first, then the secret while it still holds it (MTPipeKey.authorHolds).
     static let authorFields = 7   // the fields before the author: mid, text, name, glyph, quote, quoted mid, card
     static func authorTag(key: Data, secret: Data, mid: String, text: String) -> String {
         var m = Data("mt-letter-author".utf8); m.append(0); m.append(secret)   // LOCAL-HASH-OK: canon owner
@@ -157,26 +142,15 @@ enum MTNodeWire {
         let mac = HMAC<SHA256>.authenticationCode(for: m, using: SymmetricKey(data: key))
         return Data(mac).prefix(16).base64EncodedString()
     }
-    /// Whether a letter's author field is this person's: the tag made again under this person's key, compared in constant time.
-    static func authorHolds(_ tag: String, key: Data?, secret: Data, mid: String, text: String) -> Bool {
-        guard let key, key.count == 32, !tag.isEmpty, let got = Data(base64Encoded: tag), got.count == 16 else { return false }
-        return itemKeys(secret).contains { k in
-            guard let want = Data(base64Encoded: authorTag(key: key, secret: k, mid: mid, text: text)) else { return false }
-            var diff: UInt8 = 0
-            for (a, b) in zip(got, want) { diff |= a ^ b }
-            return diff == 0
-        }
-    }
-    /// The body with the author's field: every field before it closed and the empty ones written, so the tag stands eighth
-    /// whatever the letter carries; a body that would outgrow the envelope rides without it.
-    static func withAuthor(_ body: Data, key: Data?, secret: Data, mid: String, text: String, day: UInt64 = dayWindow()) -> Data {
-        guard let key, key.count == 32 else { return body }
+    /// The body with the author's field (the tag MTPipeKey.withAuthor made): every field before it closed and the empty ones
+    /// written, so the tag stands eighth whatever the letter carries; a body that would outgrow the envelope rides without it.
+    static func withAuthor(_ body: Data, tag: String) -> Data {
         var b = body
         if let last = b.last, last != 0 { b.append(0) }
         var closed = b.reduce(0) { n, x in x == 0 ? n + 1 : n }
         while closed < authorFields { b.append(0); closed += 1 }
         guard closed == authorFields else { return body }
-        b.append(contentsOf: authorTag(key: key, secret: itemKey(secret, day: day), mid: mid, text: text).utf8); b.append(0)
+        b.append(contentsOf: tag.utf8); b.append(0)
         return b.count <= envelopeSize ? b : body
     }
     /// The author's key the app mirrors for the extensions (wakeMyAuthor): the share sheet and the notification extension sign
@@ -208,7 +182,22 @@ enum MTNodeWire {
     /// The persons waiting on this phone's shelf -- their seat, their name and the keys their letters open with (a pipe's
     /// reference, or «rdv:» and an invitation) -- so a letter to a person not seated shows whose it is. Written by the app,
     /// read by the notification extension; this device's own, never in a copy (SeedScope.keychainStays).
-    struct ShelfEar: Codable { let seat: String; let name: String; let keys: [String: Data] }
+    struct ShelfEar: Codable {
+        let seat: String; let name: String; let keys: [String: MTPipeKey]
+        init(seat: String, name: String, keys: [String: MTPipeKey]) { self.seat = seat; self.name = name; self.keys = keys }
+        // The keys keep the form every build wrote (reference -> the bytes), through their one owner's store form.
+        private enum CodingKeys: String, CodingKey { case seat, name, keys }
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            seat = try c.decode(String.self, forKey: .seat); name = try c.decode(String.self, forKey: .name)
+            keys = MTPipeKey.held(try c.decode([String: Data].self, forKey: .keys))
+        }
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(seat, forKey: .seat); try c.encode(name, forKey: .name)
+            try c.encode(MTPipeKey.stored(keys), forKey: .keys)
+        }
+    }
     static func shelfEars() -> [ShelfEar] {
         MontanaKeychain.get("nseShelf").flatMap { try? JSONDecoder().decode([ShelfEar].self, from: $0) } ?? []
     }
@@ -223,16 +212,16 @@ enum MTNodeWire {
     /// again (one letter, two wakes). Only a door that did not answer, or refused, hands the walk on.
     /// The seal is made AT the knock, afresh for every door (16.09).
     struct Knock { let boxed: Bool; let woken: Int; let code: Int; let walked: Int }
-    static func knockLetter(secret: Data, twinRef: String, mid: String, plain: Data, doors: [String],
+    static func knockLetter(secret: MTPipeKey, twinRef: String, mid: String, plain: Data, doors: [String],
                             deadline: Date? = nil, silent: Bool = false) async -> Knock {
-        let cw = convW(secret, window: dayWindow())
+        let cw = secret.convW(day: dayWindow())
         let sub = subId(cw, ref: twinRef)
         var boxed = false, woken = -1, code = -1, walked = 0
         for d in doors {
             if let deadline, Date() >= deadline { break }
             walked += 1
             let r = await post("/wake", make: {
-                guard let env = sealBlob(key: bodyKey(secret: secret, window: minuteWindow()), plain) else { return [:] }
+                guard let env = sealBlob(key: secret.bodyKey(window: minuteWindow()), plain) else { return [:] }
                 var body: [String: Any] = ["conv": cw, "from_id": sub, "mid": mid, "env": env.base64EncodedString()]
                 if silent { body["silent"] = true }   // a service word (a receipt from the shelf, MTShelfPost) rings nobody
                 return body
@@ -292,14 +281,14 @@ enum MTNodeWire {
     /// deep (one hash and one open per minute — twelve milliseconds for the whole day), because a
     /// seal is never made after the node took it. One owner for the app and the landing door.
     static let openBackMinutes: UInt64 = 1440
-    static func openBoxed(_ sealed: Data, secret: Data, at: UInt64) -> (plain: Data, back: Int)? {
+    static func openBoxed(_ sealed: Data, secret: MTPipeKey, at: UInt64) -> (plain: Data, back: Int)? {
         let w0 = at / 60
         for w in [w0, w0 &- 1, w0 &+ 1] {   // the common case first: sealed and taken in one breath
-            if let p = openBlob(key: bodyKey(secret: secret, window: w), sealed: sealed) { return (p, Int(w0) - Int(w)) }
+            if let p = openBlob(key: secret.bodyKey(window: w), sealed: sealed) { return (p, Int(w0) - Int(w)) }
         }
         var w = w0 &- 2
         for _ in 2...openBackMinutes {
-            if let p = openBlob(key: bodyKey(secret: secret, window: w), sealed: sealed) { return (p, Int(w0) - Int(w)) }
+            if let p = openBlob(key: secret.bodyKey(window: w), sealed: sealed) { return (p, Int(w0) - Int(w)) }
             w = w &- 1
         }
         return nil

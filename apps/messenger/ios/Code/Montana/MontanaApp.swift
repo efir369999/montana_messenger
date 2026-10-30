@@ -66,7 +66,7 @@ struct MontanaApp: App {
                     .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                         Task { await askDiagnosticsWhenFree() }
                     }
-                    // THE UPDATE THAT CANNOT BE PUT OFF (the author's words 19.10.2026 22:2x MSK): a build below the least the
+                    // THE UPDATE THAT CANNOT BE PUT OFF (the author's words 19.10.2026 19:2x UTC): a build below the least the
                     // network admits sees the update page over everything, at the launch and at every return; it cannot be swiped away.
                     .fullScreenCover(isPresented: Binding(get: { release.required != nil }, set: { _ in })) {
                         if let r = release.required { MTUpdateRequired(release: r).environment(\.locale, appLocale) }
@@ -96,7 +96,7 @@ struct MontanaApp: App {
                     get: { meetVerdict != nil }, set: { if !$0 { meetVerdict = nil } })) {
                     Button("OK", role: .cancel) { meetVerdict = nil }
                 }
-                // WHICH MONTANA OPENS THE INVITATION (MTSiblingApps, the author's word 11.10.2026 17:13 MSK): with another Montana
+                // WHICH MONTANA OPENS THE INVITATION (MTSiblingApps, the author's word 11.10.2026 14:13 UTC): with another Montana
                 // app on this phone the platform's own dialog names each; with none the link opens here at once.
                 .onReceive(NotificationCenter.default.publisher(for: .montanaChooseApp)) { n in
                     guard let link = n.userInfo?["link"] as? String, let u = URL(string: link) else { return }
@@ -293,7 +293,7 @@ enum MontanaOutsideOpen {
     }
 }
 
-/// MONTANA ON A MAC LIVES WHILE THE PERSON KEEPS IT OPEN (the author's words 23.10.2026 17:4x MSK). An iPhone app on a Mac is a
+/// MONTANA ON A MAC LIVES WHILE THE PERSON KEEPS IT OPEN (the author's words 23.10.2026 14:4x UTC). An iPhone app on a Mac is a
 /// window, not a phone in a pocket: nothing but the person's hand raises it (MontanaWakePush.leaveDoorsOnMac), no system window
 /// is asked for it (MontanaBackgroundRefresh), and its quit is the end of the process (MTSendAssertion).
 enum MTMacHost {
@@ -368,13 +368,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         away = true                           // the next activation is a return
         E2E.shared.appPresence(open: false)   // the farewell
         MontanaDiagShip.shipNow()   // leaving the person — say it now, another occasion may not come
-        // THE MINTING GOES ON WHILE THE APP IS AWAY, AT THE GLOBAL LEVEL OF THIS MOMENT (the author's word 10.10.2026 15:0x MSK;
+        // THE MINTING GOES ON WHILE THE APP IS AWAY, AT THE GLOBAL LEVEL OF THIS MOMENT (the author's word 10.10.2026 12:0x UTC;
         // MTPersonChain.left, as the Wallet has it): every node's answer of every road feeds the chain's last second
         // (MontanaWakePush.learnSkew), so the leave names the second the app was last on the network, not a coin answer minutes
         // before -- the reason 667e6020 left it out. The observer runs on the main queue.
         MainActor.assumeIsolated {
             let person = MTPersonChain.shared
-            person.left(level: MTPersonChain.global(person: person.level, balance: MTCoinSplit.shared.available))
+            person.left()
         }
     }
     func application(_ application: UIApplication,
@@ -954,7 +954,7 @@ private func montanaCrashHex(_ v: UInt, _ to: UnsafeMutablePointer<CChar>) -> In
     return 2 + w
 }
 
-/// THE STACK THE HANDLER STANDS ON (the author's word 03.10.2026 13:33 MSK: «find the root of the crashes at 01:18 and 13:18»).
+/// THE STACK THE HANDLER STANDS ON (the author's word 03.10.2026 10:33 UTC: «find the root of the crashes at 22:18 and 10:18»).
 /// T1 2069 fell eleven times with SIGSEGV, KERN_PROTECTION_FAILURE (MetricKit: type 1, code 2), and not one of those deaths
 /// left the handler's line or its mark in run.crashed: the handler was installed by signal() and ran on the thread's own
 /// stack, and a thread that dies of an exhausted stack has no room left to run it -- the kernel kills the process in
@@ -966,7 +966,7 @@ private var gMontanaAltStack: UnsafeMutableRawPointer? = nil
 private let gMontanaAltStackSize = 128 * 1024
 /// The base of the image that holds our code (Montana, or Montana.debug.dylib in a Debug build), read once at install.
 private var gMontanaImageBase: UInt = 0
-/// THE IMAGES THE STACK IS COUNTED BY (03.10, T1 2070 15:11 and 15:13 MSK): the handler wrote the fallen thread's 96 innermost
+/// THE IMAGES THE STACK IS COUNTED BY (03.10, T1 2070 12:11 and 12:13 UTC): the handler wrote the fallen thread's 96 innermost
 /// frames, and the megabyte was spent below them, where nothing was written. Every frame of the chain is given to the image
 /// its return stands in -- ours first, «other» last -- by the text ranges read once at install.
 private let gMontanaImageNames: [StaticString] = ["Montana", "SwiftUI", "SwiftUICore", "AttributeGraph", "UIKitCore",
@@ -1175,8 +1175,8 @@ enum MontanaNetWitness {
         }
     }
 
-    /// Margarita's phone, 03.10 12:48-16:20 MSK on 2063: a third-party tunnel stood, ours was off, every door of the nodes died
-    /// through it, and her call at 16:20:14 fell into that window; the doors answered 0.7 s after the tunnel left. A socket bound
+    /// Margarita's phone, 03.10 09:48-13:20 UTC on 2063: a third-party tunnel stood, ours was off, every door of the nodes died
+    /// through it, and her call at 13:20:14 fell into that window; the doors answered 0.7 s after the tunnel left. A socket bound
     /// to a physical interface leaves any tunnel that does not hold every route -- ours does not, nor do most. This is the
     /// interface a door is bound to while a tunnel stands (MontanaDirect.doorRoadAbove).
     private static let physicalLock = NSLock()
@@ -1568,6 +1568,20 @@ final class MontanaTelemetry {
             self?.aliveState = "terminated"; self?.writeAlive(force: true, sync: true)
             MontanaLog.event("=== TERMINATE clean ==="); MontanaTrace.mark("scene", "terminate")
         }
+        #if targetEnvironment(macCatalyst)
+        // CLOSING THE LAST WINDOW ENDS THE MAC RUN (the author's word 24.10.2026 15:5x UTC: even in 2305 closing on the Mac did
+        // not end the process, and it has no right to live on by itself beside the phone). A windowless run kept the person's
+        // pickup and rang beside the phone. The leave runs no static teardown under living threads (the exit(0) of 2011-2027).
+        NotificationCenter.default.addObserver(forName: UIScene.didDisconnectNotification, object: nil, queue: .main) { [weak self] _ in
+            DispatchQueue.main.async {
+                guard !UIApplication.shared.connectedScenes.contains(where: { $0 is UIWindowScene }) else { return }
+                self?.aliveState = "terminated"; self?.writeAlive(force: true, sync: true)
+                MontanaLog.event("=== TERMINATE last window ==="); MontanaTrace.mark("scene", "terminate last-window")
+                MontanaLog.drain()
+                _exit(0)
+            }
+        }
+        #endif
         // THE CAUSE OF A DEATH IS NAMED, NOT GUESSED (the author's word 12.09: «the diary must name
         // the cause of a death»). The sentinel carries the facts a kill leaves behind — the resident
         // footprint, a memory warning, a stalled main thread — and the judge adds what the next launch
@@ -1947,7 +1961,7 @@ enum MTVoipReport {
     }
 }
 
-/// THE UPDATE THAT CANNOT BE PUT OFF (the author's words 19.10.2026 22:2x MSK: «on every build, at opening, a forced update to the new
+/// THE UPDATE THAT CANNOT BE PUT OFF (the author's words 19.10.2026 19:2x UTC: «on every build, at opening, a forced update to the new
 /// build»; «our build is Montana Core v1.0»): the release document (MTClientRelease) names the least build the network admits and the
 /// level of the core; a build below the least sees this page over everything, with the one way out -- the update's link. The page
 /// cannot be swiped away (MontanaApp). A build that knows no page (before 2252) is held by the node alone: from the second's cut it

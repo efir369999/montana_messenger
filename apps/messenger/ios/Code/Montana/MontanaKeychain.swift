@@ -112,9 +112,9 @@ enum MontanaKeychain {
     private static let sameEverywhere: [String: Any] = [kSecUseDataProtectionKeychain as String: true]
 
     /// A WRITE THAT CHANGES NOTHING WRITES NOTHING, AND A WRITE NEVER LEAVES THE KEY ABSENT (23.10.2026, the author's words
-    /// 12:16 MSK: «I quit Montana on the Mac, and it hangs and starts by itself»). Every wake by a push walks the ninety doors
+    /// 09:16 UTC: «I quit Montana on the Mac, and it hangs and starts by itself»). Every wake by a push walks the ninety doors
     /// that write here, and each write was a delete and an add: 114 deletes and 111 adds in the 36 s of one background launch
-    /// on the Mac (system log 12:17:45-12:18:20), most of them the same bytes again -- and between the delete and the add an
+    /// on the Mac (system log 09:17:45-09:18:20), most of them the same bytes again -- and between the delete and the add an
     /// extension reading the key found none. The same bytes under the same class: nothing is written. Otherwise the item is
     /// updated where it stands, added only where none stands, and recreated only when the keychain refuses the update.
     @discardableResult static func set(_ key: String, _ data: Data) -> Bool {
@@ -170,7 +170,7 @@ enum MontanaKeychain {
     }
 }
 
-/// THE MIRRORS ARE READ FROM THE KEYCHAIN ONCE A WRITE (the author's words 18.10.2026 14:3x-14:4x MSK: «the chats lag»; «as the
+/// THE MIRRORS ARE READ FROM THE KEYCHAIN ONCE A WRITE (the author's words 18.10.2026 11:3x-11:4x UTC: «the chats lag»; «as the
 /// critic, find the cause of all the lags and fix it in 2242»). Every «is this person refused», «is this chat pinned» asked the
 /// keychain afresh -- the system's keychain service, a decode, a set -- and the walk of the walls asked it once per correspondent
 /// on the main thread: T1 on 2241, 11:38:36Z, a frame of the chat list held 161 ms inside SecItemCopyMatching under MTBoard.send
@@ -306,9 +306,9 @@ enum MontanaHandoff {
     }
 }
 
-/// WHAT LEFT THIS APP IS KNOWN BY ITS PRINT ALONE (the author's word 08.10.2026 15:1x MSK): a stored value or a letter of an older
+/// WHAT LEFT THIS APP IS KNOWN BY ITS PRINT ALONE (the author's word 08.10.2026 12:1x UTC): a stored value or a letter of an older
 /// build is recognised by the first sixteen hex digits of the SHA-256 of its name, so this app names nothing it no longer has -- and
-/// still forgets every trace of it on the phone. WHAT CAME BACK IS NO LONGER RETIRED (the author's word 11.10.2026 12:1x MSK, No.60:
+/// still forgets every trace of it on the phone. WHAT CAME BACK IS NO LONGER RETIRED (the author's word 11.10.2026 09:1x UTC, No.60:
 /// the VPN, the coins, the mesh, the Passwords app and the P2P wall return to Montana): their values, letters, ops, rooms, diary and
 /// keychain item are this app's own again and leave this list; only the switch of the seed in the Apple Account stays retired.
 enum MTRetired {
@@ -395,7 +395,7 @@ enum MTNoticeAlias {
     }
 }
 
-/// ONE BANNER PER LETTER ACROSS BOTH PROCESSES, BY ONE ATOMIC CLAIM (17.10.2026; the author's words 00:19-00:20 MSK: «two empty
+/// ONE BANNER PER LETTER ACROSS BOTH PROCESSES, BY ONE ATOMIC CLAIM (16.10.2026; the author's words 21:19-21:20 UTC: «two empty
 /// messages on T1 ... in fact one message, which showed no sender and doubled»). The ledger of shown letters stood in one keychain
 /// item that the app and the extension each rewrote whole -- read, append, delete, add -- so two processes reading it in the same
 /// moment both saw the letter as new and both rang it (about thirty pairs on 16.10). A claim is now a FILE created with O_CREAT and
@@ -513,7 +513,7 @@ enum MTExtensionDiary {
     }
 }
 
-/// A CUT OF A LIST, A SET OR A PIECE OF A STRING IS NO PROPERTY LIST (the author's words 18.10.2026 14:1x MSK: «check the
+/// A CUT OF A LIST, A SET OR A PIECE OF A STRING IS NO PROPERTY LIST (the author's words 18.10.2026 11:1x UTC: «check the
 /// telemetry directly at both and fix it at the root»). 2239 and 2240 died at every launch on T1 and on the Mac --
 /// NSInvalidArgumentException «Attempt to insert non-property list object ArraySlice([...]) for key mt.twin.asked»: suffix
 /// hands back an ArraySlice, and the settings store takes property lists only. The store's door takes the three shapes Swift

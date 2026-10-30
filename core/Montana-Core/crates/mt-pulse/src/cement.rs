@@ -9,8 +9,8 @@
 // order-free, so two verifiers holding one set of attestations in two arrival orders carry one
 // state. Nothing here weighs anybody: a part counts once or not at all.
 
+use crate::ordered::Set;
 use crate::PulseError;
-use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Cement {
@@ -18,7 +18,7 @@ pub struct Cement {
     // an attestation from every living machine, and a list would compare each new one against every
     // one before it — work that grows with the square of the population at exactly the moment the
     // population is what an attacker is spending.
-    seen: BTreeSet<[u8; 32]>,
+    seen: Set<[u8; 32]>,
 }
 
 impl Cement {

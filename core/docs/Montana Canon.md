@@ -1,6 +1,6 @@
 # Montana — Canon
 
-**Version:** 9.5.0
+**Version:** 10.0.0
 
 Canon is the one place where the values and the bytes of Montana live. Every other document
 of the set names a quantity and points here; none of them restates a number, a size, a
@@ -595,8 +595,9 @@ AppendProof
 
 ### The roots of state
 
-A proposal carries six roots and the count of one tree, and every verifier recomputes all seven from
-the state it holds once the frames of the window have applied; none of them is read off a proposal.
+A proposal carries seven roots and the count of one tree, and every verifier recomputes all eight
+from the state it holds once the frames of the window have applied; none of them is read off a
+proposal.
 Each root stands over one table of the state, under the construction and the pair of domains named
 beside it, and an entry of each table is the one the last column names.
 
@@ -607,6 +608,7 @@ beside it, and an entry of each table is the one the last column names.
 | `record_root` | sparse, under the record domains | the commitment of a record, at the key that commitment is |
 | `machine_root` | sparse, under the Merkle domains | the commitment standing for a machine a selection event admitted, as its key |
 | `admitted_root` | append-only, under the admitted domains | the naming half of an admitted machine |
+| `credited_root` | append-only, under the credited domains | the part-nullifier of a machine a window credited, appended by the proposal of the window after it |
 | `operations_root` | append-only, under the Merkle domains | the identifier of a frame the window applied |
 
 A table holding a set is a sparse tree whose every present key carries the one-byte record `0x01`:
@@ -622,11 +624,18 @@ again, in the order they applied, over what results — Consensus states when. A
 the lowest free position as its frame applies. The tree of operations holds one window — it stands
 empty when a window opens — and its leaves are the identifiers of the frames that window applied, in
 the order they applied, so the two append-only roots that move with a frame move in one order. The
-tree of admitted machines holds the naming halves ascending.
+tree of admitted machines holds the naming halves ascending. The tree of credited rights moves with
+no frame: the proposal of window `W + 1` appends the parts of the cement of `W`, ascending, less the
+parts the challenge of `W` convicted, after every leaf an earlier proposal appended, so its leaves
+stand in the order of the windows they credit and, within one window, in the order of the cement.
 
 **What enters the two sets.** A nullifier enters the set of nullifiers when the object spending it
 applies and never leaves it: the nullifiers a frame publishes in its redemption positions — of a note
-or of a right to a share, which no reader tells apart — and the nullifier of an opening. A rate
+or of a right to a coin, which no reader tells apart — the nullifier of an opening, and the
+nullifier of a candidacy, whether or not a selection event later admits the machine it names. The
+last adds no growth of a kind of its own: a candidacy spends the right its record carries, so the
+candidacies the set can ever hold are at most the records the tree of records holds, which the
+ceiling of openings already bounds. A rate
 nullifier stands in the rate set of the horizon, which Value states is not a tree, and is no entry of
 this one. A machine enters the table of machines by the commitment a selection event admits; a
 machine of an opening cohort enters the tree of admitted machines by its naming half and writes no
@@ -802,12 +811,12 @@ every transfer slot of every window, and the scarcity that guards records would 
 
 ### `claim_spread` = 1 440 windows
 
-**Target.** The moment a share is taken must say nothing about who took it, and a machine must
+**Target.** The moment a coin is taken must say nothing about who took it, and a machine must
 not wait unreasonably to be paid.
 
 **Derivation.** The spread is one continuity segment — the same unit lived time is measured in.
 Over that span the claims of all living machines overlap thoroughly, so the moment carries no
-signal; and no machine waits more than one segment for a share it has already earned. Reusing
+signal; and no machine waits more than one segment for a coin it has already earned. Reusing
 the segment introduces no new period into the protocol, which is the whole point of choosing it
 over a number of its own.
 
@@ -1550,22 +1559,22 @@ it becomes a description.
 the circuit speaks one arithmetic and carries no second. Each redemption proves a path of
 `note_tree_depth` node permutations and the one of its leaf, carries the walk on through the
 leaf of the horizon and its seven node levels for eight more, opens its commitment at four,
-absorbs its key once and squeezes the two halves out of it at three, and derives its nullifier
-at two after the walk: fifty-eight permutations. What the walk answers with costs no permutation
-of its own: the value the accumulator ends at is held, by the split of the moment's seam, to one
-of the two roots the verifier computes — the horizon of proving and the root of admitted
-machines the proposal of the standing stride's last window carries — pinned by boundaries
-where the walk ends. Each spend holds
+derives the part of a right's window at one, absorbs its key once and squeezes the two halves out
+of it at three, and derives its nullifier at two after the walk: fifty-nine permutations. What the
+walk answers with costs no permutation of its own: the value the accumulator ends at is held, by
+the split of the moment's seam, to one of the two roots the verifier computes — the horizon of
+proving and the root of the tree of credited rights the proposal of the standing stride's last
+window carries — pinned by boundaries where the walk ends. Each spend holds
 two redemptions, two output commitments of four permutations each and one rate nullifier of
-two: one hundred and twenty-six permutations. A frame holds three spends: three hundred and
-seventy-eight permutations, which at `rows_per_permutation` is forty-eight thousand three
-hundred and eighty-four rows, rounded up to the next lawful height — 2¹⁶, the least the folding
+two: one hundred and twenty-eight permutations. A frame holds three spends: three hundred and
+eighty-four permutations, which at `rows_per_permutation` is forty-nine thousand one hundred and
+fifty-two rows, rounded up to the next lawful height — 2¹⁶, the least the folding
 reaches the tail from above that count. Extended by `proof_blowup` the domain is 2¹⁹. The cost of
 one permutation is measured rather than assumed: it is what the three bounds of a constraint
 leave it — degree two, a factor naming this row or the one after it, and the bound on the width —
 and the count they leave closes on a power of two of its own accord, so the schedule of a
 permutation is carried by a periodic column without one idle row. The margin the frame keeps at
-that cost is stated with it: a permutation of more than one hundred and seventy-three rows would
+that cost is stated with it: a permutation of more than one hundred and seventy rows would
 carry the trace past 2¹⁶ and move every length that carries a proof.
 
 **The count of folding layers follows from the tail and is not chosen.** Folding by `proof_fold`
@@ -1587,12 +1596,19 @@ tail opens none: it rides in the clear.
 redemption proves either a note or a right, and which of the two must not be readable from the
 length or the shape. The blocks are one set: the key absorbed once and squeezed twice in either
 branch; the commitment blocks computing a note's envelope — or, for a right, running that same
-chain over the naming half and the share, a note nobody reads; the leaf and the walk folding the
-tree of the branch under the domains of the branch; the nullifier chain absorbing the lane and
-closing, for a note, over the position the walk accumulated, and for a right over its window,
-squeezed once more for the moment it is due. Six seams differ, and each is a split of its
-selector — two columns whose sum is the schedule and whose product is nothing — so a rule of a
-branch fires exactly where its half stands and the degree it carries is the degree it carried.
+chain over the naming half and its worth, a note nobody reads; the block of the part, deriving for
+a right the part of its window from the half that spends and the window — the preimage its
+nullifier takes — and running for a note over the lane, read by nobody; the leaf and the walk
+folding the tree of the branch — of notes, or of credited rights — under the domains of the branch,
+a note's leaf taking its commitment out of the lane and a right's the part beside it; the nullifier
+chain absorbing the lane and closing, for a note, over the position the walk accumulated, and for a
+right over its window, squeezed once more for the moment it is due. Six kinds of seam differ, the
+one that opens a chain on the lane standing twice — before the part and before the nullifier — and
+each is a split of its selector — two columns whose sum is the schedule and whose product is
+nothing — so a rule of a branch fires exactly where its half stands and the degree it carries is the
+degree it carried. The window of a right is read at both of its chains as the window the frame
+stands in less one remainder of the moment, held from before the part to the end of the nullifier,
+so the part and the nullifier are of one window.
 The trace is therefore the same shape whichever branch a redemption took, and a frame of rights
 is indistinguishable from a frame of notes in every field and every length.
 
@@ -1897,15 +1913,16 @@ operator_nf = sponge("mt-operator-nf", limbs(operator_secret))
 
 Neither takes a window, an index or a counter, and that is the whole construction: a value with
 nothing variable in it can be produced exactly once from a given seed, so a second attempt
-presents the identical value and collides with the first. One seed therefore opens one record
-and raises one machine, and the network learns neither whose seed it was nor how many either
-person has — it learns only that some right was spent, which is what a bound needs and all it
-needs.
+presents the identical value and collides with the first. One seed therefore opens one record,
+and the record carries the right to raise one machine: its opening writes `operator_nf` into it,
+every successor carries it unchanged, and a candidacy spends it — so one record raises one machine,
+and the network learns neither whose seed or record it was nor how many either person has — it
+learns only that some right was spent, which is what a bound needs and all it needs.
 
 **Invariants of the one-time rights:**
 
 - Neither derivation admits any input beyond the branch: adding a window or an index would turn a right issued once into a right issued per window.
-- Both are of the proof hash family, and that is what makes either bound a bound. Each is published by an object whose proof asserts where it came from — an opening spends the right to open a record, a candidacy the right to raise a machine — and a circuit of this protocol works in that family alone. A value a proof cannot reach is a value a claimant draws afresh every time, and a ceiling counted over such values counts nobody.
+- Both are of the proof hash family, and that is what makes either bound a bound. Each is published by an object whose proof asserts where it came from — an opening spends the right to open a record, a candidacy the right to raise a machine its own record carries — and a circuit of this protocol works in that family alone. A value a proof cannot reach is a value a claimant draws afresh every time, and a ceiling counted over such values counts nobody.
 
 **The vectors of the two rights.** The second line of each stands on a branch of thirty-two distinct
 bytes rather than a repeated one, so a reading from the far end answers elsewhere.
@@ -2330,7 +2347,10 @@ shape before reading fields; an encoder checks that shape before publishing or s
 **Joining.** A device that holds nothing asks for the head, then — from the anchor its operator
 handed it — collects at the points of the windows it walks the proposals and the heavy attestations
 that are their certificates, and then asks for the leaves it needs. Every answer is judged against
-what the asker recomputes and never against who answered; Consensus states the walk.
+what the asker recomputes and never against who answered; Consensus states the walk. The plane of
+the head it reached it takes whole, table by table, as the leaves each table folds and never as a
+root: it asks one table from the first leaf it does not hold, repeats until an answer carries fewer
+leaves than the bound, and folds every root again from what it holds.
 
 ```
 serialize(head_query)
@@ -2349,6 +2369,20 @@ state_query_len = 41 B
 serialize(state_answer)
   proof_len                         4 B   u32   zero when the answerer holds no such leaf
   proof                     proof_len B         a MerkleProof for a sparse root, an AppendProof for an append-only one
+
+serialize(table_query)
+  genesis_state_hash               32 B         the network the asker means, recomputed by itself
+  window                            8 B   u64   the window whose head the asker verified
+  table_index                       1 B         0 notes, 1 nullifiers, 2 records, 3 machines, 4 admitted, 5 credited, 6 operations
+  from                              4 B   u32   the index of the first leaf the asker does not hold
+table_query_len = 45 B
+
+serialize(table_answer)
+  leaf_count                        4 B   u32   zero for a table read to its end and for a plane the answerer does not hold
+  leaves           leaf_count x leaf B          from `from`, in the order the table folds them; a leaf of records is its key
+                                                and its record, 64 B, a leaf of every other table 32 B
+
+table_answer_max(table) = floor((2 + collect_answer_max x cell_bytes - 4) / leaf)
 ```
 
 **Asking what a slot publishes.** One slot at a time, against the nullifier of a reach.
@@ -2376,6 +2410,7 @@ serialize(slot_answer)
 - A `collect_answer` of zero cells is the ordinary answer and is indistinguishable from any other, so asking says nothing about whether anything waits.
 - `cell_count` never exceeds `collect_answer_max`, and an answer declaring more is refused before a cell of it is read. Every other count of this section is bounded by its own construction; this one is bounded by name, because nothing else bounds it and a holder that answered with the width of the field would spend a collector's memory on one reply. A collection whose answer is refused for this reason is repeated at no point: the deposit stands where it stood.
 - A `slot_query` carries exactly one slot; a query carrying a set of slots is refused, and a repeated reach nullifier within one window is refused in silence.
+- A `table_query` names the network as a `head_query` does and one of the seven tables in the order a proposal lays their roots out; a table index past them is refused in silence. A `table_answer` is answered only from the plane of a window the answerer holds whole — the window its last close closed and the one before it — and is otherwise of zero leaves, indistinguishable from a table read to its end. The tree of admitted machines a machine holds as its root alone and answers with zero leaves: its halves pass as an opening cohort's do, and the root and the count the head carries judge them. `leaf_count` never exceeds `table_answer_max`, which keeps every answer within the answer of a collection, the largest message of this wire, and an answer declaring more is refused before a leaf of it is read. Nothing an answer carries is a root: the asker folds every root again from the leaves it holds and compares it with the root the head it verified carries, and a leaf no root covers — the rate set of the horizon, the count of openings — is never taken from an answer.
 - A `head_query` names the network by the hash the asker computed itself, so an answerer of another network is told apart before a byte of its proposal is parsed; a `state_answer` is verified by recomputing the root and comparing it with the root of a proposal already verified, and a proof of length zero is the ordinary answer for a leaf that does not exist.
 - A wake carries a tag or a handle, and a window, and nothing else; a handle is drawn at random by the holder of the letter, lives beside its pipe for that window alone, and resolves nowhere outside the machine that drew it.
 - No message of this section carries an address, a name, a person or a count of anything but its own cells.
@@ -2436,6 +2471,8 @@ message_kind
   2 collect           6 wake_handle     10 state_answer
   3 collect_public    7 head_query      11 slot_query
   4 collect_answer    8 head_answer     12 slot_answer
+                                        13 table_query
+                                        14 table_answer
 ```
 
 **Invariants of the link unit:**
@@ -2589,7 +2626,7 @@ them, taking the union of what they hold.
 - The point of a notice is a function of the nullifier, the window and the index alone. Nobody but the owner of a note can compute it before that note is spent — a nullifier is derived from the redemption branch of its owner and from the position the tree assigned, so neither the payer of a note nor any reader of the chain holds what the derivation takes — and once the frame stands the nullifier is public and the point names nobody.
 - **A machine opens what it can do before it opens the door to it.** Every rule of this section is read against something the machine holds — the round it stands in, the window it is at, the count of machines its window admits — and a door opened before that thing is in force refuses the work it was opened for, in the silence every refusal keeps. The neighbour that published in that moment published into nothing and never learns, because the wire tells it nothing; the loss is total and it is invisible from both ends. What follows for an implementation: the window is entered before the door answers, and every bound a door enforces is read when the work arrives and never once when the door was opened.
 - **A point refuses a delivery whole and never its tail.** What a point holds is bounded, and a holder that took the first cells of a delivery and refused the rest would hold a body with a hole in it — which reads back as nothing, so a point filled to its bound stops answering with anything at all, exactly when the round it carries matters most. A holder therefore admits a delivery only where what remains of its bound holds the whole of it, and refuses the whole of it otherwise, in the same silence every other refusal keeps.
-- A deposit at a point of a past round is refused in silence, exactly as under a past tag. The heavy attestations, the ballots and the pledges of a window survive at their points for `retained_windows` windows after the window closes — they are the certificate a device behind walks to the head — and so do the frames of its rounds and its proposals with their rolls, which a machine that took another name replays; nothing else of a round outlives its window.
+- A deposit at a point of a past round is refused in silence, exactly as under a past tag. The beacons of the rounds of a window, its heavy attestations, the light attestations answering its final beacon, the ballots and the pledges survive at their points for `retained_windows` windows after the window closes — they are the certificate a device behind walks to the head — and so do the frames of its rounds and its proposals with their rolls, which a machine that took another name replays. A holder opens a cell only down to its delivery and cannot tell one object of a point from another, so it keeps every point of the window whole for that time: the light attestations answering the window's other beacons survive with their point and nothing reads them, and nothing of a round outlives the retention.
 - A machine deposits at every replica and collects from every replica; withholding therefore requires every holder of a round to withhold at once, and the objects themselves are self-carrying, so a holder can delay them and can forge none.
 - The right to collect from a point of a round is public, like the right to a publication and unlike the right to mail from a pipe: what stands there names nobody.
 - A holder answers what it holds and keeps no record of who asked or who deposited; the count of collections at a point says what the ledger of the wire already says about answering at all.
@@ -2842,7 +2879,7 @@ only the holder continues the chain, and after `name_chain_length` renewals it i
 
 - A name outside the alphabet, the bounds or the leading-letter rule is refused before a slot is derived from it; two implementations therefore never resolve one written name to two slots.
 - The chain branch takes the slot, so two names of one holder yield two chains that cannot be joined.
-- A renewal is verified by one hash against the previously published link and by nothing else; a signature would name a key.
+- A renewal after the first is verified by one hash against the previously published link and by nothing else; a signature would name a key. The first renewal of a slot is verified by that hash and by a proof of lived continuity, and it carries no signature either ("The first renewal of a slot" below; records 297, 300).
 - A commitment takes the slot, a fresh blinding factor and the tip in that order, and a commitment carrying anything else is refused.
 
 ### The commitment standing for a machine
@@ -2886,7 +2923,7 @@ may differ.
 
 - It takes the spending half of the machine's secret and the window and nothing else, so one machine yields one value per window and two machines never collide.
 - The window enters as one element, for the reason the window of a right and the amount of a frame do: two limbs of one number are two witnesses inside a proof.
-- Its domain is distinct from the one that spends a right to a share, so answering a window and taking its share are two acts that do not join.
+- Its domain is distinct from the one that spends a right to a coin, so answering a window and taking its coin are two acts that do not join.
 - What a second appearance of one part-nullifier means is a rule and not a value, and Consensus holds it whole: a repetition within one window adds nothing to the cement and is lawful, and what a sanction rests on is one part-nullifier under one of the three contradicting pairs of pledges Consensus names. This document holds the derivation and nothing about the rule.
 
 ### The identifier of an application
@@ -2945,14 +2982,22 @@ domain would let the public kind collide with the private kind.
 - The tag of first contact takes its own domain, so it never collides with a tag standing on a secret two parties hold.
 - The tag of first contact carries a request and never a letter; the letters of that correspondence stand on the derived secret alone, so the public value of a name is an entrance and never a channel.
 
-### The right of a machine to a share, and what redeems it
+### The right of a machine to its coin of a window, and what redeems it
 
 A machine is admitted once and stands in the tree of admitted machines from then on; the leaf it
-occupies is the half of its secret that names it, and nothing else:
+occupies is the half of its secret that names it, and nothing else. A window it lived credits it
+`window_credit` coins, one for every second of the window, and what the network holds of that credit is a leaf of a second tree, the **tree of
+credited rights**, taken over the part its secret derives for that window:
 
 ```
 machine_sk ‖ machine_pk  = squeeze("mt-key-halves", limbs(machine_secret), 2)
 admitted_leaf            = sponge("mt-admitted-leaf", cells(machine_pk))
+part_nf(W)               = sponge("mt-part-nf", cells(machine_sk) || element(W))
+credited_leaf            = sponge("mt-credit-leaf", cells(part_nf(W)))
+credited_node(l, r)      = node("mt-credit-node", l, r)
+credited_root            = the fold of the append-only construction over the credited leaves in
+                           the order they entered, at depth note_tree_depth, under those two doors;
+                           the empty leaf is sponge("mt-credit-leaf", nothing)
 credit_nf ‖ claim_delay  = squeeze("mt-credit-nf", cells(machine_sk) || element(W), 2)
 ```
 
@@ -2963,22 +3008,67 @@ a window are two witnesses inside a proof, and a pair of non-canonical limbs sum
 window would yield a second lawful nullifier of one right. One element admits one encoding. The
 window is inside the derivation because the right is issued per window, which is exactly the
 opposite of the one-time rights above, where a window would break the construction.
+`part_nf(W)` is the nullifier of the machine's part in `W`, derived as the section on that
+nullifier derives it — the value the cement of `W` holds for the machine, if it lived `W`.
 
-**What a redemption of a right proves.** There is a leaf of the tree of admitted machines whose
-half its writer holds, the nullifier of this window's right under that half is this value, and the
-computed moment of taking falls within the standing stride of the window the frame applies in —
-every window of a stride stands before its standing period, so nothing lands before its moment,
-and a moment of a stride the horizon has left is unprovable. It proves membership exactly as the
-redemption of a note does, and against a root of its own — the root of admitted machines the
-proposal of the standing stride's last window carries; the two branches occupy the same blocks,
-so nothing of which was taken is readable from the length of a frame or the shape of its trace.
+**When a window's credit is written.** The challenge of `W` closes when the window after it closes
+(Consensus, "Finality"), and from then on no pair can convict a part of `W`. The proposal of
+`W + 1` therefore appends to the tree one credited leaf for every part of the cement of `W`,
+ascending, less every part a contradicting pair presented within the challenge of `W` convicts, and
+carries `credited_root`, the root of the whole tree after that append, which every verifier
+recomputes from the state it holds and never takes from the proposal. Nothing else of the credit
+persists: the tree holds parts, a part names nobody, and the pairs that convicted stand in the roll
+of `W + 1` so that a machine replaying that roll leaves out the same parts — the layout they take
+there is owed with the sanction itself (Registry, CNS-10), and until it lands a roll carries none
+and the proposal of `W + 1` credits the whole cement of `W`.
+
+**Why the window does not enter the leaf beside the part.** The part takes the spending half and
+the window and nothing else, the window as one element, so one machine yields one part per window
+and the parts of two windows are two unrelated values (the invariants of the nullifier of a part).
+A leaf over the part of `W` is therefore a leaf of `W` and of no other window: a redemption that
+derives the part from the window its nullifier takes reaches that leaf only by naming the window
+whose cement held the part, and a second window reaching it is a collision of the proof hash. A
+window written beside the part would bind again what the part already binds.
+
+**What a redemption of a right proves.** In the one absorption of the machine's secret under
+`mt-key-halves`, whose spending half yields `credit_nf`, it derives the part of `W` from that same
+half and that same element of the window, and walks the credited leaf of that part to the
+credited root the proposal of the standing stride's last window carries; the nullifier of this
+window's right under that half is the published value, the amount the right brings into the
+balance of the frame is `window_credit`, and the computed moment of taking falls within the standing
+stride of the window the frame applies in — every window of a stride stands before its standing
+period, so nothing lands before its moment, and a moment of a stride the horizon has left is
+unprovable. It proves membership exactly as the redemption of a note does, and against a root of its
+own; the two branches occupy the same blocks, so nothing of which was taken is readable from the
+length of a frame or the shape of its trace. Neither the part, nor `W`, nor the position of the
+leaf is published: `credit_nf` is the one public value of the position, and the part — public in
+the attestations of `W` — does not join to it, since the two take distinct domains. The amount is
+a constant of the construction and not a witness: a right is worth `window_credit` coins whatever the count of
+the living of its window, so a frame prices a right alone and no count of a cement enters its proof
+to do it. The credited root of a stride holds the parts of every window before the stride's last;
+a right whose computed moment is its own window, where that window is the last of its stride, finds
+its leaf under no root its stride stands under, and `AUDIT.md` carries that case open.
+
+**Why the redemption walks no tree of admitted machines.** A part enters a cement only beside a proof
+of presence deriving it from the secret of a machine whose naming half stands in the tree of
+admitted machines: every heavy attestation is verified natively against the root of the electorate
+before its part enters, and a part the electorate does not hold enters no cement (Consensus, "The
+pulse and the close of a window", and "The attestation of presence"). The tree of credited rights
+takes the parts of a cement and nothing else, so a credited leaf is the part of a machine that stood
+admitted in its window, and a second secret yielding the same part is a collision of the proof hash —
+the ballot stands on the same argument and walks no tree of admitted machines either (Consensus, "The
+standing of a machine, and the ballot"). The walk of the credited tree therefore stands where the
+walk of the admitted tree stood, and a position still costs one walk; what it adds is the one block
+deriving the part.
 
 **Invariants of the right of a machine:**
 
-- A redemption of a right walks to a leaf of the tree of admitted machines. Without that walk the nullifier binds nothing a network can check: the network holds no secret of any machine and can pre-register no value, so a fresh secret would yield a value it has not seen and it would pay for it. That is a mint, and the walk is what closes it.
-- The leaf is the naming half and the nullifier takes the spending half, both of one absorption of the machine's secret. Two absorptions would be two readings of one secret, and a circuit reading a secret twice is a circuit where the two readings may differ — the same closure the key of a note takes, for the same reason.
+- A redemption of a right walks to a leaf of the tree of credited rights. Without a walk the nullifier binds nothing a network can check: the network holds no secret of any machine and can pre-register no value, so a fresh secret would yield a value it has not seen and it would pay for it. A walk to the tree of admitted machines closes that and no more: a machine admitted and absent from the cement of a window would take that window's coin. The walk to the credited leaf of the part closes both, because the tree holds a part only where a cement held it.
+- The part the leaf is taken over and the nullifier both take the spending half and the one element of the window, of one absorption of the machine's secret. Two absorptions would be two readings of one secret, and a circuit reading a secret twice is a circuit where the two readings may differ — the same closure the key of a note takes, for the same reason; two elements of the window would be two windows.
+- The proposal of `W + 1` appends the parts of the cement of `W` and no other value, ascending, after the challenge of `W` has closed, and the root it carries is recomputed by every verifier; a part a contradicting pair of that challenge convicts enters no leaf.
 - The nullifier takes the spending half and the window and nothing else, so two machines never collide and one machine cannot spend one window twice.
-- Nothing published by a machine carries either half's preimage, so a share says nothing about who runs the machine.
+- Nothing published by a machine carries either half's preimage, so a coin taken says nothing about who runs the machine.
+- A redemption of a right brings exactly `window_credit` coins into the balance of its spend; a right standing for any other amount is not a right of this construction.
 - A nullifier already present in its window is refused in silence.
 - The moment of taking is the second squeeze of that same absorption, so no third reading of the secret exists anywhere in this construction.
 - All of it is of the proof hash family, for the reason the envelope of a note is: a right is redeemed by a frame and by nothing else, so the one judge of these derivations is a verifier of a proof, and a function the circuit cannot carry would put the redemption of a right beyond proving.
@@ -3043,7 +3133,8 @@ what the state became.
 `sponge`, `limbs` and `cells` are the doors and the readings of the proof hash: the circuit of a frame proves the three
 derivations below the payment key, so they are of that family, while the payment key — which
 nothing proves and anyone may compare — stays SHA-256. `value` is an unsigned sixteen-byte
-little-endian amount, `rcm` a thirty-two-byte blinding factor drawn from a cryptographic source,
+little-endian amount, a count of coins — the coin is the unit of value Value names, and one
+coin is the amount one — `rcm` a thirty-two-byte blinding factor drawn from a cryptographic source,
 `position` the unsigned eight-byte little-endian index of the leaf the commitment occupies.
 
 **Invariants of the derivations:**
@@ -3281,6 +3372,22 @@ The secret of the first block repeats one byte, so the walk and the key stand a 
 `test_secret`, a value no permutation of which is itself: an implementation reading the secret from
 its other end reproduces the first block and parts from the set here.
 
+A heal of a pipe (Network, "How a link renews its keys"; adopted, issue #75) stands on the value
+the old walk reaches at the window of the answering letter, here `pipe_secret(test_secret, W + 1)`,
+and the healed walk stands from the window after it and walks on by the ordinary step.
+```
+ss_h = 0x22 x 32, pk_h = 0x23 x 1184, ct_h = 0x24 x 1088
+pipe_heal(pipe_secret(test_secret, W + 1))       = 112f58fbae5637bb976ac9c6a85ed9bf5d26669a511de8310387a62419d81adc
+pipe_secret(healed, W + 3)                       = 43ee0cf3597a6d9450483d33820847866be77ad8cf53191102c0ee8dd401f283
+
+negative: the heal of the old walk one step on, at the window after the answering letter
+pipe_heal(pipe_secret(test_secret, W + 2))       = 85169530874db497c0d4f527900ac25eff7fc12ac2d132e7c9984b42836924b5
+```
+
+The negative line is normative: an implementation that heals the value of the window after the
+answering letter rather than the value of its own window produces it, and parts from the
+correspondent that healed the other.
+
 **The right of a machine, and the moment of extinguishing it.** One absorption of the machine's
 secret yields the half that names it and the half that spends; the leaf it stands at is over the
 first, its nullifier over the second, and the moment is the second squeeze of that nullifier's own
@@ -3301,7 +3408,20 @@ credit_nf(1000)               = 5b2123e556ede6e1fdf0c2f99baa381a11df3d96b8f19285
 credit_nf(1001)               = e4bc0bc3b4642713f3980387443d704e7e917e9d1953223333ca30b9f4990a24
 claim_window(1000) = 1000 + 1284 = 2284
 claim_window(1001) = 1001 + 368 = 1369
+part_nf(1000)                 = 90e8ec8b288c98ade06b92a0160ab271ab82032e45a283d8ce15f971c711531d
+credited_leaf(1000)           = 2f1c2ed85f87c48fae91c1df82d27dd1ea04b4f1051193750b4be3edc2f4a472
+credited_root (empty)         = 1655d5c14345e38d6e109f95b56ac3f5c817c573899cca32ab14d821b6a35f73
+credited_root (one leaf at 0) = 55be983245eb2d47c1df90a20085beaa755bc30e3c8d00ee4b6e4d9c8689986f
+credited_root (two leaves)    = 35c3cc5f188c1af3791caa2aab5f8f641fc388c53c89f76efbeab33d2b459897
 ```
+
+The tree of credited rights stands on the parts of this machine: `credited_leaf(1000)` is the leaf
+over its part of window 1000 alone, which is what an implementation writing the window beside the
+part parts from, and the root over two leaves holds its parts of windows 1000 and 1001 at positions
+0 and 1, in the order they were credited — two windows of one machine are two leaves, and the root
+pins the pairing of a level as the root of admitted machines over two halves does. An
+implementation taking the naming half where the part stands reproduces the roots of admitted
+machines above and none of these.
 
 The last of them holds the naming half above at position 0 and the second at position 1, each
 through the leaf door, and **it is what pins the pairing of a level**: a root over one half folds
@@ -3314,6 +3434,25 @@ second machine is admitted.
 The secret is a machine's own and Consensus states that nothing published ever carries it; the value
 above is a stated literal for exactly this reason, so that the vector is reproducible from this
 document while the real input never is.
+
+**The vector of a candidacy.** A record of the layout of Canon carrying the right of the branch
+of the vector of the two rights, standing alone in the tree of records at the key its commitment
+is, and a machine's secret beside it: what the public input of a candidacy holds and the values it
+is assembled from. The wrong implementations these refuse: one placing `operator_nf` anywhere but
+after `own_height`, or writing the branch itself into the record in place of its sponge, parts at
+the commitment and at the root over it; one taking the naming half of a second absorption of the
+secret in place of the second squeeze of one parts at the half; one ordering the public input
+otherwise, or leaving the machine's commitment or the suite out of it, parts at its digest.
+
+```
+machine_secret = 0x5A x 32, operator_secret = 0x22 x 32, window = 1000, node_commit = 0x66 x 32, suite_id = 1
+record = segment_bitmap 11, last_active_segment 7, opened_window 990, own_height 4, operator_nf of operator_secret, fabric_root 0x11 x 32, suite_id 1, current_pubkey 0x44 x 1952, blind 0x33 x 32
+operator_nullifier of the candidacy = aeea4d6acef552552144f4decd573616b555b73b0ddee09b37659870a2898fc0
+record_commit of the candidacy      = e795f229b47d3a835faef33f30e1e8d581eea2bbf75e41940e5213c4e686d543
+record_root of the candidacy        = 397e75dc054ebcebed04cd7107bffa17a8502639955e33b5ebb1b8169494bac2
+naming_half of the candidacy        = 34f171bc0471f01de0765a81708f5daaec4117ca0610e2e89f43a7ff9e7b9755
+SHA-256(public input)               = df4a8b89d020b8bb07d24272a9f607a5245728ca958be140df6d95631dbdb9da
+```
 
 **The birth of a seed, end to end.**
 
@@ -3371,7 +3510,7 @@ identity key = 0x66 x 32, iterations = 5 200
 fingerprint  = 00534 22536 46923 62969 86064 85215
 ```
 
-**The nullifiers of the two rates.** The nullifier of a share stands with the right it
+**The nullifiers of the two rates.** The nullifier of a right to a coin stands with the right it
 extinguishes, where its two halves are derived.
 
 ```
@@ -3579,15 +3718,15 @@ ignores the period of adaptation and holds one set of entries forever.
 
 ```
 window = 1000; protocol_version = 0x00010000
-previous, final_beacon and the six roots = 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 each x 32
+previous, final_beacon and the seven roots = 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0xAA, 0x88 each x 32
 roll = 0xBB x 32
 admitted_count = 3; cement_aggregate = 0x99 x 32; cement_count = 2
 census entry i of ten: root = (0xC0 + i) x 32, count = i
 suite_id = 1; runner_pubkey = 0xA1 x 1952; ticket_proof = 0x00 x 333 888; signature = 0x5E x 3309
-proposal_len                     = 339 899
-SHA-256 of the serialized proposal = 5fa4081fd61af207a52aa465523b0d3d8bce81a147129e4ba608a911af4aa824
-proposal_id over the 718 bytes the window decided
-                                 = 63316f7bdf2584df960fa2cf3e648bc3bb5b67e06a2b43ce7bb1ff43585de0f5
+proposal_len                     = 339 931
+SHA-256 of the serialized proposal = 362e6b4ac382261d876bcd43ea1b9294bf2a63bdebb74f0b0c6db07b14390fe7
+proposal_id over the 750 bytes the window decided
+                                 = a99a95547645bdb30a4c039352e003ce55b9fcecf5a1b7409482dc209ba26a33
 ```
 
 The identifier line catches the implementations the scope rule names: one that hashes the whole
@@ -3665,6 +3804,25 @@ k_r2i                     = 08a031d18e42a5793274dcf0943bfe9df730d7c8acf118f7d77a
 The two directional keys differ in every byte though both come from one master, which is the
 separation the two domains buy.
 
+A renewal of the keys of a link (Network, "How a link renews its keys"; adopted, issue #75) folds
+the master above with fresh material of its own, written below in the order of the roles of the
+handshake, and the two keys of the renewed secret are derived from it exactly as from a master.
+```
+renewal of the link above, standing on its master
+renew_pk_i = 0x11 x 1184, renew_pk_r = 0x12 x 1184, renew_ct_i = 0x13 x 1088, renew_ct_r = 0x14 x 1088
+renew_ss_i = 0x15 x 32,   renew_ss_r = 0x16 x 32
+renewed                   = fbc313668e31de22f840098d82a0898e132e469ea66ef675c04e2793047d2c8c
+k_i2r(renewed)            = 69558632b6b191575508ef691f7b583d85b024ad9f88adfb64f12e1166fa078f
+k_r2i(renewed)            = e51abc297e087a4f9aa52bed8069b8b8871ae618031309325421e7c807e8ee88
+
+negative: the fold in the order of the renewal, the responder having offered
+renewed(responder first)  = 790580fc26d88cdcd36c2aff922c9d31da25b0fc079f32fef816b10d11c0e624
+```
+
+The negative line is normative: an implementation that lays the values of whoever offered first,
+rather than those of the side that opened the link, produces it instead of `renewed`, and fails
+the comparison.
+
 ## The registry of domain separators
 
 Some separators carry, inside their frozen bytes, words the prose of this set does not use:
@@ -3729,6 +3887,8 @@ line, which of the two it is writing.
 | `mt-credit-nf` | the nullifier extinguishing a right to a window's share |
 | `mt-admitted-leaf` | a leaf of the tree of admitted machines: the naming half of the machine at that position |
 | `mt-admitted-node` | an internal node of the tree of admitted machines |
+| `mt-credit-leaf` | a leaf of the tree of credited rights: the part-nullifier of a machine a window credited, at the position it entered |
+| `mt-credit-node` | an internal node of the tree of credited rights |
 | `mt-cement-leaf` | a leaf of the tree of a census cement: the part-nullifier at that position |
 | `mt-cement-node` | an internal node of the tree of a census cement |
 | `mt-operator-nf` | the one-time right to raise a machine |
@@ -3740,6 +3900,7 @@ line, which of the two it is writing.
 | `mt-noise-pq-v1-sig-r` | the identity signature of the responder |
 | `mt-noise-pq-v1-sig-i` | the identity signature of the initiator |
 | `mt-noise-pq-v1-transcript` | the transcript exposed as a channel-binding token |
+| `mt-link-renew` | the secret of a link after a renewal of its keys, folded from the secret before it and both encapsulations of the renewal |
 | `mt-lookup-nf` | the nullifier bounding a record to one reach into the space of slots per window |
 | `mt-channel-slot` | the slot a channel occupies, derived from its normalized name |
 | `mt-channel-key` | the key a channel signs its publications under, derived per slot |
@@ -3770,6 +3931,7 @@ line, which of the two it is writing.
 | `mt-relay-path` | the identity of a path, taken over the pipe layer that crosses it unchanged |
 | `mt-pipe-key` | the key sealing the delivery layer of a cell, held by the two correspondents alone |
 | `mt-pipe-ratchet` | the step of the walk by which the secret of a pipe moves from one window to the next |
+| `mt-pipe-heal` | the first value of the healed walk of a pipe, folded from the old walk and the encapsulation of a heal |
 | `mt-collect` | the right to take mail from a pipe, sealed to the two correspondents for one window |
 | `mt-round-point` | the points a beacon and its attestations stand at |
 | `mt-window-point` | the points a proposal, its roll and the pledges of an agreement stand at |
@@ -3791,7 +3953,7 @@ line, which of the two it is writing.
 | `mt-horizon-leaf` | a leaf of the horizon of proving: the note root at that position of its stride |
 | `mt-horizon-node` | an internal node of the horizon of proving |
 
-**The domains of the `proof_hash` family, and there are twenty-nine.** They are computed by the
+**The domains of the `proof_hash` family, and there are thirty-one.** They are computed by the
 doors of the proof hash; every other domain of the registry is computed by SHA-256, and either
 function under a domain of the other family is a defect. The list is exact by the boundary the
 primitives section draws — what a verifier of a proof judges, and the nullifiers and digests a
@@ -3828,6 +3990,8 @@ capacity("mt-record-nf")        = the first four limbs of SHA-256("mt-record-nf"
 capacity("mt-vote")             = the first four limbs of SHA-256("mt-vote" || 0x00)
 capacity("mt-cement-leaf")      = the first four limbs of SHA-256("mt-cement-leaf" || 0x00)
 capacity("mt-cement-node")      = the first four limbs of SHA-256("mt-cement-node" || 0x00)
+capacity("mt-credit-leaf")      = the first four limbs of SHA-256("mt-credit-leaf" || 0x00)
+capacity("mt-credit-node")      = the first four limbs of SHA-256("mt-credit-node" || 0x00)
 ```
 
 ### No domain awaits a document
@@ -3847,7 +4011,7 @@ them.
 
 **Why nobody is excluded.** A runner carries what the window decided and nothing of its own. The name
 of a proposal is taken over the decision, so every runner of one decision writes one name, and the
-share of a window falls to every living machine alike, runner or not. Excluding a machine from
+coin of a window falls to every living machine alike, runner or not. Excluding a machine from
 running therefore buys nothing but the bandwidth of its copy, and it costs a window: a threshold
 below the width leaves windows no ticket clears, and such a window closes on nothing. Neither way of
 setting a lower threshold escapes that. A threshold walked by the windows that cleared it is held at
@@ -4313,11 +4477,11 @@ air_hash = the hash, under the domain of a description's identifier, of the iden
            descriptions the network accepts proofs under, in the order the planes stand:
            the frame, the ticket, the admission, the presence, the opening, the ballot
 
-identifier of the frame     = 0c2b70014a8aa0834177472226118a5637c991715f54a0518bafc14e8304fa42
+identifier of the frame     = 01f51109574f2c463fa5bf4da0d43dd314447e10bd79aa17820f0827e65b2562
 identifier of the ticket    = 0c50e4291fede09b20945f9070e50746429b40153911600a690832aab6e65378
-identifier of the admission = 3c922d853e8a474174c46ceeb16abf2b3290fdeabfff7273c2df566c65576187
+identifier of the admission = df6b61c212011e407d44462c1cd253556c5feccf44246cb201c6c87eb66b4323
 identifier of the presence  = a948eeaf8b4b07e7d51763944498a6edc463670f649dfdf351e7b478bb053052
-identifier of the opening   = 5648634d72053c18549d41db03079f98cddec8fbd308d24b055d0507521a939c
+identifier of the opening   = 34c92be6edfe2e089be14dc59489dd2d1ef3483db4fab5d08abc28eaa0ca18da
 identifier of the ballot    = a329f7e7ae7656e26147604e0f757ff9cea56facbf953eb30fd01a3f59fe9928
 
 each identifier = the hash, under the same domain, of the canonical description of its
@@ -4432,12 +4596,25 @@ the one the public input carries — and nothing of the ticket, the secret or th
 For a frame — that every redemption takes one of the two branches without
 saying which; where the branch is a note, that its root stands at a leaf of the horizon of
 proving — the fold of the standing stride of the window the frame applies in — and where it is
-a right, that its walk answers against the root of admitted machines the proposal of that
-stride's last window carries; that what is created equals what is consumed; that
+a right, that the part its secret derives for its window, from the half its nullifier takes and the
+same window, stands at a leaf of the tree of credited rights under the root the proposal of that
+stride's last window carries; that what is created equals what is consumed, a right counting
+as `window_credit` coins; that
 every nullifier derives from what was consumed by the canonical formula of its branch; that the
 rate nullifier belongs to a window of the standing stride and its index is within the bound;
 that the computed moment of a right falls within the standing stride, which is what stands
 between its moment and its landing; and that every spend is a correct transfer or filler.
+For a candidacy — that the record it absorbs, limb by limb under the record leaf domain, stands at
+a leaf of the tree of records under the `record_root` the public input carries, the root of the
+proposal of the last window of the stride standing for its `window`; that the eight limbs of that
+record's `operator_nf` are the eight limbs of `operator_nullifier` the public input carries; that
+`operator_nullifier` is the sponge, under the domain of the right to raise a machine, of a branch
+absorbed once; that the machine's secret is absorbed once and squeezed twice, and the second squeeze
+is the `naming_half` the public input carries; that every absorption ends in its canonical padding;
+and the continuity of that record that Identity states — and nothing of the record, the branch, the
+secret or the place in the tree. The record, the right and the half meet in one proof by those
+equalities and by nothing else: no walk of the tree of admitted machines stands in it, since a
+claimant who could walk that tree would need no candidacy.
 
 **The width is counted above.** The bound is sixty-four columns, including the persistent
 branch bits. At the frame's height and blowup, the extended trace alone occupies 256 MiB.
@@ -4477,7 +4654,11 @@ the planes stand. Each was written, proven and verified end to end before its id
 allowed to stand, because an identifier frozen before the thing it names has run is a number that
 measures nothing. The values standing behind `air_hash` — the Genesis State Hash and the digest
 of the published parameters — move when this row moves, and a chain opened on one value is a
-different protocol from a chain opened on the other.
+different protocol from a chain opened on the other. The identifier of the admission is the
+identifier of the statement of a candidacy written above, and a network accepts a candidacy under
+that identifier alone: a chain whose Decree binds another statement of the admission is a different
+protocol, and no verifier of this one takes a proof under the other in its place, as a fallback or
+otherwise. The same holds of the opening, whose record carries the right a candidacy spends.
 
 ### The height of the presence, and the length of its proof
 
@@ -4608,22 +4789,22 @@ demands the width from this row rather than declaring one of its own.
 |---|---|
 | `hash_bytes` — the width of a hash output, and therefore of every identifier, commitment, nullifier and root | 32 |
 | `τ₂` — the period of adaptation, in windows | 20 160 |
-| `emission_schedule` — rows of `(height, mint)`, the mint of a window read by height, ascending | (0, 13 000 000 000) |
+| `window_credit` — the coins credited to every machine living in a window, one for every second of it (article 11); derived: 86 400 / `segment_windows`, never read from a clock | 60 |
 | `slot_modulus` | 64 |
 | `retarget_period`, in windows | τ₂ |
 | `retarget_damping` | 4 |
 | `retarget_step_bound` | 4 |
 | `continuity_period`, in windows — derived: `continuity_segments` x `segment_windows` | τ₂ = 20 160 |
 | `continuity_segments` | 14 |
-| `segment_windows` | τ₂ / 14 = 1 440 |
+| `segment_windows` — the windows of one segment; the segment of window `W` is `floor(W / segment_windows)`, counted from window zero (records 297, 300) | τ₂ / 14 = 1 440 |
 | `continuity_required_num` over `_den` | 2 over 3 |
-| `max_entry_segments` | 56 |
+| `max_entry_segments` — the ceiling of the ramp of entry and the width of the bitmap a record holds (records 297, 300) | 56 |
 | `selection_interval`, in windows | 336 |
 | `confirmation_quorum_num` over `_den` | 67 over 100 |
 | `committee_divisor` | 256 |
 | `admission_divisor` | 130 |
 | `adaptive_entry_threshold_num` over `_den` | 1 over 100 |
-| `adaptive_entry_multiplier` | 100 |
+| `adaptive_entry_multiplier` — the slope of the ramp of entry; it equals `adaptive_entry_threshold_den` / `adaptive_entry_threshold_num`, so the ramp leaves `continuity_segments` exactly at the threshold (records 297, 300) | 100 |
 | `membership_term`, in windows | 2 τ₂ |
 | `candidate_expiry`, in windows | 3 τ₂ |
 | `record_bucket_base` | 4 |
@@ -4642,7 +4823,7 @@ demands the width from this row rather than declaring one of its own.
 | `inbound_slots` — the links a device answers, beside the entries it chose | 96 |
 | `target_rounds` — derived: the least count of rounds at which the expected uncovered share of the electorate falls to the complement of the quorum | 284 |
 | `round_floor` — the fewest machines a round of a chain draws in expectation, whatever the population | 50 |
-| `retained_windows` — the windows the heavy attestations and the pledges of a closed window stand at their points for, which is the certificate a device behind walks | 8 |
+| `retained_windows` — the windows the beacons of the rounds of a closed window, its heavy attestations, the light attestations answering its final beacon, the ballots and the pledges stand at their points for, which is the certificate a device behind walks | 8 |
 | `k_max` — the cap of parallel chains | 8 |
 | `k_step`, in windows — one chain added each step of height, to the cap | 96 τ₂ |
 | `cascade_width` — entitled parallel versions per chain | 3 |
@@ -4651,7 +4832,7 @@ demands the width from this row rather than declaring one of its own.
 | `standing_censuses` — the census windows the standing of a machine is counted over, newest first | 10 |
 | `census_interval`, in windows — derived: τ₂ / standing_censuses, so the censuses span one period of adaptation | τ₂ / 10 = 2 016 |
 | `standing_committee` — the votes the standing of an electorate draws in a window, in expectation, once it is wide enough to be sampled | 6 499 |
-| `air_hash` — the constraint sets the proofs of this network are accepted under | b8f1be4f243c887c10bc8fb44f2059df3b8854c929b3a2ef0c31663995b4f86d |
+| `air_hash` — the constraint sets the proofs of this network are accepted under | 49533d474ed50d1cb5d6174cf2379ba9ee7f68ff603a4b91ef2f95bbff98799c |
 
 **The volume the schedule is checked against.** Per machine, per window, across its chains:
 eligibility strikes 1.1094 times in expectation; 0.6710 of machines publish one heavy
@@ -4673,9 +4854,10 @@ verifies as they arrive; the envelope and the gate of entry bound that count, an
 majority costs a signature check alone. **The young
 network pays itself while it is everyone who exists:** the length of a window in rounds falls with
 the population below the floor of the crowd and stands at the target above it, so windows pass
-quickly in lived time while the geography is one room, and a flat schedule mints quickly in those
-early days — bounded by the one-equal-share
-rule, and shaped, if its founder wishes, by an early-height row of the schedule.
+quickly in lived time while the geography is one room, and the credit of one coin for every second
+of a window to every living machine pays a machine quickly in those early days — its coins of a
+window last the lived length of that window, which is short while the network is small, and what a
+window adds to the supply is the credit times the count of its living, which is small with it.
 
 **Every parameter of the table is published.** The last to land was the hash binding the constraint
 sets — the identifiers of the six descriptions the network accepts proofs under. These bind
@@ -4687,22 +4869,21 @@ over this table, computed by the gate on every build rather than remembered by a
 **The Genesis State Hash** binds the parameters to the state they open. Every parameter of the
 table enters as an unsigned eight-byte little-endian integer, resolved to its numeric value and in
 the order the table stands; a parameter written as a ratio enters as two such integers, numerator
-first; the emission schedule enters as its count of rows, an unsigned two-byte little-endian
-integer, followed by each row as two such eight-byte integers, height then mint, ascending by
-height; a parameter written as a hash enters as its thirty-two bytes. After them stand the six roots of the genesis state in the order a proposal carries them,
-each the empty root of its own structure — the notes, the admitted machines and the operations
-under the append-only construction, the nullifiers, the records and the machine state under the
-sparse one:
+first; a parameter written as a hash enters as its thirty-two bytes. After them stand the seven roots of the genesis state in the order a proposal carries them,
+each the empty root of its own structure — the notes, the admitted machines, the credited rights
+and the operations under the append-only construction, the nullifiers, the records and the machine
+state under the sparse one:
 
 ```
 genesis_state_hash = SHA-256("mt-genesis-state" || 0x00 || parameters
-                             || note_root || nullifier_root || record_root || machine_root || admitted_root || operations_root)
+                             || note_root || nullifier_root || record_root || machine_root || admitted_root
+                             || credited_root || operations_root)
 
-                   = 7bc9e7ef84bffeb0972273d9be68f6ede276fa7d38c0a3792b51a284c359aefd
+                   = 3f053286a6e38aca13d690cd15f561a92d6a63c1ff4e47a259644aa562d7e524
 
 published_parameters = SHA-256("mt-genesis-state" || 0x00 || the parameters that are published,
                                in the order and the encoding above)
-                     = e5e25faaad145470332106b37a11313541cde39f04b5484beaf306e987ed9499
+                     = e913fb4d56f06bc450570e7a83c75fed5f3e7a9fa6a3d1e2426952a3cc34d5d5
 ```
 
 A chain whose value differs is not a fork of Montana but a different protocol, and honest
@@ -4710,7 +4891,7 @@ implementations refuse it at the first proposal rather than diverging from it la
 
 **Why both values stand here.** The first is the hash a chain opens on, and honest implementations
 refuse a chain whose value differs at the first proposal. The second is the digest of the
-parameters alone, without the six roots, and it exists so that an implementation whose encoding of
+parameters alone, without the seven roots, and it exists so that an implementation whose encoding of
 the table has moved fails on the digest before it fails on the chain — the nearer alarm of the two.
 Both are computed by the gate on every build; neither is remembered by anyone.
 
@@ -4801,6 +4982,7 @@ serialize(record)
   last_active_segment              4 B   u32
   opened_window                    8 B   u64   the window the record was opened in
   own_height                       4 B   u32   the number of the holder's own actions
+  operator_nf                     32 B         the one-time right to raise a machine this record carries
   fabric_root                     32 B         the root of the leaves this holder witnessed
   suite_id                         2 B   u16
   current_pubkey                1952 B         the key that verifies the holder's next action
@@ -4812,9 +4994,10 @@ serialize(record)
 - The record is a preimage and never appears on the wire or in state; only its commitment does.
 - `suite_id` is a row of the suite table, and `current_pubkey` is of the size that row demands.
 - `opened_window` is written once, at opening, and carried unchanged into every successor: age is the distance from it to the current window, and a record able to rewrite it would buy standing it never lived.
+- `operator_nf` is the one-time right to raise a machine of Canon, `sponge("mt-operator-nf", limbs(operator_secret))` over the holder's own branch. It is written once, at opening, and carried unchanged into every successor, and it is the value a candidacy spends: one record raises one machine, and a record able to rewrite it would raise a machine for every value it wrote. It stands at the limbs six to thirteen of the serialization, the first limbs after the four fields an opening binds.
 - `own_height` never decreases across a succession, and a successor carries the height of its predecessor incremented by one.
-- `segment_bitmap` holds one bit per segment and is wide enough for `max_entry_segments`, the greatest count of segments the gate of entry demands under pressure; bits above that count are zero. What a gate compares is the number of bits set, never a run of them: a person who missed a day and a person who missed none both pass while they hold the share. A narrower field would leave the raised requirement unprovable — a record cannot show segments it has no room to carry.
-- `last_active_segment` names the segment the bitmap is written against, and the bitmap is read only after shifting it by the distance from that segment to the current one — a bitmap read without the shift measures continuity against a past that has moved.
+- `segment_bitmap` holds one bit per segment and is wide enough for `max_entry_segments`, the greatest count of segments the gate of entry demands under pressure; bits above that count are zero. Bit `i` stands for the segment `last_active_segment − i`: the newest segment is bit 0 (rule 2 of the rules of continuity below; records 297, 300). What a gate compares is the number of bits set, never a run of them: a person who missed a day and a person who missed none both pass while they hold the share. A narrower field would leave the raised requirement unprovable — a record cannot show segments it has no room to carry.
+- `last_active_segment` names the segment the bitmap is written against, and the bitmap is read only after shifting it by the distance from that segment to the current one — a bitmap read without the shift measures continuity against a past that has moved. The shift is to the left, toward the older bits, and the reading keeps the low `n` bits of the period in force (rules 2 and 3 below; records 297, 300).
 - `last_active_segment` never exceeds the current segment and never decreases across a succession.
 - `fabric_root` is the root of the fabric of time this holder has folded; it enters the commitment and never appears beside it, so witnessing publishes no object of its own. A record that has witnessed nothing carries the empty root of that construction.
 - `blind` is drawn from a cryptographic source for every record, including every successor; a repeated blinding factor makes two commitments of one holder comparable and is a defect.
@@ -4825,6 +5008,31 @@ with nothing else. Until then an implementation reproduces the order and the wid
 states that the set is not final rather than assuming it, and **conformance over this layout is
 unachievable** — the rule this document states for a quantity not yet frozen applies to its own
 layouts, and the conformance item that consumes this one says so.
+
+### The rules of continuity
+
+What "the segment of the window", "the shift" and "the rules of continuity" mean wherever this
+document and Identity use them. The Author decided them on 2026-10-27 as decision 292, answered
+1a 2a 3a 4b 5a (constitution records 297 and 300); each rule below names its number in that answer.
+
+```
+segment(W)                 = floor(W / segment_windows)
+mask(k)                    = 2^k - 1                                               for k from 0 to 64
+lived(record, c, n)        = popcount((segment_bitmap << (c - last_active_segment)) & mask(n))
+                                                                                   for c >= last_active_segment
+after(record, s):
+  segment_bitmap'          = ((segment_bitmap << (s - last_active_segment)) | 1) & mask(max_entry_segments)
+  last_active_segment'     = s                                                     for s >= last_active_segment
+```
+
+A shift by 64 or more yields zero, so `lived` reads nothing of a record that last acted 64 or more
+segments ago, and `after` leaves bit 0 alone.
+
+- **Rule 1, the segment of a window** (records 297, 300). The segment of window `W` is `floor(W / segment_windows)`, counted from window zero: segment 0 is windows 0 to 1 439, segment 1 is windows 1 440 to 2 879. These are aligned runs, the same alignment the census windows (`floor(w / census_interval)`) and the strides of proving already have. A segment is a count of windows and is never read from a clock, so no segment passes while no window passes. "The segment of the window being applied" in an opening is `segment(W)` of that window, and "the current segment" of a gate is `segment(W)` of the window the gate is applied in.
+- **Rule 2, the bit order and an action** (records 297, 300). Bit `i` of `segment_bitmap` stands for the segment `last_active_segment − i`, so the newest segment is bit 0. This is the numbering from the least significant bit this document uses elsewhere, and the census is ordered the same way, newest first. An action applied in segment `s` moves the record by `after`. An action in the segment already written changes nothing: the shift is zero and bit 0 is already set. An action at a segment below `last_active_segment` is not a lawful transition. Bits that the shift carries to `max_entry_segments` or above are older than any gate reads, and the mask drops them.
+- **Rule 3, the period in force** (records 297, 300). At the current segment `c`, the period of `n` segments in force is `[c − n + 1, c]`: it ends with the current segment, and an action today counts today. A reading shifts the bitmap left by `c − last_active_segment` and keeps the low `n` bits; that count is `lived`. A record whose `last_active_segment` exceeds `c` stands nowhere in a lawful state (the invariant above), and a reading of one counts nothing.
+- **The share.** A gate holding `n` in force passes when `lived(record, c, n) ≥ ceil(n × continuity_required_num / continuity_required_den)`, with the multiplication before the division (Identity, "Opening a record").
+- **Rule 4, the count in force** (records 297, 300). `n` is the count in force of the gate of entry, the ramp Consensus states under "Presence and admission". It runs from `continuity_segments` to `max_entry_segments` and never exceeds the width of the bitmap.
 
 ### The opening of a record
 
@@ -4846,8 +5054,9 @@ opening_len = 32 + 32 + PROOF_LEN = 404 640 B
 - Its length is exactly `opening_len`; an opening of any other length is refused before it is parsed.
 - `open_nullifier` is the one-time right of Canon, taking no window and no index, so one seed opens one record and a second opening under it presents the identical value and collides.
 - `record_commit` is the leaf of the tree of records over the record this opening creates, and it is the key that leaf stands at: a key derived from anything of the holder would join their openings to their actions.
-- The proof asserts the opening of `record_commit` and the spending of the right, and asserts of the record that `own_height` is zero, that `segment_bitmap` is zero, that `last_active_segment` is the segment of the window being applied and that `opened_window` is that window — a record opened with a height or a lived segment already in it would buy standing it never lived.
+- The proof asserts the opening of `record_commit` and the spending of the right, and asserts of the record that `own_height` is zero, that `segment_bitmap` is zero, that `last_active_segment` is the segment of the window being applied, `segment(W)` of rule 1 of the rules of continuity (records 297, 300), and that `opened_window` is that window — a record opened with a height or a lived segment already in it would buy standing it never lived.
 - It demands no lived time and asserts none: the segments of a record begin at its opening, and a gate of time here would be a lock whose key lies inside it.
+- It asserts nothing of `operator_nf`, and publishes nothing of it: the field is the holder's, it stands unread until a candidacy spends it, and the proof of that candidacy is the one that asserts its preimage. A record opened with a value no branch yields raises no machine, which costs its holder alone; a value bound here in public would join the record opened to the machine it later raises.
 - A window admits no more openings than `max_openings_per_window`, in the canonical order of the window, so the outcome does not depend on the order of arrival at any machine.
 - It carries no signature and no key, and an implementation that adds one names a person for the whole of their life.
 
@@ -4874,7 +5083,7 @@ action_len = 32 + 32 + 32 + PROOF_LEN = 404 672 B
 - `record_nullifier` is the nullifier of a version of Canon, taking the blinding factor and the commitment of the version acted from; a nullifier already present is refused in silence.
 - `act_nullifier` is the nullifier of the rate of action of Canon, taking the window and no index, so a second action of one window presents the identical value and collides with the first. The two nullifiers are separate values and neither serves for the other: one bounds how often a version is acted from, the other how often a person acts.
 - `successor_commit` is the leaf of the tree of records over the successor, and it is the key that leaf stands at. Where the action creates no successor it is a blank drawn by its emitter from its own randomness, and the proof asserts of that position that it holds either a successor or a closure without disclosing which — publishing two quantities where others publish three would make a closure visible by its shape.
-- The proof asserts that the version acted from stands in the tree of records under the root the window carries, that the transition follows the rules of the record — `opened_window` carried unchanged, `own_height` incremented by one, `last_active_segment` and `segment_bitmap` moved by the rules of continuity, `fabric_root` the holder's own — and that the transition is signed by the key standing in the version acted from. The signature is a witness of that proof and no field of this object: a signature beside it would name the key, and a key names a person.
+- The proof asserts that the version acted from stands in the tree of records under the root the window carries, that the transition follows the rules of the record — `opened_window` and `operator_nf` carried unchanged, `own_height` incremented by one, `last_active_segment` and `segment_bitmap` moved by the rules of continuity (`after` at `segment(W)` of the window applied; rules 1 and 2, records 297, 300), `fabric_root` the holder's own — and that the transition is signed by the key standing in the version acted from. The signature is a witness of that proof and no field of this object: a signature beside it would name the key, and a key names a person.
 - It carries no field naming which of the four acts it is, no counter, no sender and no recipient: what an observer reads is that some version was spent and some commitment appeared.
 
 ### The proposal that closes a window
@@ -4895,6 +5104,7 @@ serialize(proposal)
   record_root                      32 B
   machine_root                     32 B
   admitted_root                    32 B         over the tree of admitted machines, appended at admission
+  credited_root                    32 B         over the tree of credited rights, after the parts of the window before entered
   operations_root                  32 B         over the frames the window applied, in the order they applied
   roll                             32 B         the identifier of the roll: the frames applied and the parts of the cement
   admitted_count                    8 B   u64   the machines the tree of admitted machines holds
@@ -4909,15 +5119,15 @@ serialize(proposal)
   ticket_proof     PRESENCE_PROOF_LEN B         the clearing of the runner's ticket, under the description of the ticket
   signature                      3309 B         over everything above, by the rules for a signed object
 
-proposal_len = 8 + 4 + 8 x 32 + 8 + 32 + 8 + 10 x (32 + 8) + 2 + 32 + 1952 + PRESENCE_PROOF_LEN + 3309
-             = 339 899 B
+proposal_len = 8 + 4 + 9 x 32 + 8 + 32 + 8 + 10 x (32 + 8) + 2 + 32 + 1952 + PRESENCE_PROOF_LEN + 3309
+             = 339 931 B
 ```
 
 **The identifier of a proposal is taken over what the window decided** — the bytes from `window`
 through `suite_id`, under the proposal domain of the registry:
 
 ```
-proposal_id = SHA-256("mt-proposal" || 0x00 || serialize(proposal)[0 .. 718])
+proposal_id = SHA-256("mt-proposal" || 0x00 || serialize(proposal)[0 .. 750])
 ```
 
 The reason is what reads the identifier. An attestation attests it and the sanction of a double
@@ -4939,14 +5149,15 @@ decision between them.
 **Invariants of the proposal:**
 
 - Its length is exactly `proposal_len`; a proposal of any other length is refused before it is parsed.
-- Its identifier is taken under the proposal domain over the fields from `window` through `suite_id`, 718 bytes; an implementation hashing the whole object gives every proposal a name its runner can grind through the randomness of a proof, and one hashing through `final_beacon` or `runner_pubkey` gives two branches or two runners of one decision two names.
+- Its identifier is taken under the proposal domain over the fields from `window` through `suite_id`, 750 bytes; an implementation hashing the whole object gives every proposal a name its runner can grind through the randomness of a proof, and one hashing through `final_beacon` or `runner_pubkey` gives two branches or two runners of one decision two names.
 - `census` is the census of the standing of an electorate the rule of that section carries from the proposal before: at a census window the window's own cement — the root of its tree and its count — enters first and the oldest leaves, and at any other window it is carried as it stands. The electorate of the window two on reads its standing and its committee off it.
 - `runner_pubkey` is one-time and answers for this proposal alone; a key seen for two proposals is a defect, and it names no machine and no owner.
 - `protocol_version` carries the major component in its upper sixteen bits and the minor in its lower. A machine refuses a proposal whose major exceeds the one it implements, and refuses one whose value stands below its predecessor's — so rules never roll back inside one chain, and both rules the Constitution states are a comparison of this field.
 - `previous` is the identifier of the proposal of the window before, so the chain of proposals is a chain by construction and round zero of every window stands on bytes that are fixed. The first window of a network has no proposal before it, and its `previous` is the Genesis State Hash, so the chain of every network begins at the parameters it opened on.
 - The roots are recomputed by every verifier and never taken from the proposal on trust; `admitted_count` is the count of leaves of the tree `admitted_root` stands over, recomputed with it.
+- `credited_root` is the root of the tree of credited rights after this proposal appended the parts of the cement of the window before it, ascending, less the parts its challenge convicted; the first window of a network appends nothing. A verifier recomputes it from the tree it holds and the decided roll of the window before, and a proposal whose root differs is refused.
 - `roll` is the identifier of the roll of this proposal, laid out below: the identifiers of the frames the window applied, in the order they applied, then the parts of its cement, ascending. A machine replaying the roll recomputes `operations_root` from its frames and the cement from its parts, and a proposal whose roll does not replay to it is followed by no machine that did not take it.
-- `cement_aggregate` and `cement_count` are the aggregate and the count of the cement of this window, its living machines whatever names they pledged: the state the beacon `final_beacon` carried, a count reaching the quorum of the electorate, which a machine of the window recomputed from the heavy attestations it held when it answered that beacon, and which a device walking a certificate reads off that beacon among the beacons of the certificate; a proposal whose pair differs is refused. They are what the electorate of the window two on and the draw of that window read.
+- `cement_aggregate` and `cement_count` are the aggregate and the count of the cement of this window, its living machines whatever names they pledged: the state the beacon `final_beacon` carried, a count reaching the quorum of the electorate, which a machine of the window recomputed from the heavy attestations it held when it answered that beacon, and which a device walking a certificate reads off that beacon among the beacons of the certificate; a proposal whose pair differs is refused. They are what the electorate of the window two on and the draw of that window read, and `cement_count` is the coins the window credits, one to each of its living machines.
 - `ticket_proof` asserts that the ticket drawn from the runner's secret and the cemented aggregate of the window two before clears the threshold of the draw, that the half the secret names stands in the tree of admitted machines of the electorate, and that the digest of the key this proposal answers under is the one the proof names — without disclosing the ticket, the secret or the machine. It stands at the height of the presence and is of its length.
 - The signature covers every byte above it, and the rules for a signed object fix what is signed and how.
 
@@ -4959,10 +5170,21 @@ stands on and the ballots of their parts, which stand at their points exactly as
 published. A device verifies a certificate as the living
 verified its parts, and Consensus states the procedure.
 
+**The proof a machine writes with a window it closed is the proposal, and never the certificate.**
+When a machine closes a window it writes one record: the tables of its plane at that window, the
+head, the number of the window closed, and as the proof of that transition the bytes of the
+proposal that closed it — `proposal_len` bytes, its `ticket_proof` and its signature among them —
+whose roots are the ones those tables recompute to. The certificate of that window cannot stand in
+the record: it is made of the attestations, the pledges and the ballots of the window after it,
+which do not exist when the window closes, so a record waiting on them would write the tables and
+the head of one window apart. The certificate is what a device walking to the head verifies, from
+the points where its parts are retained, and it enters the record of no machine (the Author's
+decision of 27.10.2026 19:48 UTC, issue #19).
+
 **Invariants of the certificate:**
 
 - A certificate introduces no object, no signature and no key; its parts are a proposal with its roll, the heavy attestations of the window after it, the light attestations of that window answering the final beacon its proposal names, the pledges its decision stands on and the ballots of their parts, each of the layout and the length this document already fixes. A final beacon no verified attestation of the certificate answered closes nothing for a device, as it closes nothing for a machine of the window.
-- The heavy attestations, the light attestations answering its final beacon, the ballots and the pledges of a window, the frames of its rounds and its proposals with their rolls survive at their points for `retained_windows` windows after the window closes; a deposit at a point of a past round is refused, and what stands there is held until the retention ends, and nothing else of a round outlives its window.
+- The beacons of the rounds of a window, its heavy attestations, the light attestations answering its final beacon, the ballots and the pledges, the frames of its rounds and its proposals with their rolls survive at their points for `retained_windows` windows after the window closes; a deposit at a point of a past round is refused, and what stands there is held whole until the retention ends, the light attestations answering the window's other beacons among it and read by nothing; nothing of a round outlives the retention.
 
 ### The frame of a payment
 
@@ -5158,7 +5380,7 @@ serialize(candidacy)
   node_commit                      32 B         the commitment standing for the machine
   operator_nullifier               32 B         the extinguished one-time right to raise a machine
   suite_id                          2 B   u16
-  proof                     PROOF_LEN B         the continuity met, the commitment opened, and both halves of one reading of the secret
+  proof                     PROOF_LEN B         the continuity met, the record a member, the right it carries spent, and the naming half of one reading of the secret
 
 candidacy_len = 8 + 32 + 32 + 32 + 2 + PROOF_LEN = 404 682 B
 ```
@@ -5166,12 +5388,14 @@ candidacy_len = 8 + 32 + 32 + 32 + 2 + PROOF_LEN = 404 682 B
 **Invariants of a candidacy:**
 
 - Its length is exactly `candidacy_len`; a candidacy of any other length is refused before it is parsed.
-- `operator_nullifier` is the one-time right of Canon, taking no window and no index, so one seed raises one machine and a second candidacy under it presents the identical value and collides.
-- `node_commit` is the commitment of Canon over the answering key, its suite and a fresh blinding factor; the key itself appears in no field of this object.
+- `operator_nullifier` is the one-time right of Canon, taking no window and no index, and it is the `operator_nf` the claimant's record carries, so one record raises one machine and a second candidacy under it presents the identical value and collides. It enters the set of nullifiers when the candidacy applies, whether or not an event admits the machine.
+- `node_commit` is the commitment of Canon over the answering key, its suite and a fresh blinding factor; the key itself appears in no field of this object. It is a field of this object and of its identifier, and it stands in the public input of the proof, so a proof made under one `node_commit` stands under no other: a relay rewriting the field of a candidacy it has seen presents a proof of another statement, and the node refuses it with the right unspent.
 - `naming_half` is the half that names the machine, and it is what a selection event writes into the tree of admitted machines, whose leaf Canon folds over exactly that value — so what a candidacy publishes and what an admission records are one value. Without it an event would hold a commitment and be asked to write a half, and no rule would say how one becomes the other.
 - Publishing it discloses nothing a machine does not disclose by being admitted: that tree is public and its leaf is that half. A candidacy that is not admitted publishes it too, and no later admission can be joined to that attempt — the right it spent is one-time, so there is no second candidacy under it and no success for a failure to be linked to.
-- The proof asserts that `naming_half` and `operator_nullifier` come of one seed: the half of one absorption of the machine's secret, and the branch of the same seed holding the right. A claimant cannot spend one person's right to seat another person's machine.
-- The proof asserts the lived continuity the gate of entry demands of this window, and the opening of `node_commit`, disclosing neither.
+- The proof asserts that the record, the right and the half come of one admissible state: a record standing in the tree of records under the root the verifier takes for this window, the `operator_nf` that record carries equal to `operator_nullifier` and to the sponge of a branch the claimant holds, and `naming_half` the second squeeze of one absorption of a secret the claimant holds. A claimant cannot spend one person's right to seat another person's machine, cannot pair a record with a right it does not carry, and cannot publish a half whose secret it does not hold.
+- The public input is `window ‖ record_root ‖ naming_half ‖ node_commit ‖ operator_nullifier ‖ suite_id`, 138 B, each value in its own bytes. `window`, `node_commit` and `suite_id` bind no cell of the trace: they enter the transcript every proof opens with, and a proof stands under no other value of any of them. `window` is the field of this object, and a verifier applying another window refuses the candidacy before it verifies anything. `record_root` is no field of this object: it is the root of the tree of records the proposal of the standing stride's last window carries, the stride standing for `window` by the integer form of the horizon of proving, taken by the verifier from that one proposal — the same rule by which a frame walks a right against the root of admitted machines. Before the first stride stands no root does, and no candidacy applies.
+- The proof asserts the lived continuity the gate of entry demands of this window, out of that same record, disclosing neither the record nor its history: `lived(record, segment(window), n)` reaches the share of `n` by the rules of continuity, where `n` is the count in force Consensus states (records 297, 300).
+- **The count in force comes from the verifier, never from the object** (records 297, 300). `n` is no field of this object. The verifier recomputes it from the same proposal `record_root` is taken from, by the ramp of Consensus, and lays it into the public input beside `segment(window)`, the way it lays `record_root`. The object, `candidacy_len` and the identifier of a candidacy keep every byte they have. A field carrying `n` would add bytes to every candidacy and to the preimage of its identifier, and the verifier would still have to compare that field against its own recomputation, so it would be a second place for one value to stand. Either way the public input carries the same value, so this choice changes the fewest bytes. Until the admission circuit asserts the share, the public input stays the 138 B above. The encoding of the two values in it is fixed with that circuit in the next generation of K5, and so is the `air_hash` that binds it. Each value must stand on a limb of its own, so that the circuit binds it to one cell the way the opening binds `segment` and `window`. The public input is read in limbs of four bytes, so a value appended after the 2 B `suite_id` would straddle two limbs.
 - It carries no signature and no key, and an implementation that adds one names a machine for the whole of its life.
 
 ### The three objects of a name
@@ -5218,10 +5442,33 @@ name_renew_len  = 64 B
 - A reveal carries no slot field: the slot is the hash of the normalized name and every verifier recomputes it, so publishing it beside the name would be a second source for one value.
 - `name` holds `name_length` bytes of the normalized name followed by zeros to the fixed width, and every derivation reads the first `name_length` bytes — the padding enters no hash, and one length serves every lawful name.
 - A reveal is accepted only within `name_reveal_windows` of the commitment it opens, and only for a slot no cemented commitment already holds.
-- A renewal is accepted only when hashing `link` once yields the value published before it for that slot, and only within `name_renew_windows`.
+- A renewal is accepted only when hashing `link` once yields the value published before it for that slot, and only within `name_renew_windows`. The first renewal of a slot is accepted only when, in addition, its proof of lived continuity stands (records 297, 300).
 - A commitment no reveal opens within `name_reveal_windows` is discarded, so committing accumulates nothing.
 - A slot whose renewal does not come is released and carries nothing of whoever held it; this and the expiry above are the lifecycle bound this table stands on.
-- None of the three carries a signature, a key, a record commitment or a nullifier of the identity plane, and an object bearing one is refused.
+- None of the three carries a signature, a key, a record commitment or a nullifier of the identity plane, and an object bearing one is refused. The layout `name_renew` above is the renewal after the first. The first renewal of a slot is an object of its own, described below (records 297, 300).
+
+### The first renewal of a slot
+
+**Proposed, next generation of K5.** The Author decided on 2026-10-27 (decision 292, answer 5a;
+constitution records 297 and 300) that the first renewal of a slot is an object of its own and
+carries a proof of lived continuity, while every later renewal stays the 64 B single hash above.
+This section states what the object must establish. Its layout, its class domain in the registry
+and its circuit are **proposed, next generation**: no circuit fixes them yet, so none is written
+here. Conformance over this object is unachievable until they land, under the rule this document
+states for a quantity not yet frozen.
+
+What the first renewal of a slot must establish, and it applies alike to a slot of a name and a slot
+of a channel:
+
+- The link: hashing it once yields the tip the commitment of that slot carried, as for every renewal, and within `name_renew_windows`.
+- A record of the holder stands in the tree of records under the root the verifier takes for the window applied, by the same rule a candidacy is verified by.
+- That record reaches the share of the count in force at `segment(W)` of the window applied, by the rules of continuity.
+- One record holds a slot through one first renewal: what binds the record to this one hold of this slot, and spends nothing that joins the slot to the record, is part of the layout proposed for the next generation.
+- It carries no signature and no key. Like the proof of a candidacy, its proof discloses neither the record nor its history.
+
+A renewal is told to be the first by the state of its slot, not by its length alone: the state
+knows whether the slot has been renewed since its reveal. Every later renewal of the slot is the
+`name_renew` above.
 
 ### A publication of a channel
 
@@ -5290,7 +5537,7 @@ channel_renew_len  = 64 B
 
 - Each carries what the corresponding object of a name carries, save that a reveal publishes the verification key of the slot and its suite rather than the key a stranger encapsulates to; an object carrying both keys is refused.
 - A reveal is accepted within `name_reveal_windows` of its commitment and a renewal within `name_renew_windows`, the same periods the objects of a name stand on: one plane of slots keeps one pair of periods, and a second pair would be a second clock over one mechanism.
-- None of the three carries a signature, a record commitment or a nullifier of the identity plane; the key a reveal publishes belongs to the slot and to no person, and the signature a channel makes stands on its publications alone.
+- None of the three carries a signature, a record commitment or a nullifier of the identity plane; the key a reveal publishes belongs to the slot and to no person, and the signature a channel makes stands on its publications alone. `channel_renew` is the renewal after the first; the first renewal of a channel slot is the object of "The first renewal of a slot" above (records 297, 300).
 - A commitment spends the nullifier of a reach for its window, so one record takes at most one slot per window whichever space the slot belongs to.
 - A slot of a channel is held by the first cemented commitment for it, and a second reveal for a held slot is refused: a channel is owned inside this protocol, unlike a number, which nobody owns here.
 - The three carry no signature, no record commitment and no nullifier of the identity plane; the signature a channel makes stands on its publications and never on the objects that take its slot.
@@ -5316,7 +5563,7 @@ An implementation conforms to this document when all of the following hold.
    and claims no conformance over them until the value lands.
 7. It reproduces **every frozen vector of this document byte for byte**, from the domain-separated
    primitive and the empty values and the pinned walks of both trees through the note, the nullifiers of both rates and
-   of a share, the tag and its step labels, the walk of the secret of a pipe, the seal of a step, the placement of a sender, the slot
+   of a right to a coin, the tag and its step labels, the walk of the secret of a pipe, the seal of a step, the placement of a sender, the slot
    of a name and the slot of a channel, the tag of first contact, the handshake and the words of a
    seed. This item is the first an implementation
    should run and the cheapest to run: an implementation that reproduces the vectors has the hash

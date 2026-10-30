@@ -29,7 +29,6 @@ import android.widget.TextView
 import android.widget.Toast
 import org.json.JSONObject
 import java.io.File
-import java.security.MessageDigest
 import java.util.Date
 import kotlin.math.abs
 
@@ -58,8 +57,23 @@ object PeerAbout {
     fun note(ref: String, bio: String, link: String, at: Double) {
         val held = of(ref)
         if (held != null && held.at > at) return
-        Prefs.setStr("about.$ref", JSONObject().put("b", bio.take(BIO_LIMIT)).put("l", url(link)?.toString() ?: "").put("at", at).toString())
+        Prefs.setStr("about.$ref", JSONObject().put("b", bio.take(BIO_LIMIT)).put("l", spoken(link)).put("at", at).toString())
     }
+
+    /**
+     * EVERY LINK OF THE FIELD (iOS MTPeerAbout.links, 609736de; the author's word 21.10 16:37: «on my page on T1 the links are not
+     * seen»): the field held «dreamdepartment.io /// montana.xxx» and read as one address -- no link, or one crooked link. Each word
+     * set apart by spaces or commas is read by the one rule (url), in order, a repeat once; the words that are not the web stand
+     * aside. The one reader of the field: my page, the wire, a correspondent's page.
+     */
+    fun links(s: String): List<Uri> {
+        if (s.length > LINK_LIMIT) return emptyList()
+        val out = ArrayList<Uri>()
+        for (w in s.split(Regex("[\\s,]+"))) url(w)?.let { if (it !in out) out.add(it) }
+        return out
+    }
+    /** The field as it leaves for the wire and as it is kept of a correspondent: its links, one space apart (iOS spoken). */
+    fun spoken(s: String): String = links(s).joinToString(" ") { it.toString() }
 
     /** A link as a person types it: «site.org» wears https; nothing but the web is a link here. */
     fun url(s: String): Uri? {
@@ -139,10 +153,7 @@ object PeerSafety {
      * exactly that secret, and the number changes the moment they do.
      */
     fun fingerprint(ref: String): String? {
-        val secret = Book.secret(ref)?.takeIf { it.size == 32 } ?: return null
-        val domain = "mt-safety".toByteArray() + byteArrayOf(0)
-        var h = secret
-        repeat(5200) { h = MessageDigest.getInstance("SHA-256").digest(domain + h) }
+        val h = Book.secret(ref)?.takeIf { Wire.isWhole(it) }?.let { Wire.fingerprintMaterial(it) } ?: return null
         return (0 until 6).joinToString("") { i ->
             var v = 0L
             for (k in 0 until 5) v = (v shl 8) or (h[i * 5 + k].toLong() and 0xFF)
@@ -175,7 +186,7 @@ private enum class Tab(val title: Int, val icon: Int, val empty: Int) {
 }
 
 /** A letter of the conversation as the panes read it: its kind, its file, its manifest. */
-private class Item(val m: Msg, val kind: String, val file: File?, val name: String?, val size: Long, val du: Double)
+private class Item(val m: Msg, val kind: String, val file: File?, val name: String?, val size: Long, val du: Double, val round: Boolean)
 
 private val AUDIO_EXT = setOf("mp3", "m4a", "aac", "flac", "wav", "ogg", "opus", "aiff", "alac")
 
@@ -183,7 +194,7 @@ private fun itemOf(m: Msg): Item? {
     if (!m.text.startsWith(Marks.MEDIA)) return null
     val man = m.meta?.let { runCatching { JSONObject(it) }.getOrNull() } ?: Media.inline(m.text) ?: return null
     val f = m.file?.let { File(it) }?.takeIf { it.exists() }
-    return Item(m, man.optString("k"), f, man.optString("n").ifEmpty { null }, man.optLong("sz"), man.optDouble("du", 0.0))
+    return Item(m, man.optString("k"), f, man.optString("n").ifEmpty { null }, man.optLong("sz"), man.optDouble("du", 0.0), man.optBoolean("r"))
 }
 private fun Item.isMusic() = kind == "doc" && (name ?: file?.name ?: "").substringAfterLast('.', "").lowercase() in AUDIO_EXT
 
@@ -231,14 +242,214 @@ private fun linksIn(text: String): List<Uri> {
     return out
 }
 
-private fun select(tab: Tab, msgs: List<Msg>): List<Msg> = when (tab) {
+private fun select(tab: Tab, msgs: List<Msg>, group: Boolean = false): List<Msg> = when (tab) {
     Tab.WALL -> emptyList()   // the wall is its owner's posts, not the letters
-    Tab.MEDIA -> msgs.filter { itemOf(it)?.kind == "img" }
+    // A GROUP'S «MEDIA» HOLDS ITS PHOTOS AND ITS VIDEOS TOGETHER, as the reference's pane does (iOS 82c9ae3f, V.7); a round note is no film
+    Tab.MEDIA -> if (group) msgs.filter { itemOf(it)?.let { i -> i.kind == "img" || (i.kind == "vid" && !i.round) } == true }
+                 else msgs.filter { itemOf(it)?.kind == "img" }
     Tab.VIDEO -> msgs.filter { itemOf(it)?.kind == "vid" }
     Tab.FILES -> msgs.filter { itemOf(it)?.let { i -> i.kind == "doc" && !i.isMusic() } == true }
     Tab.LINKS -> msgs.filter { linksIn(it.text).isNotEmpty() }
     Tab.MUSIC -> msgs.filter { itemOf(it)?.isMusic() == true }
     Tab.VOICE -> msgs.filter { itemOf(it)?.kind == "aud" }
+}
+
+/**
+ * THE STRIP OF PANES, ONE FOR EVERY PAGE THAT SHOWS WHAT A CONVERSATION CARRIED (iOS MTTabStrip, MTSwipePanes, selectionBar): a
+ * person's page holds them all, its wall first; a group's holds the reference's five -- Media (its photos and its videos together),
+ * Files, Links, Music and Voice (iOS 82c9ae3f, the checklist's V.7). The page lays [bar] and [pane] among its rows and [foot] at its
+ * foot, turns the panes by [turn], and calls [heard] when the book changes, [music] when the player turns, [wall] when a wall is heard.
+ */
+internal class Panes(val bar: View, val pane: LinearLayout, val foot: View, val draw: () -> Unit, val turn: (Int) -> Unit,
+                     val heard: () -> Unit, val music: () -> Unit, val wall: () -> Unit)
+
+internal fun panesOf(act: MainActivity, ref: String, group: Boolean, onClose: () -> Unit, toChat: (String, String?) -> Unit,
+                     onFoot: (Boolean) -> Unit): Panes {
+    val c: Context = act
+    val tabs = if (group) listOf(Tab.MEDIA, Tab.FILES, Tab.LINKS, Tab.MUSIC, Tab.VOICE) else Tab.values().toList()
+    // ── THE STRIP (iOS MTTabStrip): the system's glass capsule 44 tall stands still on the page's margin and the words roll inside it,
+    // under its edge; the chosen word wears the system's grey pill, which rides to the next one; while every word fits, the tabs
+    // share the capsule equally ──
+    var tab = tabs.first()   // a page opens on its wall, a group's on its media
+    val dim = Color.argb(153, 235, 235, 245)   // iOS .secondaryLabel
+    val words = tabs.map { t ->
+        c.text(c.getString(t.title), 15f, dim, center = true).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); maxLines = 1 }
+    }
+    val pill = View(c).apply { background = c.rounded(Color.rgb(58, 58, 60), 19) }   // iOS .systemGray4
+    val wordRow = c.hstack { setPadding(dp(3), dp(3), dp(3), dp(3)) }
+    words.forEach { wordRow.addView(it, lp(WRAP, c.dp(38))) }
+    val track = FrameLayout(c).apply {
+        addView(pill, FrameLayout.LayoutParams(0, dp(38)).apply { topMargin = dp(3) })
+        addView(wordRow, FrameLayout.LayoutParams(WRAP, MATCH))
+    }
+    val roll = HorizontalScrollView(c).apply {
+        isHorizontalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER
+        addView(track, FrameLayout.LayoutParams(WRAP, MATCH))
+    }
+    val bar = FrameLayout(c).apply {
+        background = c.glassPlate()
+        clipToOutline = true   // the words roll under the capsule's own edge
+        addView(roll, FrameLayout.LayoutParams(MATCH, MATCH))
+    }
+    var slots = IntArray(0)   // each word's place in the track
+    var spans = IntArray(0)   // and its width
+    // the words' places: equal shares of the capsule while all fit, else each its own width and 16 on either side (iOS layoutSubviews)
+    fun lay() {
+        val inner = bar.width - c.dp(6)
+        if (inner == minOf(inner, 0)) return
+        val natural = words.map { v -> v.paint.measureText(v.text.toString()).toInt() + 1 + c.dp(32) }
+        val fits = natural.sum() == minOf(natural.sum(), inner)
+        val n = words.size
+        val share = inner / n
+        var x = c.dp(3)
+        slots = IntArray(n); spans = IntArray(n)
+        words.forEachIndexed { i, v ->
+            val w = if (!fits) natural[i] else if (i == n - 1) inner - share * (n - 1) else share
+            slots[i] = x; spans[i] = w; x += w
+            v.layoutParams = (v.layoutParams as LinearLayout.LayoutParams).apply { width = w }
+        }
+    }
+    // the pill under the chosen word, ridden there on the platform's spring of 0.4 s (iOS place, usingSpringWithDamping 0.85)
+    fun place(animated: Boolean) {
+        val i = tabs.indexOf(tab)
+        if (i == maxOf(i, slots.size)) return
+        words.forEachIndexed { k, v -> v.setTextColor(if (k == i) Color.WHITE else dim) }
+        val p = pill.layoutParams as FrameLayout.LayoutParams
+        if (!animated || pill.width == 0) { p.width = spans[i]; pill.layoutParams = p; pill.translationX = slots[i].toFloat(); return }
+        val fromX = pill.translationX; val fromW = pill.width
+        android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 400; interpolator = android.view.animation.DecelerateInterpolator(2f)
+            addUpdateListener { a ->
+                val f = a.animatedValue as Float
+                pill.translationX = fromX + (slots[i] - fromX) * f
+                p.width = (fromW + (spans[i] - fromW) * f).toInt(); pill.layoutParams = p
+            }
+        }.start()
+    }
+    val pane = c.vstack(Gravity.NO_GRAVITY) { setPadding(dp(16), 0, dp(16), 0) }
+    lateinit var drawPane: () -> Unit
+
+    // ── THE ITEM LAW AND THE SELECTION (iOS MTProfileItem, selectionBar): a hold opens the chat's menu of the letter, «Select» in it
+    // begins the page's own selection; the bar at the foot forwards the chosen through the chat's picker or deletes them for me ──
+    var selecting = false
+    val chosen = linkedSetOf<String>()
+    val foot = FrameLayout(c).apply { visibility = View.GONE }
+    lateinit var drawFoot: () -> Unit
+    fun endSelecting() { selecting = false; chosen.clear(); drawPane(); drawFoot() }
+    // the page closes first, then the chat beneath jumps to the letter or another chat opens (iOS dismiss, ui.showLetter)
+    fun leaveFor(to: String, mid: String?) { onClose(); toChat(to, mid) }
+    fun forward(letters: List<Msg>) {
+        val sendable = letters.filter { canForward(it) }
+        if (sendable.isNotEmpty()) act.push { close -> forwardPage(act, ref, sendable, close) { to -> close(); leaveFor(to, null) } }
+    }
+    val law = ItemLaw(
+        selecting = { selecting },
+        chosen = { m -> m.mid in chosen },
+        toggle = { m -> if (!chosen.remove(m.mid)) chosen.add(m.mid); drawPane(); drawFoot() },
+        menu = { m ->
+            letterMenu(act, ref, m, onReply = {}, onEdit = {}, onForward = { forward(listOf(m)) },
+                onSelect = { selecting = true; chosen.clear(); chosen.add(m.mid); drawPane(); drawFoot() },
+                group = group, onShowInChat = { leaveFor(ref, m.mid) })
+        },
+        redraw = { drawPane() })
+    drawFoot = {
+        foot.removeAllViews()
+        foot.visibility = if (selecting) View.VISIBLE else View.GONE
+        onFoot(selecting)
+        if (selecting) {
+            val letters = (Book.chat(ref)?.msgs ?: emptyList()).filter { it.mid in chosen }
+            val any = letters.isNotEmpty()
+            fun key(glyph: Int, words: Int, tint: Int, on: Boolean, mirrored: Boolean = false, work: () -> Unit) = FrameLayout(c).apply {
+                contentDescription = c.getString(words)
+                addView(c.icon(glyph, tint, 20).apply { if (mirrored) scaleX = -1f }, FrameLayout.LayoutParams(c.dp(20), c.dp(20), Gravity.CENTER))
+                if (on) pressable(work)
+            }
+            foot.addView(c.hstack {
+                gravity = Gravity.CENTER_VERTICAL
+                setBackgroundColor(Color.argb(235, 44, 44, 46))   // the menus' own material (iOS .ultraThinMaterial)
+                setPadding(dp(16), dp(10), dp(16), dp(10))
+                addView(key(R.drawable.ic_close, R.string.cancel, Color.rgb(204, 204, 204), true) { endSelecting() }, lp(dp(44), dp(44)))
+                addView(View(c), lp(0, 1, 1f))
+                addView(c.text(letters.size.toString(), 17f, MT.gray).apply { fontFeatureSettings = "tnum" }, lp(WRAP, WRAP))
+                addView(View(c), lp(0, 1, 1f))
+                addView(key(R.drawable.ic_reply, R.string.ld_forward, if (any) Color.WHITE else MT.gray, any, mirrored = true) {
+                    endSelecting(); forward(letters)
+                }, lp(dp(44), dp(44)))
+                addView(key(R.drawable.ic_delete, R.string.delete, if (any) SysColor.red else MT.gray, any) {
+                    val mids = letters.filter { !CoinSend.travels(it) }.map { it.mid }.toSet()   // a coin letter on its way keeps its row (iOS deleteLocally)
+                    Book.drop(ref, mids)
+                    endSelecting()
+                }, lp(dp(44), dp(44)).apply { marginStart = dp(18) })
+            }, FrameLayout.LayoutParams(MATCH, WRAP))
+        }
+    }
+    // the chosen word rides into view, a hundred points of its neighbour showing beside it (iOS reveal)
+    fun reveal(animated: Boolean) {
+        val i = tabs.indexOf(tab)
+        val w = roll.width
+        if (w == 0 || i == maxOf(i, slots.size)) return
+        val from = slots[i]
+        val to = slots[i] + spans[i]
+        var x = roll.scrollX
+        if (x + w - c.dp(100) < to) x = to - w + c.dp(100)
+        if (from - c.dp(100) < x) x = from - c.dp(100)
+        x = x.coerceIn(0, maxOf(0, track.width - w))
+        if (animated) roll.smoothScrollTo(x, 0) else roll.scrollTo(x, 0)
+    }
+    fun choose(t: Tab) { if (t != tab) { tab = t; place(true); reveal(true); drawPane() } }
+    words.forEachIndexed { i, v -> v.setOnClickListener { choose(tabs[i]) } }
+    // the capsule measured anew (the first layout, a turn of the phone): the words take their places again
+    bar.addOnLayoutChangeListener { _, left, _, right, _, oldLeft, _, oldRight, _ ->
+        if (right - left != oldRight - oldLeft) bar.post { lay(); wordRow.requestLayout(); wordRow.post { place(false); reveal(false) } }
+    }
+    // THE PANES ARE TURNED BY THE FINGER (iOS MTSwipePanes): one step along the strip, stopping at its ends
+    fun turnPane(step: Int) {
+        val j = tabs.indexOf(tab) + step
+        if (j in tabs.indices) choose(tabs[j])
+    }
+    fun emptyPane(): View = c.vstack(Gravity.CENTER_HORIZONTAL) {
+        setPadding(0, dp(36), 0, dp(36))
+        addView(c.icon(tab.icon, MT.gray), lp(dp(42), dp(42)))
+        addView(c.text(c.getString(tab.empty), 15f, MT.gray, center = true), lp().apply { topMargin = dp(10) })
+    }
+    drawPane = {
+        pane.removeAllViews()
+        val msgs = select(tab, Book.chat(ref)?.msgs ?: emptyList(), group)
+        if (tab == Tab.WALL) {
+            // THE WRITE BUTTON WHILE THE OWNER LETS ME WRITE (iOS MTBoardRows, MontanaBoardViews.swift:156-161 at 2155): it opens the
+            // one new post's page over their wall (MTBoardComposer.present(on: owner)), and the post goes to them
+            if (Board.canWrite(ref)) pane.addView(c.hstack {
+                gravity = Gravity.CENTER_VERTICAL
+                background = c.glassPlate()
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                addView(FrameLayout(c).apply {
+                    background = c.glassPlate(oval = true)
+                    addView(c.icon(R.drawable.ic_compose, Color.WHITE), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
+                }, lp(dp(44), dp(44)).apply { marginEnd = dp(14) })
+                addView(c.text(c.getString(R.string.pi_write_wall), 17f))
+                pressable { act.push { close -> newPostPage(act, close, wall = ref) } }
+            }, lp().apply { topMargin = c.dp(12) })
+            // A POST ON ITS WAY TO THEIR WALL stands at once as it will be published, under the bar of its files (iOS MTBoardRows 167-172)
+            val onItsWay = MyWall.sending(ref)
+            onItsWay.forEach { o -> pane.addView(goingCell(act, o), lp().apply { topMargin = c.dp(10) }) }
+            // THE WALL'S OWN ROWS (iOS MTBoardRows, MontanaPeerInfoScreen.swift:646): a person's page shows their wall --
+            // the same cells the feed draws (Board.postCell), with no "on X's wall" line of its own (onItsWall).
+            val wallPosts = Board.posts(ref)
+            if (wallPosts.isEmpty() && onItsWay.isEmpty()) pane.addView(emptyPane(), lp())
+            else wallPosts.forEach { item -> pane.addView(postCell(act, item, onItsWall = true), lp().apply { topMargin = c.dp(10) }) }
+        } else if (msgs.isEmpty()) pane.addView(emptyPane(), lp())
+        else paneRows(act, tab, msgs.reversed(), pane, law)   // newest on top
+    }
+
+    // the one player's turn redraws the music's glyphs, and only its turn: the clock's ticks change nothing here
+    var heardPlay = MusicPlayer.current?.uri to MusicPlayer.playing
+    return Panes(bar, pane, foot, draw = { drawPane() }, turn = { turnPane(it) },
+        heard = { drawPane(); if (selecting) drawFoot() },
+        music = {
+            val now = MusicPlayer.current?.uri to MusicPlayer.playing
+            if (now != heardPlay) { heardPlay = now; if (tab == Tab.MUSIC) drawPane() }
+        },
+        wall = { if (tab == Tab.WALL) drawPane() })
 }
 
 // ─────────────────────────── the page (iOS MontanaPeerInfoScreen) ───────────────────────────
@@ -266,7 +477,7 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
         val about = PeerAbout.of(ref)
         val f = Book.shownFace(ref)
         face.draw(if (f.exists()) BitmapFactory.decodeFile(f.path) else null, name, PeerSafety.isBlocked(ref),
-            about?.bio.orEmpty(), PeerAbout.url(about?.link ?: ""), Book.chat(ref)?.note.orEmpty())
+            about?.bio.orEmpty(), PeerAbout.links(about?.link ?: ""), Book.chat(ref)?.note.orEmpty())
     }
 
     // ── the four plates (iOS MTPeerAction): message, voice call, video call, more; a blocked person is not called ──
@@ -396,181 +607,13 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
         sections.addView(glassGroup(*second.toTypedArray()), lp().apply { topMargin = c.dp(22) })
     }
 
-    // ── THE STRIP (iOS MTTabStrip): the system's glass capsule 44 tall stands still on the page's margin and the words roll inside it,
-    // under its edge; the chosen word wears the system's grey pill, which rides to the next one; while every word fits, the tabs
-    // share the capsule equally ──
-    var tab = Tab.WALL   // a page opens on its wall
-    val dim = Color.argb(153, 235, 235, 245)   // iOS .secondaryLabel
-    val words = Tab.values().map { t ->
-        c.text(c.getString(t.title), 15f, dim, center = true).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); maxLines = 1 }
+    val panes = panesOf(act, ref, group = false, onClose, toChat) { on ->
+        body.setPadding(0, c.dp(56), 0, c.dp(if (on) 104 else 40))   // the bar's room under the last row (iOS safeAreaInset)
     }
-    val pill = View(c).apply { background = c.rounded(Color.rgb(58, 58, 60), 19) }   // iOS .systemGray4
-    val wordRow = c.hstack { setPadding(dp(3), dp(3), dp(3), dp(3)) }
-    words.forEach { wordRow.addView(it, lp(WRAP, c.dp(38))) }
-    val track = FrameLayout(c).apply {
-        addView(pill, FrameLayout.LayoutParams(0, dp(38)).apply { topMargin = dp(3) })
-        addView(wordRow, FrameLayout.LayoutParams(WRAP, MATCH))
-    }
-    val roll = HorizontalScrollView(c).apply {
-        isHorizontalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER
-        addView(track, FrameLayout.LayoutParams(WRAP, MATCH))
-    }
-    val bar = FrameLayout(c).apply {
-        background = c.glassPlate()
-        clipToOutline = true   // the words roll under the capsule's own edge
-        addView(roll, FrameLayout.LayoutParams(MATCH, MATCH))
-    }
-    var slots = IntArray(0)   // each word's place in the track
-    var spans = IntArray(0)   // and its width
-    // the words' places: equal shares of the capsule while all fit, else each its own width and 16 on either side (iOS layoutSubviews)
-    fun lay() {
-        val inner = bar.width - c.dp(6)
-        if (inner == minOf(inner, 0)) return
-        val natural = words.map { v -> v.paint.measureText(v.text.toString()).toInt() + 1 + c.dp(32) }
-        val fits = natural.sum() == minOf(natural.sum(), inner)
-        val n = words.size
-        val share = inner / n
-        var x = c.dp(3)
-        slots = IntArray(n); spans = IntArray(n)
-        words.forEachIndexed { i, v ->
-            val w = if (!fits) natural[i] else if (i == n - 1) inner - share * (n - 1) else share
-            slots[i] = x; spans[i] = w; x += w
-            v.layoutParams = (v.layoutParams as LinearLayout.LayoutParams).apply { width = w }
-        }
-    }
-    // the pill under the chosen word, ridden there on the platform's spring of 0.4 s (iOS place, usingSpringWithDamping 0.85)
-    fun place(animated: Boolean) {
-        val i = tab.ordinal
-        if (i == maxOf(i, slots.size)) return
-        words.forEachIndexed { k, v -> v.setTextColor(if (k == i) Color.WHITE else dim) }
-        val p = pill.layoutParams as FrameLayout.LayoutParams
-        if (!animated || pill.width == 0) { p.width = spans[i]; pill.layoutParams = p; pill.translationX = slots[i].toFloat(); return }
-        val fromX = pill.translationX; val fromW = pill.width
-        android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 400; interpolator = android.view.animation.DecelerateInterpolator(2f)
-            addUpdateListener { a ->
-                val f = a.animatedValue as Float
-                pill.translationX = fromX + (slots[i] - fromX) * f
-                p.width = (fromW + (spans[i] - fromW) * f).toInt(); pill.layoutParams = p
-            }
-        }.start()
-    }
-    val pane = c.vstack(Gravity.NO_GRAVITY) { setPadding(dp(16), 0, dp(16), 0) }
-    lateinit var drawPane: () -> Unit
-
-    // ── THE ITEM LAW AND THE SELECTION (iOS MTProfileItem, selectionBar): a hold opens the chat's menu of the letter, «Select» in it
-    // begins the page's own selection; the bar at the foot forwards the chosen through the chat's picker or deletes them for me ──
-    var selecting = false
-    val chosen = linkedSetOf<String>()
-    val foot = FrameLayout(c).apply { visibility = View.GONE }
-    lateinit var drawFoot: () -> Unit
-    fun endSelecting() { selecting = false; chosen.clear(); drawPane(); drawFoot() }
-    // the page closes first, then the chat beneath jumps to the letter or another chat opens (iOS dismiss, ui.showLetter)
-    fun leaveFor(to: String, mid: String?) { onClose(); toChat(to, mid) }
-    fun forward(letters: List<Msg>) {
-        val sendable = letters.filter { canForward(it) }
-        if (sendable.isNotEmpty()) act.push { close -> forwardPage(act, ref, sendable, close) { to -> close(); leaveFor(to, null) } }
-    }
-    val law = ItemLaw(
-        selecting = { selecting },
-        chosen = { m -> m.mid in chosen },
-        toggle = { m -> if (!chosen.remove(m.mid)) chosen.add(m.mid); drawPane(); drawFoot() },
-        menu = { m ->
-            letterMenu(act, ref, m, onReply = {}, onEdit = {}, onForward = { forward(listOf(m)) },
-                onSelect = { selecting = true; chosen.clear(); chosen.add(m.mid); drawPane(); drawFoot() },
-                onShowInChat = { leaveFor(ref, m.mid) })
-        },
-        redraw = { drawPane() })
-    drawFoot = {
-        foot.removeAllViews()
-        foot.visibility = if (selecting) View.VISIBLE else View.GONE
-        body.setPadding(0, c.dp(56), 0, c.dp(if (selecting) 104 else 40))   // the bar's room under the last row (iOS safeAreaInset)
-        if (selecting) {
-            val letters = (Book.chat(ref)?.msgs ?: emptyList()).filter { it.mid in chosen }
-            val any = letters.isNotEmpty()
-            fun key(glyph: Int, words: Int, tint: Int, on: Boolean, mirrored: Boolean = false, work: () -> Unit) = FrameLayout(c).apply {
-                contentDescription = c.getString(words)
-                addView(c.icon(glyph, tint, 20).apply { if (mirrored) scaleX = -1f }, FrameLayout.LayoutParams(c.dp(20), c.dp(20), Gravity.CENTER))
-                if (on) pressable(work)
-            }
-            foot.addView(c.hstack {
-                gravity = Gravity.CENTER_VERTICAL
-                setBackgroundColor(Color.argb(235, 44, 44, 46))   // the menus' own material (iOS .ultraThinMaterial)
-                setPadding(dp(16), dp(10), dp(16), dp(10))
-                addView(key(R.drawable.ic_close, R.string.cancel, Color.rgb(204, 204, 204), true) { endSelecting() }, lp(dp(44), dp(44)))
-                addView(View(c), lp(0, 1, 1f))
-                addView(c.text(letters.size.toString(), 17f, MT.gray).apply { fontFeatureSettings = "tnum" }, lp(WRAP, WRAP))
-                addView(View(c), lp(0, 1, 1f))
-                addView(key(R.drawable.ic_reply, R.string.ld_forward, if (any) Color.WHITE else MT.gray, any, mirrored = true) {
-                    endSelecting(); forward(letters)
-                }, lp(dp(44), dp(44)))
-                addView(key(R.drawable.ic_delete, R.string.delete, if (any) SysColor.red else MT.gray, any) {
-                    val mids = letters.filter { !CoinSend.travels(it) }.map { it.mid }.toSet()   // a coin letter on its way keeps its row (iOS deleteLocally)
-                    Book.edit(ref) { ch -> ch.msgs.removeAll { it.mid in mids } }
-                    endSelecting()
-                }, lp(dp(44), dp(44)).apply { marginStart = dp(18) })
-            }, FrameLayout.LayoutParams(MATCH, WRAP))
-        }
-    }
-    // the chosen word rides into view, a hundred points of its neighbour showing beside it (iOS reveal)
-    fun reveal(animated: Boolean) {
-        val i = tab.ordinal
-        val w = roll.width
-        if (w == 0 || i == maxOf(i, slots.size)) return
-        val from = slots[i]
-        val to = slots[i] + spans[i]
-        var x = roll.scrollX
-        if (x + w - c.dp(100) < to) x = to - w + c.dp(100)
-        if (from - c.dp(100) < x) x = from - c.dp(100)
-        x = x.coerceIn(0, maxOf(0, track.width - w))
-        if (animated) roll.smoothScrollTo(x, 0) else roll.scrollTo(x, 0)
-    }
-    fun choose(t: Tab) { if (t != tab) { tab = t; place(true); reveal(true); drawPane() } }
-    words.forEachIndexed { i, v -> v.setOnClickListener { choose(Tab.values()[i]) } }
-    // the capsule measured anew (the first layout, a turn of the phone): the words take their places again
-    bar.addOnLayoutChangeListener { _, left, _, right, _, oldLeft, _, oldRight, _ ->
-        if (right - left != oldRight - oldLeft) bar.post { lay(); wordRow.requestLayout(); wordRow.post { place(false); reveal(false) } }
-    }
-    // THE PANES ARE TURNED BY THE FINGER (iOS MTSwipePanes): one step along the strip, stopping at its ends
-    fun turnPane(step: Int) {
-        val j = tab.ordinal + step
-        if (j in Tab.values().indices) choose(Tab.values()[j])
-    }
-    fun emptyPane(): View = c.vstack(Gravity.CENTER_HORIZONTAL) {
-        setPadding(0, dp(36), 0, dp(36))
-        addView(c.icon(tab.icon, MT.gray), lp(dp(42), dp(42)))
-        addView(c.text(c.getString(tab.empty), 15f, MT.gray, center = true), lp().apply { topMargin = dp(10) })
-    }
-    drawPane = {
-        pane.removeAllViews()
-        val msgs = select(tab, Book.chat(ref)?.msgs ?: emptyList())
-        if (tab == Tab.WALL) {
-            // THE WRITE BUTTON WHILE THE OWNER LETS ME WRITE (iOS MTBoardRows, MontanaBoardViews.swift:156-161 at 2155): it opens the
-            // one new post's page over their wall (MTBoardComposer.present(on: owner)), and the post goes to them
-            if (Board.canWrite(ref)) pane.addView(c.hstack {
-                gravity = Gravity.CENTER_VERTICAL
-                background = c.glassPlate()
-                setPadding(dp(14), dp(10), dp(14), dp(10))
-                addView(FrameLayout(c).apply {
-                    background = c.glassPlate(oval = true)
-                    addView(c.icon(R.drawable.ic_compose, Color.WHITE), FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
-                }, lp(dp(44), dp(44)).apply { marginEnd = dp(14) })
-                addView(c.text(c.getString(R.string.pi_write_wall), 17f))
-                pressable { act.push { close -> newPostPage(act, close, wall = ref) } }
-            }, lp().apply { topMargin = c.dp(12) })
-            // A POST ON ITS WAY TO THEIR WALL stands at once as it will be published, under the bar of its files (iOS MTBoardRows 167-172)
-            val onItsWay = MyWall.sending(ref)
-            onItsWay.forEach { o -> pane.addView(goingCell(act, o), lp().apply { topMargin = c.dp(10) }) }
-            // THE WALL'S OWN ROWS (iOS MTBoardRows, MontanaPeerInfoScreen.swift:646): a person's page shows their wall --
-            // the same cells the feed draws (Board.postCell), with no "on X's wall" line of its own (onItsWall).
-            val wallPosts = Board.posts(ref)
-            if (wallPosts.isEmpty() && onItsWay.isEmpty()) pane.addView(emptyPane(), lp())
-            else wallPosts.forEach { item -> pane.addView(postCell(act, item, onItsWall = true), lp().apply { topMargin = c.dp(10) }) }
-        } else if (msgs.isEmpty()) pane.addView(emptyPane(), lp())
-        else paneRows(act, tab, msgs.reversed(), pane, law)   // newest on top
-    }
-
-    redrawAll = { drawHead(); drawActions(); drawSections(); drawPane() }
+    val bar = panes.bar
+    val pane = panes.pane
+    val foot = panes.foot
+    redrawAll = { drawHead(); drawActions(); drawSections(); panes.draw() }
     body.addView(face.view, lp())
     body.addView(actions, lp())
     body.addView(sections, lp())
@@ -580,20 +623,14 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
     // THE LOOK ASKS (iOS look, MontanaBoard.swift:609-613, MontanaPeerInfoScreen.swift:636-638, the author's word 25.09):
     // the wall not held, or held more than ten minutes, is asked for the moment this page opens.
     Board.look(ref)
-    val wallHeard: () -> Unit = { if (tab == Tab.WALL) drawPane() }
-
-    val listener: () -> Unit = { drawHead(); drawPane(); if (selecting) drawFoot() }
-    // the one player's turn redraws the music's glyphs, and only its turn: the clock's ticks change nothing here
-    var heard = MusicPlayer.current?.uri to MusicPlayer.playing
-    val music: () -> Unit = {
-        val now = MusicPlayer.current?.uri to MusicPlayer.playing
-        if (now != heard) { heard = now; if (tab == Tab.MUSIC) drawPane() }
-    }
+    val wallHeard = panes.wall
+    val listener: () -> Unit = { drawHead(); panes.heard() }
+    val music = panes.music
     return FrameLayout(c).apply {
         setBackgroundColor(Color.BLACK)
         addView(c.chatGround(PageGround.keyOf(ref)), FrameLayout.LayoutParams(MATCH, MATCH))   // the ground they sent, mine where they sent none (iOS MTFacePage 377-406)
         // a stroke begun on the strip rolls the strip and turns nothing; the page scrolled up closes the open face
-        val rows = PanesScroll(c, skip = { y -> y in bar.top.toFloat()..bar.bottom.toFloat() }, turn = { turnPane(it) }).apply {
+        val rows = PanesScroll(c, skip = { y -> y in bar.top.toFloat()..bar.bottom.toFloat() }, turn = panes.turn).apply {
             isVerticalScrollBarEnabled = false; clipToPadding = false; addView(body); face.attach(this)
         }
         // THE ROWS SINK INTO THE GROUND PAST THE MARKS ON TOP AND THE BARS AT THE FOOT (iOS MTPageEdges, MontanaPeerHeader.swift:401)
@@ -633,22 +670,28 @@ fun peerInfoPage(act: MainActivity, ref: String, onClose: () -> Unit,
  * THE PANES ARE TURNED BY THE FINGER (iOS MTSwipePanes): a quick sideways stroke over the page moves to the next tab and back.
  * The page keeps its own scrolling and every row its own tap; a stroke that turned the pane opens nothing under it.
  */
-private class PanesScroll(c: Context, private val skip: (Float) -> Boolean, private val turn: (Int) -> Unit) : ScrollView(c) {
+internal class PanesScroll(c: Context, private val skip: (Float) -> Boolean, private val turn: (Int) -> Unit) : ScrollView(c) {
     private var turned = false
+    // a row that took the stroke for itself (a swipe row's edge) keeps it: the panes do not turn under it
+    private var claimed = false
     private val stroke = GestureDetector(c, object : GestureDetector.SimpleOnGestureListener() {
         override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
             val from = e1 ?: return false
-            if (skip(from.y + scrollY) || abs(vx) < 2 * abs(vy) || abs(e2.x - from.x) < dp(48)) return false
+            if (claimed || skip(from.y + scrollY) || abs(vx) < 2 * abs(vy) || abs(e2.x - from.x) < dp(48)) return false
             turned = true
             turn(if (vx < 0) 1 else -1)
             return true
         }
     })
     override fun dispatchTouchEvent(e: MotionEvent): Boolean {
-        if (e.actionMasked == MotionEvent.ACTION_DOWN) turned = false
+        if (e.actionMasked == MotionEvent.ACTION_DOWN) { turned = false; claimed = false }
         stroke.onTouchEvent(e)
         if (turned && e.actionMasked == MotionEvent.ACTION_UP) e.action = MotionEvent.ACTION_CANCEL
         return super.dispatchTouchEvent(e)
+    }
+    override fun requestDisallowInterceptTouchEvent(disallow: Boolean) {
+        claimed = disallow
+        super.requestDisallowInterceptTouchEvent(disallow)
     }
 }
 

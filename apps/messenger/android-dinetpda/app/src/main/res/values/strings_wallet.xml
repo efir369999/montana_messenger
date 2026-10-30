@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The wallet's page as iOS 2235 lays it (MTWalletScreen.swift: MTWalletPage, MTCoinRules, MTCoinTopUpSheet, MTTimeChainsPage) -->
+<resources>
+    <string name="coin_hint">Hold the coin for 9 seconds for auto minting; music doubles auto minting.</string>
+    <string name="coin_available">Available %1$s</string>
+    <string name="coin_gathering">Gathering your coins</string>
+    <string name="coin_top_up">Top up</string>
+    <string name="coin_analytics">Analytics</string>
+    <string name="coin_from_chats">Coins from chats</string>
+    <string name="coin_from_chess">Coins from chess</string>
+    <string name="coin_from_vpn_wall">Coins from the VPN Wall</string>
+    <string name="coin_burned_n">Coins burned</string>
+    <string name="coin_on_reactions">Coins on reactions</string>
+    <plurals name="coin_second_rate">
+        <item quantity="one">1 second = %d coin</item>
+        <item quantity="other">1 second = %d coins</item>
+    </plurals>
+    <string name="coin_rate_now">Your minting rate now</string>
+    <string name="coin_rule_level">Your level increases minting. Playing music in Montana doubles it. The rate above already includes these multipliers.</string>
+    <string name="coin_rules_calls">Calls and recording</string>
+    <string name="coin_rule_calls">Audio and video calls with recording earn coins. Calls without recording burn coins at the same current rate for every full second after connection.</string>
+    <string name="coin_rule_calls_each">Each participant is counted separately by the recording on their device. Recording starts counting when audio is captured; switching it off or a recording failure switches the following seconds to burning.</string>
+    <string name="coin_rule_calls_total">Other minting does not reduce call earnings. The call record shows your total: a plus for coins earned, a minus for coins burned. Ringing and missed calls cost nothing. An empty balance does not stop the call or create debt.</string>
+    <string name="coin_rules_more">More ways to mint</string>
+    <string name="coin_rule_tap">Tap the coin on the Time Coins page to mint. Up to 13 taps count each second. After a minute of tapping, the game rests for a minute.</string>
+    <string name="coin_rule_hold">Hold the coin for 9 seconds or pull down the Time Coins page to start auto minting. It stops when you leave that page or lock the screen.</string>
+    <string name="coin_rule_messages">Messages you send and receive earn coins at your level. Transfers and call records do not mint again as messages.</string>
+    <string name="coin_rule_groups">In groups and channels, text messages longer than 13 characters earn coins at your level.</string>
+    <string name="coin_rule_vpn">An active VPN connection earns coins for the seconds it works.</string>
+    <string name="coin_rules_games">Games and transfers</string>
+    <string name="coin_rule_chess">Chess moves add coins to the prize at the player\'s level. The winner takes the prize; a draw returns each player\'s share. A stake is optional.</string>
+    <string name="coin_rule_timer">In Chess Timer, coins grow while your opponent thinks.</string>
+    <string name="coin_rule_people">Someone can send you coins in a chat. These coins come from that person.</string>
+    <string name="coin_rules_money">About money</string>
+    <string name="coin_rule_money">Coins cannot be bought, sold or exchanged for money in the app. Your currency estimate is only a calculation based on the earnings you entered.</string>
+    <string name="tc_level_pi">Level of π</string>
+    <string name="tc_wallet">Wallet</string>
+    <string name="tc_wallet_footer">Your balance reveals π: each level opens when the balance reaches the next amount — 3, 31, 314 …</string>
+    <string name="tc_talk">Chats and calls</string>
+    <string name="tc_talk_footer">The chains of the coins your chats, calls and comments minted and burned, and the chain of your wall\'s posts.</string>
+    <string name="tc_explorer">Explorer</string>
+    <string name="tc_explorer_footer">Every transfer is a record on the nodes signed by its sender\'s seed. The Explorer reads it from the nodes and checks its signature; a transfer\'s link in the Wallet chains opens it there.</string>
+    <string name="tc_observer">For an observer</string>
+    <string name="tc_vectors">Frozen vectors</string>
+    <string name="tc_observer_footer">Every link is sealed by SHA-256 over its number, moment, kind, amount, name and the seal before it; the level of the person is bit_length(seconds) − 1 (Canon). Shared chains can be checked link by link anywhere.</string>
+    <string name="tc_glevel">Global level</string>
+    <string name="tc_glevel_footer">The lower of the two levels below.</string>
+    <string name="tc_level">Level</string>
+    <string name="tc_time_online">Time online</string>
+    <string name="tc_next_level">To the next level</string>
+    <string name="tc_links">Chain links</string>
+    <string name="tc_person">Person</string>
+    <string name="tc_person_footer">A second counts while the app is open on any of your devices and a node answers its coin exchange: every few seconds while TimeCoin stands open, at each exchange elsewhere. The node\'s second, never the phone\'s clock. Each level doubles the seconds of the one before. Shown only to you, published nowhere.</string>
+</resources>

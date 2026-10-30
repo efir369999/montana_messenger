@@ -22,11 +22,14 @@ pub mod certificate;
 #[cfg(kani)]
 mod kani_decree;
 pub mod pay;
+pub mod private;
 pub mod pulse;
 pub mod round;
 pub mod runner;
 pub mod say;
 pub mod state;
+#[cfg(unix)]
+pub mod status;
 
 use mt_codec::size;
 use mt_net::{Acquaintance, Answering, Door, Link, NetError};
@@ -45,24 +48,39 @@ pub enum NodeError {
     // the block it produced failed a test of health. A machine born on a broken source looks
     // ordinary and is guessable, and nothing later reveals that — so it is refused, never warned
     // about.
-    Unborn { said: String },
+    Unborn {
+        said: String,
+    },
     // An acquaintance written in a shape this tree does not read.
-    Unreadable { what: String },
+    Unreadable {
+        what: String,
+    },
     // A row of the Decree this machine reads and the Decree does not carry.
-    Decree { row: String },
+    Decree {
+        row: String,
+    },
     // The count of the links this machine holds became unreadable, which is a machine that can no
     // longer hold itself to the ceiling the set fixes. It stops rather than answering past it.
     Uncountable,
     // What this machine could not prove or could not build of its own standing. It names what was
     // being made and never a value of it: a machine that cannot prove its presence answers nothing
     // rather than answering with something a verifier would refuse.
-    Unprovable { what: &'static str },
+    Unprovable {
+        what: &'static str,
+    },
     // What arrived and was refused. The reason reaches this operator and never the sender: every
     // refusal of a far side is silence, and what carries a reason is the local end alone.
-    Refused { what: &'static str },
+    Refused {
+        what: &'static str,
+    },
     // The round's context is known, but its cement cannot yet be reconstructed
     // from verified heavy attestations. More data may resolve this; no clock can.
     UnreconciledCement,
+    // CNS-20: a local waiting budget ended, granting no authority to close.
+    Stalled {
+        on: say::Verdict,
+        what: &'static str,
+    },
     // An object of another shape than its layout gives.
     Object(mt_state::ObjectError),
 }
@@ -189,15 +207,16 @@ pub struct Configuration {
     // cohort witnesses itself, so its halves pass between operators exactly as an acquaintance
     // does; a machine handed none of them answers its door and lives no window.
     pub admitted: Vec<[u8; 32]>,
-    // The window to open at, and how many to live. Neither is a value of the protocol: the first
-    // is where an operator starts a machine and the second is when it stops, and a machine given
-    // no count lives until it is stopped.
-    pub from: u64,
+    // Whether the operator opens a network on this machine, and how many windows to live. Neither
+    // is a value of the protocol. Opening is an act of the operator on an empty store and the one
+    // way to window zero; a machine not asked to open lives only from an anchor (Consensus, "The
+    // cold start"). A machine given no count lives until it is stopped.
+    pub open: bool,
     pub windows: Option<u64>,
-    // The right of a window, and how many machines that window's cement named, to be redeemed into
-    // a note of the wallet below. Both are what the operator read off that window when it closed:
-    // the machine cannot ask anybody for them, and nothing it holds implies them.
-    pub redeem: Option<(u64, usize)>,
+    // The window whose right is to be redeemed into a note of the wallet below, which the operator
+    // read off that window when it closed. The right is worth the window's credit, so nothing else of the
+    // window is asked for.
+    pub redeem: Option<u64>,
     pub wallet: Option<String>,
     // Whom a living machine pays out of that wallet, and what of it. Both values of a payee are
     // public and name nobody; the file is where what the payee needs is written, closed to its
@@ -214,7 +233,7 @@ impl Configuration {
             listen: listen.to_string(),
             acquaintances: Vec::new(),
             admitted: Vec::new(),
-            from: 0,
+            open: false,
             windows: None,
             redeem: None,
             wallet: None,
@@ -320,21 +339,113 @@ impl Held {
 // that have begun to stand there. The third is what lets a point take a delivery whole or refuse
 // the whole of it — a delivery already begun is counted for, and one not begun enters only where
 // the whole of it fits.
-// The window a point lives, the cells standing at it in the order they arrived, the deliveries
-// begun, and the digests of the standing cells — the last because a repetition is answered by a
-// lookup and never by a walk: the ceiling of a point is the round and the slots the set admits,
-// and a door that compared a cell against everything standing would slow by the square of what
-// it honestly holds.
+// The window a point lives, how many cells stand at it, the deliveries begun, and the digests of the
+// standing cells — the last because a repetition is answered by a lookup and never by a walk: the
+// ceiling of a point is the round and the slots the set admits, and a door that compared a cell
+// against everything standing would slow by the square of what it honestly holds.
+// **The cells themselves stand in one place, the file of the point** (issue #63). A point held its
+// cells in memory beside the file they were appended to, and what was read back held them again as
+// objects; a window that did not close stood at a new round every few seconds, and the cohort of
+// three was killed for its memory (Amsterdam at 320 MiB, Moscow at 1 GiB) while every round of the
+// window was still owed to its walk. What memory holds of a point is its count and its digests, a
+// few dozen bytes a cell against the whole width of one, and a reader is handed the range of the
+// file it asks for.
 struct AtAPoint {
     window: u64,
-    cells: Vec<Vec<u8>>,
+    count: usize,
     begun: Vec<[u8; POINT_BYTES]>,
     digests: std::collections::BTreeSet<[u8; 32]>,
 }
 
 // What one point last read back as: the window it belonged to, the count of cells that produced the
-// reading, and the objects that came of them.
-type ReadBack = (u64, usize, Vec<Vec<u8>>);
+// reading, when it was last asked for, the bytes of its objects and the objects.
+struct Read {
+    window: u64,
+    count: usize,
+    asked: u64,
+    bytes: usize,
+    objects: Vec<Vec<u8>>,
+}
+
+// What points last read back as. **It holds a ceiling of bytes, and the point asked for longest ago
+// goes first** (issue #63): it held every point of the window it was read in, and a window standing
+// at round after round held every round of it a second time. What goes is read again from the cells
+// the next time it is asked for; a live round is asked for many times a second and stays.
+struct ReadBack {
+    points: BTreeMap<[u8; POINT_BYTES], Read>,
+    bytes: usize,
+    asked: u64,
+    ceiling: usize,
+}
+
+impl ReadBack {
+    fn to_the_ceiling(ceiling: usize) -> Self {
+        Self {
+            points: BTreeMap::new(),
+            bytes: 0,
+            asked: 0,
+            ceiling,
+        }
+    }
+
+    // The objects a point read back as, where the count that produced them still stands.
+    fn of(&mut self, point: &[u8; POINT_BYTES], window: u64, count: usize) -> Option<Vec<Vec<u8>>> {
+        self.asked = self.asked.saturating_add(1);
+        let asked = self.asked;
+        let held = self.points.get_mut(point)?;
+        if held.window != window || held.count != count {
+            return None;
+        }
+        held.asked = asked;
+        Some(held.objects.clone())
+    }
+
+    // A reading kept: the windows before it go, and then the readings asked for longest ago until
+    // this one fits. A reading wider than the whole ceiling is not kept at all.
+    fn keep(&mut self, point: [u8; POINT_BYTES], window: u64, count: usize, objects: Vec<Vec<u8>>) {
+        if let Some(gone) = self.points.remove(&point) {
+            self.bytes = self.bytes.saturating_sub(gone.bytes);
+        }
+        let mut freed = 0usize;
+        self.points.retain(|_, held| {
+            let stays = held.window >= window;
+            if !stays {
+                freed = freed.saturating_add(held.bytes);
+            }
+            stays
+        });
+        self.bytes = self.bytes.saturating_sub(freed);
+        let bytes: usize = objects.iter().map(Vec::len).sum();
+        if bytes > self.ceiling {
+            return;
+        }
+        while self.bytes.saturating_add(bytes) > self.ceiling {
+            let Some(oldest) = self
+                .points
+                .iter()
+                .min_by_key(|(_, held)| held.asked)
+                .map(|(key, _)| *key)
+            else {
+                break;
+            };
+            if let Some(gone) = self.points.remove(&oldest) {
+                self.bytes = self.bytes.saturating_sub(gone.bytes);
+            }
+        }
+        self.asked = self.asked.saturating_add(1);
+        self.bytes = self.bytes.saturating_add(bytes);
+        self.points.insert(
+            point,
+            Read {
+                window,
+                count,
+                asked: self.asked,
+                bytes,
+                objects,
+            },
+        );
+    }
+}
 
 struct Standing {
     at: Mutex<BTreeMap<[u8; POINT_BYTES], AtAPoint>>,
@@ -342,14 +453,19 @@ struct Standing {
     // The window whose points, and those of every window before it, were dropped from the disk
     // last: the disk follows the memory's retention, once per window turning.
     pruned_through: Mutex<u64>,
+    // Where the cells of every point stand, and the width each of them is cut at.
+    store: Arc<Store>,
+    cell_width: usize,
 }
 
 impl Standing {
-    fn empty(retained: u64) -> Self {
+    fn empty(retained: u64, store: Arc<Store>, cell_width: usize) -> Self {
         Self {
             at: Mutex::new(BTreeMap::new()),
             retained,
             pruned_through: Mutex::new(0),
+            store,
+            cell_width,
         }
     }
 
@@ -357,18 +473,25 @@ impl Standing {
     // point, in the order they were taken: the deliveries begun and the digests are read off the
     // cells themselves, under the keys every machine computes for the point. A cell that does not
     // read as a cell of its point is not of this point and is left out.
-    fn loaded(retained: u64, store: &Store, cell_width: usize) -> Result<Self, NodeError> {
-        let standing = Self::empty(retained);
+    fn loaded(retained: u64, store: &Arc<Store>, cell_width: usize) -> Result<Self, NodeError> {
+        let standing = Self::empty(retained, Arc::clone(store), cell_width);
         let kept = store.cells_standing(cell_width).map_err(NodeError::Store)?;
         {
             let mut at = standing.at.lock().map_err(|_| NodeError::Uncountable)?;
             for (window, point, cells) in kept {
+                let read = cells.len();
                 let held = at.entry(point).or_insert(AtAPoint {
                     window,
-                    cells: Vec::new(),
+                    count: 0,
                     begun: Vec::new(),
                     digests: std::collections::BTreeSet::new(),
                 });
+                // A point lives one window, and its file is the one under that window: a file of
+                // the same point under another window is not of it.
+                if held.window != window {
+                    continue;
+                }
+                let mut taken: Vec<Vec<u8>> = Vec::with_capacity(read);
                 for cell in cells {
                     let Some((delivery, _)) = mt_wire::publish::delivery_of(&point, window, &cell)
                     else {
@@ -382,7 +505,15 @@ impl Standing {
                     if !held.begun.contains(&delivery) {
                         held.begun.push(delivery);
                     }
-                    held.cells.push(cell);
+                    held.count += 1;
+                    taken.push(cell);
+                }
+                // The file holds exactly what the point took, in the order it took it: a cell
+                // left out here and kept there would shift every index a reader asks for.
+                if taken.len() != read {
+                    store
+                        .put_cells(window, &point, &taken)
+                        .map_err(NodeError::Store)?;
                 }
             }
         }
@@ -423,7 +554,7 @@ impl Standing {
         at.retain(|_, held| window <= held.window.saturating_add(retained));
         let standing = at.entry(point).or_insert(AtAPoint {
             window,
-            cells: Vec::new(),
+            count: 0,
             begun: Vec::new(),
             digests: std::collections::BTreeSet::new(),
         });
@@ -452,14 +583,24 @@ impl Standing {
             return say::Took::AnotherPoint;
         };
         let begun = standing.begun.contains(&delivery);
-        if !begun && standing.cells.len() + usize::from(declared) > ceiling {
+        if !begun && standing.count + usize::from(declared) > ceiling {
             return say::Took::PastTheCeiling;
+        }
+        // **The cell goes to the disk under the lock that counts it**, so the count of a point and
+        // the cells of its file are one order: a reader handed the cells from an index reads the
+        // ones the count names. A cell the disk did not take is not held.
+        if self
+            .store
+            .append_cell(standing.window, &point, &cell)
+            .is_err()
+        {
+            return say::Took::Unkept;
         }
         if !begun {
             standing.begun.push(delivery);
         }
         standing.digests.insert(digest);
-        standing.cells.push(cell);
+        standing.count += 1;
         say::Took::Held
     }
 
@@ -468,18 +609,32 @@ impl Standing {
     fn count_at(&self, point: &[u8; POINT_BYTES]) -> usize {
         self.at
             .lock()
-            .map(|at| at.get(point).map(|held| held.cells.len()).unwrap_or(0))
+            .map(|at| at.get(point).map(|held| held.count).unwrap_or(0))
             .unwrap_or(0)
     }
 
     fn at(&self, point: &[u8; POINT_BYTES]) -> Vec<Vec<u8>> {
-        self.at
+        self.cells_of(point, 0, usize::MAX)
+    }
+
+    // The cells of a point from `from`, at most `take` of them, read off its file, and never past
+    // the count: a cell is appended before it is counted, so what the count names is on the disk.
+    fn cells_of(&self, point: &[u8; POINT_BYTES], from: usize, take: usize) -> Vec<Vec<u8>> {
+        let Some((window, count)) = self
+            .at
             .lock()
-            .map(|at| {
-                at.get(point)
-                    .map(|held| held.cells.clone())
-                    .unwrap_or_default()
-            })
+            .ok()
+            .and_then(|at| at.get(point).map(|held| (held.window, held.count)))
+        else {
+            return Vec::new();
+        };
+        let from = from.min(count);
+        let take = (count - from).min(take);
+        if take == 0 {
+            return Vec::new();
+        }
+        self.store
+            .cells_at(window, point, self.cell_width, from, take)
             .unwrap_or_default()
     }
 
@@ -542,6 +697,139 @@ struct RemotePoint {
     backoff: u32,
 }
 
+// **What a close hands the store.** The proposal of the window before that the agreement decided,
+// onto which the head moves — none where the window before is the Genesis or a window this machine
+// did not live; the proposal of the window closing as this machine took it; the plane the window
+// left; the decided state of the window before, which a replay of the decided roll of this window
+// starts from; and the census window this machine lived, where this window is one and its part is in
+// the cement.
+#[derive(Clone)]
+pub struct Closing {
+    pub head: Option<mt_state::layout::Proposal>,
+    pub taken: mt_state::layout::Proposal,
+    pub plane: state::State,
+    pub before: Option<state::State>,
+    pub census: Option<attest::LivedCensus>,
+}
+
+// **What a machine keeps of the last window it closed**, in the record of that window, beside the
+// head and the number the store reads: the proposal of that window as this machine took it, the
+// plane it closed the window on, the decided state of the window before, and its standing.
+//
+// The proposal stands here and not only among the proposals of the store because the close of the
+// next window rewrites the proposal of this one under the decided name before the record of that
+// close stands: a machine stopped between the two would otherwise hold its plane beside a proposal
+// whose roots are not its own. Each part is written as its length, eight bytes little-endian, and
+// its bytes; a decided state of no window is a length of nought, which no plane encodes to.
+//
+// **And the window of the head whose plane it took from the network**, where it took one: a fifth
+// part of eight bytes, little-endian, written only then, so a record of a machine that never took
+// one is the four parts it always was. A machine on such a plane holds the rate nullifiers of the
+// windows it walked alone, and it stakes and proposes nothing until the stride of the horizon
+// changes (`pulse::next_stride_after`; the author's decision 332 (b), constitution record 339).
+#[derive(Clone)]
+pub struct Kept {
+    pub taken: mt_state::layout::Proposal,
+    pub plane: state::State,
+    pub before: Option<state::State>,
+    pub census: Vec<attest::LivedCensus>,
+    pub from_the_network: Option<u64>,
+}
+
+impl Kept {
+    pub fn encode(&self) -> Result<Zeroizing<Vec<u8>>, NodeError> {
+        let taken = mt_state::Layout::bytes(&self.taken).map_err(NodeError::Object)?;
+        let plane = self.plane.encode()?;
+        let before = match &self.before {
+            Some(state) => state.encode()?,
+            None => Vec::new(),
+        };
+        let census = Zeroizing::new(attest::LivedCensus::encode(&self.census));
+        let mut out = Zeroizing::new(Vec::new());
+        let at = self.from_the_network.map(u64::to_le_bytes);
+        let mut parts = vec![&taken[..], &plane[..], &before[..], &census[..]];
+        if let Some(at) = &at {
+            parts.push(&at[..]);
+        }
+        for part in parts {
+            out.extend_from_slice(&(part.len() as u64).to_le_bytes());
+            out.extend_from_slice(part);
+        }
+        Ok(out)
+    }
+
+    pub fn decode(bytes: &[u8]) -> Result<Self, NodeError> {
+        let short = || NodeError::Refused {
+            what: "a record of a window shorter than what it declares",
+        };
+        let mut rest = bytes;
+        let mut parts: Vec<&[u8]> = Vec::new();
+        while parts.len() < 4 || (parts.len() == 4 && !rest.is_empty()) {
+            let eight = rest.get(..8).ok_or_else(short)?;
+            let mut width = [0u8; 8];
+            width.copy_from_slice(eight);
+            let width = usize::try_from(u64::from_le_bytes(width)).map_err(|_| short())?;
+            let end = width.checked_add(8).ok_or_else(short)?;
+            parts.push(rest.get(8..end).ok_or_else(short)?);
+            rest = &rest[end..];
+        }
+        if !rest.is_empty() {
+            return Err(NodeError::Refused {
+                what: "a record of a window longer than what it declares",
+            });
+        }
+        let from_the_network = match parts.get(4) {
+            None => None,
+            Some(at) => Some(u64::from_le_bytes(<[u8; 8]>::try_from(*at).map_err(
+                |_| NodeError::Refused {
+                    what: "a record of a window whose plane of the network names no window",
+                },
+            )?)),
+        };
+        Ok(Self {
+            taken: <mt_state::layout::Proposal as mt_state::Layout>::parse(parts[0])
+                .map_err(NodeError::Object)?,
+            plane: state::State::decode(parts[1])?,
+            before: if parts[2].is_empty() {
+                None
+            } else {
+                Some(state::State::decode(parts[2])?)
+            },
+            census: attest::LivedCensus::decode(parts[3])?,
+            from_the_network,
+        })
+    }
+
+    // **The plane a record keeps gives the roots of the proposal it keeps beside it.** Every
+    // proposal a close takes is verified against the roots recomputed from the plane it closes on
+    // (`pulse::take_the_proposal`, `certificate::verify_proposal`), and the close keeps the two
+    // together, so the seven tables of the plane at the window of the proposal give the roots that
+    // proposal carries. A plane or a proposal changed on the disk gives others, and is refused
+    // whole: a machine living on it would hold notes no proposal of the network names and prove
+    // paths nobody else can verify. The proposal compared is the one in the record and not the one
+    // of the archive of proposals, which the close of a machine that took another name rewrites
+    // before its own record stands. The roll and the count are not compared: the plane holds
+    // neither the cement nor the cohort they are recomputed from.
+    pub fn stands_under_its_proposal(&self) -> Result<(), NodeError> {
+        let taken = &self.taken;
+        let carried = [
+            taken.note_root,
+            taken.nullifier_root,
+            taken.record_root,
+            taken.machine_root,
+            taken.admitted_root,
+            taken.credited_root,
+            taken.operations_root,
+        ];
+        if self.plane.tables_of(taken.window)? != carried {
+            return Err(NodeError::Refused {
+                what: "a kept plane whose roots are not those of the proposal kept beside it",
+            });
+        }
+        Ok(())
+    }
+}
+
 // A machine that has been born: its store, the key it answers with, the door it stands at, the
 // count of the links it did not open, and what stands at its points.
 pub struct Machine {
@@ -571,13 +859,16 @@ pub struct Machine {
     // not a second place for what stands — the cells are the one place, and this is the answer the
     // last reading of them gave, held against the count that produced it so that it cannot outlive
     // what it was read from.
-    read_back: Arc<Mutex<BTreeMap<[u8; POINT_BYTES], ReadBack>>>,
+    read_back: Arc<Mutex<ReadBack>>,
     // The account this machine keeps of its own doings. Every count of it names nobody, and it is
     // what an operator reads instead of guessing.
     counts: Arc<say::Counts>,
     // The census windows this machine lived and the branch its part walks in each of their cements:
     // its standing, which it proves in a ballot and publishes nowhere.
     census: Arc<Mutex<Vec<attest::LivedCensus>>>,
+    // The window of the head whose plane this machine took from the network, where it took one, as
+    // the record of the last window it closed keeps it.
+    from_the_network: Arc<Mutex<Option<u64>>>,
     // The frames of this machine's own standing at the points of a round, each with what the
     // machine does once the round applies it; and those whose rounds left, told once and told again
     // where a replay moves them, until their window is final.
@@ -614,6 +905,28 @@ impl Machine {
     // standing without being told.
     pub fn start(configuration: &Configuration) -> Result<(Self, bool), NodeError> {
         let store = Store::open(&configuration.data).map_err(NodeError::Store)?;
+        // **What the machine held of the value plane stands again**: the plane of the last window it
+        // closed, kept in the record of that close. A note takes its position in the tree of notes,
+        // and a path is proven against that tree — so a plane that lived in memory alone made every
+        // note die with the run that created it, and a person paid held a note their own machine
+        // could no longer prove a path for. What is read here is what this machine wrote, and a
+        // record that does not read back whole is refused rather than half-read. **And the standing
+        // it earned stands again**, from the same record: a machine that forgot the census windows it
+        // lived would vote as a stranger until it had lived them all a second time.
+        //
+        // **What reads back whole is still not trusted.** The plane is held to the proposal the
+        // same record keeps for the window it closed, and a record whose plane gives other roots is
+        // refused before a secret is drawn, a door opened or anything held (issue #19, step K3).
+        // The head and the window closed name proposals the store holds, or the store refused to
+        // open (`StoreError::HeadWithoutItsProposal`, `StoreError::ClosedWithoutItsProposal`).
+        let record = store.window().map_err(NodeError::Store)?;
+        let kept = if record.kept.is_empty() {
+            None
+        } else {
+            let kept = Kept::decode(&record.kept)?;
+            kept.stands_under_its_proposal()?;
+            Some(kept)
+        };
         let born = match store.secret().map_err(NodeError::Store)? {
             Some(_) => false,
             None => {
@@ -643,26 +956,17 @@ impl Machine {
         let retained = mt_genesis::scalar("retained_windows").ok_or(NodeError::Decree {
             row: "retained_windows".to_string(),
         })?;
-        // **What the machine held of the value plane stands again.** A note takes its position in
-        // the tree of notes, and a path is proven against that tree — so a plane that lived in
-        // memory alone made every note die with the run that created it, and a person paid held a
-        // note their own machine could no longer prove a path for. What is read here is what this
-        // machine wrote, and a file that does not read back whole is refused rather than half-read.
         let cell_width = mt_wire::cell_bytes().map_err(|_| of_the_decree("cell_bytes"))?;
+        let store = Arc::new(store);
         let standing = Standing::loaded(retained, &store, cell_width)?;
-        let kept = store.value().map_err(NodeError::Store)?;
-        let held_value = if kept.is_empty() {
-            state::State::new()
-        } else {
-            state::State::decode(&kept)?
+        let (held_value, census, from_the_network) = match kept {
+            None => (state::State::new(), Vec::new(), None),
+            Some(kept) => (kept.plane, kept.census, kept.from_the_network),
         };
-        // **And the standing it earned stands again**: a machine that forgot the census windows it
-        // lived would vote as a stranger until it had lived them all a second time.
-        let census = attest::LivedCensus::decode(&store.standing().map_err(NodeError::Store)?)?;
         Ok((
             Self {
                 open: Arc::new(Mutex::new(None)),
-                store: Arc::new(store),
+                store,
                 answering,
                 door,
                 held: Arc::new(Held::to_the_ceiling(ceiling)),
@@ -670,9 +974,12 @@ impl Machine {
                 value: Arc::new(Mutex::new(held_value)),
                 reached: Arc::new(Mutex::new(Vec::new())),
                 admitted: Arc::new(Mutex::new(0)),
-                read_back: Arc::new(Mutex::new(BTreeMap::new())),
+                read_back: Arc::new(Mutex::new(ReadBack::to_the_ceiling(
+                    mt_store::READ_BACK_BYTES,
+                ))),
                 counts: Arc::new(say::Counts::default()),
                 census: Arc::new(Mutex::new(census)),
+                from_the_network: Arc::new(Mutex::new(from_the_network)),
                 settling: Arc::new(Mutex::new(Vec::new())),
                 retelling: Arc::new(Mutex::new(Vec::new())),
                 carriers: Mutex::new(Vec::new()),
@@ -690,21 +997,13 @@ impl Machine {
             .clone())
     }
 
-    // A census window this machine lived, kept: it replaces what stood for that window, the newest
-    // `standing_censuses` of them are what a standing counts and nothing older is kept, and the
-    // whole is written before the call returns.
-    pub fn record_census(&self, lived: attest::LivedCensus) -> Result<(), NodeError> {
-        let censuses = mt_pulse::standing::censuses().map_err(|_| NodeError::Decree {
-            row: "standing_censuses".to_string(),
-        })?;
-        let mut held = self.census.lock().map_err(|_| NodeError::Uncountable)?;
-        held.retain(|one| one.window != lived.window);
-        held.push(lived);
-        held.sort_by_key(|one| std::cmp::Reverse(one.window));
-        held.truncate(censuses);
-        self.store
-            .put_standing(&attest::LivedCensus::encode(&held))
-            .map_err(NodeError::Store)
+    // The window of the head whose plane this machine took from the network, or none where it never
+    // took one: what decides whether it may stake and propose yet (`pulse::stakes_from`).
+    pub fn plane_from_the_network(&self) -> Result<Option<u64>, NodeError> {
+        Ok(*self
+            .from_the_network
+            .lock()
+            .map_err(|_| NodeError::Uncountable)?)
     }
 
     // What this machine holds of the value plane, for as long as the caller holds the guard. A
@@ -804,13 +1103,11 @@ impl Machine {
         Ok(())
     }
 
-    // The tree of admitted machines this plane stands against, told and kept.
+    // The tree of admitted machines this plane stands against, told. It is kept with the plane at
+    // the close of the window, as everything the plane of an open window holds is.
     pub fn admits_the_tree(&self, admitted: mt_proof::poseidon::Digest) -> Result<(), NodeError> {
-        let mut state = self.value()?;
-        update_value(&mut state, &self.store, |candidate| {
-            candidate.admits(admitted);
-            Ok(())
-        })
+        self.value()?.admits(admitted);
+        Ok(())
     }
 
     // The frames standing at the points of the round this machine is in, verified and applied in
@@ -857,13 +1154,13 @@ impl Machine {
                 took.insert(*id, positions);
             }
         }
-        // What the round put into the plane is kept once, at the end of the round rather than at
-        // every frame of it: the writing is of the whole plane, so writing it per frame would write
-        // the same bytes as many times as the round carried frames — and the moment of the writing
-        // would then say how many frames a round carried.
-        if !took.is_empty() {
-            commit_value(&mut current, &self.store, state)?;
-        }
+        // **What the round put into the plane is held in memory, and kept at the close of the
+        // window**, in the one record of that close (`Machine::close`). Canon, "The roots of state":
+        // the frames of a round apply as a machine leaves it, and what a verifier recomputes the
+        // roots from is the state once the frames of the window have applied. A plane written at
+        // every round stood on the disk ahead of the head by a part of a window, a mixture no
+        // restart could tell from a close.
+        *current = state;
         drop(current);
         self.settle((window, chain, at), &took)?;
         Ok(took.len())
@@ -955,9 +1252,40 @@ impl Machine {
         attempt::Record::decode(&standing)
     }
 
+    // **The decided state of the head this machine holds**, from the record of the last window it
+    // closed: the state that record keeps of the window before the one it closed, where that window
+    // is the head. It is what a machine that walked back replays the windows it missed over. None
+    // where the record keeps no such state or the head is not the window before the one closed.
+    pub fn decided_state_of_the_head(&self) -> Result<Option<(u64, state::State)>, NodeError> {
+        let record = self.store.window().map_err(NodeError::Store)?;
+        if record.kept.is_empty() {
+            return Ok(None);
+        }
+        let kept = Kept::decode(&record.kept)?;
+        match (record.head, record.closed, kept.before) {
+            (Some(head), Some(closed), Some(before)) if head.checked_add(1) == Some(closed) => {
+                Ok(Some((head, before)))
+            }
+            _ => Ok(None),
+        }
+    }
+
     // The last window this machine closed, or none.
     pub fn closed_window(&self) -> Result<Option<u64>, NodeError> {
         self.store.closed().map_err(NodeError::Store)
+    }
+
+    // **Whether this store holds anything of a chain**: a head, a window it closed, the proposal of
+    // the first window or its record of the agreement on it. An operator opens a network only on a
+    // store holding none of them (Consensus, "The cold start"). The bytes are asked for and not
+    // read: a proposal or a record that does not parse is still something this machine wrote, and
+    // a store holding it is not empty. A machine reaches no later window without closing one, so
+    // these four are everything a chain leaves in a store.
+    pub fn holds_a_chain(&self) -> Result<bool, NodeError> {
+        Ok(self.head()?.is_some()
+            || self.closed_window()?.is_some()
+            || self.store.proposal(0).map_err(NodeError::Store)?.is_some()
+            || self.store.agreement(0).map_err(NodeError::Store)?.is_some())
     }
 
     // A window closed: the number that refuses it to be opened again is written first, then its
@@ -975,19 +1303,163 @@ impl Machine {
         }
     }
 
-    // The one door that drops a record is `let_go_of`, which writes the number first: a caller that
-    // dropped the record alone would leave a closed window open to a second pledge.
+    // The doors that drop a record are `let_go_of` and `close`, which write the number first: a
+    // caller that dropped the record alone would leave a closed window open to a second pledge.
     fn drop_agreement(&self, window: u64) -> Result<(), NodeError> {
         self.store.drop_agreement(window).map_err(NodeError::Store)
     }
 
-    // The plane this machine holds, replaced whole: what a machine does once the agreement decided
-    // a name it did not take and it replayed the decided roll and its own window again over the
-    // result. Consensus, "When the decision is not the name a machine took". Written before the
-    // swap, as every change of the plane is.
-    pub fn replace_plane(&self, plane: state::State) -> Result<(), NodeError> {
-        let mut current = self.value()?;
-        commit_value(&mut current, &self.store, plane)
+    // **A window closes in one writing.** The proposal of the window before that the agreement
+    // decided and the proposal of this window are kept first, since nothing may name a proposal the
+    // store does not hold; then one record carries the head, the number of the window closed, the
+    // plane the window left, the decided state of the window before and the standing; then the record
+    // of the agreement of the window goes. Issue #19: the tables, the proposal, the state and the
+    // record of a window survive a crash together. Consensus, "The agreement": the decision "makes
+    // the proposal of the window before final, and it is the event the pulse names as the close of
+    // the window"; a machine whose name was not decided "holds what results as the decided state of
+    // the window before"; the record of the agreement goes "when the window they govern closes".
+    //
+    // **What this machine holds moves only once the record stands.** A close refused before or at
+    // the writing leaves the plane and the standing in memory as they were, beside the record of
+    // the close before; a failed flush of the directory is not a rollback, since every reader
+    // already reads the new record, and the memory follows it.
+    pub fn close(&self, closing: Closing) -> Result<(), NodeError> {
+        self.close_marked(closing, None)
+    }
+
+    // **A close of a walk that took the plane of its head from the network** is the same one writing,
+    // and its record names that head as the window the plane was taken at (`Kept`). Every other close
+    // carries forward what the record before it named, so the mark goes with the machine from the walk
+    // to every window it follows after it, and through a restart.
+    pub(crate) fn close_marked(
+        &self,
+        closing: Closing,
+        taken_at: Option<u64>,
+    ) -> Result<(), NodeError> {
+        let Closing {
+            head: decided,
+            taken,
+            plane,
+            before,
+            census: lived,
+        } = closing;
+        let window = taken.window;
+        let standing = self.store.window().map_err(NodeError::Store)?;
+        if standing.closed.is_some_and(|closed| window <= closed) {
+            return Err(NodeError::Refused {
+                what: "a close of a window this machine already closed",
+            });
+        }
+        // "A decided window is never abandoned by a machine that verified its decision"
+        // (Consensus, "Finality").
+        let head = match &decided {
+            Some(decided) if standing.head.is_some_and(|held| held > decided.window) => {
+                return Err(NodeError::Refused {
+                    what: "a head that leaves a decided window",
+                })
+            }
+            Some(decided) => Some(decided.window),
+            None => standing.head,
+        };
+        // The census windows this machine lived, with the one this close lived replacing what stood
+        // for that window: the newest `standing_censuses` of them are what a standing counts.
+        let mut census = self.lived_census()?;
+        if let Some(lived) = lived {
+            let censuses = mt_pulse::standing::censuses().map_err(|_| NodeError::Decree {
+                row: "standing_censuses".to_string(),
+            })?;
+            census.retain(|one| one.window != lived.window);
+            census.push(lived);
+            census.sort_by_key(|one| std::cmp::Reverse(one.window));
+            census.truncate(censuses);
+        }
+        let kept = Kept {
+            taken,
+            plane,
+            before,
+            census,
+            from_the_network: taken_at.or(self.plane_from_the_network()?),
+        };
+        let record = mt_store::WindowRecord {
+            head,
+            closed: Some(window),
+            kept: kept.encode()?,
+        };
+        if let Some(decided) = &decided {
+            self.keep_proposal(decided)?;
+        }
+        self.keep_proposal(&kept.taken)?;
+        let written = self.store.commit_window(&record);
+        if written.is_ok() || matches!(&written, Err(StoreError::CommitUncertain { .. })) {
+            *self.value()? = kept.plane;
+            *self.census.lock().map_err(|_| NodeError::Uncountable)? = kept.census;
+            *self
+                .from_the_network
+                .lock()
+                .map_err(|_| NodeError::Uncountable)? = kept.from_the_network;
+        }
+        written.map_err(NodeError::Store)?;
+        self.drop_agreement(window)
+    }
+
+    // **What this machine holds of the plane of a window**: the plane the last close left, for the
+    // window that close closed, and the decided state of the window before, for that one — what a
+    // machine has to answer a device that walked to its head and asks for the tables of the head.
+    // Nothing for any other window: a machine keeps no plane further back.
+    pub fn plane_of(&self, window: u64) -> Result<Option<state::State>, NodeError> {
+        let record = self.store.window().map_err(NodeError::Store)?;
+        if record.kept.is_empty() {
+            return Ok(None);
+        }
+        let kept = Kept::decode(&record.kept)?;
+        Ok(if kept.taken.window == window {
+            Some(kept.plane)
+        } else if kept.taken.window.checked_sub(1) == Some(window) {
+            kept.before
+        } else {
+            None
+        })
+    }
+
+    // **A device that walked to a head holds the plane of that head**, judged before it reaches here
+    // (pulse::take_the_plane). It is kept in the record of the window as a close keeps the plane it
+    // closed on, beside the proposal whose roots it answers for and under the head and the window
+    // closed the walk wrote, and held in memory only once the record stands — so it stands again after
+    // a restart. The device lived no window: it holds no decided state of the window before, and its
+    // standing is what it already held. The plane came from the network, and the record names its
+    // head as the window it was taken at (`Kept`).
+    pub fn hold_the_plane(
+        &self,
+        head: &mt_state::layout::Proposal,
+        plane: state::State,
+    ) -> Result<(), NodeError> {
+        let standing = self.store.window().map_err(NodeError::Store)?;
+        if standing.head != Some(head.window) {
+            return Err(NodeError::Refused {
+                what: "a plane of another window than the head this machine holds",
+            });
+        }
+        let kept = Kept {
+            taken: head.clone(),
+            plane,
+            before: None,
+            census: self.lived_census()?,
+            from_the_network: Some(head.window),
+        };
+        let record = mt_store::WindowRecord {
+            head: standing.head,
+            closed: standing.closed,
+            kept: kept.encode()?,
+        };
+        let written = self.store.commit_window(&record);
+        if written.is_ok() || matches!(&written, Err(StoreError::CommitUncertain { .. })) {
+            *self.value()? = kept.plane;
+            *self
+                .from_the_network
+                .lock()
+                .map_err(|_| NodeError::Uncountable)? = kept.from_the_network;
+        }
+        written.map_err(NodeError::Store)
     }
 
     // Reaching an acquaintance. A machine answering with another key is not the machine the
@@ -1082,8 +1554,14 @@ impl Machine {
         let took = self
             .standing
             .hold(*point, window, cell.to_vec(), ceiling, of_a_delivery);
+        if took == say::Took::Unkept {
+            self.counts.raise(&self.counts.pushes_lost);
+            return Err(NodeError::Refused {
+                what: "a cell the disk of this machine did not take",
+            });
+        }
         if took == say::Took::Held {
-            keep_the_cell(&self.store, &self.standing, point, window, cell)?;
+            let_go_on_the_disk(&self.store, &self.standing, window)?;
         }
         match took {
             say::Took::Held => self.counts.raise(&self.counts.deposits_taken),
@@ -1242,6 +1720,75 @@ impl Machine {
         message::point_ceiling(admitted).map_err(|_| of_the_decree("cell_bytes"))
     }
 
+    // **The plane of `window` as each machine this one reached offers it**, every table read whole
+    // over the link it was asked on, laid out by `State::encoded_of_leaves` with the tree of admitted
+    // machines this device stands against. Each offer is judged alone by its caller against the roots
+    // of a head it verified (pulse::take_the_plane); how many offers agree decides nothing (Consensus,
+    // "The join"). A link that answers with another kind, malformed bytes or past the reach of a
+    // count offers nothing.
+    pub fn planes_offered(
+        &self,
+        window: u64,
+        admitted: mt_proof::poseidon::Digest,
+    ) -> Result<Vec<Vec<u8>>, NodeError> {
+        let Some(network) = mt_state::tables::genesis_state_hash() else {
+            return Err(NodeError::Refused {
+                what: "a network whose Genesis State Hash this build cannot compute",
+            });
+        };
+        let mut offers = Vec::new();
+        let mut held = self.reached.lock().map_err(|_| NodeError::Uncountable)?;
+        'links: for one in held.iter_mut() {
+            let mut tables: [Vec<u8>; 7] = Default::default();
+            for table in message::TableIndex::ALL {
+                let Ok(bound) = message::table_answer_max(table) else {
+                    continue 'links;
+                };
+                let gathered = &mut tables[usize::from(table.byte())];
+                let mut from: u32 = 0;
+                loop {
+                    let query = message::encode_table_query(&network, window, table, from);
+                    if one.link.send(Kind::TableQuery, &query).is_err() {
+                        continue 'links;
+                    }
+                    let Ok((kind, arrived)) = one.link.receive() else {
+                        continue 'links;
+                    };
+                    if kind != Kind::TableAnswer || arrived.len() < 4 {
+                        continue 'links;
+                    }
+                    let mut four = [0u8; 4];
+                    four.copy_from_slice(&arrived[..4]);
+                    let declared = u32::from_le_bytes(four) as usize;
+                    let width = declared
+                        .saturating_mul(table.leaf_bytes())
+                        .saturating_add(4);
+                    if arrived.len() < width {
+                        continue 'links;
+                    }
+                    let Ok(leaves) = message::parse_table_answer(table, &arrived[..width]) else {
+                        continue 'links;
+                    };
+                    gathered.extend_from_slice(&leaves);
+                    if declared < bound {
+                        break;
+                    }
+                    let Some(next) = u32::try_from(declared)
+                        .ok()
+                        .and_then(|n| from.checked_add(n))
+                    else {
+                        continue 'links;
+                    };
+                    from = next;
+                }
+            }
+            if let Ok(plane) = state::State::encoded_of_leaves(window, admitted, &tables) {
+                offers.push(plane);
+            }
+        }
+        Ok(offers)
+    }
+
     // How many acquaintances this machine holds a link to. What an operator reads; what nothing
     // publishes, since it names no peer.
     pub fn reached(&self) -> usize {
@@ -1388,12 +1935,10 @@ impl Machine {
         // moved, and a window turning drops the point with everything read of it.
         let standing = self.standing.count_at(point);
         {
-            let held = self.read_back.lock().map_err(|_| NodeError::Uncountable)?;
-            if let Some((stood, count, objects)) = held.get(point) {
-                if *stood == window && *count == standing {
-                    self.counts.raise(&self.counts.points_read_from_memory);
-                    return Ok(objects.clone());
-                }
+            let mut held = self.read_back.lock().map_err(|_| NodeError::Uncountable)?;
+            if let Some(objects) = held.of(point, window, standing) {
+                self.counts.raise(&self.counts.points_read_from_memory);
+                return Ok(objects);
             }
         }
         self.counts.raise(&self.counts.points_read_back);
@@ -1402,8 +1947,7 @@ impl Machine {
                 what: "cells at a point the wire cannot read back",
             })?;
         let mut held = self.read_back.lock().map_err(|_| NodeError::Uncountable)?;
-        held.retain(|_, (stood, _, _)| *stood >= window);
-        held.insert(*point, (window, standing, objects.clone()));
+        held.keep(*point, window, standing, objects.clone());
         Ok(objects)
     }
 
@@ -1452,12 +1996,27 @@ impl Machine {
             })
     }
 
+    // Both operator interfaces share the same watcher, including a panic of the door thread.
+    pub fn answer_in_background(
+        self: &Arc<Self>,
+    ) -> std::thread::JoinHandle<Result<(), NodeError>> {
+        let machine = Arc::clone(self);
+        let watch = self.counts.watch_door();
+        std::thread::spawn(move || {
+            let _watch = watch;
+            machine.serve()
+        })
+    }
+
     // Answering links until the machine is stopped.
     pub fn serve(&self) -> Result<(), NodeError> {
         loop {
             // A handshake that failed took no slot and is no reason to stop: the next caller may be
             // whoever this machine is waiting for.
-            let _ = self.answer_one();
+            match self.answer_one() {
+                Ok(_) | Err(NodeError::Net(_)) => {}
+                Err(error) => return Err(error),
+            }
         }
     }
 }
@@ -1503,6 +2062,7 @@ fn carry_until_it_ends(
             Kind::Collect => answer_with_nothing(link),
             Kind::HeadQuery => answer_the_head(link, store, &message),
             Kind::StateQuery => answer_the_state(link, value, &message),
+            Kind::TableQuery => answer_the_table(link, store, &message),
             // An answer nobody asked for, and the messages a machine of this stage does not serve:
             // read, counted and dropped, because a reply saying "not for me" is information about
             // this machine that a stranger asked for and did not earn.
@@ -1562,8 +2122,8 @@ fn take_the_deposit(
             let window = deposit_window(store, held);
             let of_a_delivery = mt_wire::publish::delivery_of(&point, window, &cell);
             let took = standing.hold(point, window, cell.clone(), ceiling, of_a_delivery);
-            if took == say::Took::Held
-                && keep_the_cell(store, standing, &point, window, &cell).is_err()
+            if took == say::Took::Unkept
+                || (took == say::Took::Held && let_go_on_the_disk(store, standing, window).is_err())
             {
                 counts.raise(&counts.pushes_lost);
             }
@@ -1602,10 +2162,8 @@ fn answer_the_collection(
     let Ok(bound) = message::collect_answer_max() else {
         return Ok(());
     };
-    let held = standing.at(&point);
-    let from = usize::from(after).min(held.len());
-    let take = (held.len() - from).min(bound);
-    let Ok(answer) = message::encode_collect_answer(&held[from..from + take]) else {
+    let held = standing.cells_of(&point, usize::from(after), bound);
+    let Ok(answer) = message::encode_collect_answer(&held) else {
         return Ok(());
     };
     link.send(Kind::CollectAnswer, &answer)
@@ -1664,6 +2222,58 @@ fn answer_the_state(
     link.send(Kind::StateAnswer, &message::encode_state_answer(&answer))
 }
 
+// **A table of a plane this machine holds whole, from the leaf the asker names.** The plane is the
+// one the last close kept, of the window it closed or of the window before it, read from the record
+// of the window and never from memory, which moves under a frame; any other window, another network
+// or a table read to its end is answered with zero leaves, which the asker does not tell apart.
+fn answer_the_table(link: &mut Link, store: &Store, message: &[u8]) -> Result<(), NetError> {
+    let width = message::table_query_len();
+    if message.len() < width {
+        return Ok(());
+    }
+    let Ok((asked, window, table, from)) = message::parse_table_query(&message[..width]) else {
+        return Ok(());
+    };
+    let Some(ours) = mt_state::tables::genesis_state_hash() else {
+        return Ok(());
+    };
+    if asked != ours {
+        return Ok(());
+    }
+    let Ok(bound) = message::table_answer_max(table) else {
+        return Ok(());
+    };
+    let one = table.leaf_bytes();
+    let leaves = plane_held(store, window)
+        .map(|plane| plane.leaves_of(table, window))
+        .unwrap_or_default();
+    let start = (from as usize).saturating_mul(one).min(leaves.len());
+    let end = start
+        .saturating_add(bound.saturating_mul(one))
+        .min(leaves.len());
+    let Ok(answer) = message::encode_table_answer(table, &leaves[start..end]) else {
+        return Ok(());
+    };
+    link.send(Kind::TableAnswer, &answer)
+}
+
+// The plane the record of the window keeps for `window`: the plane of the window the last close
+// closed, or the decided state of the window before it, and nothing for any other.
+fn plane_held(store: &Store, window: u64) -> Option<state::State> {
+    let record = store.window().ok()?;
+    if record.kept.is_empty() {
+        return None;
+    }
+    let kept = Kept::decode(&record.kept).ok()?;
+    if kept.taken.window == window {
+        Some(kept.plane)
+    } else if kept.taken.window.checked_sub(1) == Some(window) {
+        kept.before
+    } else {
+        None
+    }
+}
+
 fn answer_the_head(link: &mut Link, store: &Store, message: &[u8]) -> Result<(), NetError> {
     let width = message::head_query_len();
     if message.len() < width {
@@ -1692,50 +2302,15 @@ fn answer_the_head(link: &mut Link, store: &Store, message: &[u8]) -> Result<(),
     link.send(Kind::HeadAnswer, &answer)
 }
 
-// A cell a point took, kept on the disk beside the window it belongs to, and the windows the memory
-// let go of let go of on the disk too, once per window turning.
-fn keep_the_cell(
-    store: &Store,
-    standing: &Standing,
-    point: &[u8; POINT_BYTES],
-    window: u64,
-    cell: &[u8],
-) -> Result<(), NodeError> {
-    store
-        .append_cell(window, point, cell)
-        .map_err(NodeError::Store)?;
+// The windows the memory let go of are let go of on the disk too, once per window turning. The cell
+// itself went to the disk where the point took it, under the lock that counted it.
+fn let_go_on_the_disk(store: &Store, standing: &Standing, window: u64) -> Result<(), NodeError> {
     if standing.prune_due(window) {
         store
             .drop_points_before(window.saturating_sub(standing.retained))
             .map_err(NodeError::Store)?;
     }
     Ok(())
-}
-
-// Validate on a candidate. A failed write cannot consume a note or move the live admitted root.
-// The disk write is atomic, so the successful commit and the in-memory swap publish the same state.
-fn update_value<T>(
-    current: &mut state::State,
-    store: &Store,
-    edit: impl FnOnce(&mut state::State) -> Result<T, NodeError>,
-) -> Result<T, NodeError> {
-    let mut candidate = current.clone();
-    let result = edit(&mut candidate)?;
-    commit_value(current, store, candidate)?;
-    Ok(result)
-}
-
-fn commit_value(
-    current: &mut state::State,
-    store: &Store,
-    candidate: state::State,
-) -> Result<(), NodeError> {
-    let result = store.put_value(&candidate.encode()?);
-    if result.is_ok() || matches!(&result, Err(StoreError::CommitUncertain { .. })) {
-        // A failed durability barrier is not a rollback: the complete new file is already visible.
-        *current = candidate;
-    }
-    result.map_err(NodeError::Store)
 }
 
 // The one condition that releases a link, and no other: it carried nothing across a whole window.
@@ -1770,33 +2345,133 @@ mod tests {
 
     // Scratch artifacts are retained for inspection; tests never remove existing files.
 
+    // CNS-20: rejects a terminal door error swallowed by the serving loop or by its caller.
     #[test]
-    fn a_failed_disk_write_does_not_publish_the_candidate_in_memory() {
-        let scratch = Scratch::named("failed-state-write");
-        let store = Store::open(&scratch.0).unwrap();
-        fs::create_dir(scratch.0.join("value")).unwrap();
-        let mut state = state::State::new();
-        let before = state.encode().unwrap();
-        let other = mt_proof::poseidon::Digest::of_bytes(&[0x11; 32]).unwrap();
-        let result = update_value(&mut state, &store, |next| {
-            next.admits(other);
-            Ok(())
-        });
-        assert!(matches!(result, Err(NodeError::Store(_))));
-        assert_eq!(
-            state.encode().unwrap(),
-            before,
-            "failed persistence changed the live plane"
+    fn a_dead_door_reaches_the_verdict_and_cannot_be_erased_by_the_pulse() {
+        let at = Scratch::named("dead-door");
+        let machine = Arc::new(
+            Machine::start(&Configuration::at(&at.0, "127.0.0.1:0"))
+                .unwrap()
+                .0,
         );
-        let good = Scratch::named("state-write-retry");
-        let store = Store::open(&good.0).unwrap();
-        update_value(&mut state, &store, |next| {
-            next.admits(other);
-            Ok(())
+        let held = Arc::clone(&machine.held);
+        assert!(std::thread::spawn(move || {
+            let _held = held.standing.lock().unwrap();
+            panic!("corrupt this test's link counter");
         })
-        .unwrap();
-        assert_eq!(state.encode().unwrap(), store.value().unwrap());
-        assert_ne!(state.encode().unwrap(), before);
+        .join()
+        .is_err());
+        assert_eq!(
+            machine.answer_in_background().join().unwrap(),
+            Err(NodeError::Uncountable)
+        );
+        let counts = machine.counts();
+        assert_eq!(
+            counts.status().unwrap().on(),
+            Some(say::Verdict::NoDiagnostics)
+        );
+        assert_eq!(counts.observe(true, 7, 0, 1), say::Verdict::NoDiagnostics);
+        assert_eq!(counts.status().unwrap().exit_code(), 4);
+    }
+
+    // CNS-20: a panic must take the same path as an ordinary terminal door error.
+    #[test]
+    fn an_unwinding_door_leaves_no_diagnostics() {
+        let counts = Arc::new(say::Counts::default());
+        counts.observe(false, 3, 0, 1);
+        let watch = counts.watch_door();
+        assert!(std::thread::spawn(move || {
+            let _watch = watch;
+            panic!("this test's door unwinds");
+        })
+        .join()
+        .is_err());
+        assert_eq!(
+            counts.status(),
+            Some(say::PulseStatus::Stalled {
+                on: say::Verdict::NoDiagnostics,
+                asking: 3,
+                refused: 0,
+            })
+        );
+    }
+
+    // CNS-20 / issue #21 Gate 0 (a): a shortfall whose rounds keep turning starts every wait again at
+    // nought, and still reads as a stall once the askings of its window reach the patience. The wrong
+    // implementations it refuses: a reading bound to the wait of one round, under which such a window
+    // reads exit 0 forever; and a stall that is more than a reading, under which a later close would
+    // not read 0.
+    #[test]
+    fn a_shortfall_whose_rounds_keep_turning_reads_a_stall_once_its_window_stood_the_patience() {
+        let counts = say::Counts::default();
+        assert_eq!(counts.observe(false, 4, 0, 5), say::Verdict::NoQuorum);
+        assert_eq!(counts.status().unwrap().exit_code(), 0);
+        assert_eq!(counts.observe(false, 5, 0, 5), say::Verdict::NoQuorum);
+        let stalled = counts.status().unwrap();
+        assert_eq!(
+            stalled,
+            say::PulseStatus::Stalled {
+                on: say::Verdict::NoQuorum,
+                asking: 5,
+                refused: 0,
+            }
+        );
+        assert_eq!(stalled.exit_code(), 1);
+        assert_eq!(say::PulseStatus::parse(&stalled.to_string()), Some(stalled));
+        counts.closed(9);
+        assert_eq!(counts.status().unwrap().exit_code(), 0);
+    }
+
+    // **A point holds its cells on the disk alone, and what was read back holds a ceiling** (issue
+    // #63). The wrong implementations refused: a point answering from a copy in memory beside its
+    // file, under which a range read here is not the range of the file, and a read-back holding
+    // every point of the window it was read in, under which the bytes it holds pass the ceiling.
+    #[test]
+    fn a_point_holds_its_cells_on_the_disk_alone_and_what_was_read_back_holds_a_ceiling() {
+        let scratch = Scratch::named("cells-on-the-disk");
+        let store = Arc::new(Store::open(&scratch.0).expect("a fresh store opens"));
+        let width = 4;
+        let standing = Standing::empty(2, Arc::clone(&store), width);
+        let point = [7u8; POINT_BYTES];
+        let delivery = Some(([9u8; POINT_BYTES], 3));
+        let cells: Vec<Vec<u8>> = (0u8..3).map(|i| vec![i; width]).collect();
+        for cell in &cells {
+            assert_eq!(
+                standing.hold(point, 5, cell.clone(), 8, delivery),
+                say::Took::Held
+            );
+        }
+        assert_eq!(
+            standing.hold(point, 5, cells[0].clone(), 8, delivery),
+            say::Took::Repeated
+        );
+        assert_eq!(standing.count_at(&point), 3);
+        assert_eq!(standing.at(&point), cells);
+        assert_eq!(standing.cells_of(&point, 1, 1), vec![cells[1].clone()]);
+        assert!(standing.cells_of(&point, 3, 4).is_empty());
+        assert_eq!(
+            store
+                .cells_at(5, &point, width, 0, usize::MAX)
+                .expect("the file of the point reads"),
+            cells
+        );
+
+        let mut read_back = ReadBack::to_the_ceiling(100);
+        for i in 0u8..10 {
+            read_back.keep([i; POINT_BYTES], 5, 1, vec![vec![i; 30]]);
+            assert!(
+                read_back.bytes <= 100,
+                "the read-back held {} bytes",
+                read_back.bytes
+            );
+        }
+        assert_eq!(
+            read_back.of(&[9; POINT_BYTES], 5, 1),
+            Some(vec![vec![9; 30]])
+        );
+        assert_eq!(read_back.of(&[0; POINT_BYTES], 5, 1), None);
+        read_back.keep([42; POINT_BYTES], 5, 1, vec![vec![0; 101]]);
+        assert_eq!(read_back.of(&[42; POINT_BYTES], 5, 1), None);
     }
 
     #[test]

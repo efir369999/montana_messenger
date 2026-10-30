@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS checkmark.message: drawn for Montana (the bubble with its tail and the checkmark inside): the folders' state Read, «Read All» -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.6" android:strokeLineJoin="round"
+      android:pathData="M6,3.75h12c1.66,0 3,1.34 3,3v7.5c0,1.66 -1.34,3 -3,3H10.2l-4.05,3.2c-0.5,0.4 -1.15,0.05 -1.15,-0.6V17.2C3.85,16.8 3,15.6 3,14.25v-7.5c0,-1.66 1.34,-3 3,-3z"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.8" android:strokeLineJoin="round" android:strokeLineCap="round"
+      android:pathData="M8.4,10.6l2.45,2.45l4.75,-4.85"/>
+</vector>

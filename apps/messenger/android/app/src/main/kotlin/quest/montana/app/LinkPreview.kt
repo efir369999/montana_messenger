@@ -58,8 +58,19 @@ object LinkPreview {
     val enabled get() = Prefs.bool("linkPreviewsEnabled", true)
 
     private val linkRE = Regex("""https?://[^\s<>"']+""", RegexOption.IGNORE_CASE)
-    fun webURLs(text: String): List<String> = linkRE.findAll(text).map { it.value.trimEnd('.', ',', ')', '!', '?', ';', ':') }
+    fun webURLs(text: String): List<String> = linkRE.findAll(text).map { wired(it.value.trimEnd('.', ',', ')', '!', '?', ';', ':')) }
         .filter { runCatching { URL(it).host }.getOrNull()?.isNotEmpty() == true }.toList()
+    /**
+     * A LINK AS THE REFERENCE WRITES IT (iOS NSDataDetector's URL.absoluteString): a letter beyond ASCII is percent-escaped by its
+     * UTF-8 bytes, so a card's «u» is one string on both sides. iPhone «Анна» → A1 21.10 10:27 UTC, ru.wikipedia.org/wiki/Заглавная…:
+     * the card named the escaped link, the letter's words the plain one, and the group refused the card as past its words.
+     */
+    private fun wired(link: String): String = buildString {
+        link.codePoints().forEach { cp ->
+            if (cp in 0x21..0x7E && cp.toChar() !in "\"<>\\^`{|}") append(cp.toChar())
+            else for (b in String(Character.toChars(cp)).toByteArray()) append('%').append("%02X".format(b.toInt() and 0xFF))
+        }
+    }
 
     private val read = HashMap<String, LinkCard>()
     private val readNothing = HashSet<String>()
@@ -161,6 +172,42 @@ object LinkPreview {
         return null
     }
 
+    /**
+     * THE CARD THAT RIDES IS THE CARD THAT IS SEEN, ITS PICTURE CUT TO THE LEG (iOS MTLinkPreviewBuilder.fitting, 89dfd51d): the
+     * row keeps its picture crisp (720, 70 KB), the leg holds 16 KB -- the picture alone is re-encoded, 480 at 0.6 under 11 KB, then
+     * 320 at 0.5 under 8 KB, and only when no size fits does the card ride with its words alone. A1 → iPhone «Анна» 21.10 10:12 UTC:
+     * the picture caught up at 60 KB and the group's word dropped it whole, the iPhone drew the words with no picture.
+     */
+    fun fitting(lp: String?): String? {
+        if (lp == null || lp.toByteArray().size <= 64) return null
+        if (lp.toByteArray().size <= LEG) return lp
+        val card = LinkCard.parse(lp) ?: return null
+        val raw = card.i?.let { runCatching { Base64.decode(it, Base64.DEFAULT) }.getOrNull() }
+        val b = raw?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+        if (b != null) {
+            for ((side, q, cap) in listOf(Triple(480, 60, 11 * 1024), Triple(320, 50, 8 * 1024))) {
+                card.i = jpegB64(b, side, q, cap)
+                val j = card.json()
+                if (card.i != null && j.toByteArray().size <= LEG) return j
+            }
+        }
+        card.i = null
+        return card.json().takeIf { it.toByteArray().size in 65..LEG }
+    }
+    private const val LEG = 16_384
+    private fun jpegB64(b: Bitmap, maxSide: Int, quality: Int, capBytes: Int): String? {
+        val side = maxOf(b.width, b.height)
+        val scale = if (side > maxSide) maxSide.toFloat() / side else 1f
+        val small = Bitmap.createScaledBitmap(b, maxOf(1, (b.width * scale).toInt()), maxOf(1, (b.height * scale).toInt()), true)
+        var q = quality
+        repeat(3) {
+            val out = ByteArrayOutputStream(); small.compress(Bitmap.CompressFormat.JPEG, q, out)
+            if (out.size() <= capBytes) return Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+            q = (q * 0.6).toInt()
+        }
+        return null
+    }
+
     /** The video's title and channel from YouTube's own oEmbed, two and a half seconds of its own (iOS youtubeWords,
      * MTLinkPreview.swift:372-382 at 2155, atom 5a84afb1f68f). */
     private fun youtubeWords(url: String): Pair<String?, String?>? {
@@ -253,7 +300,8 @@ object LinkPreview {
      * and longer read, lands after, on the row only.
      */
     fun attend(ref: String, mid: String, text: String, qt: String?, qm: String?, seen: String? = null, refused: Boolean = false) {
-        LinkCard.parse(seen)?.let { land(ref, mid, text, qt, qm, it); return }
+        // off the screen's thread: a seen card without its picture reads the picture now (a read on the main thread never came back)
+        LinkCard.parse(seen)?.let { Thread { land(ref, mid, text, qt, qm, it) }.start(); return }
         if (refused || !enabled || Marks.isService(text) || webURLs(text).isEmpty()) return
         Thread {
             var card: LinkCard? = null
@@ -264,11 +312,38 @@ object LinkPreview {
             land(ref, mid, text, qt, qm, c)
         }.start()
     }
-    /** The card lands on my row and a same-mid copy of the letter carries it to the correspondent, without its picture. */
+    /**
+     * The card lands on my row and a same-mid copy of the letter carries it to the correspondent -- the envelope without its picture,
+     * the live road with it (Post.knock); in a group, to everyone by the group's own word «lp»; and its picture once more when it
+     * catches up, to the pair as to the group (iOS MTLinkCards.land and picture → attachPreview / carryCard, 89dfd51d).
+     */
     private fun land(ref: String, mid: String, text: String, qt: String?, qm: String?, card: LinkCard) {
+        val group = Groups.isKey(ref)
         Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.lp = card.json() }
-        Post.send(ref, mid, text, qt, qm, lp = card.json(withPicture = false))   // the envelope leg: the card without its picture
-        picture(card)?.let { full -> Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.lp = full.json() } }
+        if (group) Groups.carryCard(ref, mid, card)
+        else Post.send(ref, mid, text, qt, qm, lp = fitting(card.json()) ?: card.json(withPicture = false))   // the queue keeps the leg's cut
+        picture(card)?.let { full ->
+            Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.lp = full.json() }
+            if (group) Groups.carryCard(ref, mid, full)
+            else Post.send(ref, mid, text, qt, qm, lp = fitting(full.json()) ?: full.json(withPicture = false))
+            android.util.Log.d("Montana", "link card: the picture caught up mid=" + mid.take(8))
+        }
+    }
+    /**
+     * A LATE CARD ON A STANDING ROW (iOS enrichLinkPreview, the critic 22.09): a row without a card takes it whole; a card without its
+     * picture takes the picture of the same link, and nothing else of a standing card moves. True: the row changed.
+     */
+    fun enrich(row: Msg, lp: String, mid: String): Boolean {
+        val fresh = LinkCard.parse(lp) ?: return false
+        val old = row.lp?.let { s -> LinkCard.parse(s) }
+        if (old == null) { row.lp = lp; android.util.Log.d("Montana", "link card: landed on a standing row mid=" + mid.take(8)); return true }
+        if (old.i == null && fresh.i != null && fresh.u == old.u) {
+            old.i = fresh.i; old.w = fresh.w; old.h = fresh.h; old.p = fresh.p ?: old.p
+            row.lp = old.json()
+            android.util.Log.d("Montana", "link card: the picture caught up mid=" + mid.take(8))
+            return true
+        }
+        return false
     }
 }
 

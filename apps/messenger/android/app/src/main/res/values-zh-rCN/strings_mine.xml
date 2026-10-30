@@ -29,6 +29,9 @@
     <string name="ld_pin_q">置顶这条消息？</string>
     <string name="ld_pin_both">为双方置顶</string>
     <string name="ld_pin_me">为我置顶</string>
+    <string name="ld_pin_q_group">置顶此消息并通知群组所有成员？</string>
+    <string name="ld_pin_all">置顶并通知所有成员</string>
+    <string name="ld_pin_only">仅置顶</string>
     <string name="ld_pinned">置顶消息</string>
     <string name="ld_pinned_banner">置顶了一条消息</string>
     <string name="ld_pin">置顶</string>

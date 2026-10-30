@@ -182,12 +182,12 @@ object MontanaCard {
 
     /** Every live invitation — the daily generations and the permanent one (iOS outstandingInvites). */
     fun outstandingInvites(): List<ByteArray> = synchronized(lock) {
-        (map(DAILY).keys + map(PERM).keys).distinct().mapNotNull { unb64url(it) }.filter { it.size == 32 }
+        (map(DAILY).keys + map(PERM).keys + twins().keys).distinct().mapNotNull { unb64url(it) }.filter { it.size == 32 }
     }
 
     /** The roots of the cards handed out and not spent — the points a first letter may knock at (iOS outstandingRoots). */
     fun outstandingRoots(): List<ByteArray> = synchronized(lock) {
-        (map(DAILY).values + map(PERM).values).filter { keyHeld(it) }.map { it.copyOf(1184) }
+        (map(DAILY).values + map(PERM).values + twins().values.map { it.first }).filter { keyHeld(it) }.map { it.copyOf(1184) }
     }
 
     /**
@@ -213,7 +213,7 @@ object MontanaCard {
      */
     fun acceptFirst(ct: ByteArray, inv64: String, conf: String): Pair<ByteArray, ByteArray>? {
         val (root, sk) = synchronized(lock) {
-            val payload = (map(DAILY) + map(PERM))[inv64] ?: return null
+            val payload = (map(DAILY) + map(PERM))[inv64] ?: twins()[inv64]?.first ?: return null
             val root = payload.copyOf(1184)
             root to (map(KEYS)[b64url(root)] ?: return null)
         }
@@ -223,6 +223,62 @@ object MontanaCard {
         val want = b64url(MessageDigest.getInstance("SHA-256").digest("mt-first-conf".toByteArray() + byteArrayOf(0) + secret + ct).copyOf(16))
         if (!MessageDigest.isEqual(want.toByteArray(), conf.toByteArray())) return null
         return secret to root
+    }
+
+    // ── THE SEED'S OTHER DEVICES' CARDS (iOS MontanaCard twinLiveCards / takeTwin, MontanaFirstContact.swift 725-784; the author's word
+    // 18.10.2026 13:1x MSK: «on my Mac there is no chat that T1 has -- fix it at the root»): a card is born with a random key on the
+    // device that shows it, and a first letter by it was refused by every other device of the person. Every live card now rides to
+    // the seed's other devices in the pipe only they derive (Twin); they keep its secret beside their own (KEYS: the points listened
+    // at) and its invitation in a record of its own -- never in their daily record, so their own rotation buries nothing of the
+    // sibling's. A sibling's card lives its own day and the receiving generation after it. ──
+    private const val TWIN = "rdvTwin"   // invitation → {p: the card's payload, at: when taken}
+    private const val TWIN_LIFE = 2 * LIFETIME + 3600L
+    private fun twins(): Map<String, Pair<ByteArray, Double>> {
+        val o = DeviceVault.get(TWIN)?.let { runCatching { JSONObject(String(it, Charsets.UTF_8)) }.getOrNull() } ?: return emptyMap()
+        return o.keys().asSequence().mapNotNull { k ->
+            val e = o.optJSONObject(k) ?: return@mapNotNull null
+            val p = runCatching { Base64.decode(e.optString("p"), Base64.NO_WRAP) }.getOrNull() ?: return@mapNotNull null
+            k to (p to e.optDouble("at", 0.0))
+        }.toMap()
+    }
+    private fun keepTwins(m: Map<String, Pair<ByteArray, Double>>) {
+        val o = JSONObject()
+        m.forEach { (k, v) -> o.put(k, JSONObject().put("p", Base64.encodeToString(v.first, Base64.NO_WRAP)).put("at", v.second)) }
+        DeviceVault.set(TWIN, o.toString().toByteArray())
+    }
+    /** THE LIVE CARDS GO TO THE SEED'S OTHER DEVICES: the day's and the permanent one, each with its secret; a repeat within the hour rides once. */
+    fun twinLiveCards() {
+        val out = ArrayList<Triple<String, ByteArray, ByteArray>>()
+        synchronized(lock) {
+            val keys = map(KEYS)
+            text(CURRENT)?.let { cur -> map(DAILY)[cur]?.let { pl -> keys[b64url(pl.copyOf(1184))]?.let { sk -> out.add(Triple(cur, pl, sk)) } } }
+            for ((inv, pl) in map(PERM)) keys[b64url(pl.copyOf(1184))]?.let { sk -> out.add(Triple(inv, pl, sk)) }
+        }
+        for ((inv, pl, sk) in out) {
+            val js = JSONObject().put("i", inv).put("p", Base64.encodeToString(pl, Base64.NO_WRAP)).put("k", Base64.encodeToString(sk, Base64.NO_WRAP))
+            Twin.note(Twin.CARD_PIPE, inv, Twin.CARD + js.toString(), own = true)
+        }
+    }
+    /** A SIBLING'S CARD TAKEN: its secret beside this device's own, its invitation in the sibling's record; a card past its two days leaves both. */
+    fun takeTwin(body: String) {
+        val o = runCatching { JSONObject(body) }.getOrNull() ?: return
+        val inv = o.optString("i")
+        val pl = runCatching { Base64.decode(o.optString("p"), Base64.DEFAULT) }.getOrNull()
+        val sk = runCatching { Base64.decode(o.optString("k"), Base64.DEFAULT) }.getOrNull()
+        if (unb64url(inv)?.size != 32 || pl == null || pl.size < 1184 || 1184 + NAME_LIMIT * 4 < pl.size || sk == null || sk.isEmpty()) return
+        val now = now()
+        val n = synchronized(lock) {
+            val tw = twins().toMutableMap()
+            val keys = map(KEYS)
+            val fresh = tw[inv] == null
+            if (fresh) tw[inv] = pl to now
+            keys[b64url(pl.copyOf(1184))] = sk
+            for ((k, c) in tw.entries.toList()) if (TWIN_LIFE < now - c.second) { tw.remove(k); keys.remove(b64url(c.first.copyOf(1184))) }
+            save(KEYS, keys)
+            keepTwins(tw)
+            if (fresh) tw.size else -1
+        }
+        if (n >= 0) android.util.Log.d("Montana", "rdv_twin taken cards=" + n)
     }
 
     /** The words a share carries before the link (iOS MontanaConv.inviteMessage). */
@@ -248,7 +304,18 @@ object MontanaCard {
         if (!MontanaSeed.hasSeed) return   // SILENT-OK: the first screen -- no identity, no card
         offerShort(c)
         if (hasLivePermanent()) offerPermanent(c)
+        faceChanged(c)   // a face laid before this build beside a card stays no longer than the next return; a fresh one is not poured again
+        Thread { twinLiveCards() }.start()   // the seed's other devices hold every live card of this one (iOS keepLiveCardsUp)
     }
+
+    /**
+     * MY FACE CHANGED: EVERY LIVE CARD GETS THE NEW ONE BESIDE IT AT ONCE (iOS MontanaCard.faceChanged → reuploadRdv,
+     * MontanaFirstContact.swift:1075-1084 at 2240). Android laid the face only with the card, by its two-hour term, and only for the
+     * card of the day: the old face stood on the node beside every other live card, and an iPhone that reads a correspondent's face
+     * from the card (ChatStore.healFacesFromCards → MontanaCard.refaceFromCard, which wears it over the letter's) put the old picture
+     * of A1 back on T1 (18.10.2026, the author's word: «avatars must change at once»). Off the main thread: every card is a node write.
+     */
+    fun faceChanged(c: Context) { for (inv in outstandingInvites()) uploadFace(c, inv) }
     private fun hasLivePermanent(): Boolean = synchronized(lock) { map(PERM).values.firstOrNull()?.let { keyHeld(it) } ?: false }
 
     /** The person leaves: the card records leave with them (iOS MontanaCard.wipe). */
@@ -281,6 +348,7 @@ object MontanaCard {
                 if (!ok) { Thread.sleep(20_000); ok = put(rdvBid(inv), sealed) }
                 if (ok && stillOwn(key, stamp)) Prefs.setDbl(stamp, now())
                 uploadFace(c, inv)
+                twinLiveCards()   // said at a birth and at every keeping-up (iOS twinLiveCards)
             } finally { synchronized(flying) { flying.remove(key) } }
         }.start()
     }

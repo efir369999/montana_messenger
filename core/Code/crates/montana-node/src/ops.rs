@@ -195,7 +195,11 @@ mod tests {
         }
         let taken = m.take_cemented(&[op_hash(&ops[0]), op_hash(&ops[2])]);
         assert_eq!(taken.len(), 2);
-        assert_eq!(m.len(), 1, "the unpinned one stayed waiting for the next window");
+        assert_eq!(
+            m.len(),
+            1,
+            "the unpinned one stayed waiting for the next window"
+        );
     }
 
     /// What is taken is returned in canonical order, regardless of the order in the pinned list.

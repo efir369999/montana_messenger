@@ -58,6 +58,19 @@ int mt_account_from_mnemonic(const char *mnemonic_utf8, uint8_t *out_pubkey, uin
 int mt_sign(const uint8_t *seckey, const uint8_t *msg, size_t msg_len, uint8_t *out_sig);
 int mt_verify(const uint8_t *pubkey, const uint8_t *msg, size_t msg_len, const uint8_t *sig);
 
+/* The coin fold (COIN-TX-V3 sections 3 and 4): the one fold a chain node takes a coin record by.
+   state and out_state: MT_COIN_STATE_LEN bytes; sent: the SEND the record's reference names,
+   MT_COIN_SENT_LEN bytes, or NULL when the node holds none; settled: 1 when a RECV or a REFUND
+   settled it. Returns MT_OK (out_v2_set 1 and out_v2_dec for a v2 record that spent), a refusal's
+   code 1..18 (mt_coin_refusal writes its word, no NUL, and returns its length) or MT_ERR_DECODE. */
+#define MT_COIN_STATE_LEN 113
+#define MT_COIN_SENT_LEN 88
+int mt_coin_step(const uint8_t *state, const uint8_t *rec, size_t rec_len, uint64_t at, const uint8_t *sent, int settled,
+                 uint8_t *out_state, uint64_t *out_v2_dec, uint8_t *out_v2_set);
+int mt_coin_at_now(const uint8_t *state, uint64_t now, uint8_t *out_state);
+int mt_coin_refusal(int code, uint8_t *out, size_t capacity);
+int mt_coin_fold(uint8_t *out, size_t capacity);
+
 /* Fresh identity: health-tested OS entropy -> 24-word UTF-8 mnemonic (NUL-terminated).
    The only door through which a Montana identity is born; clients must not draw
    their own randomness. MT_ERR_CSPRNG (-16) when the OS has no entropy source,

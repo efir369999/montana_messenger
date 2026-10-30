@@ -279,7 +279,7 @@ struct MTBoardCell: View {
     var minting = false
     /// The post on its own page, over its comments (02.10): its words whole, no tap to open what is open.
     var whole = false
-    /// A CHANNEL'S POST IN THE THREAD'S FACE (the author's words 16.10.2026 19:0x MSK: «channels -- the feed as now is right, only make
+    /// A CHANNEL'S POST IN THE THREAD'S FACE (the author's words 16.10.2026 16:0x UTC: «channels -- the feed as now is right, only make
     /// it as the thread of short posts»; «exactly the same style as on the screenshot, one to one», his three pictures of a thread).
     var thread = false
     @ObservedObject private var board = MTBoard.shared
@@ -478,7 +478,7 @@ struct MTBoardCell: View {
             }
             coinMark
             Spacer(minLength: 0)
-            // THE EYE IN THE CORNER (the author's words 06.10.2026 00:3x MSK: «under the posts, bottom right, an eye and how many
+            // THE EYE IN THE CORNER (the author's words 05.10.2026 21:3x UTC: «under the posts, bottom right, an eye and how many
             // views»): how many people saw the post, by its wall owner's count, in the platform's short form past a thousand; a wall
             // whose owner's build counts none shows no eye rather than a zero nobody counted.
             HStack(spacing: 12) {
@@ -1211,7 +1211,7 @@ struct MTBoardClip: View {
 struct MTMintCoin: View {
     var spinning = true
     var side: CGFloat = 22
-    /// ONE TURN, THEN REST (the author's words 03.10.2026 16:46 and 16:49 MSK: «at every letter a +1 coin, animated, one turn,
+    /// ONE TURN, THEN REST (the author's words 03.10.2026 13:46 and 13:49 UTC: «at every letter a +1 coin, animated, one turn,
     /// beautifully, to show how it is minted»; «when the money flow is switched on, an active animation»): the coin makes one
     /// whole turn when it appears with a `turn` and again every time `turn` changes, and rests on its face between.
     var turn: Int? = nil
@@ -1282,34 +1282,7 @@ final class MTCoinDial {
     }
 }
 
-/// +1, THE COIN TURNING ONCE (the author's word 03.10.2026 16:46 MSK): every letter the money flow mints rises under the bar --
-/// our coin making one turn beside the number minted -- and fades. The count is the tally's (MTChatMint), never this view's.
-struct MTMintPop: View {
-    @ObservedObject private var mint = MTChatMint.shared
-    @State private var rise: CGFloat = 0
-    @State private var shown: Double = 0
-    @Environment(\.accessibilityReduceMotion) private var still   // the +1 stands and fades; it does not rise
-    var body: some View {
-        HStack(spacing: 6) {
-            MTMintCoin(side: 28, turn: mint.minted)
-            // USER-DATA: the count of coins the newest letters minted
-            Text(verbatim: "+" + String(mint.lastBatch)).font(.headline.monospacedDigit()).foregroundStyle(.primary)
-        }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(.ultraThinMaterial, in: Capsule())
-        .offset(y: rise)
-        .opacity(shown)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onChange(of: mint.minted) { _, _ in
-            rise = 0; shown = 1
-            if !still { withAnimation(.easeOut(duration: 1.3)) { rise = -28 } }
-            withAnimation(.easeIn(duration: 0.4).delay(1.0)) { shown = 0 }
-        }
-    }
-}
-
-/// THE SIDES' COINS (MTCoinFlash, the author's words 04.10.2026 00:11 MSK): at every minting in front of the person our coin
+/// THE SIDES' COINS (MTCoinFlash, the author's words 03.10.2026 21:11 UTC): at every minting in front of the person our coin
 /// rises at the left and the right edge with the count, makes its turn and fades; with Reduce Motion the coins stand and fade.
 /// It never takes a finger.
 struct MTCoinSides: View {
@@ -1346,14 +1319,14 @@ struct MTCoinSides: View {
     }
 }
 
-/// THE COIN UNDER MANY FINGERS (the author's words 04.10.2026 00:17-00:18 MSK: «multi-tapping over the whole surface of the coin,
+/// THE COIN UNDER MANY FINGERS (the author's words 03.10.2026 21:17-21:18 UTC: «multi-tapping over the whole surface of the coin,
 /// with the animation of the crediting»): the platform's own touches, every finger its own, over the coin's whole circle -- a
 /// SwiftUI button answers one touch at a time. This view takes the finger by design (the Pantheon's coin); it answers each touch
 /// with the platform's light tap and hands the point it touched to the one who mints.
 struct MTCoinTapPad: UIViewRepresentable {
     /// How far past the coin's rim a finger still mints: the pad stands this much outside the coin on every side.
     static let rim: CGFloat = 12
-    /// THE PAGE IS LOCKED WHILE THE GAME BURNS (the author's word 04.10.2026 03:58 MSK: «there is still scrolling of the wallet's page when
+    /// THE PAGE IS LOCKED WHILE THE GAME BURNS (the author's word 04.10.2026 00:58 UTC: «there is still scrolling of the wallet's page when
     /// I mint by swipes -- the flag must switch the page's scroll off fully once the game is on»): the pad holds its page's scroll and its
     /// pan off for as long as this is true, whatever any pass of the page's body sets.
     var locked = false
@@ -1386,7 +1359,7 @@ struct MTCoinTapPad: UIViewRepresentable {
         var onLongHold: (() -> Void)?
         var onPageTouch: (() -> Void)?
         var locked = false { didSet { if locked != oldValue { hold() } } }
-        /// THE NINE SECONDS (the author's word 04.10.2026 12:28 MSK: «if I press the coin in the wallet and hold it nine seconds, the
+        /// THE NINE SECONDS (the author's word 04.10.2026 09:28 UTC: «if I press the coin in the wallet and hold it nine seconds, the
         /// auto minting turns on -- an easter egg: not advertised, made exactly»): a finger that stays on the coin nine seconds, never
         /// swiping, gives its word once; a lift or a swipe's coin lets it go.
         static let nine: Double = 9
@@ -1434,7 +1407,7 @@ struct MTCoinTapPad: UIViewRepresentable {
             default: break
             }
         }
-        /// THE PAGE STANDS WHILE A FINGER IS ON THE COIN (the author's word 04.10.2026 02:58 MSK: «while minting, the wallet's page
+        /// THE PAGE STANDS WHILE A FINGER IS ON THE COIN (the author's word 03.10.2026 23:58 UTC: «while minting, the wallet's page
         /// must not scroll on T1»): the page's lock waited for a minted tap (scrollDisabled by the speed), and the list holds a touch
         /// back for a moment before the coin hears it (delaysContentTouches) -- a swipe on the coin moved the page first. A recognizer
         /// that begins at the touch itself switches the page's pan off until the last finger leaves the coin.
@@ -1445,7 +1418,7 @@ struct MTCoinTapPad: UIViewRepresentable {
             while let s = v, !(s is UIScrollView) { v = s.superview }
             return v as? UIScrollView
         }
-        /// EVERY FINGER ON THE PAGE IS HEARD (the author's word 04.10.2026 13:33 MSK: the auto minting «deactivates at any action»):
+        /// EVERY FINGER ON THE PAGE IS HEARD (the author's word 04.10.2026 10:33 UTC: the auto minting «deactivates at any action»):
         /// a recognizer that never recognizes stands on the page's own scroll view, hears each finger that lands on the page -- on a
         /// row, a button, the coin -- and lets it go on to what it touched. It leaves with the coin.
         private var watch: Watch?
@@ -1526,40 +1499,6 @@ struct MTCoinTapPad: UIViewRepresentable {
     }
 }
 
-/// One touch's coin, as the crediting's sign (the author's word 04.10 00:18): «+1» rises from the point the finger touched and
-/// fades; with Reduce Motion it fades where it stands.
-struct MTTapPop: Identifiable {
-    let id = UUID()
-    let point: CGPoint
-    var coins = 1               // the coin the touch minted (MTCoinBook.price, the second's one)
-}
-struct MTRisingPlus: View {
-    let point: CGPoint
-    var coins = 1
-    let done: () -> Void
-    @State private var up = false
-    @Environment(\.accessibilityReduceMotion) private var still
-    var body: some View {
-        // THE CHATS' CREDITING, AT THE FINGER (the author's word 04.10 00:19: «the taps' animation around, as the crediting in the chats»):
-        // the chat's capsule (MTMintPop) -- our coin turning beside the count -- rising from the point the finger touched.
-        HStack(spacing: 4) {
-            MTMintCoin(side: 18, turn: 1)
-            // USER-DATA: the coins a touch minted, the box's number of them
-            Text(verbatim: "+" + MTCoinText.count(coins)).font(.subheadline.weight(.bold).monospacedDigit()).foregroundStyle(.primary)
-        }
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(.ultraThinMaterial, in: Capsule())
-            .position(x: point.x, y: point.y - (up && !still ? 56 : 0))
-            .opacity(up ? 0 : 1)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .onAppear {
-                withAnimation(.easeOut(duration: 0.8)) { up = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { done() }
-            }
-    }
-}
-
 /// YOUR PLACE ON THE COIN (the author's words 03.10 21:41 and 22:00: «take the badge off the minting coin»; «on the coins' badge
 /// your number in the rating»): the box of π the person's balance fills (MTPiLevels.place), as the platform's badge; nothing
 /// below the first box. The balance itself stands on the wallet's page (the wallet's mark wears no badge, 18.10.2026).
@@ -1618,7 +1557,7 @@ struct MTPiLevelsSheet: View {
     }
 }
 
-/// THE MONEY FLOW BEGINS (the author's word 03.10.2026 16:49 MSK: «when it is switched on, an active animation»): the coin,
+/// THE MONEY FLOW BEGINS (the author's word 03.10.2026 13:49 UTC: «when it is switched on, an active animation»): the coin,
 /// large, makes one turn in the middle of the chat under its name, and leaves; the row of the chat stays (MTMoneyFlowRow).
 struct MTMoneyFlowBegins: View {
     let tick: Int
@@ -1958,8 +1897,9 @@ struct MTBoardComposer: View {
                 }
             }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.audio, .item], allowsMultipleSelection: true) { result in
-                if case .success(let urls) = result { for u in urls { take(u) } }
+                if case .success(let urls) = result { take(urls) }
             }
+            .fileDialogDefaultDirectory(MTFilesFolder.last)   // where the last file was taken from (council link 9561)
             .onChange(of: picks) { _, items in
                 guard !items.isEmpty else { return }
                 Task { await load(items) }
@@ -2087,16 +2027,25 @@ struct MTBoardComposer: View {
 
     /// A FILE COMES INTO THE WALL'S DRAFTS FOLDER THE MOMENT IT IS PICKED (25.09), off the main thread: a picked file lived in
     /// the temporary folder, which the system empties between runs, and the page copied it there on the main thread.
-    private func take(_ u: URL) {
-        let ext = u.pathExtension, name = u.lastPathComponent, kind = MTPostMeasure.kind(ofExtension: ext)
+    /// THE PAGE'S ORDER IS THE POST'S ORDER (the author's word 25.10.2026 17:40 UTC, council link 8089: «the upload follows the order
+    /// of the files chosen»): the files are copied one after another by one hand, so a small file never lands before a big one
+    /// chosen ahead of it -- a hand of its own per file did exactly that. The diary says how many were picked and how many came.
+    private func take(_ urls: [URL]) {
+        MTFilesFolder.remember(urls.last)
+        let asked = urls.map { u in (u, u.pathExtension, u.lastPathComponent, MTPostMeasure.kind(ofExtension: u.pathExtension)) }
         Task.detached(priority: .userInitiated) {
-            guard let f = MTBoardDrafts.take(u, kind: kind, name: name, ext: ext, move: false) else { return }
-            await MainActor.run { add(f) }
+            var got = 0
+            for (u, ext, name, kind) in asked {
+                guard let f = MTBoardDrafts.take(u, kind: kind, name: name, ext: ext, move: false) else { continue }
+                got += 1
+                await MainActor.run { add(f) }
+            }
+            MontanaTrace.mark("post_files", "picked=\(asked.count) staged=\(got)")
         }
     }
 
-    /// THE PICK COMES AS THE CHAT'S DOES, AND EVERY STEP OF IT IS WRITTEN (the author's word 06.10.2026 00:3x MSK: «why can't I
-    /// attach a video to a new post on T1»). T1 held this page open from 00:30:02 to 00:32:56 and nothing came: not a line in the
+    /// THE PICK COMES AS THE CHAT'S DOES, AND EVERY STEP OF IT IS WRITTEN (the author's word 05.10.2026 21:3x UTC: «why can't I
+    /// attach a video to a new post on T1»). T1 held this page open from 21:30:02 to 21:32:56 and nothing came: not a line in the
     /// diary, not a file in the drafts folder, not a copy in the temporary one -- the road wrote nothing and its refusals fell
     /// silent (try?), and a film came through the picker's automatic encoding, which re-encodes a long film for minutes with
     /// nothing on the page. Now a film comes as the library keeps it (.current); when the picker's hand-over refuses, the
@@ -2447,7 +2396,7 @@ struct MTBoardComments: View {
 
     var body: some View {
         let t = thread
-        // A CHANNEL'S POST READS AS A THREAD (the author's words 16.10.2026 21:05 MSK: «channels as the short posts' format -- the new
+        // A CHANNEL'S POST READS AS A THREAD (the author's words 16.10.2026 18:05 UTC: «channels as the short posts' format -- the new
         // on top and the replies below, in the style I showed», his pictures IMG_3459-3461): the post whole at the head, the replies
         // under it in the conversation's order, each in the thread's face, and the reply at the foot -- mine or a subscriber's.
         let channel = t?.wall.map { MTGroup.isKey($0) } ?? false
@@ -2995,7 +2944,7 @@ final class MTPostTextView: UIView, UIGestureRecognizerDelegate {
     }
 }
 
-/// A POST'S LINK ANSWERS AS THE PLATFORM'S LINKS DO (the author's word 06.10.2026 00:3x MSK: «the internal links to a post must
+/// A POST'S LINK ANSWERS AS THE PLATFORM'S LINKS DO (the author's word 05.10.2026 21:3x UTC: «the internal links to a post must
 /// be clickable and handy for a preview of the post and the way to it»): a tap opens the post's page at once, here, by the one
 /// road of every link (MontanaMeeting.handleLink), with no round through the system; a hold rises the platform's own preview -- the
 /// post as its wall draws it -- with its menu: open, share, copy the link. A link of a post this phone does not hold offers the
@@ -3007,7 +2956,7 @@ final class MTPostLinkPeek: NSObject, UITextViewDelegate {
 
     func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
         guard case .link(let url) = textItem.content else { return defaultAction }
-        // A YouTube link plays here, in YouTube's own player (MTYouTube, the author's word 17.10.2026 16:4x MSK).
+        // A YouTube link plays here, in YouTube's own player (MTYouTube, the author's word 17.10.2026 13:4x UTC).
         if MTLinkPreviewBuilder.youtube(url) != nil { return UIAction { _ in _ = MTYouTube.play(url) } }
         guard Self.wall(url) else { return defaultAction }
         return UIAction { _ in MontanaMeeting.handleLink(url) }

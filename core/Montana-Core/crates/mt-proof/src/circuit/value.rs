@@ -10,10 +10,15 @@
 // field elements is exact, and nothing about it can wrap.
 //
 // **What that bound costs, named rather than discovered.** An amount above two to the sixty-second
-// is unrepresentable in a frame. The whole emission of this protocol reaches that number after more
-// than a hundred thousand years of windows, so what the bound removes is a quantity no chain of
-// this network can hold — and what it buys is a balance of one subtraction instead of four
-// positions with signed carries, which is four columns and six booleans this trace does not spend.
+// is unrepresentable in a frame. No note holds more than the supply, and the supply grows by
+// `window_credit` coins for every machine living each window, so it reaches that number after two
+// to the sixty-second divided by `window_credit` · N windows at a steady N living machines — some
+// 7.7 · 10⁷ windows at a billion machines, 7.7 · 10⁴ at a trillion. That is a bound in windows and in the count of the
+// living, not in years: the set fixes neither the lived length of a window nor a ceiling on the
+// machines, so how much lived time it leaves depends on both, and a network wide enough reaches it
+// sooner. Until the supply passes it, what the bound removes is a quantity no note can hold — and
+// what it buys is a balance of one subtraction instead of four positions with signed carries,
+// which is four columns and six booleans this trace does not spend.
 //
 // **The bits ride under the blocks.** A decomposition needs one row per bit and no permutation, so
 // it stands in columns of its own beneath the blocks that are computing hashes at those same rows.

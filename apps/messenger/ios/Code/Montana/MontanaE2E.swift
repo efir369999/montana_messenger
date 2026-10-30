@@ -288,7 +288,7 @@ enum MTTop {
 /// invitation, the code -- raises it here and nowhere else, so the owner of the stack holds each one: its rise, its end and
 /// its moment. The sheet's own end is the one word the app has about a system sheet: the deed chosen, done or cancelled.
 enum MTShare {
-    /// A LINK GOES AS A LINK (the author's word 07.10.2026 00:1x MSK: «Share gives one link that opens in the browser, not a text
+    /// A LINK GOES AS A LINK (the author's word 06.10.2026 21:1x UTC: «Share gives one link that opens in the browser, not a text
     /// that turned into a file»): words and a link handed as texts are laid down as a file by the receiving apps; a web address
     /// goes to the sheet as the one URL. Nil -- the string is no web address, and its words go as they are.
     static func web(_ s: String) -> URL? {
@@ -532,7 +532,7 @@ final class E2E {
         // face is unknown, not absent — and the app's greeting, spoken at the first activation, would ask every
         // correspondent for a face it already holds.
         guard store?.lightRead == true else { return "" }
-        // THE ASK STANDS WHILE THE FACE IS MISSING (the author's word 03.10.2026 16:45 MSK: «why T1 does not show every
+        // THE ASK STANDS WHILE THE FACE IS MISSING (the author's word 03.10.2026 13:45 UTC: «why T1 does not show every
         // avatar though Mom has one»). Asked once a life (24.09), the ask rode a word the node keeps as the correspondent's
         // LAST: the next word, without it, overwrote it before a phone with no live road swept the node, and the face never
         // came again -- T1 03.10 received one face in a whole day and never held_differs once (heardHeld reads only words
@@ -594,10 +594,10 @@ final class E2E {
         let d = rest.dropFirst().prefix { $0.isNumber }
         return d.isEmpty ? nil : String(d)
     }
-    /// THE BALANCE RIDES THE PRESENCE WORD (the author's words 04.10.2026 03:03 and 04:19 MSK: «the top is a tunnel, a live set as by
-    /// a web socket, the update instant from the nodes»; «on T2 135, and on T1 the top did not move at 04:19 -- it must, at the moment
+    /// THE BALANCE RIDES THE PRESENCE WORD (the author's words 04.10.2026 00:03 and 01:19 UTC: «the top is a tunnel, a live set as by
+    /// a web socket, the update instant from the nodes»; «on T2 135, and on T1 the top did not move at 01:19 -- it must, at the moment
     /// of the update»). The balance rode the word about oneself alone: said at its occasions, once in ten minutes at most, by the bell's
-    /// ramp -- T2's word of 04:21:06 reached T1 at 04:22:02. Every presence word now carries it, so the live channel hands it over at
+    /// ramp -- T2's word of 01:21:06 reached T1 at 01:22:02. Every presence word now carries it, so the live channel hands it over at
     /// once and the node keeps it as the pair's last word, which an open wallet asks for every few seconds (sweepPresence).
     /// The owner who hid the coins (MTCoinShow) says none: the word about oneself carries the withdrawal.
     static func coinTail() -> String {
@@ -621,7 +621,7 @@ final class E2E {
         guard let coins = coinsSaid(in: payload) else { return }
         Task { @MainActor in MTCoinBoard.shared.note(peer, coins: coins, at: at) }
     }
-    /// THE GLOBAL LEVEL RIDES AFTER THE BALANCE (the author's word 11.10.2026 21:2x MSK: «everywhere an avatar is shown, the balance
+    /// THE GLOBAL LEVEL RIDES AFTER THE BALANCE (the author's word 11.10.2026 18:2x UTC: «everywhere an avatar is shown, the balance
     /// on the left and the user's global level on the right»): «L» and the level, said only while its owner's switch is on
     /// (MTLevelShow) and only once this life knows both the person's seconds and the book -- an unknown level is not said as none.
     static func levelTail() -> String {
@@ -1329,9 +1329,9 @@ final class E2E {
     func notePeerSeen(_ peer: String) {
         DispatchQueue.main.async { self.store?.noteSeen(peer, at: MontanaWakePush.nodeNow(), by: "call") }
     }
-    func logCall(peer: String, video: Bool, incoming: Bool, durationSec: Int, missed: Bool, credit: MTCallCredit? = nil) {
+    func logCall(peer: String, video: Bool, incoming: Bool, durationSec: Int, missed: Bool, call: String? = nil) {
         DispatchQueue.main.async { [weak self] in
-            self?.store?.appendCallLog(peer: peer, video: video, incoming: incoming, dur: durationSec, missed: missed, credit: credit)
+            self?.store?.appendCallLog(peer: peer, video: video, incoming: incoming, dur: durationSec, missed: missed, call: call)
         }
     }
 
@@ -1583,7 +1583,7 @@ final class E2E {
         if wordsHeld { sendAboutByDraft(to: peer, bio: bio, link: link) }   // the builds 1919-1921 read only the draft word's keys
         // MY COIN KEY RIDES THE SAME WORD (COIN-TX-V3 section 1): a SEND of version 3 commits to the receiver's key, so a
         // correspondent learns mine -- a coin key's tag, never a name. THE KEY IS DERIVED FOR THE WORD, NEVER WAITED FOR (the
-        // author's word 21.10.2026 12:41 MSK: «on 2263 I still cannot send coins from T1 to Petros, it says the correspondent's
+        // author's word 21.10.2026 09:41 UTC: «on 2263 I still cannot send coins from T1 to Petros, it says the correspondent's
         // Montana has not told its key -- if there is a chat there is everything, and it must work at once»): the word took only
         // a key this process had already derived, so a phone whose person never opened the wallet told none -- T1's diary
         // 09:39:15Z refused for «no receiver key» while Petros's phone receipted T1's words within 4 s. A key not derived yet

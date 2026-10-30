@@ -115,7 +115,7 @@ struct MTTunnelRoad {
     }
 }
 
-/// THE TUNNEL'S LIVING SECONDS (the author's words 04.10.2026 17:13-17:24 MSK: «while the VPN tunnel is on and alive, the same auto
+/// THE TUNNEL'S LIVING SECONDS (the author's words 04.10.2026 14:13-14:24 UTC: «while the VPN tunnel is on and alive, the same auto
 /// minting as in the wallet -- alive it mints, not alive it does not, by the level each second»; «every minting's TimeChain stands
 /// by itself: sitting with the VPN is x1, minting with the VPN is x2»). The tunnel is the one witness of its own life, so it alone
 /// counts: the stretch from a judge that held it alive to the next judge counts, whatever that next judge says -- the life watch's

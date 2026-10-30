@@ -5,6 +5,11 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 
+[features]
+# A test of a crash fails the file operations of a writing at the count it arms. No build of a
+# machine carries it: it is enabled by the tests of the crates that need it and by nothing else.
+fault = []
+
 [dependencies]
 mt-codec = { workspace = true }
 mt-state = { workspace = true }

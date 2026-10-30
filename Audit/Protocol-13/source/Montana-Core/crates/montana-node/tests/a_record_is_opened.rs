@@ -23,6 +23,7 @@ fn a_new_record(window: u64, segment: u32) -> Vec<u8> {
     out.extend_from_slice(&segment.to_le_bytes());
     out.extend_from_slice(&window.to_le_bytes());
     out.extend_from_slice(&0u32.to_le_bytes());
+    out.extend_from_slice(&[0x55u8; 32]);
     out.extend_from_slice(&[0x11u8; 32]);
     out.extend_from_slice(&1u16.to_le_bytes());
     out.extend_from_slice(&[0x22u8; mt_codec::size::SIGNING_PUBLIC_KEY]);

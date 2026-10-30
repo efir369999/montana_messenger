@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Money Flow of a chat (iOS MTMoneyFlow, flipMark, MTMoneyFlowRow, MTMoneyFlowBegins; Localizable.xcstrings en). -->
+<resources>
+    <string name="mf_title">Money Flow</string>
+    <string name="mf_begun">Money flow has begun</string>
+    <string name="mf_begun_sub">Every letter mints a coin</string>
+</resources>

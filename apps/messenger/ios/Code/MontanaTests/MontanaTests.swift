@@ -61,8 +61,8 @@ final class MontanaTests: XCTestCase {
         XCTAssertNotEqual(fp, MTPipe.fingerprint(secret: s2), "a swapped secret changes the number")
         XCTAssertNil(MTPipe.fingerprint(secret: Data(repeating: 0x41, count: 31)))
         // The number read off the kept material is the number read off the secret, for both secrets.
-        XCTAssertEqual(MTPipe.fingerprint(material: MTPipeKept.of(s1).fingerprint), fp)
-        XCTAssertEqual(MTPipe.fingerprint(material: MTPipeKept.of(s2).fingerprint), MTPipe.fingerprint(secret: s2))
+        XCTAssertEqual(MTPipe.fingerprint(material: MTPipeKey(s1).kept().fingerprint), fp)
+        XCTAssertEqual(MTPipe.fingerprint(material: MTPipeKey(s2).kept().fingerprint), MTPipe.fingerprint(secret: s2))
     }
 
     // A letter does not name its sender: the envelope holds only its own number and the text,
@@ -75,7 +75,7 @@ final class MontanaTests: XCTestCase {
         let secret = Data(repeating: 0x5A, count: 32)
         let mid = "abc123", text = "hello"
         var body = Data(mid.utf8); body.append(0); body.append(contentsOf: text.utf8)
-        let sealed = try XCTUnwrap(MTPipe.sealBody(body, sharedSecret: secret))
+        let sealed = try XCTUnwrap(MTPipe.sealBody(body, sharedSecret: MTPipeKey(secret)))
         let tag = Data(repeating: 0x7E, count: MontanaPhoneNode.letterTagBytes)
 
         var env = Data([MontanaPhoneNode.letterFrame]); env.append(tag); env.append(sealed)
@@ -83,13 +83,13 @@ final class MontanaTests: XCTestCase {
         XCTAssertEqual(parsed.tag, tag, "the window tag passes the wire byte for byte")
         XCTAssertEqual(parsed.sealed, sealed, "the body passes the wire byte for byte")
 
-        let opened = try XCTUnwrap(MontanaPhoneNode.openBody(parsed.sealed, secret: secret))
+        let opened = try XCTUnwrap(MontanaPhoneNode.openBody(parsed.sealed, secret: MTPipeKey(secret)))
         XCTAssertEqual(opened.mid, mid)
         XCTAssertEqual(opened.text, text)
 
         XCTAssertNil(env.range(of: Data(mid.utf8)), "the letter id is not in the envelope")
         XCTAssertNil(env.range(of: Data(text.utf8)), "the text is not in the envelope")
-        XCTAssertNil(MontanaPhoneNode.openBody(parsed.sealed, secret: Data(repeating: 0x5B, count: 32)),
+        XCTAssertNil(MontanaPhoneNode.openBody(parsed.sealed, secret: MTPipeKey(Data(repeating: 0x5B, count: 32))),
                      "the body does not open with a stranger's secret")
 
         var blob = Data([0x00]); blob.append(contentsOf: "id".utf8)
@@ -145,24 +145,25 @@ final class MontanaTests: XCTestCase {
     func testPipeReferenceIsOfTheSecretAndNotOfARef() throws {
         let a = Data(repeating: 0x21, count: 32)
         let b = Data(repeating: 0x22, count: 32)
-        let ra = try XCTUnwrap(MTPipeBook.reference(of: a))
-        XCTAssertEqual(ra, MTPipeBook.reference(of: a), "the same secret files under the same name")
-        XCTAssertNotEqual(ra, MTPipeBook.reference(of: b), "two correspondences do not share a name")
+        let ra = try XCTUnwrap(MTPipeKey(a).reference)
+        XCTAssertEqual(ra, MTPipeKey(a).reference, "the same secret files under the same name")
+        XCTAssertNotEqual(ra, MTPipeKey(b).reference, "two correspondences do not share a name")
         XCTAssertEqual(ra.count, 32, "sixteen bytes in hex")
-        XCTAssertNil(MTPipeBook.reference(of: Data(repeating: 0x21, count: 31)), "a short secret is refused")
+        XCTAssertNil(MTPipeKey(Data(repeating: 0x21, count: 31)).reference, "a short secret is refused")
     }
 
     func testKeptDerivativesAreTheOwnerFormulas() {
-        // Thirty-two distinct bytes: a record built over a reversed or truncated secret fails every line.
+        // Thirty-two distinct bytes: a record built over a reversed or truncated secret fails every line. The values are
+        // computed by python hashlib and hmac apart from this tree (tools/mt-pipe-owner-check.py holds the same oracle).
         let secret = Data((0..<32).map { UInt8($0) })
-        let kept = MTPipeKept.of(secret)
-        XCTAssertEqual(kept.root, MTNodeWire.convRoot(secret))
+        let kept = MTPipeKey(secret).kept()
+        XCTAssertEqual(kept.root.montanaHexString, "d9c3e7f533da2d0ed10b6729601c478ab29d1b0cafed60443113ee6a63824e11")
         XCTAssertEqual(kept.fingerprint, MTPipe.fingerprintMaterial(secret))
-        XCTAssertEqual(kept.faceBid, MontanaFirstContact.pipeFaceBid(secret))
-        XCTAssertEqual(kept.faceKey, MontanaFirstContact.pipeFaceKey(secret))
-        XCTAssertEqual(kept.pair, MTCoinTx.pairTag(secret: secret))
-        XCTAssertEqual(kept.ref, MTPipeBook.reference(of: secret))
-        XCTAssertNotEqual(kept, MTPipeKept.of(Data(secret.reversed())))
+        XCTAssertEqual(kept.faceBid, "cbcc3fb667e739f6787aafba0f00e233642b9b0dfeba9f00a0c572588a8afb12")
+        XCTAssertEqual(kept.faceKey.montanaHexString, "0e092e31844c94bfbd6e28fd41126c1be4515bc5ee9c60ebc7a5b232da51842a")
+        XCTAssertEqual(kept.pair.montanaHexString, "8e1d2e90a6f5d72fd89f56f2a8a8a8f801608689990466545a4d0e8d62fa586f")
+        XCTAssertEqual(kept.ref, "630dcd2966c4336691125448bbb25b4f")
+        XCTAssertNotEqual(kept, MTPipeKey(Data(secret.reversed())).kept())
     }
 
     // A letter is recognised by the tag of its pipe, and the correspondence is read off the match —
@@ -386,7 +387,7 @@ final class MontanaMeetBookTests: XCTestCase {
         let b = try XCTUnwrap(MontanaFirstContact.contactPair(masterSeed: master, slot: Data([2])))
 
         let started = try XCTUnwrap(MontanaFirstContact.begin(toward: a.root), "the scanner writes to card A")
-        let sealed = try XCTUnwrap(MTPipe.sealBody(Data("mid\u{0}hello".utf8), sharedSecret: started.secret))
+        let sealed = try XCTUnwrap(MTPipe.sealBody(Data("mid\u{0}hello".utf8), sharedSecret: MTPipeKey(started.secret)))
 
         // Card B «opens» the stranger's letter — that is the disease…
         let garbage = MontanaFirstContact.accept(ciphertext: started.ciphertext,
@@ -394,14 +395,14 @@ final class MontanaMeetBookTests: XCTestCase {
         XCTAssertNotNil(garbage, "implicit rejection: decryption with a wrong key does NOT refuse — the disease's premise")
         XCTAssertNotEqual(garbage, started.secret, "…but the secret is garbage nobody holds")
         // …and the seal rejects garbage: proof instead of trusting decryption.
-        XCTAssertNil(MTPipe.openBody(sealed, sharedSecret: try XCTUnwrap(garbage)),
+        XCTAssertNil(MTPipe.openBody(sealed, sharedSecret: MTPipeKey(try XCTUnwrap(garbage))),
                      "the body seal does not open with the garbage secret — a phantom is impossible")
 
         // One's own card A opens both the secret and the seal.
         let real = try XCTUnwrap(MontanaFirstContact.accept(ciphertext: started.ciphertext,
                                                             contactSecret: a.secret, contactRoot: a.root))
         XCTAssertEqual(real, started.secret, "one's own card arrives at the same secret")
-        XCTAssertNotNil(MTPipe.openBody(sealed, sharedSecret: real), "and the seal opens")
+        XCTAssertNotNil(MTPipe.openBody(sealed, sharedSecret: MTPipeKey(real)), "and the seal opens")
     }
 
     // A pipe's death sweeps the book without touching other records.

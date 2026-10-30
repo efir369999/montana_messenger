@@ -1,7 +1,7 @@
 //  MTGroupRoom.swift -- a group's live room: a voice or video chat of up to 13 people, and a stream.
 //
-//  THE AUTHOR'S WORDS 07.10.2026 MSK. 00:2x: "groups up to 130 people and audio and video calls in a group with up to 13 connected
-//  at once ... and add streaming so one can connect to stream rooms". 00:3x: "a tap on the phone in a group chooses the kind of call,
+//  THE AUTHOR'S WORDS 06.10.2026 UTC. 21:2x: "groups up to 130 people and audio and video calls in a group with up to 13 connected
+//  at once ... and add streaming so one can connect to stream rooms". 21:3x: "a tap on the phone in a group chooses the kind of call,
 //  then whom of the group to invite by a link to the group call, not by the call itself; the link opens the way into the room;
 //  everyone has a picture of their own on the screen, even on audio; easy control of the groups and the calls, in our style, with
 //  the screen shown, and the control with the call's owner, who created it".
@@ -158,7 +158,7 @@ struct MTRoomTile: Identifiable, Equatable {
     var speaking: Bool
     var linked: Bool
     var owner: Bool
-    /// Invited and not in yet: the row says «calling» while the others talk (the author's word 18.10.2026 13:3x MSK: «show the dialing
+    /// Invited and not in yet: the row says «calling» while the others talk (the author's word 18.10.2026 10:3x UTC: «show the dialing
     /// status while the others go on talking»).
     var ringing = false
 }
@@ -359,7 +359,7 @@ final class MTRoomLive {
 /// Read and written on the main thread; WebRTC and the node hand their words over to it there.
 final class MTGroupRoom: NSObject, CXProviderDelegate {
     static let shared = MTGroupRoom()
-    /// [I-14] The most people in one room at once (the author's word 07.10.2026 00:2x MSK: "up to 13 connected at once").
+    /// [I-14] The most people in one room at once (the author's word 06.10.2026 21:2x UTC: "up to 13 connected at once").
     static let capacity = 13
     /// A room no word renewed for this long is gone from the bars: its people may have left without a word. A living room says so
     /// every ten minutes (here), so half an hour of silence is a room that died with nobody left to close it.
@@ -791,9 +791,9 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         guard let r = live else { return }
         MainActor.assumeIsolated {
             MTCallRecording.shared.finish(r.uuid)
-            if let credit = MTCallMint.finish(talkElapsed) {
+            if let talk = talkElapsed {
                 ChatStore.live?.appendCallLog(peer: r.chat, video: r.cameraOn || r.screen || r.pairs.values.contains { $0.camera },
-                    incoming: false, dur: talkElapsed?.seconds ?? 0, missed: false, credit: credit)
+                    incoming: false, dur: talk.seconds, missed: false, call: talk.call)
             }
         }
         MTCallAudioOwner.shared.release(r.uuid)
@@ -898,7 +898,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
 
     // -- a call of two grows into a room ---------------------------------------------------------
 
-    /// A CALL OF TWO GROWS INTO A ROOM (the author's words 17.10.2026 23:22 MSK: «add to the current call more people from the
+    /// A CALL OF TWO GROWS INTO A ROOM (the author's words 17.10.2026 20:22 UTC: «add to the current call more people from the
     /// user's contacts, up to 13 on a call», «from the call's page»). A room's words, keys and invitations ride a group's road, so
     /// the call is carried by a group this phone owns, born here of the peer and the people chosen -- each by the pipe this phone
     /// holds with them, as every group is (MTGroup.create): its people see it in their list, and nobody outside it learns who is
@@ -933,7 +933,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         }
         let others = g.members.map(\.seat).filter { $0 != seat }
         let video = MontanaCall.shared.isVideo ? !CallUIModel.shared.cameraOff : false
-        // THE ROOM IS MINTED BEFORE THE CALL SAYS IT MOVES (the author's word 18.10.2026 13:3x MSK: «adding to a call must not throw
+        // THE ROOM IS MINTED BEFORE THE CALL SAYS IT MOVES (the author's word 18.10.2026 10:3x UTC: «adding to a call must not throw
         // into a group and interrupt; it connects in the same call and shows the dialing while the others go on talking»). Measured
         // 18.10 10:19:49Z: the call of two ended at the tap, T2 sat alone in the room, and T1 heard the room by the group's road at
         // 10:25:21Z -- nobody met. Now the room's id, key, this phone's room key and moment ride to the peer with the group's
@@ -1302,7 +1302,6 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
             r.wasAlone = false
             if r.connectedAt == nil {
                 r.connectedAt = Date()
-                MainActor.assumeIsolated { MTCallMint.begin(talkElapsed); MTMintBeat.run() }
             }
             tune(p, r)
             tellState(to: p)
@@ -1515,7 +1514,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
                                         linked: p?.linked == true, owner: r.owner == seat))
             }
         }
-        // THE INVITED WHO ARE NOT IN YET stand under the people with «calling» (the author's word 18.10.2026 13:3x MSK: «show the
+        // THE INVITED WHO ARE NOT IN YET stand under the people with «calling» (the author's word 18.10.2026 10:3x UTC: «show the
         // dialing status while the others go on talking»), until they come in or two minutes pass unanswered.
         r.ringing = r.ringing.filter { e in r.people[e.key] == nil && Date().timeIntervalSince(e.value) < 120 }
         for seat in r.ringing.keys.sorted() {
@@ -2421,7 +2420,7 @@ struct MTRoomVideo: UIViewRepresentable {
     }
 }
 
-/// WHOM TO INVITE (the author's word 07.10.2026 00:3x MSK): the people of the group, everyone at one tap; the chosen get the room's
+/// WHOM TO INVITE (the author's word 06.10.2026 21:3x UTC): the people of the group, everyone at one tap; the chosen get the room's
 /// way in -- a banner and the bar over their chat -- and no phone rings.
 struct MTRoomInviteSheet: View {
     let chat: String
@@ -2502,7 +2501,7 @@ struct MTRoomInviteSheet: View {
     }
 }
 
-/// WHOM TO ADD TO THE CALL (the author's words 17.10.2026 23:22 MSK: «add to the current call more people from the user's contacts,
+/// WHOM TO ADD TO THE CALL (the author's words 17.10.2026 20:22 UTC: «add to the current call more people from the user's contacts,
 /// up to 13 on a call», «from the call's page»): the people this phone writes with, each by a tick -- the list a group is chosen
 /// from (MTGroupPickStep.reachable, MTPickRow), the peer left out. This phone and the peer are counted in: a row past the room's
 /// measure takes no tick. The tick at the top hands the people chosen over; the call grows once the sheet is gone (grow).
@@ -2617,7 +2616,7 @@ struct MTRoomBar: View {
     }
 }
 
-/// THE PHONE MARK OF A GROUP (the author's word 07.10.2026 00:3x MSK): a tap chooses the kind of call, then whom to invite; a room
+/// THE PHONE MARK OF A GROUP (the author's word 06.10.2026 21:3x UTC): a tap chooses the kind of call, then whom to invite; a room
 /// already living in the group is joined at once, its mark ringed.
 struct MTRoomMark: View {
     let chat: String

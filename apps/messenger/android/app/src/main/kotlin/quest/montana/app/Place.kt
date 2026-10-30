@@ -29,7 +29,7 @@ import java.util.Locale
  */
 object PlaceLetter {
     private const val PIN = "\uD83D\uDCCD"
-    private const val ROAD = "https://maps.apple.com/?ll="
+    const val ROAD = "https://maps.apple.com/?ll="
 
     class Place(val lat: Double, val lon: Double, val name: String?, val street: String?)
 

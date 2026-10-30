@@ -515,10 +515,8 @@ fn random_elements(count: usize) -> Result<Vec<F>, ProveError> {
     let mut block = vec![0u8; 8 * count.max(1)];
     while out.len() < count {
         getrandom::getrandom(&mut block).map_err(|_| ProveError::Randomness)?;
-        for eight in block.chunks_exact(8) {
-            let mut word = [0u8; 8];
-            word.copy_from_slice(eight);
-            if let Some(value) = F::try_from_u64(u64::from_le_bytes(word)) {
+        for eight in block.as_chunks::<8>().0 {
+            if let Some(value) = F::try_from_u64(u64::from_le_bytes(*eight)) {
                 out.push(value);
                 if out.len() == count {
                     break;
@@ -1380,7 +1378,8 @@ mod boundary_batching_tests {
 
     #[test]
     fn batching_matches_the_direct_quotients_at_every_coset_point() {
-        let shape = Shape::of_rows_log2(8).expect("a complete folding shape");
+        // The least height a shape stands at: below it the free block fills the trace.
+        let shape = Shape::of_rows_log2(10).expect("a complete folding shape");
         let public = [F::from_u64_reduced(17), F::from_u64_reduced(3)];
         let extended: Vec<Vec<F>> = (0..2)
             .map(|column| {

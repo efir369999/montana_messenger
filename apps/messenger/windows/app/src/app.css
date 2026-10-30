@@ -1,0 +1,217 @@
+/* iOS Montana 2251, the chats page (MontanaChatsList.swift, MTLibraryRow, ContentView.swift:471): always dark, a black
+   page, white names, gray previews and times, a blue unread capsule, the platform separator. */
+:root {
+  color-scheme: dark;
+  --page: #000000;
+  --white: #ffffff;
+  --gray: #8e8e93;               /* SwiftUI .gray */
+  --blue: #0a84ff;               /* SwiftUI Color.blue, dark */
+  --separator: rgba(84, 84, 88, 0.6); /* UIColor.separator, dark */
+  --search-fill: rgba(118, 118, 128, 0.24); /* UISearchBar .minimal field, dark */
+  --row: 72px; --face: 48px; --gap: 16px; --side: 16px;
+  font-family: -apple-system, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  color: var(--white);
+  background: var(--page);
+}
+/* THE INK FOLLOWS THE GROUND UNDER IT (iOS 2304 MTWallpaper.Ink, scheme, lightGrounds; the author's word 22.10 18:21: «white on the
+   dark, black on the light»): a place under a light ground -- the sky, the water, a light photo -- wears black words, every other
+   ground white ones; the nearest place that names its ink («data-ink») decides. A bubble, a plate and a sheet keep their own dark
+   (iOS 2304 MontanaBubble: the letter's column stays dark on any ground). */
+.glyph-mirror { display: inline-flex; transform: scaleX(-1); }   /* a glyph turned to face the other way (ForwardGlyph) */
+:root { --ink: #ffffff; --ink-2: rgba(235, 235, 245, 0.6); --event-ink: rgba(235, 235, 245, 0.75); }
+:root[data-ink="dark"], [data-ink="dark"] {
+  --ink: #ffffff; --ink-2: rgba(235, 235, 245, 0.6); --event-ink: rgba(235, 235, 245, 0.75); color-scheme: dark;
+  --glass: rgba(44, 44, 46, 0.92); --glass-rim: rgba(255, 255, 255, 0.18); --glass-field: rgba(255, 255, 255, 0.28);
+  --bar-glyph: rgb(204, 204, 204); --puck: rgba(255, 255, 255, 0.16); --search-fill: rgba(118, 118, 128, 0.24);
+  --separator: rgba(84, 84, 88, 0.6);
+}
+/* under a light ground the platform's light appearance: its materials light, its bar glyphs dark (iOS 2304: «every primary word,
+   bar and material turns to the platform's dark ink»); the bubbles keep their own plates */
+/* THE WHITE ICONS ARE THE DEFAULT (iOS MontanaOctagon.barGlyph, MTLibraryIconStyle.initial): with them every bar glyph is white; with
+   another style, the platform's grey (0.8) */
+:root[data-icons="white"]:not([data-ink="light"]), :root[data-icons="white"] [data-ink="dark"] { --bar-glyph: #ffffff; }
+:root[data-ink="light"], [data-ink="light"] {
+  --ink: #000000; --ink-2: rgba(60, 60, 67, 0.6); --event-ink: rgba(60, 60, 67, 0.85); color-scheme: light;
+  --glass: rgba(242, 242, 247, 0.92); --glass-rim: rgba(0, 0, 0, 0.12); --glass-field: rgba(0, 0, 0, 0.14);
+  --bar-glyph: rgb(60, 60, 67); --puck: rgba(0, 0, 0, 0.08); --search-fill: rgba(118, 118, 128, 0.12);
+  --separator: rgba(60, 60, 67, 0.29);
+}
+[data-ink] { color: var(--ink); }
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; background: var(--page); overflow: clip; }
+/* THE SCROLL INDICATOR (UIScrollView's, on a dark page): no track and no arrows -- a white capsule 3 wide at 35 %, 2 from the edge,
+   shown while the pointer is over what scrolls, as iOS shows it while the finger moves the page */
+::-webkit-scrollbar { width: 7px; height: 7px; background: transparent; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-thumb { border-radius: 4px; border: 2px solid transparent; background-color: transparent; background-clip: padding-box; }
+:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.35); }
+.split { display: grid; grid-template-columns: minmax(320px, 380px) 1fr; height: 100%; }
+.list { display: flex; flex-direction: column; border-right: 0.5px solid var(--separator); min-width: 0; }
+.chat { background: transparent; }   /* my page's ground stands behind it (Ground.jsx) */
+
+/* THE TIME PANEL (MontanaShapes.swift 85-96, MontanaChatsList.swift 490-545; the plate's tone and rim after Android's
+   glassPlate: one tone, not see-through, by the word of 08.10.2026) */
+:root {
+  --bar-height: 60px;
+  --bar-glyph: rgb(204, 204, 204);         /* Color(white: 0.8) */
+  --glass: rgba(44, 44, 46, 0.92);
+  --glass-rim: rgba(255, 255, 255, 0.18);
+  --puck: rgba(255, 255, 255, 0.16);        /* MTBarPuck */
+  --green: #30d158; --red: #ff453a; --lamp-unknown: rgb(115, 115, 115);
+}
+.time-panel { padding: 4px 12px 2px; display: flex; justify-content: center; }
+/* the plate keeps 14 within its sides (montanaOctagonFace: .padding(.horizontal, 14)); folded it hugs the logo: 60 + 2 x 14 */
+.bar-plate {
+  position: relative; display: flex; width: 100%; height: var(--bar-height); border-radius: calc(var(--bar-height) / 2); padding: 0 14px;
+  background: var(--glass); border: 1px solid var(--glass-rim); transition: width 0.45s cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+.bar-plate.folded { width: calc(var(--bar-height) + 28px); }
+.bar-puck {
+  position: absolute; top: 6px; bottom: 6px; left: 0; border-radius: 999px; background: var(--puck);
+  transition: transform 0.2s ease-in-out, width 0.2s ease-in-out; pointer-events: none;
+}
+.bar-slot {
+  flex: 1 1 0; min-width: 0; display: grid; place-items: center; background: none; border: 0; padding: 0; cursor: pointer;
+  position: relative; transition: opacity 0.3s, flex-grow 0.45s;
+}
+.bar-plate.folded .bar-slot:not(.logo-slot) { flex-grow: 0; opacity: 0; pointer-events: none; overflow: hidden; }
+.glyph-box { position: relative; display: block; transition: transform 0.12s ease-out, opacity 0.12s ease-out; }
+.bar-slot:active .glyph-box { transform: scale(0.88); opacity: 0.7; }   /* MTBarGlyphStyle: pressed 0.88 at 0.7, eased out in 0.12 s */
+/* the platform's counter at the glyph's top-trailing corner, 10 out and 4 up (glyphBadge: overlay(.topTrailing).offset(10, -4)) */
+.count-badge {
+  position: absolute; right: -10px; top: -4px;
+  height: 20px; min-width: 20px; padding: 0 6px; border-radius: 10px; background: #ff3b30; color: #fff;
+  font-size: 13px; font-weight: 600; line-height: 20px; text-align: center; white-space: nowrap;
+}
+.logo-plate {   /* MTFeedGlyph(side: 36) on the round glass plate (MTGlassCirclePlate) */
+  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  background: var(--glass); border: 1px solid var(--glass-rim); position: relative;
+}
+.logo-plate img { width: 18px; height: 18px; object-fit: contain; }   /* the logo padded side/4 = 9 within the 36 plate */
+.page-body { flex: 1; }
+/* the first screen's face and its call sign link (iOS onboarding) */
+.ob-face { width: 96px; height: 96px; border-radius: 50%; border: 0; padding: 0; overflow: hidden; align-self: center; margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ob-face img { width: 100%; height: 100%; object-fit: cover; }
+.ob-link { align-self: center; border: 0; background: none; color: var(--blue); font: inherit; font-size: 15px; padding: 8px; cursor: pointer; }
+
+.search { padding: 10px var(--side) 6px; }
+.search input {
+  width: 100%; height: 36px; border: 0; border-radius: 10px; padding: 0 12px;
+  background: var(--search-fill); color: var(--white); font: inherit; font-size: 17px; outline: none;
+}
+.search input::placeholder { color: var(--gray); }
+
+.empty-chats { flex: 1; display: grid; place-items: center; }
+.empty-title { font-size: 20px; font-weight: 700; color: var(--white); } /* .title3.bold() */
+
+.core-failed { padding: 8px var(--side); font-size: 12px; color: #ff453a; border-top: 0.5px solid var(--separator); }
+
+.row { display: flex; align-items: center; height: var(--row); padding: 0 var(--side); gap: var(--gap); position: relative; }
+.row::after { content: ""; position: absolute; left: calc(var(--side) + var(--face) + var(--gap)); right: var(--side); bottom: 0; border-bottom: 0.5px solid var(--separator); }
+.face { width: var(--face); height: var(--face); border-radius: 50%; background: #000; border: 1px solid rgba(255, 255, 255, 0.45);
+        display: grid; place-items: center; color: var(--white); font-size: 20px; flex: none; }
+.words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.top, .bottom { display: flex; align-items: center; gap: 6px; }
+.name { font-size: 17px; font-weight: 600; line-height: 22px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.time { font-size: 14px; color: var(--gray); }
+.preview { font-size: 16px; line-height: 20px; color: var(--gray); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge { background: var(--blue); color: var(--white); font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 999px; }
+
+@media (max-width: 700px) {
+  .split { grid-template-columns: 1fr; }
+  .chat { display: none; }
+}
+
+/* THE ONBOARDING (MontanaSettings.swift 2380-2960): the burgundy ground until a background is chosen, white titles, gray
+   words, the doors -- capsules 52 high, at most 420 wide, the main act on the platform's blue glass (MTLoginDoorStyle) */
+:root { --platform-blue: #0a84ff; --orange: #ff9f0a; }
+.splash { height: 100%; background: #000; }
+/* the seat's move: the same black over the whole window, the app standing under it until the program starts again (App.jsx) */
+.splash.moving { position: fixed; inset: 0; z-index: 90; height: auto; }
+/* the window fell twice in a short while (main.jsx Fall): the black ground and the one button that draws it anew */
+.splash.fell { display: grid; place-items: center; padding: 0 16px; }
+.onboarding { position: relative; height: 100%; background-size: cover; background-position: center; color: #fff; overflow: auto; }
+.onboarding.grounded { position: relative; isolation: isolate; }
+.ob-ground { position: fixed; inset: 0; z-index: -1; }
+.ob-page { min-height: 100%; max-width: 560px; margin: 0 auto; padding: 24px 20px 28px; display: flex; flex-direction: column;
+           align-items: center; gap: 14px; text-align: center; position: relative; }
+.grow { flex: 1; }
+.door-icon { width: 120px; height: 120px; object-fit: contain; }
+.ob-title { margin: 22px 0 0; font-size: 28px; font-weight: 700; }
+.ob-sub { color: var(--gray); font-size: 17px; margin-top: -6px; }
+.ob-legal { color: var(--gray); font-size: 11px; padding: 0 12px; }
+.ob-legal a { color: rgba(255, 255, 255, 0.8); }
+.doors { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
+.door {
+  height: 52px; width: 100%; border-radius: 26px; border: 1px solid rgba(255, 255, 255, 0.35);
+  background: var(--glass); color: var(--ink); font: inherit; font-size: 17px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 18px; transition: transform 0.12s ease-out;
+}
+.door:active { transform: scale(0.97); }
+.door:disabled { opacity: 0.4; cursor: default; }
+.door-blue { background: color-mix(in srgb, var(--platform-blue) 28%, var(--glass)); }
+.door-logo { width: 24px; height: 24px; object-fit: contain; }
+.back { position: absolute; left: 12px; top: 14px; display: flex; align-items: center; gap: 2px; background: none; border: 0;
+        color: #fff; font: inherit; font-size: 17px; cursor: pointer; }
+.glow { width: 120px; height: 120px; display: grid; place-items: center; position: relative; }
+.glow::before { content: ""; position: absolute; inset: -90px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 60%); filter: blur(34px);
+  animation: glow 2.3s ease-in-out infinite alternate; }
+@keyframes glow { from { transform: scale(0.92); opacity: 0.6; } to { transform: scale(1.08); opacity: 1; } }
+.glow img { width: 66px; height: 66px; position: relative; filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.6)); }
+.ob-brand { font-size: 40px; font-weight: 700; }
+.ob-lead { color: var(--gray); font-size: 15px; padding: 0 20px; }
+.priv { display: flex; flex-direction: column; gap: 12px; text-align: left; align-self: center; }
+.priv-row { display: flex; gap: 12px; align-items: center; }
+.priv-a { font-size: 15px; font-weight: 600; }
+.priv-b { font-size: 13px; color: var(--gray); }
+.ob-h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.ob-text { color: var(--gray); font-size: 15px; white-space: pre-line; text-align: left; }
+.ob-caption { color: var(--gray); font-size: 12px; }
+.toggle-row { width: 100%; max-width: 420px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+              text-align: left; font-size: 15px; cursor: pointer; }
+.toggle-row input { appearance: none; width: 51px; height: 31px; border-radius: 16px; background: rgba(120, 120, 128, 0.32);
+                    position: relative; flex: none; cursor: pointer; transition: background 0.2s; }
+.toggle-row input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%;
+                           background: #fff; transition: transform 0.2s; }
+.toggle-row input:checked { background: #30d158; }
+.toggle-row input:checked::after { transform: translateX(20px); }
+.word-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; overflow: auto; }
+.word { display: flex; gap: 6px; padding: 7px; border-radius: 10px; background: var(--glass); border: 1px solid var(--glass-rim);
+        text-align: left; user-select: text; }
+.word-n { color: var(--gray); width: 26px; text-align: right; }
+.name-card { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
+.name-field, .recover-field { width: 100%; border-radius: 14px; border: 1px solid var(--glass-rim); background: var(--glass);
+                              color: var(--ink); font: inherit; font-size: 17px; padding: 12px; outline: none; }
+.recover-field { height: 130px; resize: none; }
+.problem { color: #ff453a; font-size: 13px; }
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: #fff;
+           animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.alert-shade, .sheet-shade { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: grid; place-items: center; }
+.alert { width: 270px; border-radius: 14px; background: rgba(44, 44, 46, 0.97); text-align: center; overflow: hidden; }
+.alert-title { padding: 18px 16px 2px; font-size: 17px; font-weight: 600; }
+.alert-text { padding: 2px 16px 16px; font-size: 13px; }
+.alert button { width: 100%; height: 44px; border: 0; border-top: 0.5px solid var(--separator); background: none;
+                color: var(--platform-blue); font: inherit; font-size: 17px; cursor: pointer; }
+.sheet { width: min(560px, 94vw); height: min(720px, 90vh); border-radius: 14px; background: #1c1c1e; overflow: hidden; }
+
+/* THE TERMS (MontanaTermsView): the platform's inset list, white rows on glass; the gate's «I agree» under it */
+.gate { height: 100%; background: #000; }
+.terms { height: 100%; display: flex; flex-direction: column; color: #fff; }
+.terms-title { text-align: center; font-size: 17px; font-weight: 600; padding: 14px; }
+.terms-list { flex: 1; overflow: auto; padding: 0 16px 16px; }
+.terms-head { color: var(--gray); font-size: 13px; text-transform: uppercase; padding: 18px 16px 6px; }
+.terms-group { border-radius: 10px; background: var(--glass); overflow: hidden; }
+.terms-row { padding: 11px 16px; font-size: 15px; border-bottom: 0.5px solid var(--separator); display: block; color: #fff; text-decoration: none; }
+.terms-row:last-child { border-bottom: 0; }
+.terms-row.link { color: #fff; }
+.terms-door { align-self: center; padding: 12px 20px; }
+
+/* WelcomeView: the logo and «Montana» */
+.welcome { height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+           font-size: 34px; font-weight: 700; color: #fff; }
+.welcome img { width: 96px; height: 96px; }
+

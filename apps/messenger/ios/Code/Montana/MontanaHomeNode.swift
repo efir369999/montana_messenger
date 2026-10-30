@@ -35,7 +35,7 @@ enum MontanaHomeNode {
         MontanaLocalVault.setString(hostKey, clean)
         MontanaTrace.mark("home_node", "host set=" + (clean.isEmpty ? "0" : "1"))
     }
-    /// THE NODE JOINS AT LEVEL 8 (MTLevelAccess.ownNode, the author's word 17.10.2026 18:1x MSK): the person's switch is kept for
+    /// THE NODE JOINS AT LEVEL 8 (MTLevelAccess.ownNode, the author's word 17.10.2026 15:1x UTC): the person's switch is kept for
     /// the day the level opens it, and the copies ride only then; taking one's own copy back asks no level (takeBack).
     static var on: Bool { UserDefaults.standard.bool(forKey: switchKey) && MTLevelAccess.opens(.ownNode) }
     static func setOn(_ v: Bool) { UserDefaults.standard.set(v, forKey: switchKey) }
@@ -594,7 +594,7 @@ extension MontanaBackup.Refusal {
 
 
 // ── THE FILES ON YOUR NODE ────────────────────────────────────────────────────────────────────────────────────────
-// The author's word 18.10.2026 20:1x MSK: «make my Lauterbourg node my personal storage for T1, so I clear the cache in the
+// The author's word 18.10.2026 17:1x UTC: «make my Lauterbourg node my personal storage for T1, so I clear the cache in the
 // app and it weighs nothing, and even after deleting the app I come back and load everything from my own node».
 //
 // Every file of this phone's media store is sealed by this phone under a key of its own, cut into the pieces the doors

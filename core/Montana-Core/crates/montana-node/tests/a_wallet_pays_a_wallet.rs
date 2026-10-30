@@ -63,7 +63,7 @@ fn a_wallet_pays_a_wallet_and_the_machine_learns_nothing_of_it() {
         .map(|at| state.path_of(at).expect("a position that was written"))
         .collect();
     let root = state.notes_root();
-    let admitted = mt_proof::admitted::empty_root();
+    let credited = mt_proof::credited::empty_root();
 
     let amount = 250_000_000u128;
     let payment = payer
@@ -75,7 +75,7 @@ fn a_wallet_pays_a_wallet_and_the_machine_learns_nothing_of_it() {
             &of_payer,
             &paths,
             &root,
-            &admitted,
+            &credited,
         )
         .expect("a payment of what the payer holds");
 

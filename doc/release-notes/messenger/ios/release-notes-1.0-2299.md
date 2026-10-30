@@ -11,4 +11,4 @@ Notable changes
 Security and anonymity
 ----------------------
 
-- The burn of a call waits on disk until the node accepts it, and the debt falls only by an accepted BURN; before the online cut of 26 October 00:00 MSK nothing is laid, since the node refuses a BURN until then.
+- The burn of a call waits on disk until the node accepts it, and the debt falls only by an accepted BURN; before the online cut of 25 October 21:00 UTC nothing is laid, since the node refuses a BURN until then.

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="coin_hint">按住硬币 9 秒开启自动铸币；音乐使自动铸币翻倍。</string>
+    <string name="coin_available">可用 %1$s</string>
+    <string name="coin_gathering">正在收集您的硬币</string>
+    <string name="coin_top_up">充值</string>
+    <string name="coin_analytics">分析</string>
+    <string name="coin_from_chats">来自聊天的硬币</string>
+    <string name="coin_from_chess">国际象棋的硬币</string>
+    <string name="coin_from_vpn_wall">VPN 墙的硬币</string>
+    <string name="coin_burned_n">燃烧的硬币</string>
+    <string name="coin_on_reactions">用于回应的硬币</string>
+    <plurals name="coin_second_rate">
+        <item quantity="other">1 秒 = %d 枚硬币</item>
+    </plurals>
+    <string name="coin_rate_now">当前铸币速度</string>
+    <string name="coin_rule_level">等级越高，铸币越多。在 Montana 播放音乐可使铸币翻倍。上方速度已包含这些加成。</string>
+    <string name="coin_rules_calls">通话与录制</string>
+    <string name="coin_rule_calls">录音或录像的语音和视频通话赚取金币；未录制的通话按相同当前费率销毁金币，从接通后每个完整秒开始计算。</string>
+    <string name="coin_rule_calls_each">每位参与者按自己设备上的录制情况单独计算。实际采集到声音后开始赚取金币；关闭录制或录制失败后，接下来的秒数改为销毁金币。</string>
+    <string name="coin_rule_calls_total">其他铸币不会减少通话收益。通话记录显示您的净额：正数表示赚取，负数表示销毁。等待接听和未接通话不收费。余额为零不会中断通话，也不会产生欠款。</string>
+    <string name="coin_rules_more">更多铸币方式</string>
+    <string name="coin_rule_tap">在“时间币”页面点击硬币即可铸币。每秒最多计入13次点击。连续点击一分钟后，游戏休息一分钟。</string>
+    <string name="coin_rule_hold">按住硬币9秒，或下拉“时间币”页面，即可自动铸币。离开页面或锁屏时停止。</string>
+    <string name="coin_rule_messages">发送和接收消息可按您的等级赚币。转账和通话记录不会作为消息重复铸币。</string>
+    <string name="coin_rule_groups">在群组和频道中，超过13个字符的文字消息可按您的等级赚币。</string>
+    <string name="coin_rule_vpn">有效的 VPN 连接按工作秒数赚币。</string>
+    <string name="coin_rules_games">游戏和转账</string>
+    <string name="coin_rule_chess">棋步按玩家等级增加奖金。胜者获得奖金；和棋时各自收回自己的份额。下注可选。</string>
+    <string name="coin_rule_timer">在“棋钟”中，对手思考时您会获得时间币。</string>
+    <string name="coin_rule_people">他人可以在聊天中向您转账，时间币从对方余额中扣除。</string>
+    <string name="coin_rules_money">关于金钱</string>
+    <string name="coin_rule_money">应用内不能用现金买卖或兑换时间币。所选货币金额仅根据您填写的收入估算。</string>
+    <string name="tc_level_pi">π 等级</string>
+    <string name="tc_wallet">钱包</string>
+    <string name="tc_wallet_footer">余额揭示 π：余额达到下一个数额（3、31、314……）时开启新等级。</string>
+    <string name="tc_talk">聊天与通话</string>
+    <string name="tc_talk_footer">您的聊天、通话和评论所铸造和燃烧的硬币之链，以及您留言墙帖子的链。</string>
+    <string name="tc_explorer">浏览器</string>
+    <string name="tc_explorer_footer">每笔转账都是节点上由发送者助记词签名的记录。浏览器从节点读取并核验其签名；钱包链中的转账链接会在浏览器中打开它。</string>
+    <string name="tc_observer">供观察者</string>
+    <string name="tc_vectors">冻结向量</string>
+    <string name="tc_observer_footer">每个链节都以 SHA-256 封印其编号、时刻、类型、数额、名称及前一链节的封印；个人等级为 bit_length(秒数) − 1（Canon）。分享出去的链可在任何地方逐节核验。</string>
+    <string name="tc_glevel">全局等级</string>
+    <string name="tc_glevel_footer">以下两个等级中较低的一个。</string>
+    <string name="tc_level">等级</string>
+    <string name="tc_time_online">在线时间</string>
+    <string name="tc_next_level">距下一等级</string>
+    <string name="tc_links">链节</string>
+    <string name="tc_person">个人</string>
+    <string name="tc_person_footer">当应用在您的任一设备上打开、且节点应答其硬币交换时计一秒：时间币打开时每隔几秒一次，应用其他部分则在每次交换时。以节点的时间为准，而非手机时钟。每一级的秒数是前一级的两倍。仅您可见，不对外公布。</string>
+</resources>

@@ -1,0 +1,112 @@
+{
+  "kind": "analytical examples; not observed product performance or privacy",
+  "constant_schedule": [
+    {
+      "interval_seconds": {
+        "fraction": "60",
+        "decimal": 60.0
+      },
+      "one_way_MiB_day": {
+        "fraction": "45/8",
+        "decimal": 5.625
+      },
+      "two_way_MiB_day": {
+        "fraction": "45/4",
+        "decimal": 11.25
+      }
+    },
+    {
+      "interval_seconds": {
+        "fraction": "10",
+        "decimal": 10.0
+      },
+      "one_way_MiB_day": {
+        "fraction": "135/4",
+        "decimal": 33.75
+      },
+      "two_way_MiB_day": {
+        "fraction": "135/2",
+        "decimal": 67.5
+      }
+    },
+    {
+      "interval_seconds": {
+        "fraction": "1",
+        "decimal": 1.0
+      },
+      "one_way_MiB_day": {
+        "fraction": "675/2",
+        "decimal": 337.5
+      },
+      "two_way_MiB_day": {
+        "fraction": "675",
+        "decimal": 675.0
+      }
+    },
+    {
+      "interval_seconds": {
+        "fraction": "1/10",
+        "decimal": 0.1
+      },
+      "one_way_MiB_day": {
+        "fraction": "3375",
+        "decimal": 3375.0
+      },
+      "two_way_MiB_day": {
+        "fraction": "6750",
+        "decimal": 6750.0
+      }
+    }
+  ],
+  "one_GiB_at_4096_bytes_per_second_seconds": {
+    "fraction": "262144",
+    "decimal": 262144.0
+  },
+  "one_GiB_at_4096_bytes_per_second_hours": {
+    "fraction": "16384/225",
+    "decimal": 72.81777777777778
+  },
+  "one_GiB_per_minute_bytes_per_second": {
+    "fraction": "268435456/15",
+    "decimal": 17895697.066666666
+  },
+  "one_GiB_per_minute_Mbit_per_second": {
+    "fraction": "33554432/234375",
+    "decimal": 143.16557653333334
+  },
+  "same_rate_GiB_per_day": {
+    "fraction": "1440",
+    "decimal": 1440.0
+  },
+  "same_rate_TiB_per_day": {
+    "fraction": "45/32",
+    "decimal": 1.40625
+  },
+  "uniform_example": {
+    "N": 10,
+    "r0": 0,
+    "r1": 5,
+    "early_departure_probability_r0": {
+      "fraction": "1/2",
+      "decimal": 0.5
+    },
+    "early_departure_probability_r1": {
+      "fraction": "0",
+      "decimal": 0.0
+    }
+  },
+  "additive_Poisson_example": {
+    "lambda_per_second": 1,
+    "s_per_second": 1,
+    "T_seconds": 120,
+    "TV_lower_bound": {
+      "fraction": "9/10",
+      "decimal": 0.9
+    },
+    "equal_prior_optimal_success_lower_bound": {
+      "fraction": "19/20",
+      "decimal": 0.95
+    },
+    "scope": "toy model only; no Montana parameter or measurement"
+  }
+}

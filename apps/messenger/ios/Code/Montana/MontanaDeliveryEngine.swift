@@ -82,7 +82,7 @@ final class MontanaDeliveryEngine {
     ///
     /// A CORRESPONDENT'S BIRTH STANDS NO FURTHER AHEAD THAN THIS PHONE'S CLOCK AND THE TOLERANCE (spec Stage 9 §Ordering, the note
     /// beside ChatStore.before: «clamp into [..., local receive time + tolerance]; own messages (multi-device echo) are not clamped»;
-    /// the tolerance is the stage's audit closure S9-F2: two minutes; the author's word 11.10.2026 20:1x MSK: «check the whole
+    /// the tolerance is the stage's audit closure S9-F2: two minutes; the author's word 11.10.2026 17:1x UTC: «check the whole
     /// architecture of the chats' time chains, so there are no holes by the constitution»). The name's millisecond is the
     /// sender's claim, and a claim of a far year stood under every later letter of the chat for good. A letter of my own other
     /// device keeps its own moment.
@@ -141,10 +141,10 @@ final class MontanaDeliveryEngine {
         MontanaTrace.mark("rx_own", mid: mid, "landed=\(landed ? 1 : 0) kind=\(kind) from=\(String(from.prefix(10)))")
     }
 
-    /// A DELETION IS AN EVENT OF THE SEED'S CHAIN (the critic B-4; the author's words 11.10.2026 20:1x MSK: «check the whole
-    /// architecture of the chats' time chains, so there are no holes by the constitution», 21:5x: «carry out all 13»). My other
+    /// A DELETION IS AN EVENT OF THE SEED'S CHAIN (the critic B-4; the author's words 11.10.2026 17:1x UTC: «check the whole
+    /// architecture of the chats' time chains, so there are no holes by the constitution», 18:5x: «carry out all 13»). My other
     /// device took a letter away for everyone, or the whole conversation, and its word reached here signed by these words
-    /// (MTNodeWire.authorHolds). Applied to nobody, the conversation stood on this phone after the other had erased it, and this
+    /// (MTPipeKey.authorHolds). Applied to nobody, the conversation stood on this phone after the other had erased it, and this
     /// phone's archive blocks were filed back there. The word walks the hand's own road here -- the plate's deleteLocally and
     /// deleteEverywhere for a letter, deleteChat's local steps and the dying pipe for the conversation -- and nothing is said to
     /// the correspondent again: the device that spoke already said it.
@@ -252,7 +252,7 @@ final class MontanaDeliveryEngine {
         // from the box answers, the mirror's copy does not.
         if !mirrored, !own, MTFabricRules.isLiveAct(text) { MTFabric.shared.heard(from) }
         let sid = "mid:\(mid)"
-        // THE PERSON'S OWN LETTER FROM ANOTHER OF THEIR DEVICES (MTNodeWire.authorHolds, 11.10.2026, No.62): a word the same
+        // THE PERSON'S OWN LETTER FROM ANOTHER OF THEIR DEVICES (MTPipeKey.authorHolds, 11.10.2026, No.62): a word the same
         // words wrote is mine, whichever device wrote it and whatever road brought it -- never the correspondent's name, face,
         // banner or receipt. A call's signal keeps its own road: the call machine hears its sibling there («answered elsewhere»).
         if own, !text.hasPrefix(callSignalMark) {
@@ -273,7 +273,7 @@ final class MontanaDeliveryEngine {
             return
         }
         // A copy of the same letter over another transport is not a second letter.
-        // THE COPY IS LOOKED FOR WHERE THE ROW STANDS (19.10.2026, T1 11:01 MSK on 2246): a pipe folded into its conversation
+        // THE COPY IS LOOKED FOR WHERE THE ROW STANDS (19.10.2026, T1 08:01 UTC on 2246): a pipe folded into its conversation
         // (MTSamePair) holds no rows of its own -- its letters land in the conversation, and the copy check that read the pipe
         // found nothing there; the person's own «hello» of 10.10, brought back by the twin mirror, stood twice under one name,
         // rang a banner with the person's own name and the feed died on the repeated identifier.
@@ -445,7 +445,7 @@ final class MontanaDeliveryEngine {
     // sixteen, and only then — every twenty.
     private let fastTries = 12                   // the bell's ramp (bellDue) — not a floor on the knock
     private let sparse: Double = 300             // the node holds the letter: only the receipt is awaited, once in five minutes
-    /// THE CARRIAGE OF A LETTER (the author's words 07.10.2026 18:4x MSK: «let it hang on my device as sent for at least 30 days
+    /// THE CARRIAGE OF A LETTER (the author's words 07.10.2026 15:4x UTC: «let it hang on my device as sent for at least 30 days
     /// locally if the node did not send at once»): this phone carries a letter thirty days, re-boxing it on the node (the box keeps a
     /// letter a day from its last ring) for a receiver that sleeps, is switched off or sits in a seat not in use.
     static let carryDays: Double = 30
@@ -1090,24 +1090,14 @@ final class MontanaDeliveryEngine {
                 // Without this, the chunks lay as a SECOND copy beside the sealed archive until
                 // the term itself passed.
                 dropChunks(of: letterText)
-                // A long letter is delivered — its blob on the store serves no one now (7.2b).
-                if MontanaWakePush.takeLongRef(mid) {
-                    let freed = MontanaWakePush.releaseLetter(mid)
-                    if !freed.isEmpty { Task { await MontanaWakePush.dropBids(freed) } }
-                }
-                // The letter is delivered — its chunks on the node serve no one now. ONLY the
-                // chunks no other living letter references are removed: one chunk carries
-                // twenty broadcasts, and an early teardown would break the late addressees
-                // exactly as it once did on the receiving side (stage 1). The sender keeps the
-                // reference count — the node is blind. A media receipt means an ASSEMBLED FILE
-                // (the assembly point sends it), so the cargo may leave the node: no one will
-                // come for it again.
-                let freed = MontanaWakePush.releaseLetter(mid)
-                if !freed.isEmpty { Task { await MontanaWakePush.dropBids(freed) } }
-                MontanaLog.event("DELIVERY ✓ mid=\(mid.prefix(8)) receipt — dequeued ms=\(ms ?? -1) tries=\(tries) freed=\(freed.count)")
+                // A RECEIPT IS ONE DEVICE, NOT THE PERSON (24.10.2026, the author's word: photos sat only in the Mac's chat, T1
+                // got none). The receipt said «freed, no one will come for it again» and removed the long letter's blob, the
+                // chunks and the box copy -- while the person's other device had not come yet. The cargo now lives the life
+                // every letter outside the queue lives: its chunks leave the node one box term later (sweepOrphanChunks), the
+                // box copy at the node's own term; only a funeral or a withdrawal takes them early.
+                _ = MontanaWakePush.takeLongRef(mid)
+                MontanaLog.event("DELIVERY ✓ mid=\(mid.prefix(8)) receipt — dequeued ms=\(ms ?? -1) tries=\(tries)")
                 MontanaTrace.mark("delivered", mid: mid, "ms=\(ms ?? -1) tries=\(tries)" + (by == "receipt" ? "" : " by=\(by)"))
-                // Delivered by the direct road — the node-box copy serves no one now (7.2c).
-                Task { await MontanaWakePush.boxDel([mid]) }
                 MTCompressResume.shared.cancel(letter: mid)
                 MTEncodeRegistry.shared.cancel(letter: mid)
             }
@@ -1386,11 +1376,8 @@ final class MontanaDeliveryEngine {
                     case .alive: continue
                     case .settled:
                         a.removeAll { $0.mid == f.mid }
-                        // Same tail as the receipt road ([C-1]): the delivered letter's chunks
-                        // and box copy are needed by nobody — without this they sat a week.
-                        let freed = MontanaWakePush.releaseLetter(f.mid)
-                        if !freed.isEmpty { Task { await MontanaWakePush.dropBids(freed) } }
-                        Task { await MontanaWakePush.boxDel([f.mid]) }
+                        // Same tail as the receipt road ([C-1]): one device's receipt is not the person's -- the chunks and
+                        // the box copy live out their term for the other devices (sweepOrphanChunks, the node's box term).
                         MontanaTrace.mark("queue_mirror", mid: f.mid, "row delivered — the raced-over item dequeued with its tail")
                     case .absent:
                         let freed = MontanaWakePush.releaseLetter(f.mid)
@@ -1572,7 +1559,7 @@ final class MontanaDeliveryEngine {
         }
         // A letter ends by its CARRIAGE only. Death by try-count killed a letter in ~2.5 minutes: a
         // receiver opening the app later had no way left to get it.
-        // A COIN LETTER HAS NO END (the author's words 07.10.2026 18:4x MSK: «online or in cold storage, what difference -- they
+        // A COIN LETTER HAS NO END (the author's words 07.10.2026 15:4x UTC: «online or in cold storage, what difference -- they
         // must leave»): its coins ride with it until the receiver's receipt, and no clock hands them back.
         if now - it.since > carry, MTCoinLetter.parse(it.text) == nil {
             a.remove(at: i); save(a)
@@ -1646,13 +1633,13 @@ final class MontanaDeliveryEngine {
         // for the next push forever. The pickup is one, rationed inside (8 s).
         if !isSilentLetter(text) { MontanaWakePush.fetchBoxKick() }
         // The three-hop truth (the author's rule 24.08): once the NODE holds the letter, one checkmark stands — for days if the
-        // receiver sleeps; that is not a failure. NO CLOCK PAINTS RED (the author's words 07.10.2026 18:4x MSK: «I don't want to
+        // receiver sleeps; that is not a failure. NO CLOCK PAINTS RED (the author's words 07.10.2026 15:4x UTC: «I don't want to
         // see an error if I in fact sent and the other one just did not read»). A letter the node has not taken keeps its clock
         // and keeps knocking for its whole carriage; red comes only with a word (MTRefusal) — real loss of the cargo still turns
         // red through the cargo check below. The ONE channel — the accelerator node (server model): the whole letter rides as an
         // E2E envelope inside the wake; node accepted (200) = handed over, the letter leaves the queue, the receiver's extension
         // stores it into the chat. Not 200 — retry within the letter's term.
-        guard let secret = MTPipeBook.secret(for: to) else {
+        guard let secret = MTPipeBook.key(for: to) else {
             MontanaLog.event("DELIVERY ✗ mid=\(m.prefix(8)) no pipe secret for \(to.prefix(10)) — dropped")
             a.remove(at: i); save(a)
             refuse(m, chat: chat, .noRoad)
@@ -1684,7 +1671,7 @@ final class MontanaDeliveryEngine {
                 let fct = MTPipeBook.first(for: to)
                 if let inv, let fct {
                     MontanaWakePush.wakeRdv(invite: inv, mid: m, text: text, ct: fct,
-                                            conf: MontanaFirstContact.firstConfirm(secret: secret, ct: fct)) { [weak self] code in
+                                            conf: MTPipeBook.firstConfirm(for: to, pipe: secret, ct: fct)) { [weak self] code in
                         // THE NODE'S WORD ON A FIRST LETTER REACHES THE QUEUE (07.10, T1 to a second account of the same phone): the
                         // doorbell boxes the letter under the card's key, and the node answers 200 the moment it is safe in the box --
                         // nineteen times in ten minutes the queue heard none of it. 200 is the node holding it: one checkmark, and

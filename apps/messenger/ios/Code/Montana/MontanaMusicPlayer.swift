@@ -212,7 +212,7 @@ struct MontanaScrubber: UIViewRepresentable {
     }
 }
 
-/// THE ONE SCRUBBER'S UIKIT BODY: A CONTROL THAT DRAWS NOTHING (the author's word 04.10.2026 12:30 MSK, «by constitution 0»; T1
+/// THE ONE SCRUBBER'S UIKIT BODY: A CONTROL THAT DRAWS NOTHING (the author's word 04.10.2026 09:30 UTC, «by constitution 0»; T1
 /// 04.10 09:08:08Z: at a cold start the main thread stood 4.0 s inside the first frame of the system slider -- UISlider's frame, UIKit,
 /// QuartzCore -- and the app stood frozen). Every host draws its own fill and asks this view for the finger alone: the system slider
 /// it was drew no track and no thumb on any of its four hosts, so a plain control takes the touch, holds a value from 0 to 1 and
@@ -496,7 +496,7 @@ struct MTPlayerHead: View {
                 }
                 nowPlaying
             }
-            // THE SOUND'S LINE (the author's word 16.10.2026 19:0x MSK: «under the big player, over the search and filter buttons, a
+            // THE SOUND'S LINE (the author's word 16.10.2026 16:0x UTC: «under the big player, over the search and filter buttons, a
             // thin horizontal floating volume scale with a tall tap area»): the system's own volume, no plate (MTVolumeLine).
             MTVolumeLine()
             head
@@ -568,7 +568,7 @@ struct MTPlayerHead: View {
         }
         .frame(height: 60)
     }
-    /// THE PLAYLIST THAT PLAYS, LEFT OF «BACK» (the author's word 16.10.2026 19:0x MSK: «in the big player, to the left of the back
+    /// THE PLAYLIST THAT PLAYS, LEFT OF «BACK» (the author's word 16.10.2026 16:0x UTC: «in the big player, to the left of the back
     /// button, a button that shows the current playlist, so it shows where it plays from, and one can manage it there»): always
     /// standing, the track's place beside the glyph when the queue holds it; the tap opens the queue's own page (MTQueuePage) --
     /// where it plays from, the track that plays in the middle, a tap plays, a swipe takes out, a drag moves. The music page centred
@@ -709,7 +709,7 @@ struct MTPlayerClockLine: View {
     }
 }
 
-/// THE SOUND'S LINE (the author's word 16.10.2026 19:0x MSK: «a thin horizontal floating volume scale with a tall tap area»): the
+/// THE SOUND'S LINE (the author's word 16.10.2026 16:0x UTC: «a thin horizontal floating volume scale with a tall tap area»): the
 /// system's own volume -- the platform's volume view, so the hardware buttons move it and the system's own volume plate does not
 /// cover the player while it stands -- drawn as a thin line between the quiet and the loud speaker, no plate under it. The whole
 /// line, 44 points tall, is the finger's: a touch anywhere on it sets the volume where it lands and a drag carries it.
@@ -731,7 +731,7 @@ struct MTVolumeSlider: UIViewRepresentable {
     func makeUIView(context: Context) -> MTVolumeLineView { MTVolumeLineView() }
     func updateUIView(_ v: MTVolumeLineView, context: Context) {}
 }
-/// THE LINE OWNS ITS HORIZONTAL (the author's word 18.10.2026 13:3x MSK: «on T2, trying to make the sound louder on the big player, it
+/// THE LINE OWNS ITS HORIZONTAL (the author's word 18.10.2026 10:3x UTC: «on T2, trying to make the sound louder on the big player, it
 /// turned the page -- before, everything worked»): the tabs' pan owns the page's centre and every other pan waits for it to fail
 /// (MTTabPan), and it gives way only over a view wearing the mark. The volume view's own slider wore it by nature; since the line
 /// took the finger itself (16.10) its drag was the tabs' -- a flat stroke on the line turned the pages. A slider is a horizontal by
@@ -784,7 +784,7 @@ final class MTVolumeLineView: UIView, MTHorizontalOwning {
     }
 }
 
-/// THE PLAYLIST THAT PLAYS AND WHERE IT PLAYS FROM (the author's word 16.10.2026 19:0x MSK: «a button that shows the current playlist,
+/// THE PLAYLIST THAT PLAYS AND WHERE IT PLAYS FROM (the author's word 16.10.2026 16:0x UTC: «a button that shows the current playlist,
 /// so it shows where it plays from, and one can manage it there»): the player's own queue (VoicePlayer.queue), its source named by
 /// what it holds -- one chat, the walls, the folders, the chats, or everything -- and the track that plays standing in the middle.
 /// A tap plays a track, a swipe takes it out, a drag in the reorder mode moves it: the queue's one owner is the player, the page
@@ -826,7 +826,7 @@ struct MTQueuePage: View {
                 ToolbarItem(placement: .cancellationAction) { MontanaCloseMark { montanaClose?() } }
                 ToolbarItemGroup(placement: .confirmationAction) {
                     MontanaBarMark(glyph: "music.note.list", label: "Show in playlist") { montanaClose?(); onPlace() }
-                    // THE ARROWS TURN THE ORDER, THE LINES MOVE BY HAND (the author's word 18.10.2026 13:3x MSK: «change the arrow button
+                    // THE ARROWS TURN THE ORDER, THE LINES MOVE BY HAND (the author's word 18.10.2026 10:3x UTC: «change the arrow button
                     // to the ordering icon, and to the left of it an arrow button that only turns the tracks' order over»).
                     MontanaBarMark(glyph: "arrow.up.arrow.down", label: "Reverse order") {
                         withAnimation { player.reverseQueue(); tracks = player.queue }
@@ -989,7 +989,7 @@ enum MTMusicArt {
 /// player's own head, in the room the plate leaves above it (MTPlayerHead.stage), and a tap folds it back. The track that plays:
 /// its own cover whole (MTTrackMeta.wholeCover), else the app's icon sending out its waves (MTCoverWaves) inside the stage.
 /// The separate full-screen page it replaces took 3065 ms to rise on T1 and, while it stood, drove the app from 1.6 to 2.6 GB
-/// with 551 memory warnings in 80 s (2047, 30.09 22:56-22:58 MSK).
+/// with 551 memory warnings in 80 s (2047, 30.09 19:56-19:58 UTC).
 struct MTCoverStage: View {
     let file: String
     let onClose: () -> Void
@@ -1221,7 +1221,7 @@ struct MontanaPlayerBar: View {
                             onGoToMessage: { m in onGoTo(m.chat, m.file) }, leave: { MTPlayerUnfold.shared.set(false) },
                             coverRoom: MTScene.size().height / 3, onTitle: { MTPlayerUnfold.shared.set(false) })
             .padding(.horizontal, MTPlayerHead.edge).padding(.vertical, MTPlayerHead.gap)
-            // THE PAGE UNDER THE PLAYER TAKES NO FINGER (the author's word 16.10.2026 19:0x MSK: «check that a press on the big player
+            // THE PAGE UNDER THE PLAYER TAKES NO FINGER (the author's word 16.10.2026 16:0x UTC: «check that a press on the big player
             // does not press the page»): the head is plates and round buttons with air between them, and the air let a touch fall
             // through the hosted tree to the row under it -- the row lit and opened. The head's whole frame, its room included, is
             // the player's: a tap between the plates is the player's and does nothing, a drag there scrolls nothing under it.
@@ -1842,7 +1842,7 @@ struct MusicTabView: View {
     var query = ""
     var reserve: CGFloat = 0   // the floating player's room at the rows' bottom (MontanaChatsList.playerReserve)
     @State private var pickFolder = false
-    /// YOUTUBE UNDER THE PERSON'S OWN TRACKS (the author's words 17.10.2026 16:3x-16:4x MSK: «from the big player's search, find
+    /// YOUTUBE UNDER THE PERSON'S OWN TRACKS (the author's words 17.10.2026 13:3x-13:4x UTC: «from the big player's search, find
     /// the music natively through our bot»; «search YouTube's music at once»): the words, once they settle, are asked of our
     /// service (MTYouTube.search), and what it found stands under the page's own rows -- for the words it was found for alone.
     @State private var tube: [MTYouTube.Found] = []

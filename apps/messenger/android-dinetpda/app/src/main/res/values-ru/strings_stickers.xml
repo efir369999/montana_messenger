@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stickers">Стикеры</string>
+    <string name="stickers_empty">Здесь появятся ваши стикеры. Сделайте стикер из фото кнопкой +</string>
+    <string name="sticker_make">Сделать стикер</string>
+    <string name="sticker_delete_q">Удалить этот стикер?</string>
+</resources>

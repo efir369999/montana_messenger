@@ -14,19 +14,12 @@ import CryptoKit
 /// hash, and two implementations that disagree here do not share a network.
 enum MTPipe {
     /// The one composition of the set: `SHA-256(domain || 0x00 || parts…)`. Every label of this tree
-    /// is built here and nowhere else — a second place writing the same shape drifts the day one of
-    /// them is corrected, and two labels that differ by a byte are two protocols.
-    static func domained(_ domain: String, _ parts: [Data]) -> Data {
-        var m = Data(domain.utf8)
-        m.append(0x00)
-        for p in parts { m.append(p) }
-        return Data(SHA256.hash(data: m))
-    }
+    /// is built by it and by nothing else — a second place writing the same shape drifts the day one of
+    /// them is corrected, and two labels that differ by a byte are two protocols. It stands in
+    /// MTNodeWire, compiled into the extensions too, so the pipe's one owner (MTPipeKey) builds by it.
+    static func domained(_ domain: String, _ parts: [Data]) -> Data { MTNodeWire.domained(domain, parts) }
 
-    static func windowLE(_ w: UInt64) -> Data {
-        var v = w.littleEndian
-        return withUnsafeBytes(of: &v) { Data($0) }
-    }
+    static func windowLE(_ w: UInt64) -> Data { MTNodeWire.windowLE(w) }
 
     /// The length of one window, and the only place it is stated. A label, a rendezvous and an
     /// announce all count time by this number: two of them holding their own copy is how one of
@@ -43,10 +36,9 @@ enum MTPipe {
 
     static func windows(at: Date = Date()) -> [UInt64] { windows(around: window(at)) }
 
-    /// The tag of a pipe: where a letter is deposited in this window, and nowhere else.
-    static func tag(sharedSecret: Data, window: UInt64) -> Data {
-        domained("mt-tag", [sharedSecret, windowLE(window)]).prefix(16)
-    }
+    /// The tag of a secret two hold: where a letter is deposited in this window, and nowhere else. A pipe's own tag is asked of
+    /// its owner (MTPipeKey.tag); this one takes the channel secret two machines established (MontanaRendezvous).
+    static func tag(sharedSecret: Data, window: UInt64) -> Data { MTNodeWire.tag(sharedSecret: sharedSecret, window: window) }
 
     /// The label of one step, from the secret two neighbouring machines share.
     static func stepLabel(handshakeSecret: Data, window: UInt64) -> Data {
@@ -61,21 +53,18 @@ enum MTPipe {
     ///
     /// Exactly two hold it, so a Poly1305 seal under it IS proof of the sender, and a signature beside
     /// it is unnecessary: a signature would put a permanent public key onto the wire -- exactly the
-    /// value the set abolishes.
-    static func bodyKey(sharedSecret: Data, window: UInt64) -> Data {
-        Data(MTNodeWire.bodyKey(secret: sharedSecret, window: window))   // the one owner of the recipe
-    }
+    /// value the set abolishes. The key of a minute is the pipe owner's to derive (MTPipeKey.bodyKey).
 
     /// Seal a letter body with the pipe key. The core draws the nonce and lays it before the ciphertext.
-    static func sealBody(_ body: Data, sharedSecret: Data, window w: UInt64 = window()) -> Data? {
-        MontanaDirect.seal(key: [UInt8](bodyKey(sharedSecret: sharedSecret, window: w)), body)
+    static func sealBody(_ body: Data, sharedSecret: MTPipeKey, window w: UInt64 = window()) -> Data? {
+        MontanaDirect.seal(key: sharedSecret.bodyKey(window: w), body)
     }
 
     /// Open a letter body. The accepted windows are the same as for the label: clocks drift, and a
     /// letter sealed on a minute boundary must open for the one whose minute has already turned.
-    static func openBody(_ sealed: Data, sharedSecret: Data, at: Date = Date()) -> Data? {
+    static func openBody(_ sealed: Data, sharedSecret: MTPipeKey, at: Date = Date()) -> Data? {
         for w in windows(at: at) {
-            if let p = MontanaDirect.open(key: [UInt8](bodyKey(sharedSecret: sharedSecret, window: w)), sealed) {
+            if let p = MontanaDirect.open(key: sharedSecret.bodyKey(window: w), sealed) {
                 return p
             }
         }
@@ -84,7 +73,7 @@ enum MTPipe {
 
     /// A letter read from the node box: the node names the minute it took the letter, the seal
     /// wears the sender's minute — the walk goes back from the node's (MTNodeWire, the one owner).
-    static func openBoxed(_ sealed: Data, sharedSecret: Data, at: UInt64) -> (plain: Data, back: Int)? {
+    static func openBoxed(_ sealed: Data, sharedSecret: MTPipeKey, at: UInt64) -> (plain: Data, back: Int)? {
         MTNodeWire.openBoxed(sealed, secret: sharedSecret, at: at)
     }
 
@@ -124,16 +113,13 @@ enum MTPipe {
     /// stranger in the middle would have had to replace exactly this value, and the number changes
     /// the moment they do. Named rather than smoothed: the set derives it from an identity key,
     /// and that difference is written down in the internal audit.
-    static let fingerprintIterations = 5200
+    static var fingerprintIterations: Int { MTNodeWire.fingerprintIterations }
 
     /// The hash the thirty digits are read from, all thirty-two bytes of it (Canon, «The fingerprint compared out of band»: h after
     /// fingerprint_iterations). It is also what a testimony of a call names its addressee by (Canon, «The testimony of a call»;
-    /// MTFabric), so the number and the testimony stand on one derivation, never two.
-    static func fingerprintMaterial(_ key: Data) -> Data {
-        var h = key
-        for _ in 0 ..< fingerprintIterations { h = domained("mt-safety", [h]) }
-        return h
-    }
+    /// MTFabric), so the number and the testimony stand on one derivation, never two -- MTNodeWire's, which the pipe's owner
+    /// keeps a correspondence's material by (MTPipeKey.kept).
+    static func fingerprintMaterial(_ key: Data) -> Data { MTNodeWire.fingerprintMaterial(key) }
 
     static func fingerprint(secret: Data) -> String? {
         guard secret.count == 32 else { return nil }
@@ -192,50 +178,11 @@ enum MTPipe {
         // (de05839d...). The values are derived from the set formula apart from this code, not read off it.
         let bodySecret = Data((0..<32).map { UInt8($0) })
         guard Data(MTNodeWire.sealKey(stepSecret: bodySecret, window: 0x0102030405060708)).montanaHexString
-                  == "e55fbc1e0f95c4fe012b476c4dd1a51c9455e24641248f4f1557ed57f8c14f35",
-              bodyKey(sharedSecret: bodySecret, window: 1000).montanaHexString
-                  == "e25542e65a84d1a5b5c72a13172ecb62319c18f21a59978a53e7dac2c22a966a" else { return false }
+                  == "e55fbc1e0f95c4fe012b476c4dd1a51c9455e24641248f4f1557ed57f8c14f35" else { return false }
 
-        // The walk of the pipe secret by the day. The anchor day itself is the established secret (the earlier builds meet
-        // there), the next two are one and two steps down. What it rejects is named: an implementation that never steps
-        // (the key of the anchor's secret, a656c407...), one stepping once whatever the distance (1110b376...), one stepping
-        // by the day's number rather than its distance from the anchor (a walk of twenty thousand), and one without the domain
-        // (630dcd29...). The values are derived from the formula in Python apart from this code.
-        let a = MTNodeWire.walkAnchorDay
-        guard MTNodeWire.pipeSecret(bodySecret, day: a) == bodySecret,
-              MTNodeWire.pipeSecret(bodySecret, day: a + 1).montanaHexString
-                  == "5dcfd87692fcd444a4344d756dfa37abe670d2eb252aa9b402646be97cf3c50a",
-              MTNodeWire.pipeSecret(bodySecret, day: a + 2).montanaHexString
-                  == "0c31775e80ae463de61fecee68bee8bb4ebbcee8e6b2045f8714e93ef18cb1b0",
-              bodyKey(sharedSecret: bodySecret, window: (a + 2) * MTNodeWire.minutesPerDay).montanaHexString
-                  == "925378a4bb83e7137cbb1f8cdaba8b79fc37e30d3159e4158da6e0fee8518bb5",
-              MTNodeWire.convW(bodySecret, window: a) == "d29425fcf807a325b74d8bb017420cfe2250cc47e8bdc6351f6006cd4a6bdc9b",
-              MTNodeWire.convW(bodySecret, window: a + 2) == "c665fdca8978b9c6e54b9a4f16a06ccac657ba7da259df0a8f3e2550d7c2d518"
-        else { return false }
-
-        // The root of a conversation, what a coin SEND is blinded under past the anchor. It rejects a root without the zero
-        // separator (3be77415...) and one that takes the walk's domain (5dcfd876..., the walk's first step), and the anchor day
-        // still blinds under the established secret as the earlier builds do. Derived from the formula in Python apart from this code.
-        guard MTNodeWire.convRoot(bodySecret).montanaHexString == "d9c3e7f533da2d0ed10b6729601c478ab29d1b0cafed60443113ee6a63824e11",
-              MTNodeWire.itemKey(bodySecret, day: a) == bodySecret,
-              MTNodeWire.itemKey(bodySecret, day: a + 1) == MTNodeWire.convRoot(bodySecret),
-              MTNodeWire.itemKeys(bodySecret) == [MTNodeWire.convRoot(bodySecret), bodySecret]
-        else { return false }
-
-        // The author field of a letter stands on the same key: the root past the anchor, the established secret on the anchor
-        // day, and a reader holds both. It rejects a signer that keeps the established secret past the anchor and a reader
-        // that tries the root alone.
-        let person = Data(repeating: 0x33, count: 32)
-        let rootTag = MTNodeWire.authorTag(key: person, secret: MTNodeWire.convRoot(bodySecret), mid: "m", text: "t")
-        let anchorTag = MTNodeWire.authorTag(key: person, secret: bodySecret, mid: "m", text: "t")
-        guard rootTag.utf8.elementsEqual(anchorTag.utf8) == false,
-              MTNodeWire.withAuthor(Data(), key: person, secret: bodySecret, mid: "m", text: "t", day: a + 1)
-                == Data(count: 7) + Data(rootTag.utf8) + Data([0]),
-              MTNodeWire.withAuthor(Data(), key: person, secret: bodySecret, mid: "m", text: "t", day: a)
-                == Data(count: 7) + Data(anchorTag.utf8) + Data([0]),
-              MTNodeWire.authorHolds(rootTag, key: person, secret: bodySecret, mid: "m", text: "t"),
-              MTNodeWire.authorHolds(anchorTag, key: person, secret: bodySecret, mid: "m", text: "t")
-        else { return false }
+        // The body key of a minute, the walk of the pipe secret by the day, the root and the author field stand with the secret
+        // in its one owner, and so do their vectors (MTPipeKey.agreesWithCanon).
+        guard MTPipeKey.agreesWithCanon() else { return false }
 
         guard ownerRef(ownerSecret: owner, sharedSecret: shared).montanaHexString == "f4f72dafb742470e49defbd3c2326c27",
               ownerRef(ownerSecret: owner, sharedSecret: Data(repeating: 0x45, count: 32)).montanaHexString == "d24f63a8c1220ea9c176ec706b8a256f" else { return false }
@@ -249,25 +196,7 @@ enum MTPipe {
 }
 
 
-/// What a correspondence derives from its secret once and for good. Each field names its one owner formula; none walks with
-/// the day, so none may be read from the walked secret.
-struct MTPipeKept: Codable, Equatable {
-    let root: Data          // MTNodeWire.convRoot
-    let fingerprint: Data   // MTPipe.fingerprintMaterial: the safety number and a testimony's addressee
-    let faceBid: String     // MontanaFirstContact.pipeFaceBid
-    let faceKey: Data       // MontanaFirstContact.pipeFaceKey
-    let pair: Data          // MTCoinTx.pairTag(secret:)
-    let ref: String?        // MTPipeBook.reference(of:); absent from a record kept before it was born here
-
-    static func of(_ secret: Data) -> MTPipeKept {
-        MTPipeKept(root: MTNodeWire.convRoot(secret),
-                   fingerprint: MTPipe.fingerprintMaterial(secret),
-                   faceBid: MontanaFirstContact.pipeFaceBid(secret),
-                   faceKey: MontanaFirstContact.pipeFaceKey(secret),
-                   pair: MTCoinTx.pairTag(secret: secret),
-                   ref: MTPipeBook.reference(of: secret))
-    }
-}
+// What a correspondence derives from its secret once and for good (MTPipeKept) is made by the secret's one owner, MTPipeKey.
 
 
 /// The secret a correspondence stands on, kept where the tag that stands on it is computed.
@@ -278,64 +207,200 @@ struct MTPipeKept: Codable, Equatable {
 /// passed through a third machine is precisely the letter whose two ends hold no channel. It is
 /// not derived from an address either: an address is what leaves.
 ///
-/// One place, sealed at rest under the key of the device, and it never travels.
+/// One place, sealed at rest under the key of the device, and it never travels. The book holds each pipe as its one owner
+/// does (MTPipeKey) and hands out that value, never the bytes: what a pipe derives is asked of it (24.10.2026).
 enum MTPipeBook {
-    private static let key = "pipeSecrets"
-    private static var cache: [String: Data]?
+    private static let storeKey = "pipeSecrets"
+    private static var cache: [String: MTPipeKey]?
+    /// The UTC day the book in memory stands floored for (0 before the first read).
+    private static var cacheDay: UInt64 = 0
+    /// Whether the clock guard withheld the first floor at the last read: the next read asks it again (decision 188, #38).
+    private static var cacheHeld = false
+    /// When the vault last refused to seal the book (nil while the disk holds what memory holds). Memory keeps the floored copy
+    /// and hands it out floored; a later read seals it again, at most once a minute (a locked device must not flood the trace).
+    private static var cacheRefusedAt: Date?
 
     /// THE LOCK GUARDS MEMORY ONLY. The store — cipher, keychain, preferences, the diary — is
     /// read and written OUTSIDE it (14.09: the main thread stood 200 s on this lock in the chat's
     /// body while another thread held it inside the store; the screen froze whole). A slow store
     /// now slows one reader; nobody waits on a lock for I/O.
     private static let cacheLock = NSLock()
-    private static func load() -> [String: Data] {
+    private static func load() -> [String: MTPipeKey] {
+        let day = MTNodeWire.dayWindow()
         cacheLock.lock()
-        let hit = cache
+        let hit = cache, hitDay = cacheDay, hitHeld = cacheHeld
+        let retry = cacheRefusedAt.map { Date().timeIntervalSince($0) >= 60 } ?? false
         cacheLock.unlock()
-        if let hit { return hit }
+        if let hit {
+            if hitDay == day, !hitHeld, !retry { return hit }
+            // THE BOOK IN MEMORY WALKS WITH THE DAY (25.10.2026, decision 191): memory holds the book as floored for the day
+            // it is read on, as the disk does. A new day floors what memory holds before anyone reads it -- by the day the
+            // clock guard gives (decision 188, #38), asked again at every read while it withholds the first floor.
+            let fd = floorDay(for: hit)
+            let walked = hit.mapValues { $0.floored(day: fd) }
+            cacheLock.lock()
+            if cacheDay == hitDay { cache = walked; cacheDay = day; cacheHeld = fd < day }
+            cacheLock.unlock()
+            if walked != hit { floorStore(walked) } else if retry { store(walked) }   // a refused write is sealed again (#38, case 13)
+            if fd >= MTPipeKey.eraseDay { MontanaArchive.dropSecretHeads(day: fd) }   // after the floor heads, on the same queue
+            return walked
+        }
         // A decryption failure is NOT cached: a thread race at process start cached emptiness forever --
         // the whole pipe book "vanished", live letters fell with send_refused no_secret /
         // enqueue_drop no-pipe (22:10:30). Truly empty -- we re-read cheaply; empty from a fault --
         // the next attempt sees the truth.
         let t0 = Date()
-        guard let d = MontanaLocalVault.getDecrypted(key) else { return [:] }
-        let m = (try? JSONDecoder().decode([String: Data].self, from: d)) ?? [:]
+        guard let d = MontanaLocalVault.getDecrypted(storeKey) else { return [:] }
+        let raw = MTPipeKey.book(d, day: 0)   // as sealed, before the day's floor: the guard sees whether a key is floored
+        let fd = floorDay(for: raw)
+        let m = raw.mapValues { $0.floored(day: fd) }
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
         if ms > 500 { MontanaTrace.mark("pipes_read_slow", "ms=\(ms) main=\(Thread.isMainThread ? 1 : 0)") }
         cacheLock.lock()
-        if cache == nil { cache = m }   // the first reader publishes; a parallel reader's copy is the same book
+        let first = cache == nil
+        if first { cache = m; cacheDay = day; cacheHeld = fd < day }   // the first reader publishes; a parallel reader's copy is the same book
         let now = cache ?? m
         cacheLock.unlock()
+        // THE BOOK ERASES ITSELF BY THE DAY (OZ1, decision 126): the pipes were read floored (MTPipeKey.book); a vault that still
+        // holds more -- the established secret from 03.11.2026 UTC, a floor of an earlier day -- is sealed again as read, once,
+        // and the archive's head of each correspondence is written in the floor's form, so a restore by the words never meets
+        // the secret again. The index stays: a floor derives every tag of the days it keeps byte for byte.
+        if first, MTPipeKey.lags(d, day: fd) { floorStore(now) }
+        // the archive's old heads with the secret leave the folders' logs, once, after the floor heads above (the same queue)
+        if first, fd >= MTPipeKey.eraseDay { MontanaArchive.dropSecretHeads(day: fd) }
         return now
     }
 
-    private static func store(_ m: [String: Data]) {
+    private static func floorStore(_ m: [String: MTPipeKey]) {
+        store(m)
+        let refs = m.filter { conv, pipe in pipe.reference == conv }.keys
+        for conv in refs { MontanaArchive.writeHead(convRef: conv, legacy: []) }
+        MontanaTrace.mark("pipes_floored", "n=\(m.count) heads=\(refs.count)")
+    }
+
+    @discardableResult
+    private static func store(_ m: [String: MTPipeKey]) -> Bool {
         // The seal refused (the key is absent at this instant) -- the cache is NOT replaced: otherwise
         // the process would live with a book that is not on disk, and the next writer would immortalise emptiness.
-        guard let d = try? JSONEncoder().encode(m), MontanaLocalVault.setEncrypted(key, d) else {
+        let fd = floorDay(for: m)
+        guard let d = MTPipeKey.form(m, day: fd), MontanaLocalVault.setEncrypted(storeKey, d) else {
             MontanaTrace.mark("pipes_write_refused", "n=\(m.count)")
-            return
+            cacheLock.lock(); cacheRefusedAt = Date(); cacheLock.unlock()
+            return false
         }
-        cacheLock.lock(); cache = m; cacheLock.unlock()
+        // Memory holds what the disk holds: the book as floored on the day (a pipe born from eraseDay is floored at its birth,
+        // and the confirmation its first letter carries was kept beside the ciphertext before it -- rememberConfirm).
+        let day = MTNodeWire.dayWindow()
+        let held = m.mapValues { $0.floored(day: fd) }
+        cacheLock.lock(); cache = held; cacheDay = day; cacheHeld = fd < day; cacheRefusedAt = nil; cacheLock.unlock()
+        return true
+    }
+
+    // ── THE CLOCK GUARD OF THE FIRST FLOOR, SEALED BESIDE THE BOOK (decision 188, #38, 25.10.2026) ─────────────────────────────
+    // The rule is MTFloorGuard's (MTPipeKey.swift); here its state lives: M, H and Hc sealed under the device key beside the book,
+    // one of the seat's keys (SeedScope.seatKeys), never in the archive -- a restore by the words starts with none and takes c
+    // from the nodes. A record that does not open now is not replaced: the guard decides on a fresh state and writes nothing.
+    private static let guardKey = "pipeFloorGuard"
+    private static let guardLock = NSLock()   // LOCK-OK: the guard's state and this run's node day, in memory
+    private static var guardState: MTFloorGuard?
+    private static var heardDay: UInt64?        // the day of a node Date heard in this run (c of the run)
+    private static var heldTold: [UInt64]?      // d, c, left of this run's last floor_held
+    private static var floorDayNow: UInt64 = 0  // the day the book last floored by
+    /// The sealed record, read outside the lock; nil while it lies on the disk and does not open.
+    private static func guardRead() -> MTFloorGuard? {
+        guardLock.lock(); let hit = guardState; guardLock.unlock()
+        if let hit { return hit }
+        let g: MTFloorGuard
+        if UserDefaults.standard.data(forKey: guardKey) == nil {
+            g = MTFloorGuard()
+        } else {
+            guard let d = MontanaLocalVault.getDecrypted(guardKey),
+                  let read = try? JSONDecoder().decode(MTFloorGuard.self, from: d) else { return nil }
+            g = read
+        }
+        guardLock.lock()
+        if guardState == nil { guardState = g }
+        let now = guardState ?? g
+        guardLock.unlock()
+        return now
+    }
+    private static func guardWrite(_ g: MTFloorGuard) {
+        if let d = try? JSONEncoder().encode(g) { _ = MontanaLocalVault.setEncrypted(guardKey, d) }
+    }
+    /// A node's Date was heard (MontanaWakePush.learnSkew): it is the confirmed day of this run, and M rises to it.
+    static func heard(nodeDate: Date) {
+        let day = UInt64(max(0, nodeDate.timeIntervalSince1970)) / 86400
+        let read = guardRead()
+        guardLock.lock()
+        heardDay = max(heardDay ?? 0, day)
+        var g = guardState ?? read ?? MTFloorGuard()
+        let rose = g.heard(day)
+        if read != nil { guardState = g }
+        guardLock.unlock()
+        if rose, read != nil { guardWrite(g) }
+    }
+    /// The day a restore by the words floors the heads it reads by: the later of the device day and M (decision 188, E).
+    static func recoveryDay() -> UInt64 {
+        MTPipeKey.recoveryDay(device: MTNodeWire.dayWindow(), mark: guardRead()?.mark)
+    }
+    /// The day the book floors by now: the device day, or the day before eraseDay while the guard withholds the first floor.
+    /// The archive's heads and the extensions' mirror are written by it, as the book is.
+    static func floorDay() -> UInt64 {
+        _ = load()
+        guardLock.lock(); let fd = floorDayNow; guardLock.unlock()
+        return fd == 0 ? MTNodeWire.dayWindow() : fd
+    }
+    /// The guard asked for a book about to be floored: the day it floors by. A book with no pipe is not asked (the rule is
+    /// asked when the first pipe arrives, and H does not start on an empty book).
+    private static func floorDay(for book: [String: MTPipeKey]) -> UInt64 {
+        let d = MTNodeWire.dayWindow()
+        guard !book.isEmpty else {
+            guardLock.lock(); floorDayNow = d; guardLock.unlock()
+            return d
+        }
+        let floored = book.values.contains { $0.isFloored }
+        let read = guardRead()
+        guardLock.lock()
+        var g = guardState ?? read ?? MTFloorGuard()
+        let before = g, heard = heardDay
+        let v = g.decide(day: d, heard: heard, floored: floored)
+        let line = MTFloorGuard.line(v, day: d, confirmed: g.confirmed(heard: heard), told: &heldTold)
+        if read != nil { guardState = g }
+        let fd = MTFloorGuard.floorDay(v, day: d)
+        floorDayNow = fd
+        guardLock.unlock()
+        if g != before, read != nil { guardWrite(g) }
+        if let line { MontanaTrace.mark(line.0, line.1) }
+        return fd
     }
 
     /// Remember the secret a first letter established. Written once per correspondence: a second
     /// writing would mean two secrets for one pipe, and the two ends would compute two tags.
     /// The answer is explicit: a caller that cannot store the secret cannot send, and learning that
     /// at the moment of sending is how a letter goes missing without anyone being told.
-    @discardableResult
-    static func remember(_ secret: Data, for conv: String) -> Bool {
-        if secret.count != 32 || conv.isEmpty { return false }
+    private static func remember(_ secret: MTPipeKey, for conv: String) -> Bool {
+        if !secret.isWhole || conv.isEmpty { return false }
         guard MontanaDeviceKey.key != nil else { MontanaTrace.mark("pipes_read_locked", "remember"); return false }
         var m = load()
-        if let existing = m[conv] { return existing == secret }
+        // ONE PIPE MET AGAIN (decision 188, #37): from eraseDay the book holds the floor, and a card letter brings the whole secret
+        // again, an archive head a floor of another day. Two keys are one pipe only when both, walked to the later floor day,
+        // give the same whole floor (MTPipeKey.samePipe) -- never the reference alone. The store keeps the further floor; a whole
+        // secret met again is floored before the comparison and never written back.
+        if let existing = m[conv] {
+            guard existing.samePipe(secret) else { return false }
+            let keep = existing.further(secret)
+            if keep != existing { m[conv] = keep; store(m) }
+            return true
+        }
         m[conv] = secret
         store(m)
         dropIndex()
         return true
     }
 
-    static func secret(for conv: String) -> Data? { load()[conv] }
+    /// The pipe of a correspondence as its one owner holds it: a reference that answers what the pipe derives -- the key of a
+    /// minute, the label of a day, the tag of a window, an item's blind and author field -- and hands out no byte of the secret.
+    static func key(for conv: String) -> MTPipeKey? { load()[conv] }
 
     // -- what a correspondence keeps of its secret for good -------------------
     // THE PERMANENT DERIVATIVES ARE BORN WITH THE PIPE (22.10.2026, OZ 3 phase 2 step 1). The walk erases the established
@@ -380,8 +445,8 @@ enum MTPipeBook {
     static func kept(for conv: String) -> MTPipeKept? {
         let m = keptLoad()
         if let k = m?[conv], k.ref != nil { return k }
-        guard let s = secret(for: conv), s.count == 32 else { return m?[conv] }
-        let k = MTPipeKept.of(s)
+        guard let s = key(for: conv), s.isWhole else { return m?[conv] }
+        let k = s.kept()
         if var m, MontanaDeviceKey.key != nil { m[conv] = k; keptStore(m) }
         return k
     }
@@ -390,9 +455,9 @@ enum MTPipeBook {
     /// not one sealed write per pipe on the thread that asks.
     static func keepAll() {
         guard var m = keptLoad(), MontanaDeviceKey.key != nil else { return }
-        let lacking = load().filter { conv, s in s.count == 32 && m[conv]?.ref == nil }
+        let lacking = load().filter { conv, s in s.isWhole && m[conv]?.ref == nil }
         guard !lacking.isEmpty else { return }
-        for (conv, s) in lacking { m[conv] = MTPipeKept.of(s) }
+        for (conv, s) in lacking { m[conv] = s.kept() }
         keptStore(m)
     }
 
@@ -405,14 +470,15 @@ enum MTPipeBook {
     /// device key that SeedScope resets, so only the cache could have carried the previous
     /// person's pipes into the next person's book — and re-sealed them there on the first write.
     static func forgetAll() {
-        cacheLock.lock(); cache = nil; keptCache = nil; cacheLock.unlock()
+        cacheLock.lock(); cache = nil; keptCache = nil; cacheHeld = false; cacheLock.unlock()
+        guardLock.lock(); guardState = nil; heldTold = nil; floorDayNow = 0; guardLock.unlock()   // the guard is the seat's, as the book
         dropIndex()
     }
 
     /// A correspondence this device can answer for. It replaces the question the tree used to ask —
     /// «is this string a Montana address» — which asked about the shape of a public name instead of
     /// about possession, and which no string could ever satisfy. Reachability is proven, not named.
-    static func holds(_ conv: String) -> Bool { secret(for: conv) != nil }
+    static func holds(_ conv: String) -> Bool { key(for: conv) != nil }
 
     /// Every correspondence this device answers for. The list never leaves the device.
     static func all() -> [String] { Array(load().keys) }
@@ -540,19 +606,10 @@ enum MTPipeBook {
         return true
     }
 
-    /// The local name of a correspondence: what this device files a conversation under once an
-    /// address is no longer allowed to be that name.
-    ///
-    /// It is derived from the secret the two of them hold, so both devices of one person arrive at
-    /// the same one, and it NEVER leaves the device — nothing on the wire carries it, and no domain
-    /// of the set covers it, because the set has nothing to say about how a device files its own
-    /// papers. What matters is what it is not: it is not an address, it cannot be handed out, and a
-    /// stranger holding it learns nothing they could reach anyone with.
-    static func reference(of secret: Data) -> String? {
-        if secret.count != 32 { return nil }
-        // LOCAL-HASH-OK: a filing name inside one device, not a quantity of the protocol.
-        return Data(SHA256.hash(data: secret)).prefix(16).map { String(format: "%02x", $0) }.joined()
-    }
+    // The local name of a correspondence -- what this device files a conversation under once an address is no longer allowed
+    // to be that name -- is derived from the secret the two of them hold, so both devices of one person arrive at the same one,
+    // and it NEVER leaves the device (MTPipeKey.reference). It is not an address, it cannot be handed out, and a stranger
+    // holding it learns nothing they could reach anyone with.
 
     /// Establish a correspondence from the secret its first letter produced: the device files it
     /// under a name of its own making and answers for its tags from that moment.
@@ -564,10 +621,12 @@ enum MTPipeBook {
     /// secret is gone is dead on both sides until a new first contact. The point of birth is the
     /// one place every secret passes; `seal: false` is for the two callers that are not a
     /// birth: the twin reference (no correspondence, no folder) and the restore itself.
-    static func establish(secret: Data, seal: Bool = true) -> String? {
-        guard let ref = reference(of: secret) else { return nil }
-        let born = self.secret(for: ref) == nil
-        guard remember(secret, for: ref) else { return nil }
+    static func establish(secret: Data, seal: Bool = true) -> String? { establish(pipe: MTPipeKey(secret), seal: seal) }
+    /// The same birth for a pipe already held as its owner holds it: one met on the shelf, one restored from the archive.
+    static func establish(pipe: MTPipeKey, seal: Bool = true) -> String? {
+        guard let ref = pipe.reference else { return nil }
+        let born = key(for: ref) == nil
+        guard remember(pipe, for: ref) else { return nil }
         _ = kept(for: ref)
         touch(ref)
         if seal, born { MontanaArchive.writeHead(convRef: ref, legacy: []) }   // the folder is the archive's to resolve, on its queue
@@ -612,10 +671,46 @@ enum MTPipeBook {
     static func first(for conv: String) -> Data? { firsts()[conv] }
     static func forgetFirst(_ conv: String) {
         forgetRoot(conv)   // the point of first contact dies with the ciphertext it belonged to
+        forgetConfirm(conv)   // and the confirmation bound to that ciphertext
         var m = firsts()
         guard m.removeValue(forKey: conv) != nil, let d = try? JSONEncoder().encode(m) else { return }
         _ = MontanaLocalVault.setEncrypted(firstKey, d)
         dropAwaiting()
+    }
+
+    /// THE CONFIRMATION OF A FIRST LETTER OUTLIVES THE FLOOR (decision 188, #36, 25.10.2026). The key confirmation a first
+    /// letter carries is made of the established secret (MTNodeWire.firstConfirm), and from eraseDay the book holds the floor, never the secret: an
+    /// introduction still unanswered then could not be sent again (sameConfirm refuses an empty value). So the confirmation is
+    /// made once, at the pipe's birth, and kept here -- sealed like the ciphertext beside it, bound to that ciphertext by its
+    /// hash, and dropped with it on the answer or the drop (forgetFirst). It is bytes the wire carries anyway: it opens nothing,
+    /// and the floor still erases the secret.
+    private static let confirmKey = "pipeFirstConfirms"
+    private static func confirms() -> [String: Data] {
+        guard let d = MontanaLocalVault.getDecrypted(confirmKey),
+              let m = try? JSONDecoder().decode([String: Data].self, from: d) else { return [:] }
+        return m
+    }
+    /// The bound form: SHA-256 of the ciphertext (32) followed by the confirmation's bytes.
+    // LOCAL-HASH-OK: a binding inside one device's sealed record, not a quantity of the protocol.
+    private static func bound(_ ct: Data) -> Data { Data(SHA256.hash(data: ct)) }
+    @discardableResult
+    static func rememberConfirm(_ confirm: String, ct: Data, for conv: String) -> Bool {
+        guard ct.count == 1088, !conv.isEmpty, !confirm.isEmpty else { return false }
+        var m = confirms(); m[conv] = bound(ct) + Data(confirm.utf8)
+        guard let d = try? JSONEncoder().encode(m) else { return false }
+        return MontanaLocalVault.setEncrypted(confirmKey, d)
+    }
+    private static func forgetConfirm(_ conv: String) {
+        var m = confirms()
+        guard m.removeValue(forKey: conv) != nil, let d = try? JSONEncoder().encode(m) else { return }
+        _ = MontanaLocalVault.setEncrypted(confirmKey, d)
+    }
+    /// The confirmation a first letter of this correspondence carries with this ciphertext: the pipe's own while it holds the
+    /// secret, else the one kept at its birth -- and only for the very ciphertext it was made for; any other gets none.
+    static func firstConfirm(for conv: String, pipe: MTPipeKey, ct: Data) -> String {
+        if pipe.holdsOrigin { return pipe.firstConfirm(ct: ct) }
+        guard let kept = confirms()[conv], kept.count > 32, kept.prefix(32) == bound(ct) else { return "" }
+        return String(decoding: kept.dropFirst(32), as: UTF8.self)
     }
 
     /// The contact key a correspondence was BEGUN at, kept until the other side answers.
@@ -762,10 +857,7 @@ enum MTPipeBook {
     }
 
     /// Where a letter of this correspondence is deposited in this window.
-    static func tag(for conv: String, window w: UInt64) -> Data? {
-        if let s = secret(for: conv) { return MTPipe.tag(sharedSecret: s, window: w) }
-        return nil
-    }
+    static func tag(for conv: String, window w: UInt64) -> Data? { key(for: conv)?.tag(window: w) }
 
     /// The tags this device answers for right now — its own pipes across the accepted windows.
     ///
@@ -786,8 +878,8 @@ enum MTPipeBook {
         indexLock.lock(); defer { indexLock.unlock() }
         if let i = index, i.window == w { return i.map }
         var map: [Data: String] = [:]
-        for (conv, secret) in load() {
-            for k in MTPipe.windows(around: w) { map[MTPipe.tag(sharedSecret: secret, window: k)] = conv }
+        for (conv, pipe) in load() {
+            for k in MTPipe.windows(around: w) { for t in pipe.tags(window: k) { map[t] = conv } }   // Y, Y + 1: the earlier tag too
         }
         index = (w, map)
         return map
@@ -824,10 +916,7 @@ enum MTPipeBook {
     /// announcement carries only a port. Conversation marks in a local network record were an error of
     /// class -- any value bound to a conversation is disclosure in an open announcement -- and the
     /// mechanism computing them is removed from here whole, so that one line cannot bring it back.
-    static func myTag(for conv: String, at: Date = Date()) -> Data? {
-        guard let s = secret(for: conv) else { return nil }
-        return MTPipe.tag(sharedSecret: s, window: MTPipe.window(at))
-    }
+    static func myTag(for conv: String, at: Date = Date()) -> Data? { key(for: conv)?.tag(window: MTPipe.window(at)) }
 
     /// How many correspondences this device can answer for — the measure of the stage, countable
     /// without opening anything.

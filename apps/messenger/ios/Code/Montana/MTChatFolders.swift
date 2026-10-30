@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// THE FOLDERS OVER THE CHATS (the author's words 17.10.2026 18:4x MSK: «badges over the chats, the groups and the channels, and
+/// THE FOLDERS OVER THE CHATS (the author's words 17.10.2026 15:4x UTC: «badges over the chats, the groups and the channels, and
 /// their control in the settings»; «left of the chats, the groups and the channels a field All, every chat in it, the groups and
 /// the channels too -- and a category Bots, our bot in it»; «the groups and the channels one to one as in the reference»). The
 /// reference's own folders: All Chats and the person's folders, each the kinds of chats and the chats it takes and the states and the
@@ -75,7 +75,7 @@ struct MTChatFolder: Codable, Identifiable, Hashable {
     static let all = MTChatFolder(id: allID, leaves: [])
     var isAll: Bool { id == Self.allID }
     var shownTitle: String {
-        if isAll { return String(localized: "All", bundle: MTLanguage.bundle) }   // the author's word 18.10.2026 10:2x MSK: «call it simply All»
+        if isAll { return String(localized: "All", bundle: MTLanguage.bundle) }   // the author's word 18.10.2026 07:2x UTC: «call it simply All»
         guard title.isEmpty, let p = preset else { return title }
         switch p {
         case .contacts, .nonContacts: return String(localized: "Chats", bundle: MTLanguage.bundle)
@@ -185,7 +185,7 @@ final class MTChatFolders: ObservableObject {
     }
 }
 
-/// OUR BOT (the author's word 17.10.2026 18:4x MSK: «a category Bots, and our bot there»): Montana's bot, the door to the wallet
+/// OUR BOT (the author's word 17.10.2026 15:4x UTC: «a category Bots, and our bot there»): Montana's bot, the door to the wallet
 /// and to Montana as its Mini App. A row of the Bots folder and of All Chats; a tap opens the bot where it lives -- it speaks no letter
 /// here and keeps no conversation on this phone.
 enum MTBot {
@@ -244,7 +244,7 @@ struct MTFolderTabs: View {
             }
         }
         .frame(height: 44)
-        .montanaOctagonFace(bar: true)   // the time panel's own plate (the author's word 18.10.2026 10:2x MSK)
+        .montanaOctagonFace(bar: true)   // the time panel's own plate (the author's word 18.10.2026 07:2x UTC)
     }
 
     /// The strip's width with every name whole, by the platform's own measure of the words.

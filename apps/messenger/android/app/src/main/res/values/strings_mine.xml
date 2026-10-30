@@ -31,6 +31,9 @@
     <string name="ld_pin_q">Pin this message?</string>
     <string name="ld_pin_both">Pin for both</string>
     <string name="ld_pin_me">Pin for me</string>
+    <string name="ld_pin_q_group">Pin this message and notify all members of the group?</string>
+    <string name="ld_pin_all">Pin and notify all members</string>
+    <string name="ld_pin_only">Only Pin</string>
     <string name="ld_pinned">Pinned message</string>
     <string name="ld_pinned_banner">Pinned a message</string>
     <string name="ld_pin">Pin</string>

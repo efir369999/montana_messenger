@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Every door of the network is TLS. The one exception is a check's own node on the computer an emulator runs on (10.0.2.2,
+     tools/clocknode.py), named only by a file the emulator's root lays in the app's own folder (Doors.testDoor). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

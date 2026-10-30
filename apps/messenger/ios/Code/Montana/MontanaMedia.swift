@@ -93,7 +93,7 @@ final class VoiceRecorder: NSObject, ObservableObject {
         _ = r?.prepareToRecord()
         return r
     }
-    /// A TAP IS NOT A TAPE (the author's word 22.10.2026 23:3x MSK: «switching the button from the voice message to the video and
+    /// A TAP IS NOT A TAPE (the author's word 22.10.2026 20:3x UTC: «switching the button from the voice message to the video and
     /// to the coin intercepts the sound and it breaks off»). The finger lands before it is known whether it taps -- the mode
     /// switches -- or holds. Readying took the recording session, which does not mix, at the landing: every tap of the switch cut
     /// the music and the voice that played. While anything sounds the landing readies nothing; the sound is taken only by the
@@ -716,7 +716,7 @@ final class VoicePlayer: NSObject, ObservableObject {
         next()
     }
 
-    /// A TRACK MOVED IN THE QUEUE BY HAND (MTQueuePage, the author's word 16.10.2026 19:0x MSK: «the current playlist ... and one can
+    /// A TRACK MOVED IN THE QUEUE BY HAND (MTQueuePage, the author's word 16.10.2026 16:0x UTC: «the current playlist ... and one can
     /// manage it there»): the queue, the playlist's one owner, moves it; the track that plays keeps playing, its place followed by
     /// its file.
     func moveInQueue(from: IndexSet, to: Int) {
@@ -727,7 +727,7 @@ final class VoicePlayer: NSObject, ObservableObject {
         MontanaTrace.mark("music_queue", "moved n=\(queue.count) playing_at=\(queueIndex + 1)")
     }
 
-    /// THE QUEUE TURNED OVER (MTQueuePage's arrows, the author's word 18.10.2026 13:3x MSK: «an arrow button that only turns the
+    /// THE QUEUE TURNED OVER (MTQueuePage's arrows, the author's word 18.10.2026 10:3x UTC: «an arrow button that only turns the
     /// tracks' order over»): the queue, the playlist's one owner, reverses itself; the track that plays keeps playing, its place
     /// followed by its file, and a second turn gives back the order as it stood.
     func reverseQueue() {
@@ -3155,7 +3155,7 @@ private struct MTPhotoLook: View {
 }
 enum PhotoPresenter {
     private static weak var host: UIViewController?
-    /// ONE ROAD FOR A PICTURE AMONG PICTURES (the author's words 05.10.2026 14:04, 15:04 and 18:24 MSK: «photos dropped into the
+    /// ONE ROAD FOR A PICTURE AMONG PICTURES (the author's words 05.10.2026 11:04, 12:04 and 15:24 UTC: «photos dropped into the
     /// chat -- paging by a tap at the edge or a swipe aside»; «by constitution 0, in the posts and everywhere one function»; «our
     /// task of the edge taps, by constitution 0»): every tap on a picture -- a chat's, a post's, a correspondent's page -- comes
     /// here with the pictures it stands among, oldest first, and opens OUR album (MontanaPhotoViewer: the system's page view

@@ -64,6 +64,18 @@ object Doors {
         return all.filter { it !in mute }.ifEmpty { all }
     }
 
+    /**
+     * THE MAP OF WHAT THE DOORS CAN IS WAITED FOR, NOT GUESSED AT (iOS doorsWaited, MontanaGif.swift 381-397 at 2155): when the map has
+     * nothing to say of a capability, one round of the doors is run and the map asked again — once, and only then.
+     */
+    fun waited(cap: String): List<String> {
+        val have = ordered(cap)
+        if (have.isNotEmpty()) return have
+        if (verifying.compareAndSet(false, true)) try { verify(0) } finally { verifying.set(false) }
+        else { var n = 0; while (verifying.get() && n++ < 65) Thread.sleep(200) }   // a round already runs: its answer is waited for
+        return ordered(cap)
+    }
+
     /** A door of the list (iOS MontanaNodes.Node 38-52): a bare one, or one behind a delivery network with the web socket's path. */
     class Door(val host: String, val port: Int, val path: String?) {
         val label: String get() = Channels.labelOf(host, port, path != null)

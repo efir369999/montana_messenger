@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS archivebox: drawn for Montana (the lid, the box and its slot): the folders' state Archived -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.6" android:strokeLineJoin="round"
+      android:pathData="M3.6,4.5h16.8c0.61,0 1.1,0.49 1.1,1.1v2.3c0,0.61 -0.49,1.1 -1.1,1.1H3.6c-0.61,0 -1.1,-0.49 -1.1,-1.1V5.6c0,-0.61 0.49,-1.1 1.1,-1.1z"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.6" android:strokeLineJoin="round"
+      android:pathData="M4.1,9v9.4c0,1.16 0.94,2.1 2.1,2.1h11.6c1.16,0 2.1,-0.94 2.1,-2.1V9"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.6" android:strokeLineCap="round"
+      android:pathData="M9.6,12.6h4.8"/>
+</vector>

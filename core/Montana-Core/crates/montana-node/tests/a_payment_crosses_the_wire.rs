@@ -116,7 +116,7 @@ fn a_frame_published_at_the_points_of_a_window_is_applied_by_the_machine_holding
             &of_payer,
             &paths,
             &root,
-            &mt_proof::admitted::empty_root(),
+            &mt_proof::credited::empty_root(),
         )
         .expect("a payment of what the payer holds");
 

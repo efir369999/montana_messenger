@@ -41,6 +41,7 @@ fn a_world(secrets: &[[u8; 32]], aggregate: [u8; 32]) -> World {
         record_root: [0x55; 32],
         machine_root: [0x66; 32],
         admitted_root: cohort.root().bytes(),
+        credited_root: mt_proof::credited::empty_root().bytes(),
         operations_root: [0x88; 32],
         roll: [0xBB; 32],
         admitted_count: cohort.count(),
@@ -56,6 +57,7 @@ fn a_world(secrets: &[[u8; 32]], aggregate: [u8; 32]) -> World {
         record_root: roots.record_root,
         machine_root: roots.machine_root,
         admitted_root: roots.admitted_root,
+        credited_root: roots.credited_root,
         operations_root: roots.operations_root,
         roll: roots.roll,
         admitted_count: roots.admitted_count,
@@ -696,6 +698,55 @@ fn the_agreement_decides_what_a_certificate_makes_final() {
         under(&[astray, heavies[1].clone(), heavies[2].clone()], &closings),
         Err(refused("an attestation outside the beacon of its round"))
     );
+}
+
+// A certificate's verdict is a function of the set of its pledges. Four machines, every heavy on the
+// predecessor; machines 0 and 1 close attempt zero on it, and machine 3, faulty, closes it on the
+// predecessor and on another name. Handed in either order, the certificate is accepted where the
+// other name is above the predecessor and refused where it is below: the part counts under the
+// lesser of its two names (Consensus, "The sanction of a double answer"). The wrong implementation
+// refused: one keeping the pledge handed in first, which accepts one order and refuses the other.
+#[test]
+fn the_order_the_pledges_are_handed_in_changes_no_verdict() {
+    let world = a_world(
+        &[[0x11u8; 32], [0x22u8; 32], [0x33u8; 32], [0x44u8; 32]],
+        [0x33u8; 32],
+    );
+    let x = world.previous_id();
+    let beacon = world.beacon();
+    let heavies: Vec<Confirmation> = (0..4).map(|at| world.heavy(at)).collect();
+    let under = |pledges: &[Pledge]| {
+        verify_certificate(
+            WINDOW,
+            &world.electorate(),
+            Predecessor::Proposal(&world.previous),
+            &world.aggregate,
+            1,
+            &[Round {
+                beacon: &beacon,
+                heavy: &heavies,
+                light: &[],
+                ballots: &[],
+            }],
+            pledges,
+        )
+    };
+    let honest = [world.pledge(0, 0, x, 0), world.pledge(1, 0, x, 0)];
+    for (other, accepted) in [([0xFFu8; 32], true), ([0x00u8; 32], false)] {
+        assert_eq!(x < other, accepted);
+        let on_x = world.pledge(3, 0, x, 0);
+        let on_other = world.pledge(3, 0, other, 0);
+        let forward = [on_x.clone(), on_other.clone()];
+        let backward = [on_other, on_x];
+        let one = under(&[&forward[..], &honest[..]].concat());
+        let two = under(&[&backward[..], &honest[..]].concat());
+        assert_eq!(one, two);
+        if accepted {
+            assert_eq!(one.expect("the lesser name decides").cement_count, 4);
+        } else {
+            assert_eq!(one, Err(refused(UNDECIDED)));
+        }
+    }
 }
 
 // The close counts a beacon "which a verified attestation answered" (Consensus, "The beacon a window

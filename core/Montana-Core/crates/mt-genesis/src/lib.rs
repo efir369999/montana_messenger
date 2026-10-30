@@ -3,9 +3,9 @@
 // and every other crate reads them from `decree()` rather than writing one of its own.
 //
 // The encoding is the Decree's own rule: every parameter as an unsigned eight-byte little-endian
-// integer in the order the table stands; a ratio as two such integers, numerator first; the
-// emission schedule as its count of rows in two bytes followed by each row as two such integers,
-// height then mint, ascending; a parameter written as a hash as its thirty-two bytes.
+// integer in the order the table stands; a ratio as two such integers, numerator first; a
+// parameter written as a hash as its thirty-two bytes. The credit of a window is a scalar like any
+// other: one coin for every second of it to every machine living in it, eight bytes by the general rule.
 
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
@@ -16,7 +16,6 @@ pub const TAU2: u64 = 20_160;
 pub enum Entry {
     Scalar(&'static str, u64),
     Ratio(&'static str, u64, u64),
-    Schedule(&'static str, &'static [(u64, u64)]),
     Hash(&'static str, [u8; 32]),
     // A parameter the set names and has not published. It carries no value — not a zero, not a
     // stand-in, nothing — because a value written in place of one that does not exist is a value
@@ -32,7 +31,6 @@ impl Entry {
         match self {
             Entry::Scalar(n, _)
             | Entry::Ratio(n, _, _)
-            | Entry::Schedule(n, _)
             | Entry::Hash(n, _)
             | Entry::Unpublished(n, _) => n,
         }
@@ -42,7 +40,6 @@ impl Entry {
         match self {
             Entry::Scalar(n, _)
             | Entry::Ratio(n, _, _)
-            | Entry::Schedule(n, _)
             | Entry::Hash(n, _)
             | Entry::Unpublished(n, _) => n,
         }
@@ -52,7 +49,6 @@ impl Entry {
         match self {
             Entry::Scalar(..) => Some(8),
             Entry::Ratio(..) => Some(16),
-            Entry::Schedule(_, rows) => Some(2 + 16 * rows.len()),
             Entry::Hash(..) => Some(32),
             Entry::Unpublished(..) => None,
         }
@@ -66,13 +62,6 @@ impl Entry {
                 out.extend_from_slice(&num.to_le_bytes());
                 out.extend_from_slice(&den.to_le_bytes());
             }
-            Entry::Schedule(_, rows) => {
-                out.extend_from_slice(&(rows.len() as u16).to_le_bytes());
-                for (height, mint) in rows.iter() {
-                    out.extend_from_slice(&height.to_le_bytes());
-                    out.extend_from_slice(&mint.to_le_bytes());
-                }
-            }
             Entry::Hash(_, h) => out.extend_from_slice(h),
         }
     }
@@ -85,7 +74,10 @@ impl Entry {
 pub const PARAMETERS: &[Entry] = &[
     Entry::Scalar("hash_bytes", 32),
     Entry::Scalar("tau2", TAU2),
-    Entry::Schedule("emission_schedule", &[(0, 13_000_000_000)]),
+    // One coin for every second a machine lived (constitution, article 11; the author's word of
+    // 2026-10-26 17:08 UTC): a window is 86 400 / segment_windows = 60 seconds, so its right is
+    // worth 60 coins, and tau-2 of them is node_lock. Derived from the count, never from a clock.
+    Entry::Scalar("window_credit", 86_400 / (TAU2 / 14)),
     Entry::Scalar("slot_modulus", 64),
     Entry::Scalar("retarget_period", TAU2),
     Entry::Scalar("retarget_damping", 4),
@@ -131,9 +123,9 @@ pub const PARAMETERS: &[Entry] = &[
     Entry::Hash(
         "air_hash",
         [
-            0xb8, 0xf1, 0xbe, 0x4f, 0x24, 0x3c, 0x88, 0x7c, 0x10, 0xbc, 0x8f, 0xb4, 0x4f, 0x20,
-            0x59, 0xdf, 0x3b, 0x88, 0x54, 0xc9, 0x29, 0xb3, 0xa2, 0xef, 0x0c, 0x31, 0x66, 0x39,
-            0x95, 0xb4, 0xf8, 0x6d,
+            0x49, 0x53, 0x3d, 0x47, 0x4e, 0xd5, 0x0d, 0x1c, 0xb5, 0xd6, 0x17, 0x4c, 0xf2, 0x37,
+            0x9b, 0xa9, 0xee, 0x7f, 0x68, 0xff, 0x60, 0x3a, 0x4b, 0x91, 0xef, 0x2f, 0x95, 0xbb,
+            0xff, 0x98, 0x79, 0x9c,
         ],
     ),
 ];
@@ -326,6 +318,23 @@ mod tests {
         assert_eq!(s("claim_spread"), s("segment_windows"));
         assert_eq!(s("retarget_period"), TAU2);
         assert_eq!(s("census_interval") * s("standing_censuses"), TAU2);
+        // One second, one coin: every machine living a window is credited one coin for every second of it, and
+        // the constitutional layer fixes the number.
+        assert_eq!(s("window_credit"), 60);
+        assert_eq!(s("window_credit") * s("segment_windows"), 86_400);
+    }
+
+    // The ramp of entry (Consensus, "Presence and admission"; constitution records 297 and 300)
+    // leaves `continuity_segments` exactly at the threshold only while the multiplier is the
+    // threshold turned over. It reaches `max_entry_segments` at four times the threshold, and the
+    // bitmap of a record is wide enough for that ceiling. A row moved alone breaks one of these.
+    #[test]
+    fn the_multiplier_of_entry_is_its_threshold_turned_over() {
+        let (num, den) = super::ratio("adaptive_entry_threshold").expect("the Decree names it");
+        assert_eq!(den, num * s("adaptive_entry_multiplier"));
+        assert_eq!((num, den), (1, 100));
+        assert_eq!(s("max_entry_segments"), 4 * s("continuity_segments"));
+        assert!(s("max_entry_segments") <= u64::from(u64::BITS));
     }
 
     #[test]
@@ -335,17 +344,10 @@ mod tests {
         // them: what is checked is that order, read off the table rather than pinned by a place a
         // new row would move.
         let mut at = 0usize;
-        for entry in PARAMETERS.iter().take(2) {
+        for entry in PARAMETERS.iter().take(3) {
             let width = entry.encoded_len().expect("a published row");
             if let Entry::Scalar(_, value) = entry {
                 assert_eq!(&bytes[at..at + 8], &value.to_le_bytes());
-            }
-            if let Entry::Schedule(_, rows) = entry {
-                assert_eq!(
-                    &bytes[at..at + 2],
-                    &(rows.len() as u16).to_le_bytes(),
-                    "a schedule opens with its count of rows"
-                );
             }
             at += width;
         }

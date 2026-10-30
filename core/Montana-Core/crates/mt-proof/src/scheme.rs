@@ -1378,7 +1378,8 @@ mod boundary_batching_tests {
 
     #[test]
     fn batching_matches_the_direct_quotients_at_every_coset_point() {
-        let shape = Shape::of_rows_log2(8).expect("a complete folding shape");
+        // The least height a shape stands at: below it the free block fills the trace.
+        let shape = Shape::of_rows_log2(10).expect("a complete folding shape");
         let public = [F::from_u64_reduced(17), F::from_u64_reduced(3)];
         let extended: Vec<Vec<F>> = (0..2)
             .map(|column| {

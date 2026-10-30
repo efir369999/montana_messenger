@@ -36,7 +36,7 @@ mt_codec::constants! {
     /// these bytes, because the name is what an attestation attests — and a name over proof bytes
     /// is a name its maker redraws by reproving, while a name over the final beacon or the runner's
     /// key is one name per branch or per runner of a single decision.
-    pub const PROPOSAL_DECIDED_LEN: usize = 718, writes "proposal_id = SHA-256(\"mt-proposal\" || 0x00 || serialize(proposal)[0 .. 718])";
+    pub const PROPOSAL_DECIDED_LEN: usize = 750, writes "proposal_id = SHA-256(\"mt-proposal\" || 0x00 || serialize(proposal)[0 .. 750])";
 }
 
 // The one value of the agreement the set writes as a number: what the `since` of a pledge holds

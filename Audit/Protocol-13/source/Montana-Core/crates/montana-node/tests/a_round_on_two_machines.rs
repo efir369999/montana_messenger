@@ -75,6 +75,7 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
             position: branches[0].1,
         },
         [0x55u8; 32],
+        [0x54u8; 32],
         &electorate,
         &aggregate,
     )
@@ -100,6 +101,7 @@ fn a_beacon_crosses_to_the_other_machine_and_its_answer_comes_back() {
             position: branches[1].1,
         },
         [0x55u8; 32],
+        [0x54u8; 32],
         &electorate,
         &aggregate,
     )

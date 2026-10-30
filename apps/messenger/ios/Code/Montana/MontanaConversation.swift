@@ -385,9 +385,8 @@ struct ScrollDownButton<Label: View>: View {
     }
 }
 
-/// THE RED MINUS AT THE NEWEST END (the author's word 05.10.2026 01:24 MSK: «in the chat the same way, an animation of a red minus
-/// coin»): the coins this chat's bubble or call just paid (MTCoinPaid) rise above the way to the newest in red, as the ribbon's plus
-/// rises under the field (MTMintPop), and fade; with Reduce Motion it stands and fades. It never takes a finger.
+/// THE RED MINUS AT THE NEWEST END (the author's word 04.10.2026 22:24 UTC: «in the chat the same way, an animation of a red minus
+/// coin»): the coins this chat's bubble or call just paid (MTCoinPaid) rise above the way to the newest in red, and fade; with Reduce Motion it stands and fades. It never takes a finger.
 struct MTPayPop: View {
     let chat: String
     @ObservedObject var pin: ChatConversationView.FeedPin
@@ -658,7 +657,7 @@ struct ChatInputBar: View {
     var meshRoom = false
     /// A BAR OF WORDS ALONE: no picture, file, voice or round note stands, and the arrow is the bar's end.
     var textOnly = false
-    // A GROUP'S BAR IS THE PAIR'S BAR, KEY FOR KEY (the author's word 17.10.2026 22:3x MSK: «in groups and channels every button under
+    // A GROUP'S BAR IS THE PAIR'S BAR, KEY FOR KEY (the author's word 17.10.2026 19:3x UTC: «in groups and channels every button under
     // the field exactly as in chats, the whole of a chat's work, one to one»): one's own card rides the group's picture road, a place and
     // a person from the book ride as words by the group's carrier -- no key stands apart for a group any more.
     /// A CHANNEL'S OWNER'S BAR (the reference: the field of a channel says «Broadcast» while it is empty).
@@ -672,17 +671,17 @@ struct ChatInputBar: View {
     /// hosts the words at the top (.field) and the open bar's row of buttons on the keys (.row), two nodes of one model.
     enum Part { case whole, field, row }
     var part: Part = .whole
-    /// THE MONEY FLOW IS ON IN THIS CHAT (the author's words 03.10.2026 16:45 MSK: «in minting mode make the send button a little
+    /// THE MONEY FLOW IS ON IN THIS CHAT (the author's words 03.10.2026 13:45 UTC: «in minting mode make the send button a little
     /// bigger, the finger's size, like the call button, in its style»; «the field with the system's highlight, and below all the
     /// buttons in the system's blue circle»): the send plate stands at the bar marks' 44 (MTBarRoundMark), and the field and
     /// every button of the row wear the platform's blue ring -- the coin's own ring (MTMiniFace.playingRing).
     var minting = false
-    /// THE COIN, THE BUTTON'S THIRD MODE (the author's word 06.10.2026 23:2x MSK: «the button switches the voice message, then the
+    /// THE COIN, THE BUTTON'S THIRD MODE (the author's word 06.10.2026 20:2x UTC: «the button switches the voice message, then the
     /// video message, then the coin -- to write just a number and press send coin; the field lit up as enter the sum of coins»): a
     /// pair's chat that may take coins (MTCoinSend.canPay) goes microphone, camera, coin; the coin's key sends the number written
     /// (onSendCoin), and the page stands the exact balance above the field (MTCoinBalancePlate).
     var coins = false
-    /// A GROUP'S COIN (the author's word 18.10.2026 00:14 MSK: «with a choice by check marks among the members, as on the Send page of
+    /// A GROUP'S COIN (the author's word 17.10.2026 21:14 UTC: «with a choice by check marks among the members, as on the Send page of
     /// the time coin»): the coin's key opens the choice of people, the number written -- or none yet -- standing beside each pick.
     var coinPicks = false
     var onSendCoin: (Int) -> Void = { _ in }
@@ -1125,11 +1124,11 @@ struct ChatInputBar: View {
     }
 }
 
-/// THE AVAILABLE BALANCE ABOVE THE FIELD (the author's word 06.10.2026 23:2x MSK: «while entering, the exact available balance above
+/// THE AVAILABLE BALANCE ABOVE THE FIELD (the author's word 06.10.2026 20:2x UTC: «while entering, the exact available balance above
 /// or under the line of the message»): in the coin's mode of the bar (ChatInputBar.coinMode) this plate stands on the feed's side of
 /// the field, where a reply's plate stands; its cross takes the button back to the microphone. It observes the book and the chain's
 /// split alone, so the page is not drawn again at every coin minted. The number is the available (the author's word 16.10.2026
-/// 17:19 MSK: «a transfer from the chat and from any place shows only the available»), the one the coin's send is weighed by.
+/// 14:19 UTC: «a transfer from the chat and from any place shows only the available»), the one the coin's send is weighed by.
 struct MTCoinBalancePlate: View {
     let onClose: () -> Void
     @ObservedObject private var book = MTLocalCoinLedger.shared
@@ -1159,8 +1158,8 @@ struct MTCoinBalancePlate: View {
     }
 }
 
-/// THE CHAT PAGE IS CARRIED LINK BY LINK IN A BOX (the author's word 03.10.2026 15:13 MSK: «find the cause of the crash at 15:12, fix
-/// it and put it on T1»; 16:24: «the chats page crashes, most likely from the feed, keyboard, field and minting edits -- a deep
+/// THE CHAT PAGE IS CARRIED LINK BY LINK IN A BOX (the author's word 03.10.2026 12:13 UTC: «find the cause of the crash at 12:12, fix
+/// it and put it on T1»; 13:24: «the chats page crashes, most likely from the feed, keyboard, field and minting edits -- a deep
 /// analysis»). T1 died of an exhausted main-thread stack (1008 KB, the kernel's own size) on 2069, 2070 and 2071 at the first chat
 /// opened in a run. The whole chain counted on 2071: 329 frames, and eleven of ours held 840 KB of the 1008. A value of the chat page
 /// weighs some 29 KB, and each getter of the body's chain (chatCoreL3 down to chatCoreL0, the feed, the bar) held every intermediate of
@@ -1205,8 +1204,7 @@ struct ChatConversationView: View {
             return rowCache.messages
         }
         // A step of a chess game is not a row of the feed (29.09): the board reads those letters from the store itself. The letter
-        // that closes a game is (the author's word 06.10.2026 23:2x MSK: «in the chat after the game show the coins' transfer or
-        // top-up»): it wears what the game gave or took (MTChessCoins.net).
+        // that closes a game is (the author's word 06.10.2026 20:2x UTC): it says how the game ended -- and nothing of coins.
         let a = (store.messages[chat.name] ?? []).filter { m in !m.isChessStep || m.chessLetter?.end != nil }
         var sorted = true
         for i in 1..<max(a.count, 1) where ChatStore.before(a[i], a[i - 1]) { sorted = false; break }
@@ -1275,7 +1273,6 @@ struct ChatConversationView: View {
     @State private var chessGame: MTChessPush?   // a game opened from its invitation, on this chat's own stack (29.09)
     @State private var chessPlayed: String?      // the pair's game while it is played (MTChessSend.playedGame): the mark's ring
     @State private var askChess = false          // the platform's question before a new game
-    @State private var chessStake = ""           // the stake typed in that question (the author's word 06.10.2026 23:2x MSK)
     @State private var roomAsk: MTRoomKind?      // a group's call chosen at the top: whom to invite (07.10)
     @State private var roomAskVideo = false
     @State private var groupRefusal: String?     // what the group took from its members, said when this phone tries it (G.5)
@@ -1571,7 +1568,7 @@ struct ChatConversationView: View {
         }
         // THE PINNED PLATE FLOATS OVER THE FEED (the author's word 22.09): under the bar at the top, centred,
         // over the letters and the media alike, drawn over the wash. ITS LOWEST EDGE IS WHERE THE FEED'S TOP RESTS (the author's
-        // words 16.10.2026 18:29-18:30 MSK: «the pins in the money flow cover the letters crookedly and the gap is wrong»): the
+        // words 16.10.2026 15:29-15:30 UTC: «the pins in the money flow cover the letters crookedly and the gap is wrong»): the
         // feed's end letter stands below it, the newest in the money flow and the oldest in a plain chat; the letters run on under it.
         // A GROUP'S LIVING ROOM STANDS OVER ITS CHAT (MTRoomBar, the author's word 07.10.2026): above the pinned plate, the whole row
         // the way in.
@@ -1593,7 +1590,6 @@ struct ChatConversationView: View {
         // THE MONEY FLOW SEEN (the author's words 03.10 16:46 and 16:49): its beginning in the middle of the chat, every minting
         // under the field, on the coin's side.
         .overlay { MTMoneyFlowBegins(tick: flowBegun) }
-        .overlay(alignment: .topTrailing) { if ribbon { MTMintPop().padding(.top, topBarSize.height + pinReserve + 8).padding(.trailing, 16) } }
         .safeAreaInset(edge: .top) { if selectingMsgs { selectionTopBar } }
         .alert("Not enough coins", isPresented: $coinRefused) {
             Button("OK", role: .cancel) {}
@@ -1627,7 +1623,7 @@ struct ChatConversationView: View {
     /// may say that a sum is short (MTCoinSplit.available). A chain/network answer which is still undecided is never
     /// translated into «Not enough coins» -- that would make the shown available balance lie.
     private func sendCoin(_ n: Int) {
-        // A GROUP'S COIN IS A TRANSFER TO EACH PERSON PICKED (the author's word 18.10.2026 00:14 MSK): the Send page over the group's
+        // A GROUP'S COIN IS A TRANSFER TO EACH PERSON PICKED (the author's word 17.10.2026 21:14 UTC): the Send page over the group's
         // people; each pick goes by the pair's own transfer, and the group is only told how many were paid (MTCoinSendSheet).
         if groupCoin { sheet = .groupCoin(n); return }
         Task { @MainActor in
@@ -1651,19 +1647,19 @@ struct ChatConversationView: View {
         guard !chat.isGroup else { return }
         chessGame = MTChessPush(game: game)
     }
-    /// THE ACCEPT, AND ONLY THEN THE BOARD (the author's words 06.10.2026 23:5x MSK: «accept or not -- the buttons in the chat come
+    /// THE ACCEPT, AND ONLY THEN THE BOARD (the author's words 06.10.2026 20:5x UTC: «accept or not -- the buttons in the chat come
     /// before the chess board is shown»; «first the request is confirmed, then the decision»): the invitation's Accept is the one
-    /// door of an acceptance from the chat; a refused one (a stake past the balance) says so and raises no board.
+    /// door of an acceptance from the chat; one the replay refuses raises no board.
     private func acceptGame(_ game: String) {
         guard !chat.isGroup else { return }
-        guard MTChessSend.join(game, in: chat, store: store) != nil else { coinRefused = true; return }
+        guard MTChessSend.join(game, in: chat, store: store) != nil else { return }
         chessGame = MTChessPush(game: game)
     }
 
     private var chatCoreL1: some View {
         chatCoreL0
         .onChange(of: store.peerSeenAt[chat.name]) { _, ts in seenTick.arm(ts) }   // 10-C.2: a new stamp re-arms
-        // AN INVITATION LANDING IN THE OPEN CHAT RAISES NO BOARD (the author's words 06.10.2026 23:5x MSK, replacing «when both are
+        // AN INVITATION LANDING IN THE OPEN CHAT RAISES NO BOARD (the author's words 06.10.2026 20:5x UTC, replacing «when both are
         // in the chat, let them get into the game at once» of 30.09): it stands in the feed with its Accept and Decline.
         // THE EMOJI PANEL IS THE FIELD'S INPUT VIEW, so it leaves whenever the field stops being
         // the responder — by a tap, by the interactive drag, by a screen on top — and the flag
@@ -1776,19 +1772,20 @@ struct ChatConversationView: View {
             MontanaMediaStore.hold(Array(after.subtracting(before)))
             MontanaMediaStore.release(Array(before.subtracting(after)))
         }
-        // FILES BY THE HANDFUL, IN THE ORDER CHOSEN (the author's word 23.10 20:5x): every file the page hands back
-        // leaves as its own letter, one after another as the page lists them.
+        // FILES BY THE HANDFUL, IN THE ORDER CHOSEN (the author's word 23.10 20:5x), AND THEY WAIT ABOVE THE FIELD WITH THEIR
+        // NUMBERS (the author's word 25.10.2026 17:40 UTC, council link 8089: «it adds only one file at a time»). This road never
+        // dropped a file the page handed back: the platform's Files page takes the one file a finger touches and closes -- several
+        // are chosen only in its own «Select» mode, and it numbers nothing -- and every pick left at once as letters of its own.
+        // Now what the page hands back stands in the tray beside the pictures (stageChosen), numbered in the page's order; the
+        // tray's «+» opens the page again for the next ones, the cross takes one out, and the arrow sends the tray in its order.
         .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
-            guard case .success(let urls) = result else { return }
-            for src in urls {
-                guard let (stored, original) = copyToDocs(from: src, original: src.lastPathComponent) else { continue }
-                store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
-                                                docFile: stored, docName: original,
-                                                deliveryStatus: .sending,
-                                                senderRef: nil))
-                sendGatedMedia(fileName: stored, kind: "doc", docName: original)
+            switch result {
+            case .success(let urls): stageChosen(urls)
+            case .failure(let e): MontanaTrace.mark("files_pick", "REFUSED -- \(e.localizedDescription)")
             }
         }
+        // THE PAGE OPENS WHERE THE LAST FILE WAS TAKEN FROM (the author's word 27.10.2026 09:15 UTC, council link 9561).
+        .fileDialogDefaultDirectory(MTFilesFolder.last)
         .sheet(isPresented: $showSchedule) { scheduleSheet }
         // THE CHOOSING AS A PAGE (the author's word 23.09): the whole screen, our own glass, and the
         // field with its buttons covered by it — the arrow on the page gives the screen back.
@@ -1811,7 +1808,7 @@ struct ChatConversationView: View {
                 CameraPicker { img in sendCameraImage(img) } onVideo: { url in sendCameraVideo(url) }
                     .ignoresSafeArea()
             case .contact:
-                // A PERSON FROM THE BOOK LEAVES BY THE ONE SEND ROAD (the author's word 17.10.2026 22:3x MSK: «everything as in chats,
+                // A PERSON FROM THE BOOK LEAVES BY THE ONE SEND ROAD (the author's word 17.10.2026 19:3x UTC: «everything as in chats,
                 // one to one»): the row used to be laid on this phone alone (store.append sends nothing), so the correspondent never
                 // got it while the bubble stood here as sent. The words ride as every letter does -- to a pair, to Saved Messages, and
                 // into a group or a channel by the group's carrier (ChatStore.send hands a group's key to MTGroup.send).
@@ -1850,7 +1847,7 @@ struct ChatConversationView: View {
 
     private var chatCoreM1: some View {
         chatCoreL2
-        // THE SELECTION'S «DELETE CHAT» TAKES THE ONE ROAD (the author's word 11.10.2026 20:1x MSK: «check with the critic the whole
+        // THE SELECTION'S «DELETE CHAT» TAKES THE ONE ROAD (the author's word 11.10.2026 17:1x UTC: «check with the critic the whole
         // architecture of the chats' time chains, so there are no holes by the constitution»): its own erasing emptied the feed and
         // set the mark past ChatStore.deleteChat -- no coin guard, no tombstones; the journal, the queue, the extension box, the list
         // record and the shelf row stayed, and the local room's empty key was marked deleted. The one sheet asks the one question.
@@ -1911,8 +1908,8 @@ struct ChatConversationView: View {
             }
         }
         .toolbar {
-            // THE CHAT'S TOP IS ONE ROW THAT FITS ANY SCREEN (the author's words 04.10.2026 13:49 and 14:06 MSK: «align the buttons
-            // with the name»; «make the buttons adaptive to the screen so the interlocutor's bubble is always seen»; T1 14:06: four bar
+            // THE CHAT'S TOP IS ONE ROW THAT FITS ANY SCREEN (the author's words 04.10.2026 10:49 and 11:06 UTC: «align the buttons
+            // with the name»; «make the buttons adaptive to the screen so the interlocutor's bubble is always seen»; T1 11:06: four bar
             // items of their own took the bar from its middle and pushed the face and the name out of it): the name's bubble with the
             // face in it and the marks close at its right stand in the bar's middle as one row (chatTop) -- in a chat pushed in a stack.
             if onBack == nil {
@@ -1923,13 +1920,13 @@ struct ChatConversationView: View {
                 }
             }
         }
-        // THE CHAT'S TOP STANDS 8 FROM THE EDGES (the author's words 05.10.2026 14:04 and 18:11 MSK, T1 on 2116: «left and right 8,
+        // THE CHAT'S TOP STANDS 8 FROM THE EDGES (the author's words 05.10.2026 11:04 and 15:11 UTC, T1 on 2116: «left and right 8,
         // and all the room that is left to the interlocutor's bubble»; the bar kept its own margins of 20 whatever was asked of it,
         // and the row stood 29 from the edge): the chat over the tabs draws its top itself as the bar beside its content -- the
         // platform's own bar of the newest system, with its edge effect -- 8 from each edge; a chat pushed in a stack keeps the bar.
         .toolbar(onBack == nil ? .automatic : .hidden, for: .navigationBar)
         .modifier(MTChatTopBar(shown: onBack != nil) { chatTop })
-        // THE FIELD TAKEN IN THE FLOW BRINGS THE START (the author's word 05.10.2026 18:3x MSK: «on activating the field it must scroll
+        // THE FIELD TAKEN IN THE FLOW BRINGS THE START (the author's word 05.10.2026 15:3x UTC: «on activating the field it must scroll
         // rightly to the start, at the top»): in the turned feed the newest stands at the top, under the field.
         .onChange(of: inputFocused) { _, on in if on, newestFirst { stickBottom() } }
         .mtBoxed()
@@ -1949,16 +1946,16 @@ struct ChatConversationView: View {
         }
         .frame(maxWidth: .infinity)
     }
-    /// THE MARKS STAND CLOSE BESIDE THE NAME (the author's word 04.10.2026 13:06 MSK: «the buttons at the top of the chat closer to
-    /// each other, and the name's bubble on the rest of the room»). The chess and the handset are separate buttons (30.09 23:29), the
+    /// THE MARKS STAND CLOSE BESIDE THE NAME (the author's word 04.10.2026 10:06 UTC: «the buttons at the top of the chat closer to
+    /// each other, and the name's bubble on the rest of the room»). The chess and the handset are separate buttons (30.09 20:29), the
     /// marks are one round of the platform's glass with the ring on that same circle (02.10 18:27, MTBarRoundMark).
-    /// ONE STEP BETWEEN EVERY ROUND (the author's word 05.10.2026 14:04 MSK: «the step between all the buttons as between the handset
+    /// ONE STEP BETWEEN EVERY ROUND (the author's word 05.10.2026 11:04 UTC: «the step between all the buttons as between the handset
     /// and the chess; the room freed goes to the interlocutor's bubble»): the back, the bubble and the marks stand at one gap, and
     /// the bubble keeps the same room a round keeps around it inside its 44-point target, so every visible distance is the same.
     private func chatRow(round: CGFloat, gap: CGFloat, room: CGFloat) -> some View {
         HStack(spacing: gap) {
             if let onBack { backMark(round, onBack) }
-            // THE SHIELD ON THE INTERLOCUTOR'S BUBBLE (the author's word 17.10.2026 18:4x MSK): a badge over its top right corner while
+            // THE SHIELD ON THE INTERLOCUTOR'S BUBBLE (the author's word 17.10.2026 15:4x UTC): a badge over its top right corner while
             // this phone keeps what others delete -- a sibling over the door, never inside its link, so its tap is its own. Its target
             // is centred on the corner: it takes the corner of the bubble, not the bubble's right end, and the mark beside it stands
             // over it.
@@ -1971,7 +1968,7 @@ struct ChatConversationView: View {
                 chessMark(round)
                 handsetMark(round)
             } else if chat.isGroup, !isChannel {
-                // A CHANNEL'S PAGE HAS NO HANDSET (the author's word 16.10.2026 20:34 MSK: «on the channels' pages the handset is not
+                // A CHANNEL'S PAGE HAS NO HANDSET (the author's word 16.10.2026 17:34 UTC: «on the channels' pages the handset is not
                 // needed»): a group's top alone carries the call's mark.
                 MTRoomMark(chat: chat.name, side: round) { kind, video in roomAskVideo = video; roomAsk = kind }   // the kind, then whom (07.10)
             }
@@ -1984,7 +1981,7 @@ struct ChatConversationView: View {
         }
         .accessibilityLabel(Text("Back"))
     }
-    /// THE FACE IS THE DOOR TO THE CHAT'S SETTINGS (the author's words 03.10 21:30 and 04.10 03:25 MSK: «the interlocutor's avatar at
+    /// THE FACE IS THE DOOR TO THE CHAT'S SETTINGS (the author's words 03.10 18:30 and 04.10 00:25 UTC: «the interlocutor's avatar at
     /// the top of the chat as a button into the chat's settings, as it was»): the whole bubble, the face in it, is the one button.
     private var chatTitleDoor: some View {
         NavigationLink(destination: MontanaPeerInfoScreen(chat: chat, onSave: onChatUpdate)) {
@@ -2013,7 +2010,7 @@ struct ChatConversationView: View {
         isChannel ? MTChannelPage.head(chat.name) : MTGroupPage.head(chat.name, store: store)
     }
 
-    /// THE NAME'S BUBBLE ON THE REST OF THE BAR (the author's word 04.10.2026 13:06 MSK: «the name's bubble on the rest of the room,
+    /// THE NAME'S BUBBLE ON THE REST OF THE BAR (the author's word 04.10.2026 10:06 UTC: «the name's bubble on the rest of the room,
     /// so the name and the statuses are there and all of it is seen»): the face, the chat's name and the presence ladder, most alive
     /// first -- «typing…», «watching» (they read my draft as it appears), «in chat», «online» (app, other screen) -- in one capsule of
     /// the platform's glass, as wide as the row leaves it and never narrower than its room.
@@ -2079,7 +2076,7 @@ struct ChatConversationView: View {
         Button {
             NotificationCenter.default.post(name: .montanaOpenWallet, object: nil)
         } label: {
-            // NO BADGE OVER THE WALLET (the author's word 18.10.2026 10:3x MSK: «in the chat at the top take the red badge above the
+            // NO BADGE OVER THE WALLET (the author's word 18.10.2026 07:3x UTC: «in the chat at the top take the red badge above the
             // wallet away»): the platform's wallet glyph alone, as everywhere else it stands.
             MTBarRoundMark(ringed: false, side: side) { MontanaBarGlyph(glyph: "wallet.pass") }
         }
@@ -2107,21 +2104,21 @@ struct ChatConversationView: View {
     /// THE FEED'S TURN IS OUR MINT COIN (the author's words 02.10 14:03 and 16:55, then 18:29 and 19:24: «make the turn button a
     /// coin; while it is on it spins and coins are minted in the chat -- the fabric of time»): the wall's own coin (MTMintCoin)
     /// on the handset's round. Off: the coin stands on its face and the chat is as it was. On: the coin spins, the feed turns to
-    /// the ribbon of time (the newest letters on top, every stamp with its seal and gematria) and every letter of the pair born
-    /// from now earns its coin (MTChatMint). The ring stands while it is on -- the sign that holds under Reduce Motion too.
+    /// the ribbon of time (the newest letters on top, every stamp with its seal and gematria). The turn mints nothing: only the chain
+    /// mints, 1 coin a second (the author's word 11871, 29.10.2026; MTMoneyFlow). The ring stands while it is on -- the sign that
+    /// holds under Reduce Motion too.
     private func flipMark(_ side: CGFloat) -> some View {
         Button {
-            // A HOLD OPENS THE AUTO-REACTIONS, NOT THE TURN (the author's word 06.10.2026 17:3x MSK): the lift that ends it moves nothing.
+            // A HOLD OPENS THE AUTO-REACTIONS, NOT THE TURN (the author's word 06.10.2026 14:3x UTC): the lift that ends it moves nothing.
             if flowHeld { flowHeld = false; return }
             // The field changes its place with the turn: the keys go down first, so no keyboard is left to a field reborn elsewhere.
             inputFocused = false
             hideKeyboard()
             flows.set(chat.name, !newestFirst)   // this chat's flow alone (04.10)
-            MTChatMint.shared.turned(newestFirst)
             E2E.shared.liveTypingSwitched(on: newestFirst, peer: chat.name)   // live chat lives in this chat's flow alone
             if newestFirst {
                 store.appendMoneyFlow(peer: chat.name); flowBegun += 1   // its row in the chat and its turn on the screen
-                // THE FLOW STANDS READY AT ONCE (the author's word 05.10.2026 18:3x MSK: «on switching the money flow on, everything
+                // THE FLOW STANDS READY AT ONCE (the author's word 05.10.2026 15:3x UTC: «on switching the money flow on, everything
                 // stands in its place at once: the feed scrolled to the top, the keyboard active, the panel of buttons unfolded by
                 // default -- the field on top and the buttons under it»): the row unfolds now; once the turned feed and its field are
                 // laid, the feed goes to its newest end (the top) and the field takes the keys.
@@ -2134,12 +2131,12 @@ struct ChatConversationView: View {
             }
             MontanaTrace.mark("feed_turn", "newest_first=\(newestFirst ? 1 : 0)")
         } label: {
-            // No badge on the coin (the author's word 05.10.2026 14:04 MSK): the place in the rating stays on the wallet's page.
+            // No badge on the coin (the author's word 05.10.2026 11:04 UTC): the place in the rating stays on the wallet's page.
             MTBarRoundMark(ringed: newestFirst, side: side) { MTMintCoin(spinning: newestFirst, side: 22) }   // the marks' one round, our coin on it
         }
         .accessibilityLabel(Text("Money Flow"))
         .accessibilityAddTraits(newestFirst ? .isSelected : [])
-        // THE MONEY FLOW'S SETTINGS ON A LONG PRESS (the author's word 06.10.2026 17:3x MSK: «in the Money Flow's settings, on a long
+        // THE MONEY FLOW'S SETTINGS ON A LONG PRESS (the author's word 06.10.2026 14:3x UTC: «in the Money Flow's settings, on a long
         // press, open a page where I choose whom and how much I want to auto-react to, from my contacts»).
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
             flowHeld = true
@@ -2153,8 +2150,6 @@ struct ChatConversationView: View {
     private var coinStands: Bool { !chat.isGroup && MontanaConv.holds(chat.convId ?? chat.name) }
     /// The ribbon of time: the coin of this chat is on.
     private var ribbon: Bool { newestFirst && coinStands }
-    /// A group's or a channel's feed earns while it is open: each letter longer than the floor, by the level (MTChatMint).
-    private var groupMints: Bool { chat.isGroup && MTGroup.isKey(chat.name) }
 
     private var chatCoreM3: some View {
         chatCoreM2
@@ -2162,32 +2157,18 @@ struct ChatConversationView: View {
         .task(id: store.messages[chat.name]?.last?.id) {
             chessPlayed = MTChessSend.playedGame(in: chat, store: store)
         }
-        // THE COIN MINTS WHILE THE RIBBON IS SHOWN (the author's word 02.10 19:37): every change of the letters, and the coin's
-        // own turn, hands this chat's letters to the one tally; it pays each name once and walks only the letters born since.
-        .onChange(of: coinStands || groupMints ? store.messagesRev : -1, initial: true) { _, _ in
-            // EVERY PAIR'S CHAT MINTS, RIBBON OR NOT (the author's word 11.10.2026 21:2x MSK, MTCoinSend.mintLetter): the level's coins a letter.
-            if coinStands { MTChatMint.shared.credit(store.messages[chat.name] ?? [], oneEach: true) }
-            else if groupMints { MTChatMint.shared.credit(store.messages[chat.name] ?? [], longerThan: MTChatMint.groupLetterFloor, in: chat.name) }
-        }
         // WHOM TO INVITE INTO THE GROUP'S CALL (MTRoomMark chose the kind): the sheet hangs on the chat, never inside the bar's item
         .sheet(item: $roomAsk) { k in MTRoomInviteSheet(chat: chat.name, kind: k, video: roomAskVideo, opening: true) }
         // A RIGHT THE GROUP TOOK, OR SLOW MODE'S WAIT (MTGroup.refusal, G.5): the reference's own sentence, the field left as it was
         .alert(groupRefusal ?? "", isPresented: Binding(get: { groupRefusal != nil }, set: { on in if !on { groupRefusal = nil } })) {
             Button("OK", role: .cancel) {}
         }
-        // THE STAKE FROM THE CHAT TOO (the author's word 06.10.2026 23:2x MSK: «from the chat too, when a game is created, the
-        // invitation must say at which stake»): the question takes the stake under the balance; a short balance refuses it.
+        // A NEW GAME FROM THE CHAT: the platform's question, no stake and no balance (the author's word 29.10.2026 19:31 UTC).
         .alert("Start a new game?", isPresented: $askChess) {
-            TextField("Stake", text: $chessStake).keyboardType(.numberPad)
             Button("New game") {
-                let stake = Int(String(chessStake.filter { ch in ch.isASCII && ch.isNumber }.prefix(13))) ?? 0
-                chessStake = ""
-                if let id = MTChessSend.invite(to: chat, seconds: MTChessSend.chatClock, stake: stake, store: store) { chessGame = MTChessPush(game: id) }
-                else if 0 < stake { coinRefused = true }
+                if let id = MTChessSend.invite(to: chat, seconds: MTChessSend.chatClock, store: store) { chessGame = MTChessPush(game: id) }
             }
-            Button("Cancel", role: .cancel) { chessStake = "" }
-        } message: {
-            Text("\(MTCoinText.count(MTCoinSplit.shared.available)) coins")
+            Button("Cancel", role: .cancel) {}
         }
         .confirmationDialog("Call back?", isPresented: Binding(
             get: { callBackVideo != nil }, set: { if !$0 { callBackVideo = nil } }),
@@ -2608,7 +2589,31 @@ struct ChatConversationView: View {
         }
         // THE FEED'S TURN (the author's word 02.10 14:03): the inverted list puts its first row at the visual bottom, so the
         // newest on top is the same rows handed over oldest first -- the one owner of the order, the container untouched.
-        return newestFirst ? out : out.reversed()
+        guard newestFirst else { return out.reversed() }
+        // A LONG TEXT READS DOWNWARD IN THE TURNED FEED TOO (the author's word 25.10.2026 11:23 UTC: «the first message on top, so
+        // that scrolling down I see the continuation»): a text cut at its sending (ChatStore.breakOutgoingText) is born as
+        // neighbouring letters a moment apart, and the turn stood its last piece on top. Each such run is handed over reversed,
+        // its letters only -- the run's day, head and foot stay where every run of the turned feed has them.
+        var i = 0
+        while i < out.count {
+            var j = i
+            while j + 1 < out.count, Self.continues(out[j], out[j + 1]) { j += 1 }
+            if j > i {
+                let run = Array(out[i...j])
+                for (k, row) in run.reversed().enumerated() {
+                    let at = run[k]
+                    out[i + k] = ChatRowVM(message: row.message, newDay: at.newDay, tail: at.tail, topPad: at.topPad, members: row.members)
+                }
+            }
+            i = j + 1
+        }
+        return out
+    }
+    /// Two neighbouring rows are pieces of one text cut at its sending: one side and one speaker, plain letters, born under two
+    /// seconds apart, the earlier as long as only a cut piece is (half the piece's standard or more).
+    private static func continues(_ a: ChatRowVM, _ b: ChatRowVM) -> Bool {
+        a.members.isEmpty && b.members.isEmpty && a.message.isMine == b.message.isMine && a.message.senderRef == b.message.senderRef
+            && b.message.createdAt - a.message.createdAt < 2 && a.message.text.count * 2 >= ChatStore.sendPieceChars
     }
 
     // in-chat search bar
@@ -2821,7 +2826,7 @@ struct ChatConversationView: View {
                         }
                         if chat.isGroup, row.topPad, MessageBubble.speakerPlace(message, plate: !row.members.isEmpty) == .above,
                            let who = MTGroup.shared.speakerLine(message, in: chat.name) {
-                            // THE SPEAKER'S NAME IN THEIR OWN COLOUR AT THE HEAD OF THEIR RUN (the author's word 16.10.2026 20:34 MSK:
+                            // THE SPEAKER'S NAME IN THEIR OWN COLOUR AT THE HEAD OF THEIR RUN (the author's word 16.10.2026 17:34 UTC:
                             // «everything about groups -- atomic likeness to the reference folder»): once a run, in the colour every phone
                             // gives the speaker (MTSpeakerFace.tint), over the bubble's own edge.
                             // USER-DATA: the name of the group's speaker (MTGroup.speakerName).
@@ -2898,8 +2903,6 @@ struct ChatConversationView: View {
                                    chessOpen: message.chessLetter.map { c in c.kind == .invite && !message.isFromMe
                                        && MTChessSend.awaitsMe(c.game, rows: store.messages[chat.name] ?? []) } ?? false,
                                    onChessDecline: { game in MTChessSend.decline(game, in: chat, store: store) },
-                                   chessNet: message.chessLetter.flatMap { c in c.end == nil ? nil
-                                       : MTChessSend.state(c.game, rows: store.messages[chat.name] ?? []).flatMap(MTChessCoins.net) },
                                    onChessAccept: { game in acceptGame(game) },
                                    chessStatus: message.chessLetter.flatMap { c in c.kind != .invite ? nil
                                        : MTChessSend.state(c.game, rows: store.messages[chat.name] ?? []).flatMap { g in
@@ -2999,7 +3002,7 @@ struct ChatConversationView: View {
         }
     }
 
-    /// A CHANNEL IS A CHAT'S FEED (the author's words 17.10.2026 18:4x MSK: «we do not need our own kinds of pages inside groups and
+    /// A CHANNEL IS A CHAT'S FEED (the author's words 17.10.2026 15:4x UTC: «we do not need our own kinds of pages inside groups and
     /// channels -- everything as in the reference folder 1 to 1»): its posts stand in the feed as letters do, drawn as the
     /// reference draws a channel's posts (MTChannelPostLook); its owner writes in the chat's own field, a subscriber reads.
     private var isChannel: Bool { chat.isGroup && MTGroup.shared.kind(chat.name) == .channel }
@@ -3241,11 +3244,37 @@ struct ChatConversationView: View {
         var cut: String? = nil         // its subject, lifted by the platform, on a transparent ground
         var asSticker: Bool
         var video: Bool = false
+        /// A FILE OF THE PLATFORM'S FILES PAGE (25.10.2026): the name the person's file carries; `photo` is its copy on our disk.
+        var docName: String? = nil
         var name: String { asSticker ? (cut ?? photo) : photo }
         var sticker: Bool { asSticker }
+        var isFile: Bool { docName != nil }
+        var orderKind: MTStagedOrder.Kind { isFile ? .file : (asSticker ? .sticker : .picture) }
         var id: String { photo }
     }
     @State private var pastedImages: [MTPasted] = []
+    /// The plate the person carries over the tray now (MTTrayDrop, 27.10.2026); nil when none is held.
+    @State private var trayCarried: String? = nil
+    /// FILES FROM THE PLATFORM'S PAGE INTO THE TRAY (the author's word 25.10.2026 17:40 UTC, council link 8089): copied one after
+    /// another in the page's order, off the screen's thread (a big file copied on it froze the field), and handed to the one array
+    /// every staging road lands in -- so a file is numbered, taken out and sent exactly as a picture is. The diary names what the
+    /// page handed back and what stood in the tray, so a phone's own log proves the count.
+    func stageChosen(_ urls: [URL]) {
+        let t0 = Date()
+        MTFilesFolder.remember(urls.last)
+        Task.detached(priority: .userInitiated) {
+            var made: [MTPasted] = []
+            for src in urls {
+                guard let (stored, original) = copyToDocs(from: src, original: src.lastPathComponent) else { continue }
+                made.append(MTPasted(photo: stored, asSticker: false, docName: original))
+            }
+            let done = made
+            await MainActor.run {
+                pastedImages.append(contentsOf: done)
+                MontanaTrace.mark("files_pick", "picked=\(urls.count) staged=\(done.count) tray=\(pastedImages.count) ms=\(Int(Date().timeIntervalSince(t0) * 1000))")
+            }
+        }
+    }
     func attachPasted(_ imgs: [UIImage]) {
         // THE ENCODE IS NOT THE SCREEN'S (18.09, the author's word: everything instant). The JPEG
         // re-encode and the outgoing shape of a big pasted photo used to run on the main thread,
@@ -3294,7 +3323,7 @@ struct ChatConversationView: View {
     var pastedPreview: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(pastedImages) { item in
+                ForEach(Array(pastedImages.enumerated()), id: \.element.id) { place, item in
                     let name = item.name
                     if let cut = item.cut {
                         // THE CHOICE IS A MINIATURE, NOT A WORD: the picture and its subject stand
@@ -3326,7 +3355,18 @@ struct ChatConversationView: View {
                         Group {
                             // ONE OWNER OF A STAGED THUMBNAIL (22.09, the sticker session's own): the
                             // plate of a letter draws a picture and a video alike.
-                            if let ui = MTLetterThumb.plate(file: name, isVideo: item.video) {
+                            if item.isFile {
+                                // A FILE IN THE TRAY (25.10.2026) wears its kind, its own name and its size, at the plate's size.
+                                VStack(spacing: 3) {
+                                    Image(systemName: "doc.fill").font(.system(size: 20)).foregroundColor(.white.opacity(0.9))
+                                    Text(verbatim: item.docName ?? "").font(.caption2).foregroundColor(.white)   // USER-DATA: the person's file name
+                                        .lineLimit(2).multilineTextAlignment(.center)
+                                    Text(verbatim: fileSizeString(name)).font(.system(size: 10)).foregroundColor(.white.opacity(0.6))
+                                }
+                                .padding(.horizontal, 8)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(Color(white: 0.2))
+                            } else if let ui = MTLetterThumb.plate(file: name, isVideo: item.video) {
                                 Image(uiImage: ui).resizable().aspectRatio(contentMode: item.sticker ? .fit : .fill)
                             } else {
                                 Color(white: 0.2)
@@ -3334,9 +3374,12 @@ struct ChatConversationView: View {
                         }
                         .frame(width: 116, height: 78)
                         .overlay { if item.video { Image(systemName: "play.circle.fill").font(.system(size: 22)).foregroundColor(.white.opacity(0.9)) } }
+                        .overlay(alignment: .topLeading) { stagedNumber(place) }
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .contentShape(RoundedRectangle(cornerRadius: 12))
-                        .onTapGesture { PhotoPresenter.present(name) }
+                        .onTapGesture {
+                            if let d = item.docName { ui.docPage = MTDocOpen(id: name, name: d) } else { PhotoPresenter.present(name) }
+                        }
                         // The cross is drawn small, as in his example, and taken on the platform's own
                         // least target: the circle is 22 points and the touch around it is 44 — the
                         // target grows INWARD from the corner (the critic 22.09: carried outward by an
@@ -3351,12 +3394,43 @@ struct ChatConversationView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                    // THE ORDER IS SET HERE (the author's words 27.10.2026 09:16 UTC, council links 9562-9563: «they are loaded into the
+                    // field in the wrong order and it cannot be changed»): a plate held and carried over another takes its place, the
+                    // numbers follow, and the arrow sends the tray in the order it stands (sendPasted, MTSendLine).
+                    .onDrag {
+                        trayCarried = item.id
+                        return NSItemProvider(object: item.id as NSString)
+                    }
+                    .onDrop(of: [.text], delegate: MTTrayDrop(target: item.id, items: $pastedImages, carried: $trayCarried))
+                }
+                // ONE MORE FILE (25.10.2026): the platform's page takes one file per touch outside its «Select» mode, so a tray
+                // that holds files opens the page again from here, and what it hands back stands after the last number.
+                if pastedImages.contains(where: \.isFile) {
+                    Button { showFileImporter = true } label: {
+                        Image(systemName: "plus").font(.system(size: 20, weight: .semibold)).foregroundColor(.white)
+                            .frame(width: 78, height: 78)
+                            .background(Color(white: 0.2), in: RoundedRectangle(cornerRadius: 12))
+                            .contentShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Files"))
                 }
             }
             .padding(.vertical, 2)
             .padding(.horizontal, 16)
         }
         .padding(.vertical, 6)
+    }
+    /// THE PLACE A STAGED ITEM HOLDS (the author's word 25.10.2026 17:40 UTC, council link 8089): 1, 2, 3 in the order chosen,
+    /// the order the arrow sends them in. It is read off the item's place in the tray, so a cross closes the numbers up.
+    func stagedNumber(_ index: Int) -> some View {
+        Text(verbatim: String(MTStagedOrder.number(at: index)))   // USER-DATA: the place of the person's own pick, digits only
+            .font(.system(size: 12, weight: .bold)).monospacedDigit()
+            .foregroundColor(.black)
+            .padding(.horizontal, 5)
+            .frame(minWidth: 20, minHeight: 20)
+            .background(Color.white, in: Capsule())
+            .padding(5)
     }
     func sendPasted(caption: String) {
         let names = pastedImages
@@ -3368,9 +3442,19 @@ struct ChatConversationView: View {
         let quote = answered.map { ChatStore.listPreview($0) } ?? ""
         let quoteMid = answered?.msgId.map { MontanaStickerBook.bare($0) } ?? ""
         // Pictures pasted together are one group too (19.09) — a sticker never folds, so a paste
-        // that holds one stands on its own.
-        let slots: [MTMediaGroup.Slot?] = names.contains(where: \.sticker) ? Array(repeating: nil, count: names.count)
-                                                                            : MTMediaGroup.slots(names.count)
+        // that holds one stands on its own; a file between pictures ends their plate (MTStagedOrder.plates, 25.10).
+        var slots = [MTMediaGroup.Slot?](repeating: nil, count: names.count)
+        for run in MTStagedOrder.plates(names.map(\.orderKind)) {
+            for (j, s) in MTMediaGroup.slots(run.count).enumerated() { slots[run.lowerBound + j] = s }
+        }
+        // THE TRAY LEAVES IN ITS ORDER, ONE AFTER ANOTHER (the author's word 25.10.2026 17:40 UTC, council link 8089): every row
+        // is laid now, in the tray's order, so both feeds stand them by their birth; the network work of each waits in the
+        // conversation's one line (MTSendLine) until the one before it is over, so no file overtakes an earlier one on the wire.
+        // A group's slow mode reads the whole tray as one letter (MTGroup.slowRefusal).
+        let batch = Set(names.map(\.name))
+        let st = store, sender = MontanaMediaSender(store: store)
+        let peer = convKey, chatKey = chat.name
+        var lined = 0
         for (i, item) in names.enumerated() {
             let cap = i == 0 ? caption : ""   // the words ride with the first picture
             // A STICKER THAT LEAVES JOINS MY SET (22.09): the set fills itself from what the person
@@ -3378,7 +3462,6 @@ struct ChatConversationView: View {
             // never linked -- a letter's file may be swept without emptying the set.
             if item.sticker {
                 let file = item.name
-                let peer = convKey, chatKey = chat.name
                 let first = (i == 0 && !quote.isEmpty)
                 let letter = store.letterMidFor(chatKey, file: file)
                 Task { @MainActor in
@@ -3391,19 +3474,38 @@ struct ChatConversationView: View {
                                                     quote: first ? quote : "", quoteMid: first ? quoteMid : "")
                 }
             }
-            let docName = item.sticker ? MontanaCardPlate.stickerName : nil   // the sticker's name in the manifest (15.42)
+            // the sticker's name in the manifest (15.42); a file's own name (25.10)
+            let docName = item.docName ?? (item.sticker ? MontanaCardPlate.stickerName : nil)
+            let kind = item.isFile ? "doc" : (item.video ? "vid" : "img")
             let qt: String? = (i == 0 && !quote.isEmpty) ? quote : nil   // the plate rides with the first picture
-            var row = item.video
+            let reply: MID? = qt == nil ? nil : answered?.id
+            var row = item.isFile
+                ? Message(text: cap, isFromMe: true, time: nowHHMM(), replyText: qt, docFile: item.name,
+                          docName: docName, deliveryStatus: .sending, senderRef: nil, replyToId: reply)
+                : item.video
                 ? Message(text: cap, isFromMe: true, time: nowHHMM(), replyText: qt, videoFile: item.name,
-                          deliveryStatus: .sending, senderRef: nil, replyToId: qt == nil ? nil : answered?.id)
+                          deliveryStatus: .sending, senderRef: nil, replyToId: reply)
                 : Message(text: cap, isFromMe: true, time: nowHHMM(), replyText: qt, imageFile: item.name,
-                          docName: docName, deliveryStatus: .sending, senderRef: nil, replyToId: qt == nil ? nil : answered?.id)
+                          docName: docName, deliveryStatus: .sending, senderRef: nil, replyToId: reply)
             if let slot = slots[i] {
                 row.groupKey = slot.key; row.groupIndex = slot.index; row.groupCount = slot.count
             }
             store.append(chat.name, row)
-            sendGatedMedia(fileName: item.name, kind: item.video ? "vid" : "img", docName: docName, caption: cap)
+            if groupRefuses(fileName: item.name, kind: kind, docName: docName, caption: cap, batch: batch) { continue }
+            lined += 1
+            let file = item.name, place = i + 1, of = names.count
+            MTSendLine.shared.enqueue(chatKey) {
+                // A row taken off the feed before its turn (its cross, a deletion) is not sent after all.
+                guard (st.messages[chatKey] ?? []).contains(where: { r in r.isFromMe && [r.imageFile, r.videoFile, r.docFile].contains(file) }) else {
+                    MontanaTrace.mark("send_line", "turn=\(place)/\(of) kind=\(kind) skipped -- the row left before its turn")
+                    return
+                }
+                MontanaTrace.mark("send_line", "turn=\(place)/\(of) kind=\(kind) waiting=\(MTSendLine.shared.pending(chatKey))")
+                sender.sendMediaOverE2E(fileName: file, kind: kind, docName: docName, caption: cap, peer: peer, chatKey: chatKey)
+                await st.settled(file)
+            }
         }
+        MontanaTrace.mark("tray_send", "n=\(names.count) files=\(names.filter(\.isFile).count) lined=\(lined) plates=\(Set(slots.compactMap { $0?.key }).count)")
     }
 
     /// THE CARD IS SEEN BEFORE IT RIDES (the critic 22.09, the reference own panel above the field):
@@ -4324,15 +4426,20 @@ struct ChatConversationView: View {
     /// A MEDIA LETTER OF THIS CHAT, ASKED OF THE GROUP FIRST (G.5): a right the group took from its members, or slow mode's wait,
     /// takes the row just laid off this phone and says the reference's sentence; every other letter goes on by the one media road.
     func sendGatedMedia(fileName: String, kind: String, docName: String? = nil, caption: String = "") {
-        if chat.isGroup,
-           let why = MTGroup.shared.mediaRefusal(kind: kind, round: fileName.hasPrefix("vnote_"), name: docName ?? fileName, caption: caption,
-                                                 in: chat.name, store: store, except: fileName) {
-            let laid = (store.messages[chat.name] ?? []).filter { r in r.isFromMe && [r.imageFile, r.videoFile, r.audioFile, r.docFile].contains(fileName) }
-            store.deleteLocally(chat: chat.name, laid)
-            groupRefusal = why
-            return
-        }
+        if groupRefuses(fileName: fileName, kind: kind, docName: docName, caption: caption, batch: [fileName]) { return }
         sendMediaOverE2E(fileName: fileName, kind: kind, docName: docName, caption: caption)
+    }
+    /// The group's door for one row just laid (G.5): refused, the row leaves the feed again and the reference's sentence is said.
+    /// `batch` names every row laid with it -- a tray sent at once is one letter to slow mode (MTGroup.slowRefusal, 25.10.2026).
+    func groupRefuses(fileName: String, kind: String, docName: String?, caption: String, batch: Set<String>) -> Bool {
+        guard chat.isGroup,
+              let why = MTGroup.shared.mediaRefusal(kind: kind, round: fileName.hasPrefix("vnote_"), name: docName ?? fileName, caption: caption,
+                                                    in: chat.name, store: store, except: batch) else { return false }
+        let laid = (store.messages[chat.name] ?? []).filter { r in r.isFromMe && [r.imageFile, r.videoFile, r.audioFile, r.docFile].contains(fileName) }
+        store.deleteLocally(chat: chat.name, laid)
+        groupRefusal = why
+        MontanaTrace.mark("group_media_refused", "kind=\(kind) batch=\(batch.count)")
+        return true
     }
     // `peer`/`chatKey` name another conversation when a letter is forwarded; the open chat otherwise.
     /// THE ONE MEDIA ROAD lives in MontanaMediaSender (16.09): the chat and the share sheet's
@@ -5178,5 +5285,51 @@ struct MTBarRoundMark<Glyph: View>: View {
                 .overlay { if ringed { Circle().strokeBorder(MTMiniFace.playingRing, lineWidth: 1.5).frame(width: h, height: h) } }
                 .contentShape(Rectangle())
         }
+    }
+}
+
+
+/// A PLATE OF THE TRAY CARRIED TO ANOTHER PLACE (the author's words 27.10.2026 09:16 UTC, council links 9562-9563): the moment the held
+/// plate enters another, it takes that one's place by the tray's one rule (MTStagedOrder.moved); the drop only lets the plate go and
+/// writes the place it came to in the diary.
+struct MTTrayDrop: DropDelegate {
+    let target: String
+    @Binding var items: [ChatConversationView.MTPasted]
+    @Binding var carried: String?
+
+    func dropEntered(info: DropInfo) {
+        guard let c = carried, c != target,
+              let from = items.firstIndex(where: { $0.id == c }),
+              let to = items.firstIndex(where: { $0.id == target }) else { return }
+        withAnimation(.easeInOut(duration: 0.15)) { items = MTStagedOrder.moved(items, from: from, to: to) }
+    }
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
+    func performDrop(info: DropInfo) -> Bool {
+        if let c = carried, let at = items.firstIndex(where: { $0.id == c }) {
+            MontanaTrace.mark("tray_move", "place=\(MTStagedOrder.number(at: at)) of=\(items.count)")
+        }
+        carried = nil
+        return true
+    }
+}
+
+/// THE FILES PAGE OPENS WHERE THE PERSON LAST TOOK A FILE FROM (the author's word 27.10.2026 09:15 UTC, council link 9561: «at the
+/// opening of the choice it must show the last page of the file system»): the folder of the last file chosen, sealed on this phone
+/// (MontanaLocalVault), is the platform page's first folder; a folder gone lets the page open where it would. Read once per run.
+enum MTFilesFolder {
+    private static let key = "filesPageFolder"
+    private static var held: URL?? = nil
+    static var last: URL? {
+        if let h = held { return h }
+        let p = MontanaLocalVault.getString(key) ?? ""
+        let u: URL? = p.isEmpty ? nil : URL(fileURLWithPath: p, isDirectory: true)
+        held = .some(u)
+        return u
+    }
+    static func remember(_ file: URL?) {
+        guard let file else { return }
+        let folder = file.deletingLastPathComponent()
+        held = .some(folder)
+        MontanaLocalVault.setString(key, folder.path)
     }
 }

@@ -230,6 +230,11 @@ fn a_telephone_opens_bears_a_person_and_proves_the_frame_that_mints() {
     let mut running = 1i32;
     assert_eq!(mt_boundary::mtc_pulse_running(&mut running), 0);
     assert_eq!(running, 0);
+    assert_eq!(
+        mt_boundary::mtc_errand_redeem(0, 0),
+        -1,
+        "a window whose cement named nobody issued no right to redeem"
+    );
     assert_eq!(mt_boundary::mtc_errand_redeem(0, 1), 0);
     let amount = 1u128.to_le_bytes();
     assert_eq!(

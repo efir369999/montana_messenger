@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS point.3.connected.trianglepath.dotted: three points joined by a dotted triangle (drawn for Montana) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:fillColor="@android:color/white"
+      android:pathData="M12,4.5m-2.4,0a2.4,2.4 0,1 1,4.8 0a2.4,2.4 0,1 1,-4.8 0M4.5,18.5m-2.4,0a2.4,2.4 0,1 1,4.8 0a2.4,2.4 0,1 1,-4.8 0M19.5,18.5m-2.4,0a2.4,2.4 0,1 1,4.8 0a2.4,2.4 0,1 1,-4.8 0"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.6" android:strokeLineCap="round"
+      android:pathData="M10.35,7.58L9.41,9.34M8.73,10.61L7.78,12.37M7.1,13.64L6.16,15.4M13.65,7.58L14.59,9.34M15.27,10.61L16.22,12.37M16.9,13.64L17.84,15.4M8,18.5L10,18.5M11,18.5L13,18.5M14,18.5L16,18.5"/>
+</vector>

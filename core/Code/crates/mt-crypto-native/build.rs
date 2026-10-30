@@ -18,8 +18,11 @@ fn main() {
         Some(d) => (d.join("include"), d.join("lib")),
         None => {
             built = openssl_src::Build::new().build();
-            (built.include_dir().to_path_buf(), built.lib_dir().to_path_buf())
-        }
+            (
+                built.include_dir().to_path_buf(),
+                built.lib_dir().to_path_buf(),
+            )
+        },
     };
 
     cc::Build::new()

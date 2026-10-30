@@ -2,7 +2,7 @@
 
 | What | Where it lives | Value |
 |---|---|---|
-| Canon, the set this tree reproduces | the header of `../docs/Montana Canon.md` | 8.1.0 |
+| Canon, the set this tree reproduces | the header of `../docs/Montana Canon.md` | 10.0.0 |
 | Montana Core | this file | 0.26.0 |
 
 This file is the accounting place and not a second source: the set states its own version in its

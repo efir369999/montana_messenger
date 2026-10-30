@@ -44,10 +44,10 @@ mt_codec::constants! {
     /// the protocol — no state moves, no round advances, no window closes on it — and it is of this
     /// tree because the set names no clock anywhere: what it decides is when this machine stops
     /// holding a thread for a stranger who opened a message and never finished it. The number is
-    /// the largest message this wire carries — an answer of `collect_answer_max` cells, 433 666
+    /// the largest message this wire carries — an answer of `collect_answer_max` cells, 768 770
     /// bytes — crossing at sixty-four kilobits a second, which is the slowest link a telephone of
-    /// this network sustains: fifty-four seconds, taken up to sixty.
-    pub const PATIENCE_SECONDS: u64 = 60, code "how long this machine waits on a far side that has begun a message and stopped, which is the largest message of this wire crossing at the slowest rate a telephone sustains";
+    /// this network sustains: ninety-six seconds, taken up to one hundred and twenty.
+    pub const PATIENCE_SECONDS: u64 = 120, code "how long this machine waits on a far side that has begun a message and stopped, which is the largest message of this wire crossing at the slowest rate a telephone sustains";
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -213,11 +213,31 @@ pub struct Link {
     opened_it: bool,
 }
 
+// The end of a link, held apart from it: a thread reading a link waits without end between two
+// messages, so whoever must stop that thread ends the socket under it rather than waiting for the
+// far side to. Shutting the socket both ways returns the reading thread at once, on every copy of
+// the socket.
+pub struct Closer {
+    stream: TcpStream,
+}
+
+impl Closer {
+    // A socket already shut, or one the far side already closed, has nothing left to end.
+    pub fn close(&self) {
+        let _ = self.stream.shutdown(std::net::Shutdown::Both);
+    }
+}
+
 impl Link {
     // What a caller compares out of band to know it reached the machine it meant. The transcript
     // is public by design and both signatures cover it.
     pub fn transcript(&self) -> &[u8; 32] {
         self.channel.transcript()
+    }
+
+    pub fn closer(&self) -> Result<Closer, NetError> {
+        let stream = self.stream.try_clone().map_err(socket)?;
+        Ok(Closer { stream })
     }
 
     fn sending_key(&self) -> &[u8; 32] {

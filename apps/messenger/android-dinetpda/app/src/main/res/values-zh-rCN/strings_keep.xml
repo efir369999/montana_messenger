@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The keeping of a copy with the people one writes to (iOS MTKeeping, Localizable.xcstrings zh-Hans). -->
+<resources>
+    <string name="keep_ask_title">让联系人保管您的副本？</string>
+    <string name="keep_ask_yes">保管</string>
+    <string name="keep_ask_not_now">暂不</string>
+    <string name="keep_explained">您的副本用您的 24 个单词加密并切分成若干部分。与您通信的人按环形保管这些部分，每部分由两人保管：他们只能看到它的大小和更新时间，无法打开。在新手机上输入您的单词后，这些部分会从他们那里取回，每个人还会交还你们之间的对话。</string>
+    <string name="keep_header">联系人保管的副本</string>
+    <string name="keep_mine">让联系人保管我的副本</string>
+    <string name="keep_asking">正在询问与您通信的人…</string>
+    <string name="keep_nobody_yet">目前还没有联系人能保管部分</string>
+    <string name="keep_not_yet">尚未保管</string>
+    <string name="keep_kept_by">已由 %1$d/%2$d 人保管</string>
+    <string name="keep_others">为联系人保管部分</string>
+    <string name="keep_stop_part">不再保管此部分</string>
+    <string name="keep_take_back">从联系人处取回我的副本</string>
+    <string name="keep_parts_in_hand">已取回部分：%1$d/%2$d</string>
+    <string name="keep_restoring_chain">正在恢复身份链</string>
+    <string name="keep_came_back">副本已取回</string>
+    <string name="keep_none_came_back">副本未能取回</string>
+    <string name="keep_others_footer">他人副本的部分已加密：此手机无法打开，每一部分只会回到其主人的单词。</string>
+    <string name="keep_note_title">保管副本</string>
+    <string name="keep_note_body">%1$s 在此手机上保管其副本的一个加密部分（%2$s）。此处无人能打开它。</string>
+    <string name="keep_in_background">您的历史记录将在后台继续恢复。</string>
+</resources>

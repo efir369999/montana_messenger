@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The coin chains of version 3 (iOS MTCoinSend, MontanaConversation 1557-1560): the words as iOS says them. -->
+<resources>
+    <string name="coin_pending_title">Transfer is being confirmed</string>
+    <string name="coin_pending_sub">The available balance was sufficient. The transfer has one pending record and must not be sent again.</string>
+    <!-- The first irreversible record asks the person (the owner's word 17.10.2026); Android's own words, iOS has no such dialog. -->
+    <string name="coin_genesis_title">Open your coin chain?</string>
+    <string name="coin_genesis_body_before">This is the first record of your coins in the public journal of the Montana network (GENESIS). It can never be cancelled or deleted. It will announce the %1$s %2$s of your book. After it this phone itself records the coins you mint (MINT) and accepts the coins sent to you (RECV). Without an open chain coins can be neither sent nor received.</string>
+    <string name="coin_genesis_body_after">This is the first record of your coins in the public journal of the Montana network (GENESIS). It can never be cancelled or deleted. It opens the chain with zero: the coins of your book (%1$s %2$s) are confirmed in it by minting records (MINT), step by step, within the time of your key. After it this phone itself records the coins you mint and accepts the coins sent to you (RECV). Without an open chain coins can be neither sent nor received.</string>
+    <string name="coin_genesis_open">Open the chain</string>
+    <string name="coin_genesis_later">Not now</string>
+    <string name="coin_chain_open_button">Open the coin chain</string>
+    <string name="coin_book_loading">The coin book is loading from the network…</string>
+    <string name="coin_chain_asking">Checking with the network…</string>
+    <string name="coin_chain_closed">The coin chain is not open yet</string>
+    <string name="coin_confirmed">Confirmed by the network: %1$s %2$s</string>
+</resources>

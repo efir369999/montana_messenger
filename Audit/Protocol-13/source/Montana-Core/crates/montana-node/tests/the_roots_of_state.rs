@@ -1,5 +1,5 @@
-// The six roots and the count a proposal carries, recomputed from the plane as a real frame left it.
-// Canon, "The roots of state".
+// The seven roots and the count a proposal carries, recomputed from the plane as a real frame left
+// it. Canon, "The roots of state".
 //
 // **The wrong implementations it refuses**, named before the assertions: a set of nullifiers taking
 // the rate nullifier of a spend as an entry — the rate stands in the rate set of the horizon, which is
@@ -29,7 +29,7 @@ fn the_roots_of_state_are_the_tables_the_window_left() {
 
     // The empty plane: every root is the root of its empty table, and the count is the cohort's.
     let empty = state
-        .roots(&cohort, WINDOW)
+        .roots(&cohort, WINDOW, &[])
         .expect("the roots of an empty plane");
     assert_eq!(empty.note_root, Table::Notes.empty_root());
     assert_eq!(empty.nullifier_root, Table::Nullifiers.empty_root());
@@ -37,10 +37,11 @@ fn the_roots_of_state_are_the_tables_the_window_left() {
     assert_eq!(empty.machine_root, Table::Machines.empty_root());
     assert_eq!(empty.operations_root, Table::Operations.empty_root());
     assert_eq!(empty.admitted_root, cohort.root().bytes());
+    assert_eq!(empty.credited_root, Table::Credited.empty_root());
     assert_eq!(empty.admitted_count, 2);
     let elsewhere = Cohort::of(&[Cohort::half_of(&[0x33u8; 32])]).expect("a tree of one");
     assert!(
-        state.roots(&elsewhere, WINDOW).is_err(),
+        state.roots(&elsewhere, WINDOW, &[]).is_err(),
         "a plane answered for a tree it does not stand against"
     );
 
@@ -79,14 +80,14 @@ fn the_roots_of_state_are_the_tables_the_window_left() {
             &of_payer,
             &paths,
             &before,
-            &cohort.root(),
+            &state.credited(),
         )
         .expect("a payment of what the payer holds");
     let frame = mt_state::layout::Frame::parse(&paid.frame).expect("a frame reads back");
     state.apply(&frame, WINDOW).expect("a true frame applies");
 
     let roots = state
-        .roots(&cohort, WINDOW)
+        .roots(&cohort, WINDOW, &[])
         .expect("the roots after the frame");
     assert_eq!(roots.note_root, state.notes_root().bytes());
     assert_ne!(roots.note_root, empty.note_root);
@@ -122,7 +123,7 @@ fn the_roots_of_state_are_the_tables_the_window_left() {
     // The tree of operations holds one window: the window after holds nothing yet.
     assert_eq!(
         state
-            .roots(&cohort, WINDOW + 1)
+            .roots(&cohort, WINDOW + 1, &[])
             .expect("the roots of the next window")
             .operations_root,
         Table::Operations.empty_root()
@@ -132,9 +133,51 @@ fn the_roots_of_state_are_the_tables_the_window_left() {
     // still refuses the rate it already holds.
     let back = State::decode(&state.encode().expect("the plane encodes")).expect("it reads back");
     assert_eq!(
-        back.roots(&cohort, WINDOW).expect("the roots read back"),
+        back.roots(&cohort, WINDOW, &[])
+            .expect("the roots read back"),
         roots
     );
     assert!(rates.iter().all(|rate| back.is_spent(rate)));
     assert!(spent.iter().all(|one| back.is_spent(one)));
+
+    // The credit of a window moves no frame's root and moves the root of credited rights by the
+    // parts of its cement, in their order; it survives a stop, and a part it took has a branch that
+    // walks to that root while a part of no credited cement has none.
+    let mut parts = vec![
+        mt_derive::nullifier::part(&[0x11u8; 32], WINDOW).expect("a part of the family"),
+        mt_derive::nullifier::part(&[0x22u8; 32], WINDOW).expect("a part of the family"),
+    ];
+    parts.sort_unstable();
+    let mut credited = back;
+    credited.credit(&parts).expect("a cement the tree holds");
+    let after = credited
+        .roots(&cohort, WINDOW, &[])
+        .expect("the roots after the credit");
+    assert_eq!(
+        Some(after.credited_root),
+        mt_proof::credited::root_of(&parts, mt_proof::tree_depth()).map(|root| root.bytes()),
+        "the tree of credited rights is not the parts of the cement in their order"
+    );
+    assert_eq!(
+        (after.note_root, after.nullifier_root, after.operations_root),
+        (roots.note_root, roots.nullifier_root, roots.operations_root)
+    );
+    let (siblings, position) = credited
+        .credited_branch(&parts[1])
+        .expect("a part the credit took");
+    assert_eq!(position, 1);
+    let mut walked = mt_proof::credited::leaf(&parts[1]).expect("a part of the family");
+    for (level, sibling) in siblings.iter().enumerate() {
+        walked = if (position >> level) & 1 == 1 {
+            mt_proof::credited::node(sibling, &walked)
+        } else {
+            mt_proof::credited::node(&walked, sibling)
+        };
+    }
+    assert_eq!(walked.bytes(), after.credited_root);
+    let outside = mt_derive::nullifier::part(&[0x11u8; 32], WINDOW + 1).expect("a part");
+    assert!(credited.credited_branch(&outside).is_none());
+    let kept =
+        State::decode(&credited.encode().expect("the plane encodes")).expect("it reads back");
+    assert_eq!(kept.credited(), credited.credited());
 }

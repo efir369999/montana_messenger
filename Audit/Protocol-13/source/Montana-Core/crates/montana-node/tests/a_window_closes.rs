@@ -114,22 +114,23 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
     );
 }
 
-// What a closed window mints, and to whom. Minting creates no note: the window issues to each
-// living machine a right to a share of it, one right per machine per window, and the count of the
+// What a closed window credits, and to whom. Minting creates no note: the window issues to each
+// living machine a right to its coin, one right per machine per window, and the count of the
 // living is what the cement names — never a poll, never a count of who answered on the wire.
 #[test]
-fn a_closed_window_issues_one_equal_right_to_every_machine_its_cement_names() {
+fn a_closed_window_issues_its_credit_to_every_machine_its_cement_names() {
     let secrets = [[0x11u8; 32], [0x22u8; 32]];
     let living = secrets.len();
-    let mint = attest::mint_of(WINDOW).expect("the Decree names the schedule");
 
     let mut rights = Vec::new();
     for secret in &secrets {
-        let right = attest::right_of(secret, WINDOW, living).expect("a machine of the cement");
-        // One equal part to every living machine, with the remainder that does not divide carried
-        // forward rather than appropriated.
-        assert_eq!(right.share, mint / living as u64);
-        assert_eq!(right.carried_forward, mint % living as u64);
+        let right = attest::right_of(secret, WINDOW).expect("a machine of the cement");
+        // The window's credit, one coin for every second of it, to every living machine: nothing
+        // is divided, so nothing is carried.
+        assert_eq!(
+            right.worth,
+            attest::window_credit().expect("the Decree names it")
+        );
         // The window a right is accepted in is drawn from the machine's own secret: not early, not
         // late, and nothing about the choice is anyone's to make.
         let spread = mt_genesis::scalar("claim_spread").expect("the Decree names it");
@@ -137,15 +138,20 @@ fn a_closed_window_issues_one_equal_right_to_every_machine_its_cement_names() {
         rights.push(right);
     }
 
-    // Two machines, two rights, two nullifiers: no machine takes its share twice and none takes
+    // Two machines, two rights, two nullifiers: no machine takes its coin twice and none takes
     // another's.
     assert_ne!(rights[0].nullifier, rights[1].nullifier);
-    // And the shares of the living, plus what does not divide, are the mint of that window exactly.
-    let handed: u64 = rights.iter().map(|r| r.share).sum();
-    assert_eq!(handed + rights[0].carried_forward, mint);
+    // And the coins of the living are what the window adds to the supply exactly: its credit
+    // times the count of its cement.
+    let handed: u64 = rights.iter().map(|r| r.worth).sum();
+    assert_eq!(
+        handed,
+        living as u64 * attest::window_credit().expect("the Decree names it")
+    );
+    assert_eq!(attest::supply_added(living), Ok(handed));
 
-    // A window whose cement names nobody mints no share, and says so rather than dividing by it.
-    assert!(attest::right_of(&secrets[0], WINDOW, 0).is_err());
+    // A window whose cement names nobody adds nothing.
+    assert_eq!(attest::supply_added(0), Ok(0));
 }
 
 // The named wrong implementation this refuses: a machine answering with a proof made for another

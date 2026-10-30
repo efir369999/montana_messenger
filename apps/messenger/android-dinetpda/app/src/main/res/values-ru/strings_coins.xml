@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The coin chains of version 3 (iOS Localizable.xcstrings ru). -->
+<resources>
+    <string name="coin_pending_title">Перевод подтверждается</string>
+    <string name="coin_pending_sub">Доступного баланса достаточно. У перевода одна ожидающая запись; не отправляйте его повторно.</string>
+    <!-- The first irreversible record asks the person (the owner's word 17.10.2026); Android's own words, iOS has no such dialog. -->
+    <string name="coin_genesis_title">Открыть цепочку монет?</string>
+    <string name="coin_genesis_body_before">Это первая запись ваших монет в общий журнал сети Montana (GENESIS). Её нельзя отменить или удалить. Она объявит %1$s %2$s вашей книги. После неё телефон сам записывает начеканенные монеты (MINT) и принимает присланные вам (RECV). Без открытой цепочки монеты нельзя ни отправить, ни получить.</string>
+    <string name="coin_genesis_body_after">Это первая запись ваших монет в общий журнал сети Montana (GENESIS). Её нельзя отменить или удалить. Она откроет цепочку с нулём: монеты вашей книги (%1$s %2$s) будут подтверждаться в ней записями чеканки (MINT) постепенно, в пределах времени вашего ключа. После неё телефон сам записывает начеканенные монеты и принимает присланные вам (RECV). Без открытой цепочки монеты нельзя ни отправить, ни получить.</string>
+    <string name="coin_genesis_open">Открыть цепочку</string>
+    <string name="coin_genesis_later">Не сейчас</string>
+    <string name="coin_chain_open_button">Открыть цепочку монет</string>
+    <string name="coin_book_loading">Книга монет загружается из сети…</string>
+    <string name="coin_chain_asking">Проверка в сети…</string>
+    <string name="coin_chain_closed">Цепочка монет ещё не открыта</string>
+    <string name="coin_confirmed">Подтверждено сетью: %1$s %2$s</string>
+</resources>

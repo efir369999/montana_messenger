@@ -542,7 +542,7 @@ enum MontanaArchive {
             }}
         }}}
         if n > 0 { return Data(out.prefix(Int(n))) }
-        // A FACE IS ITS OWN FOLDER'S OR NONE (04.10, T1 03.10 23:49 MSK: one portrait on most of the book): every folder names its
+        // A FACE IS ITS OWN FOLDER'S OR NONE (04.10, T1 03.10 20:49 UTC: one portrait on most of the book): every folder names its
         // face by the one word «face», so the search below handed the first folder's face to every correspondent without one.
         guard blobId != faceBlob else { return nil }
         // The folder could have been named otherwise yesterday -- by callsign, by link, by a word common
@@ -702,7 +702,7 @@ extension MontanaArchive {
 
     /// No conversation means no trace of it on disk: letters, sealed attachments, the folder itself.
     /// Deleting for oneself and deleting for both erase the SAME local storage.
-    /// A FOLDER ALREADY GONE IS NOT FORGOTTEN AGAIN (12.10.2026, T1 during the 12:30 MSK call: the pass over the erased conversations,
+    /// A FOLDER ALREADY GONE IS NOT FORGOTTEN AGAIN (12.10.2026, T1 during the 09:30 UTC call: the pass over the erased conversations,
     /// run at every opening (sealArchiveFolderNames), cleared the marks of the same ninety-six folders three times in two seconds --
     /// 276 archive_forget lines, five sealed records read and written again for every folder each time). A folder's marks are
     /// forgotten once in a run; a folder that stands on the disk again -- an assembly that caught up after the erasure -- is removed
@@ -725,7 +725,7 @@ extension MontanaArchive {
             UserDefaults.standard.set(forgottenFolders.sorted(), forKey: forgottenKey)
         }
     }
-    /// THE FOLDER'S MARKS GO WITH THE FOLDER (the critic B-3, 11.10.2026; the author's word 11.10.2026 20:1x MSK: «check the whole
+    /// THE FOLDER'S MARKS GO WITH THE FOLDER (the critic B-3, 11.10.2026; the author's word 11.10.2026 17:1x UTC: «check the whole
     /// architecture of the chats' time chains, so there are no holes by the constitution»): the head, name-head, folder-map and
     /// cursor marks are economies that say «this folder already holds it», and they outlived the directory -- a folder born again
     /// for the same conversation never got its pipe head again (writeHeadIn: heads[folder] == form; rememberFolder: the map
@@ -789,8 +789,15 @@ extension MontanaArchive {
             MontanaTrace.markFolded("archive_refused", "a block of a deleted conversation is not filed", window: 60)
             return true
         }
+        // A HEAD WITH THE ESTABLISHED SECRET IS NOT FILED FROM THE FLOOR DAY (25.10.2026, decision 191): the twin's copy of an
+        // old head would lay the secret under the seed again after this device's pass took it out (dropSecretHeads).
+        if MTPipeBook.floorDay() >= MTPipeKey.eraseDay, onlySecretHeads(openBlock(sealed, hk: h, acct: a)) {
+            MontanaTrace.markFolded("archive_refused", "a head with the established secret is not filed from the floor day", window: 60)
+            return true
+        }
         let folder = folderName(forConv: conv) ?? conv.montanaHexString
         let base = rootURL.path
+        logLock.lock()
         let rc = base.withCString { bp in folder.withCString { cn in
             h.withUnsafeBytes { hp in a.withUnsafeBytes { ap in sealed.withUnsafeBytes { sp in
                 mt_archive_ingest(bp, cn,
@@ -799,6 +806,7 @@ extension MontanaArchive {
                     sp.bindMemory(to: UInt8.self).baseAddress, sealed.count)
             }}}
         }}
+        logLock.unlock()
         if rc == 1 {
             MontanaLog.event("HISTORY ← own device: block filed in \(folder.prefix(12))")
             // The block is filed — and now it is READ: the same road the phrase walks, so the
@@ -808,7 +816,7 @@ extension MontanaArchive {
         return rc >= 0
     }
 
-    /// THE BLOCKS OF A DELETED CONVERSATION ARE NOT FILED AGAIN (the critic B-4; the author's words 11.10.2026 20:1x MSK: «check the
+    /// THE BLOCKS OF A DELETED CONVERSATION ARE NOT FILED AGAIN (the critic B-4; the author's words 11.10.2026 17:1x UTC: «check the
     /// whole architecture of the chats' time chains, so there are no holes by the constitution»). The other device's blocks, laid
     /// before it heard of the deletion, came back by the twin's road and stood the conversation again -- in a folder named by the
     /// hash, the map's mark gone with the old folder (forgetFolderMarks), as «Recovered history». The deleted set is the
@@ -869,7 +877,7 @@ extension MontanaArchive {
         return rc == 0 ? seq : nil
     }
 
-    // ── the person's other devices through the box (the author's word 11.10.2026 12:1x MSK, No.60: «do it») ──
+    // ── the person's other devices through the box (the author's word 11.10.2026 09:1x UTC, No.60: «do it») ──
     // Nana's iPhone 17 and iPad 9 hold one seed; the road above reached the twin only at a public address, and a phone behind a
     // carrier's NAT has none: a week of every diary on Lauterbourg holds no «HISTORY → own device» line. A sleeping iPhone is woken
     // by Apple's push alone and cannot hold a letter for another, so the node holds it: the blocks, already sealed under the
@@ -891,9 +899,12 @@ extension MontanaArchive {
     nonisolated static var twinDeviceRef: String { (MontanaSeed.twin ?? "") + "#" + E2E.deviceTag() }
     /// The one place a label of the seed's own pipe is signed: by this device, never by the person (P-118.1's one exception).
     nonisolated static func twinSid(_ cw: String) -> String { MontanaWakePush.subId(cw, ref: twinDeviceRef) }
-    nonisolated static func twinListening() -> [String: Data] {
+    /// This device's name under any label of the box -- what it took is marked by it, never by the person (24.10.2026): the same
+    /// derivation as the pipe's sid, one per label, so the node links no two labels of one device.
+    nonisolated static func deviceSid(_ cw: String) -> String { twinSid(cw) }
+    nonisolated static func twinListening() -> [String: MTPipeKey] {
         guard let s = twinSecret() else { return [:] }
-        return [twinPipe: s]
+        return [twinPipe: MTPipeKey(s)]
     }
     private static var twinDue = false
     /// A block was written: the other devices get it within half a minute, in one letter with whatever came beside it.
@@ -982,11 +993,11 @@ extension MontanaArchive {
         MontanaTrace.mark("twin_hist", "taken blocks=\(filed)")
     }
 
-    // ── THE TWIN MIRROR (the author's words 18.10.2026 10:3x-10:4x MSK: «on T1 the letters of 10:07 are not seen, on the Mac with the
+    // ── THE TWIN MIRROR (the author's words 18.10.2026 07:3x-07:4x UTC: «on T1 the letters of 07:07 are not seen, on the Mac with the
     // same person they are»; «on the Mac, in my own groups and channels, what I posted from the phone is not seen -- it does not
     // sync as the chats do»; «read on the phone -- read on every device, not hanging as a banner on the computer») ──
     // Measured on T1 18.10.2026 07:05Z (archive_gap): chat a:f91e4b held 53 rows against 63 in the archive, all 12 missing ones the
-    // correspondent's, 8 of them media, the newest at 10:04 -- letters the Mac took. Three causes, each read in the set: the node's
+    // correspondent's, 8 of them media, the newest at 07:04 -- letters the Mac took. Three causes, each read in the set: the node's
     // box gives a letter to whichever device of the seed takes it first, and that device's confirmation erases it for the rest
     // (/box-del, by name); the twin's blocks join only a conversation the device does not hold (restoreFromArchive); and a group's
     // word or a read mark of the seed's other device was applied to nobody (MontanaDeliveryEngine.landOwn). So every word a device
@@ -1073,8 +1084,8 @@ extension MontanaArchive {
         }
         MontanaTrace.mark("twin_mirror", "laid words=\(batch.count) left=\(left)")
     }
-    // ── THE PAST THE TWIN MISSED (the author's words 18.10.2026 10:3x MSK: «on T1 there is no media of yesterday 17:33 in the chat, on
-    // the Mac there is»; 12:1x «finish and close every item»): the mirror carries what lands from now on; what one device took before
+    // ── THE PAST THE TWIN MISSED (the author's words 18.10.2026 07:3x UTC: «on T1 there is no media of yesterday 14:33 in the chat, on
+    // the Mac there is»; 09:1x «finish and close every item»): the mirror carries what lands from now on; what one device took before
     // it stands in that device's archive, which the other files (twin_hist) and measures against its feed (archive_gap) but never
     // lays into a conversation it holds -- an archive row carries no letter's name, so no tombstone could be asked of it. So the
     // device that sees the gap ASKS the other by the archive's own key of each row (its second, its side, a hash of its words), the
@@ -1096,7 +1107,7 @@ extension MontanaArchive {
         guard !fresh.isEmpty, let d = try? JSONSerialization.data(withJSONObject: ["i": fresh.map { i in [i.s, i.m ? 1 : 0, i.h] as [Any] }]),
               let js = String(data: d, encoding: .utf8) else { return }
         for i in fresh { asked.insert(chat + "/" + String(i.s) + "/" + i.h) }
-        // A SLICE IS NO PROPERTY LIST (the author's word 18.10.2026 14:0x MSK: «check why the app crashes on T1 and fix it urgently»):
+        // A SLICE IS NO PROPERTY LIST (the author's word 18.10.2026 11:0x UTC: «check why the app crashes on T1 and fix it urgently»):
         // T1 on 2240 died on screen every half minute from 11:08:52Z -- NSInvalidArgumentException «Attempt to insert non-property list
         // object ArraySlice([...]) for key mt.twin.asked»: suffix hands back an ArraySlice, and the settings store takes only arrays.
         UserDefaults.standard.set(Array(Array(asked).suffix(5000)), forKey: askedKey)
@@ -1207,8 +1218,12 @@ extension MontanaArchive {
         // place sealed under the seed where it may live, and without it a restored chat could be
         // read but never answered (critic pass 06.09).
         let content: Data, form: String
-        if let sec = MTPipeBook.secret(for: convRef), MTPipeBook.reference(of: sec) == convRef {
-            content = Data("s:".utf8) + Data(sec.base64EncodedString().utf8); form = "s"
+        if let pipe = MTPipeBook.key(for: convRef), pipe.reference == convRef {
+            // the pipe's one owner writes the form the archive seals; the floor's head («f» in the marker) follows the
+            // secret's once, from the day the walk erased it (OZ1, decision 126) -- the last head decides at a restore. The day
+            // is the book's own (the clock guard, decision 188), so the archive never floors ahead of the book.
+            let fd = MTPipeBook.floorDay()
+            content = pipe.archiveHead(day: fd); form = pipe.floored(day: fd).holdsOrigin ? "s" : "f"
         } else {
             content = Data("a:".utf8) + Data(convRef.utf8); form = "a"
         }
@@ -1231,9 +1246,94 @@ extension MontanaArchive {
             MontanaTrace.mark("archive_head", "folder=\(folder.prefix(8)) form=x")
         }
     }
+    // ── THE SECRET LEAVES THE ARCHIVE ON THE FLOOR DAY (25.10.2026, decision 191) ───────────────────────────────────────
+    /// Every head written before eraseDay carries the established secret («s:» with the thirty-two bytes), and a folder's log is
+    /// only ever appended to. From eraseDay the archive holds the floor, never the secret: the log of every folder is rewritten
+    /// once without those blocks. A folder whose last secret head has no floor head after it gets the floor
+    /// of that very head in its place, so the last head still decides at a restore as before (closed stays closed, reopened
+    /// stays reopened, 11.10.2026 No.61). Nothing else in the log moves; a block's (writer, seq) is its own and seq is per
+    /// identity, so a block taken out leaves no hole a reader counts. The twin's copy is cleaned by its own pass, and a secret
+    /// head it still sends is not filed here (absorb).
+    private static let logLock = NSLock()   // the rewrite against absorb, the one writer off the queue
+    private static let purgedKey = "archiveSecretHeadsPurged"
+    /// `day`: the day the book floored by (MTPipeBook.floorDay), from eraseDay.
+    static func dropSecretHeads(day: UInt64) {
+        ioQueue.async { dropSecretHeadsIn(day: day) }
+    }
+    /// Whether a sealed block is nothing but heads carrying the established secret.
+    private static func onlySecretHeads(_ items: [(conv: Data, dir: UInt8, at: UInt64, content: Data)]) -> Bool {
+        items.allSatisfy { it in it.dir == headDir } && MTPipeKey.onlySecretHeads(items.map { String(decoding: $0.content, as: UTF8.self) })
+    }
+    /// Queue-only: the pass itself, once per archive from eraseDay (again after a restore brings an older archive: the mark is
+    /// not one of the records a restore carries).
+    private static func dropSecretHeadsIn(day: UInt64) {
+        guard day >= MTPipeKey.eraseDay, MontanaLocalVault.getDecrypted(purgedKey) == nil, let (h, _, a) = keys() else { return }
+        var cut = 0, replaced = 0, folders = 0, failed = 0
+        for folder in conversations() {
+            let url = rootURL.appendingPathComponent(MontanaPaths.chats).appendingPathComponent(folder)
+                .appendingPathComponent(MontanaPaths.log)
+            logLock.lock()
+            defer { logLock.unlock() }
+            guard let data = try? Data(contentsOf: url) else { continue }
+            // the frames in file order: (u32 LE length ‖ sealed), as readLog reads them; a torn tail is kept as it lay
+            var frames: [(frame: Data, items: [(conv: Data, dir: UInt8, at: UInt64, content: Data)])] = []
+            var i = 0
+            let n = data.count
+            while i + 4 <= n {
+                let len = Int(UInt32(data[i]) | UInt32(data[i+1]) << 8 | UInt32(data[i+2]) << 16 | UInt32(data[i+3]) << 24)
+                guard len > 0, i + 4 + len <= n else { break }
+                frames.append((data.subdata(in: i..<(i + 4 + len)), openBlock(data.subdata(in: (i + 4)..<(i + 4 + len)), hk: h, acct: a)))
+                i += 4 + len
+            }
+            let tail = i < n ? data.subdata(in: i..<n) : Data()
+            // a floor head after the last secret head already decides; else the floor of that head takes its place (MTPipeKey.purge)
+            let kinds: [MTPipeKey.LogFrame] = frames.map { f in
+                if onlySecretHeads(f.items) { return .secretHead }
+                let floorHead = f.items.contains { it in
+                    let s = String(decoding: it.content, as: UTF8.self)
+                    return it.dir == headDir && MTPipeKey(archiveHead: s) != nil && !MTPipeKey.headHoldsSecret(s)
+                }
+                return floorHead ? .floorHead : .other
+            }
+            let plan = MTPipeKey.purge(kinds)
+            guard let last = plan.drop.last else { continue }
+            var put: Data? = nil
+            if plan.floorAt != nil {
+                // the floor head could not be made or laid: the old head stays rather than leave the folder with no head, the
+                // pass is not marked done, and the next start tries again
+                guard let it = frames[last].items.first,
+                      let pipe = MTPipeKey(archiveHead: String(decoding: it.content, as: UTF8.self), day: day), !pipe.holdsOrigin
+                else { failed += 1; continue }
+                appendHeadBlock(conv: it.conv, folder: folder, content: pipe.archiveHead(day: day))
+                // the block just appended is the log's last frame: the queue and the lock let no other writer in between
+                if let after = try? Data(contentsOf: url), after.count > data.count, after.prefix(data.count) == data {
+                    put = after.subdata(in: data.count..<after.count)
+                }
+                if put == nil { failed += 1; continue }
+            }
+            var out = Data()
+            for (k, f) in frames.enumerated() {
+                if kinds[k] == .secretHead {
+                    cut += 1
+                    if k == last, let put { out.append(put); replaced += 1 }
+                    continue
+                }
+                out.append(f.frame)
+            }
+            out.append(tail)
+            do { try out.write(to: url, options: .atomic) } catch { failed += 1; continue }
+            folders += 1
+        }
+        if failed == 0 { _ = MontanaLocalVault.setEncrypted(purgedKey, Data("\(day)".utf8)) }
+        MontanaTrace.mark("archive_secret_heads", "folders=\(folders) cut=\(cut) floored=\(replaced) failed=\(failed)")
+    }
+
     /// Queue-only: one head block appended to a folder's log.
     private static func appendHead(convRef: String, folder: String, content: Data) {
-        let conv = MontanaQueueKeys.sha256(Data(convRef.utf8))
+        appendHeadBlock(conv: MontanaQueueKeys.sha256(Data(convRef.utf8)), folder: folder, content: content)
+    }
+    /// Queue-only: the same block under a conversation already named by its hash.
+    private static func appendHeadBlock(conv: Data, folder: String, content: Data) {
         let base = rootURL.path
         let dev16 = Self.writerTag16()
         let st = UInt64(Date().timeIntervalSince1970)
@@ -1355,13 +1455,15 @@ extension MontanaArchive {
     static func restore(folders: [String]) -> [RestoredChat] {
         guard let (h, _, a) = keys() else { return [] }
         let book = refBook()
+        // THE ROAD BACK FLOORS BY THE LATER DAY (decision 188, E): the device's day or the trusted mark M, whichever is later
+        let backDay = MTPipeBook.recoveryDay()
         var out: [RestoredChat] = []
         var headsS = 0, headsA = 0, headsN = 0, faces = 0, closedN = 0, reopenedN = 0
         for folder in folders {
             var ref: String? = nil
             var name: String? = nil
             var items: [RestoredItem] = []
-            var headSecret: Data? = nil
+            var headSecret: MTPipeKey? = nil
             var closedThere = false, closedOnce = false
             for sealed in readLog(folder: folder) {
                 for it in openBlock(sealed, hk: h, acct: a) {
@@ -1369,7 +1471,7 @@ extension MontanaArchive {
                         guard let s = String(data: it.content, encoding: .utf8) else { continue }
                         // COMPAT-LOCAL: the head forms s:/a:/n: live only in the sealed archive on the
                         // device, never on the wire; an older archive's bare address is read below.
-                        if s.hasPrefix("s:"), let sec = Data(base64Encoded: String(s.dropFirst(2))), sec.count == 32 {
+                        if let sec = MTPipeKey(archiveHead: s, day: backDay) {
                             // The secret re-establishes the pipe once the whole log is read: from there the device
                             // answers for the correspondence again, and the reference is its chat key.
                             headsS += 1
@@ -1398,8 +1500,8 @@ extension MontanaArchive {
             // and the other side holds the secret no more — a revived pipe would be a composer writing into nothing.
             if headSecret != nil, closedOnce { if closedThere { closedN += 1 } else { reopenedN += 1 } }
             if let sec = headSecret {
-                if closedThere { ref = MTPipeBook.reference(of: sec) }
-                else if let r = MTPipeBook.establish(secret: sec, seal: false) { ref = r }
+                if closedThere { ref = sec.reference }
+                else if let r = MTPipeBook.establish(pipe: sec, seal: false) { ref = r }
             }
             // No head, or none this device can use: the folder name is the keyed hash of the
             // address, so every correspondence the device still answers for names its own folder.

@@ -203,7 +203,7 @@ final class MTTurnDrag: ObservableObject {
     var chatWall: MTWallOpen?
     var chessPage: MTChessOpen?
     var walletPage: MTPageFlag?
-    /// PASSWORDS (the author's word 06.10.2026 17:4x MSK): the person's secrets, a page of its own over the tabs (MTPasswordsPage).
+    /// PASSWORDS (the author's word 06.10.2026 14:4x UTC): the person's secrets, a page of its own over the tabs (MTPasswordsPage).
     var passwordsPage: MTPageFlag?
     var settingsShown: Bool {
         get { overlayPage == .settings }
@@ -242,7 +242,7 @@ final class MTTurnDrag: ObservableObject {
     var turnOrder: [Pane] { [.contacts, .calls, .feed, .chats, mediaIsMusic ? .music : .gallery, Self.globeWall] }
     /// The globe's page: the VPN wall where the device carries a tunnel, else the P2P wall -- the nodes of a desktop core.
     static var globeWall: Pane { MontanaVPNTunnel.carried ? .vpn : .p2p }
-    /// THE FOLDER CHOSEN ON THE CHATS PAGE, AND THE FOLDERS IN THEIR TABS' ORDER (the author's word 18.10.2026 10:2x MSK: «swipes
+    /// THE FOLDER CHOSEN ON THE CHATS PAGE, AND THE FOLDERS IN THEIR TABS' ORDER (the author's word 18.10.2026 07:2x UTC: «swipes
     /// right and left on the chats page turn between the tabs too, and from the outermost go on to the other pages»): the page names
     /// its folders here (ChatsListView), and the stroke reads them (turnStroke) -- All at every launch, as the reference.
     var chatFolder = MTChatFolder.allID
@@ -366,7 +366,7 @@ final class MTTurnDrag: ObservableObject {
         withTransaction(still) { turnDrag.x = base }
         return base
     }
-    /// A BANNER'S TAP LEAVES NO PAGE STANDING (the author's word 18.10.2026 10:3x MSK: «check that on a notification no page of the
+    /// A BANNER'S TAP LEAVES NO PAGE STANDING (the author's word 18.10.2026 07:3x UTC: «check that on a notification no page of the
     /// app stays open -- the Time Coin page does not change even when I tap a notification to go to the chat»): the platform's sheets
     /// are taken down by the outside road (MontanaOutsideOpen.chat); the pages this state draws over the tabs leave here, by the same
     /// tap, and the chat the banner names opens over the tabs alone.
@@ -535,7 +535,7 @@ struct RootView: View {
                 // The share sheet offers the chats at once after an update, not only after the next letter (23.09).
                 DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3) { MontanaNotify.seedSuggestions() }
                 MontanaHousekeeping.run()   // disk cleanup — one call, and not only on return from background
-                // THE NUMBER LEFT MONTANA (the author's word 20.10.2026 21:3x MSK: «remove the sign-in by the phone number in Montana,
+                // THE NUMBER LEFT MONTANA (the author's word 20.10.2026 18:3x UTC: «remove the sign-in by the phone number in Montana,
                 // leave it only in the Business»): a confirmation an older build kept leaves the device, with no door left to show it.
                 UserDefaults.standard.removeObject(forKey: "phoneProof")
                 if !UserDefaults.standard.bool(forKey: "profilePurge805") {
@@ -555,7 +555,7 @@ struct RootView: View {
                 // folded state IS the share's construction (SSOT: only the person unfolds it
                 // through our pill) — the broadcast picker's dismissal re-activates the scene
                 // and this line used to unfold the call by itself.
-                // THE CALL UNFOLDS ONLY WHEN THE APP COMES BACK FROM ELSEWHERE (the author's word 11.10.2026 18:5x MSK: «on
+                // THE CALL UNFOLDS ONLY WHEN THE APP COMES BACK FROM ELSEWHERE (the author's word 11.10.2026 15:5x UTC: «on
                 // Margarita's iPhone 13 the call screen does not fold, on Revaz's too, on T1 fine -- what works for me must work the
                 // same for everyone»): every return to active unfolded a folded call, an instant of inactive with no background
                 // included -- the shade, the control centre, a system question. Margarita's phone, iOS 18.1.1, 15:39:47Z: 0.4 s
@@ -618,7 +618,7 @@ struct ChatOverlay: View {
         // built once. Only a window with no size yet waits for the measure (Color.clear), never a page built at 0x0.
         Group { if overlaySize == .zero { Color.clear } else {
         MontanaSlideHost(content: NavigationStack {
-            // THE BACK STANDS IN THE CHAT'S ONE ROW (the author's word 05.10.2026 14:04 MSK: «back as the chess, the step as between
+            // THE BACK STANDS IN THE CHAT'S ONE ROW (the author's word 05.10.2026 11:04 UTC: «back as the chess, the step as between
             // the handset and the chess»): the chat stands in its own stack over the tabs, so the system gives it no back button of
             // its own; the back is the first round of the chat's top (chatTop), the marks' one size and one step.
             ChatConversationView(chat: chat, onChatUpdate: mtHandProfileEdit, jumpTargetId: jump, onBack: { handle.close?() })
@@ -874,7 +874,7 @@ final class MontanaSlideController: UIViewController, UIGestureRecognizerDelegat
         let edge = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(pan(_:)))
         edge.edges = .left; edge.delegate = self
         view.addGestureRecognizer(edge)
-        // THE PAGE LEAVES FROM ITS CENTRE TOO (the author's word 18.10.2026 10:3x MSK: «the swipe out of a chat not only from the
+        // THE PAGE LEAVES FROM ITS CENTRE TOO (the author's word 18.10.2026 07:3x UTC: «the swipe out of a chat not only from the
         // screen's edge but, as when a page is turned, from its centre, so that it catches»): the reference's own back stroke, by the
         // tabs' pan with no edge zone and to the right alone -- a stroke to the left stays the bubble's reply, a vertical one the
         // feed's, a sideways strip keeps its own; the same road as the edge's (pan), the same spring at the release.
@@ -1547,9 +1547,9 @@ enum MTApplication: String, CaseIterable, Identifiable {
         case .p2pWall: return String(localized: "P2P wall", bundle: MTLanguage.bundle)
         case .card: return String(localized: "Business card", bundle: MTLanguage.bundle)
         case .settings: return String(localized: "Settings", bundle: MTLanguage.bundle)
-        case .passwords: return String(localized: "Passwords", bundle: MTLanguage.bundle)   // the author's word 06.10.2026 17:4x MSK
+        case .passwords: return String(localized: "Passwords", bundle: MTLanguage.bundle)   // the author's word 06.10.2026 14:4x UTC
         case .chess: return String(localized: "Chess", bundle: MTLanguage.bundle)
-        case .wallet: return String(localized: "TimeCoin", bundle: MTLanguage.bundle)   // the author's word 04.10.2026 18:00 MSK: «rename the wallet TimeCoin»
+        case .wallet: return String(localized: "TimeCoin", bundle: MTLanguage.bundle)   // the author's word 04.10.2026 15:00 UTC: «rename the wallet TimeCoin»
         }
     }
     var group: MTLibraryGroup {
@@ -1563,7 +1563,7 @@ enum MTApplication: String, CaseIterable, Identifiable {
     func badge(in store: ChatStore) -> Int {
         switch self {
         case .calls: return store.missedCallsUnseen
-        // THE GROUPS AND THE CHANNELS ARE APPS OF THEIR OWN (the author's words 06.10.2026 11:5x-12:0x MSK): each counts the unread of its own rows.
+        // THE GROUPS AND THE CHANNELS ARE APPS OF THEIR OWN (the author's words 06.10.2026 08:5x-09:0x UTC): each counts the unread of its own rows.
         case .chats: return store.unreadCounts.keys.filter { !MTGroup.isKey($0) }.count
         case .groups: return store.unreadCounts.keys.filter { MTGroup.isKey($0) && MTGroup.shared.kind($0) != .channel }.count
         case .channels: return store.unreadCounts.keys.filter { MTGroup.shared.kind($0) == .channel }.count
@@ -2314,7 +2314,7 @@ struct MTShellPage: View {
 }
 
 struct MainTabView: View {
-    /// THE QUESTION OF THE COPY WITH CONTACTS (the author's word 08.10.2026 23:2x MSK: «on by default, and a question at the
+    /// THE QUESTION OF THE COPY WITH CONTACTS (the author's word 08.10.2026 20:2x UTC: «on by default, and a question at the
     /// opening»): asked once, in the platform's own alert, after the system's question of the notifications is settled.
     @State private var keepAsk = false
     // THE TABS DO NOT WATCH THE CALL (22.09): the minimized pill watches it where it is drawn
@@ -2418,7 +2418,7 @@ struct MainTabView: View {
             askWhatIsUnasked()
         }
         .onChange(of: scenePhase) { _, p in
-            if p == .active { MTVPNWallMint.shared.count() }   // the VPN wall's seconds are counted at the return (03.10)
+            if p == .active { MTVPNWallMint.count() }   // the VPN wall's seconds are counted at the return (03.10)
             if p == .active { MTNotifyAllowed.shared.read("active") }   // the person may have changed it in Settings (06.10)
             if p == .active { MTCoinVault.shared.soon("active", after: 1) }   // the seed's other devices, gathered at the return (04.10)
             if p == .active { Task { await MTTimeChainTip.shared.gather(why: "active") } }   // their tips first, in one round trip (04.10 16:34)
@@ -2470,19 +2470,19 @@ struct MainTabView: View {
                 NotificationsView()
                     .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
             }
-            // THE CROSSED GLYPH OF THE COPY'S PAGE (the author's word 08.10.2026 23:2x MSK): Data and Storage, where the copy with
+            // THE CROSSED GLYPH OF THE COPY'S PAGE (the author's word 08.10.2026 20:2x UTC): Data and Storage, where the copy with
             // contacts is switched, its cross top left.
             case .keeping: NavigationStack {
                 DataStorageView()
                     .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
             }
-            // THE GREEN SHIELD'S WAY (the author's word 16.10.2026 20:34 MSK: «the rule of the levels and the way to the settings»):
+            // THE GREEN SHIELD'S WAY (the author's word 16.10.2026 17:34 UTC: «the rule of the levels and the way to the settings»):
             // Access by level, its cross top left.
             case .levels: NavigationStack {
                 MTLevelAccessPage()
                     .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
             }
-            // A TAB'S MENU OPENS THE FOLDERS (the author's words 17.10.2026 18:4x MSK): the folders' page, its cross top left.
+            // A TAB'S MENU OPENS THE FOLDERS (the author's words 17.10.2026 15:4x UTC): the folders' page, its cross top left.
             case .folders: NavigationStack {
                 MTFolderSettingsPage()
                     .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
@@ -3194,7 +3194,7 @@ extension DeliveryStatus {
     }
 }
 
-/// THE RED MARK NEEDS A WORD, NOT A CLOCK (the author's words 07.10.2026 18:4x MSK: «I don't want to see an error if I in fact sent
+/// THE RED MARK NEEDS A WORD, NOT A CLOCK (the author's words 07.10.2026 15:4x UTC: «I don't want to see an error if I in fact sent
 /// and the other one just did not read it -- let it hang on my device as sent for at least 30 days, not an error, I did send»; «we
 /// have a TimeChain: online or in cold storage, what difference -- they must leave; the same for letters; build a guard»). A row of
 /// mine turns red now only by one of these words -- a keeper's refusal or a thing this phone cannot do -- through ChatStore.putOut,
@@ -3368,7 +3368,7 @@ enum MontanaAudioSession {
         }
     }
     /// A CLIP WITHOUT SOUND TAKES NOTHING FROM ANYBODY (the feed's playing tiles, 25.09): a person's own music goes on under a
-    /// feed of playing videos. EVERY PLAY OF IT PASSES THE LEDGER FIRST (the author's word 16.10.2026 16:06 MSK: «when I listen
+    /// feed of playing videos. EVERY PLAY OF IT PASSES THE LEDGER FIRST (the author's word 16.10.2026 13:06 UTC: «when I listen
     /// to music in another app and come to the feed, the sound goes off, though I tapped nothing»): a player wakes the session
     /// in the category it finds, and the clip asked for mixing once, at its birth, on another queue than its play. The author's
     /// phone (2215, 16.10 12:58-13:03Z) played the feed's clip five minutes after a call had closed its road into plain playback,
@@ -3601,6 +3601,12 @@ final class MTEncodeRegistry {
                 at: FileManager.default.temporaryDirectory.appendingPathComponent("mt-seg-\(file)"))
         }
     }
+}
+
+extension MTEncodeRegistry {
+    /// The living encode of a file, to wait on (ChatStore.settled, 25.10.2026): a reading of the registry, which stays the
+    /// encode's one holder -- it begins, adopts, ends and cancels nothing, so the road the registry keeps is unchanged.
+    func task(file: String) -> Task<Void, Never>? { lock.lock(); defer { lock.unlock() }; return live[file]?.task }
 }
 
 final class MTCompressResume {
@@ -4015,7 +4021,7 @@ let pipeClosedMark = "\u{200B}\u{200B}PX:"
 // speaks with»): one word, JSON with «w» -- a question, a yes, a part, a keeper's «held», a release -- riding the correspondence,
 // and a call and its answer riding the pipe of a slot. Never a row; an older build buries it unread.
 let keepMark = "\u{200B}\u{200B}KP:"
-// THE FABRIC OF TIME'S WORD (the author's word 17.10.2026 22:50 MSK: «a new level that sets the global one, named Fabric of Time»;
+// THE FABRIC OF TIME'S WORD (the author's word 17.10.2026 19:50 UTC: «a new level that sets the global one, named Fabric of Time»;
 // MTFabric): JSON -- {t, k}, a testimony of a call its signer gave at the call's close and the key it verifies under, and {c, e, at},
 // the sender's ceiling and estimate. Rides the one queue silent, only inside the pair. Never a row; an older build buries it unread.
 let fabricMark = "\u{200B}\u{200B}FT:"
@@ -4059,7 +4065,6 @@ struct MTCallInfo {
     let dur: Int
     let missed: Bool
     let call: String?
-    let coins: Int?
 }
 private final class MTCallInfoKept { let v: MTCallInfo?; init(_ v: MTCallInfo?) { self.v = v } }
 private let callInfoKept: NSCache<NSString, MTCallInfoKept> = { let c = NSCache<NSString, MTCallInfoKept>(); c.countLimit = 4096; return c }()
@@ -4090,10 +4095,9 @@ func callInfoOf(_ text: String) -> MTCallInfo? {
     var v: MTCallInfo? = nil
     if let d = String(text.dropFirst(callMark.count)).data(using: .utf8),
        let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any] {
-        let coins = o["minted"] as? Int
         v = MTCallInfo(video: (o["v"] as? Bool) ?? false, incoming: (o["inc"] as? Bool) ?? false,
              dur: (o["dur"] as? Int) ?? 0, missed: (o["miss"] as? Bool) ?? false,
-             call: o["call"] as? String, coins: coins)
+             call: o["call"] as? String)
     }
     callInfoKept.setObject(MTCallInfoKept(v), forKey: text as NSString)
     return v
@@ -4629,7 +4633,7 @@ struct MontanaDeleteChatSheet: View {
     var who: String? = nil   // whose face, for its balance and level (MTAvatarBadges, 11.10)
     let canDeleteForBoth: Bool
     /// A coin letter of mine is on its way in this chat (ChatStore.coinsTravel): the sheet says so and offers no deletion -- the
-    /// erasure would take the letter off the wire with its coins (the coin audit's first point, 05.10.2026 21:4x MSK).
+    /// erasure would take the letter off the wire with its coins (the coin audit's first point, 05.10.2026 18:4x UTC).
     var coinsTravel = false
     var onBoth: () -> Void
     var onMine: () -> Void

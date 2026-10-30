@@ -1,13 +1,13 @@
 # Coin transfer record v1 (MTTX) -- the one source of its format
 
-The author's words 11.10.2026 19:5x-20:2x MSK (No.63): «a person is their seed and everything is in it»; «so I can pay them in
+The author's words 11.10.2026 16:5x-17:2x UTC (No.63): «a person is their seed and everything is in it»; «so I can pay them in
 any scenario»; «either the coins left or not -- there is no third»; «on the TimeChain page an Explorer button to open and check a
 transaction, and on any transaction a link that confirms the sending»; «everything professional in the TimeChain, for auditors».
 
 A transfer is one record, signed by the sender's seed, laid on the nodes' append-only log. The node's 200 is the moment the coins
 left: the sender's book takes the debit in the same turn, and no answer means nothing moved. The receiver's book finds the record
 by the pair's tag -- on any build that reads it, at any later moment, on any device of its seed after a restore -- and credits it
-once, by its id. A chat letter only tells about it.
+once, by its id. A chat letter only tells about it. Historical for new records (marked 2026-10-27 UTC): from TX_V1_CUT (12.10.2026 21:00 UTC) the node takes no new v1 record ([COIN-TX-V3.md](COIN-TX-V3.md):290); the current record is v3.
 
 ## Record (5330 bytes, little-endian integers)
 

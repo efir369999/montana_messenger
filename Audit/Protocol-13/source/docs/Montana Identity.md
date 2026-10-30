@@ -65,7 +65,8 @@ wallet phrase derives keys that answer to nobody.
 A record is of one kind with a note: it is a set of quantities its holder keeps, and what the
 network holds is a **commitment to it** — created once and re-made whenever its holder acts, carrying inside it everything the protocol needs to know about their
 standing — the lived segments of their continuity, the height of their own actions, the
-standing of their current key.
+standing of their current key, and the one right to raise a machine the record carries from its
+opening to its close, which Consensus spends.
 
 What the network holds is the tree of these commitments and the set of nullifiers spent
 against them. Neither holds a name.
@@ -316,6 +317,7 @@ verifies at once, and no mark appears.
 | that a name was claimed | **claimed by the person, not created by the protocol**: publicity is a deliberate act, its consequence is stated to the person before the act, and the edge lasts as long as the name is held |
 | that a channel slot was taken | **claimed by the person, not created by the protocol**: taking a slot is a deliberate act, it publishes a commitment naming nobody and a key belonging to the slot, and nothing computable joins that slot to the record of whoever took it or to any name they hold |
 | that some record was opened in a window | **deliberately observable**: it names nobody, and it is what the bound per window is enforced against |
+| that some record raised a machine | **deliberately observable**: a candidacy publishes the right the record carries, which names nobody, is published once, and joins to nothing the record publishes when it is opened or when it acts |
 | how a seed was drawn | closed: the source and its tests are fixed by Canon and run inside the device; nothing about the draw leaves it |
 | the words of a person | closed: they exist on the device and on whatever a person writes them onto, and no path of the protocol carries them |
 | the roots of the tree and of the set | **deliberately observable**: quantities about the whole from which no participant is derivable |

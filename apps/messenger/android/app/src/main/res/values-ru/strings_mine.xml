@@ -29,6 +29,9 @@
     <string name="ld_pin_q">Закрепить это сообщение?</string>
     <string name="ld_pin_both">Закрепить у обоих</string>
     <string name="ld_pin_me">Закрепить у меня</string>
+    <string name="ld_pin_q_group">Закрепить сообщение и уведомить всех участников группы?</string>
+    <string name="ld_pin_all">Закрепить и уведомить всех</string>
+    <string name="ld_pin_only">Только закрепить</string>
     <string name="ld_pinned">Закреплённое сообщение</string>
     <string name="ld_pinned_banner">Закрепил(а) сообщение</string>
     <string name="ld_pin">Закрепить</string>

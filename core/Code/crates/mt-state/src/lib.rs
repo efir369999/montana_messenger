@@ -17,7 +17,7 @@ pub const NODE_RECORD_SIZE: usize = 2098;
 pub const CANDIDATE_RECORD_SIZE: usize = 2082;
 
 // spec, "Proposal header" layout: the only valid winner_class value = 1 (Node).
-// The constant WINNER_CLASS_NODE is kept for apply_emission and mt-lottery::Candidate.class.
+// The lottery that read it is removed by issue #18; the value stays reserved.
 pub const WINNER_CLASS_NODE: u8 = 1;
 
 // spec: Account Table (record per account) — 2059 bytes fixed

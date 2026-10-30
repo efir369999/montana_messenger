@@ -103,7 +103,7 @@ enum ShareGlass {
         item.scrollEdgeAppearance = look
         item.compactAppearance = look
     }
-    /// OUR SEND, NOT THE PLATFORM'S WHITE PLATE (the author's word 16.10.2026 19:0x MSK on T1: «on the share page the button is not
+    /// OUR SEND, NOT THE PLATFORM'S WHITE PLATE (the author's word 16.10.2026 16:0x UTC on T1: «on the share page the button is not
     /// seen -- white, not our send»): the chat's own mark (MTComposeMark .send), the author's file SendButton byte for byte -- the
     /// sheet's own catalog (ShareAssets.xcassets) holds a copy of the app's protected file, held equal to it by the guard (P-118.10)
     /// -- drawn whole at the bar's height, a 44-point target.
@@ -487,7 +487,7 @@ final class SharePickerController: UIViewController, UICollectionViewDataSource,
                 lettered.append(item)
             }
             if lettered.count > 1 { ShareSend.diag("sheet GROUP n=\(foldable) of=\(lettered.count) key=\(String((slots.first??.key ?? "-").prefix(8)))") }
-            // THE ORDER RIDES IN THE NAMES (the author's word 18.10.2026 10:2x MSK: «the order of the messages broke, and it must be
+            // THE ORDER RIDES IN THE NAMES (the author's word 18.10.2026 07:2x UTC: «the order of the messages broke, and it must be
             // strictly as I sent them»): a receiver orders letters by the birth the name carries (ChatStore.birthMs), and a bare
             // UUID carries none -- a big video that came last stood first. Each item is born a millisecond after the one before, in
             // the order the person chose them, under the app's own form of a name (ChatStore.mintMid: «t» + ms + «-» + a UUID).
@@ -556,7 +556,7 @@ final class SharePickerController: UIViewController, UICollectionViewDataSource,
                         }
                     }
                     if !text.isEmpty { item["letter"] = text }   // composed ONCE: the app's guarantee leg re-sends these very bytes
-                    // A GROUP OR A CHANNEL HAS NO PIPE (the author's word 18.10.2026 10:2x MSK: «sharing into a channel failed and hung
+                    // A GROUP OR A CHANNEL HAS NO PIPE (the author's word 18.10.2026 07:2x UTC: «sharing into a channel failed and hung
                     // with Retry»): its letter is the group's to carry to every member, which the app alone can do (MTGroup) -- the sheet
                     // lays the pieces and the letter and hands the row over.
                     let toGroup = peer.hasPrefix("grp:")
@@ -790,7 +790,7 @@ enum ShareRead {
 /// and ONE record under "pendingWall", laid whole. The page that writes the post is the app's own (MTBoardComposer, opened by
 /// MTBoard.takeFromSheet); the sheet walks no door and draws no page of its own.
 enum ShareWallHandoff {
-    /// THE WALL'S PAGE IS ONE TAP AWAY (the author's word 16.10.2026 19:0x MSK: «publishing to my own wall through Share works crooked
+    /// THE WALL'S PAGE IS ONE TAP AWAY (the author's word 16.10.2026 16:0x UTC: «publishing to my own wall through Share works crooked
     /// and does not open the app to do everything there»). A share extension may not bring its app forward -- the App Extension
     /// Programming Guide gives NSExtensionContext.open to a widget and a message app alone, and the author's word of 10.10.2026 holds
     /// «in full accordance with Apple's rules» -- so the sheet leaves the person the platform's own door: one notice, at once, no sound,
@@ -862,7 +862,7 @@ extension SharePickerController: UICollectionViewDelegateFlowLayout {
 
 // A cell: a round face -- a picture, or black with a white initial -- the name, and a tick when chosen. One's own wall wears the
 // platform's write glyph where a tick would stand: its circle opens the post's page and is never chosen.
-// THE CIRCLE STANDS TRUE BY CONSTRUCTION (the author's word 17.10.2026 18:4x MSK: «on the share page the circle of the chosen one is
+// THE CIRCLE STANDS TRUE BY CONSTRUCTION (the author's word 17.10.2026 15:4x UTC: «on the share page the circle of the chosen one is
 // found crooked -- make all of it system and native»): the ring was a layer placed by hand in the cell's layout from the face's
 // centre, read before the content view had laid the face out -- on a first pass it stood where the face had been, not where it is.
 // Now the circle is a view of its own (ShareRing), centred on the face by the layout engine and drawn from its own bounds in its own

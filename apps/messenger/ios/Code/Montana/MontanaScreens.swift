@@ -375,7 +375,7 @@ struct ScanMeetingView: View {
                     return
                 }
                 done = true
-                // WHICH MONTANA OPENS IT (MTSiblingApps, the author's word 11.10.2026 17:13 MSK): with another Montana app on this
+                // WHICH MONTANA OPENS IT (MTSiblingApps, the author's word 11.10.2026 14:13 UTC): with another Montana app on this
                 // phone the code's link is offered to it beside this one; a code that is no link opens here.
                 let link = MontanaCard.text(fromQR: code) ?? code
                 if URL(string: link)?.scheme != nil, !MTSiblingApps.others.isEmpty { choosing = link; return }

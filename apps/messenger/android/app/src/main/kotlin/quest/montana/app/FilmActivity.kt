@@ -32,8 +32,13 @@ class FilmActivity : Activity() {
     companion object {
         private const val EXTRA_FILE = "montana.film.file"
         private const val EXTRA_URL = "montana.film.url"
+        private const val EXTRA_STREAM = "montana.film.stream"
         fun open(c: Context, f: File) {
             runCatching { c.startActivity(Intent(c, FilmActivity::class.java).putExtra(EXTRA_FILE, f.path).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        }
+        /** A film not yet whole, read from its first pieces through the app's own door (Streams); [later] is where it will lie. */
+        fun openStream(c: Context, uri: Uri, later: File) {
+            runCatching { c.startActivity(Intent(c, FilmActivity::class.java).putExtra(EXTRA_STREAM, uri.toString()).putExtra(EXTRA_FILE, later.path).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }
         /** A media file at its address, the post's link (iOS VideoPresenter.present(remote:), MontanaMedia.swift:3026-3029): read
          * only now, at the person's own tap. */
@@ -93,7 +98,8 @@ class FilmActivity : Activity() {
 
     private fun play(i: Intent?) {
         val url = i?.getStringExtra(EXTRA_URL)?.takeIf { it.startsWith("https://") || it.startsWith("http://") }
-        val f = if (url != null) null else i?.getStringExtra(EXTRA_FILE)?.let { File(it) }?.takeIf { it.exists() } ?: return finish()
+        val stream = i?.getStringExtra(EXTRA_STREAM)?.takeIf { url == null && it.startsWith("content://") }?.let { Uri.parse(it) }
+        val f = if (url != null) null else i?.getStringExtra(EXTRA_FILE)?.let { File(it) }?.takeIf { stream != null || it.exists() } ?: return finish()
         film = f; link = url
         ctl = MediaController(this).also { it.setAnchorView(video); video.setMediaController(it) }
         video.setOnPreparedListener { mp ->
@@ -101,7 +107,7 @@ class FilmActivity : Activity() {
             params()
             video.start()
         }
-        video.setVideoURI(if (f != null) Uri.fromFile(f) else Uri.parse(url))
+        video.setVideoURI(stream ?: if (f != null) Uri.fromFile(f) else Uri.parse(url))
     }
 
     // the platform's window takes shapes between 1 to 2.39 and 2.39 to 1
@@ -144,7 +150,7 @@ class FilmActivity : Activity() {
     private fun share() {
         // a film at its address shares the address: there is no file of it here
         link?.let { u -> runCatching { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, u), null)) }; return }
-        val f = film ?: return
+        val f = film?.takeIf { it.exists() } ?: return   // a film still on its way shares once it is whole
         val uri = Media.uri(this, f)
         val send = Intent(Intent.ACTION_SEND).setType(contentResolver.getType(uri) ?: "video/*")
             .putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

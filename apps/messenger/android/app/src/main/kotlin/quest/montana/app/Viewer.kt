@@ -29,7 +29,7 @@ import kotlin.math.min
  * phone, in the feed's order. A video is not a page of it (the author's word 28.09): it opens in the player.
  */
 fun picturesBeside(f: File): List<File> {
-    val chat = Book.all().firstOrNull { ch -> ch.msgs.any { it.file == f.path } } ?: return listOf(f)
+    val chat = Book.rooms().firstOrNull { ch -> ch.msgs.any { it.file == f.path } } ?: return listOf(f)
     return chat.msgs.mapNotNull { m ->
         val file = m.file?.let { File(it) }?.takeIf { it.exists() } ?: return@mapNotNull null
         val man = m.meta?.let { runCatching { JSONObject(it) }.getOrNull() } ?: Media.inline(m.text)

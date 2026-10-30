@@ -1,0 +1,34 @@
+   Compiling montana-node v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/montana-node)
+   Compiling mt-conformance v0.1.0 (/srv/montana/gpt-01a1793a-f1/core/Montana-Core/crates/mt-conformance)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.93s
+     Running tests/a_stall_names_its_cause.rs (/srv/montana/gpt-01a1793a-f1-target/debug/deps/a_stall_names_its_cause-a96b3f21125c90aa)
+
+running 2 tests
+test a_mutated_attestation_does_not_replace_the_missing_data_verdict ... FAILED
+test a_mutated_attestation_does_not_replace_the_no_quorum_verdict has been running for over 60 seconds
+test a_mutated_attestation_does_not_replace_the_no_quorum_verdict ... FAILED
+
+failures:
+
+---- a_mutated_attestation_does_not_replace_the_missing_data_verdict stdout ----
+
+thread 'a_mutated_attestation_does_not_replace_the_missing_data_verdict' (157685) panicked at crates/montana-node/tests/a_stall_names_its_cause.rs:58:5:
+Stalled { on: ProofRefused, what: "waiting budget exhausted without a verified answer; round unchanged" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_mutated_attestation_does_not_replace_the_no_quorum_verdict stdout ----
+window 0 part 5b6e8308 attempt 0: this machine closes on b861d944 at asking 264
+window 0 round 0: cement 4 of 4, beacons 1, standing 18 | arrived 0 took 9648 repeat 0 refused 0w/0p/0n/0c | published 27 in 9648 cells, pushed 0 lost 0 | asked 0 pulled 0 cells | read back 9 of memory 0 | cement +4 repeat 11 refused 0w/0d/3s/0p/0o | pledges booked 0 refused 0 made 1 | refused light 0 ballot 0 proposal 0
+window 0 part 5b6e8308 enters attempt 1 at asking 906 holding 5 pledges of the agreement
+
+thread 'a_mutated_attestation_does_not_replace_the_no_quorum_verdict' (157686) panicked at crates/montana-node/tests/a_stall_names_its_cause.rs:89:5:
+Stalled { on: ProofRefused, what: "waiting budget exhausted: agreement undecided; window unchanged" }
+
+
+failures:
+    a_mutated_attestation_does_not_replace_the_missing_data_verdict
+    a_mutated_attestation_does_not_replace_the_no_quorum_verdict
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 2 filtered out; finished in 160.90s
+
+error: test failed, to rerun pass `-p montana-node --test a_stall_names_its_cause`

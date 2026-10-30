@@ -57,6 +57,15 @@ pub fn empty_root() -> Digest {
 // so it says nothing about which of two neighbours of a level is the left one. That is why the set
 // freezes a root over two.
 pub fn root_of(naming: &[[u8; 32]], depth: usize) -> Option<Digest> {
+    // A list longer than the tree is a cohort the tree cannot hold. Rooted over its first leaves it
+    // would leave the count of the cohort above the leaves of its root (WINDOW-THEOREM.md, O-4).
+    if u32::try_from(depth)
+        .ok()
+        .and_then(|bits| 1usize.checked_shl(bits))
+        .is_some_and(|room| naming.len() > room)
+    {
+        return None;
+    }
     let empties = empty_internals(depth);
     let mut level: Vec<Digest> = naming.iter().map(leaf).collect::<Option<Vec<Digest>>>()?;
     for empty in empties.iter().take(depth) {
@@ -97,6 +106,15 @@ mod tests {
         assert!(leaf(&[0xFF; 32]).is_none());
         assert!(leaf(&[0x01; 32]).is_some());
         assert!(root_of(&[[0xFF; 32]], 4).is_none());
+    }
+
+    // A list longer than the tree is refused: the named wrong implementation roots three leaves
+    // under a tree of two over the first two of them, and the count stands above the leaves.
+    #[test]
+    fn a_list_longer_than_the_tree_is_refused() {
+        let (a, b, c) = ([0x11; 32], [0x22; 32], [0x33; 32]);
+        assert!(root_of(&[a, b], 1).is_some());
+        assert!(root_of(&[a, b, c], 1).is_none());
     }
 
     // The pairing of a level, which a root over one half cannot say anything about: the named

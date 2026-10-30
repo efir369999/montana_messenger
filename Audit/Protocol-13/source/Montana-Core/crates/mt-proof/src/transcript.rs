@@ -235,8 +235,8 @@ mod tests {
         let seed = query_seed(&transcript());
         let mut counter = 0u64;
         let domain = 1usize << 10;
-        let positions = seed.positions(&mut counter, 48, domain);
-        assert_eq!(positions.len(), 48);
+        let positions = seed.positions(&mut counter, crate::params::QUERIES, domain);
+        assert_eq!(positions.len(), crate::params::QUERIES);
         assert!(positions.iter().all(|p| *p < domain));
         let mut sorted = positions.clone();
         sorted.sort_unstable();

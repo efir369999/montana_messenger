@@ -1,0 +1,48 @@
+# Nothing built, signed or personal is committed from this folder.
+
+# build output: scripts/build.py (build/Montana.apk), tools/wsl-build.sh (out/: APKs, their digests, the logs of every run),
+# cargo (the JNI library and tools/identity-ref)
+build/
+out/
+target/
+# Gradle and IDE state: this project builds without Gradle; kept out in case an IDE adds it
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+.idea/
+*.iml
+# packages and signing material
+*.apk
+*.aab
+*.apks
+*.ap_
+*.dex
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.pass
+google-services.json
+.env
+# a person's words and copies: test identities keep their words beside the APKs (out/), never here
+*.words
+*.mtbak
+# archives, installers and other platforms' outputs
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.aar
+*.exe
+*.msi
+node_modules/
+dist/
+bin/
+obj/
+# local tool state and the scripts' own bytecode
+.claude/
+.DS_Store
+__pycache__/

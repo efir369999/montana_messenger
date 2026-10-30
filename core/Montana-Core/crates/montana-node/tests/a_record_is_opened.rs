@@ -6,14 +6,18 @@
 // commitment is the leaf itself — so a machine holds the tree of records without holding one
 // record, which is the whole reason the plane publishes a commitment rather than the thing.
 //
-// **The named wrong implementations these refuse**: a claimant spending one right twice, and a
-// claimant opening a record into a window the machine is not applying. The first collides on a
-// value nothing but that seed produces; the second fails at the boundary that binds the window.
+// **The named wrong implementations these refuse**: a claimant spending one right twice, a
+// claimant opening a record into a window the machine is not applying, and a claimant writing its
+// record against a segment the window does not stand in. The first collides on a value nothing but
+// that seed produces; the second and the third fail at the boundary that binds the window and the
+// segment, which the machine derives from the window (Canon, "The rules of continuity", rule 1;
+// constitution records 297 and 300).
 
 use montana_node::state::State;
 use mt_state::Layout;
 
-const WINDOW: u64 = 1_000;
+// Window 10 085 stands in segment seven: 7 x 1 440 + 5.
+const WINDOW: u64 = 10_085;
 const SEGMENT: u32 = 7;
 
 // A record as a claimant brings it into being. The bytes are the serialization the set fixes.
@@ -23,6 +27,7 @@ fn a_new_record(window: u64, segment: u32) -> Vec<u8> {
     out.extend_from_slice(&segment.to_le_bytes());
     out.extend_from_slice(&window.to_le_bytes());
     out.extend_from_slice(&0u32.to_le_bytes());
+    out.extend_from_slice(&[0x55u8; 32]);
     out.extend_from_slice(&[0x11u8; 32]);
     out.extend_from_slice(&1u16.to_le_bytes());
     out.extend_from_slice(&[0x22u8; mt_codec::size::SIGNING_PUBLIC_KEY]);
@@ -49,6 +54,7 @@ fn a_record_enters_the_tree_and_a_right_is_spent_once() {
     let mut state = State::new();
     assert_eq!(state.records_held(), 0);
     let empty = state.records_root();
+    assert_eq!(mt_pulse::standing::segment(WINDOW), Ok(SEGMENT));
 
     let open_secret = [0x44u8; 32];
     let opening = an_opening(&open_secret, WINDOW, SEGMENT);
@@ -62,7 +68,7 @@ fn a_record_enters_the_tree_and_a_right_is_spent_once() {
     let read = mt_state::layout::Opening::parse(&bytes).expect("and reads back");
 
     state
-        .apply_opening(&read, WINDOW, SEGMENT)
+        .apply_opening(&read, WINDOW)
         .expect("a true opening applies");
     assert_eq!(state.records_held(), 1, "the record did not enter the tree");
     assert_ne!(
@@ -83,7 +89,7 @@ fn a_record_enters_the_tree_and_a_right_is_spent_once() {
     let again = an_opening(&open_secret, WINDOW, SEGMENT);
     assert_eq!(again.open_nullifier, read.open_nullifier);
     assert!(
-        state.apply_opening(&again, WINDOW, SEGMENT).is_err(),
+        state.apply_opening(&again, WINDOW).is_err(),
         "a right already spent opened a second record"
     );
     assert_eq!(state.records_held(), 1);
@@ -91,8 +97,19 @@ fn a_record_enters_the_tree_and_a_right_is_spent_once() {
     // And a record claiming another window does not stand in this one.
     let elsewhere = an_opening(&[0x45u8; 32], WINDOW + 1, SEGMENT);
     assert!(
-        state.apply_opening(&elsewhere, WINDOW, SEGMENT).is_err(),
+        state.apply_opening(&elsewhere, WINDOW).is_err(),
         "a record opened into another window was applied to this one"
     );
+    assert_eq!(state.records_held(), 1);
+
+    // Nor does a record written against a segment its window does not stand in, whether the one
+    // after it or the window's own number read as a segment.
+    for segment in [SEGMENT + 1, WINDOW as u32] {
+        let other = an_opening(&[0x46u8; 32], WINDOW, segment);
+        assert!(
+            state.apply_opening(&other, WINDOW).is_err(),
+            "a record written against segment {segment} opened in a window of segment {SEGMENT}"
+        );
+    }
     assert_eq!(state.records_held(), 1);
 }

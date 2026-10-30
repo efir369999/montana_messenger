@@ -26,9 +26,21 @@ object SamePair {
 
     private fun d(domain: String) = domain.toByteArray() + byteArrayOf(0)
     private fun tag(domain: String, older: ByteArray, newer: ByteArray) = Wire.hex(Wire.sha(d(domain), older, newer).copyOf(16))
+    /**
+     * The proof of one person over the two pipes (iOS MTPipeKey.sameTag/sameTags, a8173d52, decision 126): over the two roots
+     * from TAG_WALK_DAY, over the two established secrets before it; on Y and Y + 1 the receiver still hears the earlier one.
+     */
+    private fun sameTag(domain: String, older: ByteArray, newer: ByteArray, day: Long = Wire.day()) =
+        if (day < Wire.TAG_WALK_DAY && Wire.holdsOrigin(older) && Wire.holdsOrigin(newer)) tag(domain, older, newer)
+        else tag(domain, Wire.convRoot(older), Wire.convRoot(newer))
+    private fun sameTags(domain: String, older: ByteArray, newer: ByteArray, day: Long = Wire.day()): List<String> {
+        val now = sameTag(domain, older, newer, day)
+        val origin = Wire.holdsOrigin(older) && Wire.holdsOrigin(newer)
+        return if (origin && day >= Wire.TAG_WALK_DAY && day < Wire.ERASE_DAY) listOf(now, tag(domain, older, newer)) else listOf(now)
+    }
     private fun noise() = Wire.hex(MtBindings.nativeRandom(16) ?: ByteArray(16))
-    /** A pipe's place in the one order both ends compute alike — the tie between two pipes born at one meeting. */
-    private fun rank(secret: ByteArray) = Wire.sha(d("mt-same-rank"), secret)
+    /** A pipe's place in the one order both ends compute alike — the tie between two pipes born at one meeting; kept in the floor. */
+    private fun rank(secret: ByteArray) = Wire.sameRank(secret)
     private fun precedes(a: ByteArray, b: ByteArray): Boolean {
         for (i in 0 until minOf(a.size, b.size)) {
             val x = a[i].toInt() and 0xff; val y = b[i].toInt() and 0xff
@@ -49,7 +61,7 @@ object SamePair {
     fun ask(conv: String) {
         val sn = Book.secret(conv) ?: return
         val named = byFreshness().filter { it != conv }.take(SLOTS)
-        val tags = named.mapNotNull { q -> Book.secret(q)?.let { tag("mt-same-ask", it, sn) } }.toMutableList()
+        val tags = named.mapNotNull { q -> Book.secret(q)?.let { sameTag("mt-same-ask", it, sn) } }.toMutableList()
         while (tags.size < SLOTS) tags.add(noise())
         tags.shuffle()
         val payload = Base64.encodeToString(JSONObject().put("t", JSONArray(tags)).toString().toByteArray(), Base64.NO_WRAP)
@@ -66,7 +78,7 @@ object SamePair {
         val sn = Book.secret(conv) ?: return null
         val t = decode(payload, "t")?.optJSONArray("t") ?: return null
         val heard = (0 until minOf(t.length(), SLOTS)).map { t.optString(it) }.toSet()
-        val matches = byFreshness().filter { q -> q != conv && Book.secret(q)?.let { heard.contains(tag("mt-same-ask", it, sn)) } == true }
+        val matches = byFreshness().filter { q -> q != conv && Book.secret(q)?.let { sameTags("mt-same-ask", it, sn).any { t -> t in heard } } == true }
         matches.firstOrNull { waiting(it) == null }?.let { return it }
         matches.firstOrNull { waiting(it)?.contains(conv) != true }?.let { return it }
         val mine = rank(sn)
@@ -76,7 +88,7 @@ object SamePair {
     /** The answer, one shape for «yes» and «no»: the proof over the chosen pipe, or a tag nobody can check. */
     fun answer(older: String?, conv: String) {
         val sn = Book.secret(conv) ?: return
-        val p = older?.let { Book.secret(it) }?.let { tag("mt-same-yes", it, sn) } ?: noise()
+        val p = older?.let { Book.secret(it) }?.let { sameTag("mt-same-yes", it, sn) } ?: noise()
         val payload = Base64.encodeToString(JSONObject().put("p", p).toString().toByteArray(), Base64.NO_WRAP)
         Post.send(conv, "same-" + java.util.UUID.randomUUID().toString().uppercase(), Marks.SAME_YES + payload)
     }
@@ -85,7 +97,7 @@ object SamePair {
     fun proven(payload: String, conv: String): String? {
         val sn = Book.secret(conv) ?: return null
         val p = decode(payload, "p")?.optString("p") ?: return null
-        return Book.refs().firstOrNull { q -> q != conv && Book.secret(q)?.let { tag("mt-same-yes", it, sn) == p } == true }
+        return Book.refs().firstOrNull { q -> q != conv && Book.secret(q)?.let { p in sameTags("mt-same-yes", it, sn) } == true }
     }
 
     /** They wrote into a pipe folded here: the answer may have been lost on the way, so it is said again, once an hour at most. */

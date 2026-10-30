@@ -292,6 +292,7 @@ fn a_history() -> History {
         record_root: [0x51; 32],
         machine_root: [0x61; 32],
         admitted_root: all.root().bytes(),
+        credited_root: [0x8A; 32],
         operations_root: [0x81; 32],
         roll: roll.id().expect("an identifier"),
         admitted_count: all.count(),
@@ -634,8 +635,9 @@ fn the_closing_step_and_a_decided_book_read_no_clock() {
 
 // A round no beacon ever stood at closes nothing: the machine stands one round ahead of the round it
 // opens, so its own beacon falls at points it does not hold and silently; its budget of readings runs
-// out on the refusal the set names, and its head, its closed window, its kept proposals and its record
-// of the agreement stand as they stood when the window opened.
+// out on the stall `no data` -- the beacon is the data that never came (issue #21) -- and its head,
+// its closed window, its kept proposals and its record of the agreement stand as they stood when the
+// window opened.
 #[test]
 fn a_round_no_beacon_stood_at_closes_nothing_and_moves_nothing() {
     let at = Scratch::named("no-beacon");
@@ -648,7 +650,10 @@ fn a_round_no_beacon_stood_at_closes_nothing_and_moves_nothing() {
     let errand: pulse::Errand<'_> = &ahead;
     assert_eq!(
         pulse::live_doing(&machine, &cohort, 0, 1, 4, Some(errand)).map(|_| ()),
-        Err(refused("a round no beacon ever stood at"))
+        Err(NodeError::Stalled {
+            on: montana_node::say::Verdict::NoData,
+            what: "a round no beacon ever stood at",
+        })
     );
     assert_eq!(machine.head().expect("the store answers"), None);
     assert_eq!(machine.closed_window().expect("the store answers"), None);

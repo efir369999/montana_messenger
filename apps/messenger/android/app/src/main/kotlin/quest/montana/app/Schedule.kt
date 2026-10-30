@@ -66,6 +66,13 @@ object Scheduled {
         java.util.UUID.nameUUIDFromBytes((o.optString("ref") + "\n" + o.optLong("at") + "\n" + o.optString("t")).toByteArray()).toString().uppercase()
     }
 
+    /** The conversation gone: the letters scheduled into it leave with it (iOS forgetConversation, f5889c70). */
+    fun forget(ref: String) = synchronized(lock) {
+        val a = all(); val kept = JSONArray()
+        for (i in 0 until a.length()) a.optJSONObject(i)?.let { if (it.optString("ref") != ref) kept.put(it) }
+        if (kept.length() != a.length()) save(kept)
+    }
+
     fun add(ref: String, words: String, at: Long) = synchronized(lock) {
         save(all().put(JSONObject().put("ref", ref).put("t", words).put("at", at)))
     }

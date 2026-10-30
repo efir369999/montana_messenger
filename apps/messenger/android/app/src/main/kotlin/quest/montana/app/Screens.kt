@@ -26,11 +26,21 @@ import java.io.File
 // ─────────────────────────── the face (iOS MontanaSelfFace) ───────────────────────────
 
 object SelfFace {
-    private fun file(ctx: Context) = File(ctx.filesDir, "avatar.jpg")
+    fun file(ctx: Context) = File(ctx.filesDir, "avatar.jpg")
     fun load(ctx: Context): Bitmap? = file(ctx).takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.path) }
-    fun clear(ctx: Context) { file(ctx).delete(); changed() }
+    fun clear(ctx: Context) { file(ctx).delete(); Prefs.setBool(CLEARED, true); changed() }
     /** The face as it travels (iOS avatarData): the JPEG itself, or null when there is none. */
     fun bytes(ctx: Context): ByteArray? = file(ctx).takeIf { it.exists() }?.readBytes()
+    /**
+     * WHAT I SAY OF MYSELF IS WHAT MY HAND LAST WROTE -- NEVER WHAT A READ FAILED TO FIND (iOS MontanaSelf.holds, 38cdb16fcbe3):
+     * a face file that is not there is not knowledge (a copy whose picture has not landed yet); read as «none», it went out as the
+     * person's own word and erased the living face on every peer's screen. Only the hand's clear is «no face»; no file at all is silence.
+     */
+    fun held(ctx: Context): Boolean = file(ctx).exists() || Prefs.bool(CLEARED, false)
+    private const val CLEARED = "selfFaceCleared"
+    /** THIS SEED'S OWN FACE IS NO CORRESPONDENT'S, WHATEVER DOOR BROUGHT IT (iOS MontanaSelfFace.isMine, 80a9490f): the one rule
+     * every writer of a correspondent's face asks. */
+    fun isMine(face: ByteArray): Boolean = bytes(Book.ctx)?.contentEquals(face) == true
 
     /** The picked photo, read for the crop: no side past 2048 pixels, so a camera original fits in memory. */
     fun decode(ctx: Context, uri: Uri): Bitmap? = try {
@@ -43,13 +53,16 @@ object SelfFace {
 
     /** The face the crop rendered (640×640 JPEG) becomes the face. */
     fun set(ctx: Context, jpeg: ByteArray): Boolean = try {
-        file(ctx).writeBytes(jpeg); changed(); true
+        file(ctx).writeBytes(jpeg); Prefs.remove(CLEARED); changed(); true
     } catch (e: Exception) { false }
 
     /** THE ONE EVENT OF A CHANGE OF FACE (iOS MontanaSelfFace.changed, E2E.broadcastAvatar, MontanaShapes.swift:424-429 at 2155):
      * every correspondent is told at once -- the face waited for the next pickup of the box (Post.fetch), and a new face set
      * 10.10.2026 23:01 had gone to nobody a minute later. */
-    private fun changed() = Thread { Book.refs().filter { SamePair.merged(it) == null }.forEach { Post.announce(it) } }.start()
+    private fun changed() = Thread {
+        Book.refs().filter { SamePair.merged(it) == null }.forEach { Post.announce(it) }
+        MontanaCard.faceChanged(Book.ctx)   // the face beside every live card follows at once (iOS MontanaCard.faceChanged)
+    }.start()
 }
 
 /** A page's top bar: an optional back mark on the left, a title, an optional mark on the right. */

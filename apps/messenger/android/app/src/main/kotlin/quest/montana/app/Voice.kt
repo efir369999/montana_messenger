@@ -98,6 +98,12 @@ object VoiceTape {
      * the length read after the recorder was gone (371). */
     fun prewarm(act: MainActivity) {
         if (rec != null || prepared != null || preparing || Calls.busy() || !granted(act)) return
+        // A TAP IS NOT A TAPE (iOS b004be39, the author's word 22.10.2026 23:3x MSK): the finger lands before it is known whether
+        // it taps -- the mode switches -- or holds; while anything sounds (another app's or ours) the landing readies no
+        // microphone, the hold's own begin takes it (iOS MontanaAudioSession.sounds)
+        if (act.getSystemService(android.media.AudioManager::class.java)?.isMusicActive == true) {
+            Log.d("Montana", "voice_rec prewarm yields: something sounds"); return
+        }
         val ticket = ++request
         preparing = true
         Thread {
@@ -124,6 +130,7 @@ object VoiceTape {
         if (rec != null) return false   // one tape at a time: a second start over a rolling one is nothing (iOS VoiceRecorder.start guard, build 1519 / 2155 MontanaMedia.swift:112)
         Playing.standDown()   // a tape holds what plays, the open note closes (iOS MontanaMedia.swift:111-113 at 2155)
         request += 1; preparing = false   // a readying still on its thread is late now (iOS start, MontanaMedia.swift:115)
+        reviewed?.first?.delete(); reviewed = null   // a new tape always starts unheard (iOS: previewFile = nil at every start)
         val (r, f) = prepared?.also { prepared = null } ?: (born(act) ?: return false)
         return try {
             r.start()
@@ -133,8 +140,23 @@ object VoiceTape {
         } catch (_: Exception) { runCatching { r.release() }; f.delete(); false }
     }
 
+    /**
+     * LISTEN BEFORE SENDING (iOS VoiceRecorder.finishForReview, bef2cdaca45f; the author's word 23.09): an AAC tape is playable only
+     * when its container is closed, so the ear ENDS the tape -- the closed file and its length wait here, and stop() hands them back
+     * as though the tape had just stopped: the send walks its one road unchanged and the bin still deletes one file.
+     */
+    var reviewed: Pair<File, Double>? = null; private set
+    fun finishForReview(): File? {
+        if (rec == null) return reviewed?.first
+        val got = stop(keep = true) ?: return null
+        reviewed = got
+        Log.d("Montana", "voice_rec closed for the ear len=" + got.second.toInt())
+        return got.first
+    }
+
     /** The tape ends: the file and its length in seconds, or null when it was dropped or too short to be a word. */
     fun stop(keep: Boolean): Pair<File, Double>? {
+        reviewed?.let { rv -> reviewed = null; if (!keep) { rv.first.delete(); return null }; return rv }
         val r = rec ?: return null
         // THE LENGTH IS READ WHILE THE TAPE STILL STANDS (measured on A1 09.10.2026 22:0x MSK): `seconds` answers 0 once `rec` is gone,
         // and read after it every tape since d482f31 (30.09) measured 0 s, fell under the 0.6 s floor and was thrown away unsent

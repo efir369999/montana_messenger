@@ -13,10 +13,10 @@
 // measures: a primitive of the count — `attempts_the_close`, `can_advance`, the open quorum of the
 // book, `Pulse::open` — that writes the head, a proposal or the last window closed; and a store that
 // lets the head move onto a window whose proposal it does not hold. It does not run live_doing: a
-// live_doing that moved the head on the count would pass it untouched, and the refusal of that is
-// read off the order of the close (pulse.rs, the close: finalize after take_the_proposal returned a
-// verified proposal) — partial evidence, marked partial in REPORT.md. The right is held by the same
-// order (issued after finalize, from the decided roll) and is observed here through the door alone.
+// live_doing that moved the head on the count would pass it untouched. That refusal is measured on
+// the loop itself by a_quorum_without_a_verified_proposal_closes_nothing.rs, which fails on a
+// live_doing that closes on the count. The right is held by the same order (issued after the close,
+// from the decided roll) and is observed here through the door alone.
 
 use montana_node::certificate::empty_census;
 use montana_node::pulse::{Cohort, Pulse};
@@ -42,6 +42,7 @@ fn kept(window: u64) -> Proposal {
         record_root: [0x55; 32],
         machine_root: [0x66; 32],
         admitted_root: [0x77; 32],
+        credited_root: [0xAA; 32],
         operations_root: [0x88; 32],
         roll: [0xBB; 32],
         admitted_count: 1,

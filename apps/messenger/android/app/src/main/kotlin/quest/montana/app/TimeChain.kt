@@ -174,4 +174,17 @@ object TimeChain {
 object LetterSeal {
     private const val DOMAIN = "montana-letter-seal"
     fun seal(mid: String): String? = if (mid.startsWith("mid:")) TimeChain.sha256(DOMAIN + "\n" + mid) else null
+    private val kept = android.util.LruCache<String, Int>(4096)
+    /**
+     * THE GEMATRIA EVERY BUBBLE WEARS RIGHT OF ITS TIME (iOS MTLetterSeal.mark, MontanaBubble 2046-2056): the prime sum of the row's
+     * seal (Board.gematria, the wall's own count), counted once per name and kept — a name never changes. A row with no wire name
+     * (restored from the archive, «arc:») wears none.
+     */
+    fun gematria(mid: String): Int? {
+        if (mid.isEmpty() || mid.startsWith("arc:")) return null
+        kept.get(mid)?.let { return it }
+        val g = Board.gematria(seal(CoinSend.wire(mid)) ?: return null)
+        kept.put(mid, g)
+        return g
+    }
 }

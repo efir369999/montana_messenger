@@ -46,25 +46,6 @@ object CallsSeen {
 }
 
 /**
- * THE TIME MARK FOR A FACE NOT CHOSEN (iOS MTTimeMarkAvatar, MontanaShapes.swift:529-540, the calls' AvatarCircle timeMarkWhenMissing):
- * «absence is a complete, stable visual answer of its own» -- the black round with the sign (the iPhone's Logo, the same file) at
- * 28 of the side and a rim of white 0.35; a chosen face stands as it is.
- */
-private fun Context.callFace(ref: String, name: String, sizeDp: Int): View {
-    if (Book.shownFace(ref).exists()) return peerFace(ref, name, sizeDp)
-    return FrameLayout(this).apply {
-        background = android.graphics.drawable.GradientDrawable().apply {
-            shape = android.graphics.drawable.GradientDrawable.OVAL; setColor(Color.BLACK); setStroke(dp(1), Color.argb(89, 255, 255, 255))
-        }
-        val pad = Math.round(dp(sizeDp) * 0.36f)
-        addView(android.widget.ImageView(context).apply {
-            setImageResource(R.drawable.logo); scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
-            setPadding(pad, pad, pad, pad)
-        }, FrameLayout.LayoutParams(MATCH, MATCH))
-    }
-}
-
-/**
  * iOS CallsTabView.cell (ContentView.swift:2901-2943) in the App Library's measure (72, the face 48, the gap 16, the side 18): the
  * face; the name 17 semibold -- red when the call was missed -- and the clock 14, 22 high; 4 under them, 20 high, the arrow of the
  * call's direction 12, the camera of a video call 11, how it went 16 (the length, «Missed», «No answer», «Connection failed») and
@@ -83,7 +64,7 @@ private fun callRow(act: MainActivity, r: CallRecord): View {
         gravity = Gravity.CENTER_VERTICAL
         setPadding(dp(18), 0, dp(18), 0)
         minimumHeight = dp(72)
-        addView(c.callFace(r.ref, name, 48), lp(dp(48), dp(48)).apply { marginEnd = dp(16) })
+        addView(c.chatFace(r.ref, name, 48), lp(dp(48), dp(48)).apply { marginEnd = dp(16) })
         addView(c.vstack(Gravity.NO_GRAVITY) {
             addView(c.hstack {
                 gravity = Gravity.CENTER_VERTICAL
@@ -124,7 +105,7 @@ fun callsPane(act: MainActivity, onNewCall: () -> Unit = {}): View {
     val selected = linkedSetOf<String>()   // ref + "/" + mid
     val foot = FrameLayout(c).apply { visibility = View.GONE }
     lateinit var fill: () -> Unit
-    fun delete(ref: String, mid: String) = Book.edit(ref) { ch -> ch.msgs.removeAll { it.mid == mid } }
+    fun delete(ref: String, mid: String) = Book.drop(ref, listOf(mid))
     fun endSelecting() { selecting = false; selected.clear(); fill() }
     // the bar of the selection (iOS selectionBar): the cross out of it, the bin for the chosen, the cleared bin for the whole log
     fun drawFoot() {
@@ -213,13 +194,21 @@ fun callsPane(act: MainActivity, onNewCall: () -> Unit = {}): View {
         override fun onViewDetachedFromWindow(v: View) { Book.unlisten(again) }
     })
     return FrameLayout(c).apply {
-        addView(CoinPull(c, ScrollView(c).apply {
+        val scroll = ScrollView(c).apply {
             isVerticalScrollBarEnabled = false
             addView(c.vstack(Gravity.NO_GRAVITY) {
                 addView(rows, lp())
                 gap(120)
             })
-        }), FrameLayout.LayoutParams(MATCH, MATCH))   // one law for every page under the bar (iOS MontanaTimePanel)
+        }
+        // THE ROWS RUN ON TO THE SCREEN'S EDGES, AS THE CHATS' (iOS CallsTabView, ContentView.swift:3088-3106: «the same effect for
+        // the calls page, no border at the top or the bottom», MTChatListFrame page: "calls"; atoms 247ab9800586, 17a19adc6214): the
+        // chats page's one EdgeSink mask without the folders' tabs; no archive row stands over the calls, so the top always washes.
+        var self: View? = null
+        addView(EdgeSink(c, top = { scroll.paddingTop + c.dp(34) }, bottom = { self?.height ?: 0 }, edgeTop = { scroll.paddingTop }).apply {
+            self = this; page = "calls"; tag = EdgeSink.TAG
+            addView(CoinPull(c, scroll), FrameLayout.LayoutParams(MATCH, MATCH))   // one law for every page under the bar (iOS MontanaTimePanel)
+        }, FrameLayout.LayoutParams(MATCH, MATCH))
         addView(empty, FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
         // THE CALLS' ACTION (iOS CallsTabView, ContentView.swift:3001-3009, the author's word 01.10: «on the calls create the button»): a new
         // call is chosen among one's people -- the contacts' page, where a person's row dials; the pages' one corner, away while selecting
@@ -232,5 +221,6 @@ fun callsPane(act: MainActivity, onNewCall: () -> Unit = {}): View {
         addView(action, PageCorner.params(c))
         foot.viewTreeObserver.addOnGlobalLayoutListener { action.visibility = if (foot.visibility == View.VISIBLE) View.GONE else View.VISIBLE }
         addView(foot, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM).apply { bottomMargin = c.dp(26) })
+        ListFrame.attach(this, "calls", corner = action)
     }
 }

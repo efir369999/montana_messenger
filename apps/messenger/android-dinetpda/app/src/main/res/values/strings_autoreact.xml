@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The paid reactions: the Money Flow's auto-reactions and the menu's «Give a coin» (iOS MTAutoReactPage; Localizable.xcstrings en). -->
+<resources>
+    <string name="ar_title">Auto-reactions</string>
+    <string name="ar_header">Coins on each new letter</string>
+    <string name="ar_footer">Paid by itself as a reaction on every letter the person writes from now on, while your coins last.</string>
+    <string name="give_coin">Give a coin</string>
+</resources>

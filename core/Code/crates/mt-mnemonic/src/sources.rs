@@ -150,7 +150,11 @@ pub fn clock_step_ns() -> u64 {
                 best = d;
             }
         }
-        if best == u64::MAX { 1 } else { best.max(1) }
+        if best == u64::MAX {
+            1
+        } else {
+            best.max(1)
+        }
     })
 }
 
@@ -161,7 +165,10 @@ pub fn clock_step_ns() -> u64 {
 // dies if it does not differ.
 fn calibrate(scale: u64, mut work: impl FnMut(u64)) -> u64 {
     let need = Duration::from_nanos(
-        TICKS_PER_SAMPLE.saturating_mul(scale).saturating_mul(clock_step_ns()).min(MAX_SAMPLE_NS),
+        TICKS_PER_SAMPLE
+            .saturating_mul(scale)
+            .saturating_mul(clock_step_ns())
+            .min(MAX_SAMPLE_NS),
     );
     let mut units = CALIBRATION_START;
     loop {
@@ -177,7 +184,8 @@ fn calibrate(scale: u64, mut work: impl FnMut(u64)) -> u64 {
         let long_enough = total / PROBE_SAMPLES as u32 >= need;
         let noisy_enough = distinct_chunks(&probe) >= MIN_DISTINCT_CHUNKS
             && max_repeat(&probe) * PROBE_MODE_DEN <= PROBE_SAMPLES * PROBE_MODE_NUM;
-        let at_cap = units >= CALIBRATION_CAP || total / PROBE_SAMPLES as u32 >= Duration::from_nanos(MAX_SAMPLE_NS);
+        let at_cap = units >= CALIBRATION_CAP
+            || total / PROBE_SAMPLES as u32 >= Duration::from_nanos(MAX_SAMPLE_NS);
         if (long_enough && noisy_enough) || at_cap {
             return units;
         }
@@ -188,7 +196,9 @@ fn calibrate(scale: u64, mut work: impl FnMut(u64)) -> u64 {
 fn lcg_work(units: u64) {
     let mut acc: u64 = 0x9E37_79B9_7F4A_7C15;
     for i in 0..units {
-        acc = acc.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(i | 1);
+        acc = acc
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(i | 1);
         std::hint::black_box(acc);
     }
 }
@@ -243,7 +253,6 @@ fn memory_bytes(scale: u64) -> Vec<u8> {
     out
 }
 
-
 // Quartz. The clock that counts the passage of time inside the machine and the clock that names the calendar
 // date are driven by different mechanisms: the first from the crystal, the second is corrected from outside. The divergence
 // between them over a short interval is a physical property of THIS crystal: it drifts with
@@ -254,12 +263,18 @@ fn quartz_drift(scale: u64) -> Vec<u8> {
     let mut out = Vec::with_capacity(QUARTZ_SAMPLES * 8);
     for _ in 0..QUARTZ_SAMPLES {
         let mono = Instant::now();
-        let wall = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos() as u64).unwrap_or(0);
+        let wall = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_nanos() as u64)
+            .unwrap_or(0);
         // work between two looks at the clock: the divergence accumulates over it, and there is
         // as much of it as needed for the divergence to accumulate to K steps
         lcg_work(units);
         let elapsed_mono = mono.elapsed().as_nanos() as u64;
-        let wall_after = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos() as u64).unwrap_or(0);
+        let wall_after = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_nanos() as u64)
+            .unwrap_or(0);
         let elapsed_wall = wall_after.wrapping_sub(wall);
         out.extend_from_slice(&elapsed_mono.wrapping_sub(elapsed_wall).to_le_bytes());
     }
@@ -329,7 +344,10 @@ fn timer_bytes() -> Vec<u8> {
 // no output depends only on a seed taken sometime earlier.
 pub(crate) fn quartz_tick() -> [u8; 24] {
     let mono = Instant::now();
-    let wall = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos() as u64).unwrap_or(0);
+    let wall = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(0);
     let here = &mono as *const _ as u64;
     let mut out = [0u8; 24];
     out[..8].copy_from_slice(&(mono.elapsed().as_nanos() as u64).to_le_bytes());
@@ -449,7 +467,11 @@ pub fn jitter_probe(units: u64, samples: usize) -> (usize, usize, u64) {
         total += ns;
         out.extend_from_slice(&ns.to_le_bytes());
     }
-    (distinct_chunks(&out), max_repeat(&out) * 100 / samples, total / samples as u64)
+    (
+        distinct_chunks(&out),
+        max_repeat(&out) * 100 / samples,
+        total / samples as u64,
+    )
 }
 
 #[cfg(any(test, feature = "vectors"))]
@@ -565,7 +587,10 @@ mod tests {
     fn a_constant_source_is_not_alive() {
         // Eight identical measurements: the code ran, there is no source.
         let dead = vec![0x11u8; 8 * 8];
-        assert!(!is_alive(&dead, 8), "constant measurements must not be counted alive");
+        assert!(
+            !is_alive(&dead, 8),
+            "constant measurements must not be counted alive"
+        );
     }
 
     #[test]
@@ -588,7 +613,10 @@ mod tests {
         for i in 1..4u64 {
             lopsided.extend_from_slice(&(i * 1_000_003).to_le_bytes());
         }
-        assert!(!is_alive(&lopsided, 8), "skew toward one value — the source is dead");
+        assert!(
+            !is_alive(&lopsided, 8),
+            "skew toward one value — the source is dead"
+        );
     }
 
     #[test]
@@ -597,7 +625,10 @@ mod tests {
         for i in 0..8u64 {
             two.extend_from_slice(&(i % 2).to_le_bytes());
         }
-        assert!(!is_alive(&two, 8), "oscillation between two numbers is not counted as a source");
+        assert!(
+            !is_alive(&two, 8),
+            "oscillation between two numbers is not counted as a source"
+        );
     }
 
     #[test]
@@ -652,26 +683,42 @@ mod tests {
 
     #[test]
     fn a_fixed_work_sample_dies_on_a_fast_clock_and_a_calibrated_one_lives() {
-        assert!(!is_alive(&quantised(900, JITTER_ROUNDS), JITTER_ROUNDS), "900 ns on a 42 ns step must be dead");
+        assert!(
+            !is_alive(&quantised(900, JITTER_ROUNDS), JITTER_ROUNDS),
+            "900 ns on a 42 ns step must be dead"
+        );
         let long = TICKS_PER_SAMPLE * 42;
-        assert!(is_alive(&quantised(long, JITTER_ROUNDS), JITTER_ROUNDS), "256 steps must be alive");
+        assert!(
+            is_alive(&quantised(long, JITTER_ROUNDS), JITTER_ROUNDS),
+            "256 steps must be alive"
+        );
     }
 
     #[test]
     fn calibration_spans_the_window() {
         let step = clock_step_ns();
-        assert!(step >= 1 && step < 1_000_000, "clock step outside the reasonable range: {step}");
+        assert!(
+            (1..1_000_000).contains(&step),
+            "clock step outside the reasonable range: {step}"
+        );
         let units = calibrate(1, lcg_work);
         let start = Instant::now();
         lcg_work(units);
         let took = start.elapsed().as_nanos() as u64;
-        assert!(took >= TICKS_PER_SAMPLE * step / 2, "calibrated work {units} took {took} ns at step {step}");
+        assert!(
+            took >= TICKS_PER_SAMPLE * step / 2,
+            "calibrated work {units} took {took} ns at step {step}"
+        );
     }
 
     #[test]
     fn a_live_machine_answers_in_the_first_window() {
         let (_, r) = gather(&[0x5Au8; 32]);
-        assert_eq!(r.scale, 1, "a live machine must answer in the first window, answers in {}", r.scale);
+        assert_eq!(
+            r.scale, 1,
+            "a live machine must answer in the first window, answers in {}",
+            r.scale
+        );
         assert!(last_report().is_some());
     }
 
@@ -679,8 +726,14 @@ mod tests {
     fn six_sources_are_reported() {
         assert_eq!(SourceReport::TOTAL, 6);
         let (_, report) = gather(&[0u8; 32]);
-        assert!(!report.os_csprng, "a block of all zeros is not counted alive");
-        assert!(report.count() >= 3, "fewer than three live sources on this machine");
+        assert!(
+            !report.os_csprng,
+            "a block of all zeros is not counted alive"
+        );
+        assert!(
+            report.count() >= 3,
+            "fewer than three live sources on this machine"
+        );
     }
 
     #[test]

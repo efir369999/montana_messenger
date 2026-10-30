@@ -65,7 +65,8 @@ wallet phrase derives keys that answer to nobody.
 A record is of one kind with a note: it is a set of quantities its holder keeps, and what the
 network holds is a **commitment to it** — created once and re-made whenever its holder acts, carrying inside it everything the protocol needs to know about their
 standing — the lived segments of their continuity, the height of their own actions, the
-standing of their current key.
+standing of their current key, and the one right to raise a machine the record carries from its
+opening to its close, which Consensus spends.
 
 What the network holds is the tree of these commitments and the set of nullifiers spent
 against them. Neither holds a name.
@@ -93,7 +94,11 @@ one action per window already bounds how fast marking can go. Continuity is meas
 **now**, not against whenever the record was last written: the bitmap of segments is read
 after shifting it by the distance from the segment it was written against to the current one,
 so a record that lapsed and returned does not pass on the strength of a past that has moved
-away.
+away. The segment of window `W` is `floor(W / segment_windows)`, counted from window zero. The
+newest segment is bit 0, so the shift is to the left. An action in segment `s` shifts the bitmap
+left by `s − last_active_segment`, sets bit 0, keeps the low `max_entry_segments` bits and writes
+`s` as the segment the bitmap is written against. Canon states these as "The rules of continuity"
+(rules 1 and 2; records 297, 300).
 
 The gates that consume continuity — the candidacy of a machine and the first renewal of a
 name — demand a **share** of the segments and not all of them: an implementation counts the
@@ -103,9 +108,13 @@ bits set within the segments of the period in force and compares the count again
 required_segments = ceil(segments_in_force x continuity_required_num / continuity_required_den)
 ```
 
-with the multiplication before the division and the division rounding upward. `segments_in_force`
+with the multiplication before the division and the division rounding upward. The period of `n`
+segments in force at the current segment `c` is `[c − n + 1, c]`. It ends with the current
+segment, so an action today counts today, and its bits are the low `n` bits of the bitmap after
+the shift (rule 3; records 297, 300). `segments_in_force`
 is `continuity_segments`, raised by the gate of entry under pressure to at most
-`max_entry_segments`; the share holds against whatever count is in force, so one rule serves
+`max_entry_segments`. The rise is the ramp Consensus states under "Presence and admission"
+(rule 4; records 297, 300). The share holds against whatever count is in force, so one rule serves
 every gate that consumes it. The proof asserts that the threshold is met; it names no record
 and discloses no history.
 
@@ -243,9 +252,9 @@ of that person go on naming nobody.
 
 - **Commit.** The holder publishes a commitment over the slot, a blinding factor of their own, and the tip of a chain derived from their seed and that slot. Nothing in it names them, and nothing yet says which name was meant.
 - **Reveal.** Within the reveal period the holder publishes the name, the blinding factor and the contact root of that slot, and anyone recomputes the commitment. The contact root is the encapsulation key Canon derives from the seed and the slot; it is what makes the name reachable, and it is the only public value a name carries beyond the name itself. A slot revealed to be already held is refused, and the first commitment cemented for a slot is the one that holds it — uniqueness comes from the order of the chain and from no other party.
-- **Renew.** Before the renewal period runs out the holder publishes the next link of the chain backwards: a value that hashes to what was published before. Anyone verifies it with one hash, nobody learns who published it, and a name whose renewal does not come is released to whoever takes it next.
+- **Renew.** Before the renewal period runs out the holder publishes the next link of the chain backwards: a value that hashes to what was published before. Anyone verifies every renewal after the first with one hash; the first also carries the proof of continuity below (records 297, 300). Nobody learns who published it, and a name whose renewal does not come is released to whoever takes it next.
 
-A name works from the moment it is revealed, and it is **held** from the first renewal: that renewal carries the same proof of lived continuity every gate of the protocol carries, so a seed drawn to sweep up names and abandoned holds nothing — the proof does not assemble, the renewal does not come, and the slot returns. Between the reveal and that renewal a name is a candidacy like any other, and the holder is told so before they claim it.
+A name works from the moment it is revealed, and it is **held** from the first renewal: that renewal is an object of its own and carries the same proof of lived continuity every gate of the protocol carries (records 297, 300; its layout, class domain and circuit are proposed for the next generation of K5, Canon "The first renewal of a slot"), so a seed drawn to sweep up names and abandoned holds nothing — the proof does not assemble, the renewal does not come, and the slot returns. Between the reveal and that renewal a name is a candidacy like any other, and the holder is told so before they claim it.
 
 **A channel is a slot of this plane in a space of its own.** It is taken by the same three acts —
 commit, reveal, renew — spends the same reach of the window, is held from its first renewal by the
@@ -258,11 +267,14 @@ verified under rather than the key a stranger encapsulates to. What a publicatio
 reaches a reader is Network's; the layouts are Canon's.
 
 **The three acts above — of a name and of a channel alike — are objects of the plane of names,
-not actions of the identity plane.** They spend
+not actions of the identity plane.** The commitment, the reveal and every renewal after the first spend
 no nullifier of a record, they create no successor to one, and they carry nothing of whoever
 publishes them — which is why a reveal publishes a name without publishing a fourth quantity of
 an action, and why holding a name adds nothing an observer can join to what its holder does.
-Canon holds their layouts.
+The first renewal is the one object of this plane that proves something of a record: it proves
+the share of lived continuity, and it publishes nothing that joins the slot to that record (records
+297, 300). Canon holds their layouts; the layout of the first renewal is proposed for the next
+generation of K5.
 
 **Why a chain and not a signature.** A signature would name a key, and a key names a person. A
 chain proves continuity of the same holder without carrying anything of them: each link is
@@ -284,7 +296,7 @@ exist, and cannot be assembled from what the slot publishes.
 - A slot is derived from the normalized name alone, so two implementations resolve one name to one slot.
 - A commitment holds the slot, a fresh blinding factor and the chain tip, and nothing else; a commitment naming anything of its holder is refused.
 - A reveal is accepted only within the reveal period after its commitment, and only for a slot no cemented commitment already holds.
-- A renewal is accepted only if hashing it once yields the value published before it, and only within the renewal period.
+- A renewal is accepted only if hashing it once yields the value published before it, and only within the renewal period. A renewal after the first needs nothing more; the first is accepted only if its proof of lived continuity stands as well (records 297, 300).
 - A name whose renewal period passes is released; the slot returns to free and carries nothing of whoever held it.
 - Releasing is not reversible by the former holder, and holding is not transferable: a name is taken by living with it, and there is nowhere to sell it.
 
@@ -316,6 +328,7 @@ verifies at once, and no mark appears.
 | that a name was claimed | **claimed by the person, not created by the protocol**: publicity is a deliberate act, its consequence is stated to the person before the act, and the edge lasts as long as the name is held |
 | that a channel slot was taken | **claimed by the person, not created by the protocol**: taking a slot is a deliberate act, it publishes a commitment naming nobody and a key belonging to the slot, and nothing computable joins that slot to the record of whoever took it or to any name they hold |
 | that some record was opened in a window | **deliberately observable**: it names nobody, and it is what the bound per window is enforced against |
+| that some record raised a machine | **deliberately observable**: a candidacy publishes the right the record carries, which names nobody, is published once, and joins to nothing the record publishes when it is opened or when it acts |
 | how a seed was drawn | closed: the source and its tests are fixed by Canon and run inside the device; nothing about the draw leaves it |
 | the words of a person | closed: they exist on the device and on whatever a person writes them onto, and no path of the protocol carries them |
 | the roots of the tree and of the set | **deliberately observable**: quantities about the whole from which no participant is derivable |
@@ -338,6 +351,6 @@ An implementation conforms to this document when all of the following hold.
 12. It holds one secret and offers no passphrase beside it, and it states the weight of that secret to its holder before showing it.
 13. It derives a name slot from the normalized name alone, refuses a name outside the alphabet and the bounds Canon fixes, and resolves a name to a first-contact capability and never to an address.
 14. It spends the nullifier of a reach for the window on every taking of a slot and on every ask of what one publishes, and it refuses a second reach of one window in silence.
-15. It takes a name only by commitment, reveal within the reveal period and renewal within the renewal period, verifies a renewal by a single hash against the value published before it, and releases a slot whose renewal does not come.
+15. It takes a name only by commitment, reveal within the reveal period and renewal within the renewal period, verifies every renewal after the first by a single hash against the value published before it and the first by that hash and its proof of lived continuity (records 297, 300), and releases a slot whose renewal does not come.
 16. It takes a channel slot by the same three acts in a space of its own, holds it from the first renewal by the same proof of continuity a name is held by, publishes at its reveal the key its publications are verified under rather than the key a stranger encapsulates to, and joins that slot to the record of its holder by nothing computable.
 17. It keeps the words out of every shared surface of the device — clipboards that leave it, screenshots, backups, logs and diagnostics — and out of every path that leaves the device at all.

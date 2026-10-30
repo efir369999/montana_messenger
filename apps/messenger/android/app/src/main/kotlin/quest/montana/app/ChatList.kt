@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -17,7 +18,7 @@ import kotlin.math.abs
 // ─────────────────────────── the chats list's own marks (iOS MontanaChatsList: MTPersonMenu, swipe tiles, selection) ───────────────────────────
 
 /** THE LIST'S ORDER (iOS orderedChats): the pinned ones first, in their own order; then the rest, newest letter first. The archived leave. */
-fun listedChats(): List<Chat> = Book.all()
+fun listedChats(): List<Chat> = Book.listed()
     .filter { stands(it) && !ChatMarks.isArchived(it.ref) }
     .sortedByDescending { it.last?.at ?: Groups.bornAt(it.ref) }
     .sortedBy { ChatMarks.pinPlace(it.ref) ?: Int.MAX_VALUE }   // a stable sort: the newest-first order stays under the pins
@@ -25,13 +26,50 @@ fun listedChats(): List<Chat> = Book.all()
 /** THE CHATS PAGE'S ROWS (iOS bare): the groups and the channels live in their own pages (the author's words 06.10.2026 11:5x). */
 fun chatRows(): List<Chat> = listedChats().filter { !Groups.isKey(it.ref) }
 
-/** THE GROUPS' OR THE CHANNELS' PAGE ROWS (iOS groupRows(channel:)): the rows of its kind alone. */
-fun groupRows(channel: Boolean): List<Chat> = listedChats().filter { Groups.isKey(it.ref) && Groups.isChannel(it.ref) == channel }
-
-fun archivedChats(): List<Chat> = Book.all().filter { stands(it) && ChatMarks.isArchived(it.ref) }
+fun archivedChats(): List<Chat> = Book.listed().filter { stands(it) && ChatMarks.isArchived(it.ref) }
 
 /** A row stands on letters; a group stands from its invitation, by the moment it stood here (iOS MTGroup.stand: the row at once). */
 private fun stands(c: Chat) = c.msgs.isNotEmpty() || Groups.isKey(c.ref)
+
+/**
+ * THE LIST'S WORK, MEASURED (iOS MTListWork, MontanaChatsList.swift:2094-2120 at 2155; atom 4cbf30023edb): the chats list lives
+ * under the open chat and passes on every change of the book. Per window of thirty seconds or more with work, one line
+ * «list_work»: the passes, those that changed nothing the rows show (idle), those made under an open chat, the rows built
+ * again, the rows drawn, the builds of the ordered rows and the milliseconds of each with the worst. Android's list draws
+ * every row again on each pass (no diff of its own), so changed = drawn = the rows of every pass; «idle» is a pass whose rows'
+ * record -- order, names, unread, last letter, the archive's row -- is the one the pass before drew.
+ */
+object ListWork {
+    private var since = 0L
+    private var ms = 0.0; private var worst = 0.0; private var buildMs = 0.0
+    private var passes = 0; private var idle = 0; private var under = 0; private var changed = 0; private var builds = 0; private var drawn = 0
+    private var lastPrint = 0
+    fun <T> build(f: () -> T): T {
+        val t0 = System.nanoTime()
+        val r = f()
+        builds++; buildMs += (System.nanoTime() - t0) / 1e6
+        return r
+    }
+    /** The record a pass draws, as one number: the same number twice is a pass that drew nothing new. */
+    fun print(rows: List<Chat>, head: Boolean): Int = rows.fold(if (head) 1 else 0) { h, ch ->
+        31 * h + (ch.ref + "|" + ch.shown + "|" + ch.unread + "|" + ChatMarks.pinPlace(ch.ref) + "|" + ch.last?.mid + "|" + (ch.last?.text?.length ?: 0)).hashCode()
+    }
+    fun note(ms: Double, rows: Int, print: Int) {
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (since == 0L) since = now
+        passes++; changed += rows; drawn += rows; this.ms += ms; worst = maxOf(worst, ms)
+        if (print == lastPrint) idle++
+        lastPrint = print
+        if (Book.openChat != null) under++
+        if (now - since < 30_000) return
+        fun f(x: Double) = String.format(java.util.Locale.US, "%.1f", x)
+        android.util.Log.d("Montana", "list_work passes=" + passes + " idle=" + idle + " under_chat=" + under + " changed=" + changed +
+            " drawn=" + drawn + " rows=" + rows + " ms=" + f(this.ms) + " worst=" + f(worst) + " builds=" + builds + " build_ms=" + f(buildMs) +
+            " secs=" + (now - since) / 1000)
+        since = now
+        passes = 0; idle = 0; under = 0; changed = 0; builds = 0; drawn = 0; this.ms = 0.0; worst = 0.0; buildMs = 0.0
+    }
+}
 
 /** The chats chosen while the list selects (iOS selecting, selectedChats). */
 class ChatSelection(val onChange: (ChatSelection) -> Unit) {
@@ -49,10 +87,54 @@ const val CONVDEL_MARK = "\u2063mtconvdel:"
  * THE CONVERSATION LEAVES THIS DEVICE (iOS removeConversationLocally): its marks and its book. A word still queued for it (the
  * funeral, the funeral's receipt) is knocked out first — the pipe's secret must outlive the last word it carries.
  */
-fun buryChat(ref: String) = Thread { Post.flush(); ChatMarks.forget(ref); Book.forget(ref) }.start()
+fun buryChat(ref: String) = Thread { Post.flush(); forgetChat(ref) }.start()
 
-/** Deleted at both (iOS deleteChat forBoth): the funeral leaves by the pipe, then the chat is buried here. */
-fun deleteForBoth(ref: String) { Post.send(ref, Marks.mintMid(), CONVDEL_MARK); buryChat(ref) }
+/** The chat leaves here with its letters' names buried (iOS removeConversationLocally → bury): a late copy raises no chat again. */
+fun forgetChat(ref: String) {
+    // THE ROOM WITH NO WIRE IS NOT DELETED (iOS deleteChat 6098, isLocalRoom): Saved Messages and the Montana room always stand
+    if (Book.isLocal(ref)) { Log.d("Montana", "delete_refused the local room stays"); return }
+    Book.chat(ref)?.let { ch -> Book.bury(ref, ch.msgs.map { it.mid }) }
+    ChatMarks.forget(ref); Book.forget(ref); Notify.forget(ref)
+    // A CONVERSATION GONE LEAVES NO STATE OF ITS OWN (iOS forgetConversation, f5889c70 at 2240): its draft, its pins, the letters
+    // scheduled into it and its own keys go; the block, the mute, the name and the face, the correspondent's hide word and the
+    // graves stay -- they keep what must stay closed
+    MsgPins.forget(ref); Scheduled.forget(ref)
+    for (k in listOf("draft.", "plcap_", "pgcap_", "pgHeld.")) Prefs.remove(k + ref)
+}
+
+/**
+ * Deleted at both (iOS deleteChat forBoth): the funeral leaves by the pipe, then the chat is buried here. Its moment is kept first
+ * (iOS 876ab288): a letter of theirs born before it and still on its way stands nothing again.
+ */
+fun deleteForBoth(ref: String) {
+    val funeral = Marks.mintMid()
+    Marks.birthMs(funeral)?.let { Book.noteFuneral(ref, it) }
+    Post.send(ref, funeral, CONVDEL_MARK); buryChat(ref)
+}
+
+/**
+ * THE CORRESPONDENT'S FUNERAL, BY ITS BIRTH (iOS peerFuneral, 876ab288 at 2240): a repeat or an older one changes nothing; one older
+ * than a letter of theirs standing here takes only what was born before it, and the conversation lives on their later word; any
+ * other erases the conversation here. A funeral of a build that names none is believed as it always was. A coin letter of mine not
+ * proven delivered gives its coins back before its row goes (iOS removeConversationLocally 3484).
+ */
+fun peerFuneral(ref: String, sid: String) {
+    val moment = Marks.birthMs(sid)
+    if (moment != null) {
+        if (!Book.noteFuneral(ref, moment)) { Log.d("Montana", "funeral_repeat conv=" + ref.take(10) + " — no newer than the one kept"); return }
+        val rows = Book.chat(ref)?.msgs?.toList().orEmpty()
+        val born = { m: Msg -> Marks.birthMs(m.mid) ?: m.at }
+        if (rows.any { !it.mine && moment < born(it) }) {
+            val before = rows.filter { born(it) <= moment }
+            before.forEach { CoinSend.release(it, ref) }
+            Book.drop(ref, before.map { it.mid })
+            Log.d("Montana", "funeral_older conv=" + ref.take(10) + " — their later word stands, " + before.size + " before it go")
+            return
+        }
+    }
+    Book.chat(ref)?.msgs?.toList()?.forEach { CoinSend.release(it, ref) }
+    buryChat(ref)
+}
 
 /**
  * THE DELETION ASKED ONCE (iOS MontanaDeleteChatSheet, ContentView 4442-4467): «Permanently delete the chat with …?» on the person's
@@ -67,7 +149,7 @@ fun askDeleteChat(act: MainActivity, ref: String, done: () -> Unit = {}) {
     val both = Book.secret(ref) != null
     faceSheet(act, ref, question, null, listOfNotNull(
         if (both) FaceDeed(act.getString(R.string.dl_both), true) { deleteForBoth(ref); done() } else null,
-        FaceDeed(act.getString(R.string.dl_mine), false) { ChatMarks.forget(ref); Book.forget(ref); done() }))
+        FaceDeed(act.getString(R.string.dl_mine), false) { forgetChat(ref); done() }))
 }
 
 /** «Block this person?» on the person's face (iOS MontanaBlockSheet 4469-4483): one question for the profile and the contacts. */
@@ -170,14 +252,15 @@ class Tile(val glyph: Int, val red: Boolean = false, val deed: () -> Unit)
  * THE ROW'S TILES, right to left as iOS draws them (swipeTrailing): unread / read, pin, mute, archive, delete. In the archive
  * the archive tile takes the row back out (ArchivedChatsView: «unarchive»).
  */
-fun rowTiles(act: MainActivity, chat: Chat, inArchive: Boolean): List<Tile> = listOf(
+fun rowTiles(act: MainActivity, chat: Chat, inArchive: Boolean): List<Tile> = listOfNotNull(
     Tile(if (ChatMarks.hasUnread(chat)) R.drawable.ic_mark_read else R.drawable.ic_dot) { ChatMarks.toggleUnread(chat) },
     Tile(if (ChatMarks.isPinned(chat.ref)) R.drawable.ic_pin_slash else R.drawable.ic_pin) { pin(chat.ref) },   // pin.slash.fill on a pinned chat (iOS 782)
     Tile(if (ChatMarks.isMuted(chat.ref)) R.drawable.ic_set_bell else R.drawable.ic_bell_off) { ChatMarks.toggleMute(chat.ref) },
     Tile(if (inArchive) R.drawable.ic_unarchive else R.drawable.ic_archive) {
         if (inArchive) ChatMarks.unarchive(chat.ref) else ChatMarks.archive(chat.ref)
     },
-    Tile(R.drawable.ic_delete) { askDeleteChat(act, chat.ref) },   // every tile the same glass (iOS swipeTrailing 778-786)
+    // every tile the same glass (iOS swipeTrailing 778-786); the local room has no delete (iOS 804)
+    if (Book.isLocal(chat.ref)) null else Tile(R.drawable.ic_delete) { askDeleteChat(act, chat.ref) },
 )
 
 /**
@@ -197,7 +280,7 @@ fun personMenu(act: MainActivity, chat: Chat, inArchive: Boolean, sel: ChatSelec
     val unread = ChatMarks.hasUnread(chat)
     deeds += Deed(if (unread) R.string.cl_mark_read else R.string.cl_mark_unread, if (unread) R.drawable.ic_mark_read else R.drawable.ic_dot) { ChatMarks.toggleUnread(chat) }
     if (!inArchive) deeds += Deed(R.string.cl_archive, R.drawable.ic_archive) { ChatMarks.archive(chat.ref) }
-    deeds += Deed(R.string.cl_delete, R.drawable.ic_delete, red = true) { askDeleteChat(act, chat.ref) }
+    if (!Book.isLocal(chat.ref)) deeds += Deed(R.string.cl_delete, R.drawable.ic_delete, red = true) { askDeleteChat(act, chat.ref) }   // iOS 1218
     holdMenu(act, held, deeds, personPlate(act, chat.ref))
 }
 
@@ -254,7 +337,7 @@ fun personPlate(c: Context, ref: String): View {
         gravity = Gravity.CENTER_VERTICAL
         background = c.rounded(Color.argb(235, 44, 44, 46), 16, Color.argb(26, 255, 255, 255))
         setPadding(dp(14), dp(8), dp(14), dp(8))
-        addView(c.peerFace(ref, name, 44), lp(dp(44), dp(44)).apply { marginEnd = dp(12) })
+        addView(c.chatFace(ref, name, 44), lp(dp(44), dp(44)).apply { marginEnd = dp(12) })
         addView(c.text(name, 17f, Color.WHITE).apply { singleLineEllipsis() }, lp(WRAP, WRAP))   // USER-DATA: the name
     }
 }
@@ -320,7 +403,7 @@ fun selectionBar(act: MainActivity, sel: ChatSelection): View {
             val refs = sel.chosen.toList().filter { !CoinSend.travelsIn(it) }   // a chat with coins on their way waits (iOS deleteChat 5429)
             AlertDialog.Builder(act).setMessage(R.string.delete_chat_q)
                 .setItems(arrayOf(c.getString(R.string.dl_both), c.getString(R.string.dl_mine))) { _, which ->
-                    refs.forEach { if (which == 0 && Book.secret(it) != null) deleteForBoth(it) else { ChatMarks.forget(it); Book.forget(it) } }
+                    refs.forEach { if (which == 0 && Book.secret(it) != null) deleteForBoth(it) else forgetChat(it) }
                 }
                 .setNegativeButton(R.string.cancel, null).show()
         }, lp(0, WRAP, 1f))
@@ -382,7 +465,9 @@ fun archivePage(act: MainActivity, onBack: () -> Unit): View {
  * (iOS MTTabPan's edge zones): from the centre the stroke turns the pages, as it did before. Released past half the tiles,
  * the row stays open; a tap on the open row closes it, and so does the list's move.
  */
-class SwipeRow(private val act: MainActivity, private val content: View, tiles: List<Tile>, leading: List<Tile> = emptyList()) : FrameLayout(act) {
+// ground: what the row wears while it is pulled aside -- the list's black, or a card's own tone on a settings' plate
+class SwipeRow(private val act: MainActivity, private val content: View, tiles: List<Tile>, leading: List<Tile> = emptyList(),
+               private val ground: Int = Color.BLACK) : FrameLayout(act) {
     private val tray = act.hstack { gravity = Gravity.CENTER_VERTICAL or Gravity.END; setPadding(0, 0, dp(10), 0) }
     private val lead = act.hstack { gravity = Gravity.CENTER_VERTICAL or Gravity.START; setPadding(dp(10), 0, 0, 0) }
     private val tileSize = dp(44)
@@ -430,7 +515,7 @@ class SwipeRow(private val act: MainActivity, private val content: View, tiles: 
                 if (abs(dy) > slop && abs(dy) > abs(dx)) { edge = false; parent?.requestDisallowInterceptTouchEvent(false); return false }   // a scroll: the list's
                 if (abs(dx) > slop) {
                     // the row covers its tiles while it moves; closed, it is clear again over the page's ground
-                    dragging = true; tray.visibility = VISIBLE; lead.visibility = VISIBLE; content.setBackgroundColor(Color.BLACK); return true
+                    dragging = true; tray.visibility = VISIBLE; lead.visibility = VISIBLE; content.setBackgroundColor(ground); return true
                 }
             }
             // a tap on the open row closes it; a tap on a tile is the tile's

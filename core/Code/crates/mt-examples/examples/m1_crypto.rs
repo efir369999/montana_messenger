@@ -187,7 +187,9 @@ fn cmd_keypair_random(n: usize) -> bool {
 
     print_section("RECOVERY MECHANISM POINTER");
     print_note("Production identity flow — via m1_mnemonic (deterministic from 24 words)");
-    print_note("This command is a RANDOM keypair sanity check of the ML-DSA-65 primitive (test/dev only)");
+    print_note(
+        "This command is a RANDOM keypair sanity check of the ML-DSA-65 primitive (test/dev only)",
+    );
     print_note(
         "For the deterministic recovery test: subcommand `keypair` (without --random) or `m1_mnemonic`",
     );
@@ -406,7 +408,9 @@ fn cmd_hash() -> bool {
     let fips_ok = hex_full(&got) == expected_hex;
     print_kv("byte-exact match", format!("{fips_ok}"));
     print_note("NOTE: mt_crypto::hash(domain, parts) uses a NUL separator and a self-delimiting");
-    print_note("formula SHA-256(domain || 0x00 || parts) — not raw SHA-256. For FIPS compatibility");
+    print_note(
+        "formula SHA-256(domain || 0x00 || parts) — not raw SHA-256. For FIPS compatibility",
+    );
     print_note("the separate function sha256_raw() without domain separation is used.");
 
     print_subsection("2. Empty-parts collapse: hash(d,[]) == hash(d,[b\"\"])");

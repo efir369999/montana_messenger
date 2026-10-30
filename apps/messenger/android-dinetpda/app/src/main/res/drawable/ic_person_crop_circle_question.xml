@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS person.crop.circle.badge.questionmark: drawn for Montana (the person in the ring, the ring open at the badge), the badge
+     the Material Icons «help» circle (Apache-2.0): the folders' kind Non-Contacts -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.7" android:strokeLineCap="round"
+      android:pathData="M11.43,19.24A8.25,8.25 0,1 1,19.24 11.43"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.7"
+      android:pathData="M8.1,8.6a2.9,2.9 0,1 0,5.8 0a2.9,2.9 0,1 0,-5.8 0z"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.7" android:strokeLineCap="round"
+      android:pathData="M5.6,16.9C6.9,14.95 8.85,13.95 11,13.95c0.8,0 1.55,0.13 2.25,0.38"/>
+  <group android:translateX="12.44" android:translateY="12.44" android:scaleX="0.48" android:scaleY="0.48">
+    <path android:fillColor="@android:color/white"
+        android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM13,19h-2v-2h2v2zM15.07,11.25l-0.9,0.92C13.45,12.9 13,13.5 13,15h-2v-0.5c0,-1.1 0.45,-2.1 1.17,-2.83l1.24,-1.26c0.37,-0.36 0.59,-0.86 0.59,-1.41 0,-1.1 -0.9,-2 -2,-2s-2,0.9 -2,2H8c0,-2.21 1.79,-4 4,-4s4,1.79 4,4c0,0.88 -0.36,1.68 -0.93,2.25z"/>
+  </group>
+</vector>

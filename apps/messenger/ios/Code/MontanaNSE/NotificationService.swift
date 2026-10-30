@@ -1,9 +1,8 @@
 // NotificationService.swift — decrypting the notification on the device.
 //
-// SSOT-DEBT-ACK: bodyKey and openBlob are copied from MTPipe.swift because MTPipe and
-// MontanaDirect pull the network layer and do not compile into the extension. The formula is
-// frozen by the Canon vectors (MTPipe.agreesWithCanon) — divergence from the set fails on the
-// vector inside the app.
+// A pipe's secret is read here through its one owner (MTPipeKey, compiled into this target): the mirror the app writes is
+// opened by it, and every key of a minute and label of a day is asked of it -- this file holds no byte of a secret and no
+// formula over one (24.10.2026).
 
 import UserNotifications
 import CryptoKit
@@ -135,7 +134,7 @@ final class NotificationService: UNNotificationServiceExtension {
             // A long reference letter: pull the blob (the extension has network) — the full
             // text into both the banner and the chat. Out of time — the generic banner, the
             // app pulls the rest itself.
-            // THE PERSON'S OWN LETTER FROM ANOTHER OF THEIR DEVICES (11.10.2026, MTNodeWire.authorHolds): it waits for the app
+            // THE PERSON'S OWN LETTER FROM ANOTHER OF THEIR DEVICES (11.10.2026, MTPipeKey.authorHolds): it waits for the app
             // to land it as mine, and rings nobody -- my own word, my own call, never the correspondent's banner.
             if envOwn {
                 Self.stashLetter(conv: conv, mid: mid, text: rawText, name: "", glyph: "", qt: envQt, qm: envQm, lp: envLp, own: true)
@@ -189,7 +188,7 @@ final class NotificationService: UNNotificationServiceExtension {
                 return
             }
             if Self.serveMissedLetter(rawText, mid: mid, conv: conv, name: envName, handler: contentHandler) { return }
-            // A TRANSFER LETTER RINGS NOTHING HERE (the author's word 10.10.2026 15:3x MSK: «transfers do not touch Montana at all»;
+            // A TRANSFER LETTER RINGS NOTHING HERE (the author's word 10.10.2026 12:3x UTC: «transfers do not touch Montana at all»;
             // T1 12:24:29Z: an older build's transfer letter showed «New message» and its chat stood empty -- the app buries it
             // unread, MTRowLetter.retiredLetter): it is stashed for the app without a face and turns no badge.
             if MTRowLetter.retiredLetter(text) {
@@ -491,7 +490,7 @@ final class NotificationService: UNNotificationServiceExtension {
     // bytes inside the intent, since the extension has no App Group and INImage(url:) to a
     // private temp is unreadable to the renderer. Did not work (no entitlement) — degrade to
     // the attachment thumbnail.
-    /// THE WHOLE WAKE HAS ONE BUDGET (the author's word 06.10.2026 23:5x MSK; T1 20:51Z on 2143: the box gave 26 letters, the diary
+    /// THE WHOLE WAKE HAS ONE BUDGET (the author's word 06.10.2026 20:5x UTC; T1 20:51Z on 2143: the box gave 26 letters, the diary
     /// held no line after it, the phone no crash and no memory event, and the banner went out as the bare composed plate without its
     /// person): every walk of the network ends by 22 s from the wake, whatever its own seconds.
     /// This process's processor time over every thread it had, in microseconds (the kernel's rusage) -- the app's twin is
@@ -506,7 +505,7 @@ final class NotificationService: UNNotificationServiceExtension {
     private static func within(_ seconds: TimeInterval, of began: Date) -> Date {
         min(Date().addingTimeInterval(seconds), began.addingTimeInterval(wakeBudgetS))
     }
-    /// THE BANNER FIRST, THE REST AFTER (17.10.2026; the author's words 00:19-00:20 MSK: «two empty messages on T1 ... close such
+    /// THE BANNER FIRST, THE REST AFTER (16.10.2026; the author's words 21:19-21:20 UTC: «two empty messages on T1 ... close such
     /// errors at the root»). T1 on 2222 (16.10): 37 wakes wrote «banner shown», 6 wrote «cost» -- the box walk, the outgoing knock
     /// (a queue of 78-85 letters) and the cargo stood between the composed banner and the hand-over; the process died there, by time
     /// or by the extension's memory ceiling (unproven which), and the system showed the node's bare push with no sender, twice. The
@@ -765,7 +764,7 @@ final class NotificationService: UNNotificationServiceExtension {
 
     /// A first-meeting envelope: [encapsulation 1088][mid\0 text\0 name\0 glyph\0 padding] =
     /// 1536, the key derived from the live card's invite (mirror «rdv:<invite>»).
-    /// THE MINUTES A SEAL IS TRIED UNDER (the author's word 10.10.2026 12:5x MSK: «notifications reinforced concrete»). The seal's
+    /// THE MINUTES A SEAL IS TRIED UNDER (the author's word 10.10.2026 09:5x UTC: «notifications reinforced concrete»). The seal's
     /// minute is the sender's; a push Apple held for a phone that was away arrives minutes or hours later, and tried only around
     /// this phone's own minute its envelope never opened -- the banner fell back to the box and, the box's newest letter being an
     /// old one, said nothing new. The push names the moment the node sent it ("at"); the seal stands at it or a few minutes
@@ -782,12 +781,12 @@ final class NotificationService: UNNotificationServiceExtension {
     private static func openRdvLetter(_ sealed: Data, at: Int)
         -> (mid: String, text: String, name: String, glyph: String, ct64: String, invite: String,
             conf: String)? {
-        let secrets = pipeSecrets().filter { $0.key.hasPrefix("rdv:") }
+        let secrets = MTPipeKey.mirrored().filter { $0.key.hasPrefix("rdv:") }
         guard !secrets.isEmpty else { return nil }
         let minutes = sealMinutes(at)
         for (key, secret) in secrets {
             for w in minutes {
-                guard let plain = openBlob(key: bodyKey(secret: secret, window: w), sealed: sealed),
+                guard let plain = openBlob(key: secret.bodyKey(window: w), sealed: sealed),
                       plain.count > 1092 else { continue }
                 let ct = plain.prefix(1088)
                 var fields: [String] = []
@@ -815,7 +814,7 @@ final class NotificationService: UNNotificationServiceExtension {
         for ear in MTNodeWire.shelfEars() {
             for (key, secret) in ear.keys {
                 for w in minutes {
-                    guard let plain = openBlob(key: bodyKey(secret: secret, window: w), sealed: sealed) else { continue }
+                    guard let plain = openBlob(key: secret.bodyKey(window: w), sealed: sealed) else { continue }
                     let rdv = key.hasPrefix("rdv:")
                     guard !rdv || plain.count > 1092 else { continue }
                     let f = parseFields(rdv ? Data(plain.dropFirst(1088)) : plain)
@@ -845,17 +844,17 @@ final class NotificationService: UNNotificationServiceExtension {
 
     private static func openWithOwnPipes(_ sealed: Data, at: Int)
         -> (conv: String, mid: String, text: String, name: String, glyph: String, qt: String, qm: String, lp: String, own: Bool, author: String)? {
-        let secrets = pipeSecrets()
+        let secrets = MTPipeKey.mirrored()
         guard !secrets.isEmpty else { return nil }
         let minutes = sealMinutes(at)
         for (conv, secret) in secrets {
             for w in minutes {
-                let key = bodyKey(secret: secret, window: w)
+                let key = secret.bodyKey(window: w)
                 if let plain = openBlob(key: key, sealed: sealed), plain.contains(0) {
                     // Fields split by 0x00 (MTNodeWire.letterFields): an old envelope carried two -- the rest read empty.
                     let fields = MTNodeWire.letterFields(plain)
-                    // The person's own letter from another of their devices is told by its author field (MTNodeWire.authorHolds).
-                    let own = MTNodeWire.authorHolds(fields[7], key: MTNodeWire.mirroredAuthorKey(), secret: secret, mid: fields[0], text: fields[1])
+                    // The person's own letter from another of their devices is told by its author field (MTPipeKey.authorHolds).
+                    let own = secret.authorHolds(fields[7], person: MTNodeWire.mirroredAuthorKey(), mid: fields[0], text: fields[1])
                     if !fields[1].isEmpty { return (conv, fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6], own, fields[7]) }
                 }
             }
@@ -867,7 +866,6 @@ final class NotificationService: UNNotificationServiceExtension {
     // APNs keeps one last push; letters live in the node box, and this is the pickup. Dedup in stash.
     // The wire formulas live in MTNodeWire (the one owner, canon-held) — references, not
     // frozen copies (SSOT-CONSOLIDATE, the author's word 29.08).
-    private static func convW(_ secret: Data, window: UInt64) -> String { MTNodeWire.convW(secret, window: window) }
     private static func rdvConvW(_ invite: Data, window: UInt64) -> String { MTNodeWire.rdvConvW(invite, window: window) }
     private static func subId(_ conv: String, ref: String) -> String { MTNodeWire.subId(conv, ref: ref) }
     private static func b64urlData(_ s: String) -> Data? {
@@ -884,9 +882,9 @@ final class NotificationService: UNNotificationServiceExtension {
         guard let baseD = MontanaKeychain.get("wakeBase"), let baseS = String(data: baseD, encoding: .utf8),
               let refD = MontanaKeychain.get("wakeMyAddr"), let ref = String(data: refD, encoding: .utf8),
               !ref.isEmpty, let url = URL(string: baseS + "/fetch") else { return nil }   // SERVER-DEBT-ACK: the accelerator node (rung 4)
-        let secrets = pipeSecrets()
+        let secrets = MTPipeKey.mirrored()
         guard !secrets.isEmpty else { return nil }
-        var secretOf: [String: Data] = [:]; var rdvLabels = Set<String>()
+        var secretOf: [String: MTPipeKey] = [:]; var rdvLabels = Set<String>()
         var invOf: [String: String] = [:]   // label -> invite: whichever seal, that card is tried
         var chatOf: [String: String] = [:]
         var subs: [String] = []; var sids: [String] = []
@@ -904,7 +902,7 @@ final class NotificationService: UNNotificationServiceExtension {
             } else {
                 if isBlocked(key) { continue }   // a blocked person's letters stay in the box (15.09)
                 for w in MTNodeWire.boxDays(around: w0) {
-                    let cw = convW(secret, window: w)
+                    let cw = secret.convW(day: w)
                     secretOf[cw] = secret; chatOf[cw] = key
                     subs.append(cw); sids.append(subId(cw, ref: ref))
                 }
@@ -961,7 +959,7 @@ final class NotificationService: UNNotificationServiceExtension {
                         guard !f[0].isEmpty, !f[1].isEmpty else { continue }
                         let text = f[1].hasPrefix("\u{2063}LB:") ? (resolveLongLetterSync(f[1]) ?? f[1]) : f[1]
                         let ck = chatKey(for: chat)
-                        if MTNodeWire.authorHolds(f[7], key: MTNodeWire.mirroredAuthorKey(), secret: secret, mid: f[0], text: f[1]) {
+                        if secret.authorHolds(f[7], person: MTNodeWire.mirroredAuthorKey(), mid: f[0], text: f[1]) {
                             stashLetter(conv: ck, mid: f[0], text: f[1], name: "", glyph: "", qt: f[4], qm: f[5], lp: f[6],
                                         sentAt: Double(Int(atS) - opened.back * 60), own: true)
                             got += 1; continue   // my own letter titles no banner
@@ -1032,17 +1030,8 @@ final class NotificationService: UNNotificationServiceExtension {
     }
 
     // ── THE LANDING DOOR SENDS (18.09): the shared outgoing queue, knocked from here ──
-    /// The pipe may live under a local name (ref) while the queue names the chat key — the alias
-    /// dictionary walks both ways, as the sheet's sender does.
-    private static func pipeSecret(for conv: String, in m: [String: Data]) -> Data? {
-        if let s = m[conv] { return s }
-        if let ad = MontanaKeychain.get("nsePipeAlias"),
-           let alias = try? JSONDecoder().decode([String: String].self, from: ad) {
-            if let ref = alias.first(where: { $0.value == conv })?.key, let s = m[ref] { return s }
-            if let chat = alias[conv], let s = m[chat] { return s }
-        }
-        return nil
-    }
+    /// The pipe may live under a local name (ref) while the queue names the chat key — the alias walks both ways in the pipe's one
+    /// owner (MTPipeKey.mirrored), for this door and the sheet alike.
     private final class KnockBox: @unchecked Sendable { var k: MTNodeWire.Knock? = nil }
     /// ANY LETTER TO YOU IS A WINDOW TO SEND YOURS (18.09, the author's word): this process holds the network for these seconds even
     /// when the app is gone -- since 17.10.2026 behind the banner's hand-over (afterDelivery), never before it.
@@ -1055,7 +1044,7 @@ final class NotificationService: UNNotificationServiceExtension {
     private static func knockOutgoingSync(deadline: Date) {
         guard case .items(let items) = MTOutbox.read(), !items.isEmpty else { return }
         guard let refD = MontanaKeychain.get("wakeMyAddr"), let twinRef = String(data: refD, encoding: .utf8), !twinRef.isEmpty else { return }
-        let secrets = pipeSecrets()
+        let secrets = MTPipeKey.mirrored()
         let name = MontanaKeychain.get("wakeMyName").flatMap { String(data: $0, encoding: .utf8) } ?? ""
         let glyph = MontanaKeychain.get("wakeMyGlyph").flatMap { String(data: $0, encoding: .utf8) } ?? ""
         let doors = Array(MTNodeWire.electedFirst(MTNodeWire.mirroredDoors()).prefix(2))
@@ -1069,7 +1058,7 @@ final class NotificationService: UNNotificationServiceExtension {
         let t0 = Date()
         for it in loud.prefix(6) {
             if Date() >= deadline { break }
-            guard let secret = pipeSecret(for: it.to, in: secrets),
+            guard let secret = MTPipeKey.mirrored(it.to, in: secrets),
                   let plain = MTNodeWire.padEnvelope(MTNodeWire.letterHead(mid: it.mid, text: it.wire ?? it.text, name: name, glyph: glyph,
                                                                             quoteText: it.qt, quoteMid: it.qm,
                                                                             author: MTNodeWire.mirroredAuthorKey(), secret: secret)) else { skipped += 1; continue }
@@ -1088,8 +1077,7 @@ final class NotificationService: UNNotificationServiceExtension {
         diagLine("outgoing: queued=\(items.count) loud=\(loud.count) tried=\(tried) boxed=\(boxed) skipped=\(skipped) ms=\(Int(Date().timeIntervalSince(t0) * 1000))")
     }
 
-    // The body key and the core open live in MTNodeWire (the one owner) — references.
-    private static func bodyKey(secret: Data, window: UInt64) -> [UInt8] { MTNodeWire.bodyKey(secret: secret, window: window) }
+    // The core open lives in MTNodeWire, the body key of a minute in the pipe's owner (MTPipeKey) — references.
     private static func openBlob(key: [UInt8], sealed: Data) -> Data? { MTNodeWire.openBlob(key: key, sealed: sealed) }
 
     /// The key the chat lives under in the mirrors: the pipe may have opened under a local
@@ -1098,12 +1086,12 @@ final class NotificationService: UNNotificationServiceExtension {
     /// Banner diagnostics — appended to the contour's diary file (MTExtensionDiary); the app prints them to the trace at its drain.
     /// How many pipe secrets the extension sees. Zero means the mirror was never written or
     /// is unavailable — then not one letter from a push can be opened, and that must be said aloud.
-    static func pipeSecretCount() -> Int { pipeSecrets().count }
+    static func pipeSecretCount() -> Int { MTPipeKey.mirrored().count }
 
     private static let liveIso: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f
     }()
-    /// THE BELL IS HEARD (the author's word 10.10.2026 12:5x MSK: «notifications reinforced concrete»). Apple keeps one stored
+    /// THE BELL IS HEARD (the author's word 10.10.2026 09:5x UTC: «notifications reinforced concrete»). Apple keeps one stored
     /// push per app for a phone that is away, and a silent push sent after the letter's bell took its place. The node keeps this
     /// token's last bell loud until this word reaches it -- every door at once, since the bell came from one of them.
     private static func tellHeard(_ mid: String) {
@@ -1188,11 +1176,6 @@ final class NotificationService: UNNotificationServiceExtension {
 
     nonisolated(unsafe) static var lastOpened: String = ""   // the opening key — a second chance for the mirror lookup
 
-    private static func pipeSecrets() -> [String: Data] {
-        guard let d = MontanaKeychain.get("nsePipeSecrets"),
-              let m = try? JSONDecoder().decode([String: Data].self, from: d) else { return [:] }
-        return m
-    }
 
     private static func looksLikeRef(_ s: String) -> Bool { s.hasPrefix("mt") && s.count > 20 && !s.contains(" ") }
 

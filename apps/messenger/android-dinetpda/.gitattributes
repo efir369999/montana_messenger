@@ -1,0 +1,3 @@
+# Every byte of this folder stays as it was written: a Windows git converts line endings by default (core.autocrlf=true),
+# which breaks the shell scripts run in WSL and the files the build compares byte for byte. No path here is converted.
+* -text

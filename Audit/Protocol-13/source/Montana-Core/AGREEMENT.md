@@ -76,16 +76,43 @@ after over the predecessor of the window, with Montana's own pieces:
   applied them, and the parts of its cement, so a machine adopting it replays the window's frames
   from that list rather than from the points it happened to read.
 
-## 5. What it costs, and what stands meanwhile
+## 5. The construction adopted (session 43)
 
-It touches the object of a proposal and adds one object (the seal), the rules of the close and of
-finality in Consensus and Canon, the pulse of the node (attempts, the lock and its persistence,
-adoption and replay of a window's frames), the certificate and the walk, and the gate's vectors; and
-it asks a test of four machines with a quorum of three under a held part, a late frame and a
-partition that heals. By the measure of the work of this branch it is several days, not one.
+Date: 2026-10-16. Author of this section: the Architect (Claude), session 43, under the author's
+words of 2026-10-16 recorded in the chain of the council: "it will be done by session 43 — hand it
+over" and, before it, "close item 1 whole, with nothing left over".
 
-Meanwhile safety stands as it stood, the register of the Constitution names the finding open, and
-`AUDIT.md` carries it among what was met on the way.
+The set adopts the recommendation of section 4 with four changes, each forced by a finding against
+the recommendation as written; the normative text is Consensus 7.0.0, "The agreement on what a window
+decided", with Canon 9.0.0, "The pledge of a part" and "The roll of a proposal".
+
+1. **One pulse per window, standing on the proposal two before.** Round zero of a window links to
+   the proposal that fixed its electorate, which is final when the window opens, and the cement of a
+   beacon gathers every heavy attestation of the window whatever name it pledges. Finding: a pulse
+   standing on the name being decided parts with the names — two pulses, each gathering the living
+   of its half — so the cement the next proposal carries parts too, and a window decided past its
+   first attempt would leave the next window split on the cement: a cascade with no end.
+2. **The proposers of a later attempt are ordered by a place everybody computes.** The place is a
+   hash of the part-nullifier, the cemented aggregate of the window two before and the attempt.
+   Finding: the ticket order of section 4 is published by nobody, so a machine claiming to come
+   first is believed by no rule; a proposer any machine can impersonate is a proposer a faulty
+   machine always is, and the agreement would never leave a split it is fed.
+3. **Every proposal names its roll.** The frames it applied in order and the parts of its cement,
+   in pages chained by identifier, the first named inside the scope of the proposal's name. Finding:
+   a machine that left the rounds holding other frames or another cement cannot recompute a name it
+   did not take, and following a name it cannot validate would let a faulty proposer finalize roots
+   nobody recomputed.
+4. **A payer is told again where a replay moves its frame.** Finding: a machine adopting a decided
+   name replays the decided roll and its own window again, and the positions it told a payer at the
+   leaving of a round move with that replay; a note spends only once its window's root stands in the
+   horizon of proving, by which time the decision stands.
+
+The second vote of section 4 — the seal — is the **closing pledge**, a pledge standing on the quorum
+of its own attempt; the first vote of a later attempt is an **open pledge**, standing on an earlier
+quorum or on none. Every open pledge counts only on the quorum its `since` names, and every closing
+pledge only on the quorum of open pledges of its attempt, so two decisions leave three kinds of
+contradicting pairs and nothing else ("Finality"): accountability stays a matter of pairs, which is
+what Gate 6 of the role asks of a sanction.
 
 ## 6. The construction the author chose (session 46)
 
@@ -129,10 +156,10 @@ entry is read.
 are the cement of the window, at most the count of its electorate, so a body holds at most
 `20 + 32 × (273 + T)` bytes. One delivery carries up to 65 535 blocks (`block_count` is a u16,
 `mt-wire/src/publish.rs`, `cells_of`), and a point is read by a u16 index (`montana-node/src/pulse.rs`,
-`collect_from`), which already bounds a round point to about 227 heavy attestations of 288 cells each;
-at that electorate a body is about 16 KB, fewer cells than the one heavy attestation of a single
+`collect_from`), which already bounds a round point to about 124 heavy attestations of 528 cells each;
+at that electorate a body is about 12 KB, fewer cells than the one heavy attestation of a single
 machine. Pages answered a bound a body does not meet while points are read as they are; a later wire
-that widens the index grows the body by 32 bytes for each machine, beside the 208 blocks of that
+that widens the index grows the body by 32 bytes for each machine, beside the 391 blocks of that
 machine's heavy attestation in the same window.
 
 **Where it stands, and for how long.** At the window points of the window it closes, beside its
@@ -171,3 +198,25 @@ pairs.
 
 **Acceptance.** As section 7 of 050a0f8 states it: four machines at a quorum of three under a held
 part, a late frame and a partition that heals; then the run on six machines repeated.
+## 7. Gates
+
+- Gate 0 and the global invariants: no new primitive (SHA-256 under two new domains, ML-DSA under
+  the part key already proven); every wait is conduct and enters no rule of acceptance [I-3]; the
+  place carries the cemented aggregate, the unpredictable-offline atom [I-8]; every quantity is an
+  unsigned integer [I-9]; layouts and domains live in Canon alone [I-10];
+  pledges, the body of a roll and frames live at their points for `retained_windows` windows and a
+  machine's agreement record lives one open window [I-14].
+- Gate 4, discretion: a proposer of a later attempt chooses when to include exactly as a runner
+  does; Consensus names it ("The one place a proposer chooses, named") with its bound.
+- Gate 6, proof requirement: the sanction reads three pairs of signed pledges and nothing else.
+- Gate 7, the seed of the place: the part (canonical, fixed by the secret and the window), the
+  aggregate (canonical, unpredictable offline), the attempt (canonical, a count).
+- Gate 13: the pledge and the body of a roll carry their invariants beside their layouts.
+- Gate 15: the light attestation stops being evidence, and every place of the set that said
+  otherwise was swept (Consensus, Canon, Constitution, Registry, Value).
+
+## 8. What it costs
+
+The test of four machines with a quorum of three under a held part, a late frame and a partition
+that heals, then the run on six machines repeated, is the acceptance of this stage; the walk of a device and the certificate carry the
+pledges; the constitution's register no longer names the finding open.

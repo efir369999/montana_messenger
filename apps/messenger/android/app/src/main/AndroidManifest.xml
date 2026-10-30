@@ -46,8 +46,8 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- The active seed lives device-only (iOS AfterFirstUnlockThisDeviceOnly): no file of the app is copied —
-         no Auto Backup (fullBackupContent=false, every domain excluded). The ONE thing the system backup carries
-         is SeedBackupAgent's record of the words, and only sealed end to end (iOS MontanaAppleID). -->
+         no Auto Backup (fullBackupContent=false, every domain excluded), and nothing of the words (Montana Identity.md:343,
+         iOS e69c9b6d). SeedBackupAgent writes nothing: it only withdraws the record of the words a build before wrote. -->
     <application
         android:name="quest.montana.app.MontanaApp"
         android:allowBackup="true"

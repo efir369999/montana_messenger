@@ -63,6 +63,19 @@ object Media {
 
     /** What a media letter says of itself as known here: the manifest kept with the row, or the one inside the letter. */
     fun manifestOf(m: Msg): JSONObject? = m.meta?.let { runCatching { JSONObject(it) }.getOrNull() } ?: inline(m.text)
+    /** A picture's or a film's caption, the person's words under it ("" — none); a round note carries none. */
+    fun captionOf(m: Msg): String = manifestOf(m)?.optString("cap").orEmpty()
+    /**
+     * THE LETTER WHOSE CAPTION IS EDITED (iOS rowLetters, MontanaConversation.swift:2210-2213 at 2155, atom 3a5fc9f43b48): of a bubble
+     * of my own pictures and films -- one, or a media group's plate -- the one letter that carries the caption, or the first when none
+     * does. Null: the bubble holds anything else (a voice, a file, a round note, a sticker, the peer's letter).
+     */
+    fun captionLetter(row: List<Msg>): Msg? {
+        if (row.isEmpty() || row.any { !it.mine || !it.text.startsWith(Marks.MEDIA) }) return null
+        val mans = row.map { manifestOf(it) ?: return null }
+        if (mans.any { (it.optString("k") != "img" && it.optString("k") != "vid") || it.optBoolean("r") }) return null
+        return row.firstOrNull { captionOf(it).isNotEmpty() } ?: row.first()
+    }
 
     // ── sending ──
 
@@ -123,10 +136,35 @@ object Media {
         out.toByteArray()
     }.getOrNull()
 
-    /** The picture's small face that rides the manifest (iOS thumbBase64): 120 points, a JPEG of at most 16 KB. */
-    private fun thumb(b: Bitmap): String? {
+    private const val SEE_THROUGH_FLOOR = 16   // the last rung of a see-through preview, its side in pixels (iOS seeThroughFloor)
+    /**
+     * The picture's small face that rides the manifest (iOS thumbBase64): 120 points, at most 16 KB.
+     * A SEE-THROUGH PICTURE KEEPS ITS GROUND (iOS MontanaE2E.swift:1094-1106 at 2155, the author's word 22.09:
+     * "the sticker loads as a photo on a white ground"): this mini-frame rides in the letter and stands in the
+     * receiver's row while the file is still on its way, and JPEG has no transparency at all -- a picture with
+     * an alpha channel is written PNG instead, held down by its own side rather than a quality it does not have.
+     */
+    private fun thumb(b0: Bitmap): String? {
+        // THE PREVIEW'S PIXELS ARE OURS (iOS 8150c61c, the iPhone 17 17.10.2026): drawn in the standard range -- a wide-colour or HDR
+        // picture decoded in 16-bit float is brought to 8 bits first -- and see-through only when the SOURCE is
+        val b = if (b0.config == Bitmap.Config.RGBA_F16) b0.copy(Bitmap.Config.ARGB_8888, false) ?: b0 else b0
         val scale = minOf(1f, 120f / maxOf(b.width, b.height))
         val small = Bitmap.createScaledBitmap(b, maxOf(1, (b.width * scale).toInt()), maxOf(1, (b.height * scale).toInt()), true)
+        if (small.hasAlpha()) {
+            fun shot(side: Int): ByteArray {
+                val k = side.toFloat() / maxOf(small.width, small.height)
+                val bm = if (k >= 1f) small else Bitmap.createScaledBitmap(small, maxOf(1, (small.width * k).toInt()), maxOf(1, (small.height * k).toInt()), true)
+                return ByteArrayOutputStream().also { bm.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+            }
+            var side = maxOf(small.width, small.height)
+            while (side > SEE_THROUGH_FLOOR) {
+                val out = shot(side)
+                if (out.size <= 16000) return Base64.encodeToString(out, Base64.NO_WRAP)
+                side = maxOf(SEE_THROUGH_FLOOR, (side * 0.7f).toInt())
+            }
+            // the last rung (iOS seeThroughFloor): 16 x 16 pixels of 8-bit RGBA are 1 KiB raw, under the budget by arithmetic
+            return Base64.encodeToString(shot(SEE_THROUGH_FLOOR), Base64.NO_WRAP)
+        }
         var q = 70
         while (q >= 20) {
             val out = ByteArrayOutputStream(); small.compress(Bitmap.CompressFormat.JPEG, q, out)
@@ -140,7 +178,12 @@ object Media {
      * THE ONE ROAD OF A SENT FILE: the row stands at once with the local copy, the pieces are sealed and laid on the node,
      * then the letter with the manifest leaves by the ordinary post (the pieces first — the receiver must find them).
      */
-    fun send(c: Context, ref: String, p: Picked, caption: String, qt: String? = null, group: MediaGroup.Slot? = null) {
+    fun send(c: Context, ref: String, picked: Picked, caption: String, qt: String? = null, group: MediaGroup.Slot? = null,
+             swap: (() -> ByteArray?)? = null, gate: Boolean = true, turn: String? = null) {
+        // A MEDIA LETTER OF A GROUP IS ASKED OF THE GROUP FIRST (iOS sendGatedMedia, G.5): a right the group took from its members, or
+        // slow mode's wait, is said and no row is laid; every other letter goes on by the one road
+        if (gate && Groups.isKey(ref)) refusal(c, ref, picked, caption)?.let { Groups.tellRefusal(it); return }
+        var p = picked
         val mid = Marks.mintMid()
         val local = file(c, mid, p.ext)
         local.writeBytes(p.bytes)
@@ -152,7 +195,22 @@ object Media {
             p.wave?.takeIf { it.isNotEmpty() }?.let { w -> put("wv", Base64.encodeToString(ByteArray(w.size) { (w[it] * 255).toInt().coerceIn(0, 255).toByte() }, Base64.NO_WRAP)) }
         }
         Book.edit(ref) { it.msgs.add(Msg(mid, provisional, true, Marks.birthMs(mid) ?: System.currentTimeMillis(), qt = qt, file = local.path)) }
-        Thread {
+        if (!Book.isLocal(ref)) Transfers.set(mid, 0.01f)   // the ring stands at the tap (iOS setUploadProgress(fileName, 0.01), MontanaConversation.swift:4609)
+        val work: () -> Unit = work@{
+            // A ROW TAKEN OFF THE FEED BEFORE ITS TURN (its cross, a deletion) is not sent after all (iOS MTSendLine's guard, 2312)
+            if (turn != null && Book.chat(ref)?.msgs?.toList()?.none { it.mid == mid } == true) {
+                Transfers.set(mid, null); Log.i("Montana", "send_line turn=$turn kind=${p.kind} skipped -- the row left before its turn"); return@work
+            }
+            if (turn != null) Log.i("Montana", "send_line turn=$turn kind=${p.kind} waiting=${SendLine.pending(ref)}")
+            // THE ROW STANDS AT THE TAP, THE FULL FILE TAKES ITS PLACE BEFORE A BYTE LEAVES (iOS sendGifFound, MontanaConversation.swift
+            // 3822-3846 at 2155): `swap` brings the full bytes behind the standing row; the file's name never changes, only what lies
+            // under it, and the picture plays its three cycles again in its full shape (iOS MTGifPlay.renew)
+            swap?.invoke()?.let { full ->
+                local.writeBytes(full)
+                p = Picked(full, p.kind, p.ext, p.name, p.du, p.wave, p.round, p.badge)
+                GifPlay.renew(local.name)
+                Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid && it.file == local.path }?.let { it.text = it.text } }
+            }
             // THE TRACK'S WAVE IS BORN WITH THE LETTER (iOS MTWaveform, MontanaMediaKit 53-103, 1101-1107, atom bdee948c8ba1): a track
             // sent as a file is probed once -- sixty points -- and the manifest carries them, so the bars stand at the send and at the
             // receipt before a byte of the file has arrived; the sender's own row wears the same points
@@ -164,16 +222,21 @@ object Media {
                     .put("wv", Base64.encodeToString(ByteArray(wave!!.size) { (wave[it] * 255).toInt().coerceIn(0, 255).toByte() }, Base64.NO_WRAP))
                 Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid && it.file == local.path }?.let { it.text = told } }
             }
-            if (deliver(c, ref, mid, pw, caption, local, qt, group)) return@Thread
+            // THE LOCAL ROOM KEEPS ITS FILE (iOS isLocalRoom): nothing is sealed or laid -- the letter is settled with the file beside it
+            if (Book.isLocal(ref)) { Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.advance(2) }; return@work }
+            if (deliver(c, ref, mid, pw, caption, local, qt, group)) return@work
             // THE INTENT SURVIVES ITS BROKEN UPLOAD (iOS 1675, 1677): the bubble stands at the clock and the upload waits for the drain
             keepIntent(ref, mid, local, told, caption, qt)
             Log.w("Montana", "media: the pieces did not reach the node — the intent waits for the drain mid=" + mid.take(8))
-        }.start()
+        }
+        // a tray's file waits in its conversation's one line (SendLine): its network work starts when the one before it is over
+        if (turn != null) SendLine.enqueue(ref, work) else Thread(work).start()
     }
 
     /** The pieces laid, the row given its letter, the letter posted; false — the node took nothing, the intent stands. */
     private fun deliver(c: Context, ref: String, mid: String, p: Picked, caption: String, local: File, qt: String?, group: MediaGroup.Slot?): Boolean {
-        val (letter, man) = seal(c, p, caption, local, group) ?: return false
+        // the ring leaves when the pieces are laid or broken (iOS finish: setUploadProgress(k, nil)); a broken one waits for the drain without it
+        val (letter, man) = (try { seal(c, p, caption, local, group, mid) } finally { Transfers.set(mid, null) }) ?: return false
         Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.let { it.text = letter; it.meta = man } }
         // a group's manifest rides the group's carrier, a copy to everyone it carries to (iOS sendMediaToPeer → MTGroup.carryMedia)
         if (Groups.isKey(ref)) { if (!Groups.carryMedia(ref, mid, letter)) Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.advance(-1) } }
@@ -199,6 +262,8 @@ object Media {
         for (i in 0 until a.length()) a.optJSONObject(i)?.let { if (it.optString("mid") != mid) keep.put(it) }
         DeviceVault.set(INTENTS, keep.toString().toByteArray())
     }
+    /** The files an unsent letter still names (iOS MontanaMediaStore.held): the cache never clears them. */
+    fun inHand(): Set<String> = synchronized(intentLock) { intents().let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it)?.optString("f") }.toSet() } }
     @Volatile private var draining = false
     /** The intents still waiting go out again, oldest first, one at a time, at every pickup of the box; while the node takes nothing the rest wait too. */
     fun drainIntents(c: Context) {
@@ -228,12 +293,23 @@ object Media {
      * key for the pick, the pick's order, the words with the first letter only; one picture is no group.
      */
     fun sendAll(c: Context, ref: String, picks: List<Picked>, caption: String) {
-        val slots = MediaGroup.slots(picks.size)
-        picks.forEachIndexed { i, p -> send(c, ref, p, if (i == 0) caption else "", group = slots[i]) }
+        // an album is asked of the group whole, before its first row (G.5): its own rows are not the slow mode's last letter
+        if (Groups.isKey(ref)) picks.firstNotNullOfOrNull { p -> refusal(c, ref, p, if (p === picks.firstOrNull()) caption else "") }
+            ?.let { Groups.tellRefusal(it); return }
+        // A FILE BETWEEN PICTURES ENDS THEIR PLATE (iOS MTStagedOrder.plates, 2312): pictures side by side fold, a file stands alone
+        val slots = arrayOfNulls<MediaGroup.Slot>(picks.size)
+        for (run in StagedOrder.plates(picks.map { it.kind == "doc" })) MediaGroup.slots(run.count()).forEachIndexed { j, s -> slots[run.first + j] = s }
+        // THE TRAY LEAVES IN ITS ORDER, ONE AFTER ANOTHER (iOS MTSendLine, 2312, the author's word 25.10.2026 17:40 UTC): every row is
+        // laid now, in the tray's order; the network work of each waits in the conversation's one line, so no file overtakes an earlier one
+        picks.forEachIndexed { i, p -> send(c, ref, p, if (i == 0) caption else "", group = slots[i], gate = false, turn = "${i + 1}/${picks.size}") }
+        Log.i("Montana", "tray_send n=${picks.size} files=${picks.count { it.kind == "doc" }} plates=${slots.filterNotNull().map { it.key }.toSet().size}")
     }
+    /** What the group says to this media letter (Groups.mediaRefusal): by its kind, roundness, file name -- its extension at least -- and caption. */
+    private fun refusal(c: Context, ref: String, p: Picked, caption: String): String? =
+        Groups.mediaRefusal(c, ref, p.kind, p.round, p.name ?: ("." + p.ext), caption)
 
     /** The letter and the manifest it stands for (the sender keeps its own manifest: its row draws from it). */
-    private fun seal(c: Context, p: Picked, caption: String, local: File, group: MediaGroup.Slot? = null): Pair<String, String>? {
+    private fun seal(c: Context, p: Picked, caption: String, local: File, group: MediaGroup.Slot? = null, mid: String? = null): Pair<String, String>? {
         val bk = MtBindings.nativeRandom(32) ?: return null
         val total = p.bytes.size
         val count = maxOf(1, (total + CHUNK - 1) / CHUNK)
@@ -256,6 +332,8 @@ object Media {
             var ok = false
             for (attempt in 0 until 3) { if (Wire.putBlob(bid, sealed, cargo, i == sealedPieces.size - 1, assumeAbsent = attempt == 0)) { ok = true; break }; Thread.sleep(1500L shl attempt) }   // the key is this moment's: new at the first try, asked at a retry
             if (!ok) return null
+            // EVERY PIECE THE NODE TOOK MOVES THE RING (iOS report, MontanaChatStore.swift:5163-5169): the share and the megabytes
+            if (mid != null) ((i + 1f) / sealedPieces.size).let { Transfers.set(mid, it, Transfers.megabytes(it, total.toLong())) }
         }
         val m = JSONObject().put("k", p.kind).put("e", p.ext).put("bk", Base64.encodeToString(bk, Base64.NO_WRAP)).put("sz", total).put("chunks", chunks)
         p.name?.let { if (p.kind == "doc" || it == Stickers.CARD) m.put("n", it) }   // a sticker's picture names itself (iOS docName)
@@ -382,14 +460,20 @@ object Media {
         return Prefs.bool(if (cellular) "autoDownloadCellular" else "autoDownloadWiFi", true)
     }
     /** A letter of theirs whose file waits for a tap: no file here, and the switch of this connection is off. */
-    fun waiting(c: Context, m: Msg): Boolean = !m.mine && m.file?.let { File(it).exists() } != true && !autoAllowed(c)
+    fun waiting(c: Context, m: Msg): Boolean {
+        // A FILE YOUR NODE KEEPS (iOS MTHomeKeep.want, 6f24f091): the cache cleared it, a look brings it back by the download
+        // setting, else it waits for a tap as a letter's attachment does -- mine as well as theirs
+        if (HomeKeep.kept(m.file)) { HomeKeep.want(c, m); return !autoAllowed(c) }
+        return !m.mine && m.file?.let { File(it).exists() } != true && !autoAllowed(c)
+    }
     /** The tap on a waiting attachment: its file is asked for now, whatever the switch (iOS: a tap starts the queued download). */
     fun tapped(c: Context, m: Msg) {
-        val ref = Book.all().firstOrNull { ch -> ch.msgs.any { it.mid == m.mid } }?.ref ?: return
+        if (HomeKeep.kept(m.file)) return HomeKeep.bring(c, m, force = true)   // iOS retryOneMedia: a file your node keeps comes back from it
+        val ref = Book.rooms().firstOrNull { ch -> ch.msgs.any { it.mid == m.mid } }?.ref ?: return
         fetch(c, ref, m.mid, m.text, manual = true)
     }
 
-    fun fetch(c: Context, ref: String, mid: String, text: String, manual: Boolean = false) {
+    fun fetch(c: Context, ref: String, mid: String, text: String, manual: Boolean = false, own: Boolean = false) {
         if (!manual && !autoAllowed(c)) { Log.d("Montana", "media: automatic download is off -- the attachment waits for a tap"); return }
         synchronized(inFlight) {
             val now = System.currentTimeMillis()
@@ -402,59 +486,87 @@ object Media {
                 // THE MANIFEST LANDS BEFORE THE FILE: the row folds into its group and shows its small face while the pieces travel
                 keepManifest(ref, mid, man)
                 val dest = file(c, mid, man.optString("e"))
-                if (!download(man, dest)) {
+                // HONEST RECEPTION (iOS MontanaChatStore.swift:4800-4813): the ring at once, then every piece that came moves it
+                val size = man.optLong("sz")
+                Transfers.set(mid, 0.01f)
+                if (!download(man, dest) { f -> Transfers.set(mid, 0.01f + 0.99f * f, Transfers.megabytes(f, size)) }) {
                     // THE ROW STAYS, THE SENDER IS TOLD (iOS MontanaChatStore 4635-4649, atom aeabdc576605): a cargo every store called
                     // gone is knowledge -- the bubble stands without its file and the sender hears it once; a silent store is no verdict
                     val chunks = man.optJSONArray("chunks")
-                    if (!Groups.isKey(ref) && chunks != null && (0 until chunks.length()).any { Wire.isGone(chunks.getJSONObject(it).optString("bid")) }) Post.cargoLost(ref, mid)
+                    if (!own && !Groups.isKey(ref) && chunks != null && (0 until chunks.length()).any { Wire.isGone(chunks.getJSONObject(it).optString("bid")) }) Post.cargoLost(ref, mid)
                     return@Thread
                 }
-                Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.let { it.file = dest.path; it.meta = man.toString() } }
-                // A STICKER THAT ARRIVED IS KEPT (iOS MontanaChatStore.swift:3608-3620 at 2155, atom 0d501f110022): the
-                // receiver's panel holds what was used in the conversation, exactly as the sender's does -- one copy per
-                // picture, since Stickers.add names a sticker by its own bytes and moves a known one to the front.
-                if (man.optString("n") == Stickers.CARD) runCatching { Stickers.add(c, dest.readBytes(), dest.extension) }
-                // a group's copy was receipted by the group (Groups.handle), and its pieces serve every other member of it
-                if (!Groups.isKey(ref)) { Post.receiptFor(ref, mid); drop(man) }
+                landed(c, ref, mid, man, dest, own)
             } catch (e: Exception) { Log.w("Montana", "media fetch: ${e.javaClass.simpleName}") }
-            finally { synchronized(inFlight) { inFlight.remove(mid) } }
+            finally { Transfers.set(mid, null); synchronized(inFlight) { inFlight.remove(mid) } }
         }.start()
     }
 
-    fun download(man: JSONObject, dest: File): Boolean {
-        val bk = runCatching { Base64.decode(man.getString("bk"), Base64.DEFAULT) }.getOrNull() ?: return false
-        val chunks = man.optJSONArray("chunks") ?: return false
-        val tmp = File(dest.path + ".part")
-        tmp.outputStream().use { out ->
-            for (i in 0 until chunks.length()) {
-                val ch = chunks.getJSONObject(i)
-                val bid = ch.getString("bid"); val cs = ch.getInt("cs")
-                var piece: ByteArray? = null
-                // ONE PIECE WITH THE DOORS' OWN PATIENCE (iOS bringChunk, MontanaWakePush 2458-2487; atom aeabdc576605): a busy door is
-                // waited for on a growing pause (0.7 s doubling, six tries); a silent road gets three quick tries; neither is «gone»
-                var silentTries = 0; var busyTries = 0
-                while (silentTries < 3 && busyTries < 6) {
-                    // a piece a neighbour brought ahead of its manifest is assembled from this phone's own store (iOS MontanaBlobStore)
-                    val near = Blobs.get(bid)
-                    if (near == null && Wire.isGone(bid)) break   // every door called it gone: asked once, not every opening of the chat (iOS 2438)
-                    val busy = BooleanArray(1)
-                    val sealed = near ?: Wire.getChunk(bid, busy)
-                    if (sealed != null && Wire.hex(Wire.sha(sealed)) == bid) {   // the name is the bytes: integrity
-                        piece = Wire.open(bk, sealed)?.let { if (cs <= it.size) it.copyOf(cs) else it }
-                        if (piece != null) break
-                    }
-                    if (Wire.isGone(bid)) break
-                    if (busy[0]) {
-                        val pause = 700L shl busyTries
-                        busyTries++
-                        Log.d("Montana", "blob_dl BUSY id=" + bid.take(8) + " — the node refuses this moment, pause=" + pause / 1000 + "s")
-                        Thread.sleep(pause)
-                    } else if (++silentTries < 3) Thread.sleep(700L)
-                }
-                out.write(piece ?: return false)
-            }
+    /**
+     * THE ONE «FILE IS WHOLE» POINT OF A LETTER (iOS mediaLanded): the download's end and a player's last piece (Streams) land here,
+     * once -- the row takes its file, a sticker is kept, the receipt and the drop follow.
+     */
+    fun landed(c: Context, ref: String, mid: String, man: JSONObject, dest: File, own: Boolean) {
+        var fresh = false
+        synchronized(landing) {
+            Book.edit(ref) { ch -> ch.msgs.find { it.mid == mid }?.let { fresh = it.file != dest.path; it.file = dest.path; it.meta = man.toString() } }
         }
-        return tmp.renameTo(dest)
+        if (!fresh) return   // the other road landed it already
+        // A STICKER THAT ARRIVED IS KEPT (iOS MontanaChatStore.swift:3608-3620 at 2155, atom 0d501f110022): the
+        // receiver's panel holds what was used in the conversation, exactly as the sender's does -- one copy per
+        // picture, since Stickers.add names a sticker by its own bytes and moves a known one to the front.
+        if (man.optString("n") == Stickers.CARD) runCatching { Stickers.add(c, dest.readBytes(), dest.extension) }
+        // a group's copy was receipted by the group (Groups.handle), and its pieces serve every other member of it
+        // my other device's letter (Post.landOwn): the correspondent still fetches these pieces, the receipt is theirs to give
+        if (!own && !Groups.isKey(ref)) { Post.receiptFor(ref, mid); drop(man) }
+    }
+    private val landing = Any()
+
+    /**
+     * THE FILE PIECE BY PIECE THROUGH ITS ONE LOADER (iOS MTStreamLoader, MontanaStream.swift): the pieces are laid where they
+     * belong in «name.part» and counted in «name.have», so a download and a player reading the same file from its first pieces
+     * (Streams) share every piece, and a download that stopped half-way goes on from what it already laid.
+     */
+    fun download(man: JSONObject, dest: File, came: (Float) -> Unit = {}): Boolean {
+        val l = Streams.loader(dest, man) ?: return false
+        for (i in 0 until l.count) {
+            l.piece(i) ?: return false
+            came((i + 1f) / l.count)
+        }
+        return dest.exists()
+    }
+
+    /** One piece of a file, opened with its key, or null -- every road tried with its own patience. */
+    fun bring(bid: String, bk: ByteArray, cs: Int): ByteArray? {
+        // A PIECE OF ONE'S OWN NODE IS ASKED THERE AND ONLY THERE (iOS bringChunk, 6f24f091): the book names it (HomeBook);
+        // the doors never carried it, and they never hear its name
+        if (HomeBook.holds(bid)) {
+            val sealed = Blobs.get(bid) ?: HomeShelf.get(bid)?.also { Blobs.put(bid, it) }
+            if (sealed == null || Wire.hex(Wire.sha(sealed)) != bid) { Log.i("Montana", "home_get FAIL id=" + bid.take(8) + " -- your node did not give it"); return null }
+            return Wire.open(bk, sealed)?.let { if (cs <= it.size) it.copyOf(cs) else it }
+        }
+        // ONE PIECE WITH THE DOORS' OWN PATIENCE (iOS bringChunk, MontanaWakePush 2458-2487; atom aeabdc576605): a busy door is
+        // waited for on a growing pause (0.7 s doubling, six tries); a silent road gets three quick tries; neither is «gone»
+        var silentTries = 0; var busyTries = 0
+        while (silentTries < 3 && busyTries < 6) {
+            // a piece a neighbour brought ahead of its manifest is assembled from this phone's own store (iOS MontanaBlobStore)
+            val near = Blobs.get(bid)
+            if (near == null && Wire.isGone(bid)) break   // every door called it gone: asked once, not every opening of the chat (iOS 2438)
+            val busy = BooleanArray(1)
+            val sealed = near ?: Wire.getChunk(bid, busy)
+            if (sealed != null && Wire.hex(Wire.sha(sealed)) == bid) {   // the name is the bytes: integrity
+                val piece = Wire.open(bk, sealed)?.let { if (cs <= it.size) it.copyOf(cs) else it }
+                if (piece != null) return piece
+            }
+            if (Wire.isGone(bid)) break
+            if (busy[0]) {
+                val pause = 700L shl busyTries
+                busyTries++
+                Log.d("Montana", "blob_dl BUSY id=" + bid.take(8) + " — the node refuses this moment, pause=" + pause / 1000 + "s")
+                Thread.sleep(pause)
+            } else if (++silentTries < 3) Thread.sleep(700L)
+        }
+        return null
     }
 
     /** The file is assembled — the node's pieces serve nobody (iOS dropChunks), nor the ones a neighbour brought. */
@@ -557,8 +669,16 @@ class MediaProvider : ContentProvider() {
         if (name.startsWith("wall_")) return listOf(MyWall.storeDir(c), Board.lookIn(c)).map { File(it, name) }.firstOrNull { it.exists() }
         return File(Media.dir(c), name).takeIf { it.exists() }
     }
-    override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? =
-        fileOf(uri)?.let { ParcelFileDescriptor.open(it, ParcelFileDescriptor.MODE_READ_ONLY) }
+    override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
+        // A FILM NOT YET WHOLE (iOS MTStreamLoader's «montana-stream://» address): «stream/NAME» reads through the file's loader
+        val seg = uri.pathSegments
+        if (seg.size == 2 && seg[0] == "stream") {
+            val c = context ?: return null
+            File(Media.dir(c), seg[1]).takeIf { it.exists() }?.let { return ParcelFileDescriptor.open(it, ParcelFileDescriptor.MODE_READ_ONLY) }
+            return Streams.descriptor(c, seg[1])
+        }
+        return fileOf(uri)?.let { ParcelFileDescriptor.open(it, ParcelFileDescriptor.MODE_READ_ONLY) }
+    }
     override fun getType(uri: Uri): String? =
         uri.lastPathSegment?.substringAfterLast('.', "")?.let { MimeTypeMap.getSingleton().getMimeTypeFromExtension(it.lowercase()) }
     override fun query(uri: Uri, p: Array<out String>?, s: String?, a: Array<out String>?, o: String?): Cursor? {
@@ -568,6 +688,56 @@ class MediaProvider : ContentProvider() {
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
     override fun delete(uri: Uri, s: String?, a: Array<out String>?) = 0
     override fun update(uri: Uri, v: ContentValues?, s: String?, a: Array<out String>?) = 0
+}
+
+/**
+ * THE ORDER CHOSEN IS THE ORDER SENT (iOS MTStagedOrder, 2312; the author's word 25.10.2026 17:40 UTC, council link 8089): what waits
+ * above the field wears its place, 1, 2, 3; a cross takes one out and the numbers close up, because the number IS the place.
+ */
+object StagedOrder {
+    /** The number a place wears: one more than its index. */
+    fun number(index: Int) = index + 1
+    /** The plates of a tray: a run of two or more pictures folds into one; a file (`true`) ends the run and stands alone. */
+    fun plates(files: List<Boolean>): List<IntRange> {
+        val out = ArrayList<IntRange>()
+        var start = -1
+        for ((i, file) in files.withIndex()) {
+            if (!file) { if (start < 0) start = i }
+            else if (0 <= start) { if (1 < i - start) out.add(start until i); start = -1 }
+        }
+        if (0 <= start && 1 < files.size - start) out.add(start until files.size)
+        return out
+    }
+}
+
+/**
+ * ONE LINE OUT PER CONVERSATION (iOS MTSendLine, 2312): a file never overtakes an earlier one, whatever their sizes. Every send of a
+ * tray stands in its conversation's line and starts when the one before it is over -- uploaded, refused, or left to the drain. The
+ * rows are laid at once; only the network work waits its turn. Every other road keeps its own thread, as before.
+ */
+object SendLine {
+    private val lines = HashMap<String, ArrayDeque<() -> Unit>>()
+    fun enqueue(line: String, turn: () -> Unit) {
+        val start = synchronized(lines) {
+            val q = lines[line]
+            if (q == null) { lines[line] = ArrayDeque(listOf(turn)); true } else { q.add(turn); false }
+        }
+        // one runner per line: it takes the turns from the head and leaves when the line is empty -- the next turn starts a new one
+        if (start) Thread {
+            var next: (() -> Unit)? = turn
+            while (next != null) {
+                val now = next
+                runCatching { now() }.onFailure { Log.w("Montana", "send_line: a turn failed", it) }
+                next = synchronized(lines) {
+                    val q = lines.getValue(line)
+                    q.removeFirst()
+                    if (q.isEmpty()) { lines.remove(line); null } else q.first()
+                }
+            }
+        }.start()
+    }
+    /** How many sends of the line are not over yet, the running one with them (the trace's word). */
+    fun pending(line: String): Int = synchronized(lines) { lines[line]?.size ?: 0 }
 }
 
 /**

@@ -179,7 +179,6 @@ struct MTBoardPost: Codable, Identifiable, Hashable {
     var ed: Double? = nil       // the moment its writer last changed the words — never on a page; it moves the wall's version
     var lp: String? = nil       // the link card its writer read; a visitor draws these bytes and opens nothing
     var n: Int? = nil           // its number on its wall, given once at its birth; the short link names it (02.10)
-    var cc: Int? = nil          // the coins its comments brought, on the owner's phone only; every fifth went to its writer (04.10)
     var views: [String]? = nil  // who saw it, on the owner's phone only, each person once -- never on a page, never shown (06.10)
 }
 
@@ -248,14 +247,13 @@ struct MTBoardWord: Codable {
     var vs: [String]? = nil     // «view»: the posts seen, a few at once (06.10)
 }
 
-/// THE COINS OF COMMENTS (the author's words 04.10.2026 02:50 MSK: «20 percent of all coins for comments under a post goes to the
-/// post's author»): a comment costs its writer one coin, carried to the wall's owner; four of every five burn and the fifth goes to
-/// the post's writer. One family of names, so the wallet tells these moves from every other.
+/// THE COINS OF COMMENTS, AS HISTORY (the author's word 29.10.2026 23:10 UTC, council link 12133; decision 383 «a»): a comment
+/// costs no coin and brings none. The builds before 2322 took one from its writer to the wall's owner, burned four of five and paid
+/// the fifth to the post's writer; the names stay only so the wallet reads the lines the books already hold.
 enum MTBoardCoins {
     static let comment = "cmt:"
     static let burn = "cmt-burn:"
     static let pay = "cmt-pay:"
-    static let fifth = 5
     static func owns(_ ref: String) -> Bool { ref.hasPrefix(comment) || ref.hasPrefix(burn) || ref.hasPrefix(pay) }
 }
 
@@ -344,7 +342,7 @@ final class MTBoard: ObservableObject {
     static let faceLimit = 16_000     // a writer's small face, base64
 
     @Published private(set) var mine: [MTBoardPost] = []
-    /// THE CHANNELS I OWN ARE WALLS OF MINE (the author's words 06.10.2026 14:2x-14:4x MSK: «in channels posts as on the Wall of Thoughts»): each channel's posts as an
+    /// THE CHANNELS I OWN ARE WALLS OF MINE (the author's words 06.10.2026 11:2x-11:4x UTC: «in channels posts as on the Wall of Thoughts»): each channel's posts as an
     /// owner keeps them -- who liked, who saw, the comments by their writers -- and every subscriber is carried the counts.
     @Published private(set) var owned: [String: [MTBoardPost]] = [:]
     @Published private(set) var pages: [String: MTBoardPage] = [:]
@@ -718,7 +716,7 @@ final class MTBoard: ObservableObject {
     /// What a wall shows here: mine as its owner sees it, another's as its owner last sent it.
     func posts(on wall: String?) -> [MTBoardSeen] {
         guard let wall else { return ordered(mine).map { seen($0, by: "") } }
-        // A CHANNEL READS AS A THREAD OF SHORT POSTS (the author's word 16.10.2026 21:05 MSK: «channels in the short posts' format --
+        // A CHANNEL READS AS A THREAD OF SHORT POSTS (the author's word 16.10.2026 18:05 UTC: «channels in the short posts' format --
         // the new on top and the replies below»): its posts stand by the moment each was published, the newest on top, and a reply
         // moves nothing; a wall keeps its own order, the newest record of a chain first (02.10).
         let born = MTGroup.isKey(wall)
@@ -784,15 +782,15 @@ final class MTBoard: ObservableObject {
         }
         var once = Set<String>()
         all = all.filter { once.insert($0.id).inserted }
-        // THE FEED STANDS BY TIME, THE NEWEST ON TOP (the author's word 06.10.2026 15:0x MSK: «the Wall of Thoughts strictly by time,
-        // the newest on top, the common one» -- it replaces the rank by views of 00:4x): every post by the moment it was published,
+        // THE FEED STANDS BY TIME, THE NEWEST ON TOP (the author's word 06.10.2026 12:0x UTC: «the Wall of Thoughts strictly by time,
+        // the newest on top, the common one» -- it replaces the rank by views of 21:4x): every post by the moment it was published,
         // the newest first; a comment moves nothing. Every reader of the feed -- its page, its pictures' pager, its playlist -- reads
         // this one order.
         return Array(all.sorted { a, b in a.post.at == b.post.at ? a.id > b.id : b.post.at < a.post.at }.prefix(Self.feedSize))
     }
     func canWrite(on wall: String?) -> Bool {
         guard let wall else { return true }
-        // A CHANNEL IS A WALL (the author's words 06.10.2026 14:2x-14:4x MSK: «in channels posts as on the Wall of Thoughts; everything the wall publishes is published in a channel»): its owner alone writes on it; a subscriber reads.
+        // A CHANNEL IS A WALL (the author's words 06.10.2026 11:2x-11:4x UTC: «in channels posts as on the Wall of Thoughts; everything the wall publishes is published in a channel»): its owner alone writes on it; a subscriber reads.
         if MTGroup.isKey(wall) { return MTGroup.shared.kind(wall) == .channel && MTGroup.shared.state(wall)?.mine == true }
         return pages[wall]?.canWrite ?? false
     }
@@ -804,7 +802,7 @@ final class MTBoard: ObservableObject {
     private func ordered(_ ps: [MTBoardPost], born: Bool = false) -> [MTBoardPost] {
         ps.sorted { a, b in a.pinned != b.pinned ? a.pinned : (born ? a.at > b.at : Self.lastAt(a) > Self.lastAt(b)) }
     }
-    /// WHO ANSWERS A POST (the author's word 16.10.2026 21:05 MSK: «the replies below»): on a wall, whoever may write on it; in a
+    /// WHO ANSWERS A POST (the author's word 16.10.2026 18:05 UTC: «the replies below»): on a wall, whoever may write on it; in a
     /// channel, everyone in it -- its owner and every subscriber who has not left. A subscriber's reply rides to the owner (cmt,
     /// applyChannel), who carries it on to every subscriber with the post's counts.
     func canComment(on wall: String?) -> Bool {
@@ -963,7 +961,7 @@ final class MTBoard: ObservableObject {
         case "dl" where MTBoardRule.admits(conv, to: .see): mutate(w.id) { p in Self.toggle(&p.downloads, conv, true) }
         case "rp" where MTBoardRule.admits(conv, to: .see): mutate(w.id) { p in Self.toggle(&p.reposts, conv, true) }
         case "like", "keep", "dl", "rp": break
-        // A POST SEEN (the author's words 06.10.2026 00:4x MSK: «an eye and how many views», «people, only the number»): one who
+        // A POST SEEN (the author's words 05.10.2026 21:4x UTC: «an eye and how many views», «people, only the number»): one who
         // sees the wall names the posts they saw; a person counts once on a post, its writer never, and nobody is shown who.
         case "view" where MTBoardRule.admits(conv, to: .see):
             var moved = false
@@ -1006,22 +1004,12 @@ final class MTBoard: ObservableObject {
                 p.comments.append(c)
             }
             if face == nil { lendFaces([conv]) }   // a build that sent no face: the face they published here
-            // THE COMMENT'S COIN (04.10): one coin, taken once by its name, into the post's count -- every fifth to its writer.
-            if w.c == 1, let r = w.r, !r.isEmpty, let id = w.id, mine.contains(where: { q in q.id == id }) {
-                MainActor.assumeIsolated {
-                    if MTCoinBook.ledger.receive(1, from: conv, ref: MTBoardCoins.comment + r, on: "post:" + id) { commentCoin(id, ref: r) }
-                }
-            }
+            // A COMMENT BRINGS NO COIN (decision 383 «a»): an earlier build's «c» and «r» on it are read without them.
             // THE COMMENTER SEES EVERY COMMENT (the author's word 25.09: «comments must come from everyone who commented»):
             // a comment is an act of its writer's, as an ask is, and is answered as an ask is — with the page as it stands.
             if let t = answeredAt[conv], Date().timeIntervalSince(t) < 30 { return }
             answeredAt[conv] = Date()
             sendPage(to: conv, version: Self.spokenVersion(for: conv))
-        // MY FIFTH OF A POST'S COMMENTS (04.10): the wall's owner pays the writer of a post this phone keeps on that wall.
-        case "cpay":
-            if let id = w.id, w.c == 1, let r = w.r, !r.isEmpty, kept[id]?.wall == conv {
-                MainActor.assumeIsolated { _ = MTCoinBook.ledger.receive(1, from: conv, ref: MTBoardCoins.pay + r, on: "post:" + id) }
-            }
         case "del":
             // ONLY THE WALL'S OWNER TAKES A POST OFF THEIR WALL (the author's word 24.09: «only the owner deletes a post
             // on their own page»): a writer's «del» — the builds before the rule still send it — takes nothing down; it
@@ -1232,8 +1220,8 @@ final class MTBoard: ObservableObject {
         send(MTBoardWord(t: "ask"), to: wall)
         DispatchQueue.main.asyncAfter(deadline: .now() + 25) { [weak self] in self?.asking.remove(wall) }
     }
-    /// COINS ON ANOTHER'S POST ARE A SEND OF THE CHAIN (the author's word 03.10 13:40 for the coins, and 23.10.2026 03:27 and
-    /// 03:37 MSK: «each a SEND record in the chain, the phone only the chain's mirror»): the coins leave by the pair's version 3
+    /// COINS ON ANOTHER'S POST ARE A SEND OF THE CHAIN (the author's word 03.10 10:40 for the coins, and 23.10.2026 00:27 and
+    /// 00:37 UTC: «each a SEND record in the chain, the phone only the chain's mirror»): the coins leave by the pair's version 3
     /// SEND under the post's name -- a wall's correspondence is a pipe already (MontanaConv.holds), no first letter is owed -- and
     /// the wall's word only names that SEND; the owner's book takes the coins from the chain alone (MTCoinTx.heard, receive3).
     /// A short chain, an owner without a key or a record that did not stand refuses, and nothing leaves.
@@ -1262,7 +1250,7 @@ final class MTBoard: ObservableObject {
         patchPost(wall, p.id) { s in s.liked = on; s.likes = max(0, s.likes + (on ? 1 : -1)) }
     }
 
-    /// THE POSTS I SAW ARE NAMED TO THEIR WALL, EACH ONCE (the author's words 06.10.2026 00:4x MSK: «under the posts, bottom right,
+    /// THE POSTS I SAW ARE NAMED TO THEIR WALL, EACH ONCE (the author's words 05.10.2026 21:4x UTC: «under the posts, bottom right,
     /// an eye and how many views»): a post drawn on the screen -- in the feed, on a person's page, on its own page -- joins its
     /// wall's list of the moment, and two seconds later the list leaves as one word. A wall whose owner's build counts no views (its
     /// page carries none) is told nothing. The word leaves when the wall is looked at, as the ask does, and says nothing an ask
@@ -1288,28 +1276,7 @@ final class MTBoard: ObservableObject {
         UserDefaults.standard.set(viewed, forKey: Self.viewedKey)
     }
 
-    /// ONE COIN A COMMENT BROUGHT TO A POST OF MY WALL (the author's words 04.10.2026 02:50 MSK: «20 percent of all coins for comments
-    /// under a post goes to the post's author»): four of every five burn and the fifth goes to the post's writer -- the owner keeps
-    /// their own -- so the writer holds a fifth of the comments' coins in whole coins. The count lives on the post (cc); each fifth is
-    /// a link of the wall's chain.
-    @MainActor private func commentCoin(_ id: String, ref r: String) {
-        guard let i = mine.firstIndex(where: { q in q.id == id }) else { return }
-        let n = (mine[i].cc ?? 0) + 1
-        mine[i].cc = n
-        let writer = mine[i].author
-        if n % MTBoardCoins.fifth == 0 {
-            if writer.isEmpty {
-                MTTimeChain.note("wall", kind: "keep", coins: 1, ref: MTBoardCoins.pay + r)
-            } else if MTCoinBook.ledger.spend(1, on: "post:" + id, peer: writer, ref: MTBoardCoins.pay + r) {
-                send(MTBoardWord(t: "cpay", id: id, c: 1, r: r), to: writer)
-                MTTimeChain.note("wall", kind: "pay", coins: 1, ref: MTBoardCoins.pay + r)
-            }
-        } else {
-            MTCoinBook.ledger.burn(1, ref: MTBoardCoins.burn + r)
-        }
-        saveMine()
-    }
-    /// THE WALL AS A TIMECHAIN (the author's word 04.10.2026 02:38 MSK: «posts too as a timechain, a chain of posts»): every post
+    /// THE WALL AS A TIMECHAIN (the author's word 03.10.2026 23:38 UTC: «posts too as a timechain, a chain of posts»): every post
     /// born on my wall, every change of its words and every post taken down joins the wall's chain once, by its name -- the post's id
     /// and the digest of what it says, never the words.
     private static func chainWall(_ ps: [MTBoardPost]) {
@@ -1597,22 +1564,17 @@ struct MTWallWindow: Identifiable {
         kept.comments.append(c)
         kept.commentCount += 1
         _ = Self.chainFile(kept)
-        // A COMMENT COSTS ONE COIN (the author's words 04.10.2026 02:50 MSK): it goes to the wall's owner, who keeps each post's count
-        // and pays its writer every fifth (commentCoin). Never more than the balance holds: a comment is never refused for want of coins.
-        let r = UUID().uuidString
+        // A COMMENT COSTS NO COIN (the author's word 29.10.2026 23:10 UTC, decision 383 «a»): nothing leaves the book, nothing is
+        // carried to the wall's owner.
         guard let wall else {
             mutate(p.id, own: true) { q in var mc = c; mc.ref = ""; q.comments.append(mc) }
-            MainActor.assumeIsolated { commentCoin(p.id, ref: r) }
             return
         }
         if owned[wall] != nil {   // a channel of mine: my comment stands on my channel's post
             mutateOwned(wall, p.id) { q in var mc = c; mc.ref = ""; q.comments.append(mc) }
             return
         }
-        // A channel's comment costs no coin: its owner keeps no book of a channel's comments yet, and a coin to nobody is a coin lost.
-        let paid = MTGroup.isKey(wall) ? false : MainActor.assumeIsolated { MTCoinBook.ledger.spend(1, on: "post:" + p.id, peer: wall, ref: MTBoardCoins.comment + r) }
-        send(MTBoardWord(t: "cmt", id: p.id, at: c.at, tx: c.text, bn: c.by, bg: c.glyph, cid: c.id, fc: c.fc, hh: c.h, pv: c.pv,
-                         c: paid ? 1 : nil, r: paid ? r : nil), to: wall)
+        send(MTBoardWord(t: "cmt", id: p.id, at: c.at, tx: c.text, bn: c.by, bg: c.glyph, cid: c.id, fc: c.fc, hh: c.h, pv: c.pv), to: wall)
         askAfterAct(wall)
         var said = c; said.m = true   // my own, as the owner's next page says it
         patchPost(wall, p.id) { s in s.comments.append(said); s.commentCount += 1 }
@@ -1968,7 +1930,7 @@ struct MTWallWindow: Identifiable {
                 return
             }
             var s = p; s.media = media
-            // A CHANNEL IS A WALL (the author's words 06.10.2026 14:2x-14:4x MSK: «in channels posts as on the Wall of Thoughts; everything the wall publishes is published in a channel»): the owner's post stands on the
+            // A CHANNEL IS A WALL (the author's words 06.10.2026 11:2x-11:4x UTC: «in channels posts as on the Wall of Thoughts; everything the wall publishes is published in a channel»): the owner's post stands on the
             // channel's page here, signed by the channel, and leaves to every subscriber by the group's carrier; there is no wall owner
             // to send it to and no pair's chat for its row.
             if MTGroup.isKey(wall) {
@@ -2600,7 +2562,7 @@ enum MTBoardLook {
 }
 
 
-// THE WALL OF THOUGHTS FOR EVERYONE (the author's word 18.10.2026 20:1x MSK: «the whole wall must be global for all users, as the
+// THE WALL OF THOUGHTS FOR EVERYONE (the author's word 18.10.2026 17:1x UTC: «the whole wall must be global for all users, as the
 // top is, and everything right -- the avatars, the names, the order»). A wall shown to everyone (the sight rule .everyone) lays its
 // owner's own posts on the nodes' public table (/wall-put) under a row only the owner's words derive, as the top lays its rows;
 // every phone reads the table (/wall-get), and the feed stands the posts of all people by the moment each was published. A post of
@@ -2614,7 +2576,7 @@ final class MTBoardGlobal: ObservableObject {
     static let hiddenKey = "wall.global.hidden"                    // NOT-UI: the writers of the table the person hid
     private static let keyLabel = Data("mt-wall-owner-v1".utf8)    // NOT-UI: the derivation's own label
     private static let tokenLabel = Data("mt-wall-token".utf8)     // NOT-UI: the token's own label
-    // THE WHOLE WALL (the author's word 19.10.2026 11:4x MSK: «everyone must see the global feed of everyone, totally»): every post of
+    // THE WHOLE WALL (the author's word 19.10.2026 08:4x UTC: «everyone must see the global feed of everyone, totally»): every post of
     // mine, of any age, up to the node's row (WALL_PER_ROW); the table read page by page up to the node's whole (WALL_POSTS).
     static let perOwner = 1000
     static let tableWhole = 5000

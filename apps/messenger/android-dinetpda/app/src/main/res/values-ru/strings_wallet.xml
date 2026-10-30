@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="coin_hint">Зажмите на 9 секунд Монету для авточеканки, музыка удваивает авточеканку.</string>
+    <string name="coin_available">Доступно %1$s</string>
+    <string name="coin_gathering">Собираю ваши монеты</string>
+    <string name="coin_top_up">Пополнить</string>
+    <string name="coin_analytics">Аналитика</string>
+    <string name="coin_from_chats">Монеты из чатов</string>
+    <string name="coin_from_chess">Монеты шахмат</string>
+    <string name="coin_from_vpn_wall">Монеты ВПН СТЕНЫ</string>
+    <string name="coin_burned_n">Сожжено монет</string>
+    <string name="coin_on_reactions">Монеты на реакциях</string>
+    <plurals name="coin_second_rate">
+        <item quantity="one">1 секунда = %d Монета</item>
+        <item quantity="few">1 секунда = %d Монеты</item>
+        <item quantity="many">1 секунда = %d Монет</item>
+        <item quantity="other">1 секунда = %d Монеты</item>
+    </plurals>
+    <string name="coin_rate_now">Ваш курс чеканки сейчас</string>
+    <string name="coin_rule_level">Чем выше ваш уровень, тем больше монет. Музыка в Монтане удваивает чеканку. В курсе выше уже учтены эти множители.</string>
+    <string name="coin_rules_calls">Звонки и запись</string>
+    <string name="coin_rule_calls">Аудио- и видеозвонки с записью приносят монеты. Без записи монеты сжигаются по тому же текущему курсу за каждую полную секунду после соединения.</string>
+    <string name="coin_rule_calls_each">Для каждого участника расчёт отдельный — по записи на его устройстве. Начисление начинается с захватом звука; отключение или сбой записи переводят следующие секунды на сжигание.</string>
+    <string name="coin_rule_calls_total">Другая чеканка не уменьшает начисления за звонок. В записи звонка показан ваш итог: плюс — начислено, минус — сожжено. Ожидание ответа и пропущенные звонки ничего не стоят. Нулевой баланс не прерывает звонок и не создаёт долг.</string>
+    <string name="coin_rules_more">Другие способы чеканки</string>
+    <string name="coin_rule_tap">Нажимайте на монету на странице «Монеты Времени». В секунду учитывается до 13 нажатий. После минуты нажатий игра отдыхает минуту.</string>
+    <string name="coin_rule_hold">Удерживайте монету 9 секунд или потяните страницу «Монеты Времени» вниз — начнётся автоматическая чеканка. Она остановится, когда вы уйдёте со страницы или заблокируете экран.</string>
+    <string name="coin_rule_messages">Отправленные и полученные сообщения приносят монеты по вашему уровню. Переводы и записи о звонках повторно монеты не начисляют.</string>
+    <string name="coin_rule_groups">В группах и каналах монеты приносят текстовые сообщения длиннее 13 символов — по вашему уровню.</string>
+    <string name="coin_rule_vpn">Работающее VPN-соединение приносит монеты за время работы.</string>
+    <string name="coin_rules_games">Игры и переводы</string>
+    <string name="coin_rule_chess">В шахматах ходы пополняют приз по уровню игрока. Победитель получает приз, при ничьей каждому возвращается его доля. Ставка — по желанию.</string>
+    <string name="coin_rule_timer">В «Шахматном таймере» монеты растут, пока думает соперник.</string>
+    <string name="coin_rule_people">Другой человек может перевести вам монеты в чате — со своего баланса.</string>
+    <string name="coin_rules_money">О деньгах</string>
+    <string name="coin_rule_money">В приложении нельзя купить, продать или обменять монеты на деньги. Сумма в выбранной валюте — лишь ваша оценка по указанному вами заработку.</string>
+    <string name="tc_level_pi">Уровень по Пи</string>
+    <string name="tc_wallet">Кошелёк</string>
+    <string name="tc_wallet_footer">Баланс раскрывает π: каждый уровень открывается, когда баланс достигает следующей суммы — 3, 31, 314 …</string>
+    <string name="tc_talk">Чаты и звонки</string>
+    <string name="tc_talk_footer">Цепочки монет, которые ваши чаты, звонки и комментарии начеканили и сожгли, и цепочка постов вашей стены.</string>
+    <string name="tc_explorer">Эксплорер</string>
+    <string name="tc_explorer_footer">Каждый перевод — запись на узлах, подписанная сидом отправителя. Эксплорер читает её с узлов и проверяет подпись; ссылка перевода в цепочках кошелька открывает его там.</string>
+    <string name="tc_observer">Для наблюдателя</string>
+    <string name="tc_vectors">Замороженные векторы</string>
+    <string name="tc_observer_footer">Каждое звено запечатано SHA-256 над номером, моментом, видом, суммой, именем и печатью предыдущего; уровень личности — bit_length(секунды) − 1 (Канон). Поделённые цепочки проверяются звено за звеном где угодно.</string>
+    <string name="tc_glevel">Глобальный уровень</string>
+    <string name="tc_glevel_footer">Меньший из двух уровней ниже.</string>
+    <string name="tc_level">Уровень</string>
+    <string name="tc_time_online">Время в сети</string>
+    <string name="tc_next_level">До следующего уровня</string>
+    <string name="tc_links">Звенья цепи</string>
+    <string name="tc_person">Личность</string>
+    <string name="tc_person_footer">Секунда засчитывается, пока приложение открыто на любом вашем устройстве и узел отвечает на его обмен монетами: каждые несколько секунд, пока открыта Монета Времени, а в остальном приложении — при каждом обмене. По часам узла, не телефона. Каждый уровень удваивает секунды предыдущего. Видно только вам, нигде не публикуется.</string>
+</resources>

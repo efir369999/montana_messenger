@@ -6,6 +6,7 @@ fn record(bitmap: u64) -> Record {
         last_active_segment: 100,
         opened_window: 0,
         own_height: 0,
+        operator_nf: [0; 32],
         fabric_root: [0; 32],
         suite_id: 1,
         current_pubkey: vec![0; mt_codec::size::SIGNING_PUBLIC_KEY],

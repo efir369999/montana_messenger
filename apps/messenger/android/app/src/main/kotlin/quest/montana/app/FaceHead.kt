@@ -55,7 +55,7 @@ class FaceHead(private val act: MainActivity, private val scene: ViewGroup) {
     }
 
     /** The face and the lines as they stand now; the face keeps whether it is open. */
-    fun draw(face: Bitmap?, name: String, blocked: Boolean, bio: String, link: Uri?, note: String) {
+    fun draw(face: Bitmap?, name: String, blocked: Boolean, bio: String, links: List<Uri>, note: String) {
         this.face = face
         glyph = avatarInitial(name)   // one derivation for the whole client (iOS MontanaAvatar.initial, atom 344e5535221e/1783)
         view.removeAllViews()
@@ -78,7 +78,8 @@ class FaceHead(private val act: MainActivity, private val scene: ViewGroup) {
             setLinkTextColor(MT.blue); setTextIsSelectable(true)
             text = spanned   // USER-DATA: their bio
         }))
-        if (link != null) line(bubble(c.text(PeerAbout.shown(link), 17f, MT.blue).apply {   // USER-DATA: their link
+        // every link of the field, each its own bubble (iOS MontanaPeerHeader ForEach(links), 609736de)
+        for (link in links) line(bubble(c.text(PeerAbout.shown(link), 17f, MT.blue).apply {   // USER-DATA: their link
             maxLines = 1; ellipsize = TextUtils.TruncateAt.MIDDLE
             setOnClickListener { runCatching { act.startActivity(Intent(Intent.ACTION_VIEW, link)) } }
             // the hold is the platform's own menu with «Copy», as the iPhone's context menu

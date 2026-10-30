@@ -280,8 +280,8 @@ final class ConnectionStatus: ObservableObject {
 }
 
 struct ChatsListView: View {
-    // THE FOLDERS' TABS (the author's words 17.10.2026 18:4x MSK): the chosen folder -- All at every launch, as the reference -- is
-    // the state's (UIState.chatFolder), so the page's stroke turns the folders before the pages (18.10.2026 10:2x MSK).
+    // THE FOLDERS' TABS (the author's words 17.10.2026 15:4x UTC): the chosen folder -- All at every launch, as the reference -- is
+    // the state's (UIState.chatFolder), so the page's stroke turns the folders before the pages (18.10.2026 07:2x UTC).
     private var folderID: String {
         get { ui.chatFolder }
         nonmutating set { ui.chatFolder = newValue }
@@ -360,9 +360,9 @@ struct ChatsListView: View {
             // THE CROSSED SPEAKER UNDER THE CLOCK (the author's word 06.10 20:5x: on the left, in the menu's place while the
             // notifications are off): the system said no, so the first slot says it too and opens the notifications' page;
             // the drawer stays one stroke from the screen's left edge (MontanaDrawerHost).
-            // THE CROSSED PEOPLE BESIDE IT (the author's word 08.10.2026 23:2x MSK: «when it is off, a crossed glyph like the muted
+            // THE CROSSED PEOPLE BESIDE IT (the author's word 08.10.2026 20:2x UTC: «when it is off, a crossed glyph like the muted
             // sound, with the way to the settings of the copy with contacts»): the speaker first, then the copy, then the menu.
-            // THE APPS' GLYPH LIGHTS UP ONLY FOR AN UPDATE (the author's word 16.10.2026 16:06 MSK: «in place of the apps button on
+            // THE APPS' GLYPH LIGHTS UP ONLY FOR AN UPDATE (the author's word 16.10.2026 13:06 UTC: «in place of the apps button on
             // the time panel some incomprehensible shield; this button must light up when an update is available, only with a
             // direct link to the update»): the slot is the app library's grid, as it was; a newer build of this client on the site
             // turns it into the update's glyph with the direct link (MTReleaseState). The shields of 2206 -- a status at rest and
@@ -988,10 +988,10 @@ struct ChatsListView: View {
             let known = folderBook.tellsContacts ? MTChatFolders.contactRefs() : nil
             let bare = folderBook.rows(of: folder, live: live, archived: archivedChats, store: store, contacts: known)
             VStack(spacing: 0) {
-                // THE FOLDERS' TABS IN PLACE OF THE SEGMENTS (the author's words 17.10.2026 18:4x MSK): All left of the chats, the
+                // THE FOLDERS' TABS IN PLACE OF THE SEGMENTS (the author's words 17.10.2026 15:4x UTC): All left of the chats, the
                 // groups and the channels, the bots after them, each with its badge, the folder's own menu on a hold (MTFolderTabs). The
                 // green shield left them for the interlocutor's bubble in the chat (MTKeepShield, the same hour). AS THE TIME PANEL
-                // (18.10.2026 10:2x MSK: «this strip of tabs over the chats' feed as the time panel, by its style and its place»): the
+                // (18.10.2026 07:2x UTC: «this strip of tabs over the chats' feed as the time panel, by its style and its place»): the
                 // panel's own plate and puck, at the panel's side margins, under it.
                 HStack(spacing: 6) {
                     MTFolderTabs(tabs: folderTabs(live: live, contacts: known), chosen: folder.id,
@@ -1004,7 +1004,7 @@ struct ChatsListView: View {
                 }
                 .frame(minHeight: 44)
                 .padding(.horizontal, 12).padding(.vertical, 2)
-                // OVER THE FEED, AS THE TIME PANEL (the author's word 18.10.2026 14:4x MSK: «in 2241 the chats' panel still stands behind
+                // OVER THE FEED, AS THE TIME PANEL (the author's word 18.10.2026 11:4x UTC: «in 2241 the chats' panel still stands behind
                 // the chats' feed -- it must be as the time panel, over the feed»): the rows run on past the list's frame (MTChatListFrame,
                 // clipsToBounds off -- «what stands there covers them»), and this strip was drawn before them, so they slid over it. The
                 // time panel's own law (chatsFloating): drawn after the rows -- the order of drawing, not of layout.
@@ -1445,7 +1445,7 @@ struct ChatsListView: View {
         // a menu rising from the bottom upside down). «Group» opens its two steps -- the people, then the name -- and its
         // letters ride the owner's pipes (MTGroup); «Channel» opens its three steps -- what it is, its face and words, the
         // subscribers -- and is the same group whose owner alone posts.
-        // THE GROUPS AND THE CHANNELS ARE APPS OF THEIR OWN (the author's words 06.10.2026 11:5x-12:0x MSK): «Group» and «Channel»
+        // THE GROUPS AND THE CHANNELS ARE APPS OF THEIR OWN (the author's words 06.10.2026 08:5x-09:0x UTC): «Group» and «Channel»
         // are born in the apps of their own (createButton), and this button opens the screen of the code and the link again.
         Button { showQrFull = true } label: {
             Image(systemName: ContactsTabView.writeGlyph)   // the one write glyph of the tree (the author's word 17.09)

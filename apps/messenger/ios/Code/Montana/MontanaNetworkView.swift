@@ -1013,7 +1013,7 @@ struct MontanaVPNGlyph: View {
 
 // 3D convex power button for the VPN tab (Mode B): red = off, amber = connecting, green = connected.
 // Glossy raised look (radial highlight + bottom shade + rim), power glyph centred; state animates.
-/// THE BUTTON IS THE POWER AND NOTHING ELSE (the author's word 29.09, after T1 at 15:28 MSK: the gauge and the count that stood in
+/// THE BUTTON IS THE POWER AND NOTHING ELSE (the author's word 29.09, after T1 at 12:28 UTC: the gauge and the count that stood in
 /// its middle since 28.09 read as another control, and a tap on them switched the tunnel off 1.7 s after it came up). No ring, no
 /// count, no gauge: on and off. The rows say what is being measured.
 struct MontanaVPNPowerButton: View {

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS megaphone: drawn for Montana (the outline of ic_app_channels' horn, its back and its handle): the folders' kind Channels -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.6" android:strokeLineJoin="round"
+      android:pathData="M7.6,9.1L17,5.2c0.8,-0.33 1.6,0.25 1.6,1.1v11.4c0,0.85 -0.8,1.43 -1.6,1.1L7.6,14.9z"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.6" android:strokeLineJoin="round"
+      android:pathData="M4.4,9.1h3.2v5.8H4.4c-0.88,0 -1.6,-0.72 -1.6,-1.6v-2.6c0,-0.88 0.72,-1.6 1.6,-1.6z"/>
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.6" android:strokeLineJoin="round" android:strokeLineCap="round"
+      android:pathData="M5.3,14.9l1.05,4.1c0.12,0.45 0.5,0.75 0.95,0.75h0.25c0.62,0 1.05,-0.6 0.85,-1.2L7.6,14.9"/>
+</vector>

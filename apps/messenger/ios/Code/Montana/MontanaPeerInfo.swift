@@ -39,7 +39,7 @@ enum MTPeerKind {
 // One case per pane: the title, the empty-state icon and the selection of messages live together, so
 // adding a pane is one case and not four parallel switches.
 enum MTMediaTab: Int, CaseIterable, Identifiable {
-    // THE TRANSACTIONS AFTER THE WALL (the author's word 12.10.2026 15:2x MSK: «on the correspondent's page add after the wall a section
+    // THE TRANSACTIONS AFTER THE WALL (the author's word 12.10.2026 12:2x UTC: «on the correspondent's page add after the wall a section
     // of transactions, to see only what was sent to and received from the correspondent»).
     case wall, transactions, media, video, files, links, music, voice   // the wall first (the author's word 24.09)
 

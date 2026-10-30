@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The levels and what they open (iOS MTLevelAccess, MontanaNotify.presentKept; Localizable.xcstrings en). -->
+<resources>
+    <string name="kept_body">Their phone keeps the message you deleted for everyone. In Montana levels open functions: from level %d a person can forbid deletion on their phone.</string>
+    <string name="la_title">Access by level</string>
+    <string name="la_global">Global level %1$d</string>
+    <string name="la_global_footer">Your level grows with your time in Montana and the coins you hold. Each level opens new functions of Montana.</string>
+    <string name="la_keep">Forbid deletion on my phone</string>
+    <string name="la_keep_caption">A message your correspondent deletes for everyone stays on this phone, and their phone is told so.</string>
+    <string name="la_level">Level %1$d</string>
+    <string name="la_opens">Opens at level %1$d. Your level is %2$d.</string>
+    <string name="la_node_caption">Connect a machine you own to the Montana network through this app: it is set up from here and copies of the whole phone go to it. Taking your copy back is open on every level.</string>
+    <string name="la_shield_title">Deletion is forbidden on this phone</string>
+    <string name="la_shield_rule">In Montana levels open functions: from level %1$d a person can forbid deletion on their phone. Your level is %2$d.</string>
+    <string name="set_save_words">Save 24 words</string>
+    <string name="set_save_words_footer">Write the 24 words down and keep them: on a new phone your identity and your saved history open only from them.</string>
+    <string name="set_privacy_policy">Privacy Policy</string>
+</resources>

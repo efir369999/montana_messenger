@@ -2,6 +2,13 @@
 // sixty-seven hundredths rather than two thirds, so a cement of two against three does not close a
 // window: every machine must hold every attestation before any window closes.
 //
+// **Two windows, because a right is issued when a window is final.** The proposal of a window is
+// decided by the agreement of the window after it, and the right to its coin is issued from the
+// decided roll and from no count (Consensus, "The right to a window's coin"; the item 2 of
+// Protocol-13): so the first window's right stands once the second window closed, and the second
+// window's right stands at no close this test lives. The wrong implementation refused: one minting
+// a right at a machine's own close, before the name of the window was decided.
+//
 // **The links are one per pair and no more.** The first machine reaches the second and the third,
 // and the third reaches the second; nothing else is dialled. A link a machine opened is its way of
 // asking and a link it answered is its way of being asked, so what each machine holds comes either
@@ -14,7 +21,9 @@ use montana_node::{Configuration, Machine};
 mod common;
 use common::Scratch;
 
-const WINDOW: u64 = 2_000;
+// The window the network opens at: zero, the one window the Genesis State Hash stands under
+// (Consensus, "Invariants of the TimeChain").
+const WINDOW: u64 = 0;
 const PATIENCE: u32 = 40_000;
 
 #[test]
@@ -74,7 +83,7 @@ fn three_machines_close_a_window_and_each_takes_one_share() {
             .map(|one| {
                 let cohort = Cohort::of(&halves).expect("the same cohort");
                 scope.spawn(move || {
-                    pulse::live(one, &cohort, WINDOW, 1, PATIENCE).expect("a machine lives it")
+                    pulse::live(one, &cohort, WINDOW, 2, PATIENCE).expect("a machine lives it")
                 })
             })
             .collect();
@@ -83,31 +92,49 @@ fn three_machines_close_a_window_and_each_takes_one_share() {
             .collect()
     });
 
-    let mint = montana_node::attest::mint_of(WINDOW).expect("the Decree names the schedule");
     for one in &lived {
-        assert_eq!(one.len(), 1);
+        assert_eq!(one.len(), 2);
         assert_eq!(one[0].window, WINDOW);
-        assert_eq!(
-            one[0].living, 3,
-            "a cement of fewer than three closed a window the quorum asks three for"
-        );
+        assert_eq!(one[1].window, WINDOW + 1);
+        for window in one {
+            assert_eq!(
+                window.living, 3,
+                "a cement of fewer than three closed a window the quorum asks three for"
+            );
+        }
+        // The first window is final, decided by the second: its right is issued from the decided
+        // roll, which names all three parts, and it is the window's credit whatever the count of the three.
+        // The second awaits the decision of a window nobody lived, and credits nothing yet.
         assert_eq!(
             one[0]
                 .right
                 .as_ref()
-                .expect("every part entered the cement")
-                .share,
-            mint / 3
+                .expect("the first window is final and its roll names every part")
+                .worth,
+            montana_node::attest::window_credit().expect("the Decree names it")
+        );
+        assert!(
+            one[1].right.is_none(),
+            "a right was issued before the window's name was decided"
         );
     }
-    // One decision, one name: every machine closed the window under the identifier of one proposal,
-    // whichever runner's bytes it took.
-    assert!(
-        lived
-            .iter()
-            .all(|one| one[0].proposal == lived[0][0].proposal),
-        "three machines closing one window on one beacon took more than one proposal"
-    );
+    // One decision, one name: every machine closed each window under the identifier of one
+    // proposal, whichever runner's bytes it took, and the first window is final under it.
+    for at in 0..2 {
+        assert!(
+            lived
+                .iter()
+                .all(|one| one[at].proposal == lived[0][at].proposal),
+            "three machines closing one window on one beacon took more than one proposal"
+        );
+    }
+    for one in &machines {
+        assert_eq!(
+            one.head().expect("the store answers"),
+            Some(WINDOW),
+            "the head stands elsewhere than on the one final window"
+        );
+    }
     // Three machines, three rights, three nullifiers.
     let mut nullifiers: Vec<[u8; 32]> = lived
         .iter()

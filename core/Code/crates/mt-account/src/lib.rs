@@ -511,19 +511,36 @@ pub fn apply(op: &Operation, state: &mut AccountTable, window_w: u64) {
     }
 }
 
-// spec: "Emission" — const emission `reward_moneta(W) = EMISSION_moneta`.
+// Issuance (issue #18, the author's decision 279): one second, one coin. Every machine living
+// in a window is credited one coin for every second of that window, and a window is its
+// seconds by count: the day of 86 400 seconds divided into tau2 / 14 windows (core/docs,
+// Constitution, "Constitutional limits on the scope of a change"; Consensus, "The right to a
+// window's coin"; Canon, the Decree row `window_credit` = 86 400 / `segment_windows` = 60, with
+// `segment_windows` = tau2 / 14; Registry CNS-28). Nothing is drawn, nothing is divided, and the
+// runner of a window receives what every other living machine receives.
 
 use mt_genesis::ProtocolParams;
 
-/// reward(W) = EMISSION_moneta — a constant from ProtocolParams.
-pub fn reward_moneta(params: &ProtocolParams) -> u128 {
-    params.emission_moneta
+/// The seconds of a day, by count (Constitution, "Constitutional limits on the scope of a change").
+pub const SECONDS_OF_A_DAY: u64 = 86_400;
+
+/// The days of one tau2: `segment_windows` = tau2 / 14 (Canon, the Decree; the 14 continuity
+/// segments of a tau2).
+pub const DAYS_OF_A_TAU2: u64 = 14;
+
+/// Moneta in one coin: the unit of `AccountRecord.balance` is nɈ, and a coin (Ɉ) is 10^9 of it,
+/// as every balance this crate's callers print reads it (montana-node `status`, `start`).
+pub const MONETA_PER_COIN: u128 = 1_000_000_000;
+
+/// The coins one living machine is credited for one window: the seconds of that window,
+/// 86 400 / (tau2 / 14). Derived from the Decree's tau2, never read from a clock.
+pub fn window_credit_coins(params: &ProtocolParams) -> u64 {
+    SECONDS_OF_A_DAY / (params.tau2_windows / DAYS_OF_A_TAU2)
 }
 
-/// Total emitted supply over windows [1, window] — closed-form (window 0 has no emission).
-/// `supply_moneta(W) = EMISSION_moneta × W` (supply_moneta(0) = 0; first payout settle(1)).
-pub fn supply_moneta(window: u64, params: &ProtocolParams) -> u128 {
-    params.emission_moneta * u128::from(window)
+/// The same credit in the unit of a balance.
+pub fn window_credit_moneta(params: &ProtocolParams) -> u128 {
+    u128::from(window_credit_coins(params)) * MONETA_PER_COIN
 }
 
 // spec: "State transition → apply_proposal" steps 2, 3.5, 3.6, 4.
@@ -534,7 +551,7 @@ pub use mt_state::WINNER_CLASS_NODE;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProposalSettle {
     pub window_w: u64,
-    pub winner_id: [u8; 32],
+    // The living of window W-1: the nodes whose confirmation of W-1 the proposal of W includes.
     pub cemented_confirmers: Vec<NodeId>,
 }
 
@@ -549,47 +566,46 @@ pub fn settle_window(state: &mut AccountTable, cemented_ops: &[Operation], windo
     }
 }
 
-// Step 2: reward emission — winner_{W-1} receives EMISSION_moneta.
-// spec Sovereignty Ladder: the lottery is single-class, the winner is always a node;
-// the reward is credited to the winner node's operator_account_id.
-//
-// Protocol invariant: for any NodeRecord in NodeTable, the field
-// operator_account_id must point to an existing AccountRecord in
-// AccountTable. An invariant violation → panic in apply_emission; protection
-// via an explicit panic, not a silent skip — a corrupted NodeTable guarantees
-// a fork and must be detected immediately.
-fn apply_emission(
+// Step 2: the credit of window W-1 — every machine living in W-1 is credited
+// `window_credit_moneta`, to its operator_account_id. The living are the cemented confirmers
+// of W-1, each counted once however many times the list names it; the issuance of the window
+// is the credit times their count and nothing else. A confirmer missing from the Node Table, or
+// whose operator account is missing, is credited nothing: no input of a proposal reaches a
+// panic here.
+fn apply_window_credit(
     account_table: &mut AccountTable,
     node_table: &NodeTable,
     window_w: u64,
-    winner_id: &[u8; 32],
+    living: &[NodeId],
     params: &ProtocolParams,
 ) {
     if window_w == 0 {
         return; // genesis: no W-1
     }
-    let reward = reward_moneta(params);
-    let node = node_table
-        .get(winner_id)
-        .expect("protocol invariant: winner node exists in NodeTable");
-    let operator_id = node.operator_account_id;
-    let mut operator = account_table
-        .get(&operator_id)
-        .expect("protocol invariant: operator account exists")
-        .clone();
-    operator.balance = operator.balance.checked_add(reward).unwrap_or_else(|| {
-        panic!(
-            "apply_emission: operator balance overflow at u128::MAX (balance={}, reward={}) — \
-             encoded arithmetic horizon",
-            operator.balance, reward
-        )
-    });
-    account_table.insert(operator);
+    let credit = window_credit_moneta(params);
+    let living: std::collections::BTreeSet<&NodeId> = living.iter().collect();
+    for node_id in living {
+        let Some(node) = node_table.get(node_id) else {
+            continue;
+        };
+        let Some(existing) = account_table.get(&node.operator_account_id) else {
+            continue;
+        };
+        let mut operator = existing.clone();
+        operator.balance = operator.balance.checked_add(credit).unwrap_or_else(|| {
+            panic!(
+                "apply_window_credit: operator balance overflow at u128::MAX (balance={}, \
+                 credit={}) — encoded arithmetic horizon",
+                operator.balance, credit
+            )
+        });
+        account_table.insert(operator);
+    }
 }
 
 // Step 3.5: chain_length++ for nodes with a cemented BundledConfirmation in window W.
 // Checked arithmetic for consistency with apply_transfer / apply_change_key /
-// apply_anchor / apply_emission / apply_transfer_activation. u64 overflow
+// apply_anchor / apply_window_credit / apply_transfer_activation. u64 overflow
 // horizon ~3.5×10^11 years at 60 sec/window — practically unreachable, panic
 // = explicit halt on a protocol invariant breach.
 fn apply_chain_length_increment(node_table: &mut NodeTable, confirmers: &[NodeId], window_w: u64) {
@@ -673,6 +689,17 @@ pub fn genesis_state_root(state: &GenesisState) -> Hash32 {
     )
 }
 
+// The Genesis State Hash of the Decree `params`: the empty window-0 tables and the parameters.
+// The one expression of it in this tree: the conformance contract pins it (mt-conformance
+// harness.rs) and a window record names its network by it (issue #19 K6, the Author's decision
+// 331a). mt-genesis cannot hold it, since the tables are built here.
+pub fn genesis_state_hash(params: &ProtocolParams) -> Hash32 {
+    mt_genesis::compute_genesis_state_hash(
+        &genesis_state_root(&build_genesis_state(params)),
+        params,
+    )
+}
+
 // spec, "State transition → apply_proposal" — orchestration steps 2/3.5/3.6/4.
 //
 // Settle (cemented user ops applied via `settle_window`) runs OUTSIDE
@@ -691,12 +718,12 @@ pub fn apply_proposal(
     params: &ProtocolParams,
 ) -> Hash32 {
     // Step 1 stub: control_set (ControlObjects = NodeRegistrations) — M4 (mt-entry).
-    // Step 2: emission for window W-1 — the constant EMISSION_moneta.
-    apply_emission(
+    // Step 2: the credit of window W-1 to every machine living in it.
+    apply_window_credit(
         account_table,
         node_table,
         input.window_w,
-        &input.winner_id,
+        &input.cemented_confirmers,
         params,
     );
     // Step 3a, 3b stubs: candidate expiry + selection event — M4 (mt-entry).
@@ -1859,50 +1886,21 @@ mod tests {
         );
     }
 
-    // ================== Phase D: emission (const EMISSION_moneta = 13 Ɉ) ==================
+    // ================== Phase D: the credit of a window (one second, one coin) ==================
 
-    const EMISSION: u128 = 13_000_000_000;
-
+    // Canon, the Decree row `window_credit`: 60. Rejects a credit read from anything but the
+    // seconds of a window (the former constant EMISSION_moneta of 13 Ɉ among them).
     #[test]
-    fn reward_moneta_is_const() {
+    fn window_credit_is_the_seconds_of_a_window() {
         let p = mt_genesis::genesis_params();
-        assert_eq!(reward_moneta(p), EMISSION);
-    }
-
-    #[test]
-    fn reward_moneta_independent_of_window() {
-        let p = mt_genesis::genesis_params();
-        let r0 = reward_moneta(p);
-        let r1 = reward_moneta(p);
-        assert_eq!(r0, r1);
-        assert_eq!(r0, EMISSION);
-    }
-
-    #[test]
-    fn supply_moneta_window_zero() {
-        let p = mt_genesis::genesis_params();
-        assert_eq!(supply_moneta(0, p), 0);
-    }
-
-    #[test]
-    fn supply_moneta_grows_linearly() {
-        let p = mt_genesis::genesis_params();
-        assert_eq!(supply_moneta(0, p), 0);
-        assert_eq!(supply_moneta(1, p), EMISSION);
-        assert_eq!(supply_moneta(100, p), EMISSION * 100);
-        assert_eq!(supply_moneta(1_000_000, p), EMISSION * 1_000_000);
-    }
-
-    #[test]
-    fn supply_moneta_closed_form_matches_per_window_sum() {
-        let p = mt_genesis::genesis_params();
-        for &w in &[0u64, 1, 10, 100, 1000, 524_160] {
-            let mut expected: u128 = 0;
-            for _ in 1..=w {
-                expected += reward_moneta(p);
-            }
-            assert_eq!(supply_moneta(w, p), expected, "mismatch at W={w}");
-        }
+        assert_eq!(window_credit_coins(p), 60);
+        assert_eq!(
+            window_credit_coins(p) * (p.tau2_windows / DAYS_OF_A_TAU2),
+            SECONDS_OF_A_DAY
+        );
+        assert_eq!(window_credit_moneta(p), 60 * MONETA_PER_COIN);
+        // Cross-check of #14 (decision 233): tau2 windows of credit is node_lock, 1 209 600 coins.
+        assert_eq!(window_credit_coins(p) * p.tau2_windows, 1_209_600);
     }
 
     // ================== Phase E: apply_proposal ==================
@@ -1960,12 +1958,9 @@ mod tests {
         assert_eq!(state.root(), root_before);
     }
 
-    // spec Sovereignty Ladder: apply_proposal_emission_credits_account_winner removed
-    // as obsolete. The lottery is single-class, the winner is always a node;
-    // an account cannot be winner_id directly.
-
+    // Issue #18 (decision 279): the credit goes to every living machine, never to a drawn one.
     #[test]
-    fn apply_proposal_emission_credits_node_operator() {
+    fn apply_proposal_credits_the_operator_of_a_living_node() {
         let fx = setup_transfer();
         let mut account_table = fx.state;
         let mut node_table = NodeTable::new();
@@ -1978,8 +1973,7 @@ mod tests {
 
         let input = ProposalSettle {
             window_w: 10,
-            winner_id: node_id,
-            cemented_confirmers: vec![],
+            cemented_confirmers: vec![node_id],
         };
         let p = mt_genesis::genesis_params();
         let _root = apply_proposal(
@@ -1990,12 +1984,76 @@ mod tests {
             p,
         );
 
-        // reward = const EMISSION_moneta = 13 Ɉ.
-        let expected_reward = reward_moneta(p);
         assert_eq!(
             account_table.get(&operator).unwrap().balance,
-            balance_before + expected_reward
+            balance_before + window_credit_moneta(p)
         );
+    }
+
+    // Issue #18, S2: the issuance of a window is its seconds times the count of its living, each
+    // living machine counted once. Rejects a credit to one drawn node (apply_emission before
+    // #18 credited 13 Ɉ to `winner_id` alone), a credit that counts a confirmer named twice
+    // twice, and a credit that reaches a node which did not live in the window.
+    #[test]
+    fn the_issuance_of_a_window_is_its_seconds_for_every_living_machine() {
+        let fx = setup_transfer();
+        let p = mt_genesis::genesis_params();
+        let mut account_table = fx.state;
+        let mut node_table = NodeTable::new();
+        let candidate_pool = CandidatePool::new();
+        let a = make_node_record(0x01, fx.sender_id);
+        let b = make_node_record(0x02, fx.receiver_id);
+        let c = make_node_record(0x03, fx.receiver_id);
+        let idle = make_node_record(0x04, fx.sender_id);
+        let (id_a, id_b, id_c) = (a.node_id, b.node_id, c.node_id);
+        for n in [a, b, c, idle] {
+            node_table.insert(n);
+        }
+        let supply = |t: &AccountTable| -> u128 { t.iter().map(|r| r.balance).sum() };
+        let before = supply(&account_table);
+        let input = ProposalSettle {
+            window_w: 9,
+            cemented_confirmers: vec![id_b, id_a, id_c, id_a],
+        };
+        apply_proposal(
+            &mut account_table,
+            &mut node_table,
+            &candidate_pool,
+            &input,
+            p,
+        );
+        let seconds = u128::from(SECONDS_OF_A_DAY / (p.tau2_windows / DAYS_OF_A_TAU2));
+        assert_eq!(seconds, 60);
+        assert_eq!(
+            supply(&account_table) - before,
+            3 * seconds * MONETA_PER_COIN,
+            "three living machines, one window of 60 seconds"
+        );
+    }
+
+    // Issue #18, S2: a living node that names no account, or a node outside the table, takes
+    // nothing and panics nothing. Rejects the `expect` on a missing winner of apply_emission.
+    #[test]
+    fn a_living_node_unknown_to_the_tables_is_credited_nothing_without_a_panic() {
+        let fx = setup_transfer();
+        let p = mt_genesis::genesis_params();
+        let mut account_table = fx.state;
+        let mut node_table = NodeTable::new();
+        let orphan = make_node_record(0x05, [0xEE; 32]);
+        let orphan_id = orphan.node_id;
+        node_table.insert(orphan);
+        let before = account_table.root();
+        apply_proposal(
+            &mut account_table,
+            &mut node_table,
+            &CandidatePool::new(),
+            &ProposalSettle {
+                window_w: 9,
+                cemented_confirmers: vec![orphan_id, [0xFF; 32]],
+            },
+            p,
+        );
+        assert_eq!(account_table.root(), before);
     }
 
     #[test]
@@ -2006,10 +2064,9 @@ mod tests {
         let candidate_pool = CandidatePool::new();
         let balance_before = account_table.get(&fx.receiver_id).unwrap().balance;
 
-        // W=0: apply_emission early-returns before lookup; the winner_id value does not matter
+        // W=0: apply_window_credit early-returns before any lookup
         let input = ProposalSettle {
             window_w: 0,
-            winner_id: [0u8; 32],
             cemented_confirmers: vec![],
         };
         let p = mt_genesis::genesis_params();
@@ -2045,7 +2102,6 @@ mod tests {
 
         let input = ProposalSettle {
             window_w: 15,
-            winner_id: id_a,
             cemented_confirmers: vec![id_a, id_b],
         };
         let p = mt_genesis::genesis_params();
@@ -2073,12 +2129,10 @@ mod tests {
         let mut node_table = NodeTable::new();
         let candidate_pool = CandidatePool::new();
         let node = make_node_record(0x99, fx.sender_id);
-        let node_id = node.node_id;
         node_table.insert(node);
 
         let input = ProposalSettle {
             window_w: 5,
-            winner_id: node_id,
             cemented_confirmers: vec![[0xFFu8; 32]], // unknown
         };
         let p = mt_genesis::genesis_params();
@@ -2109,7 +2163,6 @@ mod tests {
         let p = mt_genesis::genesis_params();
         let input = ProposalSettle {
             window_w: p.tau2_windows, // τ₂ boundary
-            winner_id: node_id,
             cemented_confirmers: vec![],
         };
         apply_proposal(
@@ -2142,7 +2195,6 @@ mod tests {
         let p = mt_genesis::genesis_params();
         let input = ProposalSettle {
             window_w: p.tau2_windows + 1, // NOT a boundary
-            winner_id: node_id,
             cemented_confirmers: vec![],
         };
         apply_proposal(
@@ -2169,10 +2221,9 @@ mod tests {
         node_table.insert(node);
 
         let p = mt_genesis::genesis_params();
-        // W=0: apply_emission early-returns; the winner_id value does not matter
+        // W=0: apply_window_credit early-returns
         let input = ProposalSettle {
             window_w: 0,
-            winner_id: [0u8; 32],
             cemented_confirmers: vec![],
         };
         apply_proposal(
@@ -2201,7 +2252,6 @@ mod tests {
             nodes.insert(node);
             let input = ProposalSettle {
                 window_w: 20,
-                winner_id: node_id,
                 cemented_confirmers: vec![node_id],
             };
             apply_proposal(&mut acc, &mut nodes, &candidates, &input, p)
@@ -2220,12 +2270,10 @@ mod tests {
         let candidate_pool = CandidatePool::new();
         let p = mt_genesis::genesis_params();
         let node = make_node_record(0x77, fx.sender_id);
-        let node_id = node.node_id;
         node_table.insert(node);
 
         let input = ProposalSettle {
             window_w: 7,
-            winner_id: node_id,
             cemented_confirmers: vec![],
         };
         let returned_root = apply_proposal(
@@ -2263,8 +2311,7 @@ mod tests {
 
         let input = ProposalSettle {
             window_w: 3,
-            winner_id: node_id,
-            cemented_confirmers: vec![],
+            cemented_confirmers: vec![node_id],
         };
         let root_after = apply_proposal(
             &mut account_table,
@@ -2295,7 +2342,6 @@ mod tests {
 
         let input = ProposalSettle {
             window_w: 5,
-            winner_id: id_a,
             cemented_confirmers: vec![id_a], // only A, not B
         };
         let p = mt_genesis::genesis_params();
@@ -2318,7 +2364,6 @@ mod tests {
         // Sanity check — struct is public + all fields are public
         let s = ProposalSettle {
             window_w: 42,
-            winner_id: [0xAB; 32],
             cemented_confirmers: vec![[0x01; 32]],
         };
         assert_eq!(s.window_w, 42);
@@ -2341,7 +2386,6 @@ mod tests {
 
         let input = ProposalSettle {
             window_w: 5,
-            winner_id: node_id,
             cemented_confirmers: vec![node_id],
         };
         let p = mt_genesis::genesis_params();
@@ -2371,13 +2415,11 @@ mod tests {
         // index 1). Is that > chain_length=100? No, 90<100. It must be so that the
         // old index 1 > chain_length: set [_, 200, _, _, _, _].
         node.chain_length_checkpoints = [50, 200, 70, 80, 90, 100];
-        let node_id = node.node_id;
         node_table.insert(node);
 
         let p = mt_genesis::genesis_params();
         let input = ProposalSettle {
             window_w: p.tau2_windows, // τ₂ boundary triggers rotation
-            winner_id: node_id,
             cemented_confirmers: vec![],
         };
         apply_proposal(

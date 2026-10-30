@@ -14,7 +14,10 @@
 // are bound: the bitmap of lived segments and the height stand at zero, the segment the bitmap is
 // written against is the segment of the window being applied, and the window the record was opened
 // in is that window. They are the first six limbs of the serialization, which is why one block of
-// the absorption carries all four.
+// the absorption carries all four. The right to raise a machine the record carries, in the eight
+// limbs after them, is bound by nothing here and published by nothing here: it is the holder's,
+// the candidacy that spends it is the proof that asserts its preimage, and a value of it bound in
+// public at the opening would join the record opened to the machine it later raises.
 //
 // **The shape.** Two chains laid one after another, rows and not columns, each opening under its own
 // domain through the capacity wiring: the absorption of the branch that holds the right, whose
@@ -242,6 +245,7 @@ mod tests {
         out.extend_from_slice(&segment.to_le_bytes()); // last_active_segment
         out.extend_from_slice(&window.to_le_bytes()); // opened_window
         out.extend_from_slice(&0u32.to_le_bytes()); // own_height
+        out.extend_from_slice(&[0x55u8; 32]); // operator_nf
         out.extend_from_slice(&[0x11u8; 32]); // fabric_root
         out.extend_from_slice(&1u16.to_le_bytes()); // suite_id
         out.extend_from_slice(&[0x22u8; mt_codec::size::SIGNING_PUBLIC_KEY]);
@@ -338,6 +342,38 @@ mod tests {
             "a record claiming another window satisfied the description"
         );
     }
+    // The right a record carries is neither bound nor published by its opening: two records
+    // differing in that field alone both open, each under a commitment of its own, and no byte of
+    // either right stands in the public input. The named wrong implementations: an opening holding
+    // the field to a value of its own choosing, which bars every holder of any other from opening,
+    // and one publishing it, which joins the record opened to the machine its candidacy raises.
+    #[test]
+    fn the_right_a_record_carries_is_neither_bound_nor_published_by_its_opening() {
+        let (window, segment) = (1_000u64, 7u32);
+        let held = description().expect("stands");
+        let at = super::super::admission::LIMB_OPERATOR_NF * crate::poseidon::LIMB_BYTES;
+        let mut commitments = Vec::new();
+        for right in [[0x55u8; 32], [0x66u8; 32]] {
+            let mut record = a_new_record(window, segment);
+            record[at..at + 32].copy_from_slice(&right);
+            let (trace, digests) = trace_of(&[0x44u8; 32], &record).expect("it writes");
+            let public = public_of(&digests, window, segment);
+            assert!(
+                held.satisfied_by(&trace, &crate::poseidon::limbs_of(&public)),
+                "a record carrying a right of its holder's own did not open"
+            );
+            assert!(
+                !public.windows(32).any(|bytes| bytes == right),
+                "the opening publishes the right its record carries"
+            );
+            commitments.push(digests[1]);
+        }
+        assert_ne!(
+            commitments[0], commitments[1],
+            "the right does not enter the commitment of the record"
+        );
+    }
+
     #[test]
     fn padding_cannot_create_a_second_nullifier_for_one_right() {
         let secret = [0x44; 32];

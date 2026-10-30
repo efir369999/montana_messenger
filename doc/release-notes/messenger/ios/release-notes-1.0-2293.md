@@ -6,7 +6,7 @@ Montana for iPhone, iPad and Mac, build 1.0 (2293), from source commit `057f2d1e
 Notable changes
 ---------------
 
-- Coins follow the new rule of the time chain: from 26 October 00:00 Moscow time a mint counts only the seconds you are present in Montana, and a burned coin is a record of the chain like any other spend.
+- Coins follow the new rule of the time chain: from 25 October 21:00 UTC a mint counts only the seconds you are present in Montana, and a burned coin is a record of the chain like any other spend.
 - The gold page ground is gone; a page that used it now shows Montana's own dark ground with its pattern.
 
 Security and anonymity

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Re-checks the TimeChains, TimeChain_Master.jsonl, TimeChain_Student.jsonl and TimeChain_Government.jsonl, link by link from
-# genesis with the standard library alone. A record is named by its SHA-256 alone (the author's word 02.10.2026 22:57 MSK). council.py imports these rules, so a stranger checks the very canon the master writes. A pass proves one unbroken
+# genesis with the standard library alone. A record is named by its SHA-256 alone (the author's word 02.10.2026 19:57 UTC). council.py imports these rules, so a stranger checks the very canon the master writes. A pass proves one unbroken
 # chain whose open records re-hash from their bodies; a record's time and master stay its writer's word.
 import datetime, hashlib, json, os, re, sys
 
@@ -16,7 +16,7 @@ STAMP_MS = "%Y-%m-%dT%H:%M:%S.%fZ"
 KEYS = frozenset(FIELDS + ("hash",))
 # the essence of the TimeChain squeezed step by step: a step no shorter than the one above is no squeeze
 LEVELS = ("paragraph", "phrase", "words", "word")
-# an essence sealed before the author's word of 02.10.2026 22:57 MSK keeps the fifth step it was sealed with, one character
+# an essence sealed before the author's word of 02.10.2026 19:57 UTC keeps the fifth step it was sealed with, one character
 # shorter than the word: its hash holds it, so it is checked as sealed and never rewritten
 SEALED_FIFTH = "2026-10-02T19:57:00Z"
 # a finding on an earlier master's code opens with its axis; another master rates it once, opening with + or -

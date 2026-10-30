@@ -3,8 +3,8 @@
 // window: every machine must hold every attestation before any window closes.
 //
 // **Two windows, because a right is issued when a window is final.** The proposal of a window is
-// decided by the agreement of the window after it, and the right to its share is issued from the
-// decided roll and from no count (Consensus, "The right to a window's share"; the item 2 of
+// decided by the agreement of the window after it, and the right to its coin is issued from the
+// decided roll and from no count (Consensus, "The right to a window's coin"; the item 2 of
 // Protocol-13): so the first window's right stands once the second window closed, and the second
 // window's right stands at no close this test lives. The wrong implementation refused: one minting
 // a right at a machine's own close, before the name of the window was decided.
@@ -92,7 +92,6 @@ fn three_machines_close_a_window_and_each_takes_one_share() {
             .collect()
     });
 
-    let mint = montana_node::attest::mint_of(WINDOW).expect("the Decree names the schedule");
     for one in &lived {
         assert_eq!(one.len(), 2);
         assert_eq!(one[0].window, WINDOW);
@@ -104,15 +103,15 @@ fn three_machines_close_a_window_and_each_takes_one_share() {
             );
         }
         // The first window is final, decided by the second: its right is issued from the decided
-        // roll, which names all three parts. The second awaits the decision of a window nobody
-        // lived, and mints nothing yet.
+        // roll, which names all three parts, and it is the window's credit whatever the count of the three.
+        // The second awaits the decision of a window nobody lived, and credits nothing yet.
         assert_eq!(
             one[0]
                 .right
                 .as_ref()
                 .expect("the first window is final and its roll names every part")
-                .share,
-            mint / 3
+                .worth,
+            montana_node::attest::window_credit().expect("the Decree names it")
         );
         assert!(
             one[1].right.is_none(),

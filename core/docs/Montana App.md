@@ -1,6 +1,6 @@
 # Montana — App
 
-**Version:** 3.4.0
+**Version:** 4.0.0
 
 App holds the boundary between the protocol and everything built on it: what an application may
 put into the chain, what it may never learn about the people using it, and what a client owes
@@ -59,7 +59,7 @@ rent, no subscription exists as a protocol notion. What an application charges, 
 ordinary transfers of value between people — which name no party and enter no chain of anyone.
 
 Storage, delivery and computation are the work of the devices that do them, and the network
-already pays for carriage out of the share of a window. An application that needed a
+already pays for carriage out of the coin of a window. An application that needed a
 protocol-level fee would be asking the protocol to name who paid.
 
 ## The boundary
@@ -94,6 +94,7 @@ not an action of a person but a **lie about the state**.
 - Before a person destroys a seed, they are told that identity is the seed: nothing recovers it, and no one can be asked.
 - Where a transport with a plainly different property is used — a device in physical range, a courier — the person is told which transport is in use, never asked to choose a degree of privacy.
 - Where a client renders a coordinate of the chain as a calendar date, the date is the client's own local reading — marked as such where it could mislead — and no quantity taken from the clock of the device enters any object the client emits.
+- One exception stands, named and temporary, by the Author's decision recorded in the council chain: the iOS client of today counts the window of a tag in minutes and steps the secret of a pipe once a day from one anchor, both read off the clock of the device, so a quantity of that clock decides the tag the client emits. The day walk is kept because it gives the pipes of today's clients their forward secrecy; Canon does not carry it, and specifies the walk of the core alone, one step per window of the chain (Canon, "The secret a tag stands on walks with the window"). The exception ends when the client takes the window of a tag and the step of its walk from the height of the chain its node reports, a forged height bounded by the clamp of the walk; until then such a client departs from the line above and from item 8 below in this one respect and in no other.
 
 A client that hides, weakens or lets a person dismiss any of these does not implement this
 protocol, whatever else it implements.
@@ -191,7 +192,7 @@ An implementation conforms to this document when all of the following hold.
 5. It implements the duty Identity states about an unverified handshake, in the form Identity states it — this document adds no second obligation over the same mechanism.
 6. It states the consequence before the act for claiming a name, for destroying a seed, and for using a transport of a different property.
 7. It builds reproducibly from public source and publishes the hash of every release in the three independent places.
-8. It derives any calendar rendering of a coordinate locally, marks it as its own reading where it could mislead, and lets no quantity of the device's clock enter anything it emits.
+8. It derives any calendar rendering of a coordinate locally, marks it as its own reading where it could mislead, and lets no quantity of the device's clock enter anything it emits. The named exception of the window of a tag and the walk of a pipe (above) stands apart from this item while it stands.
 9. It moves proving only between the devices of one owner, tells the person which of their devices proves, and offers no path that carries the witness of a proof beyond the owner's devices.
 10. It emits nothing that tells an agent from a person, and runs an agent on a seed born on the agent's machine that shares no derivation with any seed of its operator.
 11. It keeps every seed, branch, shared secret and witness of an agent out of the context of the agent's reasoning program, moves value only under rules fixed at the node, and reaches the interface between the node and the reasoning program only from that machine.

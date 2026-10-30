@@ -17,6 +17,7 @@ fn init_with_fixed_entropy_is_byte_exact_deterministic() {
 
     init_run(InitArgs {
         data_dir: Some(dir_a.clone()),
+        recovery_file: None,
         mnemonic: None,
         entropy_hex: Some(HEALTHY_ENTROPY_A.to_string()),
         force: false,
@@ -25,6 +26,7 @@ fn init_with_fixed_entropy_is_byte_exact_deterministic() {
 
     init_run(InitArgs {
         data_dir: Some(dir_b.clone()),
+        recovery_file: None,
         mnemonic: None,
         entropy_hex: Some(HEALTHY_ENTROPY_A.to_string()),
         force: false,
@@ -45,6 +47,7 @@ fn init_then_inspect_terminal_ids_match() {
     let dir = tempdir();
     init_run(InitArgs {
         data_dir: Some(dir.clone()),
+        recovery_file: None,
         mnemonic: None,
         entropy_hex: Some(
             "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".into(),
@@ -73,6 +76,7 @@ fn init_refuses_overwrite_without_force() {
     let dir = tempdir();
     init_run(InitArgs {
         data_dir: Some(dir.clone()),
+        recovery_file: None,
         mnemonic: None,
         entropy_hex: Some(HEALTHY_ENTROPY_A.to_string()),
         force: false,
@@ -81,6 +85,7 @@ fn init_refuses_overwrite_without_force() {
 
     let err = init_run(InitArgs {
         data_dir: Some(dir.clone()),
+        recovery_file: None,
         mnemonic: None,
         entropy_hex: Some(HEALTHY_ENTROPY_B.to_string()),
         force: false,
@@ -93,6 +98,7 @@ fn init_refuses_overwrite_without_force() {
     );
 
     init_run(InitArgs {
+        recovery_file: Some(dir.join("replacement-mnemonic.txt")),
         data_dir: Some(dir),
         mnemonic: None,
         entropy_hex: Some(HEALTHY_ENTROPY_B.to_string()),
@@ -106,6 +112,7 @@ fn init_rejects_both_mnemonic_and_entropy() {
     let dir = tempdir();
     let err = init_run(InitArgs {
         data_dir: Some(dir),
+        recovery_file: None,
         mnemonic: Some("abandon ".repeat(23) + "art"),
         entropy_hex: Some(HEALTHY_ENTROPY_A.to_string()),
         force: false,
@@ -127,6 +134,7 @@ fn mnemonic_input_recovers_same_identity_as_its_entropy() {
     let dir_e = tempdir();
     init_run(InitArgs {
         data_dir: Some(dir_e.clone()),
+        recovery_file: None,
         mnemonic: None,
         entropy_hex: Some(entropy_hex),
         force: false,
@@ -136,6 +144,7 @@ fn mnemonic_input_recovers_same_identity_as_its_entropy() {
     let dir_m = tempdir();
     init_run(InitArgs {
         data_dir: Some(dir_m.clone()),
+        recovery_file: None,
         mnemonic: Some(mnemonic),
         entropy_hex: None,
         force: false,
@@ -167,6 +176,7 @@ fn degenerate_entropy_is_refused_by_the_node() {
         let dir = tempdir();
         let err = init_run(InitArgs {
             data_dir: Some(dir.clone()),
+            recovery_file: None,
             mnemonic: None,
             entropy_hex: Some(hex.clone()),
             force: false,

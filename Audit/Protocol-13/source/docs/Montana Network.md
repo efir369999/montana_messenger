@@ -1,6 +1,6 @@
 # Montana — Network
 
-**Version:** 3.3.0
+**Version:** 4.0.0
 
 Network holds delivery: how a thing crosses from one person to another when neither of them
 has an address and no map of the network exists. It is the layer that makes the transport
@@ -149,7 +149,7 @@ no separate expiry is introduced — the window already sets the horizon of fres
 **Invariants of a right of carriage:**
 
 - A right is extinguished exactly once; a second presentation is refused in silence.
-- Its nullifier is recorded at the holder for the window and never enters consensus state. This is what separates it from the right to a window's share, whose nullifier is consumed inside a payment and does enter the set of the chain: one buys carriage and dies with its window, the other buys value and is spent once for good.
+- Its nullifier is recorded at the holder for the window and never enters consensus state. This is what separates it from the right to a window's coin, whose nullifier is consumed inside a payment and does enter the set of the chain: one buys carriage and dies with its window, the other buys value and is spent once for good.
 - A false route costs a wait and never a disclosure: a deposit under a tag the holder does not hold is refused, and the sender's queue keeps the letter.
 - No hop can spend a right it forwarded, because no hop ever holds one.
 
@@ -564,7 +564,7 @@ links that stand: a ranking is a second mechanism, and whatever it ranks by is w
 optimises for.
 
 **A link that carried nothing across a window is released.** Occupation therefore costs carriage —
-the very work the network pays a share of a window for — and a flood that holds slots without
+the very work the network pays the coin of a window for — and a flood that holds slots without
 carrying gives them back within one window. Nothing here observes idleness of a person or of a
 machine: what is observed is that this link carried nothing, which the device holding it knows
 without asking anyone.
@@ -620,7 +620,8 @@ Canon derives the points of a round and of a window from the window, the chain, 
 index, so every machine computes them alone and none can choose to stand at one. Everything a
 window carries stands there: a beacon and the attestations answering it at the points of their
 round, a frame at the points of the round its canonical slot names, an operation of the identity
-plane likewise, and a proposal at the points of the window it closes. A machine deposits at every
+plane likewise, a proposal and its roll at the points of the window it closes, and a
+pledge of the agreement at the points of the window it is made in. A machine deposits at every
 point and collects from every point; the right to collect is public, because what stands there
 names nobody, and a runner assembles a window from what it collects rather than from what anybody
 chose to hand it. Withholding a round
@@ -729,5 +730,5 @@ An implementation conforms to this document when all of the following hold.
 18. It accepts a head only against the key the channel slot published and against the head published before it, accepts a cell only against the root that head carries, deposits and collects by the messages Canon lays out — the right to a publication public, the right to mail from a pipe sealed to the window by the collect derivation — and holds no list of who reads what.
 19. It spends a reach to learn what a slot publishes and never for collecting a publication, and it deposits a channel again in every window it is to remain readable.
 20. It holds at most `inbound_slots` links it did not open, serves a deposit at a point of a window or of a round without taking a slot for it, refuses a further handshake at that ceiling in silence, releases a link that carried nothing across a whole window, counts neither its own entries against that ceiling nor releases them by that rule, divides the budget of a window equally across every link it holds, and drops what exceeds a share without an answer and without remembering it.
-21. It deposits at every point Canon derives — a beacon and an attestation at the points of their round, a frame and an operation of the identity plane at the points of the round their slot names, a proposal at the points of its window — collects from every one of them and takes the union, treats the right to collect there as public, and floods nothing to anybody.
+21. It deposits at every point Canon derives — a beacon and an attestation at the points of their round, a frame and an operation of the identity plane at the points of the round their slot names, a proposal and its roll at the points of its window, a pledge at the points of the window it is made in — collects from every one of them and takes the union, treats the right to collect there as public, and floods nothing to anybody.
 22. It walks the secret of a pipe one step per window under the domain Canon names, derives the tag, the right to collect and the key of the inner seal of a window from the value of that window alone, holds the value of the earliest window it still accepts a cell at and erases every earlier one, and reproduces the frozen vectors of the walk.

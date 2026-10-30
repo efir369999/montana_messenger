@@ -25,13 +25,15 @@ class NodePage(private val act: MainActivity, private val onClose: () -> Unit) {
     private val stateRow = LinearLayout(act)
     private val bars = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL }
     private val capsBox = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL }
+    private val filesBox = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL }
+    private lateinit var keepRow: View
     private lateinit var host: EditText
     private lateinit var sendRow: View
     private lateinit var restoreRow: View
 
     private data class Cap(val id: String, val word: Int)
     private val capWords = listOf(
-        Cap("vault", R.string.cap_vault), Cap("box", R.string.cap_box), Cap("blob", R.string.cap_blob),
+        Cap("vault", R.string.cap_vault), Cap("home", R.string.cap_home), Cap("box", R.string.cap_box), Cap("blob", R.string.cap_blob),
         Cap("signal", R.string.cap_signal), Cap("turn", R.string.cap_turn), Cap("diag", R.string.cap_diag),
         Cap("stun", R.string.cap_stun), Cap("notify", R.string.cap_notify), Cap("gif", R.string.cap_gif),
         Cap("name", R.string.cap_name))
@@ -88,6 +90,19 @@ class NodePage(private val act: MainActivity, private val onClose: () -> Unit) {
                 restoreRow = row(R.drawable.ic_arrow_circle_down, MT.orange, c.getString(R.string.node_restore)) { restore() }
                 addView(restoreRow, lp())
             }, lp())
+            // the switch says what it does (iOS ff6c7b9f «Copies to your node»)
+            addView(c.text(c.getString(R.string.node_copies_sub), 12f, MT.gray).apply { setPadding(dp(16), dp(8), dp(16), 0) })
+            // THE FILES ON YOUR NODE (iOS HomeNodeView, 6f24f091): every attachment in sealed pieces, the node's word on what it
+            // holds, this phone's own count of what it is laying now
+            addView(header(R.string.home_files_header))
+            addView(c.plate {
+                addView(filesBox.apply { setPadding(dp(16), 0, dp(16), 0) }, lp())
+                keepRow = row(R.drawable.ic_arrow_circle_up, MT.green, c.getString(R.string.home_files_keep_now)) {
+                    if (keepRow.isEnabled) { commit(); HomeKeep.keep(act, cellular = true) }
+                }
+                addView(keepRow, lp())
+            }, lp())
+            addView(c.text(c.getString(R.string.home_files_footer), 12f, MT.gray).apply { setPadding(dp(16), dp(8), dp(16), 0) })
             addView(capsBox, lp())
         }
         view = c.vstack(Gravity.NO_GRAVITY) {
@@ -97,8 +112,10 @@ class NodePage(private val act: MainActivity, private val onClose: () -> Unit) {
             addView(ScrollView(c).apply { addView(list) }, lp(MATCH, 0, 1f))
         }
         HomeNodeWatch.onChange = { act.onMain { if (view.isAttachedToWindow) show() } }
+        HomeKeep.onChange = HomeNodeWatch.onChange
         show()
         act.background { HomeNodeWatch.ask() }
+        HomeKeep.ask()
     }
 
     private fun commit() {
@@ -151,6 +168,33 @@ class NodePage(private val act: MainActivity, private val onClose: () -> Unit) {
         sendRow.isEnabled = !empty && !moving; sendRow.alpha = if (sendRow.isEnabled) 1f else 0.4f
         restoreRow.isEnabled = HomeNodeWatch.state is HomeNodeWatch.State.Held && !moving
         restoreRow.alpha = if (restoreRow.isEnabled) 1f else 0.4f
+        filesBox.removeAllViews()
+        when (val w = HomeKeep.word) {
+            is HomeKeep.Word.Held -> filesBox.addView(c.hstack {
+                setPadding(0, dp(12), 0, dp(12))
+                addView(c.text(c.getString(R.string.home_files_held), 15f), lp(0, WRAP, 1f))
+                addView(c.text("${w.files} · " + android.text.format.Formatter.formatShortFileSize(c, w.bytes), 13f, MT.gray))   // USER-DATA: the node's count and size
+            }, lp())
+            is HomeKeep.Word.Silent -> filesBox.addView(c.hstack {
+                setPadding(0, dp(12), 0, dp(12))
+                addView(c.text(c.getString(R.string.home_files_silent), 15f), lp(0, WRAP, 1f))
+                addView(c.text(w.why, 12f, MT.gray))   // USER-DATA: the reason
+            }, lp())
+            else -> {}
+        }
+        HomeKeep.sending?.let { f -> filesBox.addView(c.vstack(Gravity.NO_GRAVITY) {
+            setPadding(0, dp(8), 0, dp(10))
+            addView(c.hstack {
+                addView(c.text(c.getString(R.string.home_files_laying), 15f), lp(0, WRAP, 1f))
+                addView(c.text("${(f * 100).toInt()}%", 13f, MT.gray))   // USER-DATA: a share
+            }, lp())
+            addView(ProgressBar(c, null, android.R.attr.progressBarStyleHorizontal).apply {
+                max = 100; progress = (f * 100).toInt()
+                progressTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
+            }, lp())
+        }, lp()) }
+        keepRow.isEnabled = !empty && HomeKeep.sending == null && MontanaHomeNode.on(act)
+        keepRow.alpha = if (keepRow.isEnabled) 1f else 0.4f
         capsBox.removeAllViews()
         val caps = HomeNodeWatch.caps
         if (caps.isNotEmpty()) {

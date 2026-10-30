@@ -96,7 +96,7 @@ class CallService : Service() {
         })
         val name = who?.let { Book.chat(it)?.shown?.ifBlank { null } } ?: getString(R.string.peer)
         val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        val open = PendingIntent.getActivity(this, 4, Intent(this, MainActivity::class.java).apply { who?.let { putExtra(Calls.EXTRA_REF, it) } }
+        val open = PendingIntent.getActivity(this, 4, Intent(this, MainActivity::class.java).apply { who?.let { putExtra(Calls.EXTRA_REF, NoticeAlias.of(it)) } }
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP), flags)
         val hang = PendingIntent.getBroadcast(this, 3, Intent(this, CallDecline::class.java), flags)
         val since = CallLine.connectedAt

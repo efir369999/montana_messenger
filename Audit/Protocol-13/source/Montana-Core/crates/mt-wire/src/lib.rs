@@ -109,6 +109,37 @@ pub fn piece_bytes() -> Result<usize, WireError> {
     Ok(outer_plaintext_bytes()? - link::FRAMING_BYTES)
 }
 
+// A body laid into a block of one width, in a time that follows the width and never the length of
+// the body. Every byte of the block is written: the body's byte where the body reaches that position,
+// zero where it does not, chosen by a mask on the position rather than by a branch on it. A block
+// that copied what was there and zeroed the rest took one time for a body filling its last block
+// and another for a body barely reaching it (Welch's t of 34 and 52 over two thousand samples, in
+// `tests/timing_cell.rs`), so the length the one width hides on the wire stood on the clock of the
+// machine that cuts. The bytes written are the same either way; only the time is not.
+//
+// The byte is read at the position clamped to the last byte of the body, so that every position
+// reads one byte and the mask alone decides what is kept. A body of nothing is read as one byte of
+// zero under a mask of zero, by the same loop, so it costs what a body of one byte costs. Indexing
+// the clamped position directly, with the body known to hold a byte, lets the compiler drop the
+// check on every byte; the position is formed by a wrapping add because the release profile checks
+// overflow, and a check that can panic inside the loop is a branch inside the loop. The first form
+// of this function, which looked each byte up with `get` and a fallback and added with a check,
+// cost seven times the copy it replaced (4.3 against 0.6 microseconds for three blocks, on the
+// machine of the check); this form costs four times, the loop still reading one byte at a time
+// through the clamped index, which is the price of a time that follows the width alone. No
+// position of a block overflows: a body is bounded by the count of pieces a link declares and the
+// count of cells a delivery declares, both of them sixteen bits.
+pub(crate) fn lay(body: &[u8], at: usize, block: &mut [u8]) {
+    let length = body.len();
+    let source: &[u8] = if body.is_empty() { &[0u8] } else { body };
+    let last = source.len() - 1;
+    for (offset, slot) in block.iter_mut().enumerate() {
+        let position = at.wrapping_add(offset);
+        let mask = u8::from(position < length).wrapping_neg();
+        *slot = source[position.min(last)] & mask;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -123,5 +154,22 @@ mod tests {
         assert_eq!(inner_plaintext_bytes(), Ok(888));
         assert_eq!(chunk_bytes(), Ok(868));
         assert_eq!(piece_bytes(), Ok(1_183));
+    }
+
+    // What `lay` writes is exactly what a copy and a zero fill wrote: the body where it reaches, zeros
+    // where it does not, an empty body all zeros. The time is the subject of `tests/timing_cell.rs`;
+    // the bytes are the subject here.
+    #[test]
+    fn a_block_is_laid_as_a_copy_and_a_zero_fill_would_lay_it() {
+        let body: Vec<u8> = (1..=10u8).collect();
+        let mut block = [0xAAu8; 4];
+        lay(&body, 0, &mut block);
+        assert_eq!(block, [1, 2, 3, 4]);
+        lay(&body, 8, &mut block);
+        assert_eq!(block, [9, 10, 0, 0]);
+        lay(&body, 12, &mut block);
+        assert_eq!(block, [0, 0, 0, 0]);
+        lay(&[], 0, &mut block);
+        assert_eq!(block, [0, 0, 0, 0]);
     }
 }

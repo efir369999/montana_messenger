@@ -1,9 +1,15 @@
 # 1. Complete window statement
 
-**Status: open.** The relation of a window and its verifier are implemented and tested in the small
-in the branch this folder is published from. Agreement on what a window decided is specified by the
-author's choice and not implemented, and a run on six hosts closed one window on two names. No
-closure or production readiness is claimed.
+**Status: closed.** Item 1 closes on the condition section 10 of
+[`WINDOW-THEOREM.md`](source/Montana-Core/WINDOW-THEOREM.md) states: the obligations O-1 to O-5
+discharged, the Lean file green on the build host, and the ring of the core green on the commit that
+carries them. O-6, the bound from above of the ballot, is discharged as well (section 10, O-6).
+The relation of a window and its verifier are implemented in the branch this folder is published
+from, and the closure of a window is stated as theorems with proofs in that note, checked in part by
+machine (`formal/Window.lean`, section 9). Agreement on what a window decided, the
+construction the author chose (section 6 of [`AGREEMENT.md`](source/Montana-Core/AGREEMENT.md)), is
+implemented and held by the test of four machines. Model checking of the code with Kani is item 2 (Historical (marked 2026-10-27 UTC): item 2 is closed on its own evidence, `02-CANONICAL-PROPOSAL.md` and `PROTOCOL-13.json` row 2; the Kani harnesses are PR #29, still a draft);
+the run on several hosts is item 13. No production readiness is claimed.
 
 ## Requirement
 
@@ -43,43 +49,32 @@ review to the test that holds it.
 ## Runs
 
 Self-verification by the implementing sessions, not an independent external audit. Commits after
-`9380a76` up to the one published here change documents only.
+`9380a76` up to the one published here change documents only, except the test file of O-6,
+`crates/mt-proof/tests/ballot_and_ticket.rs`, which the row of `033c6b7` runs.
 
 | Revision | Machine | Command, in `Montana-Core` | Result |
 |---|---|---|---|
+| `4451b21` (the core tree of PR #39 before O-6; the `Montana-Core` tree published here differs from it in `crates/mt-proof/tests/ballot_and_ticket.rs`, `AUDIT.md` and `WINDOW-THEOREM.md` only) | Linux x86-64, rustc 1.92.0, the build host | the ring of the core: `fmt`, `clippy`, `build-tests`, then every test binary of the workspace | fmt 0; Clippy 0; build-tests 0; 92 test binaries, all exit 0 (tests-all): 702 passed, 0 failed, 5 ignored (`agreement::every_book::every_book_of_the_bound_decides_at_most_one_name` of `montana-node`, the whole bound of Theorem 1, run with `--ignored`; four timing measurements of `crates/mt-wire/tests/timing_cell.rs`, of the optimized build only); doctest 0; doc 0; release build 0; 25.10.2026 20:41-22:44 UTC |
+| `033c6b7` (O-6, merged here as `0ac84ae`) | Linux x86-64, rustc 1.92.0, the build host | `cargo fmt --all -- --check`; `cargo clippy -p mt-proof --all-targets -- -D warnings`; `cargo test -p mt-proof --release`; `cargo test -p mt-conformance --release` | format 0; Clippy 0; `mt-proof`: 11 test groups, 189 passed (145 unit, 6 in `ballot_and_ticket`), 0 failed, 0 ignored; `mt-conformance`: 5 test groups, 71 passed, 0 failed, 0 ignored; exit 0 each, 25.10.2026 22:13-22:28 UTC |
+| `4451b21` | Linux x86-64, Lean 4.35.0 | `lean formal/Window.lean` (blob `a9fd7faa`, 1586 lines) | exit 0, no error, no warning, no `sorry` (`WINDOW-THEOREM.md`, section 9) |
 | `9380a76` | macOS on arm64 | `taskpolicy -b cargo test --release --jobs 2 --no-fail-fast -p montana-node -p mt-net -p mt-boundary -p mt-conformance -- --test-threads 2` | 44 test groups: 135 passed, 0 failed, 0 ignored; exit 0 after 6872.9 s. Every test file named above ran and passed. |
 | `bd1468a` with the test correction committed as `9380a76` | Linux x86-64, rustc 1.92.0, OpenSSL 3.5.4 | `cargo +1.92.0 fmt --all -- --check`; `cargo +1.92.0 clippy --release --workspace --all-targets -- -D warnings`; `cargo +1.92.0 test --release --no-fail-fast -p montana-wallet -p mt-codec -p mt-derive -p mt-genesis -p mt-merkle -p mt-proof -p mt-pulse -p mt-seed -p mt-state -p mt-store -p mt-suite -p mt-wire`; `cargo +1.92.0 build --release --workspace` | format 0; Clippy 0; 54 test groups: 507 passed, 0 failed; release build 0 |
 
-The four crates of the first row hold the tests that open network listeners; the second row holds
-the rest of the workspace.
+The four crates of the row of `9380a76` hold the tests that open network listeners; the row of
+`bd1468a` holds the rest of the workspace.
 
-## What is open
+## What is open, outside the closure of item 1
 
-1. **Agreement on what a window decided.** Section 6 of
-   [`AGREEMENT.md`](source/Montana-Core/AGREEMENT.md) records the construction the author chose on
-   2026-10-16: the roll of a proposal is one body whose root stands inside the proposal's name, at
-   the window's points for `retained_windows` windows; a machine keeps one agreement record for each
-   open window and lets it go at the close. Neither the specification text nor its code is in the
-   tree. Acceptance: four machines at a quorum of three under a held part, a late frame and a
-   partition that heals, then the run on six hosts repeated.
-2. **The run on six hosts, 2026-10-16.** A cohort of six machines on six hosts, a quorum of five, the
-   node built from this branch. Read from the machines' own logs:
-   - window 0 closed on two names: two machines on proposal `702a4d1d...` over a cement naming five
-     machines (after 33 and 65 rounds), two on proposal `9ffa8f44...` over a cement naming six (after
-     513 and 4097 rounds); each machine minted to itself under its own name;
-   - the two remaining machines stood in round 0 holding cements of six and of five parts that no
-     beacon at the quorum carried (`montana-node/src/pulse.rs`, `matches_cement`: the pair must be
-     equal);
-   - window 1 reached a cement of one or two of six at every machine and no quorum;
-   - while window 1 stood, the rounds turned without bound, and the machine at 4097 rounds of
-     window 0 was killed by its kernel (exit 137); `AGREEMENT.md`, section 6, records its memory at
-     1.25 GB after four minutes. The rule that bounds the memory of a stalled window is part of the
-     agreement stage and is not written.
-3. **The hosts.** Distributed finality, loss and recovery of quorum, partition and rejoin are item
-   13.
+1. **The memory of a stalled window.** Inside an open window nothing of a round is let go, and
+   without a quorum the rounds keep turning; the rule that bounds what a stalled window holds is part
+   of the agreement stage and is not written (`AGREEMENT.md`, section 6, *Found against the pulse*).
+2. **The run on six hosts.** The run of 2026-10-16 (six machines, a quorum of five) closed window 0
+   on two names, before the agreement stage was in the tree; the acceptance of that stage repeats it
+   on six machines (`AGREEMENT.md`, section 6, *Acceptance*). That run, with distributed finality,
+   loss and recovery of quorum, partition and rejoin, is item 13.
 
 Items 2, 3, 9 and 13 depend on this closure. Their finality, issuance and authenticated-joining
-claims remain open while this item is.
+claims remain open while this item is. Historical (marked 2026-10-27 UTC): items 1, 2 and 3 are closed (`PROTOCOL-13.json`, rows 1-3, closed 2026-10-25, 2026-10-26 and 2026-10-27); items 9 and 13 are open on their own evidence (rows 9 and 13).
 
 ## Earlier records of this item
 

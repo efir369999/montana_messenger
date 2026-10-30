@@ -119,7 +119,7 @@ class ChatStore: ObservableObject {
     /// refused in append), the reception intent is dropped, the shipping crate thrown out.
     func deleteLocally(chat: String, _ m: Message) { deleteLocally([(chat, m)]) }
     func deleteLocally(chat: String, _ ms: [Message]) { deleteLocally(ms.map { m in (chat, m) }) }
-    // MANY LETTERS, ONE WRITE (the author's word 11.10.2026 20:1x MSK: «at 20:11 on T1 the screen hangs when a chat is deleted»;
+    // MANY LETTERS, ONE WRITE (the author's word 11.10.2026 17:1x UTC: «at 17:11 on T1 the screen hangs when a chat is deleted»;
     // the critic R-1): a selection of N letters went through this road one by one -- N tombstone writes, each the whole list
     // encoded, sealed and handed to the defaults, and N blocking history writes, all on the main thread. The rows leave by one
     // pass per chat, the tombstones by one write (bury), and the history leaves for the disk on its own queue at once.
@@ -127,7 +127,7 @@ class ChatStore: ObservableObject {
         var rowsByChat: [String: Set<MID>] = [:]
         var namesByChat: [String: [String]] = [:], names: [String] = [], blobs: [String] = []
         for (chat, m) in letters {
-            // A COIN LETTER OF MINE ON ITS WAY KEEPS ITS ROW (the author's word «fix all points in order» 05.10.2026 21:4x MSK, the
+            // A COIN LETTER OF MINE ON ITS WAY KEEPS ITS ROW (the author's word «fix all points in order» 05.10.2026 18:4x UTC, the
             // coin audit's first point; MTCoinSend.travels): the row is the queue's one reason to carry the letter, and without it
             // the coins it took were gone for both sides.
             if coinTravels(m) {
@@ -198,7 +198,7 @@ class ChatStore: ObservableObject {
         var row = row
         if !row.isFromMe, chat == openConv, MTForeground.active { row.isRead = true }
         var arr = messages[chat] ?? []
-        // ONE NAME, ONE ROW AT BIRTH (19.10.2026, T1 11:01 MSK on 2246): the feed's snapshot refuses two rows of one identity
+        // ONE NAME, ONE ROW AT BIRTH (19.10.2026, T1 08:01 UTC on 2246): the feed's snapshot refuses two rows of one identity
         // outright -- a crash, not a warning -- and the history's load was the only place that kept the rule. A row whose name
         // already stands is not born again; the standing row answers.
         if let sid = row.msgId, let standing = arr.first(where: { $0.msgId == sid }) {
@@ -861,7 +861,7 @@ class ChatStore: ObservableObject {
             // THE LETTER SAYS WHETHER IT WAS READ (the author's word 23.09: «the number of unread for this chat»). The
             // count used to be the letters born after the moment the chat was last OPENED, behind a «read» set that
             // the next landing cleared — so the letters read in the open chat came back unread with the first letter
-            // after them (T1 23.09 06:26-06:39 MSK: eleven letters landed in the open chat, one more after a relaunch,
+            // after them (T1 23.09 03:26-03:39 UTC: eleven letters landed in the open chat, one more after a relaunch,
             // and the icon stood at 13 all morning). A letter is read when it stands in the open chat (placeRow,
             // markRead); the count is the letters of theirs that are not — and no sealed map is opened for it.
             for (chat, list) in messages where !deletedChats.contains(chat) {
@@ -1443,8 +1443,6 @@ class ChatStore: ObservableObject {
             $0.videoFile == file || $0.imageFile == file || $0.audioFile == file || $0.docFile == file
         }) else { return }
         messages[chat]?[i].msgId = "mid:\(mid)"
-        // A MEDIA LETTER MINTS WHEN IT IS NAMED (MTCoinSend.mintLetter): it was born without its wire name.
-        if let row = messages[chat]?[i] { MTCoinSend.mintLetter(row, in: chat) }
     }
 
     // ── THE DELIVERY LADDER: ONE DOOR, ONE ORDER ([C-1]) ─────────────────────────────────
@@ -1708,6 +1706,10 @@ class ChatStore: ObservableObject {
                 // A QUEUED INTENT IS NOT A CORPSE (18.09): the queue holds it and the drain will run it —
                 // the clock is honest on a phone that holds no node.
                 if let sid = m.msgId, MontanaDeliveryEngine.shared.queueHolds(mid: sid.hasPrefix("mid:") ? String(sid.dropFirst(4)) : sid) { continue }
+                // A GROUP'S ROW RIDES ON ITS COPIES (27.10.2026, council links 9561, 9597): never under the letter's own name, so the
+                // queue above never holds it; the group answers for the row and moves it as its copies stand (MTGroup.answersFor).
+                if MTGroup.isKey(chat), let sid = m.msgId,
+                   MTGroup.shared.answersFor(sid.hasPrefix("mid:") ? String(sid.dropFirst(4)) : sid, store: self) { continue }
                 if !coldStart {
                     let born = m.createdAt > 0 ? m.createdAt : 0
                     guard born > 0, born < edge else { continue }
@@ -1896,7 +1898,7 @@ class ChatStore: ObservableObject {
         // hand had written; the card belongs to my hand alone.
     }
     // SSOT name resolver: a manual contact rename wins, then the peer\'s self-declared name, then the short address form.
-    /// A GROUP OR A CHANNEL IS NAMED BY ITS OWN BOOK (the author's word 18.10.2026 13:3x MSK: «in the playlist that plays the groups are
+    /// A GROUP OR A CHANNEL IS NAMED BY ITS OWN BOOK (the author's word 18.10.2026 10:3x UTC: «in the playlist that plays the groups are
     /// named crookedly»): a group's key is no person's address, and the person's name book answered it with its neutral word -- the
     /// queue's «Playing from», the source's chat picker and every other asker of this one question said «Correspondent» for a group.
     func displayName(for ref: String) -> String {
@@ -1944,14 +1946,14 @@ class ChatStore: ObservableObject {
         return MTNameBook.face(chat.convId ?? chat.name, title: title(for: chat))
     }
     // Deleted «for everyone» (tombstone by msgId): receive/cloud pull do NOT resurrect them.
-    // THE TOMBSTONES KEPT ARE THE LAST 4000 THIS PHONE WROTE (the critic B-5, 11.10.2026; the author's word 11.10.2026 20:1x MSK:
+    // THE TOMBSTONES KEPT ARE THE LAST 4000 THIS PHONE WROTE (the critic B-5, 11.10.2026; the author's word 11.10.2026 17:1x UTC:
     // «check the whole architecture of the chats' time chains, so there are no holes by the constitution»): a set has no order, so
     // its suffix(4000) kept any 4000; the newest 4000 by the births the names claim were a sender's choice -- a name like
     // t9999999999999-... outranked every real tombstone and pushed them all out, and a name without a birth (arc:, given:) went
     // first. The order is the moment this phone buried the name; the list on disk is that order, oldest first, and memory holds
     // the same window, so a launch and a long life keep one rule.
-    // A TOMBSTONE STANDS IN ITS CONVERSATION (the critic's second pass; the author's words 11.10.2026 20:1x MSK: «check the whole
-    // architecture of the chats' time chains, so there are no holes by the constitution», 21:5x: «carry out all 13»): the set was
+    // A TOMBSTONE STANDS IN ITS CONVERSATION (the critic's second pass; the author's words 11.10.2026 17:1x UTC: «check the whole
+    // architecture of the chats' time chains, so there are no holes by the constitution», 18:5x: «carry out all 13»): the set was
     // one for the whole phone, and a correspondent's delete notice, the blocked door and a group's notice buried any name the
     // sender chose -- a letter of another conversation never came, and a flood of names pushed every real tombstone out. A grave
     // is now a name in a conversation: a word of a conversation buries there alone, a letter is asked by the conversation it
@@ -2038,8 +2040,8 @@ class ChatStore: ObservableObject {
         let wrote = (0 < grew || legacy != nil) && writeTombstones()
         if legacy != nil, wrote { UserDefaults.standard.removeObject(forKey: Self.legacyGravesKey) }
     }
-    // THE FUNERAL HAS A BIRTH (the critic R-5; the author's words 11.10.2026 20:1x MSK: «check the whole architecture of the chats'
-    // time chains, so there are no holes by the constitution», 21:5x: «carry out all 13»): «delete for both» rode under a name with
+    // THE FUNERAL HAS A BIRTH (the critic R-5; the author's words 11.10.2026 17:1x UTC: «check the whole architecture of the chats'
+    // time chains, so there are no holes by the constitution», 18:5x: «carry out all 13»): «delete for both» rode under a name with
     // no moment (a UUID), the receiver erased whatever stood whenever it came, and a letter of the dying pipe still on its way --
     // in a node's box, in a queue, on the other device -- landed after it and stood the conversation again. The funeral is named
     // at its birth now (mintMid), and each side keeps the newest funeral's moment of a conversation: a letter of it born at or
@@ -2102,7 +2104,7 @@ class ChatStore: ObservableObject {
         MontanaLog.event("CONVDEL ← \(chat.prefix(10)) wiped by peer")
     }
     func deleteEverywhere(chat: String, msgId: String) {
-        // The coin audit's first point (05.10.2026 21:4x MSK): a coin letter of mine on its way is not taken off the wire.
+        // The coin audit's first point (05.10.2026 18:4x UTC): a coin letter of mine on its way is not taken off the wire.
         if let row = messages[chat]?.first(where: { m in m.msgId == msgId }), coinTravels(row) {
             MontanaTrace.mark("delete_refused", "everywhere: a coin letter on its way keeps its row and its coins mid=\(String(msgId.prefix(12)))")
             return
@@ -2155,7 +2157,7 @@ class ChatStore: ObservableObject {
     /// A face of this correspondent stands: the one the screen draws (uniquePublishedPhoto). A name whose file is gone is no face,
     /// and neither is a face whose bytes another correspondent holds too -- its owner is asked for their own (04.10).
     func holdsFace(of ref: String) -> Bool { publishedFace(ref) != nil }
-    /// THE FACE ITS OWNER SENT (the author's words 04.10.2026 03:54-03:57 MSK: «no avatars anywhere on T1 -- fix it at last»): the digest
+    /// THE FACE ITS OWNER SENT (the author's words 04.10.2026 00:54-00:57 UTC: «no avatars anywhere on T1 -- fix it at last»): the digest
     /// of the bytes a correspondent's own letter or own card on the node carried. Such a face is theirs whoever else wears the same
     /// picture -- two phones of one person, a picture two people chose -- so the screen draws it; a face no owner has sent shows only
     /// while no other correspondent holds its bytes (uniquePublishedPhoto).
@@ -2169,7 +2171,7 @@ class ChatStore: ObservableObject {
         if let f = peerAvatars[ref], let owned = faceOwned[ref], MTNameBook.digestOf(f) == owned { return f }
         return MTNameBook.uniquePublishedPhoto(ref, files: peerAvatars)
     }
-    /// A FACE IS FETCHED FROM THE NODE, NOT WAITED FOR (the author's word 04.10.2026 03:57 MSK: «the ask reaches only the one whose chat is
+    /// A FACE IS FETCHED FROM THE NODE, NOT WAITED FOR (the author's word 04.10.2026 00:57 UTC: «the ask reaches only the one whose chat is
     /// open -- an architectural hole»): a face asked in a presence word comes only when its owner's phone wakes. The owner keeps their face
     /// on the node beside their daily card (MontanaCard.uploadFace) and every correspondent holds that card's link (MTPeerLinks), so a
     /// correspondent this phone draws no face for is read from the node at once -- the owner's own bytes (MontanaCard.wearFace) -- once
@@ -2909,7 +2911,7 @@ class ChatStore: ObservableObject {
     }
 
     /// A ROW STANDS WHERE ITS TIME SAYS: the moment of the chat's newest letter, the very one the row shows (the author's word
-    /// 22.10.2026 23:0x MSK, T1 at 23:01: «the chats sort crooked -- maybe not one owner of time»). The order was the moment
+    /// 22.10.2026 20:0x UTC, T1 at 20:01: «the chats sort crooked -- maybe not one owner of time»). The order was the moment
     /// THIS PHONE handled a letter, the row's time the moment the letter was BORN -- two owners. T1 rose at 20:00:29Z after a
     /// crash, the archive laid back letters missed for hours (archive_gap rows=1196 in 25 chats) and every one of them lifted
     /// its chat to the top as «now» while the row still said 19:33; a late photo did the same. One owner now: the birth.
@@ -2925,18 +2927,18 @@ class ChatStore: ObservableObject {
     }
 
     // Call log: creates the chat if missing, adds a call entry.
-    func appendCallLog(peer pipe: String, video: Bool, incoming: Bool, dur: Int, missed: Bool, credit: MTCallCredit? = nil) {
+    func appendCallLog(peer pipe: String, video: Bool, incoming: Bool, dur: Int, missed: Bool, call: String? = nil) {
         let peer = MTSamePair.root(pipe)   // a call on a folded pipe leaves its row in the conversation (24.09)
         var payload: [String: Any] = ["v": video, "inc": incoming, "dur": dur, "miss": missed]
-        if let credit {
-            guard !(messages[peer] ?? []).contains(where: { callInfoOf($0.text)?.call == credit.call }) else { return }
-            payload["call"] = credit.call; payload["minted"] = credit.coins
+        if let call {
+            guard !(messages[peer] ?? []).contains(where: { callInfoOf($0.text)?.call == call }) else { return }
+            payload["call"] = call
         }
         guard let d = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: d, encoding: .utf8) else { return }
         // ONE ROW PER CALL (the author's word 17.09): the same call reported by two doors within a
         // minute and a half — the call lane and the missed-call letter — lands once.
-        if credit == nil, let last = messages[peer]?.last, let li = callInfoOf(last.text), li.call == nil,
+        if call == nil, let last = messages[peer]?.last, let li = callInfoOf(last.text), li.call == nil,
            li.video == video, li.incoming == incoming, li.missed == missed,
            Date().timeIntervalSince1970 - last.createdAt < 90 {
             MontanaTrace.mark("call_log", "dup peer=\(String(peer.prefix(10))) — the same call, once"); return
@@ -2949,8 +2951,7 @@ class ChatStore: ObservableObject {
         bump(peer)
         Task { @MainActor in self.noteListState(peer, last: self.lastLetter(peer)) }   // the list record follows the newest (stage 9, 17.09)
         MontanaTrace.mark("call_log", "append peer=\(String(peer.prefix(10))) n=\(messages[peer]?.count ?? 0)")
-        // A CALL'S SECONDS MINT TO BOTH WHILE IT TALKS (the author's word 07.10.2026 18:5x MSK, MTCallMint): the caller no longer pays
-        // the one called at its end (the word of 05.10) -- that payment would take back from the caller the seconds both are credited.
+        // A CALL MOVES NO COIN (the author's word 29.10.2026 19:31 UTC): no second of it mints, burns or pays.
         // A missed call is the calls page's alone (the author's word 17.09): counted from the log
         // rows just placed, not the chat's unread mark — the icon follows at once.
         if incoming && missed { recalcBadge() }
@@ -2965,7 +2966,7 @@ class ChatStore: ObservableObject {
         guard let d = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: d, encoding: .utf8) else { return false }
         if let i = messages[montanaRoomKey]?.firstIndex(where: { releaseInfoOf($0.text)?.build == build }) {
-            // THE ROW SPEAKS EVERY LANGUAGE THE WORD CARRIES (19.10.2026, the author's word 11:4x MSK: «the text must be all in
+            // THE ROW SPEAKS EVERY LANGUAGE THE WORD CARRIES (19.10.2026, the author's word 08:4x UTC: «the text must be all in
             // the chosen system language»): a row born by a build that kept no translations stood in English under a Russian
             // title for good (T2, 2246). The same row, its same name, takes the languages the word brings now -- never a second row.
             if let row = messages[montanaRoomKey]?[i], !l10n.isEmpty, releaseLanguages(row.text) != l10n {
@@ -3149,7 +3150,7 @@ class ChatStore: ObservableObject {
     /// the chat opened on screen. The list's «mark as read» is bookkeeping of one's own badge and
     /// says nothing to the peer (15.47.2: it used to declare «read» for letters nobody read).
     func markRead(_ chat: String, tellPeer: Bool = true) {
-        // THE SEED'S OTHER DEVICES READ IT TOO (the twin mirror; the author's word 18.10.2026 10:2x MSK: «read on the phone -- read on
+        // THE SEED'S OTHER DEVICES READ IT TOO (the twin mirror; the author's word 18.10.2026 07:2x UTC: «read on the phone -- read on
         // every device, not hanging as a banner on the computer»): what was unread here is read there up to the same letter.
         let wasUnread = messages[chat]?.contains(where: { m in !m.isFromMe && !m.isRead }) == true || unreadCounts[chat] != nil
         if wasUnread, let newest = messages[chat]?.filter({ m in !m.isFromMe }).map(\.createdAt).max(), 0 < newest {
@@ -3427,7 +3428,7 @@ class ChatStore: ObservableObject {
     }
 
     /// Force save (going to background/termination) waits for the disk; a deletion asks the same capture without blocking
-    /// (the author's word 11.10.2026 20:1x MSK, the critic R-1): its write takes its turn on the snapshot queue at once.
+    /// (the author's word 11.10.2026 17:1x UTC, the critic R-1): its write takes its turn on the snapshot queue at once.
     func save(blocking: Bool = true) {
         guard !retired else { return }   // a store that stepped down for a move writes nothing (retire)
         // While history is being READ there is nothing to save: a snapshot of empty feeds
@@ -3464,7 +3465,7 @@ class ChatStore: ObservableObject {
         if ChatStore.live === self { ChatStore.live = nil }
         MontanaTrace.mark("store_retired", "rows=" + String(messages.values.reduce(0) { a, b in a + b.count }))
     }
-    /// THE HISTORY FILE HAS ONE WRITER: THE LIVE STORE OF THE PERSON SEATED (P-164; the author's word 10.10.2026 15:4x MSK: «on T1
+    /// THE HISTORY FILE HAS ONE WRITER: THE LIVE STORE OF THE PERSON SEATED (P-164; the author's word 10.10.2026 12:4x UTC: «on T1
     /// part of the chat with iPhone 15 is gone -- find the cause, and by construction it must never be allowed»). T1, 2173,
     /// 12:34:45-12:35:32Z: a seat's move retired the store, the forgotten seed's word emptied its memory, and the next seat's
     /// opening word found it empty -- it rebuilt 43 conversations from the archive's transcript (6 701 rows; iPhone 15's 1 979
@@ -3488,7 +3489,7 @@ class ChatStore: ObservableObject {
     /// the seed OFF the main thread, builds the rows there, and applies on main only if the
     /// identity that asked is still the one in front of the screen.
     func restoreFromArchive(epoch: Int, acct: String, folders: [String]?) {
-        // AN EMPTY FEED IS A HELD FEED (the author's word 11.10.2026 20:1x MSK: «check with the critic the whole architecture of the
+        // AN EMPTY FEED IS A HELD FEED (the author's word 11.10.2026 17:1x UTC: «check with the critic the whole architecture of the
         // chats' time chains, so there are no holes by the constitution»): a conversation emptied by deleting its letters -- or by
         // the correspondent's delete for everyone -- keeps its key with no rows (the snapshot writes the empty list and reads it
         // back), and the archive is append-only: the old rule took «no rows» for «never held» and laid the erased letters back at
@@ -3816,6 +3817,20 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
                     guard let i = self.messages[chat]?.firstIndex(where: { $0.id == row.id }) else { return }
                     switch taken {
                     case .landed(let full):
+                        // A SERVICE WORD IS NEVER A ROW (29.10.2026, issue #23 link 147 of Android 95): a reference laid as «New
+                        // message» may land the same-pair question or any other word of the machinery; written into the row it was
+                        // drawn as a bubble and never answered. The row leaves, and the word goes through the one door every word
+                        // passes (append), under the row's own name.
+                        if full.hasPrefix("\u{200B}\u{200B}") || isControlMarker(full) || mtUnknownServiceWord(full),
+                           var word = self.messages[chat]?[i] {
+                            word.text = full
+                            MTRowJournal.drop(chat, mid: row.mid)
+                            self.dropRows(chat) { r in r.id == row.id }
+                            _ = self.append(chat, word)
+                            self.save(blocking: false)
+                            MontanaTrace.mark("lb_heal", mid: row.id, "a service word -- the row leaves, the word goes through the door")
+                            return
+                        }
                         self.messages[chat]?[i].text = full
                         if let m = self.messages[chat]?[i] { self.archiveRow(chat, m) }
                         MontanaTrace.mark("lb_heal", "ok bytes=\(full.utf8.count)")
@@ -3992,8 +4007,8 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
     /// archive folder. The list is stored apart from the feed, so it is removed by the same
     /// motion, and the screen learns of it by announcement, not by guessing.
     func removeConversationLocally(_ conv: String) {
-        // THE COINS OF A LETTER THAT CAN NO LONGER GO COME BACK FIRST (the author's word «fix all points in order» 05.10.2026 21:4x
-        // MSK, the coin audit's first point): the correspondent's erasure reaches here unasked, and the queue and the node box of the
+        // THE COINS OF A LETTER THAT CAN NO LONGER GO COME BACK FIRST (the author's word «fix all points in order» 05.10.2026 18:4x
+        // UTC, the coin audit's first point): the correspondent's erasure reaches here unasked, and the queue and the node box of the
         // conversation go with it (clearChat) -- a coin letter of mine still holding its coins gives them back before its row goes.
         for m in (messages[conv] ?? []) where m.isFromMe && m.coinLetter != nil {
             let back = { MainActor.assumeIsolated { MTCoinSend.release(m, in: conv) } }   // the row's values ride along; the book moves on main
@@ -4005,7 +4020,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         // resurrected a deleted message). The extension box is purged of this conversation's
         // rows by the same motion. The node half — removing the undelivered from the node
         // store — is stage 7.
-        // ONE WRITE FOR THE WHOLE CONVERSATION (the author's word 11.10.2026 20:1x MSK: «at 20:11 on T1 the screen hangs when a chat
+        // ONE WRITE FOR THE WHOLE CONVERSATION (the author's word 11.10.2026 17:1x UTC: «at 17:11 on T1 the screen hangs when a chat
         // is deleted»): a tombstone a letter, each insert ran the set's didSet -- the whole list encoded, sealed and written to the
         // defaults on the main thread, letter after letter; T1's defaults weigh 26 MB, and the main thread stood 22 s in
         // setEncrypted waiting for the system's preferences service (HANG 17:11:45Z-17:12:07Z, all three stacks there).
@@ -4031,8 +4046,8 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         dropShelfRow(conv)
         forgetConversation(conv)
     }
-    /// A CONVERSATION GONE LEAVES NO STATE OF ITS OWN BEHIND (the critic R-3; the author's words 11.10.2026 20:1x MSK: «check the
-    /// whole architecture of the chats' time chains, so there are no holes by the constitution», 21:5x: «carry out all 13»): the
+    /// A CONVERSATION GONE LEAVES NO STATE OF ITS OWN BEHIND (the critic R-3; the author's words 11.10.2026 17:1x UTC: «check the
+    /// whole architecture of the chats' time chains, so there are no holes by the constitution», 18:5x: «carry out all 13»): the
     /// rows, the list record, the folder and the queue went, and the conversation's own keys stayed in the settings -- its ground
     /// and the ground's picture and softness, the correspondent's page ground, what this phone told them and learned their build
     /// reads, the Money Flow and the paid rule -- with its entries in the maps: the letters pinned in it, its order and its pin in
@@ -4226,7 +4241,10 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         // is read right now, not on the day the person writes into it.
         var shared = Set<String>()   // a caption several inherited at once belongs to none of them
         for c in arr where arr.filter({ $0.title == c.title }).count > 1 { shared.insert(c.title) }
-        for c in arr {
+        // AN ERASED CONVERSATION IS NOT RESOLVED (24.10.2026, Agent 468, T1 2305): the resolver writes the folder's head when the
+        // folder map lacks it, and the erasure below clears that map -- every opening T1 bore the same four erased folders anew and
+        // erased them again, 96 heads and 96 forgets a day. The one guard of every archive write holds here too ([C-1]).
+        for c in arr where archivable(c.convRef) {
             MontanaArchive.migrate(convRef: c.convRef, legacy: legacyFolderNames(c.convRef))   // the one resolver, on its queue
         }
         // Conversations a person erased are carried through on EVERY opening: the deletion
@@ -4552,6 +4570,11 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
                 // after the hang-up and ring anew; age and the graveyard close both roads.
                 if let t = o["t"] as? Double, MontanaWakePush.nodeNow() - t > MontanaCall.callLifeS {
                     MontanaTrace.mark("ring_stale", "age=\(Int(MontanaWakePush.nodeNow() - t))s")
+                    // A DEAD INVITATION STILL GETS ITS RECEIPT (24.10.2026, the Mac's diary 15:54-16:02Z: the same three invitations
+                    // of one correspondent, 523 to 535 thousand seconds old, came back at every pickup): a sender whose queue keeps a
+                    // letter until its receipt -- an older build, another platform -- resends a dropped ring for the queue's whole term,
+                    // and every copy wakes this device. The ring is dropped and the receipt goes out, as for a missed call's repeat.
+                    sendDeliveryReceipt(chat, msgId: m.msgId, isFromMe: false, text: m.text)
                     return false
                 }
                 if !MontanaCall.shared.handleSignalGate("call", seed) { return false }
@@ -4604,7 +4627,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             }
             return false
         }
-        // THE FABRIC OF TIME'S WORD (the author's word 17.10.2026 22:50 MSK, MTFabric): a testimony of a call the peer signed at its
+        // THE FABRIC OF TIME'S WORD (the author's word 17.10.2026 19:50 UTC, MTFabric): a testimony of a call the peer signed at its
         // close, and the peer's ceiling and estimate. Checked whole before it counts (MTFabric.received); never a row, never receipted.
         if m.text.hasPrefix(fabricMark) {
             if !m.isFromMe { MTFabric.shared.received(String(m.text.dropFirst(fabricMark.count)), from: chat, at: wordAt) }
@@ -4685,7 +4708,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         if m.text.hasPrefix(deleteMark) {
             if !m.isFromMe {
                 let sid = String(m.text.dropFirst(deleteMark.count))
-                // THE PERSON KEEPS WHAT OTHERS DELETE (MTLevelAccess.keepDeleted; the author's word 16.10.2026 18:19 MSK: «a checkmark
+                // THE PERSON KEEPS WHAT OTHERS DELETE (MTLevelAccess.keepDeleted; the author's word 16.10.2026 15:19 UTC: «a checkmark
                 // at level 7, so that I can forbid deletion on my phone»): the letter stays, and this phone says so itself -- the
                 // sender's phone never believes a deletion that did not happen here.
                 // The level is read before it is asked (the critic 16.10, K2): a first launch or a person just seated has not yet read
@@ -4818,7 +4841,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         // mark are not moved by it.
         let step = row.isChessStep
         if step, !row.isFromMe { row.isRead = true }
-        // A LETTER WHOSE NAME ALREADY STANDS IS A COPY (19.10.2026, T1 11:01 MSK): no second row, no banner, no count -- the
+        // A LETTER WHOSE NAME ALREADY STANDS IS A COPY (19.10.2026, T1 08:01 UTC): no second row, no banner, no count -- the
         // receipt alone, as the copy road answers it.
         if let sid = row.msgId, messages[chat]?.contains(where: { $0.msgId == sid }) == true {
             MontanaTrace.mark("row_twin", mid: String(sid.dropFirst(4)), "copy at the landing -- the row already stands")
@@ -4845,21 +4868,16 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         if !placed.isFromMe, placed.text.contains(MTCoinTx.link) {
             Task { @MainActor in await MTCoinTx.scan(why: "told") }
         }
-        // A CHOSEN PERSON'S LETTER IS PAID BY ITSELF (MTAutoReact, the author's word 06.10.2026 17:3x MSK) -- a turn after its landing,
+        // A CHOSEN PERSON'S LETTER IS PAID BY ITSELF (MTAutoReact, the author's word 06.10.2026 14:3x UTC) -- a turn after its landing,
         // so the letter stands before the reaction that rides on it.
         if !placed.isFromMe, !MTGroup.isKey(chat), MTAutoReact.rule(chat) != nil {
             let row = placed
             Task { @MainActor in MTAutoReact.landed(row, in: chat, store: self) }
         }
-        // EVERY LETTER OF A PAIR MINTS ITS LEVEL'S COINS, MINE AND MY CORRESPONDENT'S (the author's word 11.10.2026 21:2x MSK,
-        // MTCoinSend.mintLetter) -- a turn after its landing, so the letter stands before the coins it mints.
-        do { let row = placed; Task { @MainActor in MTCoinSend.mintLetter(row, in: chat) } }
         // THE ROW IS ON DISK BEFORE ANYONE IS TOLD IT EXISTS (the journal, 16.09): the receipt, the
         // list record and the emptying of the landing box all stand behind this line.
         MontanaMainProbe.step("journal") { _ = MTRowJournal.put(chat, placed) }
         MontanaMainProbe.step("archive") { archiveRow(chat, placed) }
-        // A CHESS LETTER SETTLES ITS GAME'S COINS (the author's word 03.10 22:35, MTChessCoins): mine and theirs alike, each once.
-        if placed.chessLetter != nil { MTChessCoins.settle(chat: chat, rows: messages[chat] ?? []) }
         // A receipt certifies a ROW (P-41): the funeral and stickers are the named exceptions.
         if !isControlMarker(m.text) || m.text.hasPrefix(convDelMark) || m.text.hasPrefix(stickerMark) {
             MontanaMainProbe.step("receipt") { _ = sendDeliveryReceipt(chat, msgId: m.msgId, isFromMe: m.isFromMe, text: m.text) }
@@ -6022,6 +6040,15 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         if let k = progressKey { uploadTasks[k] = t; Task { @MainActor in _ = await t.value; self.uploadTasks[k] = nil } }
     }
 
+    /// THE NETWORK WORK OF ONE FILE IS OVER (25.10.2026, for MTSendLine): its encode, then its upload, each read from its one
+    /// holder -- the encode registry and the table of living uploads -- and never guessed by a clock. A file with neither
+    /// (Saved Messages, a refusal, a send left to the drain) is over at once.
+    @MainActor
+    func settled(_ file: String) async {
+        if let encode = MTEncodeRegistry.shared.task(file: file) { await encode.value }
+        if let upload = uploadTasks[file] { await upload.value }
+    }
+
     // Mirror the chat list + base URL into the shared keychain so the extension
     // «Share» can show the chat picker and know the blob-storage address.
     // name = address to send to (convRef), title = display name.
@@ -6088,7 +6115,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
     func deleteChat(_ chat: Chat, forBoth: Bool) -> Bool {
         // The room with no wire is not deleted (the author's word 17.09): the list always shows it.
         guard !Self.isLocalRoom(chat.name) else { MontanaTrace.mark("delete_refused", "the local room stays"); return false }
-        // The coin audit's first point (05.10.2026 21:4x MSK): the chat waits while a coin letter of mine is on its way in it -- its
+        // The coin audit's first point (05.10.2026 18:4x UTC): the chat waits while a coin letter of mine is on its way in it -- its
         // erasure would take the letter off the wire with its coins (MontanaDeleteChatSheet says so instead of offering it).
         guard !coinsTravel(chat) else { MontanaTrace.mark("delete_refused", "a coin letter on its way in this chat"); return false }
         let peer = chat.convRef
@@ -6335,7 +6362,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
                 // banner, receipt. The extension has already uploaded the pieces to the node;
                 // what travels here is the letter.
                 var captionCarried = false
-                // A GROUP OR A CHANNEL SHARED INTO (the author's word 18.10.2026 10:2x MSK: «sharing into a channel on T1 failed and hung
+                // A GROUP OR A CHANNEL SHARED INTO (the author's word 18.10.2026 07:2x UTC: «sharing into a channel on T1 failed and hung
                 // with Retry, and the order broke -- it must be strictly as I sent»): the letters went to the queue of a pair, which
                 // holds no pipe by a group's key and put every one of them out red. The group carries its own: a text by its send, a
                 // media letter by its carriage, in the order the person chose, each once.
@@ -6657,7 +6684,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             MontanaTrace.mark("send_refused", "raw-reference chat=\(String(chat.prefix(10)))")
             return Message(text: "", isFromMe: true, time: nowHHMM(), senderRef: nil)
         }
-        // A COIN LETTER LEAVES BY ITS ONE DOOR (the author's words 06.10.2026 12:3x-12:4x MSK: «close the double spends»): a text that
+        // A COIN LETTER LEAVES BY ITS ONE DOOR (the author's words 06.10.2026 09:3x-09:4x UTC: «close the double spends»): a text that
         // reads as a coin letter goes only when MTCoinSend.transfer sends it, its coins taken first. A copy pasted from a bubble or
         // typed would be credited by its reader with nothing taken here -- a coin printed.
         if text != MTCoinLetter.born, MTCoinLetter.parse(text) != nil {
@@ -6690,7 +6717,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         // into the group's row -- never one letter to an address the group does not have.
         if MTGroup.isKey(chat) {
             let row = MTGroup.shared.send(text, in: chat, replyText: replyText, replyToId: replyToId, replyWireMid: replyWireMid, store: self)
-            // THE CARD BELONGS TO THE LETTER IN A GROUP TOO (the author's word 17.10.2026 22:3x MSK: «everything as in chats, one to
+            // THE CARD BELONGS TO THE LETTER IN A GROUP TOO (the author's word 17.10.2026 19:3x UTC: «everything as in chats, one to
             // one»): the plate above the field stood in a group while the letter left without its card. The one owner of the card
             // attends a group's letter as a pair's; the copy for the others is the group's own word (MTGroup.carryCard).
             if !row.text.isEmpty, row.mid.hasPrefix("mid:") {   // a refused letter is no row, and carries no card
@@ -6844,7 +6871,7 @@ enum SeedScope {
         // the point it knocks at, the contact root a name was met by.
         "savedToPhotos", "callHandleTokens", "controlMids", "peerRdvLinks", "peerRdvLinks.b", "pendingMediaJSON",
         "gifFirstRun", "pipeTouched", "pipeDying", "pipeFirstCiphertexts", "pipeFirstRoots", "pipeFirstMeta",
-        "pipeNameRoots",
+        "pipeNameRoots", "pipeFirstConfirms",
         // THE WALL (24.09): my own wall's posts with their peers and marks, and the posts whose files I keep; the
         // correspondents whose build speaks the wall and the version each was carried; the people the wall's two rules
         // name — references of this identity's correspondences, gone with it.
@@ -6979,6 +7006,7 @@ enum SeedScope {
         MTInstallPrepare.offKey,   // the install road switched the tunnel off on this device (29.09): said on the page until it is raised
         MTVPNPay.tokenKey,   // this device's own access to the VPN of Montana's nodes (05.10.2026): one device's, never a copy's
         MTGroupRoom.bookKey,   // the group rooms this phone knows and their people's room keys (07.10.2026): live minutes, never a copy's
+        "filesPageFolder",   // the folder of the last file taken on this phone (MTFilesFolder, 27.10.2026): a path of this device's file system, never a copy's
         "pagesWall", "pagesWallRecent", "pagesWallBlur", MontanaWakePush.skewKey]
     /// What each node holds for this device's token -- the node's own word about this phone, whoever is seated on it: a person
     /// lifted into the seat finds the registration of the one before and registers what differs.
@@ -6995,13 +7023,13 @@ enum SeedScope {
         "peerFaceOwned",   // the digests of the faces the correspondents themselves sent (ChatStore.faceOwned, 04.10): this person's
         "faceHealCards",   // the card link last read for each correspondent's face (ChatStore.healFacesFromCards, 18.10): this person's
         MontanaArchive.forgottenKey,   // the erased conversations' folders whose marks are gone (MontanaArchive.deleteChatFolder, 18.10)
-        "chatCoinSince",   // the moment this person's chat coin came on (MTChatMint): the person's, as the tally in Montana/Coins is (04.10)
-        MTVPNWallMint.paidKey,   // the tunnel's living seconds this person was paid (MTVPNWallMint): the person's, armed anew at a lift (04.10)
         "coinBoard.told",   // the balances this person's correspondents told (MTCoinBoard, 03.10): learned for this person, told again
         "coinBoard.levels",   // the Global Levels this person's correspondents told (MTCoinBoard, 11.10): learned for this person
         "mt.account.keys", "mt.twin.ref", "mt.node.identity", "mt.node.kem", "pipeSecrets",
         "pipeKept",   // what each pipe keeps of its secret for good (MTPipeKept, 22.10): the secrets' own, gone with them
+        "pipeFloorGuard",   // the clock guard of this book's first floor, M, H and Hc (MTPipeBook, decision 188, 25.10): the book's own
         "mt.history.folders", "mt.history.heads.form", "mt.history.nameheads", "mt.history.pushed",
+        "archiveSecretHeadsPurged",   // this person's archive had its old secret heads taken out (MontanaArchive.dropSecretHeads, 25.10)
         "mt.history.boxed", "mt.history.twinSeen",   // the history laid for this seed's other devices, and theirs filed here (11.10)
         "mt.group.mirrored.1",   // this device gave this person's groups to the seed's other devices (the twin mirror, 18.10)
         "mt.twin.asked",   // the rows this device asked of the seed's other devices (the twin's past, 18.10)
@@ -7048,7 +7076,7 @@ enum SeedScope {
         "montana.stickers.ids", "montana.gifs.mine", "videoLikes", "barredPeers", "reactionUse",
         "mt.vpn.servers", "mt.vpn.plans", "chatsJSON", "archivedJSON", "savedToPhotos", "callHandleTokens",
         "controlMids", "peerRdvLinks", "peerRdvLinks.b", "peerAbout", "pendingMediaJSON", "gifFirstRun", "pipeTouched",
-        "pipeDying", "pipeFirstCiphertexts", "pipeFirstRoots", "pipeFirstMeta", "pipeNameRoots"]
+        "pipeDying", "pipeFirstCiphertexts", "pipeFirstRoots", "pipeFirstMeta", "pipeNameRoots", "pipeFirstConfirms"]
     /// WHAT A RECORD IS KNOWN BY inside a list of records: the first of these fields it carries. A row of the
     /// chat list is its conversation, a contact its reference, a server its own id, a plan its link; two
     /// records known by one value are one record, and the device's own stands.
@@ -7521,16 +7549,14 @@ enum MTSamePair {
             || text.hasPrefix(callSignalMark) || text.hasPrefix(ringMark)
     }
     private static func hex(_ d: Data) -> String { d.map { String(format: "%02x", $0) }.joined() }
-    private static func tag(_ domain: String, _ older: Data, _ newer: Data) -> String {
-        hex(MTPipe.domained(domain, [older, newer]).prefix(16))
-    }
+
     private static func noise() -> String {
         var b = [UInt8](repeating: 0, count: 16)
         _ = mt_random_fast(&b, 16)
         return hex(Data(b))
     }
-    /// A pipe's place in the one order both ends compute alike — the tie between two pipes born at one meeting.
-    private static func rank(_ secret: Data) -> Data { MTPipe.domained("mt-same-rank", [secret]) }
+    // The tags of a question and an answer and a pipe's place in the one order both ends compute alike (the tie between two
+    // pipes born at one meeting) stand on the pipes' secrets, so their one owner makes them (MTPipeKey.sameTag, sameRank).
 
     // -- this device's own questions still waiting for their answer, with the pipes each one named: a meeting's
     //    minutes, memory only --
@@ -7572,10 +7598,10 @@ enum MTSamePair {
 
     /// The question: the silent first letter of a pipe just born at a meeting, carrying the pipe's ciphertext.
     static func ask(new conv: String) {
-        guard let sn = MTPipeBook.secret(for: conv) else { return }
+        guard let sn = MTPipeBook.key(for: conv) else { return }
         let dying = Set(MTPipeBook.dyingAll())
         let named = Array(MTPipeBook.allByFreshness().filter { $0 != conv && !dying.contains($0) }.prefix(slots))
-        var tags = named.compactMap { q in MTPipeBook.secret(for: q).map { tag("mt-same-ask", $0, sn) } }
+        var tags = named.compactMap { q in MTPipeBook.key(for: q).map { $0.sameTag("mt-same-ask", newer: sn) } }
         while tags.count < slots { tags.append(noise()) }
         tags.shuffle()
         guard let d = try? JSONSerialization.data(withJSONObject: ["t": tags]) else { return }
@@ -7586,17 +7612,17 @@ enum MTSamePair {
     }
     /// The answering side's choice: the pipe it shares with the one who asked, or none.
     static func shared(ask payload: String, new conv: String) -> String? {
-        guard let sn = MTPipeBook.secret(for: conv), let d = Data(base64Encoded: payload),
+        guard let sn = MTPipeBook.key(for: conv), let d = Data(base64Encoded: payload),
               let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any], let t = o["t"] as? [String] else { return nil }
         let heard = Set(t.prefix(slots))
         let dying = Set(MTPipeBook.dyingAll())
         let matches = MTPipeBook.allByFreshness().filter { q in
-            q != conv && !dying.contains(q) && (MTPipeBook.secret(for: q).map { heard.contains(tag("mt-same-ask", $0, sn)) } ?? false)
+            q != conv && !dying.contains(q) && (MTPipeBook.key(for: q).map { !heard.isDisjoint(with: $0.sameTags("mt-same-ask", newer: sn)) } ?? false)
         }
         if let q = matches.first(where: { waiting($0) == nil }) { return q }
         if let q = matches.first(where: { !(waiting($0)?.contains(conv) ?? false) }) { return q }
-        let mine = rank(sn)
-        if let q = matches.first(where: { q in MTPipeBook.secret(for: q).map { rank($0).lexicographicallyPrecedes(mine) } ?? false }) {
+        let mine = sn.sameRank
+        if let q = matches.first(where: { q in MTPipeBook.key(for: q).map { $0.sameRank.lexicographicallyPrecedes(mine) } ?? false }) {
             return q
         }
         var book = deferredBook()
@@ -7606,8 +7632,8 @@ enum MTSamePair {
     }
     /// The answer, one shape for «yes» and «no»: the proof over the chosen pipe, or a tag nobody can check.
     static func answer(_ older: String?, new conv: String) {
-        guard let sn = MTPipeBook.secret(for: conv) else { return }
-        let p = older.flatMap { MTPipeBook.secret(for: $0) }.map { tag("mt-same-yes", $0, sn) } ?? noise()
+        guard let sn = MTPipeBook.key(for: conv) else { return }
+        let p = older.flatMap { MTPipeBook.key(for: $0) }.map { $0.sameTag("mt-same-yes", newer: sn) } ?? noise()
         guard let d = try? JSONSerialization.data(withJSONObject: ["p": p]) else { return }
         MontanaDeliveryEngine.shared.enqueue(to: conv, chat: conv, mid: "same-" + UUID().uuidString,
                                              text: sameYesMark + d.base64EncodedString(), silent: true)
@@ -7615,9 +7641,9 @@ enum MTSamePair {
     }
     /// The asker's reading of the answer: the pipe the other side proved, or none.
     static func proven(answer payload: String, new conv: String) -> String? {
-        guard let sn = MTPipeBook.secret(for: conv), let d = Data(base64Encoded: payload),
+        guard let sn = MTPipeBook.key(for: conv), let d = Data(base64Encoded: payload),
               let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any], let p = o["p"] as? String else { return nil }
-        return MTPipeBook.all().first { q in q != conv && (MTPipeBook.secret(for: q).map { tag("mt-same-yes", $0, sn) == p } ?? false) }
+        return MTPipeBook.all().first { q in q != conv && (MTPipeBook.key(for: q).map { $0.sameTags("mt-same-yes", newer: sn).contains(p) } ?? false) }
     }
     /// They wrote into a pipe folded here: the answer may have been lost on the way, so it is said again, once an hour at most.
     static func remind(_ folded: String) {

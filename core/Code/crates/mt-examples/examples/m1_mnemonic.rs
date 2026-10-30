@@ -222,9 +222,7 @@ fn cmd_seeds(entropy_hex: Option<&str>) -> bool {
     println!("    {}", hex_full(&mlkem_app));
 
     print_section("CONSEQUENCES");
-    print_note(
-        "Identical entropy → identical mnemonic → identical master_seed → identical seeds",
-    );
+    print_note("Identical entropy → identical mnemonic → identical master_seed → identical seeds");
     print_note("These are intermediate values. Full keypairs (pk/sk) → subcommand `keypair`");
     print_note(
         "Full chain down to terminal IDs (account_id, node_id, recovery fingerprint) → `recovery-fingerprint`",
@@ -302,12 +300,8 @@ fn cmd_keypair(entropy_hex: Option<&str>) -> bool {
 
     print_section("CONSEQUENCES");
     print_note("Same entropy → same account_id and node_id (deterministic recovery flow)");
-    print_note(
-        "Device loss: entering the 24 words on a new device restores all 6 key parts + IDs",
-    );
-    print_note(
-        "Verification on two devices — via `recovery-fingerprint` (one 64-char hex)",
-    );
+    print_note("Device loss: entering the 24 words on a new device restores all 6 key parts + IDs");
+    print_note("Verification on two devices — via `recovery-fingerprint` (one 64-char hex)");
 
     println!("\n[result] KEYPAIR: PASS");
     true
@@ -351,7 +345,9 @@ fn cmd_recovery_fingerprint(entropy_hex: Option<&str>) -> bool {
     print_note(
         "Compare the two 64-char hex visually — byte equality ⇔ recovery flow byte-identical",
     );
-    print_note("A mismatch of even one hex character = either different mnemonics, or a bug in recovery");
+    print_note(
+        "A mismatch of even one hex character = either different mnemonics, or a bug in recovery",
+    );
 
     print_subsection("Component fingerprints (for detailed debug)");
     print_kv("account_id", hex_full(&id.account_id));

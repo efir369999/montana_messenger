@@ -3,7 +3,7 @@ import CryptoKit
 import LocalAuthentication
 import UniformTypeIdentifiers
 
-/// PASSWORDS (the author's word 06.10.2026 17:4x MSK: «create in Montana a new app on the side panel -- Passwords, with the whole
+/// PASSWORDS (the author's word 06.10.2026 14:4x UTC: «create in Montana a new app on the side panel -- Passwords, with the whole
 /// interface for creating and managing one's sensitive data, down to OTP keys and sharing»): the person's secrets -- sign-ins,
 /// one-time codes, notes -- in this phone's keychain alone (MontanaKeychain: this device only, never in a backup, parked with the
 /// person by a seat), unlocked by the device owner's own check, copied for this device alone and for ninety seconds, and shared

@@ -269,6 +269,17 @@ impl Conduct {
             self.closed_at.get_or_insert(now);
         }
 
+        // 5, first half, read before any pledge: pledges of a later attempt from more than the faulty
+        // can fill draw a machine into that attempt before it says anything in its own. A machine
+        // behind its cohort holds the quorum the others reached there, and its valid name stands on
+        // that later attempt; pledged in its own attempt it would stand on an attempt after itself,
+        // which no pledge does (Consensus, "How a machine pledges", 3: an open pledge stands on an
+        // earlier attempt or on none; mt-state `since_of_a_pledge` refuses it as `Since`).
+        if let Some(later) = book.drawn_into(attempt, electorate) {
+            out.push(Action::Enter(later));
+            return out;
+        }
+
         // Pledging, from attempt one on and once per attempt: attempt zero is pledged by the heavy
         // attestation, a part pledges one open pledge per attempt, and a machine that closed in this
         // attempt waits on the decision rather than opens beside its closing pledge. Following is
@@ -332,12 +343,8 @@ impl Conduct {
             }
         }
 
-        // 5. It moves on: by pledges of a later attempt from more than the faulty can fill, or four
-        // spans after it entered without a decision.
-        if let Some(later) = book.drawn_into(attempt, electorate) {
-            out.push(Action::Enter(later));
-            return out;
-        }
+        // 5. It moves on: four spans after it entered without a decision (drawn forward by a later
+        // attempt is read above, before any pledge).
         if since_entry >= span.saturating_mul(4) {
             out.push(Action::Enter(attempt.saturating_add(1)));
             return out;
@@ -705,5 +712,49 @@ mod tests {
         }
         assert_eq!(book.decided(&electorate), Some((X, 1)));
         assert!(at(&mut conduct, 1, &book, &record).is_empty());
+    }
+
+    // A machine behind its cohort, holding the quorum the others reached in a later attempt, is drawn
+    // into that attempt before it pledges in its own. The wrong implementation refused: one proposing
+    // first, on its valid name standing on that later attempt -- a pledge standing on an attempt after
+    // its own, which the layout refuses as `Since`, so the pulse of that machine stopped with
+    // `Object(Since)` (four_machines_decide_one_name.rs:217 on a62d6ab, Lauterbourg-2 a588-r2.out).
+    #[test]
+    fn a_machine_behind_is_drawn_forward_before_it_pledges() {
+        let votes = BTreeMap::new();
+        let electorate = four(&votes);
+        let aggregate = [0x33; 32];
+        let replayed = BTreeMap::new();
+        let mut book = Book::of_the_window(7);
+        for part in 2..=4 {
+            book.pledge(pledge(part, 3, Y, STANDS_ON_NONE));
+        }
+        let mut record = Record::opened(7, X);
+        record.attempt = 1;
+        record.valid = book.valid_name(&electorate);
+        assert_eq!(record.valid, Some((Y, 3)));
+        assert!(matches!(
+            pledge(1, 1, Y, 3).bytes(),
+            Err(mt_state::ObjectError::Since)
+        ));
+        let span = span_of(1);
+        let mut conduct = Conduct::default();
+        conduct.entering(0);
+        for now in [0, span, 2 * span, 4 * span] {
+            assert_eq!(
+                tick(
+                    &mut conduct,
+                    now,
+                    &book,
+                    &electorate,
+                    &record,
+                    &part(1),
+                    &aggregate,
+                    &replayed
+                ),
+                vec![Action::Enter(3)],
+                "at asking {now}"
+            );
+        }
     }
 }

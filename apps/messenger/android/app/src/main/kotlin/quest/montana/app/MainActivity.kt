@@ -87,6 +87,7 @@ class MainActivity : Activity() {
         // back from the recent apps, carries the intent that once made it — the invitation opened anew and an expired card was
         // said expired every time the app came back.
         val handed = savedInstanceState == null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0
+        if (handed && takeChat(intent)) return
         if (handed && !takeShared(intent, hasSeed && termsAccepted)) intent?.data?.let { openLink(it.toString()) }
     }
 
@@ -95,7 +96,7 @@ class MainActivity : Activity() {
      * takes the call first, the microphone asked once.
      */
     private fun takeCall(i: Intent?): Boolean {
-        val ref = i?.getStringExtra(Calls.EXTRA_REF) ?: return false
+        val ref = i?.getStringExtra(Calls.EXTRA_REF)?.let(NoticeAlias::open) ?: return false
         val answer = i.getBooleanExtra(Calls.EXTRA_ANSWER, false)
         i.removeExtra(Calls.EXTRA_REF)
         if (hasSeed && termsAccepted && Book.chat(ref) != null) push { close -> conversationPage(this, ref, close) }
@@ -120,6 +121,21 @@ class MainActivity : Activity() {
             ?.also { Prefs.setBool(CallLine.CAM_ASKED, true) }   // asked here, the capture road's gate tells a refusal, never asks twice
     ).toTypedArray()
 
+    /**
+     * A BANNER TAPPED OPENS ITS CHAT (iOS didReceive → ui.openChat, MontanaApp.swift at 2155; atoms 4b49d03f071b, 86cef409a440,
+     * a5622f175804): the chat the banner spoke of stands at once over the list; the chat already open stays as it is. The tap is
+     * stamped for the diary (notif_tap), the conversation's appearance reads the stamp (chat_open why=banner ms=…).
+     */
+    private fun takeChat(i: Intent?): Boolean {
+        val ref = i?.getStringExtra(Notify.EXTRA_CHAT)?.let(NoticeAlias::open) ?: return false
+        i.removeExtra(Notify.EXTRA_CHAT)
+        Notify.tappedAt = android.os.SystemClock.elapsedRealtime()
+        android.util.Log.d("Montana", "notif_tap chat=" + ref.take(10) + " same=" + (if (Book.openChat == ref) 1 else 0))
+        if (!hasSeed || !termsAccepted || Book.chat(ref) == null || Book.openChat == ref) return true
+        push { close -> conversationPage(this, ref, close) }
+        return true
+    }
+
     /** The new version's notice tapped (Update): the app brings it and hands it to the system's installer. */
     private fun takeUpdate(i: Intent?): Boolean {
         if (i?.action != Update.ACTION) return false
@@ -140,6 +156,7 @@ class MainActivity : Activity() {
         setIntent(intent)
         if (takeUpdate(intent)) return
         if (takeCall(intent)) return
+        if (takeChat(intent)) return
         if (!takeShared(intent, hasSeed && termsAccepted)) intent.data?.let { openLink(it.toString()) }
     }
     fun openLink(link: String) {
@@ -190,18 +207,23 @@ class MainActivity : Activity() {
                 Archive.sealForForget {
                     MontanaSeed.clear(); Archive.forgetKeys(); Prefs.forgetPerson(); SelfFace.clear(this); SavedMessages.forget(this)
                     MontanaHomeNode.forget(this); MontanaBackup.forget(this); MontanaCard.forget(); Book.wipe()
-                    MontanaBackupID.withdrawOwn(this)   // this installation's record leaves the account; a twin's stands
+                    MontanaBackupID.withdraw(this)   // a record a build before wrote leaves the account
                     hasSeed = false; termsAccepted = false
                     render()
                 }
             }
         }
         show(page)
-        if (hasSeed) MontanaBackupID.publish(this)   // the account carries this device's words (iOS publish)
+        MontanaBackupID.retire(this)   // the words no longer ride the Google Account; a record a build before wrote leaves it (iOS e69c9b6d)
         if (hasSeed && termsAccepted && !showWelcome) askWhatIsUnasked()
         // THE DAILY ROAD to the person's own node, a little after the first screen stands (iOS tickSoon).
         if (hasSeed && termsAccepted) HomeNodeWatch.tickSoon(this)
+        if (hasSeed && termsAccepted) HomeKeep.tickSoon(this)   // the files on it: the pass over Wi-Fi, or the book back on a new phone (iOS MTHomeKeep, 18.10)
+        if (hasSeed && termsAccepted) MontanaPaths.heal(this)   // the copy's old store joins the letters' folder before the archive looks there
+        Thread { runCatching { MontanaBackup.sweep(applicationContext, "launch") } }.start()   // what a killed hand left on the shelf
         if (hasSeed && termsAccepted) Archive.atLaunch()   // the archive read into the feed's empty conversations (iOS cold start 15.10)
+        // every group held stands its row (iOS standAll at every history load, 8cd39e19), then the groups held before the twin mirror, once a device
+        if (hasSeed && termsAccepted) Thread { Groups.standAll(); Groups.mirrorHeld() }.start()
         // The identity is born: the invitation that waited for it opens by itself (iOS replayPendingInvite).
         if (hasSeed && termsAccepted && !showWelcome) Prefs.str("pendingInvite", "").takeIf { it.isNotEmpty() }?.let { Prefs.remove("pendingInvite"); openInvitation(this, it) }
     }
@@ -393,7 +415,7 @@ class MainActivity : Activity() {
         }
     }
     override fun onResume() {
-        super.onResume(); CallScreen.front = this; main.removeCallbacks(boxRound); main.post(boxRound); EarService.start(this)
+        super.onResume(); CallScreen.front = this; PersonChain.onScreen = true; Thread { PersonChain.prime() }.start(); main.removeCallbacks(boxRound); main.post(boxRound); EarService.start(this)
         if (hasSeed && termsAccepted) Calls.rejoinHeldCall(this)   // the run goes back into the call its process held, once the app faces the person
         Thread { Update.look(applicationContext) }.start()   // a newer build on the site rings its notice (Update)
         if (hasSeed && termsAccepted) Thread { Signal.sweep() }.start()   // every peer's last word, one question (iOS ContentView 471)
@@ -408,7 +430,7 @@ class MainActivity : Activity() {
         if (hasSeed && termsAccepted) Thread { MyWall.roadBack("active") }.start()   // a post on its way goes on by itself (iOS roadBack 1922)   // every coin letter the chats hold stands in the book (iOS MTCoinSend.settle)
     }
     // the ear stays when the app leaves the screen: EarService holds it (the app closed is heard as the app open)
-    override fun onPause() { super.onPause(); CoinBook.closeWindows(); if (CallScreen.front === this) CallScreen.front = null; main.removeCallbacks(boxRound) }
+    override fun onPause() { super.onPause(); PersonChain.onScreen = false; PersonChain.left(); CoinBook.closeWindows(); if (CallScreen.front === this) CallScreen.front = null; main.removeCallbacks(boxRound) }
 
     // THE CALL'S WINDOW OVER OTHER APPS (CallFloat): the person leaving on a system before the platform's auto-enter, and the
     // platform's own word that the window stands or is gone
@@ -447,7 +469,7 @@ class MainActivity : Activity() {
     private var photoDone: ((Uri?) -> Unit)? = null
     fun pickPhoto(done: (Uri?) -> Unit) {
         photoDone = done
-        val intent = if (Build.VERSION.SDK_INT >= 33) Intent(MediaStore.ACTION_PICK_IMAGES)
+        val intent = if (Build.VERSION.SDK_INT >= 33) Intent(MediaStore.ACTION_PICK_IMAGES).wearOurTint()
                      else Intent(Intent.ACTION_GET_CONTENT).setType("image/*")
         @Suppress("DEPRECATION") startActivityForResult(intent, PICK_PHOTO)
     }
@@ -455,19 +477,31 @@ class MainActivity : Activity() {
     /** A picture OR a film from the system's own picker (iOS PhotosPicker .any(of: [.images, .videos])). */
     fun pickVisual(done: (Uri?) -> Unit) {
         photoDone = done
-        val intent = if (Build.VERSION.SDK_INT >= 33) Intent(MediaStore.ACTION_PICK_IMAGES)
+        val intent = if (Build.VERSION.SDK_INT >= 33) Intent(MediaStore.ACTION_PICK_IMAGES).wearOurTint()
                      else Intent(Intent.ACTION_GET_CONTENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
         @Suppress("DEPRECATION") startActivityForResult(intent, PICK_PHOTO)
     }
 
     /**
-     * THE SYSTEM'S OWN WHOLE LIBRARY (iOS MTSystemPhotos: PHPicker, any of images and videos, its own ten): what was picked, in the
-     * order the finger chose it; nothing — an empty list.
+     * The tint the system's page is asked to wear (iOS MTSystemPhotos 5a387b83: p.view.tintColor, now white on the dark page): the
+     * tick, the number and the «Add» of the picker in white. Android carries a host's colour into the picker from 15 on, but refuses
+     * one outside its brightness range and falls back to its own theme: seen on A1 24.10, pure white and F5 are refused, F0 is worn —
+     * the nearest white it lets in.
+     */
+    private fun Intent.wearOurTint(): Intent =
+        if (35 <= Build.VERSION.SDK_INT) putExtra(MediaStore.EXTRA_PICK_IMAGES_ACCENT_COLOR, 0xFFF0F0F0L) else this
+
+    /**
+     * THE SYSTEM'S OWN WHOLE LIBRARY (iOS MTSystemPhotos: PHPicker, any of images and videos; 1e46c25e: selectionLimit 0, selection
+     * .ordered): what was picked, in the order the finger chose it — the page numbers the choice; nothing — an empty list. `max` 0 is
+     * no ceiling of ours: the system's own most a pick holds.
      */
     private var manyDone: ((List<Uri>) -> Unit)? = null
-    fun pickVisualMany(max: Int, done: (List<Uri>) -> Unit) {
+    fun pickVisualMany(max: Int = 0, done: (List<Uri>) -> Unit) {
         manyDone = done
-        val intent = if (33 <= Build.VERSION.SDK_INT) Intent(MediaStore.ACTION_PICK_IMAGES).putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, max)
+        val intent = if (33 <= Build.VERSION.SDK_INT) Intent(MediaStore.ACTION_PICK_IMAGES)
+                         .putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, if (0 < max) minOf(max, MediaStore.getPickImagesMaxLimit()) else MediaStore.getPickImagesMaxLimit())
+                         .putExtra(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER, true).wearOurTint()
                      else Intent(Intent.ACTION_GET_CONTENT).setType("*/*").putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
                          .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         runCatching { @Suppress("DEPRECATION") startActivityForResult(intent, PICK_MANY) }.onFailure { manyDone = null; done(emptyList()) }

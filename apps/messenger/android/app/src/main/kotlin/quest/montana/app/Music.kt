@@ -29,6 +29,7 @@ import android.widget.TextView
 /** A track as a walk found it: where it lies, its file's name, and — once read — its tag's title and its length. */
 class Track(val uri: Uri, val file: String) {
     @Volatile var tagTitle: String? = null
+    @Volatile var artist: String? = null
     @Volatile var length: Double = 0.0
     val title: String get() = tagTitle ?: file.substringBeforeLast('.')
 }
@@ -75,6 +76,7 @@ object MusicFolders {
                     MediaMetadataRetriever().apply {
                         setDataSource(act, t.uri)
                         t.tagTitle = extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)?.takeIf { it.isNotBlank() }
+                        t.artist = extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)?.takeIf { it.isNotBlank() }
                         t.length = (extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L) / 1000.0
                         release()
                     }
@@ -307,6 +309,23 @@ class MiniFace(ctx: Context, private val bar: Boolean) : LinearLayout(ctx) {
     private val longPressRunnable = Runnable { longPressed = true; copyTitle() }
     private companion object { const val HOLD_MS = 220L }   // iOS montanaLongPress, MontanaNetFrames.swift:9 at 2155
 
+    /**
+     * A TAP ON THE NAME'S ROOM: A VOICE OR A NOTE GOES TO ITS BUBBLE (iOS MTMiniFace.open → onGoTo, MontanaMusicPlayer.swift:
+     * 1131-1137 at 2155, the author's word 15.09; atom 83753ae0754a): the open chat scrolls to the letter that carries the
+     * file and lights it, another chat opens at it (ShowLetter, the one road of «Show in chat»).
+     */
+    private fun goToLetter() {
+        val note = when (Playing.kind) { Playing.Kind.NOTE -> true; Playing.Kind.VOICE -> false; else -> return }
+        val mid = if (note) NoteOpen.mid else ""
+        val file = if (note) NoteOpen.file.ifEmpty { null } else VoicePlayer.playing
+        val act = context as? MainActivity ?: return
+        val what = if (note) "note" else "voice"
+        val (ref, letter) = ShowLetter.find(mid, file) ?: run { android.util.Log.d("Montana", "bar_goto kind=$what found=0"); return }
+        android.util.Log.d("Montana", "bar_goto kind=$what here=" + (if (Book.openChat == ref) 1 else 0))
+        if (note && Book.openChat != ref) NoteOpen.close?.invoke()   // the note's stage stands over its own chat alone
+        ShowLetter.go(act, ref, letter)
+    }
+
     init {
         orientation = HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
@@ -365,6 +384,7 @@ class MiniFace(ctx: Context, private val bar: Boolean) : LinearLayout(ctx) {
                         if (longPressed) longPressed = false
                         else if (held != null) onSeek(held)
                         else if (e.x > v.width - dp(64)) { if (Playing.kind == Playing.Kind.TRACK) { remaining = !remaining; live() } else Playing.nextRate() }
+                        else goToLetter()
                         true
                     }
                     MotionEvent.ACTION_CANCEL -> { mainHandler.removeCallbacks(longPressRunnable); scrub = null; true }
@@ -490,6 +510,9 @@ class MusicPage(private val act: MainActivity) {
     private val faces = HashMap<String, MiniFace>()
     private var lastRing: String? = null
     private var lastPlaying = false
+    /** The word at the page's head (iOS MusicTab.query): the rows are narrowed to it, see shown(). */
+    var query = ""
+        set(v) { if (v != field) { field = v; fill() } }
 
     init {
         view.addView(ScrollView(act).apply { addView(rows) }, FrameLayout.LayoutParams(MATCH, MATCH))
@@ -499,6 +522,9 @@ class MusicPage(private val act: MainActivity) {
         plus.addView(spinner, FrameLayout.LayoutParams(act.dp(26), act.dp(26), Gravity.CENTER))
         plus.pressable { act.pickFolder { it?.let { tree -> MusicFolders.lend(act, tree) } } }
         view.addView(plus, FrameLayout.LayoutParams(act.dp(56), act.dp(56), Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, act.dp(16), act.dp(36)) })
+        // the platform's bar at the right while the list scrolls, the track's number beside it; the arrow back to the top over
+        // the plus (iOS MTChatListFrame numbered, MontanaMusicPlayer.swift:1879 at 2155)
+        ListFrame.attach(view, "music", corner = plus, rows = rows)
         MusicFolders.listeners += { if (view.isAttachedToWindow || view.parent != null) fill() }
         MusicPlayer.listeners += { ringChanged() }
         // a track refused while the app is away (the next one, from the shade) is only not played: no window without a page
@@ -512,10 +538,30 @@ class MusicPage(private val act: MainActivity) {
         plus.requestLayout()
     }
 
+    /**
+     * THE PAGE'S OWN SEARCH (iOS MusicTab.query, MontanaMusicPlayer.swift:1815-1830 at 2155; atom 12063b4d0f35, the author's word
+     * 24.09: «the search on the music page searches only the music of this page, beautifully and natively»): the word at the head
+     * narrows the list itself -- by the track's name, its tag's name and artist, and where it lies (its folder) -- letter case and
+     * marks aside, as the system's search compares; nothing stands over the rows and nothing leaves the phone.
+     */
+    private fun shown(): List<Track> {
+        val q = fold(query.trim())
+        if (q.isEmpty()) return MusicFolders.tracks
+        return MusicFolders.tracks.filter { t -> listOf(t.title, t.file, t.artist ?: "", place(t)).any { fold(it).contains(q) } }
+    }
+    /** Where the track lies: its folder's path inside the lent tree (the document's own id, «primary:Music/Rock/a.mp3»). */
+    private fun place(t: Track): String = try {
+        android.provider.DocumentsContract.getDocumentId(t.uri).substringAfter(':').substringBeforeLast('/', "")
+    } catch (_: Exception) { "" }
+    /** Letter case and marks aside (iOS localizedStandardContains). */
+    private fun fold(s: String) = java.text.Normalizer.normalize(s.lowercase(), java.text.Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "")
+
     fun fill() {
-        val list = MusicFolders.tracks
+        val list = shown()
         spinner.visibility = if (MusicFolders.walking) View.VISIBLE else View.GONE
         plusGlyph.visibility = if (MusicFolders.walking) View.GONE else View.VISIBLE
+        // an empty narrowing says «Nothing found» (the catalog's own key), an empty library «No music»
+        empty.text = act.getString(if (MusicFolders.tracks.isNotEmpty() && list.isEmpty()) R.string.nothing_found else R.string.no_music)
         empty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
         rows.removeAllViews()
         list.forEachIndexed { i, t ->
@@ -524,7 +570,7 @@ class MusicPage(private val act: MainActivity) {
             val cur = MusicPlayer.current?.uri == t.uri
             face.still(t, cur, cur && MusicPlayer.playing)
             face.setOnClickListener {
-                if (MusicPlayer.current?.uri == t.uri) MusicPlayer.toggle() else MusicPlayer.play(act, MusicFolders.tracks, i)
+                if (MusicPlayer.current?.uri == t.uri) MusicPlayer.toggle() else MusicPlayer.play(act, list, i)   // the queue is the list as it stands
             }
             face.play.setOnClickListener { face.performClick() }
             rows.addView(face, LinearLayout.LayoutParams(MATCH, WRAP))

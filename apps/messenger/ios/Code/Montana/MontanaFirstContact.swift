@@ -60,7 +60,7 @@ enum MontanaFirstContact {
     /// produced without the real shared secret short of finding a SHA-256 preimage. That is the
     /// named cryptographic prohibition the law stands on.
     static func firstConfirm(secret: Data, ct: Data) -> String {
-        MTPipe.domained("mt-first-conf", [secret, ct]).prefix(16).base64urlNoPad
+        MTNodeWire.firstConfirm(secret: secret, ct: ct)   // a secret at its birth; a pipe already held asks its owner (MTPipeKey.firstConfirm)
     }
 
     /// Constant-time comparison: an early-exit compare is a timing oracle over the secret.
@@ -178,6 +178,9 @@ extension MontanaFirstContact {
     static func meet(contactRoot root: Data) -> (reference: String, ciphertext: Data)? {
         guard root.count == 1184, let started = begin(toward: root),
               let ref = MTPipeBook.establish(secret: started.secret) else { return nil }
+        // The confirmation the first letter carries is made here, while the secret is whole, and kept beside the ciphertext
+        // until the answer (decision 188, #36): from eraseDay the book holds the floor, and a resend still confirms.
+        MTPipeBook.rememberConfirm(firstConfirm(secret: started.secret, ct: started.ciphertext), ct: started.ciphertext, for: ref)
         // Where the first letter must be addressed. The other side cannot derive the pipe secret
         // until that letter reaches them, so it cannot be addressed by the tag of the pipe.
         MTPipeBook.rememberRoot(root, for: ref)
@@ -214,15 +217,8 @@ extension MontanaFirstContact {
     // node the moment the pipe is born, under a name and a seal derived from the pipe's own secret — held by exactly
     // the two of them; the other side reads it the moment the first letter hands it that secret. An empty seal says
     // «no face». The node learns nothing the meeting has not shown it already — the same pair at the same moment,
-    // the size the face letter carries anyway.
-    static func pipeFaceBid(_ secret: Data) -> String {
-        var m = Data("mt-pipe-f".utf8); m.append(0); m.append(secret)
-        return SHA256.hash(data: m).map { String(format: "%02x", $0) }.joined()
-    }
-    static func pipeFaceKey(_ secret: Data) -> Data {
-        var m = Data("mt-pipe-fk".utf8); m.append(0); m.append(secret)
-        return Data(SHA256.hash(data: m))
-    }
+    // the size the face letter carries anyway. The face's name and key are derived at the pipe's birth by the secret's one
+    // owner and kept for good (MTPipeKey.kept: faceBid, faceKey).
 
     /// The beginner's side, at the pipe's birth.
     static func layPipeFace(conv: String) {
@@ -723,8 +719,8 @@ enum MontanaCard {
     /// device's to lay and to bury, or a spent link of the sibling would stand on the node again.
     private static func ownAll() -> [String: Data] { rdvLoad().merging(permLoad()) { a, _ in a } }
 
-    // ── THE SEED'S OTHER DEVICES' CARDS (the author's word 18.10.2026 13:1x MSK: «on my Mac there is no chat that T1 has -- fix it at
-    // the root»). A card is born with a random key on the device that shows it. Measured 17.10.2026 21:12-21:33 MSK: Katana's first
+    // ── THE SEED'S OTHER DEVICES' CARDS (the author's word 18.10.2026 10:1x UTC: «on my Mac there is no chat that T1 has -- fix it at
+    // the root»). A card is born with a random key on the device that shows it. Measured 17.10.2026 18:12-18:33 UTC: Katana's first
     // letter came by T1's daily link; T1 opened it (first_accept only-card) and the Mac, the same person, refused it fifty times
     // («there is no card here for this introduction») -- the conversation was born on one device of the person. Every card a device
     // gives birth to now rides to the seed's other devices in the pipe only they derive (the twin mirror, MontanaArchive.mirrorNote):
@@ -1919,7 +1915,7 @@ enum MontanaMeeting {
             handleLink(inner, chosen: true)
             return
         }
-        // WHICH MONTANA OPENS IT (MTSiblingApps, the author's word 11.10.2026 17:13 MSK): an invitation is asked first; the root
+        // WHICH MONTANA OPENS IT (MTSiblingApps, the author's word 11.10.2026 14:13 UTC): an invitation is asked first; the root
         // answers at once when no other Montana app stands, or asks the person in the platform's own dialog.
         if !chosen, MTSiblingApps.invites(given) {
             let link = given.absoluteString
@@ -2197,7 +2193,7 @@ final class MontanaMeetBook {
 }
 
 // ════════════════════════════════════════════════════════════
-// THE OTHER MONTANA APPS ON THIS PHONE (the author's word 11.10.2026 17:13 MSK, No.62: «on scanning a QR code or following a link
+// THE OTHER MONTANA APPS ON THIS PHONE (the author's word 11.10.2026 14:13 UTC, No.62: «on scanning a QR code or following a link
 // it must check whether other Montana apps stand and ask in which to open, so I can make a chat by the link»). Montana and
 // Montana Business read one invitation -- one card on one node, two sites -- and each takes a link handed to it under its own
 // scheme (scheme://open?link=base64url), at the same one entrance of a link on that side, as chosen. The platform says whether an

@@ -545,7 +545,7 @@ final class MontanaPhoneNode: ObservableObject {
         let callPeer: String? = MontanaCall.stateSnapshot == "idle" ? nil : MontanaCall.peerSnapshot
         // An IPv6 door of theirs is dialled only from an IPv6 of our own: without one the dial
         // dies with «Network is down» before it leaves, and says so once a minute per address.
-        // AND ONLY WHILE THE SYSTEM'S PATH CARRIES IPv6 (12.10.2026, the iPhone 17 during the 11:00 MSK call: dial_waiting «Network is
+        // AND ONLY WHILE THE SYSTEM'S PATH CARRIES IPv6 (12.10.2026, the iPhone 17 during the 08:00 UTC call: dial_waiting «Network is
         // down» path=unsatisfied every five to sixty seconds, 07:58:45-08:01:40Z): an address of our own the list still names is no
         // route; the path monitor's own word is, and a change of the path asks again.
         let v6Here = Self.pathCarriesV6 && MontanaSelfEndpoint.candidates().contains { $0.contains(":") }
@@ -906,7 +906,7 @@ final class MontanaPhoneNode: ObservableObject {
         // letter, and the bound on distinct owners protected nothing. The same seal also closes forgery:
         // Poly1305 under a secret held by exactly two is proof of the sender, and a signature beside it
         // is unnecessary -- it would put a permanent key onto the wire.
-        guard let secret = MTPipeBook.secret(for: peerRef) else {
+        guard let secret = MTPipeBook.key(for: peerRef) else {
             MontanaTrace.mark("send_refused", mid: mid, "no_secret to=\(String(peerRef.prefix(10)))")
             return nil
         }
@@ -1166,7 +1166,7 @@ final class MontanaPhoneNode: ObservableObject {
     /// Open the letter body with the pipe secret and parse it. One place for both transports: the wire
     /// and radio ask it instead of each writing its own parsing.
     static func openBody(_ sealed: Data, conv: String) -> (mid: String, text: String, name: String?, glyph: String?, qt: String?, qm: String?, lp: String?)? {
-        guard let secret = MTPipeBook.secret(for: conv) else { return nil }
+        guard let secret = MTPipeBook.key(for: conv) else { return nil }
         // First contact is NOT closed here. Closing = the peer HAS MOVED TO THE PIPE label, and there is
         // one proof -- a word of theirs sealed under the pipe, read at the one door every such word
         // lands at (MontanaDeliveryEngine.receive). Opening THEIR letter with MY key proves only my knowledge of the secret: closing the
@@ -1184,11 +1184,11 @@ final class MontanaPhoneNode: ObservableObject {
     /// The letter's author field as it rode (MTNodeWire.authorTag): kept beside a correspondent's row, so a correspondence given
     /// back names its writer by the writer's own key (MTKeeping.takeGiven). Opened with the pipe's secret as the body is.
     static func author(of sealed: Data, conv: String) -> String? {
-        guard let secret = MTPipeBook.secret(for: conv), let body = MTPipe.openBody(sealed, sharedSecret: secret) else { return nil }
+        guard let secret = MTPipeBook.key(for: conv), let body = MTPipe.openBody(sealed, sharedSecret: secret) else { return nil }
         let f = MTNodeWire.letterFields(body)
         return MTNodeWire.authorFields < f.count && !f[MTNodeWire.authorFields].isEmpty ? f[MTNodeWire.authorFields] : nil
     }
-    static func openBody(_ sealed: Data, secret: Data) -> (mid: String, text: String, name: String?, glyph: String?, qt: String?, qm: String?, lp: String?)? {
+    static func openBody(_ sealed: Data, secret: MTPipeKey) -> (mid: String, text: String, name: String?, glyph: String?, qt: String?, qm: String?, lp: String?)? {
         guard let body = MTPipe.openBody(sealed, sharedSecret: secret) else { return nil }
         // mid |0| text |0| name |0| glyph |0| quote |0| quote mid |0| link card --
         // every tail is optional: an old body of two fields reads as before. The cut goes by zeros,
@@ -1224,7 +1224,7 @@ final class MontanaPhoneNode: ObservableObject {
     static func openFirst(_ ct: Data, sealed: Data, at root: Data? = nil) -> String? {
         // The body seal is the proof: a candidate secret must open it, or the card is foreign and the
         // "success" of decapsulation is implicit-rejection garbage giving birth to a phantom chat.
-        let proof: (Data) -> Bool = { openBody(sealed, secret: $0) != nil }
+        let proof: (Data) -> Bool = { openBody(sealed, secret: MTPipeKey($0)) != nil }   // a secret at its birth, before the book holds it
         // THE POINT NAMES THE CARD. The letter arrived in a mailbox opened under one root: exactly that
         // one is tried, and there is nothing left to walk through -- a phantom candidate has nowhere to come from.
         if let root {

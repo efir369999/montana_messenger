@@ -51,27 +51,33 @@ impl Wallet {
     // returns to the payer as notes of its own. The paths are the ones the state answered with,
     // one per note consumed, in the order the notes are given.
     #[allow(clippy::too_many_arguments)]
-    // The first value a machine holds: the share of a window it lived through, turned into a note
-    // of its own. Five of the six positions have nothing to put in them and take filler; the sixth
-    // consumes the right, and the whole share comes out as one note the machine pays to itself.
+    // The first value a machine holds: the coin of a window it lived through, turned into a note of
+    // its own. Five of the six positions have nothing to put in them and take filler; the sixth
+    // consumes the right, and its worth — the window's credit — comes out as one note the machine pays to
+    // itself.
     //
     // **This is where value enters a wallet at all.** Minting creates no note — it issues a right —
     // and a right is extinguished inside an ordinary payment, in a redemption position like any
     // other. Until this door is walked no note exists anywhere, so no ordinary payment can be
     // built; after it, the machine holds a note and pays like anybody.
+    //
+    // The right walks the part of its window in the tree of credited rights: `credited_siblings`
+    // and `credited_position` are where the proposal of the window after it put that part, and
+    // `credited` is the root of that tree the frame proves against. A machine whose part no cement
+    // of that window held has no such walk, and nothing here can write one.
     #[allow(clippy::too_many_arguments)]
     pub fn redeem(
         &self,
         machine_secret: &[u8; 32],
         of_the_window: u64,
-        share: u128,
-        admitted_siblings: &[Digest],
-        admitted_position: u64,
+        worth: u128,
+        credited_siblings: &[Digest],
+        credited_position: u64,
         to: &Payee,
         window: u64,
         rate_secret: &[u8; 32],
         root: &Digest,
-        admitted: &Digest,
+        credited: &Digest,
     ) -> Result<Payment, WalletError> {
         let inputs =
             mt_genesis::scalar("spend_inputs").ok_or(WalletError::NotOfTheFamily)? as usize;
@@ -89,9 +95,9 @@ impl Wallet {
             let created: Vec<Created> = (0..outputs)
                 .map(|which| Created {
                     half: to.half,
-                    // The whole share leaves by the first position; the rest create nothing, and
-                    // the shape says nothing about which did which.
-                    value: if at == 0 && which == 0 { share } else { 0 },
+                    // The coin leaves by the first position; the rest create nothing, and the
+                    // shape says nothing about which did which.
+                    value: if at == 0 && which == 0 { worth } else { 0 },
                     note_pk: to.note_pk,
                     rcm: drawn(rate_secret, at * outputs + which),
                 })
@@ -109,12 +115,12 @@ impl Wallet {
         spends[0].consumed[0] = Consumed::Right(HeldRight {
             machine_secret: *machine_secret,
             window: of_the_window,
-            value: share,
-            siblings: admitted_siblings.to_vec(),
-            position: admitted_position,
+            value: worth,
+            siblings: credited_siblings.to_vec(),
+            position: credited_position,
         });
         let frame = Frame { spends, window };
-        let object = self.prove_and_lay(&frame, window, root, admitted)?;
+        let object = self.prove_and_lay(&frame, window, root, credited)?;
         Ok(Payment {
             frame: object,
             created: created_all,
@@ -132,7 +138,7 @@ impl Wallet {
         own: &Payee,
         paths: &[Vec<Digest>],
         root: &Digest,
-        admitted: &Digest,
+        credited: &Digest,
     ) -> Result<Payment, WalletError> {
         let inputs =
             mt_genesis::scalar("spend_inputs").ok_or(WalletError::NotOfTheFamily)? as usize;
@@ -226,7 +232,7 @@ impl Wallet {
 
         let frame = Frame { spends, window };
         Ok(Payment {
-            frame: self.prove_and_lay(&frame, window, root, admitted)?,
+            frame: self.prove_and_lay(&frame, window, root, credited)?,
             created: created_all,
             spent,
         })
@@ -240,20 +246,20 @@ impl Wallet {
         frame: &Frame,
         window: u64,
         root: &Digest,
-        admitted: &Digest,
+        credited: &Digest,
     ) -> Result<Vec<u8>, WalletError> {
         let places = Places::of(mt_proof::tree_depth()).ok_or(WalletError::NotOfTheFamily)?;
         let (trace, _) = mt_proof::circuit::frame::trace_of(
             &places,
             frame,
-            admitted,
+            credited,
             mt_proof::params::ROWS_LOG2,
         )
         .ok_or(WalletError::NotOfTheFamily)?;
         let held_description =
             mt_proof::circuit::frame::description(&places, mt_proof::params::ROWS_LOG2)
                 .ok_or(WalletError::NotOfTheFamily)?;
-        let public = mt_proof::circuit::frame::public_of(frame, &places, root, admitted)
+        let public = mt_proof::circuit::frame::public_of(frame, &places, root, credited)
             .ok_or(WalletError::NotOfTheFamily)?;
         let proof = mt_proof::scheme::prove(&held_description, &public, &trace)
             .map_err(|_| WalletError::NotOfTheFamily)?;

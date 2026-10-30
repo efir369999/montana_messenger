@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The sticker panel and editor (Stickers.kt, iOS MontanaStickerScreens) -->
+    <string name="stickers">Stickers</string>
+    <string name="stickers_empty">Your stickers will appear here. Make one from a photo with +</string>
+    <string name="sticker_make">Make a sticker</string>
+    <string name="sticker_delete_q">Delete this sticker?</string>
+</resources>

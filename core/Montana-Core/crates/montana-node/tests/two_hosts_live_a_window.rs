@@ -112,9 +112,8 @@ fn two_machines_live_a_window_from_end_to_end_and_each_takes_one_share() {
     // The second window awaits the decision of a window nobody lived: no right stands for it.
     assert!(mine[1].right.is_none() && theirs[1].right.is_none());
 
-    // And each takes one share of that window and no more: two machines, two rights, two
-    // nullifiers, and the shares plus what does not divide are the mint of the window exactly.
-    let mint = montana_node::attest::mint_of(WINDOW).expect("the Decree names the schedule");
+    // And each takes the credit of that window and no more: two machines, two rights, two
+    // nullifiers, and the coins of the two are what the window adds to the supply exactly.
     // Both parts entered the cement, so both machines lived the window and both took a right.
     let mine = mine[0]
         .right
@@ -124,15 +123,16 @@ fn two_machines_live_a_window_from_end_to_end_and_each_takes_one_share() {
         .right
         .as_ref()
         .expect("the other's part entered the cement");
-    assert_eq!(mine.share, mint / 2);
-    assert_eq!(theirs.share, mint / 2);
+    let credit = montana_node::attest::window_credit().expect("the Decree names it");
+    assert_eq!(mine.worth, credit);
+    assert_eq!(theirs.worth, credit);
     assert_ne!(
         mine.nullifier, theirs.nullifier,
         "two machines took one right"
     );
     assert_eq!(
-        mine.share + theirs.share + mine.carried_forward,
-        mint,
-        "the shares of the living and what does not divide are not the mint of the window"
+        Ok(mine.worth + theirs.worth),
+        montana_node::attest::supply_added(2),
+        "the coins of the living are not what the window adds to the supply"
     );
 }

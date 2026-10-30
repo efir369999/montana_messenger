@@ -517,8 +517,9 @@ mod tests {
     // answer it carries is held to the public input by a boundary rather than by the prover's word.
     #[test]
     fn a_permutation_is_proven_and_verified_as_bytes() {
-        let held = description_at(8).expect("a height of four blocks");
-        let trace = trace_of(&input(), 8).expect("a height of four blocks");
+        // The least height a shape proves at: below it the free block fills the trace.
+        let held = description_at(10).expect("a height of eight blocks");
+        let trace = trace_of(&input(), 10).expect("a height of eight blocks");
         let public = public_of(&input());
         let bytes = crate::scheme::prove(&held, &public, &trace).expect("a true trace proves");
         assert_eq!(crate::scheme::verify(&held, &public, &bytes), Ok(()));
@@ -534,8 +535,10 @@ mod tests {
     // refuses it where the trace fails the description, rather than writing bytes nobody accepts.
     #[test]
     fn a_claimed_answer_the_permutation_does_not_give_has_no_proof() {
-        let held = description_at(8).expect("a height of four blocks");
-        let mut trace = trace_of(&input(), 8).expect("a height of four blocks");
+        // At a height a shape proves at, so that what refuses the trace is the trace and not the
+        // shape.
+        let held = description_at(10).expect("a height of eight blocks");
+        let mut trace = trace_of(&input(), 10).expect("a height of eight blocks");
         let public = public_of(&input());
         trace[RING][ROWS_PER_PERMUTATION - 1] = trace[RING][ROWS_PER_PERMUTATION - 1].plus(F::ONE);
         assert_eq!(

@@ -29,8 +29,21 @@ mt-wire = { workspace = true }
 mt-suite = { workspace = true }
 zeroize = { workspace = true }
 
+[features]
+# A test of a close without a proposal holds back the proposal a machine proves of its own
+# (`pulse::withhold`). No build of the protocol enables it.
+withhold = []
+# The vectors build a plane of notes without a frame (`state::State::witness`), a door that mints a
+# note no nullifier closes. No build of the protocol enables it.
+witness = []
+
 [dev-dependencies]
 mt-conformance = { path = "../mt-conformance" }
+# The vectors of a crash fail the file operations of the store at the count they arm.
+mt-store = { workspace = true, features = ["fault"] }
+# The vectors of a close without a proposal hold back the machine's own (`pulse::withhold`), and
+# the vectors build planes of notes without a frame (`state::State::witness`).
+montana-node = { path = ".", features = ["withhold", "witness"] }
 
 # The harnesses of the model checker stand under cfg(kani), which `cargo kani` sets and no build does.
 [lints.rust]

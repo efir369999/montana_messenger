@@ -1,5 +1,5 @@
 /* The boundary a client stands on: the birth of a person, the wallet, the machine, its pulse and
- * the mint of a window. Every door answers zero when the work was done and a negative number when
+ * the coin a window credits. Every door answers zero when the work was done and a negative number when
  * it refused; the reason of a refusal is read by `mtc_last_said` in the words the crate that
  * refused used.
  *
@@ -67,16 +67,20 @@ int32_t mtc_machine_head(uint64_t *window, int32_t *present);
 int32_t mtc_machine_links(size_t *held, size_t *ceiling, size_t *reached);
 int32_t mtc_machine_account(char *out, size_t cap, size_t *len);
 
-/* What the machine does of its own inside the window it lives, asked before the pulse begins. */
+/* What the machine does of its own inside the window it lives, asked before the pulse begins. A
+ * right is worth one coin whatever its cement counted; the count is read only to refuse a window
+ * whose cement named nobody. */
 int32_t mtc_errand_redeem(uint64_t of_the_window, size_t living);
 int32_t mtc_errand_pay(const uint8_t *half, const uint8_t *note_pk, const uint8_t *amount);
 
-/* The pulse: the cohort as the naming halves laid one after another, thirty-two bytes each. */
+/* The pulse: the cohort as the naming halves laid one after another, thirty-two bytes each. A
+ * window lived is read with the coin it credited this machine: one where its part stood in the
+ * cement, nought where it did not. */
 int32_t mtc_pulse_begin(const uint8_t *halves, size_t count, uint64_t from, uint64_t windows);
 int32_t mtc_pulse_running(int32_t *out);
 int32_t mtc_pulse_lived(size_t *out);
 int32_t mtc_pulse_lived_at(size_t at, uint64_t *window, uint32_t *rounds, size_t *living,
-                           uint64_t *share, uint64_t *accepted_in);
+                           uint64_t *worth, uint64_t *accepted_in);
 
 /* What the last payment left for its payee: the value as sixteen bytes, the blinding factor and
  * the key the note is paid to as thirty-two each, and the place the note took. */

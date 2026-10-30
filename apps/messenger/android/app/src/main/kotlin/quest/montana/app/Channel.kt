@@ -601,7 +601,7 @@ object Channels {
      */
     fun lay(secret: ByteArray, mid: String, body: ByteArray): Boolean {
         val w = Wire.minute()
-        val tag = Wire.pipeTag(secret, w)
+        val tag = Wire.windowTag(secret, w)
         val sealed = Wire.seal(Wire.bodyKey(secret, w), body) ?: return false
         return under(tag, mid, byteArrayOf(0x01) + tag + sealed, Wire.reference(secret))
     }
@@ -892,7 +892,7 @@ object Channels {
             val m = HashMap<String, String>()
             for (ref in Book.refs()) {
                 val s = Book.secret(ref) ?: continue
-                for (k in longArrayOf(w - 1, w, w + 1)) m[Wire.hex(Wire.pipeTag(s, k))] = ref
+                for (k in longArrayOf(w - 1, w, w + 1)) for (t in Wire.windowTags(s, k)) m[Wire.hex(t)] = ref   // Y, Y + 1: the earlier tag too
             }
             pipes = m
             pipesAt = w

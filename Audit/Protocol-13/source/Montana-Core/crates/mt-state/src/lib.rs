@@ -26,17 +26,25 @@ use mt_codec::{hash_of_one, Domain};
 // stand in the set, all are frozen, and the gate recomputes the lengths from the parts the set fixes.
 mt_codec::constants! {
     PROOF_AND_COMMITMENT:
-    pub const PROOF_LEN: usize = 213_440, writes "| `PROOF_LEN` | 213 440 B |";
+    pub const PROOF_LEN: usize = 404_576, writes "| `PROOF_LEN` | 404 576 B |";
     /// The length of a proof of the presence, at the presence's own height: the one description a
     /// machine proves every window is priced by its own statement, not by the tallest. The ticket
     /// stands at the same height, so the proof a proposal carries is of this length as well.
-    pub const PRESENCE_PROOF_LEN: usize = 176_544, writes "| `PRESENCE_PROOF_LEN` | 176 544 B |";
+    pub const PRESENCE_PROOF_LEN: usize = 333_888, writes "| `PRESENCE_PROOF_LEN` | 333 888 B |";
     /// The fields of a proposal the window decides: everything from the height through the suite,
     /// the census of the standing among them. The identifier of a proposal is taken over exactly
     /// these bytes, because the name is what an attestation attests — and a name over proof bytes
     /// is a name its maker redraws by reproving, while a name over the final beacon or the runner's
     /// key is one name per branch or per runner of a single decision.
-    pub const PROPOSAL_DECIDED_LEN: usize = 686, writes "proposal_id = SHA-256(\"mt-proposal\" || 0x00 || serialize(proposal)[0 .. 686])";
+    pub const PROPOSAL_DECIDED_LEN: usize = 750, writes "proposal_id = SHA-256(\"mt-proposal\" || 0x00 || serialize(proposal)[0 .. 750])";
+}
+
+// The one value of the agreement the set writes as a number: what the `since` of a pledge holds
+// where it stands on no quorum. No attempt takes it, since a pledge made in an attempt of that
+// number is refused where it is read.
+mt_codec::constants! {
+    AGREEMENT:
+    pub const STANDS_ON_NONE: u32 = 0xFFFF_FFFF, writes "or 0xFFFFFFFF for none";
 }
 
 // The rules this tree implements. The Constitution has every machine publish the version its own

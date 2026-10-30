@@ -40,5 +40,15 @@ object ContentFilter {
     private val opened = HashSet<String>()
     /** Folded in the feed: hidden, and not yet opened by the person's own tap (iOS MTFilterFold). */
     fun folded(m: Msg) = m.mid !in opened && hides(m.mine, m.text)
+    /**
+     * A PLATE OF PICTURES FOLDS BY ITS CAPTION (iOS MessageBubble.filterFolds, MontanaBubble.swift at 2240, fe409c75; audit No.57,
+     * A-18): a picture's words are its caption, a plate's the one caption its pick carries (iOS groupCaption) -- the plate's branch
+     * stood before the check, and a stranger's album showed its caption unfolded with the filter on.
+     */
+    fun plateFolds(m: Msg, members: List<Msg>): Boolean {
+        if (m.mine || m.mid in opened || !on) return false
+        val worded = members.mapNotNull { Media.manifestOf(it)?.optString("cap")?.takeIf { c -> c.isNotEmpty() } }
+        return flags(if (worded.size == 1) worded[0] else "")
+    }
     fun open(mid: String) { opened.add(mid) }
 }

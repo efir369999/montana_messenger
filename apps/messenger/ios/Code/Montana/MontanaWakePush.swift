@@ -590,8 +590,8 @@ enum MontanaWakePush {
     private static func currentPostLane() -> URLSession { baseLock.lock(); defer { baseLock.unlock() }; return postLane }
     private static func currentPostGeneration() -> Int { baseLock.lock(); defer { baseLock.unlock() }; return postGeneration }
 
-    // SSOT-CONSOLIDATE: call signals have one delivery owner, on sigQ. The existing node
-    // connection carries them; a second door is used only after failure or a missing receipt.
+    // SSOT-CONSOLIDATE: call signals have one delivery owner, on sigQ. The owned node connection
+    // carries them and every other node gets a copy at once; one receipt from any door settles it.
     // This remains the accelerator lane (SERVER-DEBT-ACK), not a claim that WebRTC media
     // already rides the full-node stream described by the network specification.
     private static var callRoutes: [String: MTCallRoute] = [:]
@@ -685,6 +685,13 @@ enum MontanaWakePush {
                 guard callRoutes[key] === route else { return }
                 route.posted(id: packet.id, door: door, accepted: code == 200, now: ProcessInfo.processInfo.systemUptime)
                 driveCallRoute(route)
+            }
+        }
+        // The copies own no route state: only a receipt from their door can settle the packet.
+        for echo in route.echoDoors {
+            sendCallPacket(route.conv, epoch: route.epoch, payload: packet.payload, door: echo, terminal: packet.terminal) { code in
+                MTCallTimeline.record(epoch: route.epoch, stage: code == 200 ? "signal.echo.ok" : "signal.echo.fail",
+                    facts: "packet=\(MTCallTimeline.diagnosticToken(packet.id)) door=\(URL(string: echo)?.host ?? echo) code=\(code)")
             }
         }
     }
@@ -793,7 +800,7 @@ enum MontanaWakePush {
     private static let subIdFormat = "sid-v2"
 
     /// The conversation's daily tag: both sides derive it from the shared pipe secret with no contact.
-    static func convW(_ secret: Data, window: UInt64) -> String { MTNodeWire.convW(secret, window: window) }
+    static func convW(_ secret: MTPipeKey, window: UInt64) -> String { secret.convW(day: window) }
 
     static func dayWindow() -> UInt64 { UInt64(Date().timeIntervalSince1970) / 86400 }
 
@@ -839,11 +846,11 @@ enum MontanaWakePush {
     /// Mirrors pipe secrets into the shared keychain so the notification extension opens the
     /// envelope on the device. Secrets stay device-only (WhenUnlocked keychain), never reach the accelerator.
     static func mirrorSecrets() {
-        var m: [String: Data] = [:]
+        var m: [String: MTPipeKey] = [:]
         var alias: [String: String] = [:]
         MTPipeBook.keepAll()
         for conv in MTPipeBook.all() {
-            guard let sec = MTPipeBook.secret(for: conv) else { continue }
+            guard let sec = MTPipeBook.key(for: conv) else { continue }
             m[conv] = sec
             // One pipe may lie under the address AND under a local name (ref) — the sides key
             // differently. The extension opens with EITHER, while the mirrors (name/avatar/
@@ -857,8 +864,7 @@ enum MontanaWakePush {
         }
         // The pipes of the slots this phone keeps (MTKeeping): the extension opens a loud call in them and shows whose copy it is.
         for (name, secret) in MTKeeping.listening() { m[name] = secret }
-        if let d = try? JSONEncoder().encode(m) { MontanaKeychain.set("nsePipeSecrets", d) }
-        if let d = try? JSONEncoder().encode(alias) { MontanaKeychain.set("nsePipeAlias", d) }
+        MTPipeKey.mirror(m, alias: alias, day: MTPipeBook.floorDay())   // the pipe's one owner writes its mirror and reads it in the extensions
         // The share extension sends letters itself; the sender identity rides sealed inside
         // the envelope, so the mirror carries it the same way it carries the pipe secrets
         // (device-only keychain, never the node).
@@ -968,7 +974,7 @@ enum MontanaWakePush {
             }
         }
         for pipe in refs {
-            guard let secret = MTPipeBook.secret(for: pipe) else { continue }
+            guard let secret = MTPipeBook.key(for: pipe) else { continue }
             // The S-2 sign of life gates the fan-out: a pipe nobody ever answered has nobody
             // to wake us, and its first letter lives seven days in the node box anyway — the
             // box fetch is the road, the wake is a rung-4 accelerator. Full 31-day fan-out is
@@ -981,7 +987,7 @@ enum MontanaWakePush {
                 subs.append(["conv": cw, "sid": mySubId(cw)])
             }
         }
-        // THE SLOTS THIS PHONE KEEPS RING IT (MTKeeping, the author's word 08.10.2026 22:4x MSK: the restore by silent pushes): a
+        // THE SLOTS THIS PHONE KEEPS RING IT (MTKeeping, the author's word 08.10.2026 19:4x UTC: the restore by silent pushes): a
         // call in the pipe of a slot wakes this phone by a background push, and its answer leaves within the wake.
         for (_, secret) in MTKeeping.listening() {
             for w in (w0 - 1)...(w0 + 1) {
@@ -999,7 +1005,7 @@ enum MontanaWakePush {
         }
         // THE SHELF RINGS THE PHONE TOO (07.10, MTShelfPost): the persons waiting on this phone's shelf are registered under
         // their own references, after the person seated -- the node trims the tail first.
-        let seated = Set(MTPipeBook.all().compactMap { MTPipeBook.secret(for: $0) })
+        let seated = Set(MTPipeBook.all().compactMap { MTPipeBook.key(for: $0) })
         subs += MTShelfPost.wakePairs(w0, seatedHolds: { seated.contains($0) })
         // ONLY WHAT CHANGED LEAVES (21.1). The whole set used to go to every door whenever its
         // digest moved — and the digest moved with the day, with the door order, with every
@@ -1027,7 +1033,7 @@ enum MontanaWakePush {
         // are asked gone; a door's «gone» is recorded (a negative moment) and never asked again.
         var blockedPairs: [[String: String]] = []
         for pipe in MTPipeBook.all() where refused.contains(pipe) {
-            guard let secret = MTPipeBook.secret(for: pipe) else { continue }
+            guard let secret = MTPipeBook.key(for: pipe) else { continue }
             for w in (w0 - 1)...(w0 + windowsAhead) {
                 let cw = convW(secret, window: w)
                 blockedPairs.append(["conv": cw, "sid": mySubId(cw)])
@@ -1128,8 +1134,8 @@ enum MontanaWakePush {
         let tok = SHA256.hash(data: Data(hex.utf8)).prefix(6).map { String(format: "%02x", $0) }.joined()
         return regSetPrefix + subIdFormat + regGeneration + "_" + host + "_" + tok
     }
-    /// THE MAPS OF A TOKEN THIS PHONE NO LONGER HOLDS GO (the critic B-6; the author's words 11.10.2026 20:1x MSK: «check the whole
-    /// architecture of the chats' time chains, so there are no holes by the constitution», 21:5x: «carry out all 13»). A map is
+    /// THE MAPS OF A TOKEN THIS PHONE NO LONGER HOLDS GO (the critic B-6; the author's words 11.10.2026 17:1x UTC: «check the whole
+    /// architecture of the chats' time chains, so there are no holes by the constitution», 18:5x: «carry out all 13»). A map is
     /// named by its door, the id formula, its generation and the token, and nothing ever removed one: T1's settings held 30 of
     /// them, 7.3 MB of a 26 MB plist -- 20 of earlier formulas and generations, 6 of tokens of the days before -- and every write
     /// of the settings is a synchronous call to the system's preferences service carrying that weight. A map stands only for
@@ -1172,7 +1178,7 @@ enum MontanaWakePush {
               let m = try? JSONDecoder().decode([String: Double].self, from: d) else { return [:] }
         return m
     }
-    /// WHAT A DOOR KEEPS IS ASKED, NOT REMEMBERED (the author's word 10.10.2026 12:5x MSK: «notifications reinforced concrete, not
+    /// WHAT A DOOR KEEPS IS ASKED, NOT REMEMBERED (the author's word 10.10.2026 09:5x UTC: «notifications reinforced concrete, not
     /// one error in principle»). The standing map is this phone's belief, and the belief stood a week while the door had lost the
     /// rows under it. A round with nothing to post asks the door, at most twice an hour, how many rows it keeps for this token
     /// (montana-notify answers "rows" since 10.10, re-asserting one pair); a door keeping fewer than the map believes is posted
@@ -1355,6 +1361,7 @@ enum MontanaWakePush {
         guard let hdr = (resp as? HTTPURLResponse)?.value(forHTTPHeaderField: "Date"),
               let server = httpDateFormatter.date(from: hdr) else { return }
         if let resp { personFeed(resp) }
+        MTPipeBook.heard(nodeDate: server)   // the clock guard of the first floor: c of this run, and M (decision 188, #38)
         let skew = Int(Date().timeIntervalSince(server) * 1000)
         let tolMs = Int(clockSlackS * 1000)
         // A CORRECTION IS TOLD ONLY WHEN IT STANDS (24.09, the noticed point 3 — the author's word «close it»): the first
@@ -1381,7 +1388,7 @@ enum MontanaWakePush {
     /// pipe walk and format as the extension's. Returns (conversation, mid, text).
     static func openLetterEnvelope(_ sealed: Data) -> (conv: String, mid: String, text: String)? {
         for conv in MTPipeBook.all() {
-            guard let secret = MTPipeBook.secret(for: conv),
+            guard let secret = MTPipeBook.key(for: conv),
                   let plain = MTPipe.openBody(sealed, sharedSecret: secret),
                   let sep = plain.firstIndex(of: 0) else { continue }
             let mid = String(data: plain[..<sep], encoding: .utf8) ?? ""
@@ -1408,8 +1415,8 @@ enum MontanaWakePush {
               let m = try? JSONDecoder().decode([String: String].self, from: d) else { return nil }
         return m[mid]
     }
-    /// A REFERENCE LIVES AS LONG AS ITS LETTER RIDES (the critic B-6; the author's words 11.10.2026 20:1x MSK: «check the whole
-    /// architecture of the chats' time chains, so there are no holes by the constitution», 21:5x: «carry out all 13»). Only a
+    /// A REFERENCE LIVES AS LONG AS ITS LETTER RIDES (the critic B-6; the author's words 11.10.2026 17:1x UTC: «check the whole
+    /// architecture of the chats' time chains, so there are no holes by the constitution», 18:5x: «carry out all 13»). Only a
     /// letter's end took its reference (takeLongRef), and a letter that left the queue another way -- a wall's page replaced by a
     /// newer one, a state retired, a word expired -- left it for good: T1 kept 6.7 MB of them. Every write keeps only the
     /// references of letters on the delivery line now; before the line has read its store, those whose name says they were born
@@ -1533,7 +1540,7 @@ enum MontanaWakePush {
     /// The letter envelope format — ONE place (SSOT): mid‖0x00‖text‖0x00‖zeros to 2048, under
     /// the pipe key. A single size — the accelerator cannot tell letter lengths apart. Called
     /// by both enqueue (the instant wake) and attempt (the insurance).
-    static func sealLetterEnvelope(mid: String, text: String, secret: Data,
+    static func sealLetterEnvelope(mid: String, text: String, secret: MTPipeKey,
                                    quoteText: String? = nil, quoteMid: String? = nil,
                                    linkPreview: String? = nil) -> String? {
         // The sender's identity rides WITH THE LETTER, inside the E2E seal — as in the server
@@ -1557,8 +1564,8 @@ enum MontanaWakePush {
             if body.last == 0 { body.removeLast() }
             body.append(tail)
         }
-        // The person signs the letter as its author (MTNodeWire.withAuthor): every device of the words reads it as its own.
-        body = MTNodeWire.withAuthor(body, key: MTLetterAuthor.key, secret: secret, mid: mid, text: text)
+        // The person signs the letter as its author (MTPipeKey.withAuthor): every device of the words reads it as its own.
+        body = secret.withAuthor(body, person: MTLetterAuthor.key, mid: mid, text: text)
         guard let padded = MTNodeWire.padEnvelope(body) else { return nil }
         return MTPipe.sealBody(padded, sharedSecret: secret)?.base64EncodedString()
     }
@@ -1581,7 +1588,7 @@ enum MontanaWakePush {
             MontanaTrace.mark("wakepush_skip", "no-addr to=\(String(conv.prefix(10)))"); return
         }
         guard agreesWithCanon() else { MontanaTrace.mark("wakepush_canon", "FAIL"); return }
-        guard let secret = MTPipeBook.secret(for: conv) else {
+        guard let secret = MTPipeBook.key(for: conv) else {
             MontanaTrace.mark("wakepush_skip", "no-pipe to=\(String(conv.prefix(10)))"); return
         }
         let w = MTPipe.window()
@@ -1695,7 +1702,7 @@ enum MontanaWakePush {
                     knockOutcome(doors[i], code: code)                       // the first answer after a failed knock drains the queue
                     MontanaTrace.mark("wakepush_tx", "code=\(code) woken=\(woken) door=\(dh) carry=\(carry) to=\(String(conv.prefix(10)))" + (code < 0 ? " err=\(errWord(err))" : ""))
                 }
-                // THE WALK STOPS AT THE FIRST DOOR THAT BOXED THE LETTER (17.10.2026; the author's words 00:19-00:20 MSK: one
+                // THE WALK STOPS AT THE FIRST DOOR THAT BOXED THE LETTER (16.10.2026; the author's words 21:19-21:20 UTC: one
                 // letter, two wakes three seconds apart under one «at»). A 200 is the letter in that node's box and in its own ring
                 // ledger, and since 10.10 the node asks its peer node itself for the persons it does not hold. Walking on past a
                 // 200 whose «woken» read 0 or -1 knocked the second node, whose ledger of rung letters had never seen this one, and
@@ -1722,9 +1729,9 @@ enum MontanaWakePush {
     static let rdvRingMagic = "mt-rdv-ring"
     /// The FIRST-MEETING letter key: derived from the invite — exactly the two sides know it
     /// (the code's owner and its opener), the node is blind, the push targets one device.
-    static func rdvLetterSecret(_ invite: Data) -> Data {
+    static func rdvLetterSecret(_ invite: Data) -> MTPipeKey {
         var m = Data("mt-rdv-letter".utf8); m.append(0); m.append(invite)
-        return Data(SHA256.hash(data: m))
+        return MTPipeKey(Data(SHA256.hash(data: m)))
     }
     private static var rdvKnocked: [String: UInt64] = [:]
     private static let rdvKnockLock = NSLock()
@@ -1894,7 +1901,7 @@ enum MontanaWakePush {
         return !Task.isCancelled
     }
 
-    /// THE KEEPING'S CARGO IS QUIET (the author's word 22.10.2026 23:0x MSK: on T1 at 23:01 the media loaded long). T1 rose
+    /// THE KEEPING'S CARGO IS QUIET (the author's word 22.10.2026 20:0x UTC: on T1 at 20:01 the media loaded long). T1 rose
     /// at 20:00:29Z after a crash and laid its daily light copy first -- 126 MB in pieces of half a megabyte, 471 puts and 918
     /// copies to the second machine in three and a half minutes -- on the very doors and roads the person's photos came in by.
     /// A copy waits a minute and loses nothing; a picture on screen waits in front of the person. Quiet cargo is the keeping's
@@ -2589,9 +2596,9 @@ enum MontanaWakePush {
             return
         }
         // Tags across the box's term (MTNodeWire.boxDays) — for the sender's skewed clock.
-        var pipes: [String: Data] = [:]
+        var pipes: [String: MTPipeKey] = [:]
         for conv in MTPipeBook.all() {   // a blocked person's letters are read too — and buried below, not left to wait
-            if let secret = MTPipeBook.secret(for: conv) { pipes[conv] = secret }
+            if let secret = MTPipeBook.key(for: conv) { pipes[conv] = secret }
         }
         for (name, secret) in MTKeeping.listening() { pipes[name] = secret }   // the pipes of the slots this phone keeps (MTKeeping)
         for (name, secret) in MontanaArchive.twinListening() { pipes[name] = secret }   // the pipe of this seed's devices (11.10.2026)
@@ -2626,13 +2633,13 @@ enum MontanaWakePush {
     /// recipe for both, so the phone hears every person it holds the same way. Tags across the box's term (MTNodeWire.boxDays).
     struct BoxEar {
         var subs: [String] = [], sids: [String] = []
-        var secretOf: [String: Data] = [:], invOf: [String: String] = [:], chatOf: [String: String] = [:]
+        var secretOf: [String: MTPipeKey] = [:], invOf: [String: String] = [:], chatOf: [String: String] = [:]
         var rdvLabels = Set<String>()
         /// The author key of the person this ear listens for: their own letters are told by it at the opening. The person seated
         /// listens with theirs; a person on the shelf listens without one -- a letter of the person seated to them is theirs to
         /// receive, never their own.
         let author: Data?
-        init(invites: [Data], pipes: [String: Data], owner: String) {   // owner: the person's own reference (P-118.1)
+        init(invites: [Data], pipes: [String: MTPipeKey], owner: String) {   // owner: the person's own reference (P-118.1)
             author = owner == (MontanaSeed.twin ?? "") ? MTLetterAuthor.key : nil
             let w0 = MontanaWakePush.dayWindow()
             for inv in invites {
@@ -2664,7 +2671,9 @@ enum MontanaWakePush {
         let subs = ear.subs, sids = ear.sids, secretOf = ear.secretOf
         let rdvLabels = ear.rdvLabels, invOf = ear.invOf, chatOf = ear.chatOf
         var stashed = 0
-        var confirmed: [String] = []   // stored letters — confirmed to the node, it removes them (the box no longer erases on yield)
+        // Stored letters -- confirmed to the node as taken BY THIS DEVICE (mid, its name under the letter's label): the letter stays
+        // for the person's other devices (24.10.2026, the Mac took T1's photos); only a funeral removes it for all (boxDel).
+        var confirmed: [[String]] = []
         // A chunk of 128 pairs — as in registration: 512 labels ≈ 69KB exceeded the node's
         // 64KiB body limit — the node answered 413 and only the tail arrived (precedent
         // labels=2, 22.08: 204 pipes -> 2050 labels -> 16 chunk receipts never collected).
@@ -2693,7 +2702,8 @@ enum MontanaWakePush {
                 let doors = boxReadDoors(bases(for: "box"))
                 guard !doors.isEmpty else { boxRested(); return stashed }
                 let page = try? JSONSerialization.data(withJSONObject:
-                    ["subs": Array(subs[start..<end]), "sids": Array(sids[start..<end])])
+                    ["subs": Array(subs[start..<end]), "sids": Array(sids[start..<end]),
+                     "devs": subs[start..<end].map { MontanaArchive.deviceSid($0) }])
                 let answers = await withTaskGroup(of: DoorAnswer.self, returning: [DoorAnswer].self) { group in
                     for b in doors {
                         group.addTask {
@@ -2785,14 +2795,14 @@ enum MontanaWakePush {
                         let f = parseLetterFields(plain)
                         guard !f[0].isEmpty, !f[1].isEmpty, let chat = chatOf[cw] else { continue }
                         if let buries, await buries(chat, f[0]) {
-                            if let m = l["m"] as? String, !m.isEmpty { confirmed.append(m) }
+                            if let m = l["m"] as? String, !m.isEmpty { confirmed.append([m, MontanaArchive.deviceSid(cw)]) }
                             continue
                         }
                         guard keep(["c": chat, "m": f[0], "t": f[1], "n": f[2], "g": f[3],
                                      "qt": f[4], "qm": f[5], "lp": f[6],
-                                     // THE PERSON'S OWN LETTER IS TOLD AT ITS OPENING (MTNodeWire.authorHolds), by the words as they rode:
+                                     // THE PERSON'S OWN LETTER IS TOLD AT ITS OPENING (MTPipeKey.authorHolds), by the words as they rode:
                                      // a long letter's words change at its landing, its author field does not.
-                                     "own": MTNodeWire.authorHolds(f[7], key: ear.author, secret: secret, mid: f[0], text: f[1]) ? "1" : "",
+                                     "own": secret.authorHolds(f[7], person: ear.author, mid: f[0], text: f[1]) ? "1" : "",
                                      "au": f[7],   // the author field as it rode, kept beside the row (Message.authorTag)
                                      // The minute the seal was MADE — the node's moment less the walk
                                      // the opener took (16.09). For a build whose names carry no birth,
@@ -2801,7 +2811,7 @@ enum MontanaWakePush {
                                      "at": String(Int(atS) - opened.back * 60)]) else { continue }
                     }
                     stashed += 1
-                    if let m = l["m"] as? String, !m.isEmpty { confirmed.append(m) }
+                    if let m = l["m"] as? String, !m.isEmpty { confirmed.append([m, MontanaArchive.deviceSid(cw)]) }
                 }
                 // Confirmation RIGHT AFTER the page: the yield is non-destructive, and it is
                 // our placement confirmation that opens the next page. THE LETTERS DO NOT WAIT FOR
@@ -2809,10 +2819,10 @@ enum MontanaWakePush {
                 // and the drain stood ten seconds behind burials to two doors dead on that network).
                 // A burial is a cleanup — it rides beside; only a full page, which needs the box
                 // cleared to yield the next one, waits for it.
-                if letters.count >= 128 { await boxDel(confirmed); confirmed.removeAll() }
+                if letters.count >= 128 { await boxTaken(confirmed); confirmed.removeAll() }
                 else if !confirmed.isEmpty {
-                    let mids = confirmed; confirmed.removeAll()
-                    Task.detached(priority: .utility) { await boxDel(mids) }
+                    let took = confirmed; confirmed.removeAll()
+                    Task.detached(priority: .utility) { await boxTaken(took) }
                 }
                 if letters.count < 128 { break }
             }
@@ -2820,7 +2830,29 @@ enum MontanaWakePush {
         return stashed
     }
 
-    /// A letter's burial in the node box: delivered by the direct road or «delete for both» —
+    /// «This device has it in hand»: the node stops yielding these letters to this device and stops their ring; the letters stay
+    /// for the person's other devices until the box's term. Every store, as the burial: a letter lies on one of them.
+    static func boxTaken(_ took: [[String]]) async {
+        guard !took.isEmpty else { return }
+        let doors = orderedBases(for: "box")
+        let awake = doors.filter { doorAlive($0) }
+        let body = try? JSONSerialization.data(withJSONObject: ["taken": took])
+        await withTaskGroup(of: Void.self) { group in
+            for b in awake.isEmpty ? doors : awake {
+                group.addTask {
+                    guard let url = URL(string: b + "/box-del") else { return }   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
+                    var req = URLRequest(url: url); req.httpMethod = "POST"   // SERVER-DEBT-ACK: the accelerator node (rung 4)
+                    req.timeoutInterval = 5
+                    req.setValue("application/json", forHTTPHeaderField: "content-type")
+                    req.httpBody = body
+                    // SILENT-OK: a missed mark costs one more yield of a letter this device already holds; its landing is idempotent by mid.
+                    _ = try? await URLSession.shared.data(for: req)   // SERVER-DEBT-ACK: the accelerator node (rung 4)
+                }
+            }
+        }
+    }
+
+    /// A letter's burial in the node box: «delete for both» —
     /// nothing stays on the node beyond what awaits delivery. The answer names each door asked and whether it said «ok».
     @discardableResult
     static func boxDel(_ mids: [String], skipping confirmed: Set<String>? = nil) async -> [String: Bool] {
@@ -3036,7 +3068,7 @@ enum MontanaWakePush {
     }
 
     /// Registering the voip token under all conversations' windows — mirrors registerConvs, its own debounce.
-    /// A RING NO PIPE OF MINE OPENS NAMES A ROW THE DOOR SHOULD NOT HOLD (12.10.2026, the author's word 11:5x MSK: «from Montana it
+    /// A RING NO PIPE OF MINE OPENS NAMES A ROW THE DOOR SHOULD NOT HOLD (12.10.2026, the author's word 08:5x UTC: «from Montana it
     /// does not call»). Measured 07:23:31-07:24:26Z: the iPhone 17's install of 11.10 was woken eleven times for a pair of the
     /// install it replaced (wakepush_vrx peer=nil, ring_posted busy-dummy from=Montana), the old call rows standing at the door
     /// under the same call token; the node counted the person rung, asked no other app of theirs, and the caller rang 55 s into
@@ -3097,7 +3129,7 @@ enum MontanaWakePush {
         let ref = twinRef; guard !ref.isEmpty else { MontanaTrace.mark("wakepush_vreg", "skip no-addr"); return }
         guard agreesWithCanon() else { MontanaTrace.mark("wakepush_canon", "FAIL"); return }
         let refs = MTPipeBook.registrable(refusing: refused ?? ChatStore.refusedNow())
-        // THE CARD RINGS ITS OWNER FOR A CALL TOO (11.10.2026, No.63, the author's word 21:5x MSK: «check T1's call at 21:55 to the iPad,
+        // THE CARD RINGS ITS OWNER FOR A CALL TOO (11.10.2026, No.63, the author's word 18:5x UTC: «check T1's call at 18:55 to the iPad,
         // Nana, Business: the call did not go through»; «calls perfect in every scenario»). A call to a pair in first contact has no pipe
         // tag its callee listens on -- the card's owner holds no secret until the first letter's encapsulation reaches them -- and it rang
         // nobody: measured on both nodes 18:56:58-18:57:25Z, NO RECIPIENTS, the pipe's call rows held one row, the caller's own. The letters
@@ -3116,7 +3148,7 @@ enum MontanaWakePush {
             }
         }
         for pipe in refs {
-            guard let secret = MTPipeBook.secret(for: pipe) else { continue }
+            guard let secret = MTPipeBook.key(for: pipe) else { continue }
             // The S-2 sign of life gates the fan-out: a pipe nobody ever answered has nobody
             // to wake us, and its first letter lives seven days in the node box anyway — the
             // box fetch is the road, the wake is a rung-4 accelerator. Full 31-day fan-out is
@@ -3141,7 +3173,7 @@ enum MontanaWakePush {
         // One door per machine and one chain per door at a time (24.09): the law and the measurement stand at registerConvs.
         let now = Date().timeIntervalSince1970
         var told = false
-        // THE DOOR HEARS EACH LIFE OF THIS PHONE ONCE, WHOLE (the author's word 12.10.2026 13:4x MSK, No.65: «a call came to her and
+        // THE DOOR HEARS EACH LIFE OF THIS PHONE ONCE, WHOLE (the author's word 12.10.2026 10:4x UTC, No.65: «a call came to her and
         // dropped by itself before her eyes -- fix it and allow no such scenario by construction»). Nana's iPhone 17, 07:23:31-07:24:09Z:
         // eleven call pushes for a pair of the install this one replaced (wakepush_vrx peer=nil, ring_posted busy-dummy end=failed) --
         // the system must be shown a call for every call push, so each one flashed on her screen and fell. The cleaning above follows
@@ -3212,10 +3244,10 @@ enum MontanaWakePush {
         if let done { answered.notify(queue: .main) { done(every.value) } }
     }
 
-    /// A MAC IS RAISED BY THE PERSON'S HAND ONLY (the author's words 23.10.2026 17:4x MSK: «Montana on the Mac opened by itself
+    /// A MAC IS RAISED BY THE PERSON'S HAND ONLY (the author's words 23.10.2026 14:4x UTC: «Montana on the Mac opened by itself
     /// on a call and the call came to the wrong place -- it opens even after I closed it and quit», «I pressed quit and the
-    /// Montana process hangs»). Measured on the author's Mac that minute (build 2241): 17:42:06 a silent ring launched the quit
-    /// app, 17:43:53 a second launch stood on the screen within a second, took the ring of a:30a858 and answered it held by the
+    /// Montana process hangs»). Measured on the author's Mac that minute (build 2241): 14:42:06 a silent ring launched the quit
+    /// app, 14:43:53 a second launch stood on the screen within a second, took the ring of a:30a858 and answered it held by the
     /// Mac's Focus (ring-held-focus) -- a missed call, the door held 1606 call rows under the Mac's PushKit token. Every push is
     /// a birth of the process the person did not ask for, so a Mac keeps no token at any door: Apple forgets the letter token,
     /// every row of both tokens leaves every notify machine, and the keys go only when every door has said yes -- until then
@@ -3516,11 +3548,37 @@ enum MontanaWakePush {
                 Task {
                     await fetchBox()
                     try? await Task.sleep(nanoseconds: 400_000_000)   // the tombstone drain has time to apply
+                    // A LONG FIRST LETTER IS NEVER LAID AS ITS REFERENCE (29.10.2026, issue #23 link 147 and PR #119 of Android 95: an
+                    // iPhone on 2316 drew «SM:…» as a bubble): the extension could not fetch the cargo, the reference was laid as «New
+                    // message», and healUnresolvedRows later wrote the words into the row -- the same-pair question, always long beside
+                    // the encapsulation, became a bubble and was never answered. The pipe is born above; the letter takes the one
+                    // long-letter road of every other pushed letter: landed -- posted with its words; waiting -- back into the box as
+                    // an ordinary letter of this pipe, for its own hour; buried -- gone.
+                    var words = t
+                    if t.hasPrefix(letterBlobMark) {
+                        switch await takeLongLetter(conv: ref, mid: m, text: t) {
+                        case .landed(let full):
+                            words = full
+                        case .waiting:
+                            await MainActor.run {
+                                inboxDrop([m])
+                                stashLongLetter(conv: ref, mid: m, text: t)
+                                _ = inboxTaken.remove(m)
+                            }
+                            return
+                        case .buried:
+                            await MainActor.run { inboxDrop([m]) }
+                            return
+                        }
+                    }
+                    let landed = words
                     await MainActor.run {
                         if MontanaDeliveryEngine.shared.store?.deletedChats.contains(ref) == true {
                             MontanaTrace.mark("rdv_hatch_dead", "ref=\(String(ref.prefix(10))) the tombstone made it — the chat is not shown")
                         } else {
-                            NotificationCenter.default.post(name: .montanaIncoming, object: nil, userInfo: ui2)
+                            var shown = ui2
+                            shown["text"] = landed
+                            NotificationCenter.default.post(name: .montanaIncoming, object: nil, userInfo: shown)
                         }
                         inboxDrop([m])   // the road ended — the letter leaves the box
                     }
@@ -3735,14 +3793,14 @@ enum MontanaWakePush {
     /// the correspondent's move then rode the silent push, eight to fourteen seconds. Each holder owns its own set; the lane
     /// dies only when every set is empty.
     private static var boardConvs = Set<String>()
-    /// A GROUP ROOM'S PAIR LANES (MTGroupRoom, the author's word 07.10.2026 00:2x MSK: calls of up to 13 in a group). Two people of
+    /// A GROUP ROOM'S PAIR LANES (MTGroupRoom, the author's word 06.10.2026 21:2x UTC: calls of up to 13 in a group). Two people of
     /// a group carried by its owner hold no pipe between them, so their lane is sealed by a key the two derive from the room's key
     /// and their two seats; it is named here by the room, never written into the book of pipes, and asked only while the room lives.
     private static var roomConvs = Set<String>()
     private static let roomLock = NSLock()
-    private static var roomSecrets: [String: Data] = [:]
+    private static var roomSecrets: [String: MTPipeKey] = [:]
     static func openRoomLane(_ conv: String, secret: Data) {
-        roomLock.lock(); roomSecrets[conv] = secret; roomLock.unlock()
+        roomLock.lock(); roomSecrets[conv] = MTPipeKey(secret); roomLock.unlock()
         sigQ.async { roomConvs.insert(conv); ensureSigTimer("room") }
     }
     static func closeRoomLane(_ conv: String) {
@@ -3750,8 +3808,8 @@ enum MontanaWakePush {
         sigQ.async { roomConvs.remove(conv) }
     }
     /// The key a lane is sealed by: a pipe's own, or a room pair's.
-    private static func laneSecret(_ conv: String) -> Data? {
-        if let s = MTPipeBook.secret(for: conv) { return s }
+    private static func laneSecret(_ conv: String) -> MTPipeKey? {
+        if let s = MTPipeBook.key(for: conv) { return s }
         roomLock.lock(); defer { roomLock.unlock() }
         return roomSecrets[conv]
     }
@@ -3843,7 +3901,7 @@ enum MontanaWakePush {
         var chatOf: [String: String] = [:]
         let w0 = dayWindow()
         for conv in MTPipeBook.all() {
-            guard MontanaConv.holds(conv), let secret = MTPipeBook.secret(for: conv) else { continue }
+            guard MontanaConv.holds(conv), let secret = MTPipeBook.key(for: conv) else { continue }
             for w in (w0 - 1)...w0 {
                 let cw = convW(secret, window: w)
                 chatOf[cw] = conv
@@ -3874,7 +3932,7 @@ enum MontanaWakePush {
         }
         var words = 0, stamps = 0
         for (chat, w) in best {
-            guard let secret = MTPipeBook.secret(for: chat), let sealed = Data(base64Encoded: w.env),
+            guard let secret = MTPipeBook.key(for: chat), let sealed = Data(base64Encoded: w.env),
                   let plain = MTPipe.openBody(sealed, sharedSecret: secret),
                   let sep = plain.firstIndex(of: 0) else { continue }
             let afterPeer = plain[plain.index(after: sep)...]
@@ -3928,7 +3986,7 @@ enum MontanaWakePush {
         let routes = callRoutes.values.filter { $0.conv == conv && !($0.isEnding) && living.contains($0.epoch) }
         guard !routes.isEmpty else { return [callReadDoors[conv] ?? signalDoor(for: conv)] }
         // Receiving has no election: the peer may still use any of these existing nodes,
-        // including an older build. Sending remains one acknowledged packet on one door.
+        // including an older build. Sending owns one door and copies each packet to the rest.
         return Array(Set(routes.flatMap { $0.doors }.filter { $0 != MTCallRoute.nearDoor })).sorted()
     }
     private static func fetchSignals(_ conv: String, door: String) {
@@ -4062,7 +4120,7 @@ enum MontanaWakePush {
                     guard !f[0].isEmpty, !f[1].isEmpty, !ChatStore.refusesNow(conv) else { continue }
                     MontanaTrace.mark("sig_apply", "lane=letter mid=\(String(f[0].prefix(8))) from=\(String(conv.prefix(10)))")
                     restash(["c": conv, "m": f[0], "t": f[1], "n": f[2], "g": f[3], "qt": f[4], "qm": f[5], "lp": f[6],
-                             "own": MTNodeWire.authorHolds(f[7], key: MTLetterAuthor.key, secret: secret, mid: f[0], text: f[1]) ? "1" : "",
+                             "own": secret.authorHolds(f[7], person: MTLetterAuthor.key, mid: f[0], text: f[1]) ? "1" : "",
                              "au": f[7], "at": String(Int(now) - opened.back * 60)])
                     drainInboxSoon()
                     continue
@@ -4138,7 +4196,7 @@ enum MontanaWakePush {
         answerGone(conv: conv, epoch: epoch, msgs: msgs)
     }
     /// The same answer for the pipe's words, which arrive already open (24.09: the pipe names every word's call).
-    /// AN ANSWER TO A CALL THIS DEVICE ENDED IS ANSWERED «GONE» (12.10.2026, the author's words 12:4x MSK on Nana's iPhone 17: «the
+    /// AN ANSWER TO A CALL THIS DEVICE ENDED IS ANSWERED «GONE» (12.10.2026, the author's words 09:4x UTC on Nana's iPhone 17: «the
     /// call comes and drops»): Marusya answered at 09:34:46.518Z a ring of Nana's call that Nana had ended at 42.278, and her phone
     /// stood «connecting» twelve seconds into nothing while Nana's phone read the answer as a sibling's and said nothing
     /// (call_sibling answer to a machine at rest). An answer addressed to THIS device («to», No.60) for a call whose seed this
@@ -4199,7 +4257,7 @@ enum MontanaWakePush {
         var saw404 = false, sawOther = false, lastCode = -1
         let ref = twinRef; guard !ref.isEmpty else { finish(-1); return }
         guard agreesWithCanon() else { MontanaTrace.mark("wakepush_canon", "FAIL"); finish(-1); return }
-        guard let secret = MTPipeBook.secret(for: conv) else { finish(-1); return }
+        guard let secret = MTPipeBook.key(for: conv) else { finish(-1); return }
         // PushKit carries invitations only. An answer belongs to the existing signal lane;
         // a delayed answer push would otherwise create a phantom incoming call at its sender.
         var body = Data("ring".utf8); body.append(0); body.append(contentsOf: ref.utf8); body.append(0)
@@ -4275,14 +4333,14 @@ enum MontanaWakePush {
     /// Open a call envelope: the pipe walk + windows. Returns the caller's address and (if present) the offer.
     static func openRingEnvelope(_ sealed: Data) -> RingPush? {
         for conv in MTPipeBook.all() {
-            guard let secret = MTPipeBook.secret(for: conv) else { continue }
+            guard let secret = MTPipeBook.key(for: conv) else { continue }
             if let ring = openRing(sealed, conv: conv, secret: secret) { return ring }
         }
         return nil
     }
 
     /// One pipe's try at a call envelope: the walk above and the ring at the card (openCardRing) open it alike.
-    private static func openRing(_ sealed: Data, conv: String, secret: Data) -> RingPush? {
+    private static func openRing(_ sealed: Data, conv: String, secret: MTPipeKey) -> RingPush? {
         guard let plain = MTPipe.openBody(sealed, sharedSecret: secret),
               let sep1 = plain.firstIndex(of: 0),
               let word = String(data: plain[..<sep1], encoding: .utf8),
@@ -4315,7 +4373,7 @@ enum MontanaWakePush {
                         device: device, bornAtMS: bornAtMS)
     }
 
-    /// THE RING AT THE CARD (11.10.2026, No.63, the author's word 21:5x MSK: «check T1's call at 21:55 to the iPad, Nana, Business: the
+    /// THE RING AT THE CARD (11.10.2026, No.63, the author's word 18:5x UTC: «check T1's call at 18:55 to the iPad, Nana, Business: the
     /// call did not go through»). A pair in first contact has no pipe tag its callee listens on: the card's owner holds no secret until
     /// the first letter's encapsulation reaches them, and the ring went where the caller alone stood (measured on both nodes, 18:56:58 to
     /// 18:57:25Z: NO RECIPIENTS; the pipe's call rows held one row, the caller's own). The owner listens at the card's daily tag
@@ -4324,11 +4382,11 @@ enum MontanaWakePush {
     /// letter out of a push (MontanaCard.accept: the confirmation is mandatory) and opens the ring with the pipe it now holds
     /// (openCardRing). The node stays blind: a daily tag and a sealed blob, as for the first letter's doorbell (wakeRdv).
     static let cardRingWord = Data("mt-card-ring".utf8) + Data([0])
-    private static func cardRing(_ conv: String, secret: Data, ring: Data, bornAtMS: Int) -> Data? {
+    private static func cardRing(_ conv: String, secret: MTPipeKey, ring: Data, bornAtMS: Int) -> Data? {
         guard let ct = MTPipeBook.first(for: conv), let inv = MontanaMeeting.invite(forConv: conv) else { return nil }
         var plain = cardRingWord
         plain.append(ct)
-        plain.append(Data(MontanaFirstContact.firstConfirm(secret: secret, ct: ct).utf8)); plain.append(0)
+        plain.append(Data(MTPipeBook.firstConfirm(for: conv, pipe: secret, ct: ct).utf8)); plain.append(0)
         plain.append(ring)
         guard let sealed = MTPipe.sealBody(plain, sharedSecret: rdvLetterSecret(inv)) else { return nil }
         let env = sealed.base64EncodedString()
@@ -4359,7 +4417,7 @@ enum MontanaWakePush {
             guard let z = tail.firstIndex(of: 0),
                   let conf = String(data: tail[tail.startIndex..<z], encoding: .utf8) else { continue }
             guard let ref = MontanaCard.accept(firstLetter: ct, invite: inv.base64urlNoPad, conf: conf),
-                  let secret = MTPipeBook.secret(for: ref) else {
+                  let secret = MTPipeBook.key(for: ref) else {
                 MontanaTrace.mark("wakepush_vrx", "card ring -- the card refused its encapsulation"); return nil
             }
             guard let ring = openRing(Data(tail[tail.index(after: z)...]), conv: ref, secret: secret) else {
@@ -4540,7 +4598,7 @@ enum MontanaDiagConsent {
     static let birth = false
     #endif
     static var on: Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? birth }
-    /// THE YES IS ASKED AT THE INSTALL AND AT EVERY UPDATE (the author's word 11.10.2026 15:5x MSK: «the request for diagnostics by
+    /// THE YES IS ASKED AT THE INSTALL AND AT EVERY UPDATE (the author's word 11.10.2026 12:5x UTC: «the request for diagnostics by
     /// default at installation and at updates»): a build the person has not answered for asks once, by the system's own alert,
     /// until the yes is given; the answer is the very switch Settings holds. Never over a call -- the camera's lesson of the same
     /// day: an alert standing over a ring made the call impossible to take (MontanaApp.askDiagnosticsWhenFree).
@@ -5216,7 +5274,7 @@ struct MTClientRelease: Codable, Equatable {
     let url: String
     let bundle: String
     let channel: String
-    /// THE LEAST BUILD THE NETWORK ADMITS AND THE LEVEL OF THE CORE (the author's words 19.10.2026 22:2x MSK: «on every build, at
+    /// THE LEAST BUILD THE NETWORK ADMITS AND THE LEVEL OF THE CORE (the author's words 19.10.2026 19:2x UTC: «on every build, at
     /// opening, a forced update to the new build»; «our build is Montana Core v1.0»): the release document names them (min, core);
     /// a build below the least sees the update page over everything (MTUpdateRequired). A document without them admits every build.
     let least: Int
@@ -5291,7 +5349,7 @@ struct MTClientRelease: Codable, Equatable {
         return channel
     }
     func refresh() async {
-        // THE WORD IS TOLD BEFORE ANY QUESTION IS ASKED (19.10.2026, the author's word 11:4x MSK: «the update messages must
+        // THE WORD IS TOLD BEFORE ANY QUESTION IS ASKED (19.10.2026, the author's word 08:4x UTC: «the update messages must
         // come to every user»): the launch's refresh asks the site while the history still loads, and the history's own
         // refresh, arriving mid-question, left at «asking» -- a phone whose history loads longer than the site answers was
         // never told (T1: no «RELEASE told» for 2245 nor 2246, T2 told). The release already in hand lands first, every call.
@@ -5418,6 +5476,13 @@ final class MTCallRoute {
         return doors[index]
     }
     var needsWake: Bool { legacy || !packets.isEmpty }
+    // Every other node holds the same packet at once (24.10.2026 16:17 UTC: the owned door was dead and
+    // held each packet five seconds while the peer read another node). The receiver applies a packet once
+    // by its id; the authenticated local connection is never doubled onto the nodes.
+    var echoDoors: [String] {
+        guard let door, door != Self.nearDoor else { return [] }
+        return doors.filter { $0 != door && $0 != Self.nearDoor }
+    }
 
     init(conv: String, epoch: String, doors: [String], life: TimeInterval, now: TimeInterval) {
         self.conv = conv; self.epoch = epoch; self.doors = doors; self.life = life; lastUse = now
@@ -5447,6 +5512,7 @@ final class MTCallRoute {
         // indistinguishable callback while handing the route to a node the peer proved.
         guard retiredWrite?.id != packets[i].id || retiredWrite?.door != door else { return nil }
         packets[i].sentDoors.insert(door)
+        packets[i].sentDoors.formUnion(echoDoors)
         let p = packets[i]
         busy = p.id
         sendingGeneration = generation
@@ -5484,6 +5550,8 @@ final class MTCallRoute {
               packets[i].sentDoors.contains(door) else { return false }
         packets.remove(at: i)
         if self.door == door { proven = true; misses = 0 }
+        // The copy reached the reader while the owned door never delivered: the route follows the peer.
+        else if !proven { heard(door: door, legacy: legacy) }
         return true
     }
     func heard(door: String, legacy: Bool) {

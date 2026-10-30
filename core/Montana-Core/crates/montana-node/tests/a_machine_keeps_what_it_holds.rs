@@ -12,11 +12,12 @@
 // plane in part rather than whole; and one that keeps nothing at all, which answers the empty
 // plane and fails at the last assertion below.
 
+use montana_node::pulse::Cohort;
 use montana_node::state::State;
-use montana_node::{Configuration, Machine};
+use montana_node::{Closing, Configuration, Machine};
 
 mod common;
-use common::Scratch;
+use common::{proposal_over, Scratch};
 
 // A digest of the family, standing on neither end of its own bytes.
 fn digest(mark: u8) -> mt_proof::poseidon::Digest {
@@ -76,29 +77,59 @@ fn a_plane_written_reads_back_as_the_plane_it_was() {
     );
 }
 
+// **What stands across a stop is the plane of the last window closed.** The plane a machine holds
+// is kept in the record of the close of a window (issue #19: the tables, the proposal, the state and
+// the record of a window survive a crash together), and what the plane took after that close — the
+// part of a window still open — is not on the disk until its own close. The wrong implementations
+// refused besides those above: one keeping nothing, which starts on the empty plane; and one
+// keeping the plane of the open window as it moves, which starts on a plane no close of this machine
+// ever named.
 #[test]
-fn a_machine_started_again_stands_on_the_plane_it_left() {
+fn a_machine_started_again_stands_on_the_plane_of_its_last_close() {
     let at = Scratch::named("keeping");
-    let admitted = digest(0x51);
-    {
+    let secret = [0x5Eu8; 32];
+    let cohort = Cohort::of(&[Cohort::half_of(&secret)]).expect("a cohort of one stands");
+    let closed_on = {
         let (machine, born) =
             Machine::start(&Configuration::at(&at.0, "127.0.0.1:0")).expect("a machine starts");
         assert!(born, "a first start draws a secret");
         machine
-            .admits_the_tree(admitted)
+            .admits_the_tree(cohort.root())
             .expect("the plane takes the tree of admitted machines");
-        assert_eq!(
-            machine.value().expect("the plane").admitted().bytes(),
-            admitted.bytes()
-        );
-    }
+        machine
+            .value()
+            .expect("the plane")
+            .witness(&digest(0x41).bytes())
+            .expect("the tree takes it");
+        let plane = machine.value().expect("the plane").clone();
+        machine
+            .close(Closing {
+                head: None,
+                taken: proposal_over(4_000, [0x10; 32], &plane, &cohort, 0xA1),
+                plane: plane.clone(),
+                before: None,
+                census: None,
+            })
+            .expect("the window closes");
+        // The open window after it moves the plane; no close keeps that.
+        machine
+            .admits_the_tree(digest(0x51))
+            .expect("the plane takes another tree");
+        plane.encode().expect("a plane encodes")
+    };
     // The machine is gone; nothing of it stands but what it wrote.
     let (again, born) =
         Machine::start(&Configuration::at(&at.0, "127.0.0.1:0")).expect("a machine starts again");
     assert!(!born, "a later start takes the secret that stands");
+    let plane = again.value().expect("the plane");
     assert_eq!(
-        again.value().expect("the plane").admitted().bytes(),
-        admitted.bytes(),
-        "a machine started again stands on an empty plane, so every note it held is unprovable"
+        plane.admitted().bytes(),
+        cohort.root().bytes(),
+        "a machine started again stands on a plane no close of it named"
+    );
+    assert_eq!(
+        plane.encode().expect("a plane encodes"),
+        closed_on,
+        "a machine started again stands on another plane than its last close, so every note it held is unprovable"
     );
 }

@@ -20,7 +20,7 @@ BUILT="$(dirname "$CORE_SRC")/../target/MontanaBindings.xcframework"
 [ -d "$BUILT" ] || BUILT="$CORE_SRC/pkg/MontanaBindings.xcframework"
 if [ -d "$BUILT" ]; then
   rsync -a --delete "$BUILT/" "$OUT/"
-  # THE FRAMEWORK SAYS WHAT IT WAS BUILT FROM (the author's words 16.10.2026 18:2x MSK: "the core must always be current there with
+  # THE FRAMEWORK SAYS WHAT IT WAS BUILT FROM (the author's words 16.10.2026 15:2x UTC: "the core must always be current there with
   # the build versions 1.0 (number)", "the client carries the core"): the commit of the core's tree and whether that tree held
   # uncommitted changes stand beside the framework, so the publisher shows on GitHub the core every build of this client carries.
   CORE_REPO="$(git -C "$CORE_SRC" rev-parse --show-toplevel)"

@@ -95,7 +95,7 @@ final class MTFeedFrame: UIView {
     /// Room for a bar floating over the feed's bottom (the voice player); part of the one inset.
     var reserve: CGFloat = 0 { didSet { if reserve != oldValue { setNeedsLayout() } } }
     /// THE LOWEST EDGE A PLATE FLOATING OVER THE FEED'S TOP COVERS, in the window's space (the pinned plate, a group's room; 0 --
-    /// none): the twin of the player's reserve at the bottom (the author's words 16.10.2026 18:29-18:30 MSK: «the pins in the money
+    /// none): the twin of the player's reserve at the bottom (the author's words 16.10.2026 15:29-15:30 UTC: «the pins in the money
     /// flow cover the letters crookedly and the gap is wrong»). The feed's visual top rests under the lowest thing standing over
     /// it -- its own top edge or the plate's -- so the end letter stands below the plate, whatever stands between (the search line,
     /// the field on top); the letters still run on under it.
@@ -771,7 +771,7 @@ struct MTFeedListView: UIViewRepresentable {
         private var lastRowId: MID?
         private var order: [MID] = []
         private var pendingScroll: MID?
-        /// A SENT LETTER BRINGS THE TURNED FEED TO ITS NEWEST (the author's word 05.10.2026 20:3x MSK: «I sent in the money flow
+        /// A SENT LETTER BRINGS THE TURNED FEED TO ITS NEWEST (the author's word 05.10.2026 17:3x UTC: «I sent in the money flow
         /// and the feed did not turn to the last message as a chat must; the money flow is a full chat, the new on top»). The
         /// send asks for the newest end before its row is born; the row lands a pass later, while the scroll still flies, and
         /// the reader judged off the top was not held -- the flight ended at the old end, the new letter above it under the

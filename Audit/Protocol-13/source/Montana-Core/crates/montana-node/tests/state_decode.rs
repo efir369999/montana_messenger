@@ -23,9 +23,10 @@ fn encoded(
     }
     bytes.extend_from_slice(&0u64.to_le_bytes());
     bytes.extend_from_slice(&0u64.to_le_bytes());
-    // No rate nullifier, and no frame applied in window zero.
+    // No rate nullifier, no frame applied in window zero, and no window credited.
     bytes.extend_from_slice(&0u32.to_le_bytes());
     bytes.extend_from_slice(&0u64.to_le_bytes());
+    bytes.extend_from_slice(&0u32.to_le_bytes());
     bytes.extend_from_slice(&0u32.to_le_bytes());
     bytes
 }
@@ -64,7 +65,7 @@ fn spent_sets_cannot_contain_the_same_nullifier_twice() {
 #[test]
 fn corrupt_counts_are_refused_before_reserving_their_declared_size() {
     let empty = State::new().encode().unwrap();
-    for at in [0, 4, 40, 44, 64, 76] {
+    for at in [0, 4, 40, 44, 64, 76, 80] {
         let mut bytes = empty.clone();
         bytes[at..at + 4].copy_from_slice(&u32::MAX.to_le_bytes());
         assert!(State::decode(&bytes).is_err());

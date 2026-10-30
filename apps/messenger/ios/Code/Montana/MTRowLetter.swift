@@ -68,7 +68,7 @@ enum MTRowLetter {
     /// for the tap that enters; the closing letter names the receiver's outcome, the cause and the moves. Nil for a letter
     /// that rings nothing (MTChessLetter.rings). Read by the app's banner door (MontanaNotify) and by the extension, which
     /// holds one letter and no board -- the same words at both.
-    /// THE BANNER'S WORDS, ONE FUNCTION (the author's word 06.10.2026 23:5x MSK: «natively, as in the chat -- any word, a transfer,
+    /// THE BANNER'S WORDS, ONE FUNCTION (the author's word 06.10.2026 20:5x UTC: «natively, as in the chat -- any word, a transfer,
     /// a game -- one function»): what the banner of a letter says, for the app's banner door (MontanaNotify) and the extension alike
     /// -- a game's invitation and end, a coin letter's coins, a voice, a media letter, the words; nil -- a word of the machine, or a
     /// step of a game, that rings nothing.
@@ -221,7 +221,7 @@ enum MTRowLetter {
 /// older build loses nothing it had. The row names the post by the name the post was born with, so a post stands in the chat
 /// once whatever carries its word twice. COMPAT-LOCAL: the row never leaves this phone; a copy of it arriving from outside is a
 /// service word no build knows and is buried unread (mtUnknownServiceWord) -- the card is seen by the two whose wall and chat it is.
-/// THE MONEY FLOW BEGAN, A ROW OF THE CHAT (the author's word 03.10.2026 16:49 MSK: «when the money flow is switched on, an
+/// THE MONEY FLOW BEGAN, A ROW OF THE CHAT (the author's word 03.10.2026 13:49 UTC: «when the money flow is switched on, an
 /// active animation and a system message, as in chess, that the game of money flow has begun, with one turn of the coin»). This
 /// phone's own row, as a call's is: laid the moment the coin comes on (ChatStore.appendMoneyFlow) and drawn as the chess
 /// invitation's card, our coin turning once. COMPAT-LOCAL: it never leaves this phone; a copy arriving from outside is a service

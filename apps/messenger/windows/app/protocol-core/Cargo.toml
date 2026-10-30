@@ -1,0 +1,22 @@
+[package]
+name = "montana-core-windows"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+license = "MIT OR Apache-2.0"
+description = "The protocol core's boundary (core/Montana-Core, crate mt-boundary, unchanged) as one Windows library: the doors iOS links as MontanaCore.xcframework"
+publish = false
+
+[lib]
+name = "montana_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+mt-boundary = { path = "../../../../../core/Montana-Core/crates/mt-boundary" }
+
+# A workspace of its own: the core's workspace stays as it came, and this library takes its pinned versions from the core's
+# lockfile (copied beside this file).
+[workspace]
+
+[profile.release]
+overflow-checks = true

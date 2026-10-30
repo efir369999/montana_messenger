@@ -19,7 +19,7 @@ enum MTCallRecordingPolicy {
     static let consentKey = "callRecordingConsent.v1"
     static var enabled: Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
     static var consented: Bool { UserDefaults.standard.bool(forKey: consentKey) }
-    /// THE CORRESPONDENT'S SWITCH HOLDS BY LEVEL (the author's word 20.10.2026 20:2x MSK: «if the user's checkmark allowing the recording
+    /// THE CORRESPONDENT'S SWITCH HOLDS BY LEVEL (the author's word 20.10.2026 17:2x UTC: «if the user's checkmark allowing the recording
     /// of a conversation is off, the level decides: lower or equal -- the checkmark holds and no recording happens; if I am level 7 and
     /// the user 6, in the chat and the call with me the recording happens on my side, and on theirs nothing happens»). Their switch is
     /// the one their person sees on Access by level, off below its level. A build that says nothing of it forbids nothing; a forbidding
@@ -29,18 +29,9 @@ enum MTCallRecordingPolicy {
         guard let theirLevel, let mine else { return false }
         return mine > theirLevel
     }
-    /// THE CALL'S COINS ARE ONE FOR BOTH (the author's word 20.10.2026 22:0x MSK: «the minting of coins for a call must by default be
-    /// the same for both»): whether the call is recorded is read from the two words both phones hold -- each side's switch (rec) and
-    /// level (lv) of the call's caps -- by the one rule each side records by (mayRecord). Recorded by either -- both earn; by neither
-    /// -- both burn. The rule is symmetric in the two sides, so both phones answer the same by construction.
-    static func callRecorded(mySwitch: Bool?, myLevel: Int?, theirSwitch: Bool?, theirLevel: Int?) -> Bool {
-        let iRecord = mySwitch == true && mayRecord(theirSwitch: theirSwitch, theirLevel: theirLevel, mine: myLevel)
-        let theyRecord = theirSwitch == true && mayRecord(theirSwitch: mySwitch, theirLevel: myLevel, mine: theirLevel)
-        return iRecord || theyRecord
-    }
 }
 
-/// THE CALL AS THE PERSON SAW IT (the author's word 16.10.2026 18:27 MSK: «the video call must be recorded as I saw it -- now the
+/// THE CALL AS THE PERSON SAW IT (the author's word 16.10.2026 15:27 UTC: «the video call must be recorded as I saw it -- now the
 /// recording's format is crooked»): the call screen tells the recorder what stands where -- the screen's shape, which picture fills
 /// it, where the corner picture stands, whether my picture is mirrored and whether the peer's is a shared screen shown whole -- and
 /// the recorder draws exactly that (MTCallTape.seen). Its writers are the screen's own owners (CallUIModel.applySides, MTCallMini).
@@ -347,7 +338,7 @@ final class MTCallTape {
         guard have.contains(big) else { return have.contains(mini) ? [mini] : [] }
         return shape.mini != nil && have.contains(mini) ? [big, mini] : [big]
     }
-    /// THE CALL AS IT WAS SEEN (the author's word 16.10.2026 18:27 MSK): a call's two pictures are drawn as its screen stood -- the
+    /// THE CALL AS IT WAS SEEN (the author's word 16.10.2026 15:27 UTC): a call's two pictures are drawn as its screen stood -- the
     /// big one filling the frame (a shared screen whole, on black), the corner one where and as large as it stood, rounded with its
     /// rim, my own mirrored as the screen mirrors it; a room's pictures share the frame in a grid, each filling its cell as its tile.
     static func seen(_ images: [String: CIImage], shape: MTCallRecordingLayout.Shape, size: CGSize) -> CIImage {
@@ -434,7 +425,7 @@ final class MTCallRecordingVideo: NSObject, RTCVideoRenderer {
     @Published private(set) var recording = Set<UUID>()
     @Published private(set) var failures = Set<UUID>()
     @Published var askConsent = false
-    /// THE CALL SCREEN'S OWN MARK (MTCallRecordMark; the author's words 16.10.2026 18:2x MSK: «from level 7 the option of automatic
+    /// THE CALL SCREEN'S OWN MARK (MTCallRecordMark; the author's words 16.10.2026 15:2x UTC: «from level 7 the option of automatic
     /// recording turns on -- below it the person presses it by hand on the call's page if they wish»): the calls the person started by
     /// it, and those they ended by it -- an ended one is not recorded again by itself.
     @Published private(set) var byHand = Set<UUID>()
@@ -510,11 +501,9 @@ final class MTCallRecordingVideo: NSObject, RTCVideoRenderer {
         let token = UUID()
         let tape = MTCallTape(id: uuid, manifest: item, timeline: timeline, onAudio: { [weak self] in
             guard let self, self.active[uuid]?.token == token else { return }
-            MTCallMint.mintSecond()
             self.recording.insert(uuid)
         }) { [weak self] in
             guard let self, self.active[uuid]?.token == token else { return }
-            MTCallMint.mintSecond()
             self.recording.remove(uuid)
             MTCallRecordingGate.remove(uuid)
             self.failures.insert(uuid)
@@ -571,7 +560,6 @@ final class MTCallRecordingVideo: NSObject, RTCVideoRenderer {
         track.add(renderer)
     }
     func finish(_ uuid: UUID, deliver: Bool = true) {
-        MTCallMint.mintSecond()
         pending.removeValue(forKey: uuid)
         if pending.isEmpty { askConsent = false }
         MTCallRecordingGate.remove(uuid)
@@ -822,7 +810,7 @@ struct MTCallRecordingConsent: ViewModifier {
     }
 }
 
-/// THE CALL'S RECORD MARK (the author's words 16.10.2026 18:2x MSK: «below level 7 the person presses it by hand on the call's page if
+/// THE CALL'S RECORD MARK (the author's words 16.10.2026 15:2x UTC: «below level 7 the person presses it by hand on the call's page if
 /// they wish»): the call screen's own mark beside the fold, on a call that stands connected -- the record glyph starts this call's
 /// recording, the stop glyph ends it; a call ended by it shows it no more.
 struct MTCallRecordMark: View {

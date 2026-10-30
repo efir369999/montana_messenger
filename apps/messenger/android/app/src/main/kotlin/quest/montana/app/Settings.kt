@@ -20,6 +20,7 @@ import android.widget.CheckBox
 import android.widget.FrameLayout
 import android.widget.GridLayout
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.Switch
@@ -135,9 +136,11 @@ fun settingsRoot(act: MainActivity, onForget: () -> Unit, onClose: () -> Unit): 
     return settingsPage(act, c.getString(R.string.settings), onClose, cross = true) {
         section(null, null,
             c.settingsRow(R.drawable.ic_set_bell, SysColor.red, c.getString(R.string.notif_sounds)) { act.push { notificationsPage(act, it) } },
+            c.settingsRow(R.drawable.ic_folder, SysColor.blue, c.getString(R.string.cf_chat_folders)) { act.push { folderSettingsPage(act, it) } },   // the folders' tabs (iOS 17.10.2026)
             c.settingsRow(R.drawable.ic_arrow_circle_down, SysColor.indigo, c.getString(R.string.data_storage)) { act.push { dataStoragePage(act, it) } },
             c.settingsRow(R.drawable.ic_set_server, SysColor.gray, c.getString(R.string.your_node)) { act.push { NodePage(act, it).view } },
             c.settingsRow(R.drawable.ic_set_lock, SysColor.gray, c.getString(R.string.privacy)) { act.push { privacyPage(act, onForget, it) } },
+            c.settingsRow(R.drawable.ic_stairs, SysColor.orange, c.getString(R.string.lv_access)) { act.push { levelAccessPage(act, it) } },   // iOS MontanaSettings.swift:134
             c.settingsRow(R.drawable.ic_set_brush, SysColor.blue, c.getString(R.string.appearance)) { act.push { AppearancePage(act, it).view } },
             c.settingsRow(R.drawable.ic_language, SysColor.cyan, c.getString(R.string.language)) { act.push { languagePage(act, it) } })
         section(null, null,
@@ -161,8 +164,9 @@ fun notificationsPage(act: MainActivity, onBack: () -> Unit): View {
         val on = c.getSystemService(NotificationManager::class.java).areNotificationsEnabled()
         status.text = c.getString(if (on) R.string.st_connected else if (!asked()) R.string.st_not_asked else R.string.st_disconnected)
     }
-    fun sw(res: Int, color: Int, word: Int, key: String) =
-        c.switchLine(res, color, c.getString(word), Prefs.bool(key, true)) { Prefs.setBool(key, it) }
+    // EVERY SWITCH SAYS WHAT IT DOES (iOS 11cc6a64, 245f03f5): a line under each, read against the code that obeys it
+    fun sw(res: Int, color: Int, word: Int, key: String, caption: Int) =
+        c.switchLine(res, color, c.getString(word), Prefs.bool(key, true), c.getString(caption)) { Prefs.setBool(key, it) }
     val page = settingsPage(act, c.getString(R.string.notifications), onBack) {
         section(null, null, c.settingsRow(R.drawable.ic_set_bell, SysColor.red, c.getString(R.string.allow_notifications), status) {
             if (!asked()) {
@@ -171,10 +175,10 @@ fun notificationsPage(act: MainActivity, onBack: () -> Unit): View {
             } else act.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, c.packageName))
         })
         section(null, null,
-            sw(R.drawable.ic_set_speaker, SysColor.pink, R.string.sound, "notifSound"),
-            sw(R.drawable.ic_set_textbubble, SysColor.green, R.string.show_text, "notifPreview"),
-            sw(R.drawable.ic_person, SysColor.orange, R.string.show_sender, "notifSender"),
-            sw(R.drawable.ic_set_lock, SysColor.blue, R.string.name_lock, "notifLockName"))
+            sw(R.drawable.ic_set_speaker, SysColor.pink, R.string.sound, "notifSound", R.string.sound_sub),
+            sw(R.drawable.ic_set_textbubble, SysColor.green, R.string.show_text, "notifPreview", R.string.show_text_sub),
+            sw(R.drawable.ic_person, SysColor.orange, R.string.show_sender, "notifSender", R.string.show_sender_sub),
+            sw(R.drawable.ic_set_lock, SysColor.blue, R.string.name_lock, "notifLockName", R.string.name_lock_sub))
     }
     page.viewTreeObserver.addOnWindowFocusChangeListener { if (it) refresh() }
     refresh()
@@ -301,7 +305,7 @@ fun privacyPage(act: MainActivity, onForget: () -> Unit, onBack: () -> Unit): Vi
         section(null, null,
             // the switch speaks: hidden, one farewell word; shown, «here» at once (iOS MontanaPresencePrivacy.setSharing)
             c.switchLine(R.drawable.ic_set_eye, SysColor.teal, c.getString(R.string.online_status), Presence.sharing, c.getString(R.string.online_status_sub)) { Presence.setSharing(it) },
-            sw(R.drawable.ic_set_check_circle, SysColor.green, R.string.read_receipts, "readReceiptsEnabled"),
+            sw(R.drawable.ic_set_check_circle, SysColor.green, R.string.read_receipts, "readReceiptsEnabled", R.string.read_receipts_sub),
             sw(R.drawable.ic_set_keyboard, SysColor.indigo, R.string.live_chat, "liveTypingEnabled"),
             // «Sync contacts» (iOS ContactsTabView.upsertSystemCard 2463-2476) writes a person's Montana name into the phone's
             // book; Android has no names yet, so the switch would claim what nothing does — it stands again with the names
@@ -315,10 +319,8 @@ fun privacyPage(act: MainActivity, onForget: () -> Unit, onBack: () -> Unit): Vi
         section(null, c.getString(R.string.wall_rule_footer),
             c.settingsRow(R.drawable.ic_compose, SysColor.blue, c.getString(R.string.wall_who_write_mine)) { act.push { wallRulePage(act, WallRule.Act.WRITE, it) } },
             c.settingsRow(R.drawable.ic_set_eye, SysColor.blue, c.getString(R.string.wall_who_see_mine)) { act.push { wallRulePage(act, WallRule.Act.SEE, it) } })
-        section(null, null, sw(R.drawable.ic_set_eye_slash, SysColor.purple, R.string.filter_objectionable, "objectionableFilterOn"),
+        section(null, null, sw(R.drawable.ic_set_eye_slash, SysColor.purple, R.string.filter_objectionable, "objectionableFilterOn", R.string.filter_objectionable_sub),
             c.settingsRow(R.drawable.ic_hand, SysColor.red, c.getString(R.string.blocked_users)) { act.push { blockedPage(act, it) } })
-        section(null, null, c.switchLine(R.drawable.ic_key, SysColor.blue, c.getString(R.string.identity_google), MontanaBackupID.on(c),
-            c.getString(R.string.identity_google_sub)) { MontanaBackupID.setOn(c, it) })
         section(null, null, c.settingsRow(R.drawable.ic_key, SysColor.gray, c.getString(R.string.seed_phrase)) { act.push { seedPage(act, it) } })
         section(null, null, c.text(c.getString(R.string.forget_device), 16f, MT.red, center = true).apply {
             setPadding(dp(16), dp(14), dp(16), dp(14))
@@ -495,27 +497,52 @@ fun dataStoragePage(act: MainActivity, onBack: () -> Unit): View {
         bar.progress = (f * 100).toInt()
     }
     fun say(s: String) = act.onMain { AlertDialog.Builder(act).setTitle(R.string.backup_header).setMessage(s).setPositiveButton(R.string.ok, null).show() }
+    // WHAT THE COPY TAKES (iOS DataStorageView inventory + plan): counted when the page opens, the plan the person left sealed here
+    val plan = CopyPlan.load()
+    val planRows = c.vstack(Gravity.NO_GRAVITY)
+    var desk: CopyDesk? = null
+    lateinit var measure: () -> Unit
+    fun count() = act.background {
+        val inv = CopyInventory.gather(act)
+        act.onMain {
+            desk?.let { it.inv = inv; it.changed(); measure(); return@onMain }
+            desk = CopyDesk(act, inv, plan).also { d ->
+                copySummary(d).forEach { r ->
+                    planRows.addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = c.dp(16) })
+                    planRows.addView(r, lp())
+                }
+            }
+            measure()   // the letters' names are counted now: what they name is the chats' (iOS measureDisk(inv))
+        }
+    }
+    fun handed(r: CopyResult) {
+        when (r) {
+            is CopyResult.Made -> act.onMain {
+                act.saveDocument(r.file.name) { uri ->
+                    if (uri == null) { r.file.delete(); return@saveDocument }
+                    act.background {
+                        try {
+                            // The saved file is its own answer (iOS: the share sheet, no words): «taken by your node» named a node that never saw it
+                            act.contentResolver.openOutputStream(uri)?.use { out -> r.file.inputStream().use { it.copyTo(out, 1 shl 16) } }
+                        } catch (e: Exception) { say(Refusal.DiskRefused(e.javaClass.simpleName).spoken(act)) }
+                        finally { r.file.delete() }
+                    }
+                }
+            }
+            is CopyResult.Refused -> say(r.why.spoken(act))
+            else -> {}
+        }
+    }
+    /** «Create backup» opens the copy BEFORE it is made (iOS make: the count taken fresh first, then the sheet). */
     fun make() {
         if (working) return
         working = true
         act.background {
-            val r = MontanaBackup.create(act) { show(R.string.sealing_copy, it) }
-            show(null, 0.0); working = false
-            when (r) {
-                is CopyResult.Made -> act.onMain {
-                    act.saveDocument(r.file.name) { uri ->
-                        if (uri == null) { r.file.delete(); return@saveDocument }
-                        act.background {
-                            try {
-                                act.contentResolver.openOutputStream(uri)?.use { out -> r.file.inputStream().use { it.copyTo(out, 1 shl 16) } }
-                                say(act.getString(R.string.node_taken_by, r.tally.chats, r.tally.records, r.tally.media))
-                            } catch (e: Exception) { say(Refusal.DiskRefused(e.javaClass.simpleName).spoken(act)) }
-                            finally { r.file.delete() }
-                        }
-                    }
-                }
-                is CopyResult.Refused -> say(r.why.spoken(act))
-                else -> {}
+            val inv = CopyInventory.gather(act)
+            act.onMain {
+                working = false
+                val d = desk?.also { it.inv = inv; it.changed() } ?: CopyDesk(act, inv, plan)
+                act.push { close -> copyPreviewPage(d, close) { r -> handed(r); count() } }
             }
         }
     }
@@ -531,7 +558,7 @@ fun dataStoragePage(act: MainActivity, onBack: () -> Unit): View {
                         try {
                             act.contentResolver.openInputStream(uri)?.use { i -> tmp.outputStream().use { i.copyTo(it, 1 shl 16) } }
                             when (val r = MontanaBackup.restore(act, tmp) { show(R.string.restoring_backup, it) }) {
-                                is CopyResult.Taken -> say(act.getString(R.string.node_taken_into, r.tally.chats, r.tally.records, r.tally.media))
+                                is CopyResult.Taken -> { say(act.getString(R.string.node_taken_into, r.tally.chats, r.tally.records, r.tally.media)); count() }
                                 is CopyResult.Refused -> say(r.why.spoken(act))
                                 else -> {}
                             }
@@ -551,7 +578,8 @@ fun dataStoragePage(act: MainActivity, onBack: () -> Unit): View {
         section(c.getString(R.string.backup_header), c.getString(R.string.backup_footer),
             c.settingsRow(R.drawable.ic_arrow_circle_up, SysColor.green, c.getString(R.string.create_backup), chevron = false) { make() },
             c.settingsRow(R.drawable.ic_arrow_circle_down, SysColor.orange, c.getString(R.string.restore_backup), chevron = false) { restore() },
-            progress)
+            progress, planRows)
+        count()
         // THE PICTURE CACHE (iOS MontanaSettings.swift:1225-1242 at 2155, MontanaCaches.dropAll; atom 542558a36f0e): the pictures kept
         // so chats and walls open without waiting are emptied here alone, by the person; the checkmark says it was done
         val cleared = c.icon(R.drawable.ic_check, MT.gray).apply { visibility = View.INVISIBLE }
@@ -561,5 +589,112 @@ fun dataStoragePage(act: MainActivity, onBack: () -> Unit): View {
                 android.util.Log.d("Montana", "caches cleared=" + n + " by=person")
                 cleared.visibility = View.VISIBLE
             })
+        // THE CACHE, CLEARED AS THE REFERENCE CLEARS IT (iOS MontanaSettings CACHE, 6f24f091; the author's word 18.10.2026 20:1x MSK):
+        // what the person's own node holds leaves this phone, and comes back from the node at a look or a tap -- the node's word
+        // decides, asked anew
+        val keptValue = c.text("", 15f, MT.gray)
+        val keptRow = c.settingsRow(R.drawable.ic_hub, SysColor.gray, c.getString(R.string.cache_kept_on_node), value = keptValue, chevron = false) {}
+            .apply { visibility = View.GONE }
+        fun kept() = act.onMain {
+            val w = HomeKeep.word as? HomeKeep.Word.Held ?: return@onMain
+            keptRow.visibility = View.VISIBLE
+            keptValue.text = "${w.files} · " + android.text.format.Formatter.formatShortFileSize(c, w.bytes)   // USER-DATA: the node's count and size
+        }
+        val clearRow = c.settingsRow(R.drawable.ic_delete, SysColor.red, c.getString(R.string.cache_clear), chevron = false) {
+            if (!HomeShelf.bringing || HomeKeep.clearing) return@settingsRow
+            AlertDialog.Builder(act).setTitle(R.string.cache_clear_q).setMessage(R.string.cache_clear_msg)
+                .setPositiveButton(R.string.cache_clear_go) { _, _ ->
+                    HomeKeep.clear(act) { r ->
+                        act.onMain {
+                            val word = if (r != null) c.getString(R.string.cache_cleared, r.first, android.text.format.Formatter.formatShortFileSize(c, r.second))
+                                else c.getString(R.string.cache_silent)
+                            AlertDialog.Builder(act).setTitle(R.string.cache_word).setMessage(word).setPositiveButton(R.string.ok, null).show()
+                            count()
+                        }
+                    }
+                }
+                .setNegativeButton(R.string.cancel, null).show()
+        }.apply { if (!HomeShelf.bringing) alpha = 0.4f }
+        // AS THE REFERENCE KEEPS ITS CACHE (iOS f5803d8c): a term for what nobody opened, a ceiling for the whole -- what leaves is
+        // what the node holds, asked anew. The platform's own menu offers the choices, as iOS's Picker does.
+        fun choice(icon: Int, color: Int, word: Int, key: String, options: List<Pair<Int, String>>): View {
+            val value = c.text("", 15f, MT.gray)
+            fun shown() { value.text = options.firstOrNull { it.first == (Prefs.str(key, "0").toIntOrNull() ?: 0) }?.second ?: options.last().second }
+            shown()
+            lateinit var row: View
+            row = c.settingsRow(icon, color, c.getString(word), value = value, chevron = false) {
+                if (!HomeShelf.bringing) return@settingsRow
+                PopupMenu(act, value).apply {
+                    options.forEachIndexed { i, (n, w) -> menu.add(0, n, i, w) }
+                    setOnMenuItemClickListener { Prefs.setStr(key, it.itemId.toString()); shown(); HomeKeep.trim(act); true }
+                    show()
+                }
+            }.apply { if (!HomeShelf.bringing) alpha = 0.4f }
+            return row
+        }
+        val gb = { g: Int -> android.text.format.Formatter.formatShortFileSize(c, g * 1_073_741_824L) }   // USER-DATA: a size in the platform's own units
+        val keepRow = choice(R.drawable.ic_restore, SysColor.blue, R.string.keep_media, HomeKeep.KEEP_DAYS,
+            listOf(3 to c.getString(R.string.keep_3_days), 7 to c.getString(R.string.keep_1_week), 30 to c.getString(R.string.keep_1_month), 0 to c.getString(R.string.keep_forever)))
+        val limitRow = choice(R.drawable.ic_hub, SysColor.gray, R.string.cache_limit, HomeKeep.LIMIT,
+            listOf(5 to gb(5), 16 to gb(16), 32 to gb(32), 0 to c.getString(R.string.cache_no_limit)))
+        section(c.getString(R.string.cache_header), c.getString(if (HomeShelf.bringing) R.string.cache_footer_node else R.string.cache_footer_no_node),
+            keepRow, limitRow, keptRow, clearRow)
+        // WHAT THIS PHONE HOLDS, MEASURED ON ITS DISK (iOS «On this phone», e02595a5 and e9187672; the author's word 18.10.2026 10:2x MSK:
+        // «I cannot see what weighs so much nor how to clean it»): the sum is the phone's own, each file counted once; the attachments
+        // are chosen by kind on their pages, the copies waiting are cleared here
+        val diskRows = c.vstack(Gravity.NO_GRAVITY)
+        fun size(b: Long) = android.text.format.Formatter.formatShortFileSize(c, b)   // USER-DATA: a size measured on this phone
+        fun diskRow(icon: Int, color: Int, word: Int, bytes: Long, act0: View? = null, onTap: (() -> Unit)? = null): View {
+            val value = c.hstack {
+                addView(c.text(size(bytes), 15f, MT.gray))
+                if (act0 != null) { gap(4); addView(act0, lp(dp(36), dp(36))) }
+            }
+            return c.settingsRow(icon, color, c.getString(word), value = value, chevron = onTap != null) { onTap?.invoke() }
+        }
+        fun drawDisk(u: DiskUse) {
+            diskRows.removeAllViews()
+            val kinds = { desk?.let { d -> act.push { close -> copyKindsPage(d) { close(); count() } } }; Unit }
+            val bin = c.icon(R.drawable.ic_delete, SysColor.red).apply {
+                setPadding(dp(6), dp(6), dp(6), dp(6)); contentDescription = c.getString(R.string.cache_clear_go)
+                alpha = if (u.shelf == 0L) 0.4f else 1f
+                pressable {
+                    if (u.shelf == 0L) return@pressable
+                    AlertDialog.Builder(act).setTitle(R.string.ds_shelf_q).setMessage(R.string.ds_shelf_msg)
+                        .setPositiveButton(R.string.cache_clear_go) { _, _ -> act.background { MontanaBackup.sweep(act, "person"); act.onMain { measure() } } }
+                        .setNegativeButton(R.string.cancel, null).show()
+                }
+            }
+            val total = c.hstack {
+                setPadding(dp(16), dp(12), dp(14), dp(12))
+                addView(c.text(c.getString(R.string.ds_total), 16f, bold = true), lp(0, WRAP, 1f))
+                addView(c.text(size(u.total), 16f, bold = true))
+            }
+            val rows = listOf(
+                diskRow(R.drawable.ic_attach, SysColor.indigo, R.string.ds_attachments, u.chats, onTap = kinds),
+                diskRow(R.drawable.ic_set_doc, SysColor.gray, R.string.ds_unnamed, u.unnamed, onTap = kinds),
+                diskRow(R.drawable.ic_grid_2x2, SysColor.teal, R.string.ds_walls, u.walls),
+                diskRow(R.drawable.ic_archive, SysColor.orange, R.string.ds_shelf, u.shelf, act0 = bin),
+                diskRow(R.drawable.ic_restore, SysColor.blue, R.string.ds_history, u.history),
+                diskRow(R.drawable.ic_person, SysColor.pink, R.string.ds_faces, u.faces),
+                diskRow(R.drawable.ic_more_horiz, SysColor.gray, R.string.ds_rest, u.other),
+                total)
+            rows.forEachIndexed { i, r ->
+                if (0 < i) diskRows.addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = c.dp(16) })
+                diskRows.addView(r, lp())
+            }
+        }
+        diskRows.addView(ProgressBar(c).apply { indeterminateTintList = ColorStateList.valueOf(MT.gray) },
+            lp(dp(28), dp(28)).apply { gravity = Gravity.CENTER_HORIZONTAL; topMargin = dp(10); bottomMargin = dp(10) })
+        section(c.getString(R.string.ds_header), c.getString(R.string.ds_footer), diskRows)
+        measure = {
+            val named = desk?.inv?.owner?.keys?.toSet() ?: emptySet()
+            act.background {
+                val u = runCatching { DiskUse.measure(act, named) }.getOrNull()
+                if (u != null) act.onMain { drawDisk(u) }
+            }
+        }
+        HomeKeep.onChange = { kept() }
+        kept()
+        HomeKeep.ask()
     }
 }

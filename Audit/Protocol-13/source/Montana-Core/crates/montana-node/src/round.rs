@@ -68,8 +68,9 @@ pub fn eligible(
     mt_pulse::U256::from_be_bytes(&drawn) < *threshold
 }
 
-// The beacon that opens a round. Round zero links to the proposal of the window before — the very
-// proposal whose cement these rounds accumulate — and every later round to the beacon before it.
+// The beacon that opens a round. Round zero links to the proposal of the window two before — final
+// when this window opens, and the one that fixed its electorate — and every later round to the
+// beacon before it (Canon, "The round of a chain, in integers").
 // The votes are what the ballots of the cement's parts cast, each part's once.
 pub fn beacon(
     window: u64,

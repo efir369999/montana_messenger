@@ -1,9 +1,9 @@
 # Montana — Consensus
 
-**Version:** 7.3.0
+**Version:** 8.0.0
 
 Consensus holds the TimeChain and its movement: how a window advances, who runs it, how it is cemented,
-how a machine enters the set that runs windows, and how the right to a window's share is
+how a machine enters the set that runs windows, and how the right to a window's coin is
 issued. It holds no number — Canon holds those — and no note, no record of a person and no pipe.
 
 ## Scope
@@ -14,7 +14,7 @@ chain and the beacon it turns on; the parallel chains of a window; the chain of 
 windows and the presence of a machine; the runner's draw, its threshold and the
 recomputation of that threshold; the committee and the quorum; the closing of a window, the agreement on what it decided
 and its finality; the cascade of the beacon; the admission of machines; the issue of the right
-to a window's share; the cold start.
+to a window's coin; the cold start.
 
 **Not in scope.** Values, layouts and vectors — Canon. Notes, proofs and transfers — Value.
 Records of people, keys and identity operations — Identity. Delivery — Network. The invariants
@@ -262,10 +262,10 @@ of the electorate and whose carried votes reach the quorum share of the committe
 reconciled — the pair it recomputed from the heavy
 attestations it held was that beacon's pair, and the votes stand within what the ballots it verified
 of those parts cast — and which a verified attestation answered. That beacon is the final beacon of the window, and its pair is the cement of
-the window: the proposal carries it, the share of every living machine divides the mint by its
-count, and the draw of the window two on reads its aggregate. An attestation a machine gathered after
-the final beacon was published enters no proposal and no share of this window; the window after it
-cements its own. The cement is the living of the window whatever names they pledged, so the share
+the window: the proposal carries it, its count is the coins the window credits, one to every
+living machine, and the draw of the window two on reads its aggregate. An attestation a machine gathered after
+the final beacon was published enters no proposal and no coin of this window; the window after it
+cements its own. The cement is the living of the window whatever names they pledged, so the coin
 of a window does not part with the names, and a machine that pledged a name the agreement did not
 decide lived the window as fully as one that pledged the decided one. Every machine runs a version of the chain where every one of them clears the draw,
 and a machine advances on the versions it holds, so two machines may close one window on two beacons
@@ -276,8 +276,8 @@ different moments and carry two tallies, so the tally stands in the beacon and i
 proposal, and the decision is the pair whichever tally reached the committee.
 
 **What this leaves in the open, said rather than implied.** The count of the living of a window is
-the count of its cement, and it is public, as the cement is; the share of the window's mint is the
-mint divided by it. What stays closed is **which** machines lived and **what** any of them weighs: a
+the count of its cement, and it is public, as the cement is; the supply the window adds is that
+count, in coins, one to each of them. What stays closed is **which** machines lived and **what** any of them weighs: a
 part-nullifier names nobody and joins to nothing across windows, the proof of presence discloses
 nothing of the secret it derives from — the section on the certificate states what hides it — and a
 ballot discloses a count of votes and nothing of the standing that drew them.
@@ -324,11 +324,11 @@ eligible machine's echo, and the cement waits for the quorum of everyone.
 
 - A window closes only on the decision of its agreement on the name of its predecessor and on a cement naming distinct machines of the electorate to the quorum share of the electorate's count and carrying the votes of their standing to the quorum share of the committee; no count of rounds, no measure and no clock closes it.
 - The electorate of a window is the admitted set the proposal of the window two before carries, root, count and census; it is fixed before the window opens and nothing of the window moves it.
-- A window closes, once its agreement has decided, on its final beacon: a beacon of its chain whose carried count reaches the quorum share of the electorate and whose carried votes reach the quorum share of the committee, reconciled by the closing machine against the heavy attestations and the ballots it held and answered by a verified attestation; that beacon's pair is the cement of the window — its living, whatever names they pledged — and the proposal and the share of every living machine read it.
+- A window closes, once its agreement has decided, on its final beacon: a beacon of its chain whose carried count reaches the quorum share of the electorate and whose carried votes reach the quorum share of the committee, reconciled by the closing machine against the heavy attestations and the ballots it held and answered by a verified attestation; that beacon's pair is the cement of the window — its living, whatever names they pledged — and the proposal and the coin of every living machine read it.
 - Every heavy attestation is verified natively before its part enters the cement: eligibility, signature and the proof of presence against the root of the electorate; a part the electorate does not hold enters no cement.
 - The count of rounds a window took is public and names nobody; it is a function of the count of the electorate, which its proposal carries in the open, and so is the count of the living, which is the count of the cement.
 - The round threshold is read out of the count of the electorate and the count of chains in force, by the rule of Canon; no observation, no count of rounds and no history enters it, and a chain of one machine and a chain of a million each compute theirs from state alone.
-- A machine retains the heavy attestations, the ballots, the pledges and the frames of a window, and its proposals with their rolls, at their points for `retained_windows` windows after it closes; the retention is read from held state, and what it bounds is the walk of a device catching up and the replay of a machine that took another name.
+- A machine retains the beacons of the rounds of a window, the heavy attestations, the light attestations answering its final beacon, the ballots, the pledges and the frames of a window, and its proposals with their rolls, at their points for `retained_windows` windows after it closes; the retention is read from held state, and what it bounds is the walk of a device catching up and the replay of a machine that took another name.
 
 ## Parallel chains
 
@@ -358,8 +358,9 @@ step of the schedule, and the volume arithmetic every step is checked against.
 ## The secret of a machine
 
 A machine holds one secret, and everything it does derives from it: the ticket it draws at
-home, its part in a window, its right to raise itself, its share, and the moment that share is
-taken. The secret never leaves the machine and enters no object it publishes — what leaves is
+home, its part in a window, the half its candidacy names it by, its coin of a window, and the moment that
+coin is taken. The right that raises it is not among them: that right is a person's, carried by
+the record of the person who raises the machine. The secret never leaves the machine and enters no object it publishes — what leaves is
 always a value derived from it in one direction, under the domain Canon names for that use.
 
 **One secret of its own, and one value its owner places there.** Everything the machine
@@ -373,7 +374,7 @@ being counted, and a derivation taking one in place of the other is a defect.
 **Every device that speaks on the network holds a secret of this kind**, whether or not it is a
 machine: it is drawn the same way, it never leaves the device, and every published value derives
 from it in one direction under the domain Canon names for that use. A device that is not a
-machine draws no ticket and takes no share, and it still places itself in a window by a value
+machine draws no ticket and takes no coin, and it still places itself in a window by a value
 derived from this secret — which is why the derivation Canon fixes for that placement names the
 sender's secret rather than a machine's.
 
@@ -391,8 +392,8 @@ from the other.
 ## The runner's draw
 
 The draw answers one service question — **who runs this window** — and it answers nothing
-about money. The share of a window is divided equally
-among the living, and the machine on duty receives the same share as any other.
+about money. Every machine living in a window is credited one coin
+for every second of it, and the machine on duty receives the same coins as any other.
 
 **A threshold, not a comparison.** Every living machine computes its own ticket at home from
 its own secret and the cemented aggregate of the window two before the one being drawn, and
@@ -407,8 +408,8 @@ one that cleared the threshold is revealed by the fact of publishing a window, a
 asserts that it cleared without disclosing the ticket, the secret or the machine.
 
 **The ticket carries no weight.** Every machine of the electorate draws against one threshold, so
-every living machine has the same chance and the expectation of income equals the share of a
-window. What the network holds of "how many of us there are" is the counts a proposal carries in
+every living machine has the same chance, and its income is the credit of every window it
+lived, whether it ran or not. What the network holds of "how many of us there are" is the counts a proposal carries in
 the open — the admitted, the cement and the census of the standing — and nothing finer: the draw
 weighs no machine, and names none. Standing weighs in the close and only there, through the votes
 the section on the standing states.
@@ -458,7 +459,7 @@ restatement is exactly how the two would come to prohibit different things.
 
 The threshold of the draw is the width at every window, and nothing walks it. A runner carries what
 the window decided and nothing of its own — the name of the proposal is taken over the decision and
-the share falls to every living machine alike — so excluding a machine from running buys only the
+the coin falls to every living machine alike — so excluding a machine from running buys only the
 bandwidth of its copy, and it costs a window: a threshold below the width leaves windows no ticket
 clears, and a window nobody runs closes on nothing. A threshold walked by the windows that cleared
 it never leaves the width, since a window closes only through a runner; one read out of state
@@ -518,8 +519,8 @@ refused. Nothing in a proposal is taken on trust.
 **When two clear the threshold**, their proposals are one proposal: the identifier is taken over
 what the window decided, so no runner grinds a name through the randomness of a proof, and neither a
 runner's key nor the beacon it closed on separates two names for one decision. A runner gains nothing by running and loses nothing by
-being late: its share is the one it already holds as a living machine, and duty adds no part of a
-mint to anyone.
+being late: its coin is the one it already holds as a living machine, and duty adds no coin to
+anyone.
 
 **The cascade of the beacon.** A stalled runner is replaced without a timeout, because a
 timeout is a clock. The standby order of a window is the one Canon derives — the ascending order
@@ -531,8 +532,8 @@ every chain in parallel from the window's first round. An eligible machine attes
 one round are distinct beacons, so the round nullifier — bound to the beacon identifier —
 yields distinct values, and attesting them all is duty, not equivocation. The window closes
 on whichever entitled version completes the cement first; among versions completing in one
-round, the senior's; a losing version is a neutral duplicate, its runner keeping its share
-and losing nothing but duty. The share of the window is divided among the living regardless
+round, the senior's; a losing version is a neutral duplicate, its runner keeping its coin
+and losing nothing but duty. Every living machine is credited its coin of the window regardless
 of who ran.
 
 **Withholding buys nothing.** Every path from a runner's one freedom — when to include — to a
@@ -544,7 +545,7 @@ timing could tune is the cemented aggregate, and its consumers are tickets and e
 keyed by other machines' secrets, which the runner cannot evaluate. And a duty that pays
 nothing: delaying the crossing delays only the runner's own version while junior versions
 complete and take the window — the slots are canonical, so the contents are identical either
-way, and duty adds no share.
+way, and duty adds no coin.
 
 **The one place a proposer chooses, named.** In an attempt after the first, the name the machines
 follow is the one its proposer took, verified by every machine that follows it — its roll replayed —
@@ -555,8 +556,8 @@ a window whose machines took different names, and the place of a proposer is dra
 chooses, so no machine holds it by choice.
 
 **Skin in the game.** A machine whose proposal the quorum rejects loses the duty of that
-window and takes no part in its draw. Its share as a living machine is untouched — the share
-is equal and does not depend on duty.
+window and takes no part in its draw. Its coin as a living machine is untouched — the coin
+is one for every living machine and does not depend on duty.
 
 ## The agreement on what a window decided
 
@@ -610,8 +611,10 @@ counts by two rules, so that no pledge stands on what is not there:
 - a closing pledge counts only where the open pledges of its own attempt reach the quorum on its
   name.
 
-A part counts once per kind and attempt, at its first appearance; a second pledge of the same kind
-and attempt under it on another name is evidence, and a repetition on the same name adds nothing.
+A part counts once per kind and attempt, under the first of its pledges of that kind and attempt in
+their canonical order ("The sanction of a double answer"), whatever the order in which a machine
+received or was handed them; every other pledge of the same kind and attempt under it on another
+name is evidence, and a repetition on the same name adds nothing.
 
 **The decision.** A name is **decided** when the closing pledges of one attempt reach the quorum on
 it. The decision makes the proposal of the window before final, and it is the event the pulse names
@@ -677,7 +680,12 @@ because both of its counts are bounded before it is read: the frames by the fram
 the parts by the count of the electorate. A machine checks a roll by replaying it: the frames in
 their order over the decided state of the window before, the parts against the heavy attestations of
 the window; the roots, the cement and the census it recomputes are the proposal's, or the roll is not
-that proposal's. Canon holds its layout and its length.
+that proposal's. The roots include the tree of credited rights, which the proposal of a window grows
+by the parts of the cement of the window before it, less the parts the challenge of that window
+convicted; the pairs that convicted stand in the roll of the proposal that leaves them out, so a
+replay leaves out the same parts — the place they take in a roll is owed with the sanction itself,
+and until it lands a roll carries none and the whole cement of the window before is credited. Canon
+holds its layout and its length.
 
 **When the decision is not the name a machine took.** A machine whose name is not the decided one
 takes the decided proposal and its roll, replays the roll over the decided state of the window two
@@ -753,8 +761,8 @@ pairs are published objects, each under one part-nullifier, and the evidence is 
 word from anyone.
 
 **What prices that third, and what does not.** The sanction is not what makes a reversal
-expensive: an equivocating right loses the share of its window and nothing else, so a third of
-the electorate willing to convict itself pays a third of one window's mint between them. What makes
+expensive: an equivocating right loses the coin of its window and nothing else, so a third of
+the electorate willing to convict itself pays one coin a machine between them. What makes
 it expensive is what a place in the electorate is. A machine enters the tree of admitted machines
 through the gate of time — a lived continuity period that cannot be bought or parallelized, a
 one-time right that names nobody, and the bounded rate of selection events — so a third of the
@@ -768,7 +776,10 @@ guarantee it does not give.
 A machine that verified a decision never leaves it. Within one set of rules length decides
 nothing; the length rule of the Constitution survives for the divergence of rules alone, and
 it counts decided windows. The challenge of a window opens at its proposal and closes when the
-window after it closes, and a pair presented after that close is refused. The attestations and the
+window after it closes, and a pair presented after that close is refused. That is also the moment the
+window's credit is written: the proposal of the window after it credits the parts of its cement the
+challenge did not convict, and from then on nothing about that window's coins can move. The
+attestations and the
 pledges themselves outlive the challenge as the certificate of the window — retained for the windows Canon names — and their
 longer life extends no challenge and names nobody.
 
@@ -776,7 +787,7 @@ longer life extends no challenge and names nobody.
 
 - A decided window is never abandoned by a machine that verified its decision, and no longer chain within one set of rules overrides it.
 - Two decisions of one height imply at least `Q + Q - T` machines of the electorate, each under one part-nullifier, signing one of the three contradicting pairs of the agreement, and those pairs are the whole evidence.
-- The challenge of a window runs from its proposal to the close of the window after it; a pair presented after that close is refused, the attestations and the pledges retained as the certificate extend no challenge, and nothing of it enters persistent state.
+- The challenge of a window runs from its proposal to the close of the window after it; a pair presented after that close is refused, the attestations and the pledges retained as the certificate extend no challenge, and nothing of it enters persistent state but the absence of a convicted part from the tree of credited rights, which names nobody.
 
 ## The sanction of a double answer
 
@@ -789,15 +800,19 @@ attempt on two names; and a closing pledge on one name followed, in a later atte
 pledge on another name standing on none or on an attempt before the closing one.
 
 **The sanction names nobody, because nothing here can.** The second appearance is refused in
-silence and the right it would have spent is extinguished without issue: the share of that window
-is not paid, and nothing beyond that right is touched. There is no confiscation, no exclusion by
-name and no list of offenders, because a machine is accountable through its rights and not
-through an identity — the construction that hides it is the one that catches it.
+silence and the right it would have spent is extinguished without issue: the coin of that window
+is not paid, and nothing beyond that right is touched. What extinguishes it is an absence: the
+proposal of the window after it credits the parts of the cement less the convicted one, so the right
+of that window has no leaf of the tree of credited rights to walk to. There is no confiscation, no
+exclusion by name and no list of offenders, because a machine is accountable through its rights and
+not through an identity — the construction that hides it is the one that catches it.
 
 **Who applies it.** Everyone, and identically: the pair of objects carrying one nullifier is
 self-evident to any machine holding both, so the refusal is a local rule with a global result and
 needs neither a court nor a report. Whoever holds the evidence keeps it while the window remains
-open to challenge, and discards it with the window.
+open to challenge, and discards it with the window; the pairs that convicted travel once more, in
+the roll of the proposal that leaves their parts uncredited, so that a machine replaying that roll
+leaves out the same parts, and they stand there as long as that roll stands at its points.
 
 **Invariants of the sanction:**
 
@@ -811,7 +826,8 @@ open to challenge, and discards it with the window.
 - The refusal falls on the right and not on a party, so no implementation needs a name to apply it.
 - The first appearance stands and the second is refused, by the canonical order of the window and never by the order of arrival at a machine.
 - The canonical order of the heavy attestations of a window, by which the first appearance is read, is the chain index of the attested beacon ascending, then its round index ascending, then the round nullifier of the attestation ascending as a string of 32 bytes (Canon, "The confirmation of a window"), and where two of them agree in all three the pledged name ascending. Of the heavy attestations of one part-nullifier the first in this order stands: its name is the part's open pledge of attempt zero, whatever the order in which a machine received or was handed them.
-- A pair is admitted no longer than the window's challenge and enters no persistent state; the attestations retained for the join extend no challenge and name nobody, so nothing accumulates about anyone.
+- The canonical order of the pledges of one part-nullifier, of one kind and of one attempt, by which the first appearance is read, is the name ascending as a string of 32 bytes, then `since` descending, none (0xFFFFFFFF) standing above every attempt, so that of two pledges on one name the one standing on none, which counts wherever it stands, comes before one that counts only on the quorum it names. The first in this order is the part's pledge of that kind and attempt and is the one counted; every other on another name is evidence beside it, whatever the order in which a machine received or was handed them.
+- A pair is admitted no longer than the window's challenge and enters no persistent state; what persists is that the convicted part is absent from the tree of credited rights, which holds parts and names nobody. The pairs that convicted stand in the roll of the window after it while that roll stands, and the attestations retained for the join extend no challenge and name nobody, so nothing accumulates about anyone.
 
 ## The certificate of a window
 
@@ -871,7 +887,7 @@ beside it.
 
 - The certificate of a window is its proposal, the heavy attestations of the window after it, the light attestations of that window answering the final beacon its proposal names, the pledges of that window's agreement its decision stands on, and the ballots of their parts; it introduces no object and no signature of its own.
 - A device verifies a certificate as the living verified its parts: every presence proof against the root of the electorate of its window, every signature, every pledge's and every light attestation's key against the heavy attestation of its part and every light attestation's name against the name that heavy attestation pledged, the final beacon answered by an attestation so verified, the distinctness of the parts, the counting of the agreement and the count of the deciding quorum against the count of the electorate, every ballot against the census, the aggregate and the committee of that electorate, the votes against the committee, and the proposal's ticket proof and signature; nothing of it is taken on trust.
-- The heavy attestations, the light attestations answering its final beacon, the ballots and the pledges of a window survive at their points for `retained_windows` windows after the window closes, beside the frames of its rounds and its proposals with their rolls, and nothing else of a round outlives its window.
+- The beacons of the rounds of a window, its heavy attestations, the light attestations answering its final beacon, the ballots and the pledges survive at their points for `retained_windows` windows after the window closes, beside the frames of its rounds and its proposals with their rolls. A holder opens a cell only down to its delivery and cannot tell one object of a point from another, so it keeps every point of the window whole for that time: the light attestations answering the window's other beacons survive with their point and nothing reads them, and nothing of a round outlives the retention.
 - No proof of one length asserts the quorum of a window: the relation that would need one has no prover, and the set names that rather than stating a proof nobody can write.
 - A proposal is final when its certificate verifies — the decision of the window after it stands in it — and the head of the TimeChain is the newest proposal so verified.
 
@@ -908,6 +924,31 @@ cannot be bought or parallelized. Where the pressure of pending candidates excee
 of the active set, the required continuity rises by the multiplier Canon fixes, to a bounded
 maximum — so that a rush of applicants raises the price in time rather than in money.
 
+**The ramp of entry** (decision 292, answer 4b; constitution records 297 and 300). The count of
+segments in force at the gate of entry is
+
+```
+n = min(max_entry_segments,
+        max(continuity_segments,
+            ceil(continuity_segments x pending x adaptive_entry_multiplier / active)))
+```
+
+with the multiplications before the division and the division rounding upward. `active` is the
+`admitted_count` of a proposal. `pending` is the count of candidacies applied and neither admitted
+by a selection event nor expired, as they stand once that proposal has applied. Both are measured in
+one proposal: the proposal of the last window of the stride standing for the candidacy's window,
+the one whose `record_root` the candidacy is verified against (Canon, "The candidacy of a machine").
+A claimant therefore knows `n` before it proves. Every verifier recomputes `n` from the state it
+holds, and the candidacy states no `n`. Because `adaptive_entry_threshold_den /
+adaptive_entry_threshold_num = adaptive_entry_multiplier`, the ramp leaves `continuity_segments`
+exactly where `pending / active` reaches the threshold of 1/100, and it reaches `max_entry_segments`
+at four times the threshold. Each of the three numbers acts by its name: the threshold is where the
+ramp begins, the multiplier is its slope, and `max_entry_segments` is its ceiling. No Decree row
+moves. `n` is the `segments_in_force` of Identity, and the record of a candidacy passes when it lived
+at least `ceil(n x 2 / 3)` of the `n` segments ending with the current one (Canon, "The rules of
+continuity"). Where `active` is zero, the formula divides by zero. The count there awaits the
+Author's decision and is not stated here.
+
 **The commitment that stands for a machine.** A machine is represented in every consensus
 structure by a commitment derived, under the domain Canon names for it, from the public key it
 answers with, the suite that key belongs to, and a blinding factor of its own. That commitment
@@ -919,9 +960,14 @@ material.
 claimant extinguishes a one-time right to raise a machine, under the domain Canon names for
 it. The right is proven by possession and its nullifier names no one, so what the network
 learns is that some claimant spent theirs — never whose it was, nor how many machines answer
-to one person, because the answer is one and the rule needs no counting to hold it. Without
-this a lived continuity period would buy an unbounded fleet: the gate would cost time once
-and yield machines forever.
+to one record, because the answer is one and the rule needs no counting to hold it. The right
+is carried by the record whose continuity the candidacy proves: the opening of the record writes
+it, every successor carries it unchanged, and the proof of a candidacy asserts that the right it
+spends is the one that record carries, that the record stands in the tree of records under the
+root of one proposal Canon names, and that the half it publishes comes of a secret the claimant
+holds. Without this a lived continuity period would buy an unbounded fleet: the gate would cost
+time once and yield machines forever, and one person's record would seat another person's
+machine.
 
 **Invariants of admission:**
 
@@ -932,7 +978,7 @@ and yield machines forever.
 - A candidacy carries the extinguished one-time right to raise a machine; a second candidacy under the same right is refused, and the refusal names nobody.
 - The order of candidates within an event follows the canonical sort key derived from the cemented aggregate; no participant chooses it.
 - The number admitted by one event never exceeds the bound Canon fixes.
-- A candidacy that is not admitted expires after the period Canon fixes and leaves no record.
+- A candidacy that is not admitted expires after the period Canon fixes and leaves nothing behind but the right it spent.
 
 ## The attestation of presence
 
@@ -1089,17 +1135,17 @@ not, and every verifier reads the same bytes of it.
 
 **The set of the living is therefore derived and never observed.** It is read off the cement: the
 part-nullifiers that entered it, each once, are the machines that lived in that window. From that
-the count of the living follows deterministically, and with it the divisor of the shares — which is
-why the count is a quantity every machine reads off the cement rather than a quantity anyone
+the count of the living follows deterministically, and with it the coins the window credits — which
+is why the count is a quantity every machine reads off the cement rather than a quantity anyone
 publishes or polls. Nothing observes absence and nothing needs to: a machine that did not enter the
-cement takes no share of that window, and its term runs out in its own time by the rule of presence
+cement takes no coin of that window, and its term runs out in its own time by the rule of presence
 and admission.
 
 **What this refuses, named rather than implied.** A rule that counted a machine as living because it
 answered on the wire, because a neighbour saw it, or because it was reachable at the moment a window
 closed. Each of those is an observation and not a testimony: reachability is bought with sockets and
 bytes rather than with anything that cannot be multiplied, so a thousand processes on one machine
-would answer as a thousand living machines and take a thousand shares. What cannot be multiplied is
+would answer as a thousand living machines and take a thousand coins. What cannot be multiplied is
 a place in the tree of admitted machines, which costs a lived continuity period and a one-time right
 to raise a machine, and admission to which runs at the bounded rate a selection event fixes.
 
@@ -1117,20 +1163,41 @@ everywhere, and it is the choice here.
 - No count of witnesses, no threshold over such a count, and no measure of reachability enters the definition of the living.
 - The opening cohort and a resuming part of a split witness themselves by the same quorum; the rule states no exception for either.
 
-## The right to a window's share
+## The right to a window's coin
 
-Minting creates no note. A window mints a fixed quantity and issues, to each living machine,
-a **right to a share** of it. The count of the living is the count of the cement of the window,
-which every machine holds; the share is the mint divided by it, and the remainder that does not
-divide is carried forward rather than appropriated.
+Minting creates no note. A window credits **one coin for every second of it** — `window_credit`
+of the Decree — to every machine living in it, and issues to each a **right to its coins** of that
+window. Nothing is divided, so no remainder exists to carry or to appropriate. The count of the
+living is the count of the cement of the window, which every machine holds, and the credit times
+that count is the supply the window adds, in coins.
 
-Each living machine holds exactly one right to a share per window, and each such right is extinguished by
-exactly one nullifier — so no machine takes its share twice, and no machine takes another's.
+**One second, one coin, and a window is its seconds by count.** The Decree divides the day of
+86 400 seconds into `segment_windows` windows, so a window is 86 400 / `segment_windows` seconds by
+count and credits that many coins to every machine whose part-nullifier its cement holds — the
+only presence the cement witnesses, by the invariants above. No clock is read to issue a coin and
+none could be: a second is counted by the Decree and never measured, and the lived length of a
+window's seconds is the lived length of that window, which varies as the section on the pulse
+states.
 
-Consensus issues the right and states what it is worth: one equal part to every living machine,
-with the remainder that does not divide carried forward rather than appropriated. How a right
-is proven and consumed is Value's, and is not described here — a second description of one
-construction is how two documents come to disagree about it.
+Each living machine holds exactly one right per window, worth the window's credit, and each such
+right is extinguished by exactly one nullifier — so no machine takes its coins twice, and no
+machine takes another's. The right is bound to its window by its nullifier, to its amount by this rule, to one
+use by the set of nullifiers, and to its recipient by the payment that redeems it, whose notes
+are the recipient's.
+
+**A right is bound to the living of its window, and an invented right is refused.** The proposal
+of the window after a window credits it: it appends to the tree of credited rights the parts of
+that window's cement, less any part its challenge convicted, and every verifier recomputes the
+root it carries. A right of a window is redeemed by walking the part its machine's secret derives
+for that window to that tree, so a machine whose part the cement of the window did not hold —
+admitted or not, present in other windows or not — holds nothing to walk to and takes no coin of
+it. Admission is not presence: the tree of admitted machines says who may answer, and only a cement
+says who did.
+
+Consensus issues the right and states what it is worth: the window's credit to every living
+machine, the same for each of them whatever the count of the living. How a right is proven and consumed is
+Value's, and is not described here — a second description of one construction is how two
+documents come to disagree about it.
 
 ## The join
 
@@ -1194,6 +1261,22 @@ windows catches up in `k` windows of that duty. Machines retain the attestations
 walk and takes a fresh anchor from its operator, which is a change of trust and not a verification,
 and the set says so.
 
+**A plane taken from the network waits out its stride.** A device that holds no state to replay from
+takes the plane of the head from the network (step 5), and so holds the rate nullifiers of only the
+windows it walked, while the rate set of Canon lives a whole stride of `proving_horizon` windows. Such a
+device puts up no stake and no proposal until the standing stride of the horizon changes after the
+head whose plane it took: the first window it stakes and proposes in is `k x proving_horizon +
+proving_lag - 1` for the least `k` that puts it past that head, so it waits at most `proving_horizon`
+windows. Until then it follows the decided roll of every window, replayed over the state it holds
+with every root recomputed, and it publishes nothing of its own. There is no new wire and no change of
+Genesis, and the price is up to one stride without its vote. The record of the last window it closed
+names the window of the head it took the plane at, and every close carries that mark forward, so the
+wait holds through a restart. A machine that walked from a state of its own replays every window and
+does not wait. The rule is `pulse::next_stride_after`, `pulse::stakes_from` and
+`pulse::follow_to_the_next_stride` (`core/Montana-Core/crates/montana-node/src/pulse.rs:3166-3255`), and
+the mark is the fifth part of `Kept` (`lib.rs:725-737`). These are the Author's decision 332 (b),
+record 339 of the constitution chain, 2026-10-29 09:28 UTC, issue #16 K7b.
+
 **Two proposals, and no second count.** A device offered two proposals of one height takes the one
 the agreement of the window after decided; where two decisions verify, the two are an equivocation
 and the contradicting pairs of pledges under one part-nullifier are the evidence the sanction of this
@@ -1208,6 +1291,7 @@ resolves by the rule this document already states and never by asking who is mor
 - Every leaf of state a joining device takes is checked against a root the verified head carries, by recomputation; a leaf accepted on the word of whoever answered is a defect.
 - A device asks several machines and judges every answer alone; nothing in the join is decided by how many answers agree.
 - Joining publishes nothing about the joiner but the fact that some device asked, which the ledger of the wire already holds.
+- A device whose plane came from the network stakes and proposes nothing before the standing stride of the horizon changes after the head it took the plane at; until then it only follows the decided rolls, and the mark survives every close and restart.
 
 ## The way back
 
@@ -1273,6 +1357,36 @@ an eligible proposer and a verified certificate; obtaining the numeric quorum al
 Monitoring reports these conditions and authorizes no transition. Reconnection restores
 liveness only when the original authorization and verification requirements are met.
 
+What monitoring reports to an operator is three verdicts, and each carries an exit code of the
+operator's status read. The codes are operator signals and not values of the protocol: no
+proposal, root, frame, message of the wire or quorum carries them.
+
+- `no quorum`, code 1: the data the window waits on stands, and the pledges or the cement on it
+  fall short of the quorum share.
+- `no data`, code 2: a beacon, an attestation or a proposal the window waits on was not delivered
+  to the machine.
+- `no diagnostics`, code 4: the machine gives no reading. It made none in this run, its
+  diagnostic door is gone, or no running machine holds its store. A missing reading never reads
+  as success.
+
+A window closed, and a shortfall still awaited inside the patience of its wait, are a healthy
+machine and read 0; the waiting reading names its shortfall and is not a stall. A verdict reached
+when the patience of a wait runs out is a stall: it closes nothing and moves no head. A shortfall
+whose rounds keep turning starts a new wait at every round, so the patience of one wait never runs
+out on it; once the askings of the whole window reach the patience (`WAITS_UP_TO` on a running
+machine) the reading is the stall of its shortfall -- `no quorum`, code 1, where the data stands --
+and the machine waits on indefinitely, as "The liveness price" requires: the reading gives no
+window up, closes nothing and enters no rule of acceptance (the Author's decision on Gate 0 of
+issue #21, (a), record 357 of the constitution chain, 2026-10-29 12:48 UTC). A refused proof is not a verdict
+and not a state. Every refusal a machine counts is of an object deposited at a public point, and
+anyone may deposit there, so a refusal names no cause of a shortfall. The machine counts its
+refusals and shows the count beside every reading as `refused N`, never in place of the verdict.
+Code 3 is given to no verdict. The verdicts and their codes are `say::Verdict`
+(`core/Montana-Core/crates/montana-node/src/say.rs:24-40`); the readings and the counter are
+`say::PulseStatus` (`say.rs:69-87`, written at `say.rs:159-182`); the verdict is chosen from the
+shortfall alone, and the reading of a window that stood the patience is chosen, at `say.rs:250-285` (the Author's decision 334 (a), record 339 of the constitution
+chain, 2026-10-29 09:28 UTC; issue #21).
+
 **Invariants of the way back:**
 
 - The electorate and the threshold are those of the proposal of the window two before, for all rounds of the window.
@@ -1281,12 +1395,27 @@ liveness only when the original authorization and verification requirements are 
 - No silence, locally counted population, missing diagnostic or restart supplies authority.
 - A certificate is verified whole before finality or issuance.
 - A different Genesis is a different network and requires an explicit operator choice.
+- A machine must start only if the roots its kept plane gives at the window of the proposal it keeps beside that plane, in the record of the last window it closed, equal the roots that proposal carries — `note_root`, `nullifier_root`, `record_root`, `machine_root`, `admitted_root`, `credited_root` and `operations_root` — and it must refuse the record whole otherwise, before it draws a secret, opens a door or holds anything. A record that reads back whole is still not trusted: a plane or a proposal changed on the disk would leave the machine holding notes no proposal of the network names. The compared proposal is the one of the record, not the one of the archive of proposals, which a close under another name rewrites first; the roll and the count are not compared, since the plane holds neither the cement nor the cohort they are recomputed from. The rule is `Kept::stands_under_its_proposal` (`core/Montana-Core/crates/montana-node/src/lib.rs:774-791`), called from `Machine::start` at `lib.rs:880-887` before the secret is read or drawn at `lib.rs:888` (the Author's decision of 27.10.2026 19:48 UTC, issue #19).
+- The record of the last window a machine applied names its network by the Genesis State Hash, and a machine must not start on a record that names another network: it refuses the record whole, names both hashes, and writes nothing. Bytes that decode under this network's layout prove nothing of the network they were written in, so a store that names no network — one kept before the record named it — is taken only at window zero and only on the tables a machine of this network holds there; above window zero it returns only by a fresh sync from the network, never by a migration of its own tables. The earlier generation does this in `core/Code`: the record carries the hash in its head, under its checksum (`crates/mt-store/src/window.rs`), start refuses another network at `crates/montana-node/src/window_record.rs:159` and a store that names none above window zero at `window_record.rs:205`, and no commit writes a record of another network (`window_record.rs:53`); the new generation binds its store to its network at `core/Montana-Core/crates/mt-store/src/lib.rs:463-504` (the Author's decision 331a of 29.10.2026 09:28 UTC, constitution records 331 and 336, issue #19).
 
 ## The cold start
 
-The first window is an empty literal with no operators. The first candidate is admitted by a
-selection event while the set of machines is empty and the continuity gate therefore does not
-apply, and it finalizes its own chain while the committee consists of itself alone.
+The first window is window zero, and it opens on the opening cohort an operator hands its
+machines: the naming halves of the machines admitted to it, every one of them its own among them.
+Its predecessor is the Genesis State Hash, its electorate is that cohort, and its proposal carries
+it, as "The pulse and the close of a window" states for the first two windows of a network; the
+machines of the cohort enter the tree of admitted machines by their naming halves and write no
+commitment (Canon, "The roots of state"). The cohort witnesses itself by the quorum of the pulse
+and by no other rule: no candidate is admitted into an empty set by a selection event, and no
+continuity gate is set aside for one.
+
+**Opening is an explicit act of the operator, on an empty store.** A machine opens window zero only
+when its operator asks it to open and only while it holds nothing of a chain — no head, no window it
+closed, no proposal and no record of the agreement. A machine that holds a chain and is asked to
+open is refused: what it would open is a second window zero of a network it already stands in. A
+machine that holds nothing and is not asked to open opens no window; it enters a network only from
+an anchor, by "The join". Nothing a machine receives tells opening a network from entering one, so
+the operator's act tells them apart, and it is explicit for the reason the anchor is.
 
 ## Observability ledger
 
@@ -1294,7 +1423,7 @@ apply, and it finalizes its own chain while the committee consists of itself alo
 |---|---|
 | the coordinate of a window | closed by construction: it is the point of the whole layer, it names no one, and it is one number for the network |
 | who ran a window | closed: the runner is nameless under a one-time key, and the ticket proof of its proposal asserts clearing without the ticket, the secret or the machine |
-| how many machines are living | **deliberately observable**: the count of the cement is the divisor of the shares and the quorum is a count against the count of the electorate, so every machine reads both; they are numbers about the network and name nobody |
+| how many machines are living | **deliberately observable**: the count of the cement times the credit is the supply the window adds, the window's credit to each living machine, and the quorum is a count against the count of the electorate, so every machine reads both; they are numbers about the network and name nobody |
 | the standing of a machine | closed: it is the census windows whose cements hold the machine's parts, and a part names nobody; no object carries it, the ballot proves it without disclosing it, and the sum of the electorate's standing is a sum of census counts that names nobody |
 | the votes of a ballot | **deliberately observable**: the count of votes a standing drew in a window is what the vote half of the close adds up, and it is a draw whose expectation is the standing over the committee — joined to nothing across windows and to no machine, and published only above the floor of the committee, where a full standing expects at most one vote; below the floor no ballot exists |
 | the presence of a machine over time | closed: a part-nullifier and a one-time key join to nothing across windows, and the proof of presence hides its witness, so no public timeline of a machine exists |
@@ -1315,15 +1444,15 @@ An implementation conforms to this document when all of the following hold.
 1. It advances a round only on a valid attestation — eligibility checked natively against the round threshold over the part-nullifier the attestation carries, the signature under the asserted suite, the proof of presence verified for a heavy attestation against the digest of the key that signed it, and its key's published heavy held for a light one — links every beacon to its predecessor by hash and round zero to the proposal of the window two before, enters each part-nullifier into the cement at first appearance only, whatever name it pledges, and carries the cement as the aggregate and the count, and closes a window only on the decision of its agreement and on a cement reaching the quorum share of the electorate's count, never on a count of rounds, a measure or a clock.
 2. It computes eligibility from the nullifier of its part in that window, the cemented aggregate of the window two before and the pair of chain and round, under the domain Canon names, compared unsigned and big-endian; it attests every valid version of a round it sees, and presents one round nullifier per beacon.
 3. It computes the round threshold from the count of admitted machines and the count of chains in force by the rule of Canon — the crowd floored, then the width divided by the admitted, the floor of the crowd applied before the division and the width after it — and reproduces the frozen vectors.
-4. It takes the identifier of a proposal over the fields the window decided, verifies the ticket proof a proposal carries against the root of the electorate, the cemented aggregate of the window two before and the threshold of the draw, recomputes the public facts a proposal carries — the census among them — and retains the heavy attestations, the ballots, the pledges and the frames of a window, and its proposals with the pages of their rolls, at their points for `retained_windows` windows after it closes.
+4. It takes the identifier of a proposal over the fields the window decided, verifies the ticket proof a proposal carries against the root of the electorate, the cemented aggregate of the window two before and the threshold of the draw, recomputes the public facts a proposal carries — the census among them — and retains the beacons of the rounds of a window, its heavy attestations, the light attestations answering its final beacon, the ballots, the pledges and the frames, and its proposals with the pages of their rolls, at their points for `retained_windows` windows after it closes.
 5. It finalizes a proposal only on the decision of the agreement of the window after it — closing pledges of distinct machines of the electorate on its name reaching the quorum share of its count, with ballots of their parts casting the quorum share of the committee the electorate's standing draws — verifying the roots and the control set — the canonically admitted objects that change who runs windows — by independent recomputation rather than by trust.
 6. It takes two clearings that closed on one final beacon as one proposal under one identifier, and walks the cascade in the standby order Canon derives — the ascending order of the cascade key over the commitments of the active set — running the entitled parallel versions from the window's first round and closing on the senior completed cement.
 7. It admits a candidate only through a selection event, in the canonical order, within the bound, and only after the lived continuity period Identity defines.
-8. It issues one equal right per living machine per window, carries the indivisible remainder forward, and derives the count of the living from the cement and from nothing else.
+8. It issues one right per living machine per window, worth the window's credit, divides nothing and carries no remainder, reads no clock to issue it, and derives the count of the living — which times the credit is the coins the window adds — from the cement and from nothing else.
 9. It publishes of an admission the commitment that stands for the machine — derived under the domain Canon names from the answering key, its suite and a blinding factor — and nothing that names an owner, an address or a person.
-10. It refuses a candidacy whose one-time right to raise a machine is already extinguished, and it derives that right under the domain Canon names.
+10. It refuses a candidacy whose one-time right to raise a machine is already extinguished, and it derives that right under the domain Canon names; it verifies the proof of a candidacy of the window it applies against the root of the tree of records it takes from the one proposal Canon names for that window, never against a root the candidacy states.
 11. It disregards, for the window in which a proposal was rejected, the ticket of the machine that published it — and restores it for the next window, because the loss is of duty and never of its place.
-12. It refuses a repeated round nullifier under one beacon in silence, holds as evidence against a machine only one part-nullifier under one of the three contradicting pairs of pledges, extinguishes that right without issuing its share, applies the refusal by the canonical order of the window, and accepts no other evidence.
+12. It refuses a repeated round nullifier under one beacon in silence, holds as evidence against a machine only one part-nullifier under one of the three contradicting pairs of pledges, extinguishes that right without issuing its coin, applies the refusal by the canonical order of the window, and accepts no other evidence.
 13. It treats a decided window as final: it never abandons a decision it verified, it resolves nothing by chain length within one set of rules, and it discards beacons, attestations, pledges and the evidence of an equivocation with the close that ends the challenge.
 14. It derives a ticket from the half of its secret that spends and the aggregate of the window two before, compares unsigned and big-endian against the threshold of the draw, which is the width at every window, and publishes no ticket.
 15. It orders its own running by its ticket — it waits the share of its patience its ticket stands at before it proves its own proposal and takes a verified proposal of its decision that stands meanwhile — and reproduces the frozen vectors of the recomputation of a walked threshold, which the schedule of chains takes.
@@ -1331,3 +1460,4 @@ An implementation conforms to this document when all of the following hold.
 17. It counts a machine's standing as the census windows whose cements hold its parts, carries the census from proposal to proposal by the rule of Canon, reads the committee off the standing alone, draws every unit's coin from its own spending half, the census window and the aggregate of the window two before, publishes a ballot only where its standing drew a vote and the electorate is above the floor of the committee, verifies every ballot it gathers against the census, the aggregate and the committee of the electorate, counts a part's ballot once at its largest count, and refuses a beacon whose votes exceed what those ballots cast.
 18. It runs the agreement on what a window decided: it pledges in attempt zero the name it took, counts every open pledge on the quorum its `since` names and every closing pledge on the quorum of open pledges of its attempt, a part once per kind and attempt, closes on a quorum of open pledges of its attempt, proposes in the order of its place, follows the open pledge at the lowest place only where its lock admits it and the name is valid to it, moves to a later attempt on its spans or on pledges beyond the share the quorum leaves, keeps its attempt, its lock, its valid name and its pledges through a restart, and reproduces the frozen vectors of the place.
 19. It names in every proposal the roll of what its window applied, publishes the roll beside the proposal, follows a name it did not take only where a quorum backs it or its roll replays to it, replays the decided roll over the decided state of the window two before where its own name was not decided and applies its open window again over the result, and tells a payer again what its frame took where a replay moves it.
+20. It tells its operator, of a window it has not closed, one of the three verdicts of "The way back" with its code — `no quorum` 1, `no data` 2, `no diagnostics` 4 — and reads 0 for a window closed or a shortfall awaited inside its patience. It chooses the verdict from the shortfall it observes and never from a refusal. It counts refusals and shows the count beside the reading as `refused N`, never as a verdict or a state. It reads a missing reading as `no diagnostics` and never as success. No verdict, code or count enters a proposal, a root, the wire or a quorum, and a stall closes nothing.

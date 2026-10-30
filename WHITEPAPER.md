@@ -61,7 +61,7 @@ one input is indistinguishable from a payment of two [Constitution, I-2; Value, 
 a right is redeemed inside a payment that nothing distinguishes from any other [Constitution, I-2 (4); Value, Extinguishing
 a right]. The one disclosure primitive is a proof of a single payment, produced by its owner [Constitution, I-2 (3);
 Value, Disclosure]. The value layer is specified and partly implemented in `core/Montana-Core`; it cannot yet create the
-first value, and no deployed application holds a note (AUDIT.md, F-8).
+first value, and no deployed application holds a note (AUDIT.md, F-8). Historical in part (marked 2026-10-27 UTC): "cannot yet create the first value" no longer describes `main`, where a right becomes a note and is paid away (AUDIT.md, F-8).
 
 ## 4. Identity
 
@@ -117,7 +117,7 @@ applications implement today:
 | Delivery | A letter travels directly between two devices that reach each other, otherwise through nodes that hold the sealed body and not its key; the services of the nodes are not in this repository; a letter is sealed at its own length | F-4, F-14 |
 | Channels | The post-quantum handshake of the client core seals each channel; it does not authenticate the far end | F-1 |
 | Calls | Media is protected by DTLS-SRTP, a classical key exchange. The frame layer of SFrame [7] under a key from a call seed carried in a sealed letter is written in the iOS code and switched off; Android has none | F-6 |
-| Coins of time | A book of coins per seed kept by the phone, minted by the application's rules, and signed transfer records chained per key on a node; these are not the notes of section 3 | F-4, F-8 |
+| Coins of time | A book of coins per seed kept by the phone, minted by the application's rules, and signed transfer records chained per key on a node; these are not the notes of section 3. Historical in part (marked 2026-10-27 UTC): from 22.10.2026 21:00 UTC no source of coins but the seconds of a key's life enters its chain, and from 25.10.2026 21:00 UTC only a MINT of present seconds (`Audit/App/COIN-TX-V3.md`, lines 187-217) | F-4, F-8 |
 | VPN (iOS) | A client of Xray-core with a packet tunnel; its protocols are classical and it is not a protection of Montana | |
 
 Beside the core, both applications compute symmetric sealing, key derivation and hashing with the platforms' own libraries,
@@ -155,8 +155,8 @@ what the applications and the client core do not yet do of the set is catalogued
 The frozen vectors in Canon are the first thing to run against: an implementation that reproduces them has the hash layer
 right [core/docs/README.md]. Each document of the set closes with a conformance set listing what an independent
 implementation must reproduce to be the same network [Constitution, The document set]. The applications are built from
-their folders in this repository. The binaries released beside the source are the export uploaded to the App Store and the
-Android package; no reproducible build is published, and the core inside a binary is not recorded against `core/`, so the
+their folders in this repository. The binaries released beside the source are the export uploaded to the App Store; the
+Android package is served by the site and carried by no GitHub release (RELEASES.md, Binaries); no reproducible build is published, and the core inside a binary is not recorded against `core/`, so the
 correspondence of a binary with its tree is not established (AUDIT.md, section 3 and F-12). [`AUDIT.md`](AUDIT.md) is the
 entry point of a review: scope, the trees under audit, builds, vectors and the open findings.
 

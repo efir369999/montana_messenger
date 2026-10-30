@@ -262,9 +262,9 @@ struct SettingsTabView: View {
 // ════════════════════════════════════════════════════════════
 
 // Questions
-/// QUESTIONS (the author's words 17.10.2026 22:50 MSK: «make all of these into a section of questions: answers to every question in
+/// QUESTIONS (the author's words 17.10.2026 19:50 UTC: «make all of these into a section of questions: answers to every question in
 /// the app as a separate section, with all the information and the documents, public, so that AI agents read the link to montana.xxx
-/// and learn every rule of the app for the person»; 23:18 MSK: «everything into build 2238»): the platform's own list, a section a
+/// and learn every rule of the app for the person»; 20:18 UTC: «everything into build 2238»): the platform's own list, a section a
 /// topic, a row a question, the whole row the road to its answer. Every answer says only what this build keeps -- the levels and the
 /// minting as MTPersonChain, MTPiLevels and MTLevelAccess hold them (APPLE-RULES 2.1, 2.3.1(a)); the same answers, with the
 /// specification's, stand on montana.xxx/faq for people and for the agents that read the site (MontanaSafety.guide).
@@ -290,8 +290,8 @@ struct MTQuestionsPage: View {
             Item(question: "Can I take my copy back from my node below level 8?",
                  answer: "Yes. Setting up your node and sending copies to it open at level 8. Taking your copy back from it is open on every level."),
         ]),
-        // THE FABRIC OF TIME (the author's words 17.10.2026 22:24-22:50 MSK; 18.10.2026 00:4x «a sliding window of t2 over live activity»,
-        // 10:2x a correspondent weighed by their ceiling; MTFabric): what this build does of it and no more -- its deviations from the
+        // THE FABRIC OF TIME (the author's words 17.10.2026 19:24-19:50 UTC; 17.10.2026 21:4x «a sliding window of t2 over live activity»,
+        // 07:2x a correspondent weighed by their ceiling; MTFabric): what this build does of it and no more -- its deviations from the
         // specification named, not hidden (the window from the nodes' seconds, no witness into the network yet).
         Topic(title: "Fabric of Time", systemImage: "point.3.connected.trianglepath.dotted", items: [
             Item(question: "What is the Fabric of Time?",
@@ -1425,7 +1425,7 @@ struct DataStorageView: View {
             }
             .listRowBackground(MTGlassRowPlate())
 
-            // THE CACHE, CLEARED AS THE REFERENCE CLEARS IT (the author's word 18.10.2026 20:1x MSK): what the person's own node
+            // THE CACHE, CLEARED AS THE REFERENCE CLEARS IT (the author's word 18.10.2026 17:1x UTC): what the person's own node
             // holds leaves this phone, and comes back from the node at a look or a tap -- the node's word decides, asked anew.
             Section {
                 if case .held(let files, let bytes, _) = homeKeep.word {
@@ -1495,7 +1495,7 @@ struct DataStorageView: View {
                 if let w = cacheWord { Text(w) }
             }
 
-            // WHAT THIS PHONE HOLDS, MEASURED ON ITS DISK (the author's word 18.10.2026 10:2x MSK: «on T1 Montana weighs 20 GB, I cannot
+            // WHAT THIS PHONE HOLDS, MEASURED ON ITS DISK (the author's word 18.10.2026 07:2x UTC: «on T1 Montana weighs 20 GB, I cannot
             // see what weighs so much nor how to clean it, and Data and Storage shows other numbers»): the sum is the phone's own, each
             // file counted once; the attachments are chosen by kind below, the waiting copies cleared here.
             Section {
@@ -1518,7 +1518,7 @@ struct DataStorageView: View {
                         .accessibilityLabel(Text("Clear"))
                     }
                     diskRow("Kept for the people who write to you", "person.2.fill", .green, u.kept)
-                    // EVERY PART NAMED AND EACH IN THE PERSON'S HAND (the author's word 18.10.2026 23:3x MSK): the links a viewer was
+                    // EVERY PART NAMED AND EACH IN THE PERSON'S HAND (the author's word 18.10.2026 20:3x UTC): the links a viewer was
                     // handed that outlived their files are released by one word (MTDocLink.release) -- what the node does not hold
                     // goes back to the chats, never lost; the history is the letters themselves, cleared chat by chat.
                     HStack {
@@ -2148,7 +2148,7 @@ struct PrivacyView: View {
                     Text("Only whether others see you online. Walls and pages come and go regardless.")
                         .font(.caption).foregroundColor(.gray)
                 }
-                // THE OWNER SHOWS OR HIDES THEIR COINS (the author's words 04.10.2026 05:47 and 05:48 MSK: «whether the balance is
+                // THE OWNER SHOWS OR HIDES THEIR COINS (the author's words 04.10.2026 02:47 and 02:48 UTC: «whether the balance is
                 // shown each decides, on by default; who does not show is not in the top -- the privacy settings»; «the owner governs
                 // privacy»): one switch for the Montana top, the coins told to correspondents and the coin's badge (MTCoinShow).
                 VStack(alignment: .leading, spacing: 4) {
@@ -2265,7 +2265,7 @@ struct PrivacyView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             let rest = Text("Your account is deleted: this device erases your 24-word identity, and your public name leaves Montana's nodes. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.")
-            // THE COINS ARE SAID BEFORE THE WORDS GO (the author's word 12.10.2026 15:3x MSK, No.66, after 4 105 470 coins stood on a
+            // THE COINS ARE SAID BEFORE THE WORDS GO (the author's word 12.10.2026 12:3x UTC, No.66, after 4 105 470 coins stood on a
             // forgotten account on 11.10): an account that holds coins says how many, and that only its 24 words bring them back.
             let coins = MTCoinSplit.shared.available
             if 0 < coins {
@@ -2449,7 +2449,7 @@ struct MontanaOnboardingView: View {
 
     var body: some View {
         ZStack {
-            // THE LOGIN PAGE IS BURGUNDY BY DEFAULT (the author's word 06.10.2026 15:1x MSK: «by default the login page has the burgundy
+            // THE LOGIN PAGE IS BURGUNDY BY DEFAULT (the author's word 06.10.2026 12:1x UTC: «by default the login page has the burgundy
             // ground»): the author's file as it came, until the person being made chooses a ground of their own (ground).
             if grounds.birthChosen {
                 Color.clear.montanaPageGround().allowsHitTesting(false)   // the login pages wear the one ground of every page
@@ -2462,7 +2462,7 @@ struct MontanaOnboardingView: View {
             } else {
                 VStack { Group {
                     switch step {
-                    // THE PAGE DOES NOT OPEN TWICE (the author's word 06.10.2026 15:1x MSK: «from the side panel the login page reloads, and
+                    // THE PAGE DOES NOT OPEN TWICE (the author's word 06.10.2026 12:1x UTC: «from the side panel the login page reloads, and
                     // after the tap opens again»): a person being added (MTSeats.adding) already chose Montana at the door; the first screen
                     // that stands after the seat is emptied opens on the Montana road, whichever page took the road's one-time word.
                     case 0: if montanaRoad || seats.adding { intro } else { doors }   // the doors first (the author's design 29.09), the Montana road behind
@@ -2771,7 +2771,7 @@ struct MontanaOnboardingView: View {
     /// THE COPY KEPT BY THE PEOPLE ONE WROTE TO (MTKeeping, 08.10): with no node named, the words call the pipe of every slot; the
     /// page shows the parts in hand, and the person may walk on at any moment -- the copy is laid whenever it stands, merged.
     func takeFromKeepers() {
-        takingWord = "Restoring the identity chain"   // the author's word 11.10.2026 17:13 MSK: the person's chain comes back first
+        takingWord = "Restoring the identity chain"   // the author's word 11.10.2026 14:13 UTC: the person's chain comes back first
         step = 5
         keep.onboardingWaits = true
         // THE LIGHT COPY LETS THE PERSON IN (App: «once the light copy is laid»): the full copy follows from the keepers.
@@ -2794,7 +2794,7 @@ struct MontanaOnboardingView: View {
             if case .calling(let have, let need) = keep.taking, need > 0, keepLaying == nil {
                 Text("Parts in hand: \(have) of \(need)").foregroundColor(.gray).font(.caption)
             }
-            // THE BAR FROM THE FIRST FRAME (the author's word 09.10.2026 11:3x MSK: «the progress bar must show at once, now it spins
+            // THE BAR FROM THE FIRST FRAME (the author's word 09.10.2026 08:3x UTC: «the progress bar must show at once, now it spins
             // long before it comes; under it the approximate time of the restore»): nothing measured yet is a bar at zero, never a
             // spinner, and the time left is said once it can be measured.
             let f = homeNode.fetching ?? homeNode.restoring ?? keepShare ?? 0
@@ -2974,7 +2974,7 @@ struct WelcomeView: View {
     }
 }
 
-/// ACCESS BY LEVEL (the author's words 16.10.2026 18:2x MSK: «in the settings a path Access by level -- where they open for each»; «we
+/// ACCESS BY LEVEL (the author's words 16.10.2026 15:2x UTC: «in the settings a path Access by level -- where they open for each»; «we
 /// have the gamification of access to Montana's functions»): the person's Global Level on top, and under each level the functions it
 /// opens (MTLevelAccess) -- switches the person moves once their level reaches it, each with its contract under it (SETTINGS.md).
 struct MTLevelAccessPage: View {
@@ -2993,7 +2993,7 @@ struct MTLevelAccessPage: View {
         List {
             Section {
                 Text("Global level \(level)")
-                // THE FABRIC OF TIME BESIDE THE GLOBAL LEVEL (the author's word 17.10.2026 22:50 MSK: «at once let a new level appear in
+                // THE FABRIC OF TIME BESIDE THE GLOBAL LEVEL (the author's word 17.10.2026 19:50 UTC: «at once let a new level appear in
                 // the clients that sets the global one, named Fabric of Time»): its level this turn, and through its first two turns
                 // the days until its first count.
                 LabeledContent {
@@ -3011,7 +3011,7 @@ struct MTLevelAccessPage: View {
             .listRowBackground(MTGlassRowPlate())
             Section {
                 VStack(alignment: .leading, spacing: 4) {
-                    // BELOW ITS LEVEL A SWITCH STANDS OFF (the author's word 16.10.2026 20:34 MSK: «if the level has not reached 7, the
+                    // BELOW ITS LEVEL A SWITCH STANDS OFF (the author's word 16.10.2026 17:34 UTC: «if the level has not reached 7, the
                     // accesses by level are off by default, these checkmarks»): the switch shows what works -- nothing until the level
                     // opens it; the person's own choice is kept for the day it does.
                     Toggle("Forbid deletion on my phone", systemImage: "lock.shield",
@@ -3032,7 +3032,7 @@ struct MTLevelAccessPage: View {
             }
             .disabled(!open)
             .listRowBackground(MTGlassRowPlate())
-            // LEVEL 8 (the author's word 17.10.2026 18:1x MSK: only from level 8 can one connect one's own node to the Montana
+            // LEVEL 8 (the author's word 17.10.2026 15:1x UTC: only from level 8 can one connect one's own node to the Montana
             // network through the client): the page of one's node, where it is set up and its copies go; its copy comes back on
             // every level, on that page and on the first screen.
             Section {
@@ -3063,10 +3063,10 @@ struct MTLevelAccessPage: View {
     }
 }
 
-/// THE GREEN SHIELD (the author's word 16.10.2026 20:34 MSK: «a message cannot be deleted while the protection is on; a tap on the
+/// THE GREEN SHIELD (the author's word 16.10.2026 17:34 UTC: «a message cannot be deleted while the protection is on; a tap on the
 /// shield shows the rule of the levels and the way to the settings»): it stands while this phone keeps what others delete
 /// (MTLevelAccess.keepsDeleted); a tap lays the rule over it in the platform's own popover, whose last row is the way to Access by level.
-/// A BADGE ON THE INTERLOCUTOR'S BUBBLE (the author's word 17.10.2026 18:4x MSK: «the shield moves to a badge in the top right corner
+/// A BADGE ON THE INTERLOCUTOR'S BUBBLE (the author's word 17.10.2026 15:4x UTC: «the shield moves to a badge in the top right corner
 /// of the interlocutor's bubble inside the chat»): the platform's green round with the white shield, over the corner of the name's
 /// capsule at the chat's top, as a count stands over a mark; its target is the platform's least.
 struct MTKeepShield: View {

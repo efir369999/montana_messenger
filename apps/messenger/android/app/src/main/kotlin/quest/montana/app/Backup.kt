@@ -30,7 +30,7 @@ import javax.crypto.spec.SecretKeySpec
 // record sealed alone, AAD = that 48-byte header and u64 LE index, info "mt-backup-key-v1" -- is still read.
 
 /** What a copy held — COUNTED here, never promised (iOS MontanaBackup.Tally). */
-data class Tally(var chats: Int = 0, var records: Int = 0, var media: Int = 0, var bytes: Int = 0, var skipped: Int = 0)
+data class Tally(var chats: Int = 0, var records: Int = 0, var media: Int = 0, var bytes: Long = 0, var skipped: Int = 0)
 
 /** Why a copy did not come back. Every one is spoken to the person (iOS MontanaBackup.Refusal). */
 sealed class Refusal {
@@ -76,7 +76,23 @@ object MontanaPaths {
     fun archive(c: Context) = File(c.filesDir, "Montana")                  // iOS Documents/Montana (archive.rs root)
     fun chats(c: Context) = File(archive(c), "Chats")                      // = archive.rs CHATS_DIR
     private fun support(c: Context) = File(c.filesDir, "Support")          // iOS Application Support
-    fun store(c: Context) = File(support(c), "Montana/Media")              // iOS MontanaMediaStore.dir
+    /**
+     * iOS MontanaMediaStore.dir: THE ONE FOLDER A LETTER LOOKS IN FOR ITS FILE (iOS MontanaBackup 686, 1175-1179: «the attachment goes
+     * back where a letter looks for it»). The earlier builds kept a store of the copy's own beside it: a copy made here carried no
+     * attachment, and an attachment a copy brought lay where no letter looked.
+     */
+    fun store(c: Context) = Media.dir(c)
+    fun oldStore(c: Context) = File(support(c), "Montana/Media")
+    /** The store of the earlier builds: what lies there joins the letters' folder once, a file already there stays as it is. */
+    fun heal(c: Context) {
+        val old = oldStore(c)
+        val files = old.listFiles() ?: return
+        val dir = store(c)
+        var moved = 0
+        for (f in files) if (f.isFile && !File(dir, f.name).exists() && f.renameTo(File(dir, f.name))) moved++
+        old.deleteRecursively()
+        Log.i("Montana", "copy_store healed moved=$moved of ${files.size}")
+    }
     /** The person's other places (iOS MontanaBackup.places), each named once. */
     fun places(c: Context): Map<String, File> = mapOf(
         "avatars" to File(support(c), "Avatars"),
@@ -108,13 +124,28 @@ object MontanaBackup {
     fun forget(c: Context) {
         // the sealed log of the chats stays (iOS sealForForget): only the words reopen it; the rest of the archive's root goes
         MontanaPaths.archive(c).listFiles()?.filter { it.name != MontanaPaths.chats(c).name }?.forEach { it.deleteRecursively() }
-        (listOf(MontanaPaths.store(c), MontanaPaths.taken(c)) + MontanaPaths.places(c).values)
+        (listOf(MontanaPaths.store(c), MontanaPaths.oldStore(c), MontanaPaths.taken(c)) + MontanaPaths.places(c).values)
             .forEach { it.deleteRecursively() }
         shelf(c)?.deleteRecursively()
     }
 
     /** Where a copy waits while it is laid: outside every system backup. */
     fun shelf(c: Context): File? = File(c.noBackupFilesDir, "MontanaBackup").takeIf { it.isDirectory || it.mkdirs() }
+    /** THE SHELF SWEPT (iOS MontanaBackup.sweep, e02595a5): what a hand left a minute ago or earlier leaves -- at a launch, where no
+     *  copy is laid, and on the person's word to clear the copies waiting; never the file laid this minute, nor while the node's
+     *  copy goes or comes. The answer is the bytes freed. */
+    fun sweep(c: Context, why: String): Long {
+        if (HomeNodeWatch.working) return 0L
+        val edge = System.currentTimeMillis() - 60_000
+        var freed = 0L; var n = 0
+        File(c.noBackupFilesDir, "MontanaBackup").listFiles()?.forEach { f ->
+            if (edge <= f.lastModified()) return@forEach
+            val size = f.length()
+            if (f.deleteRecursively()) { freed += size; n++ }
+        }
+        if (0 < n) Log.i("Montana", "backup_sweep files=$n bytes=$freed by=$why")
+        return freed
+    }
 
     /** A name a copy may write: one plain file, never a path out of its place. */
     fun plainName(n: String) = n.isNotEmpty() && !n.contains('/') && !n.startsWith(".")
@@ -221,23 +252,39 @@ object MontanaBackup {
      * A file that will not read stops the copy: a copy one attachment short that calls itself whole is the shape a
      * person leans on and loses. Runs on the caller's worker thread.
      */
-    fun create(c: Context, progress: (Double) -> Unit): CopyResult {
+    fun create(c: Context, scope: CopyScope = CopyScope(), progress: (Double) -> Unit): CopyResult {
         if (!keyKAT() || !ownerKAT()) return CopyResult.Refused(Refusal.NoVault)
         val mn = MontanaSeed.mnemonic ?: return CopyResult.Refused(Refusal.NoSeed)
         val ent = MtBindings.nativeMnemonicToEntropy(mn)?.takeIf { it.size == 32 } ?: return CopyResult.Refused(Refusal.NoSeed)
-        val card = Card.build(c) ?: return CopyResult.Refused(Refusal.NoVault)
+        val card = Card.build(c)?.let { Card.without(it, scope) } ?: return CopyResult.Refused(Refusal.NoVault)
         val salt = MtBindings.nativeRandom(32) ?: return CopyResult.Refused(Refusal.DiskRefused("salt"))
         val dir = shelf(c) ?: return CopyResult.Refused(Refusal.DiskRefused("shelf"))
         dir.listFiles()?.forEach { it.delete() }   // a copy of the copy has no business waiting here
         val part = File(dir, java.util.UUID.randomUUID().toString() + ".part")   // NOT-UI: the unfinished name
 
         // What will be taken, counted from the disk: the bar measures bytes sealed against it.
-        val chats = MontanaPaths.chats(c).listFiles { f -> f.isDirectory }?.sortedBy { it.name } ?: emptyList()
-        val store = MontanaPaths.store(c).listFiles { f -> f.isFile && !f.name.startsWith(".") }?.sortedBy { it.name } ?: emptyList()
+        // A conversation left out is left out whole (iOS skipFolders): its folder is not read, not a block of it travels.
+        val skipFolders = scope.skipConvs.mapNotNull { Archive.folderOf(it) }.toSet()
+        val chats = MontanaPaths.chats(c).listFiles { f -> f.isDirectory && f.name !in skipFolders }?.sortedBy { it.name } ?: emptyList()
+        // A file still landing is not a file yet; a file the scope leaves out stays out (iOS Scope.takes(file:)): a conversation, a
+        // kind or one file the person left out, a file the person's node keeps whole
+        val store = MontanaPaths.store(c).listFiles { f -> f.isFile && !f.name.startsWith(".") && !f.name.endsWith(".part") && !f.name.endsWith(StreamLoader.LEDGER) && scope.takes(f.name) }
+            ?.sortedBy { it.name } ?: emptyList()
+        // The files of the other places, less the faces of a left-out conversation, the picture its grounds stood on, and the pictures
+        // beside attachments left out (iOS placeFiles)
+        val grounds = scope.people.flatMap { listOf(ChatWall.choice(it), ChatWall.choice(PageGround.keyOf(it))) }
+            .mapNotNull { (it as? ChatWall.Choice.Photo)?.file }.toSet()
         val placed = MontanaPaths.places(c).flatMap { (place, d) ->
-            (d.listFiles { f -> f.isFile && plainName(f.name) }?.sortedBy { it.name } ?: emptyList()).map { place to it }
+            (d.listFiles { f -> f.isFile && plainName(f.name) }?.sortedBy { it.name } ?: emptyList()).filter { f ->
+                when (place) {
+                    "avatars" -> f.name !in scope.skipFaces
+                    "wallpapers" -> f.name !in grounds
+                    "pictures" -> scope.takesPicture(f.name)
+                    else -> true
+                }
+            }.map { place to it }
         }
-        val feed = Card.kept(c, "feed")
+        val feed = Card.kept(c, "feed")?.let { Card.without(scope.people, it) }
         var total = 0L
         for (d in chats) {
             total += File(d, "conversation.mtlog").length()
@@ -291,14 +338,14 @@ object MontanaBackup {
                     }
                     File(d, "Media").listFiles { f -> f.isFile && !f.name.startsWith(".") }?.sortedBy { it.name }?.forEach { f ->
                         pieces(f, KIND_MEDIA, d.name + "/" + f.name, w)
-                        tally.media++; tally.bytes += f.length().toInt()
+                        tally.media++; tally.bytes += f.length()
                         any = true
                     }
                     if (any) tally.chats++
                 }
                 // The attachments themselves go LAST after every letter: on the other side a file lands after its letter.
-                for (f in store) { pieces(f, KIND_STORE, f.name, w); tally.media++; tally.bytes += f.length().toInt() }
-                for ((place, f) in placed) { pieces(f, KIND_PLACE, "$place/${f.name}", w); tally.bytes += f.length().toInt() }
+                for (f in store) { pieces(f, KIND_STORE, f.name, w); tally.media++; tally.bytes += f.length() }
+                for ((place, f) in placed) { pieces(f, KIND_PLACE, "$place/${f.name}", w); tally.bytes += f.length() }
                 feed?.let { fd ->
                     val count = maxOf(1, (fd.size + PIECE - 1) / PIECE)
                     for (i in 0 until count) {
@@ -323,7 +370,8 @@ object MontanaBackup {
             val made = File(dir, nameNow(ent))
             if (!part.renameTo(made)) return CopyResult.Refused(Refusal.DiskRefused("move"))
             progress(1.0)
-            Log.i("Montana", "backup_made chats=${tally.chats} rec=${tally.records} media=${tally.media} places=${placed.size} card=${card.count} bytes=${tally.bytes}")
+            Log.i("Montana", "backup_made chats=${tally.chats} rec=${tally.records} media=${tally.media} places=${placed.size} card=${card.count} bytes=${tally.bytes}" +
+                " left_out convs=${scope.skipConvs.size} kinds=${scope.skipKinds.size} files=${scope.skipFiles.size}")
             return CopyResult.Made(made, tally)
         } catch (e: Exception) {
             return CopyResult.Refused(if (e.message?.contains("ENOSPC") == true) Refusal.NoSpace else Refusal.DiskRefused("write " + e.javaClass.simpleName))
@@ -443,7 +491,6 @@ object MontanaBackup {
         var placed = 0
         private var sink: FileOutputStream? = null
         private var dropping = false
-        private val root = MontanaPaths.archive(c)
 
         companion object {
             /** The history key and the owner branch of the seed, both from the core (iOS MontanaArchive.keys). */
@@ -512,12 +559,12 @@ object MontanaBackup {
             }
         }
 
-        /** A sealed block of history: filed by the core's own ingest if it opens under this person's history key. */
-        private fun absorb(sealed: ByteArray) {
-            val conv = MtBindings.nativeArchivePeekConv(hk, owner, sealed) ?: return
-            // A folder's name comes with the card; before it, the conversation's own id names it, as on iOS.
-            MtBindings.nativeArchiveIngest(root.path, hex(conv), hk, owner, sealed)
-        }
+        /**
+         * A sealed block of history, BY THE TWIN'S OWN ROAD (iOS Taker → MontanaArchive.absorb): filed into the folder its conversation
+         * is already filed under (a copy taken back on the device that made it laid every block a second time in a folder named by the
+         * conversation's hash), a block of a conversation deleted here is not filed, and a filed one is read into the feed.
+         */
+        private fun absorb(sealed: ByteArray) { Archive.absorb(sealed) }
 
         /** The copy has been read to its end: it is whole only if its tail meets the stream it closes. */
         fun finish(): CopyResult {
@@ -532,6 +579,7 @@ object MontanaBackup {
             tally.chats = MontanaPaths.chats(c).listFiles { f -> f.isDirectory }?.size ?: 0
             tally.skipped = t.optJSONObject("tally")?.optInt("skipped") ?: 0
             Log.i("Montana", "backup_taken rec=${tally.records} media=${tally.media} places=$placed chats=${tally.chats} card=${if (card != null) 1 else 0} feed=${feed?.size ?: 0}")
+            Archive.afterCopy()   // the card laid first, then the letters read back (iOS: tombstones stand before the feed is rebuilt)
             return CopyResult.Taken(tally)
         }
     }
@@ -581,14 +629,17 @@ object Card {
         "cbPeerFill1" to Form.WORD, "cbPeerFill2" to Form.WORD, "cbPeerOpacity" to Form.FRACTION, "cbPeerText" to Form.WORD,
         "cbPeerOutline" to Form.WORD, "cbPeerOutlineOp" to Form.FRACTION, "cbPeerOutlineW" to Form.FRACTION,
         "bubbleColorIndex" to Form.FRACTION,
-        // the feed's motion (MontanaChatMotion.swift 6-9), the note (MontanaFeeds.swift 1718, 1783-1808), the voice (MontanaMedia.swift 324-326)
+        // the feed's motion (MontanaChatMotion.swift 6-9), the note (MontanaFeeds.swift 1718, 1783-1808), the voice (MontanaMedia.swift 324-326),
+        // the voice orb's look (MTVoiceBuble.swift 114; MontanaChatStore.swift settingKeys 6214)
         "chatSpringBounce" to Form.FRACTION, "chatSpringDuration" to Form.FRACTION,
-        "noteQuality" to Form.WORD, "vnoteCorner" to Form.WHOLE_WORD, "voiceRate" to Form.FRACTION_WORD,
+        "noteQuality" to Form.WORD, "vnoteCorner" to Form.WHOLE_WORD, "voiceRate" to Form.FRACTION_WORD, "voiceOrb.look" to Form.WORD,
         // the field (MontanaBubble.swift 2361-2362, MontanaConversation.swift 661), the panes (ContentView.swift 226-227, 4296;
         // MontanaChatsList.swift 454), the mesh switch (MontanaNetworkView.swift 123), the daily copies to one's own node
         // (MontanaHomeNode.swift 23, 39-40)
         "composeOpen" to Form.SWITCH, "composeMediaMode" to Form.WORD, "lastMediaPane" to Form.WORD, "cardKind" to Form.WORD,
         "timePanelOpen" to Form.SWITCH, Mesh.KEY to Form.SWITCH, "mt.home.node.on" to Form.SWITCH,
+        // the person's term and ceiling of the cache their node backs (MontanaChatStore.swift settingKeys 6913, 18.10.2026)
+        HomeKeep.KEEP_DAYS to Form.WHOLE_WORD, HomeKeep.LIMIT to Form.WHOLE_WORD,
         // the wall's rules (MontanaBoard.swift 44-49, 64-77): the rule a word, the people a list
         "boardRule" to Form.WORD, "boardSight" to Form.WORD,
         "boardAllow" to Form.LINES, "boardDeny" to Form.LINES, "boardSightAllow" to Form.LINES, "boardSightDeny" to Form.LINES,
@@ -729,6 +780,15 @@ object Card {
         val store = MontanaPaths.store(c)
         val stickers = Stickers.names(c).filter { keepMirror(Stickers.file(c, it), store) }
         if (stickers.isEmpty()) out.remove("a:montana.stickers.mine") else out.put("a:montana.stickers.mine", b64(JSONArray(stickers).toString()))
+        // The groups and channels held here (iOS SeedScope.dataKeys → MTGroup.stateKey; 8cd39e19), each face laid in the copy's faces,
+        // a face changed since written over the one laid before
+        val avatars = MontanaPaths.places(c).getValue("avatars")
+        Groups.carried(json(out.optString("d:" + Groups.STORE))) { name, src ->
+            val dst = File(avatars, name)
+            val same = dst.isFile && dst.length() == src.length() && runCatching { dst.readBytes().contentEquals(src.readBytes()) }.getOrDefault(false)
+            val laidNow = same || ((avatars.isDirectory || avatars.mkdirs()) && runCatching { src.copyTo(dst, overwrite = true) }.isSuccess)
+            if (laidNow) { laid.add(dst.path); name } else null
+        }?.let { out.put("d:" + Groups.STORE, b64(it)) }
         // The answers counted (iOS MTReactions, MontanaMessageMenu.swift 94-100: a map of answer to count, a property list on the card)
         QuickReactions.counts().takeIf { it.isNotEmpty() }?.let { out.put("p:reactionUse", b64(plist(it))) } ?: out.remove("p:reactionUse")
         // The moment the calls page was last seen (iOS ChatStore.loadCallsSeenAt 593-603: a sealed word of seconds)
@@ -771,6 +831,7 @@ object Card {
         var stickers: List<String>? = null
         var reactions: Map<String, Int>? = null
         var callsSeen: Long? = null
+        var groups: ByteArray? = null
         var laid = 0
         fun one(tagged: String) {
             val tag = tagged.take(2)
@@ -815,6 +876,7 @@ object Card {
                 tag == "a:" && k == "montana.stickers.mine" -> stickers = words(v)
                 tag == "p:" && k == "reactionUse" -> reactions = unb64(v)?.let { counts(it) }
                 tag == "d:" && k == "callsSeenAt" -> callsSeen = unb64(v)?.let { ms(String(it, Charsets.UTF_8)) }
+                tag == "d:" && k == Groups.STORE -> groups = unb64(v)
             }
         }
         for (tagged in map.keys()) runCatching { one(tagged) }
@@ -845,7 +907,8 @@ object Card {
             { pins?.let { MsgPins.lay(it) } },
             { stickers?.let { Stickers.lay(c, it, MontanaPaths.store(c)) } },
             { reactions?.let { QuickReactions.lay(it) } },
-            { callsSeen?.let { CallsSeen.lay(it) } }
+            { callsSeen?.let { CallsSeen.lay(it) } },
+            { groups?.let { Groups.lay(it, avatars) } }
         ).forEach { runCatching(it) }
         Log.i("Montana", "card laid values=$laid marks=${marks.size} grounds=${grounds.size} of ${map.length()}")
         return keep(c, "card", raw)
@@ -980,6 +1043,57 @@ object Card {
     }
     private fun xml(s: String) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     private fun unxml(s: String) = s.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+
+    /**
+     * A LEFT-OUT CONVERSATION LEAVES NO WORD ON THE CARD (iOS seedCard 821-851, without 858-876): its own keys go, and from every
+     * collection its key in a map, its name in a list, a record naming it by one of the fields a record names a person with.
+     */
+    fun without(built: Built, scope: CopyScope): Built {
+        val people = scope.people
+        if (people.isEmpty()) return built
+        val o = runCatching { JSONObject(String(built.data, Charsets.UTF_8)) }.getOrNull() ?: return built
+        val out = JSONObject()
+        for (k in o.keys()) {
+            if (k.length > 2 && !scope.takesKey(k.substring(2))) continue
+            val v = o.optString(k)
+            val tag = k.take(2)
+            // a left-out group leaves the groups held with its conversation: the map names it by its id, the conversation by its key
+            if (k == "d:" + Groups.STORE) { out.put(k, json(v)?.let { g -> g.keys().asSequence().toList().filter { Groups.key(it) in people }.forEach { g.remove(it) }; b64(g.toString()) } ?: v); continue }
+            out.put(k, if (tag == "d:" || tag == "a:" || tag == "m:" || tag == "k:") unb64(v)?.let { without(people, it) }?.let { b64(it) } ?: v else v)
+        }
+        return Built(out.toString().toByteArray(), out.length())
+    }
+    /** The bytes of one collection without the left-out people; the bytes as they were when they are no collection or name none of them. */
+    fun without(people: Set<String>, raw: ByteArray): ByteArray {
+        if (people.isEmpty()) return raw
+        val fields = listOf("ref", "chat", "convRef", "convId", "name", "address", "to")
+        return when (val v = runCatching { org.json.JSONTokener(String(raw, Charsets.UTF_8)).nextValue() }.getOrNull()) {
+            is JSONObject -> {
+                val gone = v.keys().asSequence().filter { it in people }.toList()
+                if (gone.isEmpty()) raw else { gone.forEach { v.remove(it) }; v.toString().toByteArray() }
+            }
+            is JSONArray -> {
+                val kept = JSONArray()
+                for (i in 0 until v.length()) {
+                    val x = v.opt(i)
+                    val named = when (x) {
+                        is String -> x in people
+                        is JSONObject -> fields.any { f -> x.optString(f, "").let { it.isNotEmpty() && it in people } }
+                        else -> false
+                    }
+                    if (!named) kept.put(x)
+                }
+                if (kept.length() == v.length()) raw else kept.toString().toByteArray()
+            }
+            else -> raw
+        }
+    }
+    /** The files of the faces the card names for these conversations (iOS MTNameBook.manualPhoto: the faces' place in a copy). */
+    fun facesOf(c: Context, refs: Set<String>): Set<String> {
+        if (refs.isEmpty()) return emptySet()
+        val card = kept(c, "card")?.let { runCatching { JSONObject(String(it, Charsets.UTF_8)) }.getOrNull() } ?: return emptySet()
+        return strings(card.optString("d:manualPhotos"))?.filterKeys { it in refs }?.values?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+    }
 
     /** What a copy handed back and this phone keeps sealed; null when nothing is kept or the device key refuses. */
     fun kept(c: Context, name: String): ByteArray? =

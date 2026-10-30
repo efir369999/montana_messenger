@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ch_all">Все</string>
+    <string name="ch_spending">Расходы</string>
+    <string name="ch_income">Доходы</string>
+    <string name="ch_operations">Операции</string>
+    <string name="ch_no_operations">Операций нет</string>
+    <string name="ch_search_contacts">Поиск по контактам</string>
+    <string name="ch_minted">Чеканка</string>
+    <string name="ch_minting_day">Чеканка за сутки</string>
+    <string name="ch_burning_day">Сжигание за сутки</string>
+    <string name="ch_spending_day">Расходы за сутки</string>
+    <string name="ch_every_month">Все месяцы</string>
+    <string name="ch_operation">Операция</string>
+    <string name="ch_kind">Вид</string>
+    <string name="ch_category">Категория</string>
+    <string name="ch_when">Когда</string>
+    <string name="ch_open_explorer">Открыть в Эксплорере</string>
+    <string name="ch_key_chain_footer">Вся цепь вашего ключа монет, проверенная в Эксплорере.</string>
+    <string name="ch_transactions">Транзакции</string>
+    <string name="ch_no_transactions">Транзакций пока нет</string>
+</resources>

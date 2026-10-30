@@ -568,7 +568,7 @@ final class MontanaBLEMesh: NSObject {
         carryStore = carryStore.filter { $0.value.expiry > now }
         var tags = Set<Data>()
         for w in MTPipe.windows() {
-            if let s = MTPipeBook.secret(for: conv) { tags.insert(MTPipe.tag(sharedSecret: s, window: w)) }
+            if let s = MTPipeBook.key(for: conv) { tags.formUnion(s.tags(window: w)) }
         }
         for (mid, c) in carryStore where tags.contains(c.dst) {
             broadcast(packet(type: c.type, msgId: mid, dst: c.dst, payload: c.payload), exceptLink: nil)

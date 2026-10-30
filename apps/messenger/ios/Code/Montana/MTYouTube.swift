@@ -1,8 +1,8 @@
-// MTYouTube.swift -- YouTube inside Montana. The author's words 17.10.2026 MSK: 16:3x-16:4x, a social network that plays the music
+// MTYouTube.swift -- YouTube inside Montana. The author's words 17.10.2026 UTC: 13:3x-13:4x, a social network that plays the music
 // of a YouTube link inside itself «breaks nothing -- do it so here», «search YouTube's music at once, and a link plays inside our
-// app»; 18:0x, integrate it natively -- the mini player works, no extra windows in the chat, everything plays at once, nothing takes
-// the sound before the person's own tap and nothing cuts another app's music; 18:1x, «YouTube in our app like picture in picture»,
-// «the native picture in picture, the system's, when YouTube is turned on»; 18.10.2026 11:1x, «the picture in picture is not alive
+// app»; 15:0x, integrate it natively -- the mini player works, no extra windows in the chat, everything plays at once, nothing takes
+// the sound before the person's own tap and nothing cuts another app's music; 15:1x, «YouTube in our app like picture in picture»,
+// «the native picture in picture, the system's, when YouTube is turned on»; 18.10.2026 08:1x, «the picture in picture is not alive
 // either and nothing takes a tap -- the behaviour as in the chat everywhere, loading natively into our mini player».
 // A YouTube link in a letter, in a card or on a wall, and a row the music page's search found, play in YouTube's own player inside
 // our mini player (MTYouTubeStage): the person stays on the screen they were on, the window stands over it and moves under the
@@ -123,7 +123,7 @@ enum MTYouTube {
     }
 }
 
-/// THE ONE PLAYER, OUR MINI PLAYER (the author's words 18.10.2026 11:1x MSK: «the picture in picture is not alive either and nothing
+/// THE ONE PLAYER, OUR MINI PLAYER (the author's words 18.10.2026 08:1x UTC: «the picture in picture is not alive either and nothing
 /// takes a tap; the behaviour must be as in the chat everywhere, and it must load natively into our mini player»; «this must be one
 /// function, behaving always the same by the constitution»). T1 08:05:45Z: the video went into the system's picture in picture
 /// from a stage standing on the window outside every controller, and from that moment not one touch reached the app -- the main
@@ -323,7 +323,7 @@ enum MTYouTube {
         let cfg = WKWebViewConfiguration()
         cfg.allowsInlineMediaPlayback = true
         cfg.mediaTypesRequiringUserActionForPlayback = []   // the person's tap was the action: the video starts at once
-        cfg.allowsPictureInPictureMediaPlayback = false     // our mini player is the window (the author's word 18.10.2026 11:1x)
+        cfg.allowsPictureInPictureMediaPlayback = false     // our mini player is the window (the author's word 18.10.2026 08:1x UTC)
         cfg.websiteDataStore = .nonPersistent()
         cfg.userContentController.add(watch, name: channel)
         cfg.userContentController.addUserScript(WKUserScript(source: listen, injectionTime: .atDocumentStart, forMainFrameOnly: true))

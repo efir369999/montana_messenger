@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build Montana for the Mac or the phone from this source and compare it with a published release, byte for byte."""
 # Constitution [I-14]: «Every release build of an official Montana client is reproducible byte for byte from publicly published
-# source by any independent builder.» The author's words 21.10.2026 20:4x and 20:58 MSK: «there is no reproducible build of the
+# source by any independent builder.» The author's words 21.10.2026 17:4x and 17:58 UTC: «there is no reproducible build of the
 # applications -- fix it», «while you wait for OZ 1, close OZ 2».
 #
 # One archive road for the release and for anyone who checks it: the release road (mt-mac-release.sh) archives through --archive
@@ -284,7 +284,7 @@ def digest(text):
 
 def released_app(package, work):
     if package.endswith('.dmg'):
-        # the Mac release is a disk image (the author's word 22.10.2026 19:37 MSK: «isn't a native app's build a DMG?»): attached
+        # the Mac release is a disk image (the author's word 22.10.2026 16:37 UTC: «isn't a native app's build a DMG?»): attached
         # read-only and unseen by Finder, the app copied out whole, the image detached
         mount = os.path.join(work, 'volume')
         run(['hdiutil', 'attach', '-readonly', '-nobrowse', '-noautoopen', '-mountpoint', mount, package])

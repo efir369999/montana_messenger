@@ -19,6 +19,7 @@ fn two_verifiers_reach_one_cement_from_two_arrival_orders() {
     let secrets = [[0x73u8; 32], [0x74u8; 32]];
     let window = 1_000;
     let parent = [0x22; 32];
+    let two_before = [0x21; 32];
     let aggregate = [0x33; 32];
     let threshold = mt_pulse::U256::from_be_bytes(&[0xff; 32]);
     let cohort =
@@ -39,6 +40,7 @@ fn two_verifiers_reach_one_cement_from_two_arrival_orders() {
         (window, 0, 0),
         &branch,
         parent,
+        two_before,
         &electorate,
         &aggregate,
     )
@@ -49,6 +51,7 @@ fn two_verifiers_reach_one_cement_from_two_arrival_orders() {
         (window, 0, 0),
         &branch,
         parent,
+        two_before,
         &electorate,
         &aggregate,
     )

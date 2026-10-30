@@ -2,6 +2,168 @@
 
 Every build of Montana for iPhone, iPad and Mac, newest first. The version is the one Settings shows: 1.0 (build). Each entry is written here by the build road before the build is made, from the release notes the build carries; a build whose entry is not on this page is not built. Each build's full notes are in [`doc/release-notes/messenger/ios`](doc/release-notes/messenger/ios).
 
+## 1.0 (2322) - 2026-10-30
+
+Source commit `186237067ba2`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2322.md).
+
+- A comment on a wall costs no coin and brings none: nothing leaves your wallet when you comment, the wall's owner burns nothing and pays no share to the post's writer. Coins are born only by the network's core, one coin a second.
+- The wallet's «Chats and calls» chains are history: the coins chats, calls and comments minted and burned before stay readable there, and nothing moves them now.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged. A comment's word no longer carries a coin and its name; the coin book no longer has a burn door, and the lines written before are read as history. No new address, key or network road is added.
+
+## 1.0 (2321) - 2026-10-30
+
+Source commit `bf11ab0b1f58`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2321.md).
+
+- The app no longer counts coins of its own: letters in chats, taps on the wallet's coin, the VPN wall's seconds, the wallet's pull and the time away mint nothing on the device. Coins are born only by the network's core, one coin a second.
+- The +1 that rose under a chat's field and at the finger on the wallet's coin is gone, since nothing is credited there.
+- From 30.10.2026 12:00 UTC the app no longer asks the network to mint the seconds you are here, and the wallet no longer shows seconds on their way to such a minting: from that moment the network takes no such record.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged. The device's coin book no longer writes earned lines; the lines written before are read as history. The VPN wall and the wallet's pull still tell the chain that the person is here, as before. From 30.10.2026 12:00 UTC the app lays no minting record on the coin chain. No new address, key or network road is added.
+
+## 1.0 (2319) - 2026-10-29
+
+Source commit `5068b59c0575`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2319.md).
+
+- Calls no longer credit or take coins: a call's seconds mint nothing and burn nothing, and no coin receipt stands under a call. Coins are born only by the network's core, one coin a second.
+- Chess no longer credits or takes coins: no coins for moves, no stakes, no pot and no winnings. Coins are born only by the network's core, one coin a second.
+- The captured pieces beside each player are all drawn at the same size, in the board's own artwork.
+- A first message that arrives as a long letter is shown with its words, and a service message is never shown as a chat bubble.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged. Chess letters no longer carry any coin field; a letter of an earlier build is read without its coin fields. A call writes no coin and lays no burn on the coin chain; the call's row keeps only its name and seconds. No new address, key or network road is added.
+
+## 1.0 (2317) - 2026-10-29
+
+Source commit `3febd62ee04f`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2317.md).
+
+- Chess no longer credits or takes coins: no coins for moves, no stakes, no pot and no winnings. Coins are born only by the network's core, one coin a second.
+- The captured pieces beside each player are all drawn at the same size, in the board's own artwork.
+- A first message that arrives as a long letter is shown with its words, and a service message is never shown as a chat bubble.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged. Chess letters no longer carry any coin field; a letter of an earlier build is read without its coin fields. No new address, key or network road is added.
+
+## 1.0 (2316) - 2026-10-29
+
+Source commit `f6484629d89a`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2316.md).
+
+- When the network does not answer at the moment you open the wallet, the balance shows the last amount the chain confirmed for your key, not a lower local estimate. Your coins on the chain did not change.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged: the last amount the chain confirmed is kept sealed in your own folder on this phone, next to the key it belongs to, and never travels. When the road to the chain fails, the diary now records the reply code and which of the two chain nodes was asked, never the key.
+
+## 1.0 (2315) - 2026-10-27
+
+Source commit `1604d008df48`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2315.md).
+
+- A file you sent to a channel or a group no longer shows as failed with «retry» after you reopen the app: it stands as sent, the way the channel shows it.
+- In the row of files and pictures above the message field, hold one and carry it to another place: the numbers follow, and they are sent in the order you set.
+- The Files page opens in the folder you last took a file from.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged: the folder of the last chosen file is kept sealed on this phone alone and never travels in a copy, and the sent state of a channel's file is read from the copies this phone already holds. Nothing new leaves the phone.
+
+## 1.0 (2314) - 2026-10-26
+
+Source commit `df26a92dd9fe`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2314.md).
+
+- The Time Coins page shows the minting as it happens: while you are in the app, your Time Balance rises every second with the seconds on their way to the network, before the window that confirms them is finalized; when the network confirms them the number moves on without a jump. The line Available beneath it, and what you can send, stay exactly what the network has confirmed.
+
+**Security and anonymity**
+
+- Security and anonymity are unchanged: the rising seconds are shown and never spent, a transfer is weighed by the confirmed balance alone, and a minting record now counts only from the moment the person came into the app, so no second before their presence is claimed. Nothing new leaves the phone.
+
+## 1.0 (2313) - 2026-10-25
+
+Source commit `7c3624af1f00`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2313.md).
+
+- Conversations keep their keys in step with the day more reliably: when the phone's clock runs ahead of the network, the first daily step of a conversation's keys waits up to four days for the network to confirm the day, and a conversation met again after a pause stays the same conversation. Messages, calls and coins work as before.
+
+**Security and anonymity**
+
+- This build strengthens security: the daily step that erases a conversation's earlier key is taken by the day the nodes confirm, not by the phone's clock alone, and waits at most four days for that confirmation; a restore from the 24 words takes the later of the two days; erased keys are written to the device's storage again if the first write was refused. Anonymity is unchanged: nothing new leaves the phone.
+
+## 1.0 (2312) - 2026-10-25
+
+Source commit `4c768afb86eb`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2312.md).
+
+- Several files can now be chosen at once: they wait above the message field numbered 1, 2, 3 in the order you chose them, a cross takes one out and the numbers close up, and they are sent one after another in that order to a chat, a channel or a group, so a small file never overtakes a larger one. Messages, calls and coins work as before.
+
+**Security and anonymity**
+
+- This build changes neither security nor anonymity: the chosen files are sent by the same encrypted road as before, only one after another in the chosen order; in a group with slow mode, a set of files sent together now counts as one message.
+
+## 1.0 (2311) - 2026-10-25
+
+Source commit `a8986f934307`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2311.md).
+
+- A long message split into several bubbles now reads top to bottom in the order it was written: the first part on top, and scrolling down shows the continuation. Messages, calls and coins work as before.
+
+**Security and anonymity**
+
+- This build changes neither security nor anonymity: it changes only the order in which the pieces of one long message are shown on the screen; nothing is sent, stored or encrypted differently.
+
+## 1.0 (2310) - 2026-10-25
+
+Source commit `f83cf7350b4b`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2310.md).
+
+- Each conversation's secret now moves forward one day at a time. From 3 November the phone keeps only the step from two days back and erases the original secret, so a secret taken from the phone later cannot open earlier days. From 1 November messages carry the day's tag: update both ends to this build before then. Messages, calls and coins work as before.
+
+**Security and anonymity**
+
+- Security: the pipe secret walks by UTC day; from 03.11 every stored form keeps a 249-byte floor (the walk's value at D-2 and the quantities kept for good) with no byte of the original secret. Limits: an archive head already sent to twins and keepers stays until a newer head is written over it; a device clock set forward moves the floor for good. Builds 2309 and earlier do not hear the new tag from 01.11.
+
+## 1.0 (2309) - 2026-10-25
+
+Source commit `8439bb0f4306`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2309.md).
+
+- The secret of each conversation now lives in one place inside the app and is never handed out: every part of the app, the notification extension and the share sheet ask that one place for what they need. Messages, calls and coins work exactly as before.
+
+**Security and anonymity**
+
+- Security: one owner holds the conversation secret and exposes only derived values; a build check refuses any read of the raw secret elsewhere. The wire is unchanged byte for byte. Erasing the original secret by day is the next step and is not in this build.
+
+## 1.0 (2308) - 2026-10-24
+
+Source commit `2d8a183d860e`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2308.md).
+
+- A call that has already ended no longer keeps waking your device: the stale invitation is now confirmed to its sender, so it stops being sent again.
+
+**Security and anonymity**
+
+- Security: the confirmation is the same end-to-end sealed receipt as for any letter and carries nothing about the call. Anonymity is unchanged.
+
+## 1.0 (2307) - 2026-10-24
+
+Source commit `d2cd1db9a283`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2307.md).
+
+- Calls connect when one of the nodes is down: every call signal also goes through the other node at once.
+- On the Mac, closing the last window quits the app.
+- A conversation you erased no longer comes back to the device's storage at every launch.
+
+**Security and anonymity**
+
+- Security: a call signal sent through a second node is the same end-to-end sealed packet, and the receiver drops repeats by its id; an erased conversation leaves no folder on the device. Anonymity is unchanged.
+
+## 1.0 (2306) - 2026-10-24
+
+Source commit `221bec73d642`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2306.md).
+
+- One person, many devices: a letter, a photo or a video is taken by each of your devices on its own, so the Mac fetching first no longer leaves the phone without it.
+
+**Security and anonymity**
+
+- Security: the node marks a letter as taken per device under a per-label device name, so it links no two labels of one device; the sealed letter stays end-to-end encrypted and leaves the node at the box term. Anonymity is unchanged.
+
 ## 1.0 (2305) - 2026-10-24
 
 Source commit `1d217f36fc91`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2305.md).
@@ -70,7 +232,7 @@ Source commit `4d8b7da44672`. [Release notes](doc/release-notes/messenger/ios/re
 
 **Security and anonymity**
 
-- The burn of a call waits on disk until the node accepts it, and the debt falls only by an accepted BURN; before the online cut of 26 October 00:00 MSK nothing is laid, since the node refuses a BURN until then.
+- The burn of a call waits on disk until the node accepts it, and the debt falls only by an accepted BURN; before the online cut of 25 October 21:00 UTC nothing is laid, since the node refuses a BURN until then.
 
 ## 1.0 (2298) - 2026-10-23
 
@@ -127,7 +289,7 @@ Source commit `55a032bb8d74`. [Release notes](doc/release-notes/messenger/ios/re
 
 Source commit `057f2d1ec42d`. [Release notes](doc/release-notes/messenger/ios/release-notes-1.0-2293.md).
 
-- Coins follow the new rule of the time chain: from 26 October 00:00 Moscow time a mint counts only the seconds you are present in Montana, and a burned coin is a record of the chain like any other spend.
+- Coins follow the new rule of the time chain: from 25 October 21:00 UTC a mint counts only the seconds you are present in Montana, and a burned coin is a record of the chain like any other spend.
 - The gold page ground is gone; a page that used it now shows Montana's own dark ground with its pattern.
 
 **Security and anonymity**
@@ -463,7 +625,7 @@ Source commit `5f4152679331`. [Release notes](doc/release-notes/messenger/ios/re
 - The coins page shows your Time Balance: the time your coins hold, large and white, in days, hours, minutes and seconds, with the coins beneath it. One coin is one second, and one TCM is a billion coins.
 - Transfers, the history, the analytics, the TimeChain and a call's receipt show the time beside every amount of coins.
 - No caption to hold the coin and no tap counter under it: a tap mints at most one coin a second.
-- From 20 October, 00:00 Moscow time, the coin chain itself counts one coin per second of a key's life.
+- From 19 October, 21:00 UTC, the coin chain itself counts one coin per second of a key's life.
 
 ## 1.0 (2249) - 2026-10-19
 

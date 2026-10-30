@@ -1,4 +1,4 @@
-// A table of the proof hash and the module that owns its fold are one value, or the six roots a
+// A table of the proof hash and the module that owns its fold are one value, or the seven roots a
 // genesis carries are not the roots the set freezes. They were two for as long as nothing put them
 // beside each other: a table handed its own domains to the fold of the state, which is SHA-256, and
 // the set names a domain of one family under the doors of the other a defect in as many words.
@@ -11,6 +11,7 @@ fn a_table_of_the_proof_hash_and_the_owner_of_its_fold_are_one_value() {
         let owned = match table {
             Table::Notes => mt_proof::notes::empty_root().bytes(),
             Table::Admitted => mt_proof::admitted::empty_root().bytes(),
+            Table::Credited => mt_proof::credited::empty_root().bytes(),
             Table::Records => mt_proof::records::empty_root().bytes(),
             other => panic!("a table of the proof hash with no owner named: {other:?}"),
         };
@@ -28,12 +29,12 @@ fn the_two_constructions_of_the_state_refuse_a_table_of_the_proof_hash() {
 
 #[test]
 fn the_three_families_of_a_genesis_stand_apart() {
-    let six = mt_state::tables::genesis_roots();
-    for (at, root) in six.iter().enumerate() {
-        for other in six.iter().skip(at + 1) {
+    let seven = mt_state::tables::genesis_roots();
+    for (at, root) in seven.iter().enumerate() {
+        for other in seven.iter().skip(at + 1) {
             if root == other {
                 assert_eq!(
-                    six[1], six[3],
+                    seven[1], seven[3],
                     "two roots of a genesis agree that are not the two sparse tables of the state"
                 );
             }

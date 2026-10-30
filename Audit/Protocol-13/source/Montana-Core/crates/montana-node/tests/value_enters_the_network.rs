@@ -1,5 +1,5 @@
 // Where value enters the network at all: a window closes, its cement names the machines that lived
-// it, each takes a right to a share, and a right becomes a note by being extinguished inside an
+// it, each takes a right to its coin, and a right becomes a note by being extinguished inside an
 // ordinary payment. Only then can one wallet pay another — and that is the whole of the chain this
 // stage is measured by.
 //
@@ -19,22 +19,6 @@ use common::{of, payee_of, Scratch};
 
 const WINDOW: u64 = 1_000;
 
-// The tree of admitted machines holding one machine, and the branch it walks.
-fn admitted_of_one(
-    machine_secret: &[u8; 32],
-) -> (mt_proof::poseidon::Digest, Vec<mt_proof::poseidon::Digest>) {
-    let naming = mt_derive::nullifier::machine_halves(machine_secret).1;
-    let leaf = mt_proof::admitted::leaf(&naming).expect("a half of the family");
-    let empties = mt_proof::admitted::empty_internals(mt_proof::tree_depth());
-    let mut current = leaf;
-    let mut siblings = Vec::new();
-    for empty in empties.iter().take(mt_proof::tree_depth()) {
-        siblings.push(*empty);
-        current = mt_proof::admitted::node(&current, empty);
-    }
-    (current, siblings)
-}
-
 #[test]
 fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
     let miner_at = Scratch::named("value-miner");
@@ -45,34 +29,42 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
     let (of_payee, payee_key) = payee_of(0xB2);
 
     let machine_secret = of(0x77, 0);
-    let (admitted_root, admitted_siblings) = admitted_of_one(&machine_secret);
-    let mut state = State::new().with_admitted(admitted_root);
+    // The window closed on a cement naming one machine, and the proposal of the window after it
+    // credited that machine's part: the leaf its right walks to.
+    let part = mt_derive::nullifier::part(&machine_secret, WINDOW).expect("a secret of the family");
+    let mut state = State::new();
+    state.credit(&[part]).expect("a cement the tree holds");
+    let (credited_siblings, credited_position) = state
+        .credited_branch(&part)
+        .expect("the part the window credited");
+    let credited_root = state.credited();
 
-    // The window closed on a cement naming one machine, so that machine takes the whole mint.
-    let right =
-        attest::right_of(&machine_secret, WINDOW, 1).expect("a window that named a machine");
+    // The window closed on a cement naming one machine, so that machine takes the window's credit, one coin for
+    // every second of it, as every machine of every cement does.
+    let right = attest::right_of(&machine_secret, WINDOW).expect("a window that named a machine");
     assert_eq!(right.window, WINDOW);
-    assert!(
-        right.share > 0,
-        "a window that mints nothing mints no right"
+    assert_eq!(
+        right.worth,
+        attest::window_credit().expect("the Decree names it"),
+        "a right is worth its window's credit"
     );
 
-    // The right becomes a note: five positions of filler, the sixth the right itself, and the whole
-    // share leaves as one note the machine pays to itself. Nothing else could have been built —
-    // this wallet holds not one note yet.
+    // The right becomes a note: five positions of filler, the sixth the right itself, and the coin
+    // leaves as one note the machine pays to itself. Nothing else could have been built — this
+    // wallet holds not one note yet.
     assert_eq!(miner.balance().expect("a balance"), 0);
     let minted = miner
         .redeem(
             &machine_secret,
             WINDOW,
-            u128::from(right.share),
-            &admitted_siblings,
-            0,
+            u128::from(right.worth),
+            &credited_siblings,
+            credited_position,
             &of_miner,
             right.accepted_in,
             &of(0xD4, 0),
             &state.notes_root(),
-            &admitted_root,
+            &credited_root,
         )
         .expect("a machine holding one right writes a frame");
 
@@ -82,9 +74,9 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
         .expect("a true frame applies");
     let created = minted.created.first().expect("a redemption creates a note");
     assert_eq!(
-        u128::from(right.share),
+        u128::from(right.worth),
         created.value,
-        "the note created is not the share the window minted"
+        "the note created is not the coins the window credited"
     );
     let note = Note::of(
         created.value,
@@ -101,13 +93,14 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
     miner.enter(note).expect("the ledger takes it");
     assert_eq!(
         miner.balance().expect("a balance"),
-        u128::from(right.share),
+        u128::from(right.worth),
         "the first value of the network did not reach the wallet that mined it"
     );
 
-    // And now it pays like anybody. The wallet holds one note where a frame consumes six, so the
-    // rest of its positions take filler too — the same branch, used for what it was written for.
-    let paid = u128::from(right.share) / 4;
+    // And now it pays like anybody: the whole credit, since nothing smaller than a coin exists. The
+    // wallet holds one note where a frame consumes six, so the rest of its positions take filler
+    // too — the same branch, used for what it was written for.
+    let paid = u128::from(right.worth);
     let taking = (mt_genesis::scalar("spend_inputs").expect("named")
         * mt_genesis::scalar("spends_per_frame").expect("named")) as usize;
     let mut paths = Vec::with_capacity(taking);
@@ -123,7 +116,7 @@ fn a_window_mints_a_right_the_right_becomes_a_note_and_the_note_is_paid_away() {
             &of_miner,
             &paths,
             &state.notes_root(),
-            &admitted_root,
+            &credited_root,
         )
         .expect("a wallet holding a note pays");
     let object = mt_state::layout::Frame::parse(&payment.frame).expect("a frame reads back");

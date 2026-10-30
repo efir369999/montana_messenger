@@ -19,6 +19,7 @@ pub fn handed(window: u64, previous: [u8; 32], cohort: &Cohort, cement: [u8; 32]
         record_root: [0x55; 32],
         machine_root: [0x66; 32],
         admitted_root: cohort.root().bytes(),
+        credited_root: mt_proof::credited::empty_root().bytes(),
         operations_root: [0x88; 32],
         roll: [0xBB; 32],
         admitted_count: cohort.count(),

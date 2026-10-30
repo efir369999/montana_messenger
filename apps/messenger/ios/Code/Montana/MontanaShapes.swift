@@ -86,7 +86,7 @@ enum MontanaOctagon {
     /// The compose row (the author's word 14.09, the platform's own message field): «+», the
     /// field and the microphone all stand at the system field's height.
     static var composeHeight: CGFloat { MTInputField.tier }   // read from the one owner of the compose tier (20.09)
-    /// The glyph inside a bar button. ONE STYLE FOR EVERY BUTTON (the author's word 07.10.2026 18:4x MSK: the style of the buttons
+    /// The glyph inside a bar button. ONE STYLE FOR EVERY BUTTON (the author's word 07.10.2026 15:4x UTC: the style of the buttons
     /// -- write on the wall, send and the rest -- one for each style chosen; with white icons, everything in that style): with the
     /// white icons chosen (MTLibraryIconStyle, the one owner of the choice) every bar glyph is that white, as the send mark already
     /// is; with another style, the platform's grey.
@@ -502,7 +502,7 @@ enum MontanaSeen {
             // minute (the author's word 11.09): no «less than» sign in a presence line.
             let f = DateComponentsFormatter()
             var cal = Calendar.current; cal.locale = MTLanguage.locale; f.calendar = cal
-            // The short unit (the author's word 05.10.2026 14:04 MSK: «minutes» to «min»), so the line fits beside the face.
+            // The short unit (the author's word 05.10.2026 11:04 UTC: «minutes» to «min»), so the line fits beside the face.
             f.allowedUnits = [.minute]; f.unitsStyle = .short
             return f.string(from: max(60, diff)) ?? MTClock.time(date)
         }
@@ -881,7 +881,7 @@ struct MTComposeMark: View {
     }
 }
 
-/// THE SYMBOL OF SENDING TIME (the author's words 05.10.2026 18:3x-18:5x MSK: «save it in Media and use it always as the symbol of
+/// THE SYMBOL OF SENDING TIME (the author's words 05.10.2026 15:3x-15:5x UTC: «save it in Media and use it always as the symbol of
 /// sending time»; «use only our send symbol, a touch larger and in proportion to the text»): the author's own file, byte for byte
 /// (Media/IMG_3066.png, the asset TimeSend), drawn at the height it is given -- the one owner of the mark wherever time is sent.
 struct MTTimeSendMark: View {
@@ -1153,7 +1153,7 @@ struct MontanaCallMark: View {
     static let topPad: CGFloat = 8
     @State private var pressed = false
     var body: some View {
-        // THE MARK'S FINGER IS THE PLATFORM'S (the author's words 12.10.2026 15:4x-15:5x MSK: «on the iPhone 17 the talk does not fold by
+        // THE MARK'S FINGER IS THE PLATFORM'S (the author's words 12.10.2026 12:4x-12:5x UTC: «on the iPhone 17 the talk does not fold by
         // the arrow -- at the root, at one touch»; «everything native, and the same for everyone»). The iPhone 17 Pro Max on iOS 26.6.2
         // under Display Zoom (its call screen 375x812, T1's 428x926): nine calls of 11-12.10 and not one fold by the arrow, T1 eight of
         // nineteen. The drawn Button shared its finger with the platform's interactive glass laid over it and with the picture's

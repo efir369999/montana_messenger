@@ -19,7 +19,7 @@ import java.io.File
 
 /** The name the person gave a document (the manifest's «n»), found by its file among the book's letters; else the file's own. */
 fun docName(f: File): String {
-    for (ch in Book.all()) for (m in ch.msgs) if (m.file == f.path) {
+    for (ch in Book.rooms()) for (m in ch.msgs) if (m.file == f.path) {
         val man = m.meta?.let { runCatching { JSONObject(it) }.getOrNull() } ?: Media.inline(m.text)
         man?.optString("n")?.takeIf { it.isNotBlank() }?.let { return it }   // USER-DATA: the document's name
     }

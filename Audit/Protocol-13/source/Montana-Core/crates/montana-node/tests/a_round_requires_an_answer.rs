@@ -14,6 +14,7 @@ fn only_a_verified_answer_to_this_beacon_moves_the_round() {
     let cohort = Cohort::of(&[Cohort::half_of(&secret)]).unwrap();
     let branch = cohort.branch_of(&secret).unwrap();
     let previous = [0x42; 32];
+    let two_before = [0x41; 32];
     let aggregate = [0x37; 32];
     let threshold = mt_pulse::U256::from_be_bytes(&[0xff; 32]);
     let electorate =
@@ -24,6 +25,7 @@ fn only_a_verified_answer_to_this_beacon_moves_the_round() {
         (12, 0, 0),
         &branch,
         previous,
+        two_before,
         &electorate,
         &aggregate,
     )
@@ -64,18 +66,6 @@ fn only_a_verified_answer_to_this_beacon_moves_the_round() {
         .gather_light(&early_light, &aggregate, &beacon, &threshold)
         .is_err());
 
-    let unrelated = pulse
-        .standing
-        .heavy(&secret, beacon.id().unwrap(), [0x43; 32])
-        .unwrap();
-    assert!(pulse
-        .gather(&unrelated, &cohort.root(), &aggregate, &beacon, &threshold)
-        .is_err());
-    assert_eq!(
-        pulse.living(),
-        0,
-        "valid signature and presence under a different head add no cement"
-    );
     let mut bad = heavy.clone();
     bad.signature[0] ^= 1;
     assert!(pulse
@@ -90,6 +80,26 @@ fn only_a_verified_answer_to_this_beacon_moves_the_round() {
     assert!(!pulse
         .gather(&heavy, &cohort.root(), &aggregate, &beacon, &threshold)
         .unwrap());
+    // A heavy attestation of the same part naming another proposal of the window before is the
+    // first of the contradicting pairs the sanction reads: the first appearance stands and the
+    // second is refused, and the cement moves by neither (Consensus, "The sanction of a double
+    // answer"). A part of another machine naming another name enters the cement whatever it
+    // pledges; the pulse tests of the agreement carry that case.
+    let unrelated = pulse
+        .standing
+        .heavy(&secret, beacon.id().unwrap(), [0x43; 32])
+        .unwrap();
+    assert_eq!(
+        pulse.gather(&unrelated, &cohort.root(), &aggregate, &beacon, &threshold),
+        Err(montana_node::NodeError::Refused {
+            what: "a second heavy attestation of one part naming another name"
+        })
+    );
+    assert_eq!(
+        pulse.living(),
+        1,
+        "a second name under one part moved the cement"
+    );
     pulse.advance(&machine, &beacon).unwrap();
     assert_eq!(pulse.round, 1);
     let next = pulse.beacon_of_this_round().unwrap();
@@ -121,9 +131,12 @@ fn only_a_verified_answer_to_this_beacon_moves_the_round() {
     pulse.advance(&machine, &next).unwrap();
     assert_eq!(pulse.round, 2);
 
-    // A real signature from a proven member is still no substitute for checking
-    // the cement. This answers the forged version through the lower signing
-    // primitive, exactly as a malicious member can do.
+    // A real signature from a proven member is still no substitute for checking the cement: a
+    // beacon whose pair this machine did not recompute is answered by nothing of this machine and
+    // closed on never. It moves the round, since a verified attestation answered it (Consensus, "The
+    // round": "A round advances only on a valid attestation") — a machine with one heavy more than the
+    // runner held would otherwise stand in its round for ever. This answers the forged version
+    // through the lower signing primitive, exactly as a malicious member can do.
     let mut forged = pulse.beacon_of_this_round().unwrap();
     forged.cement_aggregate[0] ^= 1;
     let signed = pulse
@@ -133,13 +146,18 @@ fn only_a_verified_answer_to_this_beacon_moves_the_round() {
     assert!(pulse
         .gather_light(&signed, &aggregate, &forged, &threshold)
         .unwrap());
-    assert!(!pulse.can_advance(&forged));
-    assert!(pulse.advance(&machine, &forged).is_err());
+    assert!(!pulse.can_advance(&forged), "a forged pair reconciled");
     assert!(pulse
         .answer(&secret, &forged, &aggregate, &threshold)
         .is_err());
-    assert_eq!(pulse.round, 2);
+    assert!(pulse.is_answered(&forged));
+    pulse.advance(&machine, &forged).unwrap();
+    assert_eq!(pulse.round, 3);
     assert_eq!(pulse.living(), 1);
+    assert!(
+        pulse.parts_of(&forged).is_none(),
+        "a forged pair names parts of this machine's cement"
+    );
 
     assert!(
         Pulse::open(
@@ -148,6 +166,7 @@ fn only_a_verified_answer_to_this_beacon_moves_the_round() {
             (12, 1, 0),
             &branch,
             [0x43; 32],
+            two_before,
             &electorate,
             &aggregate
         )
@@ -165,6 +184,7 @@ fn a_late_heavy_enters_the_windows_cement_without_closing_another_round() {
     machine.admits(cohort.count()).unwrap();
     let branch = cohort.branch_of(&secrets[0]).unwrap();
     let previous = [0x42; 32];
+    let two_before = [0x41; 32];
     let aggregate = [0x37; 32];
     let threshold = mt_pulse::U256::from_be_bytes(&[0xff; 32]);
     let electorate =
@@ -175,6 +195,7 @@ fn a_late_heavy_enters_the_windows_cement_without_closing_another_round() {
         (12, 0, 0),
         &branch,
         previous,
+        two_before,
         &electorate,
         &aggregate,
     )

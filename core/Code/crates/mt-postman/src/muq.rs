@@ -483,7 +483,11 @@ async fn forward_deposit_to_host(host_addr: SocketAddr, sealed: &[u8]) -> Result
     write_fixed(&mut st, &[TAG_HOST_DEPOSIT]).await?;
     send_frame(&mut st, sealed).await?;
     let mut ack = [0u8; 1];
-    let _ = read_fixed(&mut st, &mut ack).await; // wait for the ack (guarantee of deposit delivery)
+    // Report success only after the host acknowledges acceptance.
+    read_fixed(&mut st, &mut ack).await?;
+    if ack[0] != OK {
+        return Err(WireError::Closed);
+    }
     Ok(())
 }
 
@@ -523,6 +527,78 @@ async fn forward_register_to_host(host_addr: SocketAddr, sealed: &[u8]) -> Resul
     write_fixed(&mut st, &[TAG_RELAY_REGISTER]).await?;
     send_frame(&mut st, sealed).await?;
     let mut ack = [0u8; 1];
-    let _ = read_fixed(&mut st, &mut ack).await;
+    read_fixed(&mut st, &mut ack).await?;
+    if ack[0] != OK {
+        return Err(WireError::Closed);
+    }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use tokio::io::AsyncWriteExt;
+    use tokio::net::TcpListener;
+    use tokio::task::JoinHandle;
+
+    use super::*;
+    use crate::config::tls_acceptor;
+
+    const SEALED: &[u8] = b"opaque forwarding fixture";
+
+    async fn with_timeout<F: std::future::Future>(f: F) -> F::Output {
+        tokio::time::timeout(Duration::from_secs(10), f)
+            .await
+            .expect("must not hang for more than 10s")
+    }
+
+    // Read the real forwarding request before replying, or close without an ACK.
+    async fn host_reply(expected_tag: u8, reply: Option<u8>) -> (SocketAddr, JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let acceptor = tls_acceptor().unwrap();
+        let task = tokio::spawn(async move {
+            let (tcp, _) = listener.accept().await.unwrap();
+            let mut st = acceptor.accept(tcp).await.unwrap();
+            let mut tag = [0u8; 1];
+            read_fixed(&mut st, &mut tag).await.unwrap();
+            assert_eq!(tag, [expected_tag]);
+            assert_eq!(recv_frame(&mut st).await.unwrap(), SEALED);
+            if let Some(ack) = reply {
+                write_fixed(&mut st, &[ack]).await.unwrap();
+            } else {
+                st.shutdown().await.unwrap();
+            }
+        });
+        (addr, task)
+    }
+
+    #[tokio::test]
+    async fn forward_deposit_requires_host_ok() {
+        for reply in [Some(OK), Some(ERR), Some(0x7f), None] {
+            let result = with_timeout(async {
+                let (addr, host) = host_reply(TAG_HOST_DEPOSIT, reply).await;
+                let result = forward_deposit_to_host(addr, SEALED).await;
+                host.await.unwrap();
+                result
+            })
+            .await;
+            assert_eq!(result.is_ok(), reply == Some(OK), "reply: {reply:?}");
+        }
+    }
+
+    #[tokio::test]
+    async fn forward_register_requires_host_ok() {
+        for reply in [Some(OK), Some(ERR), Some(0x7f), None] {
+            let result = with_timeout(async {
+                let (addr, host) = host_reply(TAG_RELAY_REGISTER, reply).await;
+                let result = forward_register_to_host(addr, SEALED).await;
+                host.await.unwrap();
+                result
+            })
+            .await;
+            assert_eq!(result.is_ok(), reply == Some(OK), "reply: {reply:?}");
+        }
+    }
 }

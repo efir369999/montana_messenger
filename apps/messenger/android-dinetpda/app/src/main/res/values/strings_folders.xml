@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The folders over the chats (iOS MTChatFolders.swift, MontanaChatsList.swift folderMenu/folderEmpty, MontanaSettings.swift:130;
+     Localizable.xcstrings en). Chats, Groups, Channels, Edit, Delete, Cancel, Done and Search are the catalogue's shared words. -->
+<resources>
+    <string name="fl_title">Chat Folders</string>
+    <string name="fl_folders">Folders</string>
+    <string name="fl_all_chats">All Chats</string>
+    <string name="fl_all">All</string>
+    <string name="fl_bots">Bots</string>
+    <string name="fl_kind_contacts">Contacts</string>
+    <string name="fl_kind_non_contacts">Non-Contacts</string>
+    <string name="fl_leave_muted">Muted</string>
+    <string name="fl_leave_read">Read</string>
+    <string name="fl_leave_archived">Archived</string>
+    <string name="fl_bot">bot</string>
+    <string name="fl_intro">Create folders for different groups of chats and quickly switch between them.</string>
+    <string name="fl_create">Create a Folder</string>
+    <string name="fl_folders_footer">Tap the pencil to change the order or delete folders.</string>
+    <string name="fl_recommended">Recommended Folders</string>
+    <string name="fl_unread">Unread</string>
+    <string name="fl_unread_words">New messages from all chats.</string>
+    <string name="fl_personal">Personal</string>
+    <string name="fl_personal_words">Only messages from personal chats.</string>
+    <string name="fl_groups_words">Only messages from groups.</string>
+    <string name="fl_channels_words">Only messages from channels.</string>
+    <string name="fl_bots_words">Only messages from bots.</string>
+    <string name="fl_new">New Folder</string>
+    <string name="fl_edit_folder">Edit Folder</string>
+    <string name="fl_name">Folder Name</string>
+    <string name="fl_add_chats">Add Chats</string>
+    <string name="fl_included">Included Chats</string>
+    <string name="fl_included_footer">Choose chats and types of chats that will appear in this folder.</string>
+    <string name="fl_exclude_add">Add Chats to Exclude</string>
+    <string name="fl_excluded">Excluded Chats</string>
+    <string name="fl_excluded_footer">Choose chats and types of chats that will never appear in this folder.</string>
+    <string name="fl_discard_q">You have changed the filter. Discard changes?</string>
+    <string name="fl_discard">Discard</string>
+    <string name="fl_chat_types">Chat Types</string>
+    <string name="fl_include">Include Chats</string>
+    <string name="fl_exclude">Exclude Chats</string>
+    <string name="fl_read_all">Read All</string>
+    <string name="fl_mute_all">Mute All</string>
+    <string name="fl_unmute_all">Unmute All</string>
+    <string name="fl_remove">Remove</string>
+    <string name="fl_edit_folders">Edit Folders</string>
+    <string name="fl_reorder">Reorder Tabs</string>
+    <string name="fl_remove_q">Remove %1$s?</string>
+    <string name="fl_remove_note">This will remove the folder, your chats will not be deleted.</string>
+    <string name="fl_empty">Folder is empty.</string>
+    <string name="fl_empty_note">No chats currently match this folder.</string>
+</resources>

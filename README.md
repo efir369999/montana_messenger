@@ -5,12 +5,16 @@ words held on the device: there is no phone number, no e-mail address and no acc
 the source of the protocol core and of the two Montana applications, laid out for an external audit.
 
 [![iPhone and iPad on TestFlight](https://img.shields.io/badge/iPhone%20·%20iPad-TestFlight-D4AF37?style=for-the-badge&logo=apple&logoColor=white)](https://testflight.apple.com/join/BHaSYWkz)
-[![Releases](https://img.shields.io/badge/IPA%20·%20APK-Releases-C9A227?style=for-the-badge&logo=github&logoColor=white)](https://github.com/efir369999/montana_messenger/releases/latest)
+[![Releases](https://img.shields.io/badge/IPA-Releases-C9A227?style=for-the-badge&logo=github&logoColor=white)](https://github.com/efir369999/montana_messenger/releases/latest)
 
 [montana.quest](https://montana.quest) · [Whitepaper](WHITEPAPER.md) · [Audit package](AUDIT.md) · [13-item status](Audit/Protocol-13/README.md) · [Security](SECURITY.md)
 
-**Protocol closure is open: 0 of 13 acceptance criteria are closed.** Finality, the issuance bound,
-authenticated first joining and node anonymity are not established by the published snapshot.
+**Protocol closure is open: 5 of 13 acceptance criteria are closed** -- items 1 to 4: the window proof and its
+verifier, closing only a verified canonical Proposal, redemption bound to authorized issuance, and admission witnesses
+bound to one state; and item 7: the earlier core's lottery removed ([status](Audit/Protocol-13/README.md), written from
+`core/Montana-Core/PROTOCOL-13.json`). Items 5, 6 and 8 to 13 are open: continuity after a partition, authenticated
+first joining, node anonymity and a run of the network on many hosts are among what the published snapshot does not
+establish.
 Read the source-pinned [reports in Audit](Audit/README.md) before treating historical readiness
 statements or passing primitive tests as evidence of these properties.
 
@@ -37,11 +41,13 @@ publication and remain in the history of this repository; nothing in the current
 | Platform | Install | Files |
 |---|---|---|
 | iPhone, iPad, Mac | [TestFlight](https://testflight.apple.com/join/BHaSYWkz) | [IPA](https://github.com/efir369999/montana_messenger/releases/latest/download/Montana-Messenger.ipa) |
-| Android 8 or later | [APK](https://github.com/efir369999/montana_messenger/releases/latest/download/Montana-Messenger.apk) | [APK](https://github.com/efir369999/montana_messenger/releases/latest/download/Montana-Messenger.apk) |
+| Android 8 or later | [montana.quest](https://montana.quest/messenger/) | APK from the site: [`latest.json`](https://montana.quest/download/android/latest.json) names its build, commit and SHA-256 |
 
 The IPA is the export uploaded to the App Store and is published to be read and compared with the source; it installs
-through TestFlight. The APK is signed with the project's Android key. Which build each file is, and its SHA-256, is in
-[`RELEASES.md`](RELEASES.md) and in the notes of each release.
+through TestFlight. Which build it is, and its SHA-256, is in the notes of each release. The APK is signed with the
+project's Android key and is served by the site, not by the GitHub releases: none of the 75 releases of this repository
+(`v1.0-2221` to `v1.0-2315`, read 2026-10-27 UTC) carries one. The source of each folder is the table Sources of
+[`RELEASES.md`](RELEASES.md).
 
 ## What protects a conversation
 

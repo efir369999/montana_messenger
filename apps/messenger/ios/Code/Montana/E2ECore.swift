@@ -191,10 +191,10 @@ enum MontanaLocalVault {
         return true
     }
 
-    // THE SETTINGS HOLD A NAME, NEVER A LOAD (23.10.2026, the author's words 12:16 MSK: «I quit Montana on the Mac, and it hangs
+    // THE SETTINGS HOLD A NAME, NEVER A LOAD (23.10.2026, the author's words 09:16 UTC: «I quit Montana on the Mac, and it hangs
     // and starts by itself»). The system keeps an app's settings in one file and rewrites it whole at each change, and above 4 MB
     // it calls the store «invalid ... a bug in Montana»: ours stood at 14.2 MB on the Mac, the wall alone 8.5 MB under one key,
-    // and one wake by a push rewrote it 45 times in 36 s (system log 12:17:45-12:18:20). A sealed value from 64 KB on lies in a
+    // and one wake by a push rewrote it 45 times in 36 s (system log 09:17:45-09:18:20). A sealed value from 64 KB on lies in a
     // file named by the hash of its bytes; the settings keep, under the value's own key, the 37 bytes that name it. The key keeps
     // its class -- a copy, a seat and a wipe find it where it always stood -- and two values share a file only when their bytes
     // are one. A file no key names any more leaves a minute after its key moved on, and at the launch's housekeeping.

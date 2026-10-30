@@ -163,7 +163,7 @@ enum MTLetterAuthor {
     }
     /// Whether a letter in this conversation was written by this person -- on this device or another of the same words.
     static func mine(_ tag: String, conv: String, mid: String, text: String) -> Bool {
-        guard !tag.isEmpty, let secret = MTPipeBook.secret(for: conv) else { return false }
-        return MTNodeWire.authorHolds(tag, key: key, secret: secret, mid: mid, text: text)
+        guard !tag.isEmpty, let pipe = MTPipeBook.key(for: conv) else { return false }
+        return pipe.authorHolds(tag, person: key, mid: mid, text: text)
     }
 }

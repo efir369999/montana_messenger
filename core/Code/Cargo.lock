@@ -2026,6 +2026,7 @@ dependencies = [
  "mt-account",
  "mt-bootstrap",
  "mt-codec",
+ "mt-coin",
  "mt-crypto",
  "mt-messenger-e2e",
  "mt-mnemonic",
@@ -2058,6 +2059,13 @@ dependencies = [
 [[package]]
 name = "mt-codec"
 version = "1.2.0"
+
+[[package]]
+name = "mt-coin"
+version = "1.2.0"
+dependencies = [
+ "sha2 0.10.9",
+]
 
 [[package]]
 name = "mt-conformance"
@@ -2303,6 +2311,7 @@ dependencies = [
  "mt-consensus",
  "mt-crypto",
  "mt-state",
+ "sha2 0.10.9",
 ]
 
 [[package]]

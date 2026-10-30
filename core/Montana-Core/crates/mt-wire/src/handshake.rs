@@ -251,6 +251,42 @@ pub fn responder_to_initiator(master: &[u8; 32]) -> [u8; 32] {
     hash(domain::MT_NOISE_PQ_V1_R2I, &[Part::of(master)])
 }
 
+// **The secret of a link after a renewal of its keys** (Network, "How a link renews its keys";
+// issue #75). The secret of a link begins as the master of its handshake, and the two directional
+// keys are derived from every secret of the link exactly as from the master, by the two functions
+// above, so a link that never renewed carries the keys of its handshake and nothing here moves the
+// handshake, its transcript or its vectors. A renewal folds the previous secret, both shared secrets
+// and the four public values it exchanged, in the order of the roles of the handshake — the values
+// of the side that opened the link first — and never in the order of the renewal, so both sides
+// compute one value whichever of them offered. `pk_i` and `pk_r` are the encapsulation keys the
+// initiator and the responder drew for this renewal alone, `ct_i` the encapsulation the initiator
+// made to `pk_r` and `ct_r` the one the responder made to `pk_i`; `ss_i` and `ss_r` are what those
+// open to. Both encapsulations enter, as both enter a master, so the new secret is beyond whoever
+// holds neither fresh decapsulation key. Every part has a width the set fixes, so the concatenation
+// is self-delimiting as the transcript's is.
+pub fn renewed(
+    previous: &[u8; 32],
+    ss_i: &[u8; 32],
+    ss_r: &[u8; 32],
+    pk_i: &[u8; size::KEM_PUBLIC_KEY],
+    pk_r: &[u8; size::KEM_PUBLIC_KEY],
+    ct_i: &[u8; kem::CIPHERTEXT_BYTES],
+    ct_r: &[u8; kem::CIPHERTEXT_BYTES],
+) -> [u8; 32] {
+    hash(
+        domain::MT_LINK_RENEW,
+        &[
+            Part::of(previous),
+            Part::of(ss_i),
+            Part::of(ss_r),
+            Part::of(pk_i),
+            Part::of(pk_r),
+            Part::of(ct_i),
+            Part::of(ct_r),
+        ],
+    )
+}
+
 // What each side signs: its own domain, the NUL of the primitive, and the transcript. The two take
 // distinct domains, so neither signature can be replayed as the other.
 fn signed_message(space: mt_codec::Domain, transcript: &[u8; 32]) -> Vec<u8> {
@@ -684,6 +720,50 @@ mod tests {
             responder_channel(&mismatched, &elsewhere, &finish, &ss_i, &ss_r),
             Err(HandshakeError::SuiteMismatch { .. })
         ));
+    }
+
+    // The fold of a renewal, recomputed here from its definition (Network, "How a link renews its
+    // keys"): the domain, the NUL, the previous secret, both shared secrets and the four public
+    // values in the order of the roles. The named wrong folds answer elsewhere: the order of the
+    // renewal (the responder offered and its values went first), one side's material alone, and the
+    // previous secret left out.
+    #[test]
+    fn a_renewal_folds_both_encapsulations_in_the_order_of_the_roles() {
+        use sha2::Digest as _;
+        let previous = [0x51u8; 32];
+        let (ss_i, ss_r) = ([0x52u8; 32], [0x53u8; 32]);
+        let (pk_i, pk_r) = (
+            [0x54u8; size::KEM_PUBLIC_KEY],
+            [0x55u8; size::KEM_PUBLIC_KEY],
+        );
+        let (ct_i, ct_r) = (
+            [0x56u8; kem::CIPHERTEXT_BYTES],
+            [0x57u8; kem::CIPHERTEXT_BYTES],
+        );
+        let next = renewed(&previous, &ss_i, &ss_r, &pk_i, &pk_r, &ct_i, &ct_r);
+        let mut by_hand = sha2::Sha256::new();
+        by_hand.update(b"mt-link-renew");
+        by_hand.update([0x00]);
+        for part in [&previous[..], &ss_i, &ss_r, &pk_i, &pk_r, &ct_i, &ct_r] {
+            by_hand.update(part);
+        }
+        assert_eq!(next, <[u8; 32]>::from(by_hand.finalize()));
+        let of_the_renewal = renewed(&previous, &ss_r, &ss_i, &pk_r, &pk_i, &ct_r, &ct_i);
+        assert_ne!(next, of_the_renewal);
+        let one_side = renewed(&previous, &ss_i, &ss_i, &pk_i, &pk_i, &ct_i, &ct_i);
+        assert_ne!(next, one_side);
+        let without_the_past = renewed(&[0u8; 32], &ss_i, &ss_r, &pk_i, &pk_r, &ct_i, &ct_r);
+        assert_ne!(next, without_the_past);
+        // The keys walk with the secret, and a link that never renewed keeps those of its master.
+        assert_ne!(
+            initiator_to_responder(&next),
+            initiator_to_responder(&previous)
+        );
+        assert_ne!(
+            responder_to_initiator(&next),
+            responder_to_initiator(&previous)
+        );
+        assert_ne!(initiator_to_responder(&next), responder_to_initiator(&next));
     }
 
     #[test]

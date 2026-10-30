@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The levels and what they open (iOS MTLevelAccess, MontanaNotify.presentKept; Localizable.xcstrings ru). -->
+<resources>
+    <string name="kept_body">Сообщение, которое вы удалили у всех, осталось на телефоне собеседника. В Монтане уровни открывают функции: с уровня %d человек может запретить удаление у себя.</string>
+    <string name="la_title">Доступ по уровню</string>
+    <string name="la_global">Глобальный уровень %1$d</string>
+    <string name="la_global_footer">Уровень растёт с вашим временем в Монтане и монетами, которые вы держите. Каждый уровень открывает новые функции Монтаны.</string>
+    <string name="la_keep">Запрет удаления у меня</string>
+    <string name="la_keep_caption">Сообщение, которое собеседник удаляет у всех, остаётся на этом телефоне, а телефон собеседника получает об этом уведомление.</string>
+    <string name="la_level">Уровень %1$d</string>
+    <string name="la_opens">Открывается на уровне %1$d. Ваш уровень — %2$d.</string>
+    <string name="la_node_caption">Подключите свою машину к сети Монтаны через это приложение: она настраивается отсюда, и на неё уходят копии всего телефона. Забрать свою копию можно на любом уровне.</string>
+    <string name="la_shield_title">Удаление на этом телефоне запрещено</string>
+    <string name="la_shield_rule">В Монтане уровни открывают функции: с уровня %1$d человек может запретить удаление у себя. Ваш уровень — %2$d.</string>
+    <string name="set_save_words">Сохранить 24 слова</string>
+    <string name="set_save_words_footer">Запишите 24 слова и храните их: на новом телефоне ваша личность и сохранённая история открываются только из них.</string>
+    <string name="set_privacy_policy">Политика конфиденциальности</string>
+</resources>

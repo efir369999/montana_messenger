@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The paid reactions: the Money Flow's auto-reactions and the menu's «Give a coin» (iOS MTAutoReactPage; Localizable.xcstrings ru). -->
+<resources>
+    <string name="ar_title">Автореакции</string>
+    <string name="ar_header">Монеты на каждое новое письмо</string>
+    <string name="ar_footer">Платится само реакцией на каждое письмо, которое человек напишет с этой минуты, пока хватает ваших монет.</string>
+    <string name="give_coin">Подарить монету</string>
+</resources>

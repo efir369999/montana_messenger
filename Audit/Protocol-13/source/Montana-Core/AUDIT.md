@@ -244,7 +244,8 @@ they do not attest to a deployed network or an independent operator's run.
 | The actual heavy-attestation verifier does not authenticate weight | The v12 server run constructed one presence proof and signed three commitments under its admitted key. `verify_heavy` accepted the ordinary weight and alternatives committing to zero and `u64::MAX`; neither the proof nor its admitted-state context changed. This is an actual node-verifier reproduction, not merely an unconstrained witness in an honest prover. The full authenticated weight relation remains open. |
 | A future public part opens an earlier standing commitment | The node used the next window's part-nullifier as its current blinding factor. A server regression reconstructed all three committed quantities from that later public part and the actual node's commitment. It failed the confidentiality expectation in 14.80 seconds. The candidate now derives a private mask with the existing HMAC primitive from the machine secret and every committed quantity, with no public-nullifier input and no wrapping window increment. The actual-node confidentiality regression passed in 14.44 seconds; the derivation package passed 67 tests and whole-workspace Clippy passed. The same node still accepts unauthorized weights in the separate open-finding test. This repair does not supply the missing authorized-weight proof. |
 | The stated history bound does not establish the lifetime target | Still open: for the stated `k / q^6` bound, `floor(q^6 / 2^128) = 1018`. The bound therefore does not establish the 128-bit target for longer histories. Its strict `q^-6 < 2^-138` inequality is also reversed. This arithmetic gap is separate from the missing soundness argument; it is not evidence of an attack with that probability. |
-| Admission's component witnesses are not bound together | Still open: the record walk, admitted naming leaf and operator-secret absorption are independent chains; the former record-to-nullifier lane is empty. Neither their common origin nor continuity follows from proving the three published digests. |
+| Admission's component witnesses are not bound together | The baseline circuit proved a record walk, an admitted naming leaf and an operator-secret absorption as independent chains over three digests the prover chose, and accepted a foreign record with the claimant's secret and an unrelated path. Canon now states the candidacy (the author's word, decision 124): the record carries `operator_nf`, the public input is the window, the record root of the proposal the verifier takes for that window, the naming half and the right. The circuit holds the eight limbs of the record's right to the right in the public input, which its chain yields; the naming half is the second squeeze of one absorption of the machine's secret; the walk of the admitted tree is gone. Relation tests refuse a foreign record, another right, a grafted half, a rewritten squeeze, another state's root and another window, and the honest admission proves and verifies. Through the node's own state (`admission_audit.rs`), the counterexample of the audit — a foreign record with the claimant's secret and an unrelated path, proven under the statement without the limbs that bind the record's right — is refused and leaves the right unspent, and the honest candidacy applies. Continuity is still not read: see the row below. |
+| A candidacy's proof can be lifted onto another `node_commit` | The proof asserted nothing of `node_commit`, so a relay rewriting that field of a seen candidacy presented an object the node applied, and the honest one was then refused as a spent right. On the author's decision 246, `node_commit` and `suite_id` now stand in the public input of the admission, in the order `window ‖ record_root ‖ naming_half ‖ node_commit ‖ operator_nullifier ‖ suite_id` (Canon, "The candidacy of a machine"): no cell holds them, and the transcript every proof opens with does (`mt-proof/src/transcript.rs`, `Transcript::opening`). `admission_audit.rs` now refuses the lifted candidacy and one relayed under another suite with the right unspent, and the honest one applies; the circuit's own end-to-end test refuses the same proof under another commitment and another suite. The admission's identifier, `air_hash` and the Genesis State Hash move with it. |
 | Record-tree byte order disagreed with its bit order | Three interleaved little-endian keys produced a root different from an independent recursive Merkle calculation; an existing record's membership path did not reach that root. Both regressions fail on the previous code and pass after ordering branches by their actual bit significance. One fold now constructs both the full root and the subtrees used in paths. This changes affected nonempty roots and requires state reconciliation before deployment. |
 | Reserved continuity bits could manufacture lived segments | The record reader and writer accepted bits above `max_entry_segments`, and the native continuity reader counted them. Three baseline tests reproduce those acceptances. The record rule now rejects reserved bits before serialization and parsing; the native counter refuses them before shifting, so a fabricated future bit cannot age into the valid region. Five memory-only regressions and 17 existing layout tests pass, as do whole-Core clippy and release. This does not enforce the gate-specific 14-to-56-segment period or its share in the admission proof. |
 | Admission continuity is not enforced end to end | Still open: an Identity segment is earned by an included action of the record. Replaying other people's cements creates no such action. The record reader and admission circuit must enforce the shifted active period and the share, including minority partition and rejoin cases. |
@@ -404,7 +405,7 @@ silence, no default, no note conjured to make the command succeed. That refusal 
 seen from the outside — a wallet holds notes only where something minted, minting stands on a
 cemented window, a cemented window stands on admitted machines, and admission stands on an object
 the set does not lay out. What the run establishes is that everything up to that point stands on a
-terminal and not only in a test.
+terminal and not only in a test. Historical (marked 2026-10-27 UTC): this is the run of an earlier build. On `main` a right becomes a note and the note is paid away (`crates/montana-node/tests/value_enters_the_network.rs:23`; `crates/mt-proof/src/circuit/frame.rs:1111-1116`: a frame that redeems no note proves against the empty root). Whether F-8 is closed is not decided here.
 
 **The identity plane had a record and the rules of its life, and no object by which a record is
 opened or acts.** Canon laid out thirty-three objects; among them stood neither an opening nor an
@@ -540,7 +541,7 @@ is redeemed inside a frame, and a frame cannot be built without notes that only 
 could have created. Closing it is the same construction the action of a record already uses for its
 successor position: a third form whose values are drawn, with the proof asserting of each position
 that it holds a redemption or a blank without disclosing which. It moves the description of the
-frame, and with it `air_hash` and the Genesis State Hash.
+frame, and with it `air_hash` and the Genesis State Hash. Historical (marked 2026-10-27 UTC): "it is unreachable" (the sentence that begins "That is the first value in the network") is the circuit of an earlier tree. On `main` a right becomes a note and the note is paid away (`crates/montana-node/tests/value_enters_the_network.rs:23`; `crates/mt-proof/src/circuit/frame.rs:1111-1116`, filler beside the right). Whether F-8 is closed is not decided here.
 
 **The window's circuit binds its public input cell by cell, and at the one height that is a proof
 nobody runs.** Its description carries a boundary for every coefficient of every accumulator and of
@@ -1180,12 +1181,47 @@ five ranged witnesses over one shared bit column. A frame redeeming a right is p
 and refused for a wrong moment and for a membership in a tree the frame does not publish — the
 mint of the invented secret, refused by the walk.
 
-**What the frame does not bind, named rather than passed over.** The share a right is worth rides
-into the balance in the cells an amount rides in, and the frame proves it consistently — but what
-binds that witnessed share to the share the window issued is the circuit of a window, where the
-count of the living is computed and never leaves. Until that circuit stands, a frame's proof
-alone does not price a right; the row of the ledger that owns this is the window circuit's, and
-this line is here so the next stage inherits a named obligation instead of discovering a hole.
+**What the frame binds of a right's worth** (issue #14, A2). What a right is worth rides into the
+balance in the cells an amount rides in, and a rule of the frame now holds it to the credit of a
+window: at the seam before the commitment tie of every redemption the layout places
+(`Places::worth_rows`), the right branch of the capacity split carries the Decree's `window_credit`
+in a periodic column, and `right(r) * (amount(r+1) - credit(r)) = 0`
+(`crates/mt-proof/src/circuit/frame.rs`, `bind_the_worth_of_a_right`), of degree two and with no
+column added. A right written at the credit plus one, at the credit minus one or at zero satisfies
+no description (`mt-proof/tests/frame.rs`, `a_right_worth_anything_but_the_credit_satisfies_no_description`),
+and the redemption `montana-node/tests/issuance_audit.rs` once reproduced -- a right redeemed above
+its credit -- is refused before the tree of notes or a balance moves, while the same right still
+redeems at its credit. The identifier of the frame, `air_hash`, the published parameters and the
+Genesis State Hash moved with the rule and were rewritten from computed output.
+
+**A right of a window is taken by a machine the window never witnessed** (issue #14, Gate -1,
+2026-10-24 22:43 UTC). The walk to the tree of admitted machines closed the invented secret and
+nothing more: it says a machine was admitted, and a right names its window only through its
+nullifier, which any admitted secret derives for any window. So a machine standing admitted and
+absent from the cement of `W` derived the nullifier of `W`, walked its own naming half, and the
+verifier credited it the coin of a window that never witnessed it — a mint bounded by the count of
+the admitted rather than by the count of the living, reproduced as a test that the verifier accepted
+on 02276e0. Closed by a tree of credited rights (Canon, "The right of a machine to its coin of a
+window, and what redeems it"): the proposal of `W + 1`, when the challenge of `W` has closed, appends
+one leaf over every part of the cement of `W`, ascending, and carries the root every verifier
+recomputes; the right's branch derives the part of `W` from the spending half and the window it
+already absorbs for the nullifier, and walks that leaf to the credited root in place of the walk to
+the tree of admitted machines. That walk is not kept beside the new one because a credited leaf
+already implies admission — a part enters a cement only beside a proof of presence against the root
+of the electorate (Consensus, "The pulse and the close of a window"), and the ballot rests on the same
+argument — so a position still costs one walk, and one block more for the part. What stays open,
+named so the next stage inherits it: **the exclusion of a convicted part** — the set says the
+proposal of `W + 1` leaves out every part a contradicting pair of the challenge of `W` convicts and
+carries the pairs in its roll, and the code credits the whole cement, because the sanction itself is
+not built; it is owed by CNS-10 at stage 19. **A right whose moment is its own window, where that
+window closes its stride** — the credited root of a stride holds the parts of every window before the
+stride's last, so a right whose computed moment is `W` itself with `W` the last window of a stride,
+one right in `claim_spread × proving_horizon`, finds no root to walk to and its coin cannot be
+taken; the moment rule and the root a right walks to are the chairman's to reconcile, and the
+proposal standing for it is to draw the moment from the window after: `claim_window(W) = W + 1 +
+(u32_le(claim_delay) mod claim_spread)`. **The reference node walks the roots it holds** rather than
+those of the standing stride, as it already did for the tree of notes and the tree of admitted
+machines.
 
 **A root over one leaf says nothing about the pairing of a level, and three trees stood on one.**
 The class the set already names — a vector over an input that is its own mirror never stands alone
@@ -2045,30 +2081,30 @@ numbers, which says the method and not the tree is what is missing.
 | occurrences of `[u8; 32]` in library code | 214 |
 | rows of the Decree the library reads | 28 of 54 |
 | of those, rows that decide a width | 9, and one relation tying a tenth to a parameter |
-| implementations of `Layout` | 16, each one declaration, and the register is held against the source |
-| domains of the registry | 97, each one declaration, counted by the harness rather than by a grep |
+| implementations of `Layout` | 17, each one declaration, and the register is held against the source |
+| domains of the registry | 101, each one declaration, counted by the harness rather than by a grep |
 | values of the set awaiting a stage | 0 — every one is read by a checker on every build |
-| domains of the registry a run takes a preimage under | 75 of 97 — the gate refuses a domain that is neither taken nor named, so this number is ninety-seven less the twenty-two named and is not a count anybody keeps |
-| of the rest, named with what owes them a vector | 22, and a silent one that is unnamed fails the build |
+| domains of the registry a run takes a preimage under | 77 of 101 — the gate refuses a domain that is neither taken nor named, so this number is a hundred and one less the twenty-four named and is not a count anybody keeps |
+| of the rest, named with what owes them a vector | 24, and a silent one that is unnamed fails the build |
 | prefix pairs among them, closed by the zero and the alphabet | 5 |
-| frozen lines of the set of the shape the coverage pass reads | 268, counted by the pass itself |
-| numerals of the library, every one of them in a register | 160, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
+| frozen lines of the set of the shape the coverage pass reads | 278, counted by the pass itself |
+| numerals of the library, every one of them in a register | 168, the free rows of a proof among them — counted by the pass that enforces it rather than by a reading of its author, and held by the measurements on every run |
 | of those, compared against a place of the set | 69 |
 | of those, named as of this tree with the reason each is | the rest, each with the reason it is of this tree and of no document |
 | rows a wrong value would pass | 0 of 69 |
 | headings of a derivation restating a value of the Decree | 19, all compared |
-| rows of the Registry of mechanisms | 98: 38 closed, 60 awaiting a stage, 0 awaiting the artifact — the Registry recounts its own table on every build, and this row is held against that recount rather than counted a second time |
-| domains of the separator registry owned by exactly one row | 97 of 97 |
+| rows of the Registry of mechanisms | 100: 38 closed, 62 awaiting a stage, 0 awaiting the artifact — the Registry recounts its own table on every build, and this row is held against that recount rather than counted a second time |
+| domains of the separator registry owned by exactly one row | 101 of 101 |
 | places reaching a preimage through the door of one body | 11 in library code under SHA-256, none of them assembling |
 | the same under the proof hash, where the set writes the preimage as a concatenation | 5, of which 3 assemble fields of fixed width, which cannot erase one |
 | kinds a field of a layout may stand under | 5, and a sixth does not compile |
-| tests of the workspace | 632 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
+| tests of the workspace | 738 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
 | crates carrying the gate in their own tests | 15 of 15, by one macro of the harness rather than fifteen readings of one invocation |
-| columns the width of a proof admits, and columns each written circuit **declares** | 64, and 64 / 59 / 30 / 30 / 30 / 63 for the frame, the ticket, the admission, the presence, the opening and the ballot; the width check reads all six registered descriptions |
+| columns the width of a proof admits, and columns each written circuit **declares** | 64, and 64 / 59 / 26 / 30 / 16 / 63 for the frame, the ticket, the admission, the presence, the opening and the ballot; the width check reads all six registered descriptions |
 | the circuit of the ticket, written and green | the chains of the presence with the ticket's absorption in place of the nullifier's, the digest of the runner's key, and the comparison of thirty-two rows; the window, fold, discharge and reduce circuits left the tree with the relation they served |
 | the ticket, proven and verified end to end | once in its unit tests at the presence's height: an honest ticket proves and verifies, and a lifted key, a moved aggregate and a lowered threshold are refused; a ticket at the threshold writes no trace |
 | the prover's time on the ticket, debug profile | the six unit tests of the ticket, two of them proving at the presence's height and one verifying, finish in 61 s together under the debug profile; the whole mt-proof library suite, 134 tests, in 655 s |
-| the admission's circuit, proven and verified end to end | once: the record chain, a walk of two hundred and fifty-six levels by the bits of a key, the admitted branch, the lane, the nullifier — and a moved public refused |
+| the admission's circuit, proven and verified end to end | once: the record chain, a walk of two hundred and fifty-six levels by the bits of a key, the halves of the machine's secret, the chain of the right with the record's own limbs held to it — and the root of another state and another window refused |
 | the prover's time on the admission, same profile and machine | near two minutes and a quarter for three hundred and sixty-four permutation blocks against the window's nineteen for twelve boundaries against twenty-seven thousand — the boundary composition measured twice, from both sides |
 | the identifiers of the five descriptions | frozen in the set and recomputed by the gate on every build; their binding is the Decree's own air_hash row |
 | the Decree | complete: every parameter published, the Genesis State Hash exists, both digests computed by the gate rather than remembered |

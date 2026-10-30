@@ -209,8 +209,6 @@ struct MessageBubble: View, Equatable {
     /// The invitation waits for this phone's answer (MTChessSend.awaitsMe): its two buttons stand under it.
     var chessOpen = false
     var onChessDecline: (String) -> Void = { _ in }
-    /// What the game this letter closes gave or took from this phone (MTChessCoins.net); nil where it holds no pot.
-    var chessNet: Int? = nil
     /// The Accept under an invitation that waits for this phone: the one door of an acceptance from the chat (MTChessSend.join).
     var onChessAccept: (String) -> Void = { _ in }
     /// An invitation answered: the game's state in its words (accepted and played, declined, over); nil while it waits.
@@ -265,7 +263,7 @@ struct MessageBubble: View, Equatable {
     // its one tap finds the tile under the finger.
     var members: [Message] = []
     var onTileTap: (Message) -> Void = { _ in }
-    /// A CHANNEL'S POST (MTChannelPostLook, the author's words 17.10.2026 18:4x MSK: «channels ... 1 to 1 as in the reference
+    /// A CHANNEL'S POST (MTChannelPostLook, the author's words 17.10.2026 15:4x UTC: «channels ... 1 to 1 as in the reference
     /// folder», «and the posts too»): drawn as one received whoever wrote it, wider, with the channel's name at the head of a run,
     /// the eye in the stamp and the round beside it that hands the post on (onShare). Nil on every other letter.
     var post: MTChannelPostLook? = nil
@@ -321,7 +319,7 @@ struct MessageBubble: View, Equatable {
             && l.message.docFile == r.message.docFile
             && l.tail == r.tail
             && l.speaker == r.speaker && l.quoteAuthor == r.quoteAuthor
-            && l.chessOpen == r.chessOpen && l.chessNet == r.chessNet && l.chessStatus == r.chessStatus
+            && l.chessOpen == r.chessOpen && l.chessStatus == r.chessStatus
             && l.members.map(\.id) == r.members.map(\.id)
             && l.members.map(\.text) == r.members.map(\.text)
             && l.members.map(\.deliveryStatus) == r.members.map(\.deliveryStatus)
@@ -477,7 +475,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             MontanaTrace.markFolded("media_tap", "on the caption — nothing opens", window: 10)
             return
         }
-        // AN INVITATION THAT WAITS FOR MY ANSWER OPENS NOTHING (the author's word 06.10.2026 23:5x MSK): its two buttons decide.
+        // AN INVITATION THAT WAITS FOR MY ANSWER OPENS NOTHING (the author's word 06.10.2026 20:5x UTC): its two buttons decide.
         if let game = message.chessLetter?.game { if !chessOpen { onTapChess(game) }; return }
         if message.coinLetter != nil { onTapCoin(); return }   // a coin letter: its transaction (05.10)
         if let card = MTWallCard.of(message.text) { onTapWallPost(card); return }   // a post's card: its wall
@@ -561,7 +559,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                             .padding(.horizontal, 6)
                     }
                 }
-                // THE BUBBLE IS A DARK SURFACE ON EVERY GROUND (the author's word 21.10.2026 21:4x MSK: «why for some the bubbles'
+                // THE BUBBLE IS A DARK SURFACE ON EVERY GROUND (the author's word 21.10.2026 18:4x UTC: «why for some the bubbles'
                 // colour goes white at the correspondent's -- fix it urgently»): the gold ground turns the app light
                 // (MTWallpaper.scheme), and the correspondent's plate -- the platform's grey -- resolved to its light shade under
                 // the default's white words. The bubble's colours are the dark platform's, so the bubble wears the dark appearance
@@ -570,9 +568,6 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                     .environment(\.colorScheme, .dark)
                     .frame(maxWidth: bubbleCeiling, alignment: drawnMine ? .trailing : .leading)
                     .modifier(MTShareBeside(on: post != nil, action: onShare))
-                if let call = callInfoOf(message.text), !call.missed, let coins = call.coins {
-                    MTCallCoinReceipt(coins: coins)
-                }
                 if ladder {
                     // THE LADDER UNDER THE BUBBLE (the author's word 08.09): three dots along the
                     // bottom — sent, delivered, read — each lit the moment its rung is reached, and
@@ -694,11 +689,10 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
 
     @ObservedObject private var fold = MTFilterFold.shared   // the filter's fold, opened for the letter by the person's tap
     private static let burgundy = Color(red: 0.50, green: 0.0, blue: 0.13)
-    /// THE GAME'S LETTER IN THE CHAT (the author's words 06.10.2026 23:2x MSK: «in the invitation, at once, the stake -- as chess and
-    /// coins, beautifully -- and below two buttons: the blue system Accept and the red burgundy Decline the game at a stake»; «after
-    /// the game show the coins' transfer or top-up»): the invitation says who plays which colour with the clock (29.09) and its
-    /// stake under our coin; while it waits for this phone's answer the two buttons stand under it; the letter that closes a game
-    /// wears what the game gave or took. A tap elsewhere opens the game.
+    /// THE GAME'S LETTER IN THE CHAT (the author's words 06.10.2026 20:2x UTC: «below two buttons: the blue system Accept and the
+    /// red burgundy Decline»): the invitation says who plays which colour with the clock (29.09); while it waits for this phone's
+    /// answer the two buttons stand under it. No stake and no coins (the author's word 29.10.2026 19:31 UTC). A tap elsewhere opens
+    /// the game.
     private func chessBubble(_ chess: MTChessLetter) -> some View {
         VStack(alignment: .trailing, spacing: 6) {
             HStack(spacing: 10) {
@@ -712,20 +706,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 }
                 Spacer(minLength: 0)
             }
-            if chess.kind == .invite, let stake = chess.stake, 0 < stake {
-                HStack(spacing: 6) {
-                    MTMintCoin(spinning: false, side: 22)
-                    // USER-DATA: the invitation's stake, whole
-                    Text(verbatim: MTCoinText.count(stake)).font(.title3.bold().monospacedDigit())
-                    Spacer(minLength: 0)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(Text("stake \(MTCoinText.count(stake))"))
-            }
-            if let chessNet, chessNet != 0 {
-                HStack { MTCoinDelta(coins: chessNet); Spacer(minLength: 0) }
-            }
-            // THE ANSWER STANDS ON THE INVITATION (the author's word 06.10.2026 23:5x MSK: «decline records the decision, sends the
+            // THE ANSWER STANDS ON THE INVITATION (the author's word 06.10.2026 20:5x UTC: «decline records the decision, sends the
             // answer, and the bubble records it as declined too»): both phones read the same replay, so both bubbles say it.
             if chess.kind == .invite, let chessStatus {
                 Text(chessStatus).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
@@ -792,7 +773,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 .background(bubbleFill).foregroundColor(bubbleText)
                 .clipShape(bubbleShape).overlay { bubbleOutline }
             } else if let secret = MTSecretLetter.parse(message.text) {
-                // A SECRET SHARED FROM PASSWORDS (MTSecretLetter, the author's word 06.10.2026 17:4x MSK): the key and the title; the
+                // A SECRET SHARED FROM PASSWORDS (MTSecretLetter, the author's word 06.10.2026 14:4x UTC): the key and the title; the
                 // receiver's tap takes it into their own Passwords after the device owner's check.
                 VStack(alignment: .trailing, spacing: 4) {
                     HStack(spacing: 12) {
@@ -816,7 +797,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                     HStack(spacing: 12) {
                         MTMintCoin(spinning: false, side: 44)
                         VStack(alignment: .leading, spacing: 2) {
-                            // THE COINS THAT LEFT OR CAME (the author's word 06.10.2026 23:2x MSK): mine went, a minus; theirs came, a
+                            // THE COINS THAT LEFT OR CAME (the author's word 06.10.2026 20:2x UTC): mine went, a minus; theirs came, a
                             // plus; a red letter's coins are back, the count alone.
                             if message.isMine, stampStatus == .failed {
                                 // USER-DATA: the number of coins the letter carries
@@ -824,9 +805,9 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                             } else {
                                 MTCoinDelta(coins: message.isMine ? -coin.c : coin.c)
                             }
-                            // THE TIME THE COINS ARE (the author's word 19.10.2026 17:44 MSK: «in transfers both the time and the coins»).
+                            // THE TIME THE COINS ARE (the author's word 19.10.2026 14:44 UTC: «in transfers both the time and the coins»).
                             MTCoinTime(coins: coin.c)
-                            // NOT DELIVERED, RETURNED (the author's word 05.10.2026 01:40 MSK, MTCoinSend.hold): a red coin letter's coins are back.
+                            // NOT DELIVERED, RETURNED (the author's word 04.10.2026 22:40 UTC, MTCoinSend.hold): a red coin letter's coins are back.
                             Text(message.isMine ? (stampStatus == .failed ? "Not delivered, coins returned" : "Coins sent") : "Coins received").font(.subheadline)
                         }
                     }
@@ -877,9 +858,9 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 let _ = thumbTick                   // dependency: redraw when the decoded picture lands
                 if let picture {
                     mediaBubble(picture: picture, aspect: picture.size, isVideo: false, file: f)
-                        // A PICTURE THE CACHE LET GO IS ASKED AGAIN (the author's word 03.10.2026 16:46 MSK: «photos on a black
-                        // ground sometimes -- fix it at the root»). T1 03.10: the photo landed whole at 16:40:56, the app left the
-                        // screen at 16:43:20 and every picture cache was emptied (MontanaCaches, caches=9); back at 16:45:30 the
+                        // A PICTURE THE CACHE LET GO IS ASKED AGAIN (the author's word 03.10.2026 13:46 UTC: «photos on a black
+                        // ground sometimes -- fix it at the root»). T1 03.10: the photo landed whole at 13:40:56, the app left the
+                        // screen at 13:43:20 and every picture cache was emptied (MontanaCaches, caches=9); back at 13:45:30 the
                         // bubble was drawn again without its picture, and the ask below never ran again -- its key, the file and its
                         // presence, had not changed. The key now says whether the picture stands drawn: a bubble drawn without it
                         // asks again, whatever emptied the cache.
@@ -1125,7 +1106,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         onPlayVoice(file)
         if let at = pendingPos { player.seek(to: at); pendingPos = nil }
     }
-    /// THE VOICE AS TEXT (the author's word 21.10.2026 12:15): the quote glyph beside the plates reads the voice on this phone and
+    /// THE VOICE AS TEXT (the author's word 21.10.2026 09:15 UTC): the quote glyph beside the plates reads the voice on this phone and
     /// lays its words under the capsule, as the system's own recordings do; a second touch folds them. MTVoiceTranscript owns
     /// the reading, the bubble only asks and shows.
     private func transcriptGlyph(_ file: String) -> some View {
@@ -2360,7 +2341,7 @@ final class MTGrowTextView: UITextView {
             MontanaTrace.mark("field_wrap", "from=\(Int(textContainer.size.width)) to=\(Int(w)) bounds=\(Int(bounds.width))")
             textContainer.size = CGSize(width: w, height: 1000000.0)
         }
-        // THE WORDS THAT FIT ARE NEVER SCROLLED AWAY (the author's word 18.10.2026 14:0x MSK: «in the Money Flow, in any scenario while
+        // THE WORDS THAT FIT ARE NEVER SCROLLED AWAY (the author's word 18.10.2026 11:0x UTC: «in the Money Flow, in any scenario while
         // it is on, I must see what I type»). A field born with a draft -- the Money Flow's field at the top of the turned feed is born
         // anew at every turn -- scrolled to its caret while it was still 0 points high and kept the offset at its full height: T1
         // 18.10.2026 08:11:50Z field_scroll from=0 to=27 h=0 content=36, then thirty seconds of typing with the line pushed up out of
@@ -2460,7 +2441,7 @@ struct MTComposeRow: View {
         .environment(\.mtChatKeyboardGeometry, nil)
     }
 }
-/// THE COINS THAT MOVED, SIGNED (the author's word 06.10.2026 23:2x MSK: «show the coins' transfer or top-up in the chat, plainly
+/// THE COINS THAT MOVED, SIGNED (the author's word 06.10.2026 20:2x UTC: «show the coins' transfer or top-up in the chat, plainly
 /// to the eye; fix the minuses and the pluses too»): what this phone's book lost or gained by a coin letter or a game's end -- the
 /// minus on red, the plus on green, the count whole, white on its capsule so it reads on either side's bubble.
 struct MTCoinDelta: View {

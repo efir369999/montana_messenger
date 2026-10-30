@@ -46,12 +46,17 @@ object ChatWall {
     }
     /** The drawn grounds, seen not read: the names are for the voice that reads the screen aloud (iOS MTWallpaper.names). */
     val names = listOf(
-        "gold" to R.string.wall_gold, "montana" to R.string.wall_montana,
+        "montana" to R.string.wall_montana,
         "default" to R.string.wall_default, "black" to R.string.wall_black, "dark" to R.string.wall_dark, "blue" to R.string.wall_blue,
         "sky" to R.string.wall_sky, "dusk" to R.string.wall_dusk, "water" to R.string.wall_water, "aurora" to R.string.wall_aurora,
         "burgundy" to R.string.wall_burgundy, "rose" to R.string.wall_rose, "forest" to R.string.wall_forest)
-    /** THE ONE DEFAULT (iOS MTWallpaper.byDefault, the author's word 03.10): my page's ground is gold until I choose another. */
-    const val BY_DEFAULT = "gold"
+    /** THE ONE DEFAULT (iOS MTWallpaper.byDefault): my page's ground is the app's own dark ground with the Montana pattern until
+     *  I choose another (the gold's place until 23.10.2026). */
+    const val BY_DEFAULT = "default"
+    /** THE GOLD GROUND IS GONE WHOLE (iOS MTWallpaper.retired, b05ee13f; the author's words 23.10.2026 02:09 and 12:50 MSK: «remove the
+     *  gold completely», only the page's ground): no choice, no default, no picture. A choice stored under its name wears the default;
+     *  a correspondent's «n:gold» names no known ground any more. */
+    val retired = setOf("gold")
 
     private val listeners = mutableListOf<() -> Unit>()
     fun listen(l: () -> Unit) { synchronized(listeners) { listeners.add(l) } }
@@ -60,9 +65,9 @@ object ChatWall {
     fun choice(ref: String): Choice {
         val s = Prefs.str("chatWall.$ref", "")
         return when {
-            s.startsWith("named:") -> Choice.Named(s.removePrefix("named:"))
+            s.startsWith("named:") -> Choice.Named(s.removePrefix("named:").let { if (it in retired) BY_DEFAULT else it })
             s.startsWith("photo:") -> Choice.Photo(s.removePrefix("photo:"))
-            // nothing chosen for my page reads as the gold; «No background» chosen by hand is stored as «general» (iOS 182-193)
+            // nothing chosen for my page reads as the default; «No background» chosen by hand is stored as «general» (iOS 182-193)
             s.isEmpty() && ref == PAGE -> Choice.Named(BY_DEFAULT)
             else -> Choice.General
         }
@@ -99,7 +104,7 @@ object ChatWall {
 class GroundPaint(private val c: Context, private val name: String) : Drawable() {
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val logo: Bitmap? = if (name == "default") logoBitmap(c) else null
-    // THE AUTHOR'S PICTURES, HIS FILES AS THEY CAME (iOS paint «montana», «burgundy», «gold»: scaledToFill, nothing drawn over them)
+    // THE AUTHOR'S PICTURES, HIS FILES AS THEY CAME (iOS paint «montana», «burgundy»: scaledToFill, nothing drawn over them)
     private val picture: Bitmap? = PICTURES[name]?.let { picture(c, it) }
     private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG)
 
@@ -182,7 +187,7 @@ class GroundPaint(private val c: Context, private val name: String) : Drawable()
     companion object {
         private var kept: Bitmap? = null
         fun logoBitmap(c: Context): Bitmap? = kept ?: runCatching { BitmapFactory.decodeResource(c.resources, R.drawable.logo) }.getOrNull()?.also { kept = it }
-        private val PICTURES = mapOf("gold" to R.drawable.montana_gold_ground, "montana" to R.drawable.montana_wallpaper, "burgundy" to R.drawable.montana_burgundy)
+        private val PICTURES = mapOf("montana" to R.drawable.montana_wallpaper, "burgundy" to R.drawable.montana_burgundy)
         private val pictures = HashMap<Int, Bitmap>()
         /** Decoded once, when a ground first wears it. */
         fun picture(c: Context, res: Int): Bitmap? = synchronized(pictures) {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare the frameworks of Montana for the Mac (Catalyst) or the phone from public source, reproducibly."""
 # REPRODUCIBLE BY ANY BUILDER (Constitution [I-14]: «every release build ... is reproducible byte for byte from publicly published
-# source by any independent builder»; the author's words 21.10.2026 20:4x and 20:58 MSK: «there is no reproducible build of the
+# source by any independent builder»; the author's words 21.10.2026 17:4x and 17:58 UTC: «there is no reproducible build of the
 # applications -- fix it», «while you wait for OZ 1, close OZ 2»). Measured on the release 2274 (21.10.2026): its main binary held
 # 1788 absolute paths of this Mac -- 1561 of the Go module cache and the tree xray was built in, 174 of the cargo registry and the
 # core, 7 of OPENSSLDIR in a session tree -- and its core was built from a working folder with uncommitted changes. So:
@@ -72,7 +72,7 @@ def core_source(home, boundary):
     commit = subprocess.check_output(['git', '-C', str(repo), 'rev-parse', '--verify', CORE_LINE + '^{commit}'], text=True).strip()
     out = home / ('core-' + commit[:12])
     # The core reads its word list from beside Code/ (mt-mnemonic: include_str! of «../../../../Montana wordlist.txt»), and the public
-    # core folder carries it there; measured 21.10.2026 21:37 MSK: an archive of Code/ alone could not compile mt-mnemonic.
+    # core folder carries it there; measured 21.10.2026 18:37 UTC: an archive of Code/ alone could not compile mt-mnemonic.
     folders = ['Code', WORDS] + (['Montana-Core'] if boundary else [])
     if not all((out / f if f == WORDS else out / f / 'Cargo.toml').is_file() for f in folders):
         blob = subprocess.run(['git', '-C', str(repo), 'archive', '--format=tar', commit] + folders, capture_output=True, check=True).stdout

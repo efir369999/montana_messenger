@@ -31,6 +31,8 @@ pub enum Kind {
     StateAnswer,
     SlotQuery,
     SlotAnswer,
+    TableQuery,
+    TableAnswer,
 }
 
 impl Kind {
@@ -48,6 +50,8 @@ impl Kind {
             10 => Some(Self::StateAnswer),
             11 => Some(Self::SlotQuery),
             12 => Some(Self::SlotAnswer),
+            13 => Some(Self::TableQuery),
+            14 => Some(Self::TableAnswer),
             _ => None,
         }
     }
@@ -66,12 +70,14 @@ impl Kind {
             Self::StateAnswer => 10,
             Self::SlotQuery => 11,
             Self::SlotAnswer => 12,
+            Self::TableQuery => 13,
+            Self::TableAnswer => 14,
         }
     }
 
     // Every kind of the vocabulary, in the order the set writes them. What it is for is the test
     // that no two carry one number and that the reading and the writing of a kind are one map.
-    pub const ALL: [Kind; 12] = [
+    pub const ALL: [Kind; 14] = [
         Kind::Deposit,
         Kind::Collect,
         Kind::CollectPublic,
@@ -84,6 +90,8 @@ impl Kind {
         Kind::StateAnswer,
         Kind::SlotQuery,
         Kind::SlotAnswer,
+        Kind::TableQuery,
+        Kind::TableAnswer,
     ];
 }
 
@@ -321,6 +329,7 @@ pub fn largest_len() -> Result<usize, WireError> {
         head_query_len(),
         state_query_len(),
         slot_query_len(),
+        table_query_len(),
     ];
     Ok(held.into_iter().fold(0usize, usize::max))
 }
@@ -535,6 +544,147 @@ pub fn parse_slot_answer(bytes: &[u8]) -> Result<Vec<u8>, WireError> {
     Ok(bytes[2..].to_vec())
 }
 
+// **The tables of a head, leaf by leaf.** A device that walked to a head takes the plane of that
+// head (Consensus, "The join", step 5) as the leaves of each table in the layout the Canon folds
+// them in, and recomputes every root from them rather than accepting one. It asks one table at a
+// time and from the index of the first leaf it does not hold, because a table is longer than one
+// answer. The question names the network as a head query does, so an answerer of another network
+// is told apart before anything is read, and the window whose head the asker verified; what comes
+// back is leaves and never a root.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum TableIndex {
+    Notes,
+    Nullifiers,
+    Records,
+    Machines,
+    Admitted,
+    Credited,
+    Operations,
+}
+
+impl TableIndex {
+    // The seven tables in the order a proposal lays their roots out.
+    pub const ALL: [TableIndex; 7] = [
+        TableIndex::Notes,
+        TableIndex::Nullifiers,
+        TableIndex::Records,
+        TableIndex::Machines,
+        TableIndex::Admitted,
+        TableIndex::Credited,
+        TableIndex::Operations,
+    ];
+
+    pub fn of(byte: u8) -> Option<Self> {
+        Self::ALL.get(usize::from(byte)).copied()
+    }
+
+    pub fn byte(self) -> u8 {
+        match self {
+            Self::Notes => 0,
+            Self::Nullifiers => 1,
+            Self::Records => 2,
+            Self::Machines => 3,
+            Self::Admitted => 4,
+            Self::Credited => 5,
+            Self::Operations => 6,
+        }
+    }
+
+    // A leaf of the tree of records is its key and the record standing at it; a leaf of every other
+    // table is one value.
+    pub fn leaf_bytes(self) -> usize {
+        match self {
+            Self::Records => 64,
+            _ => 32,
+        }
+    }
+}
+
+pub fn table_query_len() -> usize {
+    mt_codec::size::HASH + 8 + 1 + 4
+}
+
+pub fn encode_table_query(
+    network: &[u8; mt_codec::size::HASH],
+    window: u64,
+    table: TableIndex,
+    from: u32,
+) -> Vec<u8> {
+    let mut out = Vec::with_capacity(table_query_len());
+    out.extend_from_slice(network);
+    out.extend_from_slice(&window.to_le_bytes());
+    out.push(table.byte());
+    out.extend_from_slice(&from.to_le_bytes());
+    out
+}
+
+// A table the set does not name is refused in silence, like every other malformed message.
+pub fn parse_table_query(
+    bytes: &[u8],
+) -> Result<([u8; mt_codec::size::HASH], u64, TableIndex, u32), WireError> {
+    if bytes.len() != table_query_len() {
+        return Err(width(table_query_len(), bytes.len()));
+    }
+    let hash = mt_codec::size::HASH;
+    let mut network = [0u8; mt_codec::size::HASH];
+    network.copy_from_slice(&bytes[..hash]);
+    let mut window = [0u8; 8];
+    window.copy_from_slice(&bytes[hash..hash + 8]);
+    let table = TableIndex::of(bytes[hash + 8]).ok_or(WireError::Opening)?;
+    let mut from = [0u8; 4];
+    from.copy_from_slice(&bytes[hash + 9..]);
+    Ok((
+        network,
+        u64::from_le_bytes(window),
+        table,
+        u32::from_le_bytes(from),
+    ))
+}
+
+// **The bound of one answer is the largest message of this wire, and no new number.** As many
+// leaves of the table asked as keep the answer within the answer of a collection, so the reader of
+// a link holds no more for one table answer than it already holds for one collection, and an asker
+// repeats until an answer carries fewer leaves than this.
+pub fn table_answer_max(table: TableIndex) -> Result<usize, WireError> {
+    let largest = 2 + collect_answer_max()? * cell_bytes()?;
+    Ok((largest - 4) / table.leaf_bytes())
+}
+
+// An answer of zero leaves is the ordinary one: for a table read to its end, and for a window whose
+// plane the answerer does not hold, which it does not tell apart.
+pub fn encode_table_answer(table: TableIndex, leaves: &[u8]) -> Result<Vec<u8>, WireError> {
+    let one = table.leaf_bytes();
+    if !leaves.len().is_multiple_of(one) {
+        return Err(width(leaves.len() - leaves.len() % one, leaves.len()));
+    }
+    let count = leaves.len() / one;
+    let bound = table_answer_max(table)?;
+    if count > bound {
+        return Err(width(bound, count));
+    }
+    let mut out = Vec::with_capacity(4 + leaves.len());
+    out.extend_from_slice(&(count as u32).to_le_bytes());
+    out.extend_from_slice(leaves);
+    Ok(out)
+}
+
+// The leaves of an answer, refused before one is read where the count declared passes the bound.
+pub fn parse_table_answer(table: TableIndex, bytes: &[u8]) -> Result<Vec<u8>, WireError> {
+    if bytes.len() < 4 {
+        return Err(width(4, bytes.len()));
+    }
+    let declared = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
+    let bound = table_answer_max(table)?;
+    if declared > bound {
+        return Err(width(bound, declared));
+    }
+    let expected = 4 + declared * table.leaf_bytes();
+    if bytes.len() != expected {
+        return Err(width(expected, bytes.len()));
+    }
+    Ok(bytes[4..].to_vec())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -582,19 +732,19 @@ mod tests {
     #[test]
     fn every_kind_carries_one_number_and_reads_back_to_itself() {
         let mut seen: Vec<u8> = Kind::ALL.iter().map(|k| k.byte()).collect();
-        assert_eq!(seen.len(), 12);
+        assert_eq!(seen.len(), 14);
         for kind in Kind::ALL {
             assert_eq!(Kind::of(kind.byte()), Some(kind));
         }
         seen.sort_unstable();
         seen.dedup();
-        assert_eq!(seen.len(), 12, "two kinds carry one number");
+        assert_eq!(seen.len(), 14, "two kinds carry one number");
         assert_eq!(seen.first(), Some(&1), "the vocabulary opens at one");
-        assert_eq!(seen.last(), Some(&12), "the vocabulary ends at twelve");
+        assert_eq!(seen.last(), Some(&14), "the vocabulary ends at fourteen");
         // Zero is no kind, and neither is anything past the vocabulary: a piece naming one ends the
         // link rather than being read as something it is not.
         assert_eq!(Kind::of(0), None);
-        assert_eq!(Kind::of(13), None);
+        assert_eq!(Kind::of(15), None);
         assert_eq!(Kind::of(255), None);
     }
 
@@ -681,5 +831,41 @@ mod tests {
         // that named none would be answered with the first object of a point for ever.
         assert!(parse_collect_public(&public[..POINT_BYTES]).is_err());
         assert!(parse_collect_public(&sealed).is_err());
+    }
+
+    #[test]
+    fn a_table_answer_stays_within_the_largest_message_and_refuses_more() {
+        let largest = largest_len().expect("named");
+        let network = [0x44u8; mt_codec::size::HASH];
+        for table in TableIndex::ALL {
+            assert_eq!(TableIndex::of(table.byte()), Some(table));
+            let query = encode_table_query(&network, 1000, table, 7);
+            assert_eq!(query.len(), table_query_len());
+            assert_eq!(parse_table_query(&query), Ok((network, 1000, table, 7)));
+            assert!(parse_table_query(&query[..query.len() - 1]).is_err());
+            let bound = table_answer_max(table).expect("named");
+            let full = vec![0x55u8; bound * table.leaf_bytes()];
+            let answer = encode_table_answer(table, &full).expect("encodes");
+            assert!(
+                answer.len() <= largest,
+                "a table answer past the largest message"
+            );
+            assert_eq!(parse_table_answer(table, &answer), Ok(full));
+            // One leaf past the bound is refused on both sides, before a leaf is read.
+            let over = vec![0x55u8; (bound + 1) * table.leaf_bytes()];
+            assert!(encode_table_answer(table, &over).is_err());
+            let mut declared = answer.clone();
+            declared[..4].copy_from_slice(&((bound + 1) as u32).to_le_bytes());
+            assert!(parse_table_answer(table, &declared).is_err());
+            // Half a leaf is no leaf.
+            assert!(encode_table_answer(table, &[0u8; 31]).is_err());
+            // And an answer of nothing is ordinary.
+            let empty = encode_table_answer(table, &[]).expect("encodes");
+            assert_eq!(parse_table_answer(table, &empty), Ok(Vec::new()));
+        }
+        // A table past the seven is no table.
+        let mut query = encode_table_query(&network, 1000, TableIndex::Notes, 0);
+        query[mt_codec::size::HASH + 8] = 7;
+        assert!(parse_table_query(&query).is_err());
     }
 }

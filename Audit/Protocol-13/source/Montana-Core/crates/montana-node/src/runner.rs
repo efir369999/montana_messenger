@@ -81,11 +81,7 @@ impl Runner {
         decided: &Decided,
     ) -> Result<Proposal, NodeError> {
         let window = self.window;
-        let follows = match predecessor {
-            Predecessor::Genesis => true,
-            Predecessor::Proposal(previous) => previous.window.checked_add(1) == Some(window),
-        };
-        if !follows || decided.window != window {
+        if !predecessor.is_followed_by(window) || decided.window != window {
             return Err(NodeError::Refused {
                 what: "a proposal of another window than the one this runner drew",
             });
@@ -100,7 +96,9 @@ impl Runner {
             record_root: roots.record_root,
             machine_root: roots.machine_root,
             admitted_root: roots.admitted_root,
+            credited_root: roots.credited_root,
             operations_root: roots.operations_root,
+            roll: roots.roll,
             admitted_count: roots.admitted_count,
             cement_aggregate: decided.cement_aggregate,
             cement_count: decided.cement_count,

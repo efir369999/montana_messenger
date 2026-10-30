@@ -12,7 +12,7 @@ import UIKit
 final class MontanaVPNTunnel: ObservableObject {
     static let shared = MontanaVPNTunnel()
     static let extensionBundleId = (Bundle.main.bundleIdentifier ?? "p2p.montana.app") + ".PacketTunnel"   // packet-tunnel extension target
-    /// THE TUNNEL STANDS WHERE ITS PLATFORM ADMITS IT (the author's word 21.10.2026 19:3x MSK: the Mac from the site goes without the VPN):
+    /// THE TUNNEL STANDS WHERE ITS PLATFORM ADMITS IT (the author's word 21.10.2026 16:3x UTC: the Mac from the site goes without the VPN):
     /// outside the App Store the Mac admits a tunnel only as a system extension, and the Catalyst app cannot ask for one
     /// (OSSystemExtensionRequest is unavailable to iOS sources) -- the Mac product carries no tunnel and shows no VPN wall.
     #if targetEnvironment(macCatalyst)
@@ -25,7 +25,7 @@ final class MontanaVPNTunnel: ObservableObject {
     /// read by load(), not announced by the system, and the beat that pays its seconds (MTVPNWallMint) was woken only by the
     /// announcement -- twelve hours of a living tunnel paid nothing. Every turn to connected, read or announced, wakes it here.
     @Published private(set) var status: NEVPNStatus = .invalid {
-        didSet { if status == .connected, oldValue != .connected { MTVPNWallMint.shared.count() } }
+        didSet { if status == .connected, oldValue != .connected { MTVPNWallMint.count() } }
     }
     @Published private(set) var activeName: String = ""
     @Published private(set) var lastError: String = ""
@@ -480,7 +480,7 @@ final class MontanaVPNTunnel: ObservableObject {
         proto.providerConfiguration?["fallbacks"] = []
         // THE TUNNEL DOES NOT HOLD EVERY ROUTE (the author's word 30.09, «do it»): the protection of all networks is off, so a
         // socket bound to a physical interface may leave the tunnel -- the call's own adapters, and the mesh once such a binding
-        // is measured (a bare interface ban left every node dial without a path, T1 30.09 20:58 MSK).
+        // is measured (a bare interface ban left every node dial without a path, T1 30.09 17:58 UTC).
         proto.includeAllNetworks = false
         proto.disconnectOnSleep = false
         // Kept from the reverted work because it has nothing to do with the switch: the local network
@@ -946,7 +946,7 @@ private final class MTVPNMeasureReply: @unchecked Sendable {
 enum MTInstallPrepare {
     static let word = "MT_INSTALL_PREPARE"
     static var asked: Bool { !yielded && ProcessInfo.processInfo.environment[word] == "1" }
-    /// THE PREPARE LEAVES ITS MOMENT BEHIND (29.09, T1 at 15:08 MSK: the install switched the tunnel off and it stood off for twenty
+    /// THE PREPARE LEAVES ITS MOMENT BEHIND (29.09, T1 at 12:08 UTC: the install switched the tunnel off and it stood off for twenty
     /// minutes): the app's first return after the install raises the tunnel again (MontanaVPNTunnel.load). Kept under this
     /// device's own key until the raise.
     static let offKey = "mt.vpn.installOff"
@@ -1007,7 +1007,7 @@ enum MTInstallPrepare {
     }
 }
 
-/// ANY VPN DOUBLES, FOR NOW (the author's word 04.10.2026 18:48 MSK: «for now make it from any VPN, so that the doubling is there»):
+/// ANY VPN DOUBLES, FOR NOW (the author's word 04.10.2026 15:48 UTC: «for now make it from any VPN, so that the doubling is there»):
 /// a VPN raised by another app is a link of the system (utun, ipsec, ppp) under a scoped proxy setting. While Montana's tunnel is
 /// down the phone witnesses that link itself (constitution point 6: the phone is a full node) -- a second lives when bytes came in
 /// through it within the quiet (MTVPNWallMint.quiet), the rule Montana's tunnel judges its own life by. Nothing of ours runs inside

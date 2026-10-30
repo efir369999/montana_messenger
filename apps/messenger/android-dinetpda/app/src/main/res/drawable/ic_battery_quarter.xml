@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SF Symbols battery.25percent (iOS MTCallLight, MontanaCall.swift 5432): the call's light wears it instead of the dot
+     while the power floor holds the picture down. A horizontal body, its cap, a quarter filled. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="27dp" android:height="13dp" android:viewportWidth="27" android:viewportHeight="13">
+  <path android:strokeColor="@android:color/white" android:strokeWidth="1.5"
+      android:pathData="M4.25,0.75 H19.75 A3.5,3.5 0 0 1 23.25,4.25 V8.75 A3.5,3.5 0 0 1 19.75,12.25 H4.25 A3.5,3.5 0 0 1 0.75,8.75 V4.25 A3.5,3.5 0 0 1 4.25,0.75 Z"/>
+  <path android:fillColor="@android:color/white"
+      android:pathData="M24.75,4.5 A1.25,1.25 0 0 1 26,5.75 V7.25 A1.25,1.25 0 0 1 24.75,8.5 Z"/>
+  <path android:fillColor="@android:color/white"
+      android:pathData="M4,2.5 H7.4 V10.5 H4 A1.5,1.5 0 0 1 2.5,9 V4 A1.5,1.5 0 0 1 4,2.5 Z"/>
+</vector>

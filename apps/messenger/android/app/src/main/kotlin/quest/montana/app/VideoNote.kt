@@ -635,7 +635,7 @@ class NoteRing(c: Context, private val glass: Boolean = false) : View(c) {
  * THE NOTE'S WINDOW (iOS MontanaNoteWindow and MontanaNoteFrame, MontanaFeeds.swift:1239-1334 at 2155): the file's canvas (480) is
  * wider than its circle (400) -- the badge's room around it -- so the picture stands 480/400 of the window and the circle fills it;
  * the window is the circle and, on a dual note, the badge's own circle past the rim -- at the corner its manifest names, or under the
- * finger while it records (live) -- so no square cuts the badge. The layout keeps the circle's footprint; the badge stands past it.
+ * finger while it records (live) -- so no square cuts the badge. The window keeps the circle's footprint; the bubble gives the badge its room (noteBody, OVERHANG).
  */
 class NoteWindow(c: Context, private val corner: Int? = null, private val live: (() -> Pair<Float, Float>?)? = null) : android.widget.FrameLayout(c) {
     companion object {
@@ -643,6 +643,8 @@ class NoteWindow(c: Context, private val corner: Int? = null, private val live: 
         fun cornerOf(tag: String?): Int? = if (tag.isNullOrEmpty()) null else NoteRecorder.CORNER_TAGS.indexOf(tag).takeIf { 0 <= it } ?: 3
         private val REACH = ((0.5 + 72.0 / 400.0 / 3) / Math.sqrt(2.0)).toFloat()   // iOS badgeReach, in the circle's sides
         private const val RADIUS = 72f / 400f                                     // iOS badgeRadius
+        /** How far the badge stands past the circle's square, in sides -- the room a bubble must add (iOS MontanaNoteWindow.overhang). */
+        val OVERHANG = REACH + RADIUS - 0.5f
     }
     private val shape = android.graphics.Path()
     private val tick = object : Runnable { override fun run() { invalidate(); if (isAttachedToWindow) postOnAnimation(this) } }

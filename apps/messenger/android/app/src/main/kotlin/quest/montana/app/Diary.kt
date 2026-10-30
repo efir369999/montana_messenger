@@ -122,6 +122,26 @@ object Diary {
     private val HEX = Regex("[0-9a-f]{10,}")
     private val IP4 = Regex("\\b\\d{1,3}(?:\\.\\d{1,3}){3}\\b")
     private val IP6 = Regex("[0-9a-fA-F:]{3,}")
+    // ── a volley folded (iOS MontanaP2PTrace.markFolded, MontanaP2PTelemetry.swift:145-170 at 2155) ──
+    private class Volley(var n: Int, val at: Long, var kv: String)
+    private val volleys = HashMap<String, Volley>()
+    /** The first line of a volley is written at once -- a fault must not wait out a window -- the rest of `windowMs` are
+     *  counted and closed by one line «n=… more …» of their own; `key` keeps volleys of different things apart. */
+    fun folded(event: String, kv: String, windowMs: Long = 10_000, key: String = "") {
+        val slot = event + "|" + key
+        val now = android.os.SystemClock.elapsedRealtime()
+        synchronized(volleys) {
+            val v = volleys[slot]
+            if (v != null && now - v.at < windowMs) { v.n++; v.kv = kv; return }
+            volleys[slot] = Volley(1, now, kv)
+        }
+        android.util.Log.d("Montana", "$event $kv")
+        MainThread.later(windowMs) {
+            val v = synchronized(volleys) { volleys.remove(slot) } ?: return@later
+            if (v.n > 1) android.util.Log.d("Montana", event + " n=" + (v.n - 1) + " more " + v.kv)
+        }
+    }
+
     private val tags = HashMap<String, String>()
     /** iOS MontanaLog.hide: an address leaves only its family, a name its salted tag; numbers stay numbers. */
     fun hide(line: String): String {

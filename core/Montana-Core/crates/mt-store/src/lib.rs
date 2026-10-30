@@ -3,7 +3,7 @@
 // set: what this crate owes is that a machine stopped at any instant starts again holding what it
 // held, and never half of it.
 //
-// Three properties carry that, and each is held by construction rather than by care:
+// Four properties carry that, and each is held by construction rather than by care:
 //
 // **A write is whole or it never happened.** Every value goes to a file of its own beside the one
 // it replaces, is flushed to the disk, and is then renamed onto it — so a machine losing power
@@ -14,6 +14,11 @@
 // so the two orders a crash can leave are "a proposal nothing points at", which costs a file, and
 // never "a head pointing at a proposal that is not there", which would be a machine claiming a
 // window it cannot show. Opening refuses the second outright rather than repairing it.
+//
+// **A window closes in one write.** The head, the number of the last window closed and what the
+// machine keeps of that close stand in one record of one file, so a machine stopped while a window
+// closes starts again on the close before it or on this one, and never on a head of one and a
+// number of the other.
 //
 // **A secret is drawn once.** A machine that redrew its own secret would be a second machine
 // wearing the name of the first, and everything the first was known by — the links it holds, the
@@ -38,6 +43,9 @@ mt_codec::constants! {
     pub const HEAD_BYTES: usize = 8, code "the width a window number is written at on a disk of this tree, which is the width every layout of the set gives it";
     /// The permissions of the file holding a secret, on a system that has them.
     const SECRET_MODE: u32 = 0o600, code "the permissions of the file holding a machine's secret: its owner and nobody else";
+    /// The bytes what a machine read back from the cells on its disk holds at most: the objects of
+    /// many rounds of a cohort, and a small part of the memory a machine is given (issue #63).
+    pub const READ_BACK_BYTES: usize = 64 << 20, code "the ceiling of what a machine holds in memory of the cells it read back from its disk, a bound of the conduct of this tree the set lays out nowhere";
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -81,6 +89,64 @@ pub enum StoreError {
     HeadWithoutItsProposal {
         window: u64,
     },
+    // The same of the last window closed: the close keeps that window's proposal before the record
+    // naming it, so a record naming a window whose proposal is not stored was not written here.
+    ClosedWithoutItsProposal {
+        window: u64,
+    },
+    // A root holding a file of the layout before the record of a window — the head, the number,
+    // the plane and the standing each in a file of its own. Read as empty, it would be a machine
+    // that forgot the windows it closed and could pledge in them again; it is refused instead.
+    EarlierLayout {
+        at: String,
+    },
+}
+
+// **What a test of a crash reaches, and nothing else does.** Every file operation of a writing —
+// the creation of the temporary, its bytes, its flush, its rename and the flush of the directory —
+// and every removal of a record is counted on the thread that does it, and a test arms the count to
+// fail at one of them: either that one alone, as a filesystem refusing one call to a process that
+// goes on, or that one and every one after it, as a process that died there. It is compiled into
+// tests alone and is no parameter of anything this protocol runs.
+#[cfg(any(test, feature = "fault"))]
+pub mod fault {
+    use std::cell::Cell;
+
+    thread_local! {
+        static FAILS_AT: Cell<Option<(u64, bool)>> = const { Cell::new(None) };
+        static COUNTED: Cell<u64> = const { Cell::new(0) };
+    }
+
+    // From now on the operation numbered `at`, counting from one, fails; where `dies`, so does every
+    // operation after it. Arming starts the count again; `None` disarms.
+    pub fn fails_at(at: Option<u64>, dies: bool) {
+        FAILS_AT.set(at.map(|at| (at, dies)));
+        COUNTED.set(0);
+    }
+
+    // The operations this thread did since it was last armed.
+    pub fn counted() -> u64 {
+        COUNTED.get()
+    }
+
+    pub(crate) fn operation() -> std::io::Result<()> {
+        let done = COUNTED.get().saturating_add(1);
+        COUNTED.set(done);
+        match FAILS_AT.get() {
+            Some((at, dies)) if done == at || (dies && done > at) => {
+                Err(std::io::Error::other("an operation a test failed"))
+            }
+            _ => Ok(()),
+        }
+    }
+}
+
+#[cfg(not(any(test, feature = "fault")))]
+mod fault {
+    #[inline(always)]
+    pub(crate) fn operation() -> std::io::Result<()> {
+        Ok(())
+    }
 }
 
 fn said(at: &Path, e: std::io::Error) -> StoreError {
@@ -117,10 +183,14 @@ fn write_complete(at: &Path, bytes: &[u8], only_once: bool) -> Result<(), StoreE
         SERIAL.fetch_add(1, Ordering::Relaxed)
     ));
     {
+        fault::operation().map_err(|e| said(&beside, e))?;
         let mut file = create_closed(&beside)?;
+        fault::operation().map_err(|e| said(&beside, e))?;
         file.write_all(bytes).map_err(|e| said(&beside, e))?;
+        fault::operation().map_err(|e| said(&beside, e))?;
         file.sync_all().map_err(|e| said(&beside, e))?;
     }
+    fault::operation().map_err(|e| said(at, e))?;
     if only_once {
         // Linking a fully flushed file publishes it only if the destination does not exist.
         // The private temporary is retained; no racing writer can replace the winning identity.
@@ -134,10 +204,17 @@ fn write_complete(at: &Path, bytes: &[u8], only_once: bool) -> Result<(), StoreE
     } else {
         fs::rename(&beside, at).map_err(|e| said(at, e))?;
     }
+    flush_directory(directory, at)
+}
+
+// The flush that makes a name landed or removed in a directory survive a loss of power. The name
+// already changed for every reader, so a failure here is an uncertain commit and never a rollback.
+fn flush_directory(directory: &Path, at: &Path) -> Result<(), StoreError> {
     let uncertain = |e: std::io::Error| StoreError::CommitUncertain {
         at: at.display().to_string(),
         said: e.to_string(),
     };
+    fault::operation().map_err(uncertain)?;
     fs::File::open(directory)
         .map_err(uncertain)?
         .sync_all()
@@ -145,15 +222,21 @@ fn write_complete(at: &Path, bytes: &[u8], only_once: bool) -> Result<(), StoreE
     Ok(())
 }
 
-// The temporaries of exclusive openings left by a process that died between writing and linking,
-// removed under the lock of the root. Nothing else of the root is touched.
+// The temporaries a dead process left, removed under the lock of the root: those of exclusive
+// openings, left between writing and linking, and those of whole writings, left before the rename —
+// in the root and among the proposals, the two directories this crate writes whole files in.
+// Nothing else is touched. A temporary of a writing is never what a reader reads, so what goes here
+// is a file nothing names; left, it would stand for ever beside the value it never became.
 fn sweep_dead_openings(root: &Path) -> Result<(), StoreError> {
-    for entry in fs::read_dir(root).map_err(|e| said(root, e))? {
-        let entry = entry.map_err(|e| said(root, e))?;
-        let name = entry.file_name();
-        if name.to_string_lossy().contains(".opening-") {
-            let at = entry.path();
-            fs::remove_file(&at).map_err(|e| said(&at, e))?;
+    for directory in [root.to_path_buf(), root.join("proposals")] {
+        for entry in fs::read_dir(&directory).map_err(|e| said(&directory, e))? {
+            let entry = entry.map_err(|e| said(&directory, e))?;
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if name.contains(".opening-") || name.contains(".writing-") {
+                let at = entry.path();
+                fs::remove_file(&at).map_err(|e| said(&at, e))?;
+            }
         }
     }
     Ok(())
@@ -280,7 +363,18 @@ pub struct Store {
     // check that the window is not closed — and no door can own the birth of the second writer but
     // this one. The lock goes with the handle, so a store dropped releases it and a process that
     // died holds nothing.
-    _held: fs::File,
+    held: fs::File,
+}
+
+// **A store dropped lets its root go before the drop returns.** The lock belongs to the root's open
+// description, and every process spawned by any thread of this one is forked with a copy of it that
+// it keeps until it becomes its own program. A store that only closed its handle left the lock to the
+// last copy, so a start in the instant such a child stood was refused as held by another (issue #21,
+// the ring a623-p72). Unlocking ends the lock for every copy of the description.
+impl Drop for Store {
+    fn drop(&mut self) {
+        let _ = self.held.unlock();
+    }
 }
 
 impl Store {
@@ -307,14 +401,63 @@ impl Store {
         // would be refused for ever. The lock is held, so every such file in the root is a dead
         // process's; this process holds the root alone.
         sweep_dead_openings(&root)?;
-        let store = Self { root, _held: held };
+        let store = Self { root, held };
         store.check_network()?;
-        if let Some(window) = store.head()? {
-            if store.proposal(window)?.is_none() {
-                return Err(StoreError::HeadWithoutItsProposal { window });
+        for earlier in ["head", "closed", "value", "standing"] {
+            let at = store.root.join(earlier);
+            if at.exists() {
+                return Err(StoreError::EarlierLayout {
+                    at: at.display().to_string(),
+                });
+            }
+        }
+        let record = store.window()?;
+        store.shows(&record)?;
+        // **The record of a closed window goes, whatever stopped its going.** A close drops the
+        // record of the agreement after the record of the window, so a machine stopped between the
+        // two holds a record of a window it closed — a history the set refuses ("one record per open
+        // window and never a history", Consensus, "What a machine holds of the agreement").
+        if let Some(closed) = record.closed {
+            for window in store.agreements()? {
+                if window <= closed {
+                    store.drop_agreement(window)?;
+                }
             }
         }
         Ok(store)
+    }
+
+    // A record whose head or last window closed names a proposal this store does not hold is
+    // refused: both proposals are written before the record that names them.
+    fn shows(&self, record: &WindowRecord) -> Result<(), StoreError> {
+        if let Some(window) = record.head {
+            if self.proposal(window)?.is_none() {
+                return Err(StoreError::HeadWithoutItsProposal { window });
+            }
+        }
+        if let Some(window) = record.closed {
+            if self.proposal(window)?.is_none() {
+                return Err(StoreError::ClosedWithoutItsProposal { window });
+            }
+        }
+        Ok(())
+    }
+
+    // The windows whose record of the agreement stands.
+    fn agreements(&self) -> Result<Vec<u64>, StoreError> {
+        let mut out = Vec::new();
+        for entry in fs::read_dir(&self.root).map_err(|e| said(&self.root, e))? {
+            let entry = entry.map_err(|e| said(&self.root, e))?;
+            let name = entry.file_name();
+            if let Some(window) = name
+                .to_str()
+                .and_then(|name| name.strip_prefix("agreement-"))
+                .and_then(|window| window.parse::<u64>().ok())
+            {
+                out.push(window);
+            }
+        }
+        Ok(out)
     }
 
     fn check_network(&self) -> Result<(), StoreError> {
@@ -364,8 +507,8 @@ impl Store {
         self.root.join("identity")
     }
 
-    fn head_at(&self) -> PathBuf {
-        self.root.join("head")
+    fn window_at(&self) -> PathBuf {
+        self.root.join("window")
     }
 
     fn proposal_at(&self, window: u64) -> PathBuf {
@@ -444,39 +587,85 @@ impl Store {
     // closed window is let go, and this is what refuses that window to be opened again — a machine
     // that opened a closed window afresh could pledge a second name for it (Consensus, "What a
     // machine holds of the agreement"; "The way back": an honest machine preserves its pledges
-    // across a restart). It is written before the record is dropped.
-    fn closed_at(&self) -> PathBuf {
-        self.root.join("closed")
+    // across a restart). It stands in the record of the window, written before the record of the
+    // agreement is dropped.
+    pub fn closed(&self) -> Result<Option<u64>, StoreError> {
+        let [_, closed] = self.marks()?;
+        Ok(closed)
     }
 
-    pub fn closed(&self) -> Result<Option<u64>, StoreError> {
-        let at = self.closed_at();
-        let Some(bytes) = read_whole(&at)? else {
-            return Ok(None);
+    // **The two windows of the record, read off its first bytes alone.** Which points this
+    // machine holds follows from its head, so the head is asked at every deposit its door takes,
+    // and the record behind it carries a whole plane and a proposal. Reading the whole of it to
+    // learn two numbers read hundreds of kilobytes at every deposit, and four machines taking
+    // hundreds of thousands of deposits a window stopped agreeing on one (the four machines of
+    // `four_machines_decide_one_name` on 05014f6, issue #19). The marks lead the record and take
+    // at most two bytes and two windows, so those are all that is read -- what the head and the
+    // number cost before they moved into the record.
+    fn marks(&self) -> Result<[Option<u64>; 2], StoreError> {
+        let at = self.window_at();
+        let mut file = match fs::File::open(&at) {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok([None, None]),
+            Err(e) => return Err(said(&at, e)),
         };
-        let bytes = of_width(&at, bytes, HEAD_BYTES)?;
-        let mut eight = [0u8; HEAD_BYTES];
-        eight.copy_from_slice(&bytes);
-        Ok(Some(u64::from_le_bytes(eight)))
+        let mut lead = Zeroizing::new([0u8; 2 * (1 + HEAD_BYTES)]);
+        let mut read = 0;
+        while read < lead.len() {
+            match file.read(&mut lead[read..]) {
+                Ok(0) => break,
+                Ok(n) => read += n,
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+                Err(e) => return Err(said(&at, e)),
+            }
+        }
+        let (windows, _) = WindowRecord::marks_of(&at, &lead[..read])?;
+        Ok(windows)
     }
 
     // The number moves forward and never back: a window below the one already closed was closed
-    // before it, and writing it again would say otherwise.
+    // before it, and writing it again would say otherwise. The rest of the record stands as it was.
     pub fn put_closed(&self, window: u64) -> Result<(), StoreError> {
-        if self.closed()?.is_some_and(|held| held > window) {
+        let mut record = self.window()?;
+        if record.closed.is_some_and(|held| held > window) {
             return Ok(());
         }
-        write_whole(&self.closed_at(), &window.to_le_bytes())
+        record.closed = Some(window);
+        self.commit_window(&record)
     }
 
-    // The record of a window that closed, removed; a record that is not there is already gone.
+    // The record of a window that closed, removed; a record that is not there is already gone. The
+    // directory is flushed after, so a loss of power does not bring back a record of a closed window.
     pub fn drop_agreement(&self, window: u64) -> Result<(), StoreError> {
         let at = self.agreement_at(window);
+        fault::operation().map_err(|e| said(&at, e))?;
         match fs::remove_file(&at) {
-            Ok(()) => Ok(()),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(e) => Err(said(&at, e)),
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(e) => return Err(said(&at, e)),
         }
+        flush_directory(&self.root, &at)
+    }
+
+    // **The record of the last window this machine closed**: the head, the number of that window,
+    // and what the machine keeps of the close beside them, written whole by one writing. What the
+    // machine keeps is its own encoding and this crate carries it without reading it; what the
+    // crate reads is the two windows, which it holds against the proposals it stores. A store that
+    // closed nothing answers with the record of nothing.
+    pub fn window(&self) -> Result<WindowRecord, StoreError> {
+        let at = self.window_at();
+        match read_secret(&at)? {
+            None => Ok(WindowRecord::default()),
+            Some(bytes) => WindowRecord::decode(&at, &bytes),
+        }
+    }
+
+    // One writing, after the proposals it names. What the machine keeps of a close carries its
+    // standing, a secret of the machine, and the temporary is created closed to everyone but its
+    // owner, so the record never stands open.
+    pub fn commit_window(&self, record: &WindowRecord) -> Result<(), StoreError> {
+        self.shows(record)?;
+        write_whole(&self.window_at(), &record.encode())
     }
 
     #[cfg(unix)]
@@ -519,51 +708,9 @@ impl Store {
         self.close_the_file_to_others(at)
     }
 
-    fn value_at(&self) -> PathBuf {
-        self.root.join("value")
-    }
-
-    fn standing_at(&self) -> PathBuf {
-        self.root.join("standing")
-    }
-
-    // **What a machine holds of its own standing**: the census windows it lived and the branch its
-    // part walks in each of their cements. It is a secret of the machine exactly as its notes are a
-    // secret of a person — the set publishes no standing, and a file readable to others would be
-    // the one place a machine's weight stood in the open — so it goes through the same door and is
-    // closed to everyone but its owner.
-    pub fn standing(&self) -> Result<Zeroizing<Vec<u8>>, StoreError> {
-        Ok(read_secret(&self.standing_at())?.unwrap_or_else(|| Zeroizing::new(Vec::new())))
-    }
-
-    pub fn put_standing(&self, bytes: &[u8]) -> Result<(), StoreError> {
-        let at = self.standing_at();
-        write_whole(&at, bytes)?;
-        self.close_the_file_to_others(&at)
-    }
-
-    // **What a machine holds of the value plane, kept across a stop.** A note taken in one run is
-    // spendable in the next only where the tree that gave it a position still stands, and a plane
-    // that lived in memory alone made every note die with the run that created it — so a person
-    // paid could hold a note their own machine could no longer prove a path for. It carries no
-    // secret of anybody: commitments, nullifiers and roots are what the network publishes.
-    pub fn value(&self) -> Result<Vec<u8>, StoreError> {
-        Ok(read_whole(&self.value_at())?.unwrap_or_default())
-    }
-
-    pub fn put_value(&self, bytes: &[u8]) -> Result<(), StoreError> {
-        write_whole(&self.value_at(), bytes)
-    }
-
     pub fn head(&self) -> Result<Option<u64>, StoreError> {
-        let at = self.head_at();
-        let Some(bytes) = read_whole(&at)? else {
-            return Ok(None);
-        };
-        let bytes = of_width(&at, bytes, HEAD_BYTES)?;
-        let mut eight = [0u8; HEAD_BYTES];
-        eight.copy_from_slice(&bytes);
-        Ok(Some(u64::from_le_bytes(eight)))
+        let [head, _] = self.marks()?;
+        Ok(head)
     }
 
     // **What stands at a machine's points stands across a stop.** The heavy attestations, the
@@ -580,6 +727,11 @@ impl Store {
         self.root.join("points").join(format!("{window:020}"))
     }
 
+    fn point_file(&self, window: u64, point: &[u8; 16]) -> PathBuf {
+        let name: String = point.iter().map(|b| format!("{b:02x}")).collect();
+        self.points_at(window).join(name)
+    }
+
     pub fn append_cell(
         &self,
         window: u64,
@@ -588,14 +740,71 @@ impl Store {
     ) -> Result<(), StoreError> {
         let directory = self.points_at(window);
         fs::create_dir_all(&directory).map_err(|e| said(&directory, e))?;
-        let name: String = point.iter().map(|b| format!("{b:02x}")).collect();
-        let at = directory.join(name);
+        let at = self.point_file(window, point);
         let mut file = fs::OpenOptions::new()
             .append(true)
             .create(true)
             .open(&at)
             .map_err(|e| said(&at, e))?;
-        file.write_all(cell).map_err(|e| said(&at, e))
+        // A cell the disk took in part is cut off again, so the next one lands where a reader
+        // counts it and not behind the torn bytes: the file is the one place the cells of a point
+        // stand (issue #63), and a reader is handed them by their index in it.
+        let before = file.metadata().map_err(|e| said(&at, e))?.len();
+        if let Err(e) = file.write_all(cell) {
+            let _ = file.set_len(before);
+            return Err(said(&at, e));
+        }
+        Ok(())
+    }
+
+    // The cells of one point from `from`, at most `take` of them, read off its file where they were
+    // appended: a reader asking for a range is handed that range, and a point is never opened whole
+    // to answer a part of it. A point whose file is gone holds nothing.
+    pub fn cells_at(
+        &self,
+        window: u64,
+        point: &[u8; 16],
+        cell_width: usize,
+        from: usize,
+        take: usize,
+    ) -> Result<Vec<Vec<u8>>, StoreError> {
+        use std::io::{Seek, SeekFrom};
+        let at = self.point_file(window, point);
+        let mut file = match fs::File::open(&at) {
+            Ok(file) => file,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(e) => return Err(said(&at, e)),
+        };
+        let width = cell_width.max(1);
+        let unaddressable = || {
+            said(
+                &at,
+                std::io::Error::other("a range of cells past what a file addresses"),
+            )
+        };
+        let start = u64::try_from(from.saturating_mul(width)).map_err(|_| unaddressable())?;
+        let length = u64::try_from(take.saturating_mul(width)).map_err(|_| unaddressable())?;
+        file.seek(SeekFrom::Start(start))
+            .map_err(|e| said(&at, e))?;
+        let mut bytes = Vec::new();
+        file.take(length)
+            .read_to_end(&mut bytes)
+            .map_err(|e| said(&at, e))?;
+        Ok(bytes.chunks_exact(width).map(<[u8]>::to_vec).collect())
+    }
+
+    // The file of one point written again to exactly the cells given, whole or not at all: what a
+    // start reads of a point and leaves out (a repetition, a cell of another point) is left out of
+    // the file too, so every index a reader asks for is an index of what the point took.
+    pub fn put_cells(
+        &self,
+        window: u64,
+        point: &[u8; 16],
+        cells: &[Vec<u8>],
+    ) -> Result<(), StoreError> {
+        let directory = self.points_at(window);
+        fs::create_dir_all(&directory).map_err(|e| said(&directory, e))?;
+        write_whole(&self.point_file(window, point), &cells.concat())
     }
 
     // Every cell standing at every point this store keeps, by window and point, in the order the
@@ -696,11 +905,76 @@ impl Store {
     // The head moves only onto a window this store can show. The check stands here rather than in
     // the caller because a caller that forgot it would leave a machine claiming a window it cannot
     // produce, and nothing downstream would say so until somebody asked for that proposal.
+    // The rest of the record stands as it was.
     pub fn set_head(&self, window: u64) -> Result<(), StoreError> {
-        if self.proposal(window)?.is_none() {
-            return Err(StoreError::HeadWithoutItsProposal { window });
+        let mut record = self.window()?;
+        record.head = Some(window);
+        self.commit_window(&record)
+    }
+}
+
+// The record of the last window a machine closed, as the store reads it: the head, the number of
+// that window, and what the machine keeps of the close, which the store carries unread. It is
+// written as the head, then the number, each a mark of one byte — nought where no window stands,
+// one where one does, followed by the window — then what is kept, to the end of the file. A file of
+// another shape is refused rather than read in part.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct WindowRecord {
+    pub head: Option<u64>,
+    pub closed: Option<u64>,
+    pub kept: Zeroizing<Vec<u8>>,
+}
+
+impl WindowRecord {
+    pub fn encode(&self) -> Zeroizing<Vec<u8>> {
+        let mut out = Zeroizing::new(Vec::new());
+        for window in [self.head, self.closed] {
+            match window {
+                None => out.push(0),
+                Some(window) => {
+                    out.push(1);
+                    out.extend_from_slice(&window.to_le_bytes());
+                }
+            }
         }
-        write_whole(&self.head_at(), &window.to_le_bytes())
+        out.extend_from_slice(&self.kept);
+        out
+    }
+
+    // The two marks the record leads with, and the count of bytes they took.
+    fn marks_of(at: &Path, bytes: &[u8]) -> Result<([Option<u64>; 2], usize), StoreError> {
+        let short = || StoreError::WrongLength {
+            at: at.display().to_string(),
+            expected: 1 + HEAD_BYTES,
+            found: bytes.len(),
+        };
+        let mut rest = bytes;
+        let mut windows = [None, None];
+        for window in &mut windows {
+            let (mark, after) = rest.split_first().ok_or_else(short)?;
+            rest = after;
+            *window = match mark {
+                0 => None,
+                1 => {
+                    let eight = rest.get(..HEAD_BYTES).ok_or_else(short)?;
+                    rest = &rest[HEAD_BYTES..];
+                    let mut held = [0u8; HEAD_BYTES];
+                    held.copy_from_slice(eight);
+                    Some(u64::from_le_bytes(held))
+                }
+                _ => return Err(short()),
+            };
+        }
+        Ok((windows, bytes.len().saturating_sub(rest.len())))
+    }
+
+    fn decode(at: &Path, bytes: &[u8]) -> Result<Self, StoreError> {
+        let ([head, closed], taken) = Self::marks_of(at, bytes)?;
+        Ok(Self {
+            head,
+            closed,
+            kept: Zeroizing::new(bytes[taken..].to_vec()),
+        })
     }
 }
 
@@ -789,6 +1063,7 @@ mod tests {
                 at: scratch.path().display().to_string()
             })
         );
+        first.put_proposal(3, b"a proposal of the third").unwrap();
         first.put_closed(3).unwrap();
         drop(first);
         let second = Store::open(scratch.path()).unwrap();
@@ -912,6 +1187,9 @@ mod tests {
         {
             let store = Store::open(scratch.path()).unwrap();
             assert_eq!(store.closed().unwrap(), None);
+            for window in 12..=14 {
+                store.put_proposal(window, b"a proposal").unwrap();
+            }
             store.put_closed(12).unwrap();
             assert_eq!(store.closed().unwrap(), Some(12));
             store.put_closed(14).unwrap();
@@ -920,7 +1198,8 @@ mod tests {
         }
         let restarted = Store::open(scratch.path()).unwrap();
         assert_eq!(restarted.closed().unwrap(), Some(14));
-        fs::write(scratch.path().join("closed"), [0u8; 7]).unwrap();
+        // A record cut inside the number of the last window closed.
+        fs::write(scratch.path().join("window"), [0, 1, 14, 0, 0, 0, 0, 0]).unwrap();
         assert!(matches!(
             restarted.closed(),
             Err(StoreError::WrongLength { .. })
@@ -1150,12 +1429,154 @@ mod tests {
         let store = Store::open(scratch.path()).expect("a store opens");
         // Construct a crashed/orphaned directory directly, without deleting a proposal, once the
         // store that bound the root is dropped: one store, one process.
-        let head_at = store.head_at();
+        let window_at = store.window_at();
         drop(store);
-        fs::write(head_at, 5u64.to_le_bytes()).expect("an orphaned head fixture");
+        let orphaned = WindowRecord {
+            head: Some(5),
+            ..WindowRecord::default()
+        };
+        fs::write(&window_at, orphaned.encode()).expect("an orphaned head fixture");
         assert_eq!(
             Store::open(scratch.path()).err(),
             Some(StoreError::HeadWithoutItsProposal { window: 5 })
+        );
+    }
+
+    // The generalisation of the check above to the last window closed: a record naming a closed
+    // window whose proposal the store does not hold refuses to open, though its head is shown. The
+    // wrong implementation refused: one holding the head alone against the proposals, under which
+    // a record naming a closed window nothing can show is read as a machine that closed it.
+    #[test]
+    fn a_store_whose_closed_window_lost_its_proposal_refuses_to_open() {
+        let scratch = Scratch::named("closed-orphaned");
+        let store = Store::open(scratch.path()).expect("a store opens");
+        store.put_proposal(4, b"a proposal of the fourth").unwrap();
+        let window_at = store.window_at();
+        drop(store);
+        let orphaned = WindowRecord {
+            head: Some(4),
+            closed: Some(5),
+            kept: Zeroizing::new(b"what a machine keeps".to_vec()),
+        };
+        fs::write(&window_at, orphaned.encode()).expect("an orphaned closed fixture");
+        assert_eq!(
+            Store::open(scratch.path()).err(),
+            Some(StoreError::ClosedWithoutItsProposal { window: 5 })
+        );
+    }
+
+    // A root a store of the earlier layout wrote — the head and the number each in a file of their
+    // own — is refused, not read as a machine that closed nothing. The wrong implementation refused:
+    // one reading only the record of the window, under which such a machine starts with no window
+    // closed and may pledge again in every window it closed.
+    #[test]
+    fn a_store_of_the_earlier_layout_is_refused_rather_than_read_as_empty() {
+        let scratch = Scratch::named("earlier-layout");
+        drop(Store::open(scratch.path()).expect("a store opens"));
+        let earlier = scratch.path().join("closed");
+        fs::write(&earlier, 9u64.to_le_bytes()).unwrap();
+        assert_eq!(
+            Store::open(scratch.path()).err(),
+            Some(StoreError::EarlierLayout {
+                at: earlier.display().to_string()
+            })
+        );
+    }
+
+    // **A window closes whole or not at all, wherever the process dies.** The record of a closed
+    // window stands over the record before it, a record of the agreement of the window being
+    // closed stands beside them, and the closing — the record, then the drop of that agreement — is
+    // run again and again with the process dying at its first file operation, then its second, and
+    // so on until a run reaches the end with nothing failing. After every death the store is opened
+    // again, and the record reads back byte for byte as the old one or as the new one, no temporary
+    // stands beside it, and where the new one stands the record of the agreement of the window it
+    // closed is gone. The wrong implementations refused: the earlier layout of four files, under
+    // which a death between two of them opens on a head of the new close and a number of the old;
+    // and an opening that leaves a record of the agreement of a closed window standing, which a
+    // death between the record and the drop leaves for ever.
+    #[test]
+    fn a_window_record_stands_old_or_new_wherever_a_closing_dies() {
+        let old = WindowRecord {
+            head: Some(11),
+            closed: Some(12),
+            kept: Zeroizing::new(vec![0x0C; 300]),
+        };
+        let new = WindowRecord {
+            head: Some(12),
+            closed: Some(13),
+            kept: Zeroizing::new(vec![0x0D; 500]),
+        };
+        // The store as the closing finds it, and the closing, counted where nothing dies.
+        let before = |what: &str| {
+            let scratch = Scratch::named(what);
+            let store = Store::open(scratch.path()).unwrap();
+            for window in 11..=13 {
+                store.put_proposal(window, &[window as u8; 40]).unwrap();
+            }
+            store.commit_window(&old).unwrap();
+            store.open_agreement(13, &[0x13; 90]).unwrap();
+            (scratch, store)
+        };
+        let closing = |store: &Store| {
+            store
+                .commit_window(&new)
+                .and_then(|()| store.drop_agreement(13))
+        };
+        let operations = {
+            let (_scratch, store) = before("closing-counted");
+            fault::fails_at(None, false);
+            closing(&store).unwrap();
+            fault::counted()
+        };
+        assert!(
+            operations >= 7,
+            "the closing counted {operations} operations"
+        );
+        let mut seen = (false, false);
+        for at in 1..=operations {
+            let (scratch, store) = before(&format!("closing-dies-at-{at}"));
+            fault::fails_at(Some(at), true);
+            assert!(
+                closing(&store).is_err(),
+                "a closing dying at {at} succeeded"
+            );
+            fault::fails_at(None, false);
+            drop(store);
+            let store = Store::open(scratch.path()).unwrap();
+            let standing = store.window().unwrap();
+            let bytes = fs::read(scratch.path().join("window")).unwrap();
+            if standing == new {
+                assert_eq!(bytes, *new.encode());
+                assert_eq!(
+                    store.agreement(13).unwrap(),
+                    None,
+                    "a record of the agreement of a closed window stands (death at {at})"
+                );
+                seen.1 = true;
+            } else {
+                assert_eq!(standing, old, "a third record stands (death at {at})");
+                assert_eq!(bytes, *old.encode());
+                assert_eq!(store.agreement(13).unwrap(), Some(vec![0x13; 90]));
+                seen.0 = true;
+            }
+            for directory in [
+                scratch.path().to_path_buf(),
+                scratch.path().join("proposals"),
+            ] {
+                let left: Vec<String> = fs::read_dir(&directory)
+                    .unwrap()
+                    .map(|entry| entry.unwrap().file_name().to_string_lossy().to_string())
+                    .filter(|name| name.contains(".writing-"))
+                    .collect();
+                assert!(
+                    left.is_empty(),
+                    "temporaries left (death at {at}): {left:?}"
+                );
+            }
+        }
+        assert!(
+            seen.0 && seen.1,
+            "the deaths never left one of the two records"
         );
     }
 
@@ -1169,10 +1590,11 @@ mod tests {
             Err(StoreError::WrongLength { expected, found, .. })
                 if expected == SECRET_BYTES && found == SECRET_BYTES - 1
         ));
-        fs::write(store.head_at(), [0u8; HEAD_BYTES + 1]).expect("written");
+        // A record whose head is marked and cut short of its width.
+        fs::write(store.window_at(), [1u8; HEAD_BYTES]).expect("written");
         assert!(matches!(
             store.head(),
-            Err(StoreError::WrongLength { expected, .. }) if expected == HEAD_BYTES
+            Err(StoreError::WrongLength { expected, .. }) if expected == HEAD_BYTES + 1
         ));
     }
 

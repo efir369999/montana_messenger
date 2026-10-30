@@ -10,7 +10,6 @@ pub const CANON_RELATIVE: &str = "../../../docs/Montana Canon.md";
 pub enum ParsedValue {
     Scalar(u64),
     Ratio(u64, u64),
-    Schedule(Vec<(u64, u64)>),
     // A parameter the set names and has not published. It carries no value of any kind, and the
     // gate holds the code to carrying none either.
     Unpublished,
@@ -182,26 +181,6 @@ fn parse_block(md: &str, header: &str) -> Result<Vec<ParsedRow>, String> {
                 label: first.to_string(),
                 name: "tau2".to_string(),
                 value: ParsedValue::Scalar(value),
-            });
-        } else if first == "emission_schedule" {
-            let mut schedule = Vec::new();
-            for pair in value_cell.split('(').skip(1) {
-                let inner = pair
-                    .split(')')
-                    .next()
-                    .ok_or_else(|| format!("an unclosed schedule row: {value_cell:?}"))?;
-                let mut parts = inner.split(',');
-                let height = number(parts.next().unwrap_or_default())?;
-                let mint = number(parts.next().unwrap_or_default())?;
-                schedule.push((height, mint));
-            }
-            if schedule.is_empty() {
-                return Err(format!("an empty emission schedule: {value_cell:?}"));
-            }
-            rows.push(ParsedRow {
-                label: first.to_string(),
-                name: first.to_string(),
-                value: ParsedValue::Schedule(schedule),
             });
         } else if value_cell.contains("**unpublished**") {
             rows.push(ParsedRow {
@@ -446,15 +425,6 @@ fn check_block(rows: &[ParsedRow], code: &[mt_genesis::Entry], block: &str) -> R
                 if (n, d) != (cn, cd) {
                     return Err(format!(
                         "Decree divergence at `{}`: the set holds {n} over {d}, the code holds {cn} over {cd}",
-                        row.name
-                    ));
-                }
-                true
-            }
-            (ParsedValue::Schedule(s), mt_genesis::Entry::Schedule(_, cs)) => {
-                if s.as_slice() != *cs {
-                    return Err(format!(
-                        "Decree divergence at `{}`: the set holds {s:?}, the code holds {cs:?}",
                         row.name
                     ));
                 }
@@ -1506,6 +1476,54 @@ pub fn check_wire(md: &str) -> Result<(), String> {
         labeled(&hs, "k_r2i")?,
         &mt_wire::handshake::responder_to_initiator(&master),
     )?;
+    // The renewal of the link of the block (Network, "How a link renews its keys"; NET-25): the fold
+    // of the master and the fresh material of one renewal, the two keys standing on it, and the fold
+    // in the order of the renewal, which is the mistake the negative line freezes.
+    let fresh = labeled(&hs, "renew_pk_i")?;
+    let renew_pk_i = fixed_part(bare_input(fresh))?;
+    let renew_pk_r = fixed_part(input_of(fresh, "renew_pk_r")?)?;
+    let renew_ct_i = fixed_part(input_of(fresh, "renew_ct_i")?)?;
+    let renew_ct_r = fixed_part(input_of(fresh, "renew_ct_r")?)?;
+    let opened = labeled(&hs, "renew_ss_i")?;
+    let renew_ss_i = repeat32(bare_input(opened))?;
+    let renew_ss_r = repeat32(input_of(opened, "renew_ss_r")?)?;
+    let renewed = mt_wire::handshake::renewed(
+        &master,
+        &renew_ss_i,
+        &renew_ss_r,
+        &renew_pk_i,
+        &renew_pk_r,
+        &renew_ct_i,
+        &renew_ct_r,
+    );
+    compare_hash("renewed", labeled(&hs, "renewed")?, &renewed)?;
+    compare_hash(
+        "k_i2r(renewed)",
+        labeled(&hs, "k_i2r(renewed)")?,
+        &mt_wire::handshake::initiator_to_responder(&renewed),
+    )?;
+    compare_hash(
+        "k_r2i(renewed)",
+        labeled(&hs, "k_r2i(renewed)")?,
+        &mt_wire::handshake::responder_to_initiator(&renewed),
+    )?;
+    let responder_first = mt_wire::handshake::renewed(
+        &master,
+        &renew_ss_r,
+        &renew_ss_i,
+        &renew_pk_r,
+        &renew_pk_i,
+        &renew_ct_r,
+        &renew_ct_i,
+    );
+    compare_hash(
+        "renewed(responder first)",
+        labeled(&hs, "renewed(responder first)")?,
+        &responder_first,
+    )?;
+    if responder_first == renewed {
+        return Err("the negative vector of a renewal equals the positive one".to_string());
+    }
 
     // The machine standing at a point, and the ring that wraps.
     let holder_rows = parse_labeled(md, HOLDER_HEADER)?;
@@ -1739,6 +1757,7 @@ pub fn check_serialized_layouts(md: &str) -> Result<(), String> {
         record_root: [0x55; 32],
         machine_root: [0x66; 32],
         admitted_root: [0x77; 32],
+        credited_root: [0xAA; 32],
         operations_root: [0x88; 32],
         roll: [0xBB; 32],
         admitted_count: 3,
@@ -1925,7 +1944,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
     let wire = |value: Result<usize, mt_wire::WireError>| -> Result<usize, String> {
         value.map_err(|e| format!("the wire cannot read the Decree: {e:?}"))
     };
-    let of_the_wire: [(&str, usize, &str); 14] = [
+    let of_the_wire: [(&str, usize, &str); 15] = [
         ("hello_len", mt_wire::handshake::hello_len(), "hello"),
         ("hello_answer_len", mt_wire::handshake::hello_answer_len(), "answer of a hello"),
         ("hello_finish_len", mt_wire::handshake::hello_finish_len(), "finish of a hello"),
@@ -1938,6 +1957,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
         ("head_query_len", mt_wire::message::head_query_len(), "query of a head"),
         ("state_query_len", mt_wire::message::state_query_len(), "query of a leaf"),
         ("slot_query_len", mt_wire::message::slot_query_len(), "query of a slot"),
+        ("table_query_len", mt_wire::message::table_query_len(), "query of a table"),
         ("channel_commit_len", SlotCommit::expected_len(), "commitment over a slot of a channel"),
         ("channel_renew_len", SlotRenew::expected_len(), "renewal of a slot of a channel"),
     ];
@@ -1961,6 +1981,7 @@ pub const RIGHTS_HEADER: &str = "**The vectors of the two rights.**";
 pub const VERSION_HEADER: &str = "**The vectors of the nullifier of a version.**";
 pub const TAG_HEADER: &str = "**A tag and the labels of its steps.**";
 pub const CLAIM_HEADER: &str = "**The right of a machine, and the moment of extinguishing it.**";
+pub const CANDIDACY_HEADER: &str = "**The vector of a candidacy.**";
 pub const HORIZON_HEADER: &str = "**The horizon fold, at three of its reach.**";
 pub const LOOKUP_HEADER: &str = "**The nullifier of a reach into the space of slots.**";
 pub const NAME_HEADER: &str = "**A name: its slot, its chain and its commitment.**";
@@ -2022,6 +2043,45 @@ fn compare_number(label: &str, stated: u64, computed: u64) -> Result<(), String>
         ));
     }
     Ok(())
+}
+
+// The record of the vector of a candidacy, read field by field out of its line in the order the
+// layout gives: a field the line does not name, or names out of that order, is refused rather than
+// filled, and the right the record carries is the one derived beside it, as the line says.
+fn record_of_the_vector(cell: &str, right: &[u8; 32]) -> Result<mt_state::layout::Record, String> {
+    let mut fields = cell.split(',').map(str::trim);
+    let mut field = |name: &str| -> Result<&str, String> {
+        let part = fields
+            .next()
+            .ok_or_else(|| format!("the record of the vector ends before `{name}`"))?;
+        part.strip_prefix(name)
+            .map(str::trim)
+            .ok_or_else(|| format!("the record of the vector names {part:?} where `{name}` stands"))
+    };
+    let segment_bitmap = number(field("segment_bitmap")?)?;
+    let last_active_segment = number(field("last_active_segment")?)?;
+    let opened_window = number(field("opened_window")?)?;
+    let own_height = number(field("own_height")?)?;
+    if field("operator_nf")? != "of operator_secret" {
+        return Err("the record of the vector carries a right other than its branch's".to_string());
+    }
+    let fabric_root = repeat32(field("fabric_root")?)?;
+    let suite_id = number(field("suite_id")?)?;
+    let current_pubkey = repeat_bytes(field("current_pubkey")?)?;
+    let blind = repeat32(field("blind")?)?;
+    let narrow = |what: &str| format!("the `{what}` of the record of the vector is out of its width");
+    Ok(mt_state::layout::Record {
+        segment_bitmap,
+        last_active_segment: u32::try_from(last_active_segment)
+            .map_err(|_| narrow("last_active_segment"))?,
+        opened_window,
+        own_height: u32::try_from(own_height).map_err(|_| narrow("own_height"))?,
+        operator_nf: *right,
+        fabric_root,
+        suite_id: u16::try_from(suite_id).map_err(|_| narrow("suite_id"))?,
+        current_pubkey,
+        blind,
+    })
 }
 
 // Every derivation the stage of the objects owns: the note and its nullifier, the nullifiers of the
@@ -2102,6 +2162,65 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
             compare_hash(label, expected, &computed)?;
         }
     }
+
+    // The vector of a candidacy: a record carrying the right of a branch, alone in the tree of
+    // records at the key its commitment is, and a machine's secret beside it — each value the
+    // public input holds, and the digest of that input in the order the set gives it.
+    let candidacy_rows = parse_labeled(md, CANDIDACY_HEADER)?;
+    let candidacy_inputs = labeled(&candidacy_rows, "machine_secret")?;
+    let candidacy_secret = repeat32(bare_input(candidacy_inputs))?;
+    let candidacy_right = input32(candidacy_inputs, "operator_secret")?;
+    let candidacy_window = number(input_of(candidacy_inputs, "window")?)?;
+    let candidacy_machine = input32(candidacy_inputs, "node_commit")?;
+    let candidacy_suite = u16::try_from(number(input_of(candidacy_inputs, "suite_id")?)?)
+        .map_err(|_| "the suite of the vector of a candidacy is no u16".to_string())?;
+    let right = mt_derive::nullifier::operator(&candidacy_right);
+    let record = record_of_the_vector(labeled(&candidacy_rows, "record")?, &right)?;
+    let serialized = mt_state::Layout::bytes(&record)
+        .map_err(|e| format!("the record of the vector of a candidacy is no record: {e:?}"))?;
+    let commitment = mt_proof::records::leaf(&serialized);
+    let alone = std::iter::once((commitment.bytes(), commitment)).collect();
+    let record_root = mt_proof::records::root_of_leaves(&alone);
+    let naming = mt_derive::nullifier::machine_halves(&candidacy_secret).1;
+    compare_hash(
+        "operator_nullifier of the candidacy",
+        labeled(&candidacy_rows, "operator_nullifier of the candidacy")?,
+        &right,
+    )?;
+    compare_hash(
+        "record_commit of the candidacy",
+        labeled(&candidacy_rows, "record_commit of the candidacy")?,
+        &commitment.bytes(),
+    )?;
+    compare_hash(
+        "record_root of the candidacy",
+        labeled(&candidacy_rows, "record_root of the candidacy")?,
+        &record_root.bytes(),
+    )?;
+    compare_hash(
+        "naming_half of the candidacy",
+        labeled(&candidacy_rows, "naming_half of the candidacy")?,
+        &naming,
+    )?;
+    // The input the circuit of an admission is verified over, laid by the door every verifier lays
+    // it with: a public input ordered otherwise is a proof of another statement.
+    let as_digest = |bytes: &[u8; 32]| {
+        mt_proof::poseidon::Digest::of_bytes(bytes)
+            .ok_or_else(|| "a value of the vector of a candidacy is no digest of the family".to_string())
+    };
+    let public = mt_proof::circuit::admission::public_of(
+        candidacy_window,
+        &record_root,
+        &as_digest(&naming)?,
+        &candidacy_machine,
+        &as_digest(&right)?,
+        candidacy_suite,
+    );
+    compare_hash(
+        "SHA-256(public input)",
+        labeled(&candidacy_rows, "SHA-256(public input)")?,
+        &sha256(&public),
+    )?;
 
     // The nullifier that spends one version of a record. The commitment of the vector stands as
     // thirty-two distinct bytes, so a reading from the far end and a swap of the two parts both
@@ -2198,6 +2317,42 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
         labeled(&claim_rows, "admitted_root (two leaves)")?,
         &mt_proof::admitted::root_of(&[machine_pk, second], depth)
             .ok_or("a half of the vector is no digest of the family")?
+            .bytes(),
+    )?;
+    // The tree of credited rights: the part of one window, its leaf, and the roots over nothing,
+    // over that part alone and over the parts of two windows of one machine in the order they were
+    // credited — the last pins the pairing of a level, and that two windows of one machine are two
+    // leaves.
+    let credited_part = |window: u64| {
+        mt_derive::nullifier::part(&claim_secret, window)
+            .ok_or("the spending half of the vector is no digest of the family")
+    };
+    let (of_one, of_two) = (credited_part(1000)?, credited_part(1001)?);
+    compare_hash("part_nf(1000)", labeled(&claim_rows, "part_nf(1000)")?, &of_one)?;
+    compare_hash(
+        "credited_leaf(1000)",
+        labeled(&claim_rows, "credited_leaf(1000)")?,
+        &mt_proof::credited::leaf(&of_one)
+            .ok_or("a part of the vector is no digest of the family")?
+            .bytes(),
+    )?;
+    compare_hash(
+        "credited_root (empty)",
+        labeled(&claim_rows, "credited_root (empty)")?,
+        &mt_proof::credited::empty_root().bytes(),
+    )?;
+    compare_hash(
+        "credited_root (one leaf at 0)",
+        labeled(&claim_rows, "credited_root (one leaf at 0)")?,
+        &mt_proof::credited::root_of(&[of_one], depth)
+            .ok_or("a part of the vector is no digest of the family")?
+            .bytes(),
+    )?;
+    compare_hash(
+        "credited_root (two leaves)",
+        labeled(&claim_rows, "credited_root (two leaves)")?,
+        &mt_proof::credited::root_of(&[of_one, of_two], depth)
+            .ok_or("a part of the vector is no digest of the family")?
             .bytes(),
     )?;
     for (label, expected) in &claim_rows {
@@ -2391,6 +2546,37 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
         labeled(&tag_rows, "pipe_key(pipe_secret(test_secret, W + 1), W + 1)")?,
         &mt_derive::delivery::pipe_key(&walked, tw + 1),
     )?;
+    // The heal of the walk at the window of the answering letter (NET-25), the walk on from it, and
+    // the heal of the window after, which is the mistake the negative line freezes.
+    let heal = labeled(&tag_rows, "ss_h")?;
+    let ss_h = repeat32(bare_input(heal))?;
+    let pk_h = fixed_part(input_of(heal, "pk_h")?)?;
+    let ct_h = fixed_part(input_of(heal, "ct_h")?)?;
+    let healed = mt_derive::tag::pipe_heal(&walked, &ss_h, &pk_h, &ct_h);
+    compare_hash(
+        "pipe_heal(pipe_secret(test_secret, W + 1))",
+        labeled(&tag_rows, "pipe_heal(pipe_secret(test_secret, W + 1))")?,
+        &healed,
+    )?;
+    compare_hash(
+        "pipe_secret(healed, W + 3)",
+        labeled(&tag_rows, "pipe_secret(healed, W + 3)")?,
+        &mt_derive::tag::pipe_secret_step(&healed),
+    )?;
+    let healed_late = mt_derive::tag::pipe_heal(
+        &mt_derive::tag::pipe_secret_step(&walked),
+        &ss_h,
+        &pk_h,
+        &ct_h,
+    );
+    compare_hash(
+        "pipe_heal(pipe_secret(test_secret, W + 2))",
+        labeled(&tag_rows, "pipe_heal(pipe_secret(test_secret, W + 2))")?,
+        &healed_late,
+    )?;
+    if healed_late == healed {
+        return Err("the negative vector of a heal equals the positive one".to_string());
+    }
     // The two named wrong walks: the secret held unchanged, and the secret walked once per unit
     // of height. Each yields the value frozen for it, and neither yields the tag of the window.
     let of_window = mt_derive::tag::tag(&one, tw + 1);
@@ -4868,9 +5054,9 @@ pub fn check_identifiers(md: &str) -> Result<(), String> {
     Ok(())
 }
 
-// The six roots the Genesis State Hash consumes, against the frozen empty root of each tree. Every
-// one of the six is frozen elsewhere in the set with its own construction; what was missing is the
-// sentence tying the six a genesis actually carries to those values. Without it a table could pick
+// The seven roots the Genesis State Hash consumes, against the frozen empty root of each tree. Every
+// one of the seven is frozen elsewhere in the set with its own construction; what was missing is the
+// sentence tying the seven a genesis actually carries to those values. Without it a table could pick
 // its doors one way and the set freeze them another, and no build would say a word — which is how a
 // tree of the proof hash came to be folded under the SHA-256 doors of the state with its own
 // domains, the one arrangement the set names a defect in as many words.
@@ -4884,12 +5070,13 @@ pub fn check_genesis_roots(md: &str) -> Result<(), String> {
     let sparse_top = format!("empty_internal({})", mt_merkle::KEY_BITS);
     let append_top = format!("empty_internal({})", note_tree_depth()?);
 
-    let frozen: [(Table, &str); 6] = [
+    let frozen: [(Table, &str); 7] = [
         (Table::Notes, "note_root (empty)"),
         (Table::Nullifiers, sparse_top.as_str()),
         (Table::Records, "record empty_internal(256)"),
         (Table::Machines, sparse_top.as_str()),
         (Table::Admitted, "admitted_root (empty)"),
+        (Table::Credited, "credited_root (empty)"),
         (Table::Operations, append_top.as_str()),
     ];
 
@@ -4898,7 +5085,7 @@ pub fn check_genesis_roots(md: &str) -> Result<(), String> {
         let rows = match *table {
             Table::Notes => &note_rows,
             Table::Records => &record_rows,
-            Table::Admitted => &claim_rows,
+            Table::Admitted | Table::Credited => &claim_rows,
             _ => &merkle_rows,
         };
         compare_hash(
@@ -4908,7 +5095,7 @@ pub fn check_genesis_roots(md: &str) -> Result<(), String> {
         )?;
         if slot != &table.empty_root() {
             return Err(format!(
-                "the six of a genesis and the empty root of {table:?} are two values"
+                "the seven of a genesis and the empty root of {table:?} are two values"
             ));
         }
     }

@@ -218,7 +218,7 @@ struct MessageContextOverlay: View {
     /// style — the person chose blindly. The question stands where the long-press answer stood.
     let canDeleteForEveryone: Bool
     let ladder: Bool
-    /// A coin letter of mine on its way is offered no deletion (the coin audit's first point, 05.10.2026 21:4x MSK: MTCoinSend.travels).
+    /// A coin letter of mine on its way is offered no deletion (the coin audit's first point, 05.10.2026 18:4x UTC: MTCoinSend.travels).
     var canDelete = true
     var onDeleteMine: () -> Void
     var onDeleteEveryone: () -> Void

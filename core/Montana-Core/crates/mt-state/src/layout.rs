@@ -482,6 +482,9 @@ layout! {
         record_root: [u8; 32],
         machine_root: [u8; 32],
         admitted_root: [u8; 32],
+        /// The root of the tree of credited rights once this proposal has appended the parts of
+        /// the cement of the window before it: the root a right of that window walks to.
+        credited_root: [u8; 32],
         operations_root: [u8; 32],
         /// The identifier of the roll: the frames the window applied in the order they applied, then
         /// the parts of its cement. Inside the name, since it is what the window decided, and a
@@ -974,11 +977,21 @@ layout! {
 
 // ── The committed record of a person ───────────────────────────────────────────────────────────
 
-fn record_continuity(record: &Record) -> Result<(), ObjectError> {
-    let maximum = scalar("max_entry_segments")
+// The width of the bitmap a record holds: `max_entry_segments`, the most segments any gate demands.
+fn continuity_width() -> Option<u32> {
+    scalar("max_entry_segments")
         .and_then(|n| u32::try_from(n).ok())
         .filter(|&n| n != 0 && n <= u64::BITS)
-        .ok_or(ObjectError::RecordContinuity)?;
+}
+
+// The low `count` bits of a bitmap: the segments of a period of `count` ending with the newest.
+fn low_bits(count: u32) -> u64 {
+    let older = u64::BITS.saturating_sub(count);
+    u64::MAX.checked_shr(older).unwrap_or(0)
+}
+
+fn record_continuity(record: &Record) -> Result<(), ObjectError> {
+    let maximum = continuity_width().ok_or(ObjectError::RecordContinuity)?;
     if record.segment_bitmap.checked_shr(maximum).unwrap_or(0) != 0 {
         return Err(ObjectError::RecordContinuity);
     }
@@ -995,6 +1008,7 @@ layout! {
         last_active_segment: u32,
         opened_window: u64,
         own_height: u32,
+        operator_nf: [u8; 32],
         fabric_root: [u8; 32],
         suite_id: u16,
         current_pubkey: bytes(size::SIGNING_PUBLIC_KEY),
@@ -1003,22 +1017,44 @@ layout! {
 }
 
 impl Record {
-    // What a gate compares is the number of segments lived, never a run of them, and the bitmap is
-    // read only after shifting it by the distance from the segment it was written against to the
-    // current one: a bitmap read without the shift measures continuity against a past that has
-    // moved.
-    pub fn segments_lived(&self, current_segment: u32) -> u32 {
+    // What a gate compares is the number of segments lived, never a run of them. The rules of
+    // continuity read it (Canon, "The rules of continuity", rules 2 and 3; constitution records 297
+    // and 300). Bit `i` stands for the segment `last_active_segment - i`, so the newest is bit 0.
+    // The bitmap is shifted left by the distance from the segment it was written against to the
+    // current one, and only the low `in_force` bits are counted: the segments of the period in force,
+    // which ends with the current segment. A bitmap read without the shift measures continuity
+    // against a past that has moved. One read without the mask counts segments lived before the
+    // period began.
+    pub fn segments_lived(&self, current_segment: u32, in_force: u32) -> u32 {
         // Refuse reserved bits before shifting: otherwise an invented bit can
         // enter the permitted region merely by waiting. In-memory constructors
         // have not necessarily passed through the layout decoder.
+        let Some(width) = continuity_width() else {
+            return 0;
+        };
         if record_continuity(self).is_err() || current_segment < self.last_active_segment {
             return 0;
         }
         let distance = current_segment - self.last_active_segment;
-        if distance >= 64 {
-            return 0;
+        // A period wider than the bitmap reads no segment the bitmap could not have kept: an
+        // action drops what passes the width, and a reading does not count it either.
+        let shifted = self.segment_bitmap.checked_shl(distance).unwrap_or(0);
+        (shifted & low_bits(in_force.min(width))).count_ones()
+    }
+
+    // The bitmap and the segment an action applied in `segment` leaves (rule 2). The bitmap shifts
+    // left by the distance from the segment it was written against, bit 0 is set for the segment
+    // acted in, and whatever passes the width of the bitmap leaves it. An action in the segment
+    // already written changes nothing. An action in a segment before it is no lawful transition and
+    // yields nothing, since `last_active_segment` never decreases.
+    pub fn continuity_after_action(&self, segment: u32) -> Option<(u64, u32)> {
+        let width = continuity_width()?;
+        if record_continuity(self).is_err() || segment < self.last_active_segment {
+            return None;
         }
-        (self.segment_bitmap >> distance).count_ones()
+        let distance = segment - self.last_active_segment;
+        let shifted = self.segment_bitmap.checked_shl(distance).unwrap_or(0);
+        Some(((shifted | 1) & low_bits(width), segment))
     }
 }
 
@@ -1078,7 +1114,7 @@ mod tests {
         assert_eq!(
             Proposal::expected_len(),
             8 + 4
-                + 9 * 32
+                + 10 * 32
                 + 8
                 + 32
                 + 8
@@ -1091,7 +1127,7 @@ mod tests {
         // The decided fields stand from the height through the suite, the census among them.
         assert_eq!(
             super::super::PROPOSAL_DECIDED_LEN,
-            8 + 4 + 8 * 32 + 8 + 32 + 8 + censuses * (32 + 8) + 2
+            8 + 4 + 9 * 32 + 8 + 32 + 8 + censuses * (32 + 8) + 2
         );
         assert_eq!(Ballot::expected_len(), 8 + 32 + 8 + super::super::PROOF_LEN);
         assert_eq!(
@@ -1120,6 +1156,7 @@ mod tests {
             record_root: [0x55; 32],
             machine_root: [0x66; 32],
             admitted_root: [0x77; 32],
+            credited_root: [0xAA; 32],
             operations_root: [0x88; 32],
             roll: [0xBB; 32],
             admitted_count: 3,
@@ -1344,6 +1381,7 @@ mod tests {
                 last_active_segment: 3,
                 opened_window: 1000,
                 own_height: 4,
+                operator_nf: [0x22; 32],
                 fabric_root: [0x77; 32],
                 suite_id: 1,
                 current_pubkey: vec![0xA1; mt_codec::size::SIGNING_PUBLIC_KEY],
@@ -1616,9 +1654,9 @@ mod tests {
             ..a_proposal()
         };
         let expected = Proposal::expected_len();
-        // The fixed fields: the window, the version, nine digests, the admitted count, the cement
+        // The fixed fields: the window, the version, ten digests, the admitted count, the cement
         // pair, the census of the standing — a root and a count per census window — and the suite.
-        let fixed = 8 + 4 + 9 * 32 + 8 + 32 + 8 + count_of("standing_censuses") * (32 + 8) + 2;
+        let fixed = 8 + 4 + 10 * 32 + 8 + 32 + 8 + count_of("standing_censuses") * (32 + 8) + 2;
         assert_eq!(empty.encode().len(), fixed);
         assert_eq!(
             empty.bytes(),
@@ -1790,25 +1828,83 @@ mod tests {
         );
     }
 
-    #[test]
-    fn the_segments_of_a_record_are_counted_after_the_shift() {
-        // Four segments lived, written against segment ten. Read at segment ten the count is four;
-        // read at twelve, two of them have moved out of the window.
-        let record = Record {
-            segment_bitmap: 0b1111,
-            last_active_segment: 10,
+    fn a_record_of(segment_bitmap: u64, last_active_segment: u32) -> Record {
+        Record {
+            segment_bitmap,
+            last_active_segment,
             opened_window: 0,
             own_height: 0,
+            operator_nf: [0; 32],
             fabric_root: [0; 32],
             suite_id: 1,
             current_pubkey: vec![0; mt_codec::size::SIGNING_PUBLIC_KEY],
             blind: [0; 32],
-        };
-        assert_eq!(record.segments_lived(10), 4);
-        assert_eq!(record.segments_lived(12), 2);
-        assert_eq!(record.segments_lived(14), 0);
+        }
+    }
+
+    #[test]
+    fn the_segments_of_a_record_are_counted_after_the_shift() {
+        // Four segments lived, written against segment ten: bit 0 is segment ten and bit 3 is
+        // segment seven (rule 2, records 297 and 300). With fourteen in force they all count until
+        // the period, which ends with the current segment, leaves segment seven behind at twenty-one.
+        let record = a_record_of(0b1111, 10);
+        assert_eq!(record.segments_lived(10, 14), 4);
+        assert_eq!(record.segments_lived(20, 14), 4);
+        assert_eq!(record.segments_lived(21, 14), 3);
+        assert_eq!(record.segments_lived(23, 14), 1);
+        assert_eq!(record.segments_lived(24, 14), 0);
         // A bitmap read without the shift would answer four at every segment, which is the defect
-        // the shift exists to prevent.
-        assert_ne!(record.segments_lived(12), record.segments_lived(10));
+        // the shift exists to prevent. The old reader shifted right, read the low bits as the oldest,
+        // and answered nought at twenty.
+        assert_ne!(record.segments_lived(24, 14), record.segments_lived(10, 14));
+        // A segment before the one the bitmap is written against reads nothing.
+        assert_eq!(record.segments_lived(9, 14), 0);
+    }
+
+    #[test]
+    fn segments_lived_before_the_period_in_force_do_not_count() {
+        // Ten segments lived, the newest of them twenty segments before the segment written against
+        // (bits 20 to 29), as Agent 492 reported of the old reader: with fourteen in force none
+        // count, and with the whole width in force all ten do (rule 3, records 297 and 300).
+        let record = a_record_of(0b11_1111_1111 << 20, 100);
+        assert_eq!(record.segments_lived(100, 14), 0);
+        assert_eq!(record.segments_lived(100, 25), 5);
+        assert_eq!(record.segments_lived(100, 56), 10);
+        // A period wider than the bitmap counts nothing the bitmap could not have kept: at segment
+        // 127 the record's segments are 71 to 80, and 71 lies past the width of fifty-six.
+        assert_eq!(record.segments_lived(127, 64), 9);
+        assert_eq!(record.segments_lived(100, 0), 0);
+    }
+
+    #[test]
+    fn an_action_writes_its_segment_into_bit_nought() {
+        // Segments ten, nine and seven lived (rule 2, records 297 and 300).
+        let record = a_record_of(0b1011, 10);
+        // An action in the segment already written changes nothing.
+        assert_eq!(record.continuity_after_action(10), Some((0b1011, 10)));
+        // Two segments on, the bitmap shifts left by two and segment twelve takes bit 0.
+        assert_eq!(record.continuity_after_action(12), Some((0b10_1101, 12)));
+        // A segment before the one written against is no lawful transition.
+        assert_eq!(record.continuity_after_action(9), None);
+        // Far enough on, every older segment has passed the width and only the new one stands.
+        assert_eq!(record.continuity_after_action(10 + 56), Some((1, 66)));
+        assert_eq!(record.continuity_after_action(10 + 64), Some((1, 74)));
+        assert_eq!(
+            record.continuity_after_action(u32::MAX),
+            Some((1, u32::MAX))
+        );
+        // A full bitmap stays full: the oldest segment leaves as the newest enters, and the
+        // successor stands inside the width the layout holds a record to.
+        let width = continuity_width().expect("the Decree names it");
+        let full = a_record_of(low_bits(width), 10);
+        let (bitmap, last) = full.continuity_after_action(11).expect("lawful");
+        assert_eq!((bitmap, last), (low_bits(width), 11));
+        assert!(a_record_of(bitmap, last).bytes().is_ok());
+        // What an action writes is what a gate reads: segment twelve and the three before it.
+        let (bitmap, last) = record.continuity_after_action(12).expect("lawful");
+        let next = a_record_of(bitmap, last);
+        assert_eq!(next.segments_lived(12, 14), 4);
+        assert_eq!(next.segments_lived(12, 1), 1);
+        assert_eq!(next.segments_lived(12, 3), 2);
     }
 }
