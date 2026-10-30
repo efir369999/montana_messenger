@@ -62,8 +62,8 @@
    "item": 9,
    "report": "09-AUTHENTICATED-JOIN.md",
    "requirement": "Authenticate first connection and fast sync",
-   "status": "open",
-   "summary": "A fresh node must authenticate history from the network's trusted beginning or an authenticated checkpoint. A server's own advertised root does not authenticate its snapshot."
+   "status": "closed",
+   "summary": "Closed on 2026-10-30 on the chairman's verdict of #20: a node that holds nothing joins the running chain from an anchor of two consecutive final proposals, judges every certificate from there at the one door (pulse::join, certificate::walk) and takes the tables of its head against the head's roots; a self-rooted plane, one altered credited leaf and a forged anchor are refused. Tests on main 2f5a1a2: run a683-k789-j20 on Lauterbourg-3 -- step 1 cargo test --release -p mt-boundary rc 0 (19:56:17 UTC), step 2 cargo test --release -p montana-node with a_device_joins_the_running_chain, a_walk_from_an_anchor, a_device_takes_the_plane_of_its_head, a_machine_away_walks_back_from_its_own_anchor rc 0 (20:41:50 UTC), 5 passed, 0 failed. A clean node on a host, network run of 13-NETWORK-REPRODUCTION.md steps S2 and S7 on Lauterbourg-2 and, separately, Lauterbourg-3: S2 held on both (windows 0..2 final, one name, cement 3..4 of 4); in S7 a forged anchor was refused (rc 1) and wrote no chain, and a clean machine started from the honest anchor walked from window 1 to the head at window 3 on both; each run held 55 of 56 expectations -- the one failed check compared the anchor's two handed-in windows, is corrected in PR #78 (8ca8173), and holds on the runs' evidence (walked windows carry a's names, the first links to the anchor). The iOS client's MontanaCore.xcframework is built from 2f5a1a2 and carries mtc_machine_join (montana_core.h:75), published in build 2325. Our own reproduction, not an external audit. Outside this closure: the client opening the door from its screens, and the run on several separate hosts (item 13)."
   },
   {
    "item": 10,
