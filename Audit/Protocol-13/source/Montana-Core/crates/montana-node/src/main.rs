@@ -8,12 +8,26 @@ const USAGE: &str = "\
 montana-node — a machine of Montana
 
   montana-node --data <directory> --listen <address> [--acquaintance <line>]...
+               [--anchor <earlier> --anchor <later>]
                [--admitted <half>]... [--open] [--windows <n>]
 
+  --status               read the live local reading (requires --data): a closed window or a
+                         wait inside the patience exits 0, a stall exits 1, 2 or 4
   --data <directory>     where this machine keeps what it holds between starts
   --listen <address>     where it answers, as an address and a port
   --acquaintance <line>  a machine to reach, as its operator handed it over:
                          an address, an at-sign and the key it answers with
+  --anchor <file>        given twice, the earlier first: the proposals of two consecutive
+                         final windows, as their operator handed them over. A machine
+                         keeps every proposal it took as one file of <data>/proposals,
+                         named by its window in twenty digits; its last final window
+                         is the one it names at its start, \"holding the chain to window
+                         <n>\". That file and the one before it are an anchor, and only
+                         they are handed over: the rest of <data> is the machine's own.
+                         This machine walks from it to the head over the machines it
+                         reached, verifying every certificate, before it does anything
+                         else; the trust in the anchor is the trust placed in whoever
+                         handed it over.
   --admitted <half>      the naming half of a machine admitted to the window, in
                          hexadecimal, as its operator handed it over. Given once for
                          every machine of the cohort — this one included — it is what
@@ -61,10 +75,18 @@ fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(said) => {
-            eprintln!("montana-node: {said}");
-            ExitCode::FAILURE
+            eprintln!("{said}");
+            ExitCode::from(
+                montana_node::say::Verdict::from_line(&said).map_or(1, |on| on.exit_code()),
+            )
         }
     }
+}
+
+// The owner-only file of details stands from here on: the start is past every refusal.
+fn stand() -> Result<(), String> {
+    montana_node::private::stand()
+        .map_err(|e| format!("the owner-only file of details does not stand: {e}"))
 }
 
 fn run() -> Result<(), String> {
@@ -73,28 +95,45 @@ fn run() -> Result<(), String> {
         print!("{USAGE}");
         return Ok(());
     }
-    let (configuration, payment) = read_configuration(&held)?;
+    if held.iter().any(|arg| arg == "--status") {
+        return read_status(&held);
+    }
+    let (configuration, payment, anchor) = read_configuration(&held)?;
+    // The anchor is read before the machine starts, so an anchor that is no anchor stops an
+    // operator before anything of this machine is drawn or kept.
+    let anchor = match anchor.as_slice() {
+        [] => None,
+        [earlier, later] => Some(read_anchor(earlier, later)?),
+        _ => return Err("--anchor is given twice, the earlier proposal first".to_string()),
+    };
 
     let (machine, born) = Machine::start(&configuration).map_err(said)?;
+    let machine = std::sync::Arc::new(machine);
     if born {
         println!("this machine was born: it drew its secret and will not draw another");
     }
-    println!("answering at {}", machine.address().map_err(said)?);
+    // The address of this machine, its acquaintance, its digits and its half are details: they go
+    // to the owner-only file of the data directory and never to a default line (#22, K1). The file
+    // is named here and created by `stand` once the start is past its refusals, since a refused
+    // start writes nothing (Consensus, "The cold start").
+    montana_node::private::keep_at(configuration.data.as_path());
+    let address = machine.address().map_err(said)?;
+    montana_node::private::say("answering at its door", || {
+        format!("answering at {address}")
+    });
     // Two values with two purposes: the line a machine reads, and the digits a person compares.
-    println!(
-        "hand this to another operator: {}",
-        machine.acquaintance().map_err(said)?
-    );
-    println!(
-        "check these digits with them by voice: {}",
-        machine.fingerprint()
-    );
+    let acquaintance = machine.acquaintance().map_err(said)?;
+    let digits = machine.fingerprint();
     // The half this machine is named by in the tree of admitted machines. It passes between
-    // operators exactly as the acquaintance above does, and it names no owner, no address and no
-    // person.
-    println!(
-        "hand this over too, to stand in one window: {}",
-        hex(&machine.naming_half().map_err(said)?)
+    // operators exactly as the acquaintance above does.
+    let half = hex(&machine.naming_half().map_err(said)?);
+    montana_node::private::say(
+        "what to hand to another operator stands in private.log of the data directory",
+        || {
+            format!(
+                "hand this to another operator: {acquaintance}\ncheck these digits with them by voice: {digits}\nhand this over too, to stand in one window: {half}"
+            )
+        },
     );
     match machine.head().map_err(said)? {
         Some(window) => println!("holding the chain to window {window}"),
@@ -109,18 +148,47 @@ fn run() -> Result<(), String> {
         match machine.reach_and_hold(line) {
             Ok(transcript) => {
                 let shown: String = transcript.iter().map(|b| format!("{b:02x}")).collect();
-                println!("reached {line}\n  transcript {shown}");
+                montana_node::private::say("reached an acquaintance", || {
+                    format!("reached {line}\n  transcript {shown}")
+                });
             }
             // A machine that did not answer is one line of an operator's morning and not a reason
             // to stop: the others may answer, and this one is dialled again once the machine lives.
             Err(e) => {
-                eprintln!("could not reach {line}: {}", said(e));
+                eprintln!("could not reach an acquaintance");
+                let why = said(e);
+                montana_node::private::note(|| format!("could not reach {line}: {why}"));
                 unreached.push(line.clone());
             }
         }
     }
 
+    // **A machine handed an anchor walks to the head before it does anything else.** Consensus, "The
+    // join": it asks the machines it reached for what stands at the points of every window after the
+    // anchor, judges every answer and trusts none, and takes as its head the newest proposal whose
+    // certificate verified. A walk that refuses stops the machine: a machine that went on to live
+    // a window would be living it on a chain it could not verify. Handed a cohort, it also takes the
+    // state of that head from them, against its roots, where it holds none to replay from.
+    let cohort = if configuration.admitted.is_empty() {
+        None
+    } else {
+        Some(montana_node::pulse::Cohort::of(&configuration.admitted).map_err(said)?)
+    };
+    if let Some(anchor) = anchor {
+        let waits = montana_node::pulse::WAITS_UP_TO;
+        let head = match &cohort {
+            Some(cohort) => montana_node::pulse::join_under(&machine, &anchor, cohort, waits),
+            None => montana_node::pulse::join(&machine, &anchor, waits),
+        }
+        .map_err(said)?;
+        println!(
+            "walked from window {} to the head at window {}",
+            anchor.later.window, head.later.window
+        );
+    }
+
     if let Some(asked) = payment {
+        stand()?;
         return pay_and_report(&machine, &asked);
     }
 
@@ -130,17 +198,19 @@ fn run() -> Result<(), String> {
     // A machine handed no cohort answers its door and lives no window: it has no tree of admitted
     // machines to prove its presence against, and a machine that made one up would be proving
     // something no other machine holds.
-    if configuration.admitted.is_empty() {
+    let Some(cohort) = cohort else {
         println!("no machine was named as admitted, so this one lives no window");
+        stand()?;
         return machine.serve().map_err(said);
-    }
-    let cohort = montana_node::pulse::Cohort::of(&configuration.admitted).map_err(said)?;
+    };
     let half = machine.naming_half().map_err(said)?;
+    // The refusal names where the half stands and not the half (#22, K1): a refused start writes
+    // nothing, so the owner-only file is not stood here, and a start without --admitted writes it.
     if !cohort.holds(&half) {
         return Err(format!(
-            "this machine is not among the {} named as admitted; hand its own half over too: {}",
+            "this machine is not among the {} named as admitted; hand its own half over too: a start without --admitted writes it to {} of the data directory",
             cohort.count(),
-            hex(&half)
+            montana_node::private::FILE
         ));
     }
     // Where this machine begins, decided before it enters anything: window zero only where its
@@ -148,10 +218,31 @@ fn run() -> Result<(), String> {
     // and no window at all for a machine holding nothing that was not asked to open (Consensus,
     // "The cold start").
     let from = montana_node::pulse::first_window(&machine, configuration.open).map_err(said)?;
+    // A machine whose plane came from the network stakes and proposes nothing until the stride of the
+    // horizon changes, and follows the decided rolls until then (the author's decision 332 (b),
+    // constitution record 339).
+    let waited = from;
+    let from = montana_node::pulse::follow_to_the_next_stride(
+        &machine,
+        from,
+        montana_node::pulse::WAITS_UP_TO,
+    )
+    .map_err(said)?;
+    if from != waited {
+        println!("followed the decided rolls to window {from}, past the change of the stride of the horizon");
+    }
+    stand()?;
     println!(
         "living from window {from} in a cohort of {}",
         cohort.count()
     );
+    // The status endpoint writes its locator into the store, so it opens only once every refusal
+    // of a start is behind: a refused start writes nothing (Consensus, "The cold start"). A machine
+    // that lives no window has no pulse to read and reads `no diagnostics`.
+    #[cfg(unix)]
+    let _status =
+        montana_node::status::Server::open(&configuration.data, std::sync::Arc::clone(&machine))
+            .map_err(|error| format!("no diagnostics: {error}"))?;
 
     // The door and the pulse stand at once: the door answers the links strangers open, and the
     // pulse asks over the links this machine opened. Neither waits on the other, which is what
@@ -163,11 +254,7 @@ fn run() -> Result<(), String> {
     machine
         .enter_round(from, montana_node::pulse::opening_chain(), 0)
         .map_err(said)?;
-    let machine = std::sync::Arc::new(machine);
-    let answering = std::sync::Arc::clone(&machine);
-    std::thread::spawn(move || {
-        let _ = answering.serve();
-    });
+    machine.answer_in_background();
     for line in unreached {
         montana_node::pulse::reach_again(std::sync::Arc::clone(&machine), line);
     }
@@ -202,14 +289,19 @@ fn run() -> Result<(), String> {
                             &rate_secret,
                             Box::new(move |settled| match settled {
                                 Ok(minted) => {
-                                    println!(
-                                        "the right of window {of_the_window} is a note now: {} at position {}",
-                                        minted.value, minted.position
+                                    montana_node::private::say(
+                                        &format!("the right of window {of_the_window} is a note now"),
+                                        || {
+                                            format!(
+                                                "the right of window {of_the_window} is a note of {} at position {}",
+                                                minted.value, minted.position
+                                            )
+                                        },
                                     );
                                     if let Ok(balance) = montana_wallet::Wallet::open(&wallet_at)
                                         .and_then(|wallet| wallet.balance())
                                     {
-                                        println!("this wallet holds {balance}");
+                                        montana_node::private::note(|| format!("this wallet holds {balance}"));
                                     }
                                 }
                                 Err(e) => println!("the right of window {of_the_window} stands unredeemed: {e:?}"),
@@ -295,13 +387,16 @@ fn run() -> Result<(), String> {
             "window {} closed after {} rounds on a cement naming {} machines",
             one.window, one.rounds, one.living
         );
-        match &one.right {
-            Some(right) => println!(
-                "  it credits {} coin to this machine, accepted in window {}",
-                right.worth, right.accepted_in
+        montana_node::private::note(|| match &one.right {
+            Some(right) => format!(
+                "window {} credits {} coin to this machine, accepted in window {}",
+                one.window, right.worth, right.accepted_in
             ),
-            None => println!("  this machine's part is not in its cement, so it took no coin"),
-        }
+            None => format!(
+                "window {}: this machine's part is not in its cement, so it took no coin",
+                one.window
+            ),
+        });
     }
     Ok(())
 }
@@ -408,6 +503,20 @@ fn read32(said: &str) -> Result<[u8; 32], String> {
     Ok(out)
 }
 
+// The two proposals of an anchor, each read whole off the file it was handed in and through the one
+// door of its layout. Whether they are consecutive, and everything after them, is the walk's.
+fn read_anchor(earlier: &str, later: &str) -> Result<montana_node::certificate::Anchor, String> {
+    let proposal = |at: &str| -> Result<mt_state::layout::Proposal, String> {
+        let bytes = std::fs::read(at).map_err(|e| format!("--anchor {at}: {e}"))?;
+        <mt_state::layout::Proposal as mt_state::Layout>::parse(&bytes)
+            .map_err(|e| format!("--anchor {at} is no proposal: {e:?}"))
+    };
+    Ok(montana_node::certificate::Anchor {
+        earlier: proposal(earlier)?,
+        later: proposal(later)?,
+    })
+}
+
 fn said(e: NodeError) -> String {
     match e {
         NodeError::Store(e) => format!("what this machine keeps: {e:?}"),
@@ -426,6 +535,7 @@ fn said(e: NodeError) -> String {
             "this machine could not build {what}, and answers nothing rather than answering with \
              what a verifier would refuse"
         ),
+        NodeError::Stalled { on, what } => format!("{on}: {what}"),
         NodeError::Refused { what } => format!("refused: {what}"),
         NodeError::UnreconciledCement => {
             "waiting: beacon cement does not match the verified heavy attestations; no signature or round transition is authorized".to_string()
@@ -437,8 +547,11 @@ fn said(e: NodeError) -> String {
 // What an operator typed. A flag naming no value, or a flag this machine does not know, is an
 // error rather than a default: a machine started with a misspelt flag and a default beside it is a
 // machine doing something its operator did not ask for.
-fn read_configuration(held: &[String]) -> Result<(Configuration, Option<Asked>), String> {
+type Typed = (Configuration, Option<Asked>, Vec<String>);
+
+fn read_configuration(held: &[String]) -> Result<Typed, String> {
     let mut data: Option<String> = None;
+    let mut anchor: Vec<String> = Vec::new();
     let mut listen: Option<String> = None;
     let mut acquaintances: Vec<String> = Vec::new();
     let mut pay: Option<String> = None;
@@ -472,6 +585,10 @@ fn read_configuration(held: &[String]) -> Result<(Configuration, Option<Asked>),
             }
             "--acquaintance" => {
                 acquaintances.push(value()?);
+                at += 2;
+            }
+            "--anchor" => {
+                anchor.push(value()?);
                 at += 2;
             }
             "--admitted" => {
@@ -605,5 +722,78 @@ fn read_configuration(held: &[String]) -> Result<(Configuration, Option<Asked>),
             })
         }
     };
-    Ok((configuration, asked))
+    Ok((configuration, asked, anchor))
+}
+
+// The status query never opens Store: it must not create a machine or acquire its data lock.
+fn read_status(args: &[String]) -> Result<(), String> {
+    let mut args = args.iter();
+    let mut data = None;
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--status" => {}
+            "--data" if data.is_none() => data = args.next(),
+            _ => return Err("no diagnostics: --status requires only --data DIR".to_string()),
+        }
+    }
+    let data = data.ok_or("no diagnostics: --status requires --data DIR")?;
+    #[cfg(unix)]
+    {
+        let status =
+            montana_node::status::read(std::path::Path::new(data)).map_err(|on| on.to_string())?;
+        // A close and a wait inside the patience are healthy and exit 0; a stall exits its code.
+        if status.exit_code() == 0 {
+            println!("{status}");
+            Ok(())
+        } else {
+            Err(status.to_string())
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = data;
+        Err("no diagnostics: this platform has no local status door".to_string())
+    }
+}
+
+#[cfg(test)]
+mod status_tests {
+    // CNS-20: rejects the generic error prefix obscuring the typed stall's first word.
+    #[test]
+    fn the_last_error_line_starts_with_the_verdict() {
+        let codes: std::collections::BTreeSet<u8> = [
+            montana_node::say::Verdict::NoQuorum,
+            montana_node::say::Verdict::NoData,
+            montana_node::say::Verdict::NoDiagnostics,
+        ]
+        .into_iter()
+        .map(|on| {
+            let line = super::said(montana_node::NodeError::Stalled {
+                on,
+                what: "budget exhausted",
+            });
+            assert_eq!(montana_node::say::Verdict::from_line(&line), Some(on));
+            assert_ne!(on.exit_code(), 0);
+            on.exit_code()
+        })
+        .collect();
+        assert_eq!(codes.len(), 3);
+        // F1a: the retired verdict reads as no verdict and its code is given to none.
+        assert!(!codes.contains(&3));
+        assert_eq!(
+            montana_node::say::Verdict::from_line("proof refused; asking 1; refused 1"),
+            None
+        );
+        for on in [
+            montana_node::say::Verdict::NoQuorum,
+            montana_node::say::Verdict::NoData,
+            montana_node::say::Verdict::NoDiagnostics,
+        ] {
+            assert!(super::said(montana_node::NodeError::Stalled {
+                on,
+                what: "budget exhausted"
+            })
+            .starts_with(&format!("{on}:")));
+        }
+    }
 }

@@ -21,12 +21,15 @@ use montana_node::state::State;
 use mt_proof::poseidon::Digest;
 
 mod common;
-use common::{a_candidacy_of, a_record_carrying, an_opening_of};
+use common::{
+    a_candidacy_of, a_lived_record_carrying, a_record_carrying, an_opening_of, the_gate_of, ACTIVE,
+};
 
-const WINDOW: u64 = 1_000;
-// The segment window 1 000 stands in, floor(1 000 / 1 440) = 0: the machine derives it from the
-// window (Canon, "The rules of continuity", rule 1; constitution records 297 and 300).
-const SEGMENT: u32 = 0;
+const WINDOW: u64 = 21_160;
+// The segment window 21 160 stands in, floor(21 160 / 1 440) = 14: the machine derives it from the
+// window (Canon, "The rules of continuity", rule 1; constitution records 297 and 300). A claimant's
+// record lives the fourteen segments up to it, so the gate of entry stands met.
+const SEGMENT: u32 = 14;
 const MACHINE: [u8; 32] = [0x5A; 32];
 const OWN_RIGHT: [u8; 32] = [0x22; 32];
 
@@ -66,6 +69,7 @@ fn walked(
         siblings,
         &MACHINE,
         &OWN_RIGHT,
+        &the_gate_of(WINDOW),
     )
     .expect("an attacker writes it");
     assert_ne!(
@@ -82,6 +86,7 @@ fn walked(
             &digests[1],
             &node_commit,
             &digests[2],
+            &the_gate_of(WINDOW),
             1,
         )
     };
@@ -111,7 +116,9 @@ fn walked(
 fn refused(state: &mut State, candidacy: &mt_state::layout::Candidacy, root: &Digest, what: &str) {
     let before = state.encode().expect("the plane is written");
     assert!(
-        state.apply_candidacy(candidacy, WINDOW, root).is_err(),
+        state
+            .apply_candidacy(candidacy, WINDOW, root, ACTIVE)
+            .is_err(),
         "the node applied {what}"
     );
     assert!(
@@ -128,9 +135,9 @@ fn refused(state: &mut State, candidacy: &mt_state::layout::Candidacy, root: &Di
 #[test]
 fn an_own_record_walked_by_the_path_of_another_record_of_the_tree_is_refused() {
     let mut state = State::new();
-    let own = a_record_carrying(&OWN_RIGHT, WINDOW, SEGMENT);
+    let own = a_lived_record_carrying(&OWN_RIGHT, WINDOW);
     let other = a_record_carrying(&[0x23; 32], WINDOW, SEGMENT);
-    opened(&mut state, 0x44, &own);
+    state.witness_record(&own);
     opened(&mut state, 0x45, &other);
     let root = state.records_root();
     let own_path = state
@@ -152,14 +159,14 @@ fn an_own_record_walked_by_the_path_of_another_record_of_the_tree_is_refused() {
     let honest = a_candidacy_of(&state, &own, &MACHINE, &OWN_RIGHT, WINDOW);
     assert_eq!(honest.operator_nullifier, mixed.operator_nullifier);
     state
-        .apply_candidacy(&honest, WINDOW, &root)
+        .apply_candidacy(&honest, WINDOW, &root, ACTIVE)
         .expect("the honest admission of the same record verifies");
     assert!(state.is_spent_right(&honest.operator_nullifier));
 }
 
 #[test]
 fn a_path_spliced_of_two_states_of_the_tree_is_refused() {
-    let own = a_record_carrying(&OWN_RIGHT, WINDOW, SEGMENT);
+    let own = a_lived_record_carrying(&OWN_RIGHT, WINDOW);
     let first = a_record_carrying(&[0x23; 32], WINDOW, SEGMENT);
     let at_first = parting(&key_of(&own), &key_of(&first));
     // A second record parting from the claimant's at another level than the first, so the two
@@ -171,7 +178,7 @@ fn a_path_spliced_of_two_states_of_the_tree_is_refused() {
     let at_second = parting(&key_of(&own), &key_of(&second));
 
     let mut state = State::new();
-    opened(&mut state, 0x44, &own);
+    state.witness_record(&own);
     let early = state.clone();
     opened(&mut state, 0x45, &first);
     let middle = state.clone();
@@ -216,7 +223,7 @@ fn a_path_spliced_of_two_states_of_the_tree_is_refused() {
 
     let honest = a_candidacy_of(&state, &own, &MACHINE, &OWN_RIGHT, WINDOW);
     state
-        .apply_candidacy(&honest, WINDOW, &held)
+        .apply_candidacy(&honest, WINDOW, &held, ACTIVE)
         .expect("the honest admission under the tree held now verifies");
     assert!(state.is_spent_right(&honest.operator_nullifier));
 }

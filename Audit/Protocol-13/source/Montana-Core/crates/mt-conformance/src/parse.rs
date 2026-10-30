@@ -1476,6 +1476,54 @@ pub fn check_wire(md: &str) -> Result<(), String> {
         labeled(&hs, "k_r2i")?,
         &mt_wire::handshake::responder_to_initiator(&master),
     )?;
+    // The renewal of the link of the block (Network, "How a link renews its keys"; NET-25): the fold
+    // of the master and the fresh material of one renewal, the two keys standing on it, and the fold
+    // in the order of the renewal, which is the mistake the negative line freezes.
+    let fresh = labeled(&hs, "renew_pk_i")?;
+    let renew_pk_i = fixed_part(bare_input(fresh))?;
+    let renew_pk_r = fixed_part(input_of(fresh, "renew_pk_r")?)?;
+    let renew_ct_i = fixed_part(input_of(fresh, "renew_ct_i")?)?;
+    let renew_ct_r = fixed_part(input_of(fresh, "renew_ct_r")?)?;
+    let opened = labeled(&hs, "renew_ss_i")?;
+    let renew_ss_i = repeat32(bare_input(opened))?;
+    let renew_ss_r = repeat32(input_of(opened, "renew_ss_r")?)?;
+    let renewed = mt_wire::handshake::renewed(
+        &master,
+        &renew_ss_i,
+        &renew_ss_r,
+        &renew_pk_i,
+        &renew_pk_r,
+        &renew_ct_i,
+        &renew_ct_r,
+    );
+    compare_hash("renewed", labeled(&hs, "renewed")?, &renewed)?;
+    compare_hash(
+        "k_i2r(renewed)",
+        labeled(&hs, "k_i2r(renewed)")?,
+        &mt_wire::handshake::initiator_to_responder(&renewed),
+    )?;
+    compare_hash(
+        "k_r2i(renewed)",
+        labeled(&hs, "k_r2i(renewed)")?,
+        &mt_wire::handshake::responder_to_initiator(&renewed),
+    )?;
+    let responder_first = mt_wire::handshake::renewed(
+        &master,
+        &renew_ss_r,
+        &renew_ss_i,
+        &renew_pk_r,
+        &renew_pk_i,
+        &renew_ct_r,
+        &renew_ct_i,
+    );
+    compare_hash(
+        "renewed(responder first)",
+        labeled(&hs, "renewed(responder first)")?,
+        &responder_first,
+    )?;
+    if responder_first == renewed {
+        return Err("the negative vector of a renewal equals the positive one".to_string());
+    }
 
     // The machine standing at a point, and the ring that wraps.
     let holder_rows = parse_labeled(md, HOLDER_HEADER)?;
@@ -1896,7 +1944,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
     let wire = |value: Result<usize, mt_wire::WireError>| -> Result<usize, String> {
         value.map_err(|e| format!("the wire cannot read the Decree: {e:?}"))
     };
-    let of_the_wire: [(&str, usize, &str); 14] = [
+    let of_the_wire: [(&str, usize, &str); 15] = [
         ("hello_len", mt_wire::handshake::hello_len(), "hello"),
         ("hello_answer_len", mt_wire::handshake::hello_answer_len(), "answer of a hello"),
         ("hello_finish_len", mt_wire::handshake::hello_finish_len(), "finish of a hello"),
@@ -1909,6 +1957,7 @@ pub fn check_layouts(md: &str) -> Result<(), String> {
         ("head_query_len", mt_wire::message::head_query_len(), "query of a head"),
         ("state_query_len", mt_wire::message::state_query_len(), "query of a leaf"),
         ("slot_query_len", mt_wire::message::slot_query_len(), "query of a slot"),
+        ("table_query_len", mt_wire::message::table_query_len(), "query of a table"),
         ("channel_commit_len", SlotCommit::expected_len(), "commitment over a slot of a channel"),
         ("channel_renew_len", SlotRenew::expected_len(), "renewal of a slot of a channel"),
     ];
@@ -2125,6 +2174,19 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
     let candidacy_machine = input32(candidacy_inputs, "node_commit")?;
     let candidacy_suite = u16::try_from(number(input_of(candidacy_inputs, "suite_id")?)?)
         .map_err(|_| "the suite of the vector of a candidacy is no u16".to_string())?;
+    // The gate a verifier computes and takes from no candidacy: the segment of the window, the count
+    // of segments in force and the share of it (Canon, "The candidacy of a machine"; constitution
+    // records 297, 300 and 370). The count is the vector's input; the other two are derived as a
+    // verifier derives them, so an implementation deriving either otherwise parts at the digest.
+    let candidacy_in_force = u32::try_from(number(input_of(candidacy_inputs, "in_force")?)?)
+        .map_err(|_| "the count in force of the vector of a candidacy is no u32".to_string())?;
+    let candidacy_gate = mt_proof::circuit::continuity::Gate {
+        segment: mt_pulse::standing::segment(candidacy_window)
+            .map_err(|e| format!("the window of the vector of a candidacy has no segment: {e:?}"))?,
+        in_force: candidacy_in_force,
+        required: mt_pulse::entry::required_segments(candidacy_in_force)
+            .map_err(|e| format!("the share of the vector of a candidacy: {e:?}"))?,
+    };
     let right = mt_derive::nullifier::operator(&candidacy_right);
     let record = record_of_the_vector(labeled(&candidacy_rows, "record")?, &right)?;
     let serialized = mt_state::Layout::bytes(&record)
@@ -2165,6 +2227,7 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
         &as_digest(&naming)?,
         &candidacy_machine,
         &as_digest(&right)?,
+        &candidacy_gate,
         candidacy_suite,
     );
     compare_hash(
@@ -2497,6 +2560,37 @@ pub fn check_derivations(md: &str) -> Result<(), String> {
         labeled(&tag_rows, "pipe_key(pipe_secret(test_secret, W + 1), W + 1)")?,
         &mt_derive::delivery::pipe_key(&walked, tw + 1),
     )?;
+    // The heal of the walk at the window of the answering letter (NET-25), the walk on from it, and
+    // the heal of the window after, which is the mistake the negative line freezes.
+    let heal = labeled(&tag_rows, "ss_h")?;
+    let ss_h = repeat32(bare_input(heal))?;
+    let pk_h = fixed_part(input_of(heal, "pk_h")?)?;
+    let ct_h = fixed_part(input_of(heal, "ct_h")?)?;
+    let healed = mt_derive::tag::pipe_heal(&walked, &ss_h, &pk_h, &ct_h);
+    compare_hash(
+        "pipe_heal(pipe_secret(test_secret, W + 1))",
+        labeled(&tag_rows, "pipe_heal(pipe_secret(test_secret, W + 1))")?,
+        &healed,
+    )?;
+    compare_hash(
+        "pipe_secret(healed, W + 3)",
+        labeled(&tag_rows, "pipe_secret(healed, W + 3)")?,
+        &mt_derive::tag::pipe_secret_step(&healed),
+    )?;
+    let healed_late = mt_derive::tag::pipe_heal(
+        &mt_derive::tag::pipe_secret_step(&walked),
+        &ss_h,
+        &pk_h,
+        &ct_h,
+    );
+    compare_hash(
+        "pipe_heal(pipe_secret(test_secret, W + 2))",
+        labeled(&tag_rows, "pipe_heal(pipe_secret(test_secret, W + 2))")?,
+        &healed_late,
+    )?;
+    if healed_late == healed {
+        return Err("the negative vector of a heal equals the positive one".to_string());
+    }
     // The two named wrong walks: the secret held unchanged, and the secret walked once per unit
     // of height. Each yields the value frozen for it, and neither yields the tag of the window.
     let of_window = mt_derive::tag::tag(&one, tw + 1);
@@ -4081,6 +4175,7 @@ fn registers() -> Vec<&'static [mt_codec::Constant]> {
         mt_proof::circuit::ballot::BALLOT,
         mt_proof::circuit::capacity::CAPACITIES,
         mt_proof::circuit::admission::ADMISSION,
+        mt_proof::circuit::continuity::CONTINUITY,
         mt_proof::circuit::presence::PRESENCE,
         mt_proof::circuit::opening::OPENING,
         mt_proof::circuit::lane::LANE,

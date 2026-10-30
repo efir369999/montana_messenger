@@ -13,6 +13,7 @@
 use montana_wallet::pay::Payee;
 use std::path::PathBuf;
 
+pub mod stall;
 pub mod walk;
 
 // Each run creates a fresh directory and retains it for failure inspection.
@@ -112,6 +113,41 @@ pub fn a_record_carrying(operator_secret: &[u8; 32], window: u64, segment: u32) 
     .expect("a record of the layout")
 }
 
+// The machines admitted in the proposal a candidacy of these vectors takes its root from: one, so the
+// ramp stands at its floor of fourteen segments and ten of them must be lived (`mt_pulse::entry`).
+pub const ACTIVE: u64 = 1;
+
+// A record that lived the fourteen segments up to the one `window` stands in, carrying the right of
+// `operator_secret`: opened thirteen segments before, an action in every segment since. Only an
+// action marks a segment and the node applies none yet, so the vectors stand this record in the
+// tree through `State::witness_record` rather than through an opening.
+pub fn a_lived_record_carrying(operator_secret: &[u8; 32], window: u64) -> Vec<u8> {
+    let windows = mt_genesis::scalar("segment_windows").expect("the Decree names it");
+    let segment = mt_pulse::standing::segment(window).expect("a window of the width");
+    assert!(
+        segment >= 13,
+        "a record lives fourteen segments only from the fourteenth on"
+    );
+    mt_state::Layout::bytes(&mt_state::layout::Record {
+        segment_bitmap: 0x3FFF,
+        last_active_segment: segment,
+        opened_window: window - 13 * windows,
+        own_height: 13,
+        operator_nf: mt_derive::nullifier::operator(operator_secret),
+        fabric_root: [0x11; 32],
+        suite_id: 1,
+        current_pubkey: vec![0x22; mt_codec::size::SIGNING_PUBLIC_KEY],
+        blind: [0x33; 32],
+    })
+    .expect("a record of the layout")
+}
+
+// The gate the verifier lays for a candidacy of `window` under the counts of these vectors.
+pub fn the_gate_of(window: u64) -> mt_proof::circuit::continuity::Gate {
+    montana_node::state::State::gate_of_a_candidacy(window, ACTIVE)
+        .expect("the gate of a window of the width")
+}
+
 // The opening of that record, proven as its claimant proves it.
 pub fn an_opening_of(
     open_secret: &[u8; 32],
@@ -144,12 +180,14 @@ pub fn a_candidacy_of(
     let siblings = state
         .path_of_a_record(&key)
         .expect("the record stands in the tree the state holds");
+    let gate = the_gate_of(window);
     let (trace, digests) = mt_proof::circuit::admission::trace_of(
         record,
         &key,
         &siblings,
         machine_secret,
         operator_secret,
+        &gate,
     )
     .expect("a claimant writes it");
     let node_commit =
@@ -161,6 +199,7 @@ pub fn a_candidacy_of(
         &digests[1],
         &node_commit,
         &digests[2],
+        &gate,
         suite_id,
     );
     let held = mt_proof::circuit::admission::description().expect("the description stands");
