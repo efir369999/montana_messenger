@@ -502,6 +502,38 @@ fn a_device_walks_from_its_anchor_to_the_head_and_no_further() {
     )
     .expect("the honest bytes stand beside a refused copy");
     assert_eq!(past_the_copy.later.signature, next.signature);
+    // The same copies over the open window of a running network: the newest certificate short of
+    // its quorum, and the copy outside the certificate offered first. The honest bytes are refused
+    // only because the window after is still closing, so the walk is taken again without it and the
+    // honest proposal awaits its certificate. A walker answering with the first refusal it met says
+    // the copy's, which no retry walks around, and a device back from a partition is refused its
+    // join by the order the copies reached a point (a_minority_waits_and_rejoins.rs:460, issue #16).
+    let (copy_head, copy_awaiting) = walk_to_the_open(
+        &anchor,
+        &[
+            Step {
+                certificate: &rounds,
+                pledges: &closed,
+                rolls: &rolls,
+                next: &copies,
+            },
+            Step {
+                certificate: &short,
+                pledges: &closed_after,
+                rolls: &[],
+                next: &[],
+            },
+        ],
+        1,
+        &draw,
+        major,
+    )
+    .expect("a window still closing is walked around past a refused copy");
+    assert_eq!(copy_head, anchor);
+    assert_eq!(
+        copy_awaiting.map(|held| held.signature),
+        Some(next.signature.clone())
+    );
 
     // A minority of the window after attesting another name: the fourth machine attests `other` and
     // closes on it, the three close on the honest name — the quorum of four — so `other` stands under
