@@ -239,6 +239,9 @@ pub struct Link {
     // it is told stands for the window of its handshake.
     window: Option<u64>,
     set_in: Option<u64>,
+    // Messages of the far side read while this side waited for its renewal to complete, handed to
+    // the caller in their order before anything read after them.
+    held: std::collections::VecDeque<(Kind, Vec<u8>)>,
 }
 
 // A renewal this side has begun or answered and that has not completed. What it holds is the
@@ -338,6 +341,7 @@ impl Link {
             renewal: Renewal::Idle,
             sealed: 0,
             ceiling,
+            held: std::collections::VecDeque::new(),
             window: None,
             set_in: None,
         })
@@ -399,8 +403,42 @@ impl Link {
         }
         if self.due() {
             self.offer()?;
+        } else if self.sealed >= self.ceiling && !matches!(self.renewal, Renewal::Idle) {
+            self.settle()?;
         }
         self.seal(kind, message)
+    }
+
+    // **No key carries more than the ceiling and one message.** A side whose renewal is under way
+    // seals under the key it holds until the renewal completes, and a side that only sends never
+    // reads the message that completes it. So a side at the ceiling with a renewal under way reads
+    // before it seals again: the messages of the renewal are taken in, and any other message is held
+    // for the caller. The far side has been sent the renewal and owes its message, so the wait is
+    // bounded by the patience of a message begun, and what is held by the largest message this wire
+    // carries: a far side that keeps this side waiting longer, or sends more than that, ends the
+    // link, and a new handshake replaces it.
+    fn settle(&mut self) -> Result<(), NetError> {
+        let bound = link::pieces_max()
+            .map_err(wire)?
+            .saturating_mul(mt_wire::cell_bytes().map_err(wire)?);
+        let mut kept = 0usize;
+        while !matches!(self.renewal, Renewal::Idle) {
+            wait_with_patience(&self.stream)?;
+            let (kind, message) = self.open_message_begun()?;
+            match kind {
+                Kind::RenewOffer => self.offered(&message)?,
+                Kind::RenewAnswer => self.answered(&message)?,
+                Kind::RenewFinish => self.finished(&message)?,
+                _ => {
+                    kept = kept.saturating_add(message.len());
+                    if kept > bound {
+                        return Err(NetError::RenewalOutOfTurn);
+                    }
+                    self.held.push_back((kind, message));
+                }
+            }
+        }
+        Ok(())
     }
 
     // A message of a caller in a window. A side about to send in a window later than the one its
@@ -426,6 +464,9 @@ impl Link {
     // The next message of the far side. A message of a renewal is taken inside the link and never
     // handed on: the reader goes on to the message after it, so a caller reads what it always read.
     pub fn receive(&mut self) -> Result<(Kind, Vec<u8>), NetError> {
+        if let Some(waiting) = self.held.pop_front() {
+            return Ok(waiting);
+        }
         loop {
             let (kind, message) = self.open_message()?;
             match kind {
@@ -457,10 +498,15 @@ impl Link {
     // count is read once, held against the largest message this wire carries, and the link ends if
     // the units it names do not assemble.
     fn open_message(&mut self) -> Result<(Kind, Vec<u8>), NetError> {
-        let width = mt_wire::cell_bytes().map_err(wire)?;
         // Silence between two messages is ordinary and is never bounded; silence inside one is
         // bounded, because the far side has already said how many units it is sending.
         wait_without_end(&self.stream)?;
+        self.open_message_begun()
+    }
+
+    // The same, with the wait for the first unit set by the caller.
+    fn open_message_begun(&mut self) -> Result<(Kind, Vec<u8>), NetError> {
+        let width = mt_wire::cell_bytes().map_err(wire)?;
         let opening = read_exactly(&mut self.stream, width)?;
         wait_with_patience(&self.stream)?;
         let (key, first) = self.open_first(&opening)?;
@@ -978,6 +1024,48 @@ mod tests {
         answered.receive().expect("it arrives");
         agree(&opened, &answered);
         assert_eq!(opened.sealed, 1);
+        assert!(at_rest(&opened) && at_rest(&answered));
+    }
+
+    // The bound at the ceiling: a side that only sends, with its renewal under way, reads before it
+    // seals past the ceiling, so its old key carries the ceiling and one message; a message of the
+    // far side read on the way reaches the caller in its turn.
+    #[test]
+    fn a_side_that_only_sends_settles_its_renewal_before_it_seals_past_the_ceiling() {
+        let (mut opened, mut answered) = met();
+        opened.ceiling = 3;
+        let first = *opened.secret;
+        for n in 0..3 {
+            opened
+                .send(Kind::StateQuery, &query(n))
+                .expect("it crosses");
+        }
+        // At the ceiling the next message goes behind an offer, under the keys the link holds.
+        opened
+            .send(Kind::StateQuery, &query(3))
+            .expect("it crosses");
+        assert!(has_offered(&opened) && opened.sealed > opened.ceiling);
+        // The far side sends a message of its own, then reads the four and answers the offer.
+        answered
+            .send(Kind::StateQuery, &query(4))
+            .expect("it crosses");
+        for _ in 0..4 {
+            answered.receive().expect("it arrives");
+        }
+        assert!(awaits_finish(&answered));
+        // The side that only sends reads before it seals again: the message of the far side is
+        // held, the answer completes the renewal, and the next message is under the new key.
+        opened
+            .send(Kind::StateQuery, &query(5))
+            .expect("it crosses");
+        assert!(at_rest(&opened));
+        assert_ne!(*opened.secret, first);
+        assert_eq!(opened.sealed, 1);
+        let (_, arrived) = opened.receive().expect("it was held");
+        assert_eq!(&arrived[..message::state_query_len()], &query(4)[..]);
+        let (_, arrived) = answered.receive().expect("it arrives");
+        assert_eq!(&arrived[..message::state_query_len()], &query(5)[..]);
+        agree(&opened, &answered);
         assert!(at_rest(&opened) && at_rest(&answered));
     }
 
