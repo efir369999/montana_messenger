@@ -208,7 +208,7 @@ fun levelAccessPage(act: MainActivity, onBack: () -> Unit): View {
     val eight = LevelAccess.Feature.OWN_NODE.level
     val nodeOpen = LevelAccess.opens(LevelAccess.Feature.OWN_NODE)
     return settingsPage(act, c.getString(R.string.lv_access), onBack) {
-        section(null, c.getString(R.string.lv_footer),
+        section(null, c.getString(if (GooglePlay.COINS) R.string.lv_footer else R.string.lv_footer_play),
             c.text(c.getString(R.string.lv_global, level), 16f).apply { setPadding(c.dp(16), c.dp(13), c.dp(14), c.dp(13)) },   // USER-DATA: the level
             c.hstack {
                 gravity = Gravity.CENTER_VERTICAL

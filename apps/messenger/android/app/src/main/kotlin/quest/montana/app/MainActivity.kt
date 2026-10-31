@@ -174,7 +174,7 @@ class MainActivity : Activity() {
         // A COIN'S LINK OPENS THE WALLET (iOS handleLink 1871-1877, the author's word 03.10): the coin letter's machine line is no
         // invitation, and the invitation road answered it «could not be opened».
         if (Meeting.normalize(link).startsWith(CoinLetter.LINK.substringBefore("/1/"))) {
-            if (hasSeed && termsAccepted) push { close -> walletPage(this, close) }
+            if (hasSeed && termsAccepted && GooglePlay.COINS) push { close -> walletPage(this, close) }
             return
         }
         // A SET'S LINK IS NOT AN INVITATION (iOS handleLink 1966-1985): it names a set and nobody else. The hand that passed it was

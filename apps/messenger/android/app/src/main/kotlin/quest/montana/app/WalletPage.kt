@@ -100,7 +100,7 @@ fun Context.coinPlate(m: Msg, coin: CoinLetter.Coin, mine: Boolean, act: MainAct
         val words = if (mine) (if (back) R.string.coin_letter_back else R.string.coin_letter_sent) else R.string.coin_letter_received
         addView(text(getString(words), 15f, BubbleStyle.text(mine)).apply { setPadding(0, dp(2), 0, 0) }, lp(WRAP, WRAP))
     }, lp(WRAP, WRAP))
-    if (act != null && ref != null) pressable {
+    if (act != null && ref != null && GooglePlay.COINS) pressable {
         val peer = Book.chat(ref)?.shown?.ifBlank { null } ?: context.getString(R.string.peer)
         act.push { back -> coinMovePage(act, CoinSend.wire(m.mid), mine, peer, back) }
     }

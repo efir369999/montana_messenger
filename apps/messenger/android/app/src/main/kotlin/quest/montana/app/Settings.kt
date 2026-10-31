@@ -412,7 +412,7 @@ fun seedPage(act: MainActivity, onBack: () -> Unit): View {
         body.gap(12)
         body.addView(c.text("⚠ " + c.getString(R.string.sg_for_you), 17f, Color.WHITE, bold = true, center = true), lp())
         body.gap(6)
-        body.addView(c.text(c.getString(R.string.sg_wallet), 22f, Color.WHITE, bold = true, center = true), lp())
+        body.addView(c.text(c.getString(if (GooglePlay.COINS) R.string.sg_wallet else R.string.sg_account), 22f, Color.WHITE, bold = true, center = true), lp())
         body.gap(16)
         lateinit var go: AccentButton
         val ticks = BooleanArray(2)

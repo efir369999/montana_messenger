@@ -68,4 +68,9 @@
     <string name="sl_later">Отправить позже</string>
     <string name="new_call">Новый звонок</string>   <!-- iOS CallsTabView «New Call» -->
     <string name="cl_draft">Черновик:</string>   <!-- iOS ChatRow «Draft:» -->
+    <!-- the Google Play build (GooglePlay.COINS false): the same places without a word of a wallet -->
+    <string name="sg_account">Эта сид-фраза разблокирует доступ к вашему аккаунту</string>
+    <string name="priv_address_title">Свой адрес</string>
+    <string name="priv_address_sub">По нему вам пишут и звонят</string>
+    <string name="lv_footer_play">Ваш уровень — наименьший из двух: ваше время в Монтане и Ткань времени — люди, с которыми вы регулярно переписываетесь и созваниваетесь последние две недели. Каждый уровень открывает новые функции Монтаны.</string>
 </resources>

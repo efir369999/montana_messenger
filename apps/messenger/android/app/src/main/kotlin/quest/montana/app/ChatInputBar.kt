@@ -202,7 +202,7 @@ class ChatInputBar(private val act: MainActivity, val field: EditText, private v
 
     /** The chat may take coins (iOS coins: MTCoinSend.canPay or the group's coin) and the coin's key opens the people (iOS coinPicks). */
     var coins = false
-        set(v) { field = v; syncSend() }
+        set(v) { field = v && GooglePlay.COINS; syncSend() }
     var coinPicks = false
     var onSendCoin: ((Long) -> Unit)? = null
     /** The coin's mode came or went: the page stands the balance above the field or takes it away (iOS MTCoinBalancePlate). */

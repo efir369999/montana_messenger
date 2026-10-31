@@ -68,4 +68,9 @@
     <string name="sl_later">稍后发送</string>
     <string name="new_call">新通话</string>   <!-- iOS CallsTabView «New Call» -->
     <string name="cl_draft">草稿：</string>   <!-- iOS ChatRow «Draft:» -->
+    <!-- the Google Play build (GooglePlay.COINS false): the same places without a word of a wallet -->
+    <string name="sg_account">此助记词可解锁对您账户的访问权限</string>
+    <string name="priv_address_title">您自己的地址</string>
+    <string name="priv_address_sub">别人通过它给您发消息和打电话</string>
+    <string name="lv_footer_play">您的等级取两者中较低者：您在 Montana 的时间，以及时间之布——过去两周里您经常通信和通话的人。每个等级都会开启 Montana 的新功能。</string>
 </resources>

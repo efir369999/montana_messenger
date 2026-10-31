@@ -1956,6 +1956,7 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
     // THE PAIR'S MARKS BESIDE THE NAME (iOS chatRow 1866-1870 at 2155): the wallet with the balance short at its corner and the chess,
     // ringed while the pair's game is played, beside the handset -- in a pair's own chat (coinStands); a group wears none of them
     val coinStands = !group && CoinSend.canPay(ref)
+    val walletStands = coinStands && GooglePlay.COINS   // the Google Play build wears no wallet, the chess stays
     val rounds = mutableListOf<View>()     // the marks' plates: 44, or 40 where the row is short (iOS ViewThatFits)
     val gapped = mutableListOf<View>()     // the marks that stand the row's gap after the mark before them
     val handsets = mutableListOf<View>()   // the folded call's two handsets, outside the fitted row (iOS chatTop 1847, 1852)
@@ -2114,7 +2115,7 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
         if (!local) addView(keepShield(act).apply { translationX = c.dp(18).toFloat(); translationY = -c.dp(18).toFloat() },
             FrameLayout.LayoutParams(c.dp(44), c.dp(44), Gravity.TOP or Gravity.END))
         }, lp(0, dp(44), 1f).apply { marginStart = dp(6); if (!local) marginEnd = dp(6) })
-        if (coinStands) {
+        if (walletStands) {
             // THE WALLET BESIDE THE COIN (iOS walletMark): the wallet page over the chat, the one road a coin's link takes
             addView(FrameLayout(c).apply {
                 clipChildren = false
@@ -2122,12 +2123,14 @@ fun conversationPage(act: MainActivity, ref: String, onClose: () -> Unit, jump: 
                     FrameLayout.LayoutParams(MATCH, MATCH))
                 addView(walletBadge, FrameLayout.LayoutParams(WRAP, c.dp(20), Gravity.TOP or Gravity.END))
             }, lp(dp(44), dp(44)))
+        }
+        if (coinStands) {
             // THE CHESS MARK (iOS chessMark): the game's knight on the marks' round, the platform's blue ring while the game is played
             addView(FrameLayout(c).apply {
                 addView(roundMark(R.drawable.chess_knight, R.string.app_chess) { hideKeys(); chessTap() }.also { rounds.add(it) },
                     FrameLayout.LayoutParams(MATCH, MATCH))
                 addView(chessRing, FrameLayout.LayoutParams(MATCH, MATCH))
-            }.also { gapped.add(it) }, lp(dp(44), dp(44)).apply { marginStart = dp(6) })
+            }.also { if (walletStands) gapped.add(it) }, lp(dp(44), dp(44)).apply { if (walletStands) marginStart = dp(6) })
         }
         // THE HANDSET AS IT WAS (iOS handsetMark, a pair's chat): the calls' menu behind the one bar glyph — a voice call or a video call
         if (!group && !local) addView(roundMark(R.drawable.ic_bar_calls, R.string.pi_voice_call) { v ->
