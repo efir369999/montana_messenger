@@ -157,6 +157,7 @@ object Update {
 
     /** The notice's tap (MainActivity): the newest is brought, held to its digest, and handed to the system's installer. */
     fun take(act: Activity) {
+        if (!GooglePlay.SELF_UPDATE) { clear(act.applicationContext); shop(act); return }
         if (busy) return
         busy = true
         val c = act.applicationContext
@@ -180,6 +181,23 @@ object Update {
                 clear(c); round(FAILED); say(act, R.string.update_failed)
             } finally { if (!handed) busy = false }
         }.start()
+    }
+
+    /**
+     * THE UPDATE THROUGH THE SHOP (GooglePlay.SELF_UPDATE false, the author's word 31.10.2026: one build for the site and Google
+     * Play, and Play lets no app update itself): the app brings and installs nothing -- a phone that took it from Google Play goes
+     * to its page there, any other to the site's page in the browser, where the person takes the file themselves.
+     */
+    private fun shop(act: Activity) {
+        val pm = act.packageManager
+        val from = runCatching {
+            if (30 <= Build.VERSION.SDK_INT) pm.getInstallSourceInfo(act.packageName).installingPackageName
+            else @Suppress("DEPRECATION") pm.getInstallerPackageName(act.packageName)
+        }.getOrNull()
+        val play = from == "com.android.vending"
+        Log.d("Montana", "update_shop play=" + (if (play) 1 else 0))
+        val roads = if (play) listOf("market://details?id=" + act.packageName, "https://play.google.com/store/apps/details?id=" + act.packageName) else listOf(SITE)
+        for (r in roads) if (runCatching { act.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(r))) }.isSuccess) return
     }
 
     private fun say(act: Activity, what: Int) = act.runOnUiThread { Toast.makeText(act, what, Toast.LENGTH_LONG).show() }

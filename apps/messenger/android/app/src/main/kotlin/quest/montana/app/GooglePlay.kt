@@ -13,9 +13,16 @@ package quest.montana.app
  * VPN false: the VPN left for its own app 08.10, so nothing of it stands here today; its two names in the wallet's history
  * (tc_src_vpnwall, tc_src_vpnpay) are behind the wallet. Any VPN door ported later stands behind this switch.
  *
- * TO BRING THEM BACK: set both to true and build -- every door returns as it was. `git grep GooglePlay.` lists every gate.
+ * SELF_UPDATE false (the author's word 31.10.2026 20:0x: one build for the site and Google Play, and Play lets no app update itself
+ * past it): the app brings and installs no newer Montana -- the notice, the update banner and the release's «Update» lead to Google
+ * Play's page when Play installed the app, to the site's page in the browser otherwise (Update.shop); the manifest asks no
+ * REQUEST_INSTALL_PACKAGES. The rest of Update stays: the site's latest.json is still read, the Montana room still hears each build.
+ *
+ * TO BRING THEM BACK: set them to true and build -- every door returns as it was (for SELF_UPDATE also put the manifest's
+ * REQUEST_INSTALL_PACKAGES line back, written there in a comment). `git grep GooglePlay.` lists every gate.
  */
 object GooglePlay {
     const val COINS = false
     const val VPN = false
+    const val SELF_UPDATE = false
 }
