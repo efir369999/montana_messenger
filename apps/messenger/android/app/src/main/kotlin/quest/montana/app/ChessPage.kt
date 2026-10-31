@@ -12,13 +12,10 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
-import android.text.InputFilter
-import android.text.InputType
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
@@ -26,7 +23,6 @@ import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import java.util.UUID
 
 // ─────────────────────────── chess between two phones (iOS MTChessScreen: MTChessSend, MTChessCoins, MTChessAnchor, MTChessWords, MTChessPage, MTChessGameScreen) ───────────────────────────
@@ -34,16 +30,11 @@ import java.util.UUID
 /**
  * THE GAME'S LETTERS RIDE THE PAIR'S OWN ROAD (iOS MTChessSend): a letter of a game is an ordinary letter of the pair; only the
  * invitation and the closing letter ring, every other step rides a silent push and stands in the feed for the board alone.
- * THE GAME'S POT (iOS MTChessCoins, the author's words 06.10.2026 19:0x-19:1x MSK): a move names its maker's level times a
- * thousand into the pot, each side's stake leaves its book as its letter leaves, and the end pays the pot from the replay both
- * phones share — the winner mints every coin of the moves and takes both stakes, a draw or an ended game gives each their own.
+ * NO COINS IN CHESS (iOS 480cd898, the author's word 29.10.2026 19:31 UTC: «in chess there must be no crediting of coins»): a
+ * letter names no pot, no stake and no move's coin; coins are born only by the core, one coin a second.
  */
 object ChessSend {
     const val CHAT_CLOCK = 600
-    private const val POT = "chess-pot:"
-    private const val STAKE = "chess-stake:"
-    private const val BACK = "chess-back:"
-    private const val MOVE_TIMES = 1000L
     fun now(): Long = System.currentTimeMillis()
 
     /** The game's letter a row is in its own right: a forward, a reply, an edited row or a file is none. */
@@ -58,18 +49,11 @@ object ChessSend {
 
     fun send(c: Context, ref: String, packet: ChessLetter): Boolean {
         if (!canPlay(ref)) { Log.i("Montana", "chess_refused kind=" + packet.kind + " why=pair"); return false }
-        val invite = if (packet.kind == ChessLetter.INVITE) packet
-            else entries(ref).firstOrNull { it.letter.kind == ChessLetter.INVITE && it.letter.game == packet.game }?.letter
-        val pooled = invite?.pooled ?: false
-        if (pooled && packet.kind == ChessLetter.MOVE) packet.coins = moveCoins()
-        val stake = if (pooled && (packet.kind == ChessLetter.INVITE || packet.kind == ChessLetter.ACCEPT)) invite?.stake ?: 0L else 0L
-        if (0L < stake && !put(stake, packet.game, ref)) { Log.i("Montana", "chess_refused kind=" + packet.kind + " why=stake"); return false }
         val text = packet.text(c.getString(R.string.chess_title))
         val mid = Marks.mintMid()
         Book.edit(ref) { it.msgs.add(Msg(mid, text, true, Marks.birthMs(mid) ?: now())) }
         Post.send(ref, mid, text)
         Log.i("Montana", "chess_tx kind=" + packet.kind + " game=" + packet.game.take(8))
-        settle(ref)
         return true
     }
 
@@ -86,12 +70,11 @@ object ChessSend {
         }
         Post.receiptFor(ref, mid)
         if (fresh && letter.rings && shownGame != letter.game) Notify.letter(ref, text)
-        settle(ref)
     }
 
-    fun invite(c: Context, ref: String, seconds: Int, stake: Long = 0): String? {
+    fun invite(c: Context, ref: String, seconds: Int): String? {
         val id = UUID.randomUUID().toString().lowercase()
-        val packet = ChessLetter(id, id, "", ChessLetter.INVITE, now(), seconds = seconds, stake = if (0L < stake) minOf(stake, ChessLetter.MOST_COINS) else null)
+        val packet = ChessLetter(id, id, "", ChessLetter.INVITE, now(), seconds = seconds)
         return if (send(c, ref, packet)) id else null
     }
     /** ENTERING IS THE PERSON'S PRESS (iOS join): an unanswered invitation of theirs, accepted by the replay's own action. */
@@ -106,40 +89,6 @@ object ChessSend {
     /** The game on the screen: its own letters raise no banner (iOS MTChessGameScreen.shownGame). */
     @Volatile var shownGame: String? = null
 
-    fun moveCoins(): Long = runCatching { Math.multiplyExact(PiLevels.multiplier(CoinBook.balance), MOVE_TIMES) }.getOrDefault(0L).coerceAtMost(ChessLetter.MOST_COINS)
-    /** The stake leaves the book into the game's pot; a stake already put is not put twice; a short balance refuses it. */
-    private fun put(stake: Long, game: String, peer: String): Boolean =
-        stake <= CoinBook.coins(POT + game) || CoinBook.spend(stake, POT + game, peer, STAKE + game)
-    /** This side's share of a finished pot: what it mints, what comes back, what it put (iOS share). */
-    fun share(g: ChessGame): Triple<Long, Long, Long>? {
-        if (!g.pooled || !g.status.finished) return null
-        val won: Boolean? = if (g.status == ChessGame.Status.WHITE_WON) g.whiteIsMine else if (g.status == ChessGame.Status.BLACK_WON) !g.whiteIsMine else null
-        val mineIn = if (g.whiteIsMine || g.accepted) g.stake else 0L
-        val theirsIn = if (!g.whiteIsMine || g.accepted) g.stake else 0L
-        return when (won) {
-            true -> Triple(g.mintedMine + g.mintedTheirs, mineIn + theirsIn, mineIn)
-            false -> Triple(0L, 0L, mineIn)
-            null -> Triple(g.mintedMine, mineIn, mineIn)
-        }
-    }
-    /** What the game gave or took (iOS net): this side's share against what it put. */
-    fun net(g: ChessGame): Long? = share(g)?.let { it.first + it.second - it.third }
-    /** THE POT PAID AT THE END: each phone books its own side once, by the game's names. */
-    fun settle(ref: String) {
-        val all = entries(ref)
-        if (all.isEmpty()) return
-        val current = ChessGame.current(all)
-        for ((id, list) in all.groupBy { it.letter.game }) {
-            val g = ChessGame.of(list, id)?.replaced(current) ?: continue
-            val s = share(g) ?: continue
-            val got = if (0L < s.first) CoinBook.mint(s.first, POT + id) else 0L
-            val back = 0L < s.second && CoinBook.receive(s.second, ref, BACK + id)
-            if (0L < got || back) Log.i("Montana", "chess_coin game=" + id.take(8) + " pot minted=" + got + " back=" + back)
-        }
-    }
-
-    /** Every pair's games settled, at the app's front. */
-    fun settleAll() { for (c in Book.all()) if (c.msgs.any { it.text.startsWith(ChessLetter.MARK) }) settle(c.ref) }
 }
 
 /**
@@ -178,12 +127,9 @@ object ChessWords {
         })
     }
     fun control(c: Context, seconds: Int): String = if (seconds == 0) c.getString(R.string.chess_no_clock) else (seconds / 60).toString() + ":00"
-    /** The invitation says who plays which colour, with the clock, and its stake when it names one. */
-    fun seat(c: Context, l: ChessLetter, mine: Boolean): String {
-        val seat = c.getString(if (mine) R.string.chess_you_white else R.string.chess_you_black) + " · " + control(c, l.seconds ?: 0)
-        val stake = l.stake ?: 0L
-        return if (0L < stake) seat + " · " + c.getString(R.string.chess_stake, CoinText.count(stake)) else seat
-    }
+    /** The invitation's seat and clock — and nothing of coins (iOS 480cd898). */
+    fun seat(c: Context, l: ChessLetter, mine: Boolean): String =
+        c.getString(if (mine) R.string.chess_you_white else R.string.chess_you_black) + " · " + control(c, l.seconds ?: 0)
     fun clock(ms: Long): String {
         val s = maxOf(0L, (ms + 999) / 1000)
         return (s / 60).toString() + ":" + (s % 60).toString().padStart(2, '0')
@@ -378,7 +324,7 @@ fun chessBoardPage(act: MainActivity, ref: String, game0: String, inChat: Boolea
     }
     fun again(g: ChessGame) {
         browsing = null; selected = null
-        val id = ChessSend.invite(c, ref, g.seconds, g.stake)
+        val id = ChessSend.invite(c, ref, g.seconds)
         if (id == null) failed() else { gameId = id; ChessSend.shownGame = id; reload() }
     }
     fun captured(g: ChessGame, side: ChessSide): String {
@@ -452,13 +398,10 @@ fun chessBoardPage(act: MainActivity, ref: String, game0: String, inChat: Boolea
             if (browsing == null && (g.waitingForHistory || g.status != ChessGame.Status.PLAYING)) {
                 plateHolder.addView(c.statePlate {
                     addView(c.text(ChessWords.status(c, g), 17f, Color.WHITE, bold = true, center = true).apply { maxLines = 3 }, lp(WRAP, WRAP))
-                    if (g.pooled && 0L < g.pot) addView(c.text(c.getString(R.string.chess_pot, CoinText.count(g.pot)), 15f, MT.gray, center = true), lp(WRAP, WRAP))
-                    val short = g.pooled && g.status == ChessGame.Status.INVITED && !g.whiteIsMine && CoinBook.balance < g.stake
-                    if (short) addView(c.text(c.getString(R.string.chess_stake_short), 12f, MT.gray, center = true), lp(WRAP, WRAP))
                     addView(c.hstack {
                         gravity = Gravity.CENTER
                         if (g.status == ChessGame.Status.INVITED) {
-                            if (!g.whiteIsMine && !short) addView(c.barMark(R.drawable.ic_check, R.string.chess_accept_invitation) { send(ChessLetter.ACCEPT) }, lp(c.dp(44), c.dp(44)))
+                            if (!g.whiteIsMine) addView(c.barMark(R.drawable.ic_check, R.string.chess_accept_invitation) { send(ChessLetter.ACCEPT) }, lp(c.dp(44), c.dp(44)))
                             addView(c.barMark(R.drawable.ic_close, if (g.whiteIsMine) R.string.chess_withdraw else R.string.chess_decline_invitation) { send(ChessLetter.DECLINE) }, lp(c.dp(44), c.dp(44)))
                         } else if (g.status.finished && pairOver) addView(c.barMark(R.drawable.ic_plus, R.string.chess_new_game) { again(g) }, lp(c.dp(44), c.dp(44)))
                         alpha = if (live()) 1f else 0.4f
@@ -593,8 +536,10 @@ fun chessBoardPage(act: MainActivity, ref: String, game0: String, inChat: Boolea
     }
     val heard: () -> Unit = { reload() }
     page.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-        override fun onViewAttachedToWindow(v: View) { ChessSend.shownGame = gameId; Book.listen(heard); reload(); main.post(ticker) }
-        override fun onViewDetachedFromWindow(v: View) { if (ChessSend.shownGame == gameId) ChessSend.shownGame = null; Book.unlisten(heard); main.removeCallbacks(ticker) }
+        // THE BOARD HOLDS ITS OWN LANE (iOS startBoardPolling/stopBoardPolling, 29.09): the chat's farewell under the pushed board took
+        // the hold with it, and the correspondent's move rode the box; while the board stands its moves ride the lane both ways
+        override fun onViewAttachedToWindow(v: View) { ChessSend.shownGame = gameId; Book.listen(heard); reload(); main.post(ticker); Signal.hold(ref, "board") }
+        override fun onViewDetachedFromWindow(v: View) { if (ChessSend.shownGame == gameId) ChessSend.shownGame = null; Book.unlisten(heard); main.removeCallbacks(ticker); Signal.release(ref, "board") }
     })
     return page
 }
@@ -680,8 +625,8 @@ fun chessLobbyPage(act: MainActivity, onClose: () -> Unit): View {
 }
 
 /**
- * A NEW GAME (iOS MTChessNewGame): the time control, then the correspondents, each with the stake typed beside the name as an
- * offer — both players put it into the game's pot — and our send; the invitation opens its board.
+ * A NEW GAME (iOS MTChessNewGame): the time control, then the correspondents, each invited by their row — no stake and no pot
+ * (iOS 480cd898) — and our send; the invitation opens its board.
  */
 fun newChessPage(act: MainActivity, onBack: () -> Unit): View {
     val c: Context = act
@@ -705,16 +650,8 @@ fun newChessPage(act: MainActivity, onBack: () -> Unit): View {
         if (people.isEmpty()) addView(c.text(c.getString(R.string.chess_no_correspondents), 16f, MT.gray).apply { setPadding(dp(16), dp(14), dp(16), dp(14)) }, lp())
         people.forEachIndexed { i, ch ->
             if (0 < i) divider()
-            val stake = EditText(c).apply {
-                inputType = InputType.TYPE_CLASS_NUMBER; filters = arrayOf(InputFilter.LengthFilter(13)); hint = "0"
-                gravity = Gravity.END or Gravity.CENTER_VERTICAL; setTextColor(Color.WHITE); setHintTextColor(MT.gray)
-                background = c.rounded(Color.rgb(44, 44, 46), 8); setPadding(dp(8), 0, dp(8), 0)
-                contentDescription = c.getString(R.string.chess_stake_field)
-            }
             fun offer() {
-                val coins = stake.text.toString().toLongOrNull() ?: 0L
-                if (CoinBook.balance < coins) { Toast.makeText(c, R.string.coin_not_enough, Toast.LENGTH_SHORT).show(); return }
-                val id = ChessSend.invite(c, ch.ref, seconds, coins)
+                val id = ChessSend.invite(c, ch.ref, seconds)
                 if (id == null) { AlertDialog.Builder(act).setTitle(R.string.chess_invite_failed).setPositiveButton(R.string.ok, null).show(); return }
                 onBack()
                 act.push { back -> chessBoardPage(act, ch.ref, id, false, back) }
@@ -729,18 +666,16 @@ fun newChessPage(act: MainActivity, onBack: () -> Unit): View {
                     addView(c.text(ch.shown.ifBlank { c.getString(R.string.peer) }, 16f).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: the name
                     pressable { offer() }
                 }, lp(0, WRAP, 1f))
-                addView(stake, lp(dp(96), dp(44)))
                 addView(c.barMark(R.drawable.ic_paperplane, R.string.coin_send, MT.blue) { offer() }, lp(dp(44), dp(44)))
             }, lp())
         }
     }, lp())
-    body.addView(c.text(c.getString(R.string.chess_pot_footer), 12f, MT.gray).apply { setPadding(dp(16), dp(8), dp(16), 0) }, lp())
     return chessFrame(act, c.getString(R.string.chess_new_game), false, onBack, null, body)
 }
 
 /**
- * THE INVITATION'S BUBBLE (iOS the chess letter in the chat): the knight, the word, who plays which colour under which clock and
- * the stake; an invitation that waits for my answer wears the system's blue Accept and red Decline; a tap opens the board.
+ * THE INVITATION'S BUBBLE (iOS the chess letter in the chat): the knight, the word, who plays which colour under which clock; an
+ * invitation that waits for my answer wears the system's blue Accept and red Decline; a tap opens the board.
  */
 fun Context.chessPlate(act: MainActivity?, ref: String, m: Msg, letter: ChessLetter, mine: Boolean): View = vstack(Gravity.NO_GRAVITY) {
     addView(hstack {
@@ -756,11 +691,9 @@ fun Context.chessPlate(act: MainActivity?, ref: String, m: Msg, letter: ChessLet
         val game = letter.game
         if (!mine && ChessSend.awaitsMe(ref, game)) addView(hstack {
             setPadding(0, dp(8), 0, 0)
-            val short = letter.pooled && CoinBook.balance < (letter.stake ?: 0L)
             addView(text(getString(R.string.chess_accept), 15f, Color.WHITE, bold = true, center = true).apply {
                 background = rounded(MT.blue, 18); setPadding(dp(16), dp(8), dp(16), dp(8)); minHeight = dp(44); gravity = Gravity.CENTER
-                alpha = if (short) 0.4f else 1f
-                if (!short) pressable { if (ChessSend.join(act, ref, game) != null) act.push { back -> chessBoardPage(act, ref, game, true, back) } }
+                pressable { if (ChessSend.join(act, ref, game) != null) act.push { back -> chessBoardPage(act, ref, game, true, back) } }
             }, lp(WRAP, WRAP).apply { marginEnd = dp(8) })
             addView(text(getString(R.string.chess_decline), 15f, Color.WHITE, bold = true, center = true).apply {
                 background = rounded(Color.rgb(140, 30, 40), 18); setPadding(dp(16), dp(8), dp(16), dp(8)); minHeight = dp(44); gravity = Gravity.CENTER

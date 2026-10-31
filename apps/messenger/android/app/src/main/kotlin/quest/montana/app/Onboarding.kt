@@ -101,7 +101,7 @@ class Onboarding(private val act: MainActivity, private val onDone: () -> Unit) 
         addView(c.vstack(Gravity.NO_GRAVITY) {
             privRow(R.drawable.ic_key, R.string.priv_words_title, R.string.priv_words_sub); gap(12)
             privRow(R.drawable.ic_shield, R.string.priv_e2e_title, R.string.priv_e2e_sub); gap(12)
-            privRow(R.drawable.ic_credit_card, R.string.priv_wallet_title, R.string.priv_wallet_sub); gap(12)
+            if (GooglePlay.COINS) privRow(R.drawable.ic_credit_card, R.string.priv_wallet_title, R.string.priv_wallet_sub) else privRow(R.drawable.ic_app_card, R.string.priv_address_title, R.string.priv_address_sub); gap(12)
             privRow(R.drawable.ic_hub, R.string.priv_servers_title, R.string.priv_servers_sub)
         })
         spacer()

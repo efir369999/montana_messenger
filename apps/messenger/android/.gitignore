@@ -8,3 +8,5 @@ native/montana-jni/target/
 .DS_Store
 # the scripts’ own bytecode
 __pycache__/
+# the link to the pinned core/Code (scripts/build.py)
+native/core

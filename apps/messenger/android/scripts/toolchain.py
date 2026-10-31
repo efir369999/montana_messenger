@@ -56,7 +56,7 @@ class Paths:
 
     def rust_channel(self):
         # the core pins its compiler; the Android library is built with the very same one
-        pin = os.path.join(self.protocol, "Code", "rust-toolchain.toml")
+        pin = os.path.join(self.protocol, PIN["protocol"]["code"], "rust-toolchain.toml")
         for line in open(pin, encoding="utf-8"):
             key, _, value = line.partition("=")
             if key.strip() == "channel":

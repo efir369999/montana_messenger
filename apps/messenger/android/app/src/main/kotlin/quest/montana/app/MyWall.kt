@@ -144,6 +144,7 @@ object MyWall {
     }
     /** One who hides their presence carries the wall only right after an act of their own (the critic's N6). */
     fun renewVersion(own: Boolean = false) {
+        if (own) WallGlobal.laySoon()   // my wall moved: the table for everyone hears it (iOS renewVersion 542)
         synchronized(lock) { ensure(); versionKept = postsTag() }
         changed()
         if (own || Presence.sharing) schedulePush()
@@ -405,6 +406,42 @@ object MyWall {
     fun posts(): List<JSONObject> = synchronized(lock) { ensure(); ordered().map { seen(it, "", conceal = false) } }
     fun post(id: String): JSONObject? = synchronized(lock) { ensure(); mine.firstOrNull { it.optString("id") == id }?.let { seen(it, "", conceal = false) } }
     /** The correspondents whose build speaks the wall (iOS cap): the visitor's sweep asks for the walls among them never seen (Board.sweep). */
+    /**
+     * MY POSTS AS THE TABLE CARRIES THEM TO EVERYONE (iOS publicPosts, MontanaBoard.swift:735-757 at 2316): my own words on my own wall
+     * -- never a post another wrote here, never a repost -- the newest first, with my name and my face as they stand now. Nobody's comment
+     * leaves (its writer showed it to my wall alone), and a post past the table's room sheds its posters from the last file. Each with
+     * its digest: what was laid is not laid again.
+     */
+    fun publicPosts(limit: Int, budget: Int): Map<String, Pair<String, JSONObject>> {
+        val name = Prefs.userName.trim().take(64)
+        val face = Board.myFace()
+        val own = synchronized(lock) {
+            ensure()
+            mine.filter { it.optString("author").isEmpty() && !it.has("from") }.sortedByDescending { it.optDouble("at") }.take(limit)
+                .map { seen(it, "", conceal = true) }
+        }
+        val out = HashMap<String, Pair<String, JSONObject>>()
+        for (p in own) {
+            val x = Board.clean(p)
+            if (name.isNotEmpty()) x.put("byName", name)
+            if (face != null) x.put("face", face) else x.remove("face")
+            for (k in listOf("mine", "pinned", "liked", "kept", "reposted")) x.remove(k)
+            x.put("own", true).put("comments", JSONArray()).put("commentCount", 0)
+            val ms = x.optJSONArray("media") ?: JSONArray()
+            var i = ms.length() - 1
+            while (0 <= i && budget < x.toString().toByteArray().size) { ms.optJSONObject(i)?.remove("thumb"); i-- }
+            val d = x.toString().toByteArray()
+            if (budget < d.size) continue
+            out[x.optString("id")] = hex(java.security.MessageDigest.getInstance("SHA-256").digest(d)) to x
+        }
+        return out
+    }
+    /** My own posts with files, the newest first: the table's files their owner keeps (iOS keepFiles 2704-2706). */
+    fun ownMedia(limit: Int): List<Pair<String, JSONArray>> = synchronized(lock) {
+        ensure()
+        mine.filter { it.optString("author").isEmpty() && !it.has("from") && (it.optJSONArray("media")?.length() ?: 0) > 0 }
+            .sortedByDescending { it.optDouble("at") }.take(limit).map { it.optString("id") to JSONArray(it.getJSONArray("media").toString()) }
+    }
     fun speakers(): List<String> = synchronized(lock) { ensure(); cap.toList() }
     /** WHOSE POST ON MY WALL (iOS writer(of:on:), MontanaBoard.swift:2142-2149 at 2155): "" -- mine, a reference -- its writer's; null --
      * no post of that name, or a repost whose writer this phone was not told. */

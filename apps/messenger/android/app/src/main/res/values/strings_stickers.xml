@@ -12,4 +12,8 @@
     <string name="search_gifs">Search GIFs</string>
     <string name="gifs_none">No moving pictures yet</string>
     <string name="powered_by_giphy">Powered by GIPHY</string>
+    <!-- A SET AS A PAGE (iOS MontanaStickerSetPage) and its link (iOS MontanaFirstContact.handleLink 1966-1985) -->
+    <string name="sticker_delete_all">Delete all</string>
+    <string name="sticker_remove_set">Remove set</string>
+    <string name="sticker_ask_giver">Ask the person who sent this set for it.</string>
 </resources>

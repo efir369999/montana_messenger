@@ -179,12 +179,13 @@ object Media {
      * then the letter with the manifest leaves by the ordinary post (the pieces first — the receiver must find them).
      */
     fun send(c: Context, ref: String, picked: Picked, caption: String, qt: String? = null, group: MediaGroup.Slot? = null,
-             swap: (() -> ByteArray?)? = null, gate: Boolean = true, turn: String? = null) {
+             swap: (() -> ByteArray?)? = null, gate: Boolean = true, turn: String? = null, named: String? = null,
+             plate: Pair<String, String>? = null) {   // the quote the row shows and the letter does not carry: a sticker's rides its passport
         // A MEDIA LETTER OF A GROUP IS ASKED OF THE GROUP FIRST (iOS sendGatedMedia, G.5): a right the group took from its members, or
         // slow mode's wait, is said and no row is laid; every other letter goes on by the one road
         if (gate && Groups.isKey(ref)) refusal(c, ref, picked, caption)?.let { Groups.tellRefusal(it); return }
         var p = picked
-        val mid = Marks.mintMid()
+        val mid = named ?: Marks.mintMid()   // a sticker names its letter first: its passport rides under the same name (iOS letterMidFor)
         val local = file(c, mid, p.ext)
         local.writeBytes(p.bytes)
         val provisional = Marks.MEDIA + JSONObject().put("k", p.kind).put("e", p.ext).put("sz", p.bytes.size).apply {
@@ -194,7 +195,7 @@ object Media {
             MediaGroup.stamp(this, group)
             p.wave?.takeIf { it.isNotEmpty() }?.let { w -> put("wv", Base64.encodeToString(ByteArray(w.size) { (w[it] * 255).toInt().coerceIn(0, 255).toByte() }, Base64.NO_WRAP)) }
         }
-        Book.edit(ref) { it.msgs.add(Msg(mid, provisional, true, Marks.birthMs(mid) ?: System.currentTimeMillis(), qt = qt, file = local.path)) }
+        Book.edit(ref) { it.msgs.add(Msg(mid, provisional, true, Marks.birthMs(mid) ?: System.currentTimeMillis(), qt = qt ?: plate?.first, qm = plate?.second, file = local.path)) }
         if (!Book.isLocal(ref)) Transfers.set(mid, 0.01f)   // the ring stands at the tap (iOS setUploadProgress(fileName, 0.01), MontanaConversation.swift:4609)
         val work: () -> Unit = work@{
             // A ROW TAKEN OFF THE FEED BEFORE ITS TURN (its cross, a deletion) is not sent after all (iOS MTSendLine's guard, 2312)
@@ -264,6 +265,30 @@ object Media {
     }
     /** The files an unsent letter still names (iOS MontanaMediaStore.held): the cache never clears them. */
     fun inHand(): Set<String> = synchronized(intentLock) { intents().let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it)?.optString("f") }.toSet() } }
+    /** The letters whose intent waits for the drain: the queue holds them (iOS queueHolds), their clock is honest. */
+    fun intentMids(): Set<String> = synchronized(intentLock) { intents().let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it)?.optString("mid") }.toSet() } }
+    /**
+     * A RED FILE TAPPED (iOS resendMedia): THE SAME ROAD AS THE FIRST SEND under the row's own name -- the pieces sealed and laid
+     * again from the file beside the row, the letter posted again; the row back at the clock with its ring. A file gone is no retry.
+     */
+    fun resend(c: Context, ref: String, m: Msg) {
+        val f = m.file?.let { File(it) }?.takeIf { it.exists() } ?: return
+        val man = manifestOf(m) ?: return
+        var back = false
+        Book.edit(ref) { ch -> ch.msgs.find { it.mid == m.mid && it.mine }?.let { back = it.restart() } }
+        if (!back) return
+        if (!Book.isLocal(ref)) Transfers.set(m.mid, 0.01f)
+        Log.i("Montana", "resend_tap m=" + m.mid.take(8) + " kind=" + man.optString("k") + " human retry")
+        Thread {
+            val wave = man.optString("wv").takeIf { it.isNotEmpty() }?.let { w ->
+                runCatching { Base64.decode(w, Base64.NO_WRAP) }.getOrNull()?.let { b -> FloatArray(b.size) { (b[it].toInt() and 0xFF) / 255f } }
+            }
+            val p = Picked(f.readBytes(), man.optString("k").ifEmpty { "doc" }, man.optString("e").ifEmpty { f.extension }, man.optString("n").ifEmpty { null },
+                man.optDouble("du").takeIf { !it.isNaN() }, wave, man.optBoolean("r"))
+            val caption = man.optString("cap")
+            if (!deliver(c, ref, m.mid, p, caption, f, m.qt, MediaGroup.read(man))) keepIntent(ref, m.mid, f, Marks.MEDIA + man.toString(), caption, m.qt)
+        }.start()
+    }
     @Volatile private var draining = false
     /** The intents still waiting go out again, oldest first, one at a time, at every pickup of the box; while the node takes nothing the rest wait too. */
     fun drainIntents(c: Context) {
@@ -350,7 +375,7 @@ object Media {
         val mk = MtBindings.nativeRandom(32) ?: return null
         val sealed = Wire.seal(mk, json.toByteArray()) ?: return null
         val mbid = Wire.hex(Wire.sha(sealed))
-        if (!Wire.putBlob(mbid, sealed, assumeAbsent = true)) return null   // sealed under a key drawn this moment: new by construction
+        if (!Wire.putBlob(mbid, sealed, assumeAbsent = true, bulk = true)) return null   // sealed under a key drawn this moment: new by construction
         return (Marks.MEDIA + JSONObject().put("mref", mbid).put("mk", Base64.encodeToString(mk, Base64.NO_WRAP)).put("sz", total)) to json
     }
 
@@ -515,7 +540,10 @@ object Media {
         // A STICKER THAT ARRIVED IS KEPT (iOS MontanaChatStore.swift:3608-3620 at 2155, atom 0d501f110022): the
         // receiver's panel holds what was used in the conversation, exactly as the sender's does -- one copy per
         // picture, since Stickers.add names a sticker by its own bytes and moves a known one to the front.
-        if (man.optString("n") == Stickers.CARD) runCatching { Stickers.add(c, dest.readBytes(), dest.extension) }
+        if (man.optString("n") == Stickers.CARD) {
+            runCatching { Stickers.add(c, dest.readBytes(), dest.extension) }
+            StickerWire.enrich(ref, mid)   // the passport may have come before the picture: its quote settles here (iOS mediaLanded)
+        }
         // a group's copy was receipted by the group (Groups.handle), and its pieces serve every other member of it
         // my other device's letter (Post.landOwn): the correspondent still fetches these pieces, the receipt is theirs to give
         if (!own && !Groups.isKey(ref)) { Post.receiptFor(ref, mid); drop(man) }
@@ -536,28 +564,40 @@ object Media {
         return dest.exists()
     }
 
-    /** One piece of a file, opened with its key, or null -- every road tried with its own patience. */
-    fun bring(bid: String, bk: ByteArray, cs: Int): ByteArray? {
+    /**
+     * One piece of a file, opened with its key, or null. WHEN it is asked is the lane's (Lane, iOS MTCargoLane): three pieces in
+     * flight for the whole phone, the one a player waits for first.
+     */
+    fun bring(bid: String, bk: ByteArray, cs: Int, need: Lane.Need = Lane.Need.LOOK): ByteArray? {
+        val sealed = Lane.bring(bid, need) ?: return null
+        return Wire.open(bk, sealed)?.let { if (cs <= it.size) it.copyOf(cs) else it }
+    }
+
+    /** One sealed piece, its name checked against its bytes, or null -- every road tried with its own patience (iOS bringChunk). */
+    fun fetch(bid: String): ByteArray? {
         // A PIECE OF ONE'S OWN NODE IS ASKED THERE AND ONLY THERE (iOS bringChunk, 6f24f091): the book names it (HomeBook);
         // the doors never carried it, and they never hear its name
         if (HomeBook.holds(bid)) {
             val sealed = Blobs.get(bid) ?: HomeShelf.get(bid)?.also { Blobs.put(bid, it) }
             if (sealed == null || Wire.hex(Wire.sha(sealed)) != bid) { Log.i("Montana", "home_get FAIL id=" + bid.take(8) + " -- your node did not give it"); return null }
-            return Wire.open(bk, sealed)?.let { if (cs <= it.size) it.copyOf(cs) else it }
+            return sealed
         }
         // ONE PIECE WITH THE DOORS' OWN PATIENCE (iOS bringChunk, MontanaWakePush 2458-2487; atom aeabdc576605): a busy door is
         // waited for on a growing pause (0.7 s doubling, six tries); a silent road gets three quick tries; neither is «gone»
         var silentTries = 0; var busyTries = 0
         while (silentTries < 3 && busyTries < 6) {
+            // an answer can finish exactly as a call begins: every retry stands behind the call (iOS bringChunk, MontanaCall.isBusy)
+            var held = false
+            while (Calls.busy()) {
+                if (!held) { held = true; Log.d("Montana", "blob_dl held=call id=" + bid.take(8)) }
+                Thread.sleep(1000)
+            }
             // a piece a neighbour brought ahead of its manifest is assembled from this phone's own store (iOS MontanaBlobStore)
             val near = Blobs.get(bid)
             if (near == null && Wire.isGone(bid)) break   // every door called it gone: asked once, not every opening of the chat (iOS 2438)
             val busy = BooleanArray(1)
             val sealed = near ?: Wire.getChunk(bid, busy)
-            if (sealed != null && Wire.hex(Wire.sha(sealed)) == bid) {   // the name is the bytes: integrity
-                val piece = Wire.open(bk, sealed)?.let { if (cs <= it.size) it.copyOf(cs) else it }
-                if (piece != null) return piece
-            }
+            if (sealed != null && Wire.hex(Wire.sha(sealed)) == bid) return sealed   // the name is the bytes: integrity
             if (Wire.isGone(bid)) break
             if (busy[0]) {
                 val pause = 700L shl busyTries
@@ -697,6 +737,16 @@ class MediaProvider : ContentProvider() {
 object StagedOrder {
     /** The number a place wears: one more than its index. */
     fun number(index: Int) = index + 1
+    /**
+     * THE PERSON SETS THE ORDER (iOS MTStagedOrder.moved, 2315; the author's words 27.10.2026 09:16 UTC): a plate carried from `from`
+     * stands at `to`, every other keeps its turn, and the numbers follow by construction. A place outside the tray changes nothing.
+     */
+    fun <T> moved(items: List<T>, from: Int, to: Int): List<T> {
+        if (from !in items.indices || to !in items.indices || from == to) return items
+        val a = items.toMutableList()
+        a.add(to, a.removeAt(from))
+        return a
+    }
     /** The plates of a tray: a run of two or more pictures folds into one; a file (`true`) ends the run and stands alone. */
     fun plates(files: List<Boolean>): List<IntRange> {
         val out = ArrayList<IntRange>()

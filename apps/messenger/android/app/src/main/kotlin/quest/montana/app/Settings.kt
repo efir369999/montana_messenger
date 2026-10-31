@@ -128,6 +128,15 @@ fun MainActivity.push(build: (close: () -> Unit) -> View) {
     close = overlay(build { close() })
 }
 
+/**
+ * A PAGE WITH A FIELD AT ITS FOOT STANDS ABOVE THE KEYS (as the contact card's editor does, PeerInfo): a page over the current one is
+ * padded once by the system bars at its push (overlay), so the keyboard rose over its field and its send; the keys push it up instead.
+ */
+fun View.standAboveKeys() = setOnApplyWindowInsetsListener { v, insets ->
+    val b = insets.getInsets(android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.ime())
+    v.setPadding(b.left, b.top, b.right, b.bottom); insets
+}
+
 // ─────────────────────────── the settings' first page (iOS SettingsTabView) ───────────────────────────
 
 /** THE SETTINGS ARE THE PLATFORM'S OWN LIST: two sections of rows, the cross top left. */
@@ -403,7 +412,7 @@ fun seedPage(act: MainActivity, onBack: () -> Unit): View {
         body.gap(12)
         body.addView(c.text("⚠ " + c.getString(R.string.sg_for_you), 17f, Color.WHITE, bold = true, center = true), lp())
         body.gap(6)
-        body.addView(c.text(c.getString(R.string.sg_wallet), 22f, Color.WHITE, bold = true, center = true), lp())
+        body.addView(c.text(c.getString(if (GooglePlay.COINS) R.string.sg_wallet else R.string.sg_account), 22f, Color.WHITE, bold = true, center = true), lp())
         body.gap(16)
         lateinit var go: AccentButton
         val ticks = BooleanArray(2)

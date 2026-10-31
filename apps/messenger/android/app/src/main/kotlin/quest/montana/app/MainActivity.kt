@@ -174,7 +174,23 @@ class MainActivity : Activity() {
         // A COIN'S LINK OPENS THE WALLET (iOS handleLink 1871-1877, the author's word 03.10): the coin letter's machine line is no
         // invitation, and the invitation road answered it «could not be opened».
         if (Meeting.normalize(link).startsWith(CoinLetter.LINK.substringBefore("/1/"))) {
-            if (hasSeed && termsAccepted) push { close -> walletPage(this, close) }
+            if (hasSeed && termsAccepted && GooglePlay.COINS) push { close -> walletPage(this, close) }
+            return
+        }
+        // A SET'S LINK IS NOT AN INVITATION (iOS handleLink 1966-1985): it names a set and nobody else. The hand that passed it was
+        // remembered when the letter landed (StickerWire.noteLink), so the set is asked of that hand and its page opens over that
+        // very conversation. A link from nowhere opens nothing: there is no register to ask, and no address is guessed.
+        StickerPack.idIn(link)?.let { (id, title) ->
+            if (!hasSeed || !termsAccepted) return
+            android.util.Log.d("Montana", "sticker_link opened pack=" + id.take(8))
+            // my own set's link (iOS: its giver is my own reference): nobody to ask — my set's page over the open conversation
+            if (id == StickerBook.mineId) { Book.openChat?.let { Stickers.setPage(this, it) }; return }
+            val giver = StickerBook.giver(id)
+            if (giver.isNullOrEmpty()) { sayVerdict(this, R.string.sticker_ask_giver); return }
+            if (!StickerBook.holds(id)) StickerBook.meet(id, title.ifEmpty { "Montana" }, giver, 0)
+            background { StickerWire.ask(id, giver) }
+            if (Book.chat(giver) != null && Book.openChat != giver) push { close -> conversationPage(this, giver, close) }
+            Stickers.setPage(this, giver, id)
             return
         }
         if (!hasSeed || !termsAccepted) {
@@ -205,6 +221,7 @@ class MainActivity : Activity() {
                 // «Forget this device» (iOS: Privacy): first the archive seals what the words can reopen — every head, name and face
                 // (iOS sealForForget) — then the seed and everything of the person leave; the sealed history stays for the 24 words.
                 Archive.sealForForget {
+                    ShareSuggest.forgetAll(this)   // the share sheet's suggestions of the departed person go with them
                     MontanaSeed.clear(); Archive.forgetKeys(); Prefs.forgetPerson(); SelfFace.clear(this); SavedMessages.forget(this)
                     MontanaHomeNode.forget(this); MontanaBackup.forget(this); MontanaCard.forget(); Book.wipe()
                     MontanaBackupID.withdraw(this)   // a record a build before wrote leaves the account
@@ -370,6 +387,13 @@ class MainActivity : Activity() {
         } else android.window.OnBackInvokedCallback { commitBack() }
         onBackInvokedDispatcher.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback)
     }
+    /** A page's own back stroke (Conversation.kt's TabPan, iOS MTTabPan): only the page a back would take away now may be dragged. */
+    fun panOwns(page: View) = slidingPage === page && back != null
+    fun panBegin(page: View) { keysDown(); page.animate().cancel(); Motion.moveBegan(page) }
+    fun panMove(page: View, x: Float) { page.translationX = x.coerceAtLeast(0f) }
+    /** The release: the same back as the edge's (the page's close slides it the rest of the way), or the page settles home. */
+    fun panEnd(page: View, out: Boolean) { if (out && panOwns(page)) back?.invoke() else settle(page, surface.width.toFloat(), out = false) }
+
     /**
      * THE BACK NEVER LEAVES THE APP (the author's word 09.10.2026 11:5x MSK: «take away the side swipe that leaves the app -- our swipe from
      * the left opens the side panel»): a page goes back as before; at the root the left edge's stroke opens the drawer it was dragging
@@ -417,20 +441,22 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume(); CallScreen.front = this; PersonChain.onScreen = true; Thread { PersonChain.prime() }.start(); main.removeCallbacks(boxRound); main.post(boxRound); EarService.start(this)
         if (hasSeed && termsAccepted) Calls.rejoinHeldCall(this)   // the run goes back into the call its process held, once the app faces the person
+        if (hasSeed && termsAccepted) ShareSuggest.seed()   // the share sheet offers the chats at once after an update (iOS seedSuggestions)
+        Update.onLeast = { keepUpdateRequired(again = false) }; keepUpdateRequired()   // a build below the network's least sees the update banner
         Thread { Update.look(applicationContext) }.start()   // a newer build on the site rings its notice (Update)
         if (hasSeed && termsAccepted) Thread { Signal.sweep() }.start()   // every peer's last word, one question (iOS ContentView 471)
         if (hasSeed && termsAccepted) Thread { LiveDraft.sayLinkToAll() }.start()   // the daily link, preloaded to every correspondent (iOS ContentView.swift:472)
         if (hasSeed && termsAccepted) Thread { Book.healFacesFromCards() }.start()   // a faceless correspondent is read from their card at once (iOS MontanaChatStore.swift:1916, atom 796a76a34ae0)
         if (hasSeed && termsAccepted) Thread { MontanaCard.keepLiveCardsUp(applicationContext) }.start()   // the live cards turn and top up on every return (iOS MontanaApp.swift:297)
         if (hasSeed && termsAccepted) Thread { NamePlane.keepInStep() }.start()   // the name renewed when due, its point listened at (iOS keepInStep)
-        Thread { CoinBook.warm(); CoinSend.settle(); ChessSend.settleAll() }.start()
+        Thread { CoinBook.warm(); CoinSend.settle() }.start()
         // THE WALLS AT A RETURN (iOS ContentView.swift:474-477 at 2155): every wall never seen is asked (Board.sweep), and the owner carries
         // my wall to whoever speaks it -- at a return only while the presence is shown (the critic's N6)
         if (hasSeed && termsAccepted) Thread { Board.sweep(); if (Presence.sharing) MyWall.schedulePush() }.start()
         if (hasSeed && termsAccepted) Thread { MyWall.roadBack("active") }.start()   // a post on its way goes on by itself (iOS roadBack 1922)   // every coin letter the chats hold stands in the book (iOS MTCoinSend.settle)
     }
     // the ear stays when the app leaves the screen: EarService holds it (the app closed is heard as the app open)
-    override fun onPause() { super.onPause(); PersonChain.onScreen = false; PersonChain.left(); CoinBook.closeWindows(); if (CallScreen.front === this) CallScreen.front = null; main.removeCallbacks(boxRound) }
+    override fun onPause() { super.onPause(); Update.onLeast = null; PersonChain.onScreen = false; PersonChain.left(); CoinBook.closeWindows(); if (CallScreen.front === this) CallScreen.front = null; main.removeCallbacks(boxRound) }
 
     // THE CALL'S WINDOW OVER OTHER APPS (CallFloat): the person leaving on a system before the platform's auto-enter, and the
     // platform's own word that the window stands or is gone
@@ -452,6 +478,46 @@ class MainActivity : Activity() {
     fun answerCall() {
         val asks = callAsks(Calls.ringVideo())
         if (asks.isEmpty()) takeTheCall(true) else requestPermissions(asks, ASK_CALL_MIC)
+    }
+
+    /**
+     * THE UPDATE IS A NOTICE, NOT A WALL (iOS 829d29f2, .overlay(alignment: .top) { MTUpdateBanner() } over RootView): while this
+     * build stands below the least the network admits (Update.required), the update banner lies over the window's top at the launch,
+     * at every return and whenever the site's word names a new least; it hides by itself after nine seconds (iOS standing), unless
+     * its round is running, or by its cross or a swipe up. Nothing is held: the screen beneath works.
+     */
+    private var updateCard: View? = null
+    private var updateLeast = 0L
+    private val updateHide = Runnable { hideUpdateBanner() }
+    private fun keepUpdateRequired(again: Boolean = true) {
+        val r = Update.required(this)
+        if (r == null) { updateLeast = 0L; hideUpdateBanner(); return }
+        if (!again && r.least == updateLeast) return   // the same word read again shows nothing new (iOS onChange of least)
+        updateLeast = r.least
+        android.util.Log.d("Montana", "update_required least=" + r.least + " own=" + Update.own(this))
+        val decor = window.decorView as android.view.ViewGroup
+        updateCard?.let { main.removeCallbacks(updateHide); it.animate().cancel(); decor.removeView(it) }
+        val v = updateBanner(this, r, onTouched = { timeUpdateBanner() }, onClose = { hideUpdateBanner() })
+        updateCard = v
+        decor.addView(v, android.widget.FrameLayout.LayoutParams(-1, -2, android.view.Gravity.TOP))
+        v.requestApplyInsets()
+        v.alpha = 0f; v.translationY = -dp(60).toFloat()
+        v.animate().alpha(1f).translationY(0f).setDuration(300).setInterpolator(android.view.animation.DecelerateInterpolator()).start()
+        timeUpdateBanner()
+    }
+    /** Nine seconds from now, unless the round runs: then the banner stands until the round has its last word. */
+    private fun timeUpdateBanner() {
+        main.removeCallbacks(updateHide)
+        val r = Update.lastRound
+        if (r == null || r == Update.FAILED || r == Update.HANDED) main.postDelayed(updateHide, 9_000)
+    }
+    private fun hideUpdateBanner() {
+        main.removeCallbacks(updateHide)
+        val v = updateCard ?: return
+        updateCard = null
+        Update.onRound = null
+        v.animate().alpha(0f).translationY(-v.height.toFloat()).setDuration(250)
+            .withEndAction { (v.parent as? android.view.ViewGroup)?.removeView(v) }.start()
     }
 
     @Deprecated("registerBack's OnBackInvokedCallback takes every system back from API 33; this is the road below it")
@@ -509,10 +575,11 @@ class MainActivity : Activity() {
 
     /** Tracks and files, any number, from the system's document picker (iOS fileImporter [.audio, .item], allowsMultipleSelection). */
     fun openDocuments(done: (List<Uri>) -> Unit) {
-        manyDone = done
+        manyDone = { got -> got.lastOrNull()?.let { FilesFolder.remember(it) }; done(got) }
         runCatching {
             @Suppress("DEPRECATION") startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-                .setType("*/*").putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true), PICK_MANY)
+                .setType("*/*").putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                .apply { FilesFolder.last()?.let { putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) } }, PICK_MANY)
         }.onFailure { manyDone = null; done(emptyList()) }
     }
 
@@ -635,4 +702,24 @@ class MainActivity : Activity() {
     override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(pinnedText(AppLanguage.wrap(base)))
 
     private companion object { const val PICK_PHOTO = 1; const val ASK_NOTIFY = 2; const val DOCUMENT = 3; const val ASK_CAMERA = 4; const val CONFIRM_OWNER = 5; const val CAPTURE = 6; const val PICK_CONTACT = 7; const val ASK_CALL_MIC = 9; const val ASK_CALL_OUT = 10; const val ASK_SCREEN = 11; const val PICK_MANY = 12; const val ASK_MEDIA = 13; const val ASK_MIC = 14; const val ADD_CONTACT = 15 }
+}
+
+/**
+ * THE FILES PAGE OPENS WHERE THE PERSON LAST TOOK A FILE FROM (iOS MTFilesFolder, 2315; the author's word 27.10.2026 09:15 UTC,
+ * council link 9561): the last document chosen is the system page's first place -- it opens in that document's folder. Kept in
+ * the device-only vault (iOS: sealed on this phone, SeedScope.deviceKeys): a place of this phone's storage never travels in a copy.
+ * A document gone lets the page open where it would. Read once per run.
+ */
+object FilesFolder {
+    private const val KEY = "filesPageFolder"
+    private var held: Uri? = null
+    private var read = false
+    @Synchronized fun last(): Uri? {
+        if (!read) { read = true; held = DeviceVault.get(KEY)?.let { Uri.parse(String(it, Charsets.UTF_8)) } }
+        return held
+    }
+    @Synchronized fun remember(file: Uri) {
+        read = true; held = file
+        DeviceVault.set(KEY, file.toString().toByteArray(Charsets.UTF_8))
+    }
 }

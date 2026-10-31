@@ -41,6 +41,7 @@
     <string name="ld_forward">Forward</string>
     <string name="ld_forward_to">Forward to…</string>
     <string name="ld_forwarded">↪︎ Forwarded message</string>
+    <string name="ld_forwarded_from">↪︎ Forwarded from %s</string>
     <string name="ld_select">Select</string>
     <!-- the contacts page (iOS ContactsTabView: the menu about a person) -->
     <string name="ct_write">Write</string>
@@ -69,4 +70,9 @@
     <string name="sl_later">Send later</string>
     <string name="new_call">New Call</string>   <!-- iOS CallsTabView «New Call» -->
     <string name="cl_draft">Draft:</string>   <!-- iOS ChatRow «Draft:» -->
+    <!-- the Google Play build (GooglePlay.COINS false): the same places without a word of a wallet -->
+    <string name="sg_account">This seed phrase unlocks access to your account</string>
+    <string name="priv_address_title">Your own address</string>
+    <string name="priv_address_sub">People message you and call you by it</string>
+    <string name="lv_footer_play">Your level is the lower of two: your time in Montana and the Fabric of Time, the people you write to and call regularly in the last two weeks. Each level opens new functions of Montana.</string>
 </resources>

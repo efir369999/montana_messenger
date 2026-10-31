@@ -266,7 +266,11 @@ internal class Panes(val bar: View, val pane: LinearLayout, val foot: View, val 
 internal fun panesOf(act: MainActivity, ref: String, group: Boolean, onClose: () -> Unit, toChat: (String, String?) -> Unit,
                      onFoot: (Boolean) -> Unit): Panes {
     val c: Context = act
-    val tabs = if (group) listOf(Tab.MEDIA, Tab.FILES, Tab.LINKS, Tab.MUSIC, Tab.VOICE) else Tab.values().toList()
+    // A CHANNEL'S PAGE HOLDS A PERSON'S PANES WITHOUT THE WALL (iOS paneTabs, MontanaPeerInfoScreen 996 at 2315): Media its photos,
+    // Video its films, Files, Links, Music and Voice; a group's Media holds its photos and its videos together
+    val channel = group && Groups.isChannel(ref)
+    val tabs = if (channel) listOf(Tab.MEDIA, Tab.VIDEO, Tab.FILES, Tab.LINKS, Tab.MUSIC, Tab.VOICE)
+               else if (group) listOf(Tab.MEDIA, Tab.FILES, Tab.LINKS, Tab.MUSIC, Tab.VOICE) else Tab.values().toList()
     // ── THE STRIP (iOS MTTabStrip): the system's glass capsule 44 tall stands still on the page's margin and the words roll inside it,
     // under its edge; the chosen word wears the system's grey pill, which rides to the next one; while every word fits, the tabs
     // share the capsule equally ──
@@ -414,7 +418,7 @@ internal fun panesOf(act: MainActivity, ref: String, group: Boolean, onClose: ()
     }
     drawPane = {
         pane.removeAllViews()
-        val msgs = select(tab, Book.chat(ref)?.msgs ?: emptyList(), group)
+        val msgs = select(tab, Book.chat(ref)?.msgs ?: emptyList(), group && !channel)   // a channel's films have their own pane
         if (tab == Tab.WALL) {
             // THE WRITE BUTTON WHILE THE OWNER LETS ME WRITE (iOS MTBoardRows, MontanaBoardViews.swift:156-161 at 2155): it opens the
             // one new post's page over their wall (MTBoardComposer.present(on: owner)), and the post goes to them

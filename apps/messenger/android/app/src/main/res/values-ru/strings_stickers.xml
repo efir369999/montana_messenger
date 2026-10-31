@@ -10,4 +10,8 @@
     <string name="search_gifs">Поиск гифок</string>
     <string name="gifs_none">Пока нет гифок</string>
     <string name="powered_by_giphy">Powered by GIPHY</string>
+    <!-- A SET AS A PAGE (iOS MontanaStickerSetPage) and its link (iOS MontanaFirstContact.handleLink 1966-1985) -->
+    <string name="sticker_delete_all">Удалить все</string>
+    <string name="sticker_remove_set">Убрать набор</string>
+    <string name="sticker_ask_giver">Попросите набор у того, кто его прислал.</string>
 </resources>

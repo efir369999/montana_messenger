@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- THE SHARE SHEET'S ROW OF PEOPLE (iOS MontanaShare IntentsSupported INSendMessageIntent, 5807768fc372): the chats the app publishes
+     as sharing shortcuts (ShareIn.kt ShareSuggest) are offered by the system's share sheet, and one chosen there opens the share
+     page with that chat already chosen (MainActivity's ACTION_SEND filters). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <share-target android:targetClass="quest.montana.app.MainActivity">
+        <data android:mimeType="*/*" />
+        <category android:name="quest.montana.app.SHARE_CHAT" />
+    </share-target>
+</shortcuts>

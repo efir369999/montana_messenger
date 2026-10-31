@@ -10,4 +10,8 @@
     <string name="search_gifs">搜索动图</string>
     <string name="gifs_none">暂无动图</string>
     <string name="powered_by_giphy">Powered by GIPHY</string>
+    <!-- A SET AS A PAGE (iOS MontanaStickerSetPage) and its link (iOS MontanaFirstContact.handleLink 1966-1985) -->
+    <string name="sticker_delete_all">全部删除</string>
+    <string name="sticker_remove_set">移除贴纸包</string>
+    <string name="sticker_ask_giver">请向发送该贴纸包的人索取。</string>
 </resources>

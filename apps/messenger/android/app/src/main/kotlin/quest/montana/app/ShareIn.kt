@@ -14,8 +14,8 @@ import android.widget.Toast
 
 // ─────────────────────────── «Share → Montana» from another app (iOS MontanaShare: the share extension) ───────────────────────────
 
-/** What another app handed in (the system's «Share»): its words and its files. */
-class Shared(val words: String, val files: List<Uri>)
+/** What another app handed in (the system's «Share»): its words and its files, and the chat the system's suggestion named, if any. */
+class Shared(val words: String, val files: List<Uri>, val chat: String? = null)
 
 /** The system's share (ACTION_SEND / ACTION_SEND_MULTIPLE) read into words and files; null for any other intent. */
 fun sharedOf(i: Intent?): Shared? {
@@ -29,7 +29,87 @@ fun sharedOf(i: Intent?): Shared? {
     val files: List<Uri> = if (i.action == Intent.ACTION_SEND_MULTIPLE) {
         (if (Build.VERSION.SDK_INT >= 33) i.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java) else i.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)) ?: emptyList()
     } else listOfNotNull(if (Build.VERSION.SDK_INT >= 33) i.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java) else i.getParcelableExtra(Intent.EXTRA_STREAM))
-    return if (words.isEmpty() && files.isEmpty()) null else Shared(words, files)
+    // A CHAT CHOSEN FROM THE SYSTEM'S SUGGESTIONS (iOS ShareViewController takeChosen, 5807768fc372): the sheet's row of people hands
+    // over the shortcut the app published, named by the chat's alias (NoticeAlias)
+    val chat = i.getStringExtra(Intent.EXTRA_SHORTCUT_ID)?.let(NoticeAlias::open)?.takeIf { !it.startsWith(NoticeAlias.HEAD) }
+    return if (words.isEmpty() && files.isEmpty()) null else Shared(words, files, chat)
+}
+
+/**
+ * A PERSON'S CHATS IN THE SYSTEM'S SHARE SHEET (iOS MontanaNotify.suggest, 5807768fc372; the author's word 23.09: «Montana's contacts
+ * and chats are offered»): the platform offers the conversations an app publishes as sharing shortcuts (share-target of
+ * res/xml/shortcuts.xml). A shortcut carries the chat's alias, its name and face -- never its link, never a word of a letter -- and is
+ * published at most once a day per chat, so the system learns whom and which day, not every letter's moment. A chat deleted takes its
+ * shortcut with it (Notify.forget); a person who leaves the device takes them all.
+ */
+object ShareSuggest {
+    private const val CATEGORY = "quest.montana.app.SHARE_CHAT"   // NOT-UI: res/xml/shortcuts.xml's share-target
+    private val suggestedDay = HashMap<String, Long>()
+    private var seeded = false
+
+    /** The chat a person writes to is offered in the share sheet, once a day. */
+    fun suggest(ref: String) {
+        if (Build.VERSION.SDK_INT < 29 || ref.isEmpty() || Book.isLocal(ref)) return
+        val day = System.currentTimeMillis() / 86_400_000L
+        synchronized(this) { if (suggestedDay[ref] == day) return; suggestedDay[ref] = day }
+        Thread { publish(ref) }.start()
+    }
+    private fun publish(ref: String) = runCatching {
+        val c = Book.ctx
+        val sm = c.getSystemService(android.content.pm.ShortcutManager::class.java) ?: return@runCatching
+        val ch = Book.chat(ref) ?: return@runCatching
+        val alias = NoticeAlias.of(ref)
+        val name = ch.shown.ifBlank { c.getString(R.string.peer) }   // USER-DATA: the name
+        val icon = Notify.faceOf(ref)?.let { android.graphics.drawable.Icon.createWithBitmap(it) }
+            ?: android.graphics.drawable.Icon.createWithResource(c, R.mipmap.ic_launcher_glass)
+        // a tap on it in the launcher's menu opens the chat as a banner's tap does (MainActivity.takeChat)
+        val open = Intent(Intent.ACTION_MAIN).setClassName(c.packageName, MainActivity::class.java.name).putExtra(Notify.EXTRA_CHAT, alias)
+        val info = android.content.pm.ShortcutInfo.Builder(c, alias)
+            .setShortLabel(name).setLongLabel(name).setIcon(icon).setIntent(open)
+            .setCategories(setOf(CATEGORY))
+            .setPerson(android.app.Person.Builder().setName(name).setKey(alias).setIcon(icon).build())
+            .apply { if (30 <= Build.VERSION.SDK_INT) setLongLived(true) }
+            .build()
+        if (30 <= Build.VERSION.SDK_INT) sm.pushDynamicShortcut(info)
+        else {
+            // API 29 has no push: the oldest one gives way when the activity's room is full
+            val held = sm.dynamicShortcuts.filter { it.id != alias }
+            if (sm.maxShortcutCountPerActivity <= held.size) held.minByOrNull { it.lastChangedTimestamp }?.let { sm.removeDynamicShortcuts(listOf(it.id)) }
+            sm.addDynamicShortcuts(listOf(info))
+        }
+        android.util.Log.d("Montana", "share_suggest given")
+    }.onFailure { android.util.Log.d("Montana", "share_suggest refused " + it.javaClass.simpleName) }
+
+    /** The chats the share sheet shows at once after an update: the top of the person's own list, once a process. */
+    fun seed() {
+        synchronized(this) { if (seeded) return; seeded = true }
+        Book.ctx.mainLooper.let { android.os.Handler(it) }.postDelayed({
+            listedChats().filter { !Groups.isKey(it.ref) || Groups.canWrite(it.ref) }.take(8).forEach { suggest(it.ref) }
+        }, 3_000)
+    }
+
+    /** A deleted chat leaves the system's suggestions (called before its alias goes). */
+    fun forget(ref: String) {
+        synchronized(this) { suggestedDay.remove(ref) }
+        if (Build.VERSION.SDK_INT < 29) return
+        val alias = NoticeAlias.held(ref) ?: return
+        runCatching {
+            val sm = Book.ctx.getSystemService(android.content.pm.ShortcutManager::class.java) ?: return
+            sm.removeDynamicShortcuts(listOf(alias))
+            if (30 <= Build.VERSION.SDK_INT) sm.removeLongLivedShortcuts(listOf(alias))
+        }
+    }
+
+    /** The person left the device: every shortcut of theirs goes. */
+    fun forgetAll(c: Context) {
+        synchronized(this) { suggestedDay.clear() }
+        if (Build.VERSION.SDK_INT < 29) return
+        runCatching {
+            val sm = c.getSystemService(android.content.pm.ShortcutManager::class.java) ?: return
+            if (30 <= Build.VERSION.SDK_INT) sm.removeLongLivedShortcuts(sm.getShortcuts(android.content.pm.ShortcutManager.FLAG_MATCH_DYNAMIC or android.content.pm.ShortcutManager.FLAG_MATCH_CACHED).map { it.id })
+            sm.removeAllDynamicShortcuts()
+        }
+    }
 }
 
 /** Words of mine as a plain letter to a chat (the one road of a typed letter: the row now, the post after). */
@@ -54,7 +134,11 @@ fun sendWords(target: String, words: String) {
 fun sharePage(act: MainActivity, s: Shared, onClose: () -> Unit): View {
     val c: Context = act
     val chosen = linkedSetOf<String>()
-    val chats = listedChats().filter { !Groups.isKey(it.ref) || Groups.canWrite(it.ref) }   // a group this phone writes into takes it by its carrier (Groups.send, carryMedia)
+    val listed = listedChats().filter { !Groups.isKey(it.ref) || Groups.canWrite(it.ref) }   // a group this phone writes into takes it by its carrier (Groups.send, carryMedia)
+    // THE SUGGESTED CHAT STANDS FIRST AND CHOSEN (iOS takeChosen); a name the list does not hold opens the sheet as before
+    val suggested = listed.firstOrNull { it.ref == s.chat }
+    val chats = if (suggested == null) listed else listOf(suggested) + listed.filter { it !== suggested }
+    if (suggested != null) chosen.add(suggested.ref)
     var query = ""
     val field = EditText(c).apply {
         setText(s.words)   // USER-DATA: what the other app handed in

@@ -128,13 +128,16 @@ object Doors {
     // THE MACHINES BEHIND THE DOORS (iOS MontanaNodes 162-183, the network's word 15.22): which doors are one machine — the page
     // groups by that word always, the handshake only colours the state. Absent in an older node's answer.
     private const val MACHINES = "mt.nodes.machines"
-    fun machines(): List<Pair<String, Set<String>>> = runCatching {
+    fun machines(): List<Pair<String, Set<String>>> = machineDoors().map { (id, ds) -> id to ds.map { it.label }.toSet() }
+    /** The same machines by their hosts — a door base names its host, never its label (iOS mirror 4377: `m.doors.map { $0.host }`). */
+    fun machineHosts(): List<Pair<String, Set<String>>> = machineDoors().map { (id, ds) -> id to ds.map { it.host }.toSet() }
+    private fun machineDoors(): List<Pair<String, List<Door>>> = runCatching {
         val arr = org.json.JSONArray(Prefs.str(MACHINES, "[]"))
         (0 until arr.length()).mapNotNull { i ->
             val m = arr.optJSONObject(i) ?: return@mapNotNull null
             val id = m.optString("id")
             val ds = m.optJSONArray("doors") ?: return@mapNotNull null
-            if (id.isEmpty()) null else id to doors((0 until ds.length()).joinToString("\n") { ds.optString(it) }).map { it.label }.toSet()
+            if (id.isEmpty()) null else id to doors((0 until ds.length()).joinToString("\n") { ds.optString(it) })
         }
     }.getOrDefault(emptyList())
 

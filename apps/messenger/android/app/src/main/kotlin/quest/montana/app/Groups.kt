@@ -41,6 +41,8 @@ object Groups {
     private const val FACE_SIDE = 160   // iOS faceSide
     /** [I-14]: a group is bounded by the people its owner carries to (iOS peopleLimit). */
     private const val PEOPLE_LIMIT = 200
+    /** [I-14]: the posts one word of a channel's views names (iOS viewsBatch). */
+    const val VIEWS_BATCH = 200
     private const val PIECE_CHARS = 4500   // iOS ChatStore.sendPieceChars
     private const val HEARD_LIMIT = 512
     private val CROWNS = setOf(0x1F451, 0x2654, 0x2655, 0x265A, 0x265B)   // iOS MTCrown: only the Montana room wears a crown
@@ -51,6 +53,8 @@ object Groups {
     class Member(val seat: String, val pipe: String)
     /** ONE WHO ASKED TO JOIN BY THE LINK (iOS MTGroupRequest, the reference's «Member Requests»): the pipe the owner met them by, the name they gave and when (ms). */
     class Request(val pipe: String, val name: String, val at: Long)
+    /** One deed of a channel, as its owner's phone wrote it (iOS MTChannelAct): what, about whom by the names known then, when (ms). */
+    class Act(val e: String, val p: List<String>?, val t: String?, val at: Long)
 
     /** A group as this phone holds it (iOS MTGroupState): `owner` — the pipe to the owner, empty on the owner's phone; `me` — this phone's seat. */
     class State(
@@ -80,6 +84,20 @@ object Groups {
         /** THE LINK ASKS THE OWNER FIRST (iOS approval, G.8, the reference's «Request Admin Approval»): who opens it waits in `requests` until the owner adds or dismisses them. The owner's alone, never on the wire. */
         var approval: Boolean = false,
         val requests: MutableList<Request> = mutableListOf(),
+        /** THE GROUP'S INVITE LINK AS THE OWNER HANDS IT TO AN ADMINISTRATOR WHO MAY INVITE BY IT (iOS link, G.6): kept only while this phone is one. */
+        var link: String? = null,
+        /** THE CHANNEL SIGNS ITS POSTS (iOS signs, the reference's «Sign Messages»): its writer's name in every post's stamp. Carried in its invitation (sg). */
+        var signs: Boolean = false,
+        /** THE CHANNEL TAKES REACTIONS (iOS reacts, the reference's «Allow Reactions»): false -- its owner turned them off. Carried in its invitation (rx). */
+        var reacts: Boolean = true,
+        /** THE REACTIONS A CHANNEL TAKES (iOS reactList, the reference's «Some Reactions»): the owner's list; null -- every one. Carried in its invitation (rl). */
+        var reactList: List<String>? = null,
+        /** WHAT WAS DONE IN A CHANNEL (iOS acts, the reference's «Recent Actions»): the owner's phone writes each deed as it does it, by the names it knew then. Never on the wire. */
+        val acts: MutableList<Act> = mutableListOf(),
+        /** A CHANNEL'S SUBSCRIBERS COMMENT UNDER ITS POSTS (iOS talks, the reference's «Allow Comments»). Carried in its invitation (dc). */
+        var talks: Boolean = false,
+        /** THE OWNER'S NEXT POSTS GO WITHOUT SOUND (iOS silent, the bell in a channel's field, the reference's «Silent Broadcast»). The owner's alone, never in an invitation. */
+        var silent: Boolean = false,
     ) {
         val mine: Boolean get() = owner.isEmpty()
         fun json(): JSONObject = JSONObject().put("id", id).put("k", kind).put("ti", title).put("ds", about).put("ow", owner).put("me", me)
@@ -91,6 +109,8 @@ object Groups {
             .put("bd", JSONArray().apply { banned.forEach { put(JSONObject().put("s", it.seat).put("p", it.pipe)) } })
             .put("iv", invite ?: "").put("ap", approval)
             .put("rq", JSONArray().apply { requests.forEach { put(JSONObject().put("p", it.pipe).put("n", it.name).put("at", it.at)) } })
+            .put("lk", link ?: "").put("sg", signs).put("rx", reacts).put("dc", talks).apply { reactList?.let { put("rl", JSONArray(it)) } }
+            .put("as", actsJson(acts, 1L)).put("sl", silent)
         companion object {
             fun of(o: JSONObject) = State(o.getString("id"), o.getString("k"), o.optString("ti"), o.optString("ds"), o.optString("ow"),
                 o.getString("me"),
@@ -106,7 +126,9 @@ object Groups {
                 o.optBoolean("hy"),
                 o.optJSONArray("bd")?.let { a -> MutableList(a.length()) { i -> a.getJSONObject(i).let { Member(it.getString("s"), it.getString("p")) } } } ?: mutableListOf(),
                 o.optString("iv").ifEmpty { null }, o.optBoolean("ap"),
-                o.optJSONArray("rq")?.let { a -> MutableList(a.length()) { i -> a.getJSONObject(i).let { Request(it.getString("p"), it.optString("n"), it.optLong("at")) } } } ?: mutableListOf())
+                o.optJSONArray("rq")?.let { a -> MutableList(a.length()) { i -> a.getJSONObject(i).let { Request(it.getString("p"), it.optString("n"), it.optLong("at")) } } } ?: mutableListOf(),
+                o.optString("lk").ifEmpty { null }, o.optBoolean("sg"), o.optBoolean("rx", true),
+                reactionList(o.optJSONArray("rl")), actsOf(o.optJSONArray("as"), 1L), o.optBoolean("dc"), o.optBoolean("sl"))
         }
     }
 
@@ -173,6 +195,8 @@ object Groups {
     fun wipe() = synchronized(lock) {
         groups.clear(); gone.clear(); heard.clear(); copies.clear(); loaded = false; unread = false
         DeviceVault.delete(STORE); DeviceVault.delete(COPIES)
+        ChannelComments.wipe()
+        ChannelViews.wipe()
     }
 
     // ── the copy: the groups ride the card in the iPhone's form, and every group held stands a row ──
@@ -200,6 +224,11 @@ object Groups {
                 .put("approval", g.approval).put("history", g.history).put("banned", seats(g.banned))
                 .put("requests", JSONArray().apply { g.requests.forEach { put(JSONObject().put("pipe", it.pipe).put("name", it.name).put("at", it.at / 1000.0)) } })
             for ((k, v) in listOf("faceTag" to g.faceTag, "invite" to g.invite)) if (v == null) o.remove(k) else o.put(k, v)
+            if (g.kind == CHANNEL && g.signs) o.put("signs", true) else o.remove("signs")
+            if (g.kind == CHANNEL && !g.reacts) o.put("reacts", false) else o.remove("reacts")
+            if (g.kind == CHANNEL && g.talks) o.put("talks", true) else o.remove("talks")
+            g.reactList?.takeIf { g.kind == CHANNEL }?.let { o.put("reactList", JSONArray(it)) } ?: o.remove("reactList")
+            if (g.kind == CHANNEL && g.acts.isNotEmpty()) o.put("acts", actsJson(g.acts, 1000L)) else o.remove("acts")
             val file = Book.face(key(id)).takeIf { it.isFile }?.let { face(faceFile(id), it) }
             if (file == null) o.remove("face") else o.put("face", file)
             out.put(id, o)
@@ -248,7 +277,11 @@ object Groups {
             s.optJSONObject("adminTaken")?.let { x -> x.keys().asSequence().associateWith { k -> words(x.getJSONArray(k)).toList() }.toMutableMap() } ?: mutableMapOf(),
             map(s.optJSONObject("ranks")), words(s.optJSONArray("barred")), s.optInt("slow"), s.optBoolean("history"),
             seats(s.optJSONArray("banned")), s.optString("invite").ifEmpty { null }, s.optBoolean("approval"),
-            s.optJSONArray("requests")?.let { a -> MutableList(a.length()) { i -> a.getJSONObject(i).let { Request(it.getString("pipe"), it.optString("name"), (it.optDouble("at", 0.0) * 1000).toLong()) } } } ?: mutableListOf())
+            s.optJSONArray("requests")?.let { a -> MutableList(a.length()) { i -> a.getJSONObject(i).let { Request(it.getString("pipe"), it.optString("name"), (it.optDouble("at", 0.0) * 1000).toLong()) } } } ?: mutableListOf(),
+            signs = kind == CHANNEL && s.optBoolean("signs"), reacts = kind != CHANNEL || s.optBoolean("reacts", true),
+            reactList = if (kind == CHANNEL) reactionList(s.optJSONArray("reactList")) else null,
+            acts = if (kind == CHANNEL) actsOf(s.optJSONArray("acts"), 1000L) else mutableListOf(),
+            talks = kind == CHANNEL && s.optBoolean("talks"))
     }
 
     /**
@@ -278,9 +311,11 @@ object Groups {
     fun key(id: String) = KEY_HEAD + id
     /** [I-14]: a letter's link card on the wire, at most -- the pair's leg (iOS cardLimit). [I-15]: how long a card that outran its letter waits for it (iOS cardWait). */
     private const val CARD_LIMIT = 16_384
+    private const val PASSPORT_LIMIT = 4_096          // iOS passportLimit: a sticker's passport, never a carrier of anything else
     private const val CARD_WAIT_MS = 600_000L
     private fun state(key: String): State? = synchronized(lock) { if (isKey(key) && ready()) groups[key.removePrefix(KEY_HEAD)] else null }
     /** The people in the group, the owner included — the head of the group's chat says this number (iOS people). */
+    fun count(key: String): Int? = state(key)?.count
     fun peopleLine(c: Context, key: String): String? = state(key)?.count?.let { c.resources.getQuantityString(R.plurals.gr_members, it, it) }
     /**
      * A GROUP'S HEAD AS THE REFERENCE SAYS IT (iOS groupHead, 9bff8550): «N members, M online» once someone besides this phone is
@@ -289,8 +324,9 @@ object Groups {
      */
     fun headLine(c: Context, key: String): String? {
         val g = state(key) ?: return null
+        // A CHANNEL'S HEAD IS «N SUBSCRIBERS», THE OWNER COUNTED AMONG THEM (iOS MTChannelPage.head, MontanaChannel.swift 494)
+        if (g.kind == CHANNEL) return c.resources.getQuantityString(R.plurals.chn_subscribers, g.count, g.count)
         val members = c.resources.getQuantityString(R.plurals.gr_members, g.count, g.count)
-        if (g.kind != GROUP) return members
         val lit = 1 + heldConversations(g).count { Presence.word(c, it)?.second == true }
         return if (lit == 1) members else members + ", " + c.resources.getQuantityString(R.plurals.gr_online, lit, lit)
     }
@@ -299,10 +335,18 @@ object Groups {
         if (g.mine) g.members.map { it.pipe }.filter { it.isNotEmpty() }.map { SamePair.root(it) }.distinct() else listOf(SamePair.root(g.owner))
     /** Out of the group — it left, or the owner took it out: the chat says so instead of a field (iOS isOut). */
     fun isOut(key: String) = state(key)?.left == true
+    /** Taken out by the owner (iOS state.removed): a channel's foot then says «Join» in grey. */
+    fun removed(key: String) = state(key)?.removed == true
     /** A channel, not a group: its page is the channels' (iOS kind == .channel). */
     fun isChannel(key: String) = state(key)?.kind == CHANNEL
-    /** Everyone writes in a group, the owner alone in a channel (iOS canWrite). */
-    fun canWrite(key: String): Boolean { val g = state(key) ?: return false; return !g.left && (g.kind == GROUP || g.mine) }
+    fun canWrite(key: String): Boolean { val g = state(key) ?: return false; return !g.left && posts(g, g.me) }
+    /** WHO WRITES HERE (iOS canWrite): a group's every person; a channel's owner and the administrators it let post (the reference's «Post Messages»). */
+    private fun posts(g: State, seat: String) = g.kind == GROUP || seat == OWNER_SEAT || (seat in g.admins && POST !in (g.taken[seat] ?: emptyList()))
+    /**
+     * WHETHER THE FIELD OF THIS GROUP HOLDS THE COIN (iOS takesCoins; the author's word 17.10.2026 21:14 UTC): a group's every person
+     * who writes; never a channel -- its owner alone posts and its subscribers have no field.
+     */
+    fun takesCoins(key: String): Boolean = state(key)?.kind == GROUP && canWrite(key)
     /** Whether this phone pins a letter of the group for everyone (iOS mayPin). */
     fun mayPin(key: String): Boolean { val g = state(key) ?: return false; return !g.left && pins(g, g.me) }
 
@@ -310,6 +354,8 @@ object Groups {
     fun bornAt(key: String): Long = state(key)?.at ?: 0L
 
     private fun speaker(id: String, seat: String) = SPEAKER_HEAD + id + "/" + seat
+    /** The speaker of a seat in a group by its key: the colour and the name every phone gives them (a channel's commenter). */
+    fun speakerOf(key: String, seat: String) = state(key)?.let { speaker(it.id, seat) } ?: ""
     /**
      * The name a speaker's rows wear (iOS speakerName): the person as this phone knows them where it holds their pipe, else the
      * name they gave themselves in their last word.
@@ -358,17 +404,22 @@ object Groups {
 
     // ── the wire ──
 
+    /** A person this phone will not carry the group to (iOS ChatStore.refusesCold): one it blocked, or one the network barred. */
+    private fun refuses(pipe: String): Boolean = PeerSafety.isBlocked(pipe) || pipe in PeerSafety.barred()
+
     /**
      * ONE COPY TO ONE RECEIVER, UNDER A NAME OF ITS OWN (iOS carry): it has no row of its own — the row it carries stands in the
      * group's feed under the letter's name, and the copy's receipt moves that row (follow).
      */
-    private fun carry(w: JSONObject, pipe: String, letter: String, own: Boolean): String? {
+    private fun carry(w: JSONObject, pipe: String, letter: String, own: Boolean, ring: Boolean? = null): String? {
         val secret = Book.secret(pipe) ?: return null
+        if (refuses(pipe)) return null   // a person this phone blocked, or one the network barred, is carried nothing (iOS refusesCold)
         w.put("au", ownTag(w, secret))   // signed by the person: the seed's other devices know the word as their own (566c6dcc)
         val name = Marks.mintMid()
         copies[name] = Copy(w.getString("g"), letter, pipe, own, 1)
         saveCopies()
-        Post.send(pipe, name, MARK + w.toString(), quiet = w.optInt("hs") == 1)   // the past (G.4) rings nothing on the wire
+        // the past (G.4) and a channel's silent post ring nothing on the wire; a room's word rings only where it is an invitation (iOS carry ring, 07.10)
+        Post.send(pipe, name, MARK + w.toString(), quiet = w.optInt("hs") == 1 || w.optInt("sl") == 1 || ring == false)
         Log.i("Montana", "group_tx mid=" + name.take(14) + " t=" + w.optString("t") + " to=" + pipe.take(10))
         return name
     }
@@ -389,6 +440,7 @@ object Groups {
     private fun word(t: String, g: State): JSONObject {
         val w = JSONObject().put("t", t).put("g", g.id)
         if (t == "say") w.put("k", g.kind).put("ti", g.title)
+        if (t == "say" && g.kind == CHANNEL && g.silent) w.put("sl", 1)   // the bell in the owner's field (iOS w.sl, Silent Broadcast)
         clean(Prefs.userName, NAME_LIMIT).takeIf { it.isNotEmpty() }?.let { w.put("n", it) }
         return w
     }
@@ -402,7 +454,7 @@ object Groups {
         var lead: Pair<String, String>? = null
         synchronized(lock) {
             val g = state(key)
-            if (g == null || g.left || (g.kind != GROUP && !g.mine) || words.isBlank()) {
+            if (g == null || g.left || !posts(g, g.me) || words.isBlank()) {
                 Log.i("Montana", "group_refused send -- group=" + (if (g == null) 0 else 1))
                 return false
             }
@@ -435,12 +487,54 @@ object Groups {
     fun carryCard(key: String, mid: String, card: LinkCard) {
         synchronized(lock) {
             val g = state(key) ?: return
-            if (g.left || (g.kind != GROUP && !g.mine) || !isLetterName(mid)) return
+            if (g.left || !posts(g, g.me) || !isLetterName(mid)) return
             if (Book.chat(key)?.msgs?.any { it.mine && it.mid == mid } != true) return
             val tx = LinkPreview.fitting(card.json())?.takeIf { it.toByteArray().size <= CARD_LIMIT } ?: return
             val n = spread(word("lp", g).put("id", mid).put("s", g.me).put("tx", tx), g, null, own = false)   // no copy of a card witnesses the row
             Log.i("Montana", "group_tx mid=" + mid.take(14) + " card copies=$n bytes=" + tx.toByteArray().size)
         }
+    }
+
+    /**
+     * A STICKER'S PASSPORT INTO A GROUP (iOS MTGroup.carryPassport, MontanaGroup.swift:774): the set my sticker is of rides as the
+     * group's own word «sp» under the sticker letter's name, to everyone this phone carries to; it names no address. An older build
+     * buries it.
+     */
+    fun carryPassport(key: String, letter: String, body: String) {
+        synchronized(lock) {
+            val g = state(key) ?: return
+            if (g.left || !posts(g, g.me) || !isLetterName(letter) || body.toByteArray().size > PASSPORT_LIMIT) return
+            val n = spread(word("sp", g).put("id", letter).put("s", g.me).put("tx", body), g, null, own = false)   // no copy witnesses the row
+            Log.i("Montana", "group_tx mid=" + letter.take(14) + " passport copies=$n")
+        }
+    }
+
+    /**
+     * A STICKER'S PASSPORT (iOS passported, MontanaGroup.swift:2403): read by the pair's one reader of a passport (StickerWire.handle)
+     * and carried on by the owner. Only the sticker's speaker names it; it names no address, so the set is asked of the pipe it came by
+     * (a member holds the owner's).
+     */
+    private fun passported(w: JSONObject, pipe: String): Verdict {
+        val g = groups[w.getString("g")] ?: return Verdict.WAIT
+        if (g.left) return Verdict.REFUSED
+        val id = w.optString("id"); val body = w.optString("tx")
+        if (!isLetterName(id) || body.toByteArray().size > PASSPORT_LIMIT) return Verdict.REFUSED
+        val o = runCatching { JSONObject(body) }.getOrNull() ?: return Verdict.REFUSED
+        if (o.optString("t") != "id" || StickerBook.bare(o.optString("m")) != id) return Verdict.REFUSED
+        val from = SamePair.root(pipe)
+        val seat = (if (g.mine) g.members.firstOrNull { SamePair.root(it.pipe) == from }?.seat
+            else w.optString("s").takeIf { SamePair.root(g.owner) == from && isSeat(it) && it != g.me }) ?: return Verdict.REFUSED
+        val row = Book.chat(key(g.id))?.msgs?.firstOrNull { it.mid == id }
+        if (row != null && (row.mine || author(row, g) != seat)) {
+            Log.i("Montana", "group_refused a passport past its sticker's speaker")
+            return Verdict.REFUSED
+        }
+        o.remove("o")   // no address rides a group: the giver is the pipe this word came by
+        val clean = o.toString()
+        StickerWire.handle(StickerWire.MARK + clean, pipe, key(g.id))
+        if (g.mine) spread(word("sp", g).put("id", id).put("s", seat).put("tx", clean), g, seat, own = false)
+        Log.i("Montana", "group_rx mid=$id passport owner=" + (if (g.mine) 1 else 0))
+        return Verdict.HELD
     }
 
     /**
@@ -482,7 +576,7 @@ object Groups {
     fun carryMedia(key: String, mid: String, letter: String): Boolean {
         synchronized(lock) {
             val g = state(key)
-            if (g == null || g.left || (g.kind != GROUP && !g.mine) || !letter.startsWith(Marks.MEDIA) || !carries(letter) || !isLetterName(mid)) {
+            if (g == null || g.left || !posts(g, g.me) || !letter.startsWith(Marks.MEDIA) || !carries(letter) || !isLetterName(mid)) {
                 Log.i("Montana", "group_refused media -- group=" + (if (g == null) 0 else 1))
                 return false
             }
@@ -523,6 +617,11 @@ object Groups {
     /** The rights, each a short word on the wire (iOS MTAdminRight): the owner names the ones an administrator lacks. */
     const val INFO = "ci"; const val DELETE = "dm"; const val BAN = "bu"; const val INVITE = "il"; const val PIN = "pm"
     val RIGHTS = listOf(INFO, DELETE, BAN, INVITE, PIN)
+    /** A CHANNEL'S ADMINISTRATOR'S RIGHTS (iOS MTChannelRight): its info, posting through the owner, taking another's post away, its link. */
+    const val POST = "po"
+    val CH_RIGHTS = listOf(INFO, POST, DELETE, INVITE)
+    /** The rights the owner hands an administrator of this group or channel, in the reference's order (iOS setAdmin's words). */
+    fun rights(key: String): List<String> = if (state(key)?.kind == CHANNEL) CH_RIGHTS else RIGHTS
     private const val RANK_LIMIT = 16   // iOS clean(rank, 16)
     /** WHETHER A SEAT HOLDS AN ADMINISTRATOR'S RIGHT (iOS adminCan): the owner every one; an administrator the ones the owner did not take. */
     private fun adminCan(g: State, seat: String, r: String): Boolean {
@@ -533,8 +632,8 @@ object Groups {
 
     /**
      * A LETTER PINNED OR UNPINNED FOR EVERYONE (iOS MTGroup.pin): here at once, and its word carried to every phone of the group by
-     * the answers' road; `notify` -- «Pin and notify all members» against «Only Pin» (n 0: pinned without a banner). The service row
-     * «X pinned "..."» waits for the group's events (iOS lay, MTGroupEvent), which this build does not carry yet.
+     * the answers' road; `notify` -- «Pin and notify all members» against «Only Pin» (n 0: pinned without a banner); a pin lays
+     * the service row «X pinned "..."» (iOS lay, MTGroupEvent).
      */
     fun pin(key: String, m: Msg, pin: Boolean, notify: Boolean) {
         synchronized(lock) {
@@ -570,15 +669,25 @@ object Groups {
      */
     private fun throwTyping(w: JSONObject, pipes: List<String>) {
         val text = MARK + w.toString()
-        pipes.filter { !PeerSafety.isBlocked(it) }.forEach { Post.now(it, text) }
+        pipes.filter { !refuses(it) }.forEach { Post.now(it, text) }
     }
     /** The moment the owner last threw a member's typing on: once in two seconds a member, whatever it sends (iOS typingThrown, I-15). */
     private val typingThrown = HashMap<String, Long>()
-    /** A TYPING WORD LANDED (iOS typed): its seat proven by the pipe it came by, as every word's is; the head shows it for the typing's life. */
+    /**
+     * A LETTER TAKEN AWAY FOR EVERYONE STAYS ON THIS PHONE (iOS tellKept, MontanaGroup.swift:841-856; LevelAccess.keepDeleted): its
+     * speaker alone is told, by the keeper's own word «kp» to that seat -- the owner carries it there. An older build refuses the word.
+     */
+    private fun tellKept(g: State, sid: String, seat: String) {
+        if (g.left || seat == g.me) return
+        val w = JSONObject().put("t", "kp").put("g", g.id).put("id", Marks.mintMid()).put("s", g.me)
+            .put("tx", Marks.DELETE_KEPT + sid).put("ts", JSONArray().put(seat))   // COMPAT-GATED: refused by older builds
+        if (g.mine) g.members.firstOrNull { it.seat == seat }?.let { carry(w, it.pipe, "", false) } else carry(w, g.owner, "", false)
+        Log.i("Montana", "delete_kept group word to seat=$seat")
+    }
     /**
      * MY DELETION WAS KEPT IN THE GROUP (iOS keptHeard, fbd8a190): a member whose level keeps deleted letters tells the one who took
      * the letter away -- its speaker, or the owner or an administrator who deleted it -- by the group's word «kp» to that seat. The
-     * owner passes it on to the seat; the seat reads the banner. This phone keeps no deletion itself: it never says «kp».
+     * owner passes it on to the seat; the seat reads the banner.
      */
     private fun keptHeard(w: JSONObject, pipe: String): Verdict {
         val g = groups[w.getString("g")] ?: return Verdict.REFUSED
@@ -597,6 +706,7 @@ object Groups {
         return Verdict.HELD
     }
 
+    /** A TYPING WORD LANDED (iOS typed): its seat proven by the pipe it came by, as every word's is; the head shows it for the typing's life. */
     private fun typed(w: JSONObject, pipe: String): Verdict {
         val g = groups[w.getString("g")] ?: return Verdict.INSTANT
         if (g.left || g.kind != GROUP) return Verdict.INSTANT
@@ -764,7 +874,7 @@ object Groups {
     fun create(channel: Boolean, title: String, about: String, face: ByteArray?, people: List<String>): String? {
         synchronized(lock) {
             val name = clean(title, TITLE_LIMIT)
-            val pipes = people.map { SamePair.root(it) }.filter { !isKey(it) && Book.secret(it) != null }.distinct().take(PEOPLE_LIMIT)
+            val pipes = people.map { SamePair.root(it) }.filter { !isKey(it) && Book.secret(it) != null && !refuses(it) }.distinct().take(PEOPLE_LIMIT)
             // A GROUP MAY BEGIN WITH NOBODY YET (iOS b4cf7d10, the checklist's A.2): its owner adds people from its page
             if (!ready() || name.isEmpty()) {
                 Log.i("Montana", "group_refused birth -- title=" + (if (name.isEmpty()) 0 else 1) + " people=" + pipes.size)
@@ -795,6 +905,8 @@ object Groups {
      * seat, and the face where it is given — `only`, the seats the face goes to (the people just added).
      */
     private fun tellAll(g: State, face: String?, only: Set<String>? = null, by: String = OWNER_SEAT) {
+        // the group's link, minted once, for the administrators who may invite by it (iOS 1957-1958, G.6)
+        val link = if (g.admins.any { adminCan(g, it, INVITE) }) standingLink(g) else null
         for (m in g.members) {
             val w = word("inv", g).put("k", g.kind).put("ti", g.title).put("c", g.count).put("me", m.seat)
             if (g.about.isNotEmpty()) w.put("ds", g.about)
@@ -803,6 +915,11 @@ object Groups {
             // the administrators' rights left out and the custom titles (iOS ax, rk, G.6); an older build skips the keys
             if (g.taken.isNotEmpty()) w.put("ax", JSONObject().apply { g.taken.forEach { (k, v) -> put(k, JSONArray(v)) } })
             if (g.ranks.isNotEmpty()) w.put("rk", JSONObject(g.ranks.toMap()))
+            if (g.kind == CHANNEL && g.signs) w.put("sg", 1)   // a channel signs its posts (iOS sg, Sign Messages)
+            if (g.kind == CHANNEL && !g.reacts) w.put("rx", 0)   // a channel takes no reactions (iOS rx, Allow Reactions off)
+            if (g.kind == CHANNEL && g.talks) w.put("dc", 1)   // a channel's subscribers comment (iOS dc, Allow Comments)
+            if (g.kind == CHANNEL) g.reactList?.let { w.put("rl", JSONArray(it)) }   // the reactions a channel takes (iOS rl, Some Reactions)
+            if (link != null && m.seat in g.admins && adminCan(g, m.seat, INVITE)) w.put("lk", link)   // the link, to an admin who invites
             // what the members may not do, and the slow mode (iOS bn, sw, G.5): an older build skips the keys, the owner's door holds
             if (g.barred.isNotEmpty()) w.put("bn", JSONArray(g.barred))
             if (0 < g.slow) w.put("sw", g.slow)
@@ -834,6 +951,38 @@ object Groups {
             .map { (s, _) -> Seat(s, speakerName(c, speaker(g.id, s)), "") }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
             .forEach { out.add(it) }
         return out
+    }
+    /**
+     * ONE PERSON OF A GROUP AS A COIN OF THIS PHONE REACHES THEM (iOS MTGroupPayee): the seat, the name shown, the pair's chat a
+     * transfer to them rides when it is open to coins (null otherwise), and whether this phone holds a pipe with them at all.
+     */
+    class Payee(val seat: String, val name: String, val ref: String?, val held: Boolean)
+    /**
+     * WHOM A COIN OF THE GROUP REACHES FROM THIS PHONE (iOS coinPeople; the author's word 17.10.2026 21:14 UTC: «with a choice by check
+     * marks among the members, as on the Send page of the time coin»): a transfer is one record for one receiver under the pair's own
+     * secret, so a person is reached only through a pipe this phone holds with them -- the owner's phone every member it carries to,
+     * a member's phone the owner. The others stand by their seat and name alone; the pair's own door decides the rest (CoinSend.canPay).
+     */
+    fun coinPeople(c: Context, key: String): List<Payee> {
+        if (!takesCoins(key)) return emptyList()
+        val me = state(key)?.me ?: return emptyList()
+        return pagePeople(c, key).filter { it.seat != me }.map { p ->
+            if (p.pipe.isEmpty()) return@map Payee(p.seat, p.name, null, false)
+            val root = SamePair.root(p.pipe)
+            Payee(p.seat, p.name, root.takeIf { CoinSend.canPay(it) }, true)
+        }
+    }
+    /**
+     * THE GROUP IS TOLD, IT IS NEVER PAID (iOS tellCoins): the coins went to each person picked by the pair's own transfer; the group's
+     * feed gets the sender's plain words of how many were paid -- no sum, no name, no coin letter, so no phone of the group credits
+     * anything by it. A right the group took from its members, or slow mode's wait, leaves the words unsaid: the transfers stand.
+     */
+    fun tellCoins(c: Context, people: Int, key: String) {
+        if (people <= 0 || !takesCoins(key)) return
+        val words = "🪙 " + c.resources.getQuantityString(R.plurals.gr_coins_told, people, people)
+        if (!carries(words) || refusal(c, key, words, true) != null) { Log.i("Montana", "group_coin told=0 people=$people"); return }
+        send(key, words, null, null)
+        Log.i("Montana", "group_coin told=1 people=$people")
     }
     // ── mentions (iOS stage R, the reference folder: «@» names a person of the group) ──
 
@@ -874,8 +1023,12 @@ object Groups {
         }
     }
 
+    /** This phone's own name among a group's people, as it goes out with its words; «Member» while it has none (iOS lines, clean(myDisplayName)). */
+    fun myName(c: Context) = clean(Prefs.userName, NAME_LIMIT).ifEmpty { c.getString(R.string.gr_member) }
     /** This phone owns the group: its page edits it (iOS state.mine). */
     fun owns(key: String) = state(key)?.mine == true
+    /** This phone owns the group and has not ended it: it adds, names, takes out and hands the link (iOS manages, canManage). */
+    fun manages(key: String) = state(key)?.let { it.mine && !it.left } == true
     /** Whether the owner's phone already carries the group to this person (iOS carries(to:in:)): the page's «add» lists the others only. */
     fun carriesTo(pipe: String, key: String): Boolean {
         val p = SamePair.root(pipe)
@@ -899,6 +1052,9 @@ object Groups {
             val renamed = name != g.title
             g.title = name
             if (words != null) g.about = words
+            if (renamed) act(g, "title", t = name)
+            if (described) act(g, "about")
+            if (face != null) act(g, "photo")
             save()
             stand(g, face)
             tellAll(g, face?.let { thumb(it) }, by = by)
@@ -919,7 +1075,7 @@ object Groups {
             val taken = (g.members.map { it.seat } + OWNER_SEAT).toMutableSet()
             val fresh = mutableListOf<Member>()
             for (p in people.map { SamePair.root(it) }.distinct()) {
-                if (isKey(p) || Book.secret(p) == null || p in held || g.members.size + fresh.size >= PEOPLE_LIMIT) continue
+                if (isKey(p) || Book.secret(p) == null || refuses(p) || p in held || g.members.size + fresh.size >= PEOPLE_LIMIT) continue
                 var seat = mintSeat()
                 while (seat in taken) seat = mintSeat()
                 taken.add(seat)
@@ -928,6 +1084,7 @@ object Groups {
             if (fresh.isEmpty()) return
             g.members.addAll(fresh)
             g.count = g.members.size + 1
+            act(g, if (viaLink) "joined" else "invited", fresh.map { nameNow(g, it.seat) })
             // one taken out and added again by the owner's own hand is let back (iOS add, the reference's «Add To Group», G.7)
             g.banned.removeAll { b -> fresh.any { it.pipe == SamePair.root(b.pipe) } }
             save()
@@ -951,6 +1108,7 @@ object Groups {
             val g = state(key) ?: return
             val m = (if (g.mine) g.members.firstOrNull { it.seat == seat } else null) ?: return
             keepName(g, m)
+            act(g, "removed", listOf(nameNow(g, seat)))
             // ONE TAKEN OUT IS KEPT OUT (iOS remove, G.7 and E.4, the reference's «Removed Users»): until the owner lets them back or adds them again
             g.banned.removeAll { it.seat == seat }
             g.banned.add(m)
@@ -980,19 +1138,45 @@ object Groups {
     fun inviteLink(c: Context, key: String): String? {
         val mark = synchronized(lock) {
             val g = state(key) ?: return null
-            if (!g.mine || g.kind != GROUP || g.left) return null
+            if (!g.mine || g.left) return null   // a group's or a channel's (iOS inviteLink: canManage alone)
             g.invite ?: mintId().also { g.invite = it; save() }
         }
         val card = MontanaCard.offerPermanent(c) ?: return null
         val id = state(key)?.id ?: return null
-        return card + (if ('?' in card) "&" else "?") + JOIN_PARAM + "=" + id + "." + mark
+        return joinLink(card, id, mark)
     }
+    private fun joinLink(card: String, id: String, mark: String) = card + (if ('?' in card) "&" else "?") + JOIN_PARAM + "=" + id + "." + mark
+    /**
+     * The owner's link as the invitation's word carries it (iOS tellAll's inviteLink): the card this phone already holds, never one
+     * born here -- the word is laid under the groups' lock, and a card is born on the network. Null: no card stands yet (handLink).
+     */
+    private fun standingLink(g: State): String? {
+        if (!g.mine || g.left) return null
+        val card = MontanaCard.heldPermanent() ?: return null
+        val mark = g.invite ?: mintId().also { g.invite = it; save() }
+        return joinLink(card, g.id, mark)
+    }
+    /**
+     * AN ADMINISTRATOR WHO MAY INVITE HOLDS THE LINK AT ONCE (iOS tellAll mints it before it tells, G.6): where no card stands yet,
+     * the page asks for one off the main thread, and the invitation's word goes again once it is born.
+     */
+    fun handLink(c: Context, key: String) {
+        if (MontanaCard.heldPermanent() != null) return
+        val g = state(key) ?: return
+        if (!g.mine || g.admins.none { adminCan(g, it, INVITE) }) return
+        if (inviteLink(c, key) == null) return
+        synchronized(lock) { state(key)?.let { if (!it.left) tellAll(it, null) } }
+    }
+    /** The link the owner handed this phone, an administrator who may invite by it (iOS state.link, G.6); null elsewhere. */
+    fun heldLink(key: String): String? = state(key)?.link
     /** A NEW MARK (iOS resetInvite, the reference's «Revoke Link»): every link given before opens nothing more. */
     fun resetInvite(key: String) = synchronized(lock) {
         val g = state(key) ?: return@synchronized
-        if (!g.mine || g.kind != GROUP) return@synchronized
+        if (!g.mine) return@synchronized
         g.invite = mintId()
         save()
+        // an administrator who invites holds the new link at once (iOS 1574-1575, G.6); the old one opens nothing more
+        if (g.admins.any { adminCan(g, it, INVITE) }) tellAll(g, null)
         Log.i("Montana", "group_link reset")
     }
     /** A group's id or a link's mark: 32 lowercase hex, the form mintId makes (iOS isMark). */
@@ -1017,16 +1201,19 @@ object Groups {
     }
     /** THE MEETING OPENED ITS CONVERSATION (iOS askJoin): the waiting join is asked of the owner over it, the mark and this phone's name. */
     fun askJoin(pipe: String) {
-        synchronized(lock) {
+        val w = synchronized(lock) {
             val j = waitingJoin ?: return
             waitingJoin = null
             if (System.currentTimeMillis() - j.third > 600_000 || !ready()) return
             val me = clean(Prefs.userName, NAME_LIMIT)
-            val w = JSONObject().put("t", "jn").put("g", j.first).put("id", Marks.mintMid()).put("tx", j.second)
-            if (me.isNotEmpty()) w.put("n", me)
-            val sent = carry(w, pipe, "", own = false) != null
-            Log.i("Montana", "group_link join asked sent=" + (if (sent) 1 else 0))
+            JSONObject().put("t", "jn").put("g", j.first).put("id", Marks.mintMid()).put("tx", j.second).apply { if (me.isNotEmpty()) put("n", me) }
         }
+        // the meeting's pipe may still be standing up: at once when it holds, else every two seconds, a minute at most (iOS askJoin)
+        Thread {
+            for (i in 0 until 30) { if (Book.secret(pipe) != null) break; Thread.sleep(2000) }
+            val sent = synchronized(lock) { carry(w, pipe, "", own = false) } != null
+            Log.i("Montana", "group_link join asked sent=" + (if (sent) 1 else 0))
+        }.start()
     }
     /**
      * ONE WHO OPENED THE GROUP'S LINK ASKS AT THE OWNER'S PHONE (iOS joined): the mark must be the group's standing one; one the
@@ -1036,7 +1223,7 @@ object Groups {
     private fun joined(w: JSONObject, pipe: String): Verdict {
         val g = groups[w.optString("g")] ?: return Verdict.REFUSED
         val held = g.invite
-        if (!g.mine || g.kind != GROUP || g.left || held == null || w.optString("tx") != held) return Verdict.REFUSED
+        if (!g.mine || g.left || held == null || w.optString("tx") != held) return Verdict.REFUSED   // a channel's link too (iOS joined)
         val from = SamePair.root(pipe)
         if (g.members.any { SamePair.root(it.pipe) == from }) return Verdict.HELD   // already in: nothing more
         if (g.banned.any { SamePair.root(it.pipe) == from }) {
@@ -1129,7 +1316,7 @@ object Groups {
     /** Whether this phone moderates the group (iOS moderates): its owner or an administrator it named -- they take another's letter away for everyone. */
     fun moderates(key: String): Boolean {
         val g = state(key) ?: return false
-        return !g.left && g.kind == GROUP && adminCan(g, g.me, DELETE)
+        return !g.left && adminCan(g, g.me, DELETE)   // a channel's administrators delete posts too (iOS moderates)
     }
     /** Whether this phone takes a person out of the group (iOS «Ban Users», G.6): its owner, or an administrator holding the right. */
     fun mayBan(key: String): Boolean {
@@ -1150,18 +1337,273 @@ object Groups {
     fun setAdmin(key: String, seat: String, on: Boolean, taken: Set<String> = emptySet(), rank: String? = null) {
         synchronized(lock) {
             val g = state(key) ?: return
-            if (!g.mine || g.kind != GROUP || g.members.none { it.seat == seat }) return
+            if (!g.mine || g.left || g.members.none { it.seat == seat }) return   // a group's or a channel's (iOS canManage)
             g.admins.remove(seat)
             if (on) g.admins.add(seat)
             g.admins.sort()
-            val left = RIGHTS.filter { it in taken }
+            val left = (if (g.kind == CHANNEL) CH_RIGHTS else RIGHTS).filter { it in taken }   // a channel's rights are its own
             if (on && left.isNotEmpty()) g.taken[seat] = left else g.taken.remove(seat)
             val title = clean(rank ?: "", RANK_LIMIT)
             if (on && title.isNotEmpty()) g.ranks[seat] = title else g.ranks.remove(seat)
+            act(g, if (on) "promoted" else "demoted", listOf(nameNow(g, seat)))   // a channel's recent actions (its owner's phone alone)
             save()
             tellAll(g, null)
             Log.i("Montana", "group_admin " + (if (on) "named" else "dismissed"))
         }
+    }
+    /** Whether a channel signs its posts (iOS signs, «Sign Messages»). */
+    fun signsOn(key: String) = state(key)?.let { it.kind == CHANNEL && it.signs } == true
+    /** THE OWNER SIGNS THE CHANNEL'S POSTS OR STOPS (iOS setSigns): every subscriber hears it by the invitation's word again. */
+    fun setSigns(key: String, on: Boolean) {
+        synchronized(lock) {
+            val g = state(key) ?: return
+            if (!g.mine || g.left || g.kind != CHANNEL || g.signs == on) return
+            g.signs = on
+            act(g, if (on) "signOn" else "signOff")
+            save()
+            tellAll(g, null)
+            Log.i("Montana", "channel_signs " + (if (on) "on" else "off"))
+        }
+    }
+    /** [I-14]: the reactions a channel's list names, at most (iOS reactListLimit). */
+    const val REACT_LIST_LIMIT = 80
+    /** A list of reactions as it came (iOS reactionList): glyphs alone, each once, bounded; null for none or for every one. */
+    fun reactionList(a: JSONArray?): List<String>? = a?.let { reactionList((0 until it.length()).map { i -> it.optString(i) }) }
+    fun reactionList(l: List<String>?): List<String>? {
+        val out = (l ?: return null).filter { e ->
+            e.isNotEmpty() && e.codePointCount(0, e.length) <= 16 &&
+                BreakIterator.getCharacterInstance().apply { setText(e) }.let { b -> var n = 0; while (b.next() != BreakIterator.DONE) n++; n <= 4 }
+        }.distinct().take(REACT_LIST_LIMIT)
+        return out.ifEmpty { null }
+    }
+    /** [I-14]: the deeds a channel's owner keeps for its Recent Actions (iOS actsKept). */
+    private const val ACTS_KEPT = 100
+    /** The deeds as JSON -- their moments in ms here, in seconds where the iOS store keeps them (per = 1000). */
+    private fun actsJson(l: List<Act>, per: Long) = JSONArray().apply {
+        l.forEach { a -> put(JSONObject().put("e", a.e).put("at", if (per == 1L) a.at else a.at / 1000.0)
+            .apply { a.p?.let { put("p", JSONArray(it)) }; a.t?.let { put("t", it) } }) }
+    }
+    private fun actsOf(a: JSONArray?, per: Long): MutableList<Act> = a?.let { (0 until it.length()).mapNotNull { i -> it.optJSONObject(i) }.map { o ->
+        Act(o.optString("e"), o.optJSONArray("p")?.let { p -> List(p.length()) { p.optString(it) } }, o.optString("t").ifEmpty { null },
+            if (per == 1L) o.optLong("at") else (o.optDouble("at", 0.0) * 1000).toLong())
+    }.filter { it.e.isNotEmpty() }.takeLast(ACTS_KEPT).toMutableList() } ?: mutableListOf()
+    /** A DEED OF A CHANNEL, WRITTEN ON ITS OWNER'S PHONE (iOS act): a group keeps its events in its feed instead. */
+    private fun act(g: State, e: String, p: List<String>? = null, t: String? = null) {
+        if (g.kind != CHANNEL || !g.mine) return
+        g.acts.add(Act(e, p, t, System.currentTimeMillis()))
+        while (ACTS_KEPT < g.acts.size) g.acts.removeAt(0)
+    }
+    /** The name a seat is known by on this phone right now (iOS seatName): the book's, else the one it gave; empty -- unknown. */
+    private fun nameNow(g: State, seat: String): String =
+        g.members.firstOrNull { it.seat == seat }?.let { Book.chat(SamePair.root(it.pipe))?.shown?.ifBlank { null } } ?: g.names[seat] ?: ""
+    /** A channel's deeds of the last two days, newest first (iOS MTChannelActionsPage, span 48 hours). */
+    fun recentActs(key: String): List<Act> = synchronized(lock) {
+        val now = System.currentTimeMillis()
+        state(key)?.takeIf { it.kind == CHANNEL }?.acts?.filter { now - it.at < 48 * 3600_000L }?.reversed() ?: emptyList()
+    }
+    /** The reactions a channel takes: its owner's list, or null for every one (iOS reactionList(key)). */
+    fun reactionList(key: String): List<String>? = state(key)?.takeIf { it.kind == CHANNEL }?.reactList
+    /** Whether a channel's posts take reactions (iOS reactionsOn, «Allow Reactions»): on unless its owner turned them off. */
+    fun reactionsOn(key: String) = state(key)?.reacts != false
+    /** THE OWNER ALLOWS REACTIONS OR TURNS THEM OFF (iOS setReactions): every subscriber hears it by the invitation's word again. */
+    fun setReactions(key: String, on: Boolean) {
+        synchronized(lock) {
+            val g = state(key) ?: return
+            if (!g.mine || g.left || g.kind != CHANNEL || g.reacts == on) return
+            g.reacts = on
+            act(g, if (on) "reactOn" else "reactOff")
+            save()
+            tellAll(g, null)
+            Log.i("Montana", "channel_reactions " + (if (on) "on" else "off"))
+        }
+    }
+    /** Whether a channel's subscribers comment under its posts (iOS talks, «Allow Comments»). */
+    fun talks(key: String) = state(key)?.let { it.kind == CHANNEL && it.talks } == true
+    /** THE OWNER LETS ITS SUBSCRIBERS COMMENT OR STOPS IT (iOS setTalks): every subscriber hears it by the invitation's word again. */
+    fun setTalks(key: String, on: Boolean) {
+        synchronized(lock) {
+            val g = state(key) ?: return
+            if (!g.mine || g.left || g.kind != CHANNEL || g.talks == on) return
+            g.talks = on
+            act(g, if (on) "talkOn" else "talkOff")
+            save()
+            tellAll(g, null)
+            Log.i("Montana", "channel_comments " + (if (on) "on" else "off"))
+        }
+    }
+    /** WHETHER THE OWNER'S NEXT POSTS GO WITHOUT SOUND (iOS silent, the bell in a channel's field): its owner's choice, kept on its state. */
+    fun silent(key: String): Boolean = synchronized(lock) { state(key)?.silent == true }
+    fun setSilent(key: String, on: Boolean) {
+        synchronized(lock) {
+            val g = state(key) ?: return
+            if (!g.mine || g.left || g.kind != CHANNEL) return
+            g.silent = on
+            save()
+            Log.i("Montana", "channel_silent " + (if (on) "on" else "off"))
+        }
+    }
+    /** [I-14]: a comment's words, at most (iOS commentLimit). */
+    const val COMMENT_LIMIT = 4096
+    /**
+     * [I-15] ONE COMMENT FROM ONE PERSON IN THIS MANY MILLISECONDS (iOS commentGap, the reference's slowmode): the owner takes one
+     * comment from a seat in this span and refuses the rest; a subscriber's own phone keeps the same span and its field says what is
+     * left. The owner's own comments wait for nobody.
+     */
+    private const val COMMENT_GAP = 30_000L
+    private val commentAt = mutableMapOf<String, Long>()
+    private val myCommentAt = mutableMapOf<String, Long>()
+    /** The seconds this phone waits before its next comment in a channel: 0 when it may comment now (iOS commentWait). */
+    fun commentWait(key: String): Int {
+        val g = state(key) ?: return 0
+        if (g.mine) return 0
+        val last = synchronized(lock) { myCommentAt[g.id] } ?: return 0
+        return maxOf(0L, (COMMENT_GAP - (System.currentTimeMillis() - last) + 999) / 1000).toInt()
+    }
+    /**
+     * A COMMENT OF MINE UNDER A CHANNEL'S POST (iOS comment): kept here at once and carried as the channel's word -- a subscriber's
+     * to the owner, the owner's to everyone. False -- not carried (comments off, no pipe, an empty or overlong word).
+     */
+    fun comment(text: String, post: String, key: String): Boolean {
+        val words = text.trim()
+        synchronized(lock) {
+            val g = state(key) ?: return false
+            if (g.kind != CHANNEL || !g.talks || g.left || !isLetterName(post) || words.isEmpty() ||
+                words.codePointCount(0, words.length) > COMMENT_LIMIT || commentWait(key) != 0) return false
+            if (!g.mine) myCommentAt[g.id] = System.currentTimeMillis()
+            val me = clean(Prefs.userName, NAME_LIMIT)
+            val id = Marks.mintMid()
+            val w = JSONObject().put("t", "cm").put("g", g.id).put("id", id).put("s", g.me).put("tx", words).put("qm", post)   // COMPAT-GATED: older builds refuse «cm»
+            if (me.isNotEmpty()) w.put("n", me)
+            ChannelComments.put(ChannelComments.Comment(id, g.me, me, words, System.currentTimeMillis(), mine = true), post, key)
+            return 0 < spread(w, g, null, own = false) || (g.mine && g.members.isEmpty())
+        }
+    }
+    /**
+     * A COMMENT ARRIVED (iOS commented): the owner takes one only under a post of its feed, from a subscriber it carries to, while
+     * comments are on, and carries it on to everyone else; a subscriber takes the owner's word alone. Each comment once, by its name.
+     */
+    private fun commented(w: JSONObject, pipe: String): Verdict {
+        val postHere = Book.chat(key(w.optString("g")))?.msgs?.any { it.mid == w.optString("qm") } == true   // read before the lock: the book keeps its own
+        synchronized(lock) {
+            val g = groups[w.optString("g")] ?: return Verdict.WAIT
+            val id = w.optString("id"); val post = w.optString("qm"); val tx = w.optString("tx")
+            if (g.kind != CHANNEL || g.left || !isLetterName(id) || !isLetterName(post) || tx.isEmpty() ||
+                tx.codePointCount(0, tx.length) > COMMENT_LIMIT) return Verdict.REFUSED
+            val from = SamePair.root(pipe)
+            val key = key(g.id)
+            val seat: String
+            if (g.mine) {
+                val m = g.members.firstOrNull { SamePair.root(it.pipe) == from }
+                if (!g.talks || m == null || !postHere) return Verdict.REFUSED
+                seat = m.seat
+            } else {
+                val s = w.optString("s")
+                if (SamePair.root(g.owner) != from || !isSeat(s) || s == g.me) return Verdict.REFUSED
+                seat = s
+            }
+            if (ChannelComments.has(id, post, key)) return Verdict.HELD   // a repeat: taken already
+            if (g.mine) {
+                val now = System.currentTimeMillis(); val pace = g.id + "/" + seat
+                if (now - (commentAt[pace] ?: 0L) < COMMENT_GAP) {
+                    Log.i("Montana", "channel_comment_paced one comment from a seat in thirty seconds -- refused")
+                    return Verdict.REFUSED
+                }
+                commentAt[pace] = now
+            }
+            val name = clean(w.optString("n"), NAME_LIMIT)
+            val born = Marks.birthMs(id) ?: System.currentTimeMillis()
+            val fresh = ChannelComments.put(ChannelComments.Comment(id, seat, name, tx, born, mine = false), post, key)
+            if (fresh && g.mine) {
+                val on = JSONObject().put("t", "cm").put("g", g.id).put("id", id).put("s", seat).put("tx", tx).put("qm", post)
+                if (name.isNotEmpty()) on.put("n", name)
+                spread(on, g, seat, own = false)
+            }
+            return Verdict.HELD
+        }
+    }
+
+    // ── a channel's views (the reference's eye under a post; ChannelViews) ──
+
+    /**
+     * A SUBSCRIBER'S SCREEN SHOWED POSTS (iOS tellSeen): their names go to the owner alone, silent, for its count. False -- no pipe to
+     * the owner now, and the posts wait. It is a read receipt: with the person's «Read receipts» off the word never leaves.
+     */
+    fun tellSeen(letters: List<String>, key: String): Boolean {
+        synchronized(lock) {
+            if (!Prefs.bool("readReceiptsEnabled", true) || letters.isEmpty()) return false
+            val g = state(key) ?: return false
+            if (g.kind != CHANNEL || g.mine || g.left) return false
+            val w = JSONObject().put("t", "vw").put("g", g.id).put("id", Marks.mintMid()).put("s", g.me)
+                .put("tx", letters.take(VIEWS_BATCH).joinToString(","))   // COMPAT-GATED: an older owner refuses «vw»
+            return carry(w, g.owner, "", own = false) != null
+        }
+    }
+    /** THE OWNER TELLS THE NUMBERS THAT MOVED (iOS tellCounts): one silent word to every subscriber. */
+    fun tellCounts(numbers: Map<String, Int>, key: String) {
+        synchronized(lock) {
+            val g = state(key) ?: return
+            if (g.kind != CHANNEL || !g.mine || g.left || numbers.isEmpty()) return
+            val w = JSONObject().put("t", "vc").put("g", g.id).put("id", Marks.mintMid()).put("s", OWNER_SEAT)
+                .put("tx", JSONObject(numbers).toString())   // COMPAT-GATED: an older subscriber refuses «vc»
+            for (m in g.members) carry(JSONObject(w.toString()), m.pipe, "", own = false)
+        }
+    }
+    /** A subscriber's posts shown, at the owner's phone (iOS seen): the seat is the pipe's, and only posts of this channel's feed count. */
+    private fun seen(w: JSONObject, pipe: String): Verdict {
+        val posts = Book.chat(key(w.optString("g")))?.msgs?.toList()?.filter { !isEvent(it.text) }?.map { it.mid }?.toSet()
+            ?: emptySet()   // read before the lock: the book keeps its own; the owner's posts and its administrators'
+        val seat: String
+        val k: String
+        val letters: List<String>
+        synchronized(lock) {
+            val g = groups[w.optString("g")] ?: return Verdict.WAIT
+            val from = SamePair.root(pipe)
+            val tx = w.optString("tx")
+            val m = g.members.firstOrNull { SamePair.root(it.pipe) == from }
+            if (!g.mine || g.kind != CHANNEL || g.left || tx.isEmpty() || 16_384 < tx.toByteArray().size || m == null) return Verdict.REFUSED
+            seat = m.seat
+            k = key(g.id)
+            letters = tx.split(",").take(VIEWS_BATCH).filter { isLetterName(it) && it in posts }
+        }
+        ChannelViews.saw(letters, seat, k)
+        return Verdict.HELD
+    }
+    /** The owner's numbers, at a subscriber's phone (iOS counted): from the owner's pipe alone. */
+    private fun counted(w: JSONObject, pipe: String): Verdict {
+        val k: String
+        val numbers = mutableMapOf<String, Int>()
+        synchronized(lock) {
+            val g = groups[w.optString("g")] ?: return Verdict.WAIT
+            val tx = w.optString("tx")
+            if (g.mine || g.kind != CHANNEL || g.left || SamePair.root(g.owner) != SamePair.root(pipe) ||
+                tx.isEmpty() || 16_384 < tx.toByteArray().size) return Verdict.REFUSED
+            val o = runCatching { JSONObject(tx) }.getOrNull() ?: return Verdict.REFUSED
+            for (l in o.keys()) { val n = o.opt(l); if (isLetterName(l) && n is Number) numbers[l] = n.toInt() }
+            k = key(g.id)
+        }
+        ChannelViews.told(numbers, k)
+        return Verdict.HELD
+    }
+    /** THE OWNER CHOOSES THE REACTIONS ITS CHANNEL TAKES (iOS setReactionList, Some Reactions), or every one (null). */
+    fun setReactionList(key: String, list: List<String>?) {
+        synchronized(lock) {
+            val g = state(key) ?: return
+            if (!g.mine || g.left || g.kind != CHANNEL) return
+            val next = reactionList(list)
+            if (next == g.reactList) return
+            g.reactList = next
+            act(g, if (next == null) "reactOn" else "reactSome")
+            save()
+            tellAll(g, null)
+            Log.i("Montana", "channel_reactions list=${next?.size ?: 0}")
+        }
+    }
+    /** The name a signed channel's post wears in its stamp (iOS signature): its writer's -- my own on my posts; null where the channel does not sign. */
+    fun signature(c: Context, m: Msg, key: String): String? {
+        if (!signsOn(key)) return null
+        if (m.mine) return myName(c).takeIf { it != c.getString(R.string.gr_member) }
+        if (m.from?.startsWith(SPEAKER_HEAD) != true) return null
+        return speakerName(c, m.from).takeIf { it != c.getString(R.string.gr_member) }
     }
     /**
      * TAKE A PERSON OUT (iOS kick): the owner's own hand; an administrator asks the owner, whose phone carries the group (its «kk»)
@@ -1346,7 +1788,7 @@ object Groups {
     fun mayChangeInfo(key: String): Boolean {
         val g = state(key) ?: return false
         if (g.left) return false
-        if (g.kind != GROUP) return g.mine
+        if (g.kind != GROUP) return adminCan(g, g.me, INFO)   // a channel's owner, or its administrator with «Change Channel Info»
         return adminCan(g, g.me, INFO) || M_INFO !in g.barred
     }
     /** What the members may not do, and the slow mode's seconds (the permissions page reads them). */
@@ -1455,8 +1897,24 @@ object Groups {
             "named" -> if (mine) c.getString(R.string.ge_named_me, t) else c.getString(R.string.ge_named, who, t)
             "face" -> if (mine) c.getString(R.string.ge_face_me) else c.getString(R.string.ge_face, who)
             "pinned" -> if (mine) c.getString(R.string.ge_pinned_me, t) else c.getString(R.string.ge_pinned, who, t)
+            // a group's room (iOS eventWords «call», «ended»): begun by whom, ended with how long it lived
+            "call" -> when {
+                e.optString("k") == "live" -> if (mine) c.getString(R.string.ge_live_me) else c.getString(R.string.ge_live, who)
+                e.optInt("v") == 1 -> if (mine) c.getString(R.string.ge_video_me) else c.getString(R.string.ge_video, who)
+                else -> if (mine) c.getString(R.string.ge_voice_me) else c.getString(R.string.ge_voice, who)
+            }
+            "ended" -> c.getString(when {
+                e.optString("k") == "live" -> R.string.ge_live_ended
+                e.optInt("v") == 1 -> R.string.ge_video_ended
+                else -> R.string.ge_voice_ended
+            }, span(e.optInt("d")))
             else -> null
         }
+    }
+    /** A room's length as the reference's row says it: minutes and seconds, hours when it ran past one (iOS span). */
+    private fun span(seconds: Int): String {
+        val s = maxOf(0, seconds)
+        return if (s >= 3600) "%d:%02d:%02d".format(s / 3600, s % 3600 / 60, s % 60) else "%d:%02d".format(s / 60, s % 60)
     }
     /** The pinned letter's words as its service row quotes them (iOS pinWords): the list's own preview, cut at forty letters. */
     private fun pinWords(m: Msg): String {
@@ -1498,6 +1956,7 @@ object Groups {
             g.members.clear()
             save()
             Log.i("Montana", "group_dissolved by its owner")
+            Rooms.groupGone(g.id)   // its room goes with the group (iOS groupGone)
         }
         erase(key)
     }
@@ -1511,6 +1970,7 @@ object Groups {
             save()
             carry(JSONObject().put("t", "bye").put("g", g.id), g.owner, "", own = false)
             Log.i("Montana", "group_left by this phone")
+            Rooms.groupGone(g.id)
         }
         Book.edit(key) {}   // the open chat trades its field for the note at once
     }
@@ -1549,7 +2009,17 @@ object Groups {
             return true
         }
     }
-    /** The copy's pipe was gone before it left (Post.flush): my row says so (iOS copySettled, red with no pipe). */
+    /** The row of mine a copy carries, still riding (iOS bidsNamed of the queued letter): the cargo check reads its media there. */
+    fun copyRow(name: String): Msg? {
+        synchronized(lock) {
+            val c = (if (ready()) copies[name] else null)?.takeIf { it.own && it.letter.isNotEmpty() } ?: return null
+            return Book.chat(key(c.group))?.msgs?.find { it.mine && it.mid == c.letter }
+        }
+    }
+    /**
+     * The copy's pipe was gone before it left (Post.flush): my row says so (iOS copySettled, red with no pipe);
+     * so does its cargo found gone (Pipes.cargoReported, iOS copyRefused).
+     */
     fun copyLost(name: String): Boolean {
         synchronized(lock) {
             val c = (if (ready()) copies[name] else null) ?: return false
@@ -1572,6 +2042,56 @@ object Groups {
             else -> return
         }
         Book.edit(key(c.group)) { ch -> ch.msgs.find { it.mine && it.mid == c.letter }?.advance(next) }
+    }
+
+    /** Whether a row of mine still has a copy in the queue (iOS rides, for paintOrphanSending): a clock with nothing behind it is a lie. */
+    fun rides(letter: String, queued: Set<String>): Boolean = synchronized(lock) {
+        if (!ready()) return true   // an unread store says nothing is lost: the clock waits for the store
+        copies.any { it.value.own && it.value.letter == letter && it.key in queued }
+    }
+    /**
+     * A ROW OF MINE STANDS WHERE ITS COPIES SAY, ASKED AGAIN AT THE COLD SWEEP (iOS answersFor, 2315; the author's words 27.10.2026
+     * 09:15 and 09:44 UTC: after a relaunch a channel's files wore red and «retry» though they stood in the channel). A group's
+     * media rides on its copies under names of their own, never the letter's; true when the row is the group's to answer -- a copy
+     * of mine names the letter, or the store is not read yet -- and the row is moved by follow, as its receipts would move it.
+     */
+    fun answersFor(letter: String): Boolean = synchronized(lock) {
+        if (!ready()) return true
+        val c = copies.values.firstOrNull { it.own && it.letter == letter } ?: return false
+        follow(c)
+        true
+    }
+    /**
+     * A HAND ASKED AGAIN (iOS MTGroup.resend, the red mark's retry): the row goes back to the clock; every copy still in the queue
+     * keeps riding, one the queue let go rides again to its receiver anew; a letter with no copy left leaves anew to everyone.
+     */
+    fun resend(key: String, m: Msg) {
+        synchronized(lock) {
+            val g = state(key)?.takeIf { !it.left && posts(it, it.me) } ?: return
+            if (!m.mine) return
+            var back = false
+            Book.edit(key) { c -> c.msgs.find { it.mid == m.mid && it.mine }?.let { back = it.restart() } }
+            if (!back) return
+            val w = word("say", g).put("id", m.mid).put("s", g.me).put("tx", m.text)
+            if (!m.qt.isNullOrEmpty()) w.put("qt", m.qt)
+            if (!m.qm.isNullOrEmpty()) w.put("qm", m.qm)
+            val queued = Post.queued()
+            val mine = copies.filter { it.value.own && it.value.group == g.id && it.value.letter == m.mid }
+            if (mine.isEmpty()) {
+                if (spread(w, g, null, own = true) == 0) Book.edit(key) { c -> c.msgs.find { it.mid == m.mid }?.advance(if (alone(g)) 2 else -1) }
+                Log.i("Montana", "group_resend mid=" + m.mid.take(14) + " anew")
+                return
+            }
+            val gone = mine.filter { it.key !in queued }
+            gone.keys.forEach { copies.remove(it) }
+            val again = gone.values.mapNotNull { carry(w, it.to, m.mid, own = true) }
+            val left = mine.size - gone.size + again.size
+            copies.values.filter { it.own && it.group == g.id && it.letter == m.mid }.forEach { it.of = left }
+            saveCopies()
+            if (left == 0) Book.edit(key) { c -> c.msgs.find { it.mid == m.mid }?.advance(-1) }
+            Log.i("Montana", "group_resend mid=" + m.mid.take(14) + " copies=" + left + " again=" + again.size)
+        }
+        Thread { Post.flush() }.start()
     }
 
     // ── arrival ──
@@ -1635,6 +2155,10 @@ object Groups {
                     if (0 < g.slow) w.put("sw", g.slow)
                     if (g.taken.isNotEmpty()) w.put("ax", JSONObject().apply { g.taken.forEach { (k, v) -> put(k, JSONArray(v)) } })
                     if (g.ranks.isNotEmpty()) w.put("rk", JSONObject(g.ranks.toMap()))
+                    if (g.kind == CHANNEL && g.signs) w.put("sg", 1)
+                    if (g.kind == CHANNEL && !g.reacts) w.put("rx", 0)
+                    if (g.kind == CHANNEL && g.talks) w.put("dc", 1)
+                    if (g.kind == CHANNEL) g.reactList?.let { w.put("rl", JSONArray(it)) }
                     return w
                 }
                 if (g.mine) g.members.forEach { m -> notes.add(Triple(m.pipe, MARK + invitation(m.seat), true)) }
@@ -1774,8 +2298,13 @@ object Groups {
             "kk" -> kicked(w, pipe)   // COMPAT-GATED: an administrator's «take out», to the owner (iOS stage R.6)
             "ci" -> infoAsked(w, pipe)   // COMPAT-GATED: a member's renewal, to the owner (iOS G.5)
             "jn" -> joined(w, pipe)   // COMPAT-GATED: a person who opened the group's invite link, to the owner (iOS stage R.6)
+            "sp" -> passported(w, pipe)   // COMPAT-GATED: a sticker's passport (iOS 17.10, 2df34a13), an older build buries it
             "lp" -> carded(w, pipe)   // COMPAT-GATED: a letter's link card (iOS 17.10, 89dfd51d), an older build buries it
             "kp" -> keptHeard(w, pipe)   // COMPAT-GATED: a keeper's word to the one who deleted a letter (iOS 16.10, fbd8a190)
+            "cm" -> commented(w, pipe)   // COMPAT-GATED: a comment under a channel's post (iOS MTChannelComments, 2315)
+            "vw" -> seen(w, pipe)   // COMPAT-GATED: a subscriber's posts shown, to a channel's owner (iOS 17.10)
+            "vc" -> counted(w, pipe)   // COMPAT-GATED: a channel owner's view counts, to its subscribers (iOS 17.10)
+            "room" -> roomed(w, pipe)   // COMPAT-GATED: a group room's word (iOS MTGroupRoom, 07.10)
             else -> Verdict.REFUSED.also { Log.i("Montana", "group_refused kind=${t.take(8)}") }   // a newer build's word: its road ends here
         }
     }
@@ -1838,7 +2367,7 @@ object Groups {
 
     /**
      * The owner's word about its administrators, taken as it stands (iOS takeAdmins, G.6): the rights left out (known ones alone)
-     * and the custom titles. The link an inviting administrator holds (iOS lk) waits for the group's invite links on this phone.
+     * the custom titles and the link -- an https link of the owner's card, kept only while this phone is an administrator who may invite.
      */
     private fun takeAdmins(w: JSONObject, g: State) {
         g.taken.clear()
@@ -1846,7 +2375,7 @@ object Groups {
             for (seat in x.keys()) {
                 if (!isSeat(seat)) continue
                 val a = x.optJSONArray(seat) ?: continue
-                val known = (0 until a.length()).map { a.optString(it) }.filter { it in RIGHTS }.distinct()
+                val known = (0 until a.length()).map { a.optString(it) }.filter { it in RIGHTS || it in CH_RIGHTS }.distinct()   // a channel's too
                 if (known.isNotEmpty()) g.taken[seat] = known
             }
         }
@@ -1858,6 +2387,8 @@ object Groups {
                 if (t.isNotEmpty()) g.ranks[seat] = t
             }
         }
+        val mine = adminCan(g, g.me, INVITE) && g.me != OWNER_SEAT
+        g.link = if (mine) w.optString("lk").takeIf { it.length <= 2048 && it.startsWith("https://") } else null
     }
 
     /** What the members may not do and the slow mode, as the owner's word says them (iOS bn, sw, G.5): known rights alone, an hour at most. */
@@ -1865,6 +2396,10 @@ object Groups {
         g.barred.clear()
         w.optJSONArray("bn")?.let { a -> g.barred.addAll((0 until a.length()).map { a.optString(it) }.filter { it in MEMBER_RIGHTS }.distinct()) }
         g.slow = w.optInt("sw").coerceIn(0, 3600)
+        g.signs = g.kind == CHANNEL && w.optInt("sg") == 1   // iOS g.signs = w.sg == 1
+        g.reacts = g.kind != CHANNEL || w.optInt("rx", 1) != 0   // iOS g.reacts = w.rx == 0 ? false : nil
+        g.reactList = if (g.kind == CHANNEL) reactionList(w.optJSONArray("rl")) else null   // iOS reactionList(w.rl)
+        g.talks = g.kind == CHANNEL && w.optInt("dc") == 1   // iOS g.talks = w.dc == 1 ? true : nil
     }
 
     /** The administrators an invitation names (iOS ad): seats alone. */
@@ -1894,7 +2429,8 @@ object Groups {
         val seat: String
         if (g.mine) {
             val m = g.members.firstOrNull { SamePair.root(it.pipe) == from } ?: return Verdict.REFUSED
-            if (g.kind != GROUP) { Log.i("Montana", "group_refused a member's letter in a channel is not carried"); return Verdict.REFUSED }
+            // A CHANNEL CARRIES ITS ADMINISTRATORS' POSTS (iOS heard, «Post Messages»): the owner named them; anyone else only reads
+            if (!posts(g, m.seat)) { Log.i("Montana", "group_refused a member's letter in a channel is not carried"); return Verdict.REFUSED }
             seat = m.seat
         } else {
             val s0 = w.optString("s")
@@ -1929,7 +2465,7 @@ object Groups {
         // a media letter's file is gathered from the pieces every member reads; its copy was receipted already (handle)
         if (landed && words.startsWith(Marks.MEDIA)) Media.fetch(Book.ctx, key, id, words)
         // the banner a running app owes its person: the group's title over who wrote and what (a channel speaks as itself)
-        val past = w.optInt("hs") == 1   // a letter of the group's past handed to one just added (G.4): it lands silent, no banner
+        val past = w.optInt("hs") == 1 || w.optInt("sl") == 1   // the group's past handed to one just added (G.4), and a channel's silent post: no banner
         if (landed && Book.openChat != key && !past) Notify.letter(key, words, if (g.kind == GROUP) speakerName(Book.ctx, sp) else null,
             mentioned = g.kind == GROUP && mentionsMe(words))   // a mention rings through the mute (iOS presentGroup mentioned)
         if (landed && Book.openChat == key && g.kind == GROUP) readSoon(key)   // read before the eyes: the speaker hears it (B.13)
@@ -1950,6 +2486,56 @@ object Groups {
      * feed once by its name. Only a letter's own speaker changes it or takes it away; a deletion of a letter not landed yet
      * buries it before it comes.
      */
+    /**
+     * A ROOM'S WORD (iOS roomed): its seat is proven by the pipe it came by, as an answer's is; the room reads it once by its name,
+     * and the owner of the group passes it on to everyone else -- a targeted word (an invitation, a key) to the seats it names alone,
+     * ringing there only if it is an invitation. A room's word is never a row.
+     */
+    private fun roomed(w: JSONObject, pipe: String): Verdict {
+        val g = groups[w.getString("g")] ?: return Verdict.WAIT
+        if (g.left) return Verdict.REFUSED
+        val id = w.optString("id")
+        val words = w.optString("tx")
+        if (!isLetterName(id) || words.isEmpty() || words.toByteArray().size > 4096) return Verdict.REFUSED
+        val from = SamePair.root(pipe)
+        val seat = if (g.mine) g.members.firstOrNull { SamePair.root(it.pipe) == from }?.seat ?: return Verdict.REFUSED
+            else w.optString("s").takeIf { SamePair.root(g.owner) == from && isSeat(it) && it != g.me } ?: return Verdict.REFUSED
+        if (id in heard) return Verdict.HELD
+        if (!paced(g, seat)) return Verdict.WAIT
+        remember(id)
+        Rooms.heard(words, g.id, seat)
+        if (g.mine) {
+            val on = JSONObject().put("t", "room").put("g", g.id).put("k", g.kind).put("ti", g.title).put("id", id).put("s", seat).put("tx", words)
+            w.optString("n").ifEmpty { null }?.let { on.put("n", it) }
+            val ts = w.optJSONArray("ts")
+            if (ts != null && ts.length() <= 32) {
+                // a targeted word: to the seats it names alone -- ringing there if it is an invitation (a word naming no ring is one)
+                val ring = !w.has("rg") || w.optInt("rg") == 1
+                val to = List(ts.length()) { ts.optString(it) }.toSet()
+                on.put("ts", ts).put("rg", if (ring) 1 else 0)
+                for (m in g.members) if (m.seat in to && m.seat != seat) carry(JSONObject(on.toString()), m.pipe, "", own = false, ring = ring)
+            } else {
+                for (m in g.members) if (m.seat != seat) carry(JSONObject(on.toString()), m.pipe, "", own = false, ring = false)
+            }
+        }
+        return Verdict.HELD
+    }
+    /** The pace of one member's room words the owner takes and carries on (iOS paced, carriedPerMinute 30). */
+    private val carriedAt = HashMap<String, MutableList<Long>>()
+    private fun paced(g: State, seat: String): Boolean {
+        if (!g.mine) return true
+        val now = System.currentTimeMillis()
+        val moments = carriedAt.getOrPut(g.id + "/" + seat) { mutableListOf() }
+        moments.removeAll { now - it >= 60_000 }
+        if (moments.size >= 30) { Log.i("Montana", "group_paced a member past thirty room words a minute"); return false }
+        moments.add(now)
+        return true
+    }
+    /** A row of the room laid in the group's feed (iOS lay MTGroupEvent «call», «ended»): this phone's own, never sent. */
+    fun layRoom(gid: String, e: JSONObject) { synchronized(lock) { groups[gid]?.let { lay(it, e) } } }
+    /** The name a seat is shown by in its group (iOS speakerName(speaker(group, seat))). */
+    fun seatName(c: Context, gid: String, seat: String): String = speakerName(c, speaker(gid, seat))
+
     private fun answered(w: JSONObject, pipe: String): Verdict {
         val g = groups[w.getString("g")] ?: return Verdict.WAIT
         if (g.left) return Verdict.REFUSED
@@ -1965,6 +2551,16 @@ object Groups {
             Log.i("Montana", "group_refused a pin by a seat without the right seat=$seat")
             return Verdict.REFUSED
         }
+        // A CHANNEL WHOSE OWNER TURNED REACTIONS OFF TAKES NONE, ONE THAT TAKES SOME TAKES THOSE ALONE (iOS answered, Allow / Some
+        // Reactions): a subscriber's reaction ends here; the owner and its administrators are never refused
+        if (words.startsWith(Marks.REACTION) && g.kind == CHANNEL && seat != OWNER_SEAT && seat !in g.admins) {
+            val o = runCatching { JSONObject(words.removePrefix(Marks.REACTION)) }.getOrNull()
+            val list = g.reactList
+            if (!g.reacts || (list != null && o?.optString("op") == "add" && o.optString("e") !in list)) {
+                Log.i("Montana", "group_refused a reaction the channel does not take")
+                return Verdict.REFUSED
+            }
+        }
         if (g.mine && !allows(g, seat, words)) {   // a reaction or an edit past the group's permissions (iOS answered, G.5)
             Log.i("Montana", "group_refused an answer past the group's permissions")
             return Verdict.REFUSED
@@ -1979,12 +2575,12 @@ object Groups {
                     Log.i("Montana", "group_refused an answer to another's letter seat=$seat")
                     return Verdict.REFUSED
                 }
-            } else if (t in gone) return Verdict.HELD
+            } else if (t in gone || Book.isBuried(key, t)) return Verdict.HELD   // the letter is gone here already (iOS store.buried)
             else if (g.mine) return Verdict.WAIT   // the letter has not landed at the owner yet: the copy knocks again
             else if (words.startsWith(Marks.DELETE)) { bury(t); remember(id); return Verdict.HELD }
         }
         remember(id)
-        apply(key, words)
+        apply(g, key, words, seat)
         // the reference's service row of a pin: «X pinned "..."», laid under the pinned letter's own words (iOS answered)
         if (words.startsWith(PIN_MARK)) runCatching {
             val o = JSONObject(words.removePrefix(PIN_MARK))
@@ -2003,6 +2599,7 @@ object Groups {
         val from = SamePair.root(pipe)
         val m = (if (g.mine) g.members.firstOrNull { SamePair.root(it.pipe) == from } else null) ?: return Verdict.REFUSED
         keepName(g, m)
+        act(g, "left", listOf(nameNow(g, m.seat)))
         g.members.removeAll { it.seat == m.seat }
         g.admins.remove(m.seat)
         g.taken.remove(m.seat); g.ranks.remove(m.seat)
@@ -2016,9 +2613,16 @@ object Groups {
         return Verdict.HELD
     }
 
-    private fun apply(key: String, words: String) {
+    private fun apply(g: State, key: String, words: String, seat: String) {
         when {
-            words.startsWith(Marks.DELETE) -> target(words)?.let { t -> Book.drop(key, listOf(t)) }
+            // THE PERSON KEEPS WHAT OTHERS DELETE (iOS MontanaChatStore.swift:4693-4709, LevelAccess.keepDeleted): the letter stays, and
+            // the one who took it away alone is told -- the deletion's own speaker, an administrator too -- by the group's word «kp».
+            // The level is read before it is asked; a letter not on this phone is not kept.
+            words.startsWith(Marks.DELETE) -> target(words)?.let { t ->
+                PersonChain.prime(); CoinBook.warm()
+                if (LevelAccess.keepsDeleted && Book.chat(key)?.msgs?.any { it.mid == t } == true) tellKept(g, words.removePrefix(Marks.DELETE), seat)
+                else Book.drop(key, listOf(t))
+            }
             words.startsWith(Marks.EDIT) -> {
                 val tx = runCatching { JSONObject(words.removePrefix(Marks.EDIT)).getString("tx") }.getOrNull()
                 val t = target(words)
@@ -2052,6 +2656,7 @@ object Groups {
             g.left = true
             g.removed = true
             save()
+            Rooms.groupGone(g.id)
             if (!ended) lay(g, event("removed", OWNER_SEAT, listOf(g.me)))   // «X removed you»
             Book.edit(key(g.id)) {}   // the open chat trades its field for the way out at once
             Log.i("Montana", "group_rx taken out by the owner")
@@ -2111,7 +2716,7 @@ object Groups {
 
     private fun isLabel(s: String) = s.length == 32 && s.all { it in '0'..'9' || it in 'a'..'f' }
     private fun isSeat(s: String) = s.isNotEmpty() && s.length <= 16 && s.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }
-    private fun isLetterName(s: String) = s.isNotEmpty() && s.length <= 80 && !s.startsWith("mid:") &&
+    fun isLetterName(s: String) = s.isNotEmpty() && s.length <= 80 && !s.startsWith("mid:") &&
         s.all { it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it == '-' }
 
     /** A name or a title as the group shows it (iOS clean): trimmed, without a crown, at most `limit` characters as a person counts them. */

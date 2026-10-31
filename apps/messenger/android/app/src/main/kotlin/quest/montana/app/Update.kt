@@ -40,9 +40,27 @@ object Update {
     const val ACTION = "quest.montana.app.UPDATE"
 
     class Site(val number: Long, val version: String, val file: String, val sha256: String, val size: Long,
-               val notes: JSONArray = JSONArray(), val l10n: JSONObject? = null)
+               val notes: JSONArray = JSONArray(), val l10n: JSONObject? = null, val least: Long = 0, val core: String = "")
 
     @Volatile private var busy = false
+
+    /**
+     * WHAT THE UPDATE BANNER SHOWS WHILE ITS ROUND RUNS (updateBanner; seen 30.10: a phone at 608 stood under the page and its tap
+     * showed nothing -- the share brought rode only in the shade's notice): the share brought 0..100, HANDED to the system's
+     * installer, FAILED (the banner offers the tap again and the site's own file). Told on the screen's thread.
+     */
+    const val HANDED = 101
+    const val FAILED = -1
+    @Volatile var onRound: ((Int) -> Unit)? = null
+    /** The site's newest as the last round read it: the banner's road through the browser takes its file (iOS opens release.url). */
+    @Volatile var lastFile: String? = null
+    fun siteFile(): String = SITE + (lastFile ?: "")
+    /** The round's last word, so a banner laid anew mid-round shows where it stands (null -- no round has run). */
+    @Volatile var lastRound: Int? = null
+    private fun round(state: Int) {
+        lastRound = state
+        onRound?.let { f -> android.os.Handler(android.os.Looper.getMainLooper()).post { f(state) } }
+    }
 
     fun own(c: Context): Long = runCatching { c.packageManager.getPackageInfo(c.packageName, 0).longVersionCode }.getOrDefault(0L)
 
@@ -62,8 +80,22 @@ object Update {
         if (!Regex("[A-Za-z0-9._-]+[.]apk").matches(file) || !Regex("[0-9a-f]{64}").matches(sha)) return null
         // what changed, as the publishing road wrote it, and in the languages it brought (iOS MTClientRelease notes, l10n)
         Site(j.optLong("build"), j.optString("name").substringBefore(" "), file, sha, j.optLong("size"),
-            j.optJSONArray("notes") ?: JSONArray(), j.optJSONObject("l"))
+            j.optJSONArray("notes") ?: JSONArray(), j.optJSONObject("l"), maxOf(0L, j.optLong("min")), j.optString("core").take(32))
     }.getOrNull()
+
+    /**
+     * THE UPDATE THAT CANNOT BE PUT OFF (iOS 4befb14a, MTClientRelease.least/core and MTReleaseState.required): latest.json names the
+     * least build the network admits (min) and the level of the core (core); a build below the least sees the update banner over
+     * the screen (updateBanner), at the launch and at every return, kept here so it stands before the site answers. A document
+     * without them admits every build.
+     */
+    class Required(val least: Long, val core: String)
+    fun required(c: Context): Required? {
+        val least = Prefs.str("mt.update.least", "0").toLongOrNull() ?: 0L
+        return if (own(c) < least) Required(least, Prefs.str("mt.update.core", "")) else null
+    }
+    /** The screen's ear for the least (MainActivity): told on the screen's thread whenever the site's word is read. */
+    @Volatile var onLeast: (() -> Unit)? = null
 
     /** Asked when the app comes to the front and on each box round, at most once an hour: a newer build rings once. */
     fun look(c: Context, force: Boolean = false) {
@@ -73,6 +105,10 @@ object Update {
         if (!force && roomTold && now - (Prefs.str("mt.update.lookedAt", "0").toLongOrNull() ?: 0L) < EVERY) return
         Prefs.setStr("mt.update.lookedAt", now.toString())
         val s = newest() ?: return
+        lastFile = s.file
+        Prefs.setStr("mt.update.least", s.least.toString())
+        Prefs.setStr("mt.update.core", s.core)
+        onLeast?.let { android.os.Handler(android.os.Looper.getMainLooper()).post(it) }
         // THE ROOM HEARS THE BUILD (iOS MTReleaseState.deliver: release.build >= ownBuild): the newest and the one running alike, once
         if (own(c) <= s.number) {
             if (Book.appendRelease(s.number, s.version, s.notes, s.l10n, SITE)) Log.d("Montana", "release told build=" + s.number)
@@ -121,26 +157,47 @@ object Update {
 
     /** The notice's tap (MainActivity): the newest is brought, held to its digest, and handed to the system's installer. */
     fun take(act: Activity) {
+        if (!GooglePlay.SELF_UPDATE) { clear(act.applicationContext); shop(act); return }
         if (busy) return
         busy = true
         val c = act.applicationContext
         Thread {
             var handed = false
             try {
+                round(0)
                 val s = newest()
-                if (s == null) say(act, R.string.update_failed)
-                else if (s.number <= own(c)) { clear(c); say(act, R.string.update_current) }
+                if (s != null) lastFile = s.file
+                if (s == null) { Log.w("Montana", "update: the site did not answer"); round(FAILED); say(act, R.string.update_failed) }
+                else if (s.number <= own(c)) { clear(c); round(FAILED); say(act, R.string.update_current) }
                 else {
+                    Log.d("Montana", "update_take build=" + s.number + " own=" + own(c))
                     progress(c, s, 0)
                     val apk = bring(c, s)
-                    if (apk == null) { clear(c); say(act, R.string.update_failed) }
-                    else { hand(c, apk); handed = true }
+                    if (apk == null) { clear(c); round(FAILED); say(act, R.string.update_failed) }
+                    else { hand(c, apk); handed = true; round(HANDED); Log.d("Montana", "update_handed build=" + s.number) }
                 }
             } catch (e: Exception) {
-                Log.w("Montana", "update: " + e.javaClass.simpleName)
-                clear(c); say(act, R.string.update_failed)
+                Log.w("Montana", "update: " + e.javaClass.simpleName + " " + (e.message ?: ""))
+                clear(c); round(FAILED); say(act, R.string.update_failed)
             } finally { if (!handed) busy = false }
         }.start()
+    }
+
+    /**
+     * THE UPDATE THROUGH THE SHOP (GooglePlay.SELF_UPDATE false, the author's word 31.10.2026: one build for the site and Google
+     * Play, and Play lets no app update itself): the app brings and installs nothing -- a phone that took it from Google Play goes
+     * to its page there, any other to the site's page in the browser, where the person takes the file themselves.
+     */
+    private fun shop(act: Activity) {
+        val pm = act.packageManager
+        val from = runCatching {
+            if (30 <= Build.VERSION.SDK_INT) pm.getInstallSourceInfo(act.packageName).installingPackageName
+            else @Suppress("DEPRECATION") pm.getInstallerPackageName(act.packageName)
+        }.getOrNull()
+        val play = from == "com.android.vending"
+        Log.d("Montana", "update_shop play=" + (if (play) 1 else 0))
+        val roads = if (play) listOf("market://details?id=" + act.packageName, "https://play.google.com/store/apps/details?id=" + act.packageName) else listOf(SITE)
+        for (r in roads) if (runCatching { act.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(r))) }.isSuccess) return
     }
 
     private fun say(act: Activity, what: Int) = act.runOnUiThread { Toast.makeText(act, what, Toast.LENGTH_LONG).show() }
@@ -150,7 +207,7 @@ object Update {
         val conn = URL(SITE + s.file).openConnection() as HttpURLConnection
         conn.connectTimeout = 15000; conn.readTimeout = 30000
         conn.setRequestProperty("User-Agent", "Montana")
-        if (conn.responseCode != 200) { conn.disconnect(); return null }
+        if (conn.responseCode != 200) { Log.w("Montana", "update: the site answered " + conn.responseCode); conn.disconnect(); return null }
         val total = if (0L < conn.contentLengthLong) conn.contentLengthLong else s.size
         val md = MessageDigest.getInstance("SHA-256")
         val input = conn.inputStream
@@ -164,7 +221,7 @@ object Update {
                 if (n < 0) break
                 md.update(buf, 0, n); out.write(buf, 0, n); got += n
                 val pct = if (0L < total) (got * 100 / total).toInt() else 0
-                if (shown + 5 <= pct) { shown = pct; progress(c, s, pct) }
+                if (shown + 5 <= pct) { shown = pct; progress(c, s, pct); round(minOf(99, pct)) }
             }
         } finally { out.close(); input.close(); conn.disconnect() }
         val sum = md.digest().joinToString("") { "%02x".format(it) }
@@ -203,6 +260,7 @@ object Update {
             Log.w("Montana", "update: installer status " + status + " " + (why ?: ""))
             // not taken (refused, cancelled): the next look tells the same build again
             Prefs.remove("mt.update.told", "mt.update.lookedAt")
+            round(FAILED)
         }
     }
 
@@ -324,5 +382,78 @@ object Release {
         }, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = c.dp(3) })
         // the scroll is as wide as its head: a column that wraps would measure each point once at its own width and keep that height
         into.addView(col, LinearLayout.LayoutParams(c.dp(250), WRAP))
+    }
+}
+
+/**
+ * THE UPDATE IS A NOTICE, NOT A WALL (iOS MTUpdateBanner, 829d29f2; the author's word 30.10.2026 17:38 UTC, council link 13412,
+ * replacing the page of 4befb14a): a build below the least the network admits sees this card over the screen's top -- the picture,
+ * the word, which core needs which build and which this one is. A touch on it starts the update's own road (Update.take, where iOS
+ * opens release.url) and the card then stays to show where the round stands (seen 30.10: a phone at 608 saw nothing after its
+ * tap); the cross in its top right corner or a swipe up closes it. MainActivity lays it at the launch and at every return and
+ * takes it away after nine seconds.
+ */
+fun updateBanner(act: Activity, r: Update.Required, onTouched: () -> Unit, onClose: () -> Unit): android.view.View = FrameLayout(act).apply {
+    val words = Color.argb(153, 235, 235, 245)   // iOS .secondary (dark)
+    val head = android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT)
+    val card = FrameLayout(act).apply {
+        background = act.rounded(GLASS_TONE, 24, Color.argb(46, 255, 255, 255))   // iOS .regularMaterial over the dark ground
+        elevation = act.dp(12).toFloat()
+        contentDescription = act.getString(R.string.update_required_title)
+    }
+    // where the round stands, under the words: the share brought, the installer's turn, or the failure with the site's own file
+    val state = act.text("", 15f, Color.WHITE)
+    val site = act.text(act.getString(R.string.update_required_site), 15f, Color.WHITE).apply {
+        paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+        setPadding(0, act.dp(6), act.dp(12), act.dp(6))
+        setOnClickListener {
+            runCatching { act.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Update.siteFile()))) }
+        }
+    }
+    card.addView(act.hstack {
+        setPadding(act.dp(16), act.dp(14), act.dp(40), act.dp(14))
+        addView(act.icon(R.drawable.ic_arrow_down_app, Color.WHITE, 30))
+        addView(act.vstack(Gravity.START) {
+            addView(act.text(act.getString(R.string.update_required_title), 17f, Color.WHITE, bold = true), head)
+            addView(act.text(act.getString(R.string.update_required_needs, r.core, r.least, Update.own(act)), 15f, words), head)
+            addView(act.text(act.getString(R.string.update_required_install), 15f, words), head)
+            addView(state, head)
+            addView(site, head)
+        }, android.widget.LinearLayout.LayoutParams(0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = act.dp(12) })
+    }, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT))
+    card.addView(FrameLayout(act).apply {
+        addView(act.icon(R.drawable.ic_close, words, 13), FrameLayout.LayoutParams(act.dp(13), act.dp(13), Gravity.CENTER))
+        contentDescription = act.getString(R.string.close)
+        setOnClickListener { onClose() }
+    }, FrameLayout.LayoutParams(act.dp(44), act.dp(44), Gravity.TOP or Gravity.END))
+    fun show(r: Int?) {
+        val going = r != null && r != Update.FAILED && r != Update.HANDED
+        card.isEnabled = !going
+        state.text = when {
+            r == null -> ""
+            r == Update.FAILED -> act.getString(R.string.update_failed)
+            r == Update.HANDED -> act.getString(R.string.update_required_installing)
+            else -> act.getString(R.string.update_required_loading, r)
+        }
+        state.visibility = if (r == null) android.view.View.GONE else android.view.View.VISIBLE
+        site.visibility = if (r == Update.FAILED) android.view.View.VISIBLE else android.view.View.GONE
+    }
+    show(Update.lastRound)
+    Update.onRound = { show(it); onTouched() }
+    card.setOnClickListener { onTouched(); Update.take(act) }
+    // a swipe up closes it (iOS DragGesture: up by more than 16)
+    var downY = 0f
+    card.setOnTouchListener { v, e ->
+        when (e.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> { downY = e.rawY; false }
+            android.view.MotionEvent.ACTION_UP -> if (downY - e.rawY > v.dp(16)) { onClose(); true } else false
+            else -> false
+        }
+    }
+    addView(card, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT))
+    clipToPadding = false
+    setOnApplyWindowInsetsListener { v, ins ->
+        @Suppress("DEPRECATION") v.setPadding(ins.systemWindowInsetLeft + v.dp(12), ins.systemWindowInsetTop + v.dp(6), ins.systemWindowInsetRight + v.dp(12), v.dp(24))
+        ins
     }
 }

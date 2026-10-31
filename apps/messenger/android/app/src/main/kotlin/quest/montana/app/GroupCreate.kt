@@ -25,7 +25,7 @@ private fun reachable(adding: String?): List<Chat> = chatRows().filter {
 }
 
 /** A step's bar (iOS the sheet's toolbar): the cross or the back on the left, the title, the tick on the right — dim and deaf until it may act. */
-private class StepBar(c: Context, title: String, back: Boolean, onLead: () -> Unit, onDone: () -> Unit) : FrameLayout(c) {
+private class StepBar(c: Context, title: String, back: Boolean, onLead: () -> Unit, done: Boolean = true, onDone: () -> Unit = {}) : FrameLayout(c) {
     private val tick = c.icon(R.drawable.ic_check, Color.WHITE)
     init {
         setPadding(dp(8), 0, dp(8), 0)
@@ -35,7 +35,7 @@ private class StepBar(c: Context, title: String, back: Boolean, onLead: () -> Un
         addView(c.text(title, 17f, Color.WHITE, bold = true, center = true), LayoutParams(WRAP, WRAP, Gravity.CENTER))
         tick.setPadding(dp(10), dp(10), dp(10), dp(10))
         tick.pressable { if (tick.alpha == 1f) onDone() }
-        addView(tick, LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
+        if (done) addView(tick, LayoutParams(dp(44), dp(44), Gravity.CENTER_VERTICAL or Gravity.END))
     }
     fun ready(on: Boolean) { tick.alpha = if (on) 1f else 0.4f }
 }
@@ -221,5 +221,159 @@ private fun groupNamePage(act: MainActivity, members: List<Chat>, onBack: () -> 
     }
     // the name's field takes the keys at once (iOS typing = true on appear)
     name.post { name.requestFocus(); c.getSystemService(InputMethodManager::class.java).showSoftInput(name, 0) }
+    return stepFrame(c, bar, body)
+}
+
+// ── a channel's birth in three steps (iOS MTChannelIntroStep, MTChannelInfoStep, MTChannelSubscribersStep; MontanaChannel.swift 1-128) ──
+
+/**
+ * THE CHANNEL IS BORN IN THREE STEPS (iOS MTChannelIntroStep; the author's words 05.10.2026 16:0x UTC, 17.10.2026 15:4x UTC «1 to 1»):
+ * what a channel is, then its face, name and description, then the subscribers, each chosen by a tick. A channel is a group whose
+ * owner alone posts (Groups, kind channel); its posts ride the pipe of each subscriber from this phone. `onCreated` -- the channel's
+ * key once it is born. DinetPDA PR #43 (ChannelPages.kt 70-208) laid the same three steps; here they stand on this file's own parts.
+ */
+fun channelCreatePage(act: MainActivity, onClose: () -> Unit, onCreated: (String) -> Unit): View {
+    val c: Context = act
+    val bar = StepBar(c, c.getString(R.string.chn_new), back = false, onLead = onClose, done = false)
+    // iOS VStack(spacing: 18) { Spacer; megaphone.fill 64; «What is a Channel?»; its sentence; Spacer; Spacer; «Create Channel» }
+    val body = c.vstack(Gravity.CENTER_HORIZONTAL) {
+        setPadding(dp(32), 0, dp(32), dp(12))
+        addView(View(c), lp(MATCH, 0, 1f))
+        addView(c.icon(R.drawable.ic_megaphone_fill, Color.WHITE), lp(dp(72), dp(72)))
+        gap(18)
+        addView(c.text(c.getString(R.string.chn_what_is), 22f, Color.WHITE, bold = true, center = true), lp())
+        gap(18)
+        addView(c.text(c.getString(R.string.chn_what_is_sub), 17f, MT.gray, center = true), lp())
+        addView(View(c), lp(MATCH, 0, 2f))
+        addView(c.text(c.getString(R.string.chn_create), 17f, Color.WHITE, bold = true, center = true).apply {
+            gravity = Gravity.CENTER
+            background = c.rounded(MT.blue, 14)
+            pressable {
+                act.push { back -> channelInfoPage(act, back) { title, about, face, people ->
+                    back(); onClose()
+                    Groups.create(channel = true, title = title, about = about, face = face, people = people)?.let(onCreated)
+                } }
+            }
+        }, lp(MATCH, dp(50)))
+    }
+    return stepFrame(c, bar, body)
+}
+
+/** THE SECOND STEP (iOS MTChannelInfoStep): the face beside the name, the description of up to six lines; the tick, once a name stands. */
+private fun channelInfoPage(act: MainActivity, onBack: () -> Unit, onCreate: (String, String, ByteArray?, List<String>) -> Unit): View {
+    val c: Context = act
+    var face: ByteArray? = null
+    val faceBox = FrameLayout(c)
+    fun drawFace() {
+        faceBox.removeAllViews()
+        val bmp = face?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+        if (bmp != null) faceBox.addView(c.avatar(bmp, "", 60), FrameLayout.LayoutParams(c.dp(60), c.dp(60)))
+        else faceBox.addView(FrameLayout(c).apply {
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.argb(61, 118, 118, 128)) }
+            addView(c.icon(R.drawable.ic_add_a_photo, Color.WHITE), FrameLayout.LayoutParams(c.dp(24), c.dp(24), Gravity.CENTER))
+        }, FrameLayout.LayoutParams(c.dp(60), c.dp(60)))
+    }
+    drawFace()
+    faceBox.pressable {
+        act.pickPhoto { uri ->
+            val image = uri?.let { SelfFace.decode(act, it) } ?: return@pickPhoto
+            lateinit var close: () -> Unit
+            close = act.overlay(cropPage(act, image) { jpeg -> close(); if (jpeg != null) { face = jpeg; drawFace() } })
+        }
+    }
+    lateinit var bar: StepBar
+    val name = EditText(c).apply {
+        hint = c.getString(R.string.chn_name)
+        setTextColor(Color.WHITE); setHintTextColor(MT.gray)
+        background = null
+        isSingleLine = true
+        addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, d: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, d: Int) {}
+            override fun afterTextChanged(s: Editable?) { bar.ready(!s.isNullOrBlank()) }
+        })
+    }
+    val about = EditText(c).apply {
+        hint = c.getString(R.string.chn_about_hint)
+        setTextColor(Color.WHITE); setHintTextColor(MT.gray)
+        background = null
+        minLines = 1; maxLines = 6
+        setPadding(c.dp(16), c.dp(12), c.dp(16), c.dp(12))
+    }
+    bar = StepBar(c, c.getString(R.string.chn_new), back = true, onLead = onBack) {
+        c.getSystemService(InputMethodManager::class.java).hideSoftInputFromWindow(name.windowToken, 0)
+        val title = name.text.toString().trim()
+        val words = about.text.toString().trim()
+        // the keys go down first: a page pushed while they stand is laid out keyboard-short and keeps a black band under it
+        name.postDelayed({ act.push { back -> channelSubscribersPage(act, back) { people -> back(); onCreate(title, words, face, people) } } }, 250)
+    }
+    bar.ready(false)
+    val body = ScrollView(c).apply {
+        addView(c.vstack(Gravity.NO_GRAVITY) {
+            setPadding(dp(16), dp(8), dp(16), dp(32))
+            addView(c.plate {
+                addView(c.hstack {
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(dp(16), dp(10), dp(16), dp(10))
+                    addView(faceBox, lp(dp(60), dp(60)))
+                    gap(14)
+                    addView(name, lp(0, WRAP, 1f))
+                }, lp())
+            }, lp())
+            gap(24)
+            addView(c.plate { addView(about, lp()) }, lp())
+            addView(c.text(c.getString(R.string.chn_about_footer), 12f, MT.gray).apply { setPadding(dp(16), dp(8), dp(16), 0) }, lp())
+        })
+    }
+    // the name's field takes the keys at once (iOS .onAppear { typing = true })
+    name.post { name.requestFocus(); c.getSystemService(InputMethodManager::class.java).showSoftInput(name, 0) }
+    return stepFrame(c, bar, body)
+}
+
+/**
+ * THE THIRD STEP (iOS MTChannelSubscribersStep): the subscribers, each chosen by a tick among the people this phone holds a pipe with,
+ * the search over them; the tick gives the channel its birth, in the order they were chosen -- none chosen is a channel of its owner alone.
+ */
+private fun channelSubscribersPage(act: MainActivity, onBack: () -> Unit, onDone: (List<String>) -> Unit): View {
+    val c: Context = act
+    val people = reachable(null)
+    val chosen = linkedSetOf<String>()
+    val rows = c.vstack(Gravity.NO_GRAVITY)
+    var query = ""
+    lateinit var fill: () -> Unit
+    fill = {
+        rows.removeAllViews()
+        val q = query.trim()
+        people.filter { q.isEmpty() || it.shown.contains(q, ignoreCase = true) }.forEachIndexed { i, ch ->
+            if (i > 0) rows.addView(View(c).apply { setBackgroundColor(MT.hairline) }, lp(MATCH, 1).apply { marginStart = c.dp(68) })
+            rows.addView(pickRow(c, ch, ch.ref in chosen) { if (!chosen.remove(ch.ref)) chosen.add(ch.ref); fill() }, lp())
+        }
+    }
+    val search = EditText(c).apply {
+        hint = c.getString(R.string.search)
+        setTextColor(Color.WHITE); setHintTextColor(MT.gray)
+        background = c.rounded(Color.argb(61, 118, 118, 128), 10)
+        setPadding(c.dp(12), c.dp(8), c.dp(12), c.dp(8))
+        isSingleLine = true
+        addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, d: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, d: Int) {}
+            override fun afterTextChanged(s: Editable?) { query = s?.toString() ?: ""; fill() }
+        })
+    }
+    val bar = StepBar(c, c.getString(R.string.gr_add_subscribers), back = true, onLead = onBack) {
+        c.getSystemService(InputMethodManager::class.java).hideSoftInputFromWindow(search.windowToken, 0)
+        onDone(chosen.filter { ref -> people.any { it.ref == ref } })
+    }
+    fill()
+    val body = ScrollView(c).apply {
+        addView(c.vstack(Gravity.NO_GRAVITY) {
+            setPadding(dp(16), 0, dp(16), dp(32))
+            addView(search, lp())
+            gap(12)
+            addView(c.plate { addView(rows, lp()) }, lp())
+            addView(c.text(c.getString(R.string.chn_pick_note), 12f, MT.gray).apply { setPadding(dp(16), dp(8), dp(16), 0) }, lp())
+        })
+    }
     return stepFrame(c, bar, body)
 }

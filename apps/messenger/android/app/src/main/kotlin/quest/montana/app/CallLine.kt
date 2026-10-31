@@ -244,16 +244,6 @@ object CallLine {
 
     /** The moment the voice joined, for the call's clock; 0 — not yet. */
     val connectedAt: Long get() = synchronized(gate) { line?.connectedAt ?: 0L }
-    /** The second of talk now (iOS MontanaCall.talkSecond, MontanaCall.swift:672-677; CallMint): the call's peer, a name of this call
-     * alone — the first eight bytes of its seed in hex, or its connect's millisecond — and a name of this call's second. */
-    class TalkSecond(val peer: String, val call: String, val ref: String)
-    fun talkSecond(): TalkSecond? {
-        val l = synchronized(gate) { line?.takeIf { it.connectedAt != 0L } } ?: return null
-        val at = l.connectedAt
-        val seed = runCatching { android.util.Base64.decode(l.seed, android.util.Base64.DEFAULT) }.getOrNull()
-        val call = seed?.takeIf { it.isNotEmpty() }?.take(8)?.joinToString("") { "%02x".format(it) } ?: at.toString()
-        return TalkSecond(l.ref, call, call + ":" + (System.currentTimeMillis() - at) / 1000)
-    }
 
     /** «Answer» with the offer in hand (iOS proceedAccept): the line is built on its own queue, the answer leaves at once. */
     fun answer(ref: String, seed: String, offer: String) = work.execute {
@@ -495,7 +485,6 @@ object CallLine {
                 startRouteWatch(l)
                 if (l.connectedAt == 0L) {
                     l.connectedAt = System.currentTimeMillis()
-                    MintBeat.run()   // both sides mint or burn the talk by the second (iOS MontanaCall.swift:4417-4419, CallMint)
                     l.sum.battStart = power().level   // iOS 4420: every call's battery at its connect, a voice call's too
                     CallService.sync()
                     autoSpeaker(l)

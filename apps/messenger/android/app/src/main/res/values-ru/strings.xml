@@ -336,6 +336,7 @@
     <string name="pe_note">Заметка</string>
     <string name="pe_restore_photo">Вернуть оригинальное фото</string>
     <!-- the chat's ground (iOS MTWallpaperPicker) -->
+    <string name="wall_show_in_full">Показать полностью</string>
     <string name="wall_tab_ready">Обои</string>
     <string name="wall_tab_photos">Фото</string>
     <string name="wall_same_as_page">Как у моей страницы</string>
@@ -420,6 +421,13 @@
     <string name="release_expand">Развернуть</string>
     <string name="release_collapse">Свернуть</string>
     <string name="update_now">Обновить</string>
+    <!-- the update that cannot be put off (iOS MTUpdateRequired, 4befb14a) -->
+    <string name="update_required_title">Обновить Монтану</string>
+    <string name="update_required_needs">%1$s требует сборку %2$d. Эта сборка — %3$d.</string>
+    <string name="update_required_install">Установите новую сборку, чтобы продолжить.</string>
+    <string name="update_required_loading">Загрузка… %1$d%%</string>
+    <string name="update_required_installing">Установка…</string>
+    <string name="update_required_site">Скачать с сайта</string>
     <string name="update_loading">Загрузка Montana %1$s (%2$d)</string>
     <string name="update_failed">Обновление не загрузилось — попробуйте позже</string>
     <string name="update_current">У вас последняя версия Montana</string>
@@ -441,9 +449,21 @@
     <string name="coin_send_title">Отправить монеты</string>
     <string name="coin_choose_chats">Выберите чаты</string>
     <string name="coin_no_chats">Пока нет чатов</string>
+    <string name="coin_choose_members">Выберите участников</string>
+    <string name="coin_no_members">Пока нет участников</string>
+    <string name="coin_pair_closed">В этот чат монеты не отправить</string>
+    <string name="coin_no_pair">Нет своего чата с этим участником</string>
+    <string name="coin_group_note">Каждый выбранный участник получает свой перевод в вашем чате с ним. Группа узнаёт только, скольким участникам вы перевели монеты.</string>
     <string name="coin_total">Итого</string>
     <string name="coin_not_enough">Недостаточно монет</string>
+    <string name="coin_enter_amount">Введите сумму монет</string>
+    <string name="coin_send_coins">Отправить монеты</string>
+    <string name="coin_key">Монета</string>
+    <string name="coin_available">Доступно</string>
+    <string name="close">Закрыть</string>
     <string name="coin_not_enough_sub">На вашем балансе меньше монет.</string>
+    <string name="coin_not_sent">Монеты не отправлены</string>
+    <string name="coin_not_sent_sub">С баланса ничего не ушло. Попробуйте ещё раз чуть позже.</string>
     <string name="coin_you">Вы</string>
     <string name="coin_letter_sent">Монеты отправлены</string>
     <string name="coin_letter_received">Монеты получены</string>
@@ -489,7 +509,6 @@
     <string name="chess_no_clock">Без часов</string>
     <string name="chess_you_white">Вы играете белыми</string>
     <string name="chess_you_black">Вы играете чёрными</string>
-    <string name="chess_stake">ставка %1$s</string>
     <string name="chess_score">Победы %1$d · Поражения %2$d · Ничьи %3$d</string>
     <string name="chess_accept_draw">Согласиться на ничью</string>
     <string name="chess_move_failed">Не удалось отправить ход</string>
@@ -497,8 +516,6 @@
     <string name="chess_cancel">Отмена</string>
     <string name="chess_white_clock">Время белых</string>
     <string name="chess_black_clock">Время чёрных</string>
-    <string name="chess_pot">Банк: %1$s</string>
-    <string name="chess_stake_short">Не хватает монет на ставку</string>
     <string name="chess_accept_invitation">Принять приглашение</string>
     <string name="chess_withdraw">Отозвать приглашение</string>
     <string name="chess_decline_invitation">Отклонить приглашение</string>
@@ -528,11 +545,8 @@
     <string name="chess_time_control">Контроль времени</string>
     <string name="chess_invite_correspondent">Пригласить собеседника</string>
     <string name="chess_no_correspondents">Собеседники не найдены</string>
-    <string name="chess_stake_field">Ставка</string>
     <string name="chess_ask_new">Начать новую партию?</string>
-    <string name="coin_balance_line">Монет: %1$s</string>
     <string name="chess_invite_failed">Не удалось отправить приглашение</string>
-    <string name="chess_pot_footer">Оба игрока кладут ставку в банк партии, а каждый ход чеканит в него уровень сделавшего ход, умноженный на тысячу. Победитель забирает весь банк; при ничьей каждому возвращается своё.</string>
     <string name="chess_accept">Принять</string>
     <string name="chess_decline">Отклонить</string>
     <string name="wall_comments">Комментарии</string>
@@ -546,6 +560,7 @@
     <string name="wall_downloads">Скачивания</string>
     <string name="wall_views">Просмотры</string>
     <string name="wall_send">Отправить</string>
+    <string name="wall_hide_person">Скрыть этого человека</string>
     <string name="wall_save">Сохранить</string>
     <string name="wall_unsave">Убрать из сохранённых</string>
     <string name="call_end_ask">Завершить звонок?</string>
@@ -820,4 +835,9 @@
     <string name="cp_put_back">Вернуть в копию</string>
     <string name="cp_total">Итого: вложений на %1$s и записей — %2$d. Копия запечатана ключом, который открывают ваши 24 слова; самих слов в ней нет.</string>
     <string name="cp_letters">писем: %1$d · %2$s</string>
+    <string name="voice_text_read">Расшифровать</string>
+    <string name="voice_text_hide">Скрыть расшифровку</string>
+    <string name="voice_text_refused">Разрешите микрофон в Настройках</string>
+    <string name="voice_text_unsupported">Распознавание речи на устройстве недоступно для этого языка</string>
+    <string name="voice_text_silent">Речь не распознана</string>
 </resources>

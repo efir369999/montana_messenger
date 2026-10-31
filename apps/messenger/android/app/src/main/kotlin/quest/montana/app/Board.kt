@@ -57,6 +57,8 @@ object Board {
     fun listen(l: () -> Unit) { synchronized(listeners) { listeners.add(l) } }
     fun unlisten(l: () -> Unit) { synchronized(listeners) { listeners.remove(l) } }
     private fun changed() { val ls = synchronized(listeners) { listeners.toList() }; MainThread.post { ls.forEach { it() } } }
+    /** The table for everyone was read anew or a writer of it hidden: the feed draws again (iOS MTBoard.objectWillChange). */
+    fun tableMoved() = changed()
 
     private fun store() = File(File(Book.ctx.filesDir, "board").apply { mkdirs() }, "pages.json")
     /** The person forgotten: the walls this phone held and the files brought for a look leave with them (Book.wipe). */
@@ -91,6 +93,7 @@ object Board {
     private fun send(ref: String, w: JSONObject): Boolean = sendWord(ref, w) != null
     /** A word of the wall to a correspondent: the letter's name, by which its receipt is known (the page's «sent» is written by it). */
     fun sendWord(ref: String, w: JSONObject): String? {
+        if (WallGlobal.isRef(ref)) return null   // a post of the table answers nobody (iOS 18.10): no conversation holds its wall
         if (Groups.isKey(ref) || PeerSafety.isBlocked(ref) || Book.secret(ref) == null) return null
         val mid = Marks.mintMid()
         Post.send(ref, mid, MARK + w.toString())
@@ -107,6 +110,7 @@ object Board {
     private fun people() = Book.refs().filter { !Groups.isKey(it) && !PeerSafety.isBlocked(it) && SamePair.merged(it) == null }
     /** THE LOOK ASKS (iOS lookFeed, the author's word 25.09): every wall not held, or held from more than ten minutes ago. */
     fun lookFeed() {
+        WallGlobal.read()   // the posts of everyone, from the nodes' table (iOS lookFeed 616)
         val now = System.currentTimeMillis()
         val due = synchronized(lock) { ensure(); people().filter { r -> now - (pages[r]?.optLong("at") ?: 0L) >= LOOK_STALE } }
         due.forEachIndexed { i, r -> MainThread.later(300L * i, Runnable { Thread { ask(r) }.start() }) }
@@ -117,6 +121,8 @@ object Board {
      * stood for the wall for ever -- is asked, a third of a second apart.
      */
     fun sweep() {
+        WallGlobal.laySoon()   // at the app's return: what the table holds of mine is set right (iOS sweep 594)
+        WallGlobal.keepFiles()   // and the files it names lie on the stores (iOS sweep 595)
         val speakers = MyWall.speakers()
         val unknown = synchronized(lock) { ensure(); speakers.filter { r -> pages[r]?.has("v") != true } }.filter { Book.secret(it) != null }
         unknown.forEachIndexed { n, r -> MainThread.later(300L * n, Runnable { Thread { ask(r) }.start() }) }
@@ -196,7 +202,7 @@ object Board {
     }
 
     /** WHAT ARRIVES IS HELD TO ITS BOUNDS (iOS clean, the critic 24.09): a hostile page cannot fill the store. */
-    private fun clean(p: JSONObject): JSONObject {
+    fun clean(p: JSONObject): JSONObject {
         val x = JSONObject().put("id", p.optString("id").take(64)).put("byName", p.optString("byName").take(64))
             .put("byGlyph", p.optString("byGlyph").take(8)).put("at", p.optDouble("at", 0.0))
             .put("text", p.optString("text").take(TEXT_LIMIT)).put("pinned", p.optBoolean("pinned"))
@@ -278,8 +284,13 @@ object Board {
                 (0 until ps.length()).mapNotNull { ps.optJSONObject(it)?.let { p -> Item(e.key, p) } }
             }
         }
+        // THE WALL OF THOUGHTS FOR EVERYONE (iOS feed 779-784): the posts of all people from the nodes' table, each once -- a post this
+        // phone already holds from a wall stays as that wall carried it, and a writer the person hid stays out.
+        val heldIds = all.map { it.post.optString("id") }.toSet()
+        val hidden = WallGlobal.hidden()
+        val table = WallGlobal.posts.filter { (r, p) -> p.optString("id") !in heldIds && r !in hidden }.map { (r, p) -> Item(WallGlobal.PREFIX + r, p) }
         val once = HashSet<String>()
-        return all.filter { once.add(it.post.optString("id")) }
+        return (all + table).filter { once.add(it.post.optString("id")) }
             .sortedWith(compareByDescending<Item> { it.post.optDouble("at") }.thenByDescending { it.post.optString("id") }).take(FEED_SIZE)
     }
 
@@ -296,6 +307,7 @@ object Board {
         val dest = File(lookDir(), name)
         if (dest.exists()) { then(dest); return }
         val chunks = m.optJSONArray("chunks")
+        // A LOOK BRINGS PICTURES ONLY (iOS MTBoardClip: «never the whole file ahead»): a film plays from its first pieces (stream)
         if (m.optString("kind") != "img" || chunks == null || chunks.length() == 0) return
         synchronized(going) { if (!going.add(name)) return }
         Thread {
@@ -309,15 +321,35 @@ object Board {
             finally { synchronized(going) { going.remove(name) } }
         }.start()
     }
-    /** THE FOLDER KEEPS THE LATEST SEEN, BY COUNT AND BY THE DISK THEY TAKE (iOS MTBoardLook.trim, MontanaBoard.swift:2480-2494 at
-     * 2155): a gigabyte and three hundred files at most; the oldest go first. */
+    /**
+     * WHAT A PLAYER READS BEFORE THE FILE IS WHOLE (iOS MTBoard.streamSource, MontanaBoard.swift:1727-1736 at 2322): a post's film
+     * through its one loader (Streams) in the look's folder, the address the app's own door reads it by; [whole] is told once the
+     * last piece lies, the file then standing where a look's copy does.
+     */
+    fun stream(wall: String, m: JSONObject, pid: String, i: Int, whole: (File) -> Unit = {}): android.net.Uri? {
+        val chunks = m.optJSONArray("chunks")
+        if (chunks == null || chunks.length() == 0 || !plain(pid)) return null
+        val dest = File(lookDir(), fileName(pid, i, m.optString("ext")))
+        // a piece every door calls gone is said to the wall's owner, whose phone lays the post's files again (iOS MTStreamSource.post)
+        return Streams.address(Book.ctx, dest, JSONObject().put("bk", m.optString("key")).put("chunks", chunks), gone = { reportGone(wall, pid) }) {
+            trimLook(); MainThread.post { whole(dest) }
+        }
+    }
+    /**
+     * THE FOLDER KEEPS THE LATEST SEEN, BY COUNT AND BY THE DISK THEY TAKE (iOS MTBoardLook.trim, MontanaBoard.swift:2538-2560 at
+     * 2322): a gigabyte and three hundred files at most; the oldest go first. A FILE A PLAYER READS IS NOT THE TRIM'S (iOS, the
+     * author's word 03.10): a film streamed into this folder lies as a part at its whole length beside its ledger -- a file whose
+     * loader lives (Streams.holds) is neither counted nor taken, and a file counts by the disk it takes, so a part counts only
+     * the pieces laid.
+     */
     private fun trimLook() {
-        val all = lookDir().listFiles()?.sortedBy { it.lastModified() } ?: return
-        var total = all.sumOf { it.length() }
+        val all = lookDir().listFiles()?.filter { !Streams.holds(it.name) }?.sortedBy { it.lastModified() } ?: return
+        fun bytes(f: File) = runCatching { android.system.Os.stat(f.path).st_blocks * 512 }.getOrDefault(f.length())
+        var total = all.sumOf { bytes(it) }
         var count = all.size
         for (f in all) {
             if (count <= LOOK_KEEP && total <= LOOK_BUDGET) break
-            total -= f.length(); count--
+            total -= bytes(f); count--
             f.delete()
         }
     }
@@ -329,6 +361,7 @@ object Board {
      * pieces this phone holds of it (iOS keep's progress, 1586-1593): the repost's bar reads it.
      */
     fun keep(wall: String, p: JSONObject, progress: ((Int, Int) -> Unit)? = null): Boolean {
+        if (WallGlobal.isRef(wall)) return false   // a post of the table answers nobody (iOS 18.10)
         val id = p.optString("id")
         if (!plain(id)) return false
         synchronized(lock) { if (!keeping.add(id)) return false }
@@ -382,6 +415,7 @@ object Board {
      * stays, and the wall's owner is told it keeps the post. The writer keeps theirs from the start.
      */
     private fun becomePeer(wall: String, p: JSONObject) {
+        if (WallGlobal.isRef(wall)) return   // a post of the table answers nobody (iOS 18.10)
         val id = p.optString("id")
         val ms = p.optJSONArray("media") ?: JSONArray()
         val here = (0 until ms.length()).map { fileName(id, it, ms.optJSONObject(it)?.optString("ext") ?: "") }.filter { MyWall.storeFile(it).exists() }
@@ -408,6 +442,7 @@ object Board {
     }
     /** REMOVE FROM SAVED (iOS unkeep 1624-1630): the writer keeps their post while it stands; only the wall's owner takes it down. */
     fun unkeep(wall: String, p: JSONObject) {
+        if (WallGlobal.isRef(wall)) return   // a post of the table answers nobody (iOS 18.10)
         val id = p.optString("id")
         if (wall.isEmpty()) { MyWall.ownMark(id, "keepers", false); return }
         if (p.optBoolean("mine")) return
@@ -434,6 +469,7 @@ object Board {
      * with a try again. The repost wears the face its post carried, else -- the owner's own post -- the face this phone holds for them.
      */
     fun repost(wall: String, p: JSONObject) {
+        if (WallGlobal.isRef(wall)) return   // a post of the table answers nobody (iOS 18.10)
         val id = p.optString("id")
         if (wall.isEmpty() || !plain(id)) return
         val ms = p.optJSONArray("media") ?: JSONArray()
@@ -592,6 +628,7 @@ object Board {
      * come to this phone -- on the owner's wall, and on this page at once; one counted in a launch before this one is not counted again.
      */
     private fun noteDownloaded(wall: String, p: JSONObject) {
+        if (WallGlobal.isRef(wall)) return   // a post of the table answers nobody (iOS 18.10)
         val id = p.optString("id")
         val ms = p.optJSONArray("media") ?: return
         if (ms.length() == 0) return
@@ -737,6 +774,7 @@ object Board {
      * the post is mine, the owner's own, or -- a repost -- its first writer's, where this phone holds the post as itself.
      */
     fun writer(wall: String, p: JSONObject): String? {
+        if (WallGlobal.isRef(wall)) return null   // a writer of the table: nobody this phone knows (iOS writer 2239)
         if (wall.isEmpty()) return MyWall.writerOf(p.optString("id")) ?: if (p.optBoolean("mine")) "" else null
         if (p.has("from")) return if (p.optBoolean("own")) wall else originalWriter(p.optString("id"), wall)
         if (p.optBoolean("mine")) return ""
@@ -774,6 +812,7 @@ object Board {
 
     /** A like given or taken back (iOS like): the word to the wall's owner and the page here at once; the owner's next page says it exact. */
     fun like(wall: String, p: JSONObject) {
+        if (WallGlobal.isRef(wall)) return   // a post of the table answers nobody (iOS 18.10)
         if (wall.isEmpty()) { MyWall.like(p.optString("id")); return }   // my own wall: my own mark, the version moves
         val on = !p.optBoolean("liked")
         val id = p.optString("id")
@@ -789,6 +828,7 @@ object Board {
     private val seenDue = HashMap<String, MutableList<String>>()
     private val viewed: MutableList<String> by lazy { Prefs.str("board.viewed", "").split('\n').filter { it.isNotEmpty() }.toMutableList() }
     fun view(wall: String, p: JSONObject) {
+        if (WallGlobal.isRef(wall)) return   // a post of the table answers nobody (iOS 18.10)
         if (wall.isEmpty() || p.optBoolean("mine") || !p.has("views")) return
         val id = p.optString("id")
         val first = synchronized(lock) {
@@ -863,11 +903,12 @@ object Board {
     }
 
     /**
-     * A COMMENT (iOS comment): sealed into the post's chain after the last seal this phone holds, sent to the wall's owner with
-     * one coin when the book holds one (the author's words 04.10 02:50: four of five burn, the fifth to the post's writer), and
-     * shown here at once as my own; the wall is asked again so the owner's page brings every comment.
+     * A COMMENT (iOS comment): sealed into the post's chain after the last seal this phone holds, sent to the wall's owner — it
+     * costs no coin and brings none (iOS 0e183aff, decision 383 «a», build 2322: nothing leaves the book) — and shown here at once
+     * as my own; the wall is asked again so the owner's page brings every comment.
      */
     fun comment(wall: String, p: JSONObject, text: String) {
+        if (WallGlobal.isRef(wall)) return   // a post of the table answers nobody (iOS 18.10)
         if (wall.isEmpty()) { MyWall.comment(p.optString("id"), text); return }
         val t = text.trim().take(COMMENT_LIMIT)
         if (t.isEmpty()) return
@@ -879,12 +920,9 @@ object Board {
         val prev = post(wall, id)?.optJSONArray("comments")?.let { cs -> cs.optJSONObject(cs.length() - 1)?.optString("h")?.takeIf { it.isNotEmpty() } } ?: ZERO_HASH
         val h = seal(cid, at, prev, t)
         val face = commentFace()
-        val r = java.util.UUID.randomUUID().toString().uppercase()
-        val paid = CoinBook.spend(1L, "post:" + id, wall, "cmt:" + r)
         val w = JSONObject().put("t", "cmt").put("id", id).put("at", at).put("tx", t).put("bn", name).put("bg", glyph)
             .put("cid", cid).put("hh", h).put("pv", prev)
         if (face != null) w.put("fc", face)
-        if (paid) w.put("c", 1).put("r", r)
         if (!send(wall, w)) return
         synchronized(lock) { askedAt[wall] = System.currentTimeMillis() }
         send(wall, JSONObject().put("t", "ask"))   // iOS askAfterAct: the owner answers with the page as it stands
@@ -894,6 +932,73 @@ object Board {
     }
 
     fun nameOf(c: Context, ref: String) = Book.chat(ref)?.name?.takeIf { it.isNotBlank() } ?: c.getString(R.string.wall_someone)
+}
+
+/**
+ * A VIDEO IN A POST PLAYS BY ITSELF (iOS MTBoardClip, MontanaBoardViews.swift:1160-1196 at 2315; the author's words 25.09 «a video in the
+ * feed shows playing at once, without a tap» and 29.10 «the video in the feed must play by itself»): the system's player over the tile,
+ * without sound, round and round, while at least half of the tile stands on a screen the person sees -- off the screen, under another
+ * page or with the app away it rests and lets its decoder go. Under its first frame the poster stands as before; a touch is the full
+ * player with sound (openTile). Where this connection's automatic download is off the film never comes, and the tile stays its poster.
+ * The pieces come as the player asks for them (Board.stream, iOS MTBoardClip at 2322), never the whole file ahead; a file this phone
+ * holds plays from the disk. The loader is born only when the tile first stands seen, and only where the connection lets it.
+ */
+private class WallClip(c: Context) : android.view.TextureView(c), android.view.TextureView.SurfaceTextureListener {
+    var file: File? = null
+        set(v) { field = v; look() }
+    /** The film's address before it is whole (Board.stream), asked for once the tile first plays. */
+    var stream: (() -> android.net.Uri?)? = null
+    private var streamed: android.net.Uri? = null
+    private var surface: android.view.Surface? = null
+    private var player: android.media.MediaPlayer? = null
+    private val scrolled = android.view.ViewTreeObserver.OnScrollChangedListener { look() }
+    init { surfaceTextureListener = this; alpha = 0f }
+    override fun onAttachedToWindow() { super.onAttachedToWindow(); viewTreeObserver.addOnScrollChangedListener(scrolled); post { look() } }
+    override fun onDetachedFromWindow() { viewTreeObserver.removeOnScrollChangedListener(scrolled); rest(); super.onDetachedFromWindow() }
+    override fun onWindowVisibilityChanged(visibility: Int) { super.onWindowVisibilityChanged(visibility); look() }
+    private fun seen(): Boolean {
+        if (windowVisibility != View.VISIBLE || !isShown || height == 0) return false
+        val r = android.graphics.Rect()
+        return getGlobalVisibleRect(r) && 2 * r.height() >= height
+    }
+    private fun look() { if (seen()) play() else rest() }
+    private fun play() {
+        if (player != null) return
+        val s = surface ?: return
+        val f = file?.takeIf { it.exists() }
+        val uri = if (f != null) null else streamed ?: (if (Media.autoAllowed(context)) stream?.invoke() else null)?.also { streamed = it }
+        if (f == null && uri == null) return
+        val mp = android.media.MediaPlayer()
+        player = mp
+        runCatching {
+            if (f != null) mp.setDataSource(f.path) else mp.setDataSource(context, uri!!)
+            mp.setSurface(s)
+            mp.isLooping = true
+            mp.setVolume(0f, 0f)
+            mp.setOnVideoSizeChangedListener { _, w, h -> crop(w, h) }
+            mp.setOnInfoListener { _, what, _ -> if (what == android.media.MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) alpha = 1f; false }
+            mp.setOnPreparedListener { if (player === it) it.start() }
+            mp.setOnErrorListener { p, _, _ -> if (player === p) rest(); true }
+            mp.prepareAsync()
+        }.onFailure { Log.w("Montana", "wall_clip: " + it.javaClass.simpleName); rest() }
+    }
+    private fun rest() {
+        val mp = player ?: return
+        player = null
+        alpha = 0f
+        // a player still waiting on a piece lets go off the main thread: its read may stand on the network a while
+        Thread { runCatching { mp.reset() }; mp.release() }.start()
+    }
+    /** The film fills the tile as the poster does (CENTER_CROP): scaled by the larger side's need, cut evenly on the other. */
+    private fun crop(w: Int, h: Int) {
+        if (w <= 0 || h <= 0 || width == 0 || height == 0) return
+        val k = maxOf(width.toFloat() / w, height.toFloat() / h)
+        setTransform(android.graphics.Matrix().apply { setScale(w * k / width, h * k / height, width / 2f, height / 2f) })
+    }
+    override fun onSurfaceTextureAvailable(st: android.graphics.SurfaceTexture, w: Int, h: Int) { surface = android.view.Surface(st); look() }
+    override fun onSurfaceTextureSizeChanged(st: android.graphics.SurfaceTexture, w: Int, h: Int) { player?.let { crop(it.videoWidth, it.videoHeight) } }
+    override fun onSurfaceTextureDestroyed(st: android.graphics.SurfaceTexture): Boolean { rest(); surface?.release(); surface = null; return true }
+    override fun onSurfaceTextureUpdated(st: android.graphics.SurfaceTexture) {}
 }
 
 /** A picture of a post: its width the post's, its height by the frame's shape (iOS MTBoardFrame.held: 9:16 up to 16:9). */
@@ -1116,15 +1221,25 @@ fun postCell(act: MainActivity, it: Board.Item, whole: Boolean = false, onItsWal
         // one-tone glass in a correspondent's bubble's own shape, under the glass's thin light rim -- the clear glass is the buttons'
         background = c.rounded(GLASS_TONE, 18, android.graphics.Color.argb(46, 255, 255, 255))
         setPadding(dp(12), dp(12), dp(12), dp(12))
-        val name = p.optString("byName").ifEmpty { c.getString(R.string.wall_someone) }
+        // THE WRITER'S NAME AS IT STANDS NOW (iOS shownName, MontanaBoard.swift:758-773 at 2316; the author's word 18.10.2026: «everything
+        // right -- the avatars, the names»): mine as I am named now, a correspondent's as this phone names them, a writer this phone never
+        // met -- the table's among them -- by the name the post carried
+        val writer = Board.writer(it.wall, p)
+        val carried = p.optString("byName")
+        val name = when {
+            writer == null -> carried
+            writer.isEmpty() -> Prefs.userName.trim().ifEmpty { carried }
+            else -> Book.chat(writer)?.name?.takeIf { n -> n.isNotBlank() } ?: carried
+        }.ifEmpty { c.getString(R.string.wall_someone) }
+        val table = WallGlobal.isRef(it.wall)   // a post of the table wears the face it carried (iOS MTBoardGlobal)
         val face = if (own && it.wall.isEmpty()) SelfFace.load(c)   // my own wall: my own face
-            else if (own) Book.face(it.wall).takeIf { f -> f.exists() }?.let { f -> BitmapFactory.decodeFile(f.path) } else poster(p.optString("face"))
+            else if (own && !table) Book.face(it.wall).takeIf { f -> f.exists() }?.let { f -> BitmapFactory.decodeFile(f.path) } else poster(p.optString("face"))
         addView(c.hstack {
             gravity = Gravity.CENTER_VERTICAL
             // THE BYLINE OPENS ITS WRITER'S ONE PAGE (iOS MTBoardCell.header, MontanaBoardViews.swift:375-386 at 2155; MTBoardOpen 94-111):
             // the face, the name and when -- one target over its whole room; my name leads to My page, a correspondent's to theirs; a
             // writer this phone is not told of opens nothing, nor the wall's owner on their own wall's page
-            val w = Board.writer(it.wall, p)
+            val w = writer
             val opens = when {
                 w == null -> false
                 w.isEmpty() -> it.wall.isNotEmpty() || !onItsWall   // in the feed my own post opens my page
@@ -1160,11 +1275,45 @@ fun postCell(act: MainActivity, it: Board.Item, whole: Boolean = false, onItsWal
         if (field != null) { gap(10); addView(field, lp()) }
         else if (words.isNotEmpty()) {
             gap(10)
-            addView(c.text(linkedWords(words) { u -> act.openLink(u.toString()) }, 16f).apply {
+            val shown = c.text(linkedWords(words) { u -> act.openLink(u.toString()) }, 16f).apply {
                 setTextIsSelectable(false)
                 movementMethod = android.text.method.LinkMovementMethod.getInstance()
                 setLinkTextColor(MT.blue)
-            }, lp())
+            }
+            addView(shown, lp())
+            // ONLY POSTS FOLD (iOS MTPostFold, MTMessageText.swift:267-294 at 2316; MTPostTextView 2955-2980; atoms 29b6ebf37967,
+            // b207add12856): off its own page a post's words stand at eight lines, the last cut with an ellipsis, and under them
+            // «Show in full» in the platform's blue with the chevron at the right; a touch anywhere but a link opens the post whole
+            // with its comments (the cell's own press, onOpenWords). On the post's own page the words stand whole.
+            if (!whole) {
+                shown.maxLines = POST_FOLD_LINES
+                val foot = c.hstack {
+                    gravity = Gravity.CENTER_VERTICAL or Gravity.END
+                    minimumHeight = dp(22)
+                    visibility = View.GONE
+                    addView(c.text(c.getString(R.string.wall_show_in_full), 16f, MT.blue).apply { gravity = Gravity.END }, lp(0, WRAP, 1f))
+                    gap(6)
+                    addView(c.icon(R.drawable.ic_chevron_right, android.graphics.Color.WHITE).apply { setPadding(dp(4), dp(4), dp(4), dp(4)) }, lp(dp(22), dp(22)))
+                }
+                addView(foot, lp())
+                // THE ELLIPSIS IS CUT BY HAND: a TextView with a movement method (the links' touch) lays no ellipsis of its own, so
+                // the eighth line stood cut with nothing to say more follows (seen on A1, trial 666). A layout that stops before the
+                // words' end folds: its last line takes the ellipsis where it fits, the links' spans kept, and the foot shows.
+                var folded = false
+                shown.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+                    val t = v as android.widget.TextView
+                    val l = t.layout ?: return@addOnLayoutChangeListener
+                    if (folded || l.lineCount < POST_FOLD_LINES || t.text.length <= l.getLineEnd(POST_FOLD_LINES - 1)) return@addOnLayoutChangeListener
+                    folded = true
+                    val start = l.getLineStart(POST_FOLD_LINES - 1)
+                    val last = t.text.subSequence(start, l.getLineEnd(POST_FOLD_LINES - 1)).trimEnd()
+                    val room = l.width.toFloat()
+                    val tail: CharSequence = if (t.paint.measureText(last, 0, last.length) + t.paint.measureText("…") <= room) android.text.SpannableStringBuilder(last).append("…")
+                        else android.text.TextUtils.ellipsize(last, t.paint, room, android.text.TextUtils.TruncateAt.END)
+                    val cut = android.text.SpannableStringBuilder(t.text.subSequence(0, start)).append(tail)
+                    t.post { t.text = cut; foot.visibility = View.VISIBLE }
+                }
+            }
         }
         // A LINK THE POST'S WRITER READ RIDES WITH THE POST (iOS MTWallLink, MontanaBoardViews.swift:544 at 2155, atom 5a84afb1f68f):
         // the picture its writer's own read brought, the site and the title under it.
@@ -1188,17 +1337,28 @@ fun postCell(act: MainActivity, it: Board.Item, whole: Boolean = false, onItsWal
                 clipToOutline = true
                 posterHeld?.let { b -> setImageBitmap(b) }
             }
-            addView(tile, lp())
+            // A FILM'S TILE PLAYS BY ITSELF (iOS MTBoardClip): the clip stands over the poster, the touch goes through to the tile
+            val clip = if (kind == "vid" && field == null) WallClip(c) else null
+            if (clip == null) addView(tile, lp())
+            else addView(FrameLayout(c).apply {
+                background = c.rounded(MT.hairline, 12)
+                outlineProvider = ViewOutlineProvider.BACKGROUND
+                clipToOutline = true
+                addView(tile, FrameLayout.LayoutParams(MATCH, WRAP))
+                addView(clip, FrameLayout.LayoutParams(MATCH, MATCH))
+            }, lp())
             // A TILE'S TOUCH OPENS ITS FILE (iOS MTBoardMediaView.tile, MontanaBoardViews.swift:695-716 at 2155; openTile)
             if (field == null) tile.pressable { openTile(act, it.wall, p, i, !onItsWall, whole) }   // the editor's tiles answer nothing (iOS onTile: { _ in }, 2090)
             // THE SHARP PICTURE, ELSE THE POSTER DECODED OFF THE MAIN THREAD, ELSE THE TILE'S GREY (iOS MTBoardPicture, MontanaBoardViews.swift:
             // 926-941 at 2155); what was drawn sharp stands sharp on the first frame of the next drawing (iOS MTBoardPicture.cache 944-948)
             if (posterHeld == null) WallPoster.decode(thumb) { b -> if (!sharp) tile.setImageBitmap(b) }
-            Board.bring(m, p.optString("id"), i) { f ->
+            fun sharpen(f: File) {
                 val held = wallSharp.get(f.path)
                 if (held != null) { sharp = true; tile.setImageBitmap(held) }
                 else Thread { Media.preview(c, f, kind, 1600)?.let { b -> wallSharp.put(f.path, b); MainThread.post { sharp = true; tile.setImageBitmap(b) } } }.start()
             }
+            Board.bring(m, p.optString("id"), i) { f -> clip?.file = f; sharpen(f) }
+            clip?.stream = { Board.stream(it.wall, m, p.optString("id"), i) { f -> clip?.file = f; sharpen(f) } }
         }
         // THE TRACKS AND THE FILES AS ROWS, UNDER THE PICTURES (iOS MTBoardMediaView, MontanaBoardViews.swift:657-667, 718-720 at 2155):
         // a track in the one player's face, any other file as its row
@@ -1268,9 +1428,11 @@ private fun postMenu(act: MainActivity, anchor: View, wall: String, p: JSONObjec
         menu.add(0, 0, 0, R.string.share)
         if (wall.isEmpty()) menu.add(0, 1, 1, if (p.optBoolean("pinned")) R.string.cl_unpin else R.string.cl_pin)
         if (wall.isEmpty() && mine && !p.has("from")) menu.add(0, 8, 1, R.string.edit)   // MY OWN WORDS ARE MINE TO CHANGE (iOS 416-419)
-        if (!p.optBoolean("kept")) menu.add(0, 2, 2, R.string.wall_save)
+        val table = WallGlobal.isRef(wall)   // a post of the table for everyone: its writer is nobody this phone knows (iOS 387, 437-440)
+        if (table) menu.add(0, 9, 2, red(R.string.wall_hide_person))
+        else if (!p.optBoolean("kept")) menu.add(0, 2, 2, R.string.wall_save)
         else if (!mine || wall.isEmpty()) menu.add(0, 3, 3, R.string.wall_unsave)
-        if (wall.isNotEmpty() && !p.optBoolean("reposted") && !mine) menu.add(0, 4, 4, R.string.wall_repost)
+        if (wall.isNotEmpty() && !table && !p.optBoolean("reposted") && !mine) menu.add(0, 4, 4, R.string.wall_repost)
         if (p.optString("text").isNotEmpty()) menu.add(0, 5, 5, R.string.copy)
         if (!mine) menu.add(0, 6, 6, red(R.string.pi_report))
         if (wall.isEmpty()) menu.add(0, 7, 7, red(R.string.delete))
@@ -1286,6 +1448,7 @@ private fun postMenu(act: MainActivity, anchor: View, wall: String, p: JSONObjec
                 6 -> reportPost(act, wall, p)
                 7 -> Thread { MyWall.remove(id) }.start()
                 8 -> act.push { close -> postEditor(act, p, close) }
+                9 -> WallGlobal.hide(wall)
             }
             true
         }
@@ -1336,6 +1499,12 @@ private fun wallPage(wall: String, inFeed: Boolean): List<Board.Item> = when {
 private fun openTile(act: MainActivity, wall: String, p: JSONObject, i: Int, inFeed: Boolean, whole: Boolean = false) {
     val kind = p.optJSONArray("media")?.optJSONObject(i)?.optString("kind") ?: return
     if (!whole) { act.push { close -> wallMediaPage(act, wall, p, i, inFeed, close) }; return }
+    // A FILM NOT YET HERE OPENS AT ONCE ON ITS FIRST PIECES (iOS MTBoardMediaView.open, MontanaBoardViews.swift:981-982 at 2322)
+    val m = p.optJSONArray("media")?.optJSONObject(i)
+    if (kind == "vid" && m != null && Board.here(p, i) == null) {
+        val later = Board.fileOf(p, i)?.let { File(Board.lookIn(act), it) }
+        if (later != null) Board.stream(wall, m, p.optString("id"), i) { Thread { Board.file(wall, p, i) }.start() }?.let { FilmActivity.openStream(act, it, later); return }
+    }
     Thread {
         val f = Board.file(wall, p, i) ?: return@Thread
         if (kind == "vid") { MainThread.post { FilmActivity.open(act, f) }; return@Thread }
@@ -1387,6 +1556,8 @@ private fun shownAll(wall: String, p: JSONObject, i: Int, inFeed: Boolean): List
 }
 
 private const val ZOOM_TAG = "wall_zoom"
+/** The post preview keeps its eight-line limit (iOS MTPostFold.foldLines). */
+private const val POST_FOLD_LINES = 8
 /** A few screens of pictures at their own pixels, kept by their cost (iOS MTBoardShownPicture.cache, MontanaBoardViews.swift:3141-3142). */
 private val wallShown = Caches.kept("wall_shown", object : android.util.LruCache<String, Bitmap>(48_000_000) { override fun sizeOf(key: String, value: Bitmap) = value.byteCount })
 
@@ -1564,19 +1735,27 @@ private fun shownFilm(act: MainActivity, s: Shown, active: Boolean): View {
         override fun onViewAttachedToWindow(v: View) {}
         override fun onViewDetachedFromWindow(v: View) { gone = true; player?.stopPlayback(); player = null }   // the screen scrolled away rests (rest 3208-3213)
     })
+    fun play(f: File?, uri: android.net.Uri?) {
+        if (gone || f == null && uri == null) return
+        val v = android.widget.VideoView(c)
+        v.setMediaController(android.widget.MediaController(c))
+        v.setOnInfoListener { _, what, _ ->
+            if (what == android.media.MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) { wheel.visibility = View.GONE; poster.visibility = View.GONE }
+            false
+        }
+        box.addView(v, 0, FrameLayout.LayoutParams(MATCH, MATCH, Gravity.CENTER))
+        player = v
+        if (f != null) v.setVideoPath(f.path) else v.setVideoURI(uri)
+        v.start()
+    }
+    // A FILM NOT YET HERE PLAYS FROM ITS FIRST PIECES (iOS MTBoardMediaPage, MontanaBoardViews.swift:3450-3455 at 2322): through the
+    // file's one loader, shared with the feed's tile; once whole, the touch's road keeps it (Board.file -- this phone becomes its peer)
+    val here = Board.here(s.post, s.i)
+    val uri = if (here != null) null else Board.stream(s.wall, s.media, s.post.optString("id"), s.i) { Thread { Board.file(s.wall, s.post, s.i) }.start() }
+    if (here != null || uri != null) { play(here, uri); return box }
     Thread {
         val f = Board.file(s.wall, s.post, s.i)
-        MainThread.post {
-            wheel.visibility = View.GONE
-            if (f == null || gone) return@post
-            val v = android.widget.VideoView(c)
-            v.setMediaController(android.widget.MediaController(c))
-            v.setOnInfoListener { _, what, _ -> if (what == android.media.MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) poster.visibility = View.GONE; false }
-            box.addView(v, 0, FrameLayout.LayoutParams(MATCH, MATCH, Gravity.CENTER))
-            player = v
-            v.setVideoPath(f.path)
-            v.start()
-        }
+        MainThread.post { wheel.visibility = View.GONE; play(f, null) }
     }.start()
     return box
 }
@@ -1726,26 +1905,32 @@ private fun postEditor(act: MainActivity, p: JSONObject, onClose: () -> Unit): V
  * here first by the touch's own road (Board.file), and a track of the page not yet here stands out of the queue.
  */
 private fun playTrack(act: MainActivity, wall: String, p: JSONObject, i: Int, inFeed: Boolean) {
-    Thread {
-        val f = Board.file(wall, p, i) ?: return@Thread
-        fun tracks(posts: List<Board.Item>): List<Track> {
-            val once = HashSet<String>()
-            val out = ArrayList<Track>()
-            for (item in posts) {
-                val ms = item.post.optJSONArray("media") ?: continue
-                for (j in 0 until ms.length()) {
-                    val mj = ms.optJSONObject(j) ?: continue
-                    if (mj.optString("kind") != "aud") continue
-                    val here = Board.here(item.post, j) ?: continue
-                    if (!once.add(here.name)) continue
-                    out.add(Track(android.net.Uri.fromFile(here), mj.optString("name").ifEmpty { here.name }).apply { length = mj.optDouble("dur", 0.0) })
-                }
+    // A TRACK PLAYS FROM ITS FIRST PIECES (iOS MTBoardMediaView's queue, MontanaBoardViews.swift:1032-1050 at 2322): a track on this
+    // phone from the disk, another on its own loader (Board.stream); the touched one, once whole, is kept by the touch's road (Board.file)
+    val name = Board.fileOf(p, i) ?: return
+    fun tracks(posts: List<Board.Item>): List<Track> {
+        val once = HashSet<String>()
+        val out = ArrayList<Track>()
+        for (item in posts) {
+            val ms = item.post.optJSONArray("media") ?: continue
+            val id = item.post.optString("id")
+            for (j in 0 until ms.length()) {
+                val mj = ms.optJSONObject(j) ?: continue
+                if (mj.optString("kind") != "aud") continue
+                val nj = Board.fileOf(item.post, j) ?: continue
+                if (!once.add(nj)) continue
+                val touched = nj == name
+                val uri = Board.here(item.post, j)?.let { android.net.Uri.fromFile(it) }
+                    ?: Board.stream(item.wall, mj, id, j) { if (touched) Thread { Board.file(item.wall, item.post, j) }.start() } ?: continue
+                out.add(Track(uri, mj.optString("name").ifEmpty { nj }).apply { length = mj.optDouble("dur", 0.0) })
             }
-            return out
         }
+        return out
+    }
+    Thread {
         var list = tracks(wallPage(wall, inFeed))
-        if (list.none { t -> t.uri.lastPathSegment == f.name }) list = tracks(listOf(Board.Item(wall, p)))
-        val k = list.indexOfFirst { t -> t.uri.lastPathSegment == f.name }
+        if (list.none { t -> t.uri.lastPathSegment == name }) list = tracks(listOf(Board.Item(wall, p)))
+        val k = list.indexOfFirst { t -> t.uri.lastPathSegment == name }
         val queue = list
         Log.d("Montana", "music board queue n=" + queue.size + " at=" + (k + 1) + " in=" + (if (inFeed) "feed" else "wall"))
         if (k != -1) MainThread.post { MusicPlayer.play(act, queue, k) }
@@ -1882,7 +2067,10 @@ fun wallCommentsPage(act: MainActivity, wall: String, id: String, onClose: () ->
             contentDescription = c.getString(R.string.wall_send)
             pressable {
                 val p = Board.post(wall, id) ?: return@pressable
-                Thread { Board.comment(wall, p, field.text.toString()) }.start()
+                // the words are read here, on the main thread: read inside the thread they came after the line below had emptied the
+                // field, and the comment went nowhere
+                val words = field.text.toString()
+                Thread { Board.comment(wall, p, words) }.start()
                 field.setText("")
             }
         }, lp(dp(44), dp(44)))
@@ -1904,6 +2092,7 @@ fun wallCommentsPage(act: MainActivity, wall: String, id: String, onClose: () ->
             override fun onViewAttachedToWindow(v: View) { Board.listen(again); draw() }
             override fun onViewDetachedFromWindow(v: View) { Board.unlisten(again) }
         })
+        standAboveKeys()
     }
 }
 
@@ -1917,11 +2106,19 @@ class FeedPane(private val act: MainActivity) : FrameLayout(act) {
     private val goingColumn = c.vstack(Gravity.NO_GRAVITY)
     private val column = c.vstack(Gravity.NO_GRAVITY)
     private val empty = c.text(c.getString(R.string.no_posts), 17f, MT.gray, center = true)
-    private val again: () -> Unit = { if (isShown) draw() }
+    // THE POSTS ARE LAID AS THEY COME INTO REACH (iOS MTFeedTabView's lazy stack): the first ones at once, the next ones while
+    // the scroll nears the end -- laying every post of the feed at once held the screen for 0.7 s each time the page was shown
+    // (A1, trial 670: «motion what=pane:feed worst_ms=740»), the turn's first frame included
+    private val scroll = ScrollView(c)
+    private var items = emptyList<Board.Item>()
+    private var laid = 0
+    private var stale = true        // the board moved while the page stood unseen
+    private var drawnAt = 0L
+    private val again: () -> Unit = { if (isShown) draw() else stale = true }
     private var goingIds = emptyList<String>()
     // A POST OF MINE ON ITS WAY READ LIVE (iOS MTBoardSendingLive, MontanaBoardViews.swift:2824-2834 at 2155): its bar moves with every
     // piece the node confirms; a post that left its way, or a new one, moves the feed
-    private val moved: () -> Unit = { if (isShown) { if (MyWall.sendingAll().map { it.id } != goingIds) draw() else drawGoing() } }
+    private val moved: () -> Unit = { if (isShown) { if (MyWall.sendingAll().map { it.id } != goingIds) draw() else drawGoing() } else stale = true }
     // ROOM KEPT AT THE BOTTOM FOR THE FLOATING PLAYER (iOS MTFeedTabView.reserve, MontanaBoardViews.swift:2864 at 2155,
     // atom f056cf90ad09): the posts scroll clear of the bar while it stands -- 60 more than the tab bar's own room, as
     // the music page's plus moves for it (MusicPage.reserve).
@@ -1936,9 +2133,14 @@ class FeedPane(private val act: MainActivity) : FrameLayout(act) {
         pressable { act.push { close -> newPostPage(act, close) } }
     }
     init {
-        addView(ScrollView(c).apply {
+        addView(scroll.apply {
             isVerticalScrollBarEnabled = false
             addView(c.vstack(Gravity.NO_GRAVITY) { addView(goingColumn, lp()); addView(column, lp()); addView(foot, lp(MATCH, dp(120))) })
+            val near = android.view.ViewTreeObserver.OnScrollChangedListener { reach() }
+            addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) { v.viewTreeObserver.addOnScrollChangedListener(near) }
+                override fun onViewDetachedFromWindow(v: View) { v.viewTreeObserver.removeOnScrollChangedListener(near) }
+            })
         }, LayoutParams(MATCH, MATCH))
         addView(empty, LayoutParams(WRAP, WRAP, Gravity.CENTER))
         addView(write, PageCorner.params(c))
@@ -1950,10 +2152,23 @@ class FeedPane(private val act: MainActivity) : FrameLayout(act) {
         write.layoutParams = PageCorner.params(c, reserve = on)
     }
     private fun draw() {
-        val items = Board.feed()
-        column.removeAllViews()
-        for (it in items) column.addView(postCell(act, it), lp().apply { setMargins(dp(12), dp(6), dp(12), dp(6)) })
+        items = Board.feed()
+        stale = false; drawnAt = System.currentTimeMillis()
+        // as many as stood laid are laid again, so a feed read deep down keeps its place when the board moves
+        val keep = laid
+        column.removeAllViews(); laid = 0
+        lay(maxOf(FIRST, keep))
         drawGoing()
+    }
+    private fun lay(n: Int) {
+        val to = minOf(items.size, laid + n)
+        for (i in laid until to) column.addView(postCell(act, items[i]), lp().apply { setMargins(dp(12), dp(6), dp(12), dp(6)) })
+        laid = to
+        if (laid < items.size) scroll.post { reach() }   // a short feed that does not fill the reach yet is laid on, a frame at a time
+    }
+    /** Two screens from the end, the next posts are laid. */
+    private fun reach() {
+        if (laid < items.size && column.bottom - scroll.scrollY < scroll.height * 3) lay(NEXT)
     }
     /** THE POSTS ON THEIR WAY STAND FIRST (iOS MTFeedTabView's rows, MontanaBoardViews.swift:2875-2879 and 2940-2942 at 2155): every post
      * of mine on its way to any wall, under the bar of its files, newest first, over the posts of the walls. */
@@ -1968,6 +2183,8 @@ class FeedPane(private val act: MainActivity) : FrameLayout(act) {
     override fun onDetachedFromWindow() { Board.unlisten(again); MyWall.unlisten(moved); super.onDetachedFromWindow() }
     override fun onVisibilityChanged(v: View, visibility: Int) {
         super.onVisibilityChanged(v, visibility)
-        if (visibility == View.VISIBLE && isAttachedToWindow) { Board.lookFeed(); draw() }
+        // laid again only when the board moved while it stood unseen, or a minute on, for the posts' «when»
+        if (visibility == View.VISIBLE && isAttachedToWindow) { Board.lookFeed(); if (stale || 60_000L < System.currentTimeMillis() - drawnAt) draw() }
     }
+    private companion object { const val FIRST = 12; const val NEXT = 12 }
 }

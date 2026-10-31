@@ -1,5 +1,5 @@
 {
-  "why": "One toolchain for every computer that builds Montana for Android: scripts/setup.py installs exactly this, scripts/build.py builds with exactly this. The core's Rust compiler is the core's own pin (Montana Protocol/Code/rust-toolchain.toml), not repeated here.",
+  "why": "One toolchain for every computer that builds Montana for Android: scripts/setup.py installs exactly this, scripts/build.py builds with exactly this. The core's Rust compiler is the core's own pin (core/Code/rust-toolchain.toml), not repeated here.",
   "jdk": {
     "release": "jdk-17.0.20.1+1",
     "macos-aarch64": {
@@ -40,8 +40,11 @@
   },
   "cargo_ndk": "4.1.2",
   "protocol": {
-    "dir": "../Montana Protocol",
-    "commit": "ae36d1f927a7ff1a6d9fbf6d4a09c2ff37a0630e"
+    "why": "the public core: core/Code of this repository at a named main commit (the chairman's decision 312, issue #23); its core/Code is checked against that commit's tree, not against the checkout's head",
+    "dir": "../../..",
+    "code": "core/Code",
+    "commit": "312dda6c8ef086381a26e6196f969252c2c67b52",
+    "repository": "https://github.com/efir369999/montana_messenger.git"
   },
   "hosts": {
     "macos-aarch64": {

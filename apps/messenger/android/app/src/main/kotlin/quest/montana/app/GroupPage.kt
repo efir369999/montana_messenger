@@ -27,8 +27,8 @@ fun groupPage(act: MainActivity, key: String, onClose: () -> Unit,
               onSearch: () -> Unit = { onClose(); act.push { close -> conversationPage(act, key, close, search = true) } }): View {
     val c: Context = act
     // THE GROUP'S PANES UNDER ITS PEOPLE, AS THE REFERENCE'S PAGE HAS THEM (iOS 82c9ae3f, V.7): Media -- its photos and its videos
-    // together --, Files, Links, Music and Voice; a channel keeps its page as it was
-    val panes = if (Groups.isChannel(key)) null else panesOf(act, key, group = true, onClose, toChat) {}
+    // together --, Files, Links, Music and Voice; a channel's Media and Video apart (iOS paneTabs, MontanaPeerInfoScreen 996 at 2315)
+    val panes: Panes? = panesOf(act, key, group = true, onClose, toChat) {}
     panes?.pane?.setPadding(0, 0, 0, 0)   // the page's own margins hold it
     val edit = c.text(c.getString(R.string.edit), 17f, SysColor.blue).apply { setPadding(c.dp(8), c.dp(10), c.dp(8), c.dp(10)) }
     edit.pressable { act.push { back -> groupEditPage(act, key, back) { back(); onClose() } } }
@@ -39,17 +39,6 @@ fun groupPage(act: MainActivity, key: String, onClose: () -> Unit,
         addView(edit, FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER_VERTICAL or Gravity.END))
     }
     val body = c.vstack(Gravity.NO_GRAVITY) { setPadding(dp(16), 0, dp(16), dp(32)) }
-    fun memberRow(face: View, name: String, role: String, onTap: (() -> Unit)?) = c.hstack {
-        gravity = Gravity.CENTER_VERTICAL
-        setPadding(dp(16), dp(6), dp(16), dp(6))
-        minimumHeight = dp(52)
-        addView(face, lp(dp(40), dp(40)).apply { marginEnd = dp(12) })
-        addView(c.vstack(Gravity.NO_GRAVITY) {
-            addView(c.text(name, 17f, Color.WHITE).apply { singleLineEllipsis() }, lp())   // USER-DATA: a person's name
-            addView(c.text(role, 13f, MT.gray), lp())
-        }, lp(0, WRAP, 1f))
-        if (onTap != null) pressable(onTap)
-    }
     fun actionRow(glyph: Int, words: String, red: Boolean, onTap: () -> Unit) = c.hstack {
         gravity = Gravity.CENTER_VERTICAL
         setPadding(dp(16), dp(12), dp(16), dp(12))
@@ -84,20 +73,16 @@ fun groupPage(act: MainActivity, key: String, onClose: () -> Unit,
                     .setNegativeButton(R.string.cancel, null).show()
             }
         }
+        // A SUBSCRIBER'S «MORE» ON A CHANNEL'S PAGE IS THE REPORT ALONE (iOS MontanaPeerInfoScreen 563-567 at 2315): «Leave» stands
+        // among the page's buttons, and a channel's history is not the subscriber's to clear
+        if (Groups.isChannel(key)) items.retainAll { it.first == c.getString(R.string.pi_report) }
         PopupMenu(c, v).apply {
             items.forEachIndexed { i, (t, _) -> menu.add(0, i, i, t) }
             setOnMenuItemClickListener { items[it.itemId].second(); true }
         }.show()
     }
-    /**
-     * A GROUP'S PAGE AS THE REFERENCE LAYS IT (iOS 1915a7f4, MTGroupPage): under the head its buttons -- its sound and «More» (no voice
-     * chat is held on this phone, nor has a chat its own search yet) -- the description with its caption over its words, then the people
-     * with no header: «Add Member» first for the owner, the owner, the administrators, everyone else by name, this phone among them.
-     * A row: the face, the name, online under it, the role on a capsule of its own colour; a tap opens the person's page where this
-     * phone holds their pipe, a hold names the deeds. The ways out stand in «More» and in the editor.
-     */
-    fun drawGroup() {
-        val owns = Groups.owns(key)
+    // THE PAGE'S BUTTONS under the head: a group's sound, search and «More»; a channel's as MTChannelPage.actions has them
+    fun drawPlates() {
         val plates = c.hstack { setPadding(0, dp(4), 0, dp(10)) }
         fun plate(icon: Int, label: String, work: (View) -> Unit) {
             if (plates.childCount > 0) plates.addView(View(c), lp(c.dp(10), 1))
@@ -116,8 +101,27 @@ fun groupPage(act: MainActivity, key: String, onClose: () -> Unit,
         }
         // «Search» (iOS .search, MontanaPeerInfoScreen.swift:590-596): the chat's own search, the page gone down to its chat
         plate(R.drawable.ic_search, c.getString(R.string.search)) { onSearch() }
-        plate(R.drawable.ic_more_horiz, c.getString(R.string.pi_more)) { v -> groupMore(v) }
+        // A CHANNEL'S BUTTONS (iOS MTChannelPage.actions, MontanaChannel 500-511): its owner's sound and search (the live stream
+        // waits for the rooms), one out of it the same, a subscriber's sound, search, «Leave» asked first, and «More»
+        val subscriber = Groups.isChannel(key) && !Groups.manages(key) && !Groups.isOut(key) && Book.chat(key) != null
+        if (subscriber) plate(R.drawable.ic_leave, c.getString(R.string.ch_leave)) {
+            AlertDialog.Builder(c).setTitle(R.string.gp_leave_channel_q)
+                .setPositiveButton(R.string.gp_leave_channel) { _, _ -> Groups.leave(key); redraw() }
+                .setNegativeButton(R.string.cancel, null).show()
+        }
+        if (!Groups.isChannel(key) || subscriber) plate(R.drawable.ic_more_horiz, c.getString(R.string.pi_more)) { v -> groupMore(v) }
         body.addView(plates, lp())
+    }
+    /**
+     * A GROUP'S PAGE AS THE REFERENCE LAYS IT (iOS 1915a7f4, MTGroupPage): under the head its buttons -- its sound and «More» (no voice
+     * chat is held on this phone, nor has a chat its own search yet) -- the description with its caption over its words, then the people
+     * with no header: «Add Member» first for the owner, the owner, the administrators, everyone else by name, this phone among them.
+     * A row: the face, the name, online under it, the role on a capsule of its own colour; a tap opens the person's page where this
+     * phone holds their pipe, a hold names the deeds. The ways out stand in «More» and in the editor.
+     */
+    fun drawGroup() {
+        val owns = Groups.manages(key)   // a group its owner ended is nobody's to add to or take from (iOS lines: g.mine && g.left != true)
+        drawPlates()
         Groups.about(key).takeIf { it.isNotEmpty() }?.let { about ->
             body.section(null, null, c.vstack(Gravity.NO_GRAVITY) {
                 setPadding(dp(16), dp(10), dp(16), dp(10))
@@ -133,7 +137,7 @@ fun groupPage(act: MainActivity, key: String, onClose: () -> Unit,
         val iBan = !owns && Groups.mayBan(key)   // an administrator takes out a member who is none, while «Ban Users» stands (G.6)
         class Person(val seat: String, val name: String, val pipe: String, val me: Boolean)
         val people = Groups.pagePeople(c, key).map { Person(it.seat, it.name, it.pipe, false) } +
-            listOfNotNull(mySeat?.let { Person(it, Prefs.userName, "", true) })
+            listOfNotNull(mySeat?.let { Person(it, Groups.myName(c), "", true) })
         fun rank(seat: String) = if (seat == Groups.OWNER) 0 else if (Groups.isAdmin(key, seat)) 1 else 2
         for (p in people.sortedWith(compareBy<Person> { rank(it.seat) }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.name })) {
             val r = rank(p.seat)
@@ -161,7 +165,7 @@ fun groupPage(act: MainActivity, key: String, onClose: () -> Unit,
                 setPadding(dp(16), dp(8), dp(16), dp(8))
                 minimumHeight = dp(56)
                 val face = when {
-                    p.me -> c.avatar(SelfFace.load(c), Prefs.userName, 40)
+                    p.me -> c.avatar(SelfFace.load(c), p.name, 40)
                     root != null -> c.peerFace(root, p.name, 40)
                     else -> c.avatar(null, p.name, 40).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Groups.tint(ref)) } }
                 }
@@ -211,6 +215,7 @@ fun groupPage(act: MainActivity, key: String, onClose: () -> Unit,
             // «N members, M online», said once for the chat's top and the page (iOS MTGroupPage.head, 1915a7f4)
             Groups.headLine(c, key)?.let { addView(c.text(it, 15f, MT.gray, center = true), lp(WRAP, WRAP)) }
         }, lp())
+        if (channel) drawPlates()
         if (!channel) {
             drawGroup()
             panes?.let { p ->
@@ -220,71 +225,40 @@ fun groupPage(act: MainActivity, key: String, onClose: () -> Unit,
             }
             return
         }
-        // THE GROUP'S DESCRIPTION (iOS the group page's info above its people, stage R): the owner's words, read by all
-        Groups.about(key).takeIf { it.isNotEmpty() && !channel }?.let { about ->
+        // THE CHANNEL'S DESCRIPTION (iOS sections .about, data.kind == .group holds a channel too): the owner's words, read by all
+        Groups.about(key).takeIf { it.isNotEmpty() }?.let { about ->
             body.section(null, null, c.vstack(Gravity.NO_GRAVITY) {
                 setPadding(dp(16), dp(10), dp(16), dp(10))
                 addView(c.text(about, 17f, Color.WHITE).apply { setTextIsSelectable(true) }, lp())   // USER-DATA: the owner's words
                 addView(c.text(c.getString(R.string.gp_about), 13f, MT.gray), lp())
             })
         }
+        // A CHANNEL'S ROWS, AS THE REFERENCE'S CHANNEL PAGE HAS THEM (iOS channelRows, MontanaPeerInfoScreen 404-420): its owner's
+        // «Administrators» and «Subscribers» with their numbers and «Channel Settings»; an administrator who may change its info or
+        // hand its link sees the settings alone; a subscriber sees no people of the channel
         val rows = mutableListOf<View>()
-        // «Add Member» heads the people, as the reference folder's group page has it (iOS stage R)
-        if (owns) rows += actionRow(R.drawable.ic_person_add, c.getString(R.string.gp_add), red = false) {
-            act.push { close -> groupPickPage(act, close, {}, adding = key) }
-        }
-        // THE ROLES, AS THE REFERENCE'S MEMBER LIST NAMES THEM (iOS stage R.6): owner, admin, member; the owner's hold on a person names
-        // or dismisses an administrator and takes the person out; an administrator's takes out a member who is none
-        val mySeat = Groups.mySeat(key)
-        val iAdmin = !owns && mySeat?.let { Groups.isAdmin(key, it) } == true
-        // an administrator takes a member out only while the owner left it «Ban Users» (iOS adminCan .ban, G.6)
-        val iBan = !owns && Groups.mayBan(key)
-        // the custom title the owner gave stands instead of the role's own word (iOS rank, G.6)
-        fun roleWord(seat: String?, role: Int) = seat?.takeIf { role != R.string.gp_member }?.let { Groups.rank(key, it) } ?: c.getString(role)
-        rows += memberRow(c.avatar(SelfFace.load(c), Prefs.userName, 40), c.getString(R.string.gp_you),
-            roleWord(mySeat, if (owns) R.string.gp_owner else if (iAdmin) R.string.gp_admin else R.string.gp_member), null)
-        Groups.pagePeople(c, key).forEach { s ->
-            val theOwner = !owns && s.seat == Groups.OWNER
-            val admin = Groups.isAdmin(key, s.seat)
-            val mayRemove = owns || (iBan && !theOwner && !admin)
-            val deeds = mutableListOf<Pair<String, () -> Unit>>()
-            // the admin's rights page, as the reference's «Promote» and «Edit Admin Rights» open it (iOS MTGroupAdminRightsPage, G.6)
-            if (owns && !channel) {
-                if (admin) {
-                    deeds += c.getString(R.string.gp_edit_rights) to { act.push { back -> groupAdminRightsPage(act, key, s.seat, s.name, isNew = false) { back(); draw() } } }
-                    deeds += c.getString(R.string.gp_dismiss) to { Groups.setAdmin(key, s.seat, false); draw() }
-                } else deeds += c.getString(R.string.gp_promote) to { act.push { back -> groupAdminRightsPage(act, key, s.seat, s.name, isNew = true) { back(); draw() } } }
+        val settings = { act.push { back -> groupEditPage(act, key, back) { back(); onClose() } }; Unit }
+        if (Groups.manages(key)) {
+            val admins = 1 + Groups.admins(key).size   // the reference counts its owner among them
+            rows += c.navRow(R.drawable.ic_checkmark_shield, c.getString(R.string.gp_admins), c.text("$admins", 17f, MT.gray)) {
+                act.push { back -> groupAdminsPage(act, key) { back(); draw() } }   // the number counted again on the way back
             }
-            if (mayRemove) deeds += c.getString(R.string.gp_remove_from) to {
-                AlertDialog.Builder(c).setTitle(R.string.gp_remove_q)
-                    .setPositiveButton(R.string.gp_remove) { _, _ -> Groups.kick(key, s.seat); draw() }
-                    .setNegativeButton(R.string.cancel, null).show()
+            rows += c.navRow(R.drawable.ic_app_groups, c.getString(R.string.ch_subscribers), c.text("${Groups.count(key) ?: 1}", 17f, MT.gray)) {
+                act.push { back -> channelPeoplePage(act, key) { back(); draw() } }
             }
-            val face = if (s.pipe.isEmpty()) c.avatar(null, s.name, 40) else c.peerFace(SamePair.root(s.pipe), s.name, 40)
-            rows += memberRow(face, s.name, roleWord(s.seat, if (theOwner) R.string.gp_owner else if (admin) R.string.gp_admin else R.string.gp_member),
-                if (deeds.isEmpty()) null else ({
-                    AlertDialog.Builder(c).setTitle(s.name)   // USER-DATA: a person's name
-                        .setItems(deeds.map { it.first }.toTypedArray()) { _, i -> deeds[i].second() }
-                        .setNegativeButton(R.string.cancel, null).show()
-                }))
-        }
-        val title0 = Book.chat(key)?.shown ?: ""
-        // the owner's way out is the group's end for everyone (iOS «Delete Group», «Delete for All»)
-        if (owns && !channel) rows += actionRow(R.drawable.ic_delete, c.getString(R.string.gp_dissolve), red = true) {
-            AlertDialog.Builder(c).setTitle(c.getString(R.string.gp_dissolve_q, title0))   // USER-DATA: the group's title
-                .setPositiveButton(R.string.gp_dissolve_all) { _, _ -> Groups.dissolve(key); onClose() }
-                .setNegativeButton(R.string.cancel, null).show()
-        } else if (!owns && !Groups.isOut(key)) rows += actionRow(R.drawable.ic_leave,
-            c.getString(if (channel) R.string.gp_leave_channel else R.string.gp_leave_group), red = true) {
-            // LEAVE GROUP (iOS «Are you sure you want to leave and delete %@?»): the owner is told, and the chat goes; a channel is left as before
-            if (channel) AlertDialog.Builder(c).setTitle(R.string.gp_leave_channel_q)
+            rows += c.navRow(R.drawable.ic_settings, c.getString(R.string.ch_settings), null, settings)
+        } else if (Groups.mayChangeInfo(key) || Groups.heldLink(key) != null) rows += c.navRow(R.drawable.ic_settings, c.getString(R.string.ch_settings), null, settings)
+        if (!owns && !Groups.isOut(key)) rows += actionRow(R.drawable.ic_leave, c.getString(R.string.gp_leave_channel), red = true) {
+            AlertDialog.Builder(c).setTitle(R.string.gp_leave_channel_q)
                 .setPositiveButton(R.string.gp_leave_channel) { _, _ -> Groups.leave(key); draw() }
                 .setNegativeButton(R.string.cancel, null).show()
-            else AlertDialog.Builder(c).setTitle(c.getString(R.string.gr_erase_q, title0))
-                .setPositiveButton(R.string.gp_leave_group) { _, _ -> Groups.leaveAndErase(key); onClose() }
-                .setNegativeButton(R.string.cancel, null).show()
         }
-        body.section(c.getString(R.string.gp_members), null, *rows.toTypedArray())
+        if (rows.isNotEmpty()) body.section(null, null, *rows.toTypedArray())
+        panes?.let { p ->   // the channel's panes under its rows, as a group's stand under its people
+            body.addView(p.bar, lp(MATCH, c.dp(44)).apply { topMargin = c.dp(24) })
+            body.addView(p.pane, lp())
+            p.heard()
+        }
     }
     redraw = { draw() }
     draw()
@@ -333,16 +307,21 @@ private fun groupEditPage(act: MainActivity, key: String, onBack: () -> Unit, on
             close = act.overlay(cropPage(act, image) { jpeg -> close(); if (jpeg != null) { face = jpeg; drawFace() } })
         }
     }
+    val channel = Groups.isChannel(key)
     val name = EditText(c).apply {
         setText(Book.chat(key)?.shown ?: "")   // USER-DATA: the group's title
-        hint = c.getString(R.string.gr_name)
-        setTextColor(Color.WHITE); setHintTextColor(MT.gray)
+        hint = c.getString(if (channel) R.string.ch_name else R.string.gr_name)
+        // an administrator who may only invite reads the name (iOS MontanaPeerInfoScreen 663, G.6)
+        val named = Groups.mayChangeInfo(key)
+        isEnabled = named
+        setTextColor(if (named) Color.WHITE else MT.gray); setHintTextColor(MT.gray)
         background = null
         isSingleLine = true
         setPadding(c.dp(16), c.dp(12), c.dp(16), c.dp(12))
     }
-    // THE DESCRIPTION, AS THE REFERENCE'S GROUP EDITOR HAS IT (iOS stage R): written by the owner, carried to every member (Groups.renew)
-    val channel = Groups.isChannel(key)
+    // THE DESCRIPTION, AS THE REFERENCE'S GROUP EDITOR HAS IT (iOS stage R): written by the owner, carried to every member (Groups.renew);
+    // a channel's by its owner alone (iOS MontanaPeerInfoScreen editor, mayChangeInfo)
+    val described = !channel || Groups.mayChangeInfo(key)
     val about = EditText(c).apply {
         setText(Groups.about(key))   // USER-DATA: the owner's words about the group
         hint = c.getString(R.string.gp_about_hint)
@@ -354,7 +333,7 @@ private fun groupEditPage(act: MainActivity, key: String, onBack: () -> Unit, on
     val done = c.text(c.getString(R.string.gp_done), 17f, SysColor.blue, bold = true).apply { setPadding(c.dp(8), c.dp(10), c.dp(8), c.dp(10)) }
     done.pressable {
         c.getSystemService(InputMethodManager::class.java).hideSoftInputFromWindow(name.windowToken, 0)
-        Groups.renew(key, name.text.toString(), face, if (channel) null else about.text.toString())
+        Groups.renew(key, name.text.toString(), face, if (described) about.text.toString() else null)
         onBack()
     }
     val bar = FrameLayout(c).apply {
@@ -374,12 +353,12 @@ private fun groupEditPage(act: MainActivity, key: String, onBack: () -> Unit, on
                     addView(faceBox, lp(dp(100), dp(100)))
                     gap(20)
                     addView(c.plate { addView(name, lp()) }, lp())
-                    if (!channel) {
+                    if (described) {
                         gap(20)
                         addView(c.plate { addView(about, lp()) }, lp())
-                        addView(c.text(c.getString(R.string.gp_about_note), 13f, MT.gray).apply { setPadding(dp(16), dp(6), dp(16), 0) }, lp())
+                        addView(c.text(c.getString(if (channel) R.string.ch_about_note else R.string.gp_about_note), 13f, MT.gray).apply { setPadding(dp(16), dp(6), dp(16), 0) }, lp())
                     }
-                    if (!channel && Groups.owns(key)) {
+                    if (!channel && Groups.manages(key)) {
                         // THE ADMINISTRATORS, as the reference's editor lists them, with their count (iOS MTGroupAdminsPage, G.6)
                         gap(20)
                         val count = c.text("", 17f, MT.gray)
@@ -460,6 +439,60 @@ private fun groupEditPage(act: MainActivity, key: String, onBack: () -> Unit, on
                                 }, lp())
                             }, lp())
                         }
+                    } else if (channel && Groups.manages(key)) {
+                        // THE CHANNEL'S LINK, THE PEOPLE TAKEN OUT AND ITS END, where the reference's channel settings keep them
+                        // (iOS MontanaPeerInfoScreen editor 683-711; Discussion, Reactions and Recent Actions come with their own pages)
+                        gap(20)
+                        val links = c.navRow(R.drawable.ic_link, c.getString(R.string.gp_links), null) {
+                            act.push { back -> groupLinksPage(act, key, back) }
+                        }
+                        // «Discussion» (iOS editor 689): «Allow Comments» on its own page
+                        val talk = c.navRow(R.drawable.ic_set_textbubble, c.getString(R.string.ch_discussion), null) {
+                            act.push { back -> channelDiscussionPage(act, key, back) }
+                        }
+                        // «Reactions» (iOS editor 692-695): «Disabled», the number of the owner's list, or «All Reactions»
+                        val said = c.text("", 17f, MT.gray)
+                        fun reread() {
+                            said.text = when {
+                                !Groups.reactionsOn(key) -> c.getString(R.string.ch_reactions_off)
+                                else -> Groups.reactionList(key)?.size?.toString() ?: c.getString(R.string.ch_reactions_all)   // USER-DATA: a count
+                            }
+                        }
+                        reread()
+                        val reactions = c.navRow(R.drawable.ic_face_smiling, c.getString(R.string.ch_reactions), said) {
+                            act.push { back -> channelReactionsPage(act, key, back) { reread() } }
+                        }
+                        addView(c.plate { addView(links, lp()); divider(); addView(talk, lp()); divider(); addView(reactions, lp()) }, lp())
+                        gap(20)
+                        val removed = c.text("", 17f, MT.gray)
+                        fun reweigh() { removed.text = Groups.bannedPeople(c, key).size.toString() }   // USER-DATA: a count
+                        reweigh()
+                        val out = c.navRow(R.drawable.ic_hand, c.getString(R.string.gp_removed), removed) {
+                            act.push { back -> groupRemovedPage(act, key, back) { reweigh() } }
+                        }
+                        // «Recent Actions» under the people taken out (iOS editor 699-707)
+                        val deeds = c.navRow(R.drawable.ic_clock_arrow, c.getString(R.string.ch_recent_actions), null) {
+                            act.push { back -> channelActionsPage(act, key, back) }
+                        }
+                        addView(c.plate { addView(out, lp()); divider(); addView(deeds, lp()) }, lp())
+                        gap(20)
+                        addView(c.plate {
+                            addView(c.text(c.getString(R.string.ch_dissolve), 17f, SysColor.red).apply {
+                                setPadding(dp(16), dp(12), dp(16), dp(12)); minimumHeight = dp(48); gravity = Gravity.CENTER_VERTICAL
+                                pressable {
+                                    AlertDialog.Builder(c).setMessage(R.string.ch_dissolve_q)   // the whole question, as the reference asks it
+                                        .setPositiveButton(R.string.ch_dissolve) { _, _ -> Groups.dissolve(key); onGone() }
+                                        .setNegativeButton(R.string.cancel, null).show()
+                                }
+                            }, lp())
+                        }, lp())
+                    } else if (Groups.heldLink(key) != null) {
+                        // an administrator who may invite holds the link the owner handed it (iOS MontanaPeerInfoScreen 795-801, G.6)
+                        gap(20)
+                        val links = c.navRow(R.drawable.ic_link, c.getString(R.string.gp_links), null) {
+                            act.push { back -> groupLinksPage(act, key, back) }
+                        }
+                        addView(c.plate { addView(links, lp()) }, lp())
                     }
                 })
             }, lp(MATCH, 0, 1f))
@@ -488,6 +521,7 @@ private fun Context.navRow(glyph: Int?, words: String, trail: View?, onTap: () -
  */
 private fun groupLinksPage(act: MainActivity, key: String, onBack: () -> Unit): View {
     val c: Context = act
+    val channel = Groups.isChannel(key)   // a channel's page has its own words and no approval (iOS MTChannelInviteLinksPage)
     var link: String? = null
     val shown = c.text("…", 17f, Color.WHITE).apply { setSingleLine(true); ellipsize = android.text.TextUtils.TruncateAt.MIDDLE }   // USER-DATA: the group's link
     fun button(words: Int, onTap: () -> Unit) = c.text(c.getString(words), 17f, Color.WHITE, bold = true, center = true).apply {
@@ -505,7 +539,8 @@ private fun groupLinksPage(act: MainActivity, key: String, onBack: () -> Unit): 
             .setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, link), null))
     }
     fun fetch() = act.background {
-        val l = Groups.inviteLink(act, key)
+        // the owner's own link, or -- to an administrator who may invite (iOS MTGroupInviteLinksPage onAppear, G.6) -- the one the owner handed it
+        val l = Groups.inviteLink(act, key) ?: Groups.heldLink(key)
         act.onMain {
             link = l
             if (l == null) android.widget.Toast.makeText(c, R.string.card_failed, android.widget.Toast.LENGTH_LONG).show()
@@ -517,14 +552,14 @@ private fun groupLinksPage(act: MainActivity, key: String, onBack: () -> Unit): 
         minHeight = dp(48)
         gravity = Gravity.CENTER_VERTICAL
         pressable {
-            AlertDialog.Builder(c).setMessage(R.string.gp_link_revoke_q)
+            AlertDialog.Builder(c).setMessage(if (channel) R.string.ch_link_revoke_q else R.string.gp_link_revoke_q)
                 .setPositiveButton(R.string.gp_link_revoke_do) { _, _ -> Groups.resetInvite(key); shown.text = "…"; link = null; fetch() }
                 .setNegativeButton(R.string.cancel, null).show()
         }
     }
     fetch()
     return settingsPage(act, c.getString(R.string.gp_links), onBack) {
-        section(c.getString(R.string.gp_link_head), c.getString(R.string.gp_link_note), c.vstack(Gravity.NO_GRAVITY) {
+        section(c.getString(R.string.gp_link_head), c.getString(if (channel) R.string.ch_link_note else R.string.gp_link_note), c.vstack(Gravity.NO_GRAVITY) {
             setPadding(dp(16), dp(12), dp(16), dp(12))
             addView(shown, lp())
             gap(12)
@@ -534,24 +569,27 @@ private fun groupLinksPage(act: MainActivity, key: String, onBack: () -> Unit): 
                 addView(share, lp(0, WRAP, 1f))
             }, lp())
         })
+        if (!Groups.manages(key)) return@settingsPage   // the owner alone asks first and ends the links given before
         // THE LINK ASKS THE OWNER FIRST (iOS MTGroupInviteLinksPage, G.8): who opens it waits among the requests
-        var ready = false   // the switch set to what is stored is not the owner's tap
-        lateinit var note: android.widget.TextView
-        fun renote(on: Boolean) { note.text = c.getString(if (on) R.string.gp_approval_on_note else R.string.gp_approval_off_note) }
-        val approval = c.toggleRow(c.getString(R.string.gp_approval)) { on ->
-            if (!ready) return@toggleRow
-            Groups.setApproval(key, on)
-            renote(on)
-        }.apply {
-            setPadding(dp(16), dp(10), dp(16), dp(10)); minimumHeight = dp(48)
-            (getChildAt(0) as android.widget.TextView).textSize = 17f
-            (0 until childCount).map { getChildAt(it) }.filterIsInstance<Switch>().firstOrNull()?.isChecked = Groups.approval(key)
-            ready = true
+        if (!channel) {
+            var ready = false   // the switch set to what is stored is not the owner's tap
+            lateinit var note: android.widget.TextView
+            fun renote(on: Boolean) { note.text = c.getString(if (on) R.string.gp_approval_on_note else R.string.gp_approval_off_note) }
+            val approval = c.toggleRow(c.getString(R.string.gp_approval)) { on ->
+                if (!ready) return@toggleRow
+                Groups.setApproval(key, on)
+                renote(on)
+            }.apply {
+                setPadding(dp(16), dp(10), dp(16), dp(10)); minimumHeight = dp(48)
+                (getChildAt(0) as android.widget.TextView).textSize = 17f
+                (0 until childCount).map { getChildAt(it) }.filterIsInstance<Switch>().firstOrNull()?.isChecked = Groups.approval(key)
+                ready = true
+            }
+            section(null, "", approval)
+            note = getChildAt(childCount - 1) as android.widget.TextView   // the section's words under it change with the switch
+            renote(Groups.approval(key))
         }
-        section(null, "", approval)
-        note = getChildAt(childCount - 1) as android.widget.TextView   // the section's words under it change with the switch
-        renote(Groups.approval(key))
-        section(null, null, revoke)
+        if (!channel || Groups.manages(key)) section(null, null, revoke)
     }
 }
 
@@ -639,6 +677,7 @@ private fun groupRequestsPage(act: MainActivity, key: String, onBack: () -> Unit
  */
 private fun groupRemovedPage(act: MainActivity, key: String, onBack: () -> Unit, onLeft: () -> Unit): View {
     val c: Context = act
+    val channel = Groups.isChannel(key)   // a channel's page has its own words (iOS MTChannelRemovedPage)
     val body = c.vstack(Gravity.NO_GRAVITY) {}
     fun draw() {
         body.removeAllViews()
@@ -651,7 +690,7 @@ private fun groupRemovedPage(act: MainActivity, key: String, onBack: () -> Unit,
                 addView(c.text(p.name, 17f, Color.WHITE).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: a removed person's name
                 pressable {
                     AlertDialog.Builder(c).setTitle(p.name)   // USER-DATA: a person's name
-                        .setItems(arrayOf(c.getString(R.string.gp_removed_add), c.getString(R.string.delete))) { _, i ->
+                        .setItems(arrayOf(c.getString(if (channel) R.string.ch_removed_add else R.string.gp_removed_add), c.getString(R.string.delete))) { _, i ->
                             if (i == 0) Groups.add(key, listOf(p.pipe)) else Groups.unban(key, p.seat)
                             draw()
                         }
@@ -659,7 +698,7 @@ private fun groupRemovedPage(act: MainActivity, key: String, onBack: () -> Unit,
                 }
             }
         }
-        body.section(c.getString(R.string.gp_removed_head), c.getString(R.string.gp_removed_note), *rows.toTypedArray())
+        body.section(c.getString(R.string.gp_removed_head), c.getString(if (channel) R.string.ch_removed_note else R.string.gp_removed_note), *rows.toTypedArray())
     }
     draw()
     val page = settingsPage(act, c.getString(R.string.gp_removed), onBack) { addView(body, lp()) }
@@ -672,6 +711,14 @@ private fun groupRemovedPage(act: MainActivity, key: String, onBack: () -> Unit,
 }
 
 /** The rights' rows in the reference's own words (iOS MTAdminRight.title). */
+/** A channel's administrator's right in the reference's words (iOS MTChannelRight.title). */
+private fun channelRightWord(r: String) = when (r) {
+    Groups.INFO -> R.string.ch_r_info
+    Groups.POST -> R.string.ch_r_post
+    Groups.DELETE -> R.string.ch_r_delete
+    else -> R.string.gr_add_subscribers
+}
+
 private fun rightWord(r: String) = when (r) {
     Groups.INFO -> R.string.gp_r_info
     Groups.DELETE -> R.string.gp_r_delete
@@ -681,10 +728,53 @@ private fun rightWord(r: String) = when (r) {
 }
 
 /**
+ * A CHANNEL'S SUBSCRIBERS, AS THE REFERENCE LISTS THEM (iOS MTChannelPeoplePage, MontanaChannel 514-576): «Add Subscribers» first for
+ * its owner, then every person; the owner's swipe or hold takes one out, asked «Remove from the channel?» first.
+ */
+private fun channelPeoplePage(act: MainActivity, key: String, onBack: () -> Unit): View {
+    val c: Context = act
+    val body = c.vstack(Gravity.NO_GRAVITY) {}
+    fun draw() {
+        body.removeAllViews()
+        val manages = Groups.manages(key)
+        if (manages) body.section(null, null, c.navRow(R.drawable.ic_person_add, c.getString(R.string.gr_add_subscribers), null) {
+            act.push { close -> groupPickPage(act, { close(); draw() }, {}, adding = key) }
+        })
+        val rows = Groups.pagePeople(c, key).map { p ->
+            val remove = {
+                AlertDialog.Builder(c).setTitle(R.string.ch_remove_q)
+                    .setPositiveButton(R.string.gp_remove) { _, _ -> Groups.remove(key, p.seat); draw() }
+                    .setNegativeButton(R.string.cancel, null).show()
+                Unit
+            }
+            val row = c.hstack {
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(16), dp(6), dp(16), dp(6))
+                minimumHeight = dp(52)
+                val face = if (p.pipe.isEmpty()) c.avatar(null, p.name, 40) else c.peerFace(SamePair.root(p.pipe), p.name, 40)
+                addView(face, lp(dp(40), dp(40)).apply { marginEnd = dp(12) })
+                addView(c.text(p.name, 17f, Color.WHITE).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: a subscriber's name
+                if (manages) setOnLongClickListener {
+                    AlertDialog.Builder(c).setTitle(p.name)   // USER-DATA: a subscriber's name
+                        .setItems(arrayOf(c.getString(R.string.gp_remove))) { _, _ -> remove() }
+                        .setNegativeButton(R.string.cancel, null).show()
+                    true
+                }
+            }
+            if (!manages) row else SwipeRow(act, row, listOf(Tile(R.drawable.ic_delete, red = true) { remove() }), ground = GLASS_TONE or (0xFF shl 24))
+        }
+        if (rows.isNotEmpty()) body.section(null, null, *rows.toTypedArray())
+    }
+    draw()
+    return settingsPage(act, c.getString(R.string.ch_subscribers), onBack) { addView(body, lp()) }
+}
+
+/**
  * THE GROUP'S ADMINISTRATORS, AS THE REFERENCE'S PAGE LISTS THEM (iOS MTGroupAdminsPage, G.6): the owner first, every administrator
  * with its custom title or its role, each opening its rights; «Add Admin» chooses among the members.
  */
 private fun groupAdminsPage(act: MainActivity, key: String, onBack: () -> Unit): View {
+    if (Groups.isChannel(key)) return channelAdminsPage(act, key, onBack)
     val c: Context = act
     val body = c.vstack(Gravity.NO_GRAVITY) {}
     fun role(seat: String, owner: Boolean) = c.text(Groups.rank(key, seat) ?: c.getString(if (owner) R.string.gp_owner_cap else R.string.gp_admin_cap), 17f, MT.gray)   // USER-DATA: the owner's custom title
@@ -697,7 +787,7 @@ private fun groupAdminsPage(act: MainActivity, key: String, onBack: () -> Unit):
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(16), dp(12), dp(16), dp(12))
             minimumHeight = dp(48)
-            addView(c.text(Prefs.userName, 17f, Color.WHITE).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: my name
+            addView(c.text(Groups.myName(c), 17f, Color.WHITE).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: my name, cut as it goes out (iOS MTGroup.clean)
             addView(role(Groups.OWNER, owner = true))
         }
         admins.forEach { p ->
@@ -712,6 +802,257 @@ private fun groupAdminsPage(act: MainActivity, key: String, onBack: () -> Unit):
     }
     draw()   // a rights page or «Add Admin» closed: the list is drawn again (iOS onAppear tick)
     return settingsPage(act, c.getString(R.string.gp_admins), onBack) { addView(body, lp()) }
+}
+
+/**
+ * A CHANNEL'S ADMINISTRATORS, AS THE REFERENCE'S PAGE LISTS THEM (iOS MTChannelAdminsPage, MontanaChannel 631-736): «Channel Admins» --
+ * the owner, every administrator opening its rights, the owner's swipe or hold dismissing one, «Add Admin» under them; then «Sign
+ * Messages». A channel's admins wear their role, no custom title.
+ */
+private fun channelAdminsPage(act: MainActivity, key: String, onBack: () -> Unit): View {
+    val c: Context = act
+    val body = c.vstack(Gravity.NO_GRAVITY) {}
+    fun draw() {
+        body.removeAllViews()
+        val owns = Groups.manages(key)
+        val people = Groups.pagePeople(c, key)
+        val admins = Groups.admins(key).mapNotNull { s -> people.firstOrNull { it.seat == s } }
+        fun role(word: Int) = c.text(c.getString(word), 17f, MT.gray)
+        val rows = mutableListOf<View>()
+        rows += c.hstack {
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            minimumHeight = dp(48)
+            addView(c.text(Groups.myName(c), 17f, Color.WHITE).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: my name
+            addView(role(R.string.gp_owner_cap))
+        }
+        admins.forEach { p ->
+            val dismiss = { Groups.setAdmin(key, p.seat, false); draw() }
+            val row = c.navRow(null, p.name, role(R.string.gp_admin_cap)) {
+                if (owns) act.push { back -> groupAdminRightsPage(act, key, p.seat, p.name, isNew = false) { back(); draw() } }
+            }
+            if (owns) row.setOnLongClickListener {
+                AlertDialog.Builder(c).setTitle(p.name)   // USER-DATA: an administrator's name
+                    .setItems(arrayOf(c.getString(R.string.gp_dismiss))) { _, _ -> dismiss() }
+                    .setNegativeButton(R.string.cancel, null).show()
+                true
+            }
+            rows += if (!owns) row else SwipeRow(act, row, listOf(Tile(R.drawable.ic_minus_circle, red = true) { dismiss() }), ground = GLASS_TONE or (0xFF shl 24))
+        }
+        if (owns) rows += c.navRow(R.drawable.ic_person_add, c.getString(R.string.gp_add_admin), null) {
+            act.push { back -> groupAdminPickPage(act, key) { back(); draw() } }
+        }
+        body.section(c.getString(R.string.ch_admins_head), c.getString(R.string.ch_add_admin_note), *rows.toTypedArray())
+        // «Sign Messages» (iOS Toggle → MTGroup.setSigns): every subscriber hears it by the invitation's word again
+        if (owns) body.section(null, c.getString(R.string.ch_sign_note), c.toggleRow(c.getString(R.string.ch_sign)) { on -> Groups.setSigns(key, on) }.apply {
+            setPadding(dp(16), dp(10), dp(16), dp(10))
+            (0 until childCount).map { getChildAt(it) }.filterIsInstance<Switch>().firstOrNull()?.isChecked = Groups.signsOn(key)
+        })
+    }
+    draw()   // a rights page or «Add Admin» closed: the list is drawn again (iOS tick)
+    return settingsPage(act, c.getString(R.string.gp_admins), onBack) { addView(body, lp()) }
+}
+
+/**
+ * WHAT A CHANNEL'S POSTS TAKE, AS THE REFERENCE'S PAGE KEEPS IT (iOS MTChannelReactionsPage, MontanaChannel 738-800): «Allow
+ * Reactions», and while on, «Available Reactions» -- six to a row, the chosen bright with a check, the rest dim; at least one stays,
+ * every one chosen is the whole choice. Every subscriber hears it by the invitation's word again.
+ */
+private fun channelReactionsPage(act: MainActivity, key: String, onBack: () -> Unit, onChange: () -> Unit): View {
+    val c: Context = act
+    val all = QuickReactions.channelChoice
+    val chosen = (Groups.reactionList(key) ?: all).toMutableSet()
+    val body = c.vstack(Gravity.NO_GRAVITY) {}
+    fun draw() {
+        body.removeAllViews()
+        val on = Groups.reactionsOn(key)
+        body.section(null, c.getString(R.string.ch_allow_reactions_note), c.toggleRow(c.getString(R.string.ch_allow_reactions)) { v ->
+            if (v != Groups.reactionsOn(key)) { Groups.setReactions(key, v); onChange(); body.post { draw() } }   // the switch set while drawn changes nothing
+        }.apply {
+            setPadding(dp(16), dp(10), dp(16), dp(10))
+            (0 until childCount).map { getChildAt(it) }.filterIsInstance<Switch>().firstOrNull()?.isChecked = on
+        })
+        if (!on) return
+        val grid = c.vstack(Gravity.NO_GRAVITY) { setPadding(dp(10), dp(6), dp(10), dp(6)) }
+        for (row in all.chunked(6)) {
+            grid.addView(c.hstack {
+                for (e in row) addView(FrameLayout(c).apply {
+                    val glyph = c.text(e, 28f, center = true).apply { alpha = if (e in chosen) 1f else 0.3f }
+                    addView(glyph, FrameLayout.LayoutParams(dp(44), dp(44), Gravity.CENTER))
+                    val tick = c.icon(R.drawable.ic_set_check_circle, Color.WHITE, 13).apply { visibility = if (e in chosen) View.VISIBLE else View.GONE }
+                    addView(tick, FrameLayout.LayoutParams(dp(13), dp(13), Gravity.CENTER).apply { leftMargin = dp(16); topMargin = dp(16) })
+                    contentDescription = e   // USER-DATA: a reaction's glyph
+                    // one in or out: at least one stays (none at all is «Allow Reactions» off); every one chosen is the whole choice
+                    pressable {
+                        if (e in chosen) { if (chosen.size == 1) return@pressable; chosen.remove(e) } else chosen.add(e)
+                        glyph.alpha = if (e in chosen) 1f else 0.3f
+                        tick.visibility = if (e in chosen) View.VISIBLE else View.GONE
+                        Groups.setReactionList(key, if (chosen.size == all.size) null else all.filter { it in chosen })
+                        onChange()   // the editor's row says it at once: the system's back closes the page past onBack
+                    }
+                }, lp(0, dp(48), 1f))
+                repeat(6 - row.size) { addView(View(c), lp(0, dp(48), 1f)) }
+            }, lp(MATCH, WRAP))
+        }
+        body.section(c.getString(R.string.ch_available_reactions), null, grid)
+    }
+    draw()
+    return settingsPage(act, c.getString(R.string.ch_reactions), onBack) { addView(body, lp()) }
+}
+
+/**
+ * WHAT WAS DONE IN A CHANNEL, AS THE REFERENCE'S PAGE SHOWS IT (iOS MTChannelActionsPage, MontanaChannel 847-903): the deeds of the last
+ * two days, newest first, each in the reference's words with its moment; none -- «No actions here yet».
+ */
+private fun channelActionsPage(act: MainActivity, key: String, onBack: () -> Unit): View {
+    val c: Context = act
+    val acts = Groups.recentActs(key)
+    return settingsPage(act, c.getString(R.string.ch_recent_actions), onBack) {
+        if (acts.isEmpty()) {
+            addView(c.vstack(Gravity.CENTER_HORIZONTAL) {
+                setPadding(dp(16), dp(36), dp(16), dp(36))
+                addView(c.text(c.getString(R.string.ch_no_actions), 17f, Color.WHITE, bold = true, center = true), lp(MATCH, WRAP))
+                gap(8)
+                addView(c.text(c.getString(R.string.ch_no_actions_note), 15f, MT.gray, center = true), lp(MATCH, WRAP))
+            }, lp())
+            return@settingsPage
+        }
+        val moment = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT)
+        section(null, null, *acts.map { a ->
+            c.vstack(Gravity.NO_GRAVITY) {
+                setPadding(dp(16), dp(10), dp(16), dp(10))
+                addView(c.text(actWords(c, a), 17f, Color.WHITE), lp())   // USER-DATA: the people's names inside the catalogue's sentence
+                gap(3)
+                addView(c.text(moment.format(java.util.Date(a.at)), 12f, MT.gray), lp())   // USER-DATA: the deed's moment
+            }
+        }.toTypedArray())
+    }
+}
+
+/** A CHANNEL'S DISCUSSION (iOS MTChannelDiscussionPage, MontanaChannel 1045-1061): «Allow Comments» -- every post then wears its
+ *  comments' footer on every subscriber's phone; the comments ride the channel itself, no group hosts them. */
+private fun channelDiscussionPage(act: MainActivity, key: String, onBack: () -> Unit): View {
+    val c: Context = act
+    val row = c.toggleRow(c.getString(R.string.ch_allow_comments)) { v -> if (v != Groups.talks(key)) Groups.setTalks(key, v) }.apply {
+        setPadding(dp(16), dp(10), dp(16), dp(10))
+        (0 until childCount).map { getChildAt(it) }.filterIsInstance<Switch>().firstOrNull()?.isChecked = Groups.talks(key)
+    }
+    return settingsPage(act, c.getString(R.string.ch_discussion), onBack) {
+        addView(c.vstack(Gravity.NO_GRAVITY) { section(null, c.getString(R.string.ch_allow_comments_note), row) }, lp())
+    }
+}
+
+/**
+ * THE COMMENTS OF A POST (iOS MTChannelCommentsSheet, MontanaChannel 966-1041): the post's words over the comments, each with its
+ * speaker's name in their colour and its moment; while comments are on and I am inside, the field under them, and the slowmode's
+ * words while this phone waits (Groups.commentWait). The list follows the book as comments come.
+ */
+internal fun channelCommentsPage(act: MainActivity, key: String, post: Msg, onBack: () -> Unit): View {
+    val c: Context = act
+    val list = ChannelComments.comments(post.mid, key)
+    val title = if (list.isEmpty()) c.getString(R.string.ch_comments) else c.resources.getQuantityString(R.plurals.ch_comments_n, list.size, list.size)
+    val rows = c.vstack(Gravity.NO_GRAVITY) {}
+    val time = android.text.format.DateFormat.getTimeFormat(c)
+    fun fill() {
+        rows.removeAllViews()
+        val now = ChannelComments.comments(post.mid, key)
+        rows.background = c.rounded(MT.plate, 12)
+        if (now.isEmpty()) rows.addView(c.text(c.getString(R.string.ch_no_comments), 17f, MT.gray, center = true).apply {
+            setPadding(dp(16), dp(24), dp(16), dp(24))
+        }, lp(MATCH, WRAP))
+        for (cm in now) rows.addView(c.vstack(Gravity.NO_GRAVITY) {
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+            addView(c.hstack {
+                gravity = Gravity.CENTER_VERTICAL
+                val who = if (cm.mine) Groups.myName(c) else cm.name.ifEmpty { c.getString(R.string.gr_member) }
+                addView(c.text(who, 15f, Groups.tint(Groups.speakerOf(key, cm.seat)), bold = true).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: the speaker's name
+                addView(c.text(time.format(java.util.Date(cm.at)), 11f, MT.gray), lp(WRAP, WRAP))   // USER-DATA: the comment's moment
+            }, lp(MATCH, WRAP))
+            gap(3)
+            addView(c.text(cm.text, 17f, Color.WHITE), lp(MATCH, WRAP))   // USER-DATA: the comment's words
+        }, lp(MATCH, WRAP))
+    }
+    fill()
+    val heard: () -> Unit = { fill() }
+    return settingsPage(act, title, onBack, cross = true) {
+        val words = post.text.takeIf { !Marks.isService(it) }.orEmpty()
+        if (words.isNotEmpty()) addView(c.vstack(Gravity.NO_GRAVITY) {
+            section(null, null, c.text(words, 17f, Color.WHITE).apply { maxLines = 8; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(dp(16), dp(12), dp(16), dp(12)) })   // USER-DATA: the post's words
+        }, lp())
+        addView(rows, lp(MATCH, WRAP).apply { setMargins(dp(16), dp(12), dp(16), dp(12)) })
+        if (Groups.talks(key) && !Groups.isOut(key)) {
+            // THE FIELD SAYS WHAT IS LEFT (the reference's slowmode words): one comment in thirty seconds (Groups.COMMENT_GAP)
+            val slow = c.text("", 13f, MT.gray, center = true).apply { visibility = View.GONE; setPadding(dp(16), 0, dp(16), dp(4)) }
+            val field = EditText(c).apply {
+                hint = c.getString(R.string.ch_comment)
+                setTextColor(Color.WHITE); setHintTextColor(MT.gray)
+                background = c.rounded(MT.plate, 22)
+                minLines = 1; maxLines = 5
+                setPadding(dp(14), dp(11), dp(14), dp(11))
+            }
+            val send = c.icon(R.drawable.ic_arrow_up, Color.WHITE, 22).apply {
+                background = c.rounded(MT.blue, 18); setPadding(dp(7), dp(7), dp(7), dp(7))
+                contentDescription = c.getString(R.string.send)
+            }
+            fun ready() { send.alpha = if (field.text.toString().isBlank()) 0.4f else 1f }
+            field.addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, d: Int) {}
+                override fun onTextChanged(s: CharSequence?, a: Int, b: Int, d: Int) {}
+                override fun afterTextChanged(s: android.text.Editable?) = ready()
+            })
+            ready()
+            send.setOnClickListener {
+                if (field.text.toString().isBlank()) return@setOnClickListener
+                if (Groups.comment(field.text.toString(), post.mid, key)) field.setText("")
+            }
+            val tick = object : Runnable {
+                override fun run() {
+                    val wait = Groups.commentWait(key)
+                    slow.visibility = if (0 < wait) View.VISIBLE else View.GONE
+                    if (0 < wait) slow.text = c.getString(R.string.ch_slowmode, String.format(java.util.Locale.ROOT, "0:%02d", wait))
+                    slow.postDelayed(this, 1000)
+                }
+            }
+            addView(slow, lp(MATCH, WRAP))
+            addView(c.hstack {
+                gravity = Gravity.BOTTOM
+                setPadding(dp(12), dp(8), dp(12), dp(8))
+                addView(field, lp(0, WRAP, 1f).apply { marginEnd = dp(8) })
+                addView(send, lp(dp(36), dp(36)).apply { bottomMargin = dp(4) })
+            }, lp(MATCH, WRAP))
+            slow.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) { tick.run() }
+                override fun onViewDetachedFromWindow(v: View) { v.removeCallbacks(tick) }
+            })
+        }
+        rows.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) { ChannelComments.listen(heard); fill() }
+            override fun onViewDetachedFromWindow(v: View) { ChannelComments.unlisten(heard) }
+        })
+    }.apply { standAboveKeys() }
+}
+
+/** The deed in the reference's words, its doer this phone's owner (iOS MTChannelActionsPage.words). */
+private fun actWords(c: Context, a: Groups.Act): String {
+    val names = (a.p ?: emptyList()).map { it.ifEmpty { c.getString(R.string.gr_member) } }.joinToString(", ")
+    return when (a.e) {
+        "invited" -> c.getString(R.string.cha_invited, names)
+        "joined" -> c.getString(R.string.cha_joined, names)
+        "removed" -> c.getString(R.string.cha_removed, names)
+        "left" -> c.getString(R.string.cha_left, names)
+        "title" -> c.getString(R.string.cha_title, a.t ?: "")
+        "about" -> c.getString(R.string.cha_about)
+        "photo" -> c.getString(R.string.cha_photo)
+        "promoted" -> c.getString(R.string.cha_promoted, names)
+        "demoted" -> c.getString(R.string.cha_demoted, names)
+        "signOn" -> c.getString(R.string.cha_sign_on)
+        "signOff" -> c.getString(R.string.cha_sign_off)
+        "reactOn" -> c.getString(R.string.cha_react_on)
+        "reactSome" -> c.getString(R.string.cha_react_some)
+        "talkOn" -> c.getString(R.string.cha_talk_on)
+        "talkOff" -> c.getString(R.string.cha_talk_off)
+        else -> c.getString(R.string.cha_react_off)
+    }
 }
 
 /** «Add Admin» (iOS MTGroupAdminPickPage): the members who are none yet, each opening the rights it would have. */
@@ -748,16 +1089,22 @@ private fun groupAdminRightsPage(act: MainActivity, key: String, seat: String, n
     val done = c.icon(R.drawable.ic_check, Color.WHITE).apply {
         setPadding(c.dp(10), c.dp(10), c.dp(10), c.dp(10))
         contentDescription = c.getString(R.string.gp_done)
-        pressable { hideKeys(); Groups.setAdmin(key, seat, true, taken, rank.text.toString()); onBack() }
+        pressable {
+            hideKeys(); Groups.setAdmin(key, seat, true, taken, rank.text.toString())
+            if (Groups.INVITE !in taken) act.background { Groups.handLink(act, key) }   // the link to an admin who invites, once a card stands
+            onBack()
+        }
     }
+    // a channel's administrator has its own rights and no custom title (iOS MTChannelAdminRightsPage, MTChannelRight)
+    val channel = Groups.isChannel(key)
     return settingsPage(act, c.getString(R.string.gp_rights), { hideKeys(); onBack() }, trailing = done) {
         section(null, null, c.text(name, 17f, Color.WHITE, bold = true).apply {   // USER-DATA: a person's name
             setPadding(dp(16), dp(12), dp(16), dp(12)); singleLineEllipsis()
         })
-        section(c.getString(R.string.gp_rank), c.getString(R.string.gp_rank_note), rank)
-        section(c.getString(R.string.gp_rights_q), null, *Groups.RIGHTS.map { r ->
+        if (!channel) section(c.getString(R.string.gp_rank), c.getString(R.string.gp_rank_note), rank)
+        section(c.getString(if (channel) R.string.ch_rights_q else R.string.gp_rights_q), null, *Groups.rights(key).map { r ->
             var ready = false   // the switch set to what is stored is not the owner's tap
-            c.toggleRow(c.getString(rightWord(r))) { on ->
+            c.toggleRow(c.getString(if (channel) channelRightWord(r) else rightWord(r))) { on ->
                 if (!ready) return@toggleRow
                 if (on) taken.remove(r) else taken.add(r)
             }.apply {

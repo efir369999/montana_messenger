@@ -468,6 +468,114 @@ fun voiceBody(c: Context, m: Msg, du: Double, into: LinearLayout, wave: FloatArr
     }, LinearLayout.LayoutParams(WRAP, WRAP))
 }
 
+private val trackWaves = Caches.kept("track_waves", android.util.LruCache<String, FloatArray>(64))
+
+/** A letter's file is music by its name (iOS mtIsAudioName on docName, else on the file). */
+fun isTrackLetter(m: Msg, man: JSONObject?): Boolean =
+    man?.optString("k") == "doc" && (Waveform.isAudio(man.optString("n")) || Waveform.isAudio(m.file ?: ""))
+
+/**
+ * THE CHAT'S MUSIC IS THE PLAYER'S QUEUE, IN THE CHAT'S ORDER (iOS openMusic, MontanaConversation.swift:1351-1376 at 2322): a track
+ * on the phone plays from its file; A TRACK NOT YET WHOLE PLAYS FROM ITS FIRST PIECES (25.09) on its one loader (Streams), and lands,
+ * once whole, as the download's would (Media.landed); a track with no manifest in hand is not in the queue yet.
+ */
+private fun chatTracks(c: Context, chat: Chat): List<Pair<String, Track>> {
+    val app = c.applicationContext
+    return chat.msgs.toList().mapNotNull { r ->
+        val man = Media.manifestOf(r)
+        if (!isTrackLetter(r, man) || man == null) return@mapNotNull null
+        val name = man.optString("n").ifEmpty { r.file?.let { File(it).name } ?: return@mapNotNull null }
+        val uri = r.file?.let(::File)?.takeIf { it.exists() }?.let { android.net.Uri.fromFile(it) } ?: run {
+            val dest = Media.file(app, r.mid, man.optString("e"))
+            Streams.address(app, dest, man) { Media.landed(app, chat.ref, r.mid, man, dest, own = r.mine) } ?: return@mapNotNull null
+        }
+        r.mid to Track(uri, name).apply { length = man.optDouble("du", 0.0) }
+    }
+}
+
+/**
+ * A MUSIC FILE IN ITS BUBBLE (iOS audioBubble voice=false, MontanaBubble.swift:1338-1420 at 2322; the author's word 10.09: one audio
+ * bubble for a voice and a music file): the play round, the wave that rode the letter, the times -- then the track's name, and under
+ * it the note and the file's size. The round is the only start: the chat's music becomes the one player's queue, this track first
+ * (chatTracks); a track not yet on the phone waits for its download as any file does. The wave follows the one player.
+ */
+fun trackBody(c: Context, m: Msg, man: JSONObject, into: LinearLayout, chat: Chat?) {
+    val tint = BubbleStyle.text(m.mine)
+    val f = m.file?.let(::File)?.takeIf { it.exists() }
+    val uri = f?.let { android.net.Uri.fromFile(it) }
+    fun fmt(s: Double) = "%d:%02d".format(s.toInt() / 60, s.toInt() % 60)
+    val title = man.optString("n").ifEmpty { f?.name ?: "" }
+    val wave = man.optString("wv").takeIf { it.isNotEmpty() }?.let { runCatching { android.util.Base64.decode(it, android.util.Base64.DEFAULT) }.getOrNull() }
+    val total = man.optDouble("du", 0.0).takeIf { it > 0 } ?: f?.let { VoiceLength.of(it.path)?.div(1000.0) } ?: 0.0
+    fun mine() = uri != null && MusicPlayer.current?.uri == uri
+    val ink = if (m.mine) Color.rgb(158, 222, 255) else Color.WHITE
+    val bar = WaveView(c).apply {
+        bars = resampleWave(wave?.let { b -> FloatArray(b.size) { (b[it].toInt() and 0xFF) / 255f } }, 44)
+        barDp = 2f
+        played = ink; rest = MT.withAlpha(ink, 0.5f)
+    }
+    // A TRACK WITHOUT ITS WAVE IN THE LETTER IS MEASURED FROM ITS FILE (iOS waveColumn: MTWaveform.samples once on the disk), kept
+    if (wave == null && f != null) trackWaves.get(f.path)?.let { bar.bars = resampleWave(it, 44) }
+        ?: Thread { Waveform.compute(f)?.let { w -> trackWaves.put(f.path, w); MainThread.post { bar.bars = resampleWave(w, 44) } } }.start()
+    val now = c.text(fmt(0.0), 11f, MT.withAlpha(tint, 0.8f)).apply { fontFeatureSettings = "tnum" }
+    val length = c.text(fmt(total), 11f, MT.withAlpha(tint, 0.8f)).apply { fontFeatureSettings = "tnum" }
+    val mark = ImageView(c).apply {
+        imageTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
+        background = c.voiceRoundPlate()
+        setPadding(c.dp(12), c.dp(12), c.dp(12), c.dp(12))
+    }
+    val follow: () -> Unit = {
+        val on = mine()
+        mark.setImageResource(if (on && MusicPlayer.playing) R.drawable.ic_pause_fill else R.drawable.ic_play_fill)
+        val at = if (on) MusicPlayer.fraction else 0.0
+        bar.progress = at.toFloat()
+        now.text = fmt(at * (if (on) MusicPlayer.duration.takeIf { it > 0 } ?: total else total))
+    }
+    follow()
+    mark.alpha = if (f == null) 0.4f else 1f
+    mark.setOnClickListener {
+        // automatic download off, the file waits: the round asks for it (iOS: a tap starts the queued download)
+        if (f == null) { if (Media.waiting(c, m)) Media.tapped(c, m); return@setOnClickListener }
+        if (mine()) { MusicPlayer.toggle(); return@setOnClickListener }
+        val act = c as? MainActivity ?: return@setOnClickListener
+        val queue = chat?.let { chatTracks(c, it) }.orEmpty()
+        val k = queue.indexOfFirst { it.first == m.mid }
+        val list = if (k == -1) listOf(Track(uri!!, title).apply { this.length = total }) else queue.map { it.second }
+        Log.d("Montana", "music_open i=" + (maxOf(k, 0) + 1) + " n=" + list.size + " streamed=" + list.count { it.uri.scheme == "content" })
+        MusicPlayer.play(act, list, maxOf(k, 0))
+    }
+    // THE FINGER ON THE WAVE (iOS MontanaScrubber on the wave): playing, it moves the place; at rest, the place starts it
+    bar.onSeek = { p -> if (f != null) { if (!mine()) mark.performClick(); MusicPlayer.seek(p.toDouble()) } }
+    mark.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: View) { Playing.listen(follow); follow() }
+        override fun onViewDetachedFromWindow(v: View) { Playing.unlisten(follow) }
+    })
+    into.addView(c.vstack(Gravity.NO_GRAVITY) {
+        setPadding(c.dp(2), c.dp(4), c.dp(2), c.dp(2))
+        addView(c.hstack {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(android.widget.FrameLayout(c).apply { addView(mark, android.widget.FrameLayout.LayoutParams(c.dp(40), c.dp(40), Gravity.CENTER)) }, lp(c.dp(44), c.dp(44)))
+            addView(c.vstack(Gravity.NO_GRAVITY) {
+                addView(if (f == null && !Media.waiting(c, m)) android.widget.ProgressBar(c).apply { isIndeterminate = true } else bar,
+                    lp(if (f == null && !Media.waiting(c, m)) c.dp(26) else MATCH, c.dp(26)))
+                addView(c.hstack {
+                    addView(now, lp(0, WRAP).apply { weight = 1f })
+                    addView(length, lp(WRAP, WRAP))
+                }, lp(MATCH, WRAP))
+            }, lp(c.dp(178), WRAP).apply { marginStart = c.dp(10) })
+        }, lp(WRAP, WRAP))
+        addView(c.text(title, 14f, tint, bold = true).apply {   // USER-DATA: the track's file name
+            maxWidth = c.dp(232); setSingleLine(true); ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+        }, lp(WRAP, WRAP).apply { topMargin = c.dp(7) })
+        addView(c.hstack {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(c.icon(R.drawable.ic_music_note, MT.withAlpha(tint, 0.7f)), lp(c.dp(11), c.dp(11)))
+            addView(c.text(android.text.format.Formatter.formatShortFileSize(c, man.optLong("sz")), 11f, MT.withAlpha(tint, 0.7f)),
+                lp(WRAP, WRAP).apply { marginStart = c.dp(4) })
+        }, lp(WRAP, WRAP).apply { topMargin = c.dp(4) })
+    }, LinearLayout.LayoutParams(WRAP, WRAP).apply { bottomMargin = c.dp(4) })
+}
+
 
 /**
  * THE WAVE (iOS MTVoiceBubble's lines / the recorder's swell): one rounded line per slot. Played — the lines behind the

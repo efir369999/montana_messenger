@@ -336,6 +336,7 @@
     <string name="pe_note">备注</string>
     <string name="pe_restore_photo">恢复原始照片</string>
     <!-- the chat's ground (iOS MTWallpaperPicker) -->
+    <string name="wall_show_in_full">显示全文</string>
     <string name="wall_tab_ready">壁纸</string>
     <string name="wall_tab_photos">照片</string>
     <string name="wall_same_as_page">与我的页面相同</string>
@@ -420,6 +421,13 @@
     <string name="release_expand">展开</string>
     <string name="release_collapse">收起</string>
     <string name="update_now">更新</string>
+    <!-- the update that cannot be put off (iOS MTUpdateRequired, 4befb14a) -->
+    <string name="update_required_title">更新 Montana</string>
+    <string name="update_required_needs">%1$s 需要版本 %2$d。当前版本为 %3$d。</string>
+    <string name="update_required_install">请安装新版本以继续。</string>
+    <string name="update_required_loading">正在下载… %1$d%%</string>
+    <string name="update_required_installing">正在安装…</string>
+    <string name="update_required_site">从网站下载</string>
     <string name="update_loading">正在下载 Montana %1$s (%2$d)</string>
     <string name="update_failed">更新未能下载，请稍后再试</string>
     <string name="update_current">Montana 已是最新版本</string>
@@ -441,9 +449,21 @@
     <string name="coin_send_title">发送硬币</string>
     <string name="coin_choose_chats">选择聊天</string>
     <string name="coin_no_chats">暂无聊天</string>
+    <string name="coin_choose_members">选择成员</string>
+    <string name="coin_no_members">暂无成员</string>
+    <string name="coin_pair_closed">无法向此聊天发送硬币</string>
+    <string name="coin_no_pair">你与该成员没有单独的聊天</string>
+    <string name="coin_group_note">每位选中的成员都会在你与其的聊天中收到一笔单独的转账。群组只会得知你向多少位成员转了硬币。</string>
     <string name="coin_total">合计</string>
     <string name="coin_not_enough">硬币不足</string>
+    <string name="coin_enter_amount">输入硬币数量</string>
+    <string name="coin_send_coins">发送硬币</string>
+    <string name="coin_key">硬币</string>
+    <string name="coin_available">可用</string>
+    <string name="close">关闭</string>
     <string name="coin_not_enough_sub">您的硬币余额不足。</string>
+    <string name="coin_not_sent">金币未发送</string>
+    <string name="coin_not_sent_sub">余额未扣除任何金币。请稍后再试。</string>
     <string name="coin_you">您</string>
     <string name="coin_letter_sent">已发送的硬币</string>
     <string name="coin_letter_received">收到的硬币</string>
@@ -489,7 +509,6 @@
     <string name="chess_no_clock">不限时</string>
     <string name="chess_you_white">你执白棋</string>
     <string name="chess_you_black">你执黑棋</string>
-    <string name="chess_stake">赌注 %1$s</string>
     <string name="chess_score">胜 %1$d · 负 %2$d · 和 %3$d</string>
     <string name="chess_accept_draw">同意和棋</string>
     <string name="chess_move_failed">无法发送走棋</string>
@@ -497,8 +516,6 @@
     <string name="chess_cancel">取消</string>
     <string name="chess_white_clock">白方用时</string>
     <string name="chess_black_clock">黑方用时</string>
-    <string name="chess_pot">奖池：%1$s</string>
-    <string name="chess_stake_short">金币不足以支付赌注</string>
     <string name="chess_accept_invitation">接受邀请</string>
     <string name="chess_withdraw">撤回邀请</string>
     <string name="chess_decline_invitation">拒绝邀请</string>
@@ -528,11 +545,8 @@
     <string name="chess_time_control">时间限制</string>
     <string name="chess_invite_correspondent">邀请联系人</string>
     <string name="chess_no_correspondents">未找到联系人</string>
-    <string name="chess_stake_field">赌注</string>
     <string name="chess_ask_new">开始新对局？</string>
-    <string name="coin_balance_line">%1$s 枚硬币</string>
     <string name="chess_invite_failed">无法发送邀请</string>
-    <string name="chess_pot_footer">双方将赌注放入对局奖池，每走一步都会按走棋者的等级乘以一千铸币放入奖池。胜者拿走整个奖池；和棋时各自取回自己的部分。</string>
     <string name="chess_accept">接受</string>
     <string name="chess_decline">拒绝</string>
     <string name="wall_comments">评论</string>
@@ -546,6 +560,7 @@
     <string name="wall_downloads">下载次数</string>
     <string name="wall_views">浏览量</string>
     <string name="wall_send">发送</string>
+    <string name="wall_hide_person">隐藏此人</string>
     <string name="wall_save">保存</string>
     <string name="wall_unsave">从已保存中移除</string>
     <string name="call_end_ask">结束通话？</string>
@@ -820,4 +835,9 @@
     <string name="cp_put_back">放回副本</string>
     <string name="cp_total">合计：附件 %1$s，记录 %2$d 条。备份由您的 24 个助记词所对应的密钥封存；助记词本身不在其中。</string>
     <string name="cp_letters">%1$d 条消息 · %2$s</string>
+    <string name="voice_text_read">转写</string>
+    <string name="voice_text_hide">隐藏转写</string>
+    <string name="voice_text_refused">请在设置中允许麦克风</string>
+    <string name="voice_text_unsupported">此语言不支持设备上的语音识别</string>
+    <string name="voice_text_silent">未识别到语音</string>
 </resources>

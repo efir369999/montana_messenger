@@ -15,6 +15,25 @@ import java.io.File
 /** THE WORDS OF A FORWARDED LETTER'S QUOTE ON THE WIRE (iOS Message.forwardedQuote): the same literal both ways, never translated. */
 const val FORWARDED_QUOTE = "↪︎ Forwarded message"
 
+/**
+ * A FORWARD OF A CHANNEL'S POST NAMES ITS CHANNEL (iOS Message.forwardedFromHead, ContentView 3762-3771 at 2315): the wire quote is
+ * this head and the channel's name; a build that does not know the head draws it as the quote it reads. Never translated.
+ */
+const val FORWARDED_FROM_HEAD = "↪︎ Forwarded from "
+
+/** The channel a forward names, at most 64 letters, or null (iOS Message.forwardedFrom). */
+fun forwardedFrom(qt: String?): String? =
+    qt?.takeIf { it.startsWith(FORWARDED_FROM_HEAD) }?.removePrefix(FORWARDED_FROM_HEAD)?.take(64)?.ifEmpty { null }
+
+/** Whether a quote marks a forward, the bare one or a channel's -- never drawn as a quote (iOS MontanaBubble.quoted 1815). */
+fun isForwardQuote(qt: String?) = qt == FORWARDED_QUOTE || qt?.startsWith(FORWARDED_FROM_HEAD) == true
+
+/** The quote a forward from `from` carries: a channel's post names its channel, any other forward the bare mark (iOS forwardMessage 4385). */
+fun forwardQuote(from: String): String {
+    val title = if (Groups.isChannel(from)) Book.chat(from)?.shown?.trim().orEmpty() else ""
+    return if (title.isEmpty()) FORWARDED_QUOTE else FORWARDED_FROM_HEAD + title.take(64)
+}
+
 /** THE PIN'S WORD ON THE WIRE (iOS pinMark): silent, + {sid, txt, op}. */
 const val PIN_MARK = "\u200B\u200BPN:"
 
@@ -147,7 +166,7 @@ fun canForward(m: Msg): Boolean =
  * ONE LETTER FORWARDED (iOS forward(_:to:)): words leave as a new letter of mine with the forwarded quote; a picture, a film,
  * a voice or a file leaves as a fresh copy of the local file — new pieces on the node, never the old keys.
  */
-fun forwardOne(c: Context, target: String, m: Msg) {
+fun forwardOne(c: Context, target: String, m: Msg, qt: String = FORWARDED_QUOTE) {
     if (m.text.startsWith(Marks.MEDIA)) {
         val f = m.file?.let { File(it) }?.takeIf { it.exists() } ?: return
         val man = m.meta?.let { runCatching { JSONObject(it) }.getOrNull() } ?: Media.inline(m.text) ?: JSONObject()
@@ -156,17 +175,17 @@ fun forwardOne(c: Context, target: String, m: Msg) {
         }
         val p = Media.Picked(f.readBytes(), man.optString("k").ifEmpty { "doc" }, man.optString("e").ifEmpty { f.extension },
             man.optString("n").ifEmpty { null }, man.optDouble("du").takeIf { !it.isNaN() }, wave, man.optBoolean("r"))
-        Media.send(c, target, p, man.optString("cap"), qt = FORWARDED_QUOTE)
+        Media.send(c, target, p, man.optString("cap"), qt = qt)
         return
     }
     if (Marks.isService(m.text)) return
     // into a group the words ride the group's carrier with the forwarded quote (iOS forward → ChatStore.send → MTGroup.send)
-    if (Groups.isKey(target)) { Groups.send(target, m.text, FORWARDED_QUOTE, null); return }
+    if (Groups.isKey(target)) { Groups.send(target, m.text, qt, null); return }
     val mid = Marks.mintMid()
     // THE LINK'S CARD RIDES WITH THE FORWARDED WORDS (iOS forward → store.send(linkCard: m.linkPreview), ba4026d9f232): the card
     // the letter already wears is the forward's own, never fetched again and never lost on the way
-    Book.edit(target) { it.msgs.add(Msg(mid, m.text, true, Marks.birthMs(mid) ?: System.currentTimeMillis(), qt = FORWARDED_QUOTE, lp = m.lp)) }
-    Post.send(target, mid, m.text, FORWARDED_QUOTE, lp = m.lp)
+    Book.edit(target) { it.msgs.add(Msg(mid, m.text, true, Marks.birthMs(mid) ?: System.currentTimeMillis(), qt = qt, lp = m.lp)) }
+    Post.send(target, mid, m.text, qt, lp = m.lp)
 }
 
 /**
@@ -185,7 +204,8 @@ fun forwardPage(act: MainActivity, from: String, letters: List<Msg>, onBack: () 
                 addView(c.text(ch.shown.ifBlank { c.getString(R.string.peer) }, 17f, Color.WHITE, bold = true).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: the name
                 pressable {
                     val to = ch.ref
-                    Thread { letters.sortedBy { it.at }.forEach { forwardOne(c, to, it) } }.start()
+                    val qt = forwardQuote(from)
+                    Thread { letters.sortedBy { it.at }.forEach { forwardOne(c, to, it, qt) } }.start()
                     onSent(to)
                 }
             }, lp())

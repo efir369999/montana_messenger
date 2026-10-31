@@ -586,9 +586,8 @@ object Channels {
             }
             else -> return
         }
-        val secret = Book.secret(from) ?: return
-        val w = Wire.minute()
-        val plain = listOf(w, w - 1, w + 1).firstNotNullOfOrNull { Wire.open(Wire.bodyKey(secret, it), sealed) }
+        if (Book.secret(from) == null) return
+        val plain = Book.openLetter(sealed, from)   // every key the pipe gives, heard by the heal (iOS MontanaPhoneNode.openBody(conv:))
             ?: return Unit.also { Log.d("Montana", "open_refused — the pipe seal did not match, a forgery or a foreign window") }
         Post.fromChannel(from, plain)
     }
@@ -884,15 +883,18 @@ object Channels {
     }
 
     /** The tags of my pipes across the accepted windows (iOS MTPipeBook.tagIndex 624-637): rebuilt once a window. */
-    private var pipesAt = -1L
+    @Volatile private var pipesAt = -1L
     private var pipes = emptyMap<String, String>()
+    /** A heal moved a pipe's walk (Book.healRead, rebase): the index is built again. No lock: the book calls it under its own. */
+    fun dropPipes() { pipesAt = -1L }
     private fun myPipes(): Map<String, String> = synchronized(this) {
         val w = Wire.minute()
         if (w != pipesAt) {
             val m = HashMap<String, String>()
             for (ref in Book.refs()) {
                 val s = Book.secret(ref) ?: continue
-                for (k in longArrayOf(w - 1, w, w + 1)) for (t in Wire.windowTags(s, k)) m[Wire.hex(t)] = ref   // Y, Y + 1: the earlier tag too
+                val h = Book.healing(ref)   // a heal in flight: the healed walk's tags first, the old walk's after (iOS 76f5eeb7)
+                for (k in longArrayOf(w - 1, w, w + 1)) for (t in Wire.windowTags(s, k, h)) m[Wire.hex(t)] = ref   // Y, Y + 1: the earlier tag too
             }
             pipes = m
             pipesAt = w

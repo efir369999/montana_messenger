@@ -129,6 +129,9 @@ object MontanaCard {
         }
     }
 
+    /** The permanent link while one stands whole, its key in place: never born and never laid on the node from here (iOS offerStanding's card, read by a group's word under its own lock). */
+    fun heldPermanent(): String? = synchronized(lock) { map(PERM).entries.firstOrNull()?.takeIf { keyHeld(it.value) }?.let { PERM_PREFIX + it.key } }
+
     /** THE LINK OF THE DAY: one per device, born exactly a day after the one before; the one before keeps receiving. */
     fun offerShort(c: Context): String? {
         synchronized(lock) {

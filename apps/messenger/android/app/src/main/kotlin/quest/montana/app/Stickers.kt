@@ -1,6 +1,8 @@
 package quest.montana.app
 
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -15,6 +17,7 @@ import android.os.Build
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.GridLayout
@@ -33,8 +36,9 @@ import java.io.File
  *     (iOS sendStickerFile: kind img, docName MontanaCardPlate.stickerName), drawn in its own square without a bubble.
  * MY OWN SET (iOS MontanaStickerBook): the pictures lie in the app's private storage, the order in the defaults; a picture is
  * named by its own bytes, so the same sticker is kept once and, used again, moves to the front; the ceiling is a person's set.
- * Not yet here: the sets of other people and the «SP:» words that carry them (an older build buries them unread, and so does
- * this one), and the platform's subject cut — iOS lifts the subject with Vision; Android has no such native road.
+ * THE SETS OF OTHER PEOPLE travel by the «SP:» words (StickerWire): a sticker of my set carries its passport, my set is given to
+ * whoever asks it, the sets of others are met and land in StickerBook, and their page and link (setPage, StickerPack) ask the
+ * giver for them. Not yet here: the platform's subject cut — iOS lifts the subject with Vision; Android has no such native road.
  */
 object Stickers {
     /** The card sticker's name in a picture's manifest (iOS MontanaCardPlate.stickerName): every build draws it bare. */
@@ -48,7 +52,7 @@ object Stickers {
 
     private fun dir(c: Context) = File(c.filesDir, "stickers").apply { mkdirs() }
     /** The person forgotten: their stickers leave with them (Book.wipe); the list of names lived in the person's preferences. */
-    fun wipe(c: Context) = File(c.filesDir, "stickers").deleteRecursively()
+    fun wipe(c: Context) { File(c.filesDir, "stickers").deleteRecursively(); StickerBook.wipe() }
     fun file(c: Context, name: String) = File(dir(c), name)
     fun names(c: Context): List<String> = Prefs.str(SHELF, "").split('\n').filter { it.isNotEmpty() && file(c, it).exists() }
     private fun keep(list: List<String>) = Prefs.setStr(SHELF, list.joinToString("\n"))
@@ -63,7 +67,7 @@ object Stickers {
         keep(list.take(CEILING))
         return name
     }
-    fun forget(c: Context, name: String) { keep(names(c).filter { it != name }); file(c, name).delete() }
+    fun forget(c: Context, name: String) { keep(names(c).filter { it != name }); if (!StickerBook.othersHold(name)) file(c, name).delete() }
     /**
      * A COPY LAID (iOS MontanaStickerBook, MontanaSticker.swift 128, 171-173: «montana.stickers.mine», names over the media store, laid as
      * a union — SeedScope.unionKeys 6308): the set here stays as it stands, and a sticker of the copy's it lacks joins after it, its
@@ -153,21 +157,39 @@ object Stickers {
 
     // ── leaving ──
 
-    /** A glyph sticker: one letter of the mark and the emoji (iOS sendSticker). */
+    /**
+     * A STICKER ANSWERS A LETTER LIKE ANY WORD DOES (iOS sendSticker → sendMessage's replyingTo, sendStickerFile's answered,
+     * MontanaConversation.swift:4240-4243 and 4509-4515 at 2316; atom 0d501f110022): the open chat hands over the letter its plate
+     * holds, and the plate goes. A moving picture answers nobody (iOS sendGifFile / sendGifFound leave replyingTo where it stands).
+     */
+    var answering: ((String) -> Msg?)? = null
+    private fun answered(ref: String): Pair<String, String>? = answering?.invoke(ref)?.let { letterWords(Book.ctx, it).take(200) to it.mid }
+
+    /** A glyph sticker: one letter of the mark and the emoji, the quote with it as with any word (iOS sendSticker). */
     fun sendGlyph(ref: String, e: String) {
         val text = Marks.STICKER + e
-        if (Groups.isKey(ref)) { Groups.send(ref, text, null, null); return }   // a group's letter rides the group's carrier
+        val q = answered(ref)
+        if (Groups.isKey(ref)) { Groups.send(ref, text, q?.first, q?.second); return }   // a group's letter rides the group's carrier
         val mid = Marks.mintMid()
-        Book.edit(ref) { it.msgs.add(Msg(mid, text, true, Marks.birthMs(mid) ?: System.currentTimeMillis())) }
-        Post.send(ref, mid, text)
+        Book.edit(ref) { it.msgs.add(Msg(mid, text, true, Marks.birthMs(mid) ?: System.currentTimeMillis(), qt = q?.first, qm = q?.second)) }
+        Post.send(ref, mid, text, q?.first, q?.second)
     }
 
-    /** A picture of my set leaves by the picture road with the card sticker's name, and moves to the front of the set. */
+    /**
+     * A picture of my set leaves by the picture road with the card sticker's name, and moves to the front of the set; its passport
+     * follows under the letter's own name, so the other side knows the set it is of (iOS sendStickerFile + MontanaStickerWire.sendPassport).
+     */
     fun sendPicture(c: Context, ref: String, name: String) {
         val f = file(c, name).takeIf { it.exists() } ?: return
         val bytes = f.readBytes()
         add(c, bytes, f.extension)
-        Thread { Media.send(c, ref, Media.Picked(bytes, "img", f.extension, CARD), "") }.start()
+        val mid = Marks.mintMid()
+        // the plate stands over the sticker here at once; the picture road carries no reply, the quote rides the passport (iOS 22.09)
+        val q = answered(ref)
+        Thread {
+            Media.send(c, ref, Media.Picked(bytes, "img", f.extension, CARD), "", named = mid, plate = q)
+            if (Book.chat(ref)?.msgs?.any { it.mid == mid } == true) StickerWire.sendPassport(ref, mid, bytes, q)   // a refused letter has no passport
+        }.start()
     }
 
     /** ANY STICKER LETTER CAN BE RE-CUT, MINE OR THEIRS (iOS onEditSticker: MontanaMessageMenu.swift:474-476 and
@@ -176,10 +198,20 @@ object Stickers {
      * Android narrows only to a picture already on this phone (the file assembled). */
     fun editable(m: Msg): Boolean = isPicture(m) && m.file != null
 
-    /** THE SAME LETTER OPENS MY OWN SET, MINE OR THEIRS (iOS onViewSet: MontanaMessageMenu.swift:479-482 and
-     * MontanaConversation.swift:2256-2259 at 2155): the panel a hold on the emoji key already opens (panel below)
-     * is the very page the row would open. */
+    /** THE STICKER'S OWN SET (iOS onViewSet / onCopyLink, MontanaConversation.swift:2387-2402 at 2314): a letter of mine
+     * belongs to this phone's set; a letter of another carries its passport, and the passport names the set. */
     fun viewable(m: Msg): Boolean = isPicture(m)
+    fun setOf(m: Msg): String = if (m.mine) "" else StickerBook.passport(m.mid)?.pack ?: ""
+
+    /** The set's link to the clipboard (iOS onCopyLink): the passport's set and title, or my own set's. */
+    fun copyLink(c: Context, m: Msg) {
+        val port = if (m.mine) null else StickerBook.passport(m.mid)
+        copyLink(c, port?.pack ?: StickerBook.mineId, port?.title ?: "Montana")
+    }
+    private fun copyLink(c: Context, pack: String, title: String) {
+        c.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("", StickerPack.link(pack, title)))
+        Log.d("Montana", "sticker_link copied pack=" + pack.take(8))
+    }
 
     /** EDIT STICKER (iOS MontanaStickerEditor via the .stickerEdit sheet, MontanaConversation 2139-2149): the letter's own
      * picture opens in the editor; what the check keeps is a NEW sticker of my set, sent at once — the letter it came from
@@ -205,32 +237,57 @@ object Stickers {
     // ── the panel ──
 
     /**
-     * MY SET'S PAGE (iOS MontanaStickerSetPage, opened by the panel's settings glass and by «View set» on a sticker letter): the
-     * glyphs in a row, my set four in a row under them. A tap sends, a hold asks to drop one of my own, the plus makes one from a
-     * photo. Our cross at the left. The choosing itself is the field's panel (Picker.kt).
+     * A SET AS A PAGE (iOS MontanaStickerSetPage, MontanaStickerScreens.swift:172-282 at 2314; opened by the panel's settings
+     * glass and by «View sticker set» on a sticker letter), four in a row. A tap sends one into this conversation; our cross at
+     * the left, the set's link at the right. The page shows ANY set: `pack` empty is this phone's own — the glyphs over it, the
+     * plus that makes one from a photo, a hold that drops one, «Delete all»; another's set is the one its passport or link named,
+     * asked of its giver once per opening while it is not whole, filling as its pages land, the places still on the way standing
+     * empty, and «Remove set» takes it off this phone. Nobody else is asked: the link carries no address.
      */
-    fun setPage(act: MainActivity, ref: String) {
+    fun setPage(act: MainActivity, ref: String, pack: String = "") {
         val c: Context = act
+        val mine = pack.isEmpty() || pack == StickerBook.mineId
+        val title = if (mine) c.getString(R.string.stickers) else StickerBook.pack(pack)?.title ?: "Montana"   // USER-DATA: the set's own title
         lateinit var close: () -> Unit
         val grid = GridLayout(c).apply { columnCount = 4; setPadding(c.dp(10), c.dp(6), c.dp(10), c.dp(16)) }
         val empty = c.text(c.getString(R.string.stickers_empty), 15f, MT.gray, center = true).apply { setPadding(c.dp(24), c.dp(28), c.dp(24), c.dp(28)) }
+        fun list(): List<String> = if (mine) names(c) else StickerBook.pack(pack)?.names?.filter { file(c, it).exists() } ?: emptyList()
+        fun waiting(): Int = if (mine) 0 else StickerBook.pack(pack)?.let { maxOf(0, it.expected - it.names.size) } ?: 0
+        val foot = c.vstack(Gravity.NO_GRAVITY) {}
         fun fill() {
             grid.removeAllViews()
-            val list = names(c)
-            empty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+            val list = list()
+            empty.visibility = if (mine && list.isEmpty()) View.VISIBLE else View.GONE
             val cell = (c.resources.displayMetrics.widthPixels - c.dp(20)) / 4
             for (n in list) grid.addView(ImageView(c).apply {
                 scaleType = ImageView.ScaleType.FIT_CENTER
                 setPadding(c.dp(8), c.dp(8), c.dp(8), c.dp(8))
                 act.background { BitmapFactory.decodeFile(file(c, n).path, BitmapFactory.Options().apply { inSampleSize = 2 })?.let { b -> act.onMain { setImageBitmap(b) } } }
                 pressable { close(); sendPicture(c, ref, n) }
-                setOnLongClickListener {
+                if (mine) setOnLongClickListener {
                     AlertDialog.Builder(c).setMessage(R.string.sticker_delete_q)
                         .setPositiveButton(R.string.delete) { _, _ -> forget(c, n); fill() }
                         .setNegativeButton(R.string.cancel, null).show()
                     true
                 }
             }, GridLayout.LayoutParams().apply { width = cell; height = cell })
+            // what has not arrived yet stands as an empty place, not as a word: the eye sees how much is still on the way
+            repeat(waiting()) {
+                grid.addView(View(c).apply { background = c.rounded(Color.argb(13, 255, 255, 255), 12) },
+                    GridLayout.LayoutParams().apply { width = cell - c.dp(12); height = cell - c.dp(12); setMargins(c.dp(6), c.dp(6), c.dp(6), c.dp(6)) })
+            }
+            // THE RED ROW AT THE FOOT (iOS «Delete all» / «Remove set»), behind the platform's own question
+            foot.removeAllViews()
+            if (list.isNotEmpty()) foot.addView(c.text(c.getString(if (mine) R.string.sticker_delete_all else R.string.sticker_remove_set), 16f, MT.red, center = true).apply {
+                setPadding(c.dp(16), c.dp(14), c.dp(16), c.dp(14))
+                pressable {
+                    AlertDialog.Builder(c).setMessage(if (mine) R.string.sticker_delete_all else R.string.sticker_remove_set)
+                        .setPositiveButton(R.string.delete) { _, _ ->
+                            if (mine) { names(c).forEach { forget(c, it) }; fill() } else { StickerBook.drop(pack); close() }
+                        }
+                        .setNegativeButton(R.string.cancel, null).show()
+                }
+            }, lp())
         }
         val glyphs = HorizontalScrollView(c).apply {
             isHorizontalScrollBarEnabled = false
@@ -252,15 +309,20 @@ object Stickers {
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(c.dp(12), c.dp(12), c.dp(12), c.dp(6))
                 addView(mark(R.drawable.ic_close, R.string.cancel) { close() }, lp(c.dp(40), c.dp(40)))
-                addView(c.text(c.getString(R.string.stickers), 17f, bold = true, center = true), lp(0, WRAP, 1f))
+                addView(c.text(title, 17f, bold = true, center = true).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }, lp(0, WRAP, 1f))
+                // THE SET'S LINK (iOS the page's link mark): its name and title, no address
+                addView(mark(R.drawable.ic_link, R.string.copy_link) {
+                    if (mine) copyLink(c, StickerBook.mineId, "Montana") else copyLink(c, pack, title)
+                }, lp(c.dp(40), c.dp(40)).apply { if (mine) marginEnd = c.dp(8) })
                 // THE PLUS MAKES ONE FROM A PHOTO (iOS MontanaStickerEditor): the system's picker, then the frame
-                addView(mark(R.drawable.ic_plus, R.string.sticker_make) {
+                if (mine) addView(mark(R.drawable.ic_plus, R.string.sticker_make) {
                     act.pickPhoto { uri -> if (uri != null) act.background { load(c, uri)?.let { b -> act.onMain { editor(act, b) { bytes, ext -> close(); fill(); val n = add(c, bytes, ext); sendPicture(c, ref, n) } } } } }
                 }, lp(c.dp(40), c.dp(40)))
             }, lp())
-            addView(glyphs, lp())
+            if (mine) addView(glyphs, lp())
             addView(View(c).apply { setBackgroundColor(Color.argb(40, 255, 255, 255)) }, lp(MATCH, 1).apply { topMargin = c.dp(6) })
             addView(ScrollView(c).apply { addView(c.vstack(Gravity.NO_GRAVITY) { addView(empty, lp()); addView(grid, lp()) }) }, lp(MATCH, (c.resources.displayMetrics.heightPixels * 0.42).toInt()))
+            addView(foot, lp())
         }
         val page = FrameLayout(c).apply {
             setBackgroundColor(Color.argb(120, 0, 0, 0))
@@ -269,7 +331,11 @@ object Stickers {
             addView(sheet, FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM))
         }
         fill()
-        close = act.overlay(page)
+        val shut = act.overlay(page)
+        StickerBook.onChange = { fill() }
+        close = { StickerBook.onChange = null; shut() }
+        // A SET WE DO NOT HOLD IS ASKED OF THE ONE WHO GAVE IT, once per opening (iOS askGiver)
+        if (!mine && (waiting() > 0 || list().isEmpty())) StickerBook.giver(pack)?.let { g -> act.background { StickerWire.ask(pack, g) } }
     }
 
     /** The picked photo, stood upright by its own EXIF turn and no larger than the frame needs. */

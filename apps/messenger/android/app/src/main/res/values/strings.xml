@@ -337,6 +337,7 @@
     <string name="pe_note">Note</string>
     <string name="pe_restore_photo">Restore original photo</string>
     <!-- the chat's ground (iOS MTWallpaperPicker) -->
+    <string name="wall_show_in_full">Show in full</string>
     <string name="wall_tab_ready">Wallpapers</string>
     <string name="wall_tab_photos">Photos</string>
     <string name="wall_same_as_page">Same as my page</string>
@@ -425,6 +426,13 @@
     <string name="release_expand">Expand</string>
     <string name="release_collapse">Collapse</string>
     <string name="update_now">Update</string>
+    <!-- the update that cannot be put off (iOS MTUpdateRequired, 4befb14a) -->
+    <string name="update_required_title">Update Montana</string>
+    <string name="update_required_needs">%1$s needs build %2$d. This build is %3$d.</string>
+    <string name="update_required_install">Install the new build to go on.</string>
+    <string name="update_required_loading">Downloading… %1$d%%</string>
+    <string name="update_required_installing">Installing…</string>
+    <string name="update_required_site">Download from the site</string>
     <string name="update_loading">Downloading Montana %1$s (%2$d)</string>
     <string name="update_failed">The update did not download — try again later</string>
     <string name="update_current">Montana is up to date</string>
@@ -446,9 +454,21 @@
     <string name="coin_send_title">Send coins</string>
     <string name="coin_choose_chats">Choose chats</string>
     <string name="coin_no_chats">No chats yet</string>
+    <string name="coin_choose_members">Choose members</string>
+    <string name="coin_no_members">No members yet</string>
+    <string name="coin_pair_closed">Coins can\'t go to this chat</string>
+    <string name="coin_no_pair">No chat of your own with this member</string>
+    <string name="coin_group_note">Each member you pick gets a transfer of their own in your chat with them. The group is told only how many members you sent coins to.</string>
     <string name="coin_total">Total</string>
     <string name="coin_not_enough">Not enough coins</string>
+    <string name="coin_enter_amount">Enter the coin amount</string>
+    <string name="coin_send_coins">Send coins</string>
+    <string name="coin_key">Coin</string>
+    <string name="coin_available">Available</string>
+    <string name="close">Close</string>
     <string name="coin_not_enough_sub">Your coin balance is lower than this.</string>
+    <string name="coin_not_sent">Coins were not sent</string>
+    <string name="coin_not_sent_sub">Nothing left your balance. Try again in a moment.</string>
     <string name="coin_you">You</string>
     <string name="coin_letter_sent">Coins sent</string>
     <string name="coin_letter_received">Coins received</string>
@@ -494,7 +514,6 @@
     <string name="chess_no_clock">No clock</string>
     <string name="chess_you_white">You play white</string>
     <string name="chess_you_black">You play black</string>
-    <string name="chess_stake">stake %1$s</string>
     <string name="chess_score">Wins %1$d · Losses %2$d · Draws %3$d</string>
     <string name="chess_accept_draw">Accept draw</string>
     <string name="chess_move_failed">Move could not be sent</string>
@@ -502,8 +521,6 @@
     <string name="chess_cancel">Cancel</string>
     <string name="chess_white_clock">White clock</string>
     <string name="chess_black_clock">Black clock</string>
-    <string name="chess_pot">Pot: %1$s</string>
-    <string name="chess_stake_short">Not enough coins for the stake</string>
     <string name="chess_accept_invitation">Accept invitation</string>
     <string name="chess_withdraw">Withdraw invitation</string>
     <string name="chess_decline_invitation">Decline invitation</string>
@@ -533,11 +550,8 @@
     <string name="chess_time_control">Time control</string>
     <string name="chess_invite_correspondent">Invite a correspondent</string>
     <string name="chess_no_correspondents">No correspondents found</string>
-    <string name="chess_stake_field">Stake</string>
     <string name="chess_ask_new">Start a new game?</string>
-    <string name="coin_balance_line">%1$s coins</string>
     <string name="chess_invite_failed">Invitation could not be sent</string>
-    <string name="chess_pot_footer">Both players put the stake into the game\'s pot, and every move mints its maker\'s level times a thousand into it. The winner takes the whole pot; a draw gives each their own back.</string>
     <string name="chess_accept">Accept</string>
     <string name="chess_decline">Decline</string>
     <string name="wall_comments">Comments</string>
@@ -551,6 +565,7 @@
     <string name="wall_downloads">Downloads</string>
     <string name="wall_views">Views</string>
     <string name="wall_send">Send</string>
+    <string name="wall_hide_person">Hide this person</string>
     <string name="wall_save">Save</string>
     <string name="wall_unsave">Remove from saved</string>
     <string name="call_end_ask">End the call?</string>
@@ -825,4 +840,9 @@
     <string name="cp_put_back">Put back into the copy</string>
     <string name="cp_total">Total: %1$s of attachments and %2$d records. The copy is sealed with the key your 24 words open; the words are not in it.</string>
     <string name="cp_letters">%1$d letters · %2$s</string>
+    <string name="voice_text_read">Transcribe</string>
+    <string name="voice_text_hide">Hide transcription</string>
+    <string name="voice_text_refused">Allow the microphone in Settings</string>
+    <string name="voice_text_unsupported">Speech recognition is not available for this language</string>
+    <string name="voice_text_silent">No speech recognized</string>
 </resources>

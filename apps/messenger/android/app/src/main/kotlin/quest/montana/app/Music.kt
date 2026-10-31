@@ -154,9 +154,9 @@ object MusicPlayer {
             // the processor stays awake while it plays: the screen goes dark, the music goes on
             setWakeMode(a, PowerManager.PARTIAL_WAKE_LOCK)
             // A LONG LISTEN GOES ON WHERE IT STOPPED (iOS VoicePlayer.toggle:411-414 at 2155, MTPlayPlaces.at, 26.09).
-            setOnPreparedListener { prepared = true; PlayPlaces.at(t.file, it.duration / 1000.0, false)?.let { at -> runCatching { it.seekTo((at * 1000).toInt()) } }; it.start(); playing = true; tick(); changed() }
-            setOnCompletionListener { if (index + 1 < queue.size) play(a, queue, index + 1) else { playing = false; seek(0.0); changed() } }
-            setOnErrorListener { _, _, _ -> playing = false; changed(); refused?.invoke(); true }
+            setOnPreparedListener { if (mp !== it) return@setOnPreparedListener; prepared = true; PlayPlaces.at(t.file, it.duration / 1000.0, false)?.let { at -> runCatching { it.seekTo((at * 1000).toInt()) } }; it.start(); playing = true; tick(); changed() }
+            setOnCompletionListener { if (mp !== it) return@setOnCompletionListener; if (index + 1 < queue.size) play(a, queue, index + 1) else { playing = false; seek(0.0); changed() } }
+            setOnErrorListener { p, _, _ -> if (mp !== p) return@setOnErrorListener true; playing = false; changed(); refused?.invoke(); true }
             try { setDataSource(a, t.uri); prepareAsync() } catch (_: Exception) { refused?.invoke() }
         }
         changed()
@@ -195,7 +195,9 @@ object MusicPlayer {
 
     private fun release() {
         main.removeCallbacksAndMessages(null)
-        mp?.release(); mp = null; prepared = false; playing = false
+        // a player still waiting on a track's piece (Streams) lets go off the main thread: its read may stand on the network a while
+        mp?.let { old -> Thread { old.release() }.start() }
+        mp = null; prepared = false; playing = false
     }
     private fun tick() {
         main.removeCallbacksAndMessages(null)

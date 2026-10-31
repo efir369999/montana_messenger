@@ -8,6 +8,7 @@ import android.graphics.Outline
 import android.graphics.drawable.GradientDrawable
 import android.text.InputFilter
 import android.text.InputType
+import android.util.Log
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
@@ -99,7 +100,7 @@ fun Context.coinPlate(m: Msg, coin: CoinLetter.Coin, mine: Boolean, act: MainAct
         val words = if (mine) (if (back) R.string.coin_letter_back else R.string.coin_letter_sent) else R.string.coin_letter_received
         addView(text(getString(words), 15f, BubbleStyle.text(mine)).apply { setPadding(0, dp(2), 0, 0) }, lp(WRAP, WRAP))
     }, lp(WRAP, WRAP))
-    if (act != null && ref != null) pressable {
+    if (act != null && ref != null && GooglePlay.COINS) pressable {
         val peer = Book.chat(ref)?.shown?.ifBlank { null } ?: context.getString(R.string.peer)
         act.push { back -> coinMovePage(act, CoinSend.wire(m.mid), mine, peer, back) }
     }
@@ -152,7 +153,7 @@ private fun walletFrame(act: MainActivity, title: String, onLead: () -> Unit, cr
 
 /**
  * THE WALLET (iOS MTWalletPage, «TimeCoin»): our coin where the card stood — Pantheon on Fire under the finger, every touch of the
- * coin its own, a +N rising from each touch that minted —, the book's balance in large type with the ticker, the same balance in
+ * coin its own, none of them minting —, the book's balance in large type with the ticker, the same balance in
  * Montana, the level of π and π revealed to it, Send and the levels of π; under them the minting's counts and the history.
  */
 fun walletPage(act: MainActivity, onClose: () -> Unit): View {
@@ -160,7 +161,6 @@ fun walletPage(act: MainActivity, onClose: () -> Unit): View {
     val body = c.vstack(Gravity.NO_GRAVITY)
     val fire = c.text(c.getString(R.string.coin_pantheon), 22f, MT.orange, bold = true, center = true)
     val coin = MintCoin(c, 120)
-    val pops = FrameLayout(c)
     val badge = c.text("", 13f, Color.WHITE, bold = true, center = true).apply {
         background = c.rounded(MT.blue, 11); setPadding(dp(7), dp(1), dp(7), dp(1)); minWidth = dp(22)
     }
@@ -198,7 +198,7 @@ fun walletPage(act: MainActivity, onClose: () -> Unit): View {
         fire.visibility = if (lit) View.VISIBLE else View.INVISIBLE
         speed.visibility = fire.visibility
         speed.text = Pantheon.speed.toString() + " / " + Pantheon.CEILING   // USER-DATA: the taps of the last second
-        coin.spinAt(maxOf(Pantheon.speed, if (WalletPull.on) 1 else 0))   // at least once a second while the auto minting runs (iOS MTWalletScreen.swift:73-77)
+        coin.spinAt(maxOf(Pantheon.speed, if (WalletPull.on) 1 else 0))   // at least once a second while the pull holds (iOS MTWalletScreen.swift:73-77)
         badge.text = maxOf(1, place).toString()   // the level the minting multiplies by
         val shownBar = (lit || WalletPull.on) && place < PiLevels.all.size   // iOS MTLevelProgress, MTWalletScreen.swift:124-126
         bar.visibility = if (shownBar) View.VISIBLE else View.INVISIBLE
@@ -237,29 +237,19 @@ fun walletPage(act: MainActivity, onClose: () -> Unit): View {
         windowRows.section(c.getString(R.string.coin_timechain), c.getString(R.string.coin_right_note), *shown.toTypedArray())
     }
 
-    // THE COIN TAKES EVERY FINGER (iOS MTCoinTapPad): each finger that lands mints, its +N rising where it touched; the page holds
-    // still under the game (the scroll is not given the finger while it is on the coin)
-    fun pop(x: Float, y: Float, coins: Long) {
-        val t = c.text("+" + CoinText.count(coins), 17f, Color.WHITE, bold = true).apply {   // USER-DATA: the coins one touch minted
-            background = c.rounded(Color.argb(170, 40, 40, 44), 14); setPadding(dp(8), dp(2), dp(8), dp(2))
-        }
-        pops.addView(t, FrameLayout.LayoutParams(WRAP, WRAP))
-        t.x = x - c.dp(20); t.y = y - c.dp(14)
-        t.animate().translationYBy(-c.dp(48).toFloat()).alpha(0f).setDuration(900).withEndAction { pops.removeView(t) }.start()
-        while (5 < pops.childCount) pops.removeViewAt(0)
-    }
+    // THE COIN TAKES EVERY FINGER (iOS MTCoinTapPad): each finger that lands lights the fire and counts the speed; it mints nothing and
+    // no +1 rises at the finger (iOS 86854488, decision 375 «a», build 2320). The page holds still under the game (the scroll is not
+    // given the finger while it is on the coin)
     val pad = FrameLayout(c).apply {
         contentDescription = c.getString(R.string.coin_a11y)
         isClickable = true
         setOnTouchListener { v, e ->
-            val i = e.actionIndex
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     v.parent?.requestDisallowInterceptTouchEvent(true)
                     Pantheon.touched()
-                    val coins = Pantheon.tap()
+                    Pantheon.tap()
                     v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    if (0 < coins) pop(e.getX(i), e.getY(i), coins)
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> Pantheon.released()
             }
@@ -275,7 +265,6 @@ fun walletPage(act: MainActivity, onClose: () -> Unit): View {
             addView(coin, FrameLayout.LayoutParams(dp(120), dp(120), Gravity.CENTER))
             addView(badge, FrameLayout.LayoutParams(WRAP, WRAP, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(10), dp(10), 0) })
             addView(pad, FrameLayout.LayoutParams(MATCH, MATCH))
-            addView(pops, FrameLayout.LayoutParams(MATCH, MATCH))
         }, lp(dp(144), dp(144)))
         gap(10)
         addView(speed, lp(WRAP, WRAP))
@@ -294,7 +283,6 @@ fun walletPage(act: MainActivity, onClose: () -> Unit): View {
             addView(capsule(R.string.coin_levels, null, false) { act.push { piLevelsPage(act, it) } }, lp(0, WRAP, 1f))
         }, lp(MATCH, WRAP))
     }
-    pops.isClickable = false
     body.addView(head, lp())
     body.addView(rows, lp())
     body.addView(windowRows, lp())
@@ -310,8 +298,8 @@ fun walletPage(act: MainActivity, onClose: () -> Unit): View {
         if (round != asking || !holder.isAttachedToWindow) return
         Thread { runCatching { Signal.sweep(quiet = true) }; MainThread.later(3000, Runnable { askNodes(round) }) }.start()
     }
-    // THE PULL SWITCHES THE AUTO MINTING ON (iOS MTWalletPage.pulled, MTWalletScreen.swift:404-417): let go past the trigger, the pull
-    // mints every second from now on (WalletPull) and the page reads its windows again; the book's own change redraws it (CoinBook.listen).
+    // THE PULL READS THE TOPS AGAIN (iOS MTWalletPage.pulled, MTWalletScreen.swift:404-417): let go past the trigger, the coin turns
+    // once a second from now on (WalletPull), minting nothing, and the page reads its windows again; the book's own change redraws it (CoinBook.listen).
     val page = walletFrame(act, c.getString(R.string.coin_title), onClose, true, null, body) { WalletPull.fire(); readWindows() }
     // THE LOCK ENDS IT, NOT A GLANCE (iOS .onChange(of: phase), MTWalletScreen.swift:382-386): the app gone from the screen — its window
     // hidden, the screen locked — stops the auto minting and the nodes' questions; a shade or a dialog over it does not. The return reads
@@ -345,14 +333,18 @@ fun walletPage(act: MainActivity, onClose: () -> Unit): View {
  * SEND COINS (iOS MTCoinSendSheet): the levels of π as the amounts, a box chosen stands beside every chat picked; each chat its own
  * field, the system's, the coins typed there are what that chat gets; our send at the trailing edge. A short balance refuses
  * and nothing leaves; one recipient's chat opens after the send.
+ * A GROUP'S COIN IS THIS PAGE OVER THE GROUP'S PEOPLE (iOS MTCoinSendSheet group/each/sent; the author's word 17.10.2026 21:14 UTC):
+ * `group` -- the group's key when the page opens from its field; the rows are the people a coin of this phone reaches
+ * (Groups.coinPeople), the others stand greyed with why; `each` -- the number written in the field, each pick's coins; each pick
+ * gets the pair's own transfer, the group is told only how many were paid (Groups.tellCoins), `sent` empties the field.
  */
-fun sendCoinsPage(act: MainActivity, onClose: () -> Unit): View {
+fun sendCoinsPage(act: MainActivity, onClose: () -> Unit, group: String? = null, each: Long = 0L, sent: () -> Unit = {}): View {
     val c: Context = act
     val body = c.vstack(Gravity.NO_GRAVITY)
     val picked = LinkedHashMap<String, EditText>()
     val fields = LinkedHashMap<String, EditText>()
     val marks = HashMap<String, ImageView>()
-    var chosen = 1L
+    var chosen = if (0L < each) each else 1L
     val total = c.labeled(c.getString(R.string.coin_total), "0")
     fun coinsOf(f: EditText) = f.text.toString().toLongOrNull() ?: 0L
     fun drawTotal() {
@@ -388,10 +380,14 @@ fun sendCoinsPage(act: MainActivity, onClose: () -> Unit): View {
     }
     body.addView(HorizontalScrollView(c).apply { isHorizontalScrollBarEnabled = false; addView(boxes); setPadding(0, dp(12), 0, dp(6)) }, lp())
     body.addView(total, lp())
-    val people = Book.all().filter { CoinSend.canPay(it.ref) }
+    val payees = group?.let { Groups.coinPeople(c, it) }
+    val people: List<Pair<String, String>> = payees?.mapNotNull { p -> p.ref?.let { it to (Book.chat(it)?.shown?.ifBlank { null } ?: p.name) } }
+        ?: Book.all().filter { CoinSend.canPay(it.ref) }.map { it.ref to it.shown }
+    val unreached = payees?.filter { it.ref == null }.orEmpty()
+    Log.i("Montana", "coin_send_page " + (if (group != null) "group " else "") + "pairs=" + people.size + " unreached=" + unreached.size)
     val list = c.plate {
-        if (people.isEmpty()) addView(c.text(c.getString(R.string.coin_no_chats), 16f, MT.gray).apply { setPadding(dp(16), dp(14), dp(16), dp(14)) }, lp())
-        people.forEachIndexed { i, ch ->
+        if (people.isEmpty() && unreached.isEmpty()) addView(c.text(c.getString(if (group == null) R.string.coin_no_chats else R.string.coin_no_members), 16f, MT.gray).apply { setPadding(dp(16), dp(14), dp(16), dp(14)) }, lp())
+        people.forEachIndexed { i, (ref, shown) ->
             if (0 < i) divider()
             val field = EditText(c).apply {
                 inputType = InputType.TYPE_CLASS_NUMBER
@@ -407,34 +403,50 @@ fun sendCoinsPage(act: MainActivity, onClose: () -> Unit): View {
                     override fun afterTextChanged(s: android.text.Editable?) {
                         // coins typed pick the chat, a field emptied lets it go
                         val n = s?.toString()?.toLongOrNull() ?: 0L
-                        if (0L < n) picked[ch.ref] = this@apply else picked.remove(ch.ref)
-                        mark(ch.ref); drawTotal()
+                        if (0L < n) picked[ref] = this@apply else picked.remove(ref)
+                        mark(ref); drawTotal()
                     }
                 })
             }
-            fields[ch.ref] = field
+            fields[ref] = field
             val pick = ImageView(c).apply { setPadding(dp(10), dp(10), dp(10), dp(10)) }
-            marks[ch.ref] = pick
+            marks[ref] = pick
             addView(c.hstack {
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(16), dp(8), dp(8), dp(8))
                 addView(c.hstack {
                     gravity = Gravity.CENTER_VERTICAL
-                    addView(c.peerFace(ch.ref, ch.shown, 40), lp(dp(40), dp(40)))
+                    addView(c.peerFace(ref, shown, 40), lp(dp(40), dp(40)))
                     gap(12)
-                    addView(c.text(ch.shown.ifBlank { c.getString(R.string.peer) }, 16f).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: the name
+                    addView(c.text(shown.ifBlank { c.getString(R.string.peer) }, 16f).apply { singleLineEllipsis() }, lp(0, WRAP, 1f))   // USER-DATA: the name
                     minimumHeight = dp(44)
-                    pressable { toggle(ch.ref) }
+                    pressable { toggle(ref) }
                 }, lp(0, WRAP, 1f))
                 addView(field, lp(dp(96), dp(44)))
                 addView(pick, lp(dp(44), dp(44)).apply { marginStart = dp(4) })
-                pick.pressable { toggle(ch.ref) }
+                pick.pressable { toggle(ref) }
             }, lp())
-            mark(ch.ref)
+            mark(ref)
+        }
+        // THE PEOPLE NO COIN OF THIS PHONE REACHES stand greyed with why (iOS unreached): no pipe of its own with them, or a pair closed to coins
+        unreached.forEachIndexed { i, p ->
+            if (0 < i || people.isNotEmpty()) divider()
+            addView(c.hstack {
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(16), dp(8), dp(16), dp(8))
+                minimumHeight = dp(44)
+                addView(c.avatar(null, p.name.ifBlank { "?" }, 40), lp(dp(40), dp(40)))
+                gap(12)
+                addView(c.vstack(Gravity.NO_GRAVITY) {
+                    addView(c.text(p.name, 16f, MT.gray).apply { singleLineEllipsis() })   // USER-DATA: a person's name in the group
+                    addView(c.text(c.getString(if (p.held) R.string.coin_pair_closed else R.string.coin_no_pair), 12f, MT.gray).apply { alpha = 0.7f; maxLines = 2 })
+                }, lp(0, WRAP, 1f))
+            }, lp())
         }
     }
-    body.addView(c.text(c.getString(R.string.coin_choose_chats), 13f, MT.gray).apply { setPadding(dp(16), dp(22), dp(16), dp(6)) }, lp())
+    body.addView(c.text(c.getString(if (group == null) R.string.coin_choose_chats else R.string.coin_choose_members), 13f, MT.gray).apply { setPadding(dp(16), dp(22), dp(16), dp(6)) }, lp())
     body.addView(list, lp())
+    if (group != null) body.addView(c.text(c.getString(R.string.coin_group_note), 13f, MT.gray).apply { setPadding(dp(16), dp(6), dp(16), dp(6)) }, lp())
     drawTotal()
     lateinit var close: () -> Unit
     val go = c.icon(R.drawable.ic_paperplane, MT.blue).apply {
@@ -452,9 +464,11 @@ fun sendCoinsPage(act: MainActivity, onClose: () -> Unit): View {
                 AlertDialog.Builder(act).setTitle(R.string.coin_not_enough).setMessage(R.string.coin_not_enough_sub).setPositiveButton(R.string.ok, null).show()
                 return@pressable
             }
+            Log.i("Montana", "coin_send_many chats=" + to.size + " total=" + sum + " went=" + went.size)
+            if (group != null) { Groups.tellCoins(c, went.size, group); sent() }
             close()
-            // one recipient's chat opens at once (iOS MontanaOutsideOpen.chat); many close the page
-            if (went.size == 1) act.push { back -> conversationPage(act, went[0], back) }
+            // one recipient's chat opens at once (iOS MontanaOutsideOpen.chat); many close the page; from a group it closes back into the group
+            if (group == null && went.size == 1) act.push { back -> conversationPage(act, went[0], back) }
         }
     }
     close = onClose

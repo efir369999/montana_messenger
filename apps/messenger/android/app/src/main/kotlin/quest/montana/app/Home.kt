@@ -243,12 +243,42 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
         var next: Pane? = null
         var side = 0
         var folderTo: String? = null   // the stroke turns the chats' folders first (ChatsPane.folderBeside)
+        var base = 0f   // where the pane stood when the stroke began: 0, or the place a cut settle left it
+        var settling: Pair<Pane, Pane>? = null   // the two pages a settle is sliding, until it rests
         fun order(): List<Pane> {
             val media = if (pane == Pane.MUSIC || pane == Pane.GALLERY) pane
                         else if (Prefs.str("lastMediaPane", "music") == "gallery") Pane.GALLERY else Pane.MUSIC
             return listOf(Pane.CONTACTS, Pane.CALLS, Pane.FEED, Pane.CHATS, media, Pane.P2P)   // iOS turnOrder
         }
+        /** A STROKE THAT LANDS MID-SETTLE (iOS beginStroke, 47531d53282f): the settle is cut where it stands and the stroke goes
+         *  on from there, the page beside staying where it was; the stroke's own way is not read — the page showing is the one
+         *  the finger takes. False when the settle had already come to rest under the pane. */
+        fun resume(run: Pair<Pane, Pane>): Boolean {
+            settling = null
+            val (a, b) = run
+            views.getValue(a).animate().cancel(); views.getValue(b).animate().cancel()
+            val here = views.getValue(pane)   // the settle going on arrived at the release, one coming home did not
+            val beside = if (pane == a) b else a
+            val w = panes.width.toFloat()
+            base = here.translationX
+            if (pane != a && pane != b) {   // a glyph's tap chose another page meanwhile: both settled pages leave
+                listOf(a, b).map { views.getValue(it) }.filter { it !== here }.forEach { it.visibility = View.GONE; it.translationX = 0f }
+                here.translationX = 0f
+                base = 0f
+                return false
+            }
+            if (base == 0f || w <= 0f) {
+                views.getValue(beside).apply { visibility = View.GONE; translationX = 0f }
+                base = 0f
+                return false
+            }
+            next = beside; side = if (base < 0f) 1 else -1; folderTo = null
+            Motion.moveBegan(panes)
+            return true
+        }
         override fun begin(side: Int): Boolean {
+            settling?.let { if (resume(it)) return true }
+            base = 0f
             // the drawer's groups and channels are the chats' page too: their stroke turns the folders and, as a tab, the page back to the chats
             folderTo = if (views[pane] === chats && !search.active) chats.folderBeside(side) else null
             if (folderTo != null) { this.side = side; return true }
@@ -263,9 +293,18 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
         override fun move(dx: Float) {
             if (folderTo != null) return
             val w = panes.width.toFloat()
-            val d = if (side > 0) dx.coerceIn(-w, 0f) else dx.coerceIn(0f, w)
+            val total = base + dx
+            // THE PAGE BESIDE IS THE ONE ON THE STROKE'S SIDE NOW (iOS turnStroke: the neighbour by the sign of the total): a stroke that
+            // crosses where it began takes the page on the other side, so a second flick on a settle goes on to the next page
+            val want = if (total < 0f) 1 else if (total > 0f) -1 else side
+            if (want != side) order().let { o -> o.getOrNull(o.indexOf(pane) + want) }?.let { n ->
+                next?.let { views.getValue(it).apply { visibility = View.GONE; translationX = 0f } }
+                next = n; side = want
+                views.getValue(n).apply { animate().cancel(); alpha = 1f; visibility = View.VISIBLE }
+            }
+            val d = if (side > 0) total.coerceIn(-w, 0f) else total.coerceIn(0f, w)
             views.getValue(pane).translationX = d
-            next?.let { views.getValue(it).translationX = d + side * w }
+            next?.let { views.getValue(it).translationX = d + side * w; if (0f < w) bar.ridePuck(pane, it, kotlin.math.abs(d) / w) }
         }
         override fun end(dx: Float, velocity: Float) {
             folderTo?.let { id ->
@@ -279,17 +318,21 @@ fun mainScreen(act: MainActivity, onForget: () -> Unit): View {
             val to = next ?: return
             val w = panes.width.toFloat()
             val fling = c.dp(400)
-            val go = if (kotlin.math.abs(velocity) > fling) (velocity < 0) == (side > 0) else kotlin.math.abs(dx) > w / 3
+            val go = if (kotlin.math.abs(velocity) > fling) (velocity < 0) == (side > 0) else kotlin.math.abs(base + dx) > w / 3
+            base = 0f
             val cur = views.getValue(pane); val nv = views.getValue(to)
+            val run = Pair(pane, to)
+            settling = run
             val ms = 240L
             cur.animate().translationX(if (go) -side * w else 0f).setDuration(ms).setInterpolator(android.view.animation.DecelerateInterpolator()).withEndAction {
                 if (go) { cur.visibility = View.GONE; cur.translationX = 0f }
             }.start()
             nv.animate().translationX(if (go) 0f else side * w).setDuration(ms).setInterpolator(android.view.animation.DecelerateInterpolator()).withEndAction {
                 if (!go) { nv.visibility = View.GONE; nv.translationX = 0f }
+                if (settling === run) settling = null
                 Motion.moveEnded("pane:" + (if (go) to.name.lowercase() else "stay"))
             }.start()
-            if (go) arrived(to)
+            if (go) arrived(to) else bar.showPane(pane)   // a turn let go: the puck rides home under the page that stays
             next = null
         }
     }
@@ -553,7 +596,7 @@ private fun sideDrawer(act: MainActivity, onPane: (Pane) -> Unit, onProfile: () 
         addView(row(glyph(R.drawable.ic_bar_play), R.string.app_music) { onPane(Pane.MUSIC) }, lp())
         addView(row(glyph(R.drawable.ic_app_gallery), R.string.app_gallery) { onPane(Pane.GALLERY) }, lp())
         addView(row(android.widget.ImageView(c).apply { setImageResource(R.drawable.chess_knight) }, R.string.app_chess, onTap = onChess), lp())   // chess (iOS MTChessPage)
-        addView(row(glyph(R.drawable.ic_app_wallet), R.string.app_wallet, onTap = onWallet), lp())   // TimeCoin (iOS MTWalletPage)
+        if (GooglePlay.COINS) addView(row(glyph(R.drawable.ic_app_wallet), R.string.app_wallet, onTap = onWallet), lp())   // TimeCoin (iOS MTWalletPage)
         // THE WALLS BESIDE THE FEED (iOS MTApplication .meshWall, .p2pWall; the author's word 29.09): the people around, phone to
         // phone; the nodes this phone reaches
         addView(row(glyph(R.drawable.ic_set_antenna), R.string.app_mesh_wall) { onPane(Pane.MESH) }, lp())
@@ -747,7 +790,7 @@ class HomeBar(private val act: MainActivity, onDrawer: (View) -> Unit, onPane: (
     /** The puck goes under the pane's slot; the dynamic glyph wears the music's or the gallery's face (iOS slot(of:)). */
     fun showPane(p: Pane, animated: Boolean = true) {
         // the groups and the channels are opened from the drawer: no glyph of the bar is theirs, the puck stands away (iOS slot nil)
-        slot = when (p) { Pane.CONTACTS -> 1; Pane.CALLS -> 2; Pane.FEED -> 3; Pane.CHATS -> 4; Pane.MUSIC, Pane.GALLERY -> 5; Pane.P2P -> 6; Pane.GROUPS, Pane.CHANNELS, Pane.MESH -> -1 }
+        slot = slotOf(p)
         if (p == Pane.MUSIC) media.setImageResource(R.drawable.ic_bar_play)
         if (p == Pane.GALLERY) media.setImageResource(R.drawable.ic_app_gallery)
         place(animated)
@@ -769,6 +812,23 @@ class HomeBar(private val act: MainActivity, onDrawer: (View) -> Unit, onPane: (
         val x = (if (v.width > 0) v.left.toFloat() else slot * w) + dp(3)
         if (animated) puck.animate().translationX(x).setDuration(200).setInterpolator(AccelerateDecelerateInterpolator()).start()
         else puck.translationX = x
+    }
+    private fun slotOf(p: Pane) = when (p) { Pane.CONTACTS -> 1; Pane.CALLS -> 2; Pane.FEED -> 3; Pane.CHATS -> 4; Pane.MUSIC, Pane.GALLERY -> 5; Pane.P2P -> 6; else -> -1 }
+    private fun puckX(i: Int): Float? {
+        val v = slotView(i)?.takeIf { it.width > 0 } ?: return null
+        return v.left.toFloat() + dp(3)
+    }
+    /**
+     * THE PUCK RIDES BETWEEN THE GLYPHS WITH THE STROKE (iOS turnStroke's puck, atom 79b78757f0c4): while the finger turns the pages
+     * the puck stands between the glyph of the page it leaves and the one coming in, by the share of the width the stroke has gone;
+     * the release's settle (showPane) carries it home. Folded, the puck keeps to the logo.
+     */
+    fun ridePuck(from: Pane, to: Pane, share: Float) {
+        if (fold < 1f || puck.visibility != View.VISIBLE) return
+        val a = puckX(slotOf(from)) ?: return
+        val b = puckX(slotOf(to)) ?: return
+        puck.animate().cancel()
+        puck.translationX = a + (b - a) * share.coerceIn(0f, 1f)
     }
 
     private companion object { const val CHATS = 4; const val OPEN = "timePanelOpen" }
@@ -1185,11 +1245,14 @@ private class ChatsPane(private val act: MainActivity) : FrameLayout(act) {
     private fun corner(f: ChatFolder) {
         if (!::write.isInitialized) return   // the list's first fill comes before the corner is built
         val w = write as? FrameLayout ?: return
-        val group = f.onlyKind == ChatFolders.GROUPS
-        (w.getChildAt(0) as? android.widget.ImageView)?.setImageResource(if (group) R.drawable.ic_plus else R.drawable.ic_compose)
-        w.contentDescription = c.getString(if (group) R.string.app_groups else R.string.share)
+        // the corner of the Groups app and of the Channels app: one of the page's kind is born from it (iOS createButton(channel:))
+        val kind = f.onlyKind
+        (w.getChildAt(0) as? android.widget.ImageView)?.setImageResource(if (kind == ChatFolders.GROUPS || kind == ChatFolders.CHANNELS) R.drawable.ic_plus else R.drawable.ic_compose)
+        w.contentDescription = c.getString(when (kind) { ChatFolders.GROUPS -> R.string.app_groups; ChatFolders.CHANNELS -> R.string.chn_channel; else -> R.string.share })
     }
     private fun createGroup() = act.push { close -> groupPickPage(act, close, onCreated = { key -> act.push { back -> conversationPage(act, key, back) } }) }
+    /** THE CHANNEL IS BORN AND OPENED (iOS creatingChannel → MTChannelIntroStep → MTGroup.create(.channel) → openChat). */
+    private fun createChannel() = act.push { close -> channelCreatePage(act, close, onCreated = { key -> act.push { back -> conversationPage(act, key, back) } }) }
     /** The bar stands: the rows keep room under it and «Write» steps above it, as the music's plus and the feed's write. */
     fun reserve(on: Boolean) {
         foot.layoutParams = lp(MATCH, dp(if (on) 180 else 120)); foot.requestLayout()
@@ -1216,7 +1279,7 @@ private class ChatsPane(private val act: MainActivity) : FrameLayout(act) {
             background = c.glassPlate(oval = true)
             contentDescription = c.getString(R.string.share)
             addView(c.icon(R.drawable.ic_compose, barGlyph), FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER))
-            pressable { if (folder.onlyKind == ChatFolders.GROUPS) createGroup() else act.push { cardPage(act, it) } }
+            pressable { when (folder.onlyKind) { ChatFolders.GROUPS -> createGroup(); ChatFolders.CHANNELS -> createChannel(); else -> act.push { cardPage(act, it) } } }
         }
         corner(folder)
         // THE FOLDERS' TABS AS THE TIME PANEL (iOS MTFolderTabs at 2240, the author's word 18.10.2026 10:2x MSK): at the panel's side

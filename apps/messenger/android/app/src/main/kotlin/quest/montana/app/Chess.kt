@@ -261,7 +261,7 @@ class ChessEnd(val outcome: String, val cause: String, val moves: Int) {
 class ChessLetter(
     val game: String, val id: String, val parent: String, val kind: String, val at: Long,
     var move: String? = null, var seconds: Int? = null, var offerDraw: Boolean? = null, var spent: Long? = null,
-    var end: ChessEnd? = null, var coins: Long? = null, var stake: Long? = null
+    var end: ChessEnd? = null
 ) {
     companion object {
         const val INVITE = "invite"; const val ACCEPT = "accept"; const val DECLINE = "decline"; const val MOVE = "move"
@@ -272,9 +272,6 @@ class ChessLetter(
         val TIME_CONTROLS = listOf(0, 300, 600, 900, 1800)
         /** The longest turn a letter may report: a day, so a report is bounded before it is judged. */
         const val LONGEST_TURN = 86_400_000L
-        const val MOST_COINS = 1_000_000_000_000L
-        /** The author's word of the pot, 06.10.2026 16:10:00 UTC: a game invited from it on has a pot. */
-        const val POT_SINCE = 1_791_303_000_000L
         fun isStep(text: String): Boolean = text.startsWith(MARK) && parse(text)?.isStep == true
         /** A step that does not end the game rides a silent push: only the invitation and the closing letter ring. */
         fun silent(text: String): Boolean = text.startsWith(MARK) && parse(text)?.let { it.isStep && !it.rings } == true
@@ -298,14 +295,12 @@ class ChessLetter(
                 val l = ChessLetter(o.getString("game"), o.getString("id"), o.getString("parent"), kind, o.getLong("at"),
                     if (o.has("move")) o.getString("move") else null, if (o.has("seconds")) o.getInt("seconds") else null,
                     if (o.has("offerDraw")) o.getBoolean("offerDraw") else null, if (o.has("spent")) o.getLong("spent") else null,
-                    end, if (o.has("coins")) o.getLong("coins") else null, if (o.has("stake")) o.getLong("stake") else null)
+                    end)   // NO COINS IN A CHESS LETTER (iOS 480cd898): an earlier build's «coins» and «stake» are read without them
                 if (!isUuid(l.game) || !isUuid(l.id) || !(l.parent.isEmpty() || isUuid(l.parent))) return null
                 if (l.at !in 0L..32_503_680_000_000L) return null
                 if (l.move != null && 5 < l.move!!.toByteArray().size) return null
                 if (l.spent != null && !(l.onTurn && l.spent!! in 0L..LONGEST_TURN)) return null
                 if (l.end != null && !(l.kind != INVITE && l.kind != ACCEPT && l.end!!.moves in 0..10_000)) return null
-                if (l.coins != null && !(l.kind == MOVE && l.coins!! in 0L..MOST_COINS)) return null
-                if (l.stake != null && !(l.kind == INVITE && l.stake!! in 1L..MOST_COINS)) return null
                 if (l.kind == INVITE) {
                     if (l.id != l.game || l.parent.isNotEmpty() || l.seconds !in TIME_CONTROLS || l.move != null || l.offerDraw != null) return null
                 } else {
@@ -320,10 +315,9 @@ class ChessLetter(
     val isStep: Boolean get() = kind != INVITE
     val rings: Boolean get() = kind == INVITE || end != null
     val onTurn: Boolean get() = kind == MOVE || kind == DRAW || kind == CLAIM || kind == TIMEOUT
-    val pooled: Boolean get() = kind == INVITE && POT_SINCE <= at
     fun json(): JSONObject = JSONObject().put("game", game).put("id", id).put("parent", parent).put("kind", kind).put("at", at).apply {
         move?.let { put("move", it) }; seconds?.let { put("seconds", it) }; offerDraw?.let { put("offerDraw", it) }
-        spent?.let { put("spent", it) }; end?.let { put("end", it.json()) }; coins?.let { put("coins", it) }; stake?.let { put("stake", it) }
+        spent?.let { put("spent", it) }; end?.let { put("end", it.json()) }
     }
     fun text(title: String): String {
         val code = android.util.Base64.encodeToString(json().toString().toByteArray(Charsets.UTF_8), android.util.Base64.NO_WRAP).replace('+', '-').replace('/', '_')
@@ -355,15 +349,6 @@ class ChessGame private constructor(val id: String, val whiteIsMine: Boolean, va
     var repetitions: MutableMap<String, Int> = mutableMapOf(); private set
     var waitingForHistory = false; private set
     var acceptedIDs: MutableSet<String> = mutableSetOf(); private set
-    var pooled = false; private set
-    var stake = 0L; private set
-    var accepted = false; private set
-    var mintedMine = 0L; private set
-    var mintedTheirs = 0L; private set
-    /** The pot's two parts: the stakes put in, and the coins the accepted moves minted (iOS stakes, movesPool, pot). */
-    val stakes: Long get() = stake * (if (accepted) 2 else 1)
-    val movesPool: Long get() = mintedMine + mintedTheirs
-    val pot: Long get() = movesPool + stakes
     val mySide: ChessSide get() = if (whiteIsMine) ChessSide.WHITE else ChessSide.BLACK
     val canClaimDraw: Boolean get() = 100 <= position.halfmoves || 3 <= (repetitions[position.repetitionKey] ?: 0)
     /** The side whose clock runs: the side to move, while a game under a clock is being played. */
@@ -373,13 +358,11 @@ class ChessGame private constructor(val id: String, val whiteIsMine: Boolean, va
         g.status = status; g.position = position; g.positions = positions.toMutableList(); g.moves = moves.toMutableList()
         g.notation = notation.toMutableList(); g.whiteMs = whiteMs; g.blackMs = blackMs; g.drawOfferedBy = drawOfferedBy
         g.repetitions = repetitions.toMutableMap(); g.waitingForHistory = waitingForHistory; g.acceptedIDs = acceptedIDs.toMutableSet()
-        g.pooled = pooled; g.stake = stake; g.accepted = accepted; g.mintedMine = mintedMine; g.mintedTheirs = mintedTheirs
     }
     private fun take(g: ChessGame) {
         status = g.status; position = g.position; positions = g.positions; moves = g.moves; notation = g.notation; last = g.last
         whiteMs = g.whiteMs; blackMs = g.blackMs; drawOfferedBy = g.drawOfferedBy; repetitions = g.repetitions
-        waitingForHistory = g.waitingForHistory; acceptedIDs = g.acceptedIDs; pooled = g.pooled; stake = g.stake; accepted = g.accepted
-        mintedMine = g.mintedMine; mintedTheirs = g.mintedTheirs
+        waitingForHistory = g.waitingForHistory; acceptedIDs = g.acceptedIDs
     }
 
     companion object {
@@ -389,7 +372,6 @@ class ChessGame private constructor(val id: String, val whiteIsMine: Boolean, va
             val duration = root.letter.seconds ?: return null
             if (root.letter.id != game || root.letter.parent.isNotEmpty() || duration !in ChessLetter.TIME_CONTROLS) return null
             val g = ChessGame(game, root.mine, duration, root.letter)
-            g.pooled = root.letter.pooled; g.stake = if (g.pooled) root.letter.stake ?: 0L else 0L
             g.acceptedIDs.add(game)
             g.repetitions[g.position.repetitionKey] = 1
             val unique = LinkedHashMap<String, ChessEntry>()
@@ -479,7 +461,6 @@ class ChessGame private constructor(val id: String, val whiteIsMine: Boolean, va
                 (actor == ChessSide.WHITE && event.kind == ChessLetter.DECLINE)
             if (!ok) return false
             status = if (event.kind == ChessLetter.ACCEPT) Status.PLAYING else Status.DECLINED
-            accepted = event.kind == ChessLetter.ACCEPT
             last = event; return true
         }
         if (status != Status.PLAYING) return false
@@ -518,7 +499,6 @@ class ChessGame private constructor(val id: String, val whiteIsMine: Boolean, va
         position = next; positions.add(next); moves.add(move); notation.add(word)
         drawOfferedBy = if (event.offerDraw == true) actor else null
         last = event
-        if (pooled) { if (entry.mine) mintedMine += event.coins ?: 0L else mintedTheirs += event.coins ?: 0L }
         val key = position.repetitionKey
         repetitions[key] = (repetitions[key] ?: 0) + 1
         if (position.legalMoves().isEmpty()) { if (position.checked(position.turn)) win(actor) else status = Status.DRAWN }

@@ -90,15 +90,15 @@ object PiLevels {
 /**
  * THE ONE BOOK OF COINS (iOS MTLocalCoinLedger behind MTCoinLedger): LOCAL, kept on this phone, never a note of the core's wallet —
  * the core has no door that mints or transfers today. One line of JSON per move, appended; the balance and the counts are the
- * sum of the lines, read once. A move between people is on disk in the same turn it is taken; a game's coins gather in a
- * window of a minute and join the book as one move when it closes.
+ * sum of the lines, read once. A move between people is on disk in the same turn it is taken. NO DOOR OF THE BOOK MINTS (iOS
+ * 86854488, the author's decision 375 «a», build 2320): only the chain mints, one coin a second; the old earned lines stand in
+ * the book as history.
  */
 object CoinBook {
     /** The limit of a second (the constitution of the chain, point 11): thirteen coins, all minting together. */
     const val LIMIT = 13L
     /** The ticker of the Montana time coin (point 12): one symbol in every language. */
     const val TICKER = "\$TCM"
-    private const val WINDOW_MS = 60_000L
     private const val FILE = "coin-ledger.jsonl"
 
     private var read = false
@@ -168,7 +168,6 @@ object CoinBook {
     /** A sum the integer cannot hold is no sum (the coin audit's ninth point): null instead of a wrap. */
     private fun plus(a: Long, b: Long): Long? { val s = a + b; return if (((a xor s) and (b xor s)) < 0) null else s }
     private fun sat(a: Long, b: Long): Long = plus(a, b) ?: if (0 < b) Long.MAX_VALUE else Long.MIN_VALUE
-    private fun times(a: Long, b: Long): Long? = runCatching { Math.multiplyExact(a, b) }.getOrNull()
 
     private fun count(e: CoinEntry) {
         e.on?.let { onTarget[it] = sat(onTarget[it] ?: 0L, e.c) }
@@ -217,53 +216,8 @@ object CoinBook {
         }.onFailure { Log.w("Montana", "coin book: " + it.javaClass.simpleName) }
     }
 
-    // the minting window (iOS mintInWindow): one move a minute, not one a tap
-    private class Window(val ref: String, var coins: Long, val at: Double)
-    private val windows = HashMap<String, Window>()
-    private var secondAt = 0L
-    private var secondMinted = 0L
-
-    /** A game's coins at the level's rate, gathered in its open window and booked as one move when the window closes. */
-    @Synchronized fun mintInWindow(coins: Long, prefix: String, seconds: Int, byLevel: Boolean = true): Long {
-        ensure()
-        val whole = times(coins, if (byLevel) PiLevels.multiplier(balance) else 1L) ?: return 0
-        if (whole <= 0 || plus(balance, whole) == null) return 0
-        val c = priced(whole, seconds)
-        if (c <= 0) return 0
-        val w = windows[prefix] ?: Window(prefix + "w" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().uppercase(), 0, nowS()).also { win ->
-            windows[prefix] = win
-            MainThread.later(WINDOW_MS, Runnable { closeIf(prefix, win.ref) })
-        }
-        w.coins += c
-        balance += c
-        // the game an earning came from, by its name (iOS MTCoinCounts.earn, MTWalletCore.swift:1900-1905): the pull's seconds are the Pantheon's too
-        if (prefix.startsWith(Pantheon.PREFIX)) tapped = sat(tapped, c) else earned = sat(earned, c)
-        reached(nowS())
-        changed()
-        return c
-    }
-    @Synchronized private fun closeIf(prefix: String, ref: String) { if (windows[prefix]?.ref == ref) close(prefix) }
-    private fun close(prefix: String) {
-        val w = windows.remove(prefix) ?: return
-        if (w.coins <= 0) return
-        val e = CoinEntry(CoinEntry.EARN, w.coins, w.ref, at = w.at)
-        entries.add(e); taken.add(e.id)
-        write(listOf(e))
-        TimeChain.append(e)   // the window's one move, its one link
-    }
-    /** Every open window into the book now, and every waiting link into its chain: the app leaves the screen, the person leaves. */
-    @Synchronized fun closeWindows() { for (p in windows.keys.toList()) close(p); TimeChain.flush() }
-
-    /** THE LIMIT OF A SECOND (iOS priced): all the minting of one second shares its thirteen coins; what it leaves out is not minted. */
-    private fun priced(coins: Long, seconds: Int): Long {
-        val now = System.currentTimeMillis() / 1000
-        if (secondAt != now) { secondAt = now; secondMinted = 0 }
-        val away = times(PiLevels.ceiling, maxOf(0, seconds - 1).toLong())
-        val room = maxOf(0L, PiLevels.ceiling - secondMinted)
-        val c = if (away == null) coins else minOf(coins, room + away)
-        secondMinted += minOf(room, maxOf(0L, c - (away ?: c)))
-        return c
-    }
+    /** Every waiting link into its chain: the app leaves the screen, the person leaves. */
+    fun closeWindows() = TimeChain.flush()
 
     // the moves between people (iOS send, receive, retake)
     /** A coin letter stands at its own birth in every book: its name carries the millisecond the sender's phone gave it. */
@@ -301,19 +255,6 @@ object CoinBook {
         if (coins <= 0 || ref.isEmpty() || e.id in taken || balance < coins) return false
         return take(e)
     }
-    /** Coins already counted elsewhere, minted once under their name: a game's pot at its end (iOS mint). */
-    @Synchronized fun mint(coins: Long, ref: String, peer: String? = null): Long {
-        ensure()
-        if (coins <= 0 || ref.isEmpty() || ("earn:" + ref) in taken || plus(balance, coins) == null) return 0
-        return if (take(CoinEntry(CoinEntry.EARN, coins, ref, peer, null, nowS()))) coins else 0
-    }
-    /** Coins burned under their name, as many as the balance holds and no more, once by the name (iOS burn, MTWalletCore.swift:2271-2279). */
-    @Synchronized fun burn(coins: Long, ref: String): Long {
-        ensure()
-        val c = minOf(coins, balance)
-        if (c <= 0 || ref.isEmpty() || ("burn:" + ref) in taken) return 0
-        return if (take(CoinEntry(CoinEntry.BURN, c, ref, at = nowS()))) c else 0
-    }
     /** How many coins stand on a letter or a pot, given and received alike (iOS coins(on:)). */
     @Synchronized fun coins(on: String): Long { ensure(); return onTarget[on] ?: 0L }
     @Synchronized fun holds(k: String, ref: String): Boolean { ensure(); return (k + ":" + ref) in taken }
@@ -327,7 +268,6 @@ object CoinBook {
 
     /** THE BOOK OF A PERSON FORGOTTEN LEAVES WITH THEM (iOS MTCoinPlace.setAside): set aside whole under the moment, read by nobody again. */
     @Synchronized fun setAside() {
-        windows.clear()
         val d = File(Book.ctx.filesDir, "Coins")
         val place = File(File(Book.ctx.filesDir, "CoinsForgotten").apply { mkdirs() }, System.currentTimeMillis().toString())
         if (d.exists()) d.renameTo(place)
@@ -340,12 +280,13 @@ object CoinBook {
 }
 
 /**
- * PANTHEON ON FIRE (iOS MTPantheon, the author's words 03.10-04.10.2026): the first touch of the wallet's coin lights the game,
- * every tap mints the level's coins, thirteen taps a second at most — time bounds the coins, not a quicker finger. Three quiet
- * seconds put the fire out; a burn of sixty seconds rests sixty.
+ * PANTHEON ON FIRE (iOS MTPantheon, the author's words 03.10-04.10.2026): the first touch of the wallet's coin lights the game and
+ * the speed counts the taps of the last second, thirteen at most. A tap mints nothing (iOS 86854488, decision 375 «a», build 2320):
+ * the fire and the coin's turn are the game alone. Three quiet seconds put the fire out; a burn of sixty seconds rests sixty.
  */
 object Pantheon {
     const val CEILING = 13
+    /** The name a tap's coin stood under in the books of the builds before, read as history. */
     const val PREFIX = "tap:"
     private const val STREAK_MS = 60_000L
     private const val QUIET_MS = 3_000L
@@ -383,20 +324,18 @@ object Pantheon {
     fun touched() { holding = true; quiet++; light() }
     /** The last finger left the coin, or the page left under it. */
     fun released() { if (!holding) return; holding = false; goOutAfterQuiet() }
-    /** One touch of the coin: the coins it minted, none past the thirteenth of a second. */
-    fun tap(): Long {
+    /** One touch of the coin: it lights the fire and counts the finger's speed up to thirteen touches — never a coin. */
+    fun tap() {
         val now = System.currentTimeMillis()
         taps.removeAll { 1000 <= now - it }
-        if (rests) return 0
+        if (rests) return
         light()
         if (!holding) goOutAfterQuiet()
-        if (CEILING <= taps.size) return 0
+        if (CEILING <= taps.size) return
         taps.add(now)
         speed = taps.size
-        val coins = CoinBook.mintInWindow(1, PREFIX, 1)
         settle()
         changed()
-        return coins
     }
     private fun goOutAfterQuiet() {
         val q = ++quiet
@@ -417,18 +356,13 @@ object Pantheon {
 }
 
 /**
- * THE PULL SWITCHES THE AUTO MINTING ON (iOS MTWalletPull, MTWalletCore.swift:1376-1418; the author's words 04.10.2026 03:52 and 04:18
- * MSK: «pulling the wallet's page, as the time panel does, calls the coin for a forced refresh of the tops and the activation of the
- * auto minting once a second»): a pull let go past the coin's trigger mints at once and goes on minting every second — the box's
- * number of coins, the book multiplies — on the one beat of the minting by the second (MintBeat). THE PERSON ENDS IT, NO CLOCK (13:33
- * MSK, and 05.10.2026 00:53 MSK: «only leaving the page or locking the screen, touches do not reset the auto minting»): the page
- * leaving and the app leaving the screen stop it (walletPage), nothing else does. The pull asks the nodes for the pairs' last words
- * at once, their balances ride them (Signal.sweep). Android minted one second a release, as the pull did at its birth (build 2093).
+ * THE PULL READS THE TOPS AGAIN (iOS MTWalletPull; the author's words 04.10.2026 03:52 and 04:18 MSK): a pull let go past the coin's
+ * trigger asks the nodes for the pairs' last words at once, their balances ride them (Signal.sweep), and turns the coin once a second
+ * while the wallet stands open. It mints nothing (iOS 86854488, decision 375 «a», build 2320). THE PERSON ENDS IT, NO CLOCK: the page
+ * leaving and the app leaving the screen stop it (walletPage), nothing else does.
  */
 object WalletPull {
-    const val PREFIX = Pantheon.PREFIX + "pull-"
     var on = false; private set
-    private var loggedAt = 0L
     private val listeners = mutableListOf<() -> Unit>()
     fun listen(l: () -> Unit) { listeners.add(l) }
     fun unlisten(l: () -> Unit) { listeners.remove(l) }
@@ -438,88 +372,16 @@ object WalletPull {
         Thread { runCatching { Signal.sweep(quiet = true) } }.start()   // the tops read again from the nodes at once (iOS 1396)
         if (on) return
         on = true
-        Log.i("Montana", "wallet_pull auto on")
+        Log.i("Montana", "wallet_pull on")
         changed()
-        MintBeat.run()   // its seconds ride the one beat of the minting by the second (iOS 1401)
     }
-    /** The page left or the app left the screen: the minting stops with it (iOS stop 1403-1408). */
+    /** The page left or the app left the screen: the coin rests again (iOS stop). */
     fun stop(why: String) {
         if (!on) return
         on = false
-        Log.i("Montana", "wallet_pull auto off why=" + why)
+        Log.i("Montana", "wallet_pull off why=" + why)
         changed()
     }
-    /** One second of the pull in the Pantheon's window of a minute (iOS mintSecond 1409-1412); the diary hears it once a minute. */
-    fun mintSecond() {
-        val coins = CoinBook.mintInWindow(1, PREFIX, 1)
-        val now = System.currentTimeMillis()
-        if (60_000L <= now - loggedAt) { loggedAt = now; Log.i("Montana", "wallet_pull coins=" + coins) }
-    }
-}
-
-/**
- * ONE BEAT FOR THE MINTING BY THE SECOND (iOS MTMintBeat, MTWalletCore.swift:1420-1448; the author's word 04.10.2026 18:08 MSK): the
- * wallet's pull and a connected call each mint a second, asked at the same instant once a second on the screen's thread; the beat runs
- * while either wants it and stops by itself when neither does. The VPN wall's second (iOS 1433, 1436) is not here, the VPN being out of
- * this task, and neither is the one rise of the second's coins at the coin's sides (MTCoinFlash.rise, iOS 1439-1440).
- */
-object MintBeat {
-    private const val BEAT_MS = 1000L
-    private var beating = false
-    fun run() = MainThread.post {
-        if (beating) return@post
-        beating = true
-        beat()
-    }
-    private fun beat() {
-        val call = CallMint.wanted
-        if (!WalletPull.on && !call) { beating = false; return }
-        if (WalletPull.on) WalletPull.mintSecond()
-        if (call) CallMint.mintSecond()
-        MainThread.later(BEAT_MS, Runnable { beat() })
-    }
-}
-
-/**
- * A CALL'S SECOND FOLLOWS ITS CHAT (iOS MTCallMint, MTWalletCore.swift:1341-1374; the author's words 07.10.2026 18:5x, 21:3x and 21:4x
- * MSK: «from the money flow a call: +1 second +1 coin, and from an ordinary one -1 for a second of talk»; «7 coins a second of talk for
- * the 7th level»): every second a call stands connected, placed or answered, on the one beat (MintBeat), a call whose chat has the
- * Money Flow on mints the level's coins on this side in the calls' own window and TimeChain, and a call from an ordinary chat burns one
- * coin a second of talk on this side, once by its name — the call and the second. Each side counts its own phone's; Android minted
- * and burned nothing for a call.
- */
-object CallMint {
-    const val PREFIX = "callmint:"
-    const val BURN = "callburn:"
-    val wanted: Boolean get() = 0L < CallLine.connectedAt
-    private var flowOf: Pair<String, Boolean>? = null   // a call's chat, asked once a call
-    private var loggedAt = 0L
-    fun mintSecond() {
-        val talk = CallLine.talkSecond() ?: return
-        val flow = flows(talk.peer, talk.call)
-        // THE ORDINARY CHAT'S BURN WAITS FOR ITS PAIR (the conductor 09.10, coins a risk named to the author): iOS burns a second of an
-        // ordinary chat's call and a bubble of it alike, and a person turns either into minting by the chat's Money Flow. Android has
-        // neither the switch nor the bubble's burn yet (the chats module); a call alone burning would take coins no switch can save,
-        // so the second burns nothing until the switch and the bubble's burn come with it.
-        val coins = if (flow) CoinBook.mintInWindow(1, PREFIX, 1, byLevel = true) else 0L
-        val now = System.currentTimeMillis()
-        if (60_000L <= now - loggedAt) { loggedAt = now; Log.i("Montana", (if (flow) "call_mint" else "call_burn") + " coins=" + coins) }
-    }
-    /** The Money Flow is a chat's own switch; the call knows its peer, whose chat is asked once a call (iOS flows 1366-1373). */
-    private fun flows(peer: String, call: String): Boolean {
-        flowOf?.takeIf { it.first == call }?.let { return it.second }
-        val on = MoneyFlow.isOn(peer)
-        flowOf = call to on
-        return on
-    }
-}
-
-/**
- * THE MONEY FLOW IS A CHAT'S OWN (iOS MTMoneyFlow, MTWalletCore.swift:633-653): each conversation keeps its own switch under
- * «moneyFlow.» and its name. Android has no control that turns it yet, so every chat here stands ordinary.
- */
-object MoneyFlow {
-    fun isOn(conv: String): Boolean = conv.isNotEmpty() && Prefs.bool("moneyFlow." + conv, false)
 }
 
 /**
@@ -574,16 +436,23 @@ object CoinSend {
     /** A pair's own conversation, open to letters: where coins can go. */
     fun canPay(ref: String): Boolean = !Groups.isKey(ref) && Book.chat(ref) != null && Book.secret(ref) != null && !PeerSafety.isBlocked(ref)
 
+    /**
+     * A FIELD TRANSFER'S HONEST OUTCOMES (iOS MTCoinSend.TransferResult): only the balance may call it short; any other refusal is
+     * «not sent», nothing left the book. iOS's pending and noKey belong to the nodes' record (MTCoinTx), which this build has not.
+     */
+    enum class Sent { SENT, SHORT, REFUSED }
     /** Coins to a person, as a coin letter in their chat. False: refused, nothing sent. */
-    fun transfer(ref: String, coins: Long): Boolean {
-        if (!canPay(ref) || coins <= 0) return false
+    fun transfer(ref: String, coins: Long): Boolean = transferResult(ref, coins) == Sent.SENT
+    fun transferResult(ref: String, coins: Long): Sent {
+        if (!canPay(ref) || coins <= 0) { Log.i("Montana", "coin_refused transfer invalid coins=" + coins); return Sent.REFUSED }
+        if (CoinBook.balance < coins) { Log.i("Montana", "coin_refused transfer coins=" + coins + " balance=" + CoinBook.balance); return Sent.SHORT }
         val mid = Marks.mintMid()
-        if (!CoinBook.send(coins, ref, wire(mid))) return false
+        if (!CoinBook.send(coins, ref, wire(mid))) return Sent.REFUSED
         val text = CoinLetter.text(coins, mid.substringAfter('-'))
         Book.edit(ref) { it.msgs.add(Msg(mid, text, true, Marks.birthMs(mid) ?: System.currentTimeMillis())) }
         Post.send(ref, mid, text)
         Log.i("Montana", "coin_send coins=" + coins + " balance=" + CoinBook.balance)
-        return true
+        return Sent.SENT
     }
 
     /**
@@ -663,6 +532,14 @@ object CoinSend {
     /** Where a coin letter's day starts: the box took it, or it was born and no box ever did. */
     private fun since(m: Msg): Long = if (m.state == 1 && 0 < m.statusAt) m.statusAt else Marks.birthMs(m.mid) ?: m.at
 
+    /** A red coin letter may ride again (iOS mayRetry): its coins never came back, or the balance holds them again. */
+    fun mayRetry(m: Msg): Boolean {
+        if (!m.mine) return true
+        val coin = coinOf(m) ?: return true
+        val name = wire(m.mid)
+        if (!CoinBook.holds(CoinEntry.SEND, name)) return true
+        return moves(CoinEntry.SEND, AGAIN + name) == moves(CoinEntry.RECEIVE, BACK + name) || coin.c <= CoinBook.balance
+    }
     /** Whether a coin letter of mine stands red with its coins back (the bubble says so). */
     fun returned(m: Msg): Boolean {
         val name = wire(m.mid)

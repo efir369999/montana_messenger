@@ -32,7 +32,13 @@ FIXED_MOMENT = (1981, 1, 1, 1, 1, 2)
 BUILD = os.path.join(ROOT, "build")
 APK = os.path.join(BUILD, "Montana.apk")
 JNI = os.path.join(ROOT, "native", "montana-jni")
-CORE_SO = os.path.join(JNI, "target", "aarch64-linux-android", "release", "libmontana.so")
+# the core builds in one folder for every builder: OpenSSL's Configure writes its install folder into the library
+# (MODULESDIR, ENGINESDIR), and no prefix map reaches those strings
+CORE_TARGET = "/var/tmp/montana-jni-target"
+# and reaches its sources through one place for every builder: cargo hashes the full path of a crate outside the
+# library's workspace (the core's crates) into the name of every symbol and folder it makes
+CORE_PLACE = "/var/tmp/montana-jni-src"
+CORE_SO = os.path.join(CORE_TARGET, "aarch64-linux-android", "release", "libmontana.so")
 ABI = "arm64-v8a"
 APP = os.path.join(ROOT, "app", "src", "main")
 
@@ -81,20 +87,42 @@ def version():
     return int(v["BUILD"]), "%s (%s)" % (v["MARKETING"], v["BUILD"])
 
 
+def link(target, place):
+    # a link this script owns, pointed afresh at every build
+    if os.path.lexists(place) and not os.path.islink(place):
+        raise SystemExit("%s is not a link: it is the place the core builds through (docs/BUILD.md)" % place)
+    if not os.path.islink(place) or os.readlink(place) != target:
+        fresh = "%s.%d" % (place, os.getpid())
+        os.symlink(target, fresh)
+        os.replace(fresh, place)
+
+
 def core(p):
     pin = PIN["protocol"]
     if not os.path.isdir(p.protocol):
         raise SystemExit("the core's tree is not beside this repository: %s at %s (scripts/toolchain.json)"
                          % (p.protocol, pin["commit"]))
-    head = git(["rev-parse", "HEAD"], p.protocol)
-    changed = git(["status", "--porcelain", "--untracked-files=no"], p.protocol)
-    if head != pin["commit"] or changed:
-        raise SystemExit("the core's tree is %s%s; this build is pinned to %s (scripts/toolchain.json)"
-                         % (head[:12], " with changes" if changed else "", pin["commit"][:12]))
+    # the core's folder is checked, not the checkout's head: the public repository moves on in its other folders
+    code = pin["code"]
+    changed = git(["diff", "--name-only", pin["commit"], "--", code], p.protocol)
+    loose = git(["ls-files", "--others", "--exclude-standard", "--", code], p.protocol)
+    if changed or loose:
+        raise SystemExit("the core's %s in %s is not the one of %s: %s (scripts/toolchain.json)"
+                         % (code, p.protocol, pin["commit"][:12], (changed or loose).split("\n")[0]))
     channel = p.rust_channel()
-    say("core: Rust %s, NDK %s" % (channel, PIN["ndk"]))
-    run([p.tool("cargo"), "+" + channel, "ndk", "-t", ABI, "-P", MIN_SDK, "build", "--release"],
-        env=p.env(), cwd=JNI)
+    say("core: %s of %s, Rust %s, NDK %s" % (code, pin["commit"][:12], channel, PIN["ndk"]))
+    # the library names no folder of this computer, so anyone who builds the pinned commit gets the same bytes
+    link(os.path.join(p.protocol, code), os.path.join(ROOT, "native", "core"))
+    link(os.path.join(ROOT, "native"), CORE_PLACE)
+    jni = os.path.join(CORE_PLACE, "montana-jni")
+    env = p.env()
+    places = [(os.path.join(CORE_PLACE, "core"), "/core/Code"), (jni, "/montana-jni"), (p.cargo_home, "/cargo")]
+    env["CARGO_ENCODED_RUSTFLAGS"] = "\x1f".join("--remap-path-prefix=%s=%s" % pair for pair in places)
+    env["CFLAGS_aarch64_linux_android"] = " ".join("-ffile-prefix-map=%s=%s" % pair for pair in places)
+    env["CARGO_TARGET_DIR"] = CORE_TARGET
+    run([p.tool("cargo"), "+" + channel, "ndk", "-t", ABI, "-P", MIN_SDK, "--manifest-path",
+         os.path.join(jni, "Cargo.toml"), "build", "--release"],
+        env=env, cwd=JNI)
     say("core: %s, %d bytes" % (os.path.relpath(CORE_SO, ROOT), os.path.getsize(CORE_SO)))
 
 
@@ -206,7 +234,7 @@ def publish(directory, code, name):
                              % (commit[:12], before[:16], digest(APK)[:16]))
     open(target, "wb").write(open(APK, "rb").read())
     record = dict(build=code, name=name, commit=commit, sha256=digest(target), apk=target,
-                  time=time.strftime("%Y-%m-%d %H:%M:%S %Z"))
+                  time=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()))
     open(os.path.join(place, "build.json"), "w", encoding="utf-8").write(json.dumps(record, ensure_ascii=False, indent=2) + "\n")
     open(os.path.join(directory, "latest.json"), "w", encoding="utf-8").write(json.dumps(record, ensure_ascii=False, indent=2) + "\n")
     print("RESULT " + json.dumps(record, ensure_ascii=False), flush=True)
