@@ -733,22 +733,31 @@ final class MTBoard: ObservableObject {
     /// MY POSTS AS THE TABLE CARRIES THEM TO EVERYONE (MTBoardGlobal): my own words on my own wall -- never a post another wrote
     /// here, never a repost -- the newest first, a month at most, with my name and my face as they stand now. Nobody's comment
     /// leaves (its writer showed it to my wall alone), and a post past the table's room sheds its posters from the last file.
-    func publicPosts(limit: Int, budget: Int) -> [String: (digest: String, body: [String: Any])] {
+    /// THE MAIN THREAD TAKES THE SNAPSHOT, A QUEUE ENCODES (P-3, OZ1: T1 2330 stacks 15:27 -- MTBoardGlobal.lay -- publicPosts,
+    /// 157 ms of JSON on the main thread two seconds after the app's return, while the chats were opening). Here: my posts as
+    /// they stand, read where the board lives; publicPosts(_:budget:) encodes them on any thread.
+    func publicDrafts(limit: Int) -> [(id: String, post: MTBoardSeen)] {
         let name = String(E2E.myDisplayName().prefix(64)), face = Self.myFace()
-        let enc = JSONEncoder()
-        enc.outputFormatting = .sortedKeys   // one post, one digest: what was laid is not laid again
-        var out: [String: (digest: String, body: [String: Any])] = [:]
         let own = mine.filter { q in q.author.isEmpty && q.from == nil }.sorted { a, b in b.at < a.at }
-        for p in own.prefix(limit) {
+        return own.prefix(limit).map { p in
             var x = Self.clean(seen(p, by: "", conceal: true))
             if !name.isEmpty { x.byName = name }
             x.face = face; x.own = true; x.mine = false; x.pinned = false
             x.comments = []; x.commentCount = 0; x.liked = false; x.kept = false; x.reposted = false
+            return (id: p.id, post: x)
+        }
+    }
+    static func publicPosts(_ drafts: [(id: String, post: MTBoardSeen)], budget: Int) -> [String: (digest: String, body: [String: Any])] {
+        let enc = JSONEncoder()
+        enc.outputFormatting = .sortedKeys   // one post, one digest: what was laid is not laid again
+        var out: [String: (digest: String, body: [String: Any])] = [:]
+        for (id, post) in drafts {
+            var x = post
             var i = x.media.count - 1
             while 0 <= i, let d = try? enc.encode(x), budget < d.count { x.media[i].thumb = nil; i -= 1 }
             guard let d = try? enc.encode(x), d.count <= budget,
                   let body = try? JSONSerialization.jsonObject(with: d) as? [String: Any] else { continue }
-            out[p.id] = (MontanaHomeNode.hex(Data(SHA256.hash(data: d))), body)
+            out[id] = (MontanaHomeNode.hex(Data(SHA256.hash(data: d))), body)
         }
         return out
     }
@@ -2426,7 +2435,7 @@ enum MTBoardDrafts {
     /// A picture's bytes from the library come into the folder as a file of their own.
     static func take(_ data: Data, kind: String, ext: String) -> MTBoardDraftFile? {
         let id = fresh(ext)
-        guard (try? data.write(to: url(id), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil else { return nil }
+        guard MTDiskDoor.write(data, to: url(id), "board-take", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) else { return nil }
         return file(id, kind: kind, name: id, ext: ext)
     }
     private static func file(_ id: String, kind: String, name: String, ext: String) -> MTBoardDraftFile {
@@ -2633,19 +2642,23 @@ final class MTBoardGlobal: ObservableObject {
         guard !laying, let tok = Self.myToken() else { return }
         let hex = MontanaHomeNode.hex(tok)
         let sent = (UserDefaults.standard.dictionary(forKey: Self.sentKey) as? [String: String]) ?? [:]
-        var work: [(id: String, digest: String?, body: [String: Any])] = []
-        if MTBoardRule.current(.see) != .everyone {
-            guard !sent.isEmpty else { return }
-            work.append((id: "*", digest: nil, body: ["token": hex, "hide": "*"]))
-        } else {
-            let shown = MTBoard.shared.publicPosts(limit: Self.perOwner, budget: Self.budget)
-            for id in sent.keys where shown[id] == nil { work.append((id: id, digest: nil, body: ["token": hex, "hide": id])) }
-            for (id, x) in shown where sent[id] != x.digest { work.append((id: id, digest: x.digest, body: ["token": hex, "post": x.body])) }
-        }
-        guard !work.isEmpty else { return }
+        let open = MTBoardRule.current(.see) == .everyone
+        if !open, sent.isEmpty { return }
+        let drafts = open ? MTBoard.shared.publicDrafts(limit: Self.perOwner) : []   // the snapshot on the main thread (P-3)
+        let budget = Self.budget
         laying = true
-        let jobs = work
-        Task {
+        Task.detached(priority: .utility) {
+            // The encoding, off the main thread (P-3): every post as JSON, shrunk to the budget, hashed.
+            var work: [(id: String, digest: String?, body: [String: Any])] = []
+            if !open {
+                work.append((id: "*", digest: nil, body: ["token": hex, "hide": "*"]))
+            } else {
+                let shown = MTBoard.publicPosts(drafts, budget: budget)
+                for id in sent.keys where shown[id] == nil { work.append((id: id, digest: nil, body: ["token": hex, "hide": id])) }
+                for (id, x) in shown where sent[id] != x.digest { work.append((id: id, digest: x.digest, body: ["token": hex, "post": x.body])) }
+            }
+            guard !work.isEmpty else { await MainActor.run { MTBoardGlobal.shared.laying = false }; return }
+            let jobs = work
             var done: [(String, String?)] = []
             for w in jobs where await Self.send("/wall-put", w.body) != nil { done.append((w.id, w.digest)) }
             let settled = done

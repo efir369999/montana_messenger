@@ -1232,7 +1232,7 @@ final class MontanaPhoneNode: ObservableObject {
         // one is tried, and there is nothing left to walk through -- a phantom candidate has nowhere to come from.
         if let root {
             if let ref = MontanaCard.accept(firstLetter: ct, root: root, confirmed: proof) { return ref }
-            guard let mn = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(mn),
+            guard let master = MontanaSeed.root,
                   let mine = MontanaNames.contactRoot(masterSeed: master), mine == root else { return nil }
             return MontanaFirstContact.accept(firstLetter: ct, masterSeed: master, confirmed: proof)
         }
@@ -1240,7 +1240,7 @@ final class MontanaPhoneNode: ObservableObject {
         // every candidate must present a seal -- a phantom is refused, though it is created.
         MontanaTrace.mark("first_no_point", "fallback=all-cards")
         if let ref = MontanaCard.accept(firstLetter: ct, confirmed: proof) { return ref }
-        guard let mn = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(mn) else { return nil }
+        guard let master = MontanaSeed.root else { return nil }
         return MontanaFirstContact.accept(firstLetter: ct, masterSeed: master, confirmed: proof)
     }
 

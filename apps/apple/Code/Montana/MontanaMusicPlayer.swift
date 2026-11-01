@@ -38,6 +38,14 @@ struct MusicTrack: Equatable {
     }
 }
 
+/// THE LIBRARY LANDED (P-2, OZ1): the build walks off the main thread (ChatStore.musicBuilt), and its landing moves the
+/// music page alone -- the chats, which observe the store, are not redrawn for it.
+final class MTMusicShelf: ObservableObject {   // moved on the main thread alone (musicBuilt lands there)
+    static let shared = MTMusicShelf()
+    @Published private(set) var rev = 0
+    func landed() { rev &+= 1 }
+}
+
 /// Every music file in every chat, in feed order — the player's search space and the queue
 /// a search pick plays through.
 enum MontanaMusicLibrary {
@@ -1832,6 +1840,7 @@ struct MusicTabView: View {
     @ObservedObject private var now = MTNowPlaying.shared
     @ObservedObject private var meta = MTTrackMeta.shared
     @ObservedObject private var folders = MTMusicFolders.shared
+    @ObservedObject private var shelf = MTMusicShelf.shared   // the library built off the main thread landed
     @Environment(\.mtPaneLive) private var paneLive
     @ObservedObject private var placeAsk = MTMusicFocus.shared   // the unfolded mini's number: this page's row to the middle
     let panel: MontanaTimePanel

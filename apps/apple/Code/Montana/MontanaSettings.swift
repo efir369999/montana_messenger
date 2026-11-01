@@ -2334,8 +2334,7 @@ extension MontanaSeed {
         if let d = MontanaLocalVault.getDecrypted(twinKey),
            let ref = String(data: d, encoding: .utf8), !ref.isEmpty,
            MTPipeBook.holds(ref) { return ref }
-        guard let m = MontanaSeed.mnemonic,
-              let master = MontanaQueueKeys.masterSeed(m),
+        guard let master = MontanaSeed.root,
               let owner = MTPipe.ownerSecret(masterSeed: master),
               let ref = MTPipeBook.establish(secret: owner, seal: false) else { return nil }
         MontanaLocalVault.setEncrypted(twinKey, Data(ref.utf8))

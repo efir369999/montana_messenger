@@ -1103,7 +1103,7 @@ final class MontanaDirect {
     func ownerSecretCached() -> Data? {
         ownerLock.lock(); defer { ownerLock.unlock() }
         if let c = cachedOwnerSecret { return c }
-        guard let mn = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(mn),
+        guard let master = MontanaSeed.root,
               let owner = MTPipe.ownerSecret(masterSeed: master) else { return nil }
         cachedOwnerSecret = owner
         return owner

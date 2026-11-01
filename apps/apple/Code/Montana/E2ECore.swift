@@ -223,7 +223,7 @@ enum MontanaLocalVault {
         if outOfLine <= sealed.count, let d = loadsDir {
             let digest = Data(SHA256.hash(data: sealed))
             let file = d.appendingPathComponent(digest.map { String(format: "%02x", $0) }.joined())
-            if (try? sealed.write(to: file, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil { held = mark + digest }
+            if MTDiskDoor.write(sealed, to: file, "e2e-load", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) { held = mark + digest }
         }
         ud.set(held, forKey: key)
         if let before, before != loadName(held) {
@@ -347,7 +347,7 @@ enum E2EKeychain {
             st = SecItemAdd(add as CFDictionary, nil)
         }
         if st != errSecSuccess { NSLog("[Keychain] set(\(key)) FAIL status=\(st)") }
-        let fileOK = (try? data.write(to: fileURL(key), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil
+        let fileOK = MTDiskDoor.write(data, to: fileURL(key), "e2e-file", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         return st == errSecSuccess || fileOK
     }
     // The keychain read lives in getDeviceOnly; this adds the file fallback for values that also
@@ -472,15 +472,18 @@ enum MontanaInstall {
 enum MontanaSeed {
     private static let MN = "mt_active_mnemonic"
     private static let EN = "mt_active_entropy"   // legacy store, erased on sight
+    private static let RT = "mt_active_root"      // the words' stretched root, beside them (decision 494 = (b))
     // The root is kept in ONE representation: the words a person wrote down. The entropy is
     // the same secret in another shape, and a second copy only doubles what has to be erased —
-    // it is derived from the words by the core whenever it is needed.
+    // it is derived from the words by the core whenever it is needed. One shape alone is kept beside them, the stretched root
+    // (root, below): deriving it costs 2 s of the main thread at every cold opening (decision 494 = (b)), and it is erased with them.
     // Returns whether the seed is actually in storage, read back after the write. A person
     // who is told "your identity exists" and whose seed never reached the keychain loses
     // it on the next launch, and nothing before that moment says a word.
     @discardableResult
     static func setActive(mnemonic: String, entropy: Data? = nil) -> Bool {
         E2EKeychain.setDeviceOnly(MN, Data(mnemonic.utf8))   // AfterFirstUnlockThisDeviceOnly (calls with the screen off)
+        forgetRoot()   // the root of the words before is no root of these
         E2EKeychain.delete(EN)
         E2EKeychain.deleteSynced(EN)
         purgeOthers()
@@ -511,13 +514,33 @@ enum MontanaSeed {
         return MontanaSeedKeys.entropyFrom(mnemonic: m)
     }
     static var hasSeed: Bool { mnemonic != nil }
+    // THE SEATED ROOT HAS ONE OWNER (the author's words 01.11.2026 15:35 UTC, link 14170: «work by the SSOT principle and ask the
+    // key's root in one place, not 18»; decision 494 = (b), link 14169): every place that needs the seated person's master seed
+    // asks here, and nowhere derives it from the words itself. The stretch (2^20 iterations, 2 s on T1) is paid once on the
+    // device: its answer is kept in the keychain beside the words -- the same class (AfterFirstUnlockThisDeviceOnly), never
+    // synchronized, never in a backup -- and it leaves with them (clear, setActive, MontanaQueueKeys.forgetMasterSeed). It is the
+    // same secret as the words in another shape, so it adds no new thing to steal: whoever reads it could read the words.
+    static var root: Data? { mnemonic.flatMap { MontanaQueueKeys.masterSeed($0) } }
+    /// The root made ready off the main thread before the first screen asks for it (the launch, the return).
+    static func warmRoot() { DispatchQueue.global(qos: .userInitiated).async { _ = root } }
+    /// The kept root of the words whose SHA-256 is `tag`, or nil: kept only for the seated words.
+    static func keptRoot(_ tag: Data) -> Data? {
+        guard let d = E2EKeychain.getDeviceOnly(RT), d.count == 96, d.prefix(32) == tag else { return nil }
+        return Data(d.suffix(64))
+    }
+    /// Keeps the root just stretched -- when its words are the seated ones; a shelf's words keep nothing.
+    static func keepRoot(_ tag: Data, _ seed: Data) {
+        guard seed.count == 64, let m = mnemonic, MontanaQueueKeys.sha256(Data(m.utf8)) == tag else { return }
+        E2EKeychain.setDeviceOnly(RT, tag + seed)
+    }
+    static func forgetRoot() { E2EKeychain.delete(RT) }
     // Erase all other seed stores (including iCloud-synchronized ones) -> the active seed is the only one.
     static func purgeOthers() {
         for k in ["mt_seed_mnemonic", "mt_seed_entropy"] { E2EKeychain.deleteSynced(k) }
         for k in ["mt_seed_mnemonic", "mt_seed_entropy", "royalMnemonic", "royalSeckey"] { E2EKeychain.delete(k) }
     }
     static func clear() {
-        E2EKeychain.delete(MN); E2EKeychain.delete(EN); E2EKeychain.deleteSynced(EN)
+        E2EKeychain.delete(MN); E2EKeychain.delete(EN); E2EKeychain.deleteSynced(EN); forgetRoot()
         purgeOthers()
     }
 }

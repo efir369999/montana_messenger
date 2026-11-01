@@ -471,9 +471,6 @@ struct ChatsListView: View {
         .padding(.top, MontanaOctagon.barTopPad)
         .padding(.bottom, MontanaOctagon.barBottomPad)
     }
-    /// The pages warmed up after the launch (25.09): the two beside the pane, built one by one while the person still reads
-    /// the first page, so the first stroke finds its neighbour standing.
-    @State private var warmed = 0
     @State private var paneKeep = MTPaneKeep()
     // UNFOLDED BY DEFAULT, AND THE LAST CHOICE IS KEPT (the author's word 21.09): the panel opens as
     // the person left it — the platform's own store (AppStorage), one key, read at birth.
@@ -926,7 +923,7 @@ struct ChatsListView: View {
                 // the start of every stroke, the neighbour born anew each time, and 62 to 102 ms at every settle's end, the one
                 // that left torn down; T3: «the chats page flickers when I swipe» — the page slid in as a list born empty, its
                 // rows landing frames later). The reference keeps its pages; so do we: a page is built the first time it is
-                // looked at — or warmed up after the launch — and kept in the row, off the screen when not looked at; a stroke
+                // looked at (no warm-up at the launch since 01.11.2026) and kept in the row, off the screen when not looked at; a stroke
                 // moves what stands and builds nothing that stands; a settle tears nothing down. A page not looked at keeps the
                 // pass it was last built by (MTPaneKeep) — nothing of it is diffed again — and its list applies nothing until it
                 // is looked at (mtPaneLive).
@@ -1191,17 +1188,10 @@ struct ChatsListView: View {
             // WHAT OF THIS PAGE STANDS OPEN (24.09): the tabs do not turn under the finger while it does (UIState.tabsMayTurn);
             // the page alone knows these, and says so.
             .onChange(of: pageHolds, initial: true) { _, h in ui.pageHolds = h }
-            // THE NEIGHBOURS ARE WARMED UP AFTER THE LAUNCH (25.09): one and a half seconds after the tabs appear the page to one
-            // side of the pane is built, the one to the other side a moment later — each build in a turn of its own, off the
-            // screen — so the first stroke finds its neighbour standing. Two one-shot waits, never a timer.
-            .onAppear {
-                let order = ui.turnOrder
-                guard let i = order.firstIndex(of: ui.pane) else { return }
-                for (n, step) in [(1, 1.5), (-1, 1.9)] where order.indices.contains(i + n) {
-                    let p = order[i + n]
-                    DispatchQueue.main.asyncAfter(deadline: .now() + step) { if paneKeep.built.insert(p).inserted { warmed += 1 } }
-                }
-            }
+            // NO PAGE IS WARMED UP AT THE LAUNCH (the author's word 01.11.2026, link 14183: «the chats and the music must have
+            // nothing to do with each other»): the warm-up of 25.09 built the music page 1.5 s and the feed 1.9 s after the tabs
+            // appeared, on the main thread, in the very window the chats stood frozen on T1 2330 (P-2, P-3). A page is built
+            // when it is looked at -- the stroke's neighbour (MTPaneSlide) -- and never because another page opened.
             // The menu about a person — the chat's own cloud over the list (MTPersonMenu).
             .overlay {
                 if let c = personMenu {

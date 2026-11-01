@@ -546,7 +546,7 @@ enum MTKeepDerive {
     private func hand(_ made: MontanaBackup.Made, g: UInt64, keepers: [String]) async {
         defer { MontanaBackup.discard(made); renewing = false }
         let n = MTKeepCode.group
-        guard let m = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(m), let key = MTKeepDerive.keepKey(master),
+        guard let master = MontanaSeed.root, let key = MTKeepDerive.keepKey(master),
               let dir = try? MontanaBackup.shelf() else { return }
         let url = made.url
         guard let cut = await Task.detached(priority: .utility, operation: { MTKeepCode.cut(url, n: n, into: dir) }).value else {
@@ -607,7 +607,7 @@ enum MTKeepDerive {
     }
     private func nameLight(_ made: MontanaBackup.Made, g: UInt64) async {
         defer { MontanaBackup.discard(made); lighting = false }
-        guard let m = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(m), let secret = MTKeepDerive.lightSecret(master),
+        guard let master = MontanaSeed.root, let secret = MTKeepDerive.lightSecret(master),
               let digest = MontanaHomeNode.digest(of: made.url), var road = await Self.lay(made.url) else {
             return MontanaTrace.mark("keep_light", "the light copy did not reach the nodes")
         }
@@ -949,7 +949,7 @@ enum MTKeepDerive {
 
     private struct Answer { let head: MTKeepDerive.Head; let url: URL }
     private func callAndBuild() async -> Result<MontanaBackup.Tally, MontanaBackup.Refusal> {
-        guard Self.agrees, let m = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(m),
+        guard Self.agrees, let master = MontanaSeed.root,
               let key = MTKeepDerive.keepKey(master), let dir = try? MontanaBackup.shelf() else { taking = .failed; return .failure(.noSeed) }
         let secrets = (0..<MTKeepDerive.slots).compactMap { MTKeepDerive.slotSecret(master, $0) }
         guard secrets.count == MTKeepDerive.slots else { taking = .failed; return .failure(.noSeed) }

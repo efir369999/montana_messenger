@@ -614,8 +614,7 @@ final class MontanaBLEMesh: NSObject {
     static func distinctOwners(in payload: Data) -> Int { Set(seals(in: payload)).count }
 
     private static func withSeal(_ payload: Data, step: Data) -> Data {
-        guard let mn = MontanaSeed.mnemonic,
-              let master = MontanaQueueKeys.masterSeed(mn),
+        guard let master = MontanaSeed.root,
               let owner = MTPipe.ownerSecret(masterSeed: master) else { return payload }
         let seal = MTPipe.relaySeal(ownerSecret: owner, label: step)
         var out = body(of: payload)

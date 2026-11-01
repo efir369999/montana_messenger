@@ -931,7 +931,7 @@ final class MTHomeBook: @unchecked Sendable {
     func save() {
         lock.lock(); let t = tag; lock.unlock()   // LOCK-OK: a word in memory
         guard !t.isEmpty, let d = json() else { return }
-        try? d.write(to: Self.file(t), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        MTDiskDoor.write(d, to: Self.file(t), "home-book", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 }
 

@@ -433,7 +433,7 @@ enum MontanaNamePlane {
     /// name proves to carry this device's own key; a new name releases the one held before it, and the release is
     /// final (Identity: «releasing is not reversible»).
     static func take(_ raw: String) async -> Taking {
-        guard let mn = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(mn),
+        guard let master = MontanaSeed.root,
               let p = MontanaNames.prepare(raw, masterSeed: master) else { return .refused }
         let recorded = MontanaNames.currentName
         let former = (recorded != nil && recorded != p.name && MontanaNames.isHeld()) ? MontanaNames.nextRenewal(masterSeed: master) : nil
@@ -572,7 +572,7 @@ enum MontanaNamePlane {
     /// THE NAME LEAVES WITH THE ACCOUNT (App Review 5.1.1(v), 08.10.2026): the name this device holds is released at its keeper
     /// as a new name releases the one before it -- with the next link of its chain, while the words still derive it.
     static func releaseHeld() async {
-        guard MontanaNames.isHeld(), let mn = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(mn),
+        guard MontanaNames.isHeld(), let master = MontanaSeed.root,
               let held = MontanaNames.nextRenewal(masterSeed: master) else { return }
         await release(slot: held.slot, link: held.link)
     }

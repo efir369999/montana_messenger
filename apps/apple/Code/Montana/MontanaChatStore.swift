@@ -344,7 +344,12 @@ class ChatStore: ObservableObject {
         }
     }
     private var callLogMemo: [CallRecord]?
-    private var musicMemo: (lent: Int, list: [MusicTrack], byFile: [String: MusicTrack])?
+    private var musicMemo: (lent: Int, list: [MusicTrack], byFile: [String: MusicTrack])? {
+        didSet { if musicMemo == nil { musicGen &+= 1 } }   // every clearing is a new ask (musicBuilt)
+    }
+    private var musicGen = 0
+    private var musicAsked: (gen: Int, lent: Int)?
+    private var musicShown: (list: [MusicTrack], byFile: [String: MusicTrack]) = ([], [:])
     private var mediaMemo: (stories: String, list: [MTMoment])?   // the gallery's moments, kept the same way (25.09)
     private var saveWork: DispatchWorkItem?
     /// The initial store read is running. Assigning each field triggers its own write back —
@@ -3084,13 +3089,31 @@ class ChatStore: ObservableObject {
     /// until a walk of the lent folders finds something new (MTMusicFolders, its revision). A track by its file, the same.
     func musicLibrary() -> [MusicTrack] { musicBuilt().list }
     func musicTrack(_ file: String) -> MusicTrack? { musicBuilt().byFile[file] }
+    /// THE BUILD WALKS OFF THE MAIN THREAD (P-2, OZ1, the author's word 13956: the chats stood 2 s at the opening; T1 2330
+    /// stacks 15:27: MusicTabView.body -- musicBuilt -- build -- size, 372 ms of the disk asked on the main thread). The
+    /// main thread takes a snapshot of the letters and of the names, the walk and the disk run on a queue, and the page
+    /// reads the last list built until the new one lands (MTMusicShelf moves the music page alone, not the chats).
     private func musicBuilt() -> (list: [MusicTrack], byFile: [String: MusicTrack]) {
         let lent = MTMusicFolders.tracks()
         if let memo = musicMemo, memo.lent == lent.rev { return (memo.list, memo.byFile) }
-        let list = MontanaMusicLibrary.build(messages: messages, lent: lent.list, nameOf: { self.displayName(for: $0) })
-        let byFile = Dictionary(list.map { ($0.file, $0) }, uniquingKeysWith: { a, _ in a })
-        musicMemo = (lent.rev, list, byFile)
-        return (list, byFile)
+        let gen = musicGen
+        if musicAsked?.gen != gen || musicAsked?.lent != lent.rev {
+            musicAsked = (gen, lent.rev)
+            let letters = messages
+            var names: [String: String] = [:]
+            for chat in letters.keys { names[chat] = displayName(for: chat) }
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                let list = MontanaMusicLibrary.build(messages: letters, lent: lent.list, nameOf: { names[$0] ?? $0 })
+                let byFile = Dictionary(list.map { ($0.file, $0) }, uniquingKeysWith: { a, _ in a })
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.musicShown = (list, byFile)   // a list overtaken still stands better than none
+                    if self.musicGen == gen { self.musicMemo = (lent.rev, list, byFile) }
+                    MTMusicShelf.shared.landed()
+                }
+            }
+        }
+        return musicShown
     }
     /// THE GALLERY'S MOMENTS, ONE BUILDER, BUILT ONCE PER CHANGE OF THE LETTERS OR OF MY STORIES (the author's word 25.09:
     /// the gallery is a page under the bar now, and it lagged at its opening). The chats page used to walk every letter of
@@ -6919,7 +6942,7 @@ enum SeedScope {
         "photosManualCold", "peerUsernames", "orderCold", "readChatsCold", "pinnedCold", "forcedUnreadCold",
         "archivedCold", "notifPreview", "notifSender", "notifSound", "objectionableFilterOn", "shareChats",
         "nsePipeAlias", "nsePipeSecrets", "chatListState", "chatListOverlay", "missedUnseen", "unreadCounts", "nseUnread",
-        "blobKeySeed", "mt.outbox.key", "mt_active_mnemonic", "mt_apple_id_seed", "mt_device_key", "mt_store_witness", "turnPass",
+        "blobKeySeed", "mt.outbox.key", "mt_active_mnemonic", "mt_active_root", "mt_apple_id_seed", "mt_device_key", "mt_store_witness", "turnPass",
         "wakeBase", "wakeBases", "wakeElected", "wakeMyAddr", "wakeMyAuthor", "wakeMyGlyph", "wakeMyName", "wakeOwnToken",
         "wakeVoipDigest", "wakeVoipToken", "diagId", "diagSalt", "nseDiag", "nseLog", "shareDiag",
         "cargoRepairMids",   // one device's sealed reservation: an automatic cargo reconstruction may happen once here

@@ -390,7 +390,7 @@ final class MTSeats: ObservableObject {
     }
     private static func shelfWrite(_ plain: Data, _ url: URL, _ binding: Data) -> Bool {
         guard let sealed = MontanaLocalVault.seal(plain, binding) else { return false }
-        return (try? sealed.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil
+        return MTDiskDoor.write(sealed, to: url, "seat-shelf", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
     /// Rows a person on the shelf received go into their inbox on the shelf. Refused while a move runs or once the person is
     /// seated: the row then stays on the node for the next pickup.

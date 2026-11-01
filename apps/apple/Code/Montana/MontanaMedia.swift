@@ -1524,7 +1524,7 @@ enum MontanaMediaStore {
 
     @discardableResult
     static func put(_ name: String, data: Data) -> Bool {
-        let ok = (try? data.write(to: url(name), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil
+        let ok = MTDiskDoor.write(data, to: url(name), "media-put", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         if ok { MTNameBook.forgetPictures() }   // a picture file appeared — the name book asks the disk afresh (15.14)
         return ok
     }

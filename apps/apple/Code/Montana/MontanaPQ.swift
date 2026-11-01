@@ -10,8 +10,6 @@ enum MontanaPQ {
     static let MLDSA_PUB = 1952, MLKEM_PUB = 1184, MLKEM_SK = 2400
 
     // ── account key derivation from the mnemonic ──
-    /// master_seed (64) from the mnemonic — derived in ONE place (MontanaQueueKeys).
-    private static func masterSeed(_ mnemonic: String) -> Data? { MontanaQueueKeys.masterSeed(mnemonic) }
     /// 32-byte account_key seed (role "mt-account-key") — input for e2e_build_handshake.
     /// app_kem_key (ML-KEM-768) from the mnemonic: (pub 1184, sk 2400).
     /// ML-KEM-768 keypair from a 64-byte seed (for signed_prekey / one-time prekeys).
@@ -414,7 +412,7 @@ enum MontanaArchive {
         // The archive binds its records to the person by the owner branch of their seed: it is
         // derived on the device, never leaves it, and changes exactly when the seed does. What used
         // to stand here was the account identifier — a quantity the set does not have.
-        guard let master = MontanaQueueKeys.masterSeed(mn), let owner = MTPipe.ownerSecret(masterSeed: master) else { return nil }
+        guard let master = MontanaSeed.root, let owner = MTPipe.ownerSecret(masterSeed: master) else { return nil }   // the seated root's one owner (link 14170)
         hk = Data(ho); mk = Data(mo); acct = owner
         return (hk!, mk!, acct!)
     }

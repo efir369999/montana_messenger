@@ -1240,7 +1240,7 @@ enum MTLevelAccess {
         tip = t
         if let u = MTCoinPlace.file(Self.file) {
             let d = Self.encode(t)
-            disk.async { try? d.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) }
+            disk.async { MTDiskDoor.write(d, to: u, "coin-tip", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) }
         }
         soonPut()
     }
@@ -1666,11 +1666,11 @@ enum MTTimeChain {
         for (u, data) in all {
             if let f = try? FileHandle(forWritingTo: u) {
                 _ = try? f.seekToEnd()
-                try? f.write(contentsOf: data)
+                try? f.write(contentsOf: data); MTDiskDoor.count("time-chain", data.count)
                 try? f.close()
             } else if !FileManager.default.fileExists(atPath: u.path) {
                 // Born only where none stands: a chain that stands but would not open is never written over.
-                try? data.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                MTDiskDoor.write(data, to: u, "time-chain", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
             }
         }
     }
@@ -1766,7 +1766,7 @@ enum MTTimeChain {
     }
     private func keep() {
         guard let u = Self.file, let d = try? JSONEncoder().encode(Kept(lane: lane.base64EncodedString(), spans: spans, away: away)) else { return }
-        try? d.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        MTDiskDoor.write(d, to: u, "person-kept", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
     private func keepSoon() {
         guard !keepDue else { return }
@@ -1821,7 +1821,7 @@ enum MTTimeChain {
         guard write, let u = MTTimeChainPlace.file("person") else { return }
         var body = Data()
         for l in fresh { if let d = try? JSONEncoder().encode(l) { body.append(d); body.append(0x0A) } }
-        try? body.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        MTDiskDoor.write(body, to: u, "person-chain", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 
     /// A node answered an exchange of this app (MTCoinVault.post): while the app stands on the screen its second counts, and so does
@@ -2127,7 +2127,7 @@ struct MTWeave {
     }
     private func keep() {
         guard loaded, let u = Self.file, let d = try? JSONEncoder().encode(kept) else { return }
-        try? d.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        MTDiskDoor.write(d, to: u, "weave-kept", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
     private func keepSoon() {
         guard !keepDue else { return }
@@ -2156,7 +2156,7 @@ struct MTWeave {
     /// correspondence's hash, 32) into ML-DSA-65 -- one on every device of the words, another in every correspondence, and no relation
     /// to the account's key or the coins'.
     nonisolated static func signer(pair: Data) -> (pk: Data, sk: Data)? {
-        guard pair.count == 32, let words = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(words), master.count == 64 else { return nil }
+        guard pair.count == 32, let master = MontanaSeed.root, master.count == 64 else { return nil }
         let info = [UInt8](Data("mt-fabric-key".utf8) + Data([0]) + pair)
         var seed = [UInt8](repeating: 0, count: 32)
         let rc = master.withUnsafeBytes { m -> Int32 in
@@ -2252,7 +2252,7 @@ struct MTWeave {
         guard let u = MTTimeChainPlace.file("fabric") else { return }
         var body = Data()
         for l in links { if let d = try? JSONEncoder().encode(l) { body.append(d); body.append(0x0A) } }
-        try? body.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        MTDiskDoor.write(body, to: u, "fabric-chain", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 
     /// A LIVE ACT THIS PHONE LEFT FOR A CORRESPONDENT (App: a testimony is given «while it has itself sent that correspondent a live act
@@ -2921,11 +2921,11 @@ struct MTCoinCounts {
                 _ = try? h.seekToEnd()
                 if last != Data([0x0A]) { try? h.write(contentsOf: Data([0x0A])) }
             }
-            try? h.write(contentsOf: data)
+            try? h.write(contentsOf: data); MTDiskDoor.count("coin-book", data.count)
             try? h.close()
         } else if !FileManager.default.fileExists(atPath: file.path) {
             // Born only where none stands: a book that stands but would not open is never written over.
-            try? data.write(to: file, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            MTDiskDoor.write(data, to: file, "coin-book", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         }
     }
 
@@ -3667,7 +3667,7 @@ enum MTCoinChainRules {
         guard let key = MTCoinTx.myKeyTag, let u = MTCoinPlace.file(Self.lastName) else { return }
         let w = LastWord(key: key, coins: coins, height: height, at: Date().timeIntervalSince1970)
         guard let d = try? JSONEncoder().encode(w) else { return }
-        try? d.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        MTDiskDoor.write(d, to: u, "coin-last", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         last = (MTCoinBook.generation, w)
     }
     /// THE SENDS ON THEIR WAY TO THE CHAIN (fold-7; the author's words 23.10.2026 00:27 UTC: «the phone only mirrors the chain»): a SEND
@@ -3761,7 +3761,7 @@ enum MTCoinChainRules {
     private static func save(_ k: Kept) {
         kept = k
         guard let u = MTCoinPlace.file(name), let d = try? JSONEncoder().encode(k) else { return }
-        try? d.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        MTDiskDoor.write(d, to: u, "coin-rules-kept", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
     /// The seconds waiting for the core: the kept ones and the open stay's.
     static var seconds: Int {
@@ -3843,15 +3843,17 @@ enum MTCoinTx {
         keyLock.lock()
         if let c = keyCache, c.words == tag { keyLock.unlock(); return (c.pk, c.sk) }
         keyLock.unlock()
-        guard let h = derive(words) else { return nil }
+        guard let h = MontanaSeed.root.flatMap(hands) else { return nil }   // the seated root's one owner (link 14170)
         keyLock.lock(); keyCache = (tag, h.pk, h.sk); keyLock.unlock()
         return (h.pk, h.sk)
     }
     /// One key's hands: the person seated (keys()) or a person on this phone's shelf (derive) -- the record is theirs, signed by them.
     struct Hands { let pk: Data; let sk: Data; var from: String { MTCoinTx.keyTag(pk) } }
     /// The coin key of any words this phone holds, derived anew (never cached: a shelf's words are asked rarely).
-    static func derive(_ words: String) -> Hands? {
-        guard let master = MontanaQueueKeys.masterSeed(words), master.count == 64 else { return nil }
+    static func derive(_ words: String) -> Hands? { MontanaQueueKeys.masterSeed(words).flatMap(hands) }
+    /// The coin key's hands from a master seed: HKDF-Expand(master_seed, "mt-coin-tx", 32) into ML-DSA-65.
+    private static func hands(_ master: Data) -> Hands? {
+        guard master.count == 64 else { return nil }
         var seed = [UInt8](repeating: 0, count: 32)
         let role = Array("mt-coin-tx".utf8)
         let rc = master.withUnsafeBytes { m -> Int32 in
@@ -4049,7 +4051,7 @@ enum MTCoinTx {
             let id = name(rec)
             guard let book = seat.book, book.send(coins, to: conv, ref: refPrefix + id) else { return .refused }
             let pending = pendingURL(id)
-            if let pending { try? rec.write(to: pending, options: .atomic) }
+            if let pending { MTDiskDoor.write(rec, to: pending, "coin-pending", options: .atomic) }
             let word = await lay(rec)
             MontanaTrace.mark("coin_tx", "word=\(word) coins=\(coins) id=\(id.prefix(12)) attempt=\(attempt)")
             guard seat.stands else { return .pending }   // the record waits in its person's folder (settle)
@@ -4372,7 +4374,7 @@ extension MTCoinTx {
     }
     private static func save(_ name: String, _ o: [String: Any]) {
         guard let u = MTTimeChainPlace.dir()?.appendingPathComponent(name), let d = try? JSONSerialization.data(withJSONObject: o) else { return }
-        try? d.write(to: u, options: .atomic)
+        MTDiskDoor.write(d, to: u, "coin-tx-state", options: .atomic)
     }
     /// A correspondent's coin key, told in their about word (k): the key a SEND of version 3 commits to.
     static func peerFrom(_ conv: String) -> String? { (load("coin3-peers.json")["k"] as? [String: String])?[conv] }
@@ -4474,7 +4476,7 @@ extension MTCoinTx {
             let id = name(rec)
             guard book.sendHeld(coins, to: conv, ref: refPrefix + id, on: target) else { return .failed }
             let pending = pendingURL(id)
-            if let pending { try? rec.write(to: pending, options: .atomic) }
+            if let pending { MTDiskDoor.write(rec, to: pending, "coin-pending", options: .atomic) }
             let word = await lay(rec)
             MontanaTrace.mark("coin_v3", "send word=\(word) coins=\(coins) dec=\(dec) id=\(id.prefix(12)) attempt=\(attempt)")
             guard seat.stands else { return .pending }   // the record waits in its person's folder (settle)
@@ -4672,7 +4674,7 @@ enum MTCoinReplica {
     }
     private static func save(_ h: Held) {
         guard let u = url, let d = try? JSONEncoder().encode(h) else { return }
-        try? d.write(to: u, options: .atomic)
+        MTDiskDoor.write(d, to: u, "coin-replica", options: .atomic)
     }
     nonisolated private static func bytes(_ s: String) -> Data? { MTCoinChainRules.bytes(s) }
     /// One record folded onto its key's state by the chain's rules (MTCoinChainRules.step, the nodes' _tx_step).

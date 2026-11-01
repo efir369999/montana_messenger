@@ -526,7 +526,7 @@ struct RootView: View {
                 // Off the main thread: the first root render of a launch takes seconds, and
                 // the person would wait staring at a frozen screen. Name reconciliation is in no hurry.
                 Task.detached(priority: .utility) {
-                    if let seed = MontanaSeed.mnemonic.flatMap({ MontanaQueueKeys.masterSeed($0) }) {
+                    if let seed = MontanaSeed.root {
                         MontanaNames.keepInStep(masterSeed: seed)
                     }
                 }

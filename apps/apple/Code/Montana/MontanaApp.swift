@@ -386,6 +386,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         MTRowLetter.eventWords = { MTGroup.shared.eventWords($0) }   // a group's event row speaks the group's names (stage R)
         AppDelegate.launchedAt = ProcessInfo.processInfo.systemUptime
         MontanaTelemetry.shared.install()   // crashes/hangs/events → Montana/Diagnostics/telemetry.log
+        MontanaSeed.warmRoot()   // the key's root ready off the main thread before the first screen asks (decision 494, link 14170)
         // THE TOUCH DIARY STAYS ON OUR OWN PHONES (App Review 2.5.14, 08.10.2026: a record of a person's activity needs their
         // explicit consent): the Debug builds the Mac puts on the author's phones write every touch and every field's editing
         // (24.09); a build from TestFlight or the App Store writes none.
@@ -1868,7 +1869,7 @@ enum MontanaBackgroundRefresh {
         MontanaWakePush.drainInbox()
         // THE NAME IS RENEWED IN THE SYSTEM'S WINDOW TOO (24.09, the critic's P6): a renewal that waited for the
         // person's return let a name lapse between two openings; the question «is it due» is the same one.
-        if let mn = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(mn) {
+        if let master = MontanaSeed.root {
             MontanaNames.keepInStep(masterSeed: master)
         }
         // The diary is not shipped here: the phone speaks at its three moments (P-60), and the

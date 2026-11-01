@@ -437,7 +437,7 @@ enum MTBubbleGround {
     }
     private static func write(_ plain: Data) -> Bool {
         guard let sealed = MontanaLocalVault.seal(plain, aad) else { return false }
-        return (try? sealed.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil
+        return MTDiskDoor.write(sealed, to: url, "feed-sealed", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 }
 /// MY PAGE'S GROUND ON A CORRESPONDENT'S SCREEN (the author's word 25.09: «from T3 I opened T1's page and see no

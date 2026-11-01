@@ -1018,7 +1018,7 @@ enum MTPipeBook {
         for r in MontanaCard.outstandingRoots() {
             for k in MTPipe.windows(around: w) { if let t = MontanaFirstContact.knock(at: r, window: k) { tags[t] = r } }
         }
-        if let mn = MontanaSeed.mnemonic, let master = MontanaQueueKeys.masterSeed(mn),
+        if let master = MontanaSeed.root,
            let mine = MontanaNames.contactRoot(masterSeed: master) {
             for k in MTPipe.windows(around: w) { if let t = MontanaFirstContact.knock(at: mine, window: k) { tags[t] = mine } }
         }

@@ -26,25 +26,47 @@ enum MontanaQueueKeys {
     //
     // Keeping the root beside us is no more dangerous than keeping the phrase it is derived from: it is
     // one secret, and it makes no second copy. It leaves by the same boundary as everything else.
+    //
+    // THE ROOT IS STRETCHED ONCE ON THE DEVICE, IN ONE PLACE (the author's decision 494 = (b) and words 01.11.2026 15:35 UTC,
+    // links 14169-14170: «if they have none, option b suits us better»; «work by the SSOT principle and ask the key's root in one
+    // place, not 18»): the measure of 2330 on T1 (links 14164, 14172) -- every cold opening held the main thread 1943-2064 ms
+    // here, because the warm-up and the main thread stretched the same words side by side. Now the stretch is serialized (one
+    // in flight; a second asker waits for its answer and never stretches again), and the seated person's root is kept by its
+    // one owner (MontanaSeed.root) in the keychain beside the words, so a cold opening reads it instead of stretching.
+    // A password is stretched only when it is typed, never on every opening.
     private static let seedLock = NSLock()
+    private static let stretchLock = NSLock()
     private static var seedCache: (key: Data, seed: Data)?
 
     static func masterSeed(_ mnemonic: String) -> Data? {
         let key = sha256(Data(mnemonic.utf8))
-        seedLock.lock()
-        if let c = seedCache, c.key == key { seedLock.unlock(); return c.seed }
-        seedLock.unlock()
+        if let s = cached(key) { return s }
+        if let s = MontanaSeed.keptRoot(key) { remember(key, s); return s }
+        // Written before the lock: a wait on main for another's stretch is the same breach as stretching there.
+        if Thread.isMainThread { MontanaLog.event("MAIN COLD what=master-seed") }   // NOT-UI: the diary's line -- the law's breach, seen
+        stretchLock.lock(); defer { stretchLock.unlock() }
+        if let s = cached(key) { return s }
         var out = [UInt8](repeating: 0, count: 64)
         let rc = mnemonic.withCString { mt_mnemonic_to_master_seed($0, &out) }
         guard rc == 0 else { return nil }
         let seed = Data(out)
-        seedLock.lock(); seedCache = (key, seed); seedLock.unlock()
+        remember(key, seed)
+        MontanaSeed.keepRoot(key, seed)
         return seed
     }
+    private static func cached(_ key: Data) -> Data? {
+        seedLock.lock(); defer { seedLock.unlock() }
+        if let c = seedCache, c.key == key { return c.seed }
+        return nil
+    }
+    private static func remember(_ key: Data, _ seed: Data) {
+        seedLock.lock(); seedCache = (key, seed); seedLock.unlock()
+    }
 
-    /// The seed left the device -- so does the root derived from it.
+    /// The seed left the device -- so does the root derived from it, in memory and in the keychain.
     static func forgetMasterSeed() {
         seedLock.lock(); seedCache = nil; keysCache = nil; seedLock.unlock()
+        MontanaSeed.forgetRoot()
     }
     static func routingSecret(_ mnemonic: String) -> Data? {
         guard let master = masterSeed(mnemonic) else { return nil }
