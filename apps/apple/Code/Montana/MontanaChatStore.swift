@@ -2588,9 +2588,12 @@ class ChatStore: ObservableObject {
         MontanaWakePush.drainInboxSoon()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { MontanaWakePush.drainInboxSoon() }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { MontanaWakePush.drainInboxSoon() }
-        // The node box — on cold start, once the store has just attached: slightly after the
-        // triple belt, so the pipe book has time to open (the vault is sometimes busy at launch).
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { MontanaWakePush.fetchBoxKick() }
+        // THE LAUNCH'S BOX GOES AT ONCE (01.11.2026, OZ 1, the author's word 13956: the chats fresh within 3 s of the opening).
+        // It waited a blind 2.5 s «so the pipe book has time to open», but the book opens on its first read and no T1 diary
+        // since 2335 holds an empty one (subs=0 never; «no proven box» at every launch): every cold launch read its box at
+        // 2.9 s or later, 9.2-11.3 s on T1 2335/2336. A pickup before a door proves a box, or before the vault hands out this
+        // seed's reference, is owed and goes the moment a round proves one (boxDoorProven) -- never dropped, never a timer.
+        MontanaWakePush.fetchBoxKick()
         NotificationCenter.default.addObserver(forName: .montanaSeedForgotten, object: nil, queue: .main) { [weak self] _ in
             self?.wipeLocal()   // the identity changed -> clear memory (boundary — SeedScope)
         }

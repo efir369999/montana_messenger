@@ -2677,7 +2677,10 @@ enum MontanaWakePush {
             if again { Task { await fetchBox() } }
         }
         let ref = twinRef
-        guard !ref.isEmpty, agreesWithCanon() else { return }
+        guard agreesWithCanon() else { return }
+        // A pickup before the vault hands out this seed's reference (a launch's first second) is owed like one before a proven
+        // box (below): it goes when a round proves a box; it was dropped, and nothing asked again for up to eight seconds.
+        guard !ref.isEmpty else { boxLock.lock(); boxOwed = true; boxLock.unlock(); return }
         // A store nobody proved holds no letters, and the walk over four dead doors on every
         // drain wrote ~20 lines a minute for nothing (measured 03.09 22:12). A store that proves
         // itself is walked again.
