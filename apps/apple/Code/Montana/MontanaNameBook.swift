@@ -465,9 +465,40 @@ enum MTNameBook {
         if at > held || m[conv] == nil {
             m[conv] = at
             declaredAtCache = m
-            if let d = try? JSONEncoder().encode(m) { _ = MontanaLocalVault.setEncrypted(declaredAtKey, d) }
+            // A NEW W||D IS WRITTEN AT ONCE, AN ECHO IS FOLDED (01.11.2026, T1 2335: inbox-drain 127 ms on main -- every
+            // letter carries its sender's name with a fresher moment, and each one rewrote the whole map through the
+            // settings store, synchronously, on main). The moment advances in memory for every letter; the store hears a
+            // changed name at once (its receipt waits for the disk, MontanaLocalVault.commit), and the echo of a name
+            // already held at most once a second, off main.
+            if declared[conv] != name { writeDeclaredAts(m) } else { foldDeclaredAts() }
         }
         return true
+    }
+    private static let declaredAtQueue = DispatchQueue(label: "montana.names.declaredAt", qos: .utility)
+    private static let declaredAtLock = NSLock()
+    private static var declaredAtEpoch = 0   // raised when the store is replaced under the living: a folded write of the old book is dropped
+    private static var declaredAtFolding = false
+    private static func writeDeclaredAts(_ m: [String: Double]) {
+        declaredAtLock.lock(); let epoch = declaredAtEpoch; declaredAtLock.unlock()
+        // MAIN-SAFE-SYNC: put encodes and stores one map and never waits on main; behind any folded write on its way, the newest lands last
+        declaredAtQueue.sync { put(m, epoch) }
+    }
+    private static func foldDeclaredAts() {
+        guard !declaredAtFolding else { return }
+        declaredAtFolding = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            declaredAtFolding = false
+            guard let m = declaredAtCache else { return }   // the store was replaced: the next word reads it again
+            declaredAtLock.lock(); let epoch = declaredAtEpoch; declaredAtLock.unlock()
+            declaredAtQueue.async { put(m, epoch) }
+        }
+    }
+    /// On declaredAtQueue alone. The epoch moves only on this queue too (forgetStored), so it cannot move between the look
+    /// and the write, and the store is written under no lock (tools/mt-lock-check.py rule 4).
+    private static func put(_ m: [String: Double], _ epoch: Int) {
+        declaredAtLock.lock(); let current = declaredAtEpoch; declaredAtLock.unlock()
+        guard epoch == current, let d = try? JSONEncoder().encode(m) else { return }
+        _ = MontanaLocalVault.setEncrypted(declaredAtKey, d)
     }
     /// ONE-TIME SWEEP of the old doors' residue: a card name that is not in the rename book was
     /// never typed here — it is the peer's old word, copied. Cleared, so neither the card editor
@@ -537,6 +568,8 @@ enum MTNameBook {
     static func forgetStored() {
         manualCache = nil; nameCache = nil; manualPhotoCache = nil; manualColdCache = nil
         invalidateContacts(); declaredAtCache = nil; coldCache = nil; coldPhotoCache = nil
+        // MAIN-SAFE-SYNC: the queue holds only put, which never waits on main; the epoch moves after any write on its way
+        declaredAtQueue.sync { declaredAtLock.lock(); declaredAtEpoch += 1; declaredAtLock.unlock() }
         published = [:]
         forgetPictures()
         if let d = MontanaLocalVault.getDecrypted("peerUsernames") { MontanaKeychain.set("peerUsernames", d) }

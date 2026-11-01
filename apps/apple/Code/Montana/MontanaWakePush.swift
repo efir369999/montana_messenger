@@ -84,11 +84,50 @@ enum MontanaWakePush {
         return candidates().filter { known[$0]?.contains(cap) == true }
     }
 
+    /// ONE ROUND IN FLIGHT (01.11.2026, T1 2336 17:59:16-21; the author's word 14302: «the door should be found and held, not
+    /// searched every time»): `verifiedAt` moves only when a round ends, so every `bases(for:)` asked while a stale map was being
+    /// verified began a round of its own -- seventeen rounds in five seconds, each four probes, a /doors read and a release
+    /// check. A caller now joins the round already in flight and wakes with its answer; a new round begins only when none is.
+    /// A round begun on another network is not joined and does not speak for this one (the author's word 14303: «VPN and
+    /// the rest, every scenario»): a change of the network (networkPathChanged) raises `netGen`, lets the next caller begin
+    /// a round of its own, and the old round's silences and its «fresh» are dropped -- its answers stay, a capability is the
+    /// node's own and no network's.
+    private static var roundInFlight: Task<Void, Never>?
+    private static var roundSeq = 0
+    private static var netGen = 0
     static func verifyBases(_ pass: Int = 0) async {
-        let before = Set(candidates())
+        if pass != 0 { await verifyRound(pass); return }   // the second pass of the same round (doors learned in it)
+        let r = verifyLock.withLock { () -> Task<Void, Never> in
+            if let r = roundInFlight { return r }
+            roundSeq += 1
+            let mine = roundSeq
+            let r = Task {
+                await verifyRound(0)
+                verifyLock.withLock { if roundSeq == mine { roundInFlight = nil } }
+            }
+            roundInFlight = r
+            return r
+        }
+        await r.value
+    }
+
+    private static func verifyRound(_ pass: Int) async {
+        let gen = verifyLock.withLock { netGen }
+        let doors = candidates()
+        let before = Set(doors)
         var found: [String: Set<String>?] = [:]   // a value that is nil says «asked and silent»
+        // EVERY MACHINE SPOKE, THE MAP STANDS (01.11.2026, T1 2335; the author's words 13956, 14301-14304): the round wrote its
+        // answers only when every door had spoken, so two live doors that answered in a tenth of a second waited for two dead
+        // ones' six seconds of silence -- accel_paths at 6.5 s, and the launch's box pickup at 2.5 s found no proven box. The
+        // doors of one machine are one node, one store, one set of capabilities (MontanaNodes.machines, the network's own
+        // word): once every door has answered, or its machine has answered through another of its doors, ON THIS NETWORK AND
+        // NOW, the map is the whole map and is used. A door whose machine is unknown holds the round as before; the slow
+        // doors and the silent ones join at the round's end by the same merge. Nothing is carried from another network or
+        // another life: a tunnel, a whitelist hour or a new Wi-Fi is judged by its own answers.
+        let machineOf = machines(doors)
+        var early = false
         await withTaskGroup(of: (String, Set<String>?).self) { group in
-            for b in candidates() {
+            for b in doors {
                 group.addTask {
                     // The one probe of a door (MTNodeWire.health) — the sheet asks through it too.
                     // The node names what it holds. A node that names nothing held everything
@@ -98,17 +137,28 @@ enum MontanaWakePush {
                     return (b, caps)
                 }
             }
-            for await (b, held) in group { found[b] = held }
+            for await (b, held) in group {
+                found[b] = held
+                guard !early, held != nil, found.count < doors.count, everyMachineSpoke(doors, found, machineOf) else { continue }
+                early = true
+                verifyLock.lock()
+                for (d, h) in found { if let h { capsOf[d] = h; silentDoors.remove(d) } }
+                verifyLock.unlock()
+                MontanaTrace.mark("accel_early", "spoke=\(found.count) of=\(doors.count) -- every machine answered")
+                if found.values.contains(where: { $0?.contains("box") == true }) { boxDoorProven() }
+            }
         }
         verifyLock.lock()
+        let sameNet = gen == netGen   // the network did not change under the round
         // Merged, not replaced: a door that answered once and is silent now keeps its capabilities
         // (a single failed round is not a lost capability), but its silence is written down.
-        for (b, held) in found {
+        for (b, held) in found where sameNet || held != nil {   // a round that outlived a network change writes no silence
             if let held { capsOf[b] = held; silentDoors.remove(b) } else { silentDoors.insert(b) }
         }
-        verifiedAt = Date()
+        if sameNet { verifiedAt = Date() }
         verifyLock.unlock()
         for (b, held) in found where held != nil { proveDoor(b) }   // the round's answer is proof for the call's walk
+        if found.values.contains(where: { $0?.contains("box") == true }) { boxDoorProven() }
         // The extension's door mirror holds VERIFIED doors only — the one owner of the
         // list is this verification, not the raw candidate roster.
         // In the app's own order (the author's word 16.09: the sheet on cellular walked a dead
@@ -162,7 +212,7 @@ enum MontanaWakePush {
         // of=4» and «doors_learned n=6» 350 ms apart, and until the app was relaunched it never
         // knocked at the third node, while its own page showed that node as lost.
         if pass == 0, !Set(candidates()).subtracting(before).isEmpty {
-            await verifyBases(1)
+            await verifyRound(1)
         }
         // A DOOR THAT DID NOT ANSWER IS A QUESTION, NOT A VERDICT: the mode is measured then, so a
         // quiet minute costs the phone nothing. But a probe that never fires is a probe nobody has
@@ -174,6 +224,20 @@ enum MontanaWakePush {
         if (!mute.isEmpty && MontanaNetProbe.minutePassed()) || MontanaNetProbe.hourPassed() {
             await MontanaNetProbe.round(mute: mute, alive: alive)
         }
+    }
+
+    /// Every door answered or fell silent, or its machine answered through another of its doors.
+    private static func everyMachineSpoke(_ doors: [String], _ found: [String: Set<String>?], _ machineOf: [String: String]) -> Bool {
+        let spoke = Set(found.compactMap { e in e.value == nil ? nil : machineOf[e.key] })
+        return doors.allSatisfy { d in found.keys.contains(d) || machineOf[d].map(spoke.contains) == true }
+    }
+    /// The machine behind each door, by the network's own word (/doors «nodes», MontanaNodes.machines).
+    private static func machines(_ doors: [String]) -> [String: String] {
+        var byHost: [String: String] = [:]
+        for m in MontanaNodes.machines() { for n in m.doors { byHost[n.host] = m.id } }
+        var out: [String: String] = [:]
+        for d in doors { if let host = URL(string: d)?.host, let id = byHost[host] { out[d] = id } }
+        return out
     }
 
     /// STORE-CONVERGENT ORDER. The per-node stores do not talk to each other, so wake and
@@ -553,6 +617,9 @@ enum MontanaWakePush {
     private static var postLane = URLSession(configuration: .default)
     private static var postGeneration = 0
     static func networkPathChanged(_ key: String) {
+        // The doors' map is judged on the new network (16.6.19): the next caller begins a round there; the map held stands
+        // until its answers come, so nothing waits on the change.
+        verifyLock.lock(); netGen += 1; roundInFlight = nil; roundSeq += 1; verifiedAt = .distantPast; verifyLock.unlock()
         let lane = URLSession(configuration: .default)   // built before the lock: under it, only the swap
         baseLock.lock()
         signalDoorDead.removeAll(); doorFails.removeAll(); deathStreak.removeAll(); doorProof.removeAll(); signalDoorChosen = nil   // proof on Wi-Fi says nothing about cellular
@@ -2502,6 +2569,20 @@ enum MontanaWakePush {
     private static var boxStartedAt: TimeInterval = 0
     private static var boxGen = 0
     private static let boxLock = NSLock()
+    /// THE WHOLE BOX ONCE A MINUTE, THE FRESH DAYS BETWEEN (01.11.2026, OZ 1, decision 502; T1 2336): every pickup asked all four
+    /// days of the box's term -- 488 labels, four pages to each of two machines -- and 57 of 64 pickups in the hour came within a
+    /// minute of the one before (a push's wake and the activation behind it read the whole box twice, 17:07:34.534 and :35.086).
+    /// A letter just knocked wears its sender's day (MTNodeWire.freshDays); the other days hold only a letter that already
+    /// waited, and the whole read takes it within a minute. The first pickup of a life is whole. Guarded by boxLock.
+    private static var lastWholeBoxAt: TimeInterval = 0
+    static let wholeBoxEveryS: TimeInterval = 60
+    /// A PICKUP BEFORE ANY PROVEN BOX IS OWED, NOT DROPPED (01.11.2026, T1 2335): the launch's pickup at 2.5 s found no proven
+    /// box and returned, and nothing asked again when the round proved one. It goes the moment a round does (verifyBases).
+    private static var boxOwed = false
+    private static func boxDoorProven() {
+        boxLock.lock(); let owed = boxOwed; boxOwed = false; boxLock.unlock()
+        if owed { fetchBoxNow() }
+    }
     /// A WAKE READS THE BOX WITHIN ITS OWN LIFE (21.09, the critic): the read is awaited, bounded
     /// by the wake's seconds, and the wake's completion follows it — a read begun in a previous
     /// life (the tablet at 22:23: nine seconds awake, the fetch of 22:06 «finishing») counts for
@@ -2550,8 +2631,17 @@ enum MontanaWakePush {
     static func fetchBoxNow() {
         boxLock.lock()
         boxLast = Date().timeIntervalSince1970
+        lastWholeBoxAt = 0   // the node said a letter lies: it is found whatever day its sender's clock gave it (fetchBoxWhole)
         boxLock.unlock()
         Task { await fetchBox() }
+    }
+
+    /// THE NEXT PICKUP IS WHOLE (01.11.2026, OZ 1): a pipe just hatched was in no whole read -- the tombstone of a conversation
+    /// erased at both ends may lie under a day the fresh read does not ask -- and a person pulling the list asks for everything.
+    /// The store's hint does the same (fetchBoxNow): two an hour on T1 2336, each a letter the node swears to.
+    static func fetchBoxWhole() async {
+        boxLock.lock(); lastWholeBoxAt = 0; boxLock.unlock()
+        await fetchBox()
     }
 
     /// Box rows that stayed sealed after the day-deep walk — per process, so a fetch every
@@ -2570,6 +2660,7 @@ enum MontanaWakePush {
             // the box — and a fresh one starts now.
             if nowT - boxStartedAt < 25 { boxTrail = true; boxLock.unlock(); return }
             boxGen += 1
+            lastWholeBoxAt = 0   // the abandoned read counts for nothing, its whole read with it
             MontanaTrace.mark("box_fetch", "stale read of \(Int(nowT - boxStartedAt))s abandoned — a fresh one starts")
         }
         boxBusy = true; boxStartedAt = nowT
@@ -2591,9 +2682,18 @@ enum MontanaWakePush {
         // drain wrote ~20 lines a minute for nothing (measured 03.09 22:12). A store that proves
         // itself is walked again.
         guard !doorsHolding("box").isEmpty else {
+            boxLock.lock(); boxOwed = true; boxLock.unlock()   // goes when a round proves a box (boxDoorProven)
             MontanaTrace.markFolded("box_fetch", "no proven box — the walk waits for a store that answers", window: 300)
             return
         }
+        // WHOLE OR FRESH (wholeBoxEveryS) is decided here, where the read surely goes, and before the pipes are gathered: a pickup
+        // turned back above owes the whole one it would have been, and a pipe born after this line meets a mark its birth zeroed
+        // (fetchBoxWhole), so the pickup that first asks its labels asks every day of them.
+        boxLock.lock()
+        let readAt = Date().timeIntervalSince1970, wholeBefore = lastWholeBoxAt
+        let whole = readAt - wholeBefore >= wholeBoxEveryS
+        if whole { lastWholeBoxAt = readAt }
+        boxLock.unlock()
         // Tags across the box's term (MTNodeWire.boxDays) — for the sender's skewed clock.
         var pipes: [String: MTPipeKey] = [:]
         for conv in MTPipeBook.all() {   // a blocked person's letters are read too — and buried below, not left to wait
@@ -2601,9 +2701,13 @@ enum MontanaWakePush {
         }
         for (name, secret) in MTKeeping.listening() { pipes[name] = secret }   // the pipes of the slots this phone keeps (MTKeeping)
         for (name, secret) in MontanaArchive.twinListening() { pipes[name] = secret }   // the pipe of this seed's devices (11.10.2026)
-        let ear = BoxEar(invites: MontanaCard.outstandingInvites(), pipes: pipes, owner: ref)
-        guard !ear.subs.isEmpty else { MontanaTrace.mark("box_fetch", "subs=0 — the book/invites are empty (vault busy?)"); return }
-        MontanaTrace.mark("box_fetch", "subs=\(ear.subs.count) invites=\(ear.rdvLabels.count / 10) pipes=\(ear.chatOf.count / 10)")
+        let ear = BoxEar(invites: MontanaCard.outstandingInvites(), pipes: pipes, owner: ref, days: whole ? nil : MTNodeWire.freshDays())
+        guard !ear.subs.isEmpty else {
+            // Nothing was read: the whole read this would have been is still owed.
+            if whole { boxLock.lock(); if lastWholeBoxAt == readAt { lastWholeBoxAt = wholeBefore }; boxLock.unlock() }
+            MontanaTrace.mark("box_fetch", "subs=0 — the book/invites are empty (vault busy?)"); return
+        }
+        MontanaTrace.mark("box_fetch", "subs=\(ear.subs.count) invites=\(ear.rdvLabels.count / 10) pipes=\(ear.chatOf.count / 10) read=\(whole ? "whole" : "fresh")")
         let stashed = await pickup(ear, buries: { chat, mid in
             // A BLOCKED PERSON'S LETTER IS BURIED HERE, NOT LEFT TO WAIT (the author's
             // question 15.09: after an unblock the letters of the block arrived — the
@@ -2638,12 +2742,13 @@ enum MontanaWakePush {
         /// listens with theirs; a person on the shelf listens without one -- a letter of the person seated to them is theirs to
         /// receive, never their own.
         let author: Data?
-        init(invites: [Data], pipes: [String: MTPipeKey], owner: String) {   // owner: the person's own reference (P-118.1)
+        /// days: the days asked -- the box's whole term by default, the fresh days between the whole reads (fetchBox).
+        init(invites: [Data], pipes: [String: MTPipeKey], owner: String, days: ClosedRange<UInt64>? = nil) {   // owner: P-118.1
             author = owner == (MontanaSeed.twin ?? "") ? MTLetterAuthor.key : nil
-            let w0 = MontanaWakePush.dayWindow()
+            let span = days ?? MTNodeWire.boxDays(around: MontanaWakePush.dayWindow())
             for inv in invites {
                 let sec = MontanaWakePush.rdvLetterSecret(inv)
-                for w in MTNodeWire.boxDays(around: w0) {
+                for w in span {
                     let cw = MontanaWakePush.rdvConvW(inv, window: w)
                     rdvLabels.insert(cw); secretOf[cw] = sec; invOf[cw] = inv.base64urlNoPad
                     subs.append(cw); sids.append(MontanaWakePush.subId(cw, ref: owner))
@@ -2654,7 +2759,7 @@ enum MontanaWakePush {
                 // it, so a device asks under its own name there (MontanaArchive.twinSid) -- its own letters stay for the others.
                 let own = conv == MontanaArchive.twinPipe
                 // A heal in flight: the box is read under both walks' labels (MTPipeKey.convWs).
-                for w in MTNodeWire.boxDays(around: w0) {
+                for w in span {
                     for cw in MontanaWakePush.convWs(secret, window: w) {
                         secretOf[cw] = secret; chatOf[cw] = conv
                         subs.append(cw); sids.append(own ? MontanaArchive.twinSid(cw) : MontanaWakePush.subId(cw, ref: owner))
@@ -3551,7 +3656,7 @@ enum MontanaWakePush {
                 // An offline round is short by construction (request timeout 5s), and offline
                 // a tombstone cannot arrive any more than a letter can.
                 Task {
-                    await fetchBox()
+                    await fetchBoxWhole()   // the pipe is new to every read: all its days are asked
                     try? await Task.sleep(nanoseconds: 400_000_000)   // the tombstone drain has time to apply
                     // A LONG FIRST LETTER IS NEVER LAID AS ITS REFERENCE (29.10.2026, issue #23 link 147 and PR #119 of Android 95: an
                     // iPhone on 2316 drew «SM:…» as a bubble): the extension could not fetch the cargo, the reference was laid as «New

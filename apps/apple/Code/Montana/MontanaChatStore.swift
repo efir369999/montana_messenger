@@ -7231,6 +7231,7 @@ enum SeedScope {
     static func forgetContent() {
         let ud = UserDefaults.standard
         MontanaTelemetry.shared.event("PROFILE wiped by clearData (had a name: \((ud.string(forKey: "userName") ?? "").isEmpty ? "no" : "yes"))")
+        MTBoard.drain()   // no wall write on its way outlives the wipe (P-4)
         for k in dataKeys { ud.removeObject(forKey: k) }
         for k in ud.dictionaryRepresentation().keys where (legacyPrefixes + dataPrefixes).contains(where: k.hasPrefix) { ud.removeObject(forKey: k) }
         MontanaCard.wipe()   // the card's records leave by their owner's door, in order after every write on its way (25.09)
@@ -7253,6 +7254,7 @@ enum SeedScope {
         if !MTSeats.anyParked { MontanaWakePush.withdrawTokenRowsEverywhere() }
         let ud = UserDefaults.standard
         forgetRetired()
+        MTBoard.drain()   // no wall write on its way outlives the wipe (P-4)
         let present = (dataKeys + legacyKeys + legacyEntryKeys + boundaryKeys).filter { ud.object(forKey: $0) != nil }.count
         for k in dataKeys + legacyKeys + legacyEntryKeys + boundaryKeys { ud.removeObject(forKey: k) }
         for k in ud.dictionaryRepresentation().keys where (legacyPrefixes + dataPrefixes).contains(where: k.hasPrefix) { ud.removeObject(forKey: k) }
@@ -7555,7 +7557,12 @@ enum MTHistoryFile {
         let knew = held, knewIndex = heldIndex, at = era
         lock.unlock()
         try? fm.createDirectory(at: chats, withIntermediateDirectories: true)
+        // ONE SPELLING FOR THE SAME ROWS (link 14269, T1 2330/2335): the encoder lays an object's keys in the order of a Swift
+        // dictionary, seeded anew in every process, so the first write after each launch found 54 of 55 parts «moved» at the very
+        // same length (4704655 bytes three launches running) and sealed and wrote all 4.7 MB again. Sorted keys spell the same rows
+        // the same bytes in every process: one rewrite after this build, then only the parts that truly moved.
         let enc = JSONEncoder()
+        enc.outputFormatting = [.sortedKeys]
         var index: [String: String] = [:]
         for (chat, rows) in snapshot {
             let n = name(chat)

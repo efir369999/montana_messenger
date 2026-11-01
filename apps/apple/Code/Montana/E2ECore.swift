@@ -226,9 +226,26 @@ enum MontanaLocalVault {
             if MTDiskDoor.write(sealed, to: file, "e2e-load", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) { held = mark + digest }
         }
         ud.set(held, forKey: key)
-        if let before, before != loadName(held) {
-            loads.asyncAfter(deadline: .now() + 60) { sweep(only: [before]) }
+        if let before, before != loadName(held) { park(before) }
+    }
+    /// ONE SWEEP A MINUTE, NOT ONE PER WRITE (01.11.2026, T1 2335: vault_loads x31). Every load a key moved away from waited its
+    /// own minute and then read the whole settings and every shelf person's store alone -- a flush of the wall writes five or six
+    /// large keys, so each page that came in cost five or six such reads a minute later. The names gather here, each keeps its
+    /// minute, and one pass takes all that are due; touched on `loads` alone.
+    private static var parked: [String: TimeInterval] = [:]
+    private static func park(_ name: String) {
+        loads.async {
+            let idle = parked.isEmpty
+            parked[name] = ProcessInfo.processInfo.systemUptime   // named again since: its minute starts over
+            if idle { loads.asyncAfter(deadline: .now() + 60) { sweepParked() } }
         }
+    }
+    private static func sweepParked() {
+        let now = ProcessInfo.processInfo.systemUptime
+        let due = Set(parked.filter { e in 60 <= now - e.value }.keys)
+        for name in due { parked.removeValue(forKey: name) }
+        if !due.isEmpty { sweep(only: due) }
+        if !parked.isEmpty { loads.asyncAfter(deadline: .now() + 60) { sweepParked() } }
     }
     /// Every load a key names -- in the settings, and in the values of each person waiting on the shelf -- stays; the rest
     /// leave. Nothing leaves while a seat's move runs, nor a file younger than ten minutes (its key may be on its way).

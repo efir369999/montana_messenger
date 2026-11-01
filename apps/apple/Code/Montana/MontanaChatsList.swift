@@ -849,7 +849,7 @@ struct ChatsListView: View {
         MontanaWakePush.drainInbox()
         MontanaPhoneNode.shared.onForeground()
         MontanaDeliveryEngine.shared.drainAll()
-        await MontanaWakePush.fetchBox()
+        await MontanaWakePush.fetchBoxWhole()   // the person asks for everything: every day of the box
         await MontanaWakePush.sweepPresence()
         store.retryPendingMedia()
     }

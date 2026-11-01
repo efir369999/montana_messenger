@@ -380,6 +380,8 @@ final class MTBoard: ObservableObject {
     /// or the memory of the moment before writes itself over them.
     func reread() { load() }
     private func load() {
+        // MAIN-SAFE-SYNC: a read waits for the wall's writes on their way (P-4); `writes` encodes, seals and stores, never waits on main.
+        Self.writes.sync {}
         mine = Self.read(Self.mineKey) ?? []
         owned = Self.read(Self.ownedKey) ?? [:]
         let numbered = Self.numberMissing(&mine)
@@ -441,7 +443,7 @@ final class MTBoard: ObservableObject {
     private func scheduleSave(_ key: String) {
         dirty.insert(key)
         saveWork?.cancel()
-        let work = DispatchWorkItem { [weak self] in self?.flush() }
+        let work = DispatchWorkItem { [weak self] in self?.gather() }   // off main from here (P-4); flush() waits for the disk
         saveWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8, execute: work)
     }
@@ -451,21 +453,30 @@ final class MTBoard: ObservableObject {
         owedReceipts.append((chat, mid))
         scheduleSave(Self.pagesKey)
     }
+    /// THE WALL IS WRITTEN OFF THE MAIN THREAD (P-4; 01.11.2026, the author's words 13956 and 14325): every gathered save
+    /// encoded each dirty key to JSON, sealed it and waited for the settings' disk (commit) on main -- five or six large keys
+    /// per page that came in. Main now only takes the values (copies of structs, nothing is encoded) and trims what the bounds
+    /// ask; the one serial queue below encodes, seals, stores and commits them in the order they were taken, and the pages'
+    /// receipts leave after that commit, as before.
+    /// THE STORE CHANGES HANDS IN ORDER (the critic, Agent 824, 01.11.2026): a write still on its way would land on a store
+    /// emptied or laid for another person -- a seat parked, cleared or lifted, a seed forgotten -- and the next read would take
+    /// it back. Each of them waits first for the writes on their way (drain), as the card's wipe waits for its own
+    /// (MontanaCard.wipe), and a read waits for them too (load).
+    private static let writes = DispatchQueue(label: "montana.board.writes", qos: .utility)
+    /// The wall's writes on their way are on the disk when this returns; from any thread but `writes` itself.
+    static func drain() {
+        writes.sync {}   // MAIN-SAFE-SYNC: `writes` encodes, seals and stores the wall; it never waits on main
+    }
+    /// Gathered and written before the call returns: the leave to the background and a seat that moves need it on the disk.
     func flush() {
-        if dirty.contains(Self.mineKey) { Self.write(mine, Self.mineKey) }
-        if dirty.contains(Self.ownedKey) { Self.write(owned, Self.ownedKey) }
-        if dirty.contains(Self.keptKey) { Self.write(kept, Self.keptKey) }
-        if dirty.contains(Self.pagesKey) {
-            if Self.walls < pages.count {
-                let keep = Set(pages.sorted { $0.value.at > $1.value.at }.prefix(Self.walls).map { $0.key })
-                pages = pages.filter { keep.contains($0.key) }
-            }
-            Self.write(pages, Self.pagesKey)
+        gather()
+        Self.drain()
+    }
+    private func gather() {
+        if dirty.contains(Self.pagesKey), Self.walls < pages.count {
+            let keep = Set(pages.sorted { $0.value.at > $1.value.at }.prefix(Self.walls).map { $0.key })
+            pages = pages.filter { keep.contains($0.key) }
         }
-        if dirty.contains(Self.capKey) { Self.write(cap, Self.capKey) }
-        if dirty.contains(Self.sentKey) { Self.write(sent, Self.sentKey) }
-        if dirty.contains(Self.draftsKey) { Self.write(drafts, Self.draftsKey) }
-        if dirty.contains(Self.goingKey) { Self.write(outgoing, Self.goingKey) }
         if dirty.contains(Self.firstKey) {
             // [I-14] bound: a moment is kept while its post stands on a page here, or for thirty days after it was first held.
             let standing = Set(pages.values.flatMap { pg in pg.posts.map(\.id) })
@@ -476,14 +487,37 @@ final class MTBoard: ObservableObject {
                 let keep = Set(gone.sorted { a, b in b.value < a.value }.prefix(Self.firstKept).map(\.key))
                 firstSeen = firstSeen.filter { e in standing.contains(e.key) || keep.contains(e.key) }
             }
-            Self.write(firstSeen, Self.firstKey)
         }
+        let d = dirty
         dirty.removeAll()
-        guard !owedReceipts.isEmpty else { return }
-        _ = MontanaLocalVault.commit()
         let owed = owedReceipts
         owedReceipts = []
-        for o in owed { ChatStore.live?.sendDeliveryReceipt(o.chat, msgId: o.mid, isFromMe: false, text: Self.mark) }
+        guard !d.isEmpty || !owed.isEmpty else { return }
+        let mine = d.contains(Self.mineKey) ? self.mine : nil
+        let owned = d.contains(Self.ownedKey) ? self.owned : nil
+        let kept = d.contains(Self.keptKey) ? self.kept : nil
+        let pages = d.contains(Self.pagesKey) ? self.pages : nil
+        let cap = d.contains(Self.capKey) ? self.cap : nil
+        let sent = d.contains(Self.sentKey) ? self.sent : nil
+        let drafts = d.contains(Self.draftsKey) ? self.drafts : nil
+        let going = d.contains(Self.goingKey) ? self.outgoing : nil
+        let first = d.contains(Self.firstKey) ? self.firstSeen : nil
+        Self.writes.async {
+            if let mine { Self.write(mine, Self.mineKey) }
+            if let owned { Self.write(owned, Self.ownedKey) }
+            if let kept { Self.write(kept, Self.keptKey) }
+            if let pages { Self.write(pages, Self.pagesKey) }
+            if let cap { Self.write(cap, Self.capKey) }
+            if let sent { Self.write(sent, Self.sentKey) }
+            if let drafts { Self.write(drafts, Self.draftsKey) }
+            if let going { Self.write(going, Self.goingKey) }
+            if let first { Self.write(first, Self.firstKey) }
+            guard !owed.isEmpty else { return }
+            _ = MontanaLocalVault.commit()
+            DispatchQueue.main.async {
+                for o in owed { ChatStore.live?.sendDeliveryReceipt(o.chat, msgId: o.mid, isFromMe: false, text: Self.mark) }
+            }
+        }
     }
 
     // -- names ----------------------------------------------------------------------------------
@@ -610,15 +644,28 @@ final class MTBoard: ObservableObject {
         if let pg = pages[wall], Date().timeIntervalSince1970 - pg.at < Self.lookStale { return }
         ask(wall)
     }
+    /// THE LOOK LASTS WHILE THE FEED IS LOOKED AT (01.11.2026, the author's word «the network is noisy»; T1 2335 17:03:09): a pass
+    /// through the feed of 0.6 s on the way to another tab sent 41 asks over twelve seconds, each a letter in the box and a push
+    /// that woke the owner's phone -- 38 phones woken, and every page they sent back woke this one to read its whole box. An ask
+    /// still waiting its turn when the feed is left is not sent; a wall asked and not answered is not asked again -- its owner's
+    /// phone not woken again -- within the look's ten minutes.
+    private var feedLook = 0
     func lookFeed() {
         MTBoardGlobal.shared.read()   // the posts of everyone, from the nodes' table (18.10)
+        feedLook += 1
+        let look = feedLook, now = Date()
         var n = 0
         for conv in cap where MontanaConv.holds(conv) {
-            if let pg = pages[conv], Date().timeIntervalSince1970 - pg.at < Self.lookStale { continue }
+            if let pg = pages[conv], now.timeIntervalSince1970 - pg.at < Self.lookStale { continue }
+            if let t = askedAt[conv], now.timeIntervalSince(t) < Self.lookStale { continue }
             let wait = 0.3 * Double(n); n += 1
-            DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in self?.ask(conv) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
+                guard let self, self.feedLook == look else { return }
+                self.ask(conv)
+            }
         }
     }
+    func leaveFeed() { feedLook += 1 }
 
     // -- the owner carries the wall ----------------------------------------------------------------
 

@@ -3142,7 +3142,8 @@ struct MTFeedTabView: View {
         // stale, the moment the feed is looked at — at its birth and at every turn to it (mtPaneLive), not at a return of the
         // app alone (MTBoard.lookFeed).
         .onAppear { if live { board.lookFeed() } }
-        .onChange(of: live) { _, on in if on { board.lookFeed() } }
+        .onChange(of: live) { _, on in if on { board.lookFeed() } else { board.leaveFeed() } }
+        .onDisappear { board.leaveFeed() }
         .modifier(MTBoardPresenting(sheet: $sheet, page: $page))
     }
     private static func row(_ id: String) -> Chat {

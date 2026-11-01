@@ -238,6 +238,7 @@ final class MTSeats: ObservableObject {
 
     /// The layer's store is empty: the values, the keychain items, the seed. Nothing here touches memory.
     private static func clearStore() {
+        MTBoard.drain()   // no wall write on its way lands on the emptied store (P-4)
         let ud = UserDefaults.standard
         for k in ud.dictionaryRepresentation().keys where layerHolds(k) { ud.removeObject(forKey: k) }
         for k in SeedScope.seatKeychain { MontanaKeychain.delete(k) }
@@ -272,6 +273,7 @@ final class MTSeats: ObservableObject {
             MontanaTrace.mark("seat_lift", "REFUSED id=" + id)
             return false
         }
+        MTBoard.drain()   // no wall write on its way lands over the lifted person's values (P-4)
         var moved = 0
         for f in SeedScope.seatFolders {
             let parked = shelf(of: f, in: id)
@@ -567,6 +569,7 @@ final class MTSeats: ObservableObject {
     }
     private func parkThenLift(from: String?, to target: String?, t0: Date) {
         ChatStore.badgeLine.sync {}   // MAIN-SAFE-SYNC: two keychain writes at most, never a wait on main; the leaving count lands before the park reads it
+        MTBoard.shared.flush()        // the wall of the person leaving, written while their store lived, lands before the park reads it (P-4)
         let ground = target == nil && from != nil ? MTWallpaper.carry() : nil   // a seat emptied for a new person keeps the cover (03.10)
         if let from {
             // The coins of the person leaving are on disk in their own folder before it moves (the coin audit's fourth point), and

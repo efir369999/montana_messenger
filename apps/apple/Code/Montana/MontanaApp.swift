@@ -521,6 +521,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // THE WAKE READS THE WHOLE BOX, NOT ONLY THE LETTER IT CARRIED (21.09, the critic: the tablet
         // was awake nine seconds at 22:23 and read nothing; the photo boxed at 22:09 waited fifteen
         // hours). The completion follows the bounded read.
+        // A LETTER INTO AN APP ON THE SCREEN IS NO WAKE (01.11.2026, the author's word «the network is noisy»; T1 2335
+        // 17:03:12-24): the app awake and shown, every push with a letter read the whole box past its gate -- 488 tags, twelve
+        // times in twelve seconds, one read per page a correspondent sent back. The letter is in hand; the rest of the box is
+        // read by the gate a live app reads it by, one pickup per eight seconds, a call inside it booked, never dropped.
+        if application.applicationState == .active, MontanaTelemetry.shared.sleptFor < MontanaWakeDoor.sleepGapS {
+            MontanaWakePush.fetchBoxKick()
+            completionHandler(.newData)
+            return
+        }
         Task { await MontanaWakePush.fetchBoxOnWake(); completionHandler(.newData) }
     }
 

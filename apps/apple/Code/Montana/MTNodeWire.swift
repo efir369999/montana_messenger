@@ -273,6 +273,13 @@ enum MTNodeWire {
     /// behind and one ahead. Ten days stood in both readers from the week-long box of August: 1 140 labels, nine pages to every
     /// store at every pickup, seven of each ten asking a day no box keeps.
     static func boxDays(around w0: UInt64) -> ClosedRange<UInt64> { (w0 - 2)...(w0 + 1) }
+    /// THE DAYS A LETTER JUST KNOCKED CAN WEAR (01.11.2026, OZ 1, T1 2336): its sender's day at the knock -- the day of an hour ago
+    /// through the day of an hour ahead, one day and two only around midnight UTC, never outside boxDays. A pickup between the
+    /// whole ones asks only these (MontanaWakePush.fetchBox); a letter under an older day waits for the next whole read.
+    static func freshDays(at t: TimeInterval = Date().timeIntervalSince1970) -> ClosedRange<UInt64> {
+        let w0 = UInt64(t) / 86400, box = boxDays(around: w0)
+        return max(UInt64(max(0, t - 3600)) / 86400, box.lowerBound)...min(UInt64(t + 3600) / 86400, box.upperBound)
+    }
 
     // ── seal / open by the core — no own cipher exists ─────────────────────
     static func sealBlob(key: [UInt8], _ plain: Data) -> Data? {

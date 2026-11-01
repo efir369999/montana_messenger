@@ -163,7 +163,11 @@ enum MontanaNodes {
     private static let machinesKey = "mt.nodes.machines"
     static func learnMachines(_ groups: [(id: String, doors: [String])]) {
         let arr: [[String: Any]] = groups.map { ["id": $0.id, "doors": $0.doors] }
-        guard let d = try? JSONSerialization.data(withJSONObject: arr), let s = String(data: d, encoding: .utf8) else { return }
+        // In one order of keys (01.11.2026, T1 2336: «machines_learned n=2» twelve times in thirteen minutes, both doors
+        // answering the same list): a dictionary's keys come out in no promised order, so the same word read as new and
+        // rewrote the whole settings file at every round.
+        guard let d = try? JSONSerialization.data(withJSONObject: arr, options: [.sortedKeys]),
+              let s = String(data: d, encoding: .utf8) else { return }
         guard s != UserDefaults.standard.string(forKey: machinesKey) else { return }
         UserDefaults.standard.set(s, forKey: machinesKey)
         MontanaTrace.mark("machines_learned", "n=\(groups.count)")
