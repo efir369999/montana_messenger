@@ -168,6 +168,19 @@ enum MontanaKeychain {
         SecItemDelete(q as CFDictionary)
         MTColdMirror.wrote(key)
     }
+
+    /// AN ITEM BORN ONCE (01.11.2026, MTLetterBox): an add and never an update -- the keychain admits exactly one creator, whichever
+    /// process it is, and the other's add finds the item standing and changes nothing.
+    @discardableResult static func addOnce(_ key: String, _ data: Data) -> Bool {
+        var add: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+                                  kSecAttrAccount as String: key,
+                                  kSecAttrAccessGroup as String: group,
+                                  kSecValueData as String: data,
+                                  kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly]
+        add.merge(sameEverywhere) { a, _ in a }
+        defer { MTColdMirror.wrote(key) }
+        return SecItemAdd(add as CFDictionary, nil) == errSecSuccess
+    }
 }
 
 /// THE MIRRORS ARE READ FROM THE KEYCHAIN ONCE A WRITE (the author's words 18.10.2026 11:3x-11:4x UTC: «the chats lag»; «as the
@@ -244,6 +257,15 @@ enum MontanaHandoff {
         }
         return d
     }
+    /// THE ONE WRITER OF THE CONTOUR'S SHARED FOLDERS (01.11.2026, the disk door, link 13994): the shelf, the cargo and the
+    /// extension's letters are written here and nowhere else, sealed until the first unlock. Every process compiles it; in the
+    /// app the bytes are named to MTDiskDoor through `counted`, laid at launch (an extension has no door of its own).
+    nonisolated(unsafe) static var counted: ((String, Int) -> Void)?
+    static func put(_ data: Data, at u: URL, _ name: String) -> Bool {
+        guard (try? data.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil else { return false }
+        counted?(name, data.count)
+        return true
+    }
     /// A shelf name is our own random word: nothing from the wire ever names a shelf file.
     static func url(_ src: String) -> URL? {
         guard !src.isEmpty, src.count <= 40, src.allSatisfy({ $0.isHexDigit || $0 == "-" }), let d = dir else { return nil }
@@ -252,8 +274,7 @@ enum MontanaHandoff {
     /// The sheet's side: the bytes go on the shelf; the returned name travels in the item.
     static func lay(_ data: Data) -> String? {
         let name = UUID().uuidString
-        guard let u = url(name),
-              (try? data.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil else { return nil }
+        guard let u = url(name), put(data, at: u, "handoff") else { return nil }
         return name
     }
     static func lay(file: URL) -> String? {
@@ -302,7 +323,7 @@ enum MontanaHandoff {
     static func layBlob(_ bid: String, _ sealed: Data) -> Bool {
         guard let u = blobURL(bid) else { return false }
         if FileManager.default.fileExists(atPath: u.path) { return true }
-        return (try? sealed.write(to: u, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil
+        return put(sealed, at: u, "blobs")
     }
 }
 
@@ -510,6 +531,170 @@ enum MTExtensionDiary {
             take(dst)
         }
         return out
+    }
+}
+
+/// THE EXTENSION'S BOX IS A FOLDER, ONE SEALED FILE A LETTER (01.11.2026, OZ 1; the author's words 13956/13957 «T1 heats, the
+/// chats wait up to 3 s at the opening» and 14020 «the NSE box: a cursor instead of the whole»). The box stood in one keychain item,
+/// the whole array of letters: every drain, every letter leaving it, every repeat the lane laid into it read the item, decoded the
+/// whole array and wrote it back whole -- on the main thread, at the opening, the moment the person waits for the chats -- and the
+/// extension did the same for every letter it stashed. Each letter is now one file of the contour's shared folder, named by the
+/// sha256 of its name (nothing of the wire names a file here), its row sealed with AES-GCM under a key born once in the shared
+/// keychain and bound to the file's name. A letter in costs one file written; a letter out, one file removed; the app opens only
+/// the files it has not read this life -- the cursor -- and knows the rest by name. The item of the builds before is read once,
+/// laid into the folder and emptied. Both processes compile this file.
+enum MTLetterBox {
+    typealias Row = [String: String]
+    private static let keyName = "nseInboxKey"   // NOT-UI: a keychain item's name
+    private static let legacyName = "nseInbox"   // NOT-UI: the item of the builds before 01.11.2026, read once for the move
+    static var dir: URL? {
+        guard let base = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: MontanaContour.appGroup) else { return nil }
+        let d = base.appendingPathComponent("inbox", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: d.path) {
+            try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true,
+                                                     attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
+        }
+        return d
+    }
+    private static let lock = NSLock()
+    private static var keyHeld: SymmetricKey?
+    /// What this life has read: a file's name, its moment and row. A name read once is never opened again while it stands.
+    private static var read: [String: (o: Int64, row: Row)] = [:]
+    private static var moved = false
+
+    /// The key is born once, by one add the keychain admits from exactly one process; the other reads the one that stands.
+    /// The keychain is asked outside the lock (a lock holds only memory): two threads that both find no key both add, the
+    /// keychain admits one, and both read the one that stands -- the same bytes, whichever of them remembers it.
+    private static func key() -> SymmetricKey? {
+        lock.lock(); let known = keyHeld; lock.unlock()
+        if let known { return known }
+        var d = MontanaKeychain.get(keyName)
+        if d?.count != 32 {
+            let fresh = SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
+            _ = MontanaKeychain.addOnce(keyName, fresh)
+            d = MontanaKeychain.get(keyName)
+        }
+        guard let d, d.count == 32 else { return nil }
+        let k = SymmetricKey(data: d)
+        lock.lock(); keyHeld = k; lock.unlock()
+        return k
+    }
+    static func name(_ mid: String) -> String {
+        SHA256.hash(data: Data(mid.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+    private static func seal(_ row: Row, o: Int64, name: String) -> Data? {
+        guard let k = key(), let plain = try? JSONSerialization.data(withJSONObject: ["o": String(o), "r": row]) else { return nil }
+        return try? AES.GCM.seal(plain, using: k, authenticating: Data(name.utf8)).combined
+    }
+    private static func open(_ sealed: Data, name: String) -> (o: Int64, row: Row)? {
+        guard let k = key(), let box = try? AES.GCM.SealedBox(combined: sealed),
+              let plain = try? AES.GCM.open(box, using: k, authenticating: Data(name.utf8)),
+              let obj = try? JSONSerialization.jsonObject(with: plain) as? [String: Any],
+              let row = obj["r"] as? Row else { return nil }
+        return (Int64(obj["o"] as? String ?? "") ?? 0, row)
+    }
+    private static func write(_ row: Row, o: Int64, name: String, in d: URL) -> Bool {
+        guard let sealed = seal(row, o: o, name: name) else { return false }
+        return MontanaHandoff.put(sealed, at: d.appendingPathComponent(name), "inbox")
+    }
+    private static func now() -> Int64 { Int64(Date().timeIntervalSince1970 * 1000) }
+
+    /// A letter into the box -- true when it was not there. A cap keeps the newest letters, by the moment their files were born
+    /// (the extension's 200: a phone away for a month does not grow the folder without end).
+    @discardableResult
+    static func lay(_ row: Row, cap: Int? = nil) -> Bool { lay(row, cap: cap, o: now()) }
+    private static func lay(_ row: Row, cap: Int?, o: Int64) -> Bool {
+        guard let m = row["m"], !m.isEmpty, let d = dir else { return false }
+        let n = name(m)
+        guard !FileManager.default.fileExists(atPath: d.appendingPathComponent(n).path) else { return false }
+        guard write(row, o: o, name: n, in: d) else { return false }
+        lock.lock(); read[n] = (o, row); lock.unlock()
+        if let cap { trim(d, cap) }
+        return true
+    }
+    private static func trim(_ d: URL, _ cap: Int) {
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: d.path), cap < names.count else { return }
+        let born = names.map { n in
+            (n, (try? d.appendingPathComponent(n).resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? .distantPast)
+        }.sorted { $0.1 < $1.1 }
+        for (n, _) in born.prefix(names.count - cap) { forget(n, in: d) }
+    }
+    /// One letter standing in the box takes a change of its row (a quote whose leg landed second); false -- not there, or no change.
+    @discardableResult
+    static func settle(_ mid: String, _ change: (inout Row) -> Bool) -> Bool {
+        guard !mid.isEmpty, let d = dir else { return false }
+        let n = name(mid)
+        lock.lock(); var held = read[n]; lock.unlock()
+        if held == nil, let data = try? Data(contentsOf: d.appendingPathComponent(n)) { held = open(data, name: n) }
+        guard let (o, was) = held else { return false }
+        var row = was
+        guard change(&row), write(row, o: o, name: n, in: d) else { return false }
+        lock.lock(); read[n] = (o, row); lock.unlock()
+        return true
+    }
+    /// Every letter in the box, oldest first. Only a file this life has not read is opened; a file gone is forgotten; a file no key
+    /// opens is no letter and leaves (its count is the caller's to say).
+    static func rows() -> (rows: [Row], unread: Int) {
+        guard let d = dir else { return (legacyRows(), 0) }
+        moveLegacy(into: d)
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: d.path)) ?? []
+        let here = Set(names)
+        lock.lock(); let known = read; lock.unlock()
+        var out: [(String, Int64, Row)] = []
+        var opened: [String: (o: Int64, row: Row)] = [:]
+        var dead = 0
+        for n in names where n.count == 64 {
+            if let k = known[n] { out.append((n, k.o, k.row)); continue }
+            guard let data = try? Data(contentsOf: d.appendingPathComponent(n)) else { continue }
+            // No key this moment (the keychain refused a read): the file is unread, not dead -- it stays for the next drain.
+            guard let got = open(data, name: n) else { if key() != nil { dead += 1; forget(n, in: d) }; continue }
+            opened[n] = got; out.append((n, got.o, got.row))
+        }
+        lock.lock()
+        for n in read.keys where !here.contains(n) { read[n] = nil }
+        read.merge(opened) { _, new in new }
+        lock.unlock()
+        return (out.sorted { ($0.1, $0.0) < ($1.1, $1.0) }.map { $0.2 }, dead)
+    }
+    /// The letters leave the box -- after their rows are on disk, never before ([C-1]: the one remover).
+    static func drop(_ mids: [String]) {
+        guard let d = dir else { return }
+        for m in mids where !m.isEmpty { forget(name(m), in: d) }
+    }
+    /// A conversation erased: every letter of it leaves the box.
+    static func dropChat(_ conv: String) {
+        guard let d = dir else { return }
+        _ = rows()
+        lock.lock(); let gone = read.filter { $0.value.row["c"] == conv }.map { $0.key }; lock.unlock()
+        for n in gone { forget(n, in: d) }
+    }
+    private static func forget(_ n: String, in d: URL) {
+        try? FileManager.default.removeItem(at: d.appendingPathComponent(n))
+        lock.lock(); read[n] = nil; lock.unlock()
+    }
+    /// The item of the builds before: its letters are laid into the folder once a life, in their order, and the item is emptied
+    /// only when every letter of it stands as a file (Agent 812: a lay the keychain refused its key emptied the item all the same,
+    /// and the letters were lost) -- else the item stays whole and the next drain moves it again.
+    private static func moveLegacy(into d: URL) {
+        lock.lock(); let done = moved; moved = true; lock.unlock()
+        guard !done else { return }
+        let old = legacyRows()
+        guard !old.isEmpty else { return }
+        for (i, r) in old.enumerated() { _ = lay(r, cap: nil, o: Int64(i)) }   // older than any file: their order kept, before the new
+        let laid = old.allSatisfy { r in
+            guard let m = r["m"], !m.isEmpty else { return true }   // a row without a name was never a letter: nothing to keep
+            return FileManager.default.fileExists(atPath: d.appendingPathComponent(name(m)).path)
+        }
+        guard laid else { lock.lock(); moved = false; lock.unlock(); return }
+        MontanaKeychain.set(legacyName, Data())
+    }
+    private static func legacyRows() -> [Row] {
+        guard let d = MontanaKeychain.get(legacyName), let a = try? JSONDecoder().decode([Row].self, from: d) else { return [] }
+        return a
+    }
+    /// The person seated changed: the folder under the name is another's, what this life read of it is no longer so.
+    static func relook() {
+        lock.lock(); read = [:]; moved = false; lock.unlock()
     }
 }
 

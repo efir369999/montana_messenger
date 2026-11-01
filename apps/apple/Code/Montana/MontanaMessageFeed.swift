@@ -448,8 +448,10 @@ final class MTFrameMeter {
 /// hang watchdog's own reader). The stall's whole length is written at the tick that ends it. Nothing is taken under the lock
 /// while the main thread is held.
 final class MTStallWatch {
-    private static let threshold: CFTimeInterval = 0.048
-    private static let cap = 4
+    /// The stall worth a stack: 48 ms for a motion's frames; the launch's probe and the main door name their own (P-1, 01.11).
+    private let threshold: CFTimeInterval
+    private let cap: Int
+    init(threshold: CFTimeInterval = 0.048, cap: Int = 4) { self.threshold = threshold; self.cap = cap }
     private let lock = NSLock()
     private let wake = DispatchSemaphore(value: 0)
     private var running = false
@@ -485,13 +487,13 @@ final class MTStallWatch {
             guard on else { wake.wait(); continue }
             usleep(8_000)
             lock.lock()
-            let beat = lastBeat, fresh = caughtBeat != beat, room = caught.count < Self.cap, still = running
+            let beat = lastBeat, fresh = caughtBeat != beat, room = caught.count < cap, still = running
             lock.unlock()
-            guard still, fresh, room, Self.threshold < CACurrentMediaTime() - beat else { continue }
+            guard still, fresh, room, threshold < CACurrentMediaTime() - beat else { continue }
             let frames = MTMainStack.capture(limit: 64)
             let ms = Int((CACurrentMediaTime() - beat) * 1000)
             lock.lock()
-            if running, caughtBeat != beat, caught.count < Self.cap { caughtBeat = beat; caught.append((ms, frames)) }
+            if running, caughtBeat != beat, caught.count < cap { caughtBeat = beat; caught.append((ms, frames)) }
             lock.unlock()
         }
     }
@@ -787,6 +789,13 @@ struct MTFeedListView: UIViewRepresentable {
         private var rowsById: [MID: ChatConversationView.ChatRowVM] = [:]   // the cell finds its row in one step (the critic 22.09)
         private var stampNow = Int.min
         private var deferredKeyboardRows = false
+        /// THE FIRST SCREEN FIRST (P-4, the law of 01.11.2026, link 13994: «the main thread gets only the ready result within the
+        /// frame's budget»). The chat's opening laid 23 cells in one frame, 717 ms (trace.log:7-8 on T1): the whole slice went to
+        /// the layout at once and every cell its estimate reached was hosted and sized before the first frame. The first pass now
+        /// gives the feed only the newest letters a screen holds; the rest follow one turn of the main thread later, at the far
+        /// end, where the reader does not stand -- no birth, the reader held where the first pass put them.
+        static let firstScreenRows = 12
+        private var restPending = false
 
         init(_ v: MTFeedListView) { self.view = v }
 
@@ -830,12 +839,31 @@ struct MTFeedListView: UIViewRepresentable {
         }
 
         func apply(rows: [ChatConversationView.ChatRowVM]) {
+            guard !appliedOnce else { applyNow(rows: rows); return }
+            MTMainDoor.enter("feed-first") { self.applyNow(rows: rows) }
+        }
+
+        private func applyRest() {
+            guard restPending else { return }
+            restPending = false
+            stampNow = Int.min   // the first pass stood for the whole model; the rest of it is still to be laid
+            MTMainDoor.enter("feed-rest") { self.applyNow(rows: self.view.rows) }
+        }
+
+        private func applyNow(rows: [ChatConversationView.ChatRowVM]) {
             guard let cv, let ds = dataSource else { return }
             // A snapshot must not pin the feed under the dragging finger. Apply the latest model
             // once the native gesture ends, including arrivals and media height changes.
             if cv.keyboardGestureActive { deferredKeyboardRows = true; return }
             if appliedOnce, view.stamp == stampNow { finishScrollIfPending(); return }   // nothing the feed draws from has moved
             stampNow = view.stamp
+            let firstScreen = !appliedOnce && rows.count > Self.firstScreenRows
+            restPending = firstScreen
+            // The newest end: the slice's front on the keys (the feed is flipped, its first item the visual bottom), its back
+            // when turned.
+            let rows = !firstScreen ? rows
+                : view.newestOnTop ? Array(rows.suffix(Self.firstScreenRows)) : Array(rows.prefix(Self.firstScreenRows))
+            if firstScreen { DispatchQueue.main.async { [weak self] in self?.applyRest() } }
             let applyBegan = CACurrentMediaTime()
             defer { MTFrameMeter.shared.applied(ms: (CACurrentMediaTime() - applyBegan) * 1000) }
             rowsNow = rows

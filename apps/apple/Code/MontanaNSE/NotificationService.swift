@@ -710,10 +710,6 @@ final class NotificationService: UNNotificationServiceExtension {
                                     qt: String = "", qm: String = "", lp: String = "", sentAt: Double = 0, own: Bool = false,
                                     author: String = "") {
         guard !mid.isEmpty, !text.isEmpty else { return }
-        var arr: [[String: String]] = []
-        if let d = MontanaKeychain.get("nseInbox"),
-           let a = try? JSONDecoder().decode([[String: String]].self, from: d) { arr = a }
-        guard !arr.contains(where: { $0["m"] == mid }) else { return }
         var row = ["c": conv, "m": mid, "t": text]
         if sentAt > 0 { row["at"] = String(Int(sentAt)) }   // the moment the sender handed it to the node
         if !name.isEmpty { row["n"] = name }
@@ -722,9 +718,8 @@ final class NotificationService: UNNotificationServiceExtension {
         if !lp.isEmpty { row["lp"] = lp }
         if own { row["own"] = "1" }   // the app lands it as mine (MontanaDeliveryEngine.landOwn)
         else if !author.isEmpty { row["au"] = author }   // a correspondent's author field, kept on the row (Message.authorTag)
-        arr.append(row)
-        if arr.count > 200 { arr.removeFirst(arr.count - 200) }
-        if let d = try? JSONEncoder().encode(arr) { MontanaKeychain.set("nseInbox", d) }
+        // One file a letter (MTLetterBox, 01.11.2026): a letter already in the box is not laid twice; the newest 200 stand.
+        guard MTLetterBox.lay(row, cap: 200) else { return }
         guard !own else { return }   // my own letter counts no unread and moves no row of the cold frame
         // STAGE 9: the extension is a LANDING DOOR too — the list record must follow the
         // letter, or the first frame after a notification tap shows the previous message
@@ -830,16 +825,10 @@ final class NotificationService: UNNotificationServiceExtension {
     private static func stashRdv(mid: String, text: String, name: String, glyph: String, ct64: String,
                                  invite: String, conf: String) {
         guard !mid.isEmpty, !text.isEmpty else { return }
-        var arr: [[String: String]] = []
-        if let d = MontanaKeychain.get("nseInbox"),
-           let a = try? JSONDecoder().decode([[String: String]].self, from: d) { arr = a }
-        guard !arr.contains(where: { $0["m"] == mid }) else { return }
         var row = ["c": "rdv", "m": mid, "t": text, "k": ct64, "i": invite, "cf": conf]
         if !name.isEmpty { row["n"] = name }
         if !glyph.isEmpty { row["g"] = glyph }
-        arr.append(row)
-        if arr.count > 200 { arr.removeFirst(arr.count - 200) }
-        if let d = try? JSONEncoder().encode(arr) { MontanaKeychain.set("nseInbox", d) }
+        MTLetterBox.lay(row, cap: 200)
     }
 
     private static func openWithOwnPipes(_ sealed: Data, at: Int)

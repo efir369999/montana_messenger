@@ -2578,9 +2578,11 @@ class ChatStore: ObservableObject {
         // A triple belt (at once, +0.7s, +2s): the keychain box is sometimes invisible to the
         // very first read after waking — the two-second «opened — empty» hole lived exactly
         // here; draining is idempotent, empty repeats are cheap and honestly write n=0.
-        DispatchQueue.main.async { MontanaWakePush.drainInbox() }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { MontanaWakePush.drainInbox() }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { MontanaWakePush.drainInbox() }
+        // ONE DRAIN AT A TIME (P-3, 01.11.2026): the three belts ask through drainInboxSoon, so a belt that comes while
+        // another is still queued joins it instead of draining the whole box again on the main thread.
+        MontanaWakePush.drainInboxSoon()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { MontanaWakePush.drainInboxSoon() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { MontanaWakePush.drainInboxSoon() }
         // The node box — on cold start, once the store has just attached: slightly after the
         // triple belt, so the pipe book has time to open (the vault is sometimes busy at launch).
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { MontanaWakePush.fetchBoxKick() }
@@ -2681,7 +2683,10 @@ class ChatStore: ObservableObject {
                 DispatchQueue.main.async { [weak self] in self?.restoreFromArchive(epoch: loadEpoch, acct: loadAcct, folders: nil) }
             }
             if let m = history {
-                DispatchQueue.main.async {
+                // THROUGH THE MAIN DOOR (P-3, the law of 01.11.2026, link 13994): the history's landing stood 2038 ms on the main
+                // thread at T1 2325's launch, unnamed (main_probe doing=-). It is a named step now: past its budget it writes its
+                // cost and the stack read while it stood to telemetry.log.
+                DispatchQueue.main.async { MTMainDoor.enter("history-apply") {
                     guard let self else { return }
                     // The identity changed while loading -> do NOT restore the old history.
                     guard self.seedEpoch == loadEpoch,
@@ -2901,7 +2906,7 @@ class ChatStore: ObservableObject {
                     MontanaDeliveryEngine.shared.drainAll()   // the queued intents resume by the drain (18.09), with the history in hand
                     self.markStaleSendsFailed(coldStart: true)
                     MontanaMainProbe.crumb = ""
-                }
+                } }
             }
         }
         // THE MAIN LIE STOOD HERE: on history load EVERY own message was painted «read» —
@@ -3364,27 +3369,27 @@ class ChatStore: ObservableObject {
     /// receipt had already left and the sender believed «delivered». The same class as the
     /// storage key (934).
     @discardableResult
-    static func writeHistory(_ snapshot: [String: [Message]]) -> Bool {
-        guard let d = try? JSONEncoder().encode(snapshot) else { return false }
+    static func writeHistory(_ snapshot: [String: [Message]]) -> Bool { writtenHistory(snapshot) != nil }
+    /// The history written, and the very bytes that went: the read-back compares against them. Only the conversations that
+    /// moved are written (MTHistoryFile, P-6): bytes= is the size of the change, chats= how many moved of= how many stand.
+    static func writtenHistory(_ snapshot: [String: [Message]]) -> MTHistoryFile.Written? {
+        var w = MTHistoryFile.Written()
         for attempt in 0..<5 {
-            if MTHistoryFile.write(d) {
-                MontanaTrace.markFolded("history_write", "bytes=\(d.count)", window: 60)
-                return true
+            if MTHistoryFile.write(snapshot, into: &w) {
+                MontanaTrace.markFolded("history_write", "bytes=\(w.bytes) chats=\(w.parts.count) of=\(snapshot.count)", window: 60)
+                return w
             }
             MontanaTrace.mark("history_write_refused", "try=\(attempt + 1)")
             Thread.sleep(forTimeInterval: 0.2)
         }
-        return false
+        return nil
     }
-    /// THE WRITTEN HISTORY IS READ BACK before the journal trusts it (17.09, the critic): the file is
-    /// opened and decoded, and every chat's set of names must equal the snapshot's. A history that reads
-    /// back differently is a lie spoken aloud — and the journal stays.
-    static func historyReadsBack(_ snapshot: [String: [Message]]) -> Bool {
-        guard let d = MTHistoryFile.read(),
-              let back = try? JSONDecoder().decode([String: [Message]].self, from: d) else { return false }
-        for (chat, rows) in snapshot where Set(rows.map { $0.mid }) != Set((back[chat] ?? []).map { $0.mid }) { return false }
-        return true
-    }
+    /// THE WRITTEN HISTORY IS READ BACK before the journal trusts it (17.09, the critic): the file is opened and must give
+    /// back the very bytes that were written. A history that reads back differently is a lie spoken aloud — and the journal
+    /// stays. BY THE BYTES, NOT BY A SECOND DECODING (P-6, the law of 01.11.2026, link 13994): the read-back decoded the whole
+    /// 4.7 MB history again after every write (T1 2325) only to compare the names of its rows; the bytes the file gives back
+    /// equal to the bytes written is the stronger check, and costs a comparison.
+    static func historyReadsBack(_ written: MTHistoryFile.Written) -> Bool { MTHistoryFile.readsBack(written) }
 
     // THE SNAPSHOT HAS ONE QUEUE AND A GENERATION (16.09). The whole-history write used to go to
     // the GLOBAL concurrent queue from three doors (the debounce, the archive heal, the restore):
@@ -3408,9 +3413,9 @@ class ChatStore: ObservableObject {
                 MontanaTrace.mark("snapshot_stale", "gen=\(gen) written=\(snapshotWritten) — an elder capture, not written")
                 return
             }
-            if writeHistory(snapshot) {
+            if let written = writtenHistory(snapshot) {
                 snapshotWritten = gen
-                if historyReadsBack(snapshot) {
+                if historyReadsBack(written) {
                     MTRowJournal.compact(against: snapshot)
                     // The blob of the old road (UserDefaults) leaves once the file holds the truth.
                     if UserDefaults.standard.object(forKey: "chatMessages") != nil { UserDefaults.standard.removeObject(forKey: "chatMessages") }
@@ -4027,12 +4032,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         let gone = (messages[conv] ?? []).compactMap { m in m.msgId }
         bury(gone, in: conv)
         MontanaNotify.removeBanners(chat: conv, letters: gone)   // the conversation's banners go with it, at either end's word (R-4)
-        if let d = MontanaKeychain.get("nseInbox"),
-           var arr = try? JSONDecoder().decode([[String: String]].self, from: d) {
-            let before = arr.count
-            arr.removeAll { $0["c"] == conv }
-            if arr.count != before, let out = try? JSONEncoder().encode(arr) { MontanaKeychain.set("nseInbox", out) }
-        }
+        MTLetterBox.dropChat(conv)
         purgeLocalCopies(conv)
         MTRowJournal.dropChat(conv)
         messages[conv] = nil
@@ -4222,9 +4222,8 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         }
         // THE PIECES THE LANDING DOOR LAID (29.09): a letter still in the extension's inbox names its pieces too — they are the
         // shelf's purpose, not litter; the app applies the letter at its next drain and assembles from them without a door.
-        if let d = MontanaKeychain.get("nseInbox"),
-           let rows = try? JSONDecoder().decode([[String: String]].self, from: d) {
-            for r in rows {
+        do {
+            for r in MTLetterBox.rows().rows {
                 guard let t = r["t"], t.hasPrefix(mediaMark), let bd = String(t.dropFirst(mediaMark.count)).data(using: .utf8),
                       let obj = try? JSONSerialization.jsonObject(with: bd) as? [String: Any],
                       let chunks = obj["chunks"] as? [[String: Any]] else { continue }
@@ -6924,7 +6923,7 @@ enum SeedScope {
         "wakeBase", "wakeBases", "wakeElected", "wakeMyAddr", "wakeMyAuthor", "wakeMyGlyph", "wakeMyName", "wakeOwnToken",
         "wakeVoipDigest", "wakeVoipToken", "diagId", "diagSalt", "nseDiag", "nseLog", "shareDiag",
         "cargoRepairMids",   // one device's sealed reservation: an automatic cargo reconstruction may happen once here
-        "nseInbox", "nseKnocked", "nseShownMids", "nseQuietIds", "nseRoomRang", "heldMids", "pendingShare", "pendingWall", "missedCallSeeds",
+        "nseInbox", "nseInboxKey", "nseKnocked", "nseShownMids", "nseQuietIds", "nseRoomRang", "heldMids", "pendingShare", "pendingWall", "missedCallSeeds",
         "callNoticeTokens", "mt.longblob.wait", "musicFolders",   // callNoticeTokens: the one-time names a call's notices wear for the system (MontanaMissedCall.noticeToken)
         "noticeAliases",   // the alias each conversation wears for the system on this phone (MTNoticeAlias, 12.10): this device's names, never a copy
         "AppLanguage", "screen.key", "screen.diary",   // the screen broadcast's call key and its diary box: this device's, for one call
@@ -7061,7 +7060,7 @@ enum SeedScope {
     /// and the chain of the one seated minted the other's coins) and the person's TimeChain. The copy's guard
     /// (tools/mt-copy-scope-check.py) holds every carried folder here and every staying one of the person (SEAT_STAYS).
     static let seatFolders = ["AS:Avatars", "AS:Wallpapers", "AS:Montana/Media", "AS:Montana/Pictures", "DOC:stories",
-        "DOC:Montana/Chats", "AS:MontanaHistory", "AS:MontanaJournal", "GROUP:delivery", "AS:Montana/WallDrafts",
+        "DOC:Montana/Chats", "AS:MontanaHistory", "AS:MontanaJournal", "GROUP:delivery", "GROUP:inbox", "AS:Montana/WallDrafts",
         "AS:Montana/Coins", "DOC:Montana/TimeChain"]
     // Per-chat keys of the era before the sealed maps (SC-05): collapsed once, forgotten with the person.
     static let legacyPrefixes = ["lastSeen_", "draft_", "mute_", "block_"]
@@ -7302,6 +7301,42 @@ func makeChannel() -> MessagingChannel {
 // AVATARVIEW — the user's avatar
 // Shows the chosen photo, or if there is none — a gold circle with a letter.
 // ════════════════════════════════════════════════════════════
+/// THE ONE DOOR OF THE MAIN THREAD (the law of 01.11.2026, the author's word, link 13994: «work is in proportion to the
+/// change; the main thread gets only the ready result within the frame's budget; every overrun is named»). Work reaches the
+/// main thread through here only: it carries a name and a budget (8 ms by default, half a 60 Hz frame); a background queue
+/// makes the result, the main thread only applies it. A step past its budget writes one line to telemetry.log with its name
+/// and its cost, and a step past 48 ms the main thread's stack read while it stood (MTStallWatch, off the main thread).
+/// tools/mt-main-door-check.py refuses heavy work sent to the main queue past this door.
+enum MTMainDoor {
+    static let budgetMs = 8
+    nonisolated(unsafe) private static var depth = 0          // the main thread's own: a door inside a door is one step
+    private static let watch = MTStallWatch(threshold: 0.048, cap: 1)
+    /// Made on `queue`, applied on the main thread under `name` and its budget.
+    static func prepare<T>(_ name: String, on queue: DispatchQueue = .global(qos: .userInitiated), budgetMs: Int = budgetMs,
+                           make: @escaping () -> T, apply: @escaping (T) -> Void) {
+        queue.async {
+            let ready = make()
+            DispatchQueue.main.async { enter(name, budgetMs: budgetMs) { apply(ready) } }
+        }
+    }
+    /// A step on the main thread, named and timed. Call on the main thread.
+    static func enter(_ name: String, budgetMs: Int = budgetMs, _ f: () -> Void) {
+        guard Thread.isMainThread else { f(); return }   // the door watches the main thread only
+        depth += 1
+        let outer = depth == 1
+        if outer { watch.start() }
+        let t0 = CACurrentMediaTime()
+        MontanaMainProbe.step(name, f)
+        let ms = Int((CACurrentMediaTime() - t0) * 1000)
+        let caught = outer ? watch.stop() : []
+        depth -= 1
+        guard ms > budgetMs else { return }
+        let line = "what=\(name) ms=\(ms) budget=\(budgetMs)"
+        MontanaTrace.mark("main_door", line)
+        MontanaLog.event("MAIN DOOR " + line + (caught.first.map { " frames: " + MTStallWatch.told($0.frames) } ?? ""))
+    }
+}
+
 /// THE MAIN THREAD IS MEASURED, NOT FELT (15.24, the author's word 07.09: «from Settings to Chats I
 /// cannot scroll for nine seconds»). After a tab appears, a probe asks the main thread for twelve
 /// seconds, ten times a second, how late it answers; the worst gap, when it happened and what the
@@ -7327,20 +7362,31 @@ enum MontanaMainProbe {
         parts = outer
         if ms > 40 { MontanaTrace.mark("main_slow", "what=\(what) ms=\(ms)" + (inner.isEmpty ? "" : " parts=" + inner.joined(separator: ","))) }
         if ms > 0 { parts?.append("\(what):\(ms)") }
+        if ms > slowestMs { slowestMs = ms; slowest = what }
         crumb = was
     }
+    /// THE PROBE NAMES WHAT STOOD, NOT WHAT CAME AFTER (P-1, the law of 01.11.2026, link 13994). The probe read the crumb when it
+    /// woke -- after the stall, when the step had already put the crumb back: main_probe chats-tab worst_ms=2045 doing=- on T1
+    /// 2325 at a launch whose main thread stood in history-apply. The slowest named step since the probe began is kept here by
+    /// the step itself, on the main thread, and the probe reads it there; the stacks come from a watcher off the main thread.
+    nonisolated(unsafe) private static var slowest = ""
+    nonisolated(unsafe) private static var slowestMs = 0
+    private static let watch = MTStallWatch(threshold: 0.1, cap: 4)
     nonisolated(unsafe) static var appearAt: Date?
     nonisolated(unsafe) private static var running = false
     @MainActor static func run(_ what: String, seconds: Double = 12) {
         appearAt = Date()
         guard !running else { return }
         running = true
+        slowest = ""; slowestMs = 0
+        watch.start()
         Task { @MainActor in
             let t0 = Date(); var worst = 0.0, at = 0.0, late = 0; var doing = ""
             let resigns0 = MontanaTelemetry.shared.resigns
             while Date().timeIntervalSince(t0) < seconds {
                 let s = Date()
-                try? await Task.sleep(nanoseconds: 100_000_000)
+                watch.beat()   // the watcher reads the main thread's stack once per stall past 100 ms, while it stands
+                try? await Task.sleep(nanoseconds: 16_000_000)
                 // A probe measures a thread that was supposed to answer. Asleep, the thread
                 // legitimately does not — and the former probe wrote the nap down as a stall
                 // (a «worst» of 3 867 866 ms measured 11.09: the phone slept with the probe half
@@ -7348,15 +7394,23 @@ enum MontanaMainProbe {
                 // active stretch, or the reading is thrown away and says so.
                 if MontanaTelemetry.shared.resigns != resigns0 {
                     running = false
+                    _ = watch.stop()
                     MontanaTrace.mark("main_probe", "\(what) interrupted=resign at=+\(String(format: "%.1f", s.timeIntervalSince(t0)))s late=\(late)")
                     return
                 }
-                let gap = Date().timeIntervalSince(s) - 0.1
+                let gap = Date().timeIntervalSince(s) - 0.016
                 if gap > 0.25 { late += 1 }
-                if gap > worst { worst = gap; at = s.timeIntervalSince(t0); doing = crumb }
+                if gap > worst { worst = gap; at = s.timeIntervalSince(t0); doing = slowest.isEmpty ? "" : "\(slowest):\(slowestMs)" }
             }
             running = false
-            MontanaTrace.mark("main_probe", "\(what) worst_ms=\(Int(worst * 1000)) at=+\(String(format: "%.1f", at))s late=\(late) doing=\(doing.isEmpty ? "-" : doing)")
+            let caught = watch.stop()
+            let line = "\(what) worst_ms=\(Int(worst * 1000)) at=+\(String(format: "%.1f", at))s late=\(late) doing=\(doing.isEmpty ? "-" : doing) stacks=\(caught.count)"
+            MontanaTrace.mark("main_probe", line)
+            // telemetry.log keeps it for a day; trace.log rotates within the hour (MontanaMessageFeed, FRAMES).
+            MontanaLog.event("MAIN PROBE " + line)
+            for (i, c) in caught.enumerated() {
+                MontanaLog.event("MAIN PROBE stack what=\(what) n=\(i + 1) ms=\(c.ms) frames: " + MTStallWatch.told(c.frames))
+            }
         }
     }
     /// The first drag after the tab appeared: how long the person waited before the list moved.
@@ -7403,6 +7457,14 @@ enum MTRestoredMid {
     static func holds(_ name: String) -> Bool { name.hasPrefix(archive) || name.hasPrefix(given) }
 }
 
+/// THE HISTORY BY CONVERSATION (P-6, the law of 01.11.2026, link 13994: «work is in proportion to the change»). The whole
+/// history was one sealed file: every letter re-sealed and re-wrote all 4.7 MB of it and read all of it back (T1 2325). Each
+/// conversation is its own sealed file now, named in one small sealed index; a write lays only the conversations whose bytes
+/// moved, and the index only when the set of conversations moved. read() gives back the very JSON the one file held, assembled
+/// from the parts, so every reader stays as it was. One part unread is the whole history unread: a missing part must never
+/// read as a conversation erased. The file of the old shape is no longer written; it is read while no index stands, or when
+/// it is younger than the index (a build before this shape wrote it after this one did), and then the next write lays every
+/// conversation again.
 enum MTHistoryFile {
     static let aad = Data("chatMessages".utf8)   // the AAD the vault blob wore — one seal, one key
     private static let url: URL = {
@@ -7413,16 +7475,124 @@ enum MTHistoryFile {
         try? d.setResourceValues(rv)
         return dir.appendingPathComponent("history.sealed")
     }()
-    static var folder: URL { url.deletingLastPathComponent() }   // read by the disk's measure (MTDiskUse)
-    static func write(_ plain: Data) -> Bool {
-        guard let sealed = MontanaLocalVault.seal(plain, aad) else { return false }
-        return (try? sealed.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil
+    static var folder: URL { url.deletingLastPathComponent() }   // read by the disk's measure (MTDiskUse); moves with a seat's park
+    private static var chats: URL { folder.appendingPathComponent("chats", isDirectory: true) }
+    private static var indexURL: URL { chats.appendingPathComponent("index.sealed") }
+    private static let indexAAD = Data("chatMessages:index".utf8)
+    private static let sealing: Data.WritingOptions = [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
+    private static func name(_ chat: String) -> String {
+        SHA256.hash(data: Data(chat.utf8)).prefix(16).map { String(format: "%02x", $0) }.joined()   // LOCAL-HASH-OK: a file name on this device
     }
+    private static func partAAD(_ name: String) -> Data { Data(("chatMessages:" + name).utf8) }
+    private static func part(_ name: String) -> URL { chats.appendingPathComponent(name + ".sealed") }
+    // What the files hold, as this process wrote or read them -- a word in memory under the lock, never the disk itself (the
+    // lock rule: a lock holds only memory; wipeLocal drops from the main thread and must not stand behind a write). The disk has
+    // one writer, the snapshot queue. A drop, or a write's own removal of a part, moves the era; a write or a read that began in
+    // an older era records nothing, so this memory may forget what a file holds -- costing one more write -- but never claims
+    // bytes the disk lacks. The files are the truth: no index on disk and this memory is forgotten.
+    private static let lock = NSLock()
+    private static var held: [String: Data] = [:]        // a part's name: its plain bytes
+    private static var heldIndex: [String: String] = [:] // a conversation: its part's name
+    private static var era = 0
+    private static func remember(_ n: String, _ plain: Data?, since at: Int) {
+        lock.lock(); if era == at { held[n] = plain }; lock.unlock()
+    }
+    private static func settle(_ parts: [String: Data], _ index: [String: String], since at: Int) {
+        lock.lock(); if era == at { held = parts; heldIndex = index }; lock.unlock()
+    }
+
+    /// What a write laid: the plain bytes of every part it wrote, and the index if it wrote one -- the read-back's measure.
+    struct Written {
+        var parts: [String: Data] = [:]
+        var index: Data?
+        var bytes: Int { parts.values.reduce(0) { $0 + $1.count } + (index?.count ?? 0) }
+    }
+
+    /// Lays the snapshot: only the parts whose bytes moved. False on the first refusal; what was laid before it stays laid
+    /// and remembered, so a retry lays only the rest.
+    static func write(_ snapshot: [String: [Message]], into w: inout Written) -> Bool {
+        let fm = FileManager.default
+        let standing = fm.fileExists(atPath: indexURL.path)
+        lock.lock()
+        if !standing { held = [:]; heldIndex = [:] }
+        let knew = held, knewIndex = heldIndex, at = era
+        lock.unlock()
+        try? fm.createDirectory(at: chats, withIntermediateDirectories: true)
+        let enc = JSONEncoder()
+        var index: [String: String] = [:]
+        for (chat, rows) in snapshot {
+            let n = name(chat)
+            index[chat] = n
+            guard let plain = try? enc.encode(rows) else { return false }
+            if knew[n] == plain { continue }   // the part already holds these very bytes
+            guard let sealed = MontanaLocalVault.seal(plain, partAAD(n)),
+                  MTDiskDoor.write(sealed, to: part(n), "history", options: sealing) else { return false }
+            remember(n, plain, since: at)
+            w.parts[n] = plain
+        }
+        guard index != knewIndex else { return true }
+        guard let plain = try? enc.encode(index), let sealed = MontanaLocalVault.seal(plain, indexAAD),
+              MTDiskDoor.write(sealed, to: indexURL, "history", options: sealing) else { return false }
+        lock.lock(); if era == at { heldIndex = index }; lock.unlock()
+        w.index = plain
+        // A conversation the snapshot no longer holds leaves with its part, once the index has stopped naming it.
+        let keep = Set(index.values)
+        var gone: [String] = []
+        for f in (try? fm.contentsOfDirectory(atPath: chats.path)) ?? [] where f.hasSuffix(".sealed") && f != "index.sealed" {
+            let n = String(f.dropLast(".sealed".count))
+            if !keep.contains(n) { try? fm.removeItem(at: part(n)); gone.append(n) }
+        }
+        if !gone.isEmpty { lock.lock(); era += 1; for n in gone { held[n] = nil }; lock.unlock() }
+        return true
+    }
+
+    /// The parts and the index a write laid give back the very bytes it laid. The disk alone: no memory is touched.
+    static func readsBack(_ w: Written) -> Bool {
+        for (n, plain) in w.parts {
+            guard let s = try? Data(contentsOf: part(n)), MontanaLocalVault.open(s, partAAD(n)) == plain else { return false }
+        }
+        if let plain = w.index {
+            guard let s = try? Data(contentsOf: indexURL), MontanaLocalVault.open(s, indexAAD) == plain else { return false }
+        }
+        return true
+    }
+
+    /// The whole history as the one file held it: a JSON map of every conversation to its rows.
     static func read() -> Data? {
+        lock.lock(); held = [:]; heldIndex = [:]; let at = era; lock.unlock()
+        let fm = FileManager.default
+        let indexAt = (try? fm.attributesOfItem(atPath: indexURL.path))?[.modificationDate] as? Date
+        let oldAt = (try? fm.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
+        if let indexAt, !(oldAt.map { $0 > indexAt } ?? false) { return readParts(since: at) }
         guard let sealed = try? Data(contentsOf: url) else { return nil }
         return MontanaLocalVault.open(sealed, aad)
     }
-    static func drop() { try? FileManager.default.removeItem(at: url) }
+    private static func readParts(since at: Int) -> Data? {
+        guard let s = try? Data(contentsOf: indexURL), let p = MontanaLocalVault.open(s, indexAAD),
+              let index = try? JSONDecoder().decode([String: String].self, from: p) else { return nil }
+        let enc = JSONEncoder()
+        var out = Data("{".utf8)
+        var parts: [String: Data] = [:]
+        for (i, (chat, n)) in index.sorted(by: { $0.key < $1.key }).enumerated() {
+            guard let s = try? Data(contentsOf: part(n)), let plain = MontanaLocalVault.open(s, partAAD(n)),
+                  let key = try? enc.encode(chat) else {
+                MontanaTrace.mark("history_part_unread", "part=" + String(n.prefix(8)) + " -- the whole history unread")
+                return nil
+            }
+            if i > 0 { out.append(UInt8(ascii: ",")) }
+            out.append(key); out.append(UInt8(ascii: ":")); out.append(plain)
+            parts[n] = plain
+        }
+        out.append(UInt8(ascii: "}"))
+        settle(parts, index, since: at)
+        return out
+    }
+    /// The files go first, then the memory with a new era: a write remembered in between is forgotten with the rest.
+    static func drop() {
+        try? FileManager.default.removeItem(at: url)
+        try? FileManager.default.removeItem(at: chats)
+        lock.lock(); era += 1; held = [:]; heldIndex = [:]; lock.unlock()
+    }
 }
 
 enum MTRowJournal {
@@ -7459,8 +7629,8 @@ enum MTRowJournal {
         }
         let dir = chatDir(chat)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let ok = (try? sealed.write(to: dir.appendingPathComponent(name + ".row"),
-                                    options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])) != nil
+        let ok = MTDiskDoor.write(sealed, to: dir.appendingPathComponent(name + ".row"), "journal",
+                                  options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         if ok { lock.lock(); pending += 1; lock.unlock() } else { MontanaTrace.mark("journal_refused", mid: row.mid, "write failed") }
         return ok
     }

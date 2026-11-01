@@ -258,6 +258,7 @@ enum MontanaLog {
             } else {
                 try? data.write(to: u)
             }
+            MTDiskDoor.count("log:\(ch)", data.count)   // the diary's own bytes are named too (the disk door, 01.11)
             guard size >= ch.rotateAtBytes else { return }
             if size < 4 * ch.rotateAtBytes, holdRotation?(ch) == true { return }
             let fm = FileManager.default
@@ -276,5 +277,53 @@ enum MontanaLog {
             try? fm.moveItem(at: u, to: prev)
             if ch == .telemetry { onTelemetryRotate?() }
         }
+    }
+}
+
+/// THE ONE DOOR OF THE DISK (the law of 01.11.2026, the author's word, link 13994: «every overrun is named»). T1 wrote 4.3 GB in
+/// 1.7 hours on 2315 and no line named the writer -- it was laid on the history, which it was not. A file is written whole
+/// through `write`, an append made by a handle of its own is told through `count`; the bytes are summed by the writer's name
+/// for the hour. Past the hour's budget one line names the writers, the largest first, and the stack of the write that
+/// crossed it; at the turn of the hour one line gives the hour's names beside the process's own count of written blocks
+/// (getrusage, ru_oublock): what the names do not hold is the unnamed rest. tools/mt-main-door-check.py refuses a new write
+/// past this door.
+enum MTDiskDoor {
+    static let hourBudget = 256 << 20
+    private static let lock = NSLock()
+    private static var hourAt = ProcessInfo.processInfo.systemUptime
+    private static var named: [String: Int] = [:]
+    private static var blocksAt = outBlocks()
+    private static var spoke = false
+    /// A file written whole, under its writer's name.
+    @discardableResult
+    static func write(_ data: Data, to url: URL, _ name: String, options: Data.WritingOptions = []) -> Bool {
+        do { try data.write(to: url, options: options) } catch { return false }
+        count(name, data.count)
+        return true
+    }
+    /// Bytes written by a handle of the writer's own, under its name.
+    static func count(_ name: String, _ bytes: Int) {
+        let now = ProcessInfo.processInfo.systemUptime
+        var hour: String?, over: String?
+        lock.lock()
+        if 3600 <= now - hourAt {
+            let blocks = outBlocks()
+            hour = "DISK HOUR named=\(named.values.reduce(0, +)) out_blocks=\(blocks - blocksAt) top=\(top())"
+            named = [:]; hourAt = now; spoke = false; blocksAt = blocks
+        }
+        named[name, default: 0] += bytes
+        let total = named.values.reduce(0, +)
+        if hourBudget < total, !spoke { spoke = true; over = "DISK OVER what=\(name) total=\(total) budget=\(hourBudget) top=\(top())" }
+        lock.unlock()
+        if let hour { MontanaLog.event(hour) }
+        if let over { MontanaLog.event(over + " frames: " + Thread.callStackSymbols.prefix(12).map { String($0.prefix(90)) }.joined(separator: " < ")) }
+    }
+    /// The hour's writers, the largest first (under the lock).
+    private static func top() -> String {
+        named.sorted { $0.value > $1.value }.prefix(8).map { "\($0.key):\($0.value)" }.joined(separator: ",")
+    }
+    private static func outBlocks() -> Int {
+        var u = rusage()
+        return getrusage(RUSAGE_SELF, &u) == 0 ? Int(u.ru_oublock) : 0
     }
 }

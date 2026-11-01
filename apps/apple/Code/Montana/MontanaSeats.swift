@@ -256,6 +256,7 @@ final class MTSeats: ObservableObject {
         MontanaCard.wipe()
         MTOutbox.wipe()
         MontanaNotify.forgetAllSuggestions()
+        MTLetterBox.relook()   // the extension's box under the name is the next person's folder now
         NotificationCenter.default.post(name: .montanaSeedForgotten, object: nil)
         SeedScope.reread(restored: false)
         Task { @MainActor in MTCoinBook.reread() }   // the coins of the person who left leave memory with them (04.10)
@@ -297,6 +298,7 @@ final class MTSeats: ObservableObject {
     /// the history file and the rows' journal, which are the lifted person's now.
     private static func liftMemory() {
         E2E.forgetDeviceTag()
+        MTLetterBox.relook()   // the lifted person's box: its files are read afresh, its old item moved
         SeedScope.reread(restored: false)
         MTBoard.shared.reread()   // the wall loads on the forgotten seed's word, which is not spoken here: it reads the lifted wall
         Task { @MainActor in MTCoinBook.reread() }   // the lifted person's own coins, never the book of the one who left (04.10)

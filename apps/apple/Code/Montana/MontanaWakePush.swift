@@ -3281,20 +3281,16 @@ enum MontanaWakePush {
     private static func restash(_ row: [String: String]) {
         if MTKeeping.takes(row) { return }   // a call in the pipe of a slot this phone keeps: answered there, never a letter of the feed
         if MontanaArchive.twinTakes(row) { return }   // the history of this seed's other devices: filed there, never a letter of the feed
-        var arr: [[String: String]] = []
-        if let d = MontanaKeychain.get("nseInbox"),
-           let a = try? JSONDecoder().decode([[String: String]].self, from: d) { arr = a }
-        guard let m = row["m"] else { return }
-        if let i = arr.firstIndex(where: { $0["m"] == m }) {
-            // The legs land in any order: a quote arriving second settles onto the row.
-            if let qt = row["qt"], !qt.isEmpty, (arr[i]["qt"] ?? "").isEmpty {
-                arr[i]["qt"] = qt; arr[i]["qm"] = row["qm"] ?? ""
-                if let d = try? JSONEncoder().encode(arr) { MontanaKeychain.set("nseInbox", d) }
+        guard let m = row["m"], !m.isEmpty else { return }
+        // One file a letter (MTLetterBox, 01.11.2026): a letter new to the box is one file written, nothing else is read.
+        if MTLetterBox.lay(row.filter { !$0.value.isEmpty }) { return }
+        // The legs land in any order: a quote arriving second settles onto the row.
+        if let qt = row["qt"], !qt.isEmpty {
+            MTLetterBox.settle(m) { r in
+                guard (r["qt"] ?? "").isEmpty else { return false }
+                r["qt"] = qt; r["qm"] = row["qm"] ?? ""; return true
             }
-            return
         }
-        arr.append(row.filter { !$0.value.isEmpty })
-        if let d = try? JSONEncoder().encode(arr) { MontanaKeychain.set("nseInbox", d) }
     }
 
     // A DEAD CARGO IS NOT ASKED FOR EVERY FIFTEEN SECONDS (21.09, the critic): two long letters whose
@@ -3413,11 +3409,7 @@ enum MontanaWakePush {
     private static var inboxTaken = Set<String>()
     /// The letter leaves the box — after its row is on disk, never before ([C-1]: the one remover).
     static func inboxDrop(_ mids: [String]) {
-        guard !mids.isEmpty, let d = MontanaKeychain.get("nseInbox"),
-              var arr = try? JSONDecoder().decode([[String: String]].self, from: d) else { return }
-        let gone = Set(mids); let before = arr.count
-        arr.removeAll { gone.contains($0["m"] ?? "") }
-        if arr.count != before, let out = try? JSONEncoder().encode(arr) { MontanaKeychain.set("nseInbox", out) }
+        MTLetterBox.drop(mids)   // one file removed a letter: the box is never read and written back whole (01.11.2026)
     }
     /// ONE DRAIN FOR A VOLLEY (10.10.2026, T1 on 2173): every letter the signal lane brought asked for a drain of its own. A
     /// return's volley of 34 signals queued fifteen drains behind one another on the main thread -- each four keychain round
@@ -3435,7 +3427,13 @@ enum MontanaWakePush {
             drainInbox()
         }
     }
+    /// The drain is a named step of the main door (P-3, 01.11.2026): past its budget it says so, with its stack.
+    /// The door is the main actor's: off the main thread it would only run the step, so the drain runs as it stands there.
     static func drainInbox() {
+        guard Thread.isMainThread else { drainInboxNow(); return }
+        MainActor.assumeIsolated { MTMainDoor.enter("inbox-drain") { drainInboxNow() } }
+    }
+    private static func drainInboxNow() {
         // THE OVERLAY IS NOT DISCARDED BEFORE ITS REPLACEMENT EXISTS. It carries what the
         // extension learned while the app was dead — the newest truth there is. Deleting it at
         // the START of the drain opened a window where the screen fell back to the persisted
@@ -3472,8 +3470,12 @@ enum MontanaWakePush {
         guard MontanaDeliveryEngine.shared.store != nil else {
             MontanaTrace.mark("drain_wait", "store not ready"); return
         }
-        guard let d = MontanaKeychain.get("nseInbox"),
-              let arr = try? JSONDecoder().decode([[String: String]].self, from: d), !arr.isEmpty else {
+        // THE DRAIN OPENS ONLY WHAT IT HAS NOT READ (MTLetterBox, 01.11.2026, the author's word 14020): the files of the letters
+        // this life already read are known by name; a new one is opened once.
+        let box = MTLetterBox.rows()
+        if 0 < box.unread { MontanaTrace.mark("inbox_unread", "files=\(box.unread)") }
+        let arr = box.rows
+        guard !arr.isEmpty else {
             // An empty box SPEAKS: silence here hid the two-second «opened — empty» hole
             // (22:42: the drain at 22.6 found zero, the letters showed only at 24.6).
             MontanaTrace.mark("wakepush_drain", "n=0")

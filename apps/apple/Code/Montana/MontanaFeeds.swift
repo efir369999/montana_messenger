@@ -1878,7 +1878,11 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
     static let inner = 144                      // the front camera's badge on the big circle's rim
     private var usedDual = false                // the note ends with the badge: its name says so (the poster's state)
     static let maxSeconds: Double = 399         // 6:39, the note's length (the author's word 15.09)
-    let session: AVCaptureSession = MontanaVideoNoteCamera.dualCapable ? AVCaptureMultiCamSession() : AVCaptureSession()
+    /// THE CAMERA IS BORN BY THE FIRST NOTE, NOT BY THE CHAT (P-2, the law of 01.11.2026, link 13994: work in
+    /// proportion to the change). A capture session made in init spoke to the media server on the main thread
+    /// every time a chat opened -- 1117 ms on T1 2325 (trace.log:1589, mach_msg under this init) -- though a
+    /// note may never be recorded. It is made on sessionQueue by the first hold, and only sessionQueue reads it.
+    private lazy var session: AVCaptureSession = MontanaVideoNoteCamera.dualCapable ? AVCaptureMultiCamSession() : AVCaptureSession()
     // two cameras (multi-camera hardware): an input, an output and a connection each
     private var frontIn: AVCaptureDeviceInput?
     private var backIn: AVCaptureDeviceInput?
@@ -1936,7 +1940,9 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
     private var length: Double = 0
     private var lastSmall: CIImage?   // the badge camera's latest frame, composed into the big one's in dual mode
     // the circle pipeline (the reference's CameraRoundVideoFilter, in CoreImage)
-    private let ci = CIContext(options: [.useSoftwareRenderer: false])
+    // Born on the frames' queue by the first frame, as the session by the first hold (P-2): a chat that opens
+    // records nothing and pays for no GPU context and no drawn discs on the main thread. Only q reads these three.
+    private lazy var ci = CIContext(options: [.useSoftwareRenderer: false])
     /// A disc mask: white inside the circle, black outside. The big circle's disc bleeds two
     /// pixels past its square so the window's clip (the same circle) never meets a half-dark
     /// edge; the circle ∩ square is still the whole circle, nothing flat shows. THE BADGE'S DISC
@@ -1952,10 +1958,10 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
         }
         return CIImage(image: img)!
     }
-    private let mask = MontanaVideoNoteCamera.disc(CGFloat(MontanaVideoNoteCamera.side))
+    private lazy var mask = MontanaVideoNoteCamera.disc(CGFloat(MontanaVideoNoteCamera.side))
         .transformed(by: CGAffineTransform(translationX: CGFloat(MontanaVideoNoteCamera.canvas - MontanaVideoNoteCamera.side) / 2,
                                            y: CGFloat(MontanaVideoNoteCamera.canvas - MontanaVideoNoteCamera.side) / 2))
-    private let innerMask = MontanaVideoNoteCamera.disc(CGFloat(MontanaVideoNoteCamera.inner), bleed: 0)
+    private lazy var innerMask = MontanaVideoNoteCamera.disc(CGFloat(MontanaVideoNoteCamera.inner), bleed: 0)
 
     /// Music played when the tape began (the author's word 24.09): the session mixes and nothing of it stands down.
     private var keepMusic = false
@@ -2511,7 +2517,7 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
         }
         sessionQueue.async {
             guard self.isRequest(ticket) else { return }
-            if self.session.isRunning { self.session.stopRunning() }
+            if self.configured, self.session.isRunning { self.session.stopRunning() }   // never born: nothing to stop
             DispatchQueue.main.async {
                 guard self.isRequest(ticket) else { return }
                 self.over(); self.busy = false

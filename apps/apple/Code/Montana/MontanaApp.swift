@@ -36,6 +36,7 @@ struct MontanaApp: App {
     init() {
         // Before any screen: an installation that has just appeared must not inherit a person.
         MontanaInstall.forgetLeftoverSeed { SeedScope.forget() }
+        MontanaHandoff.counted = MTDiskDoor.count   // the shared folders' bytes are named at the disk door in the app (01.11.2026)
         MTSeats.launch()   // a move between seats the last run did not finish is finished before any owner is born (the second identity checklist, 1.3)
         BT.dropStale()   // the bubble defaults' generation (the reference for everyone)
         _ = LocalizedBundle.install; MTLanguage.mirror(); MontanaTrace.markOnce("app_init")
@@ -1149,7 +1150,24 @@ private func montanaImageLine() -> String {
     var info = dl_info()
     guard dladdr(#dsohandle, &info) != 0, let base = info.dli_fbase else { return "IMAGE unknown" }   // NOT-UI: the journal's own line
     let name = info.dli_fname.map { String(cString: $0).split(separator: "/").last.map(String.init) ?? "?" } ?? "?"
-    return "IMAGE \(name) base=0x" + String(UInt(bitPattern: base), radix: 16) + " altstack=\(gMontanaAltStack != nil ? 1 : 0)"
+    return "IMAGE \(name) base=0x" + String(UInt(bitPattern: base), radix: 16) + " uuid=\(montanaImageUUID())" + " altstack=\(gMontanaAltStack != nil ? 1 : 0)"
+}
+
+/// THE BINARY NAMES ITSELF (P-1, the law of 01.11.2026, link 13994): T1 ran 2325 from a Release archive while the stacks were
+/// read against a Debug build of the same number -- a chain that made no sense until the UUID was asked of the device. The
+/// launch line now carries the image's own LC_UUID: a stack is read only against the dSYM of that UUID.
+private func montanaImageUUID() -> String {
+    let head = UnsafeRawPointer(#dsohandle)
+    let h = head.assumingMemoryBound(to: mach_header_64.self).pointee
+    var p = head + MemoryLayout<mach_header_64>.size
+    for _ in 0..<h.ncmds {
+        let lc = p.assumingMemoryBound(to: load_command.self).pointee
+        if lc.cmd == UInt32(LC_UUID) {
+            return UUID(uuid: p.assumingMemoryBound(to: uuid_command.self).pointee.uuid).uuidString
+        }
+        p += Int(lc.cmdsize)
+    }
+    return "?"
 }
 
 /// One line for every change of the network path. The airplane-mode tests stand on the claim

@@ -2036,6 +2036,7 @@ extension MusicTabView {
     nonisolated(unsafe) private static var lastKept: [Kept] = []          // the kept list as the queue last knew it
     nonisolated(unsafe) private static var enumSpent: TimeInterval = 0    // the walk's time inside the enumerator itself
     nonisolated(unsafe) private static var entries = 0                    // the entries the enumerator gave, of every kind
+    nonisolated(unsafe) private static var probed = 0                     // the files whose properties were asked: the new ones only
     // Under the lock: the folders picked and not yet kept, the tracks a bring put on the phone while a walk read.
     nonisolated(unsafe) private static var picks: [URL] = []
     nonisolated(unsafe) private static var broughtDuring = Set<String>()
@@ -2083,8 +2084,11 @@ extension MusicTabView {
         lock.unlock()
         if first {
             let asked = ProcessInfo.processInfo.systemUptime
-            queue.async { layKept(asked: asked) }   // the last list first, when the launch has not laid it yet
-            DispatchQueue.main.async { MainActor.assumeIsolated { MTMusicFolders.shared.walk() } }
+            // THE LAUNCH LAYS, THE PAGE WALKS (P-5, the law of 01.11.2026, link 13994: work by the change and on demand).
+            // The first ask of a launch walked every lent folder whether or not the page was ever opened -- 51 s and 401 s
+            // of walking on T1 2325 with changed=0. The kept list stands at once; the page's opening walks (onChange of
+            // the pane), and a launch with nothing kept still walks at once (layKept, cause none).
+            queue.async { layKept(asked: asked) }
         }
         return s
     }
@@ -2337,13 +2341,14 @@ extension MusicTabView {
             try? folder.setResourceValues(rv)
         }
         guard let data = try? JSONEncoder().encode(kept) else { return }
-        do { try data.write(to: keptURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) }
-        catch { MontanaTrace.mark("music_kept", "unwritten \((error as NSError).domain) \((error as NSError).code)") }
+        if !MTDiskDoor.write(data, to: keptURL, "music-shelf", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) {
+            MontanaTrace.mark("music_kept", "unwritten")
+        }
     }
     /// Every lent folder walked, the oldest lent first; a file lying under two lent folders stands once, in the first.
     nonisolated private static func walkAll(lend: Bool) {
         let t0 = ProcessInfo.processInfo.systemUptime
-        enumSpent = 0; entries = 0
+        enumSpent = 0; entries = 0; probed = 0
         lock.lock(); broughtDuring = []; let old = found; lock.unlock()
         guard var all = folders() else { land(nil, note: "keychain silent", t0: t0, lend: lend); return }
         let before = all.map(\.bookmark)
@@ -2364,7 +2369,9 @@ extension MusicTabView {
                 }
                 continue
             }
-            let met = walk(root)
+            var known: [String: Kept] = [:]
+            for k in lastKept where k.folder == all[i].id { known[k.rel] = k }
+            let met = walk(root, known: known)
             pictures += met.pictures
             // The page shows the newest first: the library holds a folder from its last path, so the page reads it in order.
             for f in met.tracks.reversed() where paths.insert(f.url.standardizedFileURL.path).inserted {
@@ -2378,16 +2385,19 @@ extension MusicTabView {
             }
         }
         if all.map(\.bookmark) != before { saveRenewed(all) }
-        land((list, map, kept), note: "folders=\(all.count) closed=\(closed) carried=\(carried) files=\(list.count) cloud=\(cloud) pictures=\(pictures) covered=\(covered) entries=\(entries) enum_ms=\(Int(enumSpent * 1000))",
+        land((list, map, kept), note: "folders=\(all.count) closed=\(closed) carried=\(carried) files=\(list.count) cloud=\(cloud) pictures=\(pictures) covered=\(covered) entries=\(entries) probed=\(probed) enum_ms=\(Int(enumSpent * 1000))",
              t0: t0, lend: lend)
     }
     /// Every regular music file under the folder, at any depth, in the order of its path. The older iCloud stands a file
     /// not on the phone as «.name.icloud»: its real name inside, its size in the placeholder; any other hidden entry is
     /// the system's own and is not entered; a folder named like a track, or a link, is not a file.
-    nonisolated private static func walk(_ root: URL) -> (tracks: [Walked], pictures: Int) {
-        // The enumerator fetches these properties for EVERY entry it gives — directories and pictures too — and the reading
-        // after it is its cache: so the enumerator's own time is what is measured (enum_ms, entries; the critic 24.09).
-        guard let en = FileManager.default.enumerator(at: root, includingPropertiesForKeys: Array(probe),
+    nonisolated private static func walk(_ root: URL, known: [String: Kept]) -> (tracks: [Walked], pictures: Int) {
+        // NAMES ONLY, PROPERTIES FOR THE NEW (P-5, the law of 01.11.2026, link 13994: work in proportion to the change). The
+        // enumerator used to fetch five properties -- iCloud's status among them -- for EVERY entry it gave, directories and
+        // pictures too: 2452 entries, enum_ms 48-49 s on T1 2325 with nothing changed. It now gives names alone; a track the
+        // last walk met keeps what that walk read (a play still asks the file itself, needsFetch), and only a file the last
+        // walk did not meet is asked (probed in the diary: 0 when nothing came).
+        guard let en = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [],
                                                       options: [.skipsPackageDescendants]) else { return ([], 0) }
         let base = root.standardizedFileURL.path
         var out: [Walked] = []
@@ -2406,15 +2416,26 @@ extension MusicTabView {
                 name = String(name.dropFirst().dropLast(".icloud".count))
                 guard mtIsAudioName(name) else { continue }
                 file = u.deletingLastPathComponent().appendingPathComponent(name)
-                local = false; size = stubSize(u) ?? 0; icloud = true
+                let path = file.standardizedFileURL.path
+                let rel = path.hasPrefix(base + "/") ? String(path.dropFirst(base.count + 1)) : name
+                if let k = known[rel], !k.local { size = k.size } else { probed += 1; size = stubSize(u) ?? 0 }
+                local = false; icloud = true
             } else if isPicture(name) {
                 let path = u.standardizedFileURL.path
                 let rel = path.hasPrefix(base + "/") ? String(path.dropFirst(base.count + 1)) : name
                 pictures[(rel as NSString).deletingLastPathComponent, default: []].append(name)
                 continue
             } else {
-                guard mtIsAudioName(name), let v = try? u.resourceValues(forKeys: probe), v.isRegularFile == true else { continue }
-                local = onPhone(v); size = v.fileSize ?? 0; icloud = v.isUbiquitousItem == true
+                guard mtIsAudioName(name) else { continue }
+                let path = u.standardizedFileURL.path
+                let rel = path.hasPrefix(base + "/") ? String(path.dropFirst(base.count + 1)) : name
+                if let k = known[rel] {
+                    local = k.local; size = k.size; icloud = k.icloud
+                } else {
+                    probed += 1
+                    guard let v = try? u.resourceValues(forKeys: probe), v.isRegularFile == true else { continue }
+                    local = onPhone(v); size = v.fileSize ?? 0; icloud = v.isUbiquitousItem == true
+                }
             }
             let path = file.standardizedFileURL.path
             let rel = path.hasPrefix(base + "/") ? String(path.dropFirst(base.count + 1)) : name
