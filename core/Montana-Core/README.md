@@ -149,8 +149,8 @@ identifier of what the window decided, judges every proposal it takes at the one
 a proposal only when the cement of the window after it reaches the quorum on it. A device holding
 nothing joins from two consecutive final proposals its operator hands it and walks the retained
 certificates to the same head (`montana-node::pulse::join`). The right a machine takes of a window
-is still created locally from the count of the cement and is no evidence of issuance; item 3 of the
-audit list carries it.
+is worth the rounds that window ran — one coin a second, `window_value` of Canon — and is still
+created locally and is no evidence of issuance; item 3 of the audit list carries it.
 
 Round advancement now requires a verified answer. Polling uses a local sleep; exhausting its
 budget returns without advancing the round. This testable property does not establish the missing

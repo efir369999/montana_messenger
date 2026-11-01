@@ -1,5 +1,7 @@
 # Montana client core
 
+**This is the retired generation of the core, kept for its primitives and bindings; its consensus line (`mt-genesis`, `mt-account`, `mt-consensus`) is superseded by `../Montana-Core`. Both mint by the one rule of Canon 9.0.0 — one coin a second: a living machine holds a right worth the window's seconds, and the 60-second window of this line is worth 60 coins (`mt_genesis::WINDOW_MONETA`). No other number of a window stands in this tree.**
+
 The Rust workspace the Montana applications link. `mt-bindings` exports it through one C ABI
 ([`crates/mt-bindings/include/montana_ffi.h`](crates/mt-bindings/include/montana_ffi.h)) to Swift on iPhone, iPad and
 Mac, and through JNI to Kotlin on Android; nothing cryptographic is reimplemented in the applications.

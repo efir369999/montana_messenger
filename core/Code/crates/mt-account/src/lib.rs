@@ -511,17 +511,17 @@ pub fn apply(op: &Operation, state: &mut AccountTable, window_w: u64) {
     }
 }
 
-// spec: "Emission" — const emission `reward_moneta(W) = EMISSION_moneta`.
+// Canon 9.0.0: one coin a second — the window's right is its seconds, `reward_moneta(W) = emission_moneta` of the Decree.
 
 use mt_genesis::ProtocolParams;
 
-/// reward(W) = EMISSION_moneta — a constant from ProtocolParams.
+/// reward(W) = the window's seconds in coins (WINDOW_MONETA of the Decree), one coin a second.
 pub fn reward_moneta(params: &ProtocolParams) -> u128 {
     params.emission_moneta
 }
 
 /// Total emitted supply over windows [1, window] — closed-form (window 0 has no emission).
-/// `supply_moneta(W) = EMISSION_moneta × W` (supply_moneta(0) = 0; first payout settle(1)).
+/// `supply_moneta(W) = emission_moneta × W` (supply_moneta(0) = 0; first payout settle(1)).
 pub fn supply_moneta(window: u64, params: &ProtocolParams) -> u128 {
     params.emission_moneta * u128::from(window)
 }
@@ -549,7 +549,7 @@ pub fn settle_window(state: &mut AccountTable, cemented_ops: &[Operation], windo
     }
 }
 
-// Step 2: reward emission — winner_{W-1} receives EMISSION_moneta.
+// Step 2: reward emission — winner_{W-1} receives the window's seconds in coins.
 // spec Sovereignty Ladder: the lottery is single-class, the winner is always a node;
 // the reward is credited to the winner node's operator_account_id.
 //
@@ -691,7 +691,7 @@ pub fn apply_proposal(
     params: &ProtocolParams,
 ) -> Hash32 {
     // Step 1 stub: control_set (ControlObjects = NodeRegistrations) — M4 (mt-entry).
-    // Step 2: emission for window W-1 — the constant EMISSION_moneta.
+    // Step 2: emission for window W-1 — the window's seconds in coins.
     apply_emission(
         account_table,
         node_table,
@@ -1859,9 +1859,9 @@ mod tests {
         );
     }
 
-    // ================== Phase D: emission (const EMISSION_moneta = 13 Ɉ) ==================
+    // ========== Phase D: emission (one coin a second: the 60-second window is 60 Ɉ) ==========
 
-    const EMISSION: u128 = 13_000_000_000;
+    const EMISSION: u128 = 60_000_000_000;
 
     #[test]
     fn reward_moneta_is_const() {
@@ -1990,7 +1990,7 @@ mod tests {
             p,
         );
 
-        // reward = const EMISSION_moneta = 13 Ɉ.
+        // reward = the window's seconds in coins = 60 Ɉ.
         let expected_reward = reward_moneta(p);
         assert_eq!(
             account_table.get(&operator).unwrap().balance,

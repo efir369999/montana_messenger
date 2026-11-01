@@ -750,6 +750,24 @@ extension MontanaArchive {
         let names = (try? FileManager.default.contentsOfDirectory(atPath: chats.path)) ?? []
         return names.filter { !$0.hasPrefix(".") }
     }
+    /// THE ARCHIVE'S FACE (the author's words 01.11.2026 16:40 UTC, link 14244: «implement it right, with no stalls and no heat»):
+    /// T1 on 2330 opened and sealed-read the whole archive at every cold start (15:23, 15:24, 15:27), and found the same 29 gaps
+    /// each time. Each log's folder, size and last write, with what the caller names beside them, in one hash: the same face is
+    /// the same archive, so a cold start that measured it once reads no log again. A stat per folder, never a byte of a log.
+    /// No face without the archive's keys (link 14255): a reading that could open nothing must not be remembered as read;
+    /// the day the road back floors by stands in it, so a later floor reads the heads again.
+    static func face(_ extra: [String]) -> String? {
+        guard keys() != nil else { return nil }
+        let chats = rootURL.appendingPathComponent(MontanaPaths.chats)
+        var parts = extra + ["day=" + String(MTPipeBook.recoveryDay())]
+        for f in conversations().sorted() {
+            let a = try? FileManager.default.attributesOfItem(atPath: chats.appendingPathComponent(f).appendingPathComponent(MontanaPaths.log).path)
+            let n = (a?[.size] as? NSNumber)?.int64Value ?? -1
+            let at = Int64((((a?[.modificationDate] as? Date)?.timeIntervalSince1970) ?? 0) * 1000)
+            parts.append(f + ":" + String(n) + ":" + String(at))
+        }
+        return SHA256.hash(data: Data(parts.joined(separator: "\n").utf8)).map { b in String(format: "%02x", b) }.joined()
+    }
 
     /// Send every block this device wrote and the twin has not seen yet. Called when the person's own
     /// reference becomes reachable — the same event that drains a pending letter.

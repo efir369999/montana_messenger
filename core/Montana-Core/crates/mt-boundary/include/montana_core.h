@@ -68,7 +68,7 @@ int32_t mtc_machine_links(size_t *held, size_t *ceiling, size_t *reached);
 int32_t mtc_machine_account(char *out, size_t cap, size_t *len);
 
 /* What the machine does of its own inside the window it lives, asked before the pulse begins. */
-int32_t mtc_errand_redeem(uint64_t of_the_window, size_t living);
+int32_t mtc_errand_redeem(uint64_t of_the_window, uint64_t rounds);
 int32_t mtc_errand_pay(const uint8_t *half, const uint8_t *note_pk, const uint8_t *amount);
 
 /* The pulse: the cohort as the naming halves laid one after another, thirty-two bytes each. */
@@ -76,7 +76,7 @@ int32_t mtc_pulse_begin(const uint8_t *halves, size_t count, uint64_t from, uint
 int32_t mtc_pulse_running(int32_t *out);
 int32_t mtc_pulse_lived(size_t *out);
 int32_t mtc_pulse_lived_at(size_t at, uint64_t *window, uint32_t *rounds, size_t *living,
-                           uint64_t *share, uint64_t *accepted_in);
+                           uint64_t *worth, uint64_t *accepted_in);
 
 /* What the last payment left for its payee: the value as sixteen bytes, the blinding factor and
  * the key the note is paid to as thirty-two each, and the place the note took. */

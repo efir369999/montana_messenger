@@ -45,8 +45,8 @@ fn not_applied() -> NodeError {
 // the network holds one right and nothing else. What is published names nobody: nullifiers,
 // commitments and the nullifier of a rate, and no amount among them.
 //
-// The window whose right this is, and how many machines its cement named, are what the operator
-// read off that window when it closed. They are of the world in the same way an acquaintance is:
+// The window whose right this is, and how many rounds it ran, are what the operator read off that
+// window when it closed. They are of the world in the same way an acquaintance is:
 // the machine cannot ask anybody for them, and nothing else it holds implies them.
 //
 // **The note enters the wallet once its frame has applied, and not before.** The frame stands at
@@ -64,7 +64,7 @@ impl Machine {
         at: &Path,
         cohort: &pulse::Cohort,
         of_the_window: u64,
-        living: usize,
+        rounds: u64,
         window: u64,
         chain: u8,
         round: u32,
@@ -75,7 +75,7 @@ impl Machine {
         let secret = self.machine_secret()?;
         let mut of_the_machine = [0u8; 32];
         of_the_machine.copy_from_slice(&secret[..32]);
-        let right = crate::attest::right_of(&of_the_machine, of_the_window, living)?;
+        let right = crate::attest::right_of(&of_the_machine, of_the_window, rounds)?;
         if right.accepted_in != window {
             return Err(NodeError::Refused {
                 what: "a right presented in a window it is not accepted in",
@@ -105,7 +105,7 @@ impl Machine {
             .redeem(
                 &of_the_machine,
                 of_the_window,
-                u128::from(right.share),
+                u128::from(right.worth),
                 &branch.siblings,
                 branch.position,
                 &own,

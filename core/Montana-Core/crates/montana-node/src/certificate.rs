@@ -333,8 +333,8 @@ pub fn verify_certificate(
 
 // What a window decided of its cement: the beacon it closed on and the pair that beacon carried,
 // with the votes the beacon carried as the evidence of the close. Consensus, "The beacon a window
-// closes on": a proposal carries the pair, the share of every living machine divides the mint by
-// its count, and the draw of the window two on reads its aggregate; the votes enter no proposal.
+// closes on": a proposal carries the pair, every living machine takes a right worth the window's
+// seconds, and the draw of the window two on reads its aggregate; the votes enter no proposal.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Decided {
     pub window: u64,

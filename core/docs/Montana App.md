@@ -1,6 +1,6 @@
 # Montana — App
 
-**Version:** 3.4.0
+**Version:** 3.4.1
 
 App holds the boundary between the protocol and everything built on it: what an application may
 put into the chain, what it may never learn about the people using it, and what a client owes
@@ -59,7 +59,7 @@ rent, no subscription exists as a protocol notion. What an application charges, 
 ordinary transfers of value between people — which name no party and enter no chain of anyone.
 
 Storage, delivery and computation are the work of the devices that do them, and the network
-already pays for carriage out of the share of a window. An application that needed a
+already pays for carriage out of the seconds of a window. An application that needed a
 protocol-level fee would be asking the protocol to name who paid.
 
 ## The boundary

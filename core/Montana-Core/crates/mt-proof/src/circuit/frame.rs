@@ -60,9 +60,9 @@ pub struct Rate {
     pub index: u8,
 }
 
-// What one redemption position consumes: a note, or a right to a window's share. The two are one
+// What one redemption position consumes: a note, or a right to a window's seconds. The two are one
 // kind — the positions are typeless, and nothing of a frame says which branch filled one.
-// What one redemption position consumes: a note, a right to a window's share, or filler. The three
+// What one redemption position consumes: a note, a right to a window's seconds, or filler. The three
 // are one kind — the positions are typeless, and nothing of a frame says which branch filled one.
 //
 // **Filler is drawn and asserts nothing.** A spend carrying no transfer holds it in every position,
@@ -1725,7 +1725,7 @@ mod tests {
         let public = public_of(&fresh, &places, &root, &admitted_root).expect("a public input");
         assert!(
             !held.satisfied_by(&trace, &poseidon::limbs_of(&public)),
-            "a share claimed by an invented secret is refused by membership"
+            "a right claimed by an invented secret is refused by membership"
         );
     }
 

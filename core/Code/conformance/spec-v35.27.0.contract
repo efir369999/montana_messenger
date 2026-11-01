@@ -11,7 +11,7 @@ network_version = 1.4.0
 field d0 8 325000000
 field reserved_m0 8 -
 field tau2_windows 8 20160
-field emission_moneta 16 13000000000
+field emission_moneta 16 60000000000
 field target_zero 32 -
 field confirmation_quorum_num 1 67
 field confirmation_quorum_den 1 100

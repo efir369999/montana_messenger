@@ -18,7 +18,7 @@ const WINDOW: u64 = 2_000;
 const PATIENCE: u32 = 40_000;
 
 #[test]
-fn three_machines_close_a_window_and_each_takes_one_share() {
+fn three_machines_close_a_window_and_each_takes_one_right() {
     let at = [
         Scratch::named("three-one"),
         Scratch::named("three-two"),
@@ -83,7 +83,6 @@ fn three_machines_close_a_window_and_each_takes_one_share() {
             .collect()
     });
 
-    let mint = montana_node::attest::mint_of(WINDOW).expect("the Decree names the schedule");
     for one in &lived {
         assert_eq!(one.len(), 1);
         assert_eq!(one[0].window, WINDOW);
@@ -91,13 +90,14 @@ fn three_machines_close_a_window_and_each_takes_one_share() {
             one[0].living, 3,
             "a cement of fewer than three closed a window the quorum asks three for"
         );
+        // Every right is worth the rounds the window ran, and never a third of anything.
         assert_eq!(
             one[0]
                 .right
                 .as_ref()
                 .expect("every part entered the cement")
-                .share,
-            mint / 3
+                .worth,
+            montana_node::attest::window_value(u64::from(one[0].rounds), 1).expect("a worth")
         );
     }
     // One decision, one name: every machine closed the window under the identifier of one proposal,

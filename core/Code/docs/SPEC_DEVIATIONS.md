@@ -77,7 +77,7 @@ reviewed separately in [the reference audit](../../Montana-Core/AUDIT.md).
 **File:line:** `crates/montana-node/src/commands/start.rs:102-128`
 **Spec section:** «Proposal header» / «Canonical acceptance» / «apply_proposal Step 4»
 **Spec quote:** «the winner forms a `ProposalHeader` (1080 bytes) with `included_bundles + included_reveals + state_root`, signs it, archives it. The validator recomputes state_root and compares.»
-**What the code does:** directly `account.balance += 13_000_000_000` bypassing `apply_emission`; ProposalHeader is not formed; `archive_proposal` is not called
+**What the code does:** directly `account.balance += emission_moneta` bypassing `apply_emission`; ProposalHeader is not formed; `archive_proposal` is not called
 **Severity:** mainnet blocker (full Step 4 of apply_proposal bypassed)
 **Closure path:** form a `mt_consensus::ProposalHeader` with the correct fields (`canonical_proposer`, `included_bundles`, `included_reveals`, `state_root`), `validate_acceptance`, emission via `mt_account::apply_proposal`, `mt_store::archive_proposal`
 **Closure cost:** ~12 hours of code

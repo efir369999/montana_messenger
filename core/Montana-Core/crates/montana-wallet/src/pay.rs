@@ -51,9 +51,9 @@ impl Wallet {
     // returns to the payer as notes of its own. The paths are the ones the state answered with,
     // one per note consumed, in the order the notes are given.
     #[allow(clippy::too_many_arguments)]
-    // The first value a machine holds: the share of a window it lived through, turned into a note
-    // of its own. Five of the six positions have nothing to put in them and take filler; the sixth
-    // consumes the right, and the whole share comes out as one note the machine pays to itself.
+    // The first value a machine holds: the right to the seconds of a window it lived through, turned
+    // into a note of its own. Five of the six positions have nothing to put in them and take filler;
+    // the sixth consumes the right, and its whole worth comes out as one note the machine pays to itself.
     //
     // **This is where value enters a wallet at all.** Minting creates no note — it issues a right —
     // and a right is extinguished inside an ordinary payment, in a redemption position like any
@@ -64,7 +64,7 @@ impl Wallet {
         &self,
         machine_secret: &[u8; 32],
         of_the_window: u64,
-        share: u128,
+        worth: u128,
         admitted_siblings: &[Digest],
         admitted_position: u64,
         to: &Payee,
@@ -89,9 +89,9 @@ impl Wallet {
             let created: Vec<Created> = (0..outputs)
                 .map(|which| Created {
                     half: to.half,
-                    // The whole share leaves by the first position; the rest create nothing, and
+                    // The whole worth leaves by the first position; the rest create nothing, and
                     // the shape says nothing about which did which.
-                    value: if at == 0 && which == 0 { share } else { 0 },
+                    value: if at == 0 && which == 0 { worth } else { 0 },
                     note_pk: to.note_pk,
                     rcm: drawn(rate_secret, at * outputs + which),
                 })
@@ -109,7 +109,7 @@ impl Wallet {
         spends[0].consumed[0] = Consumed::Right(HeldRight {
             machine_secret: *machine_secret,
             window: of_the_window,
-            value: share,
+            value: worth,
             siblings: admitted_siblings.to_vec(),
             position: admitted_position,
         });

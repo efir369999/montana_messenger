@@ -13,7 +13,7 @@ use mt_crypto::{hash, Hash32};
 
 // PARAMS_ENCODED_SIZE: layout sum for protocol_params (see spec section "Genesis Decree").
 // Layout (LE):
-// d0(8) + reserved(8) + tau2(8) + emission(16) + target_zero(32) + quorum_num(1)
+// d0(8) + reserved(8) + tau2(8) + window_moneta(16) + target_zero(32) + quorum_num(1)
 // + quorum_den(1) + dead_zone(2+2) + d_adj(2+2) + ssha_entry(8) + sel_interval(8)
 // + admission_divisor(8) + cand_expiry(8) + adapt_thr(2) + adapt_mult(2) + pruning(8)
 // + max_payload(4) + max_sf(4) + app_id(32) + content_hash(32)
@@ -22,6 +22,13 @@ use mt_crypto::{hash, Hash32};
 // the existing admission path (selection_slots(0)=1 self-admit, quorum(1)=1
 // self-cement).
 pub const PARAMS_ENCODED_SIZE: usize = 198;
+
+/// One coin a second (Canon 9.0.0). The window of this generation is 60 seconds of wall clock
+/// (`d0` is calibrated to it), so the window is worth its seconds: 60 coins, 60 × 10⁹ nɈ.
+/// No other number of a window stands in this tree.
+pub const WINDOW_SECONDS: u64 = 60;
+pub const COIN_NANO: u128 = 1_000_000_000;
+pub const WINDOW_MONETA: u128 = WINDOW_SECONDS as u128 * COIN_NANO;
 
 /// 32 bytes initial SSHA target. SHA-256("mt-genesis" || account_pk || node_pk
 /// || "montana-genesis-mainnet-2026-06-11").
@@ -41,7 +48,8 @@ pub struct ProtocolParams {
     pub d0: u64,
     pub reserved_m0: [u8; 8],
     pub tau2_windows: u64,
-    // spec, section "Emission": const emission `reward_moneta(W) = EMISSION_moneta`.
+    // The right of a window, one coin a second (Canon 9.0.0): the window of this generation
+    // runs WINDOW_SECONDS, so the row holds WINDOW_MONETA. `reward_moneta(W)` reads it.
     pub emission_moneta: u128,
     pub target_zero: [u8; 32],
     pub confirmation_quorum_num: u8,
@@ -105,7 +113,7 @@ pub fn genesis_params() -> &'static ProtocolParams {
         d0: 325_000_000,
         reserved_m0: [0u8; 8],
         tau2_windows: 20_160,
-        emission_moneta: 13_000_000_000,
+        emission_moneta: WINDOW_MONETA,
         target_zero: TARGET_ZERO_BYTES,
         confirmation_quorum_num: 67,
         confirmation_quorum_den: 100,
@@ -155,7 +163,8 @@ mod tests {
         assert_eq!(p.d0, 325_000_000);
         assert_eq!(p.reserved_m0, [0u8; 8]);
         assert_eq!(p.tau2_windows, 20_160);
-        assert_eq!(p.emission_moneta, 13_000_000_000);
+        assert_eq!(p.emission_moneta, WINDOW_MONETA);
+        assert_eq!(p.emission_moneta, 60_000_000_000);
         assert_eq!(p.confirmation_quorum_num, 67);
         assert_eq!(p.confirmation_quorum_den, 100);
         assert_eq!(p.participation_dead_zone_low, 85);
@@ -242,7 +251,7 @@ mod tests {
     fn bytes_24_to_40_encode_emission_moneta() {
         let mut buf = Vec::new();
         genesis_params().encode(&mut buf);
-        assert_eq!(&buf[24..40], &13_000_000_000u128.to_le_bytes());
+        assert_eq!(&buf[24..40], &60_000_000_000u128.to_le_bytes());
     }
 
     #[test]

@@ -1,5 +1,7 @@
 # The findings this tree carries
 
+**The rule of issuance since Canon 9.0.0 (31.10.2026): a window mints no fixed quantity. Every living machine holds a right worth the window's seconds — `window_value(r, k)` of Canon, one coin a second, never rounded up — and nothing is divided among the living and no remainder is carried. Entries below that speak of a share of a fixed mint, a divisor of the living or a carried remainder record measurements and findings made under the earlier rule and stand as history; the rule in force is Canon's.**
+
 The harness compares what has a counterpart: every value of the Decree, every domain, every frozen
 vector of the set, every numeral the sources declare and every layout they hold, against the code
 that answers for it, on every build. What has no counterpart it does not compare, and therefore
@@ -2062,7 +2064,7 @@ numbers, which says the method and not the tree is what is missing.
 | places reaching a preimage through the door of one body | 11 in library code under SHA-256, none of them assembling |
 | the same under the proof hash, where the set writes the preimage as a concatenation | 5, of which 3 assemble fields of fixed width, which cannot erase one |
 | kinds a field of a layout may stand under | 5, and a sixth does not compile |
-| tests of the workspace | 644 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
+| tests of the workspace | 646 written, counted where they are declared. Whether they pass is what a run says and never a row of a table: the four checks are the place that answers it, and a number here claiming a run would be the ledger remembering one |
 | crates carrying the gate in their own tests | 15 of 15, by one macro of the harness rather than fifteen readings of one invocation |
 | columns the width of a proof admits, and columns each written circuit **declares** | 64, and 64 / 59 / 30 / 30 / 30 / 63 for the frame, the ticket, the admission, the presence, the opening and the ballot; the width check reads all six registered descriptions |
 | the circuit of the ticket, written and green | the chains of the presence with the ticket's absorption in place of the nullifier's, the digest of the runner's key, and the comparison of thirty-two rows; the window, fold, discharge and reduce circuits left the tree with the relation they served |

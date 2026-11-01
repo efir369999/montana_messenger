@@ -68,7 +68,7 @@ struct Handed {
 // where the terminal runs it: after the round is entered and before anything of it is attested.
 #[derive(Clone, Copy, Default)]
 struct Errand {
-    redeem: Option<(u64, usize)>,
+    redeem: Option<(u64, u64)>,
     pay: Option<([u8; 32], [u8; 32], u128)>,
 }
 
@@ -78,7 +78,7 @@ struct Row {
     window: u64,
     rounds: u32,
     living: usize,
-    share: u64,
+    worth: u64,
     accepted_in: u64,
 }
 
@@ -456,18 +456,18 @@ pub extern "C" fn mtc_machine_account(out: *mut c_char, cap: usize, len: *mut us
 }
 
 // The right of a window turned into a note, asked before the pulse begins and done inside the
-// window that right is accepted in. The window it is the right of, and how many machines its cement
-// named, are what the operator read off that window when it closed: the machine cannot ask anybody
-// for them and nothing it holds implies them.
+// window that right is accepted in. The window it is the right of, and how many rounds it ran, are
+// what the operator read off that window when it closed: the machine cannot ask anybody for them
+// and nothing it holds implies them.
 #[no_mangle]
-pub extern "C" fn mtc_errand_redeem(of_the_window: u64, living: usize) -> i32 {
+pub extern "C" fn mtc_errand_redeem(of_the_window: u64, rounds: u64) -> i32 {
     door(|| {
         of_the_device(|standing| {
             let mut errand = standing
                 .errand
                 .lock()
                 .map_err(|_| "an errand another thread left locked".to_string())?;
-            errand.redeem = Some((of_the_window, living));
+            errand.redeem = Some((of_the_window, rounds));
             Ok(())
         })
     })
@@ -553,13 +553,13 @@ pub extern "C" fn mtc_pulse_begin(halves: *const u8, count: usize, from: u64, wi
                 Ok(rows) => {
                     if let Ok(mut held) = lived.lock() {
                         // A window whose cement does not hold this machine's part minted it nothing,
-                        // and its row says so with a share of nought.
+                        // and its row says so with a worth of nought.
                         for one in rows {
                             held.push(Row {
                                 window: one.window,
                                 rounds: one.rounds,
                                 living: one.living,
-                                share: one.right.as_ref().map_or(0, |right| right.share),
+                                worth: one.right.as_ref().map_or(0, |right| right.worth),
                                 accepted_in: one
                                     .right
                                     .as_ref()
@@ -592,7 +592,7 @@ fn run_the_errand(
     if asked.redeem.is_none() && asked.pay.is_none() {
         return Ok(());
     }
-    if let Some((of_the_window, living)) = asked.redeem {
+    if let Some((of_the_window, rounds)) = asked.redeem {
         let rate = *mt_wire::draw::block::<32>().map_err(|e| NodeError::Unreadable {
             what: format!("nothing to draw from: {e:?}"),
         })?;
@@ -602,7 +602,7 @@ fn run_the_errand(
             wallet_at,
             cohort,
             of_the_window,
-            living,
+            rounds,
             window,
             pulse::opening_chain(),
             0,
@@ -726,7 +726,7 @@ pub extern "C" fn mtc_pulse_lived_at(
     window: *mut u64,
     rounds: *mut u32,
     living: *mut usize,
-    share: *mut u64,
+    worth: *mut u64,
     accepted_in: *mut u64,
 ) -> i32 {
     door(|| {
@@ -740,7 +740,7 @@ pub extern "C" fn mtc_pulse_lived_at(
         wrote(window, row.window)?;
         wrote(rounds, row.rounds)?;
         wrote(living, row.living)?;
-        wrote(share, row.share)?;
+        wrote(worth, row.worth)?;
         wrote(accepted_in, row.accepted_in)
     })
 }
@@ -770,10 +770,12 @@ pub extern "C" fn mtc_measure_redemption(milliseconds: *mut u64, width: *mut usi
         let branch = cohort
             .branch_of(&secret)
             .ok_or_else(|| "a machine that stands in no cohort".to_string())?;
-        let living =
-            usize::try_from(cohort.count()).map_err(|_| "a cohort past counting".to_string())?;
+        // A full window: the frame proven is the same whatever its worth, and the worth of the
+        // window the derivation targets is the one a measurement stands for.
+        let rounds = mt_genesis::scalar("target_rounds")
+            .ok_or_else(|| "a Decree naming no target of rounds".to_string())?;
         let right =
-            montana_node::attest::right_of(&secret, 0, living).map_err(|e| format!("{e:?}"))?;
+            montana_node::attest::right_of(&secret, 0, rounds).map_err(|e| format!("{e:?}"))?;
         let rate = *mt_wire::draw::block::<32>().map_err(|e| format!("{e:?}"))?;
         let root = montana_node::state::State::new().notes_root();
         let began = std::time::Instant::now();
@@ -781,7 +783,7 @@ pub extern "C" fn mtc_measure_redemption(milliseconds: *mut u64, width: *mut usi
             .redeem(
                 &secret,
                 right.window,
-                u128::from(right.share),
+                u128::from(right.worth),
                 &branch.siblings,
                 branch.position,
                 &own,

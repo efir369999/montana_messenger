@@ -1,7 +1,7 @@
 // The closing condition of the stage of two hosts, in the part that was the wall: two machines
 // answer a window, their attestations gather into a cement, the count of the cement reaches the
-// quorum share of the electorate's count, and the window closes — with the share of that window
-// belonging to the machines the cement names and to no others.
+// quorum share of the electorate's count, and the window closes — with the right to that window's
+// seconds belonging to the machines the cement names and to no others.
 //
 // **Nothing here is a model of the rules.** Each machine draws its own eligibility, makes its own
 // proof of presence, signs with its own one-time key, and every attestation is verified as a far
@@ -115,21 +115,26 @@ fn two_machines_answer_a_window_and_its_cement_closes_it() {
 }
 
 // What a closed window mints, and to whom. Minting creates no note: the window issues to each
-// living machine a right to a share of it, one right per machine per window, and the count of the
-// living is what the cement names — never a poll, never a count of who answered on the wire.
+// living machine a right to the window's seconds, one right per machine per window, every one worth
+// the same and read off the rounds the window ran — never off how many lived it.
+// The named wrong implementation this refuses: a fixed mint divided among the living, which pays
+// each of two machines half of what one would take alone.
 #[test]
 fn a_closed_window_issues_one_equal_right_to_every_machine_its_cement_names() {
     let secrets = [[0x11u8; 32], [0x22u8; 32]];
-    let living = secrets.len();
-    let mint = attest::mint_of(WINDOW).expect("the Decree names the schedule");
+    let rounds = mt_genesis::scalar("target_rounds").expect("the Decree names it");
+    let seconds = mt_genesis::scalar("window_seconds").expect("the Decree names it");
 
     let mut rights = Vec::new();
     for secret in &secrets {
-        let right = attest::right_of(secret, WINDOW, living).expect("a machine of the cement");
-        // One equal part to every living machine, with the remainder that does not divide carried
-        // forward rather than appropriated.
-        assert_eq!(right.share, mint / living as u64);
-        assert_eq!(right.carried_forward, mint % living as u64);
+        let right = attest::right_of(secret, WINDOW, rounds).expect("a machine of the cement");
+        // A window of the target count of rounds on its one chain is worth the whole of its
+        // seconds to every living machine, however many of them lived it.
+        assert_eq!(right.worth, seconds);
+        assert_eq!(
+            right.worth,
+            attest::window_value(rounds, 1).expect("a worth")
+        );
         // The window a right is accepted in is drawn from the machine's own secret: not early, not
         // late, and nothing about the choice is anyone's to make.
         let spread = mt_genesis::scalar("claim_spread").expect("the Decree names it");
@@ -137,15 +142,19 @@ fn a_closed_window_issues_one_equal_right_to_every_machine_its_cement_names() {
         rights.push(right);
     }
 
-    // Two machines, two rights, two nullifiers: no machine takes its share twice and none takes
+    // Two machines, two rights, two nullifiers: no machine takes its seconds twice and none takes
     // another's.
     assert_ne!(rights[0].nullifier, rights[1].nullifier);
-    // And the shares of the living, plus what does not divide, are the mint of that window exactly.
-    let handed: u64 = rights.iter().map(|r| r.share).sum();
-    assert_eq!(handed + rights[0].carried_forward, mint);
 
-    // A window whose cement names nobody mints no share, and says so rather than dividing by it.
-    assert!(attest::right_of(&secrets[0], WINDOW, 0).is_err());
+    // A window that closed in a handful of rounds is worth a handful of seconds, and a window of no
+    // chain is refused rather than divided by.
+    assert_eq!(
+        attest::right_of(&secrets[0], WINDOW, rounds / 4)
+            .expect("a right")
+            .worth,
+        seconds / 4
+    );
+    assert!(attest::window_value(rounds, 0).is_err());
 }
 
 // The named wrong implementation this refuses: a machine answering with a proof made for another

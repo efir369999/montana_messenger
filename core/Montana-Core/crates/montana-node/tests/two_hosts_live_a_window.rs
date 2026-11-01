@@ -27,7 +27,7 @@ const WINDOW: u64 = 1_000;
 const PATIENCE: u32 = 40_000;
 
 #[test]
-fn two_machines_live_a_window_from_end_to_end_and_each_takes_one_share() {
+fn two_machines_live_a_window_from_end_to_end_and_each_takes_one_right() {
     let far_at = Scratch::named("living-answerer");
     let near_at = Scratch::named("living-dialler");
 
@@ -100,27 +100,28 @@ fn two_machines_live_a_window_from_end_to_end_and_each_takes_one_share() {
         "two machines closing one window on one beacon took two proposals"
     );
 
-    // And each takes one share of that window and no more: two machines, two rights, two
-    // nullifiers, and the shares plus what does not divide are the mint of the window exactly.
-    let mint = montana_node::attest::mint_of(WINDOW).expect("the Decree names the schedule");
+    // And each takes one right to that window's seconds and no more: two machines, two rights, two
+    // nullifiers, each worth the rounds its window ran and never half of anything.
     // Both parts entered the cement, so both machines lived the window and both took a right.
-    let mine = mine[0]
+    let mine_lived = &mine[0];
+    let theirs_lived = &theirs[0];
+    let mine = mine_lived
         .right
         .as_ref()
         .expect("this machine's part entered the cement");
-    let theirs = theirs[0]
+    let theirs = theirs_lived
         .right
         .as_ref()
         .expect("the other's part entered the cement");
-    assert_eq!(mine.share, mint / 2);
-    assert_eq!(theirs.share, mint / 2);
+    for (one, right) in [(mine_lived, mine), (theirs_lived, theirs)] {
+        assert_eq!(
+            right.worth,
+            montana_node::attest::window_value(u64::from(one.rounds), 1).expect("a worth"),
+            "a right not worth the rounds its window ran"
+        );
+    }
     assert_ne!(
         mine.nullifier, theirs.nullifier,
         "two machines took one right"
-    );
-    assert_eq!(
-        mine.share + theirs.share + mine.carried_forward,
-        mint,
-        "the shares of the living and what does not divide are not the mint of the window"
     );
 }

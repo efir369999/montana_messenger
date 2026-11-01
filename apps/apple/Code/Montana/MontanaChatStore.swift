@@ -3511,6 +3511,7 @@ class ChatStore: ObservableObject {
     }
     // ── THE ARCHIVE → FEED ROAD (15.10) ─────────────────────────────────────────
     private var ingestedFolders = Set<String>()
+    nonisolated static let archiveFaceKey = "mt.archive.face"   // NOT-UI: the face of the archive last read whole (SeedScope names it)
     private var ingestWork: DispatchWorkItem?
 
     /// Called on main. Snapshots which chats already have rows, opens the sealed folders under
@@ -3529,8 +3530,20 @@ class ChatStore: ObservableObject {
         // lost, the hand decides what to do with it).
         let feedSigs: [String: Set<String>] = messages.mapValues { Set($0.compactMap { ChatStore.archiveSig($0) }) }
         DispatchQueue.global(qos: .utility).async { [weak self] in
+            // THE SAME ARCHIVE IS NOT READ TWICE (link 14244, MontanaArchive.face): a cold start whose archive, feed, pipe book and
+            // asked rows stand as at the last whole reading would find the same gaps and build nothing, so it reads no log. Any
+            // change (a block written, a chat born or emptied, a pipe, a row unasked) changes the face, and the archive is read.
+            let asked = (UserDefaults.standard.stringArray(forKey: "mt.twin.asked") ?? []).count
+            let face = folders == nil ? MontanaArchive.face(["feed=" + occupied.sorted().joined(separator: ","),
+                                                             "pipes=" + String(MTPipeBook.count), "asked=" + String(asked)]) : nil
+            if let face, face == UserDefaults.standard.string(forKey: ChatStore.archiveFaceKey) {
+                MontanaTrace.mark("archive_same", "chats=" + String(occupied.count))
+                DispatchQueue.main.async { self?.afterPipes(grew: false) }
+                return
+            }
             let pipesBefore = MTPipeBook.count
             let found = folders.map { MontanaArchive.restore(folders: $0) } ?? MontanaArchive.restoreAll()
+            if let face { UserDefaults.standard.set(face, forKey: ChatStore.archiveFaceKey) }
             // The heads re-establish the pipes of a copy just taken back: the roads wake for them at once.
             let grew = pipesBefore < MTPipeBook.count
             DispatchQueue.main.async { self?.afterPipes(grew: grew) }
@@ -7056,6 +7069,7 @@ enum SeedScope {
         "mt.history.boxed", "mt.history.twinSeen",   // the history laid for this seed's other devices, and theirs filed here (11.10)
         "mt.group.mirrored.1",   // this device gave this person's groups to the seed's other devices (the twin mirror, 18.10)
         "mt.twin.asked",   // the rows this device asked of the seed's other devices (the twin's past, 18.10)
+        "mt.archive.face",   // the face of this person's archive at its last whole reading (link 14244)
         "mt.endpoint.book", "rdvPermUpOk", "rdvUpOk", "rdvPermUpAt", "rdvUpAt", "pendingInvite",
         MontanaDeliveryEngine.pendingKey, "orphanDelivered", "handoffTaken",
         "longLetterRefs", "nodeChunkLedger", "nodeChunkOrphanSince", "wakeUnsentDrops",

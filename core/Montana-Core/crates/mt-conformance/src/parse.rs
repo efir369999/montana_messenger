@@ -10,7 +10,6 @@ pub const CANON_RELATIVE: &str = "../../../docs/Montana Canon.md";
 pub enum ParsedValue {
     Scalar(u64),
     Ratio(u64, u64),
-    Schedule(Vec<(u64, u64)>),
     // A parameter the set names and has not published. It carries no value of any kind, and the
     // gate holds the code to carrying none either.
     Unpublished,
@@ -182,26 +181,6 @@ fn parse_block(md: &str, header: &str) -> Result<Vec<ParsedRow>, String> {
                 label: first.to_string(),
                 name: "tau2".to_string(),
                 value: ParsedValue::Scalar(value),
-            });
-        } else if first == "emission_schedule" {
-            let mut schedule = Vec::new();
-            for pair in value_cell.split('(').skip(1) {
-                let inner = pair
-                    .split(')')
-                    .next()
-                    .ok_or_else(|| format!("an unclosed schedule row: {value_cell:?}"))?;
-                let mut parts = inner.split(',');
-                let height = number(parts.next().unwrap_or_default())?;
-                let mint = number(parts.next().unwrap_or_default())?;
-                schedule.push((height, mint));
-            }
-            if schedule.is_empty() {
-                return Err(format!("an empty emission schedule: {value_cell:?}"));
-            }
-            rows.push(ParsedRow {
-                label: first.to_string(),
-                name: first.to_string(),
-                value: ParsedValue::Schedule(schedule),
             });
         } else if value_cell.contains("**unpublished**") {
             rows.push(ParsedRow {
@@ -446,15 +425,6 @@ fn check_block(rows: &[ParsedRow], code: &[mt_genesis::Entry], block: &str) -> R
                 if (n, d) != (cn, cd) {
                     return Err(format!(
                         "Decree divergence at `{}`: the set holds {n} over {d}, the code holds {cn} over {cd}",
-                        row.name
-                    ));
-                }
-                true
-            }
-            (ParsedValue::Schedule(s), mt_genesis::Entry::Schedule(_, cs)) => {
-                if s.as_slice() != *cs {
-                    return Err(format!(
-                        "Decree divergence at `{}`: the set holds {s:?}, the code holds {cs:?}",
                         row.name
                     ));
                 }

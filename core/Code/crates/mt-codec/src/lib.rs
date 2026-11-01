@@ -166,11 +166,11 @@ mod tests {
     }
 
     #[test]
-    fn write_u128_emission_moneta() {
-        // spec: EMISSION_moneta = 13_000_000_000
+    fn write_u128_window_moneta() {
+        // one coin a second: the 60-second window is worth 60_000_000_000 nɈ (Canon 9.0.0)
         let mut buf = Vec::new();
-        write_u128(&mut buf, 13_000_000_000u128);
-        let expected = 13_000_000_000u128.to_le_bytes();
+        write_u128(&mut buf, 60_000_000_000u128);
+        let expected = 60_000_000_000u128.to_le_bytes();
         assert_eq!(buf.as_slice(), &expected);
         assert_eq!(buf.len(), 16);
     }

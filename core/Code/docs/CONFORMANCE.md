@@ -23,7 +23,7 @@ network.
 | Quorum on active_chain_length with 2τ₂ active predicate | active_chain_length_at | node-kill ⇒ honest freeze (+1 inertia), node-return ⇒ resume (+62 windows/75 s) |
 | apply_proposal steps 1/2/3a/3b/3.5/3.6 incl. checkpoint rotation | mt-account, mt-entry | unit tests; settle_and_bookkeep single transition shared by proposer and followers |
 | Canonical cemented_bundle_aggregate fed with real confirmer sets (was empty everywhere) | cba_from + bc_set_history | per-window histories persisted via archive replay |
-| Genesis Decree params (d0=325M, τ₂=20160, emission=13e9 nɈ, quorum 67, admission 130, selection 336, pruning 4τ₂) | mt-genesis | constants matched against spec text |
+| Genesis Decree params (d0=325M, τ₂=20160, emission=60e9 nɈ (1 coin a second × 60 s), quorum 67, admission 130, selection 336, pruning 4τ₂) | mt-genesis | constants matched against spec text |
 | Envelope archiving on every node; explorer parity from any node | drain cemented arm + mt-store::load_proposal_envelope | live |
 
 ## Open, tracked in SPEC_DEVIATIONS.md

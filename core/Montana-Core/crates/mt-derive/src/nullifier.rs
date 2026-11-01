@@ -1,8 +1,8 @@
 // Every nullifier of the set: a value that names nobody and can be produced once. The set states
 // them in `docs/Montana Canon.md` — the one-time rights of a person, the nullifier of the rate of
 // payment, of the rate of action, of a reach into the space of slots, of a machine's part, of a
-// right to a share, of an attestation of a beacon — and the difference between them is exactly what
-// enters the preimage:
+// right to a window's seconds, of an attestation of a beacon — and the difference between them is
+// exactly what enters the preimage:
 //
 //   nothing but the branch      -> a right issued once in a life
 //   the branch and the window   -> a right issued once per window
@@ -133,7 +133,7 @@ pub fn round(machine_secret: &[u8; 32], beacon_id: &[u8; 32]) -> [u8; 32] {
     )
 }
 
-// The window a right to a share is accepted in: not early and not late, and a person chooses
+// The window a right to a window's seconds is accepted in: not early and not late, and a person chooses
 // nothing, so nothing about the choice can be read. The spread is the Decree's.
 pub fn claim_window(machine_secret: &[u8; 32], window: u64) -> Option<u64> {
     let spread = mt_genesis::divisor("claim_spread")?;
@@ -153,8 +153,8 @@ mod tests {
     const W: u64 = 1000;
 
     #[test]
-    fn the_nullifiers_of_the_two_rates_and_of_a_share_are_the_frozen_values() {
-        // Canon, "The nullifiers of the two rates, and the nullifier of a share".
+    fn the_nullifiers_of_the_two_rates_and_of_a_right_are_the_frozen_values() {
+        // Canon, "The nullifiers of the two rates, and the nullifier of a right".
         assert_eq!(
             hex(&rate(&[0x55u8; 32], W, 2)),
             "a8a93575275a22c234290aa51717ced537e24014719decd6b3f97268d00ce15e"

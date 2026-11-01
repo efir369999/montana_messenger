@@ -3,9 +3,8 @@
 // and every other crate reads them from `decree()` rather than writing one of its own.
 //
 // The encoding is the Decree's own rule: every parameter as an unsigned eight-byte little-endian
-// integer in the order the table stands; a ratio as two such integers, numerator first; the
-// emission schedule as its count of rows in two bytes followed by each row as two such integers,
-// height then mint, ascending; a parameter written as a hash as its thirty-two bytes.
+// integer in the order the table stands; a ratio as two such integers, numerator first; a
+// parameter written as a hash as its thirty-two bytes.
 
 #![forbid(unsafe_code)]
 #![deny(clippy::all)]
@@ -16,7 +15,6 @@ pub const TAU2: u64 = 20_160;
 pub enum Entry {
     Scalar(&'static str, u64),
     Ratio(&'static str, u64, u64),
-    Schedule(&'static str, &'static [(u64, u64)]),
     Hash(&'static str, [u8; 32]),
     // A parameter the set names and has not published. It carries no value — not a zero, not a
     // stand-in, nothing — because a value written in place of one that does not exist is a value
@@ -32,7 +30,6 @@ impl Entry {
         match self {
             Entry::Scalar(n, _)
             | Entry::Ratio(n, _, _)
-            | Entry::Schedule(n, _)
             | Entry::Hash(n, _)
             | Entry::Unpublished(n, _) => n,
         }
@@ -42,7 +39,6 @@ impl Entry {
         match self {
             Entry::Scalar(n, _)
             | Entry::Ratio(n, _, _)
-            | Entry::Schedule(n, _)
             | Entry::Hash(n, _)
             | Entry::Unpublished(n, _) => n,
         }
@@ -52,7 +48,6 @@ impl Entry {
         match self {
             Entry::Scalar(..) => Some(8),
             Entry::Ratio(..) => Some(16),
-            Entry::Schedule(_, rows) => Some(2 + 16 * rows.len()),
             Entry::Hash(..) => Some(32),
             Entry::Unpublished(..) => None,
         }
@@ -66,13 +61,6 @@ impl Entry {
                 out.extend_from_slice(&num.to_le_bytes());
                 out.extend_from_slice(&den.to_le_bytes());
             }
-            Entry::Schedule(_, rows) => {
-                out.extend_from_slice(&(rows.len() as u16).to_le_bytes());
-                for (height, mint) in rows.iter() {
-                    out.extend_from_slice(&height.to_le_bytes());
-                    out.extend_from_slice(&mint.to_le_bytes());
-                }
-            }
             Entry::Hash(_, h) => out.extend_from_slice(h),
         }
     }
@@ -85,7 +73,7 @@ impl Entry {
 pub const PARAMETERS: &[Entry] = &[
     Entry::Scalar("hash_bytes", 32),
     Entry::Scalar("tau2", TAU2),
-    Entry::Schedule("emission_schedule", &[(0, 13_000_000_000)]),
+    Entry::Scalar("window_seconds", 60),
     Entry::Scalar("slot_modulus", 64),
     Entry::Scalar("retarget_period", TAU2),
     Entry::Scalar("retarget_damping", 4),
@@ -335,17 +323,10 @@ mod tests {
         // them: what is checked is that order, read off the table rather than pinned by a place a
         // new row would move.
         let mut at = 0usize;
-        for entry in PARAMETERS.iter().take(2) {
+        for entry in PARAMETERS.iter().take(3) {
             let width = entry.encoded_len().expect("a published row");
             if let Entry::Scalar(_, value) = entry {
                 assert_eq!(&bytes[at..at + 8], &value.to_le_bytes());
-            }
-            if let Entry::Schedule(_, rows) = entry {
-                assert_eq!(
-                    &bytes[at..at + 2],
-                    &(rows.len() as u16).to_le_bytes(),
-                    "a schedule opens with its count of rows"
-                );
             }
             at += width;
         }

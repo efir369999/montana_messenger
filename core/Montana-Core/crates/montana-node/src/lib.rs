@@ -169,10 +169,10 @@ pub struct Configuration {
     // no count lives until it is stopped.
     pub from: u64,
     pub windows: Option<u64>,
-    // The right of a window, and how many machines that window's cement named, to be redeemed into
-    // a note of the wallet below. Both are what the operator read off that window when it closed:
-    // the machine cannot ask anybody for them, and nothing it holds implies them.
-    pub redeem: Option<(u64, usize)>,
+    // The right of a window, and how many rounds that window ran, to be redeemed into a note of the
+    // wallet below. Both are what the operator read off that window when it closed: the machine
+    // cannot ask anybody for them, and nothing it holds implies them.
+    pub redeem: Option<(u64, u64)>,
     pub wallet: Option<String>,
     // Whom a living machine pays out of that wallet, and what of it. Both values of a payee are
     // public and name nobody; the file is where what the payee needs is written, closed to its

@@ -590,8 +590,9 @@ impl Pulse {
         })
     }
 
-    // How many machines the cement names: the count of the living, which the share of the window
-    // is divided by, and a count of distinct part-nullifiers and of nothing else.
+    // How many machines the cement names: the count of the living, which the issuance of the
+    // window multiplies the worth of its right by, and a count of distinct part-nullifiers and of
+    // nothing else.
     pub fn living(&self) -> usize {
         self.cement.count() as usize
     }
@@ -1225,14 +1226,34 @@ pub fn live_doing(
         let living = usize::try_from(decided.cement_count).map_err(|_| NodeError::Refused {
             what: "a count of the living past what a number carries",
         })?;
+        // How many rounds this window ran, the one it closed at among them: rounds are counted
+        // from zero, and a window that closed in its round zero has run one. It is the one count
+        // the worth of the window's right reads, and this machine ran one chain of it; a window
+        // of more chains is worth the rounds of every one of them, which this machine does not
+        // hold, so it refuses rather than pricing the whole window by its own part of it.
+        let rounds = pulse.round.checked_add(1).ok_or(NodeError::Refused {
+            what: "a round past the last one a count carries",
+        })?;
         let right = if lived_it {
-            Some(attest::right_of(&of_the_machine, window, living)?)
+            let chains = mt_derive::tag::chains_at(window).ok_or(NodeError::Decree {
+                row: "k_step".to_string(),
+            })?;
+            if chains != 1 {
+                return Err(NodeError::Refused {
+                    what: "a window of more chains than the one this machine ran",
+                });
+            }
+            Some(attest::right_of(
+                &of_the_machine,
+                window,
+                u64::from(rounds),
+            )?)
         } else {
             None
         };
         let lived = Lived {
             window,
-            rounds: pulse.round,
+            rounds,
             living,
             right,
             proposal: id,
@@ -1246,10 +1267,10 @@ pub fn live_doing(
         match &lived.right {
             Some(right) => println!(
                 "window {} closed after {} rounds on a cement naming {} machines and casting {} votes; the next links to the proposal {} | it mints {} to this machine, accepted in window {}",
-                lived.window, lived.rounds, lived.living, decided.cement_votes, link, right.share, right.accepted_in
+                lived.window, lived.rounds, lived.living, decided.cement_votes, link, right.worth, right.accepted_in
             ),
             None => println!(
-                "window {} closed after {} rounds on a cement naming {} machines and casting {} votes; the next links to the proposal {} | this machine's part is not in that cement, so it took no share of it",
+                "window {} closed after {} rounds on a cement naming {} machines and casting {} votes; the next links to the proposal {} | this machine's part is not in that cement, so it took no right of it",
                 lived.window, lived.rounds, lived.living, decided.cement_votes, link
             ),
         }

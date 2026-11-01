@@ -481,12 +481,11 @@ pub fn verify_ballot(
     Ok(held.votes)
 }
 
-// What a window mints, and to whom. Minting creates no note: a window mints a fixed quantity and
-// issues, to each living machine, a **right to a share** of it — one right per machine per window,
-// extinguished by exactly one nullifier, so no machine takes its share twice and none takes
-// another's. The count of the living is the count of part-nullifiers the cement holds, and the
-// share is the mint of that window divided by it, the remainder that does not divide carried
-// forward rather than appropriated.
+// What a window mints, and to whom. Minting creates no note: a window issues, to each living
+// machine, a **right to the window's seconds** — one right per machine per window, extinguished by
+// exactly one nullifier, so no machine takes its seconds twice and none takes another's. Every right
+// of one window is worth the same, and the worth is read off the rounds the window ran and never off
+// the count of the living: one coin a second to every machine, whoever else lived it.
 //
 // A machine reads its own right out of its own secret and tells nobody: the nullifier names no one,
 // and the window it is accepted in is drawn from the same absorption, so a person chooses nothing
@@ -496,49 +495,43 @@ pub struct Right {
     pub nullifier: [u8; 32],
     // The window this right is accepted in — not early and not late.
     pub accepted_in: u64,
-    pub share: u64,
-    pub carried_forward: u64,
+    pub worth: u64,
 }
 
-// The mint of a window, read off the schedule of the Decree by the height of that window.
-pub fn mint_of(window: u64) -> Result<u64, NodeError> {
-    let schedule = mt_genesis::get("emission_schedule").ok_or(NodeError::Decree {
-        row: "emission_schedule".to_string(),
+// What one right of a window is worth: Canon's `window_seconds` over the rounds the window ran,
+// summed over its chains, and the chains in force at its height. The multiplication precedes the
+// division and the division truncates, so the fraction of a second a window does not reach is not
+// paid — and in a hundred and twenty-eight bits no product of two counts of this width overflows.
+pub fn window_value(rounds: u64, chains: u64) -> Result<u64, NodeError> {
+    let seconds = mt_genesis::scalar("window_seconds").ok_or(NodeError::Decree {
+        row: "window_seconds".to_string(),
     })?;
-    let rows = match schedule {
-        mt_genesis::Entry::Schedule(_, rows) => rows,
-        _ => {
-            return Err(NodeError::Decree {
-                row: "emission_schedule".to_string(),
-            })
-        }
-    };
-    // The row a height reads: the last one whose height does not exceed it, the rows ascending.
-    let mut held = None;
-    for (height, mint) in rows.iter() {
-        if *height <= window {
-            held = Some(*mint);
-        }
+    let target = mt_genesis::divisor("target_rounds").ok_or(NodeError::Decree {
+        row: "target_rounds".to_string(),
+    })?;
+    if chains == 0 {
+        return Err(NodeError::Refused {
+            what: "a window of no chain",
+        });
     }
-    held.ok_or(NodeError::Decree {
-        row: "emission_schedule".to_string(),
+    let worth =
+        u128::from(seconds) * u128::from(rounds) / (u128::from(chains) * u128::from(target));
+    u64::try_from(worth).map_err(|_| NodeError::Refused {
+        what: "a worth past what a number carries",
     })
 }
 
-// The right this machine holds to the share of a window it lived in. The count of the living is
-// what the cement names, and the division is exact: the share each takes and the remainder the
-// window carries forward.
-pub fn right_of(machine_secret: &[u8; 32], window: u64, living: usize) -> Result<Right, NodeError> {
-    if living == 0 {
-        return Err(NodeError::Refused {
-            what: "a window whose cement names no machine mints no share",
-        });
-    }
-    let mint = mint_of(window)?;
-    let living = living as u64;
+// The right this machine holds to the seconds of a window it lived in, priced by the rounds that
+// window ran summed over its chains. The count of chains is the one in force at the window's
+// height, read off the Decree and never chosen.
+pub fn right_of(machine_secret: &[u8; 32], window: u64, rounds: u64) -> Result<Right, NodeError> {
+    let chains = mt_derive::tag::chains_at(window).ok_or(NodeError::Decree {
+        row: "k_step".to_string(),
+    })?;
+    let worth = window_value(rounds, chains)?;
     let nullifier =
         mt_derive::nullifier::credit(machine_secret, window).ok_or(NodeError::Unprovable {
-            what: "the right of this machine to a window's share",
+            what: "the right of this machine to a window's seconds",
         })?;
     let accepted_in = mt_derive::nullifier::claim_window(machine_secret, window).ok_or(
         NodeError::Unprovable {
@@ -549,7 +542,6 @@ pub fn right_of(machine_secret: &[u8; 32], window: u64, living: usize) -> Result
         window,
         nullifier,
         accepted_in,
-        share: mint / living,
-        carried_forward: mint % living,
+        worth,
     })
 }

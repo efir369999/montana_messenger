@@ -1,10 +1,10 @@
 # Montana — Value
 
-**Version:** 4.0.0
+**Version:** 4.1.0
 
 Value holds what money is in Montana and how it moves: the note, its commitment, its
 nullifier, the trees they live in, the fixed shape of a spend, what the proof asserts, how a
-right to a window's share is extinguished, and the single mechanism by which an owner may disclose
+right to a window's seconds is extinguished, and the single mechanism by which an owner may disclose
 one payment. It holds no number — Canon holds those — and it names no party, because none
 exists.
 
@@ -146,7 +146,7 @@ accompanies it. Two entities where one suffices would restore distinguishability
 
 For every redemption, one of two branches holds and the proof does not say which: either a note
 exists whose commitment lies in a tree whose root the horizon of proving holds and the bearer
-knows its ownership secret, or the bearer holds an unextinguished right to the share of a window and the
+knows its ownership secret, or the bearer holds an unextinguished right to the seconds of a window and the
 machine secret that proves it. In both branches the nullifier published is derived from what was
 consumed by the canonical formula of that branch. What is created equals what is consumed. The rate nullifier
 belongs to a window of the standing stride — every window of which stands before the one the
@@ -174,7 +174,7 @@ The proof is of fixed length. Its branch is never disclosed.
 
 ## Extinguishing a right
 
-A right to a window's share creates no note. It is extinguished inside an ordinary payment: the
+A right to a window's seconds creates no note. It is extinguished inside an ordinary payment: the
 bearer proves entitlement and consumes the right **in a nullifier position like any other**, so
 nothing about the payment says that a right was what it consumed. The moment of extinguishing is
 computed from the machine's secret and the window rather than chosen, and the landing stands
@@ -190,8 +190,8 @@ where no observer can tell which entries are rights and which are notes.
 ## Conservation of issuance
 
 - **Per payment:** what is created equals what is consumed, asserted by the proof and never by adding open numbers.
-- **Per window:** the change of supply equals the mint of that window — one right per living machine, each extinguished by exactly one nullifier — with the indivisible remainder carried forward.
-- **Globally:** the sum of unspent notes, unredeemed rights and the carried remainder equals the supply, held by proof and induction and **unverifiable by addition** — amounts are hidden and rights are private.
+- **Per window:** the change of supply equals the issuance of that window — one right per living machine, each worth the window's seconds and extinguished by exactly one nullifier.
+- **Globally:** the sum of unspent notes and unredeemed rights equals the supply, held by proof and induction and **unverifiable by addition** — amounts are hidden and rights are private.
 
 **The honest price.** The ability to detect a breach of issuance by simple summation is lost
 together with open amounts, and no reconciliation of balances replaces it. The integrity of

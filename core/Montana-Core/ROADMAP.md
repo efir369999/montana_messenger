@@ -1,5 +1,7 @@
 # The plan, in twenty-one stages
 
+**The rule of issuance since Canon 9.0.0 (31.10.2026): a window mints no fixed quantity. Every living machine holds a right worth the window's seconds — `window_value(r, k)` of Canon, one coin a second, never rounded up — and nothing is divided among the living and no remainder is carried. Entries below that speak of a share of a fixed mint, a divisor of the living or a carried remainder record measurements and findings made under the earlier rule and stand as history; the rule in force is Canon's.**
+
 **Current review, 2026-10-14:** this plan states the intended protocol. Its earlier stage
 closure narrative is historical and is superseded by the reopened findings in
 [AUDIT.md](AUDIT.md). Complete finality, bounded issuance, admission, authenticated joining

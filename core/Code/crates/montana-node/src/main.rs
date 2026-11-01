@@ -94,7 +94,7 @@ fn help_text() -> String {
                                             the next W % 336 == 0)\n\
                        Active: per window SshaReveal + BundledConfirmation +\n\
                                ProposalHeader + apply_proposal + archive_proposal,\n\
-                               state_root self-verify, 13 Ɉ emission to the operator\n\
+                               state_root self-verify, the window's 60 seconds as 60 Ɉ to the operator\n\
                      Ctrl-C — graceful shutdown with state save.\n\
          \n\
          Options:\n\

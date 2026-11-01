@@ -20,8 +20,9 @@ fn audit_reproduces_an_oversized_right_becoming_a_spendable_note() {
         root = mt_proof::admitted::node(&root, sibling);
     }
     let mut state = State::new().with_admitted(root);
-    let right = attest::right_of(&secret, 1_000, 1).unwrap();
-    let forged = u128::from(right.share) + 1;
+    let rounds = mt_genesis::scalar("target_rounds").unwrap();
+    let right = attest::right_of(&secret, 1_000, rounds).unwrap();
+    let forged = u128::from(right.worth) + 1;
     let (payee, spending_key) = payee_of(0xA1);
     let payment = wallet
         .redeem(
@@ -51,7 +52,7 @@ fn audit_reproduces_an_oversized_right_becoming_a_spendable_note() {
     assert_eq!(note.commitment, frame.spends[0].commitments[0]);
     wallet.enter(note).unwrap();
     assert_eq!(wallet.balance().unwrap(), forged);
-    assert!(forged > u128::from(attest::mint_of(right.window).unwrap()));
+    assert!(forged > u128::from(attest::window_value(rounds, 1).unwrap()));
 
     let (recipient, _) = payee_of(0xB2);
     let positions = (mt_genesis::scalar("spend_inputs").unwrap()

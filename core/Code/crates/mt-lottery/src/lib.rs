@@ -367,7 +367,7 @@ pub fn validate_reveal(
 // ⇒ seniority_term = 0 (the first 13 windows after registration).
 // The divisor 13 — derivation: target T_cap = 3 × T_year ≈ 1 577 880 windows,
 // snapshot_max = 6τ₂ = 120 960, divisor = 1 577 880 / 120 960 ≈ 13.
-// Structural reuse: matches EMISSION_moneta = 13 Ɉ per window.
+// Structural reuse: matches the window's right of 60 Ɉ (one coin a second, 60-second window).
 pub fn seniority_term(chain_length: u64, chain_length_snapshot: u64) -> u64 {
     (chain_length / 13).min(chain_length_snapshot)
 }

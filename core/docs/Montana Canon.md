@@ -1,6 +1,6 @@
 # Montana — Canon
 
-**Version:** 8.1.0
+**Version:** 9.0.0
 
 Canon is the one place where the values and the bytes of Montana live. Every other document
 of the set names a quantity and points here; none of them restates a number, a size, a
@@ -622,7 +622,7 @@ tree of admitted machines holds the naming halves ascending.
 
 **What enters the two sets.** A nullifier enters the set of nullifiers when the object spending it
 applies and never leaves it: the nullifiers a frame publishes in its redemption positions — of a note
-or of a right to a share, which no reader tells apart — and the nullifier of an opening. A rate
+or of a right to a window's seconds, which no reader tells apart — and the nullifier of an opening. A rate
 nullifier stands in the rate set of the horizon, which Value states is not a tree, and is no entry of
 this one. A machine enters the table of machines by the commitment a selection event admits; a
 machine of an opening cohort enters the tree of admitted machines by its naming half and writes no
@@ -688,6 +688,40 @@ the fold itself is carried by every verifier, and carriage is not judgement.
 A number here is not chosen; it follows from a target stated before it. Each derivation below
 names the target, the reasoning, what moves if the target moves, and the answer to the obvious
 objection.
+
+### `window_seconds` = 60
+
+**Target.** Every living machine is paid one coin for each second it lives, and nothing pays it
+faster — while the protocol reads no clock, by [I-15] of the Constitution.
+
+**Derivation.** The protocol counts rounds, and a round is one echo across a sample scattered like
+the population; a second is therefore a count of rounds, and this row fixes how many. Where the
+living span the planet, an echo is bounded below by a round trip of light in fibre over half the
+circumference — 2 × 20 000 km at 200 000 km/s, 0.2 s — so a window of `target_rounds` = 284 echoes
+lasts at least 56.8 s; the nearest whole minute above it is 60, and a second of Montana is
+284 / 60 ≈ 4.73 rounds of one chain, ≈ 0.211 s an echo. The worth of a window's right is that
+quotient taken in integers, the multiplication first, the division truncating toward zero:
+
+```
+window_value(r, k) = ⌊window_seconds × r / (k × target_rounds)⌋
+```
+
+`r` is the count of rounds the window ran, summed over its chains, and `k` the count of chains in
+force at its height; both are public, and Consensus states the right they price.
+
+**Sensitivity.** At 57 a second is 4.98 rounds and a planet-wide echo pays a little under a coin a
+second; at 120 a second is 2.37 rounds, which an echo within one continent completes, and the
+network would pay two coins a second wherever it is not spread over the planet. The row moves the
+pay of every machine by its own ratio and nothing else: no rule of closing, of the draw or of
+admission reads it.
+
+**Defence.** Why not a fixed coin per window — a window closes in its first rounds while the
+network is small (Consensus, the pulse), so a fixed coin per window would pay a one-round window as
+a full one, hundreds of times a second. Why not a clock — [I-15] admits none, and a second read
+from a machine's quartz is a second its owner sets. Why does a network gathered in one room not
+pay faster — it does, by the ratio of its echo to the planet's, and the set says so rather than
+claiming a floor the protocol cannot read; a chain a room runs alone is a different network, and
+the echo of the real one is the echo of everyone.
 
 ### `proving_lag` = 2 windows
 
@@ -1562,7 +1596,7 @@ tail opens none: it rides in the clear.
 redemption proves either a note or a right, and which of the two must not be readable from the
 length or the shape. The blocks are one set: the key absorbed once and squeezed twice in either
 branch; the commitment blocks computing a note's envelope — or, for a right, running that same
-chain over the naming half and the share, a note nobody reads; the leaf and the walk folding the
+chain over the naming half and the worth, a note nobody reads; the leaf and the walk folding the
 tree of the branch under the domains of the branch; the nullifier chain absorbing the lane and
 closing, for a note, over the position the walk accumulated, and for a right over its window,
 squeezed once more for the moment it is due. Six seams differ, and each is a split of its
@@ -2851,7 +2885,7 @@ may differ.
 
 - It takes the spending half of the machine's secret and the window and nothing else, so one machine yields one value per window and two machines never collide.
 - The window enters as one element, for the reason the window of a right and the amount of a frame do: two limbs of one number are two witnesses inside a proof.
-- Its domain is distinct from the one that spends a right to a share, so answering a window and taking its share are two acts that do not join.
+- Its domain is distinct from the one that spends a right to a window's seconds, so answering a window and taking its seconds are two acts that do not join.
 - What a second appearance of one part-nullifier means is a rule and not a value, and Consensus holds it whole: a repetition within one window adds nothing to the cement and is lawful, and what a sanction rests on is one part-nullifier under two different proposal identifiers of one height. This document holds the derivation and nothing about the rule.
 
 ### The identifier of an application
@@ -2910,7 +2944,7 @@ domain would let the public kind collide with the private kind.
 - The tag of first contact takes its own domain, so it never collides with a tag standing on a secret two parties hold.
 - The tag of first contact carries a request and never a letter; the letters of that correspondence stand on the derived secret alone, so the public value of a name is an entrance and never a channel.
 
-### The right of a machine to a share, and what redeems it
+### The right of a machine to a window's seconds, and what redeems it
 
 A machine is admitted once and stands in the tree of admitted machines from then on; the leaf it
 occupies is the half of its secret that names it, and nothing else:
@@ -2943,7 +2977,7 @@ so nothing of which was taken is readable from the length of a frame or the shap
 - A redemption of a right walks to a leaf of the tree of admitted machines. Without that walk the nullifier binds nothing a network can check: the network holds no secret of any machine and can pre-register no value, so a fresh secret would yield a value it has not seen and it would pay for it. That is a mint, and the walk is what closes it.
 - The leaf is the naming half and the nullifier takes the spending half, both of one absorption of the machine's secret. Two absorptions would be two readings of one secret, and a circuit reading a secret twice is a circuit where the two readings may differ — the same closure the key of a note takes, for the same reason.
 - The nullifier takes the spending half and the window and nothing else, so two machines never collide and one machine cannot spend one window twice.
-- Nothing published by a machine carries either half's preimage, so a share says nothing about who runs the machine.
+- Nothing published by a machine carries either half's preimage, so a right says nothing about who runs the machine.
 - A nullifier already present in its window is refused in silence.
 - The moment of taking is the second squeeze of that same absorption, so no third reading of the secret exists anywhere in this construction.
 - All of it is of the proof hash family, for the reason the envelope of a note is: a right is redeemed by a frame and by nothing else, so the one judge of these derivations is a verifier of a proof, and a function the circuit cannot carry would put the redemption of a right beyond proving.
@@ -3336,7 +3370,7 @@ identity key = 0x66 x 32, iterations = 5 200
 fingerprint  = 00534 22536 46923 62969 86064 85215
 ```
 
-**The nullifiers of the two rates.** The nullifier of a share stands with the right it
+**The nullifiers of the two rates.** The nullifier of a right to a window's seconds stands with the right it
 extinguishes, where its two halves are derived.
 
 ```
@@ -3690,7 +3724,7 @@ line, which of the two it is writing.
 | `mt-rate-nf` | the nullifier bounding spends per window without naming a payer |
 | `mt-act-nf` | the nullifier bounding actions of the identity plane per window, without naming anyone |
 | `mt-record-nf` | the nullifier spending one version of a record, without naming its holder |
-| `mt-credit-nf` | the nullifier extinguishing a right to a window's share |
+| `mt-credit-nf` | the nullifier extinguishing a right to a window's seconds |
 | `mt-admitted-leaf` | a leaf of the tree of admitted machines: the naming half of the machine at that position |
 | `mt-admitted-node` | an internal node of the tree of admitted machines |
 | `mt-cement-leaf` | a leaf of the tree of a census cement: the part-nullifier at that position |
@@ -4566,7 +4600,7 @@ demands the width from this row rather than declaring one of its own.
 |---|---|
 | `hash_bytes` — the width of a hash output, and therefore of every identifier, commitment, nullifier and root | 32 |
 | `τ₂` — the period of adaptation, in windows | 20 160 |
-| `emission_schedule` — rows of `(height, mint)`, the mint of a window read by height, ascending | (0, 13 000 000 000) |
+| `window_seconds` — the seconds a window of `target_rounds` rounds on each chain is worth to every living machine, one coin a second | 60 |
 | `slot_modulus` | 64 |
 | `retarget_period`, in windows | τ₂ |
 | `retarget_damping` | 4 |
@@ -4629,11 +4663,10 @@ a step of the schedule grows is capacity, paid in the shared stream and nowhere 
 What grows with the population is the count of heavy attestations each living machine
 verifies as they arrive; the envelope and the gate of entry bound that count, and the light
 majority costs a signature check alone. **The young
-network pays itself while it is everyone who exists:** the length of a window in rounds falls with
-the population below the floor of the crowd and stands at the target above it, so windows pass
-quickly in lived time while the geography is one room, and a flat schedule mints quickly in those
-early days — bounded by the one-equal-share
-rule, and shaped, if its founder wishes, by an early-height row of the schedule.
+network mints no faster than the old:** the length of a window in rounds falls with the
+population below the floor of the crowd and stands at the target above it, and a right is worth
+the rounds of its window and never the window, so a window that passes in a handful of rounds is
+worth a handful of seconds — one coin a second at every population.
 
 **Every parameter of the table is published.** The last to land was the hash binding the constraint
 sets — the identifiers of the six descriptions the network accepts proofs under. These bind
@@ -4645,9 +4678,7 @@ over this table, computed by the gate on every build rather than remembered by a
 **The Genesis State Hash** binds the parameters to the state they open. Every parameter of the
 table enters as an unsigned eight-byte little-endian integer, resolved to its numeric value and in
 the order the table stands; a parameter written as a ratio enters as two such integers, numerator
-first; the emission schedule enters as its count of rows, an unsigned two-byte little-endian
-integer, followed by each row as two such eight-byte integers, height then mint, ascending by
-height; a parameter written as a hash enters as its thirty-two bytes. After them stand the six roots of the genesis state in the order a proposal carries them,
+first; a parameter written as a hash enters as its thirty-two bytes. After them stand the six roots of the genesis state in the order a proposal carries them,
 each the empty root of its own structure — the notes, the admitted machines and the operations
 under the append-only construction, the nullifiers, the records and the machine state under the
 sparse one:
@@ -4656,11 +4687,11 @@ sparse one:
 genesis_state_hash = SHA-256("mt-genesis-state" || 0x00 || parameters
                              || note_root || nullifier_root || record_root || machine_root || admitted_root || operations_root)
 
-                   = 7bc9e7ef84bffeb0972273d9be68f6ede276fa7d38c0a3792b51a284c359aefd
+                   = a3108738e8c361fe88cf9b077c3a76b39f2a06f16417c73a092fa4ad24da1dae
 
 published_parameters = SHA-256("mt-genesis-state" || 0x00 || the parameters that are published,
                                in the order and the encoding above)
-                     = e5e25faaad145470332106b37a11313541cde39f04b5484beaf306e987ed9499
+                     = de679e4362cbefaf9220141ded821a1ef786272193afa33516b6a26922407e2a
 ```
 
 A chain whose value differs is not a fork of Montana but a different protocol, and honest
@@ -5214,7 +5245,7 @@ An implementation conforms to this document when all of the following hold.
    and claims no conformance over them until the value lands.
 7. It reproduces **every frozen vector of this document byte for byte**, from the domain-separated
    primitive and the empty values and the pinned walks of both trees through the note, the nullifiers of both rates and
-   of a share, the tag and its step labels, the walk of the secret of a pipe, the seal of a step, the placement of a sender, the slot
+   of a right to a window's seconds, the tag and its step labels, the walk of the secret of a pipe, the seal of a step, the placement of a sender, the slot
    of a name and the slot of a channel, the tag of first contact, the handshake and the words of a
    seed. This item is the first an implementation
    should run and the cheapest to run: an implementation that reproduces the vectors has the hash

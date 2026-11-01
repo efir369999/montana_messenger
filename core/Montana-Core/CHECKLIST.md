@@ -29,8 +29,9 @@ Every item names what proves it, so that nobody has to remember what "works" mea
    runs do not differ, which is Network's sentence about routes made a measurement.*
 
 4. **Two machines live windows, one after another.** Rounds, a cement of both, a window closed on
-   that cement, and one equal share minted to each — six thousand five hundred million per machine
-   per window, which is the baseline halved. — *Measured on two hosts, two windows, twice.*
+   that cement, and one right minted to each. — *Measured on two hosts, two windows, twice, under the
+   fixed mint of Canon 8.1.0 and before; since Canon 9.0.0 a right is worth the window's seconds —
+   one coin a second, `window_value` of Canon — and no fixed mint exists.*
 
 5. **A machine keeps an account of itself.** Cells arrived, held, and refused under each rule
    separately; objects published and pushed; collections asked and cells pulled; points read back

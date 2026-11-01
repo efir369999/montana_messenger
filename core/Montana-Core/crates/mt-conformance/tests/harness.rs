@@ -204,18 +204,15 @@ fn a_changed_ratio_breaks_the_build_with_both_ratios() {
 }
 
 #[test]
-fn a_changed_emission_row_breaks_the_build_with_both_schedules() {
+fn a_changed_worth_of_a_window_breaks_the_build_with_both_values() {
     let md = canon();
-    let line = row_line(&md, "emission_schedule");
-    let (doctored, old_mint, new_mint) = bump_last_number(&line);
-    let Some(mt_genesis::Entry::Schedule(_, rows)) = mt_genesis::get("emission_schedule") else {
-        panic!("the Decree holds the schedule");
-    };
-    assert_eq!(old_mint, rows[0].1);
+    let line = row_line(&md, "window_seconds");
+    let (doctored, old, new) = bump_last_number(&line);
+    assert_eq!(Some(old), mt_genesis::scalar("window_seconds"));
     let err = check_all(&doctored_canon(&md, &line, &doctored)).expect_err("the gate must refuse");
-    assert!(err.contains("emission_schedule"), "{err}");
-    assert!(err.contains(&old_mint.to_string()), "{err}");
-    assert!(err.contains(&new_mint.to_string()), "{err}");
+    assert!(err.contains("window_seconds"), "{err}");
+    assert!(err.contains(&old.to_string()), "{err}");
+    assert!(err.contains(&new.to_string()), "{err}");
 }
 
 #[test]

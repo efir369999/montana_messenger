@@ -5,7 +5,7 @@
 //   transfer-scenario    sponsor → A → B → Transfer A→B 50% balance
 //   change-key           ChangeKey: rotate pk; old pk → InvalidSignature on the next op
 //   anchor               Anchor: chain payload hashes
-//   emission-schedule [W1 W2 ...]  reward + supply ledger
+//   emission-ledger [W1 W2 ...]    reward + supply ledger
 //   validation-rejects   6 OpError cases REJECTED byte-for-byte
 //   all                  Run all 7
 //
@@ -470,15 +470,15 @@ fn cmd_anchor() -> bool {
     pass
 }
 
-fn cmd_emission_schedule(windows: &[u64]) -> bool {
-    print_section("EMISSION SCHEDULE — reward + supply ledger");
+fn cmd_emission_ledger(windows: &[u64]) -> bool {
+    print_section("EMISSION LEDGER — reward + supply, one coin a second");
     print_note(
-        "spec, section \"Emission\": reward_moneta = EMISSION_moneta = 13 Ɉ const per window. supply_moneta(W) = W × EMISSION_moneta.",
+        "Canon 9.0.0, one coin a second: reward_moneta = the window's seconds in coins = 60 Ɉ per 60-second window. supply_moneta(W) = W × reward.",
     );
 
     let params = genesis_params();
     let reward = reward_moneta(params);
-    print_kv("EMISSION_moneta (per window)", format!("{reward} nɈ"));
+    print_kv("window right (per window)", format!("{reward} nɈ"));
 
     let mut all_match = true;
     print_subsection("Schedule");
@@ -509,7 +509,7 @@ fn cmd_emission_schedule(windows: &[u64]) -> bool {
 
     let pass = all_match && lin_ok && reward > 0;
     println!(
-        "\n[result] EMISSION-SCHEDULE: {}",
+        "\n[result] EMISSION-LEDGER: {}",
         if pass { "PASS" } else { "FAIL" }
     );
     pass
@@ -734,7 +734,7 @@ fn cmd_all() -> bool {
     let c = cmd_transfer_scenario();
     let d = cmd_change_key();
     let e = cmd_anchor();
-    let f = cmd_emission_schedule(&[0, 100, 1000, 20160, 1_000_000]);
+    let f = cmd_emission_ledger(&[0, 100, 1000, 20160, 1_000_000]);
     let g = cmd_validation_rejects();
 
     print_section("SUMMARY");
@@ -743,7 +743,7 @@ fn cmd_all() -> bool {
     print_kv("transfer-scenario", if c { "PASS" } else { "FAIL" });
     print_kv("change-key", if d { "PASS" } else { "FAIL" });
     print_kv("anchor", if e { "PASS" } else { "FAIL" });
-    print_kv("emission-schedule", if f { "PASS" } else { "FAIL" });
+    print_kv("emission-ledger", if f { "PASS" } else { "FAIL" });
     print_kv("validation-rejects", if g { "PASS" } else { "FAIL" });
 
     let pass = a && b && c && d && e && f && g;
@@ -772,7 +772,7 @@ fn usage() {
     eprintln!("  transfer-scenario           sponsor → A → B → Transfer A→B");
     eprintln!("  change-key                  ChangeKey: pk rotation + signature transition");
     eprintln!("  anchor                      Anchor: chain payload hashes");
-    eprintln!("  emission-schedule [W ...]   reward + supply ledger");
+    eprintln!("  emission-ledger [W ...]     reward + supply ledger");
     eprintln!("  validation-rejects          6 OpError adversarial cases");
     eprintln!("  all                         Run all 7");
     eprintln!();
@@ -794,11 +794,11 @@ fn main() -> ExitCode {
         "transfer-scenario" => cmd_transfer_scenario(),
         "change-key" => cmd_change_key(),
         "anchor" => cmd_anchor(),
-        "emission-schedule" => {
+        "emission-ledger" => {
             let ws: Vec<u64> = args[2..].iter().filter_map(|s| s.parse().ok()).collect();
             let default = vec![0u64, 100, 1000, 20160, 1_000_000];
             let use_args: &[u64] = if ws.is_empty() { &default } else { &ws };
-            cmd_emission_schedule(use_args)
+            cmd_emission_ledger(use_args)
         },
         "validation-rejects" => cmd_validation_rejects(),
         "all" => cmd_all(),
