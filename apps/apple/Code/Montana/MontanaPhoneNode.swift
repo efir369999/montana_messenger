@@ -534,7 +534,7 @@ final class MontanaPhoneNode: ObservableObject {
         }
         MontanaTrace.markChanged("roads", "all")
         let epoch = Self.pathEpoch
-        if epoch != pathEpochSeen { pathEpochSeen = epoch; pathAt.removeAll() }   // the network came back: every address is a question again
+        if epoch != pathEpochSeen { pathEpochSeen = epoch; pathAt.removeAll(); Self.unparkAll() }   // the network came back: every address is a question again
         var attempts = 0
         // A CALL OWNS THE RADIO (13.09, measured on a cellular call that took twenty-one seconds to
         // find its path): while a call is being set up or held, this walk knocks the doors of EVERY
@@ -558,6 +558,7 @@ final class MontanaPhoneNode: ObservableObject {
             // Addresses that never answered are not retried into the ground.
             for ep in e.endpoints where ep.isGlobal && (v6Here || !ep.ip.contains(":")) {
                 guard attempts < 4 else { return }
+                if let p = Self.parkedAt(ep.hostPort), now.timeIntervalSince(p) < Self.pathStepMax { continue }   // our tunnel answered it: parked till the ceiling or the network's return
                 let cur = pathAt[ep.hostPort]
                 let step = cur?.step ?? Self.pathStepMin
                 guard now.timeIntervalSince(cur?.at ?? .distantPast) >= step else { continue }
@@ -609,6 +610,17 @@ final class MontanaPhoneNode: ObservableObject {
         pathLock.lock(); defer { pathLock.unlock() }; return _pathEpoch
     }
     private static func pathReturned() { pathLock.lock(); _pathEpoch += 1; pathLock.unlock() }
+    /// A DIAL OUR OWN TUNNEL ANSWERED IS NOT ASKED AGAIN WHILE IT HOLDS THE ROUTE (OZ 1, build 2342; T1 2340, 19:30-19:40 UTC: 142 path_try,
+    /// 59 dials, 30 handshake_timeout «ifs=tunnel» in ten minutes, each «tcp_ready ms=3» then eight silent seconds -- the tunnel's own stack
+    /// takes the SYN and no peer ever answers, and every timeout shipped the diary (diag_ship cause=failure)). Such an address rests the
+    /// walk's full ceiling (pathStepMax); the network's return (pathReturned) asks it anew, as every address.
+    private static var _parked: [String: Date] = [:]
+    static func parkPath(ip: String, port: UInt16) {
+        let hostPort = ip.contains(":") ? "[\(ip)]:\(port)" : "\(ip):\(port)"
+        pathLock.lock(); _parked[hostPort] = Date(); pathLock.unlock()
+    }
+    private static func parkedAt(_ hostPort: String) -> Date? { pathLock.lock(); defer { pathLock.unlock() }; return _parked[hostPort] }
+    private static func unparkAll() { pathLock.lock(); _parked.removeAll(); pathLock.unlock() }
     private func startPathMonitor() {
         guard pathMonitor == nil else { return }
         let m = NWPathMonitor()

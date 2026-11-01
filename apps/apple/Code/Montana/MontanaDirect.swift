@@ -935,6 +935,9 @@ final class MontanaDirect {
         self.q.asyncAfter(deadline: .now() + Self.handshakeBudget) { [weak oc] in
             guard let oc, oc.sendKey == nil || !oc.ready else { return }
             MontanaTrace.mark("handshake_timeout", mid: mid, "ip=\(ip):\(port) \(oc.nw.pathStory)")
+            // A SYN OUR TUNNEL TOOK IS NOT A PEER (OZ 1, build 2342; T1 2340: tcp_ready ms=3 then eight silent seconds, thirty times in ten
+            // minutes): a peer's address rests the walk's ceiling (MontanaPhoneNode.parkPath); the network's return asks it anew.
+            if !MontanaNodes.isNode(ip), MontanaPhoneNode.tunnelUp() { MontanaPhoneNode.parkPath(ip: ip, port: UInt16(port)) }
             if MontanaNodes.isNode(ip) { MontanaDirect.noteDoorFail(ip: ip, port: port, why: "handshake-timeout") }
             // A failure while OUR tunnel holds the route is the tunnel's fact, not the address's (see below).
             if !toRef.hasPrefix("ep:"), !MontanaPhoneNode.tunnelUp() { MontanaOverlayBook.shared.fail(ref: toRef, ip: ip, port: port) }

@@ -7082,7 +7082,8 @@ enum SeedScope {
         "mt.apple.signin.id", "mt.restore.outbox", MTSamePair.mergedKey, MTSamePair.deferredKey,
         MTGroup.copiesKey,   // the copies of the groups' words on their way (05.10): the person's own ledger of the queue
         MTChannelViews.storeKey]   // which subscriber's seat saw which post of a channel (17.10, the critic's K-1): who saw what never rides a copy
-    static let seatPrefixes = ["ckpt_", "mrefGone_", "rdvFaceUp:", "sentAv4_", "sentAvNone2_", "sentNm2_", "sentAb1_", "sentPg1_"]
+    static let seatPrefixes = ["ckpt_", "mrefGone_", "rdvFaceUp:", "sentAv4_", "sentAvNone2_", "sentNm2_", "sentAb1_", "sentPg1_",
+                               "pageRet1_"]   // the moment the queue retired my page to a visitor unreceipted (Announced.pageRetired, 2342): this seat's own
     /// THE PERSON'S OWN IN THE KEYCHAIN (the second identity checklist, 1.1): parked with the seat, lifted with it -- the two
     /// sets a copy carries, the outgoing queue's key and its knock ledger, the extension's box of this person's letters, and
     /// the mirrors the app writes from this person's store for the extensions and the first frame (another person's mirror

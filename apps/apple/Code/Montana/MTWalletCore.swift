@@ -952,6 +952,40 @@ enum MTLevelAccess {
     private var full = Set<String>()                   // the doors that refused a piece as full: laid whole next
     private var running = false, again = false
     private var dueAt = Double.infinity
+    /// THE PIECES OPENED STAND ACROSS LAUNCHES (OZ 1, build 2342; T1 2340 cold launch 19:30 UTC: coins_vault why=read rows=4/4
+    /// got=120756 joined=0 -- every launch fetched, opened and decoded the whole book from all four rows, because «have» named only the
+    /// pieces this process had opened and a process is born with none). The names of the moves each piece carries, and the pieces each
+    /// row said it keeps, are kept in the seed's own file (coin-vault-pieces): read once at the first gather, written when a gather
+    /// changed them and not oftener than every ten minutes, forgotten with the seat. A piece is its own name (SHA-256 of its blob), so a
+    /// kept piece is never stale; one the node no longer holds leaves at the gather, as before; a file of another token lays nothing.
+    private struct KeptPieces: Codable { var token: String; var pieces: [String: [String]]; var held: [String: [String]] }
+    nonisolated private static let keptFile = "coin-vault-pieces"   // NOT-UI: the file's own name
+    private var keptRead = false
+    private var keptWroteAt: Double = 0
+    private let disk = DispatchQueue(label: "montana.coin-vault", qos: .utility)
+    private func readKept(token: String) async {
+        guard !keptRead else { return }
+        keptRead = true
+        guard let u = MTCoinPlace.file(Self.keptFile) else { return }
+        let read = await Task.detached(priority: .utility) { () -> KeptPieces? in
+            guard let d = try? Data(contentsOf: u) else { return nil }
+            return try? JSONDecoder().decode(KeptPieces.self, from: d)
+        }.value
+        guard let read, read.token == token, pieces.isEmpty else { return }
+        pieces = read.pieces.mapValues { Set($0) }
+        held = read.held
+        MontanaTrace.mark("coins_vault", "kept pieces=\(pieces.count) rows=\(held.count)")
+    }
+    private func writeKept(token: String) {
+        let now = Date().timeIntervalSince1970
+        guard 600 < now - keptWroteAt, let u = MTCoinPlace.file(Self.keptFile) else { return }
+        keptWroteAt = now
+        let k = KeptPieces(token: token, pieces: pieces.mapValues { Array($0) }, held: held)
+        disk.async {
+            guard let d = try? JSONEncoder().encode(k) else { return }
+            MTDiskDoor.write(d, to: u, Self.keptFile, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        }
+    }
 
     nonisolated static func keys(entropy: Data) -> (seal: SymmetricKey, token: Data, tip: Data) {
         let ikm = SymmetricKey(data: entropy)
@@ -1016,7 +1050,11 @@ enum MTLevelAccess {
         return try? JSONDecoder().decode([MTCoinEntry].self, from: plain)
     }
     /// The person who left the seat takes their vault's memory with them.
-    func forget() { heard = false; heardAt = 0; pieces = [:]; held = [:]; full = [] }
+    func forget() {
+        heard = false; heardAt = 0; pieces = [:]; held = [:]; full = []
+        keptRead = false; keptWroteAt = 0
+        if let u = MTCoinPlace.file(Self.keptFile) { disk.async { try? FileManager.default.removeItem(at: u) } }   // the kept pieces go with the person
+    }
     /// A gathering soon: the moves of a minute -- the minting's own window -- ride one piece, never one each; the nearest ask wins, so
     /// a row waiting for the seed's union never waits behind a minute's.
     func soon(_ why: String, after seconds: Double = 60) {
@@ -1043,7 +1081,11 @@ enum MTLevelAccess {
         guard !doors.isEmpty else { return }
         running = true
         defer { running = false; if again { again = false; soon("again", after: 1) } }
-        let rows = Self.rows(doors, common: MontanaHomeNode.hex(k.token), entropy: e)
+        let token = MontanaHomeNode.hex(k.token)
+        await readKept(token: token)
+        if moved(gen, why) { return }
+        let heldBefore = held, piecesBefore = Set(pieces.keys)
+        let rows = Self.rows(doors, common: token, entropy: e)
         var answered: [String] = []
         var fresh: [MTCoinEntry] = []
         for r in rows {
@@ -1113,6 +1155,7 @@ enum MTLevelAccess {
         }
         let live = Set(held.values.flatMap { $0 })
         pieces = pieces.filter { live.contains($0.key) }   // a piece no node keeps is forgotten here too
+        if held != heldBefore || Set(pieces.keys) != piecesBefore { writeKept(token: token) }
         MontanaTrace.mark("coins_vault", "why=\(why) rows=\(answered.count)/\(rows.count) got=\(fresh.count) joined=\(joined) laid=\(laid) whole=\(whole) moves=\(book.count)")
         MTTopNet.shared.put()   // the row tells the union just gathered
     }

@@ -442,7 +442,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // and birth on that call would crash under the person's hands.
         _ = MontanaCall.shared
         MontanaTrace.mark("launch_end")
-        MTMusicFolders.lay()   // the lent folders' last list stands before any page asks (the author's word 24.09)
+        // THE LAUNCH LAYS NO MUSIC LIST (OZ 1, build 2342; T1 2340: music_kept laid=829 ms=1566 in the launch's second second at every
+        // launch, the music page unopened): the first ask of a launch lays the kept list (MTMusicFolders.tracks) -- a second and a half
+        // at the music page's first opening, not at every launch (the law of 01.11.2026, link 13994: work on demand). The kept list
+        // itself still stands at that first ask, before any walk, as the author's word 24.09 asked.
         MontanaEntropy.warm()   // the seed is gathered before anyone draws, and the diary names what it stands on
         // A copy the previous run did not finish is not a copy: it leaves before anybody can take it
         // for one. The cloud copy, when the person asked for one, is refreshed while the app is on

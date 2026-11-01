@@ -702,6 +702,10 @@ final class MTBoard: ObservableObject {
         for conv in due where MontanaConv.holds(conv) && !pushing.contains(conv) {
             let v = Self.spokenVersion(for: conv)
             guard sent[conv] != v, !onItsWay(conv, v) else { continue }
+            // A VISITOR WHO DID NOT COME FOR THE LAST PAGE IS NOT CARRIED ONE AT EVERY LAUNCH (OZ 1, build 2342; T1 2340: 23 pages of 30
+            // posts in the launch's first seconds, every launch, to visitors whose last page the queue retired unreceipted): the page goes
+            // to them again at their sign of life after the retirement (MTPipeBook.aliveAt), as the name and the face do (LAW S-2).
+            if let r = MontanaDeliveryEngine.Announced.pageRetiredAt(to: conv), (MTPipeBook.aliveAt(conv) ?? 0) < r { continue }
             pushing.insert(conv)
             let wait = 0.15 * Double(n); n += 1   // the same second for everyone, a few frames apart (25.09)
             DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
@@ -741,6 +745,7 @@ final class MTBoard: ObservableObject {
             let b = shared
             b.sent[conv] = v
             b.saveSent()
+            MontanaDeliveryEngine.Announced.forgetPageRetired(to: conv)   // the visitor came for it: the next carriage is by the version again
         }
     }
     /// A page of a wall, told from any other word of it — for the queue, which keeps one per person.

@@ -527,6 +527,14 @@ final class MontanaDeliveryEngine {
         static func forgetGround(to ref: String) {
             UserDefaults.standard.removeObject(forKey: ground(to: ref))
         }
+        /// A PAGE RETIRED WITHOUT ITS RECEIPT (OZ 1, build 2342; T1 2340 cold launch 19:30 UTC: 34 profile_expired, then 23 pages of
+        /// 30 posts carried again in the launch's first seconds -- at every launch since 16.10, to visitors who never came for the last
+        /// one): the moment the queue let the page go unreceipted. The owner carries the page to that visitor again at the visitor's
+        /// sign of life after this moment (MTBoard.pushDue), not at every launch; the receipt (MTBoard.delivered) clears it.
+        static func pageRetired(to ref: String) -> String { "pageRet1_" + mine + "_" + ref }
+        static func markPageRetired(to ref: String) { UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: pageRetired(to: ref)) }
+        static func pageRetiredAt(to ref: String) -> Double? { UserDefaults.standard.object(forKey: pageRetired(to: ref)) as? Double }
+        static func forgetPageRetired(to ref: String) { UserDefaults.standard.removeObject(forKey: pageRetired(to: ref)) }
         /// One tag for a page's ground, on the sender's «is it announced», on the receipt's «now it is», on the
         /// receiver's «what I hold» and in the presence word's «G» ([C-1]): the name's digest of the content; none = «0».
         static func groundTag(_ g: String) -> String { g.isEmpty ? "0" : wireTag(Data(g.utf8)) }
@@ -606,7 +614,7 @@ final class MontanaDeliveryEngine {
             case .about: forgetAbout(to: ref)
             case .ground: forgetGround(to: ref)
             case .letter, .piece: break
-            case .page: break   // what a visitor holds of my wall is written by the page's receipt alone (MTBoard.delivered)
+            case .page: markPageRetired(to: ref)   // what a visitor holds of my wall is written by the page's receipt alone (MTBoard.delivered); the retirement is remembered for the owner's next carriage
             }
         }
     }
