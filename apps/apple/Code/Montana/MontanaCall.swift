@@ -787,6 +787,11 @@ final class MontanaCall: NSObject {
     // notification). It is read from the state's own snapshot, under its lock -- one source: an unlocked second copy of the
     // same fact (busyFlag), written on the main thread and read by the delivery and sound queues, is gone (the critic of No.69).
     static var isBusy: Bool { stateSnapshot != "idle" || MTGroupRoom.isLive }   // a group's room holds the sound as a call does (07.10)
+    /// THE CARGO YIELDS TO A CALL BEING BORN, NOT TO A CALL THAT STANDS (the author's words 14448 and 14454, 02.11.2026: in a call
+    /// from T1 to the iPhone 11 the media and the gifs did not leave, the wall's post did not publish). The roads are the call's
+    /// while it dials, rings, connects or reconnects; a standing call carries its sound on its own peer connection, and one chunk
+    /// at a time beside it costs it nothing (the lanes narrow to one under isBusy). Read from the snapshot, as isBusy is.
+    static var isConnecting: Bool { let s = stateSnapshot; return s != "idle" && s != "connected" && s != "active" }
     // K-1: snapshots for foreign threads (the signal poller) — the machine's fields belong
     // to the main thread; these mirrors live under their own lock.
     private static let snapLock = NSLock()

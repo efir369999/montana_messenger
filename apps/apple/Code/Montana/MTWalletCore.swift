@@ -3129,7 +3129,7 @@ enum MTOwnWords {
 enum MTCoinSend {
     /// A field transfer has three honest outcomes. Only the available the page shows (MTCoinSplit.available) may call it short;
     /// an unanswered node record is pending, not an insufficient balance and not a second send.
-    enum TransferResult { case sent(String), short, pending, refused, noKey }
+    enum TransferResult { case sent(String), short, pending, refused, noKey, paced }
     /// The system chain's name for a restored credit: this prefix and the coin letter's wire name.
     static let restorePrefix = "restore:"
     /// A pair's own conversation, open to letters, of other words than mine: where a bubble burns its coin (pay).
@@ -3209,6 +3209,9 @@ enum MTCoinSend {
         case .noKey:
             MontanaTrace.mark("coin_refused", "transfer no receiver key coins=\(coins) balance=\(balance)")
             return .noKey
+        case .paced:
+            MontanaTrace.mark("coin_refused", "transfer paced: the key's node took its thirty records a minute twice over coins=\(coins) balance=\(balance)")
+            return .paced
         }
     }
     /// COINS GIVEN ON THE CORRESPONDENT'S LETTER ARE A SEND OF THE CHAIN (the author's words 23.10.2026 00:27 and 00:37 UTC: the
@@ -3233,6 +3236,11 @@ enum MTCoinSend {
     /// The one road of a paid reaction: the pair's SEND under the letter's name; the word names it, carries no coins of its own.
     /// A SEND still waiting for its node's word (pending) has left the book and says no name -- the reader's scan credits it.
     @MainActor private static func give(_ coins: Int, on sid: String, words: String, to conv: String) async -> Bool {
+        // A REACTION KEEPS ROOM FOR A SEND (the critic of 14486): six of the key's thirty records a minute stay the person's own.
+        guard MTCoinTx.reactionRoom else {
+            MontanaTrace.mark("coin_refused", "reaction pace laid=\(MTCoinTx.laidThisMinute()) kept=\(MTCoinTx.keptForSends) coins=\(coins)")
+            return false
+        }
         switch await MTCoinTx.send3(coins, conv: conv, on: sid) {
         case .sent(let id):
             let obj: [String: Any] = ["sid": sid, "txt": words, "e": "🪙", "op": "coin3", "c": coins, "tx": id]   // NOT-UI: wire keys
@@ -3244,7 +3252,7 @@ enum MTCoinSend {
         case .notApplicable(let why):
             MontanaTrace.mark("coin_refused", "reaction v3 why=\(why) coins=\(coins)")
             return false
-        case .failed:
+        case .failed, .paced:
             return false
         }
     }
@@ -3874,7 +3882,22 @@ enum MTCoinTx {
         let id: String; let version: UInt8; let coins: Int; let birthMs: UInt64; let pair: Data; let prev: String; let from: String; let bytes: Data
         var kind: UInt8 = 1; var to = Data(); var ref = ""; var a: UInt64 = 0; var b: UInt64 = 0; var nonce = Data()   // version 3's fields (COIN-TX-V3)
     }
-    enum Word: Equatable { case left, notLeft, unknown, behind }
+    enum Word: Equatable { case left, notLeft, unknown, behind, paced }
+    /// THE KEY'S PACE HAS ONE OWNER (the critic of 14486, 02.11.2026): the node takes thirty records a minute from one key (V3
+    /// section 7, TX_KEY_PM), and the paid reactions -- a person's and the auto-reactions' -- spent the whole minute a send of the
+    /// person's own then needed (T1 11:15:12 UTC, 429 «key pace»): two spenders of one budget and no keeper. Every record the node
+    /// took from this phone stands here by its moment; a reaction leaves six of the thirty to the person's sends (reactionRoom),
+    /// and a send that still meets the pace waits the minute out (send3).
+    static let keyPace = 30, keptForSends = 6
+    private static let paceLock = NSLock()
+    private static var laidAt: [Date] = []   // under paceLock (LOCK-OK: one array, never held across a wait)
+    static func laidThisMinute() -> Int {
+        paceLock.lock(); defer { paceLock.unlock() }
+        laidAt.removeAll { 60 <= Date().timeIntervalSince($0) }
+        return laidAt.count
+    }
+    private static func tookOne() { paceLock.lock(); laidAt.append(Date()); paceLock.unlock() }
+    static var reactionRoom: Bool { laidThisMinute() < keyPace - keptForSends }   // paced: the key's pace at its node (429 «key pace», V3 section 7): not laid, laid again when the minute frees
 
     private static let keyLock = NSLock()
     private static var keyCache: (words: Data, pk: Data, sk: Data)?
@@ -4017,9 +4040,13 @@ enum MTCoinTx {
         if b[4] == 2 && b.count == size2 || b[4] == 3 && b.count == size3 {
             guard let door = chainDoor(keyTag(b[4] == 2 ? Data(b[101..<2053]) : Data(b[182..<2134]))) else { return .notLeft }
             let a = await ask(door + "/tx-put", ["rec": rec.base64EncodedString()])
-            if a.code == 200, (a.obj?["id"] as? String) == id { return .left }
+            if a.code == 200, (a.obj?["id"] as? String) == id { tookOne(); return .left }
+            // THE NODE'S CODE AND WORD GO TO THE DIARY (T1 02.11.2026 11:15:12 UTC: «coin_v3 send word=notLeft» and nothing of why;
+            // the node had said 429 «key pace»): a refusal is read by its code and its word, never guessed.
+            MontanaTrace.mark("coin_lay", "code=\(a.code) error=\(a.obj?["error"] as? String ?? "-") unreached=\(a.unreached ? 1 : 0) id=\(id.prefix(12))")
             if a.code == 409 { return .behind }
-            if a.code == 400 || a.code == 429 || a.code == 507 || a.unreached { return .notLeft }
+            if a.code == 429 { return .paced }
+            if a.code == 400 || a.code == 507 || a.unreached { return .notLeft }
             let g = await ask(door + "/tx-get", ["id": id])
             return g.code == 200 ? .left : .unknown
         }
@@ -4053,7 +4080,7 @@ enum MTCoinTx {
     /// record laid there. Taken -- the coins left. A head that moved (another device of the words sent meanwhile) -- the coins come
     /// back under the same number, the seed's own records join the book, the balance is asked again and one more record goes on the
     /// new head. Refused, or never reached -- the coins come back. No answer -- the record waits on disk for the node's word (settle).
-    enum SendResult { case sent(String), pending, refused, noKey }
+    enum SendResult { case sent(String), pending, refused, noKey, paced }
     @MainActor static func send(_ coins: Int, conv: String) async -> String? {
         if case let .sent(id) = await sendResult(coins, conv: conv) { return id }
         return nil
@@ -4064,6 +4091,7 @@ enum MTCoinTx {
         case .sent(let id): return .sent(id)
         case .pending: return .pending
         case .failed: return .refused
+        case .paced: return .paced
         case .notApplicable(let why):
             // the reason a version 3 SEND could not go, said: 08:59:58 UTC of 12.10 laid a v2 record and nothing told why
             MontanaTrace.mark("coin_v3", "v2 road why=\(why) coins=\(coins)")
@@ -4102,10 +4130,11 @@ enum MTCoinTx {
             case .left:
                 if let pending { try? FileManager.default.removeItem(at: pending) }
                 return .sent(id)
-            case .notLeft, .behind:
+            case .notLeft, .behind, .paced:
                 book.receive(coins, from: conv, ref: backPrefix + id, on: nil)
                 if let pending { try? FileManager.default.removeItem(at: pending) }
                 if word == .notLeft { return .refused }
+                if word == .paced { return .paced }
                 await scanFresh(why: "behind")   // the other device's record joins the book before the balance is asked again
             case .unknown:
                 return .pending
@@ -4129,7 +4158,7 @@ enum MTCoinTx {
                 case .notLeft, .behind:
                     if let conv { book.receive(r.coins, from: conv, ref: backPrefix + r.id, on: book.entry(.send, refPrefix + r.id)?.on) }
                     try? fm.removeItem(at: u)
-                case .unknown: continue
+                case .unknown, .paced: continue   // paced: the record stays in its folder, the next settle lays it again
                 }
             }
         }
@@ -4495,7 +4524,7 @@ extension MTCoinTx {
         save(onceFile, ["n": o])
     }
     private static let onceFile = "coin3-once.json"
-    enum Send3 { case sent(String), pending, notApplicable(String), failed }
+    enum Send3 { case sent(String), pending, notApplicable(String), failed, paced }   // paced: the key's node took its thirty records this minute and the next, nothing left
     private static let noReceiverKey = "no receiver key"   // NOT-UI: the trace's reason, and the one the send page names
     /// SENDS (version 3): the receiver's key known (their about word), my chain announced and holding the sum, the record names
     /// the declared part of it (proven is spent first), commits to the receiver's key under the pair's blind, and is laid on my
@@ -4520,8 +4549,19 @@ extension MTCoinTx {
             guard book.sendHeld(coins, to: conv, ref: refPrefix + id, on: target) else { return .failed }
             let pending = pendingURL(id)
             if let pending { MTDiskDoor.write(rec, to: pending, "coin-pending", options: .atomic) }
-            let word = await lay(rec)
-            MontanaTrace.mark("coin_v3", "send word=\(word) coins=\(coins) dec=\(dec) id=\(id.prefix(12)) attempt=\(attempt)")
+            var word = await lay(rec)
+            // THE KEY'S PACE IS WAITED, NOT REFUSED (the author's word 14463, 02.11.2026: 500 coins from T1 to the iPhone 11 at
+            // 11:15:12 UTC «did not leave»). The node takes thirty records a minute from one key (V3 section 7, TX_KEY_PM); T1 had
+            // laid thirty reactions of one coin in that minute, the node said 429 «key pace», and the phone said notLeft at once and
+            // gave the coins back. The record stands as it is -- the head is mine and did not move -- and goes again every five
+            // seconds till the minute frees, a minute at most; a head that moved meanwhile answers 409 and the next attempt builds on it.
+            var paced = 0
+            while word == .paced, paced < 12 {
+                paced += 1
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                word = await lay(rec)
+            }
+            MontanaTrace.mark("coin_v3", "send word=\(word) coins=\(coins) dec=\(dec) id=\(id.prefix(12)) attempt=\(attempt) paced=\(paced)")
             guard seat.stands else { return .pending }   // the record waits in its person's folder (settle)
             switch word {
             case .left:
@@ -4529,10 +4569,11 @@ extension MTCoinTx {
                 keepOpen(openSends() + [["id": id, "conv": conv, "coins": coins, "at": st.now]])
                 MTCoinSplit.shared.laid(id, coins: coins, on: st.height)
                 return .sent(id)
-            case .notLeft, .behind:
+            case .notLeft, .behind, .paced:
                 book.receive(coins, from: conv, ref: backPrefix + id, on: target)
                 if let pending { try? FileManager.default.removeItem(at: pending) }
                 if word == .notLeft { return .failed }
+                if word == .paced { return .paced }   // a minute of waiting did not free the key: the coins are back, the person is told
             case .unknown:
                 keepOpen(openSends() + [["id": id, "conv": conv, "coins": coins, "at": st.now]])
                 MTCoinSplit.shared.laid(id, coins: coins, on: st.height)

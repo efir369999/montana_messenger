@@ -19,10 +19,12 @@ import UniformTypeIdentifiers
 enum MTBoardSheet: Identifiable {
     case comments(String, String?)
     case report(MontanaReport, Bool)   // the report, and whether its person may be blocked with it
+    case people(String, String?, Bool) // who liked (true) or who saw (false) the post, on a hold (the author's word 14475, 02.11.2026)
     var id: String {
         switch self {
         case .comments(let p, let w): return "cmt#" + (w ?? "") + "#" + p
         case .report(let r, _): return "rep#" + r.mid
+        case .people(let p, let w, let l): return (l ? "lk#" : "vw#") + (w ?? "") + "#" + p
         }
     }
     /// A POST REPORTED (Guideline 1.2 — the terms promise «any letter or person can be reported from its menu»): its writer
@@ -58,6 +60,13 @@ struct MTBoardPresenting: ViewModifier {
                     MontanaReportSheet(report: r, onBlock: {
                         if blocks, let s = ChatStore.live, !s.isBlocked(r.peer) { s.toggleBlocked(r.peer) }
                     }, offersBlock: blocks)
+                    .montanaMotionMeter()
+                case .people(let pid, let owner, let likes):
+                    // A NAME UNDER THE MARK OPENS ITS PERSON'S PAGE, as a commenter's face does: the sheet goes down first.
+                    MTBoardPeople(postId: pid, owner: owner, likes: likes) { w in
+                        sheet = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { MTBoardOpen.go(w, page: $page) }
+                    }
                     .montanaMotionMeter()
                 }
             }
@@ -182,6 +191,7 @@ struct MTBoardRows: View {
                     MTBoardCell(post: p, owner: owner, onComments: { sheet = .comments(p.id, owner) }, onWriter: open,
                                 onReport: { sheet = .reporting(p, on: owner) },
                                 onOpenWords: { sheet = .comments(p.id, owner) },
+                                onPeople: { likes in sheet = .people(p.id, owner, likes) },
                                 onShow: { i in page = .media(MTBoardShow(pid: p.id, at: i, owner: owner, feed: nil)) },
                                 minting: p.id == posts.first?.id, thread: thread)
                 }
@@ -272,6 +282,9 @@ struct MTBoardCell: View {
     var onReport: (() -> Void)? = nil
     /// A folded post opens whole on the letter's page (26.09): the host sets the route, the row presents nothing.
     var onOpenWords: (() -> Void)? = nil
+    /// WHO PUT THE MARK, WHO SAW (the author's word 14475, 02.11.2026): a hold on the like or on the eye asks the host for the names
+    /// (true -- who liked, false -- who saw); the host presents them (MTBoardSheet.people), the row presents nothing.
+    var onPeople: ((Bool) -> Void)? = nil
     /// A picture or a video of a published post opens its page's viewer (MTBoardMediaPage): the host sets the route, the row presents nothing.
     var onShow: ((Int) -> Void)? = nil
     /// THE COINS MINT OVER THE NEWEST (the author's word 02.10): the post at the head of its wall or of the feed, until a newer
@@ -286,6 +299,7 @@ struct MTBoardCell: View {
     @ObservedObject private var fold = MTFilterFold.shared   // the filter's fold, opened for the post by the person's tap
     @ObservedObject private var coinBook = MTLocalCoinLedger.shared   // the coins on the post (03.10)
     @State private var coinRefused = false
+    @State private var reachRefused = false   // a table post whose writer could not be reached by name (02.11.2026)
 
     var body: some View {
         if thread { threadBody } else { plateBody }
@@ -315,7 +329,9 @@ struct MTBoardCell: View {
                 MTBoardMediaView(post: post, owner: owner, sources: draft?.sources ?? sources, onTile: draft?.onTile, inFeed: !onItsWall,
                                  onShow: sending ? nil : onShow)
             }
-            if !sending, !global { counters.allowsHitTesting(draft == nil) }   // a post of the table for everyone is read, not answered (18.10)
+            // A POST OF THE TABLE ANSWERS THROUGH ITS WRITER'S @NAME (the author's word 14475, 02.11.2026; it was read and not
+            // answered since 18.10): its marks stand as on any post, and the first one taken opens the road (reached).
+            if !sending { counters.allowsHitTesting(draft == nil) }
         }
         .padding(12)
         .contentShape(Rectangle())
@@ -396,10 +412,13 @@ struct MTBoardCell: View {
     private var header: some View {
         let w = board.writer(of: post, on: owner)
         let opens = opens(w)
+        // A TABLE WRITER'S NAME LEADS TO THEIR PAGE BY THEIR @NAME (the author's word 14475, 02.11.2026: «a tap on the user's name
+        // must lead to the publisher's profile page»): nobody this phone knows yet, but the post names them -- the tap opens the road.
+        let reachable = global && post.nm != nil && w == .unknown
         return HStack(spacing: 10) {
             MTBoardByline(writer: w, name: MTBoard.shownName(w, carried: post.byName), glyph: post.byGlyph, face: post.face, at: post.at,
                           minting: minting, share: minting ? MTBoard.window(of: post)?.share : nil,
-                          onOpen: opens && draft == nil ? { onWriter(w) } : nil)
+                          onOpen: opens && draft == nil ? { onWriter(w) } : (reachable && draft == nil ? { reached { c in onWriter(.peer(c)) } } : nil))
             if post.pinned {
                 Image(systemName: "pin.fill").font(.caption).foregroundColor(.secondary)
             }
@@ -463,18 +482,34 @@ struct MTBoardCell: View {
 
     /// THE POST'S PEERS AND MARKS (the author's word 24.09): keepers, likes, comments, reposts — each a mark that
     /// answers the finger — and the downloads, a count.
+    private var readers: Bool { !global && board.countsViews(on: owner) }
     private var counters: some View {
         HStack(spacing: 0) {
-            mark(post.liked ? "heart.fill" : "heart", post.likes, tint: post.liked ? .red : .secondary, label: "Like") {
-                board.like(post, on: owner)
+            mark(post.liked ? "heart.fill" : "heart", post.likes, tint: post.liked ? .red : .secondary, label: "Like",
+                 hold: onPeople.map { f in { f(true) } }) {
+                if global {
+                    let on = !post.liked
+                    reached { c in board.like(post, on: c); MTBoardGlobal.shared.mark(post.id) { s in s.liked = on; s.likes = max(0, s.likes + (on ? 1 : -1)) } }
+                } else {
+                    board.like(post, on: owner)
+                }
             }
             // A REPOST'S COMMENTS ARE ITS ORIGINAL'S (the author's word 25.09): the count of the one thread (MTBoard.thread).
             mark("bubble.left", board.thread(of: post, on: owner)?.post.commentCount ?? 0, label: "Comments") { onComments() }
             mark(post.kept ? "tray.full.fill" : "tray.and.arrow.down", post.keepers, tint: post.kept ? .accentColor : .secondary, label: "Keepers") {
-                if post.kept { board.unkeep(post, on: owner) } else { Task { await board.keep(post, on: owner) } }
+                if global {
+                    let on = !post.kept
+                    reached { c in
+                        if on { Task { await board.keep(post, on: c) } } else { board.unkeep(post, on: c) }
+                        MTBoardGlobal.shared.mark(post.id) { s in s.kept = on; s.keepers = max(0, s.keepers + (on ? 1 : -1)) }
+                    }
+                } else if post.kept { board.unkeep(post, on: owner) } else { Task { await board.keep(post, on: owner) } }
             }
             mark("arrow.2.squarepath", post.reposts, tint: post.reposted ? .accentColor : .secondary, label: "Repost") {
-                if let owner, !post.reposted, !post.mine { Task { await board.repost(post, from: owner) } }
+                if global {
+                    guard !post.reposted else { return }
+                    reached { c in Task { await board.repost(post, from: c) }; MTBoardGlobal.shared.mark(post.id) { s in s.reposted = true; s.reposts += 1 } }
+                } else if let owner, !post.reposted, !post.mine { Task { await board.repost(post, from: owner) } }
             }
             coinMark
             Spacer(minLength: 0)
@@ -495,15 +530,32 @@ struct MTBoardCell: View {
                         // USER-DATA: a count, digits only
                         Text(verbatim: seen.formatted(.number.notation(.compactName))).lineLimit(1)
                     }
+                    .frame(minHeight: 44).contentShape(Rectangle())
+                    // WHO SAW IT, on a hold (the author's word 14475, 02.11.2026) -- on my own posts alone: a reader is named to
+                    // the post's owner and to nobody else (MTBoard.countsViews, the critic of 14486).
+                    .onLongPressGesture { if readers { onPeople?(false) } }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text("Views"))
                     // USER-DATA: a count, digits only
                     .accessibilityValue(Text(verbatim: String(seen)))
+                    .accessibilityAction(named: Text("Names")) { if readers { onPeople?(false) } }
                 }
             }
             .font(.footnote.weight(.semibold)).foregroundColor(.secondary)
             .lineLimit(1)
             .fixedSize()
+        }
+        .alert("Not sent", isPresented: $reachRefused) {
+            Button("OK", role: .cancel) {}
+        } message: { Text("The writer can be reached only through a chat, and none could be opened: they gave no @name, or the name did not answer.") }
+    }
+    /// THE TABLE POST'S WORD GOES BY THE PIPE ITS WRITER'S @NAME OPENS (the author's word 14475, 02.11.2026): held already -- at once;
+    /// not held -- the meeting door opens one (MTBoard.reachOpen), then the word goes; no name, or a name that did not answer -- the
+    /// person is told, and nothing is sent.
+    private func reached(_ act: @escaping (String) -> Void) {
+        Task { @MainActor in
+            guard let c = await board.reachOpen(post) else { reachRefused = true; return }
+            act(c)
         }
     }
     /// THE COINS ON THE POST (the author's word 03.10 13:40): a tap gives one, the hold offers five or ten; my own post only
@@ -519,7 +571,7 @@ struct MTBoardCell: View {
         .foregroundColor(.secondary)
         .frame(minWidth: 48, minHeight: 44)   // 48, not 56: the eye stands in the row's corner on a phone 375 wide (06.10)
         .contentShape(Rectangle())
-        if owner != nil, !post.mine {
+        if owner != nil, !post.mine, !global {   // a table post takes no coins yet: its writer's key is known by a pipe alone
             Menu {
                 ForEach([1, 5, 10], id: \.self) { c in
                     Button { give(c) } label: {
@@ -707,20 +759,73 @@ struct MTBoardCell: View {
         f.unitsStyle = .abbreviated
         return f.string(from: d) ?? ""
     }
-    private func mark(_ glyph: String, _ n: Int, tint: Color = .secondary, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: glyph)
-                // USER-DATA: a count, digits only
-                Text(verbatim: String(n))
-            }
-            .font(.footnote.weight(.semibold))
-            .foregroundColor(tint)
-            .frame(minWidth: 48, minHeight: 44)
-            .contentShape(Rectangle())
+    private func mark(_ glyph: String, _ n: Int, tint: Color = .secondary, label: LocalizedStringKey, hold: (() -> Void)? = nil,
+                      action: @escaping () -> Void) -> some View {
+        let face = HStack(spacing: 4) {
+            Image(systemName: glyph)
+            // USER-DATA: a count, digits only
+            Text(verbatim: String(n))
         }
-        .buttonStyle(.plain)
+        .font(.footnote.weight(.semibold))
+        .foregroundColor(tint)
+        .frame(minWidth: 48, minHeight: 44)
+        .contentShape(Rectangle())
+        return Group {
+            if let hold {
+                // A MARK THAT ANSWERS THE HOLD TOO (the author's word 14475, 02.11.2026: «on a long press one must see who put it»): the
+                // tap and the hold on one view, the platform telling them apart; a Button under a long-press gesture fired both.
+                face.onTapGesture(perform: action).onLongPressGesture(perform: hold)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction(named: Text("Names"), hold)
+            } else {
+                Button(action: action) { face }.buttonStyle(.plain)
+            }
+        }
         .accessibilityLabel(Text(label))
+    }
+}
+
+/// WHO PUT THE MARK, WHO SAW (the author's word 14475, 02.11.2026: «on a long press one must see who saw it or who put it»): the names
+/// under a post's like and its eye, on a hold. On my own wall each name is a road to the person's page (MTBoard.people gives the
+/// writer); on another's wall the names its owner's page carries, words alone.
+struct MTBoardPeople: View {
+    let postId: String
+    let owner: String?
+    let likes: Bool
+    var onWriter: (MTBoardWriter) -> Void
+    @ObservedObject private var board = MTBoard.shared
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        let rows = board.people(of: postId, on: owner, likes: likes)
+        NavigationStack {
+            List {
+                if rows.isEmpty {
+                    Text("Nobody yet").foregroundColor(.secondary).listRowBackground(MTGlassRowPlate())
+                }
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
+                    if let w = r.writer, w != .unknown {
+                        Button { onWriter(w) } label: { line(r.name, w) }.buttonStyle(.plain)
+                    } else {
+                        line(r.name, .unknown)
+                    }
+                }
+                .listRowBackground(MTGlassRowPlate())
+            }
+            .scrollContentBackground(.hidden)
+            .montanaPageGround()
+            .navigationTitle(likes ? Text("Likes") : Text("Views"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { MontanaCloseMark { dismiss() } } }
+        }
+    }
+    private func line(_ name: String, _ w: MTBoardWriter) -> some View {
+        HStack(spacing: 12) {
+            MTBoardFace(writer: w, name: name, glyph: MontanaAvatar.initial(title: name, name: ""), size: 36)
+            // USER-DATA: the person's name, as they gave it
+            Text(verbatim: name).foregroundColor(.primary).lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .frame(minHeight: 44).contentShape(Rectangle())
     }
 }
 
@@ -1634,7 +1739,7 @@ struct MTBoardFace: View {
         Group {
             switch writer {
             case .me:
-                MTSelfFace(size: size, initial: glyph)
+                MTSelfFace(size: size)   // my face, my letter -- not the glyph the post carried (a repost kept its first writer's, 02.11.2026)
             case .peer(let conv):
                 // The face this phone holds for them; none held, the small face the post carries (25.09).
                 let file = MTNameBook.displayedPhoto(conv)
@@ -3181,6 +3286,7 @@ struct MTFeedTabView: View {
                 MTBoardCell(post: it.post, owner: it.owner, onComments: { sheet = .comments(it.post.id, it.owner) },
                             onWriter: open, onItsWall: false, onReport: { sheet = .reporting(it.post, on: it.owner) },
                             onOpenWords: { sheet = .comments(it.post.id, it.owner) },
+                            onPeople: { likes in sheet = .people(it.post.id, it.owner, likes) },
                             onShow: { i in page = .media(MTBoardShow(pid: it.post.id, at: i, owner: it.owner,
                                                                       feed: query.trimmingCharacters(in: .whitespacesAndNewlines))) },
                             minting: top)

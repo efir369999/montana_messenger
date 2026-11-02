@@ -29943,6 +29943,54 @@
         }
       }
     },
+    "Likes": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лайки"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点赞"
+          }
+        }
+      }
+    },
+    "Nobody yet": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока никого"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时没有人"
+          }
+        }
+      }
+    },
+    "The writer can be reached only through a chat, and none could be opened: they gave no @name, or the name did not answer.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "До автора можно дойти только через чат, а открыть его не удалось: он не указал @имя, или имя не ответило."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只能通过聊天联系作者，但无法打开聊天：对方未提供 @名称，或该名称没有回应。"
+          }
+        }
+      }
+    },
     "Nothing left your balance. Try again in a moment.": {
       "localizations": {
         "ru": {
@@ -29955,6 +30003,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "余额未扣除任何金币。请稍后再试。"
+          }
+        }
+      }
+    },
+    "Your key's node takes thirty records a minute, and this minute was full. Nothing left your balance. Try again in a minute." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Узел вашего ключа принимает тридцать записей в минуту, и эта минута была занята. С баланса ничего не ушло. Попробуйте ещё раз через минуту."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您的密钥节点每分钟接受三十条记录，这一分钟已满。余额未扣除任何金币。请一分钟后再试。"
           }
         }
       }

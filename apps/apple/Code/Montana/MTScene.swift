@@ -30,6 +30,15 @@ enum MTScene {
         let s = win?.traitCollection.displayScale ?? 0
         return s > 0 ? s : 3
     }
+    /// THE GROUND LAID BY THE WINDOW COVERS ITS OWN PLACE (the author's word 02.11.2026 12:29 UTC, link 14516: «in the side panel
+    /// the page's ground is not seen at the bottom» -- T1 2342, the drawer black below 428 points of 926). A ground aligned to the
+    /// window (the drawer's, a still page's) was framed by the window's size alone, asked once in a body; a window that answered
+    /// another size than the one the view stands in -- another key window, a turn not yet laid out -- left the rest of the view on
+    /// black. The frame is the window's, never less than the view's own place measured from the window's origin.
+    static func ground(at origin: CGPoint, own: CGSize) -> CGSize {
+        let w = size()
+        return CGSize(width: max(w.width, origin.x + own.width), height: max(w.height, origin.y + own.height))
+    }
     static func width(_ measured: CGFloat) -> CGFloat { measured > 0 ? measured : size().width }
     static func height(_ measured: CGFloat) -> CGFloat { measured > 0 ? measured : size().height }
 

@@ -466,7 +466,7 @@ struct MTPageGroundWindow: View {
     var body: some View {
         GeometryReader { g in
             let at = g.frame(in: .global).origin
-            let win = MTScene.size()
+            let win = MTScene.ground(at: at, own: g.size)
             MontanaChatBackdrop(conv: MTWallpaper.pageKey(.me))
                 .frame(width: win.width, height: win.height)
                 .offset(x: -at.x, y: -at.y)

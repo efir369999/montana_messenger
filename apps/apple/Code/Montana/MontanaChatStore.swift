@@ -6010,6 +6010,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
                     while !Task.isCancelled {
                         try? await Task.sleep(nanoseconds: 5_000_000_000)
                         if Task.isCancelled { break }
+                        if MontanaCall.isConnecting { beat.value = Date(); continue }   // held by a call's birth is not silence (T1, 02.11.2026: «giving up honestly» under held=call)
                         if Date().timeIntervalSince(beat.value) > Self.uploadSilenceLimit {
                             MontanaTrace.mark("blob_up", "silent longer than \(Int(Self.uploadSilenceLimit))s — giving up honestly")
                             return false

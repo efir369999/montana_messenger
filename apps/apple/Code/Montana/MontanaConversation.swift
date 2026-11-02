@@ -1603,6 +1603,9 @@ struct ChatConversationView: View {
         .alert("Coins were not sent", isPresented: $coinNoKey) {
             Button("OK", role: .cancel) {}
         } message: { Text("This person's Montana has not shared its coin key yet. Nothing left your balance. Try again after they update and open Montana.") }
+        .alert("Coins were not sent", isPresented: $coinPaced) {
+            Button("OK", role: .cancel) {}
+        } message: { Text("Your key's node takes thirty records a minute, and this minute was full. Nothing left your balance. Try again in a minute.") }
         .alert("The coins are on their way", isPresented: $coinsTravel) {
             Button("OK", role: .cancel) {}
         } message: { Text("A coin letter keeps its coins until it is delivered or they come back. Then it can be deleted.") }
@@ -1638,6 +1641,8 @@ struct ChatConversationView: View {
                 coinNotSent = true
             case .noKey:
                 coinNoKey = true
+            case .paced:
+                coinPaced = true
             }
         }
     }
@@ -3863,6 +3868,7 @@ struct ChatConversationView: View {
     @State private var coinPending = false  // the chain has the send but has not answered its final word yet
     @State private var coinNotSent = false  // the chain refused the send: nothing left the book
     @State private var coinNoKey = false  // the receiver's coin key is not known: nothing left the book
+    @State private var coinPaced = false  // the key's node took its thirty records a minute, this minute and the next: nothing left the book (14463)
     @State private var coinsTravel = false  // a selection held a coin letter on its way: the store kept it (05.10)
     @State private var flowBegun = 0        // the money flow switched on: the coin's one turn in the middle (MTMoneyFlowBegins)
     @State private var autoReactShown = false   // the Money Flow's coin held: the page of auto-reactions (MTAutoReactPage, 06.10)

@@ -87,9 +87,11 @@ actor MTCargoLane {
     private func pump() {
         // A received attachment is bulk cargo too.  The lane used to cap it at three requests,
         // but those three could start while a call was dialing and take the same doors.  The
-        // call has priority; the durable media intent and its waiters stay intact and this one
-        // actor wakes itself after the call instead of relying on a screen event to resume it.
-        guard !MontanaCall.isBusy else {
+        // call's birth has priority; the durable media intent and its waiters stay intact and this one
+        // actor wakes itself after the birth instead of relying on a screen event to resume it.
+        // A CALL THAT STANDS SHARES THE DOORS (the author's words 14448 and 14454, 02.11.2026): the lane runs beside it, one
+        // piece at a time (MontanaCall.isConnecting holds it, isBusy narrows it).
+        guard !MontanaCall.isConnecting else {
             if !asks.isEmpty, !callWakeArmed {
                 callWakeArmed = true
                 MontanaTrace.markFolded("cargo_lane", "held=call queued=\(asks.count) flying=\(inFlight.count)", window: 30, key: "call")
@@ -101,7 +103,7 @@ actor MTCargoLane {
             return
         }
         callWakeArmed = false
-        while inFlight.count < Self.width {
+        while inFlight.count < (MontanaCall.isBusy ? 1 : Self.width) {
             let waiting = asks.filter { !inFlight.contains($0.key) }
             guard let next = waiting.max(by: { a, b in
                 a.value.need.rawValue != b.value.need.rawValue ? a.value.need.rawValue < b.value.need.rawValue : a.value.seq > b.value.seq

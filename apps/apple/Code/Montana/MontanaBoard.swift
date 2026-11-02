@@ -207,6 +207,15 @@ struct MTBoardSeen: Codable, Identifiable, Hashable {
     var lp: String? = nil       // the link card its writer read; a visitor draws these bytes and opens nothing
     var n: Int? = nil           // its number on its wall, given once at its birth; the short link names it (02.10)
     var views: Int? = nil       // how many people saw it, by its wall owner's count; nil -- the owner's build counts none (06.10)
+    // THE ROAD TO A WRITER NOBODY HOLDS A PIPE WITH (the author's word 14475, 02.11.2026: «if there is no chat with the contact, the
+    // field to put reactions and likes does not appear on the Wall of Thoughts -- fix it»): a post of the table carries the public
+    // @name its writer holds (laid by the owner alone, MTBoard.publicDrafts), and a reader reaches them by it (MTBoard.reach).
+    var nm: String? = nil       // the writer's held @name, on the table alone; a page to a pipe-holder carries none
+    // WHO PUT THE MARK (the same word: «on a long press one must see who saw it or who put it»): the names they gave themselves
+    // (MTBoard.said), fifty at most, on a page to a pipe-holder alone -- never on the table, which anyone reads. WHO SAW stays with
+    // the wall's owner (MTBoard.people reads the post's own references): a look is no public act, and the critic of 14486 kept
+    // the readers' names off every visitor's page.
+    var ln: [String]? = nil     // who liked it
 }
 
 struct MTBoardPage: Codable, Hashable {
@@ -380,8 +389,7 @@ final class MTBoard: ObservableObject {
     /// or the memory of the moment before writes itself over them.
     func reread() { load() }
     private func load() {
-        // MAIN-SAFE-SYNC: a read waits for the wall's writes on their way (P-4); `writes` encodes, seals and stores, never waits on main.
-        Self.writes.sync {}
+        Self.drain()   // a read waits for the wall's writes on their way (P-4); nothing on its way -- no wait at all (drain)
         mine = Self.read(Self.mineKey) ?? []
         owned = Self.read(Self.ownedKey) ?? [:]
         let numbered = Self.numberMissing(&mine)
@@ -463,14 +471,44 @@ final class MTBoard: ObservableObject {
     /// it back. Each of them waits first for the writes on their way (drain), as the card's wipe waits for its own
     /// (MontanaCard.wipe), and a read waits for them too (load).
     private static let writes = DispatchQueue(label: "montana.board.writes", qos: .utility)
-    /// The wall's writes on their way are on the disk when this returns; from any thread but `writes` itself.
+    /// THE MAIN THREAD UNDER A SWIFTUI UPDATE NEVER WAITS FOR `writes` (T1 2342, 01.11.2026 22:54:25 UTC, the author's word 14448;
+    /// the critic, Agent 831): the leave to the background ran flush() from onChange(scenePhase) inside the view's layout, where
+    /// main holds SwiftUI's update lock; `writes` was storing a key -- UserDefaults posts its change on the writing thread, and
+    /// SwiftUI's @AppStorage observer asked that same lock -- and both stood for ever. The word «never waits on main» was false:
+    /// the queue waits on main through SwiftUI at every store. So: nothing on its way -- no wait at all (onItsWay counts the
+    /// writes handed over); the leave to the background holds the run with a background task and waits for nothing
+    /// (flushForBackground); drain() and flush() remain for the seats and the wipes, which run on main from a dispatched turn,
+    /// outside any view update. tools/mt-wall-lock-check.py keeps all three.
+    private static let waysLock = NSLock()
+    private static var ways = 0   // the gathered writes handed to `writes` and not yet stored; under waysLock (LOCK-OK: one integer)
+    private static func onItsWay() -> Int { waysLock.lock(); defer { waysLock.unlock() }; return ways }
+    private static func way(_ d: Int) { waysLock.lock(); ways += d; waysLock.unlock() }
+    /// The wall's writes on their way are on the disk when this returns; from any thread but `writes` itself, and never from a
+    /// SwiftUI body, action or onChange (see above). With nothing on its way it returns at once and meets no lock.
     static func drain() {
-        writes.sync {}   // MAIN-SAFE-SYNC: `writes` encodes, seals and stores the wall; it never waits on main
+        let n = onItsWay()
+        guard 0 < n else { return }
+        if Thread.isMainThread { MontanaTrace.mark("wall_drain", "main waits n=\(n)") }
+        // MAIN-SAFE-SYNC: only behind writes on their way, and never from a SwiftUI body, action or onChange (no SwiftUI file calls drain, flush or reread -- mt-wall-lock-check.py); the leave to the background waits for nothing (flushForBackground).
+        writes.sync {}
     }
-    /// Gathered and written before the call returns: the leave to the background and a seat that moves need it on the disk.
+    /// Gathered and written before the call returns: a seat that moves needs it on the disk (MTSeats, from a dispatched main turn).
     func flush() {
         gather()
         Self.drain()
+    }
+    /// THE LEAVE TO THE BACKGROUND (ContentView, onChange(scenePhase)): gathered on main, stored and committed on `writes` under a
+    /// background task -- the system grants the seconds -- and main waits for nothing.
+    func flushForBackground() {
+        gather()
+        let n = Self.onItsWay()
+        guard 0 < n else { return }
+        let hold = UIApplication.shared.beginBackgroundTask(withName: "wall-flush") { MontanaTrace.mark("wall_flush", "the background time ended first") }
+        Self.writes.async {
+            _ = MontanaLocalVault.commit()
+            MontanaTrace.mark("wall_flush", "landed n=\(n)")
+            if hold != .invalid { UIApplication.shared.endBackgroundTask(hold) }
+        }
     }
     private func gather() {
         if dirty.contains(Self.pagesKey), Self.walls < pages.count {
@@ -502,7 +540,9 @@ final class MTBoard: ObservableObject {
         let drafts = d.contains(Self.draftsKey) ? self.drafts : nil
         let going = d.contains(Self.goingKey) ? self.outgoing : nil
         let first = d.contains(Self.firstKey) ? self.firstSeen : nil
+        Self.way(1)
         Self.writes.async {
+            defer { Self.way(-1) }
             if let mine { Self.write(mine, Self.mineKey) }
             if let owned { Self.write(owned, Self.ownedKey) }
             if let kept { Self.write(kept, Self.keptKey) }
@@ -790,12 +830,17 @@ final class MTBoard: ObservableObject {
     /// they stand, read where the board lives; publicPosts(_:budget:) encodes them on any thread.
     func publicDrafts(limit: Int) -> [(id: String, post: MTBoardSeen)] {
         let name = String(E2E.myDisplayName().prefix(64)), face = Self.myFace()
+        // THE @NAME I HOLD RIDES WITH MY POST (the author's word 14475, 02.11.2026): the name is public already -- anyone searches it
+        // and opens a chat by it -- so a reader of the table who holds no pipe with me reaches me by the same door. A lapsed name is
+        // not laid (heldName), as it is neither shown nor handed out anywhere else.
+        let atName = MontanaNames.heldName.flatMap { MontanaNames.normalize($0) }
         let own = mine.filter { q in q.author.isEmpty && q.from == nil }.sorted { a, b in b.at < a.at }
         return own.prefix(limit).map { p in
             var x = Self.clean(seen(p, by: "", conceal: true))
             if !name.isEmpty { x.byName = name }
             x.face = face; x.own = true; x.mine = false; x.pinned = false
             x.comments = []; x.commentCount = 0; x.liked = false; x.kept = false; x.reposted = false
+            x.nm = atName; x.ln = nil   // the table names nobody who liked
             return (id: p.id, post: x)
         }
     }
@@ -877,11 +922,35 @@ final class MTBoard: ObservableObject {
                     commentCount: p.comments.count,
                     liked: p.likes.contains(v), kept: p.keepers.contains(v), reposted: p.reposts.contains(v),
                     mine: p.author == v, from: p.from,
-                    face: p.author.isEmpty && p.from == nil ? nil : p.face,
-                    // A REPOST OF THE OWNER'S OWN POST IS THE OWNER'S TOO (the author's word 25.09: «on a reposted post everything
-                    // works as on an ordinary one — its writer clickable»): the visitor is told its writer is the page's owner.
-                    own: p.author.isEmpty && (p.from == nil || p.srcBy == ""), lp: p.lp, n: p.n, views: p.views?.count ?? 0)
+                    face: p.author.isEmpty ? nil : p.face,
+                    // A REPOST OF MINE IS MINE (the author's word 14476, 02.11.2026: «a repost is made in the name of the one who
+                    // reposted, and below it the note whose post it is»): the visitor is told its writer is the page's owner, and the
+                    // line under it names the wall it came from (from).
+                    own: p.author.isEmpty, lp: p.lp, n: p.n, views: p.views?.count ?? 0,
+                    ln: Self.said(p.likes))
     }
+    /// WHO PUT THE MARK, BY THE NAME THEY GAVE THEMSELVES (the author's word 14475, 02.11.2026): the owner's own name for "" and, for a
+    /// correspondent, the name they declared or their @name (publicName) -- never the name this phone keeps for them, which is this
+    /// phone's own word. Fifty at most, the newest last.
+    static let namesShown = 50
+    static func said(_ refs: [String]) -> [String] {
+        refs.suffix(namesShown).map { r in r.isEmpty ? String(E2E.myDisplayName().prefix(64)) : publicName(of: r) }
+    }
+    /// THE NAMES UNDER A POST'S LIKE AND ITS EYE (the same word): on my own wall off the post's own references, each a road to the
+    /// person's page; on a channel of mine the same; on another's wall the likers its owner's page carries (MTBoardSeen.ln), words
+    /// alone, and no readers -- who saw a post is its owner's to know (countsViews).
+    func people(of id: String, on wall: String?, likes: Bool) -> [(name: String, writer: MTBoardWriter?)] {
+        let own: MTBoardPost? = wall == nil ? mine.first(where: { $0.id == id }) : wall.flatMap { owned[$0] }?.first(where: { $0.id == id })
+        if let q = own {
+            let refs = likes ? q.likes : (q.views ?? [])
+            return refs.reversed().map { r in (r.isEmpty ? Self.shownName(.me, carried: q.byName) : Self.nameOf(r), r.isEmpty ? .me : .peer(r)) }
+        }
+        guard likes, let wall else { return [] }
+        let p = pages[wall]?.posts.first(where: { $0.id == id })
+        return (p?.ln ?? []).reversed().map { ($0, nil) }
+    }
+    /// Whose readers this phone may name: my own wall's and my channels' (people).
+    func countsViews(on wall: String?) -> Bool { wall.map { owned[$0] != nil } ?? true }
     /// A COMMENT AS A PAGE CARRIES IT TO ONE VISITOR (the author's word 25.09: «the commenters' faces are still not seen»):
     /// nobody's reference — only the two marks that visitor may read: the comment is their own, or the wall owner's. Those
     /// two wear the faces the visitor's phone holds; the rest wear the small face their writers sent.
@@ -1164,6 +1233,8 @@ final class MTBoard: ObservableObject {
         x.from = x.from.map { String($0.prefix(64)) }
         if faceLimit < (x.face?.count ?? 0) { x.face = nil }
         x.views = x.views.map { max(0, $0) }
+        x.nm = x.nm.flatMap { n in n.isEmpty ? nil : String(n.prefix(32)) }
+        x.ln = x.ln.map { $0.suffix(namesShown).map { String($0.prefix(64)) } }
         x.comments = x.comments.suffix(commentsShown).map { c in
             var y = c
             y.by = String(y.by.prefix(64)); y.glyph = String(y.glyph.prefix(8)); y.text = String(y.text.prefix(commentLimit)); y.ref = nil
@@ -1298,7 +1369,7 @@ final class MTBoard: ObservableObject {
         case .notApplicable(let why):
             MontanaTrace.mark("coin_refused", "wall v3 why=\(why) coins=\(coins)")
             return false
-        case .failed:
+        case .failed, .paced:
             return false
         }
     }
@@ -1760,17 +1831,17 @@ struct MTWallWindow: Identifiable {
         guard started else { return }
         let whole = await keep(p, on: wall, progress: { i, n in DispatchQueue.main.async { MTBoard.shared.brought(pid, i, n) } })
         let own = p.own == true
-        var face = p.face
-        if face == nil, own { face = await Self.face(of: wall) }
-        let worn = face
         await MainActor.run {
             guard whole else { self.reposting[pid]?.failed = true; return }
             self.reposting[pid] = nil
             guard !self.mine.contains(where: { $0.id == pid }) else { return }
-            self.mine.append(MTBoardPost(id: pid, author: "", byName: p.byName, byGlyph: p.byGlyph,
+            // THE REPOST STANDS UNDER MY NAME AND MY FACE (the author's word 14476, 02.11.2026: «a repost is made in the name of the
+            // one who reposted, and below it the note whose post it is»): its writer on my wall is me (author ""), its face mine,
+            // and the line under its head says the wall it came from (from, src); who wrote it there is kept by reference (srcBy).
+            self.mine.append(MTBoardPost(id: pid, author: "", byName: E2E.myDisplayName(), byGlyph: E2E.myFaceGlyph(),
                                          at: Date().timeIntervalSince1970, text: p.text, media: p.media, pinned: false,
                                          keepers: [""], likes: [], downloads: [], reposts: [], comments: [], from: Self.publicName(of: wall),
-                                         face: worn, src: wall, srcBy: own ? wall : (p.mine ? "" : nil), lp: p.lp))   // "" — I wrote it
+                                         face: nil, src: wall, srcBy: own ? wall : (p.mine ? "" : nil), lp: p.lp))   // "" — I wrote it
             self.saveMine(own: true)
             self.send(MTBoardWord(t: "rp", id: pid), to: wall)
             self.patchPost(wall, pid) { x in if !x.reposted { x.reposted = true; x.reposts += 1 } }
@@ -2259,19 +2330,40 @@ struct MTWallWindow: Identifiable {
     /// post is mine, the owner's own, or by a writer this phone is not told of — and a repost wears its first writer's
     /// name, a writer not named to this phone either.
     func writer(of p: MTBoardSeen, on wall: String?) -> MTBoardWriter {
-        if MTBoardGlobal.isRef(wall) { return .unknown }   // a writer of the table: nobody this phone knows (18.10)
+        // A WRITER OF THE TABLE is nobody this phone knows (18.10) -- unless this phone holds a pipe under the @name the post carries
+        // (the author's word 14475, 02.11.2026): then the writer is that correspondent, and their name leads to their page.
+        if MTBoardGlobal.isRef(wall) { return reach(p).map { MTBoardWriter.peer($0) } ?? .unknown }
         guard let wall else {
             guard let q = mine.first(where: { $0.id == p.id }) else { return p.mine ? .me : .unknown }
-            // A REPOST ON MY WALL WEARS ITS WRITER when this phone knows them (the author's word 25.09): me, when I wrote it.
-            if q.from != nil {
-                if q.srcBy == "" { return .me }
-                return q.srcBy.map { MTBoardWriter.peer($0) } ?? originalWriter(p.id, besides: nil)
-            }
+            // A REPOST ON MY WALL IS MINE (the author's word 14476, 02.11.2026: «a repost is made in the name of the one who reposted,
+            // and below it the note whose post it is»): its byline is me; the line under it names the wall it came from (source).
             return q.author.isEmpty ? .me : .peer(q.author)
         }
         if p.from != nil { return p.own == true ? .peer(wall) : originalWriter(p.id, besides: wall) }
         if p.mine { return .me }
         return p.own == true ? .peer(wall) : .unknown
+    }
+    /// THE WRITER OF A TABLE POST, REACHED BY THEIR @NAME (the author's word 14475, 02.11.2026: «if there is no chat with the
+    /// contact, the field to put reactions and likes does not appear on the Wall of Thoughts -- fix it»): a post of the table is
+    /// held by no conversation, so no word of the wall could go to its writer (18.10). The post carries the @name its writer holds
+    /// (MTBoardSeen.nm), and the name is the road: a pipe this phone already holds under that name answers at once. A row that claims
+    /// another's name gains nothing -- the name's plane resolves it to its real holder, who ignores a word about a post not theirs.
+    /// nil -- no name, or no pipe under it yet (reachOpen opens one).
+    func reach(_ p: MTBoardSeen) -> String? {
+        guard let nm = p.nm, let n = MontanaNames.normalize(nm) else { return nil }
+        // ONE LOOK AT THE NAME BOOK, NOT A WALK OF THE PIPES (the critic of 14486): this runs in a row's body for every post of the
+        // table on the screen; the book in memory answers which conversations hold the name, and only those are asked of the pipes.
+        return MTNameBook.convs(named: n).first { c in MontanaConv.holds(c) && !ChatStore.refusesCold(c) }
+    }
+    /// The same road, opened when none is held: the one meeting door (MontanaMeeting.meet) opens a conversation by the name as a
+    /// search by name does, the wall is asked by it, and the caller's word goes by it. nil -- no name, or the name did not answer.
+    @MainActor func reachOpen(_ p: MTBoardSeen) async -> String? {
+        if let c = reach(p) { return c }
+        guard let nm = p.nm, let n = MontanaNames.normalize(nm) else { MontanaTrace.mark("wall_reach", "REFUSED no name"); return nil }
+        guard case .opened(let conv) = await MontanaMeeting.meet(n) else { MontanaTrace.mark("wall_reach", "REFUSED name did not open"); return nil }
+        MontanaTrace.mark("wall_reach", "opened id=\(String(p.id.prefix(10))) conv=\(String(conv.prefix(10)))")
+        ask(conv)
+        return conv
     }
     /// THE WALL A REPOST CAME FROM, READ BY THE POST'S OWN NAME (the author's word 25.09: «after "Reposted from" the name must
     /// open its page — now it does not»): a repost keeps the name its writer gave the post, and a phone that holds the wall
@@ -2680,6 +2772,15 @@ final class MTBoardGlobal: ObservableObject {
         MontanaTrace.mark("wall_global", "hid a writer hidden=\(h.count)")
     }
 
+    /// A TABLE POST ANSWERED THROUGH ITS WRITER'S PIPE (the author's word 14475, 02.11.2026): the word left by the pipe the @name
+    /// opened (MTBoard.reachOpen); until the writer's page comes and takes the post over (feed: a held post stays as its wall carried
+    /// it), the mark is drawn on the table's own row here, so the finger sees what it did.
+    func mark(_ id: String, _ change: (inout MTBoardSeen) -> Void) {
+        guard let i = posts.firstIndex(where: { $0.post.id == id }) else { return }
+        change(&posts[i].post)
+        MTBoard.shared.objectWillChange.send()
+    }
+
     // -- the owner lays --
     func laySoon() {
         DispatchQueue.main.async { [weak self] in
@@ -2818,6 +2919,8 @@ final class MTBoardGlobal: ObservableObject {
             else { continue }
             s.mine = false; s.liked = false; s.kept = false; s.reposted = false; s.own = true; s.pinned = false; s.from = nil
             s.comments = []
+            s.nm = s.nm.flatMap { MontanaNames.normalize($0) }   // a name only as the layer spells one; anything else is no road
+            s.ln = nil                                            // a stranger's row names nobody
             let letters = s.byName.unicodeScalars.filter { u in u.properties.generalCategory != .control }
                 .filter { u in u.properties.generalCategory != .format }
             s.byName = String(String(String.UnicodeScalarView(letters)).prefix(64))

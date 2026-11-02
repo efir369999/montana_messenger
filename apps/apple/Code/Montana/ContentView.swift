@@ -489,7 +489,7 @@ struct RootView: View {
                 MTAppAway.left()
                 MTForeground.active = false
                 E2E.shared.persistHistory()          // force-save history (debounce may not have fired)
-                MTBoard.shared.flush()               // the wall's drafts and the posts on their way, before the run may die (25.09)
+                MTBoard.shared.flushForBackground()  // the wall's drafts and the posts on their way, under a background task; main waits for nothing here (the deadlock of T1 2342, 01.11.2026)
                 // Stage 8.2: undelivered letters keep the process alive for the system grace
                 // window — a letter that can be handed over in seconds does not wait for the
                 // next launch. The queue itself is on disk either way.

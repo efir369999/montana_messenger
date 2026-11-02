@@ -100,6 +100,9 @@ enum MTNameBook {
         }
     }
     static func name(_ conv: String) -> String? { names()[conv] }
+    /// The conversations this phone holds a person's @name under (MTBoard.reach, 02.11.2026): one look at the book in memory -- the
+    /// book keeps a name lowercased and without its @ (setName), the form the layer normalizes to -- never a walk of the pipes.
+    static func convs(named n: String) -> [String] { names().compactMap { $0.value == n ? $0.key : nil } }
 
     // THE FACE GLYPH IS DERIVED FROM THE NAME, NEVER STORED (20.09, the critic — CLIENT-FIX). A callsign
     // carries its emoji first, so the glyph is a function of the name the book already holds. A stored
