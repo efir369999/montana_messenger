@@ -243,6 +243,38 @@ final class MontanaDeliveryEngine {
             MontanaTrace.markFolded("rx_blocked", "door peer=\(String(from.prefix(10)))", window: 60, key: "door:" + from)
             return
         }
+        // A LONG LETTER LANDS AS ITS WORDS, NEVER AS ITS REFERENCE (02.11.2026, the author's word 14853: «it is crooked and maybe
+        // systemic -- fix it»; T1 on 2349, 19:25:13Z): the live channel brought a correspondent's long letter here and the door laid
+        // its reference as a row -- «New message» under a turning wheel -- and its words came only when the chat was opened two
+        // minutes later (lb_heal). The push and the box already took the one long-letter road before a row; this door, where every
+        // road ends, takes it too: landed -- the same letter walks in again with its words; waiting -- it waits in the box for its
+        // own hour, as a pushed one does; buried -- its sender was told. A copy of a row already standing passes to the copy check
+        // below, and a twin's mirrored copy keeps its road (its row is healed when its chat opens).
+        if !mirrored, text.hasPrefix(MontanaWakePush.letterBlobMark),
+           store.messages[MTSamePair.root(from)]?.contains(where: { $0.msgId == "mid:\(mid)" }) != true {
+            let born = Self.letterMoment(mid: mid, sentAt: sentAt, own: own)
+            Task { @MainActor [weak self] in
+                switch await MontanaWakePush.takeLongLetter(conv: own ? "" : from, mid: mid, text: text, bornAt: born) {   // own: nobody to tell
+                case .landed(let full):
+                    MontanaTrace.mark("lb_live", mid: mid, "landed bytes=\(full.utf8.count) -- the letter walks in with its words")
+                    self?.receive(from: from, mid: mid, text: full, senderName: senderName, senderGlyph: senderGlyph,
+                                  transport: transport, quoteText: quoteText, quoteMid: quoteMid, linkPreview: linkPreview,
+                                  sentAt: sentAt, own: own, author: author)
+                case .waiting:
+                    var row: [String: String] = [:]
+                    if let sentAt, 0 < sentAt { row["at"] = String(sentAt) }
+                    if let senderName { row["n"] = senderName }
+                    if let quoteText { row["qt"] = quoteText; row["qm"] = quoteMid ?? "" }
+                    if let linkPreview { row["lp"] = linkPreview }
+                    if own { row["own"] = "1" } else if let author { row["au"] = author }
+                    MontanaWakePush.stashLongLetter(conv: from, mid: mid, text: text, extra: row)
+                    MontanaTrace.mark("lb_live", mid: mid, "waiting -- the letter waits in the box for its hour, no row")
+                case .buried:
+                    MontanaTrace.mark("lb_live", mid: mid, "buried -- no row")
+                }
+            }
+            return
+        }
         // THE TWIN MIRROR (MontanaArchive.mirrorNote): a correspondent's word this device took rides to the seed's other devices -- the
         // box gave it to this one, and this one's confirmation erases it there; one that came by the mirror rides no further.
         if !mirrored, !own, Self.mirrors(text) {

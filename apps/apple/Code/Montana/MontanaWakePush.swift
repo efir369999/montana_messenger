@@ -3376,8 +3376,9 @@ enum MontanaWakePush {
     /// Letters the extension stored from pushes — into the chat by the same reception road as
     /// any incoming (.montanaIncoming, mid dedup at the receiver). Called on activation.
     /// A long letter whose blob is not yet reachable waits in the inbox like any pushed letter.
-    static func stashLongLetter(conv: String, mid: String, text: String) {
-        restash(["c": conv, "m": mid, "t": text])
+    /// `extra` -- the rest of the letter's envelope (the box's own keys: at, n, qt, qm, lp, own, au) when the live door stashes it.
+    static func stashLongLetter(conv: String, mid: String, text: String, extra: [String: String] = [:]) {
+        restash(extra.merging(["c": conv, "m": mid, "t": text]) { _, letter in letter })
     }
 
     /// Rows the shelf received for the person now seated (MTSeats.landShelf): into the inbox as a pickup's rows, then the drain.
