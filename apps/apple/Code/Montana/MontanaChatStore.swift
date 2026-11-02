@@ -6980,6 +6980,7 @@ enum SeedScope {
     /// plans know this phone by (a plan that counts devices meets a restored phone as the same one, not as one more).
     static let settingKeys = [MTKeeping.mineKey, MTKeeping.othersKey, MTKeeping.budgetKey, MTKeeping.toldKey,   // the keeping of a copy (08.10)
                               "appLibraryIcons", "appLibraryPins", MTLibraryIconStyle.key, MTChessComputer.levelKey, "AppLanguage", "AppleLanguages", MTLetterMotion.bounceKey, MTLetterMotion.durationKey,
+        MTGifPlay.reduceKey,   // the person's «Reduce GIF animation» (link 14680, 02.11.2026), as their other looks
         "notifEnabled", "notifSound", "notifPreview", "notifSender", "notifLockName",
         "autoDownloadCellular", "autoDownloadWiFi",
         MTCallRecordingPolicy.key,   // recording preference follows the phone's other Privacy settings; consent is separate
@@ -7025,6 +7026,7 @@ enum SeedScope {
     /// · the dead calls' seeds, the tunnel's clock and the place its diary was carried to, the roads the tunnel judged
     ///   dead (a verdict of this network and this hour, not of the server), and the copy's own clock.
     static let deviceKeys = ["mt.keep.held",   // the parts this phone keeps for others (MTKeeping): never in this person's copy
+                             "mt.birth.unfinished",   // the print of a making on this phone before its profile (MontanaBirth, link 14680): never a copy's
                              MTKeeping.askedBackKey,   // the correspondences this phone asked to give back (MTKeeping): this device's own
                              "diagId", "diagHideRule", "diagWmTele", "diagWmTrace", "diagWmVpn", "diagGenTele", "diagGenTrace", "diagGenVpn",
         "mt.probe.at", "mt.probe.conf", "mt.probe.mode", "mt.probe.rot",

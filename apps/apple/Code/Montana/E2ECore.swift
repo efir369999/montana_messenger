@@ -480,6 +480,28 @@ enum MontanaInstall {
     }
 }
 
+/// A BIRTH IS WHOLE OR IT IS NOT (the author's word 02.11.2026, link 14680 (1): «in the middle of the registration I left, and it
+/// created the identity all the same -- check it and fix it, do not allow it»). The seed lands at «Create», before the words are
+/// saved and the name is given: until the profile's checkmark the person is a making, not a person. The mark holds the print of the
+/// words being made, never the words; a launch that finds it beside the same words forgets the making before any screen. A seed
+/// the locked keychain does not give keeps the mark for the next launch.
+enum MontanaBirth {
+    private static let K = "mt.birth.unfinished"
+    private static func seal(_ words: String) -> String {
+        SHA256.hash(data: Data(words.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+    static func begun(_ words: String) { UserDefaults.standard.set(seal(words), forKey: K) }
+    static func finished() { UserDefaults.standard.removeObject(forKey: K) }
+    static func forgetUnfinished(_ wipe: () -> Void) {
+        let ud = UserDefaults.standard
+        guard let mark = ud.string(forKey: K), let held = MontanaSeed.mnemonic else { return }
+        ud.removeObject(forKey: K)
+        guard seal(held) == mark else { return }
+        NSLog("[birth] a making left before its profile -- the unfinished identity is forgotten")
+        wipe()
+    }
+}
+
 // SINGLE SOURCE OF TRUTH of the active identity.
 // The seed of the ACTIVE identity is stored ONLY here:
 //  - Keychain device-local (AfterFirstUnlockThisDeviceOnly): iOS hardware-backed encryption,

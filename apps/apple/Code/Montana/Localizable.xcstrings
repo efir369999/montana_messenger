@@ -2004,22 +2004,6 @@
         }
       }
     },
-    "Adjusts scrolling, new messages and the return after a reply swipe. Reduce Motion takes priority.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Настраивает пружину при прокрутке, появлении сообщений и возврате после смахивания для ответа. «Уменьшение движения» имеет приоритет."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "调整滚动、新消息和回复轻扫后的回弹。优先遵循减弱动态效果设置。"
-          }
-        }
-      }
-    },
     "All": {
       "localizations": {
         "ru": {
@@ -2120,22 +2104,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "您页面上的帖子示例"
-          }
-        }
-      }
-    },
-    "Animation duration": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Длительность анимации"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "动画时长"
           }
         }
       }
@@ -6186,22 +6154,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "收藏"
-          }
-        }
-      }
-    },
-    "Feed motion": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Движение ленты"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "列表动效"
           }
         }
       }
@@ -11520,22 +11472,6 @@
         }
       }
     },
-    "Reset motion": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сбросить движение"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重置动效"
-          }
-        }
-      }
-    },
     "Reset to Montana": {
       "localizations": {
         "ru": {
@@ -13041,22 +12977,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "速度"
-          }
-        }
-      }
-    },
-    "Springiness": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пружинистость"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "弹性"
           }
         }
       }
@@ -16351,6 +16271,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "语音消息样式"
+          }
+        }
+      }
+    },
+    "Reduce GIF animation": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уменьшить анимацию гифок"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "减少 GIF 动画"
+          }
+        }
+      }
+    },
+    "GIFs play without stopping; a tap stops one. With this on, a GIF plays three times and then only on a tap.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Гифки играют без остановки, касание останавливает. С галочкой гифка проигрывается три раза, дальше — только по касанию."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF 会不停播放，轻点即可停止。开启后，GIF 播放三遍，之后仅在轻点时播放。"
           }
         }
       }

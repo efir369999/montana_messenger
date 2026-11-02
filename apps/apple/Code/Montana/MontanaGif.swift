@@ -44,9 +44,16 @@ enum MontanaGif {
 /// reset it. What it counts is FRAMES: three cycles are three times the file's own frame count, so they are whole
 /// wherever they begin. A first showing plays its three cycles once in the file's life (the mark survives a
 /// relaunch); after that only a tap plays them, and a tap on a playing one stops it on the frame it stands on.
+///
+/// GIFS DO NOT STOP BY DEFAULT (the author's word 02.11.2026, link 14680 (3): «gifs do not stop by default; in Appearance a
+/// checkmark "reduce gif animation"»): without the checkmark every gif plays on, a tap stops it and a tap plays it on again;
+/// with it the three cycles above are the rule. `forever` is the count that a shown frame never spends.
 final class MTGifPlay {
     static let shared = MTGifPlay()
     static let cycles = 3
+    static let forever = Int.max
+    static let reduceKey = "gifReduceMotion"
+    static var reduced: Bool { UserDefaults.standard.bool(forKey: reduceKey) }
     static let changed = Notification.Name("mtGifPlayChanged")
     private let lock = NSLock()
     private var left: [String: Int] = [:]        // frames still to play, by file
@@ -74,6 +81,7 @@ final class MTGifPlay {
     func framesLeft(_ key: String, frames: Int) -> Int {
         lock.lock(); defer { lock.unlock() }
         if let l = left[key] { return l }
+        if !Self.reduced { left[key] = Self.forever; return Self.forever }
         if ran.contains(key) { left[key] = 0; return 0 }
         let n = Self.cycles * max(1, frames)
         left[key] = n
@@ -83,7 +91,8 @@ final class MTGifPlay {
     func shown(_ key: String, at index: Int) -> Int {
         lock.lock()
         standing[key] = index
-        let l = max(0, (left[key] ?? 0) - 1)
+        let was = left[key] ?? 0
+        let l = was == Self.forever ? was : max(0, was - 1)
         left[key] = l
         var keep: [String]? = nil
         if !ran.contains(key) {
@@ -101,6 +110,12 @@ final class MTGifPlay {
         lock.lock(); left[key] = nil; standing[key] = nil; ran.remove(key); lock.unlock()
         NotificationCenter.default.post(name: Self.changed, object: key)
     }
+    /// The checkmark turned: every count is dropped and every gif on the screen asks the book again -- on, they play on; off,
+    /// the ones whose first cycles were spent rest.
+    func reduceChanged() {
+        lock.lock(); let keys = Array(left.keys); left.removeAll(); lock.unlock()
+        keys.forEach { NotificationCenter.default.post(name: Self.changed, object: $0) }
+    }
     /// Where a file stands when it rests: its first frame, as it stood before it played.
     func rest(_ key: String) {
         lock.lock(); standing[key] = 0; lock.unlock()
@@ -116,7 +131,7 @@ final class MTGifPlay {
         let frames = Self.frameCount(url)
         lock.lock()
         let playing = (left[key] ?? 0) > 0
-        left[key] = playing ? 0 : Self.cycles * frames
+        left[key] = playing ? 0 : (Self.reduced ? Self.cycles * frames : Self.forever)
         if !ran.contains(key) { ran.insert(key); ranList.append(key) }
         let keep = ranList
         lock.unlock()
