@@ -759,13 +759,12 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 wallCardBubble(card)
             } else if MTMoneyFlowRow.of(message.text) {
                 // THE MONEY FLOW BEGAN (MTMoneyFlowRow): the chess invitation's card, our coin turning once as the row appears.
+                // NO LETTER MINTS (the author's word 02.11.2026 16:14 UTC, link 14629: «only 1 coin is 1 second, no other way named»):
+                // the card's second line said every letter mints a coin; the turn mints nothing, only the chain's second does.
                 VStack(alignment: .trailing, spacing: 4) {
                     HStack(spacing: 10) {
                         MTMintCoin(side: 40, turn: 0)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Money flow has begun").font(.headline)
-                            Text("Every letter mints a coin").font(.subheadline)
-                        }
+                        Text("Money flow has begun").font(.headline)
                     }
                     metaLine(onMedia: false)
                 }

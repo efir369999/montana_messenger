@@ -426,7 +426,7 @@ final class MTBoard: ObservableObject {
         DispatchQueue.global(qos: .utility).async { _ = MTBoardLook.folder() }   // the folder's birth and its one-time move out of Caches, off the main thread (29.09)
         renewVersion()
         if sealedChain { saveMine() }
-        DispatchQueue.main.async { [weak self] in self?.lendMissingFaces(); self?.watchMint() }   // the wall may be read first from any thread
+        DispatchQueue.main.async { [weak self] in self?.lendMissingFaces(); self?.watchClock() }   // the wall may be read first from any thread
     }
     private static func read<T: Decodable>(_ key: String) -> T? {
         guard let d = MontanaLocalVault.getDecrypted(key) else { return nil }
@@ -1528,18 +1528,7 @@ final class MTBoard: ObservableObject {
 
 
 typealias MTChainBody = [String: Any]
-typealias MTWallWindowList = [MTWallWindow]
 typealias MTChainRows = [MTChainBody]
-
-struct MTWallWindow: Identifiable {
-    let id: String
-    let title: String
-    let share: Int
-    let open: Bool
-    let span: String
-    let to: Double
-    let marks: [String]
-}
 
     static func chainFile(_ post: MTBoardSeen) -> URL? {
         let safe = String(post.id.filter { $0.isLetter || $0.isNumber }.prefix(64))
@@ -1562,14 +1551,14 @@ struct MTWallWindow: Identifiable {
         return url
     }
 
-    private var mintTick: Timer?
-    private func watchMint() {
-        guard mintTick == nil else { return }
-        mintTick = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+    /// THE WALL'S MOMENTS READ AGAIN EVERY MINUTE («5 min ago»): the one clock of the wall's pages.
+    private var clockTick: Timer?
+    private func watchClock() {
+        guard clockTick == nil else { return }
+        clockTick = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             self?.objectWillChange.send()
         }
     }
-    static let windowSilence: Double = 60
     static func chainBody(n: Int, time: String, master: String, prev: String, thread: [String], text: String) -> MTChainBody {
         ["n": n, "time": time, "master": master, "kind": "word", "prev": prev, "thread": thread, "text": text]
     }
@@ -1599,40 +1588,10 @@ struct MTWallWindow: Identifiable {
         }
         return out
     }
-    func wallWindows() -> MTWallWindowList {
-        var seen = Set<String>()
-        var rows = MTWallWindowList()
-        func take(_ post: MTBoardSeen) {
-            guard seen.insert(post.id).inserted, let row = Self.window(of: post) else { return }
-            rows.append(row)
-        }
-        for post in posts(on: nil) { take(post) }
-        for wall in pages.keys {
-            for post in posts(on: wall) { take(post) }
-        }
-        return rows
-    }
     func place(of id: String) -> String? {
         if mine.contains(where: { $0.id == id }) { return "" }
         for pair in pages where pair.value.posts.contains(where: { $0.id == id }) { return pair.key }
         return nil
-    }
-    static func window(of post: MTBoardSeen) -> MTWallWindow? {
-        let cs = post.comments.sorted { $0.at < $1.at }
-        guard let first = cs.first, let last = cs.last else { return nil }
-        var broken = false
-        for i in cs.indices.dropFirst() {
-            let gap = cs[i].at - cs[i - 1].at
-            if !(gap < windowSilence) { broken = true }
-        }
-        let now = Date().timeIntervalSince1970
-        let live = now - last.at < windowSilence && !broken
-        let end = live ? now : last.at
-        let length = max(0, end - first.at)
-        let minutes = broken ? 0 : max(1, Int(length / windowSilence))
-        let marks = cs.map { local($0.at) }
-        let title = post.text.isEmpty ? post.id : String(post.text.prefix(80))
-        return MTWallWindow(id: post.id, title: title, share: minutes, open: live, span: local(first.at) + " | " + local(last.at), to: last.at, marks: marks)
     }
     static func linkPost(_ id: String) -> String { "montana://wall/post/" + id }
     static func linkComment(_ post: String, _ comment: String) -> String {

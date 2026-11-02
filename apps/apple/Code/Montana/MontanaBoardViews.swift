@@ -193,7 +193,7 @@ struct MTBoardRows: View {
                                 onOpenWords: { sheet = .comments(p.id, owner) },
                                 onPeople: { likes in sheet = .people(p.id, owner, likes) },
                                 onShow: { i in page = .media(MTBoardShow(pid: p.id, at: i, owner: owner, feed: nil)) },
-                                minting: p.id == posts.first?.id, thread: thread)
+                                thread: thread)
                 }
                 .modifier(MTBoardRowRoom(edge: thread ? 0 : edge, vertical: thread ? 0 : 6))
             }
@@ -287,9 +287,6 @@ struct MTBoardCell: View {
     var onPeople: ((Bool) -> Void)? = nil
     /// A picture or a video of a published post opens its page's viewer (MTBoardMediaPage): the host sets the route, the row presents nothing.
     var onShow: ((Int) -> Void)? = nil
-    /// THE COINS MINT OVER THE NEWEST (the author's word 02.10): the post at the head of its wall or of the feed, until a newer
-    /// record stands over it.
-    var minting = false
     /// The post on its own page, over its comments (02.10): its words whole, no tap to open what is open.
     var whole = false
     /// A CHANNEL'S POST IN THE THREAD'S FACE (the author's words 16.10.2026 16:0x UTC: «channels -- the feed as now is right, only make
@@ -417,7 +414,6 @@ struct MTBoardCell: View {
         let reachable = global && post.nm != nil && w == .unknown
         return HStack(spacing: 10) {
             MTBoardByline(writer: w, name: MTBoard.shownName(w, carried: post.byName), glyph: post.byGlyph, face: post.face, at: post.at,
-                          minting: minting, share: minting ? MTBoard.window(of: post)?.share : nil,
                           onOpen: opens && draft == nil ? { onWriter(w) } : (reachable && draft == nil ? { reached { c in onWriter(.peer(c)) } } : nil))
             if post.pinned {
                 Image(systemName: "pin.fill").font(.caption).foregroundColor(.secondary)
@@ -619,7 +615,6 @@ struct MTBoardCell: View {
                     HStack(spacing: 4) {
                         // USER-DATA: the writer's name
                         Text(verbatim: MTBoard.shownName(w, carried: post.byName)).font(.subheadline.weight(.bold)).foregroundColor(.primary).lineLimit(1)
-                        if minting { MTMintCoin() }
                         // USER-DATA: how long ago the post was written, in the platform's short units
                         Text(verbatim: "\u{00B7} " + Self.ago(post.at)).font(.subheadline).foregroundColor(.secondary).lineLimit(1)
                         Spacer(minLength: 4)
@@ -638,7 +633,6 @@ struct MTBoardCell: View {
                 threadFace(w, size: 44)
                 // USER-DATA: the writer's name
                 Text(verbatim: MTBoard.shownName(w, carried: post.byName)).font(.headline).foregroundColor(.primary).lineLimit(1)
-                if minting { MTMintCoin() }
                 Spacer(minLength: 4)
                 threadMenu
             }
@@ -1692,8 +1686,6 @@ struct MTBoardByline: View {
     let glyph: String
     var face: String? = nil
     var at: Double? = nil
-    var minting = false
-    var share: Int? = nil
     var onOpen: (() -> Void)? = nil
     var body: some View {
         if let onOpen {
@@ -1709,11 +1701,6 @@ struct MTBoardByline: View {
                 // USER-DATA: the writer's name
                 HStack(spacing: 6) {
                     Text(verbatim: name).font(.subheadline.weight(.semibold)).foregroundColor(.primary).lineLimit(1)
-                    if minting {
-                        MTMintCoin()
-                        // USER-DATA: the share this post's live comment window holds now -- the wallet counts the same rows
-                        if let share { Text(verbatim: String(share)).font(.caption.monospacedDigit()).foregroundColor(.secondary) }
-                    }
                 }
                 if let at {
                     Text(Date(timeIntervalSince1970: at), format: .dateTime.day().month().hour().minute())
@@ -3216,13 +3203,12 @@ struct MTFeedTabView: View {
         let byRow = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let mine = q.isEmpty ? board.draft(on: nil) : nil   // my own draft stands first (the author's word 25.09), not under a search
         let rows = (mine == nil ? [] : [Self.row(Self.draftMark)]) + going.map { Self.row(Self.outMark + $0.id) } + items.map { Self.row($0.id) }
-        let newest = items.max { MTBoard.lastAt($0.post) < MTBoard.lastAt($1.post) }?.id
         ZStack(alignment: .top) {
             MontanaTimePanelList(panel: panel, rows: rows,
-                                 fingerprint: { c in Self.print(byRow[c.id]) + [c.id == newest ? 1 : 0] },
+                                 fingerprint: { c in Self.print(byRow[c.id]) },
                                  swipeLeading: { _ in [] }, swipeTrailing: { _ in [] }, swipesEnabled: false,
                                  onOpen: { _ in },
-                                 rowContent: { c in AnyView(cell(c.id, byRow[c.id], top: c.id == newest)) },
+                                 rowContent: { c in AnyView(cell(c.id, byRow[c.id])) },
                                  bottomReserve: reserve, page: "feed")
                 // The author's post icon opens the composer through its one presenter.
                 // THE WRITE AS THE CHATS' WRITE (the author's word 01.10 00:42: «on the wall fix the style as on the chats»): the same
@@ -3273,7 +3259,7 @@ struct MTFeedTabView: View {
         return [p.likes, p.commentCount, p.keepers, p.reposts, p.downloads, p.liked ? 1 : 0, p.kept ? 1 : 0,
                 p.reposted ? 1 : 0, p.media.count, p.text.count, Int(p.at), Int(MTBoard.lastAt(p)), p.pinned ? 1 : 0, p.views ?? -1]
     }
-    @ViewBuilder private func cell(_ id: String, _ it: MTBoardFeedItem?, top: Bool = false) -> some View {
+    @ViewBuilder private func cell(_ id: String, _ it: MTBoardFeedItem?) -> some View {
         if id == Self.draftMark {
             MTBoardDraftLive().padding(.horizontal, MTPageEdge.side).padding(.vertical, 6)
         } else if id.hasPrefix(Self.outMark) {
@@ -3288,8 +3274,7 @@ struct MTFeedTabView: View {
                             onOpenWords: { sheet = .comments(it.post.id, it.owner) },
                             onPeople: { likes in sheet = .people(it.post.id, it.owner, likes) },
                             onShow: { i in page = .media(MTBoardShow(pid: it.post.id, at: i, owner: it.owner,
-                                                                      feed: query.trimmingCharacters(in: .whitespacesAndNewlines))) },
-                            minting: top)
+                                                                      feed: query.trimmingCharacters(in: .whitespacesAndNewlines))) })
             }
             .padding(.horizontal, MTPageEdge.side).padding(.vertical, 6)
         }

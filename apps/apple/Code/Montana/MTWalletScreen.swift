@@ -6,7 +6,6 @@ struct MTWalletPage: View {
     @Environment(\.montanaClose) private var close
     @Environment(\.scenePhase) private var phase
     @Environment(UIState.self) private var ui
-    @State private var windows = MTBoard.MTWallWindowList()
     /// THE COIN BOOK (the author's word 03.10 13:52): the balance, the moves and the history all read the one ledger.
     @ObservedObject private var book = MTLocalCoinLedger.shared
     @ObservedObject private var pantheon = MTPantheon.shared
@@ -66,7 +65,7 @@ struct MTWalletPage: View {
                     // THE WALLET'S HEAD (the author's word 03.10 13:53): our mint coin where the card stood, the coin book's balance
                     // in large type under it, and the button that sends coins to a person in their chat.
                     VStack(spacing: 14) {
-                        // PANTHEON ON FIRE (the author's word 03.10 22:25): the first tap lights the game, every tap mints one coin, the coin
+                        // PANTHEON ON FIRE (the author's word 03.10 22:25): the first tap lights the game -- a tap mints nothing (decision 375 «a»), the coin
                         // spins at the speed of the taps (MTPantheon) and rests on its face when they stop.
                         // THE COIN TAKES EVERY FINGER (04.10, T1's diary: not one tap of the Pantheon on 2087 -- the coin's own drawing never
                         // takes a finger; the author's words 00:17-00:18: «multi-tapping over the whole surface of the coin, with the animation
@@ -111,8 +110,8 @@ struct MTWalletPage: View {
                         .frame(width: 120, height: 120)
                         .background(GeometryReader { g in Color.clear.preference(key: MTWalletPullKey.self, value: g.frame(in: .named("walletList")).minY) })
                         // THE BOX ON THE COIN (the author's word 04.10.2026 00:07 UTC: «the box's level as a badge on the coin in the wallet»):
-                        // the number of the level of π the balance fills -- the minting's multiplier -- as the platform's badge, at the coin's rim,
-                        // and the number of the apps minting at once beside it (MTMintLevelBadge, the author's word 04.10.2026 15:08 UTC).
+                        // the number of the level of π the balance fills -- the minting's multiplier -- as the platform's badge, at the coin's rim
+                        // (MTMintLevelBadge).
                         .overlay(alignment: .topTrailing) { MTMintLevelBadge(balance: total).offset(x: -8, y: 8).allowsHitTesting(false) }
                         // THE COIN CATCHES FIRE AT THE TAPS (the author's word 04.10 00:19): its glow grows with the speed and dims to embers
                         // between the taps while the game burns.
@@ -250,52 +249,10 @@ struct MTWalletPage: View {
                     if coinsShown { Text("Your name and coins are shown to everyone in the Montana top. Privacy settings turn it off.") }
                     else { Text("You are not in the Montana top. Privacy settings turn it on.") }
                 }
-                // EVERY ROAD OF THE COINS STANDS BEHIND TOP UP (the author's word 11.10.2026 17:2x UTC: «take the canvas of the ways of
-                // minting off the coins' page onto the Top up button»): the page keeps the coin, the balance and its buttons; Top up opens
-                // the whole list (MTCoinTopUpSheet, MTCoinRules). The chains moved to the TimeChain page, the wallet's second chain (10.10.2026).
-                // THE WALL'S MINTING STANDS ON THE WALLET (the author's word 02.10 15:28): the rights the comment windows hold,
-                // beside the confirmed balance and never added into it -- only the core turns a right into a note.
-                Section {
-                    LabeledContent("Minting now", value: String(windows.filter(\.open).reduce(0) { $0 + $1.share }))
-                    LabeledContent("Rights from the wall", value: String(windows.reduce(0) { $0 + $1.share }))
-                    // THE CHATS' COINS (the author's word 02.10 19:37): one coin for every letter of a chat in the ribbon of time,
-                    // live. LOCAL TALLY, NOT MINTING -- counted on this phone, never added into the confirmed balance (MTChatMint).
-                    // ONE BOOK (the author's word 03.10 13:53): every row reads the coin ledger, the chats' coins included.
-                    LabeledContent {
-                        // USER-DATA: a number, the coins the chats earned
-                        Text(verbatim: MTCoinText.count(book.earned)).monospacedDigit()
-                    } label: { Text("Coins from chats") }
-                    LabeledContent {
-                        // USER-DATA: a number, the coins the Pantheon on Fire's taps minted
-                        Text(verbatim: MTCoinText.count(book.tapped)).monospacedDigit()
-                    } label: { Text("Coins from the Pantheon") }
-                    LabeledContent {
-                        // USER-DATA: a number, the coins the VPN wall's seconds minted (MTVPNWallMint)
-                        Text(verbatim: MTCoinText.count(book.walled)).monospacedDigit()
-                    } label: { Text("Coins from the VPN Wall") }
-                    .task { MTVPNWallMint.count() }   // the wallet opened: the wall's seconds since the last count are paid
-                    LabeledContent {
-                        // USER-DATA: a number, the coins calls and letters burned (MTCoinBurn)
-                        Text(verbatim: MTCoinText.count(book.burned)).monospacedDigit()
-                    } label: { Text("Coins burned") }
-                    LabeledContent {
-                        // USER-DATA: a number, the coins that came from people
-                        Text(verbatim: MTCoinText.count(book.received)).monospacedDigit()
-                    } label: { Text("Coins received") }
-                    LabeledContent {
-                        // USER-DATA: a number, the coins sent to people
-                        Text(verbatim: MTCoinText.count(book.sent)).monospacedDigit()
-                    } label: { Text("Coins sent") }
-                    LabeledContent {
-                        // USER-DATA: a number, the coins given on letters and posts
-                        Text(verbatim: MTCoinText.count(book.spent)).monospacedDigit()
-                    } label: { Text("Coins on reactions") }
-                    LabeledContent {
-                        // USER-DATA: a number, the balance in Montana (one coin is 0.000000001)
-                        Text(verbatim: MTChatMint.montana(total)).monospacedDigit()
-                    } label: { Text("Coins in Montana") }
-                } header: { Text("Minting") }
-                  footer: { Text("Coins are counted on this phone until the wallet opens.") }
+                // ONE COIN, ONE SECOND -- NO OTHER ROAD ON THE PAGE (the author's word 02.11.2026 16:14 UTC, link 14629: «this is no longer
+                // relevant; everything about coins -- only 1 coin is 1 second, and no other way named»): the Minting section stood here with
+                // the old local tallies -- the wall's rights, the chats, the Pantheon, the VPN wall, the burns, the reactions -- as if each
+                // were a road of coins; only the chain mints, by the seconds a person is here (MTCoinSplit), and the balance above is all of it.
                 // THE TIMECHAIN STANDS BEHIND ITS BUTTON, NOT UNDER THE PAGE (the author's word 12.10.2026 12:2x UTC: «remove the TimeChain's
                 // description from the bottom of the Time Coins page, it is behind the button already»): the core's confirmed balance, its
                 // last window and its notes stand on the TimeChain page («For an observer», MTTimeChainsPage), the wall's chains among the
@@ -349,7 +306,7 @@ struct MTWalletPage: View {
         // lowest of 85 touches -- and the system took the app home; the author's word: «I did not do that»): the system's swipe at
         // the bottom edge waits for a second stroke here, as a game asks of it.
         .defersSystemGestures(on: .bottom)
-        .task { await refresh() }
+        .task { MTVPNWallMint.count() }   // the wallet opened: the beat runs and the chain hears the person (fold-7)
         // THE AUTO MINTING IS ON BY DEFAULT (the author's word 09.10.2026 17:1x UTC: "in every app the auto minting automatically,
         // by default"): the page standing open mints by the second without a pull or a hold; leaving the page or locking the
         // screen still ends it (MTWalletPull), and the return to the page or to the app begins it again.
@@ -380,7 +337,7 @@ struct MTWalletPage: View {
         .onChange(of: phase) { _, new in
             // THE LOCK ENDS IT, NOT A GLANCE (the author's word 04.10.2026 21:53 UTC): the screen locked or the app left goes to the
             // background; a banner or the Control Center pulled down only makes the scene inactive, and the minting goes on.
-            if new == .active { Task { await refresh() }; if !pantheon.lit { autoMint.fire() } } else if new == .background { autoMint.stop(why: "background") }
+            if new == .active { if !pantheon.lit { autoMint.fire() } } else if new == .background { autoMint.stop(why: "background") }
         }
         .onDisappear { autoMint.stop(why: "page"); pantheon.released() }
         // the page's own beat: the seconds on their way rise once a second, with the +1 of the minting (MTCoinSplit.beat)
@@ -400,18 +357,10 @@ struct MTWalletPage: View {
         pullArmed = false
         pullReleased = (Date(), MontanaCoinSpinner.angle(forPull: MontanaCoinSpinner.pullTrigger))
         autoMint.fire()
-        Task { await refresh() }
         DispatchQueue.main.asyncAfter(deadline: .now() + MontanaCoinSpinner.finish + 0.15) { pullReleased = nil }
-    }
-    /// The wall's windows read again: the minting rows stand on them (the core's own state lives on the TimeChain page).
-    @MainActor private func refresh() async {
-        windows = MTBoard.shared.wallWindows()
     }
 }
 
-/// WHERE COINS COME FROM (the author's word 03.10.2026 13:55 UTC: «make send and top up there»). Nothing is bought here and no
-/// coin is made by a tap: the sheet names the three roads that really bring coins -- the money flow of a chat, a person's
-/// coins in their chat, the wall's comments -- each in its own line.
 /// THE TOP THIRTEEN PEOPLE (the author's word 03.10.2026 19:23 UTC: «in the wallet, under the add-account button, the top
 /// thirteen balances by coins, beautifully, with avatars and names, as in a social network»): the person and the pairs that
 /// told their balance (MTCoinBoard), each with the face and the name the chats tab draws, the most coins first. A pair whose
@@ -1278,17 +1227,15 @@ struct MTMintingApps: View {
     }
 }
 
-/// THE LEVEL ON THE COIN AND THE APPS BESIDE IT (the author's word 04.10.2026 15:08 UTC: «on the badge the level's number as now and
-/// x2 beside it»): the platform's badge carries the level of π the balance fills and, while two apps or more mint at once, their
-/// number after the sign of times -- the count of the icons above the coin (MTMintingApps).
+/// THE LEVEL ON THE COIN (the author's word 04.10.2026 15:08 UTC): the platform's badge carries the level of π the balance fills.
+/// ONE COIN, ONE SECOND (the author's word 02.11.2026 16:14 UTC, link 14629): only the chain mints, so no count of minting apps
+/// stands beside it.
 struct MTMintLevelBadge: View {
     let balance: Int
-    @ObservedObject private var flash = MTCoinFlash.shared
     var body: some View {
-        let place = MTPiLevels.place(balance), apps = flash.apps.count
-        let parts = [0 < place ? String(place) : "", 2 <= apps ? "×" + String(apps) : ""]
-        // USER-DATA: the level's number and the count of the apps minting at once
-        MTCountBadge(word: parts.filter { part in !part.isEmpty }.joined(separator: " "))
+        let place = MTPiLevels.place(balance)
+        // USER-DATA: the level's number
+        MTCountBadge(word: 0 < place ? String(place) : "")
     }
 }
 
@@ -1475,7 +1422,8 @@ struct MTCurrency: Identifiable {
 
 /// THE FIRE'S MINUTE UNDER THE LEVEL (the author's word 04.10.2026 10:38 UTC; MTPantheon.streak): the platform's bar of the unbroken
 /// burn to its sixty seconds, and through the rest after it the seconds left -- drawn by the clock, never by the taps, and paused
-/// while neither runs; it always stands, shown or hidden, so the coin never moves under the finger.
+/// while neither runs; it always stands, shown or hidden, so the coin never moves under the finger. THE FIRE RESTS, NOT A MINTING
+/// (the author's word 02.11.2026 16:14 UTC, link 14629: «only 1 coin is 1 second, no other way named»): the game mints nothing.
 struct MTPantheonStreak: View {
     @ObservedObject var pantheon: MTPantheon
     var body: some View {
@@ -1490,7 +1438,7 @@ struct MTPantheonStreak: View {
                     .tint(rest == nil ? .orange : .gray)
                     .frame(maxWidth: 240)
                 if let rest {
-                    Text("Minting rests \(Int(rest.rounded(.up))) s").font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
+                    Text("The fire rests \(Int(rest.rounded(.up))) s").font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
                 } else {
                     Text("\(Int(run)) of 60 seconds unbroken").font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
                 }
@@ -1528,26 +1476,18 @@ struct MTTimeChainRows: View {
             for source in sources { MTTimeChain.head(source) { heads[source] = $0 } }
         }
     }
-    /// A source's word in the catalogue, one table for every place that names it: the game or the road its coins came by.
+    /// A source's word in the catalogue, one table for every place that names it. Every chain of the builds before is one word
+    /// (MTTimeChain.before): the wallet names no road of coins but the chain's second.
     static func key(_ source: String) -> String {
+        if MTTimeChain.before.contains(source) { return "Earlier builds" }
         switch source {
-        case "chess": return "Coins from chess"
-        case "pantheon": return "Coins from the Pantheon"
-        case "vpnwall": return "Coins from the VPN Wall"
         case "vpnpay": return "Paid for the VPN"
-        case "timer": return "Timer"
-        case "chats": return "Coins from chats"
-        case "groups": return "Coins from groups"
-        case "channels": return "Coins from channels"
-        case "comments": return "Coins for comments"
         case "wall": return "Wall"
         case "received": return "Coins received"
         case "spent": return "Coins on reactions"
         case "pi": return "Levels of π"
         case "person": return "Person"
         case "fabric": return "Fabric of Time"
-        case "calls": return "Burned for calls"
-        case "letters": return "Burned for letters"
         case "system": return "System chain"
         default: return "Coins sent"
         }
@@ -1668,9 +1608,9 @@ struct MTTimeChainsPage: View {
     @ObservedObject private var node = MTNetworkNode.shared
     @State private var core: Result<MTWalletCore.Snapshot, MTWalletCore.Absence>?
     @State private var chainFiles: [URL] = []
-    /// The chats' and calls' chains of coins; every other source is the wallet's own. The third chain of time is the Fabric of Time.
-    static let talk = ["chats", "groups", "channels", "comments", "wall", "calls", "letters"]
-    private static let own = MTTimeChain.sources.filter { s in s != "pi" && !talk.contains(s) }
+    /// The wallet's own chains; the wall's chain stands apart, the chains of the builds before nowhere (MTTimeChain.before). The
+    /// third chain of time is the Fabric of Time.
+    private static let own = MTTimeChain.sources.filter { s in s != "pi" && s != "wall" && !MTTimeChain.before.contains(s) }
     private var vectorsHold: Bool { MTPersonChain.levelKAT() && MTFabricRules.selfCheck() && MTTopNet.keyKAT() && MTCoinVault.keyKAT() && MTTimeChainTip.selfCheck() }
     var body: some View {
         let place = MTPiLevels.place(split.available)
@@ -1769,11 +1709,11 @@ struct MTTimeChainsPage: View {
                 Text("The people you write to and call regularly, each weighed by the level their own time and wallet give them: the greatest number g for which at least g people you exchanged with — words, voice, video, photos, stickers, transfers, games or a call — in each of the last two weeks stand at level g or above. An exchange counts when both of you write: once a day each phone signs that the other's word reached it and gives the signature to the other. Counted again whenever a signature comes or leaves the two weeks; through its first two weeks it stands at the lower of your two levels above. Your ceiling goes only to the people you write to, inside your conversation.")
             }
             Section {
-                MTTimeChainRows(sources: Self.talk)
+                MTTimeChainRows(sources: ["wall"])
             } header: {
-                Label("Chats and calls", systemImage: "bubble.left.and.bubble.right")
+                Label("Wall", systemImage: "rectangle.stack")
             } footer: {
-                Text("The chains of the coins your chats, calls and comments minted and burned before, kept as history: they move no coin now. And the chain of your wall's posts.")
+                Text("The chain of your wall's posts.")
             }
             // THE EXPLORER (the author's word 11.10.2026 17:2x UTC: «on the TimeChain page an Explorer button to open and check a
             // transaction ... everything professional in the TimeChain, for auditors»): the public page that reads a transfer's

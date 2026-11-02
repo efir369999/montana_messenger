@@ -270,9 +270,9 @@ enum MTPiLevels {
 /// once and the coins after it rose again half a second later): while the minting by the second beats (MTMintBeat), the beat
 /// alone raises the coins, once a second, with the sum of everything minted in that second; without it the coins gather a fifth
 /// of a second and rise once, twice a second at most (the heat, 04.10 12:27).
-/// THE APPS THAT MINT (the same word: «above the coin the icons of the apps that give the minting; on the badge the level and x2
-/// beside it»): the app of a coin is the app of its TimeChain (MTTimeChain.app, constitution point 4), and an app whose coins were
-/// born within the last second and a half mints now.
+/// THE APP THAT MINTS (the same word: «above the coin the icons of the apps that give the minting»): ONE COIN, ONE SECOND (the
+/// author's word 02.11.2026 16:14 UTC, link 14629) -- only the chain's seconds are born here, so the one icon is the wallet's
+/// own, standing while coins were born within the last second and a half.
 @MainActor final class MTCoinFlash: ObservableObject {
     static let shared = MTCoinFlash()
     @Published private(set) var tick = 0
@@ -284,13 +284,13 @@ enum MTPiLevels {
     private var held = 0
     private var gathering = false
     private var rose: Double = 0
-    private var minted: [MTApplication: Double] = [:]
+    private var minted: Double = 0
     private var looks = 0
-    func born(_ n: Int, ref: String) {
+    func born(_ n: Int) {
         guard 0 < n else { return }
         let now = Date().timeIntervalSince1970
         held += n
-        if let app = MTTimeChain.app(MTTimeChain.source(ref: ref, kind: .earn)) { minted[app] = now }
+        minted = now
         guard !MTMintBeat.beats, !gathering else { return }
         gathering = true
         let wait = max(Self.gather, rose + Self.apart - now)
@@ -319,7 +319,7 @@ enum MTPiLevels {
     }
     private func look() {
         let now = Date().timeIntervalSince1970
-        let fresh = MTApplication.allCases.filter { app in minted[app].map { at in now - at < Self.lasting } ?? false }
+        let fresh: [MTApplication] = now - minted < Self.lasting ? [.wallet] : []
         if fresh != apps { apps = fresh }
     }
 }
@@ -1574,6 +1574,11 @@ enum MTTimeChain {
     /// 5 185 of the iPhone 17's 15 331 moves reached the seed's other devices a millisecond earlier than their owner wrote them.
     nonisolated static func ms(_ moment: Double) -> Int64 { Int64((moment * 1000).rounded()) }
     nonisolated static func now() -> Double { Double(ms(Date().timeIntervalSince1970)) / 1000 }
+    /// THE CHAINS OF THE BUILDS BEFORE (the author's word 02.11.2026 16:14 UTC, link 14629: «only 1 coin is 1 second, no other way
+    /// named»): the games, the chats, the comments, the calls and the letters minted or burned coins on this phone until the chain
+    /// alone minted (decisions 375 and 383 «a»). Their chains stay sealed on the phone; the wallet names them by one word, the
+    /// builds before, and shows no road of coins by them.
+    static let before = Set(["chess", "pantheon", "vpnwall", "timer", "chats", "groups", "channels", "comments", "calls", "letters"])
     /// The sources, each its own chain, in the wallet's order.
     static let sources = ["pi", "chess", "pantheon", "vpnwall", "vpnpay", "timer", "chats", "groups", "channels", "comments", "wall", "received", "spent", "sent", "calls", "letters", "system"]
     private static let q = DispatchQueue(label: "montana.TimeChains", qos: .utility)
@@ -1603,20 +1608,6 @@ enum MTTimeChain {
         case .spend: return "spent"
         case .send: return "sent"
         case .burn: return r.hasPrefix(MTCoinBurn.callPrefix) ? "calls" : "letters"
-        }
-    }
-    /// The app whose coins a chain keeps: the icon above the wallet's coin while the chain's coins are born (MTCoinFlash.apps).
-    static func app(_ source: String) -> MTApplication? {
-        switch source {
-        case "chess", "timer": return .chess
-        case "pantheon": return .wallet
-        case "vpnwall", "vpnpay": return .vpnWall
-        case "calls": return .calls
-        case "chats": return .chats
-        case "groups": return .groups
-        case "channels": return .channels
-        case "comments", "wall": return .feed
-        default: return nil
         }
     }
     private static func file(_ chain: String) -> URL? { MTTimeChainPlace.file(chain) }
@@ -2642,43 +2633,14 @@ enum MTCoinPlace {
     }
 }
 
-/// THE BOOK'S COUNTS BY SOURCE, ONE CLASSIFICATION (04.10): a move adds to its source's count here, the same for a move taken now
-/// and for the whole file folded at its reading.
+/// THE BOOK'S ONE SUM (the coin audit's ninth point, 05.10.2026 18:4x UTC): the tallies saturate, never trap -- a sum past the
+/// integer is shown at its edge, and the app lives. ONE COIN, ONE SECOND (the author's word 02.11.2026 16:14 UTC, link 14629: «only
+/// 1 coin is 1 second, no other way named»): the counts by source -- the Pantheon's taps, chess, the VPN wall, the chats -- stood
+/// here for the wallet's Minting section and went with it; only the chain mints, by the seconds a person is here.
 struct MTCoinCounts {
-    var earned = 0
-    /// The coins the Pantheon on Fire's taps minted (MTPantheon), counted apart: «coins from chats» counts the chats alone.
-    var tapped = 0
-    /// The coins of chess in the book's lines of the builds before (MTCoinLegacy) -- counted apart, so the received and the
-    /// reactions rows count people and reactions alone; chess writes no coin any more.
-    var played = 0
-    /// The coins the VPN wall minted by its seconds (MTVPNWallMint), counted apart.
-    var walled = 0
-    /// The coins burned by calls and letters (MTCoinBurn), the Economy of Time's sink.
-    var burned = 0
-    var received = 0
-    var spent = 0
-    var sent = 0
-    /// The tallies saturate, never trap (the coin audit's ninth point, 05.10.2026 18:4x UTC): a sum past the integer is shown at
-    /// its edge, and the app lives.
     static func plus(_ a: Int, _ b: Int) -> Int {
         let (s, over) = a.addingReportingOverflow(b)
         return over ? (0 < b ? Int.max : Int.min) : s
-    }
-    @MainActor mutating func add(_ e: MTCoinEntry) {
-        switch e.k {
-        case .earn: earn(e.c, ref: e.ref)
-        case .receive: if MTCoinLegacy.chess(e.ref) { played = Self.plus(played, e.c) } else { received = Self.plus(received, e.c) }
-        case .spend: if MTCoinLegacy.chess(e.ref) { played = Self.plus(played, -e.c) } else { spent = Self.plus(spent, e.c) }
-        case .send: sent = Self.plus(sent, e.c)
-        case .burn: burned = Self.plus(burned, e.c)
-        }
-    }
-    /// The game an earning came from, by its name: the Pantheon's taps, chess and its Timer, the VPN wall, the chats.
-    @MainActor mutating func earn(_ c: Int, ref: String) {
-        if ref.hasPrefix(MTPantheon.refPrefix) { tapped = Self.plus(tapped, c) }
-        else if MTCoinLegacy.chess(ref) || MTCoinLegacy.timer(ref) { played = Self.plus(played, c) }   // the Timer is chess too (04.10)
-        else if ref.hasPrefix(MTVPNWallMint.refPrefix) { walled = Self.plus(walled, c) }
-        else { earned = Self.plus(earned, c) }
     }
 }
 
@@ -2687,15 +2649,6 @@ struct MTCoinCounts {
     @Published private(set) var entries: [MTCoinEntry] = []
     @Published private(set) var balance = 0
     @Published private(set) var onTarget: [String: Int] = [:]
-    @Published private(set) var counts = MTCoinCounts()
-    var earned: Int { counts.earned }
-    var tapped: Int { counts.tapped }
-    var played: Int { counts.played }
-    var walled: Int { counts.walled }
-    var burned: Int { counts.burned }
-    var received: Int { counts.received }
-    var spent: Int { counts.spent }
-    var sent: Int { counts.sent }
     /// The highest level of π the balance has filled since the book was read (MTPiLevels): a level reached for the first time is a link.
     private var level = 0
     private var taken = Set<String>()
@@ -2726,7 +2679,7 @@ struct MTCoinCounts {
     /// (MTCoinBook.reread).
     func reread() {
         flush()   // the person who left keeps every move of their last second, in their own book
-        entries = []; taken = []; onTarget = [:]; counts = MTCoinCounts(); ownPeers = []
+        entries = []; taken = []; onTarget = [:]; ownPeers = []
         balance = 0; level = 0
         begin()
     }
@@ -2791,11 +2744,10 @@ struct MTCoinCounts {
     private func adopt(_ r: Reading) {
         guard reading === r else { return }   // a reading of the person who left the seat
         reading = nil
-        var sum = 0, counts = MTCoinCounts(), onTarget: [String: Int] = [:], level = 0
+        var sum = 0, onTarget: [String: Int] = [:], level = 0
         var levels: [(n: Int, at: Double)] = []
         for e in r.moves {
             sum += e.signed
-            counts.add(e)
             if let on = e.shownOn { onTarget[on, default: 0] += e.shownCoins }
             let place = MTPiLevels.place(sum)
             if level < place {
@@ -2803,7 +2755,7 @@ struct MTCoinCounts {
                 level = place
             }
         }
-        entries = r.moves; taken = r.taken; balance = sum; self.counts = counts; self.onTarget = onTarget; self.level = level
+        entries = r.moves; taken = r.taken; balance = sum; self.onTarget = onTarget; self.level = level
         ownPeers = Self.own(r.moves, names: r.taken)
         MontanaTrace.mark("coin_book", "read moves=\(r.moves.count) balance=\(sum) local=1")
         for l in levels { MTTimeChain.note("pi", kind: "level", coins: l.n, ref: "level:" + String(l.n), at: l.at) }
@@ -2818,18 +2770,18 @@ struct MTCoinCounts {
     /// THE MOVES OF THE SEED'S OTHER DEVICES (MTCoinVault): taken once by their names into this book and this phone's file, in one
     /// assignment -- a device restored by its words takes the whole book here; they are on the nodes already and ride no piece back.
     @discardableResult func join(_ moves: [MTCoinEntry]) -> Int {
-        var all = entries, names = taken, sum = balance, c = counts, on = onTarget
+        var all = entries, names = taken, sum = balance, on = onTarget
         var fresh: [MTCoinEntry] = []
         for e in moves where 0 < e.c && !e.restoredName && !names.contains(e.id) {
             let (next, over) = sum.addingReportingOverflow(e.signed)
             guard !over else { continue }
             sum = next
-            all.append(e); names.insert(e.id); c.add(e)
+            all.append(e); names.insert(e.id)
             if let t = e.shownOn { on[t, default: 0] += e.c }
             fresh.append(e)
         }
         guard !fresh.isEmpty else { return 0 }
-        entries = all; taken = names; balance = sum; counts = c; onTarget = on
+        entries = all; taken = names; balance = sum; onTarget = on
         ownPeers.formUnion(Self.own(fresh, names: names))
         MTCoinSplit.shared.told()
         reached(at: Date().timeIntervalSince1970)
@@ -2860,7 +2812,6 @@ struct MTCoinCounts {
         taken.insert(e.id)
         ownPeers.formUnion(Self.own([e], names: taken))
         balance = next
-        counts.add(e)
         if let on = e.shownOn { onTarget[on, default: 0] += e.shownCoins }
         MTCoinSplit.shared.told()
         reached(at: e.at)
@@ -3781,7 +3732,7 @@ enum MTCoinChainRules {
         guard before != now else { return }
         objectWillChange.send()
         told()
-        if before < now { MTCoinFlash.shared.born(now - before, ref: MTWalletPull.refPrefix) }
+        if before < now { MTCoinFlash.shared.born(now - before) }
     }
 }
 

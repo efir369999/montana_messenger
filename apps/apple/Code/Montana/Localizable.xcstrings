@@ -1,6 +1,40 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Earlier builds": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прежние сборки"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "早期版本"
+          }
+        }
+      }
+    },
+    "The chain of your wall's posts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цепочка постов вашей стены."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的墙上帖子的链。"
+          }
+        }
+      }
+    },
     "Full Screen": {
       "localizations": {
         "ru": {
@@ -21283,23 +21317,6 @@
         }
       }
     },
-    "Burned for calls": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сожжено за звонки"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通话燃烧"
-          }
-        }
-      }
-    },
     "What is Your hour worth Now?": {
       "extractionState": "manual",
       "localizations": {
@@ -21381,23 +21398,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "小时"
-          }
-        }
-      }
-    },
-    "Burned for letters": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сожжено за письма"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "消息燃烧"
           }
         }
       }
@@ -21581,22 +21581,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "数量"
-          }
-        }
-      }
-    },
-    "Rights from the wall": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Права со стены"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "来自墙的权利"
           }
         }
       }
@@ -22979,40 +22963,6 @@
         }
       }
     },
-    "Coins from the Pantheon": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монеты Пантеона"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "万神殿的硬币"
-          }
-        }
-      }
-    },
-    "Coins from chess": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монеты шахмат"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "国际象棋的硬币"
-          }
-        }
-      }
-    },
     "Not delivered, coins returned": {
       "extractionState": "manual",
       "localizations": {
@@ -23047,36 +22997,19 @@
         }
       }
     },
-    "Minting rests %lld s": {
+    "The fire rests %lld s": {
       "extractionState": "manual",
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пауза чеканки: %lld с"
+            "value": "Огонь отдыхает: %lld с"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "铸币暂停 %lld 秒"
-          }
-        }
-      }
-    },
-    "Coins burned": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сожжено монет"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "燃烧的硬币"
+            "value": "火焰休息 %lld 秒"
           }
         }
       }
@@ -23094,23 +23027,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "π 的等级"
-          }
-        }
-      }
-    },
-    "Coins for comments": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монеты за комментарии"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "评论的硬币"
           }
         }
       }
@@ -23552,22 +23468,6 @@
         }
       }
     },
-    "Coins are counted on this phone until the wallet opens.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монеты считаются на этом телефоне, пока кошелёк не откроется."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在钱包开放之前，硬币在此手机上计数。"
-          }
-        }
-      }
-    },
     "Coins on reactions": {
       "localizations": {
         "ru": {
@@ -23612,22 +23512,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "已发送的硬币"
-          }
-        }
-      }
-    },
-    "Every letter mints a coin": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Каждое письмо чеканит монету"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每封信铸造一枚硬币"
           }
         }
       }
@@ -23708,22 +23592,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "铸造"
-          }
-        }
-      }
-    },
-    "Minting now": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чеканится сейчас"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在铸造"
           }
         }
       }
@@ -23937,38 +23805,6 @@
         }
       }
     },
-    "Coins from chats": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монеты из чатов"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "来自聊天的硬币"
-          }
-        }
-      }
-    },
-    "Coins in Montana": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монеты в Монтане"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "以 Montana 计的硬币"
-          }
-        }
-      }
-    },
     "Currency": {
       "extractionState": "manual",
       "localizations": {
@@ -23999,57 +23835,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的汇率：1 枚币 = %@"
-          }
-        }
-      }
-    },
-    "Coins from groups": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монеты из групп"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "来自群组的硬币"
-          }
-        }
-      }
-    },
-    "Coins from channels": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монеты из каналов"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "来自频道的硬币"
-          }
-        }
-      }
-    },
-    "Coins from the VPN Wall": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Монеты ВПН СТЕНЫ"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "VPN 墙的硬币"
           }
         }
       }
@@ -26018,22 +25803,6 @@
         }
       }
     },
-    "Chats and calls": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чаты и звонки"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聊天与通话"
-          }
-        }
-      }
-    },
     "Frozen vectors": {
       "localizations": {
         "ru": {
@@ -26158,22 +25927,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "当应用在您的任一设备上打开、且节点应答其硬币交换时计一秒：时间币打开时每隔几秒一次，应用其他部分则在每次交换时。以节点的时间为准，而非手机时钟。每一级的秒数是前一级的两倍。仅您可见，不对外公布。"
-          }
-        }
-      }
-    },
-    "The chains of the coins your chats, calls and comments minted and burned before, kept as history: they move no coin now. And the chain of your wall's posts.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цепочки монет, которые ваши чаты, звонки и комментарии начеканили и сожгли раньше, сохранены как история: теперь они монет не двигают. И цепочка постов вашей стены."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "您的聊天、通话和评论此前所铸造和燃烧的硬币之链，作为历史保留：它们现在不再移动任何硬币。以及您留言墙帖子的链。"
           }
         }
       }
@@ -26822,23 +26575,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "已收到"
-          }
-        }
-      }
-    },
-    "Burned": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сожжено"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已燃烧"
           }
         }
       }
