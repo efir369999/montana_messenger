@@ -596,6 +596,12 @@ struct MTWallpaperPicker: View {
     let task: MTWallpaperTask
     /// What the checkmark goes on to: the first screen makes the person after their ground is chosen (the author's word 30.09).
     var onDone: () -> Void = {}
+    /// THE MAKING WEARS THE GROUND AT A TAP (the author's word 02.11.2026 15:54 UTC, link 14611: «while the identity is being
+    /// made, take away the preview and on a tap apply the page's ground at once, without extra actions and extra
+    /// confirmations»): on the first screen a ground or a photo is worn the moment it is touched -- no preview, no second
+    /// checkmark; the page behind the chooser wears it at once, and the chooser's own checkmark goes on to the person.
+    /// Everywhere else the preview stays.
+    var instant = false
     private var conv: String { task.key }
     @Environment(\.montanaClose) private var montanaClose
     @Environment(\.dismiss) private var dismiss
@@ -647,7 +653,8 @@ struct MTWallpaperPicker: View {
             .onChange(of: photoItem) { _, item in
                 Task {
                     guard let d = try? await item?.loadTransferable(type: Data.self), let ui = UIImage(data: d) else { return }
-                    preview = MTWallpaperCandidate(choice: .general, picture: ui)   // placed by hand in the preview, saved as placed
+                    if instant { task.wear(photo: ui) }   // the making: worn whole, at once
+                    else { preview = MTWallpaperCandidate(choice: .general, picture: ui) }   // placed by hand in the preview, saved as placed
                     photoItem = nil
                 }
             }
@@ -708,7 +715,9 @@ struct MTWallpaperPicker: View {
     /// leads to the library tab; every other ground to the preview.
     private func tile(_ c: MTWallpaper.Choice, chosen: Bool) -> some View {
         Button {
-            if case .photo = c { tab = 1 } else { preview = MTWallpaperCandidate(choice: c) }
+            if case .photo = c { tab = 1 }
+            else if instant { task.wear(c) }   // the making: worn at the tap (link 14611)
+            else { preview = MTWallpaperCandidate(choice: c) }
         } label: { face(c, chosen: chosen) }
             .buttonStyle(.plain)
             .accessibilityLabel(label(c))
@@ -903,6 +912,25 @@ enum MTWallpaperTask {
         }
     }
     var isPage: Bool { if case .page = self { return true }; return false }
+    /// THE ONE SETTING OF A GROUND: the preview's checkmark and the making's tap (link 14611) both end here -- the picture
+    /// worn before leaves, the ground is sharp as it was shown, and my page's ground is told to every correspondent (25.09).
+    func wear(_ choice: MTWallpaper.Choice) {
+        let file: (MTWallpaper.Choice) -> String? = { if case .photo(let f) = $0 { return f }; return nil }
+        let conv = key
+        if let old = file(MTWallpaper.choice(for: conv)), old != file(choice) { MTWallpaper.remove(old) }
+        MTWallpaper.setBlur(0, for: conv)   // what is set is sharp, as it was shown (P-136)
+        MTWallpaper.set(choice, for: conv)
+        if isPage { MTPageGround.changed() }
+    }
+    /// A photo worn whole, with no placing by hand: the page's ground kept light (25.09), else the picture at the
+    /// window's size; a picture that cannot be kept is named in the diary and nothing is set.
+    func wear(photo ui: UIImage) {
+        var f = isPage ? MTWallpaper.keep(MTWallpaper.lightData(ui)) : nil
+        if f == nil, let data = ui.jpegData(compressionQuality: 0.92) { f = MTWallpaper.savePhoto(data) }
+        guard let file = f else { MontanaTrace.mark("wallpaper", "REFUSED -- the photo could not be kept (instant)"); return }
+        MontanaTrace.mark("wallpaper", "photo kept how=instant blur=0")
+        wear(.photo(file))
+    }
 }
 struct MTWallpaperPreview: View {
     let task: MTWallpaperTask
@@ -1002,13 +1030,9 @@ struct MTWallpaperPreview: View {
         } else {
             MontanaTrace.mark("wallpaper", "ground kept blur=0")
         }
-        if case .photo(let old) = MTWallpaper.choice(for: conv), old != photoFile(choice) { MTWallpaper.remove(old) }
-        MTWallpaper.setBlur(0, for: conv)   // no slider on this page: what is set is sharp, as the preview showed it
-        MTWallpaper.set(choice, for: conv)
-        if task.isPage { MTPageGround.changed() }   // my page's ground, to every correspondent who reads it (25.09)
+        task.wear(choice)   // no slider on this page: what is set is sharp, as the preview showed it
         leave()
     }
-    private func photoFile(_ c: MTWallpaper.Choice) -> String? { if case .photo(let f) = c { return f }; return nil }
 }
 
 /// MY PAGE OVER ITS GROUND, FOR THE PREVIEW (the author's word 26.09: «the page ground's preview with the real face, name, bio,
@@ -2493,7 +2517,7 @@ struct MontanaOnboardingView: View {
         // identity's ground, then that ground on every page of the making, up to the chats»): the very page of my page's ground,
         // over everything -- the root's way back stands over this screen -- and its checkmark makes the person.
         .fullScreenCover(isPresented: $ground) {
-            MTWallpaperPicker(task: .page, onDone: { grounds.birthChosen = true; createSeed() }).environment(\.montanaClose, nil)
+            MTWallpaperPicker(task: .page, onDone: { grounds.birthChosen = true; createSeed() }, instant: true).environment(\.montanaClose, nil)
         }
         .alert("The identity could not be stored on this device", isPresented: $birthFailed) {
             Button("Got it", role: .cancel) {}
