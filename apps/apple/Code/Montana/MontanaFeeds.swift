@@ -169,9 +169,7 @@ enum MTWallpaper {
     }
     static func isPageKey(_ k: String?) -> Bool { k == page || (k?.hasPrefix(page + ".") ?? false) }
     /// The one bit the screens observe: a change of any wallpaper.
-    /// `birthChosen`: the person being made is born on the indigo (link 14680) -- from then on the making wears my page's ground,
-    /// before it the login page's burgundy (MontanaOnboardingView).
-    final class Book: ObservableObject { static let shared = Book(); @Published var rev = 0; @Published var birthChosen = false }
+    final class Book: ObservableObject { static let shared = Book(); @Published var rev = 0 }
     /// The ink of a place's own ground (scheme(for:)) on its words, bars and materials; a ground chosen anew turns it at once.
     struct Ink: ViewModifier {
         let conv: String?
@@ -216,7 +214,7 @@ enum MTWallpaper {
     /// any more -- the light gradients alone are.
     static let lightGrounds = ["sky", "water"]
     static var scheme: ColorScheme { scheme(of: choice(for: page)) }
-    static var birthScheme: ColorScheme { Book.shared.birthChosen ? scheme : scheme(of: .named(burgundy)) }
+    static var birthScheme: ColorScheme { scheme(of: .named(indigo)) }   // the login and the making wear the one indigo (links 14793-14794)
     static func scheme(of c: Choice) -> ColorScheme {
         switch c {
         case .named(let n): return lightGrounds.contains(n) ? .light : .dark

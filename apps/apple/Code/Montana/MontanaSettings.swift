@@ -2455,17 +2455,14 @@ struct MontanaOnboardingView: View {
     @ObservedObject private var keep = MTKeeping.shared           // the parts coming back from the people one wrote to (08.10)
     @State private var barSince = Date()                          // when the bar first stood on the page: the time left is measured from it
     @ObservedObject private var seats = MTSeats.shared            // a person being added: the page stands on the Montana road (06.10)
-    @ObservedObject private var grounds = MTWallpaper.Book.shared // birthChosen: the new person chose a ground, the pages wear it from then on
 
     var body: some View {
         ZStack {
-            // THE LOGIN PAGE IS BURGUNDY BY DEFAULT (the author's word 06.10.2026 12:1x UTC: «by default the login page has the burgundy
-            // ground»): the author's file as it came, until the person being made chooses a ground of their own (ground).
-            if grounds.birthChosen {
-                Color.clear.montanaPageGround().allowsHitTesting(false)   // the login pages wear the one ground of every page
-            } else {
-                MTWallpaper.paint(MTWallpaper.burgundy).ignoresSafeArea().allowsHitTesting(false)
-            }
+            // ONE INDIGO FROM THE FIRST PAGE TO THE LAST (the author's words 02.11.2026 18:35 UTC, links 14793-14794: «it must be ONE
+            // ON ALL PAGES -- INDIGO from the 1st page of creation and login to the last, and not change along the way»): the login,
+            // the making and the restoring stand on the one indigo, never the burgundy, never switched at «Create»; Appearance changes
+            // the page's ground afterwards.
+            MTWallpaper.paint(MTWallpaper.indigo).ignoresSafeArea().allowsHitTesting(false)
             if step == 3 {
                 // Same profile screen as in settings — one source, no second implementation
                 ProfileView(onboarding: true, onFinish: { MontanaBirth.finished(); onDone() })
@@ -2494,8 +2491,6 @@ struct MontanaOnboardingView: View {
         }
         .environment(\.colorScheme, MTWallpaper.birthScheme)   // the words wear the ink of the ground the page stands on
         .interactiveDismissDisabled()
-        // A making that ends leaves the next one on the login page's own ground.
-        .onDisappear { if MontanaSeed.hasSeed { grounds.birthChosen = false } }
         .onAppear {   // opened to make a second person: the Montana road beside the seated one
             if MTSeats.shared.takeMontanaRoad() { montanaRoad = true }
         }
@@ -2562,7 +2557,6 @@ struct MontanaOnboardingView: View {
                 // as the page's ground, and remove the step of choosing the ground from the registration completely»): the person is born
                 // on the indigo, and the rest of the making wears it up to the chats; Appearance changes it afterwards.
                 MTWallpaper.set(.named(MTWallpaper.indigo), for: MTWallpaper.page)
-                grounds.birthChosen = true
                 MontanaTrace.mark("seed_born", "ms=\(ms) stored=1")
                 MontanaEntropy.report("birth")   // what this identity stands on — recorded that same instant
                 step = 1

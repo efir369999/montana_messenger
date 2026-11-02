@@ -6979,7 +6979,7 @@ enum SeedScope {
     /// servers, its plans with their links, the one chosen, the pin and the fold of the hand-added section, and the number the
     /// plans know this phone by (a plan that counts devices meets a restored phone as the same one, not as one more).
     static let settingKeys = [MTKeeping.mineKey, MTKeeping.othersKey, MTKeeping.budgetKey, MTKeeping.toldKey,   // the keeping of a copy (08.10)
-                              "appLibraryIcons", "appLibraryPins", MTLibraryIconStyle.key, MTChessComputer.levelKey, "AppLanguage", "AppleLanguages", MTLetterMotion.bounceKey, MTLetterMotion.durationKey,
+                              "appLibraryIcons", "appLibraryPins", MTLibraryIconStyle.key, MTChessComputer.levelKey, "AppLanguage", "AppleLanguages",
         MTGifPlay.reduceKey,   // the person's «Reduce GIF animation» (link 14680, 02.11.2026), as their other looks
         "notifEnabled", "notifSound", "notifPreview", "notifSender", "notifLockName",
         "autoDownloadCellular", "autoDownloadWiFi",

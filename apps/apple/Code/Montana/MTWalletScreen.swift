@@ -15,7 +15,7 @@ struct MTWalletPage: View {
     @ObservedObject private var coinSplit = MTCoinSplit.shared   // the balance as its chain holds it, proven and declared
     @AppStorage(MTCoinShow.key) private var coinsShown = true   // the owner's switch (Privacy), read here for the table's line
     @AppStorage(MTPersonalRate.key) private var personalRate = ""   // the person's own rate of the coin, for the balance in their currency
-    @AppStorage(MTCoinUnit.mainKey) private var mainUnit = MTCoinUnit.time   // the sum the person made the main one, time by default
+    @AppStorage(MTCoinUnit.mainKey) private var mainUnit = MTCoinUnit.coins   // the sum the person made the main one, coins by default
     @State private var sending = false
     @State private var toppingUp = false
     @State private var levelsShown = false
@@ -87,8 +87,8 @@ struct MTWalletPage: View {
                         .shadow(color: .orange.opacity(pantheon.lit ? 0.8 : 0), radius: 8)
                         // NO CAPTION UNDER THE NAME (the author's word 19.10.2026 14:4x UTC: «on the Time Coins page remove the words
                         // hold 9 seconds»): the hold still starts the auto minting; the rules behind Top up say it (MTCoinRules).
-                        // THE APPS THAT MINT, ABOVE THE COIN (the author's word 04.10.2026 15:08 UTC): their icons, the row kept in its place.
-                        MTMintingApps()
+                        // NO ICONS OF APPS UNDER THE NAME (the author's word 02.11.2026 18:19 UTC, link 14775: «under the words Pantheon on
+                        // Fire remove the icons of the wallet and the VPN on the Time Coins page»): only the chain mints, one coin a second.
                         ZStack {
                             Group {
                                 if pantheon.lit || autoMint.on {
@@ -134,9 +134,9 @@ struct MTWalletPage: View {
                             .opacity(pantheon.lit || autoMint.on ? 1 : 0)
                             .accessibilityHidden(!(pantheon.lit || autoMint.on))
                         MTSecondPrice()
-                        MTPantheonStreak(pantheon: pantheon)
-                            .opacity(pantheon.lit || pantheon.restUntil != nil ? 1 : 0)
-                            .accessibilityHidden(!(pantheon.lit || pantheon.restUntil != nil))
+                        // NO LINE OF THE FIRE'S SECONDS (the author's word 02.11.2026 18:17 UTC, link 14773: «at the swipes and taps on the
+                        // coin remove this line with the seconds from 0 to 60»): the fire keeps its minute and its rest (MTPantheon.streak),
+                        // the page draws neither.
                         // USER-DATA: the coin book's balance, a number
                         // Until the book lands, the balance a device of the same words told in its tip (MTTimeChainTip, 04.10 16:34).
                         // THE TICKER BESIDE THE BALANCE (the author's word 04.10.2026 14:31 UTC: «to the right of the amount, exactly the
@@ -156,7 +156,7 @@ struct MTWalletPage: View {
                         Text("Time Balance").font(.subheadline).foregroundStyle(.secondary)
                         // THE MAIN SUM BY THE PERSON'S TAP (the author's words 19.10.2026 17:4x UTC: «at a tap on the coins or on $TCM show
                         // it as the main currency, the user's choice on the page -- of the 3, the one you tap becomes the main, large and
-                        // white, and by default the Time Balance in units of time»; «leave the words Time Balance, and the tap area of the
+                        // white, and by default the Time Balance in units of time» -- coins by default since link 14774; «leave the words Time Balance, and the tap area of the
                         // kind of balance right, native, system, so it switches easily»): the three are one count read three ways
                         // (MTCoinUnit); the chosen stands large under the words, the other two small beneath, each a whole row's button.
                         balanceSum(mainUnit)
@@ -495,7 +495,10 @@ extension MTCoinText {
         }
     }
     /// The sum the person made the main one on the wallet's page (the author's word 19.10.2026 17:4x UTC), a setting of the person.
-    nonisolated static let mainKey = "mt.coin.mainUnit"
+    /// COINS BY DEFAULT (the author's word 02.11.2026 18:17 UTC, link 14774: «by default it must show the Time Balance large and white
+    /// in coins, not TCM»): the choice is kept under a name of its own from 2350, so every phone opens on the coins once; the name of
+    /// the builds before leaves by its print (MTRetired), and a tap chooses again.
+    nonisolated static let mainKey = "mt.coin.mainUnit.2350"
     /// The whole balance as its row on the wallet's page reads it.
     func balance(_ coins: Int) -> Text {
         switch self {
@@ -736,7 +739,7 @@ struct MTCoinMovePage: View {
     /// What a fold needs of the screen's world, read on the screen's thread once: the people's names, the channels, the sources' words.
     struct Ask {
         let names: [String: String]; let channels: Set<String>; let words: [String: String]; let minted: String; let mintedDay: String
-        let burnedDay: String; let spentDay: String; let calendar: Calendar
+        let burnedDay: String; let spentDay: String; let reactions: String; let calendar: Calendar
     }
     @Published private(set) var fold: Fold?
     private var watchers = 0
@@ -770,6 +773,7 @@ struct MTCoinMovePage: View {
                       mintedDay: String(localized: "Minting of the day", bundle: MTLanguage.bundle),
                       burnedDay: String(localized: "Burning of the day", bundle: MTLanguage.bundle),
                       spentDay: String(localized: "Spending of the day", bundle: MTLanguage.bundle),
+                      reactions: String(localized: "Reactions", bundle: MTLanguage.bundle),
                       calendar: Calendar.current)
         let started = Date()
         Task.detached(priority: .userInitiated) {
@@ -799,6 +803,16 @@ struct MTCoinMovePage: View {
     /// lines of their own.
     nonisolated static func small(_ e: MTCoinEntry, _ source: String) -> Bool {
         (e.k == .spend || e.k == .burn) && source != "calls" && e.c <= MTCoinBook.smallSpend
+    }
+    /// THE REACTIONS OF A DAY FOLD BY THE PERSON (the author's word 02.11.2026 18:15 UTC, link 14772: «make the history group them, if
+    /// these sends concern a reaction under a post; here it is not clear and there is no need to write every coin in its own row»):
+    /// a paid reaction is a SEND of the chain under the letter or the post it was given on (MTCoinEntry.on, MTCoinSend.give,
+    /// MTBoard's coin), and a reaction received is credited under it too -- a transfer to a person stands under nothing and keeps
+    /// its own line. A day's reactions given to one person are one line, the ones received from them another; a reaction's SEND no
+    /// node took (MTCoinTx.backPrefix) comes back into the line it left. Nil: not a reaction; true: given, false: received.
+    nonisolated static func reaction(_ e: MTCoinEntry) -> Bool? {
+        guard e.on != nil, e.k == .send || e.k == .receive else { return nil }
+        return e.k == .send || e.ref.hasPrefix(MTCoinTx.backPrefix)
     }
     /// Every move of the book folded once: the lines day after day, a day's minting one line of it, a day's small expenses one line of
     /// each source and kind, the months' and the whole's sums by source, and the transfers with each person. The days are found by the
@@ -838,6 +852,8 @@ struct MTCoinMovePage: View {
         var minted: [Date: (sum: Int, count: Int, at: Double)] = [:]
         struct Small: Hashable { let day: Date; let source: String; let kind: MTCoinEntry.Kind }
         var smalls: [Small: (sum: Int, count: Int, at: Double)] = [:]
+        struct React: Hashable { let day: Date; let peer: String; let given: Bool }
+        var reacts: [React: (sum: Int, count: Int, at: Double)] = [:]
         var byPeer: [String: [Line]] = [:]
         for e in moves {
             let day = dayOf(e.at)
@@ -858,6 +874,18 @@ struct MTCoinMovePage: View {
                 continue
             }
             let who = e.peer.map { p in ask.names[p] ?? String(p.prefix(10)) } ?? name
+            if let given = reaction(e) {
+                // Only the history's line folds: the person's page keeps every move with them (with), the sums took it above.
+                let key = React(day: day, peer: e.peer ?? "", given: given)
+                let had = reacts[key] ?? (0, 0, 0)
+                let back = e.ref.hasPrefix(MTCoinTx.backPrefix)
+                reacts[key] = (MTCoinCounts.plus(had.sum, e.signed), had.count + (back ? 0 : 1), max(had.at, e.at))
+                if let p = e.peer, source == "sent" || source == "received" {
+                    byPeer[p, default: []].append(Line(id: e.id, at: e.at, signed: e.signed, title: who, category: name, glyph: glyph(e.k),
+                                                       source: source, ref: e.ref, peer: e.peer, tx: nil, count: 1))
+                }
+                continue
+            }
             let tx = e.ref.hasPrefix(MTCoinTx.refPrefix) ? String(e.ref.dropFirst(MTCoinTx.refPrefix.count)) : nil
             let line = Line(id: e.id, at: e.at, signed: e.signed, title: who, category: name, glyph: glyph(e.k), source: source, ref: e.ref,
                             peer: e.peer, tx: tx?.count == 64 ? tx : nil, count: 1)
@@ -873,6 +901,14 @@ struct MTCoinMovePage: View {
                                                   at: m.at, signed: -m.sum, title: ask.words[k.source] ?? k.source,
                                                   category: k.kind == .burn ? ask.burnedDay : ask.spentDay, glyph: glyph(k.kind), source: k.source,
                                                   ref: "", peer: nil, tx: nil, count: m.count))
+        }
+        for (k, m) in reacts {
+            // USER-DATA: the word Reactions and how many the line folds
+            let what = 1 < m.count ? ask.reactions + " ×" + String(m.count) : ask.reactions
+            byDay[k.day, default: []].append(Line(id: "react:" + (k.given ? "given:" : "taken:") + k.peer + ":" + String(Int(k.day.timeIntervalSince1970)),
+                                                  at: m.at, signed: m.sum, title: k.peer.isEmpty ? ask.reactions : (ask.names[k.peer] ?? String(k.peer.prefix(10))),
+                                                  category: what, glyph: k.given ? "arrow.up.right" : "arrow.down.left", source: "reactions",
+                                                  ref: "", peer: k.peer.isEmpty ? nil : k.peer, tx: nil, count: m.count))
         }
         let days = byDay.map { d, lines in
             let sorted = lines.sorted { a, b in b.at < a.at }
@@ -1208,25 +1244,6 @@ struct MTSecondPrice: View {
     }
 }
 
-/// THE APPS THAT MINT, ABOVE THE COIN (the author's word 04.10.2026 15:08 UTC: «above the coin show the icons of the apps that give
-/// the minting»): the library's own icons (MTApplicationIcon, in the style chosen in Appearance) of every app whose coins came in
-/// the last second and a half (MTCoinFlash.apps). The row keeps its place when none mints -- shown and hidden, never inserted, so
-/// the coin never moves under the finger.
-struct MTMintingApps: View {
-    @ObservedObject private var flash = MTCoinFlash.shared
-    var body: some View {
-        HStack(spacing: 10) {
-            ForEach(flash.apps) { app in MTApplicationIcon(app: app, side: 30).transition(.opacity) }
-        }
-        .frame(height: 30)
-        .animation(.easeInOut(duration: 0.3), value: flash.apps)
-        .accessibilityElement(children: .ignore)
-        // USER-DATA: the names of the apps minting now, each already in the person's language
-        .accessibilityLabel(Text("Minting") + Text(verbatim: " " + flash.apps.map(\.title).joined(separator: ", ")))
-        .accessibilityHidden(flash.apps.isEmpty)
-    }
-}
-
 /// THE LEVEL ON THE COIN (the author's word 04.10.2026 15:08 UTC): the platform's badge carries the level of π the balance fills.
 /// ONE COIN, ONE SECOND (the author's word 02.11.2026 16:14 UTC, link 14629): only the chain mints, so no count of minting apps
 /// stands beside it.
@@ -1417,33 +1434,6 @@ struct MTCurrency: Identifiable {
         if let r = region(code), r != "EU" { own = Locale(identifier: Locale.Language(identifier: "und-" + r).maximalIdentifier) }
         let n = own.localizedString(forCurrencyCode: code) ?? MTLanguage.locale.localizedString(forCurrencyCode: code) ?? code
         return n.prefix(1).uppercased(with: own) + n.dropFirst()
-    }
-}
-
-/// THE FIRE'S MINUTE UNDER THE LEVEL (the author's word 04.10.2026 10:38 UTC; MTPantheon.streak): the platform's bar of the unbroken
-/// burn to its sixty seconds, and through the rest after it the seconds left -- drawn by the clock, never by the taps, and paused
-/// while neither runs; it always stands, shown or hidden, so the coin never moves under the finger. THE FIRE RESTS, NOT A MINTING
-/// (the author's word 02.11.2026 16:14 UTC, link 14629: «only 1 coin is 1 second, no other way named»): the game mints nothing.
-struct MTPantheonStreak: View {
-    @ObservedObject var pantheon: MTPantheon
-    var body: some View {
-        let active = pantheon.lit || pantheon.restUntil != nil
-        TimelineView(.animation(minimumInterval: 0.5, paused: !active)) { t in
-            let now = t.date.timeIntervalSince1970
-            let rest = pantheon.restUntil.map { max(0, $0 - now) }
-            let run = pantheon.litAt.map { min(MTPantheon.streak, max(0, now - $0)) } ?? 0
-            VStack(spacing: 6) {
-                ProgressView(value: rest ?? run, total: MTPantheon.streak)
-                    .progressViewStyle(.linear)
-                    .tint(rest == nil ? .orange : .gray)
-                    .frame(maxWidth: 240)
-                if let rest {
-                    Text("The fire rests \(Int(rest.rounded(.up))) s").font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
-                } else {
-                    Text("\(Int(run)) of 60 seconds unbroken").font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
-                }
-            }
-        }
     }
 }
 

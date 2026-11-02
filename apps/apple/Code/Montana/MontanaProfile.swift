@@ -757,7 +757,8 @@ struct ProfileView: View {
                 // them as it already is): the very ground my page wears, window-aligned, drawn once behind the list -- the
                 // drawer stands on it the same way -- and every row above it is the tree's glass (MTGlassRowPlate); none
                 // chosen -- the page's black, as the editor always stood.
-                ZStack { Color.black; MTPageGroundWindow() }.ignoresSafeArea().contentShape(Rectangle()).onTapGesture { focus = nil }
+                // On the making the editor stands on the one indigo of the login's pages (links 14793-14794), never a ground of its own.
+                ZStack { Color.black; if onboarding { MTWallpaper.paint(MTWallpaper.indigo) } else { MTPageGroundWindow() } }.ignoresSafeArea().contentShape(Rectangle()).onTapGesture { focus = nil }
             )
             .navigationBarTitleDisplayMode(.inline)
     }

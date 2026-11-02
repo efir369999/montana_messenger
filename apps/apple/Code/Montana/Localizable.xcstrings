@@ -21252,23 +21252,6 @@
         }
       }
     },
-    "%lld of 60 seconds unbroken": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld из 60 секунд подряд"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "连续 %lld / 60 秒"
-          }
-        }
-      }
-    },
     "What is Your hour worth Now?": {
       "extractionState": "manual",
       "localizations": {
@@ -22949,23 +22932,6 @@
         }
       }
     },
-    "The fire rests %lld s": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Огонь отдыхает: %lld с"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "火焰休息 %lld 秒"
-          }
-        }
-      }
-    },
     "Levels of π": {
       "extractionState": "manual",
       "localizations": {
@@ -23528,22 +23494,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "硬币不足"
-          }
-        }
-      }
-    },
-    "Minting": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чеканка"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "铸造"
           }
         }
       }

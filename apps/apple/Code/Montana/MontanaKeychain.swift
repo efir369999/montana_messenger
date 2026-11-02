@@ -337,7 +337,10 @@ enum MTRetired {
         SHA256.hash(data: Data(s.utf8)).prefix(8).map { String(format: "%02x", $0) }.joined()
     }
     private static let values: Set<String> = [
-        "893dae5f6adc44d7"]   // the switch of the seed in the Apple Account (10.10.2026: the door closed, the switch leaves)
+        "893dae5f6adc44d7",   // the switch of the seed in the Apple Account (10.10.2026: the door closed, the switch leaves)
+        "7a8dfdc094b77ec2",   // the feed's springiness (02.11.2026, link 14680 (5): the feed's motion is no setting)
+        "6fd5056ef1a7c49a",   // the feed's animation duration (the same word)
+        "5da1d072bfa76c8b"]   // the balance's main sum of the builds before 2350 (link 14774: coins by default, the choice kept anew)
     /// A letter's machine line, by its first seventeen or nineteen characters: no kind of letter is retired now.
     private static let letterLines = Set<String>()
 

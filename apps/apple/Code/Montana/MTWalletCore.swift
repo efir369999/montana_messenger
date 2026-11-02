@@ -270,27 +270,21 @@ enum MTPiLevels {
 /// once and the coins after it rose again half a second later): while the minting by the second beats (MTMintBeat), the beat
 /// alone raises the coins, once a second, with the sum of everything minted in that second; without it the coins gather a fifth
 /// of a second and rise once, twice a second at most (the heat, 04.10 12:27).
-/// THE APP THAT MINTS (the same word: «above the coin the icons of the apps that give the minting»): ONE COIN, ONE SECOND (the
-/// author's word 02.11.2026 16:14 UTC, link 14629) -- only the chain's seconds are born here, so the one icon is the wallet's
-/// own, standing while coins were born within the last second and a half.
+/// NO ICON OF THE APP THAT MINTS (the author's word 02.11.2026 18:19 UTC, link 14775: «under the words Pantheon on Fire remove the
+/// icons of the wallet and the VPN»): only the chain's seconds are born here (link 14629), and the page names no app beside them.
 @MainActor final class MTCoinFlash: ObservableObject {
     static let shared = MTCoinFlash()
     @Published private(set) var tick = 0
     @Published private(set) var coins = 0
-    @Published private(set) var apps: [MTApplication] = []
     static let gather: Double = 0.2
     static let apart: Double = 0.5
-    static let lasting: Double = 1.5
     private var held = 0
     private var gathering = false
     private var rose: Double = 0
-    private var minted: Double = 0
-    private var looks = 0
     func born(_ n: Int) {
         guard 0 < n else { return }
         let now = Date().timeIntervalSince1970
         held += n
-        minted = now
         guard !MTMintBeat.beats, !gathering else { return }
         gathering = true
         let wait = max(Self.gather, rose + Self.apart - now)
@@ -308,19 +302,6 @@ enum MTPiLevels {
             rose = Date().timeIntervalSince1970
             tick += 1
         }
-        look()
-        looks += 1
-        let at = looks
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Self.lasting * 1_000_000_000))
-            guard let self, self.looks == at else { return }
-            self.look()
-        }
-    }
-    private func look() {
-        let now = Date().timeIntervalSince1970
-        let fresh: [MTApplication] = now - minted < Self.lasting ? [.wallet] : []
-        if fresh != apps { apps = fresh }
     }
 }
 
@@ -341,7 +322,7 @@ enum MTPiLevels {
     /// THE FIRE RESTS AFTER A MINUTE (the author's word 04.10.2026 10:38 UTC: «at the Pantheon on Fire's activation, under the level's
     /// progress, a progress of the minting's unbroken run too; when it runs unbroken over 60 seconds, the next 60 the minting
     /// pauses»): a burn counts its seconds from its lighting; at sixty the fire goes out and the coin rests sixty -- no tap mints --
-    /// and the next burn counts anew. The quiet that puts the fire out breaks the count (MTPantheonStreak draws both).
+    /// and the next burn counts anew. The quiet that puts the fire out breaks the count; since link 14773 no line draws it.
     static let streak: Double = 60
     @Published private(set) var litAt: Double?
     @Published private(set) var restUntil: Double?

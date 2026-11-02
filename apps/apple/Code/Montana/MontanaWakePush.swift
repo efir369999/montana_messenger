@@ -5458,6 +5458,18 @@ struct MTClientRelease: Codable, Equatable {
             }
         } catch {
             channelMiss = "channel:" + String(String(describing: error).prefix(80))
+            // THE RECEIPT APPLE WROTE NAMES THE CHANNEL WHEN STOREKIT IS SILENT (the author's word 02.11.2026 18:36 UTC, link
+            // 14795: «why does T1 get no Montana messages about updates -- one system, the same for everyone, one owner»): T1
+            // (iOS 26.7.1) answered every launch from 2342 to 2349 with «RELEASE ask refused channel:unknown» -- AppTransaction
+            // threw, the channel stayed nil and the site was never asked. Apple writes a TestFlight build's receipt as
+            // «sandboxReceipt» and an App Store build's as «receipt»; any other name or none still names no channel, so a store
+            // build never points at a TestFlight beta (2.2).
+            switch Bundle.main.appStoreReceiptURL?.lastPathComponent {
+            case "sandboxReceipt": channel = "beta"
+            case "receipt": channel = "store"
+            default: break
+            }
+            if let channel { MontanaLog.event("RELEASE channel receipt=\(channel) why=\(channelMiss)") }
         }
         #endif
         return channel

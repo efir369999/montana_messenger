@@ -2,25 +2,17 @@ import SwiftUI
 import UIKit
 
 /// One policy for scrolling, message arrival and reply return. UIKit owns the scroll offset.
+///
+/// THE FEED'S MOTION IS NO SETTING (the author's word 02.11.2026, link 14680 (5); the critic, link 14762): its sliders left the
+/// Appearance page, and with them the person's stored values -- a spring nobody can see or reset is no one's choice. The spring
+/// is one for everyone; the older build's two values are known by their prints alone and leave the phone (MTRetired).
 enum MTLetterMotion {
-    static let bounceKey = "chatSpringBounce"
-    static let durationKey = "chatSpringDuration"
     static let defaultBounce = 0.18
     static let defaultDuration = 0.55
-    static let bounceRange = 0.0...0.4
-    static let durationRange = 0.25...0.8
     static let rise: CGFloat = 0.9
 
-    // Copies from older builds or malformed preferences cannot create an unstable animation.
-    static func bounded(_ value: Double, in range: ClosedRange<Double>, fallback: Double) -> Double {
-        value.isFinite ? min(range.upperBound, max(range.lowerBound, value)) : fallback
-    }
-    private static func read(_ key: String, in range: ClosedRange<Double>, fallback: Double) -> Double {
-        guard let value = UserDefaults.standard.object(forKey: key) as? NSNumber else { return fallback }
-        return bounded(value.doubleValue, in: range, fallback: fallback)
-    }
-    static var duration: TimeInterval { read(durationKey, in: durationRange, fallback: defaultDuration) }
-    static var bounce: Double { read(bounceKey, in: bounceRange, fallback: defaultBounce) }
+    static var duration: TimeInterval { defaultDuration }
+    static var bounce: Double { defaultBounce }
     static var fade: TimeInterval { min(0.28, duration / 2) }
     static var reply: Animation {
         UIAccessibility.isReduceMotionEnabled ? .linear(duration: 0) : .spring(duration: duration, bounce: bounce)
