@@ -2,8 +2,8 @@ import Foundation
 import CallKit
 import AVFoundation
 
-// CallKit has one provider per application. UUIDs route actions; creating a room or
-// enabling recording must never replace the provider receiving a pair call's actions.
+// CallKit has one provider per application. UUIDs route actions; creating a room must
+// never replace the provider receiving a pair call's actions.
 final class MTSystemCalls: NSObject, CXProviderDelegate, CXCallObserverDelegate {
     static let shared = MTSystemCalls()
     let provider: CXProvider

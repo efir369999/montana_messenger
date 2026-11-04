@@ -100,11 +100,4 @@ enum MontanaWake {
         return chosen
     }
 
-    /// A device that holds a name listens at the point strangers knock on for the current window.
-    static func listenForKnocks(masterSeed: Data) {
-        let w = MontanaRendezvous.window()
-        guard let point = MontanaNames.knockPoint(masterSeed: masterSeed, window: w) else { return }
-        MontanaTrace.mark("knock_listen", mid: nil,
-                             "point=\(point.prefix(4).map { String(format: "%02x", $0) }.joined()) window=\(w)")
-    }
 }

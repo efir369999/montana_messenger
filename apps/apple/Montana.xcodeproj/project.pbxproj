@@ -14,9 +14,7 @@
 		1851F282F9D140A28907ED24 /* MontanaKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 162A17343466499E9EA2F946 /* MontanaKeychain.swift */; };
 		F4588093EB8D4BD8A1D017FB /* MontanaKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 162A17343466499E9EA2F946 /* MontanaKeychain.swift */; };
 		1BDC43419B7033B7175072A9 /* MontanaCall.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C82908A76C8A2BB4D29BB78 /* MontanaCall.swift */; };
-		A34220600000000000000002 /* MTCallRecording.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34220600000000000000001 /* MTCallRecording.swift */; };
 		A36220700000000000000002 /* MTSystemCalls.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36220700000000000000001 /* MTSystemCalls.swift */; };
-		A36AA7A5A0C0000000000002 /* MontanaAvatarMask.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36AA7A5A0C0000000000001 /* MontanaAvatarMask.swift */; };
 		519CAE989FE016D44BC763BD /* MontanaScreenWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C37D71D4B47A83AA9E3F9A4 /* MontanaScreenWire.swift */; };
 		6BFFB176A23B056EA77401FE /* MontanaScreenWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C37D71D4B47A83AA9E3F9A4 /* MontanaScreenWire.swift */; };
 		999FA56A9133EF05BBC7F2C4 /* MontanaKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 162A17343466499E9EA2F946 /* MontanaKeychain.swift */; };
@@ -54,12 +52,12 @@
 		AA11CA11P1CKB111DF100008 /* MontanaCallsignPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11CA11P1CKF11EREF00007 /* MontanaCallsignPicker.swift */; };
 		AA11CA11S1GNB111DF100006 /* MontanaCallsign.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11CA11S1GNF11EREF00005 /* MontanaCallsign.swift */; };
 		AA11P0R7MAPB111DF1000004 /* MontanaPortMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11P0R7MAPF11EREF000003 /* MontanaPortMap.swift */; };
+		MT909B0NJ0UR000000000002 /* MontanaBonjour.swift in Sources */ = {isa = PBXBuildFile; fileRef = MT909B0NJ0UR000000000001 /* MontanaBonjour.swift */; };
 		AA11D00R5B111DF110000002 /* MontanaNodes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11D00R5F11EREF00000001 /* MontanaNodes.swift */; };
 		AA11D00A5B111DF110000031 /* MontanaMusicPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11D00A5F11EREF00000031 /* MontanaMusicPlayer.swift */; };
 		AA84D00A5B111DF110000084 /* MTYouTube.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA84D00A5F11EREF00000084 /* MTYouTube.swift */; };
 		AA02EBAA0ADF8F80563F7744 /* MTKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA01F402CD6CC80F6B25C0BB /* MTKeyboard.swift */; };
 		3C5E03845AC23A0B104B73B1 /* MTScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */; };
-		4403BBB674FBD104F6FBB14D /* MontanaNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372B5EB186C72B255968A4A5 /* MontanaNames.swift */; };
 		7E97FADDF9C02501D3045892 /* E2ECore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3B9299DB437ACBF74F56ED /* E2ECore.swift */; };
 		83174E2164DDEE9FF834F3CD /* MontanaPacketPump.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18F2BE6B0D258DAF093EBD4 /* MontanaPacketPump.swift */; };
 		A3E678065220E003965C4743 /* MTTunnelIds.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFC32B207E5E9464EAC38A52 /* MTTunnelIds.swift */; };
@@ -109,6 +107,7 @@
 		65390B1152566226A68F69C5 /* MontanaE2E.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB080FE117D80FC777885A90 /* MontanaE2E.swift */; };
 		43C801FD971D05177EFA5312 /* MontanaMessageMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FD24AEC0AABE83BE15882C /* MontanaMessageMenu.swift */; };
 		951B4D822FE56DC000F4327B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 951B4D812FE56DC000F4327B /* Assets.xcassets */; };
+		MT885B1C0DE0000000000003 /* VPN.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = MT885B1C0DE0000000000002 /* VPN.xcassets */; };
 		A73C5A0E0000000000000003 /* ShareAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A73C5A0E0000000000000001 /* ShareAssets.xcassets */; };
 		95A1C0DE2FE56DC000F43202 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 95A1C0DE2FE56DC000F43201 /* AppIcon.icon */; };
 		AA11CA11S1GNTSVBDF00012 /* callsigns.tsv in Resources */ = {isa = PBXBuildFile; fileRef = AA11CA11S1GNTSVFREF00011 /* callsigns.tsv */; };
@@ -136,6 +135,8 @@
 		MT01A0C0DE0000000000000003 /* MTRowLetter.swift in Sources */ = {isa = PBXBuildFile; fileRef = MT01A0C0DE0000000000000001 /* MTRowLetter.swift */; };
 		B2C2D3E4F5A60022B2C2D3E4 /* MontanaQueueAddressing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B2C3D4E5F60011A2B2C3D4 /* MontanaQueueAddressing.swift */; };
 		B3C2D3E4F5A60022B3C2D3E4 /* MontanaNetworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2C3D4E5F60011A3B2C3D4 /* MontanaNetworkView.swift */; };
+		C4D3E2F1A0B90033C4D3E2F1 /* MontanaVPNPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E3F2A1B0C90044D4E3F2A1 /* MontanaVPNPage.swift */; };
+		E5F4D3C2B1A00055E5F4D3C2 /* MontanaPlates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E4D3C2B1A00066F5E4D3C2 /* MontanaPlates.swift */; };
 		B4C2D3E4F5A60022B4C2D3E4 /* MontanaPhoneNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B2C3D4E5F60011A4B2C3D4 /* MontanaPhoneNode.swift */; };
 		B73271ABEC2C2F2EBDB80D0F /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283480C05DAEC4CE6E61A845 /* ShareViewController.swift */; };
 		BBB1B3C4D5E60101BBB1B3C4 /* MontanaNetFrames.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA1B3C4D5E60101AAA1B3C4 /* MontanaNetFrames.swift */; };
@@ -198,6 +199,10 @@
 		BF9DFC624E0FD463B1C811FE /* MTChessRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8CBDA81A05BE33F4A03331 /* MTChessRules.swift */; };
 		0352FC66973D740096DC596D /* MTChessWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599C90CBAC14E793398B6C00 /* MTChessWire.swift */; };
 		9B560FEE4BFBCB388D5ABB79 /* MTChessWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 599C90CBAC14E793398B6C00 /* MTChessWire.swift */; };
+		A864B4000000000000000002 /* MTChessLetters.swift in Sources */ = {isa = PBXBuildFile; fileRef = A864B4000000000000000001 /* MTChessLetters.swift */; };
+		A864B4000000000000000003 /* MTChessLetters.swift in Sources */ = {isa = PBXBuildFile; fileRef = A864B4000000000000000001 /* MTChessLetters.swift */; };
+		A864B4000000000000000005 /* MTEditionMontanaLetters.swift in Sources */ = {isa = PBXBuildFile; fileRef = A864B4000000000000000004 /* MTEditionMontanaLetters.swift */; };
+		A864B4000000000000000006 /* MTEditionMontanaLetters.swift in Sources */ = {isa = PBXBuildFile; fileRef = A864B4000000000000000004 /* MTEditionMontanaLetters.swift */; };
 		DB7312C2C90B46C389071E43 /* MTChessGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26181F5412A47E889DC907A5 /* MTChessGame.swift */; };
 		4DCFE5D317DAACB424F9C2D0 /* MTChessBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE7EDAEE959ADA20F198747 /* MTChessBoard.swift */; };
 		1F5180968789568046394C2E /* MTChessScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 391AECEDDFAA4CE4AEF4F2C7 /* MTChessScreen.swift */; };
@@ -205,7 +210,167 @@
 		285BDA4A783F33F180A5BBE8 /* MTApplicationLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FF026E80059D9D5ED01349B /* MTApplicationLibrary.swift */; };
 		B3151C33342AD99AD42FAD7C /* MTPasswords.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA536B40D99583B2C87DC5C /* MTPasswords.swift */; };
 		B6E2E6D2DDDE7DA8D679DC1B /* MTWalletCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7E12B342DA3358C5F5CFE4 /* MTWalletCore.swift */; };
+		B4B631400069417480ACB2D5 /* MTFabric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29618A09E125454D8FD8DABE /* MTFabric.swift */; };
+		EC77DBA2E1C64CDE89F6A856 /* MTPersonChain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E315A8751E4384927BF548 /* MTPersonChain.swift */; };
+		EDB6B89625824FE1807FBA3D /* MTLevels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B375F36B469E46CCA6463E4B /* MTLevels.swift */; };
+		9673FE7A5F02B5C7EC593FE5 /* MTEditionMontana.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07A50C7267C6EED609DC7CE /* MTEditionMontana.swift */; };
+		F26062E0CCBAD1FED1444F97 /* MTApps.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B7C1DECD82FADF4312E8C4 /* MTApps.swift */; };
+		6FA4ABB90D224576965EC6D8 /* MTNetworkNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE17CA53C0BD4CA38F0E86E2 /* MTNetworkNode.swift */; };
 		8D17921EDE3037717250C2A7 /* MTWalletScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 736AA9B50E59053828694E62 /* MTWalletScreen.swift */; };
+		7E2D6C399F3B680127C5A889 = {isa = PBXBuildFile; fileRef = 0BAF10CE0000000000000009; };
+		79DFDA9D900BF64408BF8309 = {isa = PBXBuildFile; fileRef = MT01A0C0DE0000000000000001; };
+		1CF302565A07484360AD456E = {isa = PBXBuildFile; fileRef = 853E6C37E659A0E3FB87A32E; };
+		A718FAE78CD3A2A5AB037526 = {isa = PBXBuildFile; fileRef = 0BAF10E00000000000000001; };
+		15947A0290A37C6B1D89E874 = {isa = PBXBuildFile; fileRef = 0BAF48700000000000000001; };
+		BBA09BF0251268CC8C762964 = {isa = PBXBuildFile; fileRef = 13B06F945D4240F4A0C8A27F; };
+		9EA318C6AEB1C4D643FDB785 = {isa = PBXBuildFile; fileRef = 162A17343466499E9EA2F946; };
+		B6A23F601701796CDB627327 = {isa = PBXBuildFile; fileRef = 8A5D0E4F6B7C3D9E1F2A4B53; };
+		DBD74F862143D830EB7C4C59 = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50711D0E1F2A3; };
+		18F1A657349400C75597E0C6 = {isa = PBXBuildFile; fileRef = 417C03549593A0C11B04104E; };
+		C96831C90719654063A71715 = {isa = PBXBuildFile; fileRef = MT01A0C0DE0000000000000011; };
+		ED76CE5CED02A4F46965A24F = {isa = PBXBuildFile; fileRef = MT885B1C0DE0000000000001; };
+		5198A1BB8042068A6A261F2E = {isa = PBXBuildFile; fileRef = 162A17343466499E9EA2F946; };
+		0A29325C505E597C29CC9D44 = {isa = PBXBuildFile; fileRef = 9E17A0C4B2D14F3A81C05E30; };
+		87C936B4B645880E1B8696CF = {isa = PBXBuildFile; fileRef = 283480C05DAEC4CE6E61A845; };
+		BBED5E2E2CE139ED0FC81D0A = {isa = PBXBuildFile; fileRef = CD0F0B1A52275133B8AD7B1E; };
+		5D5959E622F5E589D4D3A1CC = {isa = PBXBuildFile; fileRef = 13B06F945D4240F4A0C8A27F; };
+		77520A71AB96FE64FDEFD7CB = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60077A1B2C3D4; };
+		FC6BC8C6504E390C6BA34429 = {isa = PBXBuildFile; fileRef = 5A1CD69C9D14ED79B08F125E; };
+		5564C96D3664F9DA9642A9DD = {isa = PBXBuildFile; fileRef = 0BAF10E00000000000000001; };
+		8D7B87511197B5E243A746E6 = {isa = PBXBuildFile; fileRef = 0BAF48700000000000000001; };
+		7DF1C32BCD6D20109C2E4378 = {isa = PBXBuildFile; fileRef = 6D686BC62839FED3DA2A819F; };
+		E46AE657679B3E7DD8411081 = {isa = PBXBuildFile; fileRef = 417C03549593A0C11B04104E; };
+		1E6DA873974EA5E34426F4A2 = {isa = PBXBuildFile; fileRef = MT885B1C0DE0000000000001; };
+		F33B14F6300E4E63697B98E5 = {isa = PBXBuildFile; fileRef = MT01A0C0DE0000000000000011; };
+		1215EBABE2640FD47553AD10 = {isa = PBXBuildFile; fileRef = A73C5A0E0000000000000001; };
+		9C83621D9BC752393ABA8F2A = {isa = PBXBuildFile; fileRef = 0BAF10CF0000000000000009; };
+		6560E50F2BC26070051C801A = {isa = PBXBuildFile; fileRef = 4C37D71D4B47A83AA9E3F9A4; };
+		084C315A64B93F55D833C8C8 = {isa = PBXBuildFile; fileRef = 162A17343466499E9EA2F946; };
+		A1D17B94B56A54F0B3D63863 = {isa = PBXBuildFile; fileRef = MT01A0C0DE0000000000000011; };
+		E9FA79595EC639FCE1299625 = {isa = PBXBuildFile; fileRef = MT885B1C0DE0000000000001; };
+		6C78A9B1EC1AF2DD298F9057 = {isa = PBXBuildFile; fileRef = 162A17343466499E9EA2F946; };
+		5BB5376CC81859FB7F487AC3 = {isa = PBXBuildFile; fileRef = 951B4D7F2FE56DBC00F4327B; };
+		7EEE3320DF731666B97318DA = {isa = PBXBuildFile; fileRef = 60F6E5456DE8C8AFB27767D0; };
+		F016F9EC28B344F0552245EC = {isa = PBXBuildFile; fileRef = 0EC1B66A0380A44E5E1FF32D; };
+		BD16D96FBA2C6E1C3C29C317 = {isa = PBXBuildFile; fileRef = 245444BE0C31474945A239C4; };
+		6A0699A63C313A5B916BA414 = {isa = PBXBuildFile; fileRef = DAF7B9AACBD34C48BCECD5CB; };
+		796667FD8B8879C0489AF8B6 = {isa = PBXBuildFile; fileRef = AF12EA3ECB7E277985236E27; };
+		FADBB871066B460ECBCB3E36 = {isa = PBXBuildFile; fileRef = 467AC00192B0BA0649ADC2A3; };
+		D780451867C49B83750D51DC = {isa = PBXBuildFile; fileRef = 1123CE856835F476BF7C5CFA; };
+		4164729A9050B484FDBE9F4A = {isa = PBXBuildFile; fileRef = 8B7CB10C09D64EEFDA7E3FE2; };
+		9136D0E0A3E9040C61A8CD0D = {isa = PBXBuildFile; fileRef = BA46B3EFDDD9E24F7C8D2B3B; };
+		8A6F96DBBC5AA03771001A42 = {isa = PBXBuildFile; fileRef = 6B6AC47BBBD0CFF316FE0C4F; };
+		E7C989A1D3A13AF6DF8F7546 = {isa = PBXBuildFile; fileRef = 3AC0D615D820499A99E92702; };
+		2D64B3A7D020A9A234225612 = {isa = PBXBuildFile; fileRef = 3AC0D615D820499A99E9270A; };
+		7C649778AB1655AD212DFC30 = {isa = PBXBuildFile; fileRef = 3AC0D615D820499A99E9270C; };
+		16F35B48063F27FE15A6351C = {isa = PBXBuildFile; fileRef = 3AC0D615D820499A99E92708; };
+		AB8DEE3DD86E7CF8EB40A0FA = {isa = PBXBuildFile; fileRef = 3AC0D615D820499A99E92704; };
+		C66E81792C66AD1DB7D96947 = {isa = PBXBuildFile; fileRef = 3AC0D615D820499A99E92706; };
+		0226571B468141F58E845509 = {isa = PBXBuildFile; fileRef = 3E9B7D14C6A2F80B5D1E4C97; };
+		66C7D22C910AF271B4EF75EE = {isa = PBXBuildFile; fileRef = 6F2B8D4E0C3A5F7B9D1E2A38; };
+		E45F67844840DD1C519F0BFF = {isa = PBXBuildFile; fileRef = 9D4E1B7A3C5F2E80A1B6D3C9; };
+		3BB743574E9E7F5E00498FB6 = {isa = PBXBuildFile; fileRef = 8A5D0E4F6B7C3D9E1F2A4B53; };
+		5E3741CDD34ACDE76F5893A6 = {isa = PBXBuildFile; fileRef = 9D4F1B6E2A7C48E3B5F0D1A8; };
+		4ECF22231C30C923994C44B1 = {isa = PBXBuildFile; fileRef = FB3AC5395697B4CB86EA4D7B; };
+		E6B59568997AF14E3552FBE1 = {isa = PBXBuildFile; fileRef = 6D422479E3BE97DFE4EDD0E1; };
+		488F341B9808F19EBDF4EECE = {isa = PBXBuildFile; fileRef = 5BD43B0D550E6F13D2554ADC; };
+		C44F49C4373C89AC3BB6FC48 = {isa = PBXBuildFile; fileRef = 77EC9B9723A02B5436C3923F; };
+		2FCEF621F81F57DDCFB4CCDF = {isa = PBXBuildFile; fileRef = BB080FE117D80FC777885A90; };
+		0DD1A6BD59948A10FE0D6018 = {isa = PBXBuildFile; fileRef = C8FD24AEC0AABE83BE15882C; };
+		9ECC6FFBF50CDCA452936F9E = {isa = PBXBuildFile; fileRef = MT01A0C0DE0000000000000001; };
+		1A781A10DD5D9CA3ED499611 = {isa = PBXBuildFile; fileRef = 29618A09E125454D8FD8DABE; };
+		7877F286092C8DB5C64B26D3 = {isa = PBXBuildFile; fileRef = 51E315A8751E4384927BF548; };
+		4BBC98E3290E0612E4050C7C = {isa = PBXBuildFile; fileRef = B375F36B469E46CCA6463E4B; };
+		29CF60B10DF63462893B5F86 = {isa = PBXBuildFile; fileRef = 6448A63F4D4B73351634D1A4; };
+		3C4C165F1F573BAEC40BE438 = {isa = PBXBuildFile; fileRef = 853E6C37E659A0E3FB87A32E; };
+		55A432944A739FF9AAD1C7FD = {isa = PBXBuildFile; fileRef = F2B7C1DECD82FADF4312E8C4; };
+		57EF715E678BF514A51E53A3 = {isa = PBXBuildFile; fileRef = CE17CA53C0BD4CA38F0E86E2; };
+		99B71AEDA99B09C1000AD37A = {isa = PBXBuildFile; fileRef = 2FF026E80059D9D5ED01349B; };
+		83BF17BCC3D9F0B20CFFEBA9 = {isa = PBXBuildFile; fileRef = MT01A0C0DE0000000000000031; };
+		F6C1373B6091B56FAAF514E5 = {isa = PBXBuildFile; fileRef = 951B4D7D2FE56DBC00F4327B; };
+		98E7DA5598DAF1165E080627 = {isa = PBXBuildFile; fileRef = AAA1B3C4D5E60101AAA1B3C4; };
+		D20E80639070D91EA8FBD4FE = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50101D0E1F2A3; };
+		47132DD9A4A9963FBF320C5A = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50405D0E1F2A3; };
+		8D0D42B0F1D2FF2F63591129 = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50401D0E1F2A3; };
+		195681286AFE39943302FF74 = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50305D0E1F2A3; };
+		7A23518EC0B995777D30DFCC = {isa = PBXBuildFile; fileRef = 4A3B9299DB437ACBF74F56ED; };
+		665DC7A348C80269AFBF5C48 = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60011A1B2C3D4; };
+		26CB7A343D80EF2048DF65D6 = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60077A1B2C3D4; };
+		1DD6CF05F8714FF82C43480B = {isa = PBXBuildFile; fileRef = 9E17A0C4B2D14F3A81C05E30; };
+		A2D8C274ADB55F7FCAFC1619 = {isa = PBXBuildFile; fileRef = A2B2C3D4E5F60011A2B2C3D4; };
+		C6837FB4635AF0702555DD6D = {isa = PBXBuildFile; fileRef = A3B2C3D4E5F60011A3B2C3D4; };
+		B7EF4485CB0F3CC6151868AA = {isa = PBXBuildFile; fileRef = F5E4D3C2B1A00066F5E4D3C2; };
+		DB1226D1F5EDE452D293A9B4 = {isa = PBXBuildFile; fileRef = A4B2C3D4E5F60011A4B2C3D4; };
+		A5949D843A2911AD01AB4AD4 = {isa = PBXBuildFile; fileRef = CE6C89C8BDD67F18B40DFC75; };
+		1E8485E0B912FE4EC466B6C4 = {isa = PBXBuildFile; fileRef = 3653F402CD6CC80F6B25C0BB; };
+		DA88BB43C681040492F9248E = {isa = PBXBuildFile; fileRef = 3653F402CD6CC80F6B25C0AA; };
+		236AC57A10498CD6ECA1E2A9 = {isa = PBXBuildFile; fileRef = 3653F402CD6CC80F6B25C0CC; };
+		6F2691A4516DD4C91F67AD77 = {isa = PBXBuildFile; fileRef = AB01F402CD6CC80F6B25C0BB; };
+		DBF02216F60A866D9343EC39 = {isa = PBXBuildFile; fileRef = F004F402CD6CC80F6B25C0BB; };
+		2B7ED3E4656BE279224445B7 = {isa = PBXBuildFile; fileRef = F003F402CD6CC80F6B25C0BB; };
+		6B9A74E1E508B0F09451CD98 = {isa = PBXBuildFile; fileRef = F002F402CD6CC80F6B25C0BB; };
+		DB20DADA9B98843847A899CA = {isa = PBXBuildFile; fileRef = F001F402CD6CC80F6B25C0BB; };
+		8B7484F137907315EEA6AF91 = {isa = PBXBuildFile; fileRef = EE01F402CD6CC80F6B25C0BB; };
+		1DAFDB6B0387EE7EC00CE33A = {isa = PBXBuildFile; fileRef = DD01F402CD6CC80F6B25C0BB; };
+		94D1B2C1F52E82B557B03A53 = {isa = PBXBuildFile; fileRef = CC01F402CD6CC80F6B25C0BB; };
+		65021738DD1C470A53892A00 = {isa = PBXBuildFile; fileRef = AA11WAKEPUSHF11EREF00013; };
+		C69DBFB6AE5814FE8B5A746D = {isa = PBXBuildFile; fileRef = AA11CA11P1CKF11EREF00007; };
+		EBC1E21FFEBD6168E1FEEA0F = {isa = PBXBuildFile; fileRef = AA11CA11S1GNF11EREF00005; };
+		932BE67B19545F61DB785A89 = {isa = PBXBuildFile; fileRef = AA11D00R5F11EREF00000001; };
+		21110395D3B8D5408B75CC7F = {isa = PBXBuildFile; fileRef = AA11D00A5F11EREF00000031; };
+		C2C566830DD062FF3DAC22E4 = {isa = PBXBuildFile; fileRef = AA01F402CD6CC80F6B25C0BB; };
+		54CCD18EB3C402911DF89F1A = {isa = PBXBuildFile; fileRef = E9D0EDEBF2387839D7D7CA6C; };
+		42A1418980D61CE87BB0029E = {isa = PBXBuildFile; fileRef = AA20PQ02FILEREF00000000002; };
+		98B4E250D517F862A72DFDFF = {isa = PBXBuildFile; fileRef = CD0F0B1A52275133B8AD7B1E; };
+		E690548D96EEC13533109321 = {isa = PBXBuildFile; fileRef = 13B06F945D4240F4A0C8A27F; };
+		E125E96828444AEEDCEEC23B = {isa = PBXBuildFile; fileRef = 5C82908A76C8A2BB4D29BB78; };
+		F27102F7F50AB46CCD9BCA05 = {isa = PBXBuildFile; fileRef = A36220700000000000000001; };
+		D6F26B91C1356A039B3EDA62 = {isa = PBXBuildFile; fileRef = 0BAF10CF0000000000000014; };
+		D401D771CDABE7AE10C66B74 = {isa = PBXBuildFile; fileRef = 0BAF20D70000000000000A01; };
+		38BC62AEBCCB09AD99DE1A9C = {isa = PBXBuildFile; fileRef = 0BAF20D70000000000085A01; };
+		A50858B7DFB1AF27003E18E9 = {isa = PBXBuildFile; fileRef = 4C37D71D4B47A83AA9E3F9A4; };
+		8D005BFA16EF88DB85DCD3F3 = {isa = PBXBuildFile; fileRef = 0BAF10E00000000000000001; };
+		BBFDD1D36846C052FEB0D869 = {isa = PBXBuildFile; fileRef = 0BAF48700000000000000001; };
+		36034FA019D18931B535913D = {isa = PBXBuildFile; fileRef = 0BAF10E00000000000000011; };
+		3C1521B421EBD2F0ACC18F0F = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50701D0E1F2A3; };
+		956BA936C3DB9733017CCBC5 = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50711D0E1F2A3; };
+		54608D6DEA305DBB309141EF = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50801D0E1F2A3; };
+		B3F6C3574688BDF3B134AB2E = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50A01D0E1F2A3; };
+		62115FE56E7647A189906182 = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50B01D0E1F2A3; };
+		78B12D7F4F334CC04365F441 = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50B03D0E1F2A3; };
+		D82B3264D63E5E84ABD1635C = {isa = PBXBuildFile; fileRef = 7A0E1D0E4E0005A7A0E1D0E4; };
+		F6883C2554800DA6BF30F971 = {isa = PBXBuildFile; fileRef = 7A0E1D0E4E0001A7A0E1D0E4; };
+		50BA1EA6102F22285627F54E = {isa = PBXBuildFile; fileRef = 7A0E1D0E4E0003A7A0E1D0E4; };
+		0E171184A1F8BF381B8751A9 = {isa = PBXBuildFile; fileRef = 5EA7C0DE5EA70001A5EA7C0D; };
+		A6C2C0BF8B5CBCDA3E4E569E = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50A03D0E1F2A3; };
+		8B37D5F27EAF29175D030983 = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50A05D0E1F2A3; };
+		00341053ED6E71736F6AEAD8 = {isa = PBXBuildFile; fileRef = E55B5234DDD20E05BBCC7EA5; };
+		09D075CFAD04B17174013613 = {isa = PBXBuildFile; fileRef = 421BA3ECEBAD49C38AABC2C1; };
+		D33C4C7DA80C98246E9E2395 = {isa = PBXBuildFile; fileRef = A5B6C7D8E9F0251309251001; };
+		3407FCB78347261A23A51DEB = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50A07D0E1F2A3; };
+		6BF211ECD573916BC6FF5072 = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50A0BD0E1F2A3; };
+		D995661E4FF29555155E281C = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C50A09D0E1F2A3; };
+		8A8446841537EA3112BC4633 = {isa = PBXBuildFile; fileRef = EAEEA5EC6C1A895EA29D5331; };
+		A1ED43637797D0B33AE43B6D = {isa = PBXBuildFile; fileRef = 4B33504E4B454550F11E0001; };
+		CDE23BB08C23953BF97913EA = {isa = PBXBuildFile; fileRef = 417C03549593A0C11B04104E; };
+		F9E313218DBF596219555D8E = {isa = PBXBuildFile; fileRef = 3B36FAEAEA266E0FED17A8F5; };
+		06A73A3D19FAF2FBDB399DD3 = {isa = PBXBuildFile; productRef = F4FBFF581E7746A1905239F0; };
+		294DFF93A23CB3DC0418FEEF = {isa = PBXBuildFile; productRef = 14DD0B5389CCBE2892A428CB; };
+		F7066988FD8374D365AF2A27 = {isa = PBXBuildFile; productRef = BD7EC76C7E783DB7141F8E82; };
+		7B7056ED4355D6C97159AF31 = {isa = PBXBuildFile; fileRef = DBFAFF8300724D6788EDEEEB; };
+		559A635F1703D8FE7857CD03 = {isa = PBXBuildFile; fileRef = 951B4D852FE56DC000F4327B; };
+		022338214046AA2799FA0E74 = {isa = PBXBuildFile; fileRef = 951B4D812FE56DC000F4327B; };
+		97B614CB0B1C4634CF85157C = {isa = PBXBuildFile; fileRef = MT880B1C0DE0000000000001; };
+		MT897A55E700000000000002 = {isa = PBXBuildFile; fileRef = MT897A55E700000000000001; };
+		09CE82D8E65391DB38AC519F = {isa = PBXBuildFile; fileRef = MT01A0C0DE0000000000000011; };
+		A2104591ABC30FEC1E780D59 = {isa = PBXBuildFile; fileRef = A24CB39E6D7CA3940F38BBEF; };
+		1771A00D97E7478B3532E516 = {isa = PBXBuildFile; fileRef = AA11CA11S1GNTSVFREF00011; };
+		1A7F45FBE0316462AF5659C2 = {isa = PBXBuildFile; fileRef = AA11D00R5TXTF11EREF00009; };
+		DF3B8A2E2F02A02A85D3EFFD = {isa = PBXBuildFile; fileRef = MT885B1C0DE0000000000001; };
+		C6CBFF8FF72A1DD60926C7D8 = {isa = PBXBuildFile; fileRef = 0020530A869AC2E1E8190CDE; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3B686584007BD07763D66C56 = {isa = PBXBuildFile; fileRef = 4D7571C867F6F547F40E896F; };
+		94518B89FEFFF83BC6E41868 = {isa = PBXBuildFile; fileRef = 920B7D38C37391F0F65F9F40; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4A7F11423E198E8E75498F3C = {isa = PBXBuildFile; fileRef = 3B36FAEAEA266E0FED17A8F5; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -251,6 +416,9 @@
 			remoteGlobalIDString = 0250B5E1393737A07D471894;
 			remoteInfo = PacketTunnel;
 		};
+		AF4372DE7BE13A65BE68B970 = {isa = PBXContainerItemProxy; containerPortal = 951B4D722FE56DBC00F4327B; proxyType = 1; remoteGlobalIDString = 0B37078E041C453EC08BBE8B; remoteInfo = MontanaMessengerShare; };
+		BB500FD4A9E12C74A0CE3184 = {isa = PBXContainerItemProxy; containerPortal = 951B4D722FE56DBC00F4327B; proxyType = 1; remoteGlobalIDString = 9037018253EE7BFCDB15F91F; remoteInfo = MontanaMessengerNSE; };
+		301B2979801D486B17E4B2B3 = {isa = PBXContainerItemProxy; containerPortal = 951B4D722FE56DBC00F4327B; proxyType = 1; remoteGlobalIDString = 2F55882EBC901229D80BCD9A; remoteInfo = MontanaMessengerBroadcast; };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -289,9 +457,12 @@
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E8AB1FEAA6464E4E739A93BA = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (C6CBFF8FF72A1DD60926C7D8, 3B686584007BD07763D66C56, 94518B89FEFFF83BC6E41868, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
+		0EA29EB528F154F50A4F8165 = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 10; files = (4A7F11423E198E8E75498F3C, ); name = "Embed Frameworks"; runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		MT919A000000000000000001 /* Names.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Code/Names.xcconfig; sourceTree = "<group>"; };
 		A28800000000000000000005 /* MTMacVPNService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTMacVPNService.swift; sourceTree = "<group>"; };
 		A28800000000000000000003 /* MTVPNSupervisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTVPNSupervisor.swift; sourceTree = "<group>"; };
 		A28800000000000000000001 /* MTVPNRecoveryWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTVPNRecoveryWindow.swift; sourceTree = "<group>"; };
@@ -315,9 +486,7 @@
 		54765188BA85C3613EB328E6 /* MontanaShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MontanaShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A1CD69C9D14ED79B08F125E /* ShareSend.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareSend.swift; sourceTree = "<group>"; };
 		5C82908A76C8A2BB4D29BB78 /* MontanaCall.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaCall.swift; sourceTree = "<group>"; };
-		A34220600000000000000001 /* MTCallRecording.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTCallRecording.swift; sourceTree = "<group>"; };
 		A36220700000000000000001 /* MTSystemCalls.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTSystemCalls.swift; sourceTree = "<group>"; };
-		A36AA7A5A0C0000000000001 /* MontanaAvatarMask.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaAvatarMask.swift; sourceTree = "<group>"; };
 		4C37D71D4B47A83AA9E3F9A4 /* MontanaScreenWire.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaScreenWire.swift; sourceTree = "<group>"; };
 		0BAF10CF0000000000000014 /* MTScreenShare.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTScreenShare.swift; sourceTree = "<group>"; };
 		0BAF20D70000000000000A01 /* MTGroupRoom.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTGroupRoom.swift; sourceTree = "<group>"; };
@@ -363,6 +532,7 @@
 		MT01A0C0DE0000000000000024 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		MT01A0C0DE0000000000000025 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		951B4D812FE56DC000F4327B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		MT885B1C0DE0000000000002 /* VPN.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = VPN.xcassets; sourceTree = "<group>"; };
 		A73C5A0E0000000000000001 /* ShareAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = ShareAssets.xcassets; sourceTree = "<group>"; };
 		95A1C0DE2FE56DC000F43201 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		AA11CA11S1GNTSVFREF00011 /* callsigns.tsv */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = callsigns.tsv; sourceTree = "<group>"; };
@@ -381,6 +551,8 @@
 		9E17A0C4B2D14F3A81C05E30 /* MontanaLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaLog.swift; sourceTree = "<group>"; };
 		A2B2C3D4E5F60011A2B2C3D4 /* MontanaQueueAddressing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaQueueAddressing.swift; sourceTree = "<group>"; };
 		A3B2C3D4E5F60011A3B2C3D4 /* MontanaNetworkView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaNetworkView.swift; sourceTree = "<group>"; };
+		D4E3F2A1B0C90044D4E3F2A1 /* MontanaVPNPage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaVPNPage.swift; sourceTree = "<group>"; };
+		F5E4D3C2B1A00066F5E4D3C2 /* MontanaPlates.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaPlates.swift; sourceTree = "<group>"; };
 		A4B2C3D4E5F60011A4B2C3D4 /* MontanaPhoneNode.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaPhoneNode.swift; sourceTree = "<group>"; };
 		A8559A35D1BAD30834437F9C /* MontanaShare.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = MontanaShare.entitlements; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE55FF66 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -410,12 +582,12 @@ DFC32B207E5E9464EAC38A52 /* MTTunnelIds.swift */ = {isa = PBXFileReference; incl
 		AA11CA11P1CKF11EREF00007 /* MontanaCallsignPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaCallsignPicker.swift; sourceTree = "<group>"; };
 		AA11CA11S1GNF11EREF00005 /* MontanaCallsign.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaCallsign.swift; sourceTree = "<group>"; };
 		AA11P0R7MAPF11EREF000003 /* MontanaPortMap.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaPortMap.swift; sourceTree = "<group>"; };
+		MT909B0NJ0UR000000000001 /* MontanaBonjour.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaBonjour.swift; sourceTree = "<group>"; };
 		AA11D00R5F11EREF00000001 /* MontanaNodes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaNodes.swift; sourceTree = "<group>"; };
 		AA11D00A5F11EREF00000031 /* MontanaMusicPlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaMusicPlayer.swift; sourceTree = "<group>"; };
 		AA84D00A5F11EREF00000084 /* MTYouTube.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTYouTube.swift; sourceTree = "<group>"; };
 		AA01F402CD6CC80F6B25C0BB /* MTKeyboard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTKeyboard.swift; sourceTree = "<group>"; };
 E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTScene.swift; sourceTree = "<group>"; };
-372B5EB186C72B255968A4A5 /* MontanaNames.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaNames.swift; sourceTree = "<group>"; };
 		D0E1F2A3B4C50101D0E1F2A3 /* MontanaDeliveryEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaDeliveryEngine.swift; sourceTree = "<group>"; };
 		D0E1F2A3B4C50601D0E1F2A3 /* MontanaMeshView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaMeshView.swift; sourceTree = "<group>"; };
 		D0E1F2A3B4C50701D0E1F2A3 /* MontanaNotify.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MontanaNotify.swift; sourceTree = "<group>"; };
@@ -452,6 +624,8 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 		E42D7172BB0A15FAC7A9E5EB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		5D8CBDA81A05BE33F4A03331 /* MTChessRules.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTChessRules.swift; sourceTree = "<group>"; };
 		599C90CBAC14E793398B6C00 /* MTChessWire.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTChessWire.swift; sourceTree = "<group>"; };
+		A864B4000000000000000001 /* MTChessLetters.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTChessLetters.swift; sourceTree = "<group>"; };
+		A864B4000000000000000004 /* MTEditionMontanaLetters.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTEditionMontanaLetters.swift; sourceTree = "<group>"; };
 		26181F5412A47E889DC907A5 /* MTChessGame.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTChessGame.swift; sourceTree = "<group>"; };
 		5FE7EDAEE959ADA20F198747 /* MTChessBoard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTChessBoard.swift; sourceTree = "<group>"; };
 		391AECEDDFAA4CE4AEF4F2C7 /* MTChessScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTChessScreen.swift; sourceTree = "<group>"; };
@@ -459,7 +633,27 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 		2FF026E80059D9D5ED01349B /* MTApplicationLibrary.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTApplicationLibrary.swift; sourceTree = "<group>"; };
 		FAA536B40D99583B2C87DC5C /* MTPasswords.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTPasswords.swift; sourceTree = "<group>"; };
 		1A7E12B342DA3358C5F5CFE4 /* MTWalletCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTWalletCore.swift; sourceTree = "<group>"; };
+		29618A09E125454D8FD8DABE /* MTFabric.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTFabric.swift; sourceTree = "<group>"; };
+		51E315A8751E4384927BF548 /* MTPersonChain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTPersonChain.swift; sourceTree = "<group>"; };
+		B375F36B469E46CCA6463E4B /* MTLevels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTLevels.swift; sourceTree = "<group>"; };
+		B07A50C7267C6EED609DC7CE /* MTEditionMontana.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTEditionMontana.swift; sourceTree = "<group>"; };
+		F2B7C1DECD82FADF4312E8C4 /* MTApps.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTApps.swift; sourceTree = "<group>"; };
+		CE17CA53C0BD4CA38F0E86E2 /* MTNetworkNode.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTNetworkNode.swift; sourceTree = "<group>"; };
 		736AA9B50E59053828694E62 /* MTWalletScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MTWalletScreen.swift; sourceTree = "<group>"; };
+		6448A63F4D4B73351634D1A4 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Code/Messenger/MTEditionMessenger.swift; sourceTree = SOURCE_ROOT; };
+		853E6C37E659A0E3FB87A32E = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Code/Messenger/MTEditionMessengerLetters.swift; sourceTree = SOURCE_ROOT; };
+		A2B579F1908D9A3E7D472932 = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Code/Messenger/Messenger.entitlements; sourceTree = SOURCE_ROOT; };
+		4D7571C867F6F547F40E896F = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MontanaMessengerNSE.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0020530A869AC2E1E8190CDE = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MontanaMessengerShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		920B7D38C37391F0F65F9F40 = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MontanaMessengerBroadcast.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA259BF854672B1FE137EFBB = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MontanaMessenger.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		MT880B1C0DE0000000000001 = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Code/Messenger/AppIcon.icon; sourceTree = SOURCE_ROOT; };
+		MT897A55E700000000000001 = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Code/Messenger/MessengerAssets.xcassets; sourceTree = SOURCE_ROOT; };
+		D5AC7BB65205EC6A18B3D982 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Code/Messenger/Info.plist; sourceTree = SOURCE_ROOT; };
+		MT885B1C0DE0000000000001 = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Code/Messenger/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		D967272185DF252C432428EA = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Code/Messenger/en.lproj/InfoPlist.strings; sourceTree = SOURCE_ROOT; };
+		2800529E4A04E132C3E2805D = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = Code/Messenger/ru.lproj/InfoPlist.strings; sourceTree = SOURCE_ROOT; };
+		7F56C89CB405D627EBE307DB = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "Code/Messenger/zh-Hans.lproj/InfoPlist.strings"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -525,6 +719,10 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		176B2D8259EA6241B14C8B4A = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (18F1A657349400C75597E0C6, ); runOnlyForDeploymentPostprocessing = 0; };
+		BA4CA26075D4F1A54BD0AC89 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (7DF1C32BCD6D20109C2E4378, E46AE657679B3E7DD8411081, ); runOnlyForDeploymentPostprocessing = 0; };
+		D3FC354395184BB8B3BA6B05 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		8887D88B694AD62AA157CAF2 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (CDE23BB08C23953BF97913EA, F9E313218DBF596219555D8E, 06A73A3D19FAF2FBDB399DD3, 294DFF93A23CB3DC0418FEEF, F7066988FD8374D365AF2A27, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -554,6 +752,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 		951B4D712FE56DBC00F4327B = {
 			isa = PBXGroup;
 			children = (
+				MT919A000000000000000001 /* Names.xcconfig */,
 				951B4D7C2FE56DBC00F4327B /* Montana */,
 				951B4D8E2FE56DC100F4327B /* MontanaTests */,
 				951B4D982FE56DC100F4327B /* MontanaUITests */,
@@ -563,6 +762,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				0BAF10CE000000000000000F /* MontanaNSE */,
 				0BAF10CF000000000000000F /* MontanaBroadcast */,
 				84408EBA7C41B54288199291 /* PacketTunnel */,
+				6665BCBC1D61CE857FC75598,
 			);
 			sourceTree = "<group>";
 		};
@@ -576,6 +776,10 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				0BAF10CE0000000000000008 /* MontanaNSE.appex */,
 				0BAF10CF0000000000000008 /* MontanaBroadcast.appex */,
 				03E57F09827D5925A7EC1690 /* PacketTunnel.appex */,
+				4D7571C867F6F547F40E896F,
+				0020530A869AC2E1E8190CDE,
+				920B7D38C37391F0F65F9F40,
+				FA259BF854672B1FE137EFBB,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -615,6 +819,13 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				MT01A0C0DE0000000000000001 /* MTRowLetter.swift */,
 				736AA9B50E59053828694E62 /* MTWalletScreen.swift */,
 				1A7E12B342DA3358C5F5CFE4 /* MTWalletCore.swift */,
+				29618A09E125454D8FD8DABE /* MTFabric.swift */,
+				51E315A8751E4384927BF548 /* MTPersonChain.swift */,
+				B375F36B469E46CCA6463E4B /* MTLevels.swift */,
+				B07A50C7267C6EED609DC7CE /* MTEditionMontana.swift */,
+				A864B4000000000000000004 /* MTEditionMontanaLetters.swift */,
+				F2B7C1DECD82FADF4312E8C4 /* MTApps.swift */,
+				CE17CA53C0BD4CA38F0E86E2 /* MTNetworkNode.swift */,
 				2FF026E80059D9D5ED01349B /* MTApplicationLibrary.swift */,
 				FAA536B40D99583B2C87DC5C /* MTPasswords.swift */,
 				391AECEDDFAA4CE4AEF4F2C7 /* MTChessScreen.swift */,
@@ -622,9 +833,11 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				5FE7EDAEE959ADA20F198747 /* MTChessBoard.swift */,
 				26181F5412A47E889DC907A5 /* MTChessGame.swift */,
 				599C90CBAC14E793398B6C00 /* MTChessWire.swift */,
+				A864B4000000000000000001 /* MTChessLetters.swift */,
 				5D8CBDA81A05BE33F4A03331 /* MTChessRules.swift */,
 				MT01A0C0DE0000000000000031 /* MTMessageText.swift */,
 				951B4D812FE56DC000F4327B /* Assets.xcassets */,
+				MT885B1C0DE0000000000002 /* VPN.xcassets */,
 				95A1C0DE2FE56DC000F43201 /* AppIcon.icon */,
 				AA11BB22CC33DD44EE55FF66 /* Localizable.xcstrings */,
 				MT01A0C0DE0000000000000011 /* PrivacyInfo.xcprivacy */,
@@ -674,6 +887,8 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				9E17A0C4B2D14F3A81C05E30 /* MontanaLog.swift */,
 				A2B2C3D4E5F60011A2B2C3D4 /* MontanaQueueAddressing.swift */,
 				A3B2C3D4E5F60011A3B2C3D4 /* MontanaNetworkView.swift */,
+				D4E3F2A1B0C90044D4E3F2A1 /* MontanaVPNPage.swift */,
+				F5E4D3C2B1A00066F5E4D3C2 /* MontanaPlates.swift */,
 				A4B2C3D4E5F60011A4B2C3D4 /* MontanaPhoneNode.swift */,
 				CE6C89C8BDD67F18B40DFC75 /* MontanaIdentity.swift */,
 				3653F402CD6CC80F6B25C0BB /* MTPipe.swift */,
@@ -691,6 +906,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				AA11CA11P1CKF11EREF00007 /* MontanaCallsignPicker.swift */,
 				AA11CA11S1GNF11EREF00005 /* MontanaCallsign.swift */,
 				AA11P0R7MAPF11EREF000003 /* MontanaPortMap.swift */,
+				MT909B0NJ0UR000000000001 /* MontanaBonjour.swift */,
 				AA11D00R5F11EREF00000001 /* MontanaNodes.swift */,
 				AA11D00A5F11EREF00000031 /* MontanaMusicPlayer.swift */,
 				AA84D00A5F11EREF00000084 /* MTYouTube.swift */,
@@ -698,15 +914,12 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				AA11D00R5TXTF11EREF00009 /* nodes.txt */,
 				AA01F402CD6CC80F6B25C0BB /* MTKeyboard.swift */,
 				E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */,
-				372B5EB186C72B255968A4A5 /* MontanaNames.swift */,
 				AA20PQ02FILEREF00000000002 /* MontanaPQ.swift */,
 				DBFAFF8300724D6788EDEEEB /* SymbolOfTime.jpg */,
 				CD0F0B1A52275133B8AD7B1E /* MontanaMediaKit.swift */,
 				13B06F945D4240F4A0C8A27F /* MontanaAvatarKit.swift */,
 				5C82908A76C8A2BB4D29BB78 /* MontanaCall.swift */,
-				A34220600000000000000001 /* MTCallRecording.swift */,
 				A36220700000000000000001 /* MTSystemCalls.swift */,
-				A36AA7A5A0C0000000000001 /* MontanaAvatarMask.swift */,
 				0BAF10CF0000000000000014 /* MTScreenShare.swift */,
 				0BAF20D70000000000000A01 /* MTGroupRoom.swift */,
 				0BAF20D70000000000085A01 /* MTGroupPage.swift */,
@@ -789,6 +1002,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			path = Code/MontanaShare;
 			sourceTree = "<group>";
 		};
+		6665BCBC1D61CE857FC75598 = {isa = PBXGroup; children = (MT885B1C0DE0000000000001, 6448A63F4D4B73351634D1A4, 853E6C37E659A0E3FB87A32E, A2B579F1908D9A3E7D472932, D5AC7BB65205EC6A18B3D982, MT880B1C0DE0000000000001, MT897A55E700000000000001, A24CB39E6D7CA3940F38BBEF, ); name = Messenger; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -926,6 +1140,10 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			productReference = 951B4D952FE56DC100F4327B /* MontanaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		9037018253EE7BFCDB15F91F = {isa = PBXNativeTarget; buildConfigurationList = A04AB00214FC9C2C27420A8C; buildPhases = (8D4E9EC26DA91A5F1AC59B46, 176B2D8259EA6241B14C8B4A, 994D5981ED3AAD5ECCF05FCD, ); buildRules = (); dependencies = (); name = MontanaMessengerNSE; productName = MontanaMessengerNSE; productReference = 4D7571C867F6F547F40E896F; productType = "com.apple.product-type.app-extension"; };
+		0B37078E041C453EC08BBE8B = {isa = PBXNativeTarget; buildConfigurationList = E02427258B4F01463E640F37; buildPhases = (9B15ECF17C4EA00294F29BFA, BA4CA26075D4F1A54BD0AC89, 406BE5113E069A85DDC92A78, ); buildRules = (); dependencies = (); name = MontanaMessengerShare; productName = MontanaMessengerShare; productReference = 0020530A869AC2E1E8190CDE; productType = "com.apple.product-type.app-extension"; };
+		2F55882EBC901229D80BCD9A = {isa = PBXNativeTarget; buildConfigurationList = DA80BD2057A5CEBB1BB09126; buildPhases = (522DF558E066395A91A30261, D3FC354395184BB8B3BA6B05, 0C0F9E93E7ED7B3D8871E4E1, ); buildRules = (); dependencies = (); name = MontanaMessengerBroadcast; productName = MontanaMessengerBroadcast; productReference = 920B7D38C37391F0F65F9F40; productType = "com.apple.product-type.app-extension"; };
+		2373673146290204153423F2 = {isa = PBXNativeTarget; buildConfigurationList = 754EC84D0A86FAC57DA5B526; buildPhases = (0790A6E13547F76B326A85BE, 8887D88B694AD62AA157CAF2, 33983B110EB3A838FF450662, E8AB1FEAA6464E4E739A93BA, 0EA29EB528F154F50A4F8165, ); buildRules = (); dependencies = (E5370C016639928B985BD4C3, 7289D4DF829F814A950E420D, 3D560914EB9387255821CA6F, ); name = MontanaMessenger; packageProductDependencies = (F4FBFF581E7746A1905239F0, 14DD0B5389CCBE2892A428CB, BD7EC76C7E783DB7141F8E82, ); productName = MontanaMessenger; productReference = FA259BF854672B1FE137EFBB; productType = "com.apple.product-type.application"; };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -975,6 +1193,10 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				0BAF10CE0000000000000001 /* MontanaNSE */,
 				0BAF10CF0000000000000001 /* MontanaBroadcast */,
 				0250B5E1393737A07D471894 /* PacketTunnel */,
+				9037018253EE7BFCDB15F91F,
+				0B37078E041C453EC08BBE8B,
+				2F55882EBC901229D80BCD9A,
+				2373673146290204153423F2,
 			);
 		};
 /* End PBXProject section */
@@ -1024,6 +1246,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				652ED60F0ABC49739B8FCCC6 /* SymbolOfTime.jpg in Resources */,
 				951B4D862FE56DC000F4327B /* Preview Assets.xcassets in Resources */,
 				951B4D822FE56DC000F4327B /* Assets.xcassets in Resources */,
+				MT885B1C0DE0000000000003 /* VPN.xcassets in Resources */,
 				95A1C0DE2FE56DC000F43202 /* AppIcon.icon in Resources */,
 				MT01A0C0DE0000000000000012 /* PrivacyInfo.xcprivacy in Resources */,
 				MT01A0C0DE0000000000000022 /* InfoPlist.strings in Resources */,
@@ -1047,6 +1270,10 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		994D5981ED3AAD5ECCF05FCD = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (C96831C90719654063A71715, ED76CE5CED02A4F46965A24F, ); runOnlyForDeploymentPostprocessing = 0; };
+		406BE5113E069A85DDC92A78 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (1E6DA873974EA5E34426F4A2, F33B14F6300E4E63697B98E5, 1215EBABE2640FD47553AD10, ); runOnlyForDeploymentPostprocessing = 0; };
+		0C0F9E93E7ED7B3D8871E4E1 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A1D17B94B56A54F0B3D63863, E9FA79595EC639FCE1299625, ); runOnlyForDeploymentPostprocessing = 0; };
+		33983B110EB3A838FF450662 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (7B7056ED4355D6C97159AF31, 559A635F1703D8FE7857CD03, 022338214046AA2799FA0E74, 97B614CB0B1C4634CF85157C, MT897A55E700000000000002, 09CE82D8E65391DB38AC519F, A2104591ABC30FEC1E780D59, 1771A00D97E7478B3532E516, 1A7F45FBE0316462AF5659C2, DF3B8A2E2F02A02A85D3EFFD, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -1071,6 +1298,8 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				0BAF10CE000000000000000A /* NotificationService.swift in Sources */,
 				MT01A0C0DE0000000000000003 /* MTRowLetter.swift in Sources */,
 				9B560FEE4BFBCB388D5ABB79 /* MTChessWire.swift in Sources */,
+				A864B4000000000000000003 /* MTChessLetters.swift in Sources */,
+				A864B4000000000000000006 /* MTEditionMontanaLetters.swift in Sources */,
 				0BAF10E00000000000000004 /* MTNodeWire.swift in Sources */,
 				0BAF48700000000000000004 /* MTPipeKey.swift in Sources */,
 				63BD85E00B1F41B7911EDEAB /* MontanaAvatarKit.swift in Sources */,
@@ -1142,6 +1371,14 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				MT01A0C0DE0000000000000002 /* MTRowLetter.swift in Sources */,
 				8D17921EDE3037717250C2A7 /* MTWalletScreen.swift in Sources */,
 				B6E2E6D2DDDE7DA8D679DC1B /* MTWalletCore.swift in Sources */,
+				B4B631400069417480ACB2D5 /* MTFabric.swift in Sources */,
+				EC77DBA2E1C64CDE89F6A856 /* MTPersonChain.swift in Sources */,
+				EDB6B89625824FE1807FBA3D /* MTLevels.swift in Sources */,
+				9673FE7A5F02B5C7EC593FE5 /* MTEditionMontana.swift in Sources */,
+				A864B4000000000000000005 /* MTEditionMontanaLetters.swift in Sources */,
+				A864B4000000000000000002 /* MTChessLetters.swift in Sources */,
+				F26062E0CCBAD1FED1444F97 /* MTApps.swift in Sources */,
+				6FA4ABB90D224576965EC6D8 /* MTNetworkNode.swift in Sources */,
 				285BDA4A783F33F180A5BBE8 /* MTApplicationLibrary.swift in Sources */,
 				B3151C33342AD99AD42FAD7C /* MTPasswords.swift in Sources */,
 				1F5180968789568046394C2E /* MTChessScreen.swift in Sources */,
@@ -1169,6 +1406,8 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				9E17A0C4B2D14F3A81C05E31 /* MontanaLog.swift in Sources */,
 				B2C2D3E4F5A60022B2C2D3E4 /* MontanaQueueAddressing.swift in Sources */,
 				B3C2D3E4F5A60022B3C2D3E4 /* MontanaNetworkView.swift in Sources */,
+				C4D3E2F1A0B90033C4D3E2F1 /* MontanaVPNPage.swift in Sources */,
+				E5F4D3C2B1A00055E5F4D3C2 /* MontanaPlates.swift in Sources */,
 				B4C2D3E4F5A60022B4C2D3E4 /* MontanaPhoneNode.swift in Sources */,
 				7C0AF61CBE27D5FFCDC3BA48 /* MontanaIdentity.swift in Sources */,
 				F9C4EBAA0ADF8F80563F7744 /* MTPipe.swift in Sources */,
@@ -1186,19 +1425,17 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				AA11CA11P1CKB111DF100008 /* MontanaCallsignPicker.swift in Sources */,
 				AA11CA11S1GNB111DF100006 /* MontanaCallsign.swift in Sources */,
 				AA11P0R7MAPB111DF1000004 /* MontanaPortMap.swift in Sources */,
+				MT909B0NJ0UR000000000002 /* MontanaBonjour.swift in Sources */,
 				AA11D00R5B111DF110000002 /* MontanaNodes.swift in Sources */,
 				AA11D00A5B111DF110000031 /* MontanaMusicPlayer.swift in Sources */,
 				AA84D00A5B111DF110000084 /* MTYouTube.swift in Sources */,
 				AA02EBAA0ADF8F80563F7744 /* MTKeyboard.swift in Sources */,
 				3C5E03845AC23A0B104B73B1 /* MTScene.swift in Sources */,
-				4403BBB674FBD104F6FBB14D /* MontanaNames.swift in Sources */,
 				AA10PQ01BUILDFILE0000000001 /* MontanaPQ.swift in Sources */,
 				58D5C45C2B21170D94F06748 /* MontanaMediaKit.swift in Sources */,
 				B13251D208304F6597B16106 /* MontanaAvatarKit.swift in Sources */,
 				1BDC43419B7033B7175072A9 /* MontanaCall.swift in Sources */,
-				A34220600000000000000002 /* MTCallRecording.swift in Sources */,
 				A36220700000000000000002 /* MTSystemCalls.swift in Sources */,
-				A36AA7A5A0C0000000000002 /* MontanaAvatarMask.swift in Sources */,
 				0BAF10CF0000000000000015 /* MTScreenShare.swift in Sources */,
 				0BAF20D70000000000000A02 /* MTGroupRoom.swift in Sources */,
 				0BAF20D70000000000085A02 /* MTGroupPage.swift in Sources */,
@@ -1260,6 +1497,10 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8D4E9EC26DA91A5F1AC59B46 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (7E2D6C399F3B680127C5A889, 79DFDA9D900BF64408BF8309, 1CF302565A07484360AD456E, A718FAE78CD3A2A5AB037526, 15947A0290A37C6B1D89E874, BBA09BF0251268CC8C762964, 9EA318C6AEB1C4D643FDB785, B6A23F601701796CDB627327, DBD74F862143D830EB7C4C59, ); runOnlyForDeploymentPostprocessing = 0; };
+		9B15ECF17C4EA00294F29BFA = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (5198A1BB8042068A6A261F2E, 0A29325C505E597C29CC9D44, 87C936B4B645880E1B8696CF, BBED5E2E2CE139ED0FC81D0A, 5D5959E622F5E589D4D3A1CC, 77520A71AB96FE64FDEFD7CB, FC6BC8C6504E390C6BA34429, 5564C96D3664F9DA9642A9DD, 8D7B87511197B5E243A746E6, ); runOnlyForDeploymentPostprocessing = 0; };
+		522DF558E066395A91A30261 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (9C83621D9BC752393ABA8F2A, 6560E50F2BC26070051C801A, 084C315A64B93F55D833C8C8, ); runOnlyForDeploymentPostprocessing = 0; };
+		0790A6E13547F76B326A85BE = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (6C78A9B1EC1AF2DD298F9057, 5BB5376CC81859FB7F487AC3, 7EEE3320DF731666B97318DA, F016F9EC28B344F0552245EC, BD16D96FBA2C6E1C3C29C317, 6A0699A63C313A5B916BA414, 796667FD8B8879C0489AF8B6, FADBB871066B460ECBCB3E36, D780451867C49B83750D51DC, 4164729A9050B484FDBE9F4A, 9136D0E0A3E9040C61A8CD0D, 8A6F96DBBC5AA03771001A42, E7C989A1D3A13AF6DF8F7546, 2D64B3A7D020A9A234225612, 7C649778AB1655AD212DFC30, 16F35B48063F27FE15A6351C, AB8DEE3DD86E7CF8EB40A0FA, C66E81792C66AD1DB7D96947, 0226571B468141F58E845509, 66C7D22C910AF271B4EF75EE, E45F67844840DD1C519F0BFF, 3BB743574E9E7F5E00498FB6, 5E3741CDD34ACDE76F5893A6, 4ECF22231C30C923994C44B1, E6B59568997AF14E3552FBE1, 488F341B9808F19EBDF4EECE, C44F49C4373C89AC3BB6FC48, 2FCEF621F81F57DDCFB4CCDF, 0DD1A6BD59948A10FE0D6018, 9ECC6FFBF50CDCA452936F9E, 1A781A10DD5D9CA3ED499611, 7877F286092C8DB5C64B26D3, 4BBC98E3290E0612E4050C7C, 29CF60B10DF63462893B5F86, 3C4C165F1F573BAEC40BE438, 55A432944A739FF9AAD1C7FD, 57EF715E678BF514A51E53A3, 99B71AEDA99B09C1000AD37A, 83BF17BCC3D9F0B20CFFEBA9, F6C1373B6091B56FAAF514E5, 98E7DA5598DAF1165E080627, D20E80639070D91EA8FBD4FE, 47132DD9A4A9963FBF320C5A, 8D0D42B0F1D2FF2F63591129, 195681286AFE39943302FF74, 7A23518EC0B995777D30DFCC, 665DC7A348C80269AFBF5C48, 26CB7A343D80EF2048DF65D6, 1DD6CF05F8714FF82C43480B, A2D8C274ADB55F7FCAFC1619, C6837FB4635AF0702555DD6D, B7EF4485CB0F3CC6151868AA, DB1226D1F5EDE452D293A9B4, A5949D843A2911AD01AB4AD4, 1E8485E0B912FE4EC466B6C4, DA88BB43C681040492F9248E, 236AC57A10498CD6ECA1E2A9, 6F2691A4516DD4C91F67AD77, DBF02216F60A866D9343EC39, 2B7ED3E4656BE279224445B7, 6B9A74E1E508B0F09451CD98, DB20DADA9B98843847A899CA, 8B7484F137907315EEA6AF91, 1DAFDB6B0387EE7EC00CE33A, 94D1B2C1F52E82B557B03A53, 65021738DD1C470A53892A00, C69DBFB6AE5814FE8B5A746D, EBC1E21FFEBD6168E1FEEA0F, 932BE67B19545F61DB785A89, 21110395D3B8D5408B75CC7F, C2C566830DD062FF3DAC22E4, 54CCD18EB3C402911DF89F1A, 42A1418980D61CE87BB0029E, 98B4E250D517F862A72DFDFF, E690548D96EEC13533109321, E125E96828444AEEDCEEC23B, F27102F7F50AB46CCD9BCA05, D6F26B91C1356A039B3EDA62, D401D771CDABE7AE10C66B74, 38BC62AEBCCB09AD99DE1A9C, A50858B7DFB1AF27003E18E9, 8D005BFA16EF88DB85DCD3F3, BBFDD1D36846C052FEB0D869, 36034FA019D18931B535913D, 3C1521B421EBD2F0ACC18F0F, 956BA936C3DB9733017CCBC5, 54608D6DEA305DBB309141EF, B3F6C3574688BDF3B134AB2E, 62115FE56E7647A189906182, 78B12D7F4F334CC04365F441, D82B3264D63E5E84ABD1635C, F6883C2554800DA6BF30F971, 50BA1EA6102F22285627F54E, 0E171184A1F8BF381B8751A9, A6C2C0BF8B5CBCDA3E4E569E, 8B37D5F27EAF29175D030983, 00341053ED6E71736F6AEAD8, 09D075CFAD04B17174013613, D33C4C7DA80C98246E9E2395, 3407FCB78347261A23A51DEB, 6BF211ECD573916BC6FF5072, D995661E4FF29555155E281C, 8A8446841537EA3112BC4633, A1ED43637797D0B33AE43B6D, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1299,6 +1540,9 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			target = 0BAF10CF0000000000000001 /* MontanaBroadcast */;
 			targetProxy = 0BAF10CF0000000000000011 /* PBXContainerItemProxy */;
 		};
+		E5370C016639928B985BD4C3 = {isa = PBXTargetDependency; name = MontanaShare; target = 0B37078E041C453EC08BBE8B; targetProxy = AF4372DE7BE13A65BE68B970; };
+		7289D4DF829F814A950E420D = {isa = PBXTargetDependency; name = MontanaNSE; target = 9037018253EE7BFCDB15F91F; targetProxy = BB500FD4A9E12C74A0CE3184; };
+		3D560914EB9387255821CA6F = {isa = PBXTargetDependency; name = MontanaBroadcast; platformFilter = ios; target = 2F55882EBC901229D80BCD9A; targetProxy = 301B2979801D486B17E4B2B3; };
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -1312,6 +1556,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
+		A24CB39E6D7CA3940F38BBEF /* InfoPlist.strings */ = {isa = PBXVariantGroup; children = (D967272185DF252C432428EA, 2800529E4A04E132C3E2805D, 7F56C89CB405D627EBE307DB, ); name = InfoPlist.strings; sourceTree = "<group>"; };
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
@@ -1321,7 +1566,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = Code/PacketTunnel/PacketTunnel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1357,7 +1602,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = Code/PacketTunnel/PacketTunnel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1390,10 +1635,13 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 		};
 		951B4D9D2FE56DC100F4327B /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = MT919A000000000000000001 /* Names.xcconfig */;
 			buildSettings = {
 				MONTANA_APP_ID = quest.montana.app;
 				MONTANA_APP_NAME = "Montana";
-				"MONTANA_APP_NAME[sdk=macosx*]" = "Montana Core";
+				"MONTANA_APP_NAME[sdk=macosx*]" = "$(MT_NAME_PROTOCOL_MAC)";
+				MONTANA_DISPLAY_NAME = "$(MT_NAME_PROTOCOL)";
+				"MONTANA_DISPLAY_NAME[sdk=macosx*]" = "$(MT_NAME_PROTOCOL_MAC)";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1457,10 +1705,13 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 		};
 		951B4D9E2FE56DC100F4327B /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = MT919A000000000000000001 /* Names.xcconfig */;
 			buildSettings = {
 				MONTANA_APP_ID = quest.montana.app;
 				MONTANA_APP_NAME = "Montana";
-				"MONTANA_APP_NAME[sdk=macosx*]" = "Montana Core";
+				"MONTANA_APP_NAME[sdk=macosx*]" = "$(MT_NAME_PROTOCOL_MAC)";
+				MONTANA_DISPLAY_NAME = "$(MT_NAME_PROTOCOL)";
+				"MONTANA_DISPLAY_NAME[sdk=macosx*]" = "$(MT_NAME_PROTOCOL_MAC)";
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1517,12 +1768,11 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconGold AppIconSun AppIconJuno AppIconPyramid";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Code/Montana/Montana.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Code/Montana/Montana-Mac.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_ASSET_PATHS = "\"Code/Montana/Preview Content\"";
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				ENABLE_PREVIEWS = YES;
@@ -1574,12 +1824,11 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconGold AppIconSun AppIconJuno AppIconPyramid";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Code/Montana/Montana-Release.entitlements";
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Code/Montana/Montana-Mac-Release.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_ASSET_PATHS = "\"Code/Montana/Preview Content\"";
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				ENABLE_PREVIEWS = YES;
@@ -1633,7 +1882,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
@@ -1660,7 +1909,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
@@ -1686,7 +1935,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
@@ -1712,7 +1961,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
@@ -1740,7 +1989,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = Code/MontanaShare/MontanaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1748,9 +1997,10 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Code/MontanaShare/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "$(MONTANA_APP_NAME)";
+				INFOPLIST_KEY_CFBundleDisplayName = "$(MONTANA_DISPLAY_NAME)";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
 				MARKETING_VERSION = 1.0;
+				MONTANA_SHARE_WALL = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID).Share";
 				SUPPORTS_MACCATALYST = YES;
@@ -1770,7 +2020,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Code/MontanaBroadcast/MontanaBroadcast.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Code/MontanaBroadcast/Info.plist;
@@ -1792,7 +2042,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Code/MontanaBroadcast/MontanaBroadcast.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Code/MontanaBroadcast/Info.plist;
@@ -1814,7 +2064,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Code/MontanaNSE/MontanaNSE.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1841,7 +2091,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Code/MontanaNSE/MontanaNSE.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1869,7 +2119,7 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = Code/MontanaShare/MontanaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2351;
+				CURRENT_PROJECT_VERSION = 2361;
 				DEVELOPMENT_TEAM = S8JCA5MBVD;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1877,9 +2127,10 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Code/MontanaShare/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "$(MONTANA_APP_NAME)";
+				INFOPLIST_KEY_CFBundleDisplayName = "$(MONTANA_DISPLAY_NAME)";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
 				MARKETING_VERSION = 1.0;
+				MONTANA_SHARE_WALL = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID).Share";
 				SUPPORTS_MACCATALYST = YES;
@@ -1892,6 +2143,14 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			};
 			name = Debug;
 		};
+		1505344D4C5653592AC7AEF6 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; CODE_SIGN_ENTITLEMENTS = Code/MontanaNSE/MontanaNSE.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 2361; DEVELOPMENT_TEAM = S8JCA5MBVD; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(MONTANA_FRAMEWORKS_DIR)", ); GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Code/MontanaNSE/Info.plist; INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.2; MARKETING_VERSION = 1.0; MONTANA_APP_ID = xxx.montana.business; PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID).MontanaNSE"; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
+		228DCD31A79AF398B1C0B90F = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; CODE_SIGN_ENTITLEMENTS = Code/MontanaNSE/MontanaNSE.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 2361; DEVELOPMENT_TEAM = S8JCA5MBVD; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(MONTANA_FRAMEWORKS_DIR)", ); GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Code/MontanaNSE/Info.plist; INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.2; MARKETING_VERSION = 1.0; MONTANA_APP_ID = xxx.montana.business; PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID).MontanaNSE"; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		CD96FEBF074E61988B1588BF = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_WEAK = NO; CODE_SIGN_ENTITLEMENTS = Code/MontanaShare/MontanaShare.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 2361; DEVELOPMENT_TEAM = S8JCA5MBVD; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(MONTANA_FRAMEWORKS_DIR)", ); GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Code/MontanaShare/Info.plist; INFOPLIST_KEY_CFBundleDisplayName = "$(MONTANA_DISPLAY_NAME)"; INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.2; MARKETING_VERSION = 1.0; MONTANA_APP_ID = xxx.montana.business; MONTANA_DISPLAY_NAME = "$(MT_NAME_MESSENGER)"; PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID).Share"; PRODUCT_BUNDLE_PACKAGE_TYPE = "XPC!"; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; VALIDATE_PRODUCT = YES; }; name = Release; };
+		B45652E1792EEC2EF9E13D77 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_WEAK = NO; CODE_SIGN_ENTITLEMENTS = Code/MontanaShare/MontanaShare.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 2361; DEVELOPMENT_TEAM = S8JCA5MBVD; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(MONTANA_FRAMEWORKS_DIR)", ); GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Code/MontanaShare/Info.plist; INFOPLIST_KEY_CFBundleDisplayName = "$(MONTANA_DISPLAY_NAME)"; INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.2; MARKETING_VERSION = 1.0; MONTANA_APP_ID = xxx.montana.business; MONTANA_DISPLAY_NAME = "$(MT_NAME_MESSENGER)"; PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID).Share"; PRODUCT_BUNDLE_PACKAGE_TYPE = "XPC!"; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		36BF752C3AB22150E2DC4624 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; CODE_SIGN_ENTITLEMENTS = Code/MontanaBroadcast/MontanaBroadcast.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 2361; DEVELOPMENT_TEAM = S8JCA5MBVD; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Code/MontanaBroadcast/Info.plist; INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.2; MARKETING_VERSION = 1.0; MONTANA_APP_ID = xxx.montana.business; PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID).MontanaBroadcast"; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
+		1532D47417EFB4A34D58906A = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; CODE_SIGN_ENTITLEMENTS = Code/MontanaBroadcast/MontanaBroadcast.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 2361; DEVELOPMENT_TEAM = S8JCA5MBVD; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Code/MontanaBroadcast/Info.plist; INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.2; MARKETING_VERSION = 1.0; MONTANA_APP_ID = xxx.montana.business; PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID).MontanaBroadcast"; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		9AD2917AAE8E38846BAC9FCA = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_ENTITLEMENTS = Code/Messenger/Messenger.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 2361; DEVELOPMENT_ASSET_PATHS = "\"Code/Montana/Preview Content\""; DEVELOPMENT_TEAM = S8JCA5MBVD; ENABLE_PREVIEWS = YES; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(MONTANA_FRAMEWORKS_DIR)", ); GENERATE_INFOPLIST_FILE = YES; "HEADER_SEARCH_PATHS[sdk=iphoneos*]" = ("$(inherited)", "$(MONTANA_FRAMEWORKS_DIR)/MontanaCore.xcframework/ios-arm64/Headers", ); INFOPLIST_FILE = Code/Messenger/Info.plist; INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO; "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES; "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES; "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES; "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES; "INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES; "INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES; "INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault; "INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; IPHONEOS_DEPLOYMENT_TARGET = 17.2; LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks"; MACOSX_DEPLOYMENT_TARGET = 13.7; MARKETING_VERSION = 1.0; MONTANA_APP_ID = xxx.montana.business; MONTANA_DISPLAY_NAME = "$(MT_NAME_MESSENGER)"; OTHER_LDFLAGS = ("$(inherited)", "-lresolv", ); "OTHER_LDFLAGS[sdk=iphoneos*]" = ("$(inherited)", "-lresolv", "$(MONTANA_FRAMEWORKS_DIR)/MontanaCore.xcframework/ios-arm64/libmt_boundary.a", ); PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID)"; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = auto; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO; "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos*]" = "$(inherited) MONTANA_PROTOCOL_CORE"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_OBJC_BRIDGING_HEADER = "Code/Montana/Montana-Bridging-Header.h"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		54BEAE2A53AE1D69D5D854F2 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_ENTITLEMENTS = Code/Messenger/Messenger.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 2361; DEVELOPMENT_ASSET_PATHS = "\"Code/Montana/Preview Content\""; DEVELOPMENT_TEAM = S8JCA5MBVD; ENABLE_PREVIEWS = YES; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(MONTANA_FRAMEWORKS_DIR)", ); GENERATE_INFOPLIST_FILE = YES; "HEADER_SEARCH_PATHS[sdk=iphoneos*]" = ("$(inherited)", "$(MONTANA_FRAMEWORKS_DIR)/MontanaCore.xcframework/ios-arm64/Headers", ); INFOPLIST_FILE = Code/Messenger/Info.plist; INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO; "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES; "INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES; "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES; "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES; "INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES; "INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES; "INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault; "INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; IPHONEOS_DEPLOYMENT_TARGET = 17.2; LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks"; MACOSX_DEPLOYMENT_TARGET = 13.7; MARKETING_VERSION = 1.0; MONTANA_APP_ID = xxx.montana.business; MONTANA_DISPLAY_NAME = "$(MT_NAME_MESSENGER)"; OTHER_LDFLAGS = ("$(inherited)", "-lresolv", ); "OTHER_LDFLAGS[sdk=iphoneos*]" = ("$(inherited)", "-lresolv", "$(MONTANA_FRAMEWORKS_DIR)/MontanaCore.xcframework/ios-arm64/libmt_boundary.a", ); PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID)"; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = auto; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO; "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos*]" = "$(inherited) MONTANA_PROTOCOL_CORE"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_OBJC_BRIDGING_HEADER = "Code/Montana/Montana-Bridging-Header.h"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1967,6 +2226,10 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		A04AB00214FC9C2C27420A8C = {isa = XCConfigurationList; buildConfigurations = (1505344D4C5653592AC7AEF6, 228DCD31A79AF398B1C0B90F, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		E02427258B4F01463E640F37 = {isa = XCConfigurationList; buildConfigurations = (CD96FEBF074E61988B1588BF, B45652E1792EEC2EF9E13D77, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		DA80BD2057A5CEBB1BB09126 = {isa = XCConfigurationList; buildConfigurations = (36BF752C3AB22150E2DC4624, 1532D47417EFB4A34D58906A, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		754EC84D0A86FAC57DA5B526 = {isa = XCConfigurationList; buildConfigurations = (9AD2917AAE8E38846BAC9FCA, 54BEAE2A53AE1D69D5D854F2, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -2004,6 +2267,9 @@ E9D0EDEBF2387839D7D7CA6C /* MTScene.swift */ = {isa = PBXFileReference; includeI
 			package = 7A0E1D0E4E0102A7A0E1D0E4 /* XCRemoteSwiftPackageReference "swift-nio" */;
 			productName = NIOPosix;
 		};
+		F4FBFF581E7746A1905239F0 = {isa = XCSwiftPackageProductDependency; package = 7A0E1D0E4E0101A7A0E1D0E4; productName = NIOSSH; };
+		14DD0B5389CCBE2892A428CB = {isa = XCSwiftPackageProductDependency; package = 7A0E1D0E4E0102A7A0E1D0E4; productName = NIOCore; };
+		BD7EC76C7E783DB7141F8E82 = {isa = XCSwiftPackageProductDependency; package = 7A0E1D0E4E0102A7A0E1D0E4; productName = NIOPosix; };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 951B4D722FE56DBC00F4327B /* Project object */;

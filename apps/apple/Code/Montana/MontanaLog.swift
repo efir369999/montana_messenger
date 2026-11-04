@@ -301,6 +301,17 @@ enum MTDiskDoor {
         count(name, data.count)
         return true
     }
+    /// Bytes appended to the end of a file that stands, under the writer's name (the person's time chain, S2a of APPS-API: its
+    /// handle used to open past the door). False when the file would not open or take the bytes -- the caller decides whether a
+    /// file is born; a file that stands is never written over here.
+    @discardableResult
+    static func append(_ data: Data, to url: URL, _ name: String) -> Bool {
+        guard let f = try? FileHandle(forWritingTo: url) else { return false }
+        defer { try? f.close() }
+        do { _ = try f.seekToEnd(); try f.write(contentsOf: data) } catch { return false }
+        count(name, data.count)
+        return true
+    }
     /// Bytes written by a handle of the writer's own, under its name.
     static func count(_ name: String, _ bytes: Int) {
         let now = ProcessInfo.processInfo.systemUptime

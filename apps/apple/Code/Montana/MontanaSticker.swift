@@ -123,6 +123,10 @@ enum MontanaStickerCut {
 /// that writes it already stands on the screen's thread.
 final class MontanaStickerBook: ObservableObject {
     static let shared = MontanaStickerBook()
+    /// THE NAME A STICKER RIDES UNDER (22.09): a sticker leaves as a picture whose manifest names it «montana-card» -- the name the
+    /// gold card sticker rode under since 15.42, which every live build draws bare and at a sticker's size. The contact card left
+    /// the app (the author's word 04.11.2026, decision 601); the name on the wire stays, or the stickers of earlier builds turn photos.
+    static let docName = "montana-card"
     /// The set's ceiling: a person's own set, not a warehouse.
     static let ceiling = 120
     private static let shelf = "montana.stickers.mine"

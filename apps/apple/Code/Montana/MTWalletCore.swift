@@ -70,126 +70,6 @@ enum MTWalletCore {
     }
 }
 
-/// EVERY SERVER AND PHONE OF OURS IS A NODE (the author's word 06.10.2026 14:2x UTC: «every server and phone of ours is a node»):
-/// this phone opens its own machine of the core -- born once, its secret drawn here and never carried to a second phone -- and
-/// reaches the machines of the Global TimeChain's genesis, every server of ours, by the post-quantum handshake of the set. It
-/// answers on this phone alone and lives no window: the genesis cohort is the servers, which never sleep, and a machine joining
-/// a chain already running is the core's stage fourteen. The person is not opened in the core here: the core keeps a person's
-/// entropy in a file, and this phone keeps the words in the keychain alone -- a second home for them waits for the notes that
-/// would need it.
-@MainActor final class MTNetworkNode: ObservableObject {
-    static let shared = MTNetworkNode()
-    /// The machines of the genesis (06.10.2026 14:28 UTC) -- Lauterbourg, Moscow, Amsterdam -- each as its operator handed it
-    /// over: the endpoint and the key it answers with. The old Frankfurt left on 23.10.2026: that address is a colleague's
-    /// server now, and a phone that dialed it would hand a stranger its address; the new Frankfurt joins with the core's stage
-    /// fourteen.
-    nonisolated static let genesis: [String] = [   // NOT-UI: the acquaintance lines of the genesis machines
-        "192.0.2.1:9635@b98a45063346fd71cb8240ff878099e4491682e579e632a84f2bbe08aed1e6f4cb6859e87864edca73c9d47807203d9f72b93b76ebd1c8c93663178f1aef3ee21cd8da1168b5b14b596ca670479266745e5f4f612943a4d7045c286d3d6c58443f2fc1509b90cfc344044f1a81a9b9eecc2b36a7fddac92ec497a9b87caec7850f74ed0759d9f276d6f141df12b2e09a46e77eae691f419bb4622d285d64f6f0835a733bfdeb14c25938963c1e1fe1f76d86c6d887ec82960e06df7167f3ce0fc0e13f9c83bbea75b727b140cc33f1e829027402fce0383adda029f17a1403e6fd4630039090231660e2864d7fbce9de3601f249b039e8e846e47c538e5a8a77bd6a882c1481bd0042aa67b74e32df9407f6381718fcbe30e49b462c07a7d94507c3f0c97236dc7878cd78324d5b72d8e53e77f737d01bac4fc756f557ba5748c252506e1d00f543315354080f540c6ea4e89406b12e759192963c0931a6a8dcd239e3a31d63e3bf5e5bc78c4748e57499b396e6725f1f7e3d28b1dfb89122a1cb0087967f1ca9b00e6be017a063e4994b4ed2301ecc8a745be4edede3ee0c559b739ec651ccdbdf0b56202088241454160a3419aaee8095d3fb9946f4f7141757ac77d743c662a4496d52fb5ac59b381c7246a2dcf5797f630de2a18061decd220b6313b6097d25050dba6ca027bf5ca612a77656dfac3ac3ed6d188e5720d0f887a28ae4c69cfa849df60f121811e3c91356b1050d5e65e84a89e1792dcd974f1d80437ceb1ce6186380640af597aae636c59252636e725bd4977df8eb753094643fc9ba12cbabf58d8cc1348c878fdaeb0b40900c460c9981d8c938cf407a5b14267c65fd12be727b3e33d26c96243f515609dc71c4ccc037937ea3a791961a9f0f96d04dd9957bd1a48991976fecb2c3fc8462477aff85ab943be89af05273135c25416a7f3d3bc7d4fc56d51e5ec2c46913b9759b5cf5ba34b3dae9c1432be74465e003230d1c17a019228b58a96ea5c4c9a55f25174cddaaa80c0d4b5b8860832534f8b9d59faf056bc8b36e8c4f336b57ddcc55f0d575795848abc3fb307519488b2c21da862b9f013e0266aa872c626327207fdfb54371fd09cca07c909b589be052374c3d81227192bd57accc399f48e7e13444b9a03b8d00f2816cac12d0ade28e1578a44f2f3d0a6f7300c7ea139df3ae39e86a350d5dac04af14d4e96d4bdb81dc3e1ec79b44249051341b6796bc1fe6639117bd030118397553001102dcb027c124808ca8a785f0771b428ba085ea39d7341141d60cacb9eedbafff7eb5ceb194b1517be308aade80c5846988d4ba6b481468af03a713aaddeedda25750912869b65e2f12fb5e0b5a74349efd39921961d845208d59f378c200cfebb580fc2448389105c056079bff79bf68bfa91457ed8087e93fb6a9dfe8c096e6ca882befadefbc2a0acc12736f8d70f2e4738f98eb8fcbae598c91ef2d09d95f04b7b39618968671c50b217250a73d08a3c9c248fcd958c0123652fa1a5c6a2103c5ecff9dd2d1d42fda8d13aa31698fad40f303476deb60c76ffa680abe29b371984f1dc9224704133ae755330108f560e33498ce25097a561408aa8ee5e91a48c17ea633538a9a7b204c0e1724fa47af51999becceaf774f5752c7cce89f5147a4a144f59c5c422042d01b9a076485fcc07084f722b315b1db5410d26097b212713d8ccd3aede06baf4511416c0fad3c944238b0021303b468beeccd56d8cd0cf8f867e0e02305126c97b31ea121ba87fcab30545217c91ed05cc1135301ce040b7e40d9f0676423f35f554280175bb2e1d4ed45546645e0eb3b12b99369fafb2a0be54b1fc9e8aae259b06cff683e667e20b370a62a84ae5e0a072be94f0ff56dd37e9e2b4fa0b025978c23b5d82ff7c416ac2694b696dec7a96ddf9d70e213ae7136328e40e2160c8a183b8b27344f64854bf4dce4b5f557cfd04d2eed31e13ea857ee5b6ff099b4a69bc24b6d277a35016b676ea5c85c3b644a0fc054d76852b07d887923319d005ad6272c34732a1a2d030dc83eea56fd0a0a183c740c4f63259161534d95d11b4873313bc13f25f005b959a6b8d1b94ce2a1571cd202bc550a479b4da176fb55d7b48660315caaeb749808751facc2cf22289a8de45a75b16bd895d3a309de3ed65d5f452a83c94239a64bd51c8cd7f7b4f966421ceb734b2bfcc99d3aafff82ed8cd61a528fead4ab737567333a2de08121081a178529e9fd8dfa62c5d3794b5185196f4572776181305f377abbccc35839989be3b93e41def252d29a8b663a7523dc4a05119afe26503717326e5f245a520887c2afea622b337fe3fdbc8be5b8b428a2f37666baf8b3e01261643a066b543edfac9baa6b0fdadf67ebb4fa7bd4bf044cb7f6a184a0aa01988699d813693cff47c0238da7ce6df0a2dd715e369bd676c7697ed19630fb41b80ec5d5d1d9bb4a90571acece58b151a2afaab7aadbbca851cb80af489714f3f602ac3f220987af5bddee280804d3c1391527309e6c6c5df3ffd325137c521f0d34115d227113d9d49bfa831a937f2276da5ce6afa8813fa5282f7c87dd13b77cec86cc5106a787e34c4ff4bf47ccbfdd773384c30ee54739ee2f8c04c8deebd34a1192694cfd8ee2769240d4fd3b50d59087e5102c49e3fb09354eb37eef0125f6fef99f3694c5e7bc234c77da18f8ada4d564423f32a046018b0c74d0d07ede8823fd537077779a",
-        "192.0.2.2:9635@6b57fc1625535534d349ba062458cbc3c06a1826bbcfdd98a788e09f9ea6e67b9fe84d7694a686860038ad394da2fb0f3883dd86f7b924b1e0da67f1a84eea1e0707758dc7120454747dee46fae130ce3f9f71f8187d89a8f60964e11f49855d44a1870791cf55f7db5fcfd8d1ccda04aaedad102d45230124a1a857d60c8b25157c4e9e72932a4b27900e396fda7e6377d8af076a38ba1c54814533a294609706198ee2106ccc59ec31b44f355574be5f10e7fb1e01583450c6d41ec7d9ebd72bee617c01e39433198eaa46ad26f5df77483ed4eaafe1de18160d342c778e3ea20c26e134889c840331adfd9976a3dc9c5ca116caafd0285b316cc003e3a9fd5a8cd9759457c01a7aa9070abc85a72c29608e279c3291eec370405e97d09fe787411cc88ba3353108802f3d1267917a14d64caef4b3e39f3a73d2d4fa02d369862b6008be3a5bce01f42bdf327acfed4ac3a12adb8f8a814e5e3405fede975a113a686f556f7dd361975d51211a88e3f069e67df0587a654a642475aad02ea6560876e984d337ec63cf7e67072c8155d5e2cc01467d188aacf7eaec553440fd9dc68e62b37e2c7c2d6a1a82780b76dba5c77c44f829d84b8f13b894192036b36763fb56457eefcb87b5e2d6cd0eb19930e098f5b21aec5e803d8007b9001a5eb7f8b080ce1f940d7d00d6f7d89747fc2c3d39f86e6916d2624d4d1cab443a57036cf869c3fa3cf2aaff690e08926745691a72f7d475924af03513eaed4d23ae5fe4f69619ff01fa2f68f4a665fd04ac0fb41d8d0d201d05e7da55b0c52f772dd908a710e83e786b134cab6f6346c8512a40ea261cee120123fd176534c600a22dd0b827329e7bfd7cae71d460fc9e5a6b6e02d133765e2ed0216f0787129abea1c708ff237775b8a1ff612219e2afa4a8ae53939c6f427249d58231faec91473928eaaf053c30109bf20c306921dd90cbfb7edd0884186bc1d8416e04f695b74f2bd74c65b2db7543304ce3cab190dcfe5360267dd22e672b4140ff83ffe262d76ae845b49a27684eb5f5616931714f5e55df2cfe7d4335e15538003e07f1fb471efcba92858ff30413693b1928e0e05fc5cdfc6d1f03734862c9d8404a278c6f56400ab92ae3a638f2958bf211c741092132eac0fe7804bdee0cd134605018999d40699d473fde8d57c3438ec53de8cd8823e4c0a04c95f3e5a07e0514ff490efe0ee1bf5b89b25083c705b90960335f4ecfcb369418704bfb3ee9e71fa053eca409fab84cf0318e42f9c5b9876c40f012d66125d3b3d33a433c8d379df84d1ca185adef03fd1abb1c5934c63079d7bee9960d0a2c6e134ed639160d8b5225a4b3bbb47fe48a9233571d01a9b85db1b3c174249f7b971cf48a7c10242334235bfc5e108178269c3fb9b874cd420c9d6795cd0a9cba4538a1a82f610f623fd134dac66c4402a6afcbf2c4a1b7af185aea74e20277bb96f53681d811990eaa7ac6b24e581570a98a31281854dc2fbf1617b183abcd2457b1d638520a11e1a83621f594e729a2298e1e1af7b4a6c817548ad6992cec4dd15c7ccbfc06a19d64d6b1a521ac9da1a528b7d9d8fa3a19f40f21f44776013383467d2957a716ec0110dfa6c3d3bdc34aa0cb2188ab9d5a058da06c1dd924ee3e0e20f1c7b232369a6fb83e18a9bdc2fc6004232bdc1d0a23c48ce3132b56408eeb7e1bdb52c47195e56204a9b4349612f88d231d4afc98b78e74d8ba133bf7605e8261c7d379006a3bd791dc4f4ff47248b109a562e0801c8e6bbdd8a929200238761a14e6daf91e874553a618313c965b645a8f14453bf721dabad4c2fc90e82ea528d8eea6feb1364265805c53426de37c2e5b74c4bc4c561d83a5373f73977c7a20e146984ccd25c4ee1333999f9308a8e8506d125e2b7788c5d4d443fa269ac89a09a09639376d36054f694b6b09b3caaad56cd0d683b030c630b1b0cb610a6aaa87c640b958c0ba4ee43adabb1b09f05c51ae02a7b1caf432c9434b97b9740fa64da4d567181cdfa91b9721422bd49cac6073a9cde4568779b552e6ec1a88aaee3c9141ca3ac23a700c4e2c45bc85a4cd2b283714db9dfff8edd454a262e698e7d23f08343a81df5e98b0b9977725be1b7bf52be8dc112aa838ce0e842b0eb834d059388fa7973c70be2e73c3feb77e8d3b55ef49c7941f2ed8a326728ce8458958d8946112f8a830a14a923bace56b19110f4a6ac2af606401cdd71043f7ef7b0fbeb03fbfd2955c15fb7710c06b9aefe587102fc9dafe6970e988e588aecc892164230a72eed78036d19c0e3dfd5cf50c9a5683a13cef3d5aefe1f2f8c3775d94b63706829ae187825f5c17551ae41d5e13eb40a908597dc46957313b22a9c44b8c2fcf9be2270ea523b83bce874860d080e4ca714d6f8b4d50ed47618b832a7e654a76cce9998dfcdf8155b4b6c5057083822693a376e37f441e5758064dd6b59cf6eccd0d1406e9f5bafc6b6cd158a27a1d528aa347a6e5b22a3a30ab3affe234cea4918ee9d47962aff2221cdb4a2f262bafcd469884024b81fe1e19ef00cb94b414068d608045f66600435c6c3a8e8c9663aada182917645507c8c94100426b990cad4c71b5ef6fedb50a4a96b8ad502d0bb6ea7f23b64c3b96d8dfc19d854bb0ed1585874af9d5c2533bf893ce411cc64ce9ab8ddc79d5bc0272a9d3c4cd08e5313f8c0758d6d59aa2e812c068a067b4b8e016155635ce9b91ca982a99cfe386d888e9",
-        "192.0.2.3:9635@fca3c6562ecb21c08068d8bc35ac94816b276b417f3fccb5e536d865bac46aa2394c1e6fd94d24eca7405acf0240837b64b2e7f6dae3e809ebcace748d844eb360b18fc8cfb6c396cb711a8f2334bbdf00288f4461aede9a2351b40c2cae395867644142e73deb5751960aef0cbed3ab33bed6b35a7e737c9f3bd60e142c8b5f91589196e6a9acdf8297d8939254205ba2f7e5c9afd16acc9e43a8c7ef60b1108404dceb02ad2cb49d1d328566f1d793fcc4e9652f647a8cd9fcca09fad1b5101227abf51c77c940d5a8693b88116c2336bb5f620f4a7ba0d0db120c8800eb06b64e2b08c9dbda255d1c5e3ffa3041130b2f8eaab26d62bfe1a6282b6c3018036442f80b87e0ab210aa1af2065676af30479b4165ec21cf55c1ccf34d278e6e013139a6cf7d47280e95097a6e2358e9bd2dc3e363807bda70ba45d5f6d787b3aea98117d806142dfcd71e599769de41e4661aa9d4dd598e0b3d6610cdd86ad8290e2b6ca5e69e6c692050f8905a6631f40b763ee27e276884379704292312e280d78a416e509abe12f877a1cac55094cd73ce36aa1912e3d96d5f91e88b7b51ac296c2d4c4a0d9da7908a788188952dd98cb75eb963d391961fa27d3bc31b90499127f0c268b3a5554d3aa668cd0c06a8ed2cfa97adfe1a0124a2edcd01f9d4b14d59d3d55ef38da7bac7269b7b1fb30ebc9bdeb2fca497e97642cf3e55459d0a77c3b4da75b952d2cf1fddc615b61ba8207eae38048b85e21e23b30dc9e9d31a36b5b8b4b691165ed63f0983ded232c2f1cb92e37684cdfc04a4fb1cf87d3856d36d4852d24556ee2aa67c4ce91a2c4d4b03cb77b0e78c1097023e8ab176c8e774054f21e7f6aba0fb4c7b3603f7261a1c68703b8ffc7d53aa664aa6378a2edf65053995c81d7da23b4a45974b85b5e9dcef29d78e4dcc377de5dca59e03229956e9a7766b412195888ed5d2d393f62a4235ab7660ba39dec918bea6b5cfbfa7e4e6e1c21d41c1d3ea8ebbd5402225d8c201738357e9a96d9b03d87bbba231e70dd74645d8ef164bf95857cd43518a486999bc97d3c29b4fa26d436249f1bc8d2ce6309376c1a47f14ab338bdfefc2cd65ee1ed4f7e030abcbe408fe1c539a9db25a1733774090d766184c0cc9e1b91ab441fd6a77eb0c879829f09344d780c380e04efc5ff40fe2199904a9cdc372e36645a1caca17734cf7b8e945e9391d028e0391b55d2f29234fd324a0ed4653c67592d3c2cd26c28455d28f686ed9a5b06f805a6cc599229d629fbeab50ca042ddac7f40d93a8c620f0ec9b1b0a096e65faf53e41f61cbc40ec3aedde99f01bd57fb107f6e0ddf5701d8aa259c426f6e5453e27adb863c111e24e65f480092e34a05ddabc1b877696c4f33284521866ef00a09cc5806559c2601dc23d83c7d0270975fd34d7297383f24055d69cb157c81e8ce759d0f6567d0f3cea80c246dfd75f9ea1ee84814a2a1b2ed31a7fbd163575c795040ad1a0cd8ed31852f97ad8f13ce5290b1d43709958f90546a1af7533afc3ddfa0e24ea000ee31d5fff8126509a668e4a166dafb9c8c2ddffab82529555b16d79cbcc9eea1a6e8d583c60bff45b0815bface213b3ddbc49d39cef678b40a891b481957d6b5e0840a97aaf2a3147684611cb0e0ec34c568f446c5e9aa606e28f6ad1db2470c3a072b5801950b4c883484cc42a3dc903f8e2bb548391d44d8d9d4b9d204cdd8f3772aeda47c203196102264a2eb992600b9c2af0c1b904dbfa25da1054e005414d7c7950605fa176135d4f0d7829ce512b7e598a269fff4fb9c554c76004d23a6bdbab671e311d1abdaa80b7d9a32740791c942ab1cba7694e19f8344edb889924491b50fea5245433b039e9bf2ad61fa5916c3ed9e74ece518e0d85ac7ff1a02c9201867c56c49c4b4a7d02c272e5d09ea69f01a50484654f3b2fd11af894991957b45763d9010aa0ff478cc1d36afc774d2bb5f398460c6fef0ce10af4601a16c96a5075706544114ea21206c777ed8043abe369f717f6519fcfa4ca03280bd3f303982470df62f29d78014725dac4a0f2acca51d99cf63ac793d28095f4115a591a1df23d8504c12d8a70264c1d8513f02762cd941e34293030e46a8c131c493323f34d8f17b8a00a5ecd4315ca32de223b14fae4890992c39f21a027de866da47ab914379962a4349111828d2f628d9ce608f95a5817ec67580674ac599acb7a17245621c15d46a3edb8a66e59760c66fd012e036a8f6b043755830fb4b361e4083ff87a60b064bb6be9ce370af1989636d4ecb2a6ec743a3c1e730419c08d0a2eaad2b258ba33affe00598d8831ea692aced857ddb51324a00b2caf271e875d3173a72b770ad795ce5def45eaa3809f755419ca43c58cb466517e663c695d3ee4f6b5b8ece2ad637ce55cc7194685bbc164721fd6a13373de03fcffee1c412f6bc207a746aa111ea2c9c67456716afd80c2694a8beb4cc51e2b1a6712b4c33fcd205115b5290f0b3bae438ba2484238b6fab49679b8ede75957e2f12ff5f3fd4200ec7dc9649e3c4556040007b6574ad39f32e6c9abda45551027c5b05b11a343569335193402cbad64b868cb004f5d87e53071239c12080bca01574625e2d9bb89dafc30c9340038a21b83771cd1d88a106bf139c6adb13d589df436aef78eb87ae1e3e870487b551677444e592048d9332d71688ab8d8d871af18de597ee07ac5a9fd0601c645a77729ea1795eb21a3da3a266"
-    ]
-    nonisolated private static let dir: URL? = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
-        .appendingPathComponent("Montana", isDirectory: true).appendingPathComponent("Core", isDirectory: true)
-    /// How many machines of the genesis this phone's node holds a link to, each by a handshake both sides computed; nil while
-    /// its machine is not opened.
-    @Published private(set) var reached: Int?
-    private var held = Set<Int>()
-    private var joining = false
-    /// Whether the door of the join is done with: the device holds a head, or the build carries no anchor to walk from. Until
-    /// then every opening of the wallet walks again, even with every machine already held -- a walk refused once is not the end.
-    private var walked = false
-
-    /// The node opened once, every machine of the genesis it does not hold yet reached, and the head walked to, off the main thread.
-    func join() {
-        guard !joining, held.count < Self.genesis.count || !walked else { return }
-        joining = true
-        let missing = Self.genesis.indices.filter { i in !held.contains(i) }
-        let holding = !held.isEmpty
-        Task.detached(priority: .utility) {
-            let got = Self.reach(missing, holding: holding)
-            await MTNetworkNode.shared.joined(got)
-        }
-    }
-    private func joined(_ got: (reached: [Int], walked: Bool)?) {
-        joining = false
-        guard let got else { return }
-        held.formUnion(got.reached)
-        walked = got.walked
-        reached = held.count
-    }
-    nonisolated private static func reach(_ missing: [Int], holding: Bool) -> (reached: [Int], walked: Bool)? {
-        #if MONTANA_PROTOCOL_CORE
-        guard let dir else { return nil }
-        var standing: Int32 = 0
-        guard mtc_device_standing(&standing) == 0 else { return nil }
-        if standing == 0 {
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true,
-                                                     attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
-            // The machine's secret is this phone's: no backup carries it to another device.
-            var kept = dir
-            var values = URLResourceValues()
-            values.isExcludedFromBackup = true
-            try? kept.setResourceValues(values)
-            var born: Int32 = 0
-            let rc = dir.path.withCString { d in "127.0.0.1:0".withCString { l in mtc_device_open(d, l, &born) } }
-            MontanaTrace.mark("core_node", "open rc=\(rc) born=\(born) \(said(rc))")
-            guard rc == 0 else { return nil }
-        }
-        var got: [Int] = []
-        for i in missing {
-            let rc = genesis[i].withCString { line in mtc_machine_reach(line) }
-            MontanaTrace.mark("core_node", "reach \(i) rc=\(rc) \(said(rc))")
-            if rc == 0 { got.append(i) }
-        }
-        return (got, holding || !got.isEmpty ? walk() : false)
-        #else
-        return nil
-        #endif
-    }
-    /// THE DOOR OF THE JOIN (#136; the author's decisions 450 and 452 "a"): a phone that holds nothing walks to the head of the
-    /// chain it reached, from the anchor its operator handed it -- the proposals of two consecutive final windows, carried in the
-    /// build as anchor-earlier.proposal and anchor-later.proposal. The trust in them is the trust in the operator who built this
-    /// phone (mt-boundary lib.rs:457-465); the walk judges every certificate after them and trusts no answer. A phone that holds a
-    /// head already walks nothing, and a build without an anchor walks nothing. The walk runs on the caller's thread: this is the
-    /// detached one `join` began, never the main one. It answers whether the door is done with: a head held, or no anchor to walk from.
-    nonisolated private static func walk() -> Bool {
-        #if MONTANA_PROTOCOL_CORE
-        var head: UInt64 = 0, present: Int32 = 0
-        guard mtc_machine_head(&head, &present) == 0 else { return false }
-        guard present == 0 else { return true }
-        guard let earlier = anchor("anchor-earlier"), let later = anchor("anchor-later") else {
-            MontanaTrace.mark("core_node", "join: no anchor in the build")
-            return true
-        }
-        var window: UInt64 = 0
-        let rc = earlier.withUnsafeBytes { e in
-            later.withUnsafeBytes { l in
-                mtc_machine_join(e.bindMemory(to: UInt8.self).baseAddress, e.count,
-                                 l.bindMemory(to: UInt8.self).baseAddress, l.count, &window)
-            }
-        }
-        MontanaTrace.mark("core_node", rc == 0 ? "join rc=0 head=\(window)" : "join rc=\(rc) \(said(rc))")
-        return rc == 0
-        #else
-        return true
-        #endif
-    }
-    nonisolated private static func anchor(_ name: String) -> Data? {
-        Bundle.main.url(forResource: name, withExtension: "proposal").flatMap { try? Data(contentsOf: $0) }
-    }
-    nonisolated private static func said(_ rc: Int32) -> String {
-        #if MONTANA_PROTOCOL_CORE
-        guard rc != 0 else { return "" }
-        var out = [CChar](repeating: 0, count: 512)
-        var len = 0
-        guard mtc_last_said(&out, out.count, &len) == 0 else { return "" }
-        return String(cString: out)
-        #else
-        return ""
-        #endif
-    }
-}
-
 /// THE CHAT'S COINS, READ AS HISTORY (the author's words 02.10 18:29-19:37 began them: «every letter drips one billionth of a
 /// Montana to the person, equal to one coin»). Up to the time cut a letter of a pair's ribbon earned a coin in this phone's book by
 /// its wire name; from 22.10.2026 21:00 UTC only the chain mints (fold-6, fold-7), and since build 2320 no letter, bubble or feed
@@ -228,6 +108,43 @@ enum MTCoinText {
     }
 }
 
+/// THE CHAINS OF THE COINS (slice S2b b7f): which chain a move of coins joins, by its name and kind, and the moves joining them --
+/// the coins' own reading of the TimeChains of the minting (MTTimeChain), which keeps the chains themselves.
+extension MTTimeChain {
+    static func source(of e: MTCoinEntry) -> String { source(ref: e.ref, kind: e.k, peer: e.peer) }
+    static func source(ref r: String, kind: MTCoinEntry.Kind, peer: String? = nil) -> String {
+        source(ref: r, kind: kind, peer: peer) { p in MTGroup.shared.kind(p) == .channel }
+    }
+    /// The same reading with the channels said by the caller: a fold off the screen's thread asks no live group (MTCoinHistory).
+    static func source(ref r: String, kind: MTCoinEntry.Kind, peer: String?, channel: (String) -> Bool) -> String {
+        if MTCoinLegacy.chess(r) { return "chess" }   // the book's chess lines of the builds before (MTCoinLegacy)
+        if r.hasPrefix(MTPantheon.refPrefix) { return "pantheon" }
+        if r.hasPrefix(MTVPNWallMint.refPrefix) { return "vpnwall" }
+        if let p = MTApps.vpn?.payRefPrefix, r.hasPrefix(p) { return "vpnpay" }
+        if MTCoinLegacy.call(r) { return "calls" }
+        if MTCoinLegacy.timer(r) { return "timer" }
+        if MTBoardCoins.owns(r) { return "comments" }
+        switch kind {
+        case .earn:
+            // A GROUP'S AND A CHANNEL'S COINS STAND IN THEIR OWN CHAINS (the author's words 06.10.2026 08:5x-09:0x UTC: «their own
+            // TimeChain and their own app»): the letter's conversation names its chain.
+            guard let p = peer, MTGroup.isKey(p) else { return "chats" }
+            return channel(p) ? "channels" : "groups"
+        case .receive: return "received"
+        case .spend: return "spent"
+        case .send: return "sent"
+        case .burn: return r.hasPrefix(MTCoinBurn.callPrefix) ? "calls" : "letters"
+        }
+    }
+    /// One move of coins joins its source's chain, once by its name, in the order the moves were written.
+    static func append(_ e: MTCoinEntry) { note(source(of: e), kind: e.k.rawValue, coins: e.c, ref: e.ref, at: e.at) }
+    /// The book's whole past in one turn of the queue, not a turn for every move (04.10).
+    static func appendPast(_ moves: [MTCoinEntry]) {
+        let links = moves.map { e in (chain: source(of: e), kind: e.k.rawValue, coins: e.c, ref: e.ref, at: e.at) }
+        notePast(links)
+    }
+}
+
 /// THE THIRTEEN BOXES OF π (the author's words 03.10 21:59-22:02: «boxes by the number π, ascending by share of emission, the
 /// top thirteen»; «on the coin's badge your number in the rating»; «when sending, the same thirteen boxes in the reaction»;
 /// «a table of the top thirteen in the wallet by a button»). Box n holds the first n digits of π as whole coins -- 3, 31,
@@ -239,12 +156,12 @@ enum MTCoinText {
 enum MTPiLevels {
     /// THE LEVELS HAVE NO BORDER BUT THE INTEGER'S (the author's word 04.10 00:51: «the wallet's level is defined so, without
     /// borders, 13 always»): nineteen digits of π, the most a count of coins holds; the wallet shows thirteen of them at a time.
-    static let digits = "3141592653589793238"
-    static let all: [Int] = (1...digits.count).map { Int(digits.prefix($0)) ?? 0 }
+    static let digits = MTFabricRules.piDigits
+    static let all: [Int] = MTFabricRules.piPrefixes
     /// How many levels stand on the page at once.
     static let shown = 13
     /// The number of levels the balance fills: 0 below the first.
-    static func place(_ balance: Int) -> Int { all.filter { $0 <= balance }.count }
+    static func place(_ balance: Int) -> Int { MTFabricRules.walletLevel(balance) }
     /// THE LEVEL IS A READING, NEVER A RATE (the constitution of the chain, point 11; the author's words 19.10.2026 12:3x UTC: «this
     /// is the ceiling, the invariant -- nothing else can mint or accelerate it, no music, no VPN and so on»; «the Global Level is
     /// untied from the minting»; 13:4x: «bring it all to one owner of the function 1 coin = 1 second, and that is all»): the one
@@ -440,6 +357,153 @@ enum MTCoinBalance {
     }
 }
 
+/// THE COINS BEHIND THEIR DOOR (MTApps.coins, docs/APPS-API.md): what this application answers shared code.
+final class MTCoinsDoor: MTCoinDoor {
+    var walletLevel: Int? { MTCoinBalance.now.map(MTFabricRules.walletLevel) }
+    var chainsBefore: URL? { MTCoinPlace.dir }
+    var settingKeys: [String] {
+        [MTCoinShow.key, MTCoinShow.toldKey,   // the owner shows or hides their coins, and the wallet has said what that does (04.10)
+         "avatarBadges.coins",   // COMPAT-LOCAL: the retired viewer switch, retained for old copies (14.10); the balance owner alone governs disclosure
+         MTPersonalRate.key,   // the person's earning, its period and currency: their own rate of the coin (04.10 19:19)
+         MTCoinUnit.mainKey]   // the sum of the balance the person made the main one: time, coins or the ticker (19.10.2026)
+    }
+    var seatKeys: [String] {
+        [MTCoinBoard.key, MTCoinBoard.levelsKey]   // the balances and the Global Levels this person's correspondents told: learned for this person
+    }
+    var seatFolders: [String] {
+        ["AS:Montana/Coins"]   // the person's coin book and the chats' tally (MTCoinPlace): parked with the person, never another's (T2 19.10.2026)
+    }
+    @MainActor func moment(_ m: MTAppMoment) {
+        switch m {
+        case .launching: MTTopNet.noteFirstLaunch()   // whether an earlier build had published this device's top row (5.1.2(i), 08.10.2026)
+        case .launched: MTLocalCoinLedger.warm()   // read off the main thread from here, so the wallet opens on the frame of the touch (04.10 13:04)
+        case .active:
+            MTVPNWallMint.count()   // the VPN wall's seconds are counted at the return (03.10)
+            MTCoinVault.shared.soon("active", after: 1)   // the seed's other devices, gathered at the return (04.10)
+            Task { await MTTimeChainTip.shared.gather(why: "active") }   // their tips first, in one round trip (04.10 16:34)
+        case .tunnelConnected: MTVPNWallMint.count()
+        // The coins of the person leaving are on disk in their own folder before it moves (the coin audit's fourth point), and
+        // no walk of the chain begun under them writes from this turn on (MTCoinSeat, the critic 19.10.2026 on T2).
+        case .seatLeaving: MTLocalCoinLedger.shared.writeWhole()   // the seat's turn moves right after (MTSeatTurn.leaving)
+        // The coin book of the person forgotten is on disk whole and set aside before anything of theirs leaves (the coin
+        // audit's eighth point); with other seats the seat's own road parks it (MTSeats.leaveForgotten).
+        case .forgottenAlone: MTLocalCoinLedger.shared.writeWhole(); MTCoinPlace.setAside()
+        case .seated: MTCoinBook.reread()   // the seated person's own coins, never the book of the one who left (04.10)
+        // THE IDENTITY LEAVES THE NODES TOO (App Review 5.1.1(v), 08.10.2026: deleting an account deletes its records): the row of
+        // the Montana top -- the name and the coins shown -- is withdrawn from every node while the words still derive its token.
+        case .seedForgetting: MTTopNet.shared.withdraw()
+        case .shown, .returned, .hidden: break   // the VPN's own moments (slice S3b b1)
+        case .transfersAsked: MTCoinHistory.shared.warm()   // the coins' fold, once, at a person's transactions tab
+        }
+    }
+    // MY COIN KEY RIDES THE WORD ABOUT MYSELF (COIN-TX-V3 section 1; the author's word 21.10.2026 09:41 UTC): a key not derived
+    // yet is derived off the main thread now, and the whole book hears it when it stands (MTCoinTx.deriveForTheWord).
+    // THE BALANCE RIDES THE SAME WORD (03.10, MTCoinBoard): told again when it changed, once in ten minutes at most.
+    // HIDDEN IS SAID, NOT LEFT UNSAID (04.10, MTCoinShow): an owner who hid the coins tells -1 once.
+    func about(to peer: String, askKey: Bool, now: Double) -> MTCoinAbout {
+        let coinKey = MTCoinTx.cachedKeyTag
+        if coinKey == nil { MTCoinTx.deriveForTheWord() }
+        let keyDue = askKey || (coinKey.map { k in !MTCoinTx.toldKey(peer, k) } ?? false)
+        let coins = MTCoinShow.on ? MTCoinBalance.now : -1
+        let said = UserDefaults.standard.dictionary(forKey: "aboutCoins." + peer)
+        let coinsDue = coins.map { c in (said?["c"] as? Int) != c && 600 <= now - ((said?["at"] as? Double) ?? 0) } ?? false
+        return MTCoinAbout(keyDue: keyDue, coinsDue: coinsDue, coins: coins, key: coinKey, at: now)
+    }
+    func word(_ a: MTCoinAbout, to peer: String) -> [String: Any] {
+        var word: [String: Any] = [:]
+        if let coins = a.coins { word["c"] = coins }
+        if let coinKey = a.key { word["k"] = coinKey }
+        if let own = MTOwnWords.tag(for: peer) { word["o"] = own }   // a tag only my words make: a pair of my words knows itself (06.10)
+        return word
+    }
+    func told(_ a: MTCoinAbout, to peer: String) {
+        if let coins = a.coins { UserDefaults.standard.set(["c": coins, "at": a.at] as [String: Any], forKey: "aboutCoins." + peer) }
+        if let coinKey = a.key { MTCoinTx.noteToldKey(peer, coinKey) }
+    }
+    @MainActor func heardAbout(_ o: [String: Any], from chat: String, at: Double) -> Bool {
+        if let coins = o["c"] as? Int { MTCoinBoard.shared.note(chat, coins: coins, at: at) }   // the pair's balance (03.10)
+        if let k = o["k"] as? String { MTCoinTx.notePeerFrom(chat, k) }   // the pair's coin key: v3 sends commit to it (COIN-TX-V3)
+        if let own = o["o"] as? String { MTOwnWords.heard(own, from: chat) }   // the pair holds my words: no coin goes to it (06.10)
+        // THEIR SEND FOUND NO KEY OF MINE (21.10.2026, «q»): the word they hold is lost or never came -- told again now
+        if o["q"] != nil { MTCoinTx.forgetToldKey(chat); return true }
+        return false
+    }
+    var balanceTail: String {
+        guard MTCoinShow.on, let coins = MTCoinBalance.now else { return "" }
+        return "C" + String(coins)
+    }
+    func heardBalance(_ coins: Int, from peer: String, at: Double) {
+        Task { @MainActor in MTCoinBoard.shared.note(peer, coins: coins, at: at) }
+    }
+    func heardLevel(_ level: Int, from peer: String, at: Double) {
+        Task { @MainActor in MTCoinBoard.shared.noteLevel(peer, level: level, at: at) }
+    }
+    func isLetter(_ text: String) -> Bool { MTCoinLetter.parse(text) != nil }
+    func isLetter(_ m: Message) -> Bool { m.coinLetter != nil }
+    func strays(_ text: String) -> Bool { text != MTCoinLetter.born && MTCoinLetter.parse(text) != nil }
+    @MainActor func travels(_ m: Message) -> Bool { MTCoinSend.travels(m) }
+    @MainActor func hold(_ m: Message, in chat: String) { MTCoinSend.hold(m, in: chat) }
+    @MainActor func due(_ store: ChatStore) { MTCoinSend.due(store) }
+    @MainActor func release(_ m: Message, in chat: String) { MTCoinSend.release(m, in: chat) }
+    @MainActor func arrived(_ mid: String, from chat: String) { MTCoinSend.arrived(mid, from: chat) }
+    @MainActor func settle(_ store: ChatStore) {
+        MTCoinSend.settle(store)
+        Task { @MainActor in await MTCoinTx.settle() }   // the transfers' records: the waiting ones decided, the pipes asked (MTCoinTx)
+    }
+    @MainActor func landed(_ row: Message, in chat: String, store: ChatStore) {
+        guard !row.isFromMe else { return }
+        // A COIN LETTER IS CREDITED ON ITS LANDING (the author's word 03.10 13:52), once, by its wire name (MTCoinLedger.receive)
+        // -- a letter that names itself, never a copy (06.10).
+        if !MTGroup.isKey(chat), let coin = row.coinLetter, !row.mid.isEmpty, MTCoinSend.credits(coin, mid: row.mid, from: chat) {
+            MTCoinBook.ledger.receive(coin.c, from: chat, ref: row.mid, on: nil)
+        }
+        // A TRANSFER'S TELLING LETTER ASKS THE NODES (MTCoinTx): the letter credits nothing; the record it names is read from the log.
+        if row.text.contains(MTCoinTx.link) {
+            Task { @MainActor in await MTCoinTx.scan(why: "told") }
+        }
+        // A CHOSEN PERSON'S LETTER IS PAID BY ITSELF (MTAutoReact, the author's word 06.10.2026 14:3x UTC) -- a turn after its landing,
+        // so the letter stands before the reaction that rides on it.
+        if !MTGroup.isKey(chat), MTAutoReact.rule(chat) != nil {
+            Task { @MainActor in MTAutoReact.landed(row, in: chat, store: store) }
+        }
+    }
+    @MainActor func reacted(_ c: Int, ref: String, on sid: String, from chat: String) { MTCoinSend.reacted(c, ref: ref, on: sid, from: chat) }
+    @MainActor func gifted(_ c: Int, from peer: String, ref: String, on target: String) {
+        MTCoinBook.ledger.receive(c, from: peer, ref: ref, on: target)
+    }
+    @MainActor func heardSend(_ tx: String, on target: String) { MTCoinTx.heard(tx, on: target) }
+    @MainActor func send(_ coins: Int, to conv: String, on target: String) async -> MTCoinSent {
+        switch await MTCoinTx.send3(coins, conv: conv, on: target) {
+        case .sent(let id): return .sent(id)
+        case .pending: return .pending
+        case .notApplicable(let why): return .refused(why)
+        case .failed, .paced: return .failed
+        }
+    }
+    @MainActor func canPay(_ chat: Chat, store: ChatStore) -> Bool { MTCoinSend.canPay(chat, store: store) }
+    @MainActor func react(_ coins: Int, on m: Message, in chat: Chat, store: ChatStore) async -> Bool {
+        await MTCoinSend.react(coins, on: m, in: chat, store: store)
+    }
+    @MainActor func mayRetry(_ m: Message) -> Bool { MTCoinSend.mayRetry(m) }
+    func shelfLanded(_ text: String, mid: String, from conv: String, words: String, seat: String) async {
+        guard let coin = MTCoinLetter.parse(text), coin.bound(to: mid),
+              let e = MontanaSeedKeys.entropyFrom(mnemonic: words), e.count == 32 else { return }
+        let move = MTCoinEntry(k: .receive, c: coin.c, ref: "mid:" + mid, peer: conv, on: nil, at: Date().timeIntervalSince1970)
+        let laid = await MTCoinVault.lay([move], entropy: e)
+        MontanaTrace.mark("shelf_coin", mid: mid, "seat=\(seat) coins=\(coin.c) rows=\(laid)")
+    }
+}
+
+extension MTSeats {
+    /// A PERSON ON THE SHELF'S OWN WORDS AND THE BALANCE OF THEIR BOOK AS THE SHELF HOLDS IT -- the phone's hands for the other end
+    /// of a transfer to one's own account (MTCoinTx.landOwn, 12.10.2026). nil for the person seated, an unknown seat or a record
+    /// that does not open. Read off the screen's thread.
+    static func shelfCoins(_ id: String) -> (words: String, book: Int)? {
+        guard let words = shelfWords(id) else { return nil }
+        return (words, MTLocalCoinLedger.balance(of: shelf(folder: "AS:Montana/Coins", seat: id).appendingPathComponent(MTCoinPlace.book)))
+    }
+}
+
 /// THE PEOPLE IN THE APP HEAR MY BALANCE MOVE (the author's words 04.10.2026 00:03 and 01:19 UTC: «the update instant, as by a web
 /// socket»): a move of the book says the balance again to the correspondents in the app now, in the app word (E2E.coinBeacon) --
 /// one round in two seconds however fast the coins come, so a minute of minting is thirty rounds to the people online, not one a coin.
@@ -473,14 +537,14 @@ enum MTCoinBalance {
     struct Told: Codable { var coins: Int; var at: Double }
     struct Place: Identifiable { let id: String; let coins: Int; let mine: Bool }
     @Published private(set) var told: [String: Told] = [:]
-    private static let key = "coinBoard.told"
+    nonisolated static let key = "coinBoard.told"
     /// THE PEOPLE'S LEVELS (the author's word 11.10.2026 18:2x UTC, MTLevelShow): the Global Level each pair last told in its
     /// presence words, the newest word wins, and a word that names none takes it away. The book is drawn again only when a level
     /// moves: the moment of every word is kept beside it unpublished, so the faces are not drawn again at every beat.
     struct Level: Codable { var level: Int; var at: Double }
     @Published private(set) var levels: [String: Level] = [:]
     private var levelHeardAt: [String: Double] = [:]
-    private static let levelsKey = "coinBoard.levels"
+    nonisolated static let levelsKey = "coinBoard.levels"
 
     private init() {
         if let d = UserDefaults.standard.data(forKey: Self.key), let t = try? JSONDecoder().decode([String: Told].self, from: d) { told = t }
@@ -610,142 +674,6 @@ enum MTCoinShow {
     static let key = "coins.shown"   // NOT-UI: the owner's balance privacy preference
     static let toldKey = "top.told"  // NOT-UI: the wallet explained the public ranking
     static var on: Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
-}
-
-/// Reputation is always visible (14.10.2026). The old preference is retained only
-/// for reading backups; it no longer suppresses sending or drawing the level.
-enum MTLevelShow {
-    static let shownKey = "level.shown"   // COMPAT-LOCAL: retired preference
-    static var on: Bool { true }
-}
-
-/// THE PERSON'S LEVEL FOR A WORD SAID FROM ANY THREAD (11.10.2026, E2E.levelTail): the presence words are built off the main actor,
-/// where the chain of the person lives. The chain writes its level here at every count; nil until this life read its seconds, so
-/// an unknown level is never said as none.
-enum MTPersonLevel {
-    private static let lock = NSLock()
-    private static var held: Int?
-    static var now: Int? { lock.lock(); defer { lock.unlock() }; return held }
-    static func set(_ v: Int?) { lock.lock(); held = v; lock.unlock() }
-}
-
-/// ACCESS BY LEVEL (the author's words 16.10.2026 15:2x UTC: «both functions of level 7 must be made, and in the settings a path
-/// Access by level -- where they open for each»; «we have the gamification of access to Montana's functions»): every function a level
-/// opens is named here once, with its level. The person's level is the Global Level the avatar shows (MTPersonChain.global); before
-/// this life has read it, the last one this phone knew stands, so a launch's first second never drops a choice the level opened.
-/// LEVEL 8 (the author's word 17.10.2026 15:1x UTC: «add to the accesses that only from level 8 can one connect one's own node to
-/// the Montana network through the client»): a machine the person owns joins the network through this app -- set up from here
-/// (MontanaNodeSetup), its daily copies and a copy sent at a tap (HomeNodeWatch) -- once the level opens it; taking one's own
-/// copy back from it asks no level.
-enum MTLevelAccess {
-    enum Feature: String, CaseIterable {
-        case keepDeleted   // a letter the correspondent deletes for everyone stays on this phone, and the correspondent is told
-        case autoRecord    // calls are recorded by themselves; below its level a call is recorded by the call screen's own mark
-        case ownNode       // a machine the person owns joins Montana's network through this app: set up from here, copies sent to it
-        var level: Int { self == .ownNode ? 8 : 7 }
-    }
-    static let lastKey = "levelAccess.last"                    // NOT-UI: the last Global Level this phone knew of this person
-    static let keepKey = "levelAccess.keepDeleted"              // NOT-UI: the person's choice, on once the level opens it
-    static var level: Int? {
-        guard let p = MTPersonLevel.now, let c = MTCoinBalance.now else { return UserDefaults.standard.object(forKey: lastKey) as? Int }
-        let g = MTPersonChain.global(person: p, balance: c)
-        if UserDefaults.standard.object(forKey: lastKey) as? Int != g { UserDefaults.standard.set(g, forKey: lastKey) }
-        return g
-    }
-    static func opens(_ f: Feature) -> Bool { f.level <= (level ?? 0) }
-    /// The person keeps the letters their correspondents delete: the level opens it, and it stands until they untick it.
-    static var keepsDeleted: Bool { opens(.keepDeleted) && (UserDefaults.standard.object(forKey: keepKey) as? Bool ?? true) }
-    /// The choice as the notification extension reads it (the shared keychain): it takes a deleted letter's notice off the screen
-    /// only while this phone does not keep what others delete.
-    static func mirror() { MontanaKeychain.set("keepsDeleted", Data([keepsDeleted ? 1 : 0])) }
-}
-
-/// The public distribution contains counts of levels only. A separate, seed-derived
-/// owner token lets each person replace their own level without publishing a balance,
-/// name, address or contact list. Old clients can continue using every existing door.
-@MainActor final class MTLevelDistribution: ObservableObject {
-    static let shared = MTLevelDistribution()
-    struct Bin: Codable, Equatable { let level: Int; let count: Int }
-    @Published private(set) var bins: [Bin] = []
-    private var asking = false
-    private var again = false
-    private var published: String?
-    private var publishedAt = Date.distantPast
-    private var attemptedAt = Date.distantPast
-    private var readAt = Date.distantPast
-    nonisolated static let cacheKey = "level.distribution"
-    private init() {
-        if let data = UserDefaults.standard.data(forKey: Self.cacheKey), let kept = try? JSONDecoder().decode([Bin].self, from: data) {
-            bins = Self.valid(kept)
-        }
-    }
-    static func valid(_ input: [Bin]) -> [Bin] {
-        let clean = input.filter { (0...62).contains($0.level) && (1...1_000_000).contains($0.count) }
-        guard Set(clean.map(\.level)).count == clean.count, clean.count <= 63 else { return [] }
-        return clean.sorted { $0.level < $1.level }
-    }
-    static func rank(_ level: Int, in bins: [Bin]) -> Double? {
-        guard let first = bins.first, let last = bins.last else { return nil }
-        if first.level == last.level { return level < first.level ? 0 : 1 }
-        if level <= first.level { return 0 }
-        if level >= last.level { return 1 }
-        let total = bins.reduce(0.0) { $0 + Double($1.count) }
-        let before = bins.filter { $0.level < level }.reduce(0.0) { $0 + Double($1.count) }
-        let same = Double(bins.first { $0.level == level }?.count ?? 0)
-        let low = Double(first.count) / 2, high = total - Double(last.count) / 2
-        return max(0, min(1, (before + same / 2 - low) / (high - low)))
-    }
-    func rank(_ level: Int) -> Double? { Self.rank(level, in: bins) }
-    private func own() -> (token: String, level: Int)? {
-        guard let person = MTPersonLevel.now, let coins = MTCoinBalance.now,
-              let words = MontanaSeed.mnemonic, let entropy = MontanaSeedKeys.entropyFrom(mnemonic: words) else { return nil }
-        let key = HKDF<SHA256>.deriveKey(inputKeyMaterial: SymmetricKey(data: entropy), salt: Data(),
-            info: Data("mt-level-distribution-v1".utf8), outputByteCount: 32)
-        let token = Data(HMAC<SHA256>.authenticationCode(for: Data("owner".utf8), using: key))
-        return (MontanaHomeNode.hex(token), MTPersonChain.global(person: person, balance: coins))
-    }
-    func changed() {
-        guard let own = own(), published != own.token + ":" + String(own.level) else { return }
-        Task { await refresh() }
-    }
-    func refresh() async {
-        if asking { again = true; return }
-        let own = own(), stamp = own.map { $0.token + ":" + String($0.level) }
-        let needsPut = stamp != nil && (stamp != published || Date().timeIntervalSince(publishedAt) >= 300)
-        guard Date().timeIntervalSince(attemptedAt) >= 5, needsPut || Date().timeIntervalSince(readAt) >= 60 else { return }
-        attemptedAt = Date()
-        asking = true
-        defer {
-            asking = false
-            if again { again = false; Task { await refresh() } }
-        }
-        for base in MontanaWakePush.orderedBases(for: "levels").prefix(3) {
-            if needsPut, let own {
-                if await post(base + "/level-put", body: ["token": own.token, "level": own.level]) != nil { published = stamp; publishedAt = Date() }
-            }
-            guard let reply = await post(base + "/level-get", body: [:]),
-                  let rows = reply["levels"] as? [[String: Int]] else { continue }
-            let next = Self.valid(rows.compactMap { row in
-                guard let level = row["level"], let count = row["count"] else { return nil }
-                return Bin(level: level, count: count)
-            })
-            if bins != next {
-                bins = next
-                if let data = try? JSONEncoder().encode(next) { UserDefaults.standard.set(data, forKey: Self.cacheKey) }
-            }
-            readAt = Date()
-            MontanaTrace.markChanged("level_distribution", "bins=\(next.count)")
-            return
-        }
-    }
-    private func post(_ word: String, body: [String: Any]) async -> [String: Any]? {
-        guard let url = URL(string: word), let data = try? JSONSerialization.data(withJSONObject: body) else { return nil }
-        var request = URLRequest(url: url); request.httpMethod = "POST"; request.timeoutInterval = 6
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type"); request.httpBody = data
-        guard let (reply, response) = try? await URLSession.shared.data(for: request),
-              (response as? HTTPURLResponse)?.statusCode == 200, reply.count <= 32_768 else { return nil }
-        return (try? JSONSerialization.jsonObject(with: reply)) as? [String: Any]
-    }
 }
 
 /// THE MONTANA TOP (the author's words 04.10.2026 00:03, 02:40 and 02:47 UTC: «a live set as by a web socket, the update instant from
@@ -897,7 +825,6 @@ enum MTLevelAccess {
     }
 }
 
-
 /// THE BOOK RIDES THE SEED (the author's words 04.10.2026 10:36-10:42 UTC: «I must log in by my seed on another device and my
 /// balance must surely be kept -- the critical part»; the choice 10:40: «the book by the seed on the nodes»; «build by constitution 6
 /// fully» -- the phone is a full node). Every move of the book is sealed under a key only the words derive (ChaCha20-Poly1305, the
@@ -908,8 +835,6 @@ enum MTLevelAccess {
 /// a device that has not gathered its seed's book never tells the table a balance it does not hold.
 @MainActor final class MTCoinVault: ObservableObject {
     static let shared = MTCoinVault()
-    nonisolated private static let keyLabel = Data("mt-coins-vault-key-v1".utf8)       // NOT-UI: the seal's derivation label
-    nonisolated private static let ownerLabel = Data("mt-coins-vault-owner-v1".utf8)   // NOT-UI: the row's derivation label
     nonisolated private static let tokenLabel = Data("mt-coins-vault-token".utf8)      // NOT-UI: the token's own label
     nonisolated private static let aad = Data("mt.coins.vault".utf8)                   // NOT-UI: the words the seal is bound to
     nonisolated private static let tipLabel = Data("mt-timechain-tip-token".utf8)      // NOT-UI: the tips' row label (MTTimeChainTip)
@@ -969,17 +894,9 @@ enum MTLevelAccess {
     }
 
     nonisolated static func keys(entropy: Data) -> (seal: SymmetricKey, token: Data, tip: Data) {
-        let ikm = SymmetricKey(data: entropy)
-        let seal = HKDF<SHA256>.deriveKey(inputKeyMaterial: ikm, salt: Data(), info: keyLabel, outputByteCount: 32)
-        let owner = HKDF<SHA256>.deriveKey(inputKeyMaterial: ikm, salt: Data(), info: ownerLabel, outputByteCount: 32)
+        let seal = MTSeedVault.seal(entropy), owner = MTSeedVault.owner(entropy)   // the seed's vault keys, shared (MTSeedVault)
         return (seal, Data(HMAC<SHA256>.authenticationCode(for: tokenLabel, using: owner)),
                 Data(HMAC<SHA256>.authenticationCode(for: tipLabel, using: owner)))
-    }
-    nonisolated private static let personLabel = Data("mt-person-chain-token".utf8)   // NOT-UI: the chain of the person's row label (MTPersonChain)
-    /// The chain of the person's row and seal (MTPersonChain): the book's seal key, and a row of its own under the owner key.
-    static func personRow() -> (seal: SymmetricKey, token: Data)? {
-        guard let m = MontanaSeed.mnemonic, let e = MontanaSeedKeys.entropyFrom(mnemonic: m), e.count == 32 else { return nil }
-        return (keys(entropy: e).seal, Data(HMAC<SHA256>.authenticationCode(for: personLabel, using: ownerKey(e))))
     }
     /// THE TAG OF A PAIR ONLY THE SAME WORDS MAKE (MTOwnWords): HMAC-SHA-256 under the owner key over the label and the conversation's
     /// name. A pair of other words reads 32 bytes it can neither check nor tie to any other conversation; no node sees them (the word
@@ -1006,7 +923,7 @@ enum MTLevelAccess {
         }
     }
     nonisolated private static func ownerKey(_ entropy: Data) -> SymmetricKey {
-        HKDF<SHA256>.deriveKey(inputKeyMaterial: SymmetricKey(data: entropy), salt: Data(), info: ownerLabel, outputByteCount: 32)
+        MTSeedVault.owner(entropy)
     }
     fileprivate static func mine() -> (seal: SymmetricKey, token: Data, tip: Data)? {
         guard let m = MontanaSeed.mnemonic, let e = MontanaSeedKeys.entropyFrom(mnemonic: m), e.count == 32 else { return nil }
@@ -1076,7 +993,7 @@ enum MTLevelAccess {
             // dictionary named a different part each time -- 296 of 372 gathers in 11 h took the whole book again (12.3 M moves fetched,
             // opened and decoded, a gather every half minute while minting). A row's own pieces, opened here, are what it need not send.
             let have = Array((held[r.slot] ?? []).filter { pieces[$0] != nil }.prefix(256))
-            guard case let (200, o?) = await Self.post(door + "/vault-get", ["token": r.token, "have": have], timeout: 20),
+            guard case let (200, o?) = await MTSeedVault.post(door + "/vault-get", ["token": r.token, "have": have], timeout: 20),
                   let ids = o["held"] as? [String] else { continue }
             if moved(gen, why) { return }
             for x in (o["pieces"] as? [[String: Any]]) ?? [] {
@@ -1121,7 +1038,7 @@ enum MTLevelAccess {
                 let key = k.seal
                 guard let sealed = await Task.detached(priority: .utility, operation: { MTCoinVault.seal(part, with: key) }).value else { break }
                 if moved(gen, why) { return }
-                let (code, o) = await Self.post(r.door + "/vault-put", ["token": r.token, "blob": sealed.base64EncodedString(), "replace": last ? replace : []], timeout: 30)
+                let (code, o) = await MTSeedVault.post(r.door + "/vault-put", ["token": r.token, "blob": sealed.base64EncodedString(), "replace": last ? replace : []], timeout: 30)
                 if moved(gen, why) { return }   // the old seed's own book went to its own row; nothing more is kept here
                 if code == 413 { full.insert(slot); break }
                 guard code == 200, let id = o?["piece"] as? String else { break }
@@ -1165,15 +1082,6 @@ enum MTLevelAccess {
         }
         return plans
     }
-    fileprivate static func post(_ url: String, _ body: [String: Any], timeout: Double) async -> (Int, [String: Any]?) {
-        guard let u = URL(string: url), let d = try? JSONSerialization.data(withJSONObject: body) else { return (-1, nil) }   // SERVER-DEBT-ACK: the accelerator node (rung 4), the seed's sealed book
-        var req = URLRequest(url: u); req.httpMethod = "POST"; req.timeoutInterval = timeout   // SERVER-DEBT-ACK: the accelerator node (rung 4)
-        req.setValue("application/json", forHTTPHeaderField: "content-type")
-        req.httpBody = d
-        guard let (data, resp) = try? await URLSession.shared.data(for: req) else { return (-1, nil) }   // SERVER-DEBT-ACK: the accelerator node (rung 4)
-        MTPersonChain.shared.answered(resp)   // a node's answer is a second of the person on the network (MTPersonChain)
-        return ((resp as? HTTPURLResponse)?.statusCode ?? -1, try? JSONSerialization.jsonObject(with: data) as? [String: Any])
-    }
 
     /// A PERSON ON THE SHELF IS CREDITED IN THEIR OWN BOOK (07.10, MTShelfPost): the moves are sealed under the key only their
     /// words derive and laid on every node under both their rows -- the node's own and the common one -- exactly as their own
@@ -1185,7 +1093,7 @@ enum MTLevelAccess {
         guard !doors.isEmpty, let sealed = seal(moves, with: k.seal) else { return 0 }
         var took = 0
         for r in rows(doors, common: MontanaHomeNode.hex(k.token), entropy: entropy) {
-            let (code, _) = await post(r.door + "/vault-put", ["token": r.token, "blob": sealed.base64EncodedString(), "replace": [String]()], timeout: 30)
+            let (code, _) = await MTSeedVault.post(r.door + "/vault-put", ["token": r.token, "blob": sealed.base64EncodedString(), "replace": [String]()], timeout: 30)
             if code == 200 { took += 1 }
         }
         return took
@@ -1299,7 +1207,7 @@ enum MTLevelAccess {
         for door in MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "vault")) {
             // A piece named in its own replace would be taken off and not laid again (the node checks before it deletes).
             let gone = Array(stale.union(mine[door].map { p in [p] } ?? [])).filter { p in p != id }
-            let (code, o) = await MTCoinVault.post(door + "/vault-put", ["token": token, "blob": sealed.base64EncodedString(), "replace": gone], timeout: 10)
+            let (code, o) = await MTSeedVault.post(door + "/vault-put", ["token": token, "blob": sealed.base64EncodedString(), "replace": gone], timeout: 10)
             guard code == 200, let piece = o?["piece"] as? String else { continue }
             mine[door] = piece
             opened[piece] = t.lane
@@ -1321,7 +1229,7 @@ enum MTLevelAccess {
         let token = MontanaHomeNode.hex(k.tip)
         var fresh: [MTCoinEntry] = [], lanes = 0, gap = false, broken = 0, answered = false
         for door in MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "vault")) {
-            guard case let (200, o?) = await MTCoinVault.post(door + "/vault-get", ["token": token, "have": Array(opened.keys.prefix(256))], timeout: 6),
+            guard case let (200, o?) = await MTSeedVault.post(door + "/vault-get", ["token": token, "have": Array(opened.keys.prefix(256))], timeout: 6),
                   let held = o["held"] as? [String] else { continue }
             guard gen == MTCoinBook.generation else { MontanaTrace.mark("tip_get", "why=\(why) the seat moved -- nothing joined"); return }
             answered = true
@@ -1468,7 +1376,7 @@ enum MTVPNWallMint {
     /// The app stands in front of the person and a VPN is up -- Montana's tunnel or another app's (MTForeignVPN). Not «active» but
     /// «not in the background»: the scene's return reaches count() before the application's state turns active (T3 05.10 11:31Z).
     @MainActor static var wanted: Bool {
-        UIApplication.shared.applicationState != .background && (MontanaVPNTunnel.shared.status == .connected || MTForeignVPN.link() != nil)
+        UIApplication.shared.applicationState != .background && MTApps.vpn?.anyTunnel == true
     }
     /// The app came to the screen, the wallet opened or the tunnel rose: the beat runs and the chain hears the person (fold-7).
     @MainActor static func count() { MTMintBeat.run(); MTCoinTx.beHere() }
@@ -1538,832 +1446,6 @@ enum MTVPNWallMint {
     }
 }
 
-/// THE TIMECHAINS OF THE MINTING (the author's words 03.10.2026 21:25 UTC: «in chess too its own TimeChain of the minting for
-/// every move, put in order»; the chain's constitution, points 4 and 5: «build by the Architecture of TimeChains», «build the
-/// Economy of Time»). Every source of coins keeps its own chain on this phone -- chess, the Pantheon, the VPN wall, the Timer, the
-/// chats' letters, the coins received, given and sent: one link per move of coins, numbered, stamped in milliseconds and sealed
-/// by SHA-256 over the link and the seal of the one before, so a link changed or moved breaks every seal after it. The book keeps
-/// the balance; the chains keep how every coin came. One seam writes them -- the book's keep, where every new move is written --
-/// and a move joins its chain once, by its name. Local today; the core's key from the seed signs their heads next.
-enum MTTimeChain {
-    struct Link: Codable { let n: Int; let at: Int64; let k: String; let c: Int; let ref: String; let prev: String; let hash: String }
-    struct Head: Equatable { let n: Int; let hash: String; let whole: Bool }
-    static let genesis = String(repeating: "0", count: 64)
-    /// ONE MOMENT, THE SAME ON EVERY DEVICE TO THE MILLISECOND (the author's word 06.10.2026 08:2x UTC: «everything to the millisecond,
-    /// exact on all nodes, the sender and the receivers above all»): a move is born at a whole millisecond, and every road writes that
-    /// millisecond as it is -- the lane, the chains, the book of another device of the words. `Int64(at * 1000)` cut the fraction:
-    /// 5 185 of the iPhone 17's 15 331 moves reached the seed's other devices a millisecond earlier than their owner wrote them.
-    nonisolated static func ms(_ moment: Double) -> Int64 { Int64((moment * 1000).rounded()) }
-    nonisolated static func now() -> Double { Double(ms(Date().timeIntervalSince1970)) / 1000 }
-    /// THE CHAINS OF THE BUILDS BEFORE (the author's word 02.11.2026 16:14 UTC, link 14629: «only 1 coin is 1 second, no other way
-    /// named»): the games, the chats, the comments, the calls and the letters minted or burned coins on this phone until the chain
-    /// alone minted (decisions 375 and 383 «a»). Their chains stay sealed on the phone; the wallet names them by one word, the
-    /// builds before, and shows no road of coins by them.
-    static let before = Set(["chess", "pantheon", "vpnwall", "timer", "chats", "groups", "channels", "comments", "calls", "letters"])
-    /// The sources, each its own chain, in the wallet's order.
-    static let sources = ["pi", "chess", "pantheon", "vpnwall", "vpnpay", "timer", "chats", "groups", "channels", "comments", "wall", "received", "spent", "sent", "calls", "letters", "system"]
-    private static let q = DispatchQueue(label: "montana.TimeChains", qos: .utility)
-    private struct Held { var n: Int; var hash: String; var refs: Set<String> }
-    private static var held: [String: Held] = [:]   // each chain read once, on q
-
-    static func source(of e: MTCoinEntry) -> String { source(ref: e.ref, kind: e.k, peer: e.peer) }
-    static func source(ref r: String, kind: MTCoinEntry.Kind, peer: String? = nil) -> String {
-        source(ref: r, kind: kind, peer: peer) { p in MTGroup.shared.kind(p) == .channel }
-    }
-    /// The same reading with the channels said by the caller: a fold off the screen's thread asks no live group (MTCoinHistory).
-    static func source(ref r: String, kind: MTCoinEntry.Kind, peer: String?, channel: (String) -> Bool) -> String {
-        if MTCoinLegacy.chess(r) { return "chess" }   // the book's chess lines of the builds before (MTCoinLegacy)
-        if r.hasPrefix(MTPantheon.refPrefix) { return "pantheon" }
-        if r.hasPrefix(MTVPNWallMint.refPrefix) { return "vpnwall" }
-        if r.hasPrefix(MTVPNPay.refPrefix) { return "vpnpay" }
-        if MTCoinLegacy.call(r) { return "calls" }
-        if MTCoinLegacy.timer(r) { return "timer" }
-        if MTBoardCoins.owns(r) { return "comments" }
-        switch kind {
-        case .earn:
-            // A GROUP'S AND A CHANNEL'S COINS STAND IN THEIR OWN CHAINS (the author's words 06.10.2026 08:5x-09:0x UTC: «their own
-            // TimeChain and their own app»): the letter's conversation names its chain.
-            guard let p = peer, MTGroup.isKey(p) else { return "chats" }
-            return channel(p) ? "channels" : "groups"
-        case .receive: return "received"
-        case .spend: return "spent"
-        case .send: return "sent"
-        case .burn: return r.hasPrefix(MTCoinBurn.callPrefix) ? "calls" : "letters"
-        }
-    }
-    private static func file(_ chain: String) -> URL? { MTTimeChainPlace.file(chain) }
-    /// The person lifted into the seat: the chains held in memory belong to the person who left, and the lifted person's chains of
-    /// the builds before are laid into their TimeChain folder at the next ask.
-    static func forget() { q.async { held = [:]; MTTimeChainPlace.settle() } }
-    /// The seal: SHA-256 over the link's fields, one per line, the previous seal last.
-    static func seal(n: Int, at: Int64, k: String, c: Int, ref: String, prev: String) -> String {
-        let body = [String(n), String(at), k, String(c), ref, prev].joined(separator: "\n")
-        return SHA256.hash(data: Data(body.utf8)).map { String(format: "%02x", $0) }.joined()
-    }
-    private static func links(_ chain: String) -> [Link] {
-        guard let u = file(chain), let text = try? String(contentsOf: u, encoding: .utf8) else { return [] }
-        let decoder = JSONDecoder()
-        return text.split(separator: "\n").compactMap { try? decoder.decode(Link.self, from: Data($0.utf8)) }
-    }
-    private static func state(_ chain: String) -> Held {
-        if let h = held[chain] { return h }
-        let all = links(chain)
-        let h = Held(n: all.last?.n ?? 0, hash: all.last?.hash ?? genesis, refs: Set(all.map(\.ref)))
-        held[chain] = h
-        return h
-    }
-    /// One move of coins joins its source's chain, once by its name, in the order the moves were written.
-    static func append(_ e: MTCoinEntry) { note(source(of: e), kind: e.k.rawValue, coins: e.c, ref: e.ref, at: e.at) }
-    /// The book's whole past in one turn of the queue, not a turn for every move (04.10).
-    static func appendPast(_ moves: [MTCoinEntry]) {
-        let links = moves.map { e in (chain: source(of: e), kind: e.k.rawValue, coins: e.c, ref: e.ref, at: e.at) }
-        q.async { for l in links { write(l.chain, kind: l.kind, coins: l.coins, ref: l.ref, at: l.at) } }
-    }
-    /// One link that is not a move of coins (a level of π reached): the same seal, the same once-by-name.
-    static func note(_ chain: String, kind: String, coins: Int, ref: String, at moment: Double = Date().timeIntervalSince1970) {
-        q.async { write(chain, kind: kind, coins: coins, ref: ref, at: moment) }
-    }
-    /// THE WALL'S CHAIN (the author's word 03.10.2026 23:38 UTC): my wall's posts as they stand -- a post not yet chained joins as
-    /// born (post), one whose words or files moved as changed (edit), one chained and no longer standing as taken down (gone); the
-    /// births in the order the posts were born. One queue, so every link keeps its place.
-    static func wall(_ posts: [(id: String, sig: String, at: Double)]) {
-        q.async {
-            let refs = state("wall").refs
-            var chained = Set<String>(), gone = Set<String>()
-            for r in refs {
-                let parts = r.split(separator: ":", omittingEmptySubsequences: false)
-                if parts.count == 3, parts[0] == "post" { chained.insert(String(parts[1])) }
-                if parts.count == 2, parts[0] == "gone" { gone.insert(String(parts[1])) }
-            }
-            let now = Date().timeIntervalSince1970
-            for p in posts.sorted(by: { a, b in a.at < b.at }) {
-                let ref = "post:" + p.id + ":" + p.sig
-                guard !refs.contains(ref) else { continue }
-                let changed = chained.contains(p.id)
-                write("wall", kind: changed ? "edit" : "post", coins: 0, ref: ref, at: changed ? now : p.at)
-                chained.insert(p.id)
-            }
-            let standing = Set(posts.map { p in p.id })
-            for id in chained.subtracting(standing).subtracting(gone).sorted() {
-                write("wall", kind: "gone", coins: 0, ref: "gone:" + id, at: now)
-            }
-        }
-    }
-    /// Queue-only: one link joins its chain, once by its name.
-    private static func write(_ chain: String, kind: String, coins: Int, ref: String, at moment: Double) {
-        let at = ms(moment)
-        do {
-            var h = state(chain)
-            guard !h.refs.contains(ref), let u = file(chain) else { return }
-            let n = h.n + 1
-            let hash = seal(n: n, at: at, k: kind, c: coins, ref: ref, prev: h.hash)
-            guard var line = try? JSONEncoder().encode(Link(n: n, at: at, k: kind, c: coins, ref: ref, prev: h.hash, hash: hash)) else { return }
-            line.append(0x0A)
-            // THE LINKS OF A SECOND RIDE ONE WRITE (the author's word 04.10.2026 09:27 UTC, the heat of the minting): the seal is
-            // made at once and the link waits a second for its file with the others. A write that fails leaves the link out of the
-            // file, and the next reading of the book appends it again by its name (MTLocalCoinLedger.load).
-            waiting[u, default: Data()].append(line)
-            h.n = n; h.hash = hash; h.refs.insert(ref)
-            held[chain] = h
-            if !due {
-                due = true
-                q.asyncAfter(deadline: .now() + 1) { writeWaiting() }
-            }
-        }
-    }
-    private static var waiting: [URL: Data] = [:]   // on q: the links sealed and not yet in their files
-    private static var due = false
-    /// Queue-only: every waiting link into its chain's file.
-    private static func writeWaiting() {
-        due = false
-        let all = waiting
-        waiting = [:]
-        for (u, data) in all {
-            if let f = try? FileHandle(forWritingTo: u) {
-                _ = try? f.seekToEnd()
-                try? f.write(contentsOf: data); MTDiskDoor.count("time-chain", data.count)
-                try? f.close()
-            } else if !FileManager.default.fileExists(atPath: u.path) {
-                // Born only where none stands: a chain that stands but would not open is never written over.
-                MTDiskDoor.write(data, to: u, "time-chain", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-            }
-        }
-    }
-    /// The app leaves the screen: the waiting links are written now.
-    static func flush() { q.async { writeWaiting() } }
-    /// Every link of a chain as its file holds it (the chain's own page, the history's seals).
-    static func read(_ chain: String, done: @escaping ([Link]) -> Void) {
-        q.async {
-            let all = links(chain)
-            DispatchQueue.main.async { done(all) }
-        }
-    }
-    /// The chain read whole from its file and every seal checked from the genesis: its length, its head, whether it is whole.
-    static func head(_ chain: String, done: @escaping (Head) -> Void) {
-        q.async {
-            var prev = genesis, whole = true, n = 0
-            for l in links(chain) {
-                n += 1
-                guard l.n == n, l.prev == prev, l.hash == seal(n: l.n, at: l.at, k: l.k, c: l.c, ref: l.ref, prev: l.prev) else { whole = false; break }
-                prev = l.hash
-            }
-            let h = Head(n: n, hash: prev, whole: whole)
-            DispatchQueue.main.async { done(h) }
-        }
-    }
-}
-
-// MARK: - THE CHAIN OF THE PERSON (the author's words 10.10.2026 10:4x, 12:0x and 12:2x UTC)
-
-/// THE CHAIN OF THE PERSON COUNTS THE SECONDS THE WORDS WERE ON THE NETWORK (the author's word 10.10.2026 10:4x UTC: «in this
-/// section the first TimeChain is called Person: it shows the levels of the person, and the count goes only for the seconds this
-/// seed was actually online on any device»; App, «The chains of time a client shows»). A second counts while the wallet stands on
-/// the screen and a node answers its exchanges: the seconds are the node's own, read from the answer's Date header, never this
-/// phone's clock, and two answers at most `reach` apart vouch for every second between them. The seconds are kept as spans and
-/// joined with the spans every other device of the words laid under the words' own key -- one sealed piece a device on every
-/// node, beside the coin book -- so two devices present in one second add one second. The level is the number of whole doublings
-/// of the count (Canon, «The level of the chain of the person»: bit_length(s) - 1, none below one second); one link a level, at
-/// the second the count reached it, sealed on the one before by MTTimeChain's own seal, so the same union gives the same chain on
-/// every device. The person sees it; it is published nowhere and leaves the phone only sealed under the words.
-@MainActor final class MTPersonChain: ObservableObject {
-    static let shared = MTPersonChain()
-    struct Span: Codable, Equatable { var a: Int64; var b: Int64 }   // node seconds, both ends counted
-    struct Away: Codable { var at: Int64; var level: Int }
-    /// Two answers this far apart or nearer vouch for every second between them: the wallet asks the nodes every three seconds
-    /// while it stands open, and an answer slow by a beat or two still continues the span.
-    static let reach: Int64 = 10
-    @Published private(set) var seconds: Int64 = 0
-    @Published private(set) var links: [MTTimeChain.Link] = []
-    var level: Int? { Self.level(seconds) }
-    private var spans: [Span] = []
-    private var lane = Data()
-    private var last: Int64?   // the node second of the last answer in this stretch on the screen
-    private var away: Away?    // the app left the screen: the node second of its last answer and the Global Level of then
-    private var loaded = false, dirty = false, putting = false, keepDue = false, checked = false
-    private var putAt: Double = 0, gotAt: Double = 0
-    private var opened: [String: Data] = [:]   // a piece's name: its lane, opened once
-    private var mine: [String: String] = [:]   // a node's door: the piece of this lane it holds now
-    private var stale = Set<String>()
-
-    /// THE LEVEL (Canon, «The level of the chain of the person»): the whole doublings of the count, none below one second.
-    nonisolated static func level(_ s: Int64) -> Int? { s < 1 ? nil : 63 - s.leadingZeroBitCount }
-    /// THE FROZEN VECTORS (Canon: level(1) = 0, level(3) = 1, level(1048576) = 20, none below one second) and the doubling's edge at
-    /// every power: three refuses a logarithm rounded upward, one refuses a bit length taken without its minus one, the edges refuse
-    /// a level that opens a second early or late.
-    nonisolated static func levelKAT() -> Bool {
-        guard level(1) == 0, level(3) == 1, level(1_048_576) == 20, level(0) == nil, level(-5) == nil else { return false }
-        for k in 1...62 where level(Int64(1) << k) != k || level((Int64(1) << k) - 1) != k - 1 { return false }
-        return level(Int64.max) == 62
-    }
-    /// THE GLOBAL LEVEL OF THE PERSON, THE ONE READING OF IT (the author's words 10.10.2026 12:0x UTC: «the lowest level among the
-    /// chain of the person and the chain of the wallet becomes the Global Level of the person»; 17.10.2026 19:24 and 19:41 UTC: the
-    /// third level, the Fabric of Time, «bears on the Global level by the rule of the minimum», «under the word level we mean only the
-    /// global one»; Canon, «The level of a person»: min(p, w, f)): the lowest of the person's level, the wallet's level of π and the
-    /// level of the fabric of time this turn (MTFabricLevel). A fabric this life has not read yet adds no third term -- an unknown
-    /// level is never said as none. Every place that speaks of the person's level asks this and computes nothing of its own.
-    nonisolated static func global(person: Int?, balance: Int) -> Int {
-        MTFabricRules.levelOfPerson(person ?? 0, MTFabricRules.walletLevel(balance), MTFabricLevel.now ?? Int.max)
-    }
-
-    private struct Kept: Codable { var lane: String; var spans: [Span]; var away: Away? }
-    private static var file: URL? { MTTimeChainPlace.dir()?.appendingPathComponent("person-seconds.json") }
-    private func load() {
-        guard !loaded else { return }
-        loaded = true
-        if let u = Self.file, let d = try? Data(contentsOf: u), let k = try? JSONDecoder().decode(Kept.self, from: d),
-           let l = Data(base64Encoded: k.lane), l.count == 16 {
-            lane = l; spans = Self.joined(k.spans); away = k.away
-        } else {
-            lane = Data((0..<16).map { _ in UInt8.random(in: 0...255) })
-        }
-        MTFabric.shared.prime()   // the third level is read with the first (MTFabric)
-        recount(write: false)
-    }
-    private func keep() {
-        guard let u = Self.file, let d = try? JSONEncoder().encode(Kept(lane: lane.base64EncodedString(), spans: spans, away: away)) else { return }
-        MTDiskDoor.write(d, to: u, "person-kept", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-    }
-    private func keepSoon() {
-        guard !keepDue else { return }
-        keepDue = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in self?.keepDue = false; self?.keep() }
-    }
-    /// A person lifted into the seat: the seconds of the person who left go with their folder; the seated person's are read next.
-    func reread() {
-        loaded = false; spans = []; links = []; seconds = 0; last = nil; away = nil
-        opened = [:]; mine = [:]; stale = []; dirty = false
-        MTPersonLevel.set(nil)
-        MTFabric.shared.reread()   // the fabric of the person who left goes with their folder too
-    }
-    /// The seconds are read before a node's answer asks for them: a face that shows the level, and a word that says it, need them now.
-    func prime() { load() }
-
-    /// Spans joined: sorted, and any two that touch or overlap become one -- a second is counted once however many devices held it.
-    nonisolated static func joined(_ all: [Span]) -> [Span] {
-        var out: [Span] = []
-        for s in all.filter({ x in x.a <= x.b }).sorted(by: { x, y in x.a < y.a }) {
-            if let l = out.last, s.a <= l.b + 1 { out[out.count - 1].b = max(l.b, s.b) } else { out.append(s) }
-        }
-        return out
-    }
-    /// One link a level, at the node second the count reached 2^k, each sealed on the one before (MTTimeChain.seal).
-    nonisolated static func chain(_ spans: [Span]) -> [MTTimeChain.Link] {
-        var out: [MTTimeChain.Link] = [], count: Int64 = 0, next: Int64 = 1, prev = MTTimeChain.genesis
-        for s in spans {
-            let len = s.b - s.a + 1
-            while next <= count + len {
-                let at = (s.a + (next - count) - 1) * 1000
-                let k = out.count, ref = "level:" + String(out.count)
-                let hash = MTTimeChain.seal(n: k + 1, at: at, k: "level", c: k, ref: ref, prev: prev)
-                out.append(MTTimeChain.Link(n: k + 1, at: at, k: "level", c: k, ref: ref, prev: prev, hash: hash))
-                prev = hash
-                guard next <= Int64.max / 2 else { return out }
-                next *= 2
-            }
-            count += len
-        }
-        return out
-    }
-    /// The count and the links read again; the chain's file (TimeChain/wallet-person.jsonl, seen in Files) follows a new level.
-    private func recount(write: Bool = true) {
-        seconds = spans.reduce(0) { n, s in n + (s.b - s.a + 1) }
-        MTPersonLevel.set(level)
-        MTFabric.shared.refresh()   // the ceiling stands on the person's level (MTFabric)
-        MTLevelDistribution.shared.changed()
-        let fresh = Self.chain(spans)
-        guard fresh.last?.hash != links.last?.hash else { return }   // the head's seal seals the whole chain
-        links = fresh
-        guard write, let u = MTTimeChainPlace.file("person") else { return }
-        var body = Data()
-        for l in fresh { if let d = try? JSONEncoder().encode(l) { body.append(d); body.append(0x0A) } }
-        MTDiskDoor.write(body, to: u, "person-chain", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-    }
-
-    /// A node answered an exchange of this app (MTCoinVault.post): while the app stands on the screen its second counts, and so does
-    /// every second back to the answer before it when they are no further apart than the reach.
-    func answered(_ resp: URLResponse?) {
-        guard UIApplication.shared.applicationState == .active,
-              let hdr = (resp as? HTTPURLResponse)?.value(forHTTPHeaderField: "Date"),
-              let at = MontanaWakePush.httpDateFormatter.date(from: hdr) else { return }
-        load()
-        let s = Int64(at.timeIntervalSince1970)
-        if away != nil { away = nil; keep() }   // a leave kept by a build before 2320 is let go
-        let from = last.flatMap { l in l <= s && s - l <= Self.reach ? l : nil } ?? s
-        last = max(last ?? s, s)
-        let before = seconds
-        spans = Self.joined(spans + [Span(a: from, b: s)])
-        recount()
-        guard seconds != before else { return }
-        dirty = true
-        keepSoon()
-    }
-
-    /// THE APP LEAVING THE SCREEN ENDS THE STRETCH (the author's word 10.10.2026 12:0x UTC once paid the seconds away here, one coin
-    /// each): since build 2320 nothing local mints (the author's decision 375 «a») -- absence is not presence, and the chain mints only
-    /// while the person is here (fold-7).
-    func left() {
-        load()
-        last = nil
-    }
-
-    // MARK: the devices of the words join their seconds: one sealed piece a device, beside the coin book on every node
-    private static let aad = Data("mt.person.chain".utf8)   // NOT-UI: the words the piece's seal is bound to
-    private struct Piece: Codable { var lane: String; var spans: [Span] }
-    /// The wallet's live beat asks this every turn: the other devices' pieces every half minute, this device's union when it moved,
-    /// once a minute at most.
-    func tick() async {
-        load()
-        if !checked { checked = true; MontanaTrace.mark("person_self", "ok=\(Self.levelKAT() ? 1 : 0) fabric=\(MTFabricRules.selfCheck() ? 1 : 0)") }
-        let now = Date().timeIntervalSince1970
-        if 30 <= now - gotAt { gotAt = now; await gather() }
-        if dirty, 60 <= now - putAt { await put() }
-    }
-    private func put() async {
-        guard !putting, let k = MTCoinVault.personRow(),
-              let plain = try? JSONEncoder().encode(Piece(lane: lane.base64EncodedString(), spans: spans)),
-              let sealed = try? ChaChaPoly.seal(plain, using: k.seal, authenticating: Self.aad).combined else { return }
-        putting = true
-        defer { putting = false }
-        putAt = Date().timeIntervalSince1970
-        dirty = false
-        let token = MontanaHomeNode.hex(k.token)
-        let id = MontanaHomeNode.hex(Data(SHA256.hash(data: sealed)))
-        var laid = 0
-        for door in MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "vault")) {
-            let gone = Array(stale.union(mine[door].map { p in [p] } ?? [])).filter { p in p != id }
-            let (code, o) = await MTCoinVault.post(door + "/vault-put", ["token": token, "blob": sealed.base64EncodedString(), "replace": gone], timeout: 10)
-            guard code == 200, let piece = o?["piece"] as? String else { continue }
-            mine[door] = piece
-            opened[piece] = lane
-            laid += 1
-        }
-        if 0 < laid { stale = [] } else { dirty = true }
-        MontanaTrace.markFolded("person_put", "spans=\(spans.count) seconds=\(seconds) doors=\(laid)", window: 60)
-    }
-    private func gather() async {
-        guard let k = MTCoinVault.personRow() else { return }
-        let gen = MTCoinBook.generation
-        let token = MontanaHomeNode.hex(k.token)
-        for door in MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "vault")) {
-            guard case let (200, o?) = await MTCoinVault.post(door + "/vault-get", ["token": token, "have": Array(opened.keys.prefix(256))], timeout: 6),
-                  let held = o["held"] as? [String] else { continue }
-            guard gen == MTCoinBook.generation else { return }   // the seat moved during the wait: nothing of the person who left joins
-            let horizon = Int64(MontanaWakePush.nodeNow()) + 60   // no second of the future is a second lived
-            var got: [Span] = []
-            for x in (o["pieces"] as? [[String: Any]]) ?? [] {
-                guard let id = x["piece"] as? String, let b = (x["blob"] as? String).flatMap({ s in Data(base64Encoded: s) }),
-                      MontanaHomeNode.hex(Data(SHA256.hash(data: b))) == id,   // a piece is its own name
-                      let box = try? ChaChaPoly.SealedBox(combined: b),
-                      let plain = try? ChaChaPoly.open(box, using: k.seal, authenticating: Self.aad),
-                      let p = try? JSONDecoder().decode(Piece.self, from: plain), let l = Data(base64Encoded: p.lane) else { continue }
-                opened[id] = l
-                if l == lane {
-                    if mine[door] != id { stale.insert(id) }
-                    continue
-                }
-                got += p.spans.filter { s in s.b <= horizon }
-            }
-            let standing = Set(held)
-            opened = opened.filter { e in standing.contains(e.key) }
-            let before = seconds
-            spans = Self.joined(spans + got)
-            recount()
-            if seconds != before { dirty = true; keepSoon() }
-            MontanaTrace.markFolded("person_get", "seconds=\(seconds) level=\(level ?? -1) joined=\(seconds - before)", window: 60)
-            return
-        }
-    }
-}
-
-// MARK: - THE FABRIC OF TIME (the author's words 17.10.2026 19:24, 19:41, 19:50 and 20:18 UTC)
-
-/// THE RULES OF THE FABRIC OF TIME, AS THE CORE STATES THEM (the author's words 17.10.2026 19:24 UTC: «the 3rd level is the count of
-/// levels of the chats real with regular calls over the last 14 days -- t2 -- and it bears on the Global level by the rule of the
-/// minimum»; 19:41: «one's own is one's own global level»; 19:50: «a new level that sets the global one, named Fabric of Time»;
-/// 17.10.2026 21:4x: «not tied to the turns of t2 -- the current result of a sliding window of t2 over live activity: chats, calls,
-/// transfers, chess, games, video, audio, media, stickers, GIFs»; 07:2x: a correspondent weighed by their ceiling, «yes, do it»;
-/// Canon, «The level of the wallet», «The level of the fabric of time», «The half of the fabric», «The level of a person», «The
-/// testimony of an exchange»). Byte for byte the core's mt-derive levels.rs -- the same functions and the same frozen vectors
-/// (selfCheck) -- so a phone and a node that read one testimony name it by one identifier.
-enum MTFabricRules {
-    /// A call is a live act of the fabric when each side received the other's voice this long (Canon, call_seconds).
-    static let callSeconds = 60
-    /// τ₂ and its half (Canon, «The half of the fabric»): the last τ₂ is two halves, and a regular correspondent stands in each.
-    static let tau2Windows = UInt64(MontanaNames.tau2Windows)
-    static let halfWindows = tau2Windows / 2
-    /// A segment, Genesis segment_windows (τ₂ / 14): a signer gives one addressee one testimony a segment, a holder keeps one.
-    static let segmentWindows = tau2Windows / 14
-    static let suite: UInt16 = 1             // Canon, the suite table: row 1, ML-DSA-65
-    static let signatureLength = 3309        // Canon, the suite table: the signature of row 1
-    static let scopeLength = 43              // Canon, «The testimony of an exchange»: 2 + 32 + 8 + 1
-    static let testimonyLength = 3352        // Canon, testimony_len
-    static let mostLevels = 19               // Canon: the most levels the wallet holds, which no ceiling exceeds
-
-    /// The level of the wallet (Canon: the count of the prefixes of π the balance reaches): MTPiLevels.place, its one reading.
-    static func walletLevel(_ balance: Int) -> Int { MTPiLevels.place(balance) }
-    /// H: the greatest g for which at least g of the values stand at g or above. It counts people, not weight, in any order.
-    static func fabricLevel(_ values: [Int]) -> Int {
-        var level = 0
-        for value in values.sorted(by: >) {
-            if value <= level { break }
-            level += 1
-        }
-        return level
-    }
-    /// The half of the last τ₂ a testimony stands in: 0 the newer, 1 the older, 2 and beyond out of the window. The difference
-    /// saturates, so a testimony one window ahead of the reading stands in 0.
-    static func half(_ now: UInt64, _ window: UInt64) -> UInt64 { (window < now ? now - window : 0) / halfWindows }
-    static func segment(_ window: UInt64) -> UInt64 { window / segmentWindows }
-    /// The level of a person: the lowest of the three, never a sum or a mean of them.
-    static func levelOfPerson(_ person: Int, _ wallet: Int, _ fabric: Int) -> Int { min(person, wallet, fabric) }
-    static func weaves(_ heard: Int) -> Bool { callSeconds <= heard }
-    /// A LIVE ACT (App, «The fabric of time a client weighs»): what stands in a conversation -- words, voice and video messages,
-    /// photographs, files and media, stickers and animations, transfers, a game's moves -- never a receipt, a sign of typing or of
-    /// presence, a group's word or the fabric's own; a call is one when it weaves (MTFabric.callClosed).
-    nonisolated static func isLiveAct(_ text: String) -> Bool {
-        guard !text.hasPrefix(MTGroup.mark) else { return false }
-        return !isControlMarker(text) || text.hasPrefix(mediaMark) || text.hasPrefix(voiceMark) || text.hasPrefix(stickerMark)
-            || text.hasPrefix(appMark)
-    }
-    /// DEVIATION (Canon, «The half of the fabric»: «w is the network's window as the device read it from the network»): a phone holds
-    /// no window of the core, so its window is the nodes' second -- learned from their answers (MontanaWakePush.nodeNow), the seconds
-    /// the chain of the person counts too (MTPersonChain.answered) -- over sixty, counted from the Unix epoch.
-    static func windowNow() -> UInt64 { UInt64(max(0, MontanaWakePush.nodeNow())) / MTPipe.windowSeconds }
-
-    /// THE FAR VOICE, AS THIS PHONE RECEIVED IT (App: «A call weaves when each side received the other's voice for at least
-    /// call_seconds»): one stretch of the engine's received voice stream -- its played seconds, their energy, the samples received and
-    /// the ones the engine made up for packets that never came. A stretch counts when its level stands at a voice's floor or above, and
-    /// only by the share of it that was received: a muted microphone sends silence, which carries no energy, and a broken road is
-    /// made-up samples -- neither is a voice. The floor is -40 dBov (level 0.01): speech stands near -26 dBov, a quiet room and the
-    /// engine's comfort noise near -60 and below, so a stretch holding spoken words stands above it and a silent one below.
-    static let voiceFloor = 0.01
-    static func voiced(seconds: Double, energy: Double, received: Double, concealed: Double) -> Double {
-        guard 0 < seconds, 0 < received, 0 <= energy, voiceFloor <= (energy / seconds).squareRoot() else { return 0 }
-        return seconds * max(0, min(1, (received - concealed) / received))
-    }
-
-    /// What a correspondent signs on a live act received from the person (Canon, «The testimony of an exchange»; levels.rs, Testimony).
-    struct Testimony: Equatable {
-        enum Refusal: String { case ceilingBeyondTheWallet }
-        var suite: UInt16
-        var addressee: Data
-        var window: UInt64
-        var ceiling: UInt8
-        /// The signed scope: every field before the signature, unsigned and little-endian, in the canonical order.
-        var scope: Data {
-            var out = Data()
-            out.append(contentsOf: [UInt8(suite & 0xFF), UInt8(suite >> 8)])
-            out.append(addressee)
-            out.append(contentsOf: (0..<8).map { i in UInt8((window >> (8 * UInt64(i))) & 0xFF) })
-            out.append(ceiling)
-            return out
-        }
-        /// testimony_id = SHA-256("mt-exchange-testimony" || 0x00 || signed_scope), by the tree's one composition (MTPipe.domained).
-        var id: Data { MTPipe.domained("mt-exchange-testimony", [scope]) }
-        /// What it states of itself that a holder refuses before anything else is asked (levels.rs, refusal).
-        var refusal: Refusal? { MTFabricRules.mostLevels < Int(ceiling) ? .ceilingBeyondTheWallet : nil }
-        /// The testimony and its signature; one of any other length than testimony_len is refused before it is parsed (Canon).
-        static func parse(_ bytes: Data) -> (Testimony, Data)? {
-            let b = [UInt8](bytes)
-            guard b.count == MTFabricRules.testimonyLength else { return nil }
-            func le(_ at: Int, _ n: Int) -> UInt64 { (0..<n).reduce(UInt64(0)) { v, i in v | UInt64(b[at + i]) << (8 * UInt64(i)) } }
-            let t = Testimony(suite: UInt16(le(0, 2)), addressee: Data(b[2..<34]), window: le(34, 8), ceiling: b[42])
-            return (t, Data(b[MTFabricRules.scopeLength...]))
-        }
-    }
-
-    /// THE FROZEN VECTORS (Canon, «Frozen vectors»), each named by the wrong reading it refuses: a wallet of 3 and of 314 refuse a
-    /// strict comparison, 313 a count of digits, the nineteenth prefix a level capped at the thirteen a page shows; H(5) refuses a
-    /// weight, H(2 x 6) a count of correspondents, H(9, 1, 7, 2, 6) values read as already sorted, H() a person who writes to nobody
-    /// left without an answer; the age 10079 refuses a half rounded upward, 10080 a boundary drawn after half of τ₂ (and, its windows
-    /// exchanged, a subtraction the other way), 20160 a window keeping a testimony τ₂ old; the level of a person refuses a dropped
-    /// fabric, a first or a last term, a mean; the testimony's eight distinct bytes of its window refuse a big-endian window and its
-    /// ceiling after the window a ceiling written first; a parse that misplaces a field gives another testimony back; the voice
-    /// refuses a level read as its energy (0.05 counts, 0.0025 would not), a floor left out (0.001 counts nothing) and made-up samples.
-    static func selfCheck() -> Bool {
-        guard walletLevel(2) == 0, walletLevel(3) == 1, walletLevel(313) == 2, walletLevel(314) == 3,
-              walletLevel(3_141_592_653_589_793_238) == 19 else { return false }
-        guard fabricLevel([]) == 0, fabricLevel([5]) == 1, fabricLevel([3, 3, 3]) == 3, fabricLevel([9, 1, 7, 2, 6]) == 3,
-              fabricLevel([2, 2, 2, 2, 2, 2]) == 2 else { return false }
-        guard halfWindows == 10_080, segmentWindows == 1_440, half(20_160, 10_081) == 0, half(20_160, 10_080) == 1,
-              half(20_160, 0) == 2, half(10_080, 20_160) == 0 else { return false }
-        guard levelOfPerson(20, 5, 3) == 3, levelOfPerson(7, 2, 9) == 2, levelOfPerson(0, 9, 9) == 0 else { return false }
-        var t = Testimony(suite: 1, addressee: Data(repeating: 0x22, count: 32), window: 0x0102_0304_0506_0708, ceiling: 9)
-        let signature = Data(repeating: 0x5A, count: signatureLength)
-        guard t.scope.count == scopeLength, t.refusal == nil,
-              t.id.montanaHexString == "ea5deddd35b6355762867a5e744e4d3fdc76c3e72d9e70d17d5907a3b056d5da",
-              let back = Testimony.parse(t.scope + signature), back.0 == t, back.1 == signature,
-              Testimony.parse(t.scope) == nil else { return false }
-        t.ceiling = 19
-        guard t.refusal == nil else { return false }
-        t.ceiling = 20
-        guard t.refusal == .ceilingBeyondTheWallet else { return false }
-        guard voiced(seconds: 2, energy: 2 * 0.05 * 0.05, received: 96_000, concealed: 0) == 2,
-              voiced(seconds: 2, energy: 2 * 0.05 * 0.05, received: 96_000, concealed: 48_000) == 1,
-              voiced(seconds: 2, energy: 2 * 0.001 * 0.001, received: 96_000, concealed: 0) == 0,
-              voiced(seconds: 2, energy: 0, received: 96_000, concealed: 0) == 0 else { return false }
-        return true
-    }
-}
-
-/// THE FABRIC'S WORD FOR A READER OFF THE MAIN ACTOR (MTPersonChain.global, the call's caps): the level of the fabric now and the
-/// person's own ceiling as every testimony states it -- written by MTFabric at every reading; nil until this life has read them, so an
-/// unknown level is never said as none.
-enum MTFabricLevel {
-    private static let lock = NSLock()
-    private static var held: Int?
-    private static var told: Int?
-    static var now: Int? { lock.lock(); defer { lock.unlock() }; return held }
-    static var ceiling: Int? { lock.lock(); defer { lock.unlock() }; return told }
-    static func set(_ level: Int?, ceiling: Int?) { lock.lock(); held = level; told = ceiling; lock.unlock() }
-}
-
-/// ONE CALL AS THE FABRIC WEIGHS IT (App, «The fabric of time a client weighs»), kept by the call machine for every call it holds, by
-/// the call's name: the identifier its caller drew and its setup carried, the window the call stood from, and the seconds of the far
-/// voice this phone received (MTFabricRules.voiced).
-struct MTWeave {
-    var call: Data?
-    var from: UInt64?
-    var heard: Double = 0
-    var seen: [String: [Double]] = [:]   // a received stream's last counters: seconds, energy, received, made up
-    /// A received stream's counters now: what they grew by since that stream's last sample is weighed, and nothing else.
-    mutating func hears(_ id: String, seconds: Double, energy: Double, received: Double, concealed: Double) {
-        let last = seen[id] ?? [0, 0, 0, 0]
-        seen[id] = [seconds, energy, received, concealed]
-        let ds = seconds - last[0], de = energy - last[1], dr = received - last[2], dc = concealed - last[3]
-        guard 0 < ds, 0 <= de, 0 < dr, 0 <= dc else { return }
-        heard += MTFabricRules.voiced(seconds: ds, energy: de, received: dr, concealed: dc)
-    }
-}
-
-/// THE FABRIC OF TIME OF THIS SEED ON THIS PHONE (App, «The fabric of time a client weighs»; Identity, «The fabric of time»): the
-/// testimonies of exchanges the person's correspondents gave, the window this phone last spoke to each correspondent and the
-/// segment it last gave each a testimony in, the hash each correspondent told it to name them by, and the level of the fabric --
-/// H over the values of the correspondents regular in the window that slides with the network's, a value being the lowest ceiling a
-/// correspondent stated in the testimonies of the last τ₂; through the first τ₂ of the fabric on this seed, the ceiling. A
-/// correspondent is told apart by the key its testimonies verify under (the hash its fingerprint is read from), and by nothing it
-/// states of itself. One file beside the seconds of the person, at the same protection (TimeChain/fabric-v2.json); one link at
-/// every change of the level in its chain (TimeChain/wallet-fabric.jsonl), sealed as every chain. What it holds lives τ₂ and then
-/// leaves ([I-14]): a testimony counts in the two halves of the last τ₂ and nowhere after them.
-///
-/// THE CORRESPONDENCE A TESTIMONY STANDS ON (Canon, «The testimony of an exchange»: its addressee is the value the thirty digits two
-/// people compare out of band are read from, and it is signed by the key the two of them compare). The two of this client compare the
-/// fingerprint of the correspondence's secret (MTPipe.fingerprint, a deviation named in Audit/AUDIT.md), so the addressee is that hash,
-/// computed by both ends from the secret alone and told by neither -- a testimony handed to a third person names a correspondence that
-/// person does not hold -- and the signer's key is drawn from the seed for that correspondence alone, the same on every device of the
-/// seed. [I-17]: no key and no value of a testimony is the same in two correspondences, so none names the person to anyone else.
-@MainActor final class MTFabric: ObservableObject {
-    static let shared = MTFabric()
-    struct Held: Codable { var id: String; var key: String; var conv: String; var window: UInt64; var ceiling: Int; var body: String }
-    struct Change: Codable { var window: UInt64; var level: Int; var digest: String }
-    private struct Kept: Codable {
-        var opened: UInt64?                  // the window the fabric opened in on this seed
-        var held: [Held] = []
-        var keys: [String: String] = [:]     // the hash a fingerprint is read from: the key its testimonies verify under
-        var sent: [String: UInt64] = [:]     // a pipe: the window this phone last left a live act on it
-        var given: [String: UInt64] = [:]    // a pipe: the segment this phone last gave a testimony on it
-        var changes: [Change] = []
-    }
-    @Published private(set) var level: Int?
-    @Published private(set) var ceiling: Int?
-    @Published private(set) var regulars = 0
-    @Published private(set) var testimonies = 0
-    @Published private(set) var graceDays: Int?
-    @Published private(set) var links: [MTTimeChain.Link] = []
-    private var kept = Kept()
-    private var loaded = false, keepDue = false
-    private static var file: URL? { MTTimeChainPlace.dir()?.appendingPathComponent("fabric-v2.json") }
-
-    private func load() {
-        guard !loaded else { return }
-        loaded = true
-        if let u = Self.file, let d = try? Data(contentsOf: u), let k = try? JSONDecoder().decode(Kept.self, from: d) { kept = k }
-        links = Self.chain(kept.changes)
-    }
-    private func keep() {
-        guard loaded, let u = Self.file, let d = try? JSONEncoder().encode(kept) else { return }
-        MTDiskDoor.write(d, to: u, "weave-kept", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-    }
-    private func keepSoon() {
-        guard !keepDue else { return }
-        keepDue = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in self?.keepDue = false; self?.keep() }
-    }
-    /// A person lifted into the seat: the fabric of the person who left goes with their folder; the seated person's is read next.
-    func reread() {
-        loaded = false; kept = Kept()
-        level = nil; ceiling = nil; regulars = 0; testimonies = 0; graceDays = nil; links = []
-        pairs = [:]
-        MTFabricLevel.set(nil, ceiling: nil)
-    }
-    /// The fabric is read before a level is asked of it.
-    func prime() { load() }
-    /// The hash a correspondence's fingerprint is read from (MTPipe.fingerprintMaterial over its secret): the addressee of every
-    /// testimony on it, both ways. Derived once, at the pipe's birth, and kept by the book (MTPipeKept).
-    private var pairs: [String: Data] = [:]
-    private func pair(_ conv: String) -> Data? {
-        if let m = pairs[conv] { return m }
-        guard let m = MTPipeBook.kept(for: conv)?.fingerprint else { return nil }
-        pairs[conv] = m
-        return m
-    }
-    /// The key this person signs a correspondence's testimonies with: HKDF-Expand(master_seed, "mt-fabric-key", 0x00 and the
-    /// correspondence's hash, 32) into ML-DSA-65 -- one on every device of the words, another in every correspondence, and no relation
-    /// to the account's key or the coins'.
-    nonisolated static func signer(pair: Data) -> (pk: Data, sk: Data)? {
-        guard pair.count == 32, let master = MontanaSeed.root, master.count == 64 else { return nil }
-        let info = [UInt8](Data("mt-fabric-key".utf8) + Data([0]) + pair)
-        var seed = [UInt8](repeating: 0, count: 32)
-        let rc = master.withUnsafeBytes { m -> Int32 in
-            info.withUnsafeBufferPointer { r -> Int32 in
-                guard let mb = m.bindMemory(to: UInt8.self).baseAddress else { return -1 }
-                return mt_mldsa_seed_for_role(mb, r.baseAddress, info.count, &seed)
-            }
-        }
-        guard rc == 0 else { return nil }
-        var pk = [UInt8](repeating: 0, count: 1952), sk = [UInt8](repeating: 0, count: 4032)
-        guard mt_mldsa_keypair_from_seed(seed, &pk, &sk) == 0 else { return nil }
-        return (Data(pk), Data(sk))
-    }
-
-    /// THE READING (App): the ceiling, the regular correspondents and their values, the level -- again whenever what they stand on
-    /// moved: the person's seconds, the balance, a testimony coming or leaving the window. A handful of testimonies: it costs nothing.
-    func refresh() {
-        load()
-        let w = MTFabricRules.windowNow()
-        guard 0 < w else { return }   // the nodes' clock not heard yet: no window to read in
-        var moved = prune(w)
-        if kept.opened == nil { kept.opened = w; moved = true }
-        var ceil: Int? = nil
-        if let p = MTPersonLevel.now, let b = MTCoinBalance.now { ceil = min(MTFabricRules.mostLevels, p, MTFabricRules.walletLevel(b)) }
-        let opened = kept.opened ?? w
-        let grace = w < opened + MTFabricRules.tau2Windows
-        let regs = regulars(w)
-        // THE LEVEL: through the first τ₂ the ceiling; past it H over the regulars' values, read now -- no turn, no estimate.
-        let lvl: Int? = grace ? ceil : MTFabricRules.fabricLevel(regs.map { k in value(k, w) })
-        if let l = lvl, kept.changes.last?.level != l {
-            kept.changes.append(Change(window: w, level: l, digest: digest(regs, w)))
-            moved = true
-            links = Self.chain(kept.changes)
-            writeChain()
-            MontanaTrace.mark("fabric_level", "level=\(l) regulars=\(regs.count) grace=\(grace ? 1 : 0)")
-        }
-        MTFabricLevel.set(lvl, ceiling: ceil)
-        let left = Double((opened + MTFabricRules.tau2Windows) * MTPipe.windowSeconds) - MontanaWakePush.nodeNow()
-        let days: Int? = grace ? max(1, Int((left / 86_400).rounded(.up))) : nil
-        let count = kept.held.filter { h in MTFabricRules.half(w, h.window) < 2 }.count
-        if level != lvl { level = lvl }
-        if ceiling != ceil { ceiling = ceil }
-        if regulars != regs.count { regulars = regs.count }
-        if testimonies != count { testimonies = count }
-        if graceDays != days { graceDays = days }
-        if moved { keepSoon() }
-    }
-    /// The correspondents regular now: a testimony from them in each half of the last τ₂ (Canon, «The half of the fabric»).
-    private func regulars(_ w: UInt64) -> [String] {
-        var halves: [String: Set<UInt64>] = [:]
-        for h in kept.held {
-            let x = MTFabricRules.half(w, h.window)
-            if x < 2 { halves[h.key, default: []].insert(x) }
-        }
-        return halves.filter { e in e.value.count == 2 }.keys.sorted()
-    }
-    /// A correspondent's value: the lowest ceiling they stated in the testimonies of the last τ₂.
-    private func value(_ key: String, _ w: UInt64) -> Int {
-        kept.held.filter { h in h.key == key && MTFabricRules.half(w, h.window) < 2 }.map(\.ceiling).min() ?? 0
-    }
-    /// The set a change of the level stood on as its link names it: SHA-256 over the identifiers of the regulars' testimonies in the
-    /// window, sorted -- a value of this device alone, never on the wire (LOCAL-HASH-OK), so two readings of one set give one link.
-    private func digest(_ regs: [String], _ w: UInt64) -> String {
-        let on = Set(regs)
-        let ids = kept.held.filter { h in on.contains(h.key) && MTFabricRules.half(w, h.window) < 2 }.map(\.id).sorted()
-        return SHA256.hash(data: Data(ids.joined(separator: "\n").utf8)).map { b in String(format: "%02x", b) }.joined()
-    }
-    /// [I-14]: a testimony leaves at its half 2, a pipe's marks a τ₂ after they were made; a key leaves with its last testimony.
-    private func prune(_ w: UInt64) -> Bool {
-        let before = (kept.held.count, kept.sent.count, kept.given.count)
-        kept.held.removeAll { h in 2 <= MTFabricRules.half(w, h.window) }
-        kept.sent = kept.sent.filter { e in MTFabricRules.half(w, e.value) < 2 }
-        kept.given = kept.given.filter { e in MTFabricRules.half(w, e.value * MTFabricRules.segmentWindows) < 2 }
-        let keys = Set(kept.held.map(\.key))
-        kept.keys = kept.keys.filter { e in keys.contains(e.key) }
-        if 200 < kept.changes.count { kept.changes.removeFirst(kept.changes.count - 200) }
-        return before != (kept.held.count, kept.sent.count, kept.given.count)
-    }
-    /// One link at every change of the level, named by its window and the set it stood on, sealed on the one before
-    /// (MTTimeChain.seal); its moment is the window on the nodes' clock, so the same changes give the same chain.
-    nonisolated static func chain(_ changes: [Change]) -> [MTTimeChain.Link] {
-        var out: [MTTimeChain.Link] = [], prev = MTTimeChain.genesis
-        for c in changes {
-            let n = out.count + 1, at = Int64(c.window * MTPipe.windowSeconds) * 1000
-            let ref = "w:" + String(c.window) + ":" + String(c.digest.prefix(16))
-            let hash = MTTimeChain.seal(n: n, at: at, k: "level", c: c.level, ref: ref, prev: prev)
-            out.append(MTTimeChain.Link(n: n, at: at, k: "level", c: c.level, ref: ref, prev: prev, hash: hash))
-            prev = hash
-        }
-        return out
-    }
-    private func writeChain() {
-        guard let u = MTTimeChainPlace.file("fabric") else { return }
-        var body = Data()
-        for l in links { if let d = try? JSONEncoder().encode(l) { body.append(d); body.append(0x0A) } }
-        MTDiskDoor.write(body, to: u, "fabric-chain", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-    }
-
-    /// A LIVE ACT THIS PHONE LEFT FOR A CORRESPONDENT (App: a testimony is given «while it has itself sent that correspondent a live act
-    /// within the last half of τ₂»): the window it last spoke on the pipe (MontanaDeliveryEngine.enqueue, MTFabricRules.isLiveAct).
-    func spoke(_ conv: String) {
-        guard !conv.isEmpty, !MTGroup.isKey(conv) else { return }
-        load()
-        let w = MTFabricRules.windowNow()
-        guard 0 < w, kept.sent[conv] != w else { return }
-        kept.sent[conv] = w
-        keepSoon()
-    }
-    /// A LIVE ACT CAME FROM A CORRESPONDENT (App, «When a testimony is given»): when this phone spoke to them within the last half of τ₂
-    /// and gave them no testimony this segment, it signs one -- the window it heard them in and its own ceiling -- naming the
-    /// correspondence by the hash its secret gives, and gives it by the pair's own road, inside what only they open. A person who only
-    /// writes is given none.
-    func heard(_ conv: String) {
-        guard !conv.isEmpty, !MTGroup.isKey(conv) else { return }
-        prime()
-        let w = MTFabricRules.windowNow()
-        guard 0 < w, let s = kept.sent[conv], MTFabricRules.half(w, s) == 0 else { return }
-        let seg = MTFabricRules.segment(w)
-        guard kept.given[conv] != seg else { return }
-        guard let named = pair(conv) else {
-            return MontanaTrace.markFolded("fabric_tx", "held: no secret of the correspondence here", window: 600, key: conv)
-        }
-        guard let c = MTFabricLevel.ceiling else { return MontanaTrace.mark("fabric_tx", "held: this life has not read its own levels yet") }
-        let t = MTFabricRules.Testimony(suite: MTFabricRules.suite, addressee: named, window: w, ceiling: UInt8(clamping: c))
-        kept.given[conv] = seg
-        keepSoon()
-        let scope = t.scope
-        Task.detached(priority: .utility) {
-            guard let k = MTFabric.signer(pair: named), let sig = MontanaSeedKeys.sign(scope, seckey: k.sk), sig.count == MTFabricRules.signatureLength,
-                  let d = try? JSONSerialization.data(withJSONObject: ["t": (scope + sig).base64EncodedString(), "k": k.pk.base64EncodedString()]),
-                  let body = String(data: d, encoding: .utf8) else {
-                MontanaTrace.mark("fabric_tx", "FAIL the seed's key did not sign")
-                return
-            }
-            await MainActor.run {
-                MontanaDeliveryEngine.shared.enqueue(to: conv, chat: conv, mid: ChatStore.mintMid().mid, text: fabricMark + body, silent: true)
-                MontanaTrace.mark("fabric_tx", "to=\(String(conv.prefix(10))) ceiling=\(t.ceiling)")
-            }
-        }
-    }
-    /// A CALL OF TWO CLOSED (App: «a call that wove» is a live act): a call this phone heard the far voice in for a minute or more is a
-    /// live act both ways -- this side spoke in it and heard.
-    func callClosed(conv: String, weave: MTWeave) {
-        let heardSeconds = Int(weave.heard)
-        MontanaTrace.mark("fabric_call", "heard_s=\(heardSeconds)")
-        guard MTFabricRules.weaves(heardSeconds), !conv.isEmpty else { return }
-        spoke(conv)
-        heard(conv)
-    }
-
-    /// THE FABRIC'S WORD CAME (Canon, «Invariants of a testimony»): a testimony of an exchange. It counts only once every question is
-    /// answered, in this order -- its length, what it states of itself, that it names this correspondence, that its window stands no more than
-    /// one window past this phone's reading and inside the last τ₂, that its signature holds under the key it came with. One a segment
-    /// from one key is kept, the one stating the lower ceiling: a second adds nothing (Canon).
-    func received(_ payload: String, from conv: String, at: Double) {
-        prime()
-        guard let d = payload.data(using: .utf8), let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any] else {
-            return refuse("unreadable", conv)
-        }
-        guard o["t"] != nil else { return }   // a word of an older build: a ceiling and an estimate, which this fabric does not weigh
-        guard let body = (o["t"] as? String).flatMap({ s in Data(base64Encoded: s) }),
-              let key = (o["k"] as? String).flatMap({ s in Data(base64Encoded: s) }) else { return refuse("unreadable", conv) }
-        guard let parsed = MTFabricRules.Testimony.parse(body) else { return refuse("length", conv) }
-        let t = parsed.0, sig = parsed.1
-        guard t.suite == MTFabricRules.suite else { return refuse("suite", conv) }
-        if let r = t.refusal { return refuse(r.rawValue, conv) }
-        guard let held = pair(conv), t.addressee == held else { return refuse("addressee", conv) }
-        let w = MTFabricRules.windowNow()
-        guard t.window <= w + 1 else { return refuse("window", conv) }
-        guard MTFabricRules.half(w, t.window) < 2 else { return }   // older than the window: it counts nothing
-        guard MontanaPQ.verify(pubkey: key, message: t.scope, signature: sig) else { return refuse("signature", conv) }
-        let id = t.id.montanaHexString
-        guard !kept.held.contains(where: { h in h.id == id }) else { return }
-        let signer = MTPipe.fingerprintMaterial(key).montanaHexString
-        let seg = MTFabricRules.segment(t.window)
-        if let i = kept.held.firstIndex(where: { h in h.key == signer && MTFabricRules.segment(h.window) == seg }) {
-            guard Int(t.ceiling) < kept.held[i].ceiling else { return }
-            kept.held.remove(at: i)
-        }
-        kept.held.append(Held(id: id, key: signer, conv: conv, window: t.window, ceiling: Int(t.ceiling), body: body.base64EncodedString()))
-        kept.keys[signer] = key.base64EncodedString()
-        keep()
-        refresh()
-        MontanaTrace.mark("fabric_rx", "ceiling=\(t.ceiling) half=\(MTFabricRules.half(w, t.window))")
-    }
-    private func refuse(_ why: String, _ conv: String) {
-        MontanaTrace.mark("fabric_refused", "why=\(why) from=\(String(conv.prefix(10)))")
-    }
-}
-
-// MARK: - THE COIN CORE OF THE APP (the author's words 03.10 10:40, 10:52 and 10:53 UTC)
-
 /// ONE MOVE OF COINS on this phone's book: a coin earned by a letter of the ribbon, coins received in a chat or on a letter,
 /// coins given on a letter or a post, coins sent to a person. The amount is whole coins (one coin is one billionth of a
 /// Montana) and always positive; the kind says which way it goes. `ref` is the move's own name -- a letter's wire name, the
@@ -2423,59 +1505,6 @@ struct MTCoinEntry: Codable, Hashable, Identifiable {
     func coins(on target: String) -> Int
 }
 
-/// THE TIMECHAIN FOLDER (the author's words 04.10.2026 10:42 UTC: «in the Montana folder make a folder TimeChain, so I see it on all
-/// devices, with the wallet's TimeChain of each device in it»; «TimeChain is written so, exactly, everywhere»): the one folder the
-/// Files app shows as On My iPhone, Montana, TimeChain -- the comment chains a person wrote (MTBoardSeen, the author's word 02.10
-/// 15:09) and the wallet's chains, one file a source (wallet-pantheon.jsonl, wallet-chats.jsonl ...). The folder is the seated
-/// person's (SeedScope.seatFolders): parked and lifted with them, so no chain of one person stays to the next. Laid once a seat:
-/// the comment chains' folder of the builds before («Timechain») takes the one name -- through a step on a disk that knows no case,
-/// its files moving in on one that does -- and the wallet's chains of the builds before move in from the book's folder.
-enum MTTimeChainPlace {
-    private static let lock = NSLock()
-    private static var laid = false
-    static func dir() -> URL? {
-        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
-        let root = docs.appendingPathComponent(MontanaPaths.root).appendingPathComponent("TimeChain", isDirectory: true)
-        lock.lock(); defer { lock.unlock() }
-        if !laid {
-            laid = true
-            lay(root, before: docs.appendingPathComponent(MontanaPaths.root).appendingPathComponent("Timechain", isDirectory: true))
-        }
-        return root
-    }
-    static func file(_ chain: String) -> URL? { dir()?.appendingPathComponent("wallet-" + chain + ".jsonl") }
-    /// A seat's move: the lifted person's folder is laid again at the next ask.
-    static func settle() { lock.lock(); laid = false; lock.unlock() }
-    private static func lay(_ root: URL, before old: URL) {
-        let fm = FileManager.default
-        if fm.fileExists(atPath: old.path) {
-            let was = (try? old.resourceValues(forKeys: [.fileResourceIdentifierKey]))?.fileResourceIdentifier
-            let now = (try? root.resourceValues(forKeys: [.fileResourceIdentifierKey]))?.fileResourceIdentifier
-            if let was, let now, was.isEqual(now) {
-                let step = old.deletingLastPathComponent().appendingPathComponent("TimeChain-" + UUID().uuidString, isDirectory: true)
-                if (try? fm.moveItem(at: old, to: step)) != nil { try? fm.moveItem(at: step, to: root) }
-            } else if !fm.fileExists(atPath: root.path) {
-                try? fm.moveItem(at: old, to: root)
-            } else {
-                for n in (try? fm.contentsOfDirectory(atPath: old.path)) ?? [] where !fm.fileExists(atPath: root.appendingPathComponent(n).path) {
-                    try? fm.moveItem(at: old.appendingPathComponent(n), to: root.appendingPathComponent(n))
-                }
-                if ((try? fm.contentsOfDirectory(atPath: old.path)) ?? ["held"]).isEmpty { try? fm.removeItem(at: old) }
-            }
-        }
-        try? fm.createDirectory(at: root, withIntermediateDirectories: true,
-                                attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
-        guard let coins = MTCoinPlace.dir, let names = try? fm.contentsOfDirectory(atPath: coins.path) else { return }
-        var moved = 0
-        for n in names where n.hasPrefix("chain-") && n.hasSuffix(".jsonl") {
-            let to = root.appendingPathComponent("wallet-" + String(n.dropFirst("chain-".count)))
-            guard !fm.fileExists(atPath: to.path) else { continue }
-            if (try? fm.moveItem(at: coins.appendingPathComponent(n), to: to)) != nil { moved += 1 }
-        }
-        if 0 < moved { MontanaTrace.mark("timechain_place", "laid=\(moved)") }
-    }
-}
-
 /// THE BOOK'S CHESS LINES OF THE BUILDS BEFORE (COMPAT-LOCAL; the author's word 29.10.2026 19:31 UTC: «in chess there must be no
 /// crediting of coins»): chess and its Timer write no coin; the names their lines carried in the book of the builds before are read
 /// here only so a person's history keeps telling where those coins came from. Nothing here writes or moves a coin.
@@ -2505,12 +1534,11 @@ enum MTCoinBook {
     /// more at every seat's move, before anything is read again. A gather begun under the person who left took their key, waited on
     /// the nodes, and then read the book of the person seated -- laying it over every piece of the old seed (the whole book lost
     /// to a restore on another phone). A gather compares this after every wait and writes nothing once it moved.
-    @MainActor static private(set) var generation = 0
+    @MainActor static var generation: Int { MTSeatTurn.now }   // the seat's turn, shared with the person's chain (MTSeatTurn)
     /// A PERSON LIFTED INTO THE SEAT READS THEIR OWN COINS (the author's word 04.10.2026 00:38 UTC): every owner of coins on this phone
     /// lets the person who left go and reads the folder of the person seated (MTCoinPlace) -- the chains first, so the book's past
     /// joins the seated person's chains.
     @MainActor static func reread() {
-        generation &+= 1
         MTCoinVault.shared.forget()
         MTTimeChainTip.shared.reread()
         MTTimeChain.forget()
@@ -2519,9 +1547,6 @@ enum MTCoinBook {
         MTCoinBoard.shared.reread()
         MontanaTrace.mark("coin_book", "reread")
     }
-    /// A SEAT BEGINS TO MOVE (MTSeats.parkThenLift, in the same turn as the last write of the person leaving and before their folder
-    /// moves): from this instant no walk of the chain begun under them writes anything (MTCoinSeat).
-    @MainActor static func leave() { generation &+= 1 }
     /// NO LIMIT BUT THE BALANCE AND ONE AT LEAST (the author's word 03.10): a move of any whole number of coins from one up; the
     /// one bound is the arithmetic's -- the count must still fit the book's integer beside the balance -- never a rule of the coin.
     static func fits(_ coins: Int, beside balance: Int) -> Bool { 0 < coins && !balance.addingReportingOverflow(coins).overflow }
@@ -3061,7 +2086,7 @@ enum MTOwnWords {
 enum MTCoinSend {
     /// A field transfer has three honest outcomes. Only the available the page shows (MTCoinSplit.available) may call it short;
     /// an unanswered node record is pending, not an insufficient balance and not a second send.
-    enum TransferResult { case sent(String), short, pending, refused, noKey, paced }
+    typealias TransferResult = MTCoinTransfer   // what a coin from the field came to, as the chat reads it (slice S2b b7d)
     /// The system chain's name for a restored credit: this prefix and the coin letter's wire name.
     static let restorePrefix = "restore:"
     /// A pair's own conversation, open to letters, of other words than mine: where a bubble burns its coin (pay).
@@ -3394,7 +2419,7 @@ enum MTAutoReact {
     }
     /// A letter of the pair landed (ChatStore, beside a coin letter's credit): a chosen person's fresh letter is paid.
     @MainActor static func landed(_ m: Message, in chat: String, store: ChatStore) {
-        guard !m.isFromMe, let r = rule(chat), m.coinLetter == nil, m.chessLetter == nil, !MTRowLetter.ownRow(m.text),
+        guard !m.isFromMe, let r = rule(chat), m.coinLetter == nil, m.gameLetter == nil, !MTRowLetter.ownRow(m.text),
               let born = ChatStore.birthMs(fromMid: m.mid), r.since <= born, Date().timeIntervalSince1970 - born <= MTCoinSend.fresh,
               let c = store.listChats().first(where: { c in c.name == chat }), MTCoinSend.canPay(c, store: store) else { return }
         let conv = c.convId ?? c.name
@@ -3421,7 +2446,6 @@ enum MTAutoReact {
         MontanaTrace.markFolded("coin_paid", "coins=\(c)", window: 60)
     }
 }
-
 
 // COIN-RULES BEGIN -- tools/mt-coin-rules-check.py compiles this region as it stands with tools/coin-rules-tests.swift (COIN-TX-V3
 // section 9: the vectors V1, V2, V3, V6 and the fold's steps); it reads nothing but Foundation and CryptoKit.
@@ -4168,7 +3192,6 @@ enum MTCoinTx {
     }
 }
 
-
 // MARK: - version 3 (Audit/COIN-TX-V3.md): every move of a key's balance is a signed record of its chain
 /// THE BALANCE IS THE FOLD OF THE KEY'S CHAIN (the author's words 11.10.2026 19:5x UTC: "balances must be proven ... the Explorer
 /// shows the proof of it locally and globally"; 20:5x: "take the proven balance yourself, check it as the critic and do it
@@ -4268,7 +3291,7 @@ extension MTCoinTx {
     }
     /// THE PERSON HERE MINTS (fold-7): online -- the app in front of the person -- or behind the living tunnel of the VPN.
     @MainActor static var here: Bool {
-        UIApplication.shared.applicationState != .background || MontanaVPNTunnel.shared.status == .connected
+        UIApplication.shared.applicationState != .background || MTApps.vpn?.connected == true
     }
     /// The seconds the road to the node may take: a MINT reaching it later than this counts less than it names.
     nonisolated static let presentMargin: Int64 = 20
@@ -4614,7 +3637,6 @@ extension MTCoinTx {
         keepOpen(left)
     }
 }
-
 
 extension MTCoinTx {
     /// A V2 RECORD THAT SPENT COMES BACK AFTER ITS DAY (fold-4, P-3 of Agent 95; the author's words 19.10.2026 09:2x UTC «put it in» and

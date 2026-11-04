@@ -1452,7 +1452,7 @@ final class MontanaVideoDock: NSObject, ObservableObject {
         if !queue.isEmpty { self.queue = queue }
         if self.file != file {
             VoicePlayer.shared.stepAside()   // one thing plays: a voice stands down, a track steps aside with its place (26.09)
-            MTYouTube.rest()   // and YouTube rests where it stands (MTYouTube)
+            MTApps.youtube?.rest()   // and YouTube rests where it stands (MTApps.youtube)
             self.file = file; self.chat = chat; self.caption = caption; progress = 0; elapsed = 0; duration = 0
             let url = MontanaMediaVault.playableURL(file) ?? attachmentURL(file)
             track = []; reading = file; badgeAt = nil

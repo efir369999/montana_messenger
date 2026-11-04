@@ -496,3 +496,37 @@ struct MTSecretSaveSheet: View {
         }
     }
 }
+
+/// THE PASSWORDS DOOR'S PROTOCOL SIDE (MTApps.passwords): the page, a secret letter's face and its saving, and the vault's keychain
+/// item, behind one door, so the shared code names none of them and Montana Messenger builds without them (link 15962).
+final class MTPasswordsAppDoor: MTPasswordsDoor {
+    @MainActor func page() -> AnyView { AnyView(MTPasswordsPage()) }
+    @MainActor func letterFace(_ text: String, mine: Bool) -> AnyView? {
+        guard let secret = MTSecretLetter.parse(text) else { return nil }
+        return AnyView(HStack(spacing: 12) {
+            Image(systemName: "key.fill").font(.title2)
+            VStack(alignment: .leading, spacing: 2) {
+                // USER-DATA: the title of the shared secret
+                Text(verbatim: secret.title).font(.headline).lineLimit(2)
+                Text(mine ? "Shared from Passwords" : "Tap to save to Passwords").font(.subheadline)
+            }
+        })
+    }
+    @MainActor func take(_ text: String) {
+        if let secret = MTSecretLetter.parse(text) { MTPasswordVault.shared.incoming = secret }
+    }
+    @MainActor func saving() -> AnyView { AnyView(MTSecretSaving()) }
+    var keychainStays: [String] { [MTPasswordVault.key] }
+    var seatKeychain: [String] { [MTPasswordVault.key] }
+}
+
+/// A SECRET A CORRESPONDENT SH->ED, WAITING TO BE SAVED (MTPasswordVault.incoming): the saving sheet's host, worn by the shell behind
+/// its pages; it alone watches the vault, so the shell is not drawn again when a secret comes or goes.
+struct MTSecretSaving: View {
+    @ObservedObject private var vault = MTPasswordVault.shared
+    var body: some View {
+        Color.clear
+            .allowsHitTesting(false)
+            .sheet(item: $vault.incoming) { secret in MTSecretSaveSheet(item: secret) }
+    }
+}

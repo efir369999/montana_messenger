@@ -54,55 +54,14 @@ enum MTNameBook {
     }
     static func manualName(_ conv: String) -> String? { manual()[conv] }
 
-    /// The peer name, if this device already knows it. There is nobody outside to ask: a person says
-    /// their name over the channel the two of you share, and until then the book holds what it holds.
-    static func ensureName(_ conv: String) {
-        _ = names()[conv]
+    /// THE NICK BOOK IS GONE (the author's word 16463, 04.11.2026: «delete everything tied to nicks»): no person here is
+    /// reached or shown by an @name. The store an older build kept of them leaves the device -- the vault's value (its load is
+    /// swept with the unnamed ones) and the keychain mirror the extensions read -- at every launch that still finds one.
+    static func forgetClaimedNames() {
+        if UserDefaults.standard.object(forKey: retiredClaimedNames) != nil { UserDefaults.standard.removeObject(forKey: retiredClaimedNames) }
+        if MontanaKeychain.get(retiredClaimedNames) != nil { MontanaKeychain.delete(retiredClaimedNames) }
     }
-    // The peer nickname is a public name, learned at an introduction by @name or announced over the
-    // encrypted channel. It is kept by address: it belongs to the person, not to the conversation.
-    private static var nameCache: [String: String]?
-    private static func names() -> [String: String] {
-        if let m = nameCache { return m }
-        var m: [String: String] = [:]
-        if let d = MontanaLocalVault.getDecrypted("peerUsernames"),
-           let x = try? JSONDecoder().decode([String: String].self, from: d) { m = x }
-        if MontanaDeviceKey.key == nil { return m }   // sealed vault must not latch the cache (stage 9)
-        nameCache = m
-        return m
-    }
-    static func setName(conv: String, _ name: String?) {
-        let v = (name ?? "").trimmingCharacters(in: .whitespaces).lowercased()
-            .replacingOccurrences(of: "@", with: "")
-        var m = names()
-        m[conv] = v.isEmpty ? nil : v
-        nameCache = m
-        if let d = try? JSONEncoder().encode(m) {
-            MontanaLocalVault.setEncrypted("peerUsernames", d)
-            MontanaKeychain.set("peerUsernames", d)   // the shared place both the app and its extensions read
-        }
-        syncContactName(conv: conv, v)   // the contact card is kept in step with the name book
-    }
-
-    /// The nickname in a contact card is the same value as in the name book. Two stores of one value
-    /// drift apart by construction, so the write goes in one call.
-    static func syncContactName(conv: String, _ name: String) {
-        // The contact store is a local vault, not UserDefaults: a second path to the same data is the
-        // very desynchronisation this method is written for.
-        let raw = MontanaLocalVault.getString("mtContacts") ?? ""
-        guard let d = raw.data(using: .utf8),
-              var arr = try? JSONDecoder().decode([ContactsTabView.MTContact].self, from: d),
-              let i = arr.firstIndex(where: { $0.ref == conv }), arr[i].name != name else { return }
-        arr[i].name = name
-        if let out = try? JSONEncoder().encode(arr), let s = String(data: out, encoding: .utf8) {
-            MontanaLocalVault.setString("mtContacts", s)
-            invalidateContacts()
-        }
-    }
-    static func name(_ conv: String) -> String? { names()[conv] }
-    /// The conversations this phone holds a person's @name under (MTBoard.reach, 02.11.2026): one look at the book in memory -- the
-    /// book keeps a name lowercased and without its @ (setName), the form the layer normalizes to -- never a walk of the pipes.
-    static func convs(named n: String) -> [String] { names().compactMap { $0.value == n ? $0.key : nil } }
+    private static let retiredClaimedNames = "peerUsernames"
 
     // THE FACE GLYPH IS DERIVED FROM THE NAME, NEVER STORED (20.09, the critic — CLIENT-FIX). A callsign
     // carries its emoji first, so the glyph is a function of the name the book already holds. A stored
@@ -265,10 +224,6 @@ enum MTNameBook {
             MontanaTrace.mark("pins_wiped", "debug once names=\(names) photos=\(photos)")
             names = 0; photos = 0
         }
-        if MontanaDeviceKey.key != nil, !UserDefaults.standard.bool(forKey: "phoneNamesRestored1787") {
-            UserDefaults.standard.set(true, forKey: "phoneNamesRestored1787")
-            ContactsTabView.MTContact.restoreNamesFromPhone()   // the phone's cards outlived the sweep of 1786
-        }
         if MontanaDeviceKey.key != nil, !UserDefaults.standard.bool(forKey: "cardNamesRestored1784") {
             var back = 0
             if let data = (MontanaLocalVault.getString("mtContacts") ?? "").data(using: .utf8),
@@ -337,11 +292,8 @@ enum MTNameBook {
     static func invalidateContacts() {
         contactCache = nil
         bookLock.lock(); bookRefs = nil; bookLock.unlock()
-        // A WALL KEPT FOR CONTACTS FOLLOWS THE BOOK (the critic 25.09): one taken out of the book is carried the empty page,
-        // one put in it the page — the wall's push reads the rule anew at every change of the book.
-        if MTBoardRule.current(.see) == .contacts || MTBoardRule.current(.write) == .contacts {
-            DispatchQueue.main.async { MTBoard.shared.renewVersion(own: true) }
-        }
+        // A WALL KEPT FOR CONTACTS FOLLOWS THE BOOK (the critic 25.09; MTWallDoor.bookChanged).
+        MTApps.wall?.bookChanged()
     }
     /// THE BOOK'S PEOPLE, BY REFERENCE (the author's word 25.09: «only contacts», for who sees my wall and who writes on
     /// it): every card of the book, named or not. Read for every presence word and from any thread — held under its own
@@ -380,7 +332,7 @@ enum MTNameBook {
     /// the chat list read neither book and showed the neutral caption to everyone.
     ///
     /// The order: a local rename -> a manual rename -> the contact card -> the name the person said
-    /// about themselves -> the nickname.
+    /// about themselves.
     // COLD MIRROR (stage 9): the vault opens with the device key, and a true cold start has
     // none for the first moments — but a known name must NEVER give way to the neutral
     // caption. The mirror lives in the keychain (readable from the first instant, same
@@ -546,9 +498,8 @@ enum MTNameBook {
         // without its key and without a name is no correspondent anyone can reach — under the neutral caption it read as an
         // unknown person who could not be answered (T1 arc:d7f0fd, «Correspondent» since 17.09).
         if ChatStore.isTranscript(conv) { return String(localized: "Recovered history", bundle: MTLanguage.bundle) }
-        // A public account without a nickname does not exist, so "there is no nickname" means "the
-        // account is private", and there is nothing to show. The address is never substituted here: it
-        // is eternal and ties all of a person's actions together, while a name is held by activity, changes and is released.
+        // Nobody named themselves yet, and there is nothing else to show. The address is never substituted here: it
+        // is eternal and ties all of a person's actions together, while a name is the person's word and changes.
         // The neutral caption is one for the whole client -- there are never two words for one "no name".
         return String(localized: "Correspondent", bundle: MTLanguage.bundle)
     }
@@ -569,13 +520,12 @@ enum MTNameBook {
     /// store as it now stands — a cache kept would write the moment before back over it on the next word — and
     /// the extensions' mirrors of the book are raised from the store at once.
     static func forgetStored() {
-        manualCache = nil; nameCache = nil; manualPhotoCache = nil; manualColdCache = nil
+        manualCache = nil; manualPhotoCache = nil; manualColdCache = nil
         invalidateContacts(); declaredAtCache = nil; coldCache = nil; coldPhotoCache = nil
         // MAIN-SAFE-SYNC: the queue holds only put, which never waits on main; the epoch moves after any write on its way
         declaredAtQueue.sync { declaredAtLock.lock(); declaredAtEpoch += 1; declaredAtLock.unlock() }
         published = [:]
         forgetPictures()
-        if let d = MontanaLocalVault.getDecrypted("peerUsernames") { MontanaKeychain.set("peerUsernames", d) }
         if let d = MontanaLocalVault.getDecrypted("manualPhotos") { MontanaKeychain.set("photosManualCold", d) }
     }
     private static func pictureExists(_ ref: String) -> Bool {

@@ -64,6 +64,9 @@ struct ShareChat {
     /// first circle"). Not a chat and never a letter's address: its name is the sheet's own word; its face is the one the Saved
     /// Messages row wears -- one's own (the author's word 11.09).
     static let wallName = "montana.wall.mine"
+    /// THE CIRCLE ONLY WHERE THE WALL STANDS (link 16005): the sheet is an extension and walks no door of the app, so its target
+    /// says it -- MTShareWall in Info.plist is MONTANA_SHARE_WALL, YES for Montana's sheet alone; Montana Messenger's has no wall.
+    static let carried = Bundle.main.object(forInfoDictionaryKey: "MTShareWall") as? String == "YES"
     static func wall(from chats: [ShareChat]) -> ShareChat {
         let me = chats.first { $0.name == savedMessagesKey }
         let title = String(localized: "My wall", bundle: MTLanguage.bundle)
@@ -165,7 +168,7 @@ final class SharePickerController: UIViewController, UICollectionViewDataSource,
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(cancelTap))
         navigationItem.backButtonDisplayMode = .minimal   // the post's page goes back by the chevron alone
         ShareGlass.clearBar(navigationItem)
-        all = [ShareChat.wall(from: chats)] + chats   // one's own wall is the first circle (the author's word 29.09)
+        all = (ShareChat.carried ? [ShareChat.wall(from: chats)] : []) + chats   // one's own wall is the first circle (the author's word 29.09)
         ShareSend.diag("sheet ORDER n=\(chats.count) order=\(MTShareOrder.print(chats.map(\.name)))")
         shown = all
         buildUI()

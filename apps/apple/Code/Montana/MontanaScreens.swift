@@ -383,7 +383,7 @@ struct ScanMeetingView: View {
             }.ignoresSafeArea()
             VStack {
                 Spacer()
-                Text("Point at a one-time card or a @username code")
+                Text("Point at a one-time card")
                     .foregroundColor(.white).padding(10).background(.black.opacity(0.6)).cornerRadius(10).padding(.bottom, 40)
             }
         }
@@ -418,8 +418,6 @@ struct ScanMeetingView: View {
                 case .opened(let ref): onFound(ref)
                 case .spent: verdict = "Invitation expired. Ask for a new code."
                 case .refused: verdict = "The invitation could not be opened. Check the link or try again."
-                case .nameless: verdict = "Nobody holds this name."
-                case .ownName: verdict = "This is your own name."
                 }
             }
         }
@@ -472,7 +470,8 @@ struct SeedShowView: View {
                         .font(.system(size: 72)).foregroundColor(Color.accentColor).padding(.top, 36)
                     Label("This information is for you only!", systemImage: "exclamationmark.triangle")
                         .font(.headline).foregroundColor(.primary).padding(.top, 8)
-                    Text("This seed phrase unlocks access to your wallet")
+                    // The seed's line names the wallet only where the coins stand (guard 4 of docs/APPS-API.md).
+                    Text(LocalizedStringKey(MTApps.coins?.said(.seed) ?? "This seed phrase unlocks access to your account"))
                         .font(.title2.bold()).foregroundColor(.primary)
                         .multilineTextAlignment(.center).padding(.horizontal, 24)
                     Button { ack1.toggle() } label: {

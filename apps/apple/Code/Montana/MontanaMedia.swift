@@ -377,7 +377,7 @@ final class VoicePlayer: NSObject, ObservableObject {
         // THE CALL HOLDS THE SOUND (24.09, T1 12:31:40): under a call the player never touches the phone's sound -- the
         // person is told so and nothing starts (MontanaAudioSession, the one door).
         guard !MontanaAudioSession.refusedUnderCall(voice ? "voice message" : "music") else { return }
-        MTYouTube.rest()   // one sound: YouTube rests where it stands, its window stays (MTYouTube)
+        MTApps.youtube?.rest()   // one sound: YouTube rests where it stands, its window stays (MTApps.youtube)
         // THE TRACK THAT STEPPED ASIDE IS THE ONE ASKED FOR (26.09): the voice over it ends and the track goes on from its place.
         if !voice, let pk = parked, pk.file == file {
             release()
@@ -448,7 +448,11 @@ final class VoicePlayer: NSObject, ObservableObject {
     func pause() {
         playRequest += 1
         player?.pause(); paused = true
-        MontanaAudioSession.release("play")
+        // A PAUSED TRACK KEEPS THE SOUND (the author's word 04.11.2026 13:12 UTC, link 16165 p.1: «when music plays and I press pause on
+        // the locked screen, the music drops and will not play again»). Letting the session go at a pause lowered it into the mixing
+        // rest: the system took the app off the lock screen and put it to sleep, and the play there woke nothing. A track in hand
+        // holds the session until it is let go (release); a voice is a word, not the lock screen's, and lets go at once as before.
+        if isVoice { MontanaAudioSession.release("play") }
         disarmProximity()
         pushNowPlaying()
         if let p = player, let f = playingFile { MTPlayPlaces.keep(f, at: p.currentTime, of: p.duration, voice: isVoice) }
@@ -490,7 +494,7 @@ final class VoicePlayer: NSObject, ObservableObject {
 
     func resume() {
         guard !MontanaAudioSession.refusedUnderCall(isVoice ? "voice message" : "music") else { return }
-        MTYouTube.rest()   // one sound (MTYouTube)
+        MTApps.youtube?.rest()   // one sound (MTApps.youtube)
         // THROUGH THE KIND'S OWN DOOR (26.09): a tape or a voice between the pause and this resume left the sound in their own mode.
         let external = isVoice && MontanaAudioRoute.read("voice-resume").isExternal
         playRequest += 1
@@ -1136,7 +1140,7 @@ enum MTMosaic {
     // owner the share sheet compiles as well ([C-1], 20.09). The cut below only draws what it is given.
     /// What folds into a plate: a picture or a video; a round note, a voice, a file and a sticker do not.
     static func folds(_ m: Message) -> Bool {
-        if m.docName == MontanaCardPlate.stickerName { return false }
+        if m.docName == MontanaStickerBook.docName { return false }
         if m.imageFile != nil { return true }
         if let v = m.videoFile { return !v.hasPrefix("vnote_") }
         return false
@@ -2229,7 +2233,6 @@ struct AttachSheet: View {
     var onFile: () -> Void
     var onLocation: () -> Void
     var onContact: () -> Void
-    var onCard: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
     @State private var selected: [String] = []      // localIdentifier in selection order
     @State private var caption = ""
@@ -2345,7 +2348,6 @@ struct AttachSheet: View {
         if selected.isEmpty {
             HStack(spacing: 0) {
                 toolItem("Gallery", "photo.fill.on.rectangle.fill", active: true) { onGallery() }
-                toolItem("Business card", "person.text.rectangle.fill") { onCard() }
                 toolItem("File", "doc.fill") { onFile() }
                 toolItem("Location", "location.fill") { onLocation() }
                 toolItem("Contact", "person.crop.circle.fill") { onContact() }

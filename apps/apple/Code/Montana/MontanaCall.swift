@@ -28,6 +28,14 @@ import SwiftUI
 import UserNotifications
 import Combine
 
+/// A CALL'S NAME (slice S8: the calls' own): a digest of the call's secret, so a call's identity survives the native call UUID's
+/// replacement on process restoration -- its row in the chat and a room's attendance go by it.
+enum MTCallName {
+    static func name(_ secret: Data) -> String {
+        SHA256.hash(data: Data("montana.call.identity.v1:".utf8) + secret).map { String(format: "%02x", $0) }.joined()
+    }
+}
+
 // One record, one sequence and one monotonic clock, including callbacks off main.
 // The link is a domain-separated digest of this call's random secret, never the secret or a person.
 final class MTCallTimeline {
@@ -56,7 +64,9 @@ final class MTCallTimeline {
         registryLock.unlock()
         let operation = UUID().uuidString
         timeline?.mark("description.remote.begin", operation: operation)
-        connection.setRemoteDescription(description) { error in
+        // No candidate of a local network enters where none is reached (MTLocalNetwork, 15863).
+        let kept = RTCSessionDescription(type: description.type, sdp: MTLocalNetwork.keep(sdp: description.sdp))
+        connection.setRemoteDescription(kept) { error in
             let e = error as NSError?
             timeline?.mark(e == nil ? "description.remote.ok" : "description.remote.fail",
                 e.map { "domain=\($0.domain) code=\($0.code)" } ?? "", operation: operation)
@@ -193,7 +203,6 @@ final class MTCallAudioOwner: NSObject, RTCAudioSessionDelegate {
             guard self.holder != uuid else { return }
             self.lease += 1
             if self.holder != nil { RTCAudioSession.sharedInstance().isAudioEnabled = false }
-            MTCallRecordingGate.select(nil)
             self.holder = uuid; self.timeline = timeline; self.failure = failure
             self.captureProgress = MTCallSampleProgress(); self.playoutProgress = MTCallSampleProgress()
             self.receivedSeen = 0; self.lastSampleAt = nil; self.cameraDeadlineArmed = false
@@ -296,7 +305,6 @@ final class MTCallAudioOwner: NSObject, RTCAudioSessionDelegate {
             return
         }
         let s = RTCAudioSession.sharedInstance()
-        MTCallRecordingGate.select(uuid)
         guard !s.isAudioEnabled else { return }
         timeline?.mark("audio.enable.begin")
         s.isAudioEnabled = true
@@ -319,7 +327,6 @@ final class MTCallAudioOwner: NSObject, RTCAudioSessionDelegate {
         queue.async {
             guard self.holder == uuid else { return }
             self.suspended = on
-            MTCallRecordingGate.hold(uuid, on)
             self.timeline?.mark("audio.hold", "held=\(on ? 1 : 0)")
             if !on { self.enableIfReady(); self.expectActivation(uuid) }
         }
@@ -343,7 +350,6 @@ final class MTCallAudioOwner: NSObject, RTCAudioSessionDelegate {
     func release(_ uuid: UUID) {
         queue.async {
             guard self.holder == uuid else { return }
-            MTCallRecordingGate.release(uuid)
             self.timeline?.mark("audio.release")
             RTCAudioSession.sharedInstance().isAudioEnabled = false
             self.lease += 1
@@ -655,7 +661,7 @@ final class MontanaCall: NSObject {
     let factory: RTCPeerConnectionFactory
     private var pc: RTCPeerConnection? { didSet { signalLock.lock(); door.pc = pc; signalLock.unlock() } }
     private var localAudio: RTCAudioTrack?
-    private var localVideo: RTCVideoTrack? { didSet { refreshRecording() } }
+    private var localVideo: RTCVideoTrack?
     // The capturer mirrors its birth into the model ([C-1], same construction as isVideo): every
     // birth or replacement bumps the tick, and the model decides the call's sides afresh
     // (CallUIModel.applySides) — hand-placed pushes covered only some of the five birth sites
@@ -664,7 +670,7 @@ final class MontanaCall: NSObject {
     private var capturer: MontanaCamera? {
         didSet { DispatchQueue.main.async { CallUIModel.shared.tick += 1 } }
     }
-    private(set) var remoteVideoTrack: RTCVideoTrack? { didSet { refreshRecording() } }
+    private(set) var remoteVideoTrack: RTCVideoTrack?
     var localVideoTrack: RTCVideoTrack? { localVideo }
 
     private var peer: String? { didSet { signalLock.lock(); door.peer = peer; signalLock.unlock() } }
@@ -704,8 +710,6 @@ final class MontanaCall: NSObject {
     }
     private var callTimelines: [UUID: MTCallTimeline] = [:]
     private var callTimeline: MTCallTimeline? { callUUID.flatMap { callTimelines[$0] } }
-    /// The call in hand's name for the record mark (MTCallRecordMark), read on the main thread as refreshRecording reads it.
-    var handRecordingUUID: UUID? { callUUID }
     private func callStep(_ stage: String, _ facts: String = "") {
         callTimeline?.bind(callSeed)
         callTimeline?.mark(stage, facts)
@@ -1005,7 +1009,6 @@ final class MontanaCall: NSObject {
         parked = nil
         MontanaTrace.mark("call_hold", "parked ended reason=\(reason == .remoteEnded ? "remote" : "other")")
         provider.reportCall(with: pk.uuid, endedAt: nil, reason: reason)
-        MainActor.assumeIsolated { MTCallRecording.shared.finish(pk.uuid) }
         pk.pc?.close()
         weaveClosed(pk.seed.map { s in String(s.base64EncodedString().prefix(16)) }, peer: pk.peer, connected: pk.connectedAt != nil)
         MontanaCall.burySeed(pk.seed?.base64EncodedString())
@@ -1234,9 +1237,6 @@ final class MontanaCall: NSObject {
     /// The caller reads an ANSWER off the wake road (their `av`). Learned from the ring envelope —
     /// which arrives BEFORE any lane of ours is up — and from the caps of the lane copy.
     private(set) var peerReadsVoipAnswer = false
-    /// The correspondent's recording switch and Global Level as their caps said them (MTCallRecordingPolicy.mayRecord); nil: unsaid.
-    private var peerRecordSwitch: Bool?
-    private var peerLevel: Int?
     private var declinedByMe = false   // user tapped Decline on the ringing call — no "missed" banner
     private var answeredElsewhere = false   // another device of this person took the call (call-taken): no "missed" banner
     private var takenTold = false   // the caller told the person's other devices which one took the call
@@ -1320,29 +1320,6 @@ final class MontanaCall: NSObject {
     // log/duration
     private var startedAt: Date?
     private(set) var connectedAt: Date?
-    var recordingReservedIDs: Set<String> {
-        var seeds = [callSeed, parked?.seed].compactMap { $0 }
-        if let held = Self.heldAtLaunch, let seed = Data(base64Encoded: held.seed) { seeds.append(seed) }
-        return Set(seeds.map(MTCallName.name))
-    }
-    func refreshRecording() {
-        guard Thread.isMainThread else { DispatchQueue.main.async { self.refreshRecording() }; return }
-        guard !ended, let uuid = callUUID, let seed = callSeed, let peer, let since = connectedAt else { return }
-        MainActor.assumeIsolated {
-            let recorder = MTCallRecording.shared
-            // THE RECORDING REACHES THE CHAT WHOEVER RECORDS (the author's word 20.10.2026 16:5x UTC: «the call's recording must be in
-            // the chat in any case, even if the correspondent's does not record»): the caller sends it, and the callee does when the
-            // caller does not record by itself -- one copy in the chat, never none. The correspondent's switch holds by level (mayRecord).
-            let mine = MTLevelAccess.level
-            recorder.forbid(uuid, !MTCallRecordingPolicy.mayRecord(theirSwitch: peerRecordSwitch, theirLevel: peerLevel, mine: mine))
-            let peerRecords = peerRecordSwitch == true
-                && MTCallRecordingPolicy.mayRecord(theirSwitch: MTCallRecording.automatic, theirLevel: mine, mine: peerLevel)
-            recorder.begin(uuid: uuid, id: MTCallName.name(seed), chat: peer, since: since, sendsToChat: isInitiator || !peerRecords, timeline: callTimeline)
-            MTCallRecordingGate.mute(uuid, desiredMuted)
-            recorder.video(localVideo, uuid: uuid, source: "video-local")
-            recorder.video(remoteVideoTrack, uuid: uuid, source: "video-remote")
-        }
-    }
     /// The call in hand's name and the whole seconds it has talked: its row in the chat keeps both, once by the name.
     var talkElapsed: (call: String, seconds: Int)? {
         guard let c = connectedAt, peer != nil else { return nil }
@@ -1379,9 +1356,11 @@ final class MontanaCall: NSObject {
     private var audioBeforeShare = false              // the video state grew FOR the share — falls with it
     private var peerShareGrewVideo = false            // same truth on the watching side
     private var videoAskTimer: Timer?                 // consent waits this long, then «no answer»
+    private var videoAskedAt = Date.distantPast       // my last ask: a yes arriving after the plate's 30 s still turns the call to video (K2)
     private var videoAcceptArmed = false              // accepted: our camera joins when theirs lands
     private var videoArmedAt = Date.distantPast       // consent lives 40s — never until the call's end
     private var videoConsentFresh: Bool { videoAcceptArmed && Date().timeIntervalSince(videoArmedAt) < 40 }
+    private var videoJoinTimer: Timer?                // the yes given lights the Video button as long as the consent lives (K3)
     /// A picture actually flowed in this call — theirs rendered, or our camera or screen was born.
     /// The record in the chat reads THIS, not the video flag: the flag can stand on a frameless track.
     private var videoFramesSeen = false
@@ -1487,13 +1466,8 @@ final class MontanaCall: NSObject {
         RTCInitializeSSL()
         let enc = RTCDefaultVideoEncoderFactory()
         let dec = RTCDefaultVideoDecoderFactory()
-        let processing = RTCDefaultAudioProcessingModule(config: nil,
-            capturePostProcessingDelegate: MTCallRecordingProcessor.local,
-            renderPreProcessingDelegate: MTCallRecordingProcessor.remote)
-        // The bundled adapter's initializer does not bind its delegate. The public setters
-        // attach the processors to the native audio path before the factory starts it.
-        processing.capturePostProcessingDelegate = MTCallRecordingProcessor.local
-        processing.renderPreProcessingDelegate = MTCallRecordingProcessor.remote
+        // NO CALL IS RECORDED (the author's word 16428, 04.11.2026): the native audio path carries no processor of its own.
+        let processing = RTCDefaultAudioProcessingModule(config: nil, capturePostProcessingDelegate: nil, renderPreProcessingDelegate: nil)
         factory = RTCPeerConnectionFactory(audioDeviceModuleType: .platformDefault, bypassVoiceProcessing: false,
             encoderFactory: enc, decoderFactory: dec, audioProcessingModule: processing)
         super.init()
@@ -1616,7 +1590,6 @@ final class MontanaCall: NSObject {
         // THE FABRIC'S WORD (17.10.2026, MTWeave): the call's identifier, drawn by its caller; older builds skip the key. Whom a
         // testimony of the call names is the correspondence's own secret (MTFabric), never a word of the caps (18.10.2026).
         caps.fc = weaveCall()?.montanaHexString
-        caps.rec = MTCallRecording.automatic; caps.lv = MTLevelAccess.level
         return caps
     }
     /// WHAT THE FAR BUILD CAN DO IS LEARNED FROM EVERY WORD OF THE CALL IN HAND (24.09 23:14, T3): a call born by the wake
@@ -1625,8 +1598,6 @@ final class MontanaCall: NSObject {
     /// A capability, once said, stands for the call; cleanup forgets it.
     private func learnPeerCaps(_ caps: CallCaps?) {
         learnWeave(caps)
-        if let r = caps?.rec { peerRecordSwitch = r }
-        if let l = caps?.lv { peerLevel = l }
         if caps?.av == true { peerReadsVoipAnswer = true }
         if caps?.rejoin == true, !peerRebuilds {
             peerRebuilds = true
@@ -1854,7 +1825,7 @@ final class MontanaCall: NSObject {
         let opts = RTCPeerConnectionFactoryOptions()
         opts.ignoreLoopbackNetworkAdapter = true
         factory.setOptions(opts)
-        MontanaTrace.mark("call_ice", MontanaPhoneNode.tunnelUp() ? "every adapter -- the tunnel among them" : "every adapter")
+        MontanaTrace.mark("call_ice", MontanaPhoneNode.tunnelUp() ? "every adapter -- our own among them" : "every adapter")
         let constraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
         pc = factory.peerConnection(with: cfg, constraints: constraints, certificateVerifier: MTRelayTrust.shared, delegate: self)
         let audioConstraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
@@ -2793,7 +2764,7 @@ final class MontanaCall: NSObject {
         if ctrl == "call-ice", from == d.peer, Self.stateSnapshot != "idle", let pcx = d.pc, pcx.remoteDescription != nil {
             let batch = (candidates ?? []) + (candidate.map { [$0] } ?? [])
             var kinds: [String: Int] = [:]
-            for c in batch {
+            for c in batch where MTLocalNetwork.admits(candidate: c.candidate) {
                 kinds[Self.candidateKind(c.candidate), default: 0] += 1
                 pcx.add(RTCIceCandidate(sdp: c.candidate, sdpMLineIndex: c.sdpMLineIndex ?? 0, sdpMid: c.sdpMid)) { error in
                     if let error { MontanaTrace.mark("ice_rx_refused", "code=\((error as NSError).code)") }
@@ -3177,7 +3148,7 @@ final class MontanaCall: NSObject {
             for c in batch { kinds[Self.candidateKind(c.candidate), default: 0] += 1 }
             MontanaTrace.mark("ice_rx", "n=\(batch.count) types=\(Self.foldKinds(kinds)) applied=\(pc?.remoteDescription != nil ? 1 : 0)")
             markRemoteIceSeen()
-            for c in batch {
+            for c in batch where MTLocalNetwork.admits(candidate: c.candidate) {   // 15863
                 let ice = RTCIceCandidate(sdp: c.candidate, sdpMLineIndex: c.sdpMLineIndex ?? 0, sdpMid: c.sdpMid)
                 if pc?.remoteDescription != nil { pc?.add(ice) { _ in } } else { stashIce(ice) }
             }
@@ -3316,16 +3287,43 @@ final class MontanaCall: NSObject {
             DispatchQueue.main.async { CallUIModel.shared.peerCameraOff = false }
         case "call-video-ask":
             guard from == peer else { return }
-            MontanaTrace.mark("call_video", "consent asked by peer")
-            DispatchQueue.main.async { CallUIModel.shared.videoAskIncoming = true }
+            // THE ASK MEETS A CALL ALREADY ON ITS WAY TO VIDEO (the author's words 16421 and 16428, 04.11.2026; T1-T2 17:28 UTC: a
+            // press of Video between the consent and the offer raised a second Accept/Decline on the asker's screen, in Messenger and
+            // in the Protocol alike). A call already in video answers yes by itself, no plate; asks that crossed leave one standing --
+            // the caller's: the callee yields and says yes, so one offer rides the road.
+            DispatchQueue.main.async {
+                let m = CallUIModel.shared
+                if self.isVideo {
+                    var ok = CallSignalOut(ctrl: "call-video-ok"); ok.targetDevice = self.peerDevice
+                    self.sendSignal?(from, ok)
+                    MontanaTrace.mark("call_video", "consent asked by peer in video -- granted by itself")
+                } else if m.videoAskPending {
+                    guard !self.isInitiator else { MontanaTrace.mark("call_video", "asks crossed -- the caller's ask stands"); return }
+                    self.videoAskTimer?.invalidate(); self.videoAskTimer = nil
+                    m.videoAskPending = false
+                    MontanaTrace.mark("call_video", "asks crossed -- the callee yields")
+                    self.acceptVideoAsk()
+                } else {
+                    MontanaTrace.mark("call_video", "consent asked by peer")
+                    m.videoAskIncoming = true
+                }
+            }
         case "call-video-ok":
             guard from == peer else { return }
             MontanaTrace.mark("call_video", "consent granted")
             videoAskTimer?.invalidate(); videoAskTimer = nil
+            // A YES AFTER THE PLATE'S TIMEOUT STILL TURNS THE CALL (the author's word 16488, 04.11.2026: «it gives no confirmation,
+            // and when confirmed the video must come on at both»): the plate waits 30 s, a person accepts later, and the yes was
+            // thrown away while the peer's camera already ran. My ask lives 120 s; a yes within it turns my call to video.
             DispatchQueue.main.async {
-                if CallUIModel.shared.videoAskPending {
-                    CallUIModel.shared.videoAskPending = false
+                let m = CallUIModel.shared
+                let asked = m.videoAskPending || Date().timeIntervalSince(self.videoAskedAt) < 120
+                m.videoAskPending = false
+                self.videoAskedAt = .distantPast
+                if asked, !self.isVideo {
                     self.upgradeToVideo()
+                } else if !asked {
+                    MontanaTrace.mark("call_video", "consent granted without my ask -- ignored")
                 }
             }
         case "call-video-no":
@@ -3334,6 +3332,7 @@ final class MontanaCall: NSObject {
             videoAskTimer?.invalidate(); videoAskTimer = nil
             DispatchQueue.main.async {
                 CallUIModel.shared.videoAskPending = false
+                self.videoAskedAt = .distantPast
             }
         case "call-screen-on":
             guard from == peer else { return }
@@ -3890,7 +3889,6 @@ final class MontanaCall: NSObject {
         let finishingTimeline = callTimeline
         finishingTimeline?.mark("call.cleanup.begin")
         ended = true
-        if let uuid = callUUID { MainActor.assumeIsolated { MTCallRecording.shared.finish(uuid); MTCallRecording.shared.forbid(uuid, false) } }
         let talked = talkElapsed?.call   // the call's name: its row lands once
         weaveClosed(callEpoch, peer: peer, connected: connectedAt != nil)   // the fabric weighs a call of two that connected (MTWeave)
         weaves[""] = nil
@@ -3983,19 +3981,17 @@ final class MontanaCall: NSObject {
             let ring = (answeredAt != nil && startedAt != nil) ? Int(answeredAt!.timeIntervalSince(startedAt!)) : -1
             let drain = (b0 >= 0 && b1 >= 0 && dur >= 60 && !(powerLast?.charging ?? false)) ? String(format: "%.1f", Double(b0 - b1) * 3600.0 / Double(dur)) : "-"
             // THE CALL'S OWN HEAT (16.10.2026, No.70): the run's share of one core over the talk (the processor time the two
-            // power readings carry, MontanaPower.runMicros), and whether the person's recording was on -- a recorded video call
-            // draws the frames of both pictures a second time (MTCallTape.video). The phone's word on its heat stands beside.
+            // power readings carry, MontanaPower.runMicros). The phone's word on its heat stands beside.
             let cpuPct: String = {
                 guard let a = powerStart, let b = powerLast, 0 < dur, a.cpuMicros <= b.cpuMicros else { return "-" }
                 return String((b.cpuMicros - a.cpuMicros) / UInt64(dur) / 10_000)
             }()
-            let rec = MTCallRecordingPolicy.enabled ? 1 : 0
             MontanaTrace.mark("call_summary",
                 "dir=\(isInitiator ? "out" : "in") video=\(isVideo ? 1 : 0) setup_ms=\(setup) connect_ms=\(connect) ring_s=\(ring) rang=\(peerRinging ? 1 : 0) talk_s=\(dur) "
                 + "paths=\(paths) relay_pct=\(relayShare) tun_pct=\(tunnelShare) rtt_avg=\(rtt) breaks=\(sumBreaks) "
                 + "restarts=\(sumRestarts) ladder_min_step=\(sumLadderMin) video_lost_pkts=\(sumLostVideo) video_dark_s=\(sumVideoDarkS) "
                 + "in_kb=\(sumInBytes / 1024) out_kb=\(sumOutBytes / 1024) crypto=\(crypto) end=\(endReason) "
-                + "batt=\(b0)->\(b1) drain_pct_h=\(drain) thermal=\(powerLast.map { MontanaPower.thermalWord($0.thermal) } ?? "-") power_floor_max=\(sumPowerFloorMax) cpu_pct=\(cpuPct) rec_policy=\(rec) "
+                + "batt=\(b0)->\(b1) drain_pct_h=\(drain) thermal=\(powerLast.map { MontanaPower.thermalWord($0.thermal) } ?? "-") power_floor_max=\(sumPowerFloorMax) cpu_pct=\(cpuPct) "
                 + "knocks=\(knockN)/\(knockOk) first_ok_s=\(knockFirstOkS) last_ok_s=\(knockLastOkS) bell=\(bellRung ? 1 : 0) side=\(faultSide())")
             // THE END OF A CALL IS IN THE TELEMETRY TOO (25.09): the trace alone knew it, and the trace of T1's 19:07 call
             // from the car rotated away before it shipped -- the diary could not say whether the call had ended on the
@@ -4004,7 +4000,7 @@ final class MontanaCall: NSObject {
             // trace held the knocks, the bell and the door, and the trace on a phone holds an hour and a half -- nine
             // hours later only this line was left, and it could say «side=apple» but not how many wakes Apple took,
             // whether our loud bell went out, or who closed a call that had not rung.
-            MontanaLog.event("E2E-CALL end dir=\(isInitiator ? "out" : "in") video=\(isVideo ? 1 : 0) talk_s=\(dur) cpu_pct=\(cpuPct) rec_policy=\(rec) end=\(endReason) door=\(endDoor) "
+            MontanaLog.event("E2E-CALL end dir=\(isInitiator ? "out" : "in") video=\(isVideo ? 1 : 0) talk_s=\(dur) cpu_pct=\(cpuPct) end=\(endReason) door=\(endDoor) "
                 + "rang=\(peerRinging ? 1 : 0) knocks=\(knockN)/\(knockOk) first_ok_s=\(knockFirstOkS) bell=\(bellRung ? 1 : 0) "
                 + "paths=\(paths) rtt_avg=\(rtt) breaks=\(sumBreaks) ice=\(lastIce) asks=\(setupAsks) relay_only=\(askedRelayOnly ? 1 : 0) "
                 + "probe=\(MontanaNetProbe.verdictWord) side=\(faultSide())")
@@ -4029,7 +4025,8 @@ final class MontanaCall: NSObject {
         endBackgroundHold()
         if let a = pendingAnswerAction { pendingAnswerAction = nil; a.fulfill() }
         reachTimer?.invalidate(); reachTimer = nil
-        videoAskTimer?.invalidate(); videoAskTimer = nil; videoAcceptArmed = false
+        videoAskTimer?.invalidate(); videoAskTimer = nil; videoAcceptArmed = false; videoAskedAt = .distantPast
+        videoJoinTimer?.invalidate(); videoJoinTimer = nil
         captureRetryTimer?.invalidate(); captureRetryTimer = nil
         captureObservers.forEach { NotificationCenter.default.removeObserver($0) }
         captureObservers.removeAll()
@@ -4044,18 +4041,17 @@ final class MontanaCall: NSObject {
         if let s = callSeed { MontanaCall.dropBell(s.base64EncodedString()) }
         peer = nil; peerDevice = nil; pendingOffer = nil; dropPendingIce(); callUUID = nil
         callSeed = nil; peerPremium = false; peerReadsVoipAnswer = false; startedAt = nil; connectedAt = nil
-        peerRecordSwitch = nil; peerLevel = nil; peerRebuilds = false; rejoining = false; freshConnection = false; seenRejoinOffer = ""; heldRejoins = 0
+        peerRebuilds = false; rejoining = false; freshConnection = false; seenRejoinOffer = ""; heldRejoins = 0
         rejoinOffering = false; rejoinUntil = .distantPast
         seedlessOffer = nil; knockN = 0; knockOk = 0; knockFirstOkS = -1; knockLastOkS = -1; knockNobody = false; bellRung = false
         speakerOn = false; desiredMuted = false; videoSpeakerDecided = false
         setShareActive(false); cameraWasLive = false; setVideoSource(nil)
         audioBeforeShare = false; peerShareGrewVideo = false
         MTScreenShare.shared.disarm()
-        MTAvatarMask.shared.set(false, why: "call-end")   // the mask lives inside one call (checklist 36)
         DispatchQueue.main.async {
             let m = CallUIModel.shared
             m.heldByPeer = false; m.screenSharing = false; m.peerSharing = false
-            m.videoAsk = false; m.videoAskIncoming = false; m.videoAskPending = false
+            m.videoAsk = false; m.videoAskIncoming = false; m.videoAskPending = false; m.videoJoinPending = false
         }
         tlog("⑩ cleanup done teardown=\(Int(Date().timeIntervalSince(teardownStart)*1000))ms → idle, all call info cleared")
         setState("idle")
@@ -4089,7 +4085,6 @@ final class MontanaCall: NSObject {
 
     func toggleMute(_ muted: Bool) {
         desiredMuted = muted
-        if let uuid = callUUID { MTCallRecordingGate.mute(uuid, muted) }
         localAudio?.isEnabled = !muted
     }
 
@@ -4103,12 +4098,18 @@ final class MontanaCall: NSObject {
         if !isVideo {
             // Consent first (the author's word): the camera does not start until the peer
             // says yes. Old builds bury the unknown word — silence becomes «no answer».
+            // THE YES ALREADY GIVEN WAITS FOR THE ASKER'S PICTURE (K1, T2 17:28:58 UTC 04.11.2026): a press between my consent
+            // and the asker's offer asked anew; the camera joins by itself when the offer lands (remoteVideoArrived).
+            if videoConsentFresh { MontanaTrace.mark("call_video", "consent already given -- the camera joins with the offer"); return }
             guard let p = peer else { return }
-            guard !CallUIModel.shared.videoAskPending else { return }   // SILENT-OK: already asked
+            // A PRESS WHILE ASKING ASKS AGAIN (the author's word 16489: «the video button does not work at once»): the first word may
+            // have gone through a door that did not deliver; the plate «Video request sent» stands, the 30 s start anew.
+            let again = CallUIModel.shared.videoAskPending
             var va = CallSignalOut(ctrl: "call-video-ask"); va.targetDevice = peerDevice
             sendSignal?(p, va)
-            MontanaTrace.mark("call_video", "consent asked")
+            MontanaTrace.mark("call_video", again ? "consent asked again" : "consent asked")
             DispatchQueue.main.async {
+                self.videoAskedAt = Date()
                 CallUIModel.shared.videoAskPending = true
                 self.videoAskTimer?.invalidate()
                 self.videoAskTimer = self.callTimer(30, repeats: false) { _ in
@@ -4117,9 +4118,16 @@ final class MontanaCall: NSObject {
                     MontanaTrace.mark("call_video", "consent timeout")
                 }
             }
+        } else if localVideo == nil {
+            // IN VIDEO WITHOUT MY CAMERA (K4): the peer's picture came first -- the press joins my camera, never rests or ends it.
+            videoAcceptArmed = false
+            enableMyVideo()
         } else if cameraMutedByPerson {
             raiseMyCamera(why: "button")
-        } else if CallUIModel.shared.remoteLive, !CallUIModel.shared.peerCameraOff {
+        } else if !CallUIModel.shared.peerCameraOff {
+            // MY PRESS RESTS MY CAMERA ONLY (the author's word 16499, 04.11.2026: «I must be able to turn it off only at mine --
+            // it must not turn off the peer's video»). The rest waited for the peer's first frame (remoteLive); a press before it
+            // ended the video mode at both (call-video-end). While the peer's camera has not said it rests, only mine rests.
             restMyCamera()   // the peer's picture stays on my screen until the peer rests his own camera
         } else {
             dropVideoMode(tellPeer: true)   // the last live camera leaves — both sides return to audio
@@ -4196,7 +4204,6 @@ final class MontanaCall: NSObject {
             CallUIModel.shared.videoAsk = false
             CallUIModel.shared.tick += 1
         }
-        MTAvatarMask.shared.set(false, why: "video-end")   // no camera, no mask (checklist 36)
         MontanaTrace.mark("call_video", "video mode ended tell=\(tellPeer ? 1 : 0)")
     }
     private func upgradeToVideo() {
@@ -4206,6 +4213,7 @@ final class MontanaCall: NSObject {
         if remoteVideoTrack == nil {
             remoteVideoTrack = pc?.receivers.compactMap { $0.track as? RTCVideoTrack }.first
         }
+        DispatchQueue.main.async { CallUIModel.shared.tick += 1 }   // the asker's screen is drawn by the same beat as the invited one's (enableMyVideo)
         ensureLocalVideoTrack()
         if let u = callUUID {
             let upd = CXCallUpdate(); upd.hasVideo = true
@@ -4222,6 +4230,9 @@ final class MontanaCall: NSObject {
         guard let p = peer else { return }
         videoAcceptArmed = true   // our camera joins the moment theirs lands — offers stay sequential
         videoArmedAt = Date()     // consent is fresh for 40s, not for the call's lifetime (K-6)
+        DispatchQueue.main.async { CallUIModel.shared.videoJoinPending = true }
+        videoJoinTimer?.invalidate()
+        videoJoinTimer = callTimer(40, repeats: false) { _ in CallUIModel.shared.videoJoinPending = false }
         var ok = CallSignalOut(ctrl: "call-video-ok"); ok.targetDevice = peerDevice
         sendSignal?(p, ok)
         MontanaTrace.mark("call_video", "consent accepted")
@@ -4236,7 +4247,8 @@ final class MontanaCall: NSObject {
 
     // The answer to the peer's video invitation: the camera joins the standing call.
     func enableMyVideo() {
-        DispatchQueue.main.async { CallUIModel.shared.videoAsk = false }
+        videoJoinTimer?.invalidate(); videoJoinTimer = nil
+        DispatchQueue.main.async { CallUIModel.shared.videoAsk = false; CallUIModel.shared.videoJoinPending = false }
         guard state == "connected" || state == "active" || state == "reconnecting" else { return }
         if localVideo == nil {
             isVideo = true
@@ -5152,7 +5164,7 @@ final class MontanaCall: NSObject {
                     return s.values["localCandidateId"] as? String
                 }
                 let direct = nominatedLocal.contains { localIds.contains($0) }
-                let why = nominatedLocal.contains { tunnelIds.contains($0) } ? "the pair rides our VPN tunnel"
+                let why = nominatedLocal.contains { tunnelIds.contains($0) } ? "the pair rides our own adapter"
                     : (nominatedLocal.isEmpty ? "no pair nominated yet" : "the pair goes through a relay or over TCP")
                 DispatchQueue.main.async {
                     guard self.state == "connected" else { return }
@@ -5629,7 +5641,6 @@ final class MontanaCall: NSObject {
             self.holdOnDisk(force: true)   // the call stood connected: a run that comes back goes into it
         }
         if s == "connected" {
-            refreshRecording()
             MTScreenShare.shared.onStart = { [weak self] in self?.startScreenShare() }
             MTScreenShare.shared.onFrame = { [weak self] pb, orient, pts in self?.pushScreenFrame(pb, orientation: orient, ptsNs: pts) }
             MTScreenShare.shared.onStop = { [weak self] in DispatchQueue.main.async { self?.stopScreenShare() } }
@@ -6073,6 +6084,7 @@ extension MontanaCall {
 // ── RTCPeerConnectionDelegate ──
 extension MontanaCall: RTCPeerConnectionDelegate {
     func peerConnection(_ pc: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {
+        guard MTLocalNetwork.admits(candidate: candidate.sdp) else { return }   // a local address is not named where none is reached (15863)
         let c = CallICE(candidate: candidate.sdp, sdpMid: candidate.sdpMid, sdpMLineIndex: candidate.sdpMLineIndex)
         let kind = Self.candidateKind(candidate.sdp)
         // no.5 (analysis): candidates in a batch once per 200ms in one POST — instead of N sequential
@@ -6404,6 +6416,7 @@ extension MontanaCall: RTCPeerConnectionDelegate {
         let mineSleeps = localVideo == nil
         let armed = videoConsentFresh   // stale consent must not raise the camera (K-6)
         videoAcceptArmed = false
+        if !armed { videoJoinTimer?.invalidate(); videoJoinTimer = nil; CallUIModel.shared.videoJoinPending = false }
         autoSpeakerOnVideo()
         if armed {
             enableMyVideo()   // the accepted consent: both cameras, sequential offers
@@ -6461,31 +6474,43 @@ final class MTFirstFrameSniffer: NSObject, RTCVideoRenderer {
 
 /// THE NAME OF A VIDEO CALL, IN THE CENTRE OF THE TOP ROW (the author's word 23.09, said three times: «the name's
 /// font to the buttons' size»; «a longer name runs several times»; «the name in the centre and the timer under it,
-/// a little apart, centred too»). The name is as large as the marks beside it allow — the largest system size whose
-/// line fits their 44 points, read from the platform's own font metrics, not guessed — and stands in the centre
-/// between the fold-away arrow and the camera flip; a name wider than its room runs (MTCallMarquee). The time
-/// stands under the panel's row (MTCallTimeLine), the events under the time (MTCallStateLine). No words about the
-/// kind of call: the picture says it.
+/// a little apart, centred too»). THE NAME FITS ITS ROOM (the author's word 04.11.2026 15:47 UTC, No.16294 p.2: «the
+/// peer's name shown so that it fits the free room correctly»): it starts as large as the marks beside it allow -- the
+/// largest system size whose line fits their 44 points, read from the platform's own font metrics -- and shrinks a point
+/// at a time to the room between the marks, down to six tenths of that size; only a name wider still runs (MTCallMarquee).
+/// The width at each size is the platform's own measure of the line (NSString with the same font), not a guess. The time
+/// stands under the panel's row (MTCallTimeLine), the events under the time (MTCallStateLine). No words about the kind of
+/// call: the picture says it.
 private struct MTCallTopTitle: View {
     @ObservedObject var model: CallUIModel
-    @State private var nameWidth: CGFloat = 0
     static let nameSize: CGFloat = {
         var s: CGFloat = 40
         while s > 12, UIFont.systemFont(ofSize: s, weight: .semibold).lineHeight > montanaTouchTarget { s -= 1 }
         return s
     }()
+    /// The least size the name shrinks to before it runs: six tenths of the marks' size.
+    static let leastSize: CGFloat = floor(nameSize * 0.6)
+    /// The line's own width at a size, by the platform's measure.
+    static func width(_ name: String, _ size: CGFloat) -> CGFloat {
+        ceil((name as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: size, weight: .semibold)]).width)
+    }
+    /// The largest whole size, from nameSize down to leastSize, at which the name fits its room.
+    static func fit(_ name: String, room: CGFloat) -> CGFloat {
+        var s = nameSize
+        while s > leastSize, width(name, s) > room { s -= 1 }
+        return s
+    }
     var body: some View {
         let name = MontanaCall.shared.callerName(model.peer ?? "")
-        let font = Font.system(size: Self.nameSize, weight: .semibold)
         GeometryReader { g in
-            MTCallMarquee(text: name, font: font, textWidth: nameWidth)
-                .frame(width: min(nameWidth, g.size.width), height: montanaTouchTarget)
+            let size = Self.fit(name, room: g.size.width)
+            let w = Self.width(name, size)
+            MTCallMarquee(text: name, font: .system(size: size, weight: .semibold), textWidth: w)
+                .frame(width: min(w, g.size.width), height: montanaTouchTarget)
                 .frame(width: g.size.width, height: g.size.height)
+                .modifier(MTCallSaid(event: "call_name", kv: "room=\(Int(g.size.width)) size=\(Int(size)) width=\(Int(w))"))
         }
         .frame(height: montanaTouchTarget)
-        // The name's own width at its own size, measured off the screen: the room decides whether it runs.
-        .background(Text(verbatim: name).font(font).lineLimit(1).fixedSize().hidden()   // USER-DATA: the peer's name, measured
-            .modifier(MTCallEdge { f in if abs(nameWidth - f.width) > 0.5 { nameWidth = f.width } }))
         .shadow(color: .black.opacity(0.5), radius: 3)   // legible over whatever the picture shows
     }
 }
@@ -6516,7 +6541,6 @@ private struct MTCallClock: View {
         let status = model.statusText
         HStack(spacing: style == .audio ? 6 : 5) {
             if style != .compact { MTCallLight() }
-            MTCallRecordingStatus()
             if style == .audio {
                 Text(LocalizedStringKey("Montana Audio Call"))
                 if since != nil || !status.isEmpty { Text(verbatim: "—") }   // USER-DATA: a dash glyph
@@ -6673,7 +6697,6 @@ final class CallUIModel: ObservableObject {
     @Published var signal: Int = 2            // the light before the call's name: 2 green, 1 yellow, 0 red
     @Published var powerSaving = false        // the light wears the battery: the power floor holds the picture down
     @Published var cameraOff = false { didSet { applyCovers("camera") } }   // my camera muted inside a video call (the Video button face)
-    @Published var masked = false             // the avatar mask stands in for my camera (one writer: MTAvatarMask.set)
     @Published var cameraDenied = false       // the camera is switched off for Montana — the alert with the road to Settings
     @Published var held = false { didSet { applyCovers("hold") } }             // I put the call on hold (the Hold button face)
     @Published var heldByPeer = false { didSet { applyCovers("peer-hold") } }  // the peer put me on hold (the bold banner)
@@ -6683,6 +6706,10 @@ final class CallUIModel: ObservableObject {
     @Published var videoAsk = false { didSet { armChromeFold("ask") } }              // the peer's camera arrived while ours sleeps — offer to join
     @Published var videoAskIncoming = false { didSet { armChromeFold("ask-in") } }   // the peer asks to go video — accept or decline
     @Published var videoAskPending = false    // we asked and wait for the word back
+    @Published var videoJoinPending = false   // we said yes and wait for the asker's picture: the Video button stands lit (K3)
+    /// THE GENERATION THE SCREEN'S GEOMETRY MUST READ (CallWindowPresenter.ask, 04.11.2026, the author's words 16728-16731): raised
+    /// at every change the full screen must draw, echoed by the tree inside its geometry once it is laid out again.
+    @Published var layoutGen = 0
     @Published var peerImage: UIImage? = nil  // full-size peer photo for the call screens
     /// The peer's picture stood still after it once flowed (23.09): one writer, MontanaCall.notePeerPicture.
     @Published var peerPaused = false { didSet { applyCovers("frames") } }
@@ -6705,7 +6732,7 @@ final class CallUIModel: ObservableObject {
         MontanaTrace.mark("call_cover", "remote=\(remote ? 1 : 0) self=\(own ? 1 : 0) why=\(why)")
     }
     @Published var remoteLive = false { didSet { applySides("remote") } }   // the peer's video has RENDERED a frame — only then the layout goes pip
-    @Published var mirrorLocal = true { didSet { MTCallRecordingLayout.update { l in l.mirrorLocal = mirrorLocal } } }   // the self-view mirror follows the CAMERA'S FIRST FRAME, not the switch intent; the recording draws it so (16.10)
+    @Published var mirrorLocal = true   // the self-view mirror follows the CAMERA'S FIRST FRAME, not the switch intent
     @Published var pipSwapped = false { didSet { applySides("tap") } }   // the miniature was tapped: my picture fullscreen, the peer in the corner
     /// THE BUTTON GRID'S OWN RECT in window coordinates, written by the grid as it is laid out (.zero
     /// while the buttons are folded away). It decides who gets a TOUCH where the corner picture and the
@@ -6771,8 +6798,6 @@ final class CallUIModel: ObservableObject {
         let pip = MontanaCall.shared.remoteVideoTrack != nil && remoteLive
         let shown = pip && !peerSharing
         let bigLocal = !pip || (pipSwapped && shown)
-        let fits = peerSharing
-        MTCallRecordingLayout.update { l in l.bigLocal = bigLocal; l.remoteFits = fits; if !shown { l.mini = nil } }   // the recording draws the sides the screen shows (16.10)
         if shown != miniShown { miniShown = shown }
         if bigLocal != bigIsLocal {
             bigIsLocal = bigLocal
@@ -6830,9 +6855,41 @@ final class MTCallWindow: UIWindow {
     }
 }
 
+/// THE CALL'S HOST SAYS WHEN THE PLATFORM LAYS IT OUT (the author's words 04.11.2026 21:47-21:49 UTC, 16728-16731: on T1 the mute
+/// button did not press and the video did not come on). The diaries of 111-113 agree: the screen froze in the FIRST outgoing call of
+/// a fresh process -- T2 19:54:07 and 21:28:56, T1 21:46:07, uptime 21-186 s -- while the first incoming call (T2 21:46:08) and every
+/// later call of the same process lived. In the frozen call the screen's owner was drawn again (call_root, call_time) and the faces
+/// inside its geometry stood: no branch=video, no ask plate, no mute face, though the model held each. The host counts its layouts
+/// and says its appearance, so the next diary names the layer that stood: the platform's layout or the tree inside the geometry.
+final class MTCallHost: UIHostingController<AnyView> {
+    private(set) var laid = 0
+    init(model: CallUIModel) {
+        super.init(rootView: MontanaHost.root(CallOverlayView(model: model)))
+        MontanaHost.born(self, CallOverlayView.self)
+    }
+    @MainActor required dynamic init?(coder: NSCoder) { nil }
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        MontanaTrace.mark("call_host", "appeared laid=\(laid)")
+    }
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        laid += 1
+        if laid < 4 { MontanaTrace.mark("call_host", "laid n=\(laid)") }
+    }
+}
+
 final class CallWindowPresenter {
     static let shared = CallWindowPresenter()
     private var window: UIWindow?
+    private var host: MTCallHost?
+    private var born = 0        // windows born by this process: the freeze stood in the first one
+    private var wired = false
+    private var bag = Set<AnyCancellable>()
+    private var gen = 0         // the generation asked of the screen's geometry (ask)
+    private var echoed = 0      // the last generation the geometry's tree read (echo)
+    private var reborn = 0      // windows born again in this call, two at most
+    private var probe: DispatchWorkItem?
     func update() {
         DispatchQueue.main.async {
             let m = CallUIModel.shared
@@ -6843,14 +6900,18 @@ final class CallWindowPresenter {
             }
             // AN AUDIO CALL ON A PHONE STANDS UPRIGHT while its screen is shown (MTCallUpright, the author's word 24.09).
             let upright = show && !m.video && UIDevice.current.userInterfaceIdiom == .phone
+            var fresh = false
             if show, self.window == nil {
                 let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
                 guard let scene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first else { return }
                 let w = MTCallWindow(windowScene: scene)
                 w.windowLevel = .alert + 1
                 w.backgroundColor = .black
-                let host = MontanaHost.make(CallOverlayView(model: CallUIModel.shared))
+                let host = MTCallHost(model: CallUIModel.shared)
                 host.view.backgroundColor = .black
+                self.host = host
+                self.born += 1; fresh = true
+                MontanaTrace.mark("call_window", "born n=\(self.born) reborn=\(self.reborn)")
                 // THE CALL TAKES NO KEYBOARD'S ROOM (the author's word 23.09: «after the demo the buttons stood up to the
                 // middle of the screen»). The call has no field of its own, yet its host took the platform's whole safe
                 // area, the keyboard's region included, so a keyboard of ANOTHER window placed its buttons: T1 18:48:34,
@@ -6861,6 +6922,7 @@ final class CallWindowPresenter {
                 host.safeAreaRegions = [.container]
                 w.rootViewController = host
                 self.window = w
+                self.wire()
                 MTCallFloat.shared.stand(on: host.view)   // the floating window rises from this screen when the person leaves the app
             }
             guard let w = self.window else { MTCallUpright.apply(upright); return }
@@ -6870,7 +6932,7 @@ final class CallWindowPresenter {
                 w.windowScene?.windows.forEach { $0.endEditing(true) }   // keyboard must not float over the call
             } else if !w.isHidden || !alive {
                 w.isHidden = true
-                if !alive { self.window = nil }
+                if !alive { self.window = nil; self.host = nil; self.reborn = 0; self.probe?.cancel() }
                 w.windowScene?.windows.first(where: { !$0.isHidden && $0 !== w })?.makeKeyAndVisible()
             }
             // THE SCREEN STANDS BEFORE THE PHONE IS ASKED TO STAND (12.10.2026, No.66, the author's word 16:5x UTC: «close every hole
@@ -6880,9 +6942,96 @@ final class CallWindowPresenter {
             // call asks nothing and lived; a voice call folded and unfolded lived from the unfolding on, its tree born before the
             // ask (T1 15:50:39.372, then call_upright 39.374). So the window is laid out first and the phone asked after.
             if show { w.layoutIfNeeded() }
-            MTCallUpright.apply(upright)
+            // THE SCREEN DRAWS THE CALL'S NEW KIND BEFORE THE PHONE IS ASKED TO TURN (the author's word 04.11.2026 15:43 UTC: «I pressed
+            // video on T2 during the call, on T1 it came on, on T2 no video and the audio call stayed»). T2 15:41:55: the consent came,
+            // the camera rose and the peer's picture arrived (video_first_in), the model held video (call_chrome why=video at .227),
+            // the turn was freed at .270 -- before the screen had drawn the video kind -- and the full screen never drew again: no
+            // call_screen branch=video, the clock still said face=audio at the hang-up 15:43:43. T1 drew first (.668) and was asked
+            // after (.684), and lived. So a shown window changes its turn one main turn later, when the new kind is drawn, and is laid
+            // out again after the ask; the answer is read from the model at that moment, never from a stale copy.
+            // THE TURN IS FREED BY THE DRAWN VIDEO, NOT BEFORE IT (the author's words 04.11.2026 18:44-18:48 UTC, 16487-16489: «on T1
+            // no video», the third time). The asker's diary of 2359 (T1 18:42:53.387, T2 18:44:34.001 and 18:47:59.408): call_upright
+            // free came first and call_screen branch=video never once -- one main turn of delay was not enough, the tree still held
+            // the audio kind at the ask. A shown voice call becoming video keeps the phone upright until the video branch itself
+            // has appeared (its onAppear calls MTCallUpright.freeDrawn); a second later the turn is freed in any case, so no
+            // video call is ever left held upright.
+            if show, !upright, MTCallUpright.held, m.video, !m.screenSharing {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { MTCallUpright.freeDrawn(why: "late") }
+            } else if show, upright != MTCallUpright.held {
+                DispatchQueue.main.async {
+                    let n = CallUIModel.shared
+                    let now = n.state != "idle" && !n.minimized && !n.video && UIDevice.current.userInterfaceIdiom == .phone
+                    w.layoutIfNeeded()
+                    if MTCallUpright.apply(now), let root = w.rootViewController?.view {
+                        DispatchQueue.main.async { root.setNeedsLayout(); root.layoutIfNeeded() }
+                    }
+                }
+            } else {
+                MTCallUpright.apply(upright)
+            }
             MTCallFloat.shared.windowMoved()   // the floating window is born on the view that stands now
+            if fresh { self.ask("born") }
         }
+    }
+    /// Lays the shown call screen out again after its turn changed (MTCallUpright.freeDrawn).
+    func relayout() {
+        guard let root = window?.rootViewController?.view else { return }   // SILENT-OK: no call screen stands
+        root.setNeedsLayout(); root.layoutIfNeeded()
+    }
+    /// THE SCREEN PROVES IT IS LAID OUT AGAIN, OR IS BORN AGAIN (the author's words 16728-16731, 04.11.2026). Every change the full
+    /// screen must draw -- the kind, the mute, the asks, the camera, the buttons -- raises the generation the tree reads inside its
+    /// geometry (CallOverlayView.fullScreen echoes it); a generation not echoed within a third of a second is a tree that stood,
+    /// and a window born again from nothing is the one road the diaries prove alive: every second window of a process lived (T2
+    /// 21:40:31 and 21:41:44, T1 21:40:33) where a relayout alone did not (T2 21:29:09, «free after video late», then nothing).
+    /// Twice a call at most; the diary says each stall and each rebirth, so the next trace names the layer either way.
+    private func wire() {
+        guard !wired else { return }
+        wired = true
+        let m = CallUIModel.shared
+        let beats: [AnyPublisher<Void, Never>] = [
+            m.$video.map { _ in () }.eraseToAnyPublisher(), m.$muted.map { _ in () }.eraseToAnyPublisher(),
+            m.$videoAskPending.map { _ in () }.eraseToAnyPublisher(), m.$videoAskIncoming.map { _ in () }.eraseToAnyPublisher(),
+            m.$videoJoinPending.map { _ in () }.eraseToAnyPublisher(), m.$videoAsk.map { _ in () }.eraseToAnyPublisher(),
+            m.$cameraOff.map { _ in () }.eraseToAnyPublisher(), m.$chromeHidden.map { _ in () }.eraseToAnyPublisher()]
+        Publishers.MergeMany(beats)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.ask("model") }
+            .store(in: &bag)
+    }
+    private func ask(_ why: String) {
+        let m = CallUIModel.shared
+        guard let w = window, !w.isHidden, let host, m.state != "idle", m.state != "incoming", !m.minimized else { return }   // SILENT-OK: no full screen stands
+        gen += 1
+        m.layoutGen = gen
+        host.view.setNeedsLayout()
+        probe?.cancel()
+        let g = gen, laid = host.laid
+        let item = DispatchWorkItem { [weak self] in self?.judge(gen: g, laidBefore: laid, why: why) }
+        probe = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: item)
+    }
+    /// The tree inside the screen's geometry read this generation: it was laid out again.
+    func echo(_ g: Int) { if echoed < g { echoed = g } }
+    private func judge(gen g: Int, laidBefore: Int, why: String) {
+        guard let host, g == gen else { return }   // SILENT-OK: a newer ask judges instead
+        let m = CallUIModel.shared
+        guard m.state != "idle", m.state != "incoming", !m.minimized else { return }   // SILENT-OK: the screen is gone or folded
+        let laid = host.laid - laidBefore
+        if g <= echoed {
+            if laid == 0 { MontanaTrace.mark("call_layout", "echo gen=\(g) laid=0 why=\(why)") }
+            return
+        }
+        MontanaTrace.mark("call_layout", "stall gen=\(g) echoed=\(echoed) laid=\(laid) reborn=\(reborn) why=\(why)")
+        guard reborn < 2 else { return }
+        reborn += 1
+        rebirth(why: why)
+    }
+    private func rebirth(why: String) {
+        guard let old = window else { return }
+        old.isHidden = true
+        window = nil; host = nil
+        MontanaTrace.mark("call_window", "reborn n=\(reborn) why=\(why)")
+        update()
     }
 }
 
@@ -6958,10 +7107,8 @@ enum MontanaCallWiring {
         }
         MontanaCall.watchRoute()   // 15.28: the audio route is measured for the whole call
         MontanaLog.holdRotation = { ch in ch == .trace && MontanaCall.stateSnapshot != "idle" }   // 29.09: the call's trace outlives the call
-        // The VPN recovery's hooks (29.09): the call's word and the diary.
-        MTVPNRecoveryHooks.callBusy = { MontanaCall.isBusy }
-        MTVPNRecoveryHooks.diary = { MontanaTrace.markChanged("vpn_ui", $0, every: 60) }
-        MTVPNRecoveryHooks.markStop = { await MontanaVPNTunnel.shared.markRecoveryStop() }
+        // The VPN recovery's hooks (29.09): the call's word and the diary, through the VPN's door (slice S3b b1).
+        MTApps.vpn?.wire(callBusy: { MontanaCall.isBusy }, diary: { MontanaTrace.markChanged("vpn_ui", $0, every: 60) })
         c.onCallLog = { peer, video, incoming, dur, missed, declined, seed, rang, refused, call in
             E2E.shared.logCall(peer: peer, video: video, incoming: incoming, durationSec: dur, missed: missed, call: call)
             if !missed { E2E.shared.notePeerSeen(peer) }   // 15.7: a call that connected is the freshest proof
@@ -7189,7 +7336,7 @@ final class MTCallFramePixels {
         defer { CVPixelBufferUnlockBaseAddress(pb, []) }
         guard let y = CVPixelBufferGetBaseAddressOfPlane(pb, 0), let uv = CVPixelBufferGetBaseAddressOfPlane(pb, 1) else { return nil }
         // THE PLANES ARE WOVEN BY THE ENGINE'S OWN CONVERTER (libyuv, 16.10.2026, No.70): the chroma was interleaved byte by
-        // byte in a loop of this language, for every frame the recording and the floating window took.
+        // byte in a loop of this language, for every frame the floating window took.
         let rc = RTCYUVHelper.i420(toNV12: p.dataY, srcStrideY: p.strideY, srcU: p.dataU, srcStrideU: p.strideU,
                                    srcV: p.dataV, srcStrideV: p.strideV,
                                    dstY: y.assumingMemoryBound(to: UInt8.self), dstStrideY: Int32(CVPixelBufferGetBytesPerRowOfPlane(pb, 0)),
@@ -7644,10 +7791,6 @@ private struct MTCallMini: View {
     }
     private func note(_ why: String) {
         let c = center(.zero)
-        let size = screen
-        MTCallRecordingLayout.update { l in   // the recording draws the corner where it stands (16.10)
-            l.screen = size; l.mini = CGRect(x: c.x - Self.w / 2, y: c.y - Self.h / 2, width: Self.w, height: Self.h)
-        }
         MontanaTrace.mark("call_pip", "\(why) corner=\(corner) bottom=\(Int(c.y + Self.h / 2)) safe_bottom=\(Int(screen.height - safeBottom)) top=\(Int(c.y - Self.h / 2)) screen=\(Int(screen.width))x\(Int(screen.height)) buttons=\(buttonsUp ? 1 : 0) panel=\(topUp ? 1 : 0) panel_bottom=\(Int(topRowBottom)) grid_top=\(Int(buttonsTop))")
     }
 }
@@ -7791,7 +7934,6 @@ struct CallOverlayView: View {
             else { MTCallLive(model: model) { _ in fullScreen } }
         }
         // Whether the screen's owner is drawn again is said too (MTCallLive): the next frozen screen names its holder.
-        .modifier(MTCallRecordingConsent())
         // WHOM TO ADD TO THE CALL: the contacts this phone writes with, a tick each, the room's measure kept (MTCallAddSheet)
         .sheet(isPresented: $adding, onDismiss: addChosen) {
             if let store = ChatStore.live, let peer = model.peer {
@@ -7918,6 +8060,9 @@ struct CallOverlayView: View {
         let m = grid(screen.size.width)
         ZStack {
             callGround   // the peer's face under everything; a rendered video covers it
+            // THE GEOMETRY'S TREE ECHOES THE PRESENTER'S GENERATION (CallWindowPresenter.ask): laid out again, or it stood.
+            Color.clear.frame(width: 0, height: 0).allowsHitTesting(false)
+                .onChange(of: model.layoutGen, initial: true) { _, g in CallWindowPresenter.shared.echo(g) }
             if model.screenSharing {
                 // THE SHARER SEES THE PEER'S GROUND (23.09): the camera rests while the screen rides. The
                 // preview layer that stood here bound the call's capture session from the main thread while
@@ -7979,7 +8124,10 @@ struct CallOverlayView: View {
                     }
                 }
                 .ignoresSafeArea()
-                .onAppear { MontanaTrace.mark("call_screen", "branch=video model=\(model.video ? 1 : 0) machine=\(MontanaCall.shared.isVideo ? 1 : 0)") }
+                .onAppear {
+                    MontanaTrace.mark("call_screen", "branch=video model=\(model.video ? 1 : 0) machine=\(MontanaCall.shared.isVideo ? 1 : 0)")
+                    MTCallUpright.freeDrawn(why: "drawn")   // the video is drawn: now the phone may turn (CallWindowPresenter.update)
+                }
             } else {
                 // The voice call stands on the same ground (callGround above): the face and the wash; a swipe down on it folds.
                 // Its layer, too, never lies under a mark or a button.
@@ -8029,21 +8177,13 @@ struct CallOverlayView: View {
                         if !MTCallFloat.shared.foldAway(why: "back") { model.fold(true, why: "back") }
                     }
                     .modifier(MTCallEdge { f in if model.backMarkRect != f { model.backMarkRect = f } })   // switchTapped reads it
-                    // THE MASK'S TWIN ROOM (checklist 36): the mask stands beside the camera flip on the right, and an
-                    // empty room of the same size here keeps the name in the centre of the row. THE RECORD MARK STANDS IN IT
-                    // (MTCallRecordMark, 16.10.2026 No.72) once the call is connected -- on a voice call beside the fold, where
-                    // nothing else stands on the left; the room keeps its size either way.
+                    // THE LEFT ROOM (16.10.2026 No.72; no call is recorded, the author's word 16428, 04.11.2026): on a video call a
+                    // room of one mark's size beside the fold. TWO MARKS ON EACH SIDE (the author's word 04.11.2026 15:47 UTC, No.16294):
+                    // the fold and this room on the left, the add mark and the camera flip on the right -- each held by a room of its size
+                    // when it is not there -- so the name stands in the centre with all the room between them.
                     if videoBranch {
-                        ZStack {
-                            Color.clear
-                            if model.talkSince != nil { MTCallRecordMark(uuid: MontanaCall.shared.handRecordingUUID) }
-                        }
-                        .frame(width: montanaTouchTarget, height: montanaTouchTarget)
-                    } else if model.talkSince != nil {
-                        MTCallRecordMark(uuid: MontanaCall.shared.handRecordingUUID)
+                        Color.clear.frame(width: montanaTouchTarget, height: montanaTouchTarget)
                     }
-                    // THE ADD MARK'S TWIN ROOM: the add mark stands on the right, and a video call keeps its name in the centre
-                    if videoBranch, canAdd { Color.clear.frame(width: montanaTouchTarget, height: montanaTouchTarget) }
                     // THE NAME STANDS IN THE CENTRE OF THE TOP ROW ON A VIDEO CALL (the author's word 23.09: no words
                     // about the kind of call; the name as large as the marks, between the arrow and the camera flip).
                     // The block is the row's own height (MTCallTopTitle); the time stands under the row.
@@ -8056,17 +8196,14 @@ struct CallOverlayView: View {
                     // no word, the 44 points of the platform's control that fires at the first lifting (MontanaCallMark)
                     if canAdd {
                         MontanaCallMark(glyph: "person.badge.plus", label: "Add to Call") { adding = true }
+                    } else if videoBranch {
+                        // No add mark (the call is not connected, or a second line is parked): its room is held.
+                        Color.clear.frame(width: montanaTouchTarget, height: montanaTouchTarget)
                     }
                     if model.video {
-                        // THE MASK (the author's word 30.09, checklist 36): a glyph mark with no word on the platform's 44 points,
-                        // a sibling over the picture in the stack -- never a gesture on its platform view. Filled masks: it is on.
-                        MontanaCallMark(glyph: model.masked ? "theatermasks.fill" : "theatermasks", label: "Mask") {
-                            MTAvatarMask.shared.toggle(why: "tap")
-                        }
                         MontanaCallMark(glyph: "camera.rotate", label: "Camera") { MontanaCall.shared.switchCamera() }
                     } else if videoBranch {
-                        // No flip mark and no mask (my camera is off): their places are held, so the block stays in the centre.
-                        Color.clear.frame(width: montanaTouchTarget, height: montanaTouchTarget)
+                        // No flip mark (my camera is off): its room is held, so the name stays in the centre.
                         Color.clear.frame(width: montanaTouchTarget, height: montanaTouchTarget)
                     }
                 }
@@ -8139,6 +8276,19 @@ struct CallOverlayView: View {
                     .background(Color.black.opacity(0.45)).clipShape(Capsule())
                     .padding(.bottom, 12)
                 }
+                // THE ASKER SEES THE ASK (the author's words 16489 and 16499: «it must say a video request was sent, not just hang»):
+                // the same place the peer's plate stands, as long as the ask waits for a word back.
+                if model.videoAskPending, !model.videoAskIncoming, !model.video {
+                    HStack(spacing: 8) {
+                        Image(systemName: "video.fill").font(.subheadline).foregroundColor(.white)
+                        Text(LocalizedStringKey("Video request sent"))
+                            .font(.subheadline).foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(Color.black.opacity(0.45)).clipShape(Capsule())
+                    .padding(.bottom, 12)
+                    .onAppear { MontanaTrace.mark("call_video", "ask plate shown") }
+                }
                 if model.videoAsk, !model.peerSharing, model.video {
                     HStack(spacing: 12) {
                         Text(LocalizedStringKey("Turn on your video?"))
@@ -8171,7 +8321,7 @@ struct CallOverlayView: View {
                 // headset, a car or any other source it is «Audio» and the platform's own route menu opens (15.09).
                 let audioBtn = CallAudioButton(model: model, side: m.side, col: m.col)
                 let videoBtn = gridBtn("Video", "video.fill",
-                                       active: (model.video && !model.cameraOff) || model.videoAskPending, side: m.side, col: m.col) { MontanaCall.shared.toggleVideo() }
+                                       active: (model.video && !model.cameraOff) || model.videoAskPending || model.videoJoinPending, side: m.side, col: m.col) { MontanaCall.shared.toggleVideo() }
                 // THE MICROPHONE OFF IS SHOWN AS THE SYSTEM'S OWN CALL SHOWS IT (the author's word 24.09 with the reference):
                 // the lit plate with the crossed microphone in red; the press answers under the finger with a light tap.
                 let muteBtn = gridBtn("Mute", "mic.slash.fill",
@@ -8179,6 +8329,10 @@ struct CallOverlayView: View {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     MontanaCall.shared.muteFromUI()
                 }
+                // THE FACE SAYS WHEN IT REDRAWS (the author's word 16489: «on T2 the mute button does not press»): T2 18:46:23-28 the machine
+                // turned the microphone five times (callkit_mute 1/0/1/0/1) and the plate never changed; the next diary shows whether the
+                // screen's tree drew each change (call_face) or stood.
+                .onChange(of: model.muted) { _, on in MontanaTrace.mark("call_face", "mute=\(on ? 1 : 0)") }
                 let holdBtn = gridBtn(model.hasParked ? "Swap" : "Hold",
                                       model.hasParked ? "arrow.triangle.2.circlepath" : "pause.fill",
                                       active: model.held, side: m.side, col: m.col) { MontanaCall.shared.holdFromUI() }
@@ -8571,10 +8725,6 @@ final class FrameCountingCapturerDelegate: NSObject, RTCVideoCapturerDelegate {
         if probe, let px = (frame.buffer as? RTCCVPixelBuffer)?.pixelBuffer, Self.hasPicture(px) {
             lock.lock(); lit += 1; lock.unlock()
         }
-        // THE MASK TAKES THE CAMERA'S FRAME HERE, AT THE BIRTH OF WHAT GOES OUT (checklist 36): while it is on, the frame is
-        // read on this phone by the face tracking and never reaches the source -- the lane and the self-view carry only the
-        // avatar's frames. The count above stands all the same: the camera's life is judged by the camera's own frames.
-        if MTAvatarMask.shared.take(frame, from: capturer, into: sink) { return }
         sink.capturer(capturer, didCapture: frame)
     }
 
@@ -8796,8 +8946,9 @@ enum MTCallUpright {
     /// The app's answer now; AppDelegate asks it for every window.
     static var mask: UIInterfaceOrientationMask { held ? .portrait : declared }
     /// Holds the phone upright or frees it; the scene learns at once and turns upright if it stood in landscape.
-    static func apply(_ upright: Bool) {
-        guard upright != held else { return }   // SILENT-OK: nothing changed
+    @discardableResult
+    static func apply(_ upright: Bool) -> Bool {
+        guard upright != held else { return false }   // SILENT-OK: nothing changed
         held = upright
         MontanaTrace.mark("call_upright", upright ? "held" : "free")
         for scene in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }) {
@@ -8810,6 +8961,18 @@ enum MTCallUpright {
                     MontanaTrace.mark("call_upright", "turn refused: \(error.localizedDescription)")
                 }
             }
+        }
+        return true
+    }
+    /// Frees the turn once the video branch is drawn (CallWindowPresenter.update): read from the model at that moment, one
+    /// main turn after the drawing, then the call screen is laid out again. Nothing happens if the call is no longer a shown video.
+    static func freeDrawn(why: String) {
+        DispatchQueue.main.async {
+            guard held else { return }   // SILENT-OK: already free
+            let n = CallUIModel.shared
+            guard n.state != "idle", !n.minimized, n.video else { return }   // SILENT-OK: update() owns every other kind
+            MontanaTrace.mark("call_upright", "free after video \(why)")
+            if apply(false) { CallWindowPresenter.shared.relayout() }
         }
     }
 }

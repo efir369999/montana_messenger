@@ -398,7 +398,7 @@ struct ChatsListView: View {
             // THE PAGE STAYS (the author's word 25.09, later: «if the time panel is folded, a tap unfolds it, keeping the page
             // you are on»).
             barSlot(Self.logoSlot) {
-                if barOpen { withAnimation(.easeInOut(duration: 0.2)) { ui.pane = .feed } } else { turnPanel(open: true, by: "logo") }
+                if barOpen { withAnimation(.easeInOut(duration: 0.2)) { ui.pane = MTApps.wall == nil ? .chats : .feed } } else { turnPanel(open: true, by: "logo") }
             } label: {
                 MTFeedGlyph(side: 36)   // the feed's glyph is the logo, one drawing for the bar and the drawer
                     // THE BADGE ON THE TIME PANEL (the author's word 17.09): the unread chats and the
@@ -429,7 +429,7 @@ struct ChatsListView: View {
             // from here to its opening; a tap on the globe of the standing page stamps nothing, there is no opening to measure.
             barSlot(Self.globeSlot) {
                 let wall = UIState.globeWall
-                if ui.pane != wall, wall == .vpn { MontanaVPNOpen.tap() }
+                if ui.pane != wall, wall == .vpn { MTApps.vpn?.opened() }
                 withAnimation(.easeInOut(duration: 0.2)) { ui.pane = wall }
             } label: {
                 MTBarGlobe()
@@ -557,7 +557,6 @@ struct ChatsListView: View {
                 })
     }
     private func searchFocusedHere(_ pane: UIState.Pane) -> Bool { searchFocused && focusPane == pane }
-    @State private var endpointHit: String?          // a new user found by address (global search)
 
     private var myStoryMedia: String { get { MontanaLocalVault.getString("myStoryMedia") ?? "" } nonmutating set { MontanaLocalVault.setString("myStoryMedia", newValue) } }
     @AppStorage("avatarData") private var avatarData: Data = Data()
@@ -574,10 +573,8 @@ struct ChatsListView: View {
     @State private var personMenu: Chat?         // the row held: its menu cloud
     @State private var showScan = false
     @State private var showQrFull = false
-    @State private var showInvite = false
     @State private var creatingGroup = false          // the group's two steps, opened by the compose menu (05.10)
     @State private var creatingChannel = false        // the channel's three steps, opened by the compose menu (05.10)
-    @State private var startByName = false            // the «write by address» sheet
     @State private var selecting = false             // selection mode (the «Edit» button)
     @State private var selectedChats: Set<String> = [] // which chats are selected (by address)
     @State private var storiesCollapsed = false      // the stories strip is collapsed (while scrolling)
@@ -619,7 +616,7 @@ struct ChatsListView: View {
                                               from: Data((MontanaLocalVault.getString("mtContacts") ?? "").utf8))) ?? []
         let known = Set(ordered.compactMap(\.convId))
         return book
-            .filter { c in !known.contains(c.ref) && (c.fullName.lowercased().contains(q) || c.name.lowercased().contains(q)) }
+            .filter { c in !known.contains(c.ref) && c.fullName.lowercased().contains(q) }
             .map { c in Chat(name: c.fullName.isEmpty ? MTNameBook.display(conv: c.ref) : c.fullName,
                              lastMessage: "", time: "", unread: 0, status: "", convId: c.ref) }
     }
@@ -673,28 +670,6 @@ struct ChatsListView: View {
         searchHits = SearchHits(query: q, chats: chats, contacts: contacts, found: found)
     }
 
-    // searching for a new user by address on the server (those without a chat yet)
-    @MainActor
-    func runEmailSearch() async {
-        let raw = searchText.trimmingCharacters(in: .whitespaces)
-        endpointHit = nil
-        // Input — an @name. No address is parsed: address exchange is over.
-        guard let n = MontanaNames.normalize(raw), NameSheet.rejection(n) == nil else { return }
-        try? await Task.sleep(nanoseconds: 350_000_000)   // typing debounce
-        // TYPING ASKS NOBODY AND BEGETS NOTHING (24.09). Names now resolve at the keeper of the order, and a
-        // search that asked it at every pause in typing would hand the keeper every name a person spells, and
-        // meet each one — a new pipe per keystroke pause. The search answers from this device alone: a name
-        // already met opens its chat; meeting a new name is the explicit road («Message by @username»).
-        guard let root = MontanaNamePlane.known(n),
-              let conv = MontanaMeeting.cardMet(root: root), MTPipeBook.holds(conv) else { return }
-        guard conv != (MontanaSeed.twin ?? ""), !orderedChats.contains(where: { $0.name == conv }) else { return }
-        guard !Task.isCancelled,
-              raw == searchText.trimmingCharacters(in: .whitespaces) else { return }
-        if MontanaConv.holds(conv) {
-            endpointHit = conv
-        }
-    }
-
     /// WHAT THE CONTAINER IS TOLD ABOUT A ROW, in one number. The row draws a name, a face, a
     /// preview, a time and a badge; if none of them changed there is nothing to reconfigure, and
     /// the cell is left exactly as it stands. The preview and the time are asked of the one owner
@@ -703,7 +678,7 @@ struct ChatsListView: View {
         func p<T: Hashable>(_ v: T) -> Int { var h = Hasher(); h.combine(v); return h.finalize() }
         // THE PRINT IS THE ROW'S OWN VALUES (ChatRowModel, 23.09): each value named for the diary, and the whole model
         // last — a value the row draws that has no name here still moves the print («field=model» says which).
-        let m = rowModel(c)
+        let m = store.rowModel(c)
         return [p(c.name), p(c.order),
                 p(m.title),
                 p(m.local ? String(m.selfFace) : (m.face ?? "")),
@@ -726,7 +701,6 @@ struct ChatsListView: View {
     private func headPrint(listEmpty: Bool, pane: UIState.Pane) -> Int {
         var h = Hasher()
         h.combine(listEmpty && archivedChats.isEmpty)
-        h.combine(MontanaSelf.name)
         h.combine(searchText.isEmpty); h.combine(searchFocusedHere(pane))   // the field's dress (placeholder, clear, cancel)
         h.combine(barOpen || searchActive)                        // folded with the bar: a hairline instead of the field
         return h.finalize()
@@ -792,7 +766,7 @@ struct ChatsListView: View {
                 SwipeTile(icon: "video.fill", color: SwipeTile.glass) { MontanaCall.shared.startCall(peer: chat.convRef, device: "", video: true) }]
     }
     private func swipeTrailing(_ chat: Chat) -> [SwipeTile] {
-        guard chat.name != Self.qrRow, chat.name != MTBot.row else { return [] }
+        guard chat.name != Self.qrRow else { return [] }
         // THE MARK BOTH WAYS (the author's word 23.09): read where something is unread, the dot where nothing is.
         return [SwipeTile(icon: store.hasUnread(chat.name) ? "checkmark.message.fill" : "circle.fill", color: SwipeTile.glass) { store.toggleUnread(chat.name) },
          SwipeTile(icon: store.pinnedChats.contains(chat.name) ? "pin.slash.fill" : "pin.fill", color: SwipeTile.glass) { store.togglePinChat(chat.name) },
@@ -804,23 +778,15 @@ struct ChatsListView: View {
     /// toggles the mark, otherwise it opens the chat.
     private func rowTapped(_ chat: Chat) {
         guard chat.name != Self.qrRow else { return }
-        // OUR BOT lives where it was born (MTBot): its row opens it there, and is never a conversation of this phone.
-        if chat.name == MTBot.row {
-            if !selecting { MTBot.open() }
-            return
-        }
         if selecting { toggleSelect(chat) } else { ui.openChat(chat) }
     }
-
-    /// A row's values: the store's one builder, and our bot's own (MTBot), which no conversation of this phone holds.
-    private func rowModel(_ c: Chat) -> ChatRowModel { c.name == MTBot.row ? MTBot.model : store.rowModel(c) }
 
     /// THE ROW IS A BUBBLE, AND NO LINE PARTS TWO (the author's word 26.09, after the hairline of 11.09): the row sits centred in
     /// its bubble of one-tone glass (MTRowBubble), a breath from the next one.
     @ViewBuilder private func chatRowCell(_ chat: Chat) -> some View {
         Group {
             if chat.name == Self.qrRow {
-                MontanaQRCard(name: MontanaSelf.name, onExpand: { showQrFull = true }, onScan: { showScan = true })
+                MontanaQRCard(onExpand: { showQrFull = true }, onScan: { showScan = true })
                     .padding(.top, 30)
             } else if selecting {
                 // selection mode: circle on the left; the tap is the container's selection
@@ -828,7 +794,7 @@ struct ChatsListView: View {
                     Image(systemName: selectedChats.contains(chat.id) ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 22))
                         .foregroundColor(selectedChats.contains(chat.id) ? Color.accentColor : .gray)
-                    ChatRow(model: rowModel(chat), library: true)
+                    ChatRow(model: store.rowModel(chat), library: true)
                 }
                 .modifier(MTLibraryLine())
             } else {
@@ -836,7 +802,7 @@ struct ChatsListView: View {
                 // plate (MTRowBubble); the row's place on the screen, the bubble's, is where the menu's cloud rises.
                 // THE LINE OF THE APP LIBRARY'S LIST (the author's words 28.09): no plate -- the platform's plain line on the softened
                 // ground, the separator under it; the line's place on the screen is where the menu's cloud rises.
-                ChatRow(model: rowModel(chat), library: true)
+                ChatRow(model: store.rowModel(chat), library: true)
                     .modifier(MTLibraryLine(place: "row:" + chat.id))
                     // THE MENU ABOUT A PERSON on a hold — the container's own recognizer reports the
                     // row (onHold); a gesture here took the tap away from the selection (1617).
@@ -861,7 +827,7 @@ struct ChatsListView: View {
                          headPrint: headPrint(listEmpty: listEmpty, pane: pane),
                          // THE COIN ON THE NETWORK PAGE LOADS THE PLANS AND MEASURES THE LIST (the author's word 29.09); on every other page
                          // it fetches what the network holds for us.
-                         onRefresh: { if pane == .vpn { await MontanaVPNFreshener.shared.coinRefresh() } else { await pullRefresh() } },
+                         onRefresh: { if pane == .vpn, let v = MTApps.vpn { await v.refresh() } else { await pullRefresh() } },
                          onSettled: { turnPanel(open: !barOpen, by: "coin") },
                          pinTop: ownSearch ? false : searchActive,
                          overlay: { ownSearch ? AnyView(EmptyView()) : AnyView(searchOverlay) })
@@ -947,8 +913,10 @@ struct ChatsListView: View {
             // THE FEED SEARCHES ITSELF (the author's word 25.09), as the music does: the word at the head narrows its posts.
             // THE MINI PLAYER STANDS ON THE FEED (the author's word 26.09: «on the feed the mini player must appear if something
             // plays»): the chats page's one floating bar, floated the same way -- the posts reserving its height, «Write» above it.
-            MTFeedTabView(panel: timePanel(.feed, ownSearch: true), query: searchText, writes: !searchActive, reserve: playerReserve)   // the feed of my people's walls, the logo's page (25.09)
-                .overlay(alignment: .bottom) { playerBar }
+            if let wall = MTApps.wall {   // the feed of my people's walls, the logo's page (25.09), drawn by the wall's door (slice S4c2)
+                wall.feed(panel: timePanel(.feed, ownSearch: true), query: searchText, writes: !searchActive, reserve: playerReserve)
+                    .overlay(alignment: .bottom) { playerBar }
+            }
         case .music:
             // THE MINI PLAYER STANDS ON THE MUSIC PAGE TOO (the author's word 29.09: «the mini player there must come up, our
             // native one, and everything pinned at the bottom as on every page»; it replaces the word of 24.09 that kept the bar
@@ -972,16 +940,22 @@ struct ChatsListView: View {
                                ui.openChat(ch, jump: mid)
                            },
                            onDelete: { deleteStoryMedia(file: $0) })
-        case .vpn, .mesh, .p2p:
-            // THE THREE WALLS SEARCH THEMSELVES (25.09), as the music and the feed do: the word at the head narrows their rows. A
-            // neighbour found on the mesh opens the normal chat, over the tabs.
-            NetworkTabView(panel: timePanel(p, ownSearch: true), wall: p, query: searchText, onOpenChat: { ref in
+        case .vpn:
+            // THE VPN WALL IS THE VPN'S OWN PAGE (slice S3a): drawn through its door, and searching itself as the music and the feed
+            // do (25.09); an edition without the VPN draws nothing here.
+            MTApps.vpn?.page(panel: timePanel(p, ownSearch: true), query: searchText)
+        case .mesh:
+            // THE MESH WALL IS THE MESH'S OWN PAGE (link 15898), drawn through its door as the VPN's is; a neighbour found on it
+            // opens the normal chat, over the tabs. An edition without the mesh draws nothing here.
+            MTApps.mesh?.page(panel: timePanel(p, ownSearch: true), onOpenChat: { ref in
                 ui.openChat(Chat(name: ref, lastMessage: "", time: nowHHMM(), unread: 0,
                                  status: "Montana address", convId: ref))
             })
+        case .p2p:
+            NetworkTabView(panel: timePanel(p, ownSearch: true))
         case .chats, .groups, .channels:
             let folder = paneFolder(p)
-            let live = orderedChats + [MTBot.chat]
+            let live = orderedChats
             let known = folderBook.tellsContacts ? MTChatFolders.contactRefs() : nil
             let bare = folderBook.rows(of: folder, live: live, archived: archivedChats, store: store, contacts: known)
             VStack(spacing: 0) {
@@ -1011,7 +985,7 @@ struct ChatsListView: View {
                     ui.chatFolders = ids
                     if !ids.contains(folderID) { folderID = MTChatFolder.allID }   // a folder taken away hands the page back to All
                 }
-                let empty = folder.isAll && bare.allSatisfy { c in ChatStore.isLocalRoom(c.name) || c.name == MTBot.row } && archivedChats.isEmpty
+                let empty = folder.isAll && bare.allSatisfy { c in ChatStore.isLocalRoom(c.name) } && archivedChats.isEmpty
                 let rows = empty ? bare + [Chat(name: Self.qrRow, lastMessage: "", time: "", unread: 0, status: "", convId: Self.qrRow)] : bare
                 MontanaTimePanelList(panel: timePanel(.chats, listEmpty: false, ownSearch: false), rows: rows,
                                fingerprint: rowPrint,
@@ -1039,10 +1013,10 @@ struct ChatsListView: View {
                                        }
                                    }
                                },
-                               onHold: { c in if !selecting, c.name != Self.qrRow, c.name != MTBot.row { personMenu = c } },
+                               onHold: { c in if !selecting, c.name != Self.qrRow { personMenu = c } },
                                // A hold begins on a conversation alone (25.09): the code's card and a row being selected have no deed
                                // for it, and a hold that begins there gave the haptic of a deed that never came.
-                               holdsRow: { c in !selecting && c.name != Self.qrRow && c.name != MTBot.row },
+                               holdsRow: { c in !selecting && c.name != Self.qrRow },
                                bottomReserve: playerReserve,
                                // The rows run on to the screen's edges, as the chat's letters: the panel list's own law (23.09).
                                headFloats: storiesShown || archiveShown, page: "chats", fieldNames: MTChatListView.fieldNames,
@@ -1104,7 +1078,6 @@ struct ChatsListView: View {
     @ViewBuilder private func folderMenu(_ id: String, live: [Chat], contacts: Set<String>?) -> some View {
         if let f = folderBook.folder(id), !f.isAll {
             let rows = folderBook.rows(of: f, live: live, archived: archivedChats, store: store, contacts: contacts)
-                .filter { c in c.name != MTBot.row }
             Button { openFolders(MTChatFolders.Opening(folder: id)) } label: { Label("Edit Folder", systemImage: "pencil") }
             Button { openFolders(MTChatFolders.Opening(folder: id, addChats: true)) } label: { Label("Add Chats", systemImage: "plus") }
             if rows.contains(where: { c in store.hasUnread(c.name) }) {
@@ -1168,12 +1141,9 @@ struct ChatsListView: View {
                     .toolbar { ToolbarItem(placement: .cancellationAction) { MontanaCloseMark { showScan = false } } }
                 }.preferredColorScheme(.dark)
             }
-            .sheet(isPresented: $showInvite) {
-                InviteView { showInvite = false }
-            }
             // The code's page in the sliding slot, closed by the edge swipe like every page (the author's word 19.09).
             .montanaPage(isPresented: $showQrFull, key: "qr") {
-                MontanaQRFullView(name: MontanaSelf.name) { showQrFull = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showScan = true } }
+                MontanaQRFullView { showQrFull = false; DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showScan = true } }
             }
             // THE SETTINGS AND THE PROFILE are pages over the tabs now (the author's word 19.09): the
             // tabs' own slot shows them — see MainTabView.overlayPageView.
@@ -1307,18 +1277,6 @@ struct ChatsListView: View {
                 }
                 .environmentObject(store)
             }
-            .sheet(isPresented: $startByName) {
-                StartByNameView { ref in
-                    startByName = false
-                    let e = ref.trimmingCharacters(in: .whitespaces)
-                    guard !e.isEmpty else { return }
-                    let existing = row(for: e)
-                    let chat = existing ?? Chat(name: e, lastMessage: "", time: nowHHMM(),
-                                                unread: 0, status: "Montana address", convId: e)
-                    if existing == nil { chats.insert(chat, at: 0) }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { ui.openChat(chat) }
-                }
-            }
             .onReceive(NotificationCenter.default.publisher(for: .chatMetaUpdated)) { note in
                 guard let u = note.userInfo, let id = u["id"] as? String else { return }
                 updateChat(id, u["first"] as? String ?? "", u["last"] as? String,
@@ -1371,20 +1329,6 @@ struct ChatsListView: View {
     private var chatsEvB4: some View {
         chatsEvB3
             .onReceive(NotificationCenter.default.publisher(for: .openChatRequest)) { note in
-                // A by-name link: the conversation key comes from resolving the name; the
-                // link does not carry it. Parsed by the ONE resolver: an earlier copy of this
-                // code did not remember the first letter's ciphertext, and a correspondence
-                // started by link could not open.
-                if let atName = note.userInfo?["username"] as? String, !atName.isEmpty {
-                    Task {
-                        guard case .opened(let ref) = await MontanaMeeting.meet(atName) else { return }
-                        await MainActor.run {
-                            NotificationCenter.default.post(name: .openChatRequest, object: nil,
-                                                            userInfo: ["address": ref])
-                        }
-                    }
-                    return
-                }
                 guard let asked = note.userInfo?["address"] as? String else { return }
                 let ref = MTSamePair.root(asked)   // a folded pipe opens the conversation it speaks for (24.09)
                 UserDefaults.standard.removeObject(forKey: "pendingOpenChat")
@@ -1422,8 +1366,6 @@ struct ChatsListView: View {
 
     // ── FLOATING "COMPOSE" BUTTON ──
     var composeButton: some View {
-        // The only public identifier is the nick. The «by address» item is gone: two items
-        // led to one screen, and choosing «by nick» landed the person in address parsing.
         // The compose button opens the ONE screen of the code and the link (the author's word
         // 07.09): the same MontanaQRFullView the empty-list card opens — one screen, one door.
         // The same face as the bar's buttons above (the author's word 10.09): the bar tier's glass
@@ -1841,26 +1783,7 @@ struct ChatsListView: View {
                         Text("MESSAGES").font(.caption).foregroundColor(.gray)
                     }
                 }
-                if let e = endpointHit, !chats.contains(where: { $0.name.lowercased() == e }) {
-                    Section {
-                        NavigationLink(destination: ChatConversationView(chat: Chat(name: e, lastMessage: "", time: "", unread: 0, status: "Montana address", convId: e), onChatUpdate: updateChat)) {
-                            HStack(spacing: 12) {
-                                AvatarCircle(photoURL: nil, color: .blue, initial: MTNameBook.face(e, title: MTNameBook.display(conv: e)), size: 46, who: e)
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(MTNameBook.display(conv: e)).font(.subheadline).bold().foregroundColor(.primary)
-                                    // NO YELLOW WORD (24.09, the noticed point 4 — the author's word «close it»): the accent is the
-                                    // root's gold tint, and the line under the name wore it; it wears the platform's quiet colour.
-                                    Text("Message on Montana").font(.caption).foregroundColor(.secondary)
-                                }
-                                Spacer()
-                            }
-                        }
-                        .modifier(MTResultBubble())
-                    } header: {
-                        Text("GLOBAL SEARCH").font(.caption).foregroundColor(.gray)
-                    }
-                }
-                if settled && chats.isEmpty && contacts.isEmpty && found.isEmpty && endpointHit == nil {
+                if settled && chats.isEmpty && contacts.isEmpty && found.isEmpty {
                     Text("Nothing found")
                         .foregroundColor(.gray)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -1873,7 +1796,7 @@ struct ChatsListView: View {
         .listStyle(.insetGrouped)
         .contentMargins(.horizontal, MTPageEdge.canvas, for: .scrollContent)
         .scrollContentBackground(.hidden)   // the results stand on the page's ground (MTSearchResultsFrame, 26.09)
-        .task(id: searchText) { await refreshSearchHits(); await runEmailSearch() }
+        .task(id: searchText) { await refreshSearchHits() }
     }
 
     // contact row in search: avatar + name + status (was online / online)
@@ -2003,9 +1926,7 @@ func mediaPreview(_ m: Message) -> String? {
     if m.audioFile != nil { return MTRowLetter.mediaWords(kind: "aud") }
     // A STICKER IS A STICKER, NOT A PHOTO (the author's word 22.09): the row, the reply plate and
     // the banner all take their words here, and a sticker used to be called «Photo» in all three.
-    if m.imageFile != nil, m.docName == MontanaCardPlate.stickerName { return String(localized: "Sticker", bundle: MTLanguage.bundle) }
-    // A CARD'S PHOTO IS A BUSINESS CARD (the author's word 28.09): its caption is the card's words, not a caption to show.
-    if m.imageFile != nil, m.text.hasPrefix(MontanaCardPlate.mark) { return String(localized: "Business card", bundle: MTLanguage.bundle) }
+    if m.imageFile != nil, m.docName == MontanaStickerBook.docName { return String(localized: "Sticker", bundle: MTLanguage.bundle) }
     if m.imageFile != nil { return MTRowLetter.mediaWords(kind: "img", caption: m.text) }
     if let v = m.videoFile { return MTRowLetter.mediaWords(kind: "vid", round: v.hasPrefix("vnote_"), caption: m.text) }
     // A MOVING PICTURE IS A GIF, NOT A FILE NAMED gif_a1b2 (23.09): the row, the reply plate and

@@ -383,7 +383,13 @@ enum MTKeepDerive {
     private var takingTask: Task<Void, Never>? = nil
     private var roads: [String: (at: Double, road: [String: Any])] = [:]
 
-    private init() { reread() }
+    private init() {
+        reread()
+        // A renewal held for the charger (MontanaPower.bulkHeld) begins when the phone is put on it, not at the next launch.
+        NotificationCenter.default.addObserver(forName: UIDevice.batteryStateDidChangeNotification, object: nil, queue: .main) { _ in
+            Task { @MainActor in MTKeeping.shared.tickSoon() }
+        }
+    }
     /// What the vault holds, read again: at launch, and after a copy laid this person's state of keeping.
     func reread() {
         if let d = MontanaLocalVault.getDecrypted(Self.ownerKey), let o = try? JSONDecoder().decode(Owner.self, from: d) { owner = o } else { owner = Owner() }
@@ -474,6 +480,7 @@ enum MTKeepDerive {
             return
         }
         guard now - max(owner.renewedAt, owner.triedAt ?? 0) >= 86_400 else { return }
+        if let why = MontanaPower.bulkHeld() { return MontanaTrace.markChanged("keep_ask", "held: " + why + " -- the copy waits for the charger") }
         ask()
     }
     private func ask() {
@@ -520,6 +527,11 @@ enum MTKeepDerive {
     }
     private func renew(_ g: UInt64) {
         guard !owner.yes.isEmpty, !renewing else { return }
+        if let why = MontanaPower.bulkHeld() {
+            MontanaTrace.markChanged("keep_copy", "held: " + why + " -- the copy waits for the charger")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 300) { [weak self] in self?.tick() }
+            return
+        }
         renewing = true
         owner.asking = nil; owner.triedAt = Date().timeIntervalSince1970; saveOwner()
         // THE RING IN THE ORDER OF THE LATEST LETTER (Network): the people written to last stand first, a full ring at most.
@@ -554,7 +566,13 @@ enum MTKeepDerive {
         }
         defer { for u in cut.shares { try? FileManager.default.removeItem(at: u) } }
         var roads: [Int: [String: Any]] = [:]
-        for k in 0..<n { if let road = await Self.lay(cut.shares[k]) { roads[k] = road } }
+        for k in 0..<n {
+            // The charger taken away, the phone grown hot, a metered path: the rest of the copy waits for the next renewal.
+            if let why = MontanaPower.bulkHeld() {
+                return MontanaTrace.mark("keep_hand", "held at share \(k) of \(n): " + why + " -- the rest waits for the next renewal")
+            }
+            if let road = await Self.lay(cut.shares[k]) { roads[k] = road }
+        }
         var sent: [String: Keeper] = [:]
         var parts = 0
         for (i, conv) in keepers.enumerated() {

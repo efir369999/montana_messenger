@@ -130,13 +130,19 @@ struct SettingsTabView: View {
                     NavigationLink { MTFolderSettingsPage() } label: { navLabel("Chat Folders", "folder.fill", .blue) }   // the folders' tabs (17.10.2026)
                     NavigationLink { DataStorageView() } label: { navLabel("Data and Storage", "arrow.down.circle.fill", .indigo) }
                     NavigationLink { PrivacyView() } label: { navLabel("Privacy", "lock.fill", .gray) }
-                    NavigationLink { MTLevelAccessPage() } label: { navLabel("Access by level", "stairs", .orange) }
                     NavigationLink { AppearanceView() } label: { navLabel("Appearance", "paintbrush.fill", .blue) }
                     NavigationLink { LanguagePickerView() } label: { navLabel("Language", "globe", .cyan) }
                 }
                 .listRowBackground(MTGlassRowPlate())
+                // NO MENU OF ACCESS BY LEVEL (the author's word 16165 p.6, 04.11.2026), NO CALL RECORDING AND NO ROW OF ONE'S OWN NODE
+                // (the author's word 16428, 04.11.2026: «remove call recording entirely from the protocol, the settings and everywhere,
+                // the item YOUR NODE too»): no section stands here.
                 Section {
-                    NavigationLink { MTQuestionsPage() } label: { navLabel("Questions", "questionmark.bubble.fill", .green) }   // the answers of this build (17.10.2026)
+                    // THE QUESTIONS ARE THE COINS' OWN (decision 531 (a), guard 4 of docs/APPS-API.md): their topics speak of the level by
+                    // the wallet, the minting and the ticker, so the page stands behind the coin door; an edition without coins draws no row.
+                    if let coins = MTApps.coins {
+                        NavigationLink { coins.questionsPage() } label: { navLabel("Questions", "questionmark.bubble.fill", .green) }   // the answers of this build (17.10.2026)
+                    }
                     NavigationLink { SupportView() } label: { navLabel("Ask a question", "questionmark.circle.fill", .blue) }
                     NavigationLink { MontanaTermsView() } label: { navLabel("Terms of Use", "doc.text.fill", .gray) }
                     // THE POLICY STANDS WHERE THE TERMS STAND (App Review 5.1.1(i), 08.10.2026): reachable from inside the app, not only
@@ -216,7 +222,7 @@ struct SettingsTabView: View {
         NavigationStack {
             VStack {
                 Spacer(minLength: 8)
-                MontanaCodeView(name: MontanaSelf.name, onScan: {
+                MontanaCodeView(onScan: {
                     activeSheet = nil   // the sheet closes, otherwise the camera waits for its collapse
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { showScan = true }
                 }, onMet: { activeSheet = nil })
@@ -260,138 +266,12 @@ struct SettingsTabView: View {
 // SETTINGS SUB-SCREENS
 // ════════════════════════════════════════════════════════════
 
-// Questions
-/// QUESTIONS (the author's words 17.10.2026 19:50 UTC: «make all of these into a section of questions: answers to every question in
-/// the app as a separate section, with all the information and the documents, public, so that AI agents read the link to montana.xxx
-/// and learn every rule of the app for the person»; 20:18 UTC: «everything into build 2238»): the platform's own list, a section a
-/// topic, a row a question, the whole row the road to its answer. Every answer says only what this build keeps -- the levels and the
-/// minting as MTPersonChain, MTPiLevels and MTLevelAccess hold them (APPLE-RULES 2.1, 2.3.1(a)); the same answers, with the
-/// specification's, stand on montana.xxx/faq for people and for the agents that read the site (MontanaSafety.guide).
-struct MTQuestionsPage: View {
-    struct Item: Identifiable { let question: String; let answer: String; var id: String { question } }
-    struct Topic: Identifiable { let title: String; let systemImage: String; let items: [Item]; var id: String { title } }
-    static let topics: [Topic] = [
-        Topic(title: "Levels", systemImage: "stairs", items: [
-            Item(question: "What is the Global level?",
-                 answer: "Your Global level is the lowest of three levels: the level of the chain of the person, which grows with your time on the network, the level of π, which grows with the coins you hold, and the Fabric of Time, which stands on the people you write to and call regularly in the last two weeks. You see it in TimeCoin, on the TimeChain page, and in Settings, under Access by level."),
-            Item(question: "How does the chain of the person count my time?",
-                 answer: "A second counts while Montana is open on the screen of one of your devices and a Montana node answers it. The second is read from the node, never from the clock of your phone. Each level doubles the seconds of the one before: 1 second is level 0, 2 seconds level 1, 4 seconds level 2, then 8, 16, 32 and on. When you leave the network, your level stays, and nothing is added until you return."),
-            Item(question: "What is the level of π?",
-                 answer: "It is the level of your wallet: how many first digits of π your balance reaches. 3 coins is level 1, 31 coins level 2, 314 coins level 3, then 3141, 31415 and on, up to 19 digits. Below 3 coins the level is 0. It is the one level you lower yourself: it falls when your balance falls."),
-            Item(question: "What do the levels open?",
-                 answer: "Each level opens functions of Montana. Level 7 opens Forbid deletion on my phone: a message your correspondent deletes for everyone stays on your phone, and their phone is told so. Level 7 also opens Record calls: calls are recorded by themselves on your phone and sent to the call's chat after your first consent. Level 8 opens your own node: a machine you own joins the Montana network through this app. All of them are in Settings, under Access by level."),
-            Item(question: "Can I record a call below level 7?",
-                 answer: "Yes. On every level a call can be recorded by the record button on the call screen, unless your correspondent's switch holds. From level 7 calls are recorded by themselves once you agree the first time, and you can turn it off in Settings, under Access by level."),
-            Item(question: "Who can record a call with me?",
-                 answer: "While your Record calls switch in Access by level is off, and below level 7 it stands off, a correspondent whose Global level is not above yours cannot record your calls: neither by themselves nor by the record button, which they do not see. A correspondent with a higher level records on their side only; your phone records nothing, and the chat is told that the call is being recorded. A version of Montana that does not say the switch forbids nothing."),
-            Item(question: "Who sends the recording to the chat?",
-                 answer: "In a one-to-one call the caller sends the recording to the chat. When the caller does not record, the one who answered sends it, so a recorded call always reaches the chat, once."),
-            Item(question: "Can I take my copy back from my node below level 8?",
-                 answer: "Yes. Setting up your node and sending copies to it open at level 8. Taking your copy back from it is open on every level."),
-        ]),
-        // THE FABRIC OF TIME (the author's words 17.10.2026 19:24-19:50 UTC; 17.10.2026 21:4x «a sliding window of t2 over live activity»,
-        // 07:2x a correspondent weighed by their ceiling; MTFabric): what this build does of it and no more -- its deviations from the
-        // specification named, not hidden (the window from the nodes' seconds, no witness into the network yet).
-        Topic(title: "Fabric of Time", systemImage: "point.3.connected.trianglepath.dotted", items: [
-            Item(question: "What is the Fabric of Time?",
-                 answer: "The third level your Global level is set by: the people you write to and call regularly, each weighed by the level their own time and wallet give them. Your Global level is the lowest of the three, so the Fabric of Time can lower it and never raises it."),
-            Item(question: "What counts as an exchange?",
-                 answer: "Anything you and a person send each other that stands in your conversation: words, voice and video messages, photos, files, stickers and GIFs, coin transfers, the moves of a game, and a call in which each phone received the other's voice for at least 60 seconds. Receipts, typing and presence do not count, and neither does a group."),
-            Item(question: "When does a person's phone sign for me?",
-                 answer: "When a word of yours reaches their phone and they wrote to you themselves in the last 7 days, their phone signs, once a day at most, that your word reached it: the minute it arrived, the hash the fingerprint of your conversation is read from, and their own ceiling. It gives the signature to you alone, inside your conversation. A person who only writes and is never answered receives none."),
-            Item(question: "Who is a regular correspondent?",
-                 answer: "A person from whom your phone holds a signature in each of the last two weeks: the newer 7 days and the 7 before them. The window slides with the clock of the network; there are no fixed weeks. People are told apart by the key their signatures are made with, which their 24 words give for your conversation alone, not by anything they say about themselves."),
-            Item(question: "How is the level of the Fabric of Time counted?",
-                 answer: "Each regular correspondent stands at their ceiling: the lower of their two other levels, at its lowest in their signatures of the last two weeks. The level is the greatest number g for which at least g of your regular correspondents stand at g or above; a person far above g adds one, exactly as one at g does. It is counted again whenever a signature arrives or leaves the two weeks. Their own Fabric of Time does not enter it, so one person's dip never pulls a whole circle down."),
-            Item(question: "Does the Fabric of Time lower a newcomer?",
-                 answer: "Not in the first two weeks. From the first launch of this version on this phone with your 24 words, for 14 days the Fabric of Time stands at your ceiling, so your Global level follows your two other levels. TimeCoin and Access by level show the days left until the first count."),
-            Item(question: "What do the people I write to learn?",
-                 answer: "Your ceiling, inside the signatures your phone gives them, and nothing else of the Fabric of Time. A signature names your conversation by the hash its fingerprint is read from, which only the two of you can compute, and it is made with a key your 24 words give for that conversation alone. No key and no number in it is the same with two people, so two people you write to cannot tell from it that they speak with the same person."),
-            Item(question: "What do the nodes of the network learn?",
-                 answer: "Nothing they can read: signatures and ceilings ride inside your conversation, sealed for the other person, by the same road as your letters. Signatures stay on your phone for two weeks and then leave it."),
-            Item(question: "How does this version differ from the specification?",
-                 answer: "In four ways. A phone holds no window of the network's core, so the minute of a signature and the two weeks are read from the clock of the Montana nodes, learned from their answers. The signatures are not yet witnessed into the network; they stay on the phone that received them. Each of your devices with the same 24 words counts the signatures that reached it. And a signature names a conversation and is made with a key for that conversation alone, where the specification names the key of a person: this version knows people only by their conversations."),
-            Item(question: "Can false signatures lift a level?",
-                 answer: "No. The Fabric of Time only lowers: a person who states a false ceiling can at most spare someone a lowering and never lifts anyone above their own ceiling. One signature a day from one person is kept, the one with the lower ceiling, so two of their devices answering the same word weigh as one."),
-        ]),
-        Topic(title: "Coins and time", systemImage: "hourglass", items: [
-            Item(question: "What is a Time Coin?",
-                 answer: "The coin of Montana, ticker $TCM. Its measure is time: one second is one coin, so an hour is 3600 coins. A billion coins is one Montana."),
-            Item(question: "Do coins mint while Montana is in the background?",
-                 answer: "Yes. When Montana leaves the screen, it keeps the moment it left. When you come back, every second you were away mints one coin, the same one coin a second as everywhere. At Global level 0 the time away mints nothing, and neither does it when the network did not answer Montana before it left the screen. Both moments are read from the Montana network, so turning the clock of the phone changes nothing."),
-        ]),
-        Topic(title: "Your words and devices", systemImage: "key.horizontal", items: [
-            Item(question: "What if I use Montana on several devices?",
-                 answer: "The same 24 words on several devices are one person. Their seconds join: two devices open in the same second add one second, and once the devices have read each other's count, they show one chain of the person."),
-            Item(question: "What if I have several sets of 24 words?",
-                 answer: "Each set of 24 words is a separate person: its own seconds, its own wallet, its own levels. The levels of two persons are never added together, and coins move between them only by a real transfer."),
-        ]),
-        Topic(title: "Privacy", systemImage: "lock", items: [
-            Item(question: "Who sees my level?",
-                 answer: "The people you write with see your Global level beside your avatar. The nodes of the network keep a table of how many people stand on each level: for it Montana gives them a mark made from your 24 words and your Global level, never your balance, name or contacts. Your seconds online leave the phone only sealed under your 24 words: the nodes keep them for your other devices and cannot read them."),
-        ]),
-    ]
-    var body: some View {
-        List {
-            ForEach(Self.topics) { topic in
-                Section {
-                    ForEach(topic.items) { item in
-                        NavigationLink { MTAnswerPage(topic: topic.title, item: item) } label: {
-                            Text(LocalizedStringKey(item.question)).frame(minHeight: 44, alignment: .leading)
-                        }
-                    }
-                } header: {
-                    Label(LocalizedStringKey(topic.title), systemImage: topic.systemImage)
-                }
-                .listRowBackground(MTGlassRowPlate())
-            }
-            Section {
-                MTDocumentRow(title: "Questions and answers", link: MontanaSafety.guide)
-                MTDocumentRow(title: "Specification and code", link: MontanaSafety.source)
-            } header: {
-                Label("Documents", systemImage: "doc.text")
-            } footer: {
-                Text("The site holds the answers about Montana in English, Russian and Chinese, also as files AI assistants read. The Montana specification and the code of this app are open on GitHub.")
-            }
-            .listRowBackground(MTGlassRowPlate())
-        }
-        .foregroundColor(.primary)
-        .scrollContentBackground(.hidden)
-        .montanaPageGround()
-        .navigationTitle("Questions")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-/// One answer on a page of its own: the question over its answer in the list's own row, as the platform's help reads.
-struct MTAnswerPage: View {
-    let topic: String
-    let item: MTQuestionsPage.Item
-    var body: some View {
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(LocalizedStringKey(item.question)).font(.headline)
-                    Text(LocalizedStringKey(item.answer)).font(.body).fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.vertical, 6)
-            }
-            .listRowBackground(MTGlassRowPlate())
-        }
-        .foregroundColor(.primary)
-        .scrollContentBackground(.hidden)
-        .montanaPageGround()
-        .navigationTitle(Text(LocalizedStringKey(topic)))
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-/// A document of Montana, opened in the platform's own browser sheet inside the app (MTExplorerSheet); the whole row is the target.
+/// A document of Montana, opened in the platform's own browser sheet inside the app (MTWebSheet); the whole row is the target.
 struct MTDocumentRow: View {
     let title: String
     let link: String
     var body: some View {
-        Button { if let u = URL(string: link) { MTExplorerSheet.open(u) } } label: {
+        Button { if let u = URL(string: link) { MTWebSheet.open(u) } } label: {
             HStack {
                 Label(LocalizedStringKey(title), systemImage: "safari")
                 Spacer()
@@ -1037,79 +917,23 @@ struct MTWallpaperPreview: View {
 /// MY PAGE OVER ITS GROUND, FOR THE PREVIEW (the author's word 26.09: «the page ground's preview with the real face, name, bio,
 /// link, the write-on-the-wall button and an example post»): the head my page draws (MTFaceHeader at its circle) with my face, my
 /// name as it leaves this phone, my words and my link as they leave it -- MontanaMyProfileView's own sources -- then the wall's
-/// write button (MTBoardWriteFace, the wall's own drawing) and one post of my wall saying what it is (MTBoardCell). The dress
+/// write button and one post of my wall saying what it is, drawn by the wall behind its door (slice S4c2). The dress
 /// answers no finger: the picture under it is being placed.
 struct MTPagePreviewDress: View {
     @AppStorage("avatarData") private var avatarData: Data = Data()
     @AppStorage("profileBio") private var bio: String = ""
     @AppStorage("profileLink") private var link: String = ""
     @StateObject private var face = MTFaceDock()
-    private var sample: MTBoardSeen {
-        MTBoardSeen(id: "preview", byName: E2E.myDisplayName(), byGlyph: E2E.myFaceGlyph(), at: Date().timeIntervalSince1970,
-                    text: String(localized: "An example of a post on your page", bundle: MTLanguage.bundle), media: [],
-                    pinned: false, keepers: 0, likes: 0, downloads: 0, reposts: 0, comments: [], commentCount: 0,
-                    liked: false, kept: false, reposted: false, mine: true, own: true)
-    }
     var body: some View {
         GeometryReader { g in
             VStack(spacing: 12) {
                 MTFaceHeader(face: face, glyph: E2E.myFaceGlyph(), name: E2E.myDisplayName(), pageWidth: g.size.width,
                              bio: MTPeerAbout.said(bio), links: MTPeerAbout.links(link))
-                MTBoardWriteFace().padding(.horizontal, MTPageEdge.side)
-                MTBoardCell(post: sample, owner: nil, onComments: {}).padding(.horizontal, MTPageEdge.side)
+                if let wall = MTApps.wall { wall.preview() }   // the wall's write button and an example post, the wall's own drawing
                 Spacer(minLength: 0)
             }
         }
         .onChange(of: avatarData, initial: true) { _, d in face.load(d) }
-    }
-}
-
-/// THE APP'S ICON, CHOSEN BY ITS PICTURE (the author's word 26.09: «leave the icons to choose in the appearance settings»): the
-/// platform's own alternate icons -- the primary (nil) the liquid glass document (AppIcon.icon), «AppIconGold» the gold on black --
-/// each shown as its own miniature, the chosen one ringed in the platform's blue, the whole miniature the target. The platform itself
-/// tells the person the icon changed; the diary says what was asked and what the platform answered.
-struct MTAppIconChooser: View {
-    struct Icon: Identifiable {
-        let name: String?
-        let preview: String
-        let label: LocalizedStringKey
-        var id: String { preview }
-    }
-    // SHA-256
-    static let icons = [Icon(name: nil, preview: "IconGlassPreview", label: "Liquid glass"),
-                        Icon(name: "AppIconGold", preview: "IconGoldPreview", label: "Gold on black"),
-                        Icon(name: "AppIconSun", preview: "IconSunPreview", label: "Sunlight"),
-                        Icon(name: "AppIconJuno", preview: "IconJunoPreview", label: "Juno"),
-                        Icon(name: "AppIconPyramid", preview: "IconPyramidPreview", label: "Pyramid")]
-    @State private var current = UIApplication.shared.alternateIconName
-    // THE ICONS SCROLL AND TAKE THE TAP (the author's word 02.11.2026, link 14680 (4)): five miniatures of 72 points with their
-    // gaps are wider than the row; the HStack stood clipped, its last icons past the edge and out of the finger's reach.
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 20) {
-            ForEach(Self.icons) { icon in
-                Button { choose(icon) } label: {
-                    Image(icon.preview).resizable().scaledToFit()
-                        .frame(width: 64, height: 64)
-                        .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .stroke(current == icon.name ? MontanaOctagon.platformBlue : Color.clear, lineWidth: 3))
-                        .padding(4)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(icon.label))
-            }
-        }
-        .padding(.vertical, 6) }
-    }
-    private func choose(_ icon: Icon) {
-        guard UIApplication.shared.supportsAlternateIcons, current != icon.name else { return }
-        UIApplication.shared.setAlternateIconName(icon.name) { error in
-            DispatchQueue.main.async {
-                MontanaTrace.mark("app_icon", "set " + (icon.name ?? "primary") + (error == nil ? " ok" : " refused"))
-                if error == nil { current = icon.name }
-            }
-        }
     }
 }
 
@@ -1138,7 +962,6 @@ struct AppearanceView: View {
     @AppStorage("cbBgType") private var cbBgType = "gradient"
     @AppStorage("cbBg1") private var cbBg1 = BT.bg1
     @AppStorage("cbBg2") private var cbBg2 = BT.bg2
-    @AppStorage(MTCoinShow.key) private var coinsShown = true   // read for the line that leads to Privacy (11.10)
     @State private var bgPhotoItem: PhotosPickerItem?
     @ObservedObject private var wallBook = MTWallpaper.Book.shared
     @State private var editor: ColEdit?
@@ -1215,10 +1038,6 @@ struct AppearanceView: View {
                     }
                 }
             }.listRowBackground(MTGlassRowPlate())
-            // THE APP'S ICON (the author's word 26.09): the liquid glass or the gold on black, chosen by their pictures.
-            Section("App icon") {
-                MTAppIconChooser()
-            }.listRowBackground(MTGlassRowPlate())
             // VOICE STYLE STANDS HIGH (link 14680 (6)).
             // The voice orb's own screen (the author's word 14.09): colours of both sides, the motion.
             Section("Voice message style") {
@@ -1229,15 +1048,16 @@ struct AppearanceView: View {
                     }
                 }
             }.listRowBackground(MTGlassRowPlate())
-            // 14.10.2026: reputation is mandatory; only the owner's balance can be hidden in Privacy.
-            Section {
+            // 14.10.2026: reputation is mandatory; only the owner's balance can be hidden in Privacy. An edition without levels
+            // draws no such section (MTEdition.levels, decision 618 (b)).
+            if MTEdition.levels { Section {
                 Text("Your level is your reputation and is always visible. You can hide your balance in Privacy.")
-                NavigationLink { PrivacyView() } label: {
-                    LabeledContent { Text(coinsShown ? "On" : "Off") } label: { Text("Show my coins") }
+                if let coins = MTApps.coins {
+                    NavigationLink { PrivacyView() } label: { coins.showLine() }   // the coins' own line (slice S2b b7c)
                 }
             } header: { Text("Balance and level at avatars") } footer: {
                 Text("The level badge is red at the lowest reported level and green at the highest. Its color follows the current distribution of levels.")
-            }.listRowBackground(MTGlassRowPlate())
+            }.listRowBackground(MTGlassRowPlate()) }
             // The note's picture quality (the author's word 18.09): three steps, the platform's own
             // segmented picker — the source's height and the encoder's rate (MontanaNoteQuality).
             Section {
@@ -1433,78 +1253,76 @@ struct DataStorageView: View {
             } header: {
                 Text("PICTURE CACHE")
             } footer: {
-                Text("Pictures are kept in memory so chats and walls open without waiting. They stay until you clear them here.")
+                Text("Pictures are kept in memory so they open without waiting. They stay until you clear them here.")
             }
             .listRowBackground(MTGlassRowPlate())
 
             // THE CACHE, CLEARED AS THE REFERENCE CLEARS IT (the author's word 18.10.2026 17:1x UTC): what the person's own node
             // holds leaves this phone, and comes back from the node at a look or a tap -- the node's word decides, asked anew.
-            Section {
-                if case .held(let files, let bytes, _) = homeKeep.word {
-                    HStack {
-                        settingsToggleLabel("Kept on your node", "externaldrive.fill", .gray)
-                        Spacer()
-                        Text(verbatim: String(files) + " · " + mtSize(bytes)).foregroundColor(.secondary)   // USER-DATA: the node's count and size
-                    }
-                }
-                Button { clearingCache = true } label: {
-                    HStack {
-                        settingsToggleLabel("Clear cache", "trash.fill", .red)
-                        Spacer()
-                        if homeKeep.clearing { ProgressView() }
-                    }
-                    .contentShape(Rectangle())
-                }
-                .disabled(!MTHomeShelf.bringing || homeKeep.clearing)
-                // AS THE REFERENCE KEEPS ITS CACHE: a term for what nobody opened, a ceiling for the whole -- what leaves is what
-                // the node holds, asked anew.
-                VStack(alignment: .leading, spacing: 4) {
-                    Picker(selection: $keepDays) {
-                        Text("3 days").tag(3)
-                        Text("1 week").tag(7)
-                        Text("1 month").tag(30)
-                        Text("Forever").tag(0)
-                    } label: { settingsToggleLabel("Keep media", "clock.arrow.circlepath", .blue) }
-                    .disabled(!MTHomeShelf.bringing)
-                    .onChange(of: keepDays) { _, _ in homeKeep.trim() }
-                    Text("A photo, video or file your node holds leaves this phone when nobody has opened it for this long. It comes back from your node when you open it.")
-                        .font(.caption).foregroundColor(.gray)
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    Picker(selection: $cacheLimit) {
-                        ForEach([5, 16, 32], id: \.self) { g in
-                            Text(verbatim: mtSize(g * 1_073_741_824)).tag(g)   // USER-DATA: a size in the platform's own units
+            if MTHomeShelf.bringing {   // no node holds this phone's files (no row of one's own node, the author's word 16428): nothing to clear
+                Section {
+                    if case .held(let files, let bytes, _) = homeKeep.word {
+                        HStack {
+                            settingsToggleLabel("Kept on your node", "externaldrive.fill", .gray)
+                            Spacer()
+                            Text(verbatim: String(files) + " · " + mtSize(bytes)).foregroundColor(.secondary)   // USER-DATA: the node's count and size
                         }
-                        Text("No limit").tag(0)
-                    } label: { settingsToggleLabel("Maximum cache size", "internaldrive.fill", .gray) }
-                    .disabled(!MTHomeShelf.bringing)
-                    .onChange(of: cacheLimit) { _, _ in homeKeep.trim() }
-                    Text("Past this size the files opened longest ago leave this phone first, only those your node holds.")
-                        .font(.caption).foregroundColor(.gray)
-                }
-            } header: {
-                Text("CACHE")
-            } footer: {
-                Text(MTHomeShelf.bringing
-                     ? "What your node holds leaves this phone. Each photo, video and file comes back from your node when you open it, here or on a new phone with your 24 words."
-                     : "Set up your node in Settings, Your node: what it holds can then be cleared from this phone and comes back when you open it.")
-            }
-            .listRowBackground(MTGlassRowPlate())
-            .confirmationDialog("Clear the cache?", isPresented: $clearingCache, titleVisibility: .visible) {
-                Button("Clear", role: .destructive) {
-                    homeKeep.clear { r in
-                        if let r { cacheWord = "Cleared from this phone: \(r.files) files, \(mtSize(r.bytes)). Your node keeps them." }
-                        else { cacheWord = "Your node did not answer. Nothing was cleared." }
-                        if let inv = inventory { measureDisk(inv) }
                     }
+                    Button { clearingCache = true } label: {
+                        HStack {
+                            settingsToggleLabel("Clear cache", "trash.fill", .red)
+                            Spacer()
+                            if homeKeep.clearing { ProgressView() }
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .disabled(homeKeep.clearing)
+                    // AS THE REFERENCE KEEPS ITS CACHE: a term for what nobody opened, a ceiling for the whole -- what leaves is what
+                    // the node holds, asked anew.
+                    VStack(alignment: .leading, spacing: 4) {
+                        Picker(selection: $keepDays) {
+                            Text("3 days").tag(3)
+                            Text("1 week").tag(7)
+                            Text("1 month").tag(30)
+                            Text("Forever").tag(0)
+                        } label: { settingsToggleLabel("Keep media", "clock.arrow.circlepath", .blue) }
+                        .onChange(of: keepDays) { _, _ in homeKeep.trim() }
+                        Text("A photo, video or file your node holds leaves this phone when nobody has opened it for this long. It comes back from your node when you open it.")
+                            .font(.caption).foregroundColor(.gray)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Picker(selection: $cacheLimit) {
+                            ForEach([5, 16, 32], id: \.self) { g in
+                                Text(verbatim: mtSize(g * 1_073_741_824)).tag(g)   // USER-DATA: a size in the platform's own units
+                            }
+                            Text("No limit").tag(0)
+                        } label: { settingsToggleLabel("Maximum cache size", "internaldrive.fill", .gray) }
+                        .onChange(of: cacheLimit) { _, _ in homeKeep.trim() }
+                        Text("Past this size the files opened longest ago leave this phone first, only those your node holds.")
+                            .font(.caption).foregroundColor(.gray)
+                    }
+                } header: {
+                    Text("CACHE")
+                } footer: {
+                    Text("What your node holds leaves this phone. Each photo, video and file comes back from your node when you open it, here or on a new phone with your 24 words.")
                 }
-            } message: {
-                Text("Only what your node holds leaves this phone; what it does not hold stays.")
-            }
-            .alert("Cache", isPresented: Binding(get: { cacheWord != nil }, set: { if !$0 { cacheWord = nil } })) {
-                Button("OK") { cacheWord = nil }
-            } message: {
-                if let w = cacheWord { Text(w) }
+                .listRowBackground(MTGlassRowPlate())
+                .confirmationDialog("Clear the cache?", isPresented: $clearingCache, titleVisibility: .visible) {
+                    Button("Clear", role: .destructive) {
+                        homeKeep.clear { r in
+                            if let r { cacheWord = "Cleared from this phone: \(r.files) files, \(mtSize(r.bytes)). Your node keeps them." }
+                            else { cacheWord = "Your node did not answer. Nothing was cleared." }
+                            if let inv = inventory { measureDisk(inv) }
+                        }
+                    }
+                } message: {
+                    Text("Only what your node holds leaves this phone; what it does not hold stays.")
+                }
+                .alert("Cache", isPresented: Binding(get: { cacheWord != nil }, set: { if !$0 { cacheWord = nil } })) {
+                    Button("OK") { cacheWord = nil }
+                } message: {
+                    if let w = cacheWord { Text(w) }
+                }
             }
 
             // WHAT THIS PHONE HOLDS, MEASURED ON ITS DISK (the author's word 18.10.2026 07:2x UTC: «on T1 Montana weighs 20 GB, I cannot
@@ -1518,7 +1336,9 @@ struct DataStorageView: View {
                     NavigationLink { CopyKindsPage(inventory: held(inventory ?? CopyInventory()), plan: $plan) } label: {
                         diskRow("Files no letter names", "doc.badge.ellipsis", .gray, u.unnamed)
                     }
-                    diskRow("Pictures of walls", "square.grid.2x2.fill", .teal, u.walls)
+                    if MTApps.wall != nil {   // an edition with no wall keeps no wall pictures (link 15959)
+                        diskRow("Pictures of walls", "square.grid.2x2.fill", .teal, u.walls)
+                    }
                     HStack {
                         diskRow("Copies waiting on this phone", "shippingbox.fill", .orange, u.shelf)
                         Button { clearingShelf = true } label: {
@@ -1568,7 +1388,7 @@ struct DataStorageView: View {
                     }
                 }
             } message: {
-                Text("The copies and their shares made for iCloud, your node and your keepers leave this phone; the next round makes them again.")
+                Text("The copies and their shares made for iCloud and your keepers leave this phone; the next round makes them again.")
             }
             .confirmationDialog("Clear opened files?", isPresented: $releasing, titleVisibility: .visible) {
                 Button("Clear", role: .destructive) {
@@ -1969,14 +1789,14 @@ func settingsToggleLabel(_ title: LocalizedStringKey, _ icon: String, _ color: C
 /// this access too; after the photos, the contacts with their road and their state -- exactly what is set in
 /// iOS»). The word is the one the system's own page for this app shows, read from the system at the moment it
 /// is asked; the privacy page asks again on every return to the app. The tap is the location row's one tap: a
-/// permission never asked is asked here, one already decided is changed where the system keeps it.
+/// permission never asked is asked here, one already decided is changed where the system keeps it. The contacts' row left with
+/// the card in the phone's Contacts (the author's word 16463, 04.11.2026): no road of the app reads or writes them any more.
 enum MTSystemAccess {
     static var refused: Bool {
         let media = [AVCaptureDevice.authorizationStatus(for: .video), AVCaptureDevice.authorizationStatus(for: .audio)]
-        let contacts = CNContactStore.authorizationStatus(for: .contacts)
         let photos = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         return media.contains { $0 == .denied || $0 == .restricted }
-            || contacts == .denied || contacts == .restricted || photos == .denied || photos == .restricted
+            || photos == .denied || photos == .restricted
     }
 
     static var photosWord: String {
@@ -1991,27 +1811,6 @@ enum MTSystemAccess {
         @unknown default: return "Not asked"
         }
     }
-    static var contactsWord: String {
-        let st = CNContactStore.authorizationStatus(for: .contacts)
-        if #available(iOS 18, *) {
-            // From iOS 18 the system keeps three answers for the contacts, as for the photos.
-            switch st {
-            case .authorized: return "Full Access"
-            case .limited: return "Limited Access"
-            case .denied: return "None"
-            case .restricted: return "Restricted"
-            case .notDetermined: return "Not asked"
-            @unknown default: return "Not asked"
-            }
-        }
-        // Before iOS 18 the system's page keeps a switch.
-        switch st {
-        case .authorized: return "Allowed"
-        case .denied: return "Denied"
-        case .restricted: return "Restricted"
-        default: return "Not asked"
-        }
-    }
     /// WHAT iOS HOLDS OF THIS APP'S ACCESS, IN ONE WORD (24.09). iOS ends an app whose person changes a privacy switch in
     /// Settings, and the next launch said only «reclaimed in background, cause=unexplained» (iPhone 15 13:02:40 — the
     /// photos' access changed, and the call and the screen broadcast died with the process). The run's sentinel carries
@@ -2020,9 +1819,8 @@ enum MTSystemAccess {
         "p\(PHPhotoLibrary.authorizationStatus(for: .readWrite).rawValue)"
             + "c\(AVCaptureDevice.authorizationStatus(for: .video).rawValue)"
             + "m\(AVCaptureDevice.authorizationStatus(for: .audio).rawValue)"
-            + "k\(CNContactStore.authorizationStatus(for: .contacts).rawValue)"
     }
-    /// The switches that moved between two stamps, named: «photos», «camera», «microphone», «contacts».
+    /// The switches that moved between two stamps, named: «photos», «camera», «microphone».
     static func moved(from then: String, to now: String) -> [String] {
         func parts(_ s: String) -> [Character: String] {
             var out: [Character: String] = [:], key: Character? = nil
@@ -2032,18 +1830,13 @@ enum MTSystemAccess {
             return out
         }
         let a = parts(then), b = parts(now)
-        let names: [(Character, String)] = [("p", "photos"), ("c", "camera"), ("m", "microphone"), ("k", "contacts")]
+        let names: [(Character, String)] = [("p", "photos"), ("c", "camera"), ("m", "microphone")]
         return names.compactMap { a[$0.0] != nil && a[$0.0] != b[$0.0] ? $0.1 : nil }
     }
     static func tapPhotos(_ done: @escaping () -> Void) {
         MontanaTrace.mark("privacy_access", "photos tap word=\(photosWord)")
         guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .notDetermined else { MontanaSystemSettings.open(); return }
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in DispatchQueue.main.async(execute: done) }
-    }
-    static func tapContacts(_ done: @escaping () -> Void) {
-        MontanaTrace.mark("privacy_access", "contacts tap word=\(contactsWord)")
-        guard CNContactStore.authorizationStatus(for: .contacts) == .notDetermined else { MontanaSystemSettings.open(); return }
-        CNContactStore().requestAccess(for: .contacts) { _, _ in DispatchQueue.main.async(execute: done) }
     }
 }
 
@@ -2053,12 +1846,9 @@ struct PrivacyView: View {
     /// The settings sheet lowers with it: the first-run page stands under it otherwise.
     private func forgetSeed() {
         // THE IDENTITY LEAVES THE NODES TOO (App Review 5.1.1(v), 08.10.2026: deleting an account deletes its records): the row of
-        // the Montana top -- the name and the coins shown -- is withdrawn from every node while the words still derive its token.
-        MTTopNet.shared.withdraw()
+        // the Montana top -- the coins shown -- is withdrawn from every node while the words still derive its token.
+        MTApps.coins?.moment(.seedForgetting)
         Task { @MainActor in
-            // THE NAME LEAVES FIRST (App Review 5.1.1(v), 08.10.2026: the text says so, and so it is): the keeper of names releases
-            // it while the words still stand. No number is kept off this phone (10.10.2026), so none is asked back.
-            await MontanaNamePlane.releaseHeld()
             // Everything the seed can reopen is sealed and on disk FIRST (15.10.4); the wipe follows.
             guard let store = ChatStore.live else { SeedScope.forget(); ui.settingsShown = false; return }
             store.sealForForget { SeedScope.forget(); ui.settingsShown = false }
@@ -2066,15 +1856,12 @@ struct PrivacyView: View {
     }
     @AppStorage("readReceiptsEnabled") private var readReceipts = true
     @AppStorage("objectionableFilterOn") private var objectionableFilter = true   // Guideline 1.2: the fold over objectionable words
-    @AppStorage("syncContactsToPhone") private var syncContacts = true
     @AppStorage(MontanaDiagConsent.key) private var diagShare = MontanaDiagConsent.birth   // the diary leaves only by this yes (08.10)
     @AppStorage(MTLinkPreviewBuilder.switchKey) private var linkPreviews = true   // the card of a link I send — my device reads that page
     @State private var presenceShared = MontanaPresencePrivacy.sharing
-    @AppStorage(MTCoinShow.key) private var coinsShown = true   // the owner shows or hides their coins (04.10)
     @State private var localNetwork = MontanaPhoneNode.meshDiscoverable   // the one mesh switch owns the concept
     @ObservedObject private var place = MTLocationAccess.shared   // the one owner of the location permission says the word
     @State private var photosAccess = MTSystemAccess.photosWord       // the system's own word for this app's photos
-    @State private var contactsAccess = MTSystemAccess.contactsWord   // and for its contacts
     // One decision, not two. Leaving and deleting were the same act under two names: both erase
     // the seed, and without the seed there is nothing left to come back to. Two buttons for one
     // act taught the person that one of them was reversible. The button stands here, on the
@@ -2099,15 +1886,19 @@ struct PrivacyView: View {
             // It refreshes on the return-to-app event — the person came back from Settings, so
             // it is time to read anew. No polling, no timer: both would count blind between events.
             Section {
-                Button { MontanaSystemSettings.open() } label: {
-                    HStack(spacing: 12) {
-                        icon("globe", .blue)
-                        Text("Local Network").foregroundColor(.primary)
-                        Spacer()
-                        Text(localNetwork ? "Connected" : "Disconnected").foregroundColor(.gray)
-                        Image(systemName: "chevron.right").foregroundColor(Color(white: 0.35)).font(.footnote.weight(.semibold))
+                // The row is the mesh's switch read back: where no mesh door stands (Montana Messenger, link 15846) this phone
+                // announces itself on no network, and the row does not stand.
+                if MTApps.mesh != nil {
+                    Button { MontanaSystemSettings.open() } label: {
+                        HStack(spacing: 12) {
+                            icon("globe", .blue)
+                            Text("Local Network").foregroundColor(.primary)
+                            Spacer()
+                            Text(localNetwork ? "Connected" : "Disconnected").foregroundColor(.gray)
+                            Image(systemName: "chevron.right").foregroundColor(Color(white: 0.35)).font(.footnote.weight(.semibold))
+                        }
+                        .contentShape(Rectangle())   // the whole row is the target, not only its words (22.09)
                     }
-                    .contentShape(Rectangle())   // the whole row is the target, not only its words (22.09)
                 }
                 // WHERE THIS PHONE IS, ASKED AND CHANGED HERE TOO (the author's word 23.09). The
                 // permission a person never answered is asked by this very row; one already
@@ -2135,16 +1926,6 @@ struct PrivacyView: View {
                     }
                     .contentShape(Rectangle())   // the whole row is the target, not only its words (22.09)
                 }
-                Button { MTSystemAccess.tapContacts { refreshAccess() } } label: {
-                    HStack(spacing: 12) {
-                        icon("person.crop.circle.fill", .gray)
-                        Text("Contacts").foregroundColor(.primary)
-                        Spacer()
-                        Text(LocalizedStringKey(contactsAccess)).foregroundColor(.gray)
-                        Image(systemName: "chevron.right").foregroundColor(Color(white: 0.35)).font(.footnote.weight(.semibold))
-                    }
-                    .contentShape(Rectangle())   // the whole row is the target, not only its words (22.09)
-                }
             }
             .listRowBackground(MTGlassRowPlate())
 
@@ -2157,34 +1938,17 @@ struct PrivacyView: View {
                         icon("eye.fill", .teal)
                         Toggle("Online status", isOn: $presenceShared)
                     }
-                    Text("Only whether others see you online. Walls and pages come and go regardless.")
+                    Text("Only whether others see you online. Everything else comes and goes regardless.")
                         .font(.caption).foregroundColor(.gray)
                 }
-                // THE OWNER SHOWS OR HIDES THEIR COINS (the author's words 04.10.2026 02:47 and 02:48 UTC: «whether the balance is
-                // shown each decides, on by default; who does not show is not in the top -- the privacy settings»; «the owner governs
-                // privacy»): one switch for the Montana top, the coins told to correspondents and the coin's badge (MTCoinShow).
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 12) {
-                        icon("trophy.fill", .orange)
-                        Toggle("Show my coins", isOn: $coinsShown)
-                    }
-                    Text("Your name and coins stand in the Montana top for everyone, and your correspondents see your coins. Off, you are not in the top.")
-                        .font(.caption).foregroundColor(.gray)
-                }
+                // THE OWNER SHOWS OR HIDES THEIR COINS: the coins' own switch (slice S2b b7c), drawn where the door stands.
+                if let coins = MTApps.coins { coins.showSwitch(icon: AnyView(icon("trophy.fill", .orange))) }
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 12) {
                         icon("checkmark.circle.fill", .green)
                         Toggle("Read receipts", isOn: $readReceipts)
                     }
                     Text("People see that you have read their messages, and channel owners count your views. Off, nobody is told.")
-                        .font(.caption).foregroundColor(.gray)
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 12) {
-                        icon("person.crop.circle.fill", .orange)
-                        Toggle("Sync contacts", isOn: $syncContacts)
-                    }
-                    Text("A contact you save in Montana with a public name gets a card in the phone's Contacts. Off, no card is written.")
                         .font(.caption).foregroundColor(.gray)
                 }
                 // THE CARD OF A LINK IS READ BY MY OWN DEVICE (the author's word 22.09): sending a link
@@ -2213,25 +1977,27 @@ struct PrivacyView: View {
             .listRowBackground(MTGlassRowPlate())
             // THE WALL (the author's word 24.09): who may write on my wall, and who may see it — everyone, until the
             // person says otherwise.
-            Section {
-                NavigationLink { MTBoardRulePage(act: .write) } label: {
-                    HStack(spacing: 12) {
-                        icon("text.below.photo", .blue)
-                        Text("Who can write on my wall").foregroundColor(.primary)
+            if let wall = MTApps.wall {   // an edition with no wall has no rules of it (slice S4c2)
+                Section {
+                    NavigationLink { wall.rulePage(write: true) } label: {
+                        HStack(spacing: 12) {
+                            icon("text.below.photo", .blue)
+                            Text("Who can write on my wall").foregroundColor(.primary)
+                        }
                     }
-                }
-                NavigationLink { MTBoardRulePage(act: .see) } label: {
-                    HStack(spacing: 12) {
-                        icon("eye", .blue)
-                        Text("Who can see my wall").foregroundColor(.primary)
+                    NavigationLink { wall.rulePage(write: false) } label: {
+                        HStack(spacing: 12) {
+                            icon("eye", .blue)
+                            Text("Who can see my wall").foregroundColor(.primary)
+                        }
                     }
+                } footer: {
+                    // THE RULE'S CONTRACT (the author's word 25.09): what «Everyone» reaches, and when a wall arrives (MTBoard.look).
+                    Text("Everyone means every person you have a conversation with. A wall reaches a person's page the moment they open it.")
+                        .font(.caption).foregroundColor(.gray)
                 }
-            } footer: {
-                // THE RULE'S CONTRACT (the author's word 25.09): what «Everyone» reaches, and when a wall arrives (MTBoard.look).
-                Text("Everyone means every person you have a conversation with. A wall reaches a person's page the moment they open it.")
-                    .font(.caption).foregroundColor(.gray)
+                .listRowBackground(MTGlassRowPlate())
             }
-            .listRowBackground(MTGlassRowPlate())
             Section {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 12) {
@@ -2239,7 +2005,7 @@ struct PrivacyView: View {
                         Toggle("Filter objectionable content", isOn: $objectionableFilter)
                             .onChange(of: objectionableFilter) { _, on in MontanaKeychain.set("objectionableFilterOn", Data([on ? 1 : 0])) }
                     }
-                    Text("Messages, wall posts and comments from others with offensive words stay folded until you tap them.")
+                    Text("Messages, posts and comments from others with offensive words stay folded until you tap them.")
                         .font(.caption).foregroundColor(.gray)
                 }
                 NavigationLink { MontanaBlockedView() } label: {
@@ -2276,13 +2042,12 @@ struct PrivacyView: View {
             Button("Delete account", role: .destructive) { forgetSeed() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            let rest = Text("Your account is deleted: this device erases your 24-word identity, and your public name leaves Montana's nodes. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.")
+            let rest = Text("Your account is deleted: this device erases your 24-word identity. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.")
             // THE COINS ARE SAID BEFORE THE WORDS GO (the author's word 12.10.2026 12:3x UTC, No.66, after 4 105 470 coins stood on a
             // forgotten account on 11.10): an account that holds coins says how many, and that only its 24 words bring them back.
-            let coins = MTCoinSplit.shared.available
-            if 0 < coins {
+            if let held = MTApps.coins?.heldWords() {   // the coins said before the words go (slice S2b b7c)
                 // USER-DATA: two line breaks between the coins' line and the rest
-                Text("This account holds \(MTCoinText.count(coins)) coins. They stay with its 24 words and come back only with them.") + Text(verbatim: "\n\n") + rest
+                held + Text(verbatim: "\n\n") + rest
             } else {
                 rest
             }
@@ -2296,7 +2061,6 @@ struct PrivacyView: View {
         .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: presenceShared) { _, v in MontanaPresencePrivacy.setSharing(v) }   // 10-C.3
-        .onChange(of: coinsShown) { _, v in MTTopNet.shared.showChanged(v) }   // the table and the pairs hear it now
         .onChange(of: diagShare) { _, _ in MontanaDiagConsent.apply() }   // off: the extensions lose the diary's id at once
         .onAppear { refreshAccess() }
         // Returning to the app is that very event: the person may have changed the permission
@@ -2307,10 +2071,9 @@ struct PrivacyView: View {
     }
 
     private func refreshAccess() {
-        localNetwork = MontanaBonjour.shared.announceAccepted
+        localNetwork = MTApps.mesh?.announceAccepted ?? false
         place.refresh()
         photosAccess = MTSystemAccess.photosWord
-        contactsAccess = MTSystemAccess.contactsWord
     }
 }
 
@@ -2581,15 +2344,15 @@ struct MontanaOnboardingView: View {
             .frame(height: 120)
             .onAppear { withAnimation(.easeInOut(duration: 2.3).repeatForever(autoreverses: true)) { glow = true } }
             Text("Montana").font(.system(size: 40, weight: .bold)).foregroundColor(Color.accentColor)
-            Text("A private messenger. Your identity comes from your secret phrase, and your chats are encrypted on your device.")
+            Text(MTEdition.intro)
                 .font(.subheadline).foregroundColor(.gray).multilineTextAlignment(.center).padding(.horizontal, 20)
             VStack(alignment: .leading, spacing: 12) {
                 privRow("key.fill", "Identity from 24 words", "Only you hold the key")
                 privRow("lock.shield.fill", "End-to-end encryption", "The key lives on your devices")
-                // WHAT IS TRUE OF THIS BUILD, NOT OF AN OLDER ONE (App Review 2.3.1(a), 08.10.2026): addresses are no longer
-                // exchanged -- a person is reached by a name or an invitation -- and a letter the far phone cannot take at once
+                // WHAT IS TRUE OF THIS BUILD, NOT OF AN OLDER ONE (App Review 2.3.1(a)): a person is reached by the card -- its QR code
+                // or its link; no names in either edition (the author's word 16463) -- and a letter the far phone cannot take at once
                 // waits on a node as an envelope the node cannot open.
-                privRow("at", "Name or invitation", "People reach you by either")
+                privRow("qrcode", "Your card", "People reach you by its QR code or link")
                 privRow("point.3.connected.trianglepath.dotted", "Sealed on the way", "Nodes carry envelopes they cannot open")
             }
             Spacer()
@@ -2628,10 +2391,13 @@ struct MontanaOnboardingView: View {
             TextEditor(text: $recoverInput).frame(height: 130).padding(8).scrollContentBackground(.hidden)
                 .background(MTGlassCardPlate(cornerRadius: 14))
                 .foregroundColor(.primary).autocorrectionDisabled().textInputAutocapitalization(.never)
-            // THE PERSON'S OWN NODE, named beside the words (28.09): the copy it holds comes back before the first screen.
-            TextField("Your node (optional)", text: $nodeHost)
-                .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                .padding(12).background(MTGlassCardPlate(cornerRadius: 14)).foregroundColor(.primary)
+            // THE PERSON'S OWN NODE, named beside the words (28.09): the copy it holds comes back before the first screen. No edition
+            // draws it since the author's word 16428 (MTEdition.ownNode false in both): nodeHost stays empty and the words restore alone.
+            if MTEdition.ownNode {
+                TextField("Your node (optional)", text: $nodeHost)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                    .padding(12).background(MTGlassCardPlate(cornerRadius: 14)).foregroundColor(.primary)
+            }
             if !recoverError.isEmpty { Text(LocalizedStringKey(recoverError)).foregroundColor(.red).font(.caption).multilineTextAlignment(.center) }
             Button {
                 let words = recoverInput.lowercased().split(whereSeparator: { $0 == " " || $0 == "\n" || $0 == "," }).map(String.init)
@@ -2718,7 +2484,7 @@ struct MontanaOnboardingView: View {
     }
 
     // Step 12: the address page is gone. First launch ends at the words: the address is shown
-    // to the person nowhere, and introductions go by @name or a one-time card.
+    // to the person nowhere, and introductions go by a one-time card.
 
 
     /// THE WORDS OPENED; THE PERSON'S OWN NODE, IF NAMED, HANDS THE COPY BACK (28.09) -- otherwise the first screen.
@@ -2826,7 +2592,7 @@ struct MontanaOnboardingView: View {
     var doors: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
-            Image("IconGlassPreview").resizable().scaledToFit().frame(width: 120, height: 120)
+            Image(MTEdition.face).resizable().scaledToFit().frame(width: 120, height: 120)
             Text("Sign in to Montana").font(.title.bold()).foregroundColor(.primary).padding(.top, 22)
             Spacer(minLength: 0)
             VStack(spacing: 10) {
@@ -2974,157 +2740,5 @@ struct WelcomeView: View {
             // the splash dismisses faster (was 2.8 s)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { onFinish() }
         }
-    }
-}
-
-/// ACCESS BY LEVEL (the author's words 16.10.2026 15:2x UTC: «in the settings a path Access by level -- where they open for each»; «we
-/// have the gamification of access to Montana's functions»): the person's Global Level on top, and under each level the functions it
-/// opens (MTLevelAccess) -- switches the person moves once their level reaches it, each with its contract under it (SETTINGS.md).
-struct MTLevelAccessPage: View {
-    @ObservedObject private var person = MTPersonChain.shared
-    @ObservedObject private var split = MTCoinSplit.shared   // the available, the one number of the person's coins (fold-7)
-    @ObservedObject private var fabric = MTFabric.shared   // the third level the Global one is the lowest of (MTFabric, 17.10)
-    @AppStorage(MTCallRecordingPolicy.key) private var recordCalls = true
-    @AppStorage(MTLevelAccess.keepKey) private var keepDeleted = true
-    private var level: Int { MTPersonChain.global(person: person.level, balance: split.available) }
-    var body: some View {
-        let seven = MTLevelAccess.Feature.keepDeleted.level
-        let open = MTLevelAccess.opens(.keepDeleted)
-        let recordOpen = MTLevelAccess.opens(.autoRecord)
-        let eight = MTLevelAccess.Feature.ownNode.level
-        let nodeOpen = MTLevelAccess.opens(.ownNode)
-        List {
-            Section {
-                Text("Global level \(level)")
-                // THE FABRIC OF TIME BESIDE THE GLOBAL LEVEL (the author's word 17.10.2026 19:50 UTC: «at once let a new level appear in
-                // the clients that sets the global one, named Fabric of Time»): its level this turn, and through its first two turns
-                // the days until its first count.
-                LabeledContent {
-                    // USER-DATA: the level of the fabric of time now, a number, or a dash before this life has read it
-                    Text(verbatim: fabric.level.map { n in String(n) } ?? "—").monospacedDigit()
-                } label: {
-                    Label("Fabric of Time", systemImage: "point.3.connected.trianglepath.dotted")
-                }
-                if let days = fabric.graceDays {
-                    Text("Days until the first count: \(days)").font(.caption).foregroundColor(.gray)
-                }
-            } footer: {
-                Text("Your level is the lowest of three: your time in Montana, the coins you hold and the Fabric of Time, the people you write to and call regularly in the last two weeks, weighed by the levels their own time and wallet give them. Each level opens new functions of Montana.")
-            }
-            .listRowBackground(MTGlassRowPlate())
-            Section {
-                VStack(alignment: .leading, spacing: 4) {
-                    // BELOW ITS LEVEL A SWITCH STANDS OFF (the author's word 16.10.2026 17:34 UTC: «if the level has not reached 7, the
-                    // accesses by level are off by default, these checkmarks»): the switch shows what works -- nothing until the level
-                    // opens it; the person's own choice is kept for the day it does.
-                    Toggle("Forbid deletion on my phone", systemImage: "lock.shield",
-                           isOn: Binding(get: { open && keepDeleted }, set: { on in keepDeleted = on }))
-                    Text("A message your correspondent deletes for everyone stays on this phone, and their phone is told so.")
-                        .font(.caption).foregroundColor(.gray)
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    Toggle("Record calls", systemImage: "record.circle",
-                           isOn: Binding(get: { recordOpen && recordCalls }, set: { on in recordCalls = on }))
-                    Text("Calls are recorded by themselves on this phone and sent to the call's chat after your first consent. While this is off, a correspondent whose level is not above yours cannot record your calls; one with a higher level records on their side only. The record button on the call screen works on every level unless the correspondent's switch holds.")
-                        .font(.caption).foregroundColor(.gray)
-                }
-            } header: {
-                Text("Level \(seven)")
-            } footer: {
-                if !open { Text("Opens at level \(seven). Your level is \(level).") }
-            }
-            .disabled(!open)
-            .listRowBackground(MTGlassRowPlate())
-            // LEVEL 8 (the author's word 17.10.2026 15:1x UTC: only from level 8 can one connect one's own node to the Montana
-            // network through the client): the page of one's node, where it is set up and its copies go; its copy comes back on
-            // every level, on that page and on the first screen.
-            Section {
-                NavigationLink { HomeNodeView() } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Label("Your node", systemImage: "server.rack")
-                        Text("Connect a machine you own to the Montana network through this app: it is set up from here and copies of the whole phone go to it. Taking your copy back is open on every level.")
-                            .font(.caption).foregroundColor(.gray)
-                    }
-                }
-            } header: {
-                Text("Level \(eight)")
-            } footer: {
-                if !nodeOpen { Text("Opens at level \(eight). Your level is \(level).") }
-            }
-            .disabled(!nodeOpen)
-            .listRowBackground(MTGlassRowPlate())
-        }
-        .foregroundColor(.primary)
-        .scrollContentBackground(.hidden)
-        .montanaPageGround()
-        .navigationTitle("Access by level")
-        .navigationBarTitleDisplayMode(.inline)
-        .modifier(MTCallRecordingConsent())
-        .onChange(of: recordCalls) { _, on in MTCallRecording.shared.changed(on) }
-        .onChange(of: keepDeleted) { _, _ in MTLevelAccess.mirror() }
-        .onAppear { MTLevelAccess.mirror(); fabric.prime(); fabric.refresh() }
-    }
-}
-
-/// THE GREEN SHIELD (the author's word 16.10.2026 17:34 UTC: «a message cannot be deleted while the protection is on; a tap on the
-/// shield shows the rule of the levels and the way to the settings»): it stands while this phone keeps what others delete
-/// (MTLevelAccess.keepsDeleted); a tap lays the rule over it in the platform's own popover, whose last row is the way to Access by level.
-/// A BADGE ON THE INTERLOCUTOR'S BUBBLE (the author's word 17.10.2026 15:4x UTC: «the shield moves to a badge in the top right corner
-/// of the interlocutor's bubble inside the chat»): the platform's green round with the white shield, over the corner of the name's
-/// capsule at the chat's top, as a count stands over a mark; its target is the platform's least.
-struct MTKeepShield: View {
-    @Environment(UIState.self) private var ui
-    @ObservedObject private var person = MTPersonChain.shared
-    @ObservedObject private var split = MTCoinSplit.shared   // the available, the one number of the person's coins (fold-7)
-    @ObservedObject private var fabric = MTFabric.shared   // the Global Level the rule names follows the fabric too
-    @AppStorage(MTLevelAccess.keepKey) private var keepDeleted = true
-    @State private var told = false
-    var body: some View {
-        if MTLevelAccess.keepsDeleted {
-            Button { told = true } label: {
-                Image(systemName: "checkmark.shield.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 20, height: 20)
-                    .background(Color(uiColor: .systemGreen), in: Circle())
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Forbid deletion on my phone"))
-            .popover(isPresented: $told) { rule.presentationCompactAdaptation(.popover) }
-        }
-    }
-    private var rule: some View {
-        let seven = MTLevelAccess.Feature.keepDeleted.level
-        let level = MTPersonChain.global(person: person.level, balance: split.available)
-        return VStack(alignment: .leading, spacing: 10) {
-            Label {
-                Text("Deletion is forbidden on this phone").font(.headline)
-            } icon: {
-                Image(systemName: "checkmark.shield.fill").foregroundStyle(Color(uiColor: .systemGreen))
-            }
-            Text("A message your correspondent deletes for everyone stays on this phone, and their phone is told so.")
-                .font(.subheadline).foregroundStyle(.secondary)
-            Text("In Montana levels open functions: from level \(seven) a person can forbid deletion on their phone. Your level is \(level).")
-                .font(.subheadline).foregroundStyle(.secondary)
-            Divider()
-            Button {
-                told = false
-                ui.overlayPage = .levels
-            } label: {
-                HStack {
-                    Label("Access by level", systemImage: "stairs").foregroundStyle(.primary)
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
-                }
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(16)
-        .frame(width: 320)
-        .fixedSize(horizontal: false, vertical: true)
     }
 }

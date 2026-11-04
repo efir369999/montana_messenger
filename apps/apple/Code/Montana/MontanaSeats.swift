@@ -2,6 +2,23 @@ import Foundation
 import SwiftUI
 import UIKit
 
+/// THE SEAT'S TURN (the coin audit's second point, the author's word «fix all points in order» 05.10.2026 18:4x UTC; shared since
+/// slice S2b b7f2): one more at every move of a seat. A walk that waits on the nodes takes it at its start and, after every wait,
+/// writes nothing once it moved -- a gather begun under the person who left would lay their pieces over the seated person's
+/// (MTCoinSeat, MTPersonChain). It moves as a seat begins to move, after the last write of the person leaving, and as a person is
+/// seated, before anything of theirs is read again.
+@MainActor enum MTSeatTurn {
+    private(set) static var now = 0
+    static func leaving() {
+        MTApps.coins?.moment(.seatLeaving)   // the coins of the person leaving land in their own folder first
+        now &+= 1
+    }
+    static func seated() {
+        now &+= 1
+        MTApps.coins?.moment(.seated)   // every owner of coins then reads the seated person's own
+    }
+}
+
 // ════════════════════════════════════════════════════════════
 // THE SEATS OF MONTANA ON ONE PHONE (the second identity checklist, 1.1 to 1.5; the author's word 29.09: «Montana creates
 // a second identity with the possibility to switch»).
@@ -80,14 +97,13 @@ final class MTSeats: ObservableObject {
         guard let d = E2EKeychain.getDeviceOnly(seatRecordName(id)) else { return nil }
         return try? JSONDecoder().decode(Record.self, from: d)
     }
-    /// A PERSON ON THE SHELF'S OWN WORDS AND THE BALANCE OF THEIR BOOK AS THE SHELF HOLDS IT -- the phone's hands for the other end of a
-    /// transfer to one's own account (MTCoinTx.landOwn, 12.10.2026). nil for the person seated, an unknown seat or a record that does
-    /// not open. Read off the screen's thread.
-    static func shelfCoins(_ id: String) -> (words: String, book: Int)? {
+    /// A PERSON ON THE SHELF'S OWN WORDS -- the phone's hands for the other end of a transfer to one's own account (the coins'
+    /// MTSeats.shelfCoins, 12.10.2026). nil for the person seated, an unknown seat or a record that does not open. Read off the
+    /// screen's thread.
+    static func shelfWords(_ id: String) -> String? {
         let b = book()
         guard id != b.active, let rec = record(id), !rec.words.isEmpty else { return nil }
-        let file = shelf(of: "AS:Montana/Coins", in: id).appendingPathComponent(MTCoinPlace.book)
-        return (rec.words, MTLocalCoinLedger.balance(of: file))
+        return rec.words
     }
     /// Somebody waits on the shelf of this phone: the device key that seals their values must stand.
     static var anyParked: Bool {
@@ -238,7 +254,7 @@ final class MTSeats: ObservableObject {
 
     /// The layer's store is empty: the values, the keychain items, the seed. Nothing here touches memory.
     private static func clearStore() {
-        MTBoard.drain()   // no wall write on its way lands on the emptied store (P-4)
+        MTApps.wall?.drain()   // no wall write on its way lands on the emptied store (P-4)
         let ud = UserDefaults.standard
         for k in ud.dictionaryRepresentation().keys where layerHolds(k) { ud.removeObject(forKey: k) }
         for k in SeedScope.seatKeychain { MontanaKeychain.delete(k) }
@@ -260,7 +276,7 @@ final class MTSeats: ObservableObject {
         MTLetterBox.relook()   // the extension's box under the name is the next person's folder now
         NotificationCenter.default.post(name: .montanaSeedForgotten, object: nil)
         SeedScope.reread(restored: false)
-        Task { @MainActor in MTCoinBook.reread() }   // the coins of the person who left leave memory with them (04.10)
+        Task { @MainActor in MTSeatTurn.seated() }   // the coins of the person who left leave memory with them (04.10)
     }
 
     /// A person on the shelf takes the seat: the checks first (the record and its words, the values), then the folders,
@@ -273,7 +289,7 @@ final class MTSeats: ObservableObject {
             MontanaTrace.mark("seat_lift", "REFUSED id=" + id)
             return false
         }
-        MTBoard.drain()   // no wall write on its way lands over the lifted person's values (P-4)
+        MTApps.wall?.drain()   // no wall write on its way lands over the lifted person's values (P-4)
         var moved = 0
         for f in SeedScope.seatFolders {
             let parked = shelf(of: f, in: id)
@@ -302,8 +318,8 @@ final class MTSeats: ObservableObject {
         E2E.forgetDeviceTag()
         MTLetterBox.relook()   // the lifted person's box: its files are read afresh, its old item moved
         SeedScope.reread(restored: false)
-        MTBoard.shared.reread()   // the wall loads on the forgotten seed's word, which is not spoken here: it reads the lifted wall
-        Task { @MainActor in MTCoinBook.reread() }   // the lifted person's own coins, never the book of the one who left (04.10)
+        MTApps.wall?.reread()   // the wall loads on the forgotten seed's word, which is not spoken here: it reads the lifted wall
+        Task { @MainActor in MTSeatTurn.seated() }   // the lifted person's own coins, never the book of the one who left (04.10)
         NotificationCenter.default.post(name: .montanaSeedOpened, object: nil)
         MontanaWakePush.registerConvs()
         MontanaPhoneNode.shared.reconnectNow()
@@ -457,7 +473,7 @@ final class MTSeats: ObservableObject {
         shelfIO.async {
             guard let id = book().active else { return }
             // THE PIPES THE PERSON WAS MET BY WHILE WAITING ARE BORN IN THEIR OWN BOOK (the author's word 11.10.2026 16:0x UTC: «at
-            // 15:51 I sent an internal transfer of 4 million in Business, they did not come»). T1, 15:51:48Z: the person seated paid
+            // 15:51 I sent an internal transfer of 4 million in Messenger, they did not come»). T1, 15:51:48Z: the person seated paid
             // a person on the shelf on the pipe born on this phone (pairWithShelf), which stood only among the shelf's met pipes; the
             // receiver was seated seven seconds later and never listened on it -- a pipe met by a card is born at the lift by its
             // first letter's row, a pipe born here had no such row. Every met pipe is born now at the lift and at every pickup.
@@ -552,7 +568,7 @@ final class MTSeats: ObservableObject {
         weak var old: ChatStore?   // the store of the person leaving, watched without being held
         old = ChatStore.live
         old?.retire()
-        MTBoard.shared.flush()
+        MTApps.wall?.flush()
         MontanaLocalVault.commit()
         let earliest = Date().addingTimeInterval(from == nil ? 0 : 1.2)
         let latest = Date().addingTimeInterval(4)
@@ -569,12 +585,11 @@ final class MTSeats: ObservableObject {
     }
     private func parkThenLift(from: String?, to target: String?, t0: Date) {
         ChatStore.badgeLine.sync {}   // MAIN-SAFE-SYNC: two keychain writes at most, never a wait on main; the leaving count lands before the park reads it
-        MTBoard.shared.flush()        // the wall of the person leaving, written while their store lived, lands before the park reads it (P-4)
+        MTApps.wall?.flush()          // the wall of the person leaving, written while their store lived, lands before the park reads it (P-4)
         let ground = target == nil && from != nil ? MTWallpaper.carry() : nil   // a seat emptied for a new person keeps the cover (03.10)
         if let from {
-            // The coins of the person leaving are on disk in their own folder before it moves (the coin audit's fourth point), and
-            // no walk of the chain begun under them writes from this turn on (MTCoinSeat, the critic 19.10.2026 on T2).
-            let keep = { MainActor.assumeIsolated { MTLocalCoinLedger.shared.writeWhole(); MTCoinBook.leave() } }
+            // The coins of the person leaving are on disk in their own folder before it moves (the coin door's seatLeaving).
+            let keep = { MainActor.assumeIsolated { MTSeatTurn.leaving() } }
             // MAIN-SAFE-SYNC: the main thread runs keep itself; only a caller off it waits, on main, which waits on nobody here.
             if Thread.isMainThread { keep() } else { DispatchQueue.main.sync(execute: keep) }
             Self.stage("park")
@@ -795,12 +810,7 @@ enum MTShelfPost {
                                                  doors: MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "box")), silent: true)
             MontanaTrace.mark("shelf_receipt", mid: mid, "seat=\(p.id) boxed=\(k.boxed ? 1 : 0) code=\(k.code)")
         }
-        if let coin = MTCoinLetter.parse(text), coin.bound(to: mid),
-           let e = MontanaSeedKeys.entropyFrom(mnemonic: p.words), e.count == 32 {
-            let move = MTCoinEntry(k: .receive, c: coin.c, ref: "mid:" + mid, peer: conv, on: nil, at: Date().timeIntervalSince1970)
-            let laid = await MTCoinVault.lay([move], entropy: e)
-            MontanaTrace.mark("shelf_coin", mid: mid, "seat=\(p.id) coins=\(coin.c) rows=\(laid)")
-        }
+        await MTApps.coins?.shelfLanded(text, mid: mid, from: conv, words: p.words, seat: p.id)   // a coin letter: credited in their own book
     }
 
     /// THE SHELF RINGS THE PHONE (07.10): the labels of every person on the shelf, signed by their own reference, join the wake

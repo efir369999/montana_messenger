@@ -219,12 +219,11 @@ enum MontanaConv {
         return MTLanguage.bundle.localizedString(forKey: key, value: key, table: nil)
     }
 
-    /// What a person may hand this client to begin a correspondence: a name, or a card. Anything
+    /// What a person may hand this client to begin a correspondence: a card. Anything
     /// shaped like a standing identifier is REFUSED rather than quietly ignored — a person who was
     /// given an old address deserves to be told that addresses are gone, not to watch a scan do
     /// nothing.
     enum Meeting {
-        case name(String)
         case card(String)
         case refused
     }
@@ -236,15 +235,13 @@ enum MontanaConv {
         if let asCard = MontanaCard.text(fromQR: t) { t = asCard }
         if MontanaCard.isShort(t) { return .card(t) }   // a short invitation: the node unfolds it into a meet
         if MontanaCard.root(inCard: t) != nil { return .card(t) }
-        if let n = MontanaFirstContact.name(inInvitation: t) { return .name(n) }
-        if let n = MontanaNames.normalize(t.hasPrefix("@") ? String(t.dropFirst()) : t) { return .name(n) }
         return .refused
     }
 
     /// What a former address looks like, so a person handing one over is told plainly instead of
     /// watching a scan do nothing. Nothing decodes it — there is nothing left to decode it into.
     /// It is recognised by its shape alone: a long run of Base58 letters behind the old prefix,
-    /// far past anything a name may be.
+    /// and nothing shorter than forty letters.
     static func looksLikeFormerRef(_ t: String) -> Bool {
         guard t.hasPrefix("mt"), t.count >= 40 else { return false }
         let base58 = Set("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
@@ -905,7 +902,7 @@ extension MontanaArchive {
     private static let twinSeenKey = "mt.history.twinSeen"   // the letters of the other devices already filed here
     private static let twinCap = 8 << 20   // one letter's file stays small; what is left rides the next round
     /// The pipe's secret: the history key under its own label and this app's name -- only a device holding this seed's words
-    /// derives it, and two apps of one seed on one phone (Montana and Business) keep two pipes, never one archive.
+    /// derives it, and two apps of one seed on one phone (Montana and Messenger) keep two pipes, never one archive.
     nonisolated static func twinSecret() -> Data? {
         guard isWarm, let (hk, _, _) = keys() else { return nil }
         var m = Data("mt-twin-box".utf8); m.append(0); m.append(contentsOf: (Bundle.main.bundleIdentifier ?? "").utf8); m.append(0); m.append(hk)

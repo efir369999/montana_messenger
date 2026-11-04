@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 // ════════════════════════════════════════════════════════════
 
 /// WHAT THE WALL SHOWS OVER ITSELF (the critic 25.09): a post's comments, or a post's report — one sheet at a time, from the one
-/// presenter (MTBoardPresenting). The new post's page is a tree of its own on the platform's own sheet (MTBoardComposer.present).
+/// presenter (MTPagePresenting). The new post's page is a tree of its own on the platform's own sheet (MTBoardComposer.present).
 enum MTBoardSheet: Identifiable {
     case comments(String, String?)
     case report(MontanaReport, Bool)   // the report, and whether its person may be blocked with it
@@ -38,73 +38,51 @@ enum MTBoardSheet: Identifiable {
     }
 }
 
-/// THE WALL'S ONE PRESENTER (the critic 25.09): a post's comments, a report and a writer's page rise OVER
-/// the list or the stack that draws the wall — never from inside one of its rows. A destination or a sheet set inside a lazy
-/// container is lost when its row leaves the screen (the platform says so of navigationDestination), so every page that
-/// draws a wall — a person's page, my page, the feed — wears this once, on the container itself.
-struct MTBoardPresenting: ViewModifier {
-    @Binding var sheet: MTBoardSheet?
-    @Binding var page: MTBoardRoute?
-    func body(content: Content) -> some View {
-        content
-            .sheet(item: $sheet) { s in
-                switch s {
-                case .comments(let pid, let owner):
-                    // A COMMENTER'S FACE OPENS THEIR PAGE: the sheet goes down first, then the page rises where the wall stands.
-                    MTBoardComments(postId: pid, owner: owner) { w in
-                        sheet = nil
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { MTBoardOpen.go(w, page: $page) }
-                    }
-                    .montanaMotionMeter()   // every rise and fall of the wall's sheets and pages is measured (25.09)
-                case .report(let r, let blocks):
-                    MontanaReportSheet(report: r, onBlock: {
-                        if blocks, let s = ChatStore.live, !s.isBlocked(r.peer) { s.toggleBlocked(r.peer) }
-                    }, offersBlock: blocks)
-                    .montanaMotionMeter()
-                case .people(let pid, let owner, let likes):
-                    // A NAME UNDER THE MARK OPENS ITS PERSON'S PAGE, as a commenter's face does: the sheet goes down first.
-                    MTBoardPeople(postId: pid, owner: owner, likes: likes) { w in
-                        sheet = nil
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { MTBoardOpen.go(w, page: $page) }
-                    }
-                    .montanaMotionMeter()
-                }
-            }
-            .navigationDestination(item: $page) { r in
-                switch r {
-                case .mine: MontanaMyProfileView().montanaMotionMeter()
-                case .person(let c): MontanaPeerInfoScreen(chat: c).montanaMotionMeter()
-                case .words(let r): MTLetterPage(letter: r).montanaMotionMeter()   // a folded post, whole (26.09)
-                case .media(let s): MTBoardMediaPage(show: s).montanaMotionMeter()   // a post's picture and the page's, up and down (29.09)
-                }
-            }
+/// WHAT THE WALL SHOWS OVER ITSELF, DRAWN (the critic 25.09; slice S4c2: a page holds it as an application's sheet, MTAppSheet,
+/// and the one presenter is every page's, MTPagePresenting): a commenter's face and a name under the mark open their person's
+/// page -- the sheet goes down first, then the page rises where the wall stands.
+extension MTBoardSheet {
+    var app: MTAppSheet {
+        let s = self
+        return MTAppSheet(id: id) { page, close in AnyView(s.drawn(page: page, close: close)) }
     }
-}
-
-/// WHERE A WRITER'S NAME LEADS (the author's word 25.09: «it shows the page crookedly — it must show it whole; the page has one
-/// owner, nothing is redrawn»): my own name leads to My page — the one «My profile» and the drawer's face open, face and all
-/// (MontanaMyProfileView) — never to the room of my saved letters, which is its panes alone; a correspondent's leads to their
-/// page (MontanaPeerInfoScreen).
-enum MTBoardRoute: Hashable, Identifiable {
-    case mine
-    case person(Chat)
-    case words(MTLetterRead)   // a folded post opened whole on the letter's page (26.09)
-    case media(MTBoardShow)    // the page's pictures and videos, one screen each, up and down (29.09)
-    var id: String {
+    @MainActor @ViewBuilder private func drawn(page: Binding<MTPageRoute?>, close: @escaping () -> Void) -> some View {
         switch self {
-        case .mine: return "me"
-        case .person(let c): return "p#" + c.id
-        case .words(let r): return "w#" + r.id
-        case .media(let s): return "m#" + (s.owner ?? "") + "#" + s.start
+        case .comments(let pid, let owner):
+            MTBoardComments(postId: pid, owner: owner) { w in
+                close()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { MTBoardOpen.go(w, page: page) }
+            }
+            .montanaMotionMeter()   // every rise and fall of the wall's sheets and pages is measured (25.09)
+        case .report(let r, let blocks):
+            MontanaReportSheet(report: r, onBlock: {
+                if blocks, let s = ChatStore.live, !s.isBlocked(r.peer) { s.toggleBlocked(r.peer) }
+            }, offersBlock: blocks)
+            .montanaMotionMeter()
+        case .people(let pid, let owner, let likes):
+            // A NAME UNDER THE MARK OPENS ITS PERSON'S PAGE, as a commenter's face does: the sheet goes down first.
+            MTBoardPeople(postId: pid, owner: owner, likes: likes) { w in
+                close()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { MTBoardOpen.go(w, page: page) }
+            }
+            .montanaMotionMeter()
         }
     }
 }
 
+/// A POST'S PICTURES AND VIDEOS, ONE SCREEN EACH, UP AND DOWN (29.09): the wall's own page on the stack of the page that draws
+/// it -- an application's page of the shared route (MTPageRoute.app, slice S4c2), named as the wall's route named it.
+extension MTPageRoute {
+    static func media(_ s: MTBoardShow) -> MTPageRoute {
+        .app(MTAppPage(id: "m#" + (s.owner ?? "") + "#" + s.start) { AnyView(MTBoardMediaPage(show: s)) })
+    }
+}
+
 /// THE ROAD FROM A WRITER'S NAME TO THEIR PAGE (the author's word 24.09: «a tap on the post's head, where the publisher's name
-/// is, goes to their page»), one for the wall, the feed and the comments: mine is My page (MTBoardRoute.mine), a
+/// is, goes to their page»), one for the wall, the feed and the comments: mine is My page (MTPageRoute.mine), a
 /// correspondent's is theirs; a writer this phone was never told of has none.
 enum MTBoardOpen {
-    static func route(of w: MTBoardWriter) -> MTBoardRoute? {
+    static func route(of w: MTBoardWriter) -> MTPageRoute? {
         switch w {
         case .me: return .mine
         case .peer(let conv):
@@ -114,7 +92,7 @@ enum MTBoardOpen {
         case .unknown: return nil
         }
     }
-    static func go(_ w: MTBoardWriter, page: Binding<MTBoardRoute?>) {
+    static func go(_ w: MTBoardWriter, page: Binding<MTPageRoute?>) {
         if let r = Self.route(of: w) { page.wrappedValue = r }
     }
 }
@@ -150,7 +128,7 @@ struct MTBoardWriteFace: View {
 /// wall was once ONE cell holding a lazy stack, the list took that cell's height before the stack had drawn its posts, and
 /// centred the wall in a cell taller than it — on any phone, as soon as the posts drawn differed from the posts guessed. No
 /// row here is a lazy container and no row presents anything: the sheets and the pages rise from the container
-/// (MTBoardPresenting).
+/// (MTPagePresenting).
 struct MTBoardRows: View {
     let owner: String?          // the wall's owner by reference; nil — my own wall
     /// The wall's side margin: its own on a page of its own (My page), none inside a list that already gives one (24.09).
@@ -158,8 +136,8 @@ struct MTBoardRows: View {
     /// A THREAD'S FACE (MTBoardCell.thread): its posts edge to edge, and no write button at its head. A channel is no wall since
     /// 17.10.2026 (the author's words: «we do not need our own kinds of pages inside channels») -- its posts are its feed's letters.
     var thread = false
-    @Binding var sheet: MTBoardSheet?
-    @Binding var page: MTBoardRoute?
+    @Binding var sheet: MTAppSheet?
+    @Binding var page: MTPageRoute?
     @ObservedObject private var board = MTBoard.shared
 
     var body: some View {
@@ -188,10 +166,10 @@ struct MTBoardRows: View {
             ForEach(posts) { p in
                 VStack(spacing: 12) {
                     MTRepostBar(postId: p.id, wall: owner)   // a repost on its way, over the post it takes (25.09)
-                    MTBoardCell(post: p, owner: owner, onComments: { sheet = .comments(p.id, owner) }, onWriter: open,
-                                onReport: { sheet = .reporting(p, on: owner) },
-                                onOpenWords: { sheet = .comments(p.id, owner) },
-                                onPeople: { likes in sheet = .people(p.id, owner, likes) },
+                    MTBoardCell(post: p, owner: owner, onComments: { sheet = MTBoardSheet.comments(p.id, owner).app }, onWriter: open,
+                                onReport: { sheet = MTBoardSheet.reporting(p, on: owner).app },
+                                onOpenWords: { sheet = MTBoardSheet.comments(p.id, owner).app },
+                                onPeople: { likes in sheet = MTBoardSheet.people(p.id, owner, likes).app },
                                 onShow: { i in page = .media(MTBoardShow(pid: p.id, at: i, owner: owner, feed: nil)) },
                                 thread: thread)
                 }
@@ -243,12 +221,12 @@ struct MTBoardPane: View {
     let owner: String?          // the wall's owner by reference; nil — my own wall
     var edge: CGFloat = MTPageEdge.side
     var thread = false          // a channel's thread (MTBoardRows.thread)
-    @State private var sheet: MTBoardSheet? = nil
-    @State private var page: MTBoardRoute? = nil
+    @State private var sheet: MTAppSheet? = nil
+    @State private var page: MTPageRoute? = nil
     var body: some View {
         LazyVStack(spacing: 0) { MTBoardRows(owner: owner, edge: edge, thread: thread, sheet: $sheet, page: $page) }
             .padding(.top, 2)
-            .modifier(MTBoardPresenting(sheet: $sheet, page: $page))
+            .modifier(MTPagePresenting(sheet: $sheet, page: $page))
             .onAppear { MTBoard.shared.look(owner) }   // THE LOOK ASKS (25.09): a page of another's wall asks for it as it opens
     }
 }
@@ -294,9 +272,8 @@ struct MTBoardCell: View {
     var thread = false
     @ObservedObject private var board = MTBoard.shared
     @ObservedObject private var fold = MTFilterFold.shared   // the filter's fold, opened for the post by the person's tap
-    @ObservedObject private var coinBook = MTLocalCoinLedger.shared   // the coins on the post (03.10)
+    @ObservedObject private var coinBook = MTApps.letterCoinsWatch   // the coins on the post (03.10), behind the coin door (slice S2b b7e)
     @State private var coinRefused = false
-    @State private var reachRefused = false   // a table post whose writer could not be reached by name (02.11.2026)
 
     var body: some View {
         if thread { threadBody } else { plateBody }
@@ -326,8 +303,6 @@ struct MTBoardCell: View {
                 MTBoardMediaView(post: post, owner: owner, sources: draft?.sources ?? sources, onTile: draft?.onTile, inFeed: !onItsWall,
                                  onShow: sending ? nil : onShow)
             }
-            // A POST OF THE TABLE ANSWERS THROUGH ITS WRITER'S @NAME (the author's word 14475, 02.11.2026; it was read and not
-            // answered since 18.10): its marks stand as on any post, and the first one taken opens the road (reached).
             if !sending { counters.allowsHitTesting(draft == nil) }
         }
         .padding(12)
@@ -409,12 +384,9 @@ struct MTBoardCell: View {
     private var header: some View {
         let w = board.writer(of: post, on: owner)
         let opens = opens(w)
-        // A TABLE WRITER'S NAME LEADS TO THEIR PAGE BY THEIR @NAME (the author's word 14475, 02.11.2026: «a tap on the user's name
-        // must lead to the publisher's profile page»): nobody this phone knows yet, but the post names them -- the tap opens the road.
-        let reachable = global && post.nm != nil && w == .unknown
         return HStack(spacing: 10) {
             MTBoardByline(writer: w, name: MTBoard.shownName(w, carried: post.byName), glyph: post.byGlyph, face: post.face, at: post.at,
-                          onOpen: opens && draft == nil ? { onWriter(w) } : (reachable && draft == nil ? { reached { c in onWriter(.peer(c)) } } : nil))
+                          onOpen: opens && draft == nil ? { onWriter(w) } : nil)
             if post.pinned {
                 Image(systemName: "pin.fill").font(.caption).foregroundColor(.secondary)
             }
@@ -477,49 +449,34 @@ struct MTBoardCell: View {
     }
 
     /// THE POST'S PEERS AND MARKS (the author's word 24.09): keepers, likes, comments, reposts — each a mark that
-    /// answers the finger — and the downloads, a count.
+    /// answers the finger — and the eye.
     private var readers: Bool { !global && board.countsViews(on: owner) }
     private var counters: some View {
         HStack(spacing: 0) {
-            mark(post.liked ? "heart.fill" : "heart", post.likes, tint: post.liked ? .red : .secondary, label: "Like",
-                 hold: onPeople.map { f in { f(true) } }) {
-                if global {
-                    let on = !post.liked
-                    reached { c in board.like(post, on: c); MTBoardGlobal.shared.mark(post.id) { s in s.liked = on; s.likes = max(0, s.likes + (on ? 1 : -1)) } }
-                } else {
-                    board.like(post, on: owner)
-                }
+            // A TABLE POST TAKES NO MARK YET (decision 613, the author's word 16254): its writer is reached by no @name any more, and a
+            // mark by a letter to the writer's key without a chat is the next slice; its comments and the eye stay.
+            if !global {
+                mark(post.liked ? "heart.fill" : "heart", post.likes, tint: post.liked ? .red : .secondary, label: "Like",
+                     hold: onPeople.map { f in { f(true) } }) { board.like(post, on: owner) }
             }
             // A REPOST'S COMMENTS ARE ITS ORIGINAL'S (the author's word 25.09): the count of the one thread (MTBoard.thread).
             mark("bubble.left", board.thread(of: post, on: owner)?.post.commentCount ?? 0, label: "Comments") { onComments() }
-            mark(post.kept ? "tray.full.fill" : "tray.and.arrow.down", post.keepers, tint: post.kept ? .accentColor : .secondary, label: "Keepers") {
-                if global {
-                    let on = !post.kept
-                    reached { c in
-                        if on { Task { await board.keep(post, on: c) } } else { board.unkeep(post, on: c) }
-                        MTBoardGlobal.shared.mark(post.id) { s in s.kept = on; s.keepers = max(0, s.keepers + (on ? 1 : -1)) }
-                    }
-                } else if post.kept { board.unkeep(post, on: owner) } else { Task { await board.keep(post, on: owner) } }
-            }
-            mark("arrow.2.squarepath", post.reposts, tint: post.reposted ? .accentColor : .secondary, label: "Repost") {
-                if global {
-                    guard !post.reposted else { return }
-                    reached { c in Task { await board.repost(post, from: c) }; MTBoardGlobal.shared.mark(post.id) { s in s.reposted = true; s.reposts += 1 } }
-                } else if let owner, !post.reposted, !post.mine { Task { await board.repost(post, from: owner) } }
+            if !global {
+                mark(post.kept ? "tray.full.fill" : "tray.and.arrow.down", post.keepers, tint: post.kept ? .accentColor : .secondary, label: "Keepers") {
+                    if post.kept { board.unkeep(post, on: owner) } else { Task { await board.keep(post, on: owner) } }
+                }
+                mark("arrow.2.squarepath", post.reposts, tint: post.reposted ? .accentColor : .secondary, label: "Repost") {
+                    if let owner, !post.reposted, !post.mine { Task { await board.repost(post, from: owner) } }
+                }
             }
             coinMark
             Spacer(minLength: 0)
             // THE EYE IN THE CORNER (the author's words 05.10.2026 21:3x UTC: «under the posts, bottom right, an eye and how many
             // views»): how many people saw the post, by its wall owner's count, in the platform's short form past a thousand; a wall
             // whose owner's build counts none shows no eye rather than a zero nobody counted.
+            // NO DOWNLOADS UNDER A POST (the author's word 16165 p.3, 04.11.2026: «remove the download button under a post beside the
+            // views and the comments»): the row ends with the eye alone.
             HStack(spacing: 12) {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.down.circle")
-                    // USER-DATA: a count, digits only
-                    Text(verbatim: String(post.downloads))
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(Text("Downloads"))
                 if let seen = post.views {
                     HStack(spacing: 4) {
                         Image(systemName: "eye")
@@ -541,23 +498,11 @@ struct MTBoardCell: View {
             .lineLimit(1)
             .fixedSize()
         }
-        .alert("Not sent", isPresented: $reachRefused) {
-            Button("OK", role: .cancel) {}
-        } message: { Text("The writer can be reached only through a chat, and none could be opened: they gave no @name, or the name did not answer.") }
-    }
-    /// THE TABLE POST'S WORD GOES BY THE PIPE ITS WRITER'S @NAME OPENS (the author's word 14475, 02.11.2026): held already -- at once;
-    /// not held -- the meeting door opens one (MTBoard.reachOpen), then the word goes; no name, or a name that did not answer -- the
-    /// person is told, and nothing is sent.
-    private func reached(_ act: @escaping (String) -> Void) {
-        Task { @MainActor in
-            guard let c = await board.reachOpen(post) else { reachRefused = true; return }
-            act(c)
-        }
     }
     /// THE COINS ON THE POST (the author's word 03.10 13:40): a tap gives one, the hold offers five or ten; my own post only
     /// shows what came. The count is this phone's book: what I gave here, or what came to my post.
     @ViewBuilder private var coinMark: some View {
-        let n = coinBook.coins(on: "post:" + post.id)
+        let n = MTApps.coins?.coinsOn("post:" + post.id) ?? 0
         let face = HStack(spacing: 4) {
             MTMintCoin(spinning: false, side: 16)
             // USER-DATA: a count, digits only
@@ -963,8 +908,8 @@ struct MTBoardMediaView: View {
     /// A picture's shape in its post: the frame its writer gave it; a post from before the frame, its poster's own —
     /// held to the shapes a post takes.
     static func shape(of m: MTBoardMedia) -> CGFloat {
-        if let f = m.fr { return CGFloat(MTBoardFrame.held(f.a)) }
-        if let s = MTBoardPoster.shape(m.thumb) { return CGFloat(MTBoardFrame.held(Double(s))) }   // its header alone (25.09)
+        if let f = m.fr { return CGFloat(MTPictureFrame.held(f.a)) }
+        if let s = MTBoardPoster.shape(m.thumb) { return CGFloat(MTPictureFrame.held(Double(s))) }   // its header alone (25.09)
         return 1
     }
     /// A picture's file on this phone, when it is here: the page's pick, or the post's own file in the media store — the
@@ -1303,383 +1248,6 @@ struct MTBoardClip: View {
 /// THE HEAD OF A POST (the author's word 24.09: «show the publisher's avatar in the post too; a tap on the post's
 /// head, where the publisher's name is, goes to their page»): the writer's face and name, and when — one target over its
 /// whole room, when there is a page to open.
-
-/// THE MINT COIN, the one drawing of our coin (the wall's minting byline, and the chat's turn of the feed -- the author's words
-/// 02.10 18:29 and 19:24: «the turn button is our minting coin, it spins when you switch it on»). It spins while it mints and
-/// stands on its face while it does not; with Reduce Motion it never spins, and whoever shows it says «on» by another sign.
-struct MTMintCoin: View {
-    var spinning = true
-    var side: CGFloat = 22
-    /// ONE TURN, THEN REST (the author's words 03.10.2026 13:46 and 13:49 UTC: «at every letter a +1 coin, animated, one turn,
-    /// beautifully, to show how it is minted»; «when the money flow is switched on, an active animation»): the coin makes one
-    /// whole turn when it appears with a `turn` and again every time `turn` changes, and rests on its face between.
-    var turn: Int? = nil
-    /// HOW FAST IT SPINS (the Pantheon on Fire, 03.10: «the coin spins at a speed from 1 to 13»): turns per 1.4 s. The phase runs
-    /// on from where the face stands (MTCoinDial), so a new speed never jumps the coin.
-    var speed: Double = 1
-    @State private var angle: Double = 0
-    @State private var lit = false
-    @State private var dial = MTCoinDial()
-    @Environment(\.accessibilityReduceMotion) private var still
-    var body: some View {
-        Group {
-            if let turn {
-                Face(angle: angle, side: side)
-                    .opacity(lit ? 0.35 : 1)
-                    .onAppear { turnOnce() }
-                    .onChange(of: turn) { _, _ in turnOnce() }
-            } else {
-                TimelineView(.animation(paused: !spinning || still)) { ctx in
-                    Face(angle: spinning && !still ? dial.angle(at: ctx.date, speed: speed) : 0, side: side)
-                }
-            }
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-    /// A whole turn from wherever the coin stands: the angle grows by one turn, so a second turn in a row is a turn too.
-    private func turnOnce() {
-        // WITH REDUCE MOTION THE COIN LIGHTS, IT DOES NOT TURN (the author's words 03.10: «in that mode, without the coin's
-        // animation, show the +1»): a fade, which the setting allows, says a coin was minted on every system.
-        guard !still else {
-            lit = true
-            withAnimation(.easeOut(duration: 0.6)) { lit = false }
-            return
-        }
-        withAnimation(.easeInOut(duration: 1.1)) { angle += 360 }
-    }
-    /// The coin at one angle of a turn -- the face from the front, the back mirrored behind. Animatable, so a turn passes both.
-    private struct Face: View, Animatable {
-        var angle: Double
-        let side: CGFloat
-        var animatableData: Double { get { angle } set { angle = newValue } }
-        var body: some View {
-            let t = angle.truncatingRemainder(dividingBy: 360)
-            let front = t < 90 || 270 < t
-            Image(front ? "CoinFace" : "CoinBack")
-                .resizable().scaledToFill()
-                .frame(width: side, height: side)
-                .clipShape(Circle())
-                .scaleEffect(x: front ? 1 : -1, y: 1)
-                .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.45)
-        }
-    }
-}
-
-/// The spinning coin's phase, carried frame by frame: a change of speed turns on from where the face stands. A frame after a
-/// pause counts a tenth of a second at most, so a coin woken from rest starts where it stopped.
-final class MTCoinDial {
-    private var turned = 0.0
-    private var last: Date?
-    func angle(at now: Date, speed: Double) -> Double {
-        if let last {
-            let step = min(0.1, max(0, now.timeIntervalSince(last)))
-            turned = (turned + step * speed * 360 / 1.4).truncatingRemainder(dividingBy: 360)
-        }
-        last = now
-        return turned
-    }
-}
-
-/// THE SIDES' COINS (MTCoinFlash, the author's words 03.10.2026 21:11 UTC): at every minting in front of the person our coin
-/// rises at the left and the right edge with the count, makes its turn and fades; with Reduce Motion the coins stand and fade.
-/// It never takes a finger.
-struct MTCoinSides: View {
-    @ObservedObject private var flash = MTCoinFlash.shared
-    @State private var rise: CGFloat = 0
-    @State private var shown: Double = 0
-    @Environment(\.accessibilityReduceMotion) private var still
-    var body: some View {
-        HStack {
-            side
-            Spacer()
-            side
-        }
-        .padding(.horizontal, 10)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .offset(y: rise)
-        .opacity(shown)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onChange(of: flash.tick) { _, _ in
-            rise = 40; shown = 1
-            if !still { withAnimation(.easeOut(duration: 0.9)) { rise = -40 } }
-            withAnimation(.easeIn(duration: 0.3).delay(0.6)) { shown = 0 }
-        }
-    }
-    private var side: some View {
-        VStack(spacing: 4) {
-            MTMintCoin(side: 30, turn: flash.tick)
-            // USER-DATA: the coins just minted, a number
-            Text(verbatim: "+" + MTCoinText.count(flash.coins)).font(.headline.monospacedDigit()).foregroundStyle(.primary)
-        }
-        .padding(8)
-        .background(.ultraThinMaterial, in: Capsule())
-    }
-}
-
-/// THE COIN UNDER MANY FINGERS (the author's words 03.10.2026 21:17-21:18 UTC: «multi-tapping over the whole surface of the coin,
-/// with the animation of the crediting»): the platform's own touches, every finger its own, over the coin's whole circle -- a
-/// SwiftUI button answers one touch at a time. This view takes the finger by design (the Pantheon's coin); it answers each touch
-/// with the platform's light tap and hands the point it touched to the one who mints.
-struct MTCoinTapPad: UIViewRepresentable {
-    /// How far past the coin's rim a finger still mints: the pad stands this much outside the coin on every side.
-    static let rim: CGFloat = 12
-    /// THE PAGE IS LOCKED WHILE THE GAME BURNS (the author's word 04.10.2026 00:58 UTC: «there is still scrolling of the wallet's page when
-    /// I mint by swipes -- the flag must switch the page's scroll off fully once the game is on»): the pad holds its page's scroll and its
-    /// pan off for as long as this is true, whatever any pass of the page's body sets.
-    var locked = false
-    /// A finger landed on the coin -- before any coin of it (MTPantheon.touched).
-    var onDown: (() -> Void)? = nil
-    /// The last finger left the coin (MTPantheon.released).
-    var onUp: (() -> Void)? = nil
-    /// A finger held on the coin nine seconds without a swipe (Pad.armNine).
-    var onLongHold: (() -> Void)? = nil
-    /// A finger landed anywhere on the coin's page, the coin too (Pad.Watch).
-    var onPageTouch: (() -> Void)? = nil
-    let onTouch: (CGPoint) -> Void
-    func makeUIView(context: Context) -> Pad {
-        let v = Pad()
-        v.isMultipleTouchEnabled = true
-        v.backgroundColor = .clear
-        v.onTouch = onTouch
-        v.onDown = onDown
-        v.onUp = onUp
-        v.onLongHold = onLongHold
-        v.onPageTouch = onPageTouch
-        v.locked = locked
-        return v
-    }
-    func updateUIView(_ v: Pad, context: Context) { v.onTouch = onTouch; v.onDown = onDown; v.onUp = onUp; v.onLongHold = onLongHold; v.onPageTouch = onPageTouch; v.locked = locked }
-    final class Pad: UIView, UIGestureRecognizerDelegate {
-        var onTouch: ((CGPoint) -> Void)?
-        var onDown: (() -> Void)?
-        var onUp: (() -> Void)?
-        var onLongHold: (() -> Void)?
-        var onPageTouch: (() -> Void)?
-        var locked = false { didSet { if locked != oldValue { hold() } } }
-        /// THE NINE SECONDS (the author's word 04.10.2026 09:28 UTC: «if I press the coin in the wallet and hold it nine seconds, the
-        /// auto minting turns on -- an easter egg: not advertised, made exactly»): a finger that stays on the coin nine seconds, never
-        /// swiping, gives its word once; a lift or a swipe's coin lets it go.
-        static let nine: Double = 9
-        private var nineWork: DispatchWorkItem?
-        private func armNine() {
-            nineWork?.cancel()
-            let w = DispatchWorkItem { [weak self] in self?.nineWork = nil; self?.onLongHold?() }
-            nineWork = w
-            DispatchQueue.main.asyncAfter(deadline: .now() + Self.nine, execute: w)
-        }
-        private func disarmNine() { nineWork?.cancel(); nineWork = nil }
-        private let feel = UIImpactFeedbackGenerator(style: .light)
-        /// A SWIPE SPINS THE COIN TOO (the author's word 04.10 00:58: «any swipes spin the coin to minting as well»): every
-        /// stretch of the fingers' path over the coin is one more touch -- the coin's own pan, so the page under it does not scroll.
-        static let stretch: CGFloat = 28
-        private var travelled: CGFloat = 0
-        override init(frame: CGRect) {
-            super.init(frame: frame)
-            let pan = UIPanGestureRecognizer(target: self, action: #selector(swiped(_:)))
-            pan.cancelsTouchesInView = false
-            pan.maximumNumberOfTouches = 5
-            pan.delegate = self
-            addGestureRecognizer(pan)
-            let down = Down(target: self, action: #selector(held(_:)))
-            down.cancelsTouchesInView = false
-            down.delegate = self
-            addGestureRecognizer(down)
-        }
-        required init?(coder: NSCoder) { nil }
-        @objc private func swiped(_ g: UIPanGestureRecognizer) {
-            switch g.state {
-            case .began:
-                travelled = 0
-                g.setTranslation(.zero, in: self)
-            case .changed:
-                let t = g.translation(in: self)
-                travelled += hypot(t.x, t.y)
-                g.setTranslation(.zero, in: self)
-                while Self.stretch <= travelled {
-                    travelled -= Self.stretch
-                    disarmNine()   // a swipe mints; it is no hold
-                    onTouch?(g.location(in: self))
-                    feel.impactOccurred()
-                }
-            default: break
-            }
-        }
-        /// THE PAGE STANDS WHILE A FINGER IS ON THE COIN (the author's word 03.10.2026 23:58 UTC: «while minting, the wallet's page
-        /// must not scroll on T1»): the page's lock waited for a minted tap (scrollDisabled by the speed), and the list holds a touch
-        /// back for a moment before the coin hears it (delaysContentTouches) -- a swipe on the coin moved the page first. A recognizer
-        /// that begins at the touch itself switches the page's pan off until the last finger leaves the coin.
-        private weak var page: UIScrollView?
-        private var fingers = false
-        private func enclosing() -> UIScrollView? {
-            var v = superview
-            while let s = v, !(s is UIScrollView) { v = s.superview }
-            return v as? UIScrollView
-        }
-        /// EVERY FINGER ON THE PAGE IS HEARD (the author's word 04.10.2026 10:33 UTC: the auto minting «deactivates at any action»):
-        /// a recognizer that never recognizes stands on the page's own scroll view, hears each finger that lands on the page -- on a
-        /// row, a button, the coin -- and lets it go on to what it touched. It leaves with the coin.
-        private var watch: Watch?
-        override func didMoveToWindow() {
-            super.didMoveToWindow()
-            if window == nil {
-                if let w = watch { w.view?.removeGestureRecognizer(w) }
-                watch = nil
-                return
-            }
-            guard watch == nil, let page = enclosing() else { return }
-            let w = Watch { [weak self] in self?.onPageTouch?() }
-            w.cancelsTouchesInView = false
-            w.delaysTouchesBegan = false
-            w.delaysTouchesEnded = false
-            page.addGestureRecognizer(w)
-            watch = w
-        }
-        private final class Watch: UIGestureRecognizer {
-            private let heard: () -> Void
-            init(_ heard: @escaping () -> Void) { self.heard = heard; super.init(target: nil, action: nil) }
-            override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
-                heard()
-                state = .failed
-            }
-        }
-        /// The page moves only when no finger is on the coin and the game is out.
-        private func hold() {
-            if page == nil { page = enclosing() }
-            let free = !fingers && !locked
-            page?.panGestureRecognizer.isEnabled = free
-            page?.isScrollEnabled = free
-        }
-        @objc private func held(_ g: UIGestureRecognizer) {
-            switch g.state {
-            case .began:
-                fingers = true
-                onDown?()
-                hold()
-                armNine()
-            case .ended, .cancelled, .failed:
-                fingers = false
-                disarmNine()
-                hold()
-                onUp?()
-            default: break
-            }
-        }
-        /// The coin's own two hands -- the touch and the swipe -- work together; nothing else is touched.
-        func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
-            g.view === other.view
-        }
-        /// A touch on the coin the moment it lands: begun at the first finger, ended when the last one leaves.
-        private final class Down: UIGestureRecognizer {
-            private var fingers = 0
-            override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
-                fingers += touches.count
-                state = state == .possible ? .began : .changed
-            }
-            override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) { lift(touches.count) }
-            override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) { lift(touches.count) }
-            private func lift(_ n: Int) {
-                fingers = max(0, fingers - n)
-                if fingers == 0 { state = .ended }
-            }
-            override func reset() { fingers = 0 }
-        }
-        /// The coin's circle is the target, its corners are not.
-        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-            hypot(point.x - bounds.midX, point.y - bounds.midY) <= min(bounds.width, bounds.height) / 2
-        }
-        override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-            for t in touches {
-                onTouch?(t.location(in: self))
-                feel.impactOccurred()
-            }
-        }
-    }
-}
-
-/// YOUR PLACE ON THE COIN (the author's words 03.10 21:41 and 22:00: «take the badge off the minting coin»; «on the coins' badge
-/// your number in the rating»): the box of π the person's balance fills (MTPiLevels.place), as the platform's badge; nothing
-/// below the first box. The balance itself stands on the wallet's page (the wallet's mark wears no badge, 18.10.2026).
-struct MTCoinPlaceBadge: View {
-    @ObservedObject private var split = MTCoinSplit.shared   // the available, the one number of the person's coins (fold-7)
-    @ObservedObject private var board = MTCoinBoard.shared
-    @ObservedObject private var top = MTTopNet.shared
-    // THE NUMBER IN THE COMMON RATING (the author's word 03.10 22:25: «the coin's badge is the number in the common rating»): the
-    // person's place in the one Montana top once a node keeps it (MTTopNet, 04.10) -- none while its owner hides the coins --
-    // and among the people who told their balance before that (MTCoinBoard.rank).
-    var body: some View {
-        MTCountBadge(top.answered ? (top.rank ?? 0) : board.rank(mine: split.available)).offset(x: 6, y: -6).allowsHitTesting(false)
-    }
-}
-
-/// THE TOP THIRTEEN (the author's words 03.10 21:56-21:59: «a table of the top thirteen in the wallet by a button»; «boxes by the
-/// number π, ascending by share of emission»): the thirteen boxes, each its coins and its share of a Montana; the boxes the
-/// balance fills wear the check, the person's place stands out.
-struct MTPiLevelsSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var split = MTCoinSplit.shared   // the available, the one number of the person's coins (fold-7)
-    var body: some View {
-        let place = MTPiLevels.place(split.available)
-        // THE LEVELS AS A TIMECHAIN, THE NEWEST ON TOP (the author's word 04.10 00:51: «every new level on top, as comments in the
-        // TimeChain, revealing π as your balance; without borders, 13 always»): the next level to reach stands on top, then the
-        // levels reached, the newest first -- thirteen at a time, each with π revealed to it.
-        let top = min(MTPiLevels.all.count, place + 1)
-        let levels = Array((max(1, top - MTPiLevels.shown + 1)...top).reversed())
-        NavigationStack {
-            List {
-                ForEach(levels, id: \.self) { n in
-                    let coins = MTPiLevels.all[n - 1], reached = n <= place
-                    HStack(spacing: 12) {
-                        // USER-DATA: the level's number
-                        Text(verbatim: String(n)).font(.headline.monospacedDigit()).frame(width: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            // USER-DATA: π revealed to this level
-                            Text(verbatim: "π " + MTPiLevels.revealed(n)).font(.headline.monospacedDigit())
-                            // USER-DATA: the level's coins, short and as a share of a Montana
-                            Text(verbatim: MTPiLevels.short(coins) + " · " + MTChatMint.montana(coins) + " " + MTCoinBook.ticker).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                        }
-                        Spacer(minLength: 0)
-                        if reached { Image(systemName: "checkmark.circle.fill").foregroundColor(Color.accentColor) }
-                    }
-                    .opacity(reached ? 1 : 0.55)
-                    .frame(minHeight: 44)
-                    .listRowBackground(n == place ? AnyView(Color.accentColor.opacity(0.22)) : AnyView(MTGlassRowPlate()))
-                }
-            }
-            .scrollContentBackground(.hidden)
-            .montanaPageGround()
-            .navigationTitle("Levels of π")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaBarMark(glyph: "xmark", label: "Close") { dismiss() } } }
-        }
-    }
-}
-
-/// THE MONEY FLOW BEGINS (the author's word 03.10.2026 13:49 UTC: «when it is switched on, an active animation»): the coin,
-/// large, makes one turn in the middle of the chat under its name, and leaves; the row of the chat stays (MTMoneyFlowRow).
-struct MTMoneyFlowBegins: View {
-    let tick: Int
-    @State private var shown: Double = 0
-    @State private var scale: CGFloat = 0.6
-    var body: some View {
-        VStack(spacing: 12) {
-            MTMintCoin(side: 120, turn: tick)
-            Text("Money Flow").font(.title2.bold())
-        }
-        .padding(28)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .scaleEffect(scale)
-        .opacity(shown)
-        .allowsHitTesting(false)
-        .onChange(of: tick) { _, _ in
-            shown = 0; scale = 0.6
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { shown = 1; scale = 1 }
-            withAnimation(.easeIn(duration: 0.35).delay(1.4)) { shown = 0; scale = 0.9 }
-        }
-    }
-}
-
 struct MTBoardByline: View {
     let writer: MTBoardWriter
     let name: String
@@ -1897,7 +1465,7 @@ struct MTBoardComposer: View {
     @State private var linkURL: String
     @State private var linkGen: Int
     /// THE POST'S FIELD TAKES THE KEYS AT THE PAGE'S OPENING (24.09, the author's word: «the post's field on T3's wall was
-    /// not clickable the first time»): as the business card's page does, and as the platform's own «new message» pages
+    /// not clickable the first time»): as the contact card's page does, and as the platform's own «new message» pages
     /// do — nothing to tap before writing; a tap anywhere on the post gives the field the keys again.
     @FocusState private var textFocused: Bool
 
@@ -1915,7 +1483,7 @@ struct MTBoardComposer: View {
         _linkGen = State(initialValue: 0)
     }
 
-    struct Framing: Identifiable { let id: String; let image: UIImage; let frame: MTBoardFrame }
+    struct Framing: Identifiable { let id: String; let image: UIImage; let frame: MTPictureFrame }
 
     private var empty: Bool { text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && files.isEmpty }
     /// The draft as the page holds it this moment — what the wall's store is handed at every change.
@@ -2006,7 +1574,7 @@ struct MTBoardComposer: View {
             // THE PICTURE'S FRAME (the author's word 24.09: «editing of the photo — its size, the field of it the post
             // shows»): the one crop of the app, with the shapes a post takes under it as miniatures of the picture.
             .fullScreenCover(item: $framing) { f in
-                MTFrameCropView(image: f.image, rim: .tile, shapes: MTBoardFrame.shapes, start: f.frame) { kept in
+                MTFrameCropView(image: f.image, rim: .tile, shapes: MTPictureFrame.shapes, start: f.frame) { kept in
                     if let kept, let k = files.firstIndex(where: { $0.id == f.id }) { files[k].fr = kept }
                     framing = nil
                     MontanaTrace.mark("post_frame", kept == nil ? "left" : "set")
@@ -2112,7 +1680,7 @@ struct MTBoardComposer: View {
             guard let img = await Task.detached(priority: .userInitiated, operation: {
                 MTBoardImage.upright(url, kind: kind, longest: 2048)
             }).value, 0 < img.size.width, 0 < img.size.height else { return }
-            let now = files.first(where: { $0.id == id })?.fr ?? MTBoardFrame.own(img.size)
+            let now = files.first(where: { $0.id == id })?.fr ?? MTPictureFrame.own(img.size)
             framing = Framing(id: id, image: img, frame: now)
         }
     }
@@ -2216,7 +1784,7 @@ struct MTBoardComposer: View {
             let seen = await Task.detached(priority: .userInitiated) { MTBoardImage.upright(url, kind: kind, longest: 256)?.size }.value
             guard let seen, 0 < seen.width, 0 < seen.height,
                   let k = files.firstIndex(where: { $0.id == id }), files[k].fr == nil else { return }
-            files[k].fr = MTBoardFrame.own(seen)
+            files[k].fr = MTPictureFrame.own(seen)
         }
     }
 
@@ -2359,7 +1927,6 @@ extension MTBoardEditor {
 struct MTBoardChainPage: View {
     let post: MTBoardSeen
     @Environment(\.dismiss) private var dismiss
-    @State private var state: Result<MTWalletCore.Snapshot, MTWalletCore.Absence>?
     var body: some View {
         NavigationStack {
             List {
@@ -2383,24 +1950,7 @@ struct MTBoardChainPage: View {
                         }
                     }
                 } header: { Text("TimeChain") }
-                Section {
-                    if let state, case .success(let wallet) = state, !wallet.windows.isEmpty {
-                        ForEach(wallet.windows) { window in
-                            VStack(alignment: .leading, spacing: 6) {
-                                LabeledContent("Window", value: String(window.id))
-                                LabeledContent("Right to a share", value: String(window.share))
-                                LabeledContent("Redemption window", value: String(window.acceptedIn))
-                            }
-                        }
-                    } else if let state, case .failure(let why) = state {
-                        Text(MTWalletCore.said(why)).foregroundStyle(.secondary)
-                    } else if let state, case .success = state {
-                        Text("No confirmed window yet").foregroundStyle(.secondary)
-                    } else {
-                        Text(MTWalletCore.said(nil)).foregroundStyle(.secondary)
-                    }
-                } header: { Text("Participation") }
-                  footer: { Text("A right becomes a wallet note only after the core confirms its redemption.") }
+                if let coins = MTApps.coins { coins.participation() }   // the coins' own section (slice S2b b7e)
             }
             .navigationTitle("TimeChain")
             .navigationBarTitleDisplayMode(.inline)
@@ -2418,10 +1968,6 @@ struct MTBoardChainPage: View {
                     }
                 }
             }
-            .task {
-                let result = await Task.detached(priority: .utility) { MTWalletCore.read() }.value
-                state = result
-            }
         }
     }
 }
@@ -2433,7 +1979,7 @@ final class MTPostLinkItem: NSObject, UIActivityItemSource {
     let title: String
     let image: UIImage?
     init?(_ p: MTBoardSeen, on wall: String?) {
-        guard let u = URL(string: MTBoard.linkPost(p, on: wall)) else { return nil }
+        guard let u = URL(string: MTBoard.linkPost(p.id)) else { return nil }
         url = u
         let words = p.text.trimmingCharacters(in: .whitespacesAndNewlines)
         title = words.isEmpty ? p.byName : p.byName + " · " + String(words.prefix(160))
@@ -2702,9 +2248,9 @@ struct MTBoardComments: View {
     }
 
     /// A COMMENT'S MENU IS THE SYSTEM'S (the author's word 02.10: «a long press on a comment -- the native grey menu, share the
-    /// comment and its number»): its short link, its words, its number in the chain.
+    /// comment and its number»): its link, its words, its number in the chain.
     @ViewBuilder private func menu(_ c: MTBoardComment, number n: Int, in t: (wall: String?, post: MTBoardSeen)) -> some View {
-        Button { if let u = URL(string: MTBoard.linkComment(t.post, n, c, on: t.wall)) { MTShare.present([u]) } } label: {
+        Button { if let u = URL(string: MTBoard.linkComment(t.post.id, c.id)) { MTShare.present([u]) } } label: {
             Label("Share", systemImage: "square.and.arrow.up")
         }
         if !c.text.isEmpty {
@@ -2743,10 +2289,6 @@ struct MTBoardComments: View {
         let held = parts.count >= 2 && MTBoard.shared.place(of: parts[1]) != nil
         if parts.count == 2, parts.first == "post", held { return (parts[1], nil) }
         if parts.count == 3, parts.first == "comment", held { return (parts[1], parts[2]) }
-        if parts.count == 2 || parts.count == 3, let head = parts.first, head.hasPrefix("@"), let n = Int(parts[1]),
-           let hit = MTBoard.shared.find(name: String(head.dropFirst()), number: n, comment: parts.count == 3 ? Int(parts[2]) : nil) {
-            return hit
-        }
         return nil
     }
     private func send() {
@@ -2884,23 +2426,6 @@ struct MTBoardPostPlate: View {
     }
 }
 
-/// THE GLASS OF A PLATE IS RENDERED IN ITS OWN CONTAINER (26.09, the author's word: «check and close at the root every doubt, so
-/// that the glass works one hundred percent right»). The platform's own words (SwiftUI, «Applying Liquid Glass to custom views»):
-/// «The glassEffect(_:in:) modifier captures the content to send to the container to render. Apply the glassEffect(_:in:)
-/// modifier after other modifiers that affect the appearance of the view.» A plate's glass had no container of its own: the
-/// implicit one stood far above it, and between the two stood our changes of look made after the glass -- the clip of the
-/// bubble's shape (thirteen of them), the feed's flip, the cell. In its own GlassEffectContainer the glass is rendered where it
-/// stands, and whatever the plate's hosts do after is done to a finished plate. One owner of the plate's glass: every plate of
-/// the tree -- a letter's, a post's, a row's, a card's, a circle's, a sheet's -- stands on it.
-@available(iOS 26.0, *)
-struct MTGlassPlate<S: Shape>: View {
-    var glass: Glass = .regular
-    let shape: S
-    var body: some View {
-        GlassEffectContainer { Color.clear.glassEffect(glass, in: shape) }
-    }
-}
-
 /// A POST'S WORDS FOLD (26.09; kept only for posts by the author's word 27.09). A post whose words take more than eight
 /// lines shows its first eight, the ellipsis and the chevron; the finger opens the whole post on MTLetterPage. Its
 /// size is a function of its words, its type size and its width alone: the list asks it before the row shows, the view lays
@@ -2955,7 +2480,7 @@ final class MTPostTextView: UIView, UIGestureRecognizerDelegate {
         words.textColor = .label
         words.dataDetectorTypes = []
         words.tintColor = UIColor(MontanaOctagon.platformBlue)
-        words.delegate = MTPostLinkPeek.shared   // a post's link: its preview on a hold, its page at a tap (06.10)
+        words.delegate = MTTextLinks.shared   // a post's link: its preview on a hold, its page at a tap (06.10)
         addSubview(words)
         chevron.tintColor = .label
         chevron.contentMode = .center
@@ -3040,22 +2565,21 @@ final class MTPostTextView: UIView, UIGestureRecognizerDelegate {
 /// be clickable and handy for a preview of the post and the way to it»): a tap opens the post's page at once, here, by the one
 /// road of every link (MontanaMeeting.handleLink), with no round through the system; a hold rises the platform's own preview -- the
 /// post as its wall draws it -- with its menu: open, share, copy the link. A link of a post this phone does not hold offers the
-/// menu alone; every other link keeps the platform's own tap and hold. One delegate for every text view that carries links.
-final class MTPostLinkPeek: NSObject, UITextViewDelegate {
+/// menu alone; every other link keeps the platform's own tap and hold. Every text view's one delegate (MTTextLinks) asks it
+/// through the wall's door (slice S4c2).
+@MainActor final class MTPostLinkPeek {
     static let shared = MTPostLinkPeek()
     private var shown: UIViewController?   // the latest preview's host, held while its preview may stand
     private static func wall(_ url: URL) -> Bool { url.scheme?.lowercased() == "montana" && url.host?.lowercased() == "wall" }
 
-    func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
-        guard case .link(let url) = textItem.content else { return defaultAction }
-        // A YouTube link plays here, in YouTube's own player (MTYouTube, the author's word 17.10.2026 13:4x UTC).
-        if MTLinkPreviewBuilder.youtube(url) != nil { return UIAction { _ in _ = MTYouTube.play(url) } }
-        guard Self.wall(url) else { return defaultAction }
+    /// A post's link at a tap: its page, here; nil -- no link of the wall.
+    func action(_ url: URL) -> UIAction? {
+        guard Self.wall(url) else { return nil }
         return UIAction { _ in MontanaMeeting.handleLink(url) }
     }
-    func textView(_ textView: UITextView, menuConfigurationFor textItem: UITextItem,
-                  defaultMenu: UIMenu) -> UITextItem.MenuConfiguration? {
-        guard case .link(let url) = textItem.content, Self.wall(url) else { return .init(preview: .default, menu: defaultMenu) }
+    /// A post's link on a hold: the post as its wall draws it, with its menu; nil -- no link of the wall.
+    func menu(_ url: URL, in textView: UITextView) -> UITextItem.MenuConfiguration? {
+        guard Self.wall(url) else { return nil }
         let menu = UIMenu(children: [
             UIAction(title: String(localized: "Open"), image: UIImage(systemName: "arrow.up.forward.app")) { _ in MontanaMeeting.handleLink(url) },
             UIAction(title: String(localized: "Share"), image: UIImage(systemName: "square.and.arrow.up")) { _ in MTShare.present([url]) },
@@ -3072,54 +2596,6 @@ final class MTPostLinkPeek: NSObject, UITextViewDelegate {
         shown = host
         MontanaTrace.mark("link_peek", "post media=\(post.media.count) h=\(Int(fit.height))")
         return .init(preview: .view(host.view), menu: menu)
-    }
-}
-
-/// A ROW'S GLASS PLATE (the author's word 25.09: «transparent liquid glass, a transparent glass plate, not a dead grey»): the
-/// system's glass where it has it, the thin material before — the plate the field and the bar wear.
-struct MTGlassRowPlate: View {
-    var body: some View {
-        if #available(iOS 26.0, *), MontanaSkin.isNative {
-            MTGlassPlate(shape: Rectangle())
-        } else {
-            Rectangle().fill(MontanaOctagon.barMaterial)
-        }
-    }
-}
-
-/// A CARD'S GLASS PLATE (the author's word 25.09: «the settings' panel of buttons transparent, in the native liquid glass, as
-/// everything else»): the system's glass in the card's own rounded shape where it has it, the thin material before.
-struct MTGlassCardPlate: View {
-    var cornerRadius: CGFloat = 12
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        if #available(iOS 26.0, *), MontanaSkin.isNative {
-            MTGlassPlate(shape: shape)
-        } else {
-            shape.fill(MontanaOctagon.barMaterial)
-        }
-    }
-}
-
-struct MTGlassCirclePlate: View {
-    var body: some View {
-        if #available(iOS 26.0, *), MontanaSkin.isNative {
-            MTGlassPlate(shape: Circle())
-        } else {
-            Circle().fill(MontanaOctagon.barMaterial)
-        }
-    }
-}
-
-/// A SHEET OF GLASS (25.09): the page behind shows through the system's own glass where it has it, the thin material before —
-/// the ground of the new post's page, a tree of its own on the platform's sheet (its host's own view is clear).
-struct MTGlassSheet: ViewModifier {
-    @ViewBuilder func body(content: Content) -> some View {
-        if #available(iOS 26.0, *), MontanaSkin.isNative {
-            content.background { MTGlassPlate(shape: Rectangle()).ignoresSafeArea() }
-        } else {
-            content.background { Rectangle().fill(.ultraThinMaterial).ignoresSafeArea() }
-        }
     }
 }
 
@@ -3176,7 +2652,7 @@ struct MTBoardDraftLive: View {
 /// the posts on their way first, then the most seen (the author's words 06.10: «rank by views» -- «only the feed»).
 /// What stands here is what the walls' owners carried to this phone. A post on the screen is named to its wall's owner once
 /// (MTBoard.view, the author's word 06.10: «people, only the number»), who counts it and shows nobody who; nothing else
-/// of a look leaves the phone (the critic's P1). The sheets and the pages rise from the page itself (MTBoardPresenting), never
+/// of a look leaves the phone (the critic's P1). The sheets and the pages rise from the page itself (MTPagePresenting), never
 /// from a cell the list may let go.
 struct MTFeedTabView: View {
     let panel: MontanaTimePanel
@@ -3189,8 +2665,8 @@ struct MTFeedTabView: View {
     /// Room kept at the bottom for the floating player (the chats page's reserve, 26.09): the posts scroll under it, «Write» above it.
     var reserve: CGFloat = 0
     @ObservedObject private var board = MTBoard.shared
-    @State private var sheet: MTBoardSheet? = nil
-    @State private var page: MTBoardRoute? = nil
+    @State private var sheet: MTAppSheet? = nil
+    @State private var page: MTPageRoute? = nil
     @Environment(\.mtPaneLive) private var live   // the feed is looked at (25.09): the moment it is, every wall it draws is asked for
     private static let outMark = "out#"
     private static let draftMark = "draft#"   // my own draft, over the posts on their way (25.09)
@@ -3235,7 +2711,7 @@ struct MTFeedTabView: View {
         .onAppear { if live { board.lookFeed() } }
         .onChange(of: live) { _, on in if on { board.lookFeed() } else { board.leaveFeed() } }
         .onDisappear { board.leaveFeed() }
-        .modifier(MTBoardPresenting(sheet: $sheet, page: $page))
+        .modifier(MTPagePresenting(sheet: $sheet, page: $page))
     }
     private static func row(_ id: String) -> Chat {
         Chat(name: id, lastMessage: "", time: "", unread: 0, status: "", convId: id)
@@ -3269,10 +2745,10 @@ struct MTFeedTabView: View {
             VStack(alignment: .leading, spacing: 4) {
                 MTRepostBar(postId: it.post.id, wall: it.owner)   // the feed's repost shows its bar too (the critic 25.09)
                 if it.post.own != true { wallLink(it) }
-                MTBoardCell(post: it.post, owner: it.owner, onComments: { sheet = .comments(it.post.id, it.owner) },
-                            onWriter: open, onItsWall: false, onReport: { sheet = .reporting(it.post, on: it.owner) },
-                            onOpenWords: { sheet = .comments(it.post.id, it.owner) },
-                            onPeople: { likes in sheet = .people(it.post.id, it.owner, likes) },
+                MTBoardCell(post: it.post, owner: it.owner, onComments: { sheet = MTBoardSheet.comments(it.post.id, it.owner).app },
+                            onWriter: open, onItsWall: false, onReport: { sheet = MTBoardSheet.reporting(it.post, on: it.owner).app },
+                            onOpenWords: { sheet = MTBoardSheet.comments(it.post.id, it.owner).app },
+                            onPeople: { likes in sheet = MTBoardSheet.people(it.post.id, it.owner, likes).app },
                             onShow: { i in page = .media(MTBoardShow(pid: it.post.id, at: i, owner: it.owner,
                                                                       feed: query.trimmingCharacters(in: .whitespacesAndNewlines))) })
             }
@@ -3547,4 +3023,42 @@ struct MTBoardShownVideo: View {
         v.preferredForwardBufferDuration = 8
         return v
     }
+}
+
+/// THE WALL'S VIEWS BEHIND ITS DOOR (MTApps.wall, slice S4c2 p5): what shared pages draw of the wall -- the feed, a wall on a page,
+/// its rows inside a list, a post's link, the music's source, the page ground's preview and the two rules' page -- drawn here.
+extension MTWallAppDoor {
+    @MainActor func feed(panel: MontanaTimePanel, query: String, writes: Bool, reserve: CGFloat) -> AnyView {
+        AnyView(MTFeedTabView(panel: panel, query: query, writes: writes, reserve: reserve))
+    }
+    @MainActor func pane(owner: String?) -> AnyView { AnyView(MTBoardPane(owner: owner)) }
+    @MainActor func rows(owner: String?, edge: CGFloat, sheet: Binding<MTAppSheet?>, page: Binding<MTPageRoute?>) -> AnyView {
+        AnyView(MTBoardRows(owner: owner, edge: edge, sheet: sheet, page: page))
+    }
+    func look(_ owner: String?) { MTBoard.shared.look(owner) }
+    @MainActor func linkAction(_ url: URL) -> UIAction? { MTPostLinkPeek.shared.action(url) }
+    @MainActor func linkMenu(_ url: URL, in view: UITextView) -> UITextItem.MenuConfiguration? { MTPostLinkPeek.shared.menu(url, in: view) }
+    func openComments(_ url: URL) -> Bool { MTBoardComments.open(url) }
+    /// THE SOURCE «WALLS» (the author's word 30.09 ~00:55): the feed's posts and my wall's, as the music's queue (MTBoardPlaylist).
+    @MainActor func tracks() -> [MusicTrack] {
+        let board = MTBoard.shared
+        let posts: [(post: MTBoardSeen, wall: String?)] = board.feed().map { it in (post: it.post, wall: it.owner) }
+            + board.posts(on: nil).map { p in (post: p, wall: String?.none) }
+        return MTBoardPlaylist.tracks(posts)
+    }
+    /// MY PAGE'S PREVIEW, ITS WALL (the author's word 26.09): the write button, one drawing (MTBoardWriteFace), and one post of my
+    /// wall saying what it is (MTBoardCell), as MTPagePreviewDress lays them under my head.
+    @MainActor func preview() -> AnyView {
+        AnyView(VStack(spacing: 12) {
+            MTBoardWriteFace().padding(.horizontal, MTPageEdge.side)
+            MTBoardCell(post: Self.sample, owner: nil, onComments: {}).padding(.horizontal, MTPageEdge.side)
+        })
+    }
+    private static var sample: MTBoardSeen {
+        MTBoardSeen(id: "preview", byName: E2E.myDisplayName(), byGlyph: E2E.myFaceGlyph(), at: Date().timeIntervalSince1970,
+                    text: String(localized: "An example of a post on your page", bundle: MTLanguage.bundle), media: [],
+                    pinned: false, keepers: 0, likes: 0, downloads: 0, reposts: 0, comments: [], commentCount: 0,
+                    liked: false, kept: false, reposted: false, mine: true, own: true)
+    }
+    @MainActor func rulePage(write: Bool) -> AnyView { AnyView(MTBoardRulePage(act: write ? .write : .see)) }
 }

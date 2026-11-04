@@ -1,0 +1,15 @@
+// THE PRODUCTS' NAMES -- ONE OWNER EACH (constitution article 15, the author's word 04.11.2026 11:02 UTC, link 16053: «a name has
+// one source of truth, it is an invariant ... do not allow several owners anywhere»). Every name a person reads as an app's own --
+// under the icon, on the share sheet, in the «Open in» choice between the two apps (the author's word 16049) -- is this file's line;
+// the project, both Info.plists and the code only read it. The project's base configuration (Debug and Release) is this file;
+// tools/mt-names-check.py keeps every other place a reader.
+MT_NAME_PROTOCOL = MT Protocol
+MT_NAME_PROTOCOL_MAC = Montana Core
+MT_NAME_MESSENGER = Montana
+
+// THE APPS' LINK SCHEMES -- ONE OWNER EACH (the author's word 16667, 05.11.2026: «montana:// for the Messenger and mt-protocol://»):
+// each app registers its own, both Info.plists name both to ask whether the other stands, and the «Open in» choice reads them
+// from Info.plist (MTSiblingApps). montana:// is also the letters' own link form (montana://r/, coin, wall): every app reads it
+// in its text views by the one entrance (MontanaMeeting.handleLink), never by the system's round.
+MT_SCHEME_PROTOCOL = mt-protocol
+MT_SCHEME_MESSENGER = montana

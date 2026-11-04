@@ -4,7 +4,7 @@
 // the sound before the person's own tap and nothing cuts another app's music; 15:1x, «YouTube in our app like picture in picture»,
 // «the native picture in picture, the system's, when YouTube is turned on»; 18.10.2026 08:1x, «the picture in picture is not alive
 // either and nothing takes a tap -- the behaviour as in the chat everywhere, loading natively into our mini player».
-// A YouTube link in a letter, in a card or on a wall, and a row the music page's search found, play in YouTube's own player inside
+// A YouTube link in a letter, in a card or on a wall plays in YouTube's own player inside
 // our mini player (MTYouTubeStage): the person stays on the screen they were on, the window stands over it and moves under the
 // finger, and the system's full-screen player is one mark away.
 //
@@ -29,37 +29,14 @@
 // the session with the word that lets another app's music go on. A sound of ours that starts rests YouTube where it stands: one
 // sound at a time.
 //
-// THE SEARCH GOES BY OUR OWN SERVICE (Info.plist MontanaService): YouTube's key lives there, never in this open code, where anyone could
-// spend its daily count; YouTube sees the service ask, never the person's address. The words are asked once they settle -- the
-// count is a hundred searches a day for the whole app -- and a service that does not answer shows no YouTube row at all.
+// NO SEARCH LEAVES THE APP (the author's word 04.11.2026 13:21 UTC: «only internal, and no external services of music search»):
+// the music page finds the person's own tracks alone; a YouTube link a person sends still plays here.
 
 import SwiftUI
 import UIKit
 import WebKit
 
 enum MTYouTube {
-    /// One video YouTube's search found: its id, its title and its channel as YouTube gives them, its length in seconds.
-    struct Found: Decodable, Equatable {
-        let id: String
-        let t: String
-        let c: String
-        let s: Int
-    }
-    private struct Answer: Decodable { let items: [Found] }
-
-    /// The music page's rows of YouTube: the head that names the source, then a row for each video.
-    static let headRow = "youtube:"
-    static let rowPrefix = "youtube:v:"
-    static func rows(_ list: [Found]) -> [Chat] {
-        guard !list.isEmpty else { return [] }
-        let head = Chat(name: headRow, lastMessage: "", time: "", unread: 0, status: "", convId: headRow)
-        return [head] + list.map { f in Chat(name: rowPrefix + f.id, lastMessage: "", time: "", unread: 0, status: "", convId: rowPrefix + f.id) }
-    }
-    static func found(_ c: Chat, in list: [Found]) -> Found? {
-        guard c.name.hasPrefix(rowPrefix) else { return nil }
-        let id = String(c.name.dropFirst(rowPrefix.count))
-        return list.first { f in f.id == id }
-    }
 
     /// A tap on a link: a YouTube video plays here; any other link is not this player's (false).
     static func play(_ url: URL, title: String? = nil) -> Bool {
@@ -84,23 +61,6 @@ enum MTYouTube {
         else { DispatchQueue.main.async { MainActor.assumeIsolated { work() } } }
     }
 
-    /// Our own service on Montana's site, where YouTube's key lives.
-    private static var service: String {
-        "https://" + (Bundle.main.object(forInfoDictionaryKey: "MontanaService") as? String ?? "").lowercased() + "/b/v1"
-    }
-
-    /// YouTube's music for the words, found by our service; nil when the service does not answer.
-    static func search(_ words: String) async -> [Found]? {
-        var c = URLComponents(string: service + "/tube/search")
-        c?.queryItems = [URLQueryItem(name: "q", value: words)]
-        guard let u = c?.url else { return nil }
-        var q = URLRequest(url: u, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
-        q.httpMethod = "GET"
-        guard let got = try? await URLSession.shared.data(for: q), (got.1 as? HTTPURLResponse)?.statusCode == 200,
-              let answer = try? JSONDecoder().decode(Answer.self, from: got.0) else { return nil }
-        return answer.items.filter { f in f.id.count == 11 }
-    }
-
     /// The Referer the player is named by: this app's own identifier as a web address (Required Minimum Functionality).
     static var referer: String { "https://" + (Bundle.main.bundleIdentifier ?? "montana").lowercased() }
     /// The embedded player's own page on the privacy-enhanced host: inline, and starting at once -- the person's tap asked for it.
@@ -112,15 +72,6 @@ enum MTYouTube {
     }
     /// The video on YouTube itself, for the mark that leaves for it.
     static func watch(_ id: String) -> URL? { URL(string: "https://www.youtube.com/watch?v=" + id) }
-
-    /// The source named over its rows (Developer Policies: «make clear to the viewer that YouTube is the source»).
-    static var head: some View {
-        Label { Text("YouTube") } icon: { Image(systemName: "play.rectangle.fill") }
-            .font(.footnote.weight(.semibold))
-            .foregroundColor(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 4)
-    }
 }
 
 /// THE ONE PLAYER, OUR MINI PLAYER (the author's words 18.10.2026 08:1x UTC: «the picture in picture is not alive either and nothing
@@ -132,7 +83,7 @@ enum MTYouTube {
 /// person is on, standing in the root controller's view, YouTube's player in it at the least size YouTube's policies allow and
 /// nothing of ours over it, our bar under it: the full-screen mark (the system's own full-screen player, whose Done brings the mini
 /// player back) and the close mark. The bar carries the window: a drag moves it, the release sets it into the nearest corner.
-/// Every road that plays a video -- a letter, a card, a wall, a peer's page, the music page's search -- comes here (MTYouTube.play),
+/// Every road that plays a video -- a letter, a card, a wall, a peer's page -- comes here (MTYouTube.play),
 /// so it behaves one way everywhere. The app leaving the screen rests the video: never a background player.
 @MainActor final class MTYouTubeStage: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     static let shared = MTYouTubeStage()
@@ -370,4 +321,12 @@ enum MTYouTube {
         b.accessibilityLabel = label
         return b
     }
+}
+
+/// THE YOUTUBE DOOR (slice S8, docs/APPS-API.md): a letter's link, a card, a peer's page, the sound's ledger and the music page
+/// reach YouTube only through MTApps.youtube; the Protocol's edition fills it, Messenger's holds none.
+final class MTYouTubeAppDoor: MTYouTubeDoor {
+    func play(_ url: URL, title: String?) -> Bool { MTYouTube.play(url, title: title) }
+    var sounds: Bool { MTYouTube.sounds }
+    func rest() { MTYouTube.rest() }
 }

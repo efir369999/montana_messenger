@@ -30,10 +30,9 @@ struct CallICE: Codable { var candidate: String; var sdpMid: String?; var sdpMLi
 // and its rejoin is answered without a ring. Old builds skip the key; a peer that never said it is never sent a rejoin.
 // fm, fc (17.10.2026, the fabric of time, MTWeave): the hash the sender's fingerprint is read from, which the far side names them by in
 // its testimony of the call, and the identifier of the call its caller drew (Canon, «The testimony of a call»). Old builds skip both.
-// rec, lv (20.10.2026, MTCallRecordingPolicy.mayRecord): the sender's recording switch as its person sees it on Access by level, and its
-// Global Level -- the far side reads by them whether this person's switch holds against it. Old builds skip both and forbid nothing.
+// rec, lv (20.10.2026) are retired with the call's recording (the author's word 16428, 04.11.2026): an older build's word is skipped.
 struct CallCaps: Codable { var tier: String?; var ver: Int?; var opus_max: Int?; var hw_aec: Bool?; var sframe: Bool?; var av: Bool?; var rejoin: Bool?
-    var fc: String?; var rec: Bool?; var lv: Int? }
+    var fc: String? }
 struct E2EPlain: Codable { var body: String; var conv: String; var mid: String?; var ts: Int?
     var ctrl: String?; var sdp: CallSDP?; var candidate: CallICE?; var video: Bool?; var caps: CallCaps?; var call_seed: String? }
 struct E2ESession: Codable { var blob: String }

@@ -9,7 +9,7 @@ extension MTApplication {
         case .chats, .groups, .channels: return 2   // the chats' tile, until the author gives the groups and the channels their own
         case .feed: return 4
         case .wallet: return -1   // the platform's wallet glyph in every style (the author's word 18.10.2026 07:3x UTC: «system, as the wallet, everywhere»)
-        case .card: return 6
+        case .messenger: return 6   // the tile of the author's atlases the contact card wore until it left (decision 601)
         case .music: return 7
         case .gallery: return 8
         case .chess: return 9
@@ -31,7 +31,7 @@ extension MTApplication {
         case .music: return UIState.Glyph.music
         case .gallery: return UIState.Glyph.gallery
         case .vpnWall, .meshWall, .p2pWall: return ""
-        case .card: return "person.text.rectangle"
+        case .messenger: return "building.2.fill"   // an organisation, not a trade: the screen names no messenger (06.10)
         case .settings: return "gearshape.fill"
         case .passwords: return "key.fill"
         }
@@ -101,8 +101,8 @@ struct MTApplicationIcon: View {
         let unit = side / 30
         switch app {
         case .feed: MTFeedMark(side: 26 * unit)
-        case .chess: MTChessIcon().frame(width: 26 * unit, height: 26 * unit)
-        case .vpnWall: MontanaVPNGlyph(color: .white, size: 24 * unit)   // the globe on a stand, the VPN's own glyph
+        case .chess: if let i = MTApps.chess?.icon(size: 26 * unit) { i }   // the game's own icon, through its door (slice S4b)
+        case .vpnWall: if let g = MTApps.vpn?.glyph(color: .white, size: 24 * unit) { g }   // the globe on a stand, the VPN's own glyph
         case .meshWall: Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 22 * unit, weight: .regular)).foregroundColor(.white)
         case .p2pWall: Image(systemName: "globe").font(.system(size: 22 * unit, weight: .regular)).foregroundColor(.white)
         default: Image(systemName: app.glyph).font(.system(size: 22 * unit, weight: .regular)).foregroundColor(.white)
@@ -154,7 +154,7 @@ struct MTApplicationIcon: View {
 struct MTLibraryIconStyleView: View {
     @AppStorage(MTLibraryIconStyle.key) private var savedStyle = MTLibraryIconStyle.initial.rawValue
     @AppStorage("appLibraryIcons") private var icons = false   // the drawer's view: the 1949 list by default, the icons' grid by choice
-    private let preview: [MTApplication] = [.contacts, .calls, .chats, .feed, .wallet, .card, .music, .gallery, .chess, .vpnWall, .meshWall, .p2pWall, .settings]
+    private let preview: [MTApplication] = [.contacts, .calls, .chats, .feed, .wallet, .music, .gallery, .chess, .vpnWall, .meshWall, .p2pWall, .settings].filter(\.carried)   // only what this edition carries (MTApplication.carried)
     private var selected: MTLibraryIconStyle { MTLibraryIconStyle(rawValue: savedStyle) ?? .initial }
     private func card(_ style: MTLibraryIconStyle) -> some View {
         Button {

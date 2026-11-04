@@ -14,7 +14,7 @@ import NIOSSH
 // before Montana stands on it. Apple's NIOSSH (swift-nio-ssh) carries it; the password rides once and is kept nowhere;
 // the first meeting takes the machine's host key as it is -- the person named the machine by address and password, and
 // the door of Montana is what the meeting leaves behind, exactly as the first `ssh` of every operator does.
-enum MTSSHError: Error { case noPassword, channel, closed, timeout, refused(Int, String), belowLevel(Int) }
+enum MTSSHError: Error { case noPassword, channel, closed, timeout, refused(Int, String), notCarried }
 
 final class MTSSHRun {
     struct Outcome { let status: Int; let out: String; let err: String }
@@ -127,8 +127,8 @@ enum MontanaNodeSetup {
 
     /// Puts the door up on the machine and brings back the digest of its certificate, 64 hex.
     static func run(host: String, user: String, password: String) async throws -> String {
-        // A MACHINE JOINS MONTANA'S NETWORK FROM LEVEL 8 (MTLevelAccess.ownNode, the author's word 17.10.2026 15:1x UTC).
-        guard MTLevelAccess.opens(.ownNode) else { throw MTSSHError.belowLevel(MTLevelAccess.Feature.ownNode.level) }
+        // A MACHINE JOINS MONTANA'S NETWORK ON EVERY LEVEL (decision 606 (a)); an edition without one's own node puts up nothing.
+        guard MTEdition.ownNode else { throw MTSSHError.notCarried }
         guard let d = door(), let sc = script() else { throw MTSSHError.channel }
         let put = try await MTSSHRun.run(host: host, user: user, password: password,
                                          command: "mkdir -p /opt/montana-node-store && cat > /opt/montana-node-store/montana-node-store.py",   // NOT-UI

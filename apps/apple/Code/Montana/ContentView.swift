@@ -184,7 +184,7 @@ final class MTTurnDrag: ObservableObject {
     /// settings and the profile are one open page at a time, risen over the tabs in the chat's own
     /// sliding container and closed by the cross or by the screen-edge swipe. The network left this slot
     /// for the finger's row (the author's word 25.09): it is a page under the bar, as the calls are.
-    enum Page: String, Identifiable { case settings, profile, card, birth, notifications, keeping, levels, folders; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus; levels: the green shield's way (16.10)
+    enum Page: String, Identifiable { case settings, profile, birth, messenger, notifications, keeping, folders; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus; levels: the green shield's way (16.10)
     var overlayPage: Page?
     /// The document page over everything (the author's word 19.09): the whole screen, above the tabs and the open chat.
     var docPage: MTDocOpen?
@@ -201,9 +201,10 @@ final class MTTurnDrag: ObservableObject {
     /// shared one bar with the card: the card's back arrow and dots stood beside the chooser's cross and the
     /// preview's cross and checkmark. The slot of the document and the place is its.
     var chatWall: MTWallOpen?
-    var chessPage: MTChessOpen?
+    var chessPage: MTGameOpen?
     var walletPage: MTPageFlag?
-    /// PASSWORDS (the author's word 06.10.2026 14:4x UTC): the person's secrets, a page of its own over the tabs (MTPasswordsPage).
+    /// PASSWORDS (the author's word 06.10.2026 14:4x UTC): the person's secrets, a page of its own over the tabs, drawn behind their
+    /// door (MTApps.passwords; none in Montana Messenger, link 15962).
     var passwordsPage: MTPageFlag?
     var settingsShown: Bool {
         get { overlayPage == .settings }
@@ -239,9 +240,13 @@ final class MTTurnDrag: ObservableObject {
     /// whole as the chats, the calls and the contacts, turning sideways as they do»), the chats, the dynamic glyph's page --
     /// the music while the glyph is the music's, else the gallery (25.09) -- and THE NETWORK under the globe at the row's end
     /// (the author's word 25.09).
-    var turnOrder: [Pane] { [.contacts, .calls, .feed, .chats, mediaIsMusic ? .music : .gallery, Self.globeWall] }
+    var turnOrder: [Pane] {
+        var row: [Pane] = [.contacts, .calls, .feed, .chats, mediaIsMusic ? .music : .gallery, Self.globeWall]
+        if MTApps.wall == nil { row.removeAll { $0 == .feed } }   // the feed only where the wall stands (slice S4c2)
+        return row
+    }
     /// The globe's page: the VPN wall where the device carries a tunnel, else the P2P wall -- the nodes of a desktop core.
-    static var globeWall: Pane { MontanaVPNTunnel.carried ? .vpn : .p2p }
+    static var globeWall: Pane { MTApps.vpn?.carried == true ? .vpn : .p2p }
     /// THE FOLDER CHOSEN ON THE CHATS PAGE, AND THE FOLDERS IN THEIR TABS' ORDER (the author's word 18.10.2026 07:2x UTC: «swipes
     /// right and left on the chats page turn between the tabs too, and from the outermost go on to the other pages»): the page names
     /// its folders here (ChatsListView), and the stroke reads them (turnStroke) -- All at every launch, as the reference.
@@ -489,7 +494,7 @@ struct RootView: View {
                 MTAppAway.left()
                 MTForeground.active = false
                 E2E.shared.persistHistory()          // force-save history (debounce may not have fired)
-                MTBoard.shared.flushForBackground()  // the wall's drafts and the posts on their way, under a background task; main waits for nothing here (the deadlock of T1 2342, 01.11.2026)
+                MTApps.wall?.flushForBackground()    // the wall's drafts and the posts on their way, under a background task; main waits for nothing here (the deadlock of T1 2342, 01.11.2026)
                 // Stage 8.2: undelivered letters keep the process alive for the system grace
                 // window — a letter that can be handed over in seconds does not wait for the
                 // next launch. The queue itself is on disk either way.
@@ -500,7 +505,7 @@ struct RootView: View {
                 MTForeground.active = true
                 MontanaDeliveryEngine.shared.releaseBackgroundHold("foreground")
                 MTCompressResume.shared.runAll()   // stage 8.4: encoding killed by the window continues here
-                MTBoard.shared.roadBack("foreground")   // a post the node did not take whole goes on by itself (25.09)
+                MTApps.wall?.roadBack("foreground")     // a post the node did not take whole goes on by itself (25.09)
             }
             if phase == .active {
                 // THE EXTENSION BOX DRAINS HERE TOO. A letter that arrived by push with the
@@ -519,36 +524,30 @@ struct RootView: View {
                 MontanaPhoneNode.shared.onForeground() // the node's announcement dies in sleep — raise it anew
                 E2E.shared.sendLinkToAll()             // the daily link, preloaded to every correspondent (15.09)
                 E2E.shared.broadcastAbout()            // my bio and my link, to whoever lacks them (24.09)
-                MTBoard.shared.sweep()                 // a few walls never heard of, each at a moment of its own (24.09)
+                MTApps.wall?.sweep()                   // a few walls never heard of, each at a moment of its own (24.09)
                 // The owner carries the wall to whoever speaks it (24.09) — at a return only while the presence is
                 // shown: for one who hides it, a carry here would say they came back (the critic's N6).
-                if MontanaPresencePrivacy.sharing { MTBoard.shared.schedulePush() }
-                // Off the main thread: the first root render of a launch takes seconds, and
-                // the person would wait staring at a frozen screen. Name reconciliation is in no hurry.
-                Task.detached(priority: .utility) {
-                    if let seed = MontanaSeed.root {
-                        MontanaNames.keepInStep(masterSeed: seed)
-                    }
-                }
+                if MontanaPresencePrivacy.sharing { MTApps.wall?.schedulePush() }
                 MontanaKeychain.delete("nseUnread") // legacy second badge ledger: gone for good ([C-1])
                 E2E.shared.remirrorShareStore()
                 // The share sheet offers the chats at once after an update, not only after the next letter (23.09).
                 DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3) { MontanaNotify.seedSuggestions() }
                 MontanaHousekeeping.run()   // disk cleanup — one call, and not only on return from background
                 // THE NUMBER LEFT MONTANA (the author's word 20.10.2026 18:3x UTC: «remove the sign-in by the phone number in Montana,
-                // leave it only in the Business»): a confirmation an older build kept leaves the device, with no door left to show it.
+                // leave it only in the Messenger»): a confirmation an older build kept leaves the device, with no door left to show it.
                 UserDefaults.standard.removeObject(forKey: "phoneProof")
+                // THE CONTACT CARD LEFT THE APP (the author's word 04.11.2026 13:18 UTC, decision 601: «remove the card entirely»): the
+                // name, phone, e-mail and other ways an older build sealed for it leave the device.
+                UserDefaults.standard.removeObject(forKey: "businessCard")
                 if !UserDefaults.standard.bool(forKey: "profilePurge805") {
-                    // The four retired profile fields leave the device, and the nick book drops
-                    // the artefacts of the old name-into-nick mix-up: a real nick never holds a
-                    // space, and never equals the declared name lowercased.
+                    // The four retired profile fields leave the device.
                     for k in ["userLastName", "userUsername", "userBio", "userBirthday"] {
                         UserDefaults.standard.removeObject(forKey: k)
                     }
-                    E2E.shared.purgeNameArtefacts()
                     UserDefaults.standard.set(true, forKey: "profilePurge805")
                 }
                 E2E.shared.recalcBadge()            // badge = the app's truth (remove NSE drift)
+                MTNameBook.forgetClaimedNames()     // the retired book of claimed names leaves the device (16463)
                 MTNameBook.purgeCopiedCardNames()   // once: the peer's old word copied into card names by the retired doors (18.09)
                 MontanaCall.shared.ensureCaptureRunning()   // video call from background: the camera starts here
                 // Tap on the system pill → full-screen call. While a screen share rides, the
@@ -1530,8 +1529,26 @@ struct MTCountBadge: View {
 
 /// One catalogue owns the tiles, search rows and destinations of the app library.
 enum MTApplication: String, CaseIterable, Identifiable {
-    case contacts, calls, feed, chats, groups, channels, music, gallery, chess, wallet, vpnWall, meshWall, p2pWall, card, passwords, settings
+    case messenger, contacts, calls, feed, chats, groups, channels, music, gallery, chess, wallet, vpnWall, meshWall, p2pWall, passwords, settings
     var id: String { rawValue }
+    /// WHETHER THIS EDITION CARRIES THE APPLICATION (guard 4 of docs/APPS-API.md): an application behind a door stands only where its
+    /// door stands -- the library, its search, the icons' preview in Settings and the tile's opening ask this one rule, so Messenger
+    /// shows no tile, title or empty page of the coins, the VPN, chess or the wall.
+    var carried: Bool {
+        switch self {
+        case .wallet: return MTApps.coins != nil
+        case .vpnWall: return MTApps.vpn?.carried == true
+        case .chess: return MTApps.chess != nil
+        case .feed: return MTApps.wall != nil
+        case .messenger: return MTApps.messenger != nil
+        case .meshWall: return MTApps.mesh != nil   // Montana Messenger carries no mesh (links 15844-15846)
+        case .passwords: return MTApps.passwords != nil   // nor Passwords (link 15962)
+        // THE P2P WALL'S OWN ROW stands where the globe is the VPN's; in Montana Messenger the globe itself is the network, in the
+        // time panel, and the drawer names no wall (the author's word 03.11.2026 22:30 UTC, link 15844).
+        case .p2pWall: return MTApps.vpn != nil
+        default: return true
+        }
+    }
     var title: String {
         switch self {
         case .contacts: return String(localized: "Contacts", bundle: MTLanguage.bundle)
@@ -1545,7 +1562,7 @@ enum MTApplication: String, CaseIterable, Identifiable {
         case .vpnWall: return String(localized: "VPN wall", bundle: MTLanguage.bundle)
         case .meshWall: return String(localized: "Mesh wall", bundle: MTLanguage.bundle)
         case .p2pWall: return String(localized: "P2P wall", bundle: MTLanguage.bundle)
-        case .card: return String(localized: "Business card", bundle: MTLanguage.bundle)
+        case .messenger: return String(localized: "Organizations", bundle: MTLanguage.bundle)   // the person's organisations; the screen names no messenger (the author's word 06.10)
         case .settings: return String(localized: "Settings", bundle: MTLanguage.bundle)
         case .passwords: return String(localized: "Passwords", bundle: MTLanguage.bundle)   // the author's word 06.10.2026 14:4x UTC
         case .chess: return String(localized: "Chess", bundle: MTLanguage.bundle)
@@ -1555,7 +1572,7 @@ enum MTApplication: String, CaseIterable, Identifiable {
     var group: MTLibraryGroup {
         switch self {
         case .contacts, .calls, .chats, .groups, .channels: return .communication
-        case .feed, .card, .wallet, .vpnWall, .meshWall, .p2pWall: return .montana   // the walls beside the feed: publications common to people (29.09)
+        case .messenger, .feed, .wallet, .vpnWall, .meshWall, .p2pWall: return .montana   // the walls beside the feed: publications common to people (29.09)
         case .music, .gallery, .chess: return .media
         case .settings, .passwords: return .utilities
         }
@@ -1633,7 +1650,7 @@ struct MontanaSideDrawer: View {
     private var hasSeed: Bool { MontanaSeed.hasSeed }
     // The library and its sliding container read exactly the same width, including after rotation.
     static func width(of container: CGFloat) -> CGFloat { round(container * 0.78) }
-    private var apps: [MTApplication] { MTApplication.allCases.filter { $0 != .groups && $0 != .channels && ($0 != .vpnWall || MontanaVPNTunnel.carried) } }
+    private var apps: [MTApplication] { MTApplication.allCases.filter { $0 != .groups && $0 != .channels && $0.carried } }
     private var pins: Set<MTApplication> {
         Set(savedPins.split(separator: ",").compactMap { MTApplication(rawValue: String($0)) })
     }
@@ -1658,21 +1675,21 @@ struct MontanaSideDrawer: View {
     private func open(_ app: MTApplication) {
         leave {
             switch app {
-            case .chess: ui.chessPage = MTChessOpen()
-            case .wallet: ui.walletPage = MTPageFlag(id: "wallet")
-            case .passwords: ui.passwordsPage = MTPageFlag(id: "passwords")
+            case .chess: if MTApps.chess != nil { ui.chessPage = MTGameOpen() }
+            case .wallet: if MTApps.coins != nil { ui.walletPage = MTPageFlag(id: "wallet") }
+            case .passwords: if MTApps.passwords != nil { ui.passwordsPage = MTPageFlag(id: "passwords") }
             case .contacts: ui.pane = .contacts
             case .calls: ui.pane = .calls
-            case .feed: ui.pane = .feed
+            case .feed: if MTApps.wall != nil { ui.pane = .feed }
             case .chats: ui.pane = .chats
             case .groups: ui.pane = .groups
             case .channels: ui.pane = .channels
             case .music: ui.askMusic()
             case .gallery: ui.askGallery()
-            case .vpnWall: if MontanaVPNTunnel.carried { MontanaVPNOpen.tap(); ui.pane = .vpn }
+            case .vpnWall: if let v = MTApps.vpn, v.carried { v.opened(); ui.pane = .vpn }
             case .meshWall: ui.pane = .mesh
             case .p2pWall: ui.pane = .p2p
-            case .card: ui.overlayPage = .card
+            case .messenger: if MTApps.messenger != nil { ui.overlayPage = .messenger }
             case .settings: ui.settingsShown = true
             }
         }
@@ -2326,7 +2343,6 @@ struct MainTabView: View {
     init() { MontanaTrace.markOnce("tabs_init") }   // measure: when SwiftUI began building the tabs
     @State private var ui = UIState()
     @StateObject private var store = ChatStore.one()   // one store for every window (ChatStore.one)
-    @ObservedObject private var vault = MTPasswordVault.shared   // a secret a correspondent shared, waiting to be saved
     @Environment(\.scenePhase) private var scenePhase
     // tick for sending scheduled messages (check once every 15s, on main)
     private let scheduleTick = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
@@ -2356,7 +2372,7 @@ struct MainTabView: View {
             .montanaPage(item: $ui.overlayPage) { p in overlayPageView(p) }
             // THE CHESS PAGE UNDER AN OPEN CHAT (29.09): a game's chat slides in over the board by the app's one road
             // (UIState.openChat) and the back swipe returns to the board; a banner's chat is never hidden under the page.
-            .montanaPage(item: $ui.chessPage) { open in MTChessPage(open: open).environment(ui).environmentObject(store) }
+            .montanaPage(item: $ui.chessPage) { open in MTApps.chess?.page(open, ui: ui, store: store) }
             // CHAT — ON TOP OF TabView (the tab bar under the overlay; no .toolbar(.hidden) — see UIState)
             if let c = ui.overlayChat {
                 ChatOverlay(chat: c, jump: ui.overlayJump)
@@ -2365,9 +2381,10 @@ struct MainTabView: View {
                     .zIndex(10)
             }
         }
-        .montanaPage(item: $ui.walletPage) { _ in MTWalletPage().environment(ui) }
-        .montanaPage(item: $ui.passwordsPage) { _ in MTPasswordsPage() }
-        .sheet(item: $vault.incoming) { secret in MTSecretSaveSheet(item: secret) }
+        .montanaPage(item: $ui.walletPage) { _ in MTApps.coins?.coinsPage(ui: ui) }
+        .montanaPage(item: $ui.passwordsPage) { _ in MTApps.passwords?.page() }
+        // A secret a correspondent shared, waiting to be saved: the Passwords' own sheet, where their door stands.
+        .background { MTApps.passwords?.saving() }
         // THE DOCUMENT over everything — the whole screen; the edge swipe or the platform's close item.
         .montanaPage(item: $ui.docPage) { d in DocPreview(file: d.id, title: d.name) }
         // THE PLACE over everything: its own bar, its own cross, nothing of the chat above it.
@@ -2410,18 +2427,15 @@ struct MainTabView: View {
             // The network page's own store, read off the main thread now so the page under the bar is born holding
             // its rows (22.09: the page used to unseal and decode every server inside the touch itself; since 25.09 it is
             // built in the finger's row, warmed after the launch).
-            MontanaVPNStore.warm()
-            // The coin book too: read off the main thread from here, so the wallet opens on the frame of the touch (04.10 13:04).
-            MTLocalCoinLedger.warm()
+            MTApps.vpn?.moment(.launched)
+            MTApps.coins?.moment(.launched)   // the coin book read off the main thread from here (04.10 13:04)
             scheduleShareIngest()
             MontanaTrace.mark("shares_done")
             askWhatIsUnasked()
         }
         .onChange(of: scenePhase) { _, p in
-            if p == .active { MTVPNWallMint.count() }   // the VPN wall's seconds are counted at the return (03.10)
+            if p == .active { MTApps.coins?.moment(.active) }   // the coins' own work at the return: minting, the seed's devices, their tips
             if p == .active { MTNotifyAllowed.shared.read("active") }   // the person may have changed it in Settings (06.10)
-            if p == .active { MTCoinVault.shared.soon("active", after: 1) }   // the seed's other devices, gathered at the return (04.10)
-            if p == .active { Task { await MTTimeChainTip.shared.gather(why: "active") } }   // their tips first, in one round trip (04.10 16:34)
         }
         .onChange(of: scenePhase) { _, p in if p == .active {
             scheduleShareIngest(); store.retryPendingMedia(); MontanaDeliveryEngine.shared.drainAll()
@@ -2435,7 +2449,11 @@ struct MainTabView: View {
             ui.pane = .chats
             if (note.userInfo?["outside"] as? Bool) == true { ui.clearPages() }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .montanaOpenWallet)) { _ in ui.walletPage = MTPageFlag(id: "wallet") }
+        .onReceive(NotificationCenter.default.publisher(for: .montanaOpenWallet)) { _ in if MTApps.coins != nil { ui.walletPage = MTPageFlag(id: "wallet") } }
+        // THE ORGANISATIONS' PAGE RAISED (a joining link, a banner): only where the Messenger door stands.
+        .onReceive(NotificationCenter.default.publisher(for: .montanaOpenMessenger)) { _ in
+            if MTApps.messenger != nil { ui.overlayChat = nil; ui.overlayPage = .messenger }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .montanaAddPerson)) { _ in ui.walletPage = nil; ui.overlayPage = .birth }
         .onReceive(scheduleTick) { _ in store.fireDueScheduled() }
         .onChange(of: scenePhase) { _, p in   // the system's question answered and the app back: the copy's question follows
@@ -2457,7 +2475,7 @@ struct MainTabView: View {
         Group {
             switch p {
             case .settings: SettingsTabView(onClose: { ui.settingsShown = false })
-            case .card: MTCardFromDrawer()   // the business card, the drawer's last row (the author's word 28.09)
+            case .messenger: if let b = MTApps.messenger { b.page() }   // the person's organisations, drawn behind the Messenger door (S5c-2)
             case .profile: MTMyPageFromDrawer()   // my page, the one «My profile» opens (the author's word 24.09)
             // ONE MORE PERSON (the second identity checklist, stage 1): the first screen as a page over the tabs; the node and
             // the questions that waited for a person are asked the moment the seed lands, as at a launch.
@@ -2474,12 +2492,6 @@ struct MainTabView: View {
             // contacts is switched, its cross top left.
             case .keeping: NavigationStack {
                 DataStorageView()
-                    .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
-            }
-            // THE GREEN SHIELD'S WAY (the author's word 16.10.2026 17:34 UTC: «the rule of the levels and the way to the settings»):
-            // Access by level, its cross top left.
-            case .levels: NavigationStack {
-                MTLevelAccessPage()
                     .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
             }
             // A TAB'S MENU OPENS THE FOLDERS (the author's words 17.10.2026 15:4x UTC): the folders' page, its cross top left.
@@ -2516,7 +2528,7 @@ struct MainTabView: View {
         // No delay: the message must be in the correspondence at once. The old 1.5 seconds
         // were a guess-wait — exactly that long the user stared at an empty chat.
         store.ingestPendingShares()
-        MTBoard.shared.takeFromSheet()   // a post the sheet wrote for my own wall (the author's word 29.09)
+        MTApps.wall?.takeFromSheet()   // a post the sheet wrote for my own wall (the author's word 29.09)
         MTScreenShelfTake.run()          // a screen recording the broadcast left on the shelf goes to Photos (05.10)
         // The sheet rings a RUNNING app through a Darwin note the moment it saves the
         // sender's record — without this the bubble waited for the next activation while
@@ -2532,7 +2544,7 @@ struct MainTabView: View {
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
             DispatchQueue.main.async {
                 MainTabView.shareRingStore?.ingestPendingShares()
-                MTBoard.shared.takeFromSheet()
+                MTApps.wall?.takeFromSheet()
             }
         }, "quest.montana.share.pending" as CFString, nil, .deliverImmediately)
     }
@@ -2548,111 +2560,14 @@ struct ContactsTabView: View {
     struct MTContact: Codable, Identifiable, Equatable, Hashable {
         var id: String { ref }
         var firstName: String; var lastName: String
-        var ref: String; var name: String
+        var ref: String; var name: String   // the retired nick's slot (16463): always empty now, kept so older stores decode
         var addedAt: Double
         // The stored keys stay as older builds wrote them; the fields carry the words of the set.
         enum CodingKeys: String, CodingKey { case firstName, lastName, ref = "address", name = "username", addedAt }
         var fullName: String { lastName.isEmpty ? firstName : "\(firstName) \(lastName)" }
 
-        // ── System address book: the card IS the contact ─────────────────────────
-        // The Montana address is written as an e-mail-shaped handle because that is the form the
-        // system call machinery matches against its address book. With the card in place the system
-        // Recents resolve the name themselves and follow every later rename — including for calls
-        // already made, which a name passed at call time never could.
-        // The address is a MESSENGER handle, so it lives in the instant-message field: the card then
-        // reads «Montana» with the address under it. Writing it as an e-mail and a link showed the
-        // same address twice and made the system label our calls «e-mail» / «social profile».
-        static let systemService = "Montana"
-        private static func matchingCard(_ ref: String, in store: CNContactStore,
-                                         keys: [CNKeyDescriptor]) -> CNContact? {
-            // Matching goes by @name: there is no address in the system card and cannot be.
-            let key = MTNameBook.name( ref)
-            guard let containers = try? store.containers(matching: nil) else { return nil }
-            for container in containers {
-                let pred = CNContact.predicateForContactsInContainer(withIdentifier: container.identifier)
-                guard let cards = try? store.unifiedContacts(matching: pred, keysToFetch: keys) else { continue }
-                if let hit = cards.first(where: { card in
-                    card.instantMessageAddresses.contains { MTNameBook.name( $0.value.username) == key }
-                }) { return hit }
-            }
-            return nil
-        }
-
-        static var syncEnabled: Bool {
-            let d = UserDefaults.standard
-            return d.object(forKey: "syncContactsToPhone") == nil ? true : d.bool(forKey: "syncContactsToPhone")
-        }
-
-        static func upsertSystemCard(_ c: MTContact) {
-            // Without a nick there is nothing to write: a private account has no public
-            // identifier at all, and substituting the address is forbidden.
-            guard syncEnabled, !c.name.isEmpty else { return }
-            let store = CNContactStore()
-            store.requestAccess(for: .contacts) { ok, _ in
-                guard ok else { return }
-                let keys: [CNKeyDescriptor] = [CNContactGivenNameKey as CNKeyDescriptor,
-                                               CNContactFamilyNameKey as CNKeyDescriptor,
-                                               CNContactInstantMessageAddressesKey as CNKeyDescriptor]
-                // A person's public name is the nick — that is what we write.
-                let im = CNInstantMessageAddress(username: "@" + c.name, service: systemService)
-                let req = CNSaveRequest()
-                if let old = matchingCard(c.name, in: store, keys: keys),
-                   let m = old.mutableCopy() as? CNMutableContact {
-                    m.givenName = c.firstName; m.familyName = c.lastName
-                    m.instantMessageAddresses = [CNLabeledValue(label: systemService, value: im)]
-                    req.update(m)
-                } else {
-                    let m = CNMutableContact()
-                    m.givenName = c.firstName; m.familyName = c.lastName
-                    m.instantMessageAddresses = [CNLabeledValue(label: systemService, value: im)]
-                    req.add(m, toContainerWithIdentifier: nil)
-                }
-                try? store.execute(req)
-            }
-        }
-
-        /// THE PHONE'S CARDS OUTLIVED A SWEEP (20.09): a name the sweep of 1786 took from the rename book
-        /// still stands on the phone's card written by upsertSystemCard; each card of the book that has
-        /// a nick asks the phone for its name once and hands it to the one writer.
-        static func restoreNamesFromPhone() {
-            guard syncEnabled else { return }
-            let list = (try? JSONDecoder().decode([MTContact].self, from: Data((MontanaLocalVault.getString("mtContacts") ?? "").utf8))) ?? []
-            let carded = list.filter { !$0.name.isEmpty }
-            guard !carded.isEmpty else { MontanaTrace.mark("phone_names_restored", "cards=0"); return }
-            let store = CNContactStore()
-            store.requestAccess(for: .contacts) { ok, _ in
-                guard ok else { MontanaTrace.mark("phone_names_restored", "denied"); return }
-                let keys: [CNKeyDescriptor] = [CNContactGivenNameKey as CNKeyDescriptor,
-                                               CNContactFamilyNameKey as CNKeyDescriptor,
-                                               CNContactInstantMessageAddressesKey as CNKeyDescriptor]
-                var found: [(String, String, String)] = []
-                for c in carded {
-                    guard MTNameBook.mine(c.ref) == nil, let card = matchingCard(c.name, in: store, keys: keys) else { continue }
-                    let g = card.givenName.trimmingCharacters(in: .whitespaces), f = card.familyName.trimmingCharacters(in: .whitespaces)
-                    if !(g + f).isEmpty { found.append((c.ref, g, f)) }
-                }
-                DispatchQueue.main.async {
-                    for (ref, g, f) in found {
-                        MTNameBook.setManual(conv: ref, first: g, last: f)
-                        MTNameBook.syncContact(conv: ref, first: g, last: f)
-                    }
-                    MontanaTrace.mark("phone_names_restored", "cards=\(carded.count) names=\(found.count)")
-                }
-            }
-        }
-
-        static func deleteSystemCard(ref: String) {
-            let store = CNContactStore()
-            store.requestAccess(for: .contacts) { ok, _ in
-                guard ok else { return }
-                let keys: [CNKeyDescriptor] = [CNContactInstantMessageAddressesKey as CNKeyDescriptor]
-                guard let card = matchingCard(ref, in: store, keys: keys),
-                      let m = card.mutableCopy() as? CNMutableContact else { return }
-                let req = CNSaveRequest(); req.delete(m)
-                try? store.execute(req)
-            }
-        }
-
+        // NO CARD IN THE PHONE'S CONTACTS (the author's word 16463, 04.11.2026): the card there was written and matched by the
+        // person's @name, and there are no @names any more. The book of contacts lives in Montana alone.
     }
     private var contactsJSON: String { get { MontanaLocalVault.getString("mtContacts") ?? "" } nonmutating set { MontanaLocalVault.setString("mtContacts", newValue); MTNameBook.invalidateContacts() } }
     /// KEPT IN THE BOOK (the author's word 17.09): a person who came by the permanent link gets a
@@ -2728,7 +2643,6 @@ struct ContactsTabView: View {
     }
     private func save(_ list: [MTContact]) {
         if let d = try? JSONEncoder().encode(list) { contactsJSON = String(data: d, encoding: .utf8) ?? "" }
-        for c in list { MTContact.upsertSystemCard(c) }   // the card in the phone is kept in step
     }
     /// The card of the book goes with the conversation: a deleted person leaves the tab whole.
     private func dropCards(_ refs: Set<String>) {
@@ -2736,7 +2650,6 @@ struct ContactsTabView: View {
         save(contactsList.filter { !refs.contains($0.ref) })
         for a in refs {
             MTNameBook.setManual(conv: a, first: nil, last: nil)
-            MTContact.deleteSystemCard(ref: a)       // removed here = removed from the phone
         }
     }
     /// DELETE — the chats tab's road (ChatStore.deleteChat) and the card with it.
@@ -3236,14 +3149,14 @@ let montanaRoomKey = "Montana"
 /// too: it stood for days and held 4 479 banners of the fleet on 04.10 (the author's word 23:46: «notifications come only when
 /// Montana is opened»).
 enum MTPlayQuiet {
-    static var held: Bool { MTMoneyFlow.isOn(ChatStore.openConvNow ?? "") || MTChessGameScreen.shownGame != nil }
+    static var held: Bool { MTApps.flowOn(ChatStore.openConvNow ?? "") || MTApps.chess?.shownGame != nil }
 }
 /// THE ROOM'S NAME ON THE SCREEN AND IN ITS BANNER (the author's word 03.10: «Montana with the crown emoji in front»): the one
 /// name a crown stands before by right -- every person's name loses a typed or sent crown (MTCrown).
 let montanaRoomTitle = "\u{1F451} " + montanaRoomKey
 /// THE ROOM'S FACE IS THE APP'S ICON (the author's word 03.10: «the icon of the Montana updates chat as our app's icon»): the
 /// glass icon of the first screen, in the list, the chat's head and the banner alike.
-let montanaRoomFace = "IconGlassPreview"
+let montanaRoomFace = MTEdition.face
 /// THE MESH WALL (the author's word 29.09: «the common mesh chat, pinned at the very top of the chats; everyone on the mesh is in it
 /// at once; it is called the Mesh wall and appears the moment the switch of visibility on the mesh is on»): the room of
 /// everyone on the mesh -- no address, no pipe; its words ride the radio (MTMeshRoom). The key is English and never translated.
@@ -3461,7 +3374,7 @@ enum MontanaAudioSession {
     /// Nothing of ours sounds -- asked of the owners: the player in hand, the video in the dock, YouTube's player, a running call.
     private static var quiet: Bool {
         !MontanaCall.isBusy && (VoicePlayer.shared.playingFile == nil || VoicePlayer.shared.paused)
-            && MontanaVideoDock.shared.file == nil && !MTYouTube.sounds
+            && MontanaVideoDock.shared.file == nil && MTApps.youtube?.sounds != true
     }
     private static func lowerSession(again: Bool) {
         let ok = mtAudioTry("lowering the session") {
@@ -3974,8 +3887,6 @@ let aboutMark = "\u{200B}\u{200B}AB:"
 // «ground», receipted, sent only to a peer whose presence word speaks the «G» tag; every older build buries it unread.
 let groundMark = "\u{200B}\u{200B}PG:"   // COMPAT-GATED: only to a peer proven to read it (E2E.groundCapable)
 let ringMark = "\u{200B}\u{200B}RG:"        // a call AS A LETTER: the whole guaranteed letter road summons the callee
-// The peer's @username — by the same conveyor as the name and the photo. Without it a nick is
-// learned only on a by-name introduction, and whoever wrote first stays nickless forever.
 let cardMark = "\u{200B}\u{200B}QC:"        // the card of MY queue for THIS peer — over E2E, mutual (checklist B-5/C-7)
 let deleteMark = "\u{200B}\u{200B}DL:"      // delete message for everyone (payload = serverId) — over E2E
 // THE KEEPER'S OWN WORD ABOUT A DELETION (16.10.2026 No.72, MTLevelAccess.keepDeleted): the correspondent's phone kept the letter
@@ -4017,6 +3928,12 @@ let sameYesMark = "\u{200B}\u{200B}SY:"
 // conversation here and no life for three days, and says so to the other side over that very pipe instead of vanishing:
 // the other side's history stays readable and its composer gives way to a note.
 let pipeClosedMark = "\u{200B}\u{200B}PX:"
+// THE RETIRED WALL'S WORD (29.09, retired by the author 13.10.2026): older builds may still send it; every edition buries it
+// unread as service, and nothing imports, fetches or answers what it carries (slice S3b b2: the word is the wire's, not the VPN's).
+let retiredWallMark = "\u{200B}\u{200B}VW:"
+// THE WALL'S WORD (24.09; slice S4c2: the word is the wire's, not the wall's): a post, a mark, a page between two phones. Every
+// edition buries it unread as service, so an edition that carries no wall never draws it as a row.
+let wallMark = "\u{200B}\u{200B}WL:"
 // THE COPY KEPT BY THE PEOPLE ONE WRITES TO (the author's word 08.10.2026 20:3x, MTKeeping; Network «A copy kept by the people one
 // speaks with»): one word, JSON with «w» -- a question, a yes, a part, a keeper's «held», a release -- riding the correspondence,
 // and a call and its answer riding the pipe of a slot. Never a row; an older build buries it unread.
@@ -4116,7 +4033,7 @@ func isControlMarker(_ text: String) -> Bool {
         || text.hasPrefix(cargoLostMark) || text.hasPrefix(watchMark) || text.hasPrefix(playedMark)
         || text.hasPrefix(appMark) || text.hasPrefix(editMark) || text.hasPrefix(pinMark)
         || text.hasPrefix(MontanaStickerWire.mark)   // the set's word: machinery between two phones, never a row
-        || text.hasPrefix(MTBoard.mark)              // the wall's word (24.09): a post, a mark, a page — never a row
+        || text.hasPrefix(wallMark)                  // the wall's word (24.09): a post, a mark, a page — never a row
         || text.hasPrefix(sameAskMark) || text.hasPrefix(sameYesMark)   // one person, one conversation (24.09): never a row
         || text.hasPrefix(pipeClosedMark)            // the pipe closed at the other end (24.09): never a row
         || text.hasPrefix(keepMark)                  // the keeping of a copy (08.10): never a row
@@ -4210,82 +4127,6 @@ var montanaDarkGradient: LinearGradient {
         )
 }
 
-struct StartByNameView: View {
-    var onStart: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var ref = ""
-    @State private var checking = false
-    @State private var error = ""
-
-    private var normalized: String { ref.trimmingCharacters(in: .whitespaces) }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    TextField("@name", text: $ref)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
-                        .foregroundColor(.primary)
-                } footer: {
-                    // A name resolves through the plane of names (24.09): whoever holds one is reached by it,
-                    // met before or not.
-                    Text("Anyone who holds a name can be written to by it.")
-                }
-                .listRowBackground(MTGlassRowPlate())
-                if !error.isEmpty {
-                    Section { Text(LocalizedStringKey(error)).font(.caption).foregroundColor(.red) }
-                        .listRowBackground(MTGlassRowPlate())
-                }
-            }
-            .scrollContentBackground(.hidden).montanaPageGround()   // my page's ground, as every page wears it (26.09)
-            .navigationTitle("Message by @username").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { MontanaCloseMark { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    // The platform's own mark, not a word (the role, 22.09); the wait is the platform's spinner.
-                    if checking { ProgressView() } else { MontanaDoneMark { check() }.disabled(normalized.isEmpty) }
-                }
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-
-    func check() {
-        error = ""
-        // The nick only. No address is parsed here at all: a string resembling nothing used
-        // to pass address parsing and the wrong conversation opened — exactly what happened.
-        let name = normalized.hasPrefix("@") ? String(normalized.dropFirst()) : normalized
-        let n = name.lowercased()
-        guard !n.isEmpty else { error = "Enter a username"; return }
-        // What looks like an address is told straight: addresses are no longer exchanged. A
-        // silent refusal hides the reason, and the person keeps typing what is no longer accepted.
-        if MontanaConv.looksLikeFormerRef(name) {
-            error = "Addresses are no longer exchanged — ask for a username or a one-time card."
-            return
-        }
-        guard NameSheet.rejection(n) == nil, NameSheet.normalized(n) == n else {
-            error = "This username does not fit the rules."
-            return
-        }
-        checking = true
-        // THE ONE MEETING RESOLVER (24.09): this screen met a name by its own copy of the road — resolve and
-        // encapsulate — and a second search for the same name wove a second rope to the same person. The name
-        // goes to the resolver every entrance uses; its book by root answers with the chat already born.
-        Task {
-            let out = await MontanaMeeting.meet(n)
-            await MainActor.run {
-                checking = false
-                switch out {
-                case .opened(let ref): onStart(ref)
-                case .nameless: error = "Nobody holds this name."
-                case .ownName: error = "This is your own name."
-                case .spent, .refused: error = "The name could not be checked right now. Try again."
-                }
-            }
-        }
-    }
-}
-
 // ═══ Message context menu: a separate window ON TOP of everything ═══
 // A regular .overlay lives in the main window — under the keyboard. Here the menu is raised into
 // its own UIWindow over the whole screen; the keyboard is put down by the opener first.
@@ -4357,71 +4198,6 @@ final class MontanaOverlayWindow {
 }
 
 
-/// The invite screen. Shows what the address lacks: a one-time node with a cell behind it.
-/// The address takes part in not a single byte here — neither in the code nor in the link.
-struct InviteView: View {
-    var onClose: () -> Void
-    @State private var invite: String = ""
-    @State private var copied = false
-    @State private var busy = false
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 18) {
-                if !invite.isEmpty {
-                    MontanaQRCode(payload: Data((MontanaCard.qrText(invite) ?? invite).utf8), side: 240, logo: true)
-                        .padding(12).background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 18))
-                    Text("One-time invitation. It changes as soon as it is used.")
-                        .font(.caption).foregroundColor(.gray).multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                    Button {
-                        UIPasteboard.general.string = invite
-                        withAnimation { copied = true }
-                    } label: {
-                        Label(copied ? "Copied" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc")
-                            .font(.subheadline.bold()).foregroundColor(copied ? .green : Color.accentColor)
-                    }
-                    Button { MTShare.present([MTShare.web(invite).map { $0 as Any } ?? invite]) } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                            .font(.subheadline.bold()).foregroundColor(.black)
-                            .padding(.horizontal, 18).padding(.vertical, 10)
-                            .background(Color.accentColor).clipShape(Capsule())
-                    }
-                    Button("New invitation") { make() }
-                        .font(.caption).foregroundColor(.gray)
-                } else if busy {
-                    ProgressView()
-                    Text("Preparing an invitation…").foregroundColor(.gray).font(.caption)
-                } else {
-                    Text("The node is starting. An invitation appears as soon as it is up.")
-                        .foregroundColor(.gray).font(.caption).multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                }
-                Spacer()
-            }
-            .padding(.top, 24)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .montanaPageGround()   // my page's ground, as every page wears it (26.09)
-            .navigationTitle("Invite").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    MontanaDoneMark { onClose() }
-                }
-            }
-            .onAppear { make() }
-        }.preferredColorScheme(.dark)
-    }
-
-    private func make() {
-        busy = true; copied = false
-        DispatchQueue.global().async {
-            let inv = MontanaFirstContact.invitation() ?? ""
-            DispatchQueue.main.async { invite = inv; busy = false }
-        }
-    }
-}
-
 // The single «Copy link» button (SSOT): the SAME string the on-screen code carries is copied.
 // The button used to copy the invite BY NAME while the code showed the card — two different
 // values under one action, and a private account has no name at all: emptiness went to the
@@ -4441,7 +4217,7 @@ struct CopyLinkButton: View {
     }
 }
 
-// ═══ Montana meeting code: name or one-time card — copy/share/scan (qrSheet style) ═══
+// ═══ Montana meeting code: the card — copy/share/scan (qrSheet style) ═══
 // Shown on an EMPTY chat list (a single entry point instead of a separate address page).
 
 /// The code screen — ONE per app: in the menu, on the empty chats screen, and full screen.
@@ -4449,13 +4225,7 @@ struct CopyLinkButton: View {
 /// top, now below; the avatar was not everywhere. Here it is one, so there is nothing to
 /// diverge ([C-1]).
 struct MontanaCodeView: View {
-    let name: String
     var onScan: () -> Void
-    /// THE NAME IS TAKEN RIGHT HERE (24.09): the button under the code opens the name's own page, and the page
-    /// answers back with the name the keeper recorded — the code turns into the name's link at once.
-    @State private var naming = false
-    @State private var mine: String?
-    private var shownName: String { mine ?? name }
     /// The column scrolls by itself where it stands in a plate (the settings, the empty chats);
     /// the full page owns the one scroll and centres the column in it (19.09) — a scroll inside
     /// a scroll is two owners of one finger.
@@ -4474,7 +4244,7 @@ struct MontanaCodeView: View {
     /// The card is drawn only when the person asks for one: a card standing on the screen unasked
     /// is a key handed to whoever walks past.
     @State private var card: String?
-    private func draw() { card = permanent ? MontanaCard.offerStanding() : MontanaCard.offerShort() }
+    private func draw() { card = permanent ? MontanaCard.offerPermanent() : MontanaCard.offerShort() }
 
     var body: some View {
         // The column scrolls: with a large system font the neighbouring text grows, and
@@ -4497,17 +4267,6 @@ struct MontanaCodeView: View {
             // The day ran out — rotation begot the next code, the screen draws it.
             draw()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .montanaNameChanged)) { _ in
-            mine = MontanaSelf.name
-            draw()
-        }
-        .sheet(isPresented: $naming) {
-            NameSheet(onTaken: { n in
-                naming = false
-                mine = n
-                draw()
-            }, onClose: { naming = false })
-        }
         .onReceive(NotificationCenter.default.publisher(for: .montanaCardMet)) { n in
             // Only a letter through THE CARD ON THIS SCREEN closes it: a letter by another card or yesterday's
             // code says nothing about the person standing in front of this one.
@@ -4526,21 +4285,8 @@ struct MontanaCodeView: View {
             MTSelfFace(size: 84)
                 .frame(width: 84, height: 84).clipShape(MontanaHexagon())
                 .background(MTFrameMark("code_face"))
-            if !shownName.isEmpty {
-                // The name opens its own page: its term, and the road to change it (the critic's noticed point 8).
-                Button { naming = true } label: {
-                    Text("@" + shownName).font(.title3.bold()).foregroundColor(.primary)
-                        .frame(minHeight: 44).contentShape(Rectangle())
-                }.buttonStyle(.plain)
-            }
-            // ONE view, whatever this person holds. The screen used to fork on the name: with a
-            // name it drew the code, without one it drew a button to press first — so an identity
-            // restored from its words, which has no name by construction, met a dead end where the
-            // code belongs. What the code carries is the same in both cases: a card. A name says
-            // who is offering it and changes nothing about the offer.
-            Text(shownName.isEmpty
-                 ? "This code opens one correspondence with you and nothing else."
-                 : "Your name says who you are; the code opens the conversation.")
+            // ONE view: what the code carries is a card, the one road to be met (the author's decision 613).
+            Text("This code opens one correspondence with you and nothing else.")
                 .font(.caption).foregroundColor(.gray)
                 .multilineTextAlignment(.center).padding(.horizontal, 24)
             // The code's size is a number of points (258) and the same under every text size:
@@ -4571,11 +4317,7 @@ struct MontanaCodeView: View {
             // The exact moment the link renews (the author's word 07.09): the day's code was born
             // at a known second, and a day later the next one is — the person reads the date
             // and the time in their own format instead of «one code for a day».
-            if let c = card, permanent, c.hasPrefix(MontanaFirstContact.webNamePrefix) {
-                Text("The link stays yours while you hold the name: whoever holds it can write to you.")
-                    .font(.caption).foregroundColor(.gray)
-                    .multilineTextAlignment(.center).padding(.horizontal, 24)
-            } else if card != nil, permanent {
+            if card != nil, permanent {
                 Text("The link does not expire: whoever holds it can always write to you.")
                     .font(.caption).foregroundColor(.gray)
                     .multilineTextAlignment(.center).padding(.horizontal, 24)
@@ -4608,13 +4350,6 @@ struct MontanaCodeView: View {
                         .background(Color(white: 0.12)).clipShape(RoundedRectangle(cornerRadius: 11))
                 }
             }.padding(.horizontal, 36)
-            if shownName.isEmpty {
-                Button { naming = true } label: {
-                    Label("Take a name", systemImage: "at")
-                        .font(.subheadline.weight(.semibold)).foregroundColor(.primary)
-                        .frame(minHeight: 44).contentShape(Rectangle())
-                }.padding(.top, 2)
-            }
         }
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity)
@@ -4642,7 +4377,7 @@ struct MontanaDeleteChatSheet: View {
     var body: some View {
         MontanaFaceSheet(photoURL: photoURL, color: color, initial: initial, who: who,
                          question: "Permanently delete the chat with \(title)?",
-                         note: coinsTravel ? LocalizedStringKey("A coin letter in this chat is on its way. The chat can be deleted once it is delivered or its coins come back.") : nil,
+                         note: coinsTravel ? MTApps.coins.map { LocalizedStringKey($0.said(.chatTravels)) } : nil,   // the coins' own note (guard 4)
                          actions: coinsTravel ? [] : (canDeleteForBoth ? [MontanaFaceSheet.Action(title: "Delete for me and them", destructive: true, act: onBoth)] : [])
                              + [MontanaFaceSheet.Action(title: "Delete for me only", destructive: false, act: onMine)],
                          onCancel: onCancel)
@@ -4737,7 +4472,7 @@ struct MontanaCardShare<Content: View>: View {
     @ViewBuilder var label: () -> Content
     @AppStorage("cardKind") private var kind: String = "perm"   // the kind the code page chose
     @State private var card: String?
-    private func draw() { card = kind == "perm" ? MontanaCard.offerStanding() : MontanaCard.offerShort() }
+    private func draw() { card = kind == "perm" ? MontanaCard.offerPermanent() : MontanaCard.offerShort() }
     var body: some View {
         // THE LINK ALONE (MTShare.web, 07.10): the invitation's page on the web names the person and offers the app.
         Button {
@@ -4746,19 +4481,17 @@ struct MontanaCardShare<Content: View>: View {
             .onAppear { draw() }
             .onChange(of: kind) { _, _ in draw() }
             .onReceive(NotificationCenter.default.publisher(for: .montanaCardSpent)) { _ in draw() }
-            .onReceive(NotificationCenter.default.publisher(for: .montanaNameChanged)) { _ in draw() }
     }
 }
 
 struct MontanaQRCard: View {
-    let name: String
     var onExpand: () -> Void
     var onScan: () -> Void
     var body: some View {
         VStack(spacing: 16) {
             Text("No chats yet").font(.title3.bold()).foregroundColor(.primary)
             Button(action: onExpand) {
-                MontanaCodeView(name: name, onScan: onScan)
+                MontanaCodeView(onScan: onScan)
             }.buttonStyle(.plain)
         }
         .padding(.vertical, 20).padding(.horizontal, 8)
@@ -4766,7 +4499,6 @@ struct MontanaQRCard: View {
 }
 
 struct MontanaQRFullView: View {
-    let name: String
     var onScan: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.montanaClose) private var montanaClose
@@ -4781,7 +4513,7 @@ struct MontanaQRFullView: View {
             HStack { Spacer(); MontanaDoneMark { leave() } }.padding(.horizontal, 4).frame(height: 52)
                 .background(MTFrameMark("code_row"))
             ScrollView {
-                MontanaCodeView(name: name, onScan: onScan, scrolls: false, onMet: { leave() })
+                MontanaCodeView(onScan: onScan, scrolls: false, onMet: { leave() })
                     .padding(.top, 8)
                     .background(MTFrameMark("code_column"))
             }

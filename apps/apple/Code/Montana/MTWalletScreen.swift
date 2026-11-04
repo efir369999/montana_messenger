@@ -1,6 +1,6 @@
 import SwiftUI
-import SafariServices
 import Combine
+import UIKit.UIGestureRecognizerSubclass   // the coin pad's own recognizers set their state (moved from the wall's views, S4c1)
 
 struct MTWalletPage: View {
     @Environment(\.montanaClose) private var close
@@ -613,13 +613,8 @@ struct MTCoinTime: View {
 /// in the network's consensus by the set»): one transfer stood as link #344 on the receiver's phone and #5 on the sender's -- each
 /// phone's own chain, its number and seals its own. The global seal is the letter's (MTLetterSeal): SHA-256 over its one wire name,
 /// the one field both phones hold byte for byte, so every device that holds the transfer reads the same seal.
-struct MTCoinMoveRoute: Hashable, Identifiable {
-    let ref: String
-    let mine: Bool
-    var id: String { ref }
-}
 struct MTCoinMovePage: View {
-    let route: MTCoinMoveRoute
+    let route: MTMoveRoute
     let peer: String
     @ObservedObject private var book = MTLocalCoinLedger.shared
     @ObservedObject private var node = MTNetworkNode.shared
@@ -972,7 +967,7 @@ struct MTCoinHistoryPage: View {
     @State private var flow: Flow = .all
     @State private var query = ""
     @State private var limit = MTCoinHistoryPage.page
-    @State private var explorer: MTExplorerLink?
+    @State private var explorer: MTWebLink?
     private static let calendar = Calendar.current
     var body: some View {
         let shown = history.shown(flow, query: query, limit: limit)
@@ -1013,7 +1008,7 @@ struct MTCoinHistoryPage: View {
         .onChange(of: query) { _, _ in limit = Self.page }
         .scrollContentBackground(.hidden).montanaPageGround()
         .navigationTitle(Text("History"))
-        .sheet(item: $explorer) { link in MTExplorerSheet(url: link.url).ignoresSafeArea() }
+        .sheet(item: $explorer) { link in MTWebSheet(url: link.url).ignoresSafeArea() }
         .onAppear { history.watch() }
         .onDisappear { history.unwatch() }
     }
@@ -1030,7 +1025,7 @@ struct MTCoinHistoryPage: View {
 /// coin letter's bubble opens, MTCoinMovePage), every other line its card.
 struct MTHistoryRow: View {
     let line: MTCoinHistory.Line
-    let explore: (MTExplorerLink) -> Void
+    let explore: (MTWebLink) -> Void
     var body: some View {
         let content = HStack(spacing: 12) {
             Image(systemName: line.glyph).font(.body).frame(width: 36, height: 36)
@@ -1053,9 +1048,9 @@ struct MTHistoryRow: View {
         .frame(minHeight: 44)
         .contentShape(Rectangle())
         if let tx = line.tx, let url = URL(string: MTCoinTx.link + tx) {
-            Button { explore(MTExplorerLink(url: url)) } label: { content }.buttonStyle(.plain)
+            Button { explore(MTWebLink(url: url)) } label: { content }.buttonStyle(.plain)
         } else if line.source == "sent" || line.source == "received" {
-            NavigationLink { MTCoinMovePage(route: MTCoinMoveRoute(ref: line.ref, mine: line.signed < 0), peer: line.title) } label: { content }
+            NavigationLink { MTCoinMovePage(route: MTMoveRoute(ref: line.ref, mine: line.signed < 0), peer: line.title) } label: { content }
         } else {
             NavigationLink { MTHistoryCard(line: line) } label: { content }
         }
@@ -1139,7 +1134,7 @@ struct MTCoinAnalyticsPage: View {
 /// many coins and when; a day's minting says how many moves it folds; the person's own chain opens in the Explorer inside the app.
 struct MTHistoryCard: View {
     let line: MTCoinHistoryPage.Line
-    @State private var explorer: MTExplorerLink?
+    @State private var explorer: MTWebLink?
     var body: some View {
         List {
             Section {
@@ -1160,7 +1155,7 @@ struct MTHistoryCard: View {
             }
             if let from = MTCoinTx.cachedKeyTag, let url = URL(string: MTCoinTx.keyLink + from) {
                 Section {
-                    Button { explorer = MTExplorerLink(url: url) } label: {
+                    Button { explorer = MTWebLink(url: url) } label: {
                         Label("Open in Explorer", systemImage: "magnifyingglass").frame(minHeight: 44)
                     }
                 } footer: { Text("Your coin key's whole chain, checked in the Explorer.") }
@@ -1168,20 +1163,8 @@ struct MTHistoryCard: View {
         }
         .scrollContentBackground(.hidden).montanaPageGround()
         .navigationTitle(Text("Operation"))
-        .sheet(item: $explorer) { link in MTExplorerSheet(url: link.url).ignoresSafeArea() }
+        .sheet(item: $explorer) { link in MTWebSheet(url: link.url).ignoresSafeArea() }
     }
-}
-
-/// THE EXPLORER INSIDE THE APP (the author's word 12.10.2026 10:1x UTC: «inside the Explorer at once in the app»): the platform's own
-/// browser sheet over the record's page, never a jump out of the app.
-struct MTExplorerLink: Identifiable { let url: URL; var id: String { url.absoluteString } }
-struct MTExplorerSheet: UIViewControllerRepresentable {
-    let url: URL
-    static func open(_ url: URL) {
-        MTTop.present(SFSafariViewController(url: url), kind: "coin-explorer")
-    }
-    func makeUIViewController(context: Context) -> SFSafariViewController { SFSafariViewController(url: url) }
-    func updateUIViewController(_ vc: SFSafariViewController, context: Context) {}
 }
 
 /// THE NEXT BOX FILLS AS A LOAD FILLS (the author's word 04.10.2026 00:48 UTC: «while minting, the system's progress bar of this box to
@@ -1563,10 +1546,10 @@ struct MTTimeChainLinkRow<Content: View>: View {
     }
     var body: some View {
         if let url {
-            Button { MTExplorerSheet.open(url) } label: { content().frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle()) }
+            Button { MTWebSheet.open(url) } label: { content().frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle()) }
                 .foregroundStyle(.primary)
                 .contextMenu {
-                    Button { MTExplorerSheet.open(url) } label: { Label("Open in Explorer", systemImage: "magnifyingglass") }
+                    Button { MTWebSheet.open(url) } label: { Label("Open in Explorer", systemImage: "magnifyingglass") }
                     Button { UIPasteboard.general.string = url.absoluteString } label: { Label("Copy confirmation link", systemImage: "doc.on.doc") }
                     Button { MTShare.present([url]) } label: { Label("Share confirmation link", systemImage: "square.and.arrow.up") }
                 }
@@ -1585,7 +1568,7 @@ struct MTTimeChainLinkRow<Content: View>: View {
 /// IN MONTANA (the author's word 11.10.2026 12:2x UTC: «in the messenger carry over from the wallet the TimeChain button in place
 /// of Add account, and make everything there correct»): every sentence of the page is true of this app. The chats and calls live
 /// here, so their section says what its chains hold, not where they live. A node answers this app's coin exchange at every
-/// gather of the book (MTCoinVault.post), on this wallet every few seconds and elsewhere now and then, and the person's footer
+/// gather of the book (MTSeedVault.post), on this wallet every few seconds and elsewhere now and then, and the person's footer
 /// says both. The minting while the app is away (MTPersonChain.left) is not called here: the last answer of a messenger may
 /// stand minutes before it leaves the screen, and those minutes on the screen would be minted as away -- so the Global Level's
 /// footer names the level alone.
@@ -1709,7 +1692,7 @@ struct MTTimeChainsPage: View {
             // transaction ... everything professional in the TimeChain, for auditors»): the public page that reads a transfer's
             // record from the nodes and verifies its signature with the core (Audit/COIN-TX-V1.md); every transfer link opens it.
             Section {
-                Button { MTExplorerSheet.open(MTCoinTx.explorer) } label: {
+                Button { MTWebSheet.open(MTCoinTx.explorer) } label: {
                     Label("Explorer", systemImage: "magnifyingglass").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
                 }
             } footer: {
@@ -2325,5 +2308,840 @@ struct MTPickMark: View {
         .font(.title2)
         .frame(width: 30, height: 30)
         .animation(.easeOut(duration: 0.2), value: going)
+    }
+}
+
+/// THE SIDES' COINS (MTCoinFlash, the author's words 03.10.2026 21:11 UTC): at every minting in front of the person our coin
+/// rises at the left and the right edge with the count, makes its turn and fades; with Reduce Motion the coins stand and fade.
+/// It never takes a finger.
+struct MTCoinSides: View {
+    @ObservedObject private var flash = MTCoinFlash.shared
+    @State private var rise: CGFloat = 0
+    @State private var shown: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var still
+    var body: some View {
+        HStack {
+            side
+            Spacer()
+            side
+        }
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .offset(y: rise)
+        .opacity(shown)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onChange(of: flash.tick) { _, _ in
+            rise = 40; shown = 1
+            if !still { withAnimation(.easeOut(duration: 0.9)) { rise = -40 } }
+            withAnimation(.easeIn(duration: 0.3).delay(0.6)) { shown = 0 }
+        }
+    }
+    private var side: some View {
+        VStack(spacing: 4) {
+            MTMintCoin(side: 30, turn: flash.tick)
+            // USER-DATA: the coins just minted, a number
+            Text(verbatim: "+" + MTCoinText.count(flash.coins)).font(.headline.monospacedDigit()).foregroundStyle(.primary)
+        }
+        .padding(8)
+        .background(.ultraThinMaterial, in: Capsule())
+    }
+}
+
+/// THE TOP THIRTEEN (the author's words 03.10 21:56-21:59: «a table of the top thirteen in the wallet by a button»; «boxes by the
+/// number π, ascending by share of emission»): the thirteen boxes, each its coins and its share of a Montana; the boxes the
+/// balance fills wear the check, the person's place stands out.
+struct MTPiLevelsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var split = MTCoinSplit.shared   // the available, the one number of the person's coins (fold-7)
+    var body: some View {
+        let place = MTPiLevels.place(split.available)
+        // THE LEVELS AS A TIMECHAIN, THE NEWEST ON TOP (the author's word 04.10 00:51: «every new level on top, as comments in the
+        // TimeChain, revealing π as your balance; without borders, 13 always»): the next level to reach stands on top, then the
+        // levels reached, the newest first -- thirteen at a time, each with π revealed to it.
+        let top = min(MTPiLevels.all.count, place + 1)
+        let levels = Array((max(1, top - MTPiLevels.shown + 1)...top).reversed())
+        NavigationStack {
+            List {
+                ForEach(levels, id: \.self) { n in
+                    let coins = MTPiLevels.all[n - 1], reached = n <= place
+                    HStack(spacing: 12) {
+                        // USER-DATA: the level's number
+                        Text(verbatim: String(n)).font(.headline.monospacedDigit()).frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            // USER-DATA: π revealed to this level
+                            Text(verbatim: "π " + MTPiLevels.revealed(n)).font(.headline.monospacedDigit())
+                            // USER-DATA: the level's coins, short and as a share of a Montana
+                            Text(verbatim: MTPiLevels.short(coins) + " · " + MTChatMint.montana(coins) + " " + MTCoinBook.ticker).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
+                        if reached { Image(systemName: "checkmark.circle.fill").foregroundColor(Color.accentColor) }
+                    }
+                    .opacity(reached ? 1 : 0.55)
+                    .frame(minHeight: 44)
+                    .listRowBackground(n == place ? AnyView(Color.accentColor.opacity(0.22)) : AnyView(MTGlassRowPlate()))
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .montanaPageGround()
+            .navigationTitle("Levels of π")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaBarMark(glyph: "xmark", label: "Close") { dismiss() } } }
+        }
+    }
+}
+
+/// THE RED MINUS AT THE NEWEST END (the author's word 04.10.2026 22:24 UTC: «in the chat the same way, an animation of a red minus
+/// coin»): the coins this chat's bubble or call just paid (MTCoinPaid) rise above the way to the newest in red, and fade; with Reduce Motion it stands and fades. It never takes a finger.
+struct MTPayPop: View {
+    let chat: String
+    @ObservedObject var pin: ChatConversationView.FeedPin
+    @ObservedObject private var paid = MTCoinPaid.shared
+    @State private var rise: CGFloat = 0
+    @State private var shown: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var still
+    var body: some View {
+        HStack(spacing: 6) {
+            MTMintCoin(side: 28, turn: paid.tick)
+            // USER-DATA: the coins just paid, a number
+            Text(verbatim: "\u{2212}" + MTCoinText.count(paid.coins)).font(.headline.monospacedDigit()).foregroundStyle(.red)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: Capsule())
+        .offset(y: rise)
+        .opacity(shown)
+        .padding(.bottom, 10 + pin.bottomInset + montanaTouchTarget + 8)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onChange(of: paid.tick) { _, _ in
+            guard paid.chat == chat else { return }
+            rise = 0; shown = 1
+            if !still { withAnimation(.easeOut(duration: 1.3)) { rise = -28 } }
+            withAnimation(.easeIn(duration: 0.4).delay(1.0)) { shown = 0 }
+        }
+    }
+}
+
+extension MTCoinsDoor {
+    /// THE RED MINUS (slice S2b b5): the coins a pair's bubble or call just paid rise over the way to the newest.
+    @MainActor func payPop(chat: String, pin: ChatConversationView.FeedPin) -> AnyView { AnyView(MTPayPop(chat: chat, pin: pin)) }
+}
+
+/// THE COINS THAT MOVED, SIGNED (the author's word 06.10.2026 20:2x UTC: «show the coins' transfer or top-up in the chat, plainly
+/// to the eye; fix the minuses and the pluses too»): what this phone's book lost or gained by a coin letter or a game's end -- the
+/// minus on red, the plus on green, the count whole, white on its capsule so it reads on either side's bubble.
+struct MTCoinDelta: View {
+    let coins: Int
+    var body: some View {
+        // USER-DATA: a signed count of coins
+        Text(verbatim: (coins < 0 ? "\u{2212}" : "+") + String(MTCoinText.count(coins).drop { ch in ch == "-" }))
+            .font(.title3.bold().monospacedDigit()).foregroundStyle(.white)
+            .lineLimit(1).minimumScaleFactor(0.6)
+            .padding(.horizontal, 10).padding(.vertical, 3)
+            .background(coins < 0 ? Color.red : Color.green, in: Capsule())
+    }
+}
+
+/// THE COIN LETTER'S FACE (the author's word 03.10 13:52; slice S2b b6): our coin, the coins that left or came, the time they are,
+/// and what became of them -- inside the bubble's own plate, which the shared bubble draws.
+struct MTCoinLetterFace: View {
+    let message: Message
+    let coin: MTCoinLetter
+    let failed: Bool
+    var body: some View {
+        HStack(spacing: 12) {
+            MTMintCoin(spinning: false, side: 44)
+            VStack(alignment: .leading, spacing: 2) {
+                // THE COINS THAT LEFT OR CAME (the author's word 06.10.2026 20:2x UTC): mine went, a minus; theirs came, a
+                // plus; a red letter's coins are back, the count alone.
+                if failed {
+                    // USER-DATA: the number of coins the letter carries
+                    Text(verbatim: MTCoinText.count(coin.c)).font(.title2.bold().monospacedDigit())
+                } else {
+                    MTCoinDelta(coins: message.isMine ? -coin.c : coin.c)
+                }
+                // THE TIME THE COINS ARE (the author's word 19.10.2026 14:44 UTC: «in transfers both the time and the coins»).
+                MTCoinTime(coins: coin.c)
+                // NOT DELIVERED, RETURNED (the author's word 04.10.2026 22:40 UTC, MTCoinSend.hold): a red coin letter's coins are back.
+                Text(message.isMine ? (failed ? "Not delivered, coins returned" : "Coins sent") : "Coins received").font(.subheadline)
+            }
+        }
+    }
+}
+
+extension MTCoinsDoor {
+    /// THE COIN LETTER'S FACE (slice S2b b6): nil for every row that is no coin letter.
+    @MainActor func letterFace(_ m: Message, failed: Bool) -> AnyView? {
+        m.coinLetter.map { coin in AnyView(MTCoinLetterFace(message: m, coin: coin, failed: failed)) }
+    }
+}
+
+/// THE AVAILABLE BALANCE ABOVE THE FIELD (the author's word 06.10.2026 20:2x UTC: «while entering, the exact available balance above
+/// or under the line of the message»): in the coin's mode of the bar (ChatInputBar.coinMode) this plate stands on the feed's side of
+/// the field, where a reply's plate stands; its cross takes the button back to the microphone. It observes the book and the chain's
+/// split alone, so the page is not drawn again at every coin minted. The number is the available (the author's word 16.10.2026
+/// 14:19 UTC: «a transfer from the chat and from any place shows only the available»), the one the coin's send is weighed by.
+struct MTCoinBalancePlate: View {
+    let onClose: () -> Void
+    @ObservedObject private var book = MTLocalCoinLedger.shared
+    @ObservedObject private var split = MTCoinSplit.shared
+    var body: some View {
+        let h = MontanaOctagon.composeHeight
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                MTMintCoin(spinning: false, side: 22)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Available").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    // USER-DATA: the coins available to send, a number
+                    Text(verbatim: MTCoinText.count(split.available)).font(.footnote.monospacedDigit()).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity)
+            .montanaOctagonFace(bar: true, height: h)
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 17, weight: .semibold)).foregroundColor(MontanaOctagon.barGlyph)
+            }
+            .buttonStyle(.montanaOctagon(square: true, bar: true, height: h))
+            .accessibilityLabel(Text("Close"))
+        }
+        .padding(.horizontal).padding(.vertical, MTInputField.barPad)
+    }
+}
+
+extension MTCoinsDoor {
+    /// THE AVAILABLE BALANCE ABOVE THE FIELD (slice S2b b6): the plate of the bar's coin mode; its cross takes the bar back.
+    @MainActor func balancePlate(onClose: @escaping () -> Void) -> AnyView { AnyView(MTCoinBalancePlate(onClose: onClose)) }
+}
+
+/// GIVE A COIN UNDER A CORRESPONDENT'S LETTER (the author's words 03.10; slice S2b b6): one coin by the row, and the levels of π the
+/// balance holds as the amounts to give -- the message menu's own rows, drawn by the coins.
+struct MTCoinGiveRow: View {
+    let onCoin: (Int) -> Void
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 6) {
+                Button { MTReactClock.act = "row:coin"; onCoin(1) } label: {
+                    HStack(spacing: 8) {
+                        Text("Give a coin").foregroundColor(.primary)
+                        Spacer(minLength: 0)
+                        MTMintCoin(spinning: false, side: 20)
+                    }
+                    .contentShape(Rectangle())
+                }
+            }
+            .font(.system(size: 16))
+            .padding(.horizontal, 14).padding(.top, 9)
+            // THE THIRTEEN BOXES OF π AS THE AMOUNTS GIVEN (the author's word 03.10 22:02: «when sending, the same thirteen
+            // boxes in the reaction»): every box the balance holds is one tap; the rest stand dimmed.
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(MTPiLevels.all, id: \.self) { n in
+                        let held = n <= MTCoinSplit.shared.available
+                        Button { MTReactClock.act = "row:coin\(n)"; onCoin(n) } label: {
+                            // USER-DATA: a box of coins to give, in its short form
+                            Text(verbatim: "+" + MTPiLevels.short(n)).font(.system(size: 15, weight: .semibold).monospacedDigit())
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10).padding(.vertical, 6)
+                                .background(Color(white: 0.3), in: Capsule())
+                        }
+                        .disabled(!held)
+                        .opacity(held ? 1 : 0.4)
+                    }
+                }
+                .padding(.horizontal, 14)
+            }
+            .padding(.bottom, 9)
+        }
+    }
+}
+
+extension MTCoinsDoor {
+    /// GIVE A COIN (slice S2b b6): the message menu's coin rows.
+    @MainActor func giveRow(onCoin: @escaping (Int) -> Void) -> AnyView { AnyView(MTCoinGiveRow(onCoin: onCoin)) }
+}
+
+/// THE COINS ON THE LETTER (the author's word 03.10 13:40; slice S2b b7): the total given on a letter, on this phone's book, as a
+/// plate beside the letter's answers.
+struct MTLetterCoins: View {
+    let coins: Int
+    var body: some View {
+        HStack(spacing: 4) {
+            MTMintCoin(spinning: false, side: 16)
+            // USER-DATA: the number of coins given on this letter
+            Text(verbatim: MTCoinText.count(coins)).font(.system(size: 15, weight: .semibold).monospacedDigit())
+        }
+        .padding(.horizontal, 9).padding(.vertical, 4)
+        .background(Color(white: 0.22))
+        .clipShape(MontanaLongOctagon())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Coins"))
+    }
+}
+
+extension MTCoinsDoor {
+    @MainActor func coinsOn(_ mid: String) -> Int { MTLocalCoinLedger.shared.coins(on: mid) }
+    @MainActor func letterCoins(_ coins: Int) -> AnyView { AnyView(MTLetterCoins(coins: coins)) }
+    @MainActor func coin(spinning: Bool, side: CGFloat, turn: Int?) -> AnyView { AnyView(MTMintCoin(spinning: spinning, side: side, turn: turn)) }
+    @MainActor func flowBegins(tick: Int) -> AnyView { AnyView(MTMoneyFlowBegins(tick: tick)) }
+    @MainActor func changes(_ what: MTCoinWatched) -> AnyPublisher<Void, Never> {
+        switch what {
+        case .letters: return MTLocalCoinLedger.shared.objectWillChange.map { _ in () }.eraseToAnyPublisher()
+        // The available's beat, and a turn of the owner's switch: Privacy's own toggle writes it, and the defaults tell every write
+        // after it lands, so only a turn passes, on the main actor.
+        case .balance:
+            let turned = NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+                .map { _ in MTCoinShow.on }.prepend(MTCoinShow.on).removeDuplicates().dropFirst()
+                .receive(on: DispatchQueue.main).map { _ in () }
+            return MTCoinSplit.shared.objectWillChange.map { _ in () }.merge(with: turned).eraseToAnyPublisher()
+        case .told: return MTCoinBoard.shared.objectWillChange.map { _ in () }.eraseToAnyPublisher()
+        case .transfers: return MTCoinHistory.shared.objectWillChange.map { _ in () }.eraseToAnyPublisher()
+        case .flow: return MTMoneyFlow.shared.objectWillChange.map { _ in () }.eraseToAnyPublisher()
+        }
+    }
+}
+
+/// A POST'S PARTICIPATION (slice S2b b7e; it stood on the post's chain page, MTBoardChainPage): the windows and rights of the
+/// wallet as the core confirmed them, read off the main thread when the section appears.
+struct MTParticipationSection: View {
+    @State private var state: Result<MTWalletCore.Snapshot, MTWalletCore.Absence>?
+    var body: some View {
+        Section {
+            if let state, case .success(let wallet) = state, !wallet.windows.isEmpty {
+                ForEach(wallet.windows) { window in
+                    VStack(alignment: .leading, spacing: 6) {
+                        LabeledContent("Window", value: String(window.id))
+                        LabeledContent("Right to a share", value: String(window.share))
+                        LabeledContent("Redemption window", value: String(window.acceptedIn))
+                    }
+                }
+            } else if let state, case .failure(let why) = state {
+                Text(MTWalletCore.said(why)).foregroundStyle(.secondary)
+            } else if let state, case .success = state {
+                Text("No confirmed window yet").foregroundStyle(.secondary)
+            } else {
+                Text(MTWalletCore.said(nil)).foregroundStyle(.secondary)
+            }
+        } header: { Text("Participation") }
+          footer: { Text("A right becomes a wallet note only after the core confirms its redemption.") }
+        .task {
+            let result = await Task.detached(priority: .utility) { MTWalletCore.read() }.value
+            state = result
+        }
+    }
+}
+
+extension MTCoinsDoor {
+    @MainActor func coinsPage(ui: UIState) -> AnyView { AnyView(MTWalletPage().environment(ui)) }
+    @MainActor func participation() -> AnyView { AnyView(MTParticipationSection()) }
+    @MainActor func questionsPage() -> AnyView { AnyView(MTQuestionsPage()) }
+    func said(_ w: MTCoinWord) -> String {
+        switch w {
+        case .short: return "Not enough coins"
+        case .shortWhy: return "Your coin balance is lower than this."
+        case .notSent: return "Coins were not sent"
+        case .noKeyWhy: return "This person's Montana has not shared its coin key yet. Nothing left your balance. Try again after they update and open Montana."
+        case .travel: return "The coins are on their way"
+        case .travelWhy: return "A coin letter keeps its coins until it is delivered or they come back. Then it can be deleted."
+        case .fieldHint: return "Enter the coin amount"
+        case .chatTravels: return "A coin letter in this chat is on its way. The chat can be deleted once it is delivered or its coins come back."
+        case .seed: return "This seed phrase unlocks access to your wallet"
+        }
+    }
+    var levelRule: String { "Your level is the lowest of three: your time in Montana, the coins you hold and the Fabric of Time, the people you write to and call regularly in the last two weeks, weighed by the levels their own time and wallet give them. Each level opens new functions of Montana." }
+}
+
+/// THE MONEY FLOW OF A CHAT (slice S2b b7d2): each conversation's own turn (MTMoneyFlow), answered through the door.
+extension MTCoinsDoor {
+    func flowOn(_ conv: String) -> Bool { MTMoneyFlow.isOn(conv) }
+    @MainActor func setFlow(_ conv: String, _ on: Bool) { MTMoneyFlow.shared.set(conv, on) }
+}
+
+/// THE BADGES ON A FACE (slice S2b b7b): the available, the one number of the person's coins (fold-7); what a pair told, as the
+/// board keeps it.
+extension MTCoinsDoor {
+    @MainActor var available: Int { MTCoinSplit.shared.available }
+    @MainActor var shown: Bool { MTCoinShow.on }
+    @MainActor func toldCoins(_ conv: String) -> Int? { MTCoinBoard.shared.told[conv]?.coins }
+    @MainActor func toldLevel(_ conv: String) -> Int? { MTCoinBoard.shared.levels[conv]?.level }
+    @MainActor func badge(_ coins: Int, height: CGFloat) -> AnyView { AnyView(MTCoinFaceBadge(coins: coins, height: height)) }
+    func spokenBalance(_ coins: Int) -> String { String(localized: "Balance \(MTCoinText.count(coins))", bundle: MTLanguage.bundle) }
+}
+
+/// THE OWNER SHOWS OR HIDES THEIR COINS (slice S2b b7c; the author's words 04.10.2026 02:47 UTC and 02:48 UTC: «whether the balance is
+/// shown each decides, on by default; who does not show is not in the top -- the privacy settings»; «the owner governs privacy»): one
+/// switch for the Montana top, the coins told to correspondents and the coin's badge (MTCoinShow); the table and the pairs hear its
+/// turn at once. Its line in Appearance leads to it (11.10).
+struct MTCoinShowSwitch: View {
+    let icon: AnyView
+    @AppStorage(MTCoinShow.key) private var shown = true
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
+                icon
+                Toggle("Show my coins", isOn: $shown)
+            }
+            Text("Your name and coins stand in the Montana top for everyone, and your correspondents see your coins. Off, you are not in the top.")
+                .font(.caption).foregroundColor(.gray)
+        }
+        .onChange(of: shown) { _, v in MTTopNet.shared.showChanged(v) }
+    }
+}
+struct MTCoinShowLine: View {
+    @AppStorage(MTCoinShow.key) private var shown = true
+    var body: some View {
+        LabeledContent { Text(shown ? "On" : "Off") } label: { Text("Show my coins") }
+    }
+}
+
+extension MTCoinsDoor {
+    @MainActor func showLine() -> AnyView { AnyView(MTCoinShowLine()) }
+    @MainActor func showSwitch(icon: AnyView) -> AnyView { AnyView(MTCoinShowSwitch(icon: icon)) }
+    /// THE COINS ARE SAID BEFORE THE WORDS GO (the author's word 12.10.2026 12:3x UTC, No.66, after 4 105 470 coins stood on a
+    /// forgotten account on 11.10): an account that holds coins says how many, and that only its 24 words bring them back.
+    @MainActor func heldWords() -> Text? {
+        let coins = MTCoinSplit.shared.available
+        guard 0 < coins else { return nil }
+        return Text("This account holds \(MTCoinText.count(coins)) coins. They stay with its 24 words and come back only with them.")
+    }
+}
+
+/// THE COIN FROM THE FIELD, A MOVE'S PAGE, THE TRANSFERS WITH A PERSON (slice S2b b7d): the coins' own answers to the chat and the
+/// person's page.
+extension MTCoinsDoor {
+    @MainActor func transfer(_ coins: Int, to chat: Chat, store: ChatStore) async -> MTCoinTransfer {
+        await MTCoinSend.transferResult(coins, to: chat, store: store)
+    }
+    @MainActor func groupSend(group: String, each: Int, sent: @escaping () -> Void) -> AnyView {
+        AnyView(MTCoinSendSheet(group: group, each: each, sent: sent))
+    }
+    @MainActor func movePage(_ route: MTMoveRoute, peer: String) -> AnyView { AnyView(MTCoinMovePage(route: route, peer: peer)) }
+    @MainActor func autoReactPage() -> AnyView { AnyView(MTAutoReactPage()) }
+    /// Read from the one fold of the coins (MTCoinHistory), never from the book here; a transfer opens its record in the Explorer, a
+    /// coin letter its transaction's page.
+    @MainActor func transfers(with peers: Set<String>) -> [MTTransferLine]? {
+        let history = MTCoinHistory.shared
+        let lines = history.with(peers)
+        guard history.fold != nil else { return nil }
+        return lines.map { l in
+            let web = l.tx.flatMap { tx in URL(string: MTCoinTx.link + tx) }
+            return MTTransferLine(id: l.id, glyph: l.glyph, category: l.category, at: l.at, credit: 0 < l.signed,
+                                  said: (0 < l.signed ? "+" : "") + MTCoinText.count(l.signed),
+                                  opens: web.map { .web($0) } ?? .move(MTMoveRoute(ref: l.ref, mine: l.signed < 0)))
+        }
+    }
+}
+
+/// The count of coins on a face (the author's word 14.10.2026): its short form on the material's pill, in the face row's own type.
+struct MTCoinFaceBadge: View {
+    let coins: Int
+    let height: CGFloat
+    var body: some View {
+        Text(verbatim: MTPiLevels.short(coins))   // USER-DATA: localized compact coin count
+            .padding(.horizontal, 3).frame(height: height)
+            .background(.regularMaterial, in: Capsule())
+            .fixedSize()
+    }
+}
+
+/// THE MINT COIN, the one drawing of our coin (the wall's minting byline, and the chat's turn of the feed -- the author's words
+/// 02.10 18:29 and 19:24: «the turn button is our minting coin, it spins when you switch it on»). It spins while it mints and
+/// stands on its face while it does not; with Reduce Motion it never spins, and whoever shows it says «on» by another sign.
+struct MTMintCoin: View {
+    var spinning = true
+    var side: CGFloat = 22
+    /// ONE TURN, THEN REST (the author's words 03.10.2026 13:46 UTC and 13:49 UTC: «at every letter a +1 coin, animated, one turn,
+    /// beautifully, to show how it is minted»; «when the money flow is switched on, an active animation»): the coin makes one
+    /// whole turn when it appears with a `turn` and again every time `turn` changes, and rests on its face between.
+    var turn: Int? = nil
+    /// HOW FAST IT SPINS (the Pantheon on Fire, 03.10: «the coin spins at a speed from 1 to 13»): turns per 1.4 s. The phase runs
+    /// on from where the face stands (MTCoinDial), so a new speed never jumps the coin.
+    var speed: Double = 1
+    @State private var angle: Double = 0
+    @State private var lit = false
+    @State private var dial = MTCoinDial()
+    @Environment(\.accessibilityReduceMotion) private var still
+    var body: some View {
+        Group {
+            if let turn {
+                Face(angle: angle, side: side)
+                    .opacity(lit ? 0.35 : 1)
+                    .onAppear { turnOnce() }
+                    .onChange(of: turn) { _, _ in turnOnce() }
+            } else {
+                TimelineView(.animation(paused: !spinning || still)) { ctx in
+                    Face(angle: spinning && !still ? dial.angle(at: ctx.date, speed: speed) : 0, side: side)
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+    /// A whole turn from wherever the coin stands: the angle grows by one turn, so a second turn in a row is a turn too.
+    private func turnOnce() {
+        // WITH REDUCE MOTION THE COIN LIGHTS, IT DOES NOT TURN (the author's words 03.10: «in that mode, without the coin's
+        // animation, show the +1»): a fade, which the setting allows, says a coin was minted on every system.
+        guard !still else {
+            lit = true
+            withAnimation(.easeOut(duration: 0.6)) { lit = false }
+            return
+        }
+        withAnimation(.easeInOut(duration: 1.1)) { angle += 360 }
+    }
+    /// The coin at one angle of a turn -- the face from the front, the back mirrored behind. Animatable, so a turn passes both.
+    private struct Face: View, Animatable {
+        var angle: Double
+        let side: CGFloat
+        var animatableData: Double { get { angle } set { angle = newValue } }
+        var body: some View {
+            let t = angle.truncatingRemainder(dividingBy: 360)
+            let front = t < 90 || 270 < t
+            Image(front ? "CoinFace" : "CoinBack")
+                .resizable().scaledToFill()
+                .frame(width: side, height: side)
+                .clipShape(Circle())
+                .scaleEffect(x: front ? 1 : -1, y: 1)
+                .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.45)
+        }
+    }
+}
+
+/// The spinning coin's phase, carried frame by frame: a change of speed turns on from where the face stands. A frame after a
+/// pause counts a tenth of a second at most, so a coin woken from rest starts where it stopped.
+final class MTCoinDial {
+    private var turned = 0.0
+    private var last: Date?
+    func angle(at now: Date, speed: Double) -> Double {
+        if let last {
+            let step = min(0.1, max(0, now.timeIntervalSince(last)))
+            turned = (turned + step * speed * 360 / 1.4).truncatingRemainder(dividingBy: 360)
+        }
+        last = now
+        return turned
+    }
+}
+
+/// THE COIN UNDER MANY FINGERS (the author's words 03.10.2026 21:17-21:18 UTC: «multi-tapping over the whole surface of the coin,
+/// with the animation of the crediting»): the platform's own touches, every finger its own, over the coin's whole circle -- a
+/// SwiftUI button answers one touch at a time. This view takes the finger by design (the Pantheon's coin); it answers each touch
+/// with the platform's light tap and hands the point it touched to the one who mints.
+struct MTCoinTapPad: UIViewRepresentable {
+    /// How far past the coin's rim a finger still mints: the pad stands this much outside the coin on every side.
+    static let rim: CGFloat = 12
+    /// THE PAGE IS LOCKED WHILE THE GAME BURNS (the author's word 04.10.2026 00:58 UTC: «there is still scrolling of the wallet's page when
+    /// I mint by swipes -- the flag must switch the page's scroll off fully once the game is on»): the pad holds its page's scroll and its
+    /// pan off for as long as this is true, whatever any pass of the page's body sets.
+    var locked = false
+    /// A finger landed on the coin -- before any coin of it (MTPantheon.touched).
+    var onDown: (() -> Void)? = nil
+    /// The last finger left the coin (MTPantheon.released).
+    var onUp: (() -> Void)? = nil
+    /// A finger held on the coin nine seconds without a swipe (Pad.armNine).
+    var onLongHold: (() -> Void)? = nil
+    /// A finger landed anywhere on the coin's page, the coin too (Pad.Watch).
+    var onPageTouch: (() -> Void)? = nil
+    let onTouch: (CGPoint) -> Void
+    func makeUIView(context: Context) -> Pad {
+        let v = Pad()
+        v.isMultipleTouchEnabled = true
+        v.backgroundColor = .clear
+        v.onTouch = onTouch
+        v.onDown = onDown
+        v.onUp = onUp
+        v.onLongHold = onLongHold
+        v.onPageTouch = onPageTouch
+        v.locked = locked
+        return v
+    }
+    func updateUIView(_ v: Pad, context: Context) { v.onTouch = onTouch; v.onDown = onDown; v.onUp = onUp; v.onLongHold = onLongHold; v.onPageTouch = onPageTouch; v.locked = locked }
+    final class Pad: UIView, UIGestureRecognizerDelegate {
+        var onTouch: ((CGPoint) -> Void)?
+        var onDown: (() -> Void)?
+        var onUp: (() -> Void)?
+        var onLongHold: (() -> Void)?
+        var onPageTouch: (() -> Void)?
+        var locked = false { didSet { if locked != oldValue { hold() } } }
+        /// THE NINE SECONDS (the author's word 04.10.2026 09:28 UTC: «if I press the coin in the wallet and hold it nine seconds, the
+        /// auto minting turns on -- an easter egg: not advertised, made exactly»): a finger that stays on the coin nine seconds, never
+        /// swiping, gives its word once; a lift or a swipe's coin lets it go.
+        static let nine: Double = 9
+        private var nineWork: DispatchWorkItem?
+        private func armNine() {
+            nineWork?.cancel()
+            let w = DispatchWorkItem { [weak self] in self?.nineWork = nil; self?.onLongHold?() }
+            nineWork = w
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.nine, execute: w)
+        }
+        private func disarmNine() { nineWork?.cancel(); nineWork = nil }
+        private let feel = UIImpactFeedbackGenerator(style: .light)
+        /// A SWIPE SPINS THE COIN TOO (the author's word 04.10 00:58: «any swipes spin the coin to minting as well»): every
+        /// stretch of the fingers' path over the coin is one more touch -- the coin's own pan, so the page under it does not scroll.
+        static let stretch: CGFloat = 28
+        private var travelled: CGFloat = 0
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            let pan = UIPanGestureRecognizer(target: self, action: #selector(swiped(_:)))
+            pan.cancelsTouchesInView = false
+            pan.maximumNumberOfTouches = 5
+            pan.delegate = self
+            addGestureRecognizer(pan)
+            let down = Down(target: self, action: #selector(held(_:)))
+            down.cancelsTouchesInView = false
+            down.delegate = self
+            addGestureRecognizer(down)
+        }
+        required init?(coder: NSCoder) { nil }
+        @objc private func swiped(_ g: UIPanGestureRecognizer) {
+            switch g.state {
+            case .began:
+                travelled = 0
+                g.setTranslation(.zero, in: self)
+            case .changed:
+                let t = g.translation(in: self)
+                travelled += hypot(t.x, t.y)
+                g.setTranslation(.zero, in: self)
+                while Self.stretch <= travelled {
+                    travelled -= Self.stretch
+                    disarmNine()   // a swipe mints; it is no hold
+                    onTouch?(g.location(in: self))
+                    feel.impactOccurred()
+                }
+            default: break
+            }
+        }
+        /// THE PAGE STANDS WHILE A FINGER IS ON THE COIN (the author's word 03.10.2026 23:58 UTC: «while minting, the wallet's page
+        /// must not scroll on T1»): the page's lock waited for a minted tap (scrollDisabled by the speed), and the list holds a touch
+        /// back for a moment before the coin hears it (delaysContentTouches) -- a swipe on the coin moved the page first. A recognizer
+        /// that begins at the touch itself switches the page's pan off until the last finger leaves the coin.
+        private weak var page: UIScrollView?
+        private var fingers = false
+        private func enclosing() -> UIScrollView? {
+            var v = superview
+            while let s = v, !(s is UIScrollView) { v = s.superview }
+            return v as? UIScrollView
+        }
+        /// EVERY FINGER ON THE PAGE IS HEARD (the author's word 04.10.2026 10:33 UTC: the auto minting «deactivates at any action»):
+        /// a recognizer that never recognizes stands on the page's own scroll view, hears each finger that lands on the page -- on a
+        /// row, a button, the coin -- and lets it go on to what it touched. It leaves with the coin.
+        private var watch: Watch?
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            if window == nil {
+                if let w = watch { w.view?.removeGestureRecognizer(w) }
+                watch = nil
+                return
+            }
+            guard watch == nil, let page = enclosing() else { return }
+            let w = Watch { [weak self] in self?.onPageTouch?() }
+            w.cancelsTouchesInView = false
+            w.delaysTouchesBegan = false
+            w.delaysTouchesEnded = false
+            page.addGestureRecognizer(w)
+            watch = w
+        }
+        private final class Watch: UIGestureRecognizer {
+            private let heard: () -> Void
+            init(_ heard: @escaping () -> Void) { self.heard = heard; super.init(target: nil, action: nil) }
+            override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+                heard()
+                state = .failed
+            }
+        }
+        /// The page moves only when no finger is on the coin and the game is out.
+        private func hold() {
+            if page == nil { page = enclosing() }
+            let free = !fingers && !locked
+            page?.panGestureRecognizer.isEnabled = free
+            page?.isScrollEnabled = free
+        }
+        @objc private func held(_ g: UIGestureRecognizer) {
+            switch g.state {
+            case .began:
+                fingers = true
+                onDown?()
+                hold()
+                armNine()
+            case .ended, .cancelled, .failed:
+                fingers = false
+                disarmNine()
+                hold()
+                onUp?()
+            default: break
+            }
+        }
+        /// The coin's own two hands -- the touch and the swipe -- work together; nothing else is touched.
+        func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            g.view === other.view
+        }
+        /// A touch on the coin the moment it lands: begun at the first finger, ended when the last one leaves.
+        private final class Down: UIGestureRecognizer {
+            private var fingers = 0
+            override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+                fingers += touches.count
+                state = state == .possible ? .began : .changed
+            }
+            override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) { lift(touches.count) }
+            override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) { lift(touches.count) }
+            private func lift(_ n: Int) {
+                fingers = max(0, fingers - n)
+                if fingers == 0 { state = .ended }
+            }
+            override func reset() { fingers = 0 }
+        }
+        /// The coin's circle is the target, its corners are not.
+        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+            hypot(point.x - bounds.midX, point.y - bounds.midY) <= min(bounds.width, bounds.height) / 2
+        }
+        override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+            for t in touches {
+                onTouch?(t.location(in: self))
+                feel.impactOccurred()
+            }
+        }
+    }
+}
+
+/// THE MONEY FLOW BEGINS (the author's word 03.10.2026 13:49 UTC: «when it is switched on, an active animation»): the coin,
+/// large, makes one turn in the middle of the chat under its name, and leaves; the row of the chat stays (MTMoneyFlowRow).
+struct MTMoneyFlowBegins: View {
+    let tick: Int
+    @State private var shown: Double = 0
+    @State private var scale: CGFloat = 0.6
+    var body: some View {
+        VStack(spacing: 12) {
+            MTMintCoin(side: 120, turn: tick)
+            Text("Money Flow").font(.title2.bold())
+        }
+        .padding(28)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .scaleEffect(scale)
+        .opacity(shown)
+        .allowsHitTesting(false)
+        .onChange(of: tick) { _, _ in
+            shown = 0; scale = 0.6
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { shown = 1; scale = 1 }
+            withAnimation(.easeIn(duration: 0.35).delay(1.4)) { shown = 0; scale = 0.9 }
+        }
+    }
+}
+
+// THE QUESTIONS, moved whole from MontanaSettings.swift (decision 531 (a), guard 4): the coins' own page, opened through
+// MTApps.coins.questionsPage().
+// Questions
+/// QUESTIONS (the author's words 17.10.2026 19:50 UTC: «make all of these into a section of questions: answers to every question in
+/// the app as a separate section, with all the information and the documents, public, so that AI agents read the link to montana.xxx
+/// and learn every rule of the app for the person»; 20:18 UTC: «everything into build 2238»): the platform's own list, a section a
+/// topic, a row a question, the whole row the road to its answer. Every answer says only what this build keeps -- the levels and the
+/// minting as MTPersonChain, MTPiLevels and MTLevelAccess hold them (APPLE-RULES 2.1, 2.3.1(a)); the same answers, with the
+/// specification's, stand on montana.xxx/faq for people and for the agents that read the site (MontanaSafety.guide).
+struct MTQuestionsPage: View {
+    struct Item: Identifiable { let question: String; let answer: String; var id: String { question } }
+    struct Topic: Identifiable { let title: String; let systemImage: String; let items: [Item]; var id: String { title } }
+    static let topics: [Topic] = [
+        Topic(title: "Levels", systemImage: "stairs", items: [
+            Item(question: "What is the Global level?",
+                 answer: "Your Global level is the lowest of three levels: the level of the chain of the person, which grows with your time on the network, the level of π, which grows with the coins you hold, and the Fabric of Time, which stands on the people you write to and call regularly in the last two weeks. You see it in TimeCoin, on the TimeChain page."),
+            Item(question: "How does the chain of the person count my time?",
+                 answer: "A second counts while Montana is open on the screen of one of your devices and a Montana node answers it. The second is read from the node, never from the clock of your phone. Each level doubles the seconds of the one before: 1 second is level 0, 2 seconds level 1, 4 seconds level 2, then 8, 16, 32 and on. When you leave the network, your level stays, and nothing is added until you return."),
+            Item(question: "What is the level of π?",
+                 answer: "It is the level of your wallet: how many first digits of π your balance reaches. 3 coins is level 1, 31 coins level 2, 314 coins level 3, then 3141, 31415 and on, up to 19 digits. Below 3 coins the level is 0. It is the one level you lower yourself: it falls when your balance falls."),
+            Item(question: "What do the levels open?",
+                 answer: "Nothing more: every function of Montana is open on every level. The level shows your time on the network and your wallet."),
+        ]),
+        // THE FABRIC OF TIME (the author's words 17.10.2026 19:24-19:50 UTC; 17.10.2026 21:4x UTC «a sliding window of t2 over live activity»,
+        // 07:2x a correspondent weighed by their ceiling; MTFabric): what this build does of it and no more -- its deviations from the
+        // specification named, not hidden (the window from the nodes' seconds, no witness into the network yet).
+        Topic(title: "Fabric of Time", systemImage: "point.3.connected.trianglepath.dotted", items: [
+            Item(question: "What is the Fabric of Time?",
+                 answer: "The third level your Global level is set by: the people you write to and call regularly, each weighed by the level their own time and wallet give them. Your Global level is the lowest of the three, so the Fabric of Time can lower it and never raises it."),
+            Item(question: "What counts as an exchange?",
+                 answer: "Anything you and a person send each other that stands in your conversation: words, voice and video messages, photos, files, stickers and GIFs, coin transfers, the moves of a game, and a call in which each phone received the other's voice for at least 60 seconds. Receipts, typing and presence do not count, and neither does a group."),
+            Item(question: "When does a person's phone sign for me?",
+                 answer: "When a word of yours reaches their phone and they wrote to you themselves in the last 7 days, their phone signs, once a day at most, that your word reached it: the minute it arrived, the hash the fingerprint of your conversation is read from, and their own ceiling. It gives the signature to you alone, inside your conversation. A person who only writes and is never answered receives none."),
+            Item(question: "Who is a regular correspondent?",
+                 answer: "A person from whom your phone holds a signature in each of the last two weeks: the newer 7 days and the 7 before them. The window slides with the clock of the network; there are no fixed weeks. People are told apart by the key their signatures are made with, which their 24 words give for your conversation alone, not by anything they say about themselves."),
+            Item(question: "How is the level of the Fabric of Time counted?",
+                 answer: "Each regular correspondent stands at their ceiling: the lower of their two other levels, at its lowest in their signatures of the last two weeks. The level is the greatest number g for which at least g of your regular correspondents stand at g or above; a person far above g adds one, exactly as one at g does. It is counted again whenever a signature arrives or leaves the two weeks. Their own Fabric of Time does not enter it, so one person's dip never pulls a whole circle down."),
+            Item(question: "Does the Fabric of Time lower a newcomer?",
+                 answer: "Not in the first two weeks. From the first launch of this version on this phone with your 24 words, for 14 days the Fabric of Time stands at your ceiling, so your Global level follows your two other levels. TimeCoin shows the days left until the first count."),
+            Item(question: "What do the people I write to learn?",
+                 answer: "Your ceiling, inside the signatures your phone gives them, and nothing else of the Fabric of Time. A signature names your conversation by the hash its fingerprint is read from, which only the two of you can compute, and it is made with a key your 24 words give for that conversation alone. No key and no number in it is the same with two people, so two people you write to cannot tell from it that they speak with the same person."),
+            Item(question: "What do the nodes of the network learn?",
+                 answer: "Nothing they can read: signatures and ceilings ride inside your conversation, sealed for the other person, by the same road as your letters. Signatures stay on your phone for two weeks and then leave it."),
+            Item(question: "How does this version differ from the specification?",
+                 answer: "In four ways. A phone holds no window of the network's core, so the minute of a signature and the two weeks are read from the clock of the Montana nodes, learned from their answers. The signatures are not yet witnessed into the network; they stay on the phone that received them. Each of your devices with the same 24 words counts the signatures that reached it. And a signature names a conversation and is made with a key for that conversation alone, where the specification names the key of a person: this version knows people only by their conversations."),
+            Item(question: "Can false signatures lift a level?",
+                 answer: "No. The Fabric of Time only lowers: a person who states a false ceiling can at most spare someone a lowering and never lifts anyone above their own ceiling. One signature a day from one person is kept, the one with the lower ceiling, so two of their devices answering the same word weigh as one."),
+        ]),
+        Topic(title: "Coins and time", systemImage: "hourglass", items: [
+            Item(question: "What is a Time Coin?",
+                 answer: "The coin of Montana, ticker $TCM. Its measure is time: one second is one coin, so an hour is 3600 coins. A billion coins is one Montana."),
+            Item(question: "Do coins mint while Montana is in the background?",
+                 answer: "Yes. When Montana leaves the screen, it keeps the moment it left. When you come back, every second you were away mints one coin, the same one coin a second as everywhere. At Global level 0 the time away mints nothing, and neither does it when the network did not answer Montana before it left the screen. Both moments are read from the Montana network, so turning the clock of the phone changes nothing."),
+        ]),
+        Topic(title: "Your words and devices", systemImage: "key.horizontal", items: [
+            Item(question: "What if I use Montana on several devices?",
+                 answer: "The same 24 words on several devices are one person. Their seconds join: two devices open in the same second add one second, and once the devices have read each other's count, they show one chain of the person."),
+            Item(question: "What if I have several sets of 24 words?",
+                 answer: "Each set of 24 words is a separate person: its own seconds, its own wallet, its own levels. The levels of two persons are never added together, and coins move between them only by a real transfer."),
+        ]),
+        Topic(title: "Privacy", systemImage: "lock", items: [
+            Item(question: "Who sees my level?",
+                 answer: "The people you write with see your Global level beside your avatar. The nodes of the network keep a table of how many people stand on each level: for it Montana gives them a mark made from your 24 words and your Global level, never your balance, name or contacts. Your seconds online leave the phone only sealed under your 24 words: the nodes keep them for your other devices and cannot read them."),
+        ]),
+    ]
+    var body: some View {
+        List {
+            ForEach(Self.topics) { topic in
+                Section {
+                    ForEach(topic.items) { item in
+                        NavigationLink { MTAnswerPage(topic: topic.title, item: item) } label: {
+                            Text(LocalizedStringKey(item.question)).frame(minHeight: 44, alignment: .leading)
+                        }
+                    }
+                } header: {
+                    Label(LocalizedStringKey(topic.title), systemImage: topic.systemImage)
+                }
+                .listRowBackground(MTGlassRowPlate())
+            }
+            Section {
+                MTDocumentRow(title: "Questions and answers", link: MontanaSafety.guide)
+                MTDocumentRow(title: "Specification and code", link: MontanaSafety.source)
+            } header: {
+                Label("Documents", systemImage: "doc.text")
+            } footer: {
+                Text("The site holds the answers about Montana in English, Russian and Chinese, also as files AI assistants read. The Montana specification and the code of this app are open on GitHub.")
+            }
+            .listRowBackground(MTGlassRowPlate())
+        }
+        .foregroundColor(.primary)
+        .scrollContentBackground(.hidden)
+        .montanaPageGround()
+        .navigationTitle("Questions")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// One answer on a page of its own: the question over its answer in the list's own row, as the platform's help reads.
+struct MTAnswerPage: View {
+    let topic: String
+    let item: MTQuestionsPage.Item
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(LocalizedStringKey(item.question)).font(.headline)
+                    Text(LocalizedStringKey(item.answer)).font(.body).fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.vertical, 6)
+            }
+            .listRowBackground(MTGlassRowPlate())
+        }
+        .foregroundColor(.primary)
+        .scrollContentBackground(.hidden)
+        .montanaPageGround()
+        .navigationTitle(Text(LocalizedStringKey(topic)))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

@@ -299,7 +299,7 @@ enum MontanaBackup {
 
     // ── the shelf ───────────────────────────────────────────────────────────────
     /// Where a copy is built and where it waits to be handed on. Outside the vendor's backup: a copy
-    /// of the copy has no business riding there.
+    /// of the copy has no messenger riding there.
     static func shelf() throws -> URL {
         let fm = FileManager.default
         var d = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -1301,6 +1301,16 @@ enum MontanaBackupCloud {
     /// Info.plist — are held equal by tools/mt-cloud-truth-check.py (rule 7).
     static let container = "iCloud.quest.montana.Montana"                          // NOT-UI
     private static var firstContainer: String { "iCloud." + MontanaContour.appId }   // NOT-UI
+    /// THE CONTAINER THIS EDITION WRITES TO (the critic of S7, 03.11.2026): the one its own Info.plist declares. The Protocol
+    /// declares the named one above; the Messenger declares its own, registered as iCloud.xxx.montana.Business -- a capital B the
+    /// app's lower-case identifier does not spell, and a container's name is matched letter for letter (road messenger 87, Agent
+    /// 883: the profile refused «iCloud.» and the identifier). An edition that declares none writes into the first. Read once
+    /// from the bundle the target ships, so no #if names an edition.
+    private static let own: String = {
+        let declared = Bundle.main.object(forInfoDictionaryKey: "NSUbiquitousContainers") as? [String: Any]   // NOT-UI
+        if declared?[container] != nil { return container }
+        return declared?.keys.sorted().first ?? firstContainer
+    }()
     static var on: Bool { UserDefaults.standard.bool(forKey: switchKey) }
     /// WHETHER THIS DEVICE HAS MET A COPY OF ITS OWN — made one, or taken one back (the critic, 23.09). A device
     /// that has met none and finds one in iCloud is a device that has not been restored yet: its first copy would
@@ -1327,14 +1337,14 @@ enum MontanaBackupCloud {
     static func ready(_ done: @escaping (Bool) -> Void) {
         DispatchQueue.global(qos: .utility).async {
             _ = FileManager.default.url(forUbiquityContainerIdentifier: firstContainer)
-            let u = FileManager.default.url(forUbiquityContainerIdentifier: container)
+            let u = FileManager.default.url(forUbiquityContainerIdentifier: own)
             DispatchQueue.main.async { done(u != nil) }
         }
     }
     /// The copies' own folder in the container. Not «Documents»: that one is what a document browser
     /// shows, and a copy is not a document a person opens — it is what the app keeps for them.
     private static func folder() throws -> URL {
-        guard let base = FileManager.default.url(forUbiquityContainerIdentifier: container) else {
+        guard let base = FileManager.default.url(forUbiquityContainerIdentifier: own) else {
             throw NSError(domain: "montana.backup", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "no container"])   // NOT-UI: read by the diary
         }

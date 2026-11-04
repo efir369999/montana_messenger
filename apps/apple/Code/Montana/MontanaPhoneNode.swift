@@ -165,10 +165,11 @@ final class MontanaPhoneNode: ObservableObject {
     /// device announces itself nowhere — not on the local network, not over the radio — and is reached
     /// only by those who already hold its address.
     static var meshDiscoverable: Bool {
-        get { UserDefaults.standard.object(forKey: "mt.mesh.discoverable") as? Bool ?? false }
+        get { MTApps.mesh != nil && (UserDefaults.standard.object(forKey: "mt.mesh.discoverable") as? Bool ?? false) }
         set {
+            guard let mesh = MTApps.mesh else { return }   // Montana Messenger carries no mesh: never findable on it (15846)
             UserDefaults.standard.set(newValue, forKey: "mt.mesh.discoverable")
-            MontanaBLEMesh.shared.setDiscoverable(newValue)
+            mesh.setDiscoverable(newValue)
             // OFF at birth, and the system's local-network question rises only HERE, at the
             // person's own switch (the author's word 27.08): the first advertise/browse is
             // what makes iOS ask, so nothing advertises or browses until the switch says so.
@@ -187,10 +188,10 @@ final class MontanaPhoneNode: ObservableObject {
         // network — and the trace showed a node that knew nobody while believing itself online.
         if Self.meshDiscoverable {
             courier.advertiseMDNS(port: localPort, directPort: MontanaDirect.shared.port)
-            MontanaBLEMesh.shared.start()
+            MTApps.mesh?.start()
         } else {
-            MontanaBonjour.shared.stopAdvertising()
-            MontanaBLEMesh.shared.powerDown()
+            MTApps.mesh?.stopAdvertising()
+            MTApps.mesh?.powerDown()
             DispatchQueue.main.async { self.btPeers = [] }
         }
         MontanaTrace.mark("discoverable_applied", "on=\(Self.meshDiscoverable) scan=on relay=on")
@@ -256,7 +257,10 @@ final class MontanaPhoneNode: ObservableObject {
     /// handed to a person standing here, and it carries the overlay address anyway, so a hint that
     /// goes stale costs a lookup rather than the contact. A device with neither belongs to the mesh
     /// through the nodes holding it, and that is what its record carries.
-    static func reachableEndpoint() -> String? { MontanaSelfEndpoint.proven().first ?? lanIP() }
+    /// Where the local network is not reached (MTLocalNetwork, 15863) its address is never handed out.
+    static func reachableEndpoint() -> String? {
+        MontanaSelfEndpoint.proven().first ?? (MTLocalNetwork.reached ? lanIP() : nil)
+    }
 
     /// The card handed out of band — copied, shown as a QR, followed as a link (spec §9.5, first
     /// contact anchor). With it a scan is enough to ask the network where this person is now, so an
@@ -296,13 +300,13 @@ final class MontanaPhoneNode: ObservableObject {
         // The router's door, asked of the router rather than of a person: NAT-PMP first,
         // then UPnP. A device that gets one becomes reachable for others; a device that
         // does not carries on through the nodes it knows.
-        MontanaPortMap.open()
+        MTApps.mesh?.openRouterDoor()
         if Self.meshDiscoverable, meshDirectPort > 0 {
             courier.advertiseMDNS(port: localPort, directPort: meshDirectPort)
             MontanaTrace.mark("bonjour_publish")
         }
         startPeerScan()
-        if Self.meshDiscoverable { MontanaBLEMesh.shared.start() }
+        if Self.meshDiscoverable { MTApps.mesh?.start() }
     }
 
     /// An identity is born AFTER launch, and the first core call arrives in a world where the seed is
@@ -473,7 +477,7 @@ final class MontanaPhoneNode: ObservableObject {
         let nodes = MontanaNodes.liveNodes
         let channels = MontanaDirect.shared.liveChannels().count
         let ownDoor = Date().timeIntervalSince(MontanaDirect.shared.lastGlobalInboundAt) < 60
-        let radio = MontanaBLEMesh.shared.linkCount > 0 && !btPeers.isEmpty
+        let radio = (MTApps.mesh?.linkCount ?? 0) > 0 && !btPeers.isEmpty
         let up = started && nodes > 0
         // The verdict exists once we hold a node, or once the doors have been knocked and
         // answered — silence before the first knock is ignorance, not absence.
@@ -528,8 +532,8 @@ final class MontanaPhoneNode: ObservableObject {
             // A switched-off radio says so ONCE. A line every half minute about a thing that
             // is off is not a measure — the diary drowned in it and rotated away the minutes
             // that mattered. The line returns the moment anything in it changes.
-            let s = "on=\(btOn) links=\(MontanaBLEMesh.shared.linkCount) "
-                + "peers=\(MontanaBLEMesh.shared.knownPeerCount) queue=\(MontanaBLEMesh.shared.queuedFragments)"
+            let s = "on=\(btOn) links=\(MTApps.mesh?.linkCount ?? 0) "
+                + "peers=\(MTApps.mesh?.knownPeerCount ?? 0) queue=\(MTApps.mesh?.queuedFragments ?? 0)"
             MontanaTrace.markChanged("ble_state", s)
         }
         MontanaTrace.markChanged("roads", "all")
@@ -593,7 +597,7 @@ final class MontanaPhoneNode: ObservableObject {
         MontanaTrace.markChanged("net", "disc=\(Self.meshDiscoverable ? 1 : 0) nodes=\(reachableNodes)"
             + "(lan=\(lanNodes.count) chan=\(MontanaDirect.shared.liveChannels().count) "
             + "relay=\(MontanaNodes.liveNodes) doors=\(MontanaNodes.liveDoors))[\(nodes)] "
-            + "port=\(MontanaDirect.shared.port) ext=\(MontanaPortMap.state.external):\(MontanaPortMap.state.port) "
+            + "port=\(MontanaDirect.shared.port) ext=\(MTApps.mesh?.routerDoor.external ?? ""):\(MTApps.mesh?.routerDoor.port ?? 0) "
             + "wifi=\(wifiOn ? 1 : 0) lte=\(lteOn ? 1 : 0) ble=\(btPeers.count)")
     }
 
@@ -805,7 +809,7 @@ final class MontanaPhoneNode: ObservableObject {
         let now = Date().timeIntervalSince1970
         for cand in directCandidates() where cand.neighborRef == peerRef && cand.directPort > 0 {
             let ep = MontanaPeerEndpoint(ip: cand.ip, port: cand.directPort, at: now, source: "bonjour")
-            guard seen.insert(ep.hostPort).inserted else { continue }
+            guard MTLocalNetwork.admits(ep.ip), seen.insert(ep.hostPort).inserted else { continue }
             // A neighbour ANSWERED on this network a moment ago — that answer is the proof the
             // network is there, and it is a better proof than a flag about interfaces. The flag
             // stood here as a gate, and when it lagged behind reality it threw away the only path
@@ -826,7 +830,7 @@ final class MontanaPhoneNode: ObservableObject {
         // envelope reaches them another way: by a frame with a window position, which knows how to go
         // further and which needs an assembled path for that.
         for ep in MontanaOverlayBook.shared.endpoints(ref: peerRef) {
-            guard seen.insert(ep.hostPort).inserted else { continue }
+            guard MTLocalNetwork.admits(ep.ip), seen.insert(ep.hostPort).inserted else { continue }   // 15863
             // Remembered endpoints are another matter: one learned on a network this device has
             // since left is unreachable, and the flag is all there is to tell. It stays a gate here.
             if ep.isGlobal { global.append(ep) } else if wifiOn { lan.append(ep) }
@@ -1094,7 +1098,7 @@ final class MontanaPhoneNode: ObservableObject {
             return left(p.medium)
         }
         // Nothing on the network at all — radio is the only way left.
-        if MontanaBLEMesh.shared.send(to: peerRef, envelope: envelope) {
+        if MTApps.mesh?.send(to: peerRef, envelope: envelope) == true {
             MontanaTrace.mark("bt_tx", mid: mid, "only")
             MontanaTrace.mark("sent_route", mid: mid, "route=ble")
             return left(.bluetooth)
@@ -1123,7 +1127,7 @@ final class MontanaPhoneNode: ObservableObject {
     private func scheduleBluetoothFallback(to peer: String, envelope: Data, mid: String) {
         DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3) { [weak self] in
             guard let self, !self.hasLiveChannel(peer) else { return }
-            if MontanaBLEMesh.shared.send(to: peer, envelope: envelope) {
+            if MTApps.mesh?.send(to: peer, envelope: envelope) == true {
                 MontanaTrace.mark("bt_tx", mid: mid, "fallback after network tier")
                 MontanaTrace.mark("sent_route", mid: mid, "route=ble carrier=fallback")
             }
@@ -1148,7 +1152,7 @@ final class MontanaPhoneNode: ObservableObject {
             MontanaDirect.shared.sendBlob(toRef: peerRef, ip: peer.ip, port: peer.directPort, blobId: blobId, sealed: sealed)
             return true
         }
-        return MontanaBLEMesh.shared.sendBlob(to: peerRef, blobId: blobId, sealed: sealed)   // cross-network: blob over the BLE mesh
+        return MTApps.mesh?.sendBlob(to: peerRef, blobId: blobId, sealed: sealed) == true   // cross-network: blob over the BLE mesh
     }
 
     /// The first byte says what the frame is: a sealed blob opens with zero, a letter with this.
@@ -1234,26 +1238,19 @@ final class MontanaPhoneNode: ObservableObject {
         return sealed.isEmpty ? nil : (ct, sealed)
     }
 
-    /// Somebody wrote first. Whether they knocked at a name this device holds or at a card it once
-    /// handed out, the answer is the same secret and the same local name for it.
+    /// Somebody wrote first, knocking at a card this device once handed out (no name is held or knocked at: the author's
+    /// decision 613, 04.11.2026 -- «clean out everything tied to the @name»).
     static func openFirst(_ ct: Data, sealed: Data, at root: Data? = nil) -> String? {
         // The body seal is the proof: a candidate secret must open it, or the card is foreign and the
         // "success" of decapsulation is implicit-rejection garbage giving birth to a phantom chat.
         let proof: (Data) -> Bool = { openBody(sealed, secret: MTPipeKey($0)) != nil }   // a secret at its birth, before the book holds it
         // THE POINT NAMES THE CARD. The letter arrived in a mailbox opened under one root: exactly that
         // one is tried, and there is nothing left to walk through -- a phantom candidate has nowhere to come from.
-        if let root {
-            if let ref = MontanaCard.accept(firstLetter: ct, root: root, confirmed: proof) { return ref }
-            guard let master = MontanaSeed.root,
-                  let mine = MontanaNames.contactRoot(masterSeed: master), mine == root else { return nil }
-            return MontanaFirstContact.accept(firstLetter: ct, masterSeed: master, confirmed: proof)
-        }
+        if let root { return MontanaCard.accept(firstLetter: ct, root: root, confirmed: proof) }
         // The point is not named (radio: a frame arrives without a window address). The walk remains, but
         // every candidate must present a seal -- a phantom is refused, though it is created.
         MontanaTrace.mark("first_no_point", "fallback=all-cards")
-        if let ref = MontanaCard.accept(firstLetter: ct, confirmed: proof) { return ref }
-        guard let master = MontanaSeed.root else { return nil }
-        return MontanaFirstContact.accept(firstLetter: ct, masterSeed: master, confirmed: proof)
+        return MontanaCard.accept(firstLetter: ct, confirmed: proof)
     }
 
     private func set(_ s: String) { DispatchQueue.main.async { self.status = s }; NSLog("[node] %@", s) }
@@ -1336,7 +1333,6 @@ enum MontanaNotifyGate {
         MontanaKeychain.set("notifSound", Data([on("notifSound") ? 1 : 0]))
         MontanaKeychain.set("notifPreview", Data([on("notifPreview") ? 1 : 0]))
         MontanaKeychain.set("notifSender", Data([on("notifSender") ? 1 : 0]))
-        MTLevelAccess.mirror()   // «Forbid deletion on my phone»: the extension leaves a deleted letter's notice where the person keeps it
         registerCategories()
     }
 }

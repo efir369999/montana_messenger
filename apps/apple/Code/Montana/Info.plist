@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>$(MONTANA_APP_NAME)</string>
+	<string>$(MONTANA_DISPLAY_NAME)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -11,24 +11,29 @@
 			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>montana</string>
-				<string>montana-messenger</string>
+				<string>$(MT_SCHEME_PROTOCOL)</string>
 			</array>
 		</dict>
 	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
-		<string>montana-business</string>
-		<string>montana-messenger</string>
+		<string>$(MT_SCHEME_PROTOCOL)</string>
+		<string>$(MT_SCHEME_MESSENGER)</string>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
+	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
-	<key>MontanaService</key>
-	<string>id.montana.quest</string>
+	<key>MTSchemeProtocol</key>
+	<string>$(MT_SCHEME_PROTOCOL)</string>
+	<key>MTSchemeMessenger</key>
+	<string>$(MT_SCHEME_MESSENGER)</string>
+	<key>MTNameProtocol</key>
+	<string>$(MT_NAME_PROTOCOL)</string>
+	<key>MTNameMessenger</key>
+	<string>$(MT_NAME_MESSENGER)</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Montana uses Bluetooth to form a direct device-to-device mesh, so your phones can exchange messages nearby.</string>
+	<string>Bluetooth forms a direct device-to-device mesh, so your phones can exchange messages nearby.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_montana._udp</string>
@@ -36,23 +41,21 @@
 		<string>_mtmesh._udp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Montana uses the camera for photos and videos in your chats, video messages and video calls, and to scan a person's QR code.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>Montana uses your contacts so you can share one in a chat, and saves the people you add in Montana to your contacts by their @name. Turn this off in Settings, Privacy, Sync contacts.</string>
+	<string>The camera takes photos and videos for your chats, video messages and video calls, and scans a person's QR code.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Montana uses Face ID to open your saved passwords and to show your 24-word recovery phrase.</string>
+	<string>Face ID opens your saved passwords and shows your 24-word recovery phrase.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Montana connects your device and your correspondent's directly over Wi-Fi. The permission is needed only so the phones can find each other on the same network.</string>
+	<string>Your device and your correspondent's connect directly over Wi-Fi. The permission is needed only so the phones can find each other on the same network.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Montana uses your location so you can send it in a chat.</string>
+	<string>Your location is used only so you can send it in a chat.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Montana uses the microphone to record voice messages, videos and calls.</string>
+	<string>The microphone records voice messages, videos and calls.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Montana uses speech recognition on your device to show voice messages as text when you ask. The audio never leaves your device.</string>
+	<string>Speech is recognised on your device to show a voice message as text when you ask. The audio never leaves your device.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Montana saves photos from your chats to your library.</string>
+	<string>Photos from your chats are saved to your library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Montana shows your recent photos and videos so you can send one quickly.</string>
+	<string>Your recent photos and videos are shown so you can send one quickly.</string>
 	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
 	<true/>
 	<key>NSUbiquitousContainers</key>
@@ -62,7 +65,7 @@
 			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
 			<false/>
 			<key>NSUbiquitousContainerName</key>
-			<string>Montana</string>
+			<string>$(MT_NAME_PROTOCOL)</string>
 			<key>NSUbiquitousContainerSupportedFolderLevels</key>
 			<string>Any</string>
 		</dict>
@@ -71,7 +74,7 @@
 			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
 			<false/>
 			<key>NSUbiquitousContainerName</key>
-			<string>Montana</string>
+			<string>$(MT_NAME_PROTOCOL)</string>
 			<key>NSUbiquitousContainerSupportedFolderLevels</key>
 			<string>Any</string>
 		</dict>

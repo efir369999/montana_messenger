@@ -332,7 +332,7 @@ level 8   ownNode       a machine the person owns joins Montana's network throug
 
 (`MTWalletCore.swift:773-777`; the settings page `MontanaSettings.swift:2977-3052`; the node gate `MontanaNodeSetup.swift:131`, `MontanaHomeNode.swift:40, 186, 353`.) Below its level a switch stands off and keeps the person's choice for the day the level opens it (`MontanaSettings.swift:3014-3016`).
 
-**Between two people: the recording precedence.** A correspondent's switch against recording "holds by level": with the switch off, recording is permitted to the other side only if the other side's level is strictly higher (`MTCallRecording.swift:22-31`, `mayRecord`: the recorder's level must exceed the forbidding side's); whether a call counts as recorded for both phones is the symmetric rule `callRecorded` (`MTCallRecording.swift:32-40`), read from the two levels each phone says in the call's capabilities (`MontanaCall.swift:1334-1338`, `1629`). This is the one place in the set where one person's level is weighed against another's. The level a phone reads from its peer here is the peer's own statement.
+**Between two people.** No call is recorded (the author's word 16428, 04.11.2026: «remove call recording completely from the Protocol»), and the recording precedence that weighed one person's level against another's left with it: no place in the set weighs one person's level against another's.
 
 **Shown beside the person.** The avatar carries the balance on the left and the level on the right (`MontanaShapes.swift:656-668`), and the person's presence word to a correspondent carries "L" and the level while the owner's switch is on (`MontanaE2E.swift:624-630`). The wallet shows the three chains and the level (`MTWalletScreen.swift:1711`; `MontanaSettings.swift:2993-3010`).
 
@@ -371,7 +371,7 @@ Each item below is a claim the paper does *not* make, with the reason in the set
 
 2. **The stated ceiling is unverifiable by design** (Remark 3.7, Section 8). Any bound that uses the values of correspondents, rather than their count, is a bound on honest correspondents' statements.
 
-3. **Self-reported levels at the consumers.** Every consumer of another person's level in today's client — the recording precedence (`MTCallRecording.swift:27-31`), the avatar badge of a correspondent, the node's count — reads a self-statement from the other phone or from the caller's own. A modified client states 19. The theorems bound L*, the verified level; the consumers do not yet verify. Closure is the proof by opening of `App.md:200-202` or its zero-knowledge successor, applied at the consumer.
+3. **Self-reported levels at the consumers.** Every consumer of another person's level in today's client — the avatar badge of a correspondent, the node's count — reads a self-statement from the other phone or from the caller's own. A modified client states 19. The theorems bound L*, the verified level; the consumers do not yet verify. Closure is the proof by opening of `App.md:200-202` or its zero-knowledge successor, applied at the consumer.
 
 4. **Consent farming.** An honest person who answers strangers gives attack edges away; Theorem 4(d) counts them. The specification's defence is the two-way rule and the sixty-second bound on calls ("against a person's fabric filling with the people who merely reached them", `Canon.md:2769-2771`); against a person who chooses to answer, the set offers nothing, and a bot that elicits two replies a fortnight from many people earns an attack edge from each.
 

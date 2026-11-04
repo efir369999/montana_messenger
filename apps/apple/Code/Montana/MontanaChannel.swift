@@ -437,56 +437,6 @@ struct MTChannelSubscriberBar: View {
     }
 }
 
-/// THE CHANNEL'S OLD POSTS COME INTO ITS FEED (the critic's K-2, 17.10.2026; the author's words 17.10: «we do not need our own kinds
-/// of pages inside channels»). Until 2233 a channel was a wall, and its posts lie in the wall's store on every phone -- the owner's
-/// own, a subscriber's page. Each is laid once into the channel's feed on this phone alone; nothing goes to the network. Its row's
-/// name is made of its moment and its wall name, the same on every phone, so a word of the channel about it -- a reaction, an
-/// edit, a deletion -- finds the same row everywhere. Its words come, and its first picture or video: the file when this phone
-/// holds it, else the poster the wall carried, as a picture.
-enum MTChannelWallFold {
-    /// The row's one name for a wall post: «t», its moment in milliseconds, «-», its wall name.
-    static func name(_ p: MTBoardSeen) -> String? {
-        let pid = String(p.id.filter { c in c.isASCII && (c.isLetter || c.isNumber) }.prefix(40))
-        guard !pid.isEmpty, p.at.isFinite, 0 < p.at else { return nil }
-        let bare = "t" + String(Int64(p.at * 1000)) + "-" + pid
-        return MTGroup.isLetterName(bare) ? "mid:" + bare : nil
-    }
-    @MainActor
-    static func fold(_ key: String, store: ChatStore) {
-        guard let g = MTGroup.shared.state(key), g.kind == .channel else { return }
-        let posts = MTBoard.shared.posts(on: key)
-        guard !posts.isEmpty else { return }
-        let held = Set((store.messages[key] ?? []).map(\.mid))
-        var laid = 0
-        for p in posts.sorted(by: { a, b in a.at < b.at }) {
-            guard let mid = name(p), !held.contains(mid), !store.buried(mid, in: key) else { continue }
-            var row = Message(text: p.text, isFromMe: g.mine, time: hhmm(at: p.at), deliveryStatus: .delivered, msgId: mid,
-                              senderRef: g.mine ? nil : MTGroup.speaker(g.id, MTGroup.ownerSeat), createdAt: p.at)
-            if let f = file(p) {
-                if f.video { row.videoFile = f.name } else { row.imageFile = f.name }
-            }
-            guard !row.text.isEmpty || row.imageFile != nil || row.videoFile != nil else { continue }
-            MTRowJournal.put(key, store.placeRow(key, row))
-            laid += 1
-        }
-        guard 0 < laid else { return }
-        store.noteListState(key, last: store.lastLetter(key))
-        MontanaTrace.mark("channel_fold", "posts=\(laid)")
-    }
-    /// The post's first picture or video on this phone: the file the wall brought when it is whole here, else the poster the
-    /// post carried, laid once in the store as a picture of its own name.
-    private static func file(_ p: MTBoardSeen) -> (name: String, video: Bool)? {
-        guard let i = p.media.firstIndex(where: { m in m.kind == "img" || m.kind == "vid" }) else { return nil }
-        let m = p.media[i]
-        let whole = MTBoard.fileName(p.id, i, m.ext)
-        if MontanaMediaStore.exists(whole) { return (whole, m.kind == "vid") }
-        guard let b64 = m.thumb, b64.count <= MTBoard.thumbLimit, let data = Data(base64Encoded: b64), UIImage(data: data) != nil else { return nil }
-        let poster = "wallposter_" + p.id + "_" + String(i) + ".jpg"
-        guard MontanaMediaStore.exists(poster) || MontanaMediaStore.put(poster, data: data) else { return nil }
-        return (poster, false)
-    }
-}
-
 /// A CHANNEL'S PAGE, AS THE REFERENCE LAYS IT (the author's words 17.10.2026 15:4x-15:5x UTC: «channels ... 1 to 1», «we do not need our
 /// own kinds of pages inside channels»): the head's count and the buttons, said once here; the page (MontanaPeerInfoScreen) asks it
 /// for a channel alone, as it asks MTGroupPage for a group.

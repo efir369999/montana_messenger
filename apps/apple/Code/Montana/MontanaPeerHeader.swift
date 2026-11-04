@@ -299,9 +299,9 @@ struct MTFaceHeader: View {
                 .onTapGesture {
                     if face.dock == 0 { face.set(1) } else if face.dock == 1 { face.set(2) }
                 }
-            // The name and the @nick are one line. The system wraps when the line does not
+            // The name is one line. The system wraps when the line does not
             // fit: there is no width check of our own here, nor should there be.
-            // The name and nick size is ONE in any avatar position — the collapsed circle's.
+            // The name's size is ONE in any avatar position — the collapsed circle's.
             // Shrinking is removed: letters must not change size with the header's state;
             // when they do not fit, the system wraps to a second line.
             // THE NAME, THE BIO AND THE LINK IN BUBBLES OF ONE-TONE GLASS (the author's word 25.09): each its own plate of the

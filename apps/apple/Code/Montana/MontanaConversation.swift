@@ -144,13 +144,11 @@ struct MTDocOpen: Identifiable, Equatable { let id: String; let name: String }
 enum ChatModal: Identifiable {
     case camera
     case contact
-    case card
     case fullVideo(String)
     var id: String {
         switch self {
         case .camera: return "camera"
         case .contact: return "contact"
-        case .card: return "card"
         case .fullVideo(let f): return "vid:\(f)"
         }
     }
@@ -208,11 +206,7 @@ struct MTOpaqueChatBar: ViewModifier {
 /// One's own caption and circle letter. The address serves as no source: it is eternal and
 /// ties together everything a person does, and a private account has no identifying marks at all.
 enum MontanaSelf {
-    /// A person's name is one across the whole tree: the one they CLAIMED by fixing it in the
-    /// name layer. The profile field stores the same value for display, but the truth is one
-    /// and it comes from here: two sources of one name diverge at the first change.
-    static var name: String { MontanaNames.heldName ?? "" }   // a lapsed name is not the person's any more (24.09)
-    static var initialSource: String { name.isEmpty ? "·" : name }
+    static let initialSource = "·"   // no name of one's own (the author's decision 613): the circle wears a dot
     /// WHAT I SAY OF MYSELF IS WHAT MY HAND LAST WROTE -- NEVER WHAT A READ FAILED TO FIND (30.09). A key that is not
     /// there is not knowledge: the phone not yet unlocked since it started, a seat parked, a restore whose picture has
     /// not landed. Read as «none», it went out as the person's own word and erased the living face on every peer's
@@ -385,37 +379,6 @@ struct ScrollDownButton<Label: View>: View {
     }
 }
 
-/// THE RED MINUS AT THE NEWEST END (the author's word 04.10.2026 22:24 UTC: «in the chat the same way, an animation of a red minus
-/// coin»): the coins this chat's bubble or call just paid (MTCoinPaid) rise above the way to the newest in red, and fade; with Reduce Motion it stands and fades. It never takes a finger.
-struct MTPayPop: View {
-    let chat: String
-    @ObservedObject var pin: ChatConversationView.FeedPin
-    @ObservedObject private var paid = MTCoinPaid.shared
-    @State private var rise: CGFloat = 0
-    @State private var shown: Double = 0
-    @Environment(\.accessibilityReduceMotion) private var still
-    var body: some View {
-        HStack(spacing: 6) {
-            MTMintCoin(side: 28, turn: paid.tick)
-            // USER-DATA: the coins just paid, a number
-            Text(verbatim: "\u{2212}" + MTCoinText.count(paid.coins)).font(.headline.monospacedDigit()).foregroundStyle(.red)
-        }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(.ultraThinMaterial, in: Capsule())
-        .offset(y: rise)
-        .opacity(shown)
-        .padding(.bottom, 10 + pin.bottomInset + montanaTouchTarget + 8)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onChange(of: paid.tick) { _, _ in
-            guard paid.chat == chat else { return }
-            rise = 0; shown = 1
-            if !still { withAnimation(.easeOut(duration: 1.3)) { rise = -28 } }
-            withAnimation(.easeIn(duration: 0.4).delay(1.0)) { shown = 0 }
-        }
-    }
-}
-
 // SSOT of screen capture: recording, mirroring and screen sharing all report through here.
 // Live typing is suspended while the screen is captured — the peer's unsent words can never
 // end up in a recording or a shared screen.
@@ -558,28 +521,16 @@ struct LiveDraftSection: View {
     var peerKey: String = ""   // displayName key (convId when the chat has one)
     var onGrow: () -> Void = {}
     @State private var lastH: CGFloat = 0
-    @ObservedObject private var flows = MTMoneyFlow.shared   // the Money Flow of this chat: live chat lives there alone (03.10)
+    @ObservedObject private var flows = MTApps.flowWatch   // the Money Flow of this chat: live chat lives there alone (03.10)
     var body: some View {
-        if flows.on(conv), !capture.isCaptured, let d = live.drafts[conv], !d.isEmpty {
+        if MTApps.flowOn(conv), !capture.isCaptured, let d = live.drafts[conv], !d.isEmpty {
             let q: Message? = live.replyMids[conv]
                 .flatMap { store.localId(forMid: $0, chat: conv) }
                 .flatMap { rid in store.messages[conv]?.first(where: { $0.id == rid }) }
             Group {
-                if d.hasPrefix(MontanaCardPlate.mark) {
-                    // The card being written: the gold plate fills in as the peer types (15.43).
-                    let body = String(d.dropFirst(MontanaCardPlate.mark.count))
-                    let lines = body.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-                    HStack {
-                        MontanaCardFace(lines: lines)
-                            .opacity(0.92)
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 12).padding(.vertical, 4)
-                } else {
-                    LiveDraftBubble(text: d, caret: live.carets[conv] ?? -1,
-                                    quoteAuthor: q.map { $0.isFromMe ? E2E.myDisplayName() : store.displayName(for: peerKey.isEmpty ? conv : peerKey) },
-                                    quoteText: q.map { ChatStore.listPreview($0) })
-                }
+                LiveDraftBubble(text: d, caret: live.carets[conv] ?? -1,
+                                quoteAuthor: q.map { $0.isFromMe ? E2E.myDisplayName() : store.displayName(for: peerKey.isEmpty ? conv : peerKey) },
+                                quoteText: q.map { ChatStore.listPreview($0) })
             }
                 .background(GeometryReader { g in
                     Color.clear
@@ -611,7 +562,6 @@ struct LiveDraftSection: View {
 /// flat — its actions stand in a line under the field — so the bar is handed every one of them.
 struct MTComposeActions {
     var gallery: () -> Void = {}
-    var card: () -> Void = {}
     var file: () -> Void = {}
     var location: () -> Void = {}
     var contact: () -> Void = {}
@@ -866,10 +816,6 @@ struct ChatInputBar: View {
                 rowGlyph("photo") { showEmoji = false; actions.gallery() }
                 Spacer(minLength: 0)
             }
-            if !meshRoom && !textOnly {
-                rowGlyph("person.text.rectangle") { showEmoji = false; actions.card() }
-                Spacer(minLength: 0)
-            }
             if !textOnly {
                 rowGlyph("doc") { showEmoji = false; actions.file() }
                 Spacer(minLength: 0)
@@ -917,7 +863,7 @@ struct ChatInputBar: View {
                         if model.text.isEmpty {
                             // The hint stands where the placeholder stands (the reference's tooltip):
                             // a press that outlived the tap but not the tape is answered in words.
-                            Text(coinMode ? "Enter the coin amount" : hint ? "Hold to record" : channel ? (silent ? "Silent Broadcast..." : "Broadcast...") : "Message...").font(.system(size: 17)).foregroundColor(.gray)
+                            Text(coinMode ? LocalizedStringKey(MTApps.coins?.said(.fieldHint) ?? "") : hint ? "Hold to record" : channel ? (silent ? "Silent Broadcast..." : "Broadcast...") : "Message...").font(.system(size: 17)).foregroundColor(.gray)
                                 .padding(.leading, MTInputField.inset.left).allowsHitTesting(false)   // where the words start
                                 .animation(.easeOut(duration: 0.15), value: hint)
                         }
@@ -1114,47 +1060,13 @@ struct ChatInputBar: View {
         } label: {
             // A coin here is the send control, never a progress indicator. Its one meaning is
             // stable whether the field is empty, valid or awaiting the chain's answer.
-            MTMintCoin(spinning: false, side: MontanaOctagon.composeHeight)
+            MTApps.coins?.coin(spinning: false, side: MontanaOctagon.composeHeight, turn: nil)
                 .scaleEffect(minting ? Self.mintScale : 1)
                 .frame(width: 56, height: 56)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(0 < n || coinPicks ? "Send coins" : "Coin"))
-    }
-}
-
-/// THE AVAILABLE BALANCE ABOVE THE FIELD (the author's word 06.10.2026 20:2x UTC: «while entering, the exact available balance above
-/// or under the line of the message»): in the coin's mode of the bar (ChatInputBar.coinMode) this plate stands on the feed's side of
-/// the field, where a reply's plate stands; its cross takes the button back to the microphone. It observes the book and the chain's
-/// split alone, so the page is not drawn again at every coin minted. The number is the available (the author's word 16.10.2026
-/// 14:19 UTC: «a transfer from the chat and from any place shows only the available»), the one the coin's send is weighed by.
-struct MTCoinBalancePlate: View {
-    let onClose: () -> Void
-    @ObservedObject private var book = MTLocalCoinLedger.shared
-    @ObservedObject private var split = MTCoinSplit.shared
-    var body: some View {
-        let h = MontanaOctagon.composeHeight
-        HStack(spacing: 10) {
-            HStack(spacing: 8) {
-                MTMintCoin(spinning: false, side: 22)
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Available").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                    // USER-DATA: the coins available to send, a number
-                    Text(verbatim: MTCoinText.count(split.available)).font(.footnote.monospacedDigit()).lineLimit(1)
-                }
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity)
-            .montanaOctagonFace(bar: true, height: h)
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 17, weight: .semibold)).foregroundColor(MontanaOctagon.barGlyph)
-            }
-            .buttonStyle(.montanaOctagon(square: true, bar: true, height: h))
-            .accessibilityLabel(Text("Close"))
-        }
-        .padding(.horizontal).padding(.vertical, MTInputField.barPad)
     }
 }
 
@@ -1205,7 +1117,7 @@ struct ChatConversationView: View {
         }
         // A step of a chess game is not a row of the feed (29.09): the board reads those letters from the store itself. The letter
         // that closes a game is (the author's word 06.10.2026 20:2x UTC): it says how the game ended -- and nothing of coins.
-        let a = (store.messages[chat.name] ?? []).filter { m in !m.isChessStep || m.chessLetter?.end != nil }
+        let a = (store.messages[chat.name] ?? []).filter { m in !m.isGameStep || m.gameLetter?.ends == true }
         var sorted = true
         for i in 1..<max(a.count, 1) where ChatStore.before(a[i], a[i - 1]) { sorted = false; break }
         rowCache.messages = sorted ? a : a.sorted(by: ChatStore.before)
@@ -1270,16 +1182,16 @@ struct ChatConversationView: View {
     @State private var showGallery = false
     @State private var showFileImporter = false
     @State private var modal: ChatModal?      // what we show full-screen (camera/photo/video/file)
-    @State private var chessGame: MTChessPush?   // a game opened from its invitation, on this chat's own stack (29.09)
-    @State private var chessPlayed: String?      // the pair's game while it is played (MTChessSend.playedGame): the mark's ring
+    @State private var chessGame: MTGamePush?   // a game opened from its invitation, on this chat's own stack (29.09)
+    @State private var chessPlayed: String?      // the pair's game while it is played (MTApps.chess.playedGame): the mark's ring
     @State private var askChess = false          // the platform's question before a new game
     @State private var roomAsk: MTRoomKind?      // a group's call chosen at the top: whom to invite (07.10)
     @State private var roomAskVideo = false
     @State private var groupRefusal: String?     // what the group took from its members, said when this phone tries it (G.5)
     @State private var askEraseGroup = false     // out of a group: «Delete and Exit» asks first (stage R)
     @AppStorage("composeMediaMode") private var composeMediaMode = "mic"
-    @State private var wallPage: MTBoardRoute?   // the wall a post's card opens, on this chat's own stack (30.09)
-    @State private var coinMove: MTCoinMoveRoute?   // the move a coin letter's bubble opens, on this chat's own stack (05.10)
+    @State private var wallPage: MTPageRoute?   // the wall a post's card opens, on this chat's own stack (30.09)
+    @State private var coinMove: MTMoveRoute?   // the move a coin letter's bubble opens, on this chat's own stack (05.10)
     @State private var playerBarSize: CGSize = .zero   // the floating player's height — the feed's reserve
     /// The room the floating player takes at the feed's bottom — for the feed and for what hangs over it.
     private var playerReserve: CGFloat { playerGate.standing ? playerBarSize.height : 0 }
@@ -1416,12 +1328,12 @@ struct ChatConversationView: View {
     @ObservedObject private var mentions = MTMentionCompose.shared   // the «@» plate of a group follows its own holder (stage R)
     @AppStorage("chatBg") private var chatBg: String = "default"
     @AppStorage("chatBgPhoto") private var chatBgPhoto: Data = Data()
-    @ObservedObject private var flows = MTMoneyFlow.shared   // the feed's turn of THIS chat (04.10): the newest letters on top
+    @ObservedObject private var flows = MTApps.flowWatch   // the feed's turn of THIS chat (04.10): the newest letters on top
     @ObservedObject private var channelViews = MTChannelViews.shared   // a channel's numbers under its posts (17.10)
     @ObservedObject private var channelComments = MTChannelComments.shared   // a channel's comments under its posts (17.10)
     @State private var commentsPost: Message? = nil   // the post whose comments stand open (MTChannelCommentsSheet)
     @State private var channelSilentTick = 0   // the channel's bell turned: the bar reads its sound again (MTGroup.silent)
-    private var newestFirst: Bool { flows.on(chat.name) }
+    private var newestFirst: Bool { MTApps.flowOn(chat.name) }
     @AppStorage("bubbleStyle") private var bubbleStyleAS: String = "montana"
     @AppStorage("cbBgOn") private var cbBgOn = false
     @AppStorage("cbBgType") private var cbBgTypeAS = "gradient"
@@ -1478,7 +1390,7 @@ struct ChatConversationView: View {
             messagesList
                 .sheet(item: $commentsPost) { m in MTChannelCommentsSheet(key: chat.name, post: m) }   // a channel's post's comments
                 // A CHANNEL'S OLD WALL POSTS STAND IN ITS FEED (MTChannelWallFold, the critic's K-2): laid once on this phone as it opens.
-                .task(id: chat.name) { if isChannel { MTChannelWallFold.fold(chat.name, store: store) } }
+                .task(id: chat.name) { if isChannel { MTApps.wall?.fold(channel: chat.name, store: store) } }
                 .blur(radius: holding ? 10 : 0)
                 .allowsHitTesting(!holding)   // what stands behind the blur takes no touches — the voice's and the note's alike
                 .animation(.easeOut(duration: 0.25), value: holding)
@@ -1589,26 +1501,26 @@ struct ChatConversationView: View {
         }
         // THE MONEY FLOW SEEN (the author's words 03.10 16:46 and 16:49): its beginning in the middle of the chat, every minting
         // under the field, on the coin's side.
-        .overlay { MTMoneyFlowBegins(tick: flowBegun) }
+        .overlay { MTApps.coins?.flowBegins(tick: flowBegun) }
         .safeAreaInset(edge: .top) { if selectingMsgs { selectionTopBar } }
-        .alert("Not enough coins", isPresented: $coinRefused) {
+        .alert(coinSaid(.short), isPresented: $coinRefused) {
             Button("OK", role: .cancel) {}
-        } message: { Text("Your coin balance is lower than this.") }
+        } message: { Text(coinSaid(.shortWhy)) }
         .alert("Transfer is being confirmed", isPresented: $coinPending) {
             Button("OK", role: .cancel) {}
         } message: { Text("The available balance was sufficient. The transfer has one pending record and must not be sent again.") }
-        .alert("Coins were not sent", isPresented: $coinNotSent) {
+        .alert(coinSaid(.notSent), isPresented: $coinNotSent) {
             Button("OK", role: .cancel) {}
         } message: { Text("Nothing left your balance. Try again in a moment.") }
-        .alert("Coins were not sent", isPresented: $coinNoKey) {
+        .alert(coinSaid(.notSent), isPresented: $coinNoKey) {
             Button("OK", role: .cancel) {}
-        } message: { Text("This person's Montana has not shared its coin key yet. Nothing left your balance. Try again after they update and open Montana.") }
-        .alert("Coins were not sent", isPresented: $coinPaced) {
+        } message: { Text(coinSaid(.noKeyWhy)) }
+        .alert(coinSaid(.notSent), isPresented: $coinPaced) {
             Button("OK", role: .cancel) {}
         } message: { Text("Your key's node takes thirty records a minute, and this minute was full. Nothing left your balance. Try again in a minute.") }
-        .alert("The coins are on their way", isPresented: $coinsTravel) {
+        .alert(coinSaid(.travel), isPresented: $coinsTravel) {
             Button("OK", role: .cancel) {}
-        } message: { Text("A coin letter keeps its coins until it is delivered or they come back. Then it can be deleted.") }
+        } message: { Text(coinSaid(.travelWhy)) }
         .sheet(item: $reportSheet) { r in
             MontanaReportSheet(report: r, onBlock: { if !store.isBlocked(chat.name) { store.toggleBlocked(chat.name) } })
         }
@@ -1621,16 +1533,20 @@ struct ChatConversationView: View {
     }
 
     /// A GAME ENTERED FROM THIS CHAT (29.09): the entry accepts an unanswered invitation (MTChessSend.join) and the board rises
-    /// on this chat's own stack (MTChessPush) -- the invitation's tap, the banner's tap and the meeting (30.09) walk this one road.
+    /// on this chat's own stack (MTGamePush) -- the invitation's tap, the banner's tap and the meeting (30.09) walk this one road.
     /// THE COIN FROM THE FIELD (ChatInputBar's coin mode): the available the plate shows alone
     /// may say that a sum is short (MTCoinSplit.available). A chain/network answer which is still undecided is never
     /// translated into «Not enough coins» -- that would make the shown available balance lie.
+    /// The coins' words of these alerts, said behind their door (guard 4): an edition without coins raises none of them.
+    private func coinSaid(_ w: MTCoinWord) -> LocalizedStringKey { LocalizedStringKey(MTApps.coins?.said(w) ?? "") }
+
     private func sendCoin(_ n: Int) {
         // A GROUP'S COIN IS A TRANSFER TO EACH PERSON PICKED (the author's word 17.10.2026 21:14 UTC): the Send page over the group's
         // people; each pick goes by the pair's own transfer, and the group is only told how many were paid (MTCoinSendSheet).
         if groupCoin { sheet = .groupCoin(n); return }
+        guard let coins = MTApps.coins else { return }
         Task { @MainActor in
-            switch await MTCoinSend.transferResult(n, to: chat, store: store) {
+            switch await coins.transfer(n, to: chat, store: store) {
             case .sent:
                 input.text = ""
             case .short:
@@ -1650,15 +1566,15 @@ struct ChatConversationView: View {
     /// THE GAME'S BOARD OVER THE CHAT: it opens a game -- one answered, played or over -- and accepts nothing.
     private func enterGame(_ game: String) {
         guard !chat.isGroup else { return }
-        chessGame = MTChessPush(game: game)
+        chessGame = MTGamePush(game: game)
     }
     /// THE ACCEPT, AND ONLY THEN THE BOARD (the author's words 06.10.2026 20:5x UTC: «accept or not -- the buttons in the chat come
     /// before the chess board is shown»; «first the request is confirmed, then the decision»): the invitation's Accept is the one
     /// door of an acceptance from the chat; one the replay refuses raises no board.
     private func acceptGame(_ game: String) {
         guard !chat.isGroup else { return }
-        guard MTChessSend.join(game, in: chat, store: store) != nil else { return }
-        chessGame = MTChessPush(game: game)
+        guard MTApps.chess?.join(game, in: chat, store: store) == true else { return }
+        chessGame = MTGamePush(game: game)
     }
 
     private var chatCoreL1: some View {
@@ -1699,7 +1615,7 @@ struct ChatConversationView: View {
             if let asked = MontanaOutsideOpen.pendingGame,
                asked.chat == chat.name || MTSamePair.root(asked.chat) == MTSamePair.root(chat.convRef) {
                 MontanaOutsideOpen.pendingGame = nil
-                if !MTChessSend.awaitsMe(asked.game, rows: store.messages[chat.name] ?? []) {
+                if let chess = MTApps.chess, !chess.awaitsMe(asked.game, rows: store.messages[chat.name] ?? []) {
                     DispatchQueue.main.async { enterGame(asked.game) }
                 }
             }
@@ -1824,18 +1740,6 @@ struct ChatConversationView: View {
                     _ = store.send(text: text, chat: chat.name, convRef: convKey)
                 }
                 .ignoresSafeArea()
-            case .card:
-                // THE BUSINESS CARD LEAVES AS A PHOTO (the author's word 28.09): the kept card drawn at the card's standard
-                // proportions, down the picture road; its words ride as the caption under the card's mark.
-                // A GROUP STREAMS NO DRAFT: its key is no pipe, so the live plate's words are never said there (cardDraftPipe).
-                MontanaCardNoteView(onSend: { card in
-                    sendCardPhoto(card)
-                    if let pipe = cardDraftPipe { E2E.shared.sendDraftClear(to: pipe) }   // the live plate ends where the photo begins
-                    modal = nil
-                }, onCancel: {
-                    if let pipe = cardDraftPipe { E2E.shared.sendDraftClear(to: pipe) }
-                    modal = nil
-                }, onDraft: { t in sendCardDraft(t) })
             case .fullVideo(let f):
                 // The funnel into the one native viewer (SSOT): every old road through the
                 // modal leads here and opens the system player.
@@ -1965,12 +1869,11 @@ struct ChatConversationView: View {
             // is centred on the corner: it takes the corner of the bubble, not the bubble's right end, and the mark beside it stands
             // over it.
             chatTitleDoor.frame(minWidth: room)
-                .overlay(alignment: .topTrailing) { if !ChatStore.isLocalRoom(chat.name) { MTKeepShield().offset(x: 18, y: -18) } }
-                .padding(.horizontal, (44 - round) / 2)
+                        .padding(.horizontal, (44 - round) / 2)
             if coinStands {
-                walletMark(round)
+                if MTApps.coins != nil { walletMark(round) }   // the wallet's mark only where the coins stand (guard 4): Messenger draws none
                 flipMark(round)
-                chessMark(round)
+                if MTApps.chess != nil { chessMark(round) }
                 handsetMark(round)
             } else if chat.isGroup, !isChannel {
                 // A CHANNEL'S PAGE HAS NO HANDSET (the author's word 16.10.2026 17:34 UTC: «on the channels' pages the handset is not
@@ -2096,18 +1999,18 @@ struct ChatConversationView: View {
     private func chessMark(_ side: CGFloat) -> some View {
         Button {
             // An invitation waiting for my answer is answered in the feed: the mark leads to it, not to its board (06.10).
-            if let id = chessPlayed, MTChessSend.awaitsMe(id, rows: store.messages[chat.name] ?? []),
-               let invite = store.messages[chat.name]?.last(where: { m in m.chessLetter?.game == id && m.chessLetter?.kind == .invite }) {
+            if let id = chessPlayed, MTApps.chess?.awaitsMe(id, rows: store.messages[chat.name] ?? []) == true,
+               let invite = store.messages[chat.name]?.last(where: { m in m.gameLetter.map { $0.game == id && $0.invite } == true }) {
                 jumpTo(invite.id)
-            } else if let id = chessPlayed { chessGame = MTChessPush(game: id) } else { askChess = true }
+            } else if let id = chessPlayed { chessGame = MTGamePush(game: id) } else { askChess = true }
         } label: {
-            MTBarRoundMark(ringed: chessPlayed != nil, side: side) { MTChessIcon().frame(width: 22, height: 22) }
+            MTBarRoundMark(ringed: chessPlayed != nil, side: side) { MTApps.chess?.icon(size: 22) }
         }
         .accessibilityLabel(Text("Chess"))
     }
 
     /// THE FEED'S TURN IS OUR MINT COIN (the author's words 02.10 14:03 and 16:55, then 18:29 and 19:24: «make the turn button a
-    /// coin; while it is on it spins and coins are minted in the chat -- the fabric of time»): the wall's own coin (MTMintCoin)
+    /// coin; while it is on it spins and coins are minted in the chat -- the fabric of time»): the coins' own coin (their door's coin)
     /// on the handset's round. Off: the coin stands on its face and the chat is as it was. On: the coin spins, the feed turns to
     /// the ribbon of time (the newest letters on top, every stamp with its seal and gematria). The turn mints nothing: only the chain
     /// mints, 1 coin a second (the author's word 11871, 29.10.2026; MTMoneyFlow). The ring stands while it is on -- the sign that
@@ -2119,7 +2022,7 @@ struct ChatConversationView: View {
             // The field changes its place with the turn: the keys go down first, so no keyboard is left to a field reborn elsewhere.
             inputFocused = false
             hideKeyboard()
-            flows.set(chat.name, !newestFirst)   // this chat's flow alone (04.10)
+            MTApps.coins?.setFlow(chat.name, !newestFirst)   // this chat's flow alone (04.10)
             E2E.shared.liveTypingSwitched(on: newestFirst, peer: chat.name)   // live chat lives in this chat's flow alone
             if newestFirst {
                 store.appendMoneyFlow(peer: chat.name); flowBegun += 1   // its row in the chat and its turn on the screen
@@ -2137,7 +2040,7 @@ struct ChatConversationView: View {
             MontanaTrace.mark("feed_turn", "newest_first=\(newestFirst ? 1 : 0)")
         } label: {
             // No badge on the coin (the author's word 05.10.2026 11:04 UTC): the place in the rating stays on the wallet's page.
-            MTBarRoundMark(ringed: newestFirst, side: side) { MTMintCoin(spinning: newestFirst, side: 22) }   // the marks' one round, our coin on it
+            MTBarRoundMark(ringed: newestFirst, side: side) { MTApps.coins?.coin(spinning: newestFirst, side: 22, turn: nil) }   // the marks' one round, our coin on it (the coins' door, S4c1)
         }
         .accessibilityLabel(Text("Money Flow"))
         .accessibilityAddTraits(newestFirst ? .isSelected : [])
@@ -2149,7 +2052,7 @@ struct ChatConversationView: View {
             MontanaTrace.mark("auto_react", "page opened by the hold")
         })
         .accessibilityAction(named: Text("Auto-reactions")) { autoReactShown = true }
-        .sheet(isPresented: $autoReactShown, onDismiss: { flowHeld = false }) { MTAutoReactPage() }
+        .sheet(isPresented: $autoReactShown, onDismiss: { flowHeld = false }) { MTApps.coins?.autoReactPage() }
     }
     /// The chat that wears the coin: a pair's own conversation (the bar shows the coin there and nowhere else).
     private var coinStands: Bool { !chat.isGroup && MontanaConv.holds(chat.convId ?? chat.name) }
@@ -2160,7 +2063,7 @@ struct ChatConversationView: View {
         chatCoreM2
         // The ring follows the pair's letters: read again when a letter lands in this chat, never on another pass.
         .task(id: store.messages[chat.name]?.last?.id) {
-            chessPlayed = MTChessSend.playedGame(in: chat, store: store)
+            chessPlayed = MTApps.chess?.playedGame(in: chat, store: store)
         }
         // WHOM TO INVITE INTO THE GROUP'S CALL (MTRoomMark chose the kind): the sheet hangs on the chat, never inside the bar's item
         .sheet(item: $roomAsk) { k in MTRoomInviteSheet(chat: chat.name, kind: k, video: roomAskVideo, opening: true) }
@@ -2171,7 +2074,7 @@ struct ChatConversationView: View {
         // A NEW GAME FROM THE CHAT: the platform's question, no stake and no balance (the author's word 29.10.2026 19:31 UTC).
         .alert("Start a new game?", isPresented: $askChess) {
             Button("New game") {
-                if let id = MTChessSend.invite(to: chat, seconds: MTChessSend.chatClock, store: store) { chessGame = MTChessPush(game: id) }
+                if let id = MTApps.chess?.invite(to: chat, store: store) { chessGame = MTGamePush(game: id) }
             }
             Button("Cancel", role: .cancel) {}
         }
@@ -2254,7 +2157,7 @@ struct ChatConversationView: View {
                 }, onClose: { sheet = nil })
                 .presentationDetents([.large])
             case .groupCoin(let n):
-                MTCoinSendSheet(group: chat.name, each: n, sent: { input.text = "" })
+                MTApps.coins?.groupSend(group: chat.name, each: n, sent: { input.text = "" })
             case .stickerEdit(let file):
                 // EDIT STICKER (22.09): the picture of a letter opens in the editor, and what the
                 // checkmark keeps is a NEW sticker -- the letter of another person is never touched.
@@ -2276,8 +2179,7 @@ struct ChatConversationView: View {
                     onGallery: { sheet = nil; DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { sheet = .gallery } },
                     onFile: { sheet = nil; DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showFileImporter = true } },
                     onLocation: { sheet = nil; ui.placeAsk = MTPlaceAsk(chat: chat.name, conv: convKey) },
-                    onContact: { sheet = nil; DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { modal = .contact } },
-                    onCard: { sheet = nil; DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { modal = .card } })
+                    onContact: { sheet = nil; DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { modal = .contact } })
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
             }
@@ -2288,10 +2190,10 @@ struct ChatConversationView: View {
     private var chatCoreL3: some View {
         chatCoreM3
             .navigationDestination(item: $chessGame) { push in
-                MTChessGameScreen(seat: .correspondent(chat, game: push.game), inChat: true)
+                MTApps.chess?.board(push.game, in: chat)
             }
             .navigationDestination(item: $coinMove) { r in
-                MTCoinMovePage(route: r, peer: store.displayName(for: chat.convId ?? chat.name))
+                MTApps.coins?.movePage(r, peer: store.displayName(for: chat.convId ?? chat.name))
             }
             .navigationDestination(item: $wallPage) { r in
                 // THE CARD OPENS THE WALL THE POST STANDS ON (the author's word 30.09): the friend's page for the post I wrote there,
@@ -2367,19 +2269,19 @@ struct ChatConversationView: View {
                 onSelect: { close(); selectingMsgs = true; selectedMsgs = Set(whole.map(\.id)) },
                 // THE STICKER'S OWN ROWS (the author's word 22.09): they stand only over a sticker --
                 // a letter whose manifest carries the sticker's name and whose picture is on disk.
-                onEditSticker: (m.docName == MontanaCardPlate.stickerName && m.imageFile != nil) ? {
+                onEditSticker: (m.docName == MontanaStickerBook.docName && m.imageFile != nil) ? {
                     let file = m.imageFile ?? ""
                     close()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { sheet = .stickerEdit(file) }
                 } : nil,
-                onViewSet: (m.docName == MontanaCardPlate.stickerName && m.imageFile != nil) ? {
+                onViewSet: (m.docName == MontanaStickerBook.docName && m.imageFile != nil) ? {
                     // THE STICKER'S OWN SET: a letter of ours belongs to this phone's set; a letter
                     // of another carries its passport, and the passport names the set (22.09).
                     let pack = m.isMine ? "" : (MontanaStickerBook.shared.passport(forLetter: m.msgId ?? "")?.pack ?? "")
                     close()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { sheet = .stickerSet(pack) }
                 } : nil,
-                onCopyLink: (m.docName == MontanaCardPlate.stickerName && m.imageFile != nil) ? {
+                onCopyLink: (m.docName == MontanaStickerBook.docName && m.imageFile != nil) ? {
                     let book = MontanaStickerBook.shared
                     let port = m.isMine ? nil : book.passport(forLetter: m.msgId ?? "")
                     let pack = port?.pack ?? book.mineId
@@ -2395,10 +2297,10 @@ struct ChatConversationView: View {
                 },
                 // COINS ON THE CORRESPONDENT'S LETTER (the author's word 03.10 13:40): the book pays or refuses; refused, the
                 // person is told why, and nothing leaves.
-                onCoin: (!m.isMine && MTCoinSend.canPay(chat, store: store)) ? { n in
+                onCoin: (!m.isMine && MTApps.coins?.canPay(chat, store: store) == true) ? { n in
                     close()
                     Task { @MainActor in
-                        if await MTCoinSend.react(n, on: m, in: chat, store: store) { UIImpactFeedbackGenerator(style: .light).impactOccurred() } else {
+                        if await MTApps.coins?.react(n, on: m, in: chat, store: store) == true { UIImpactFeedbackGenerator(style: .light).impactOccurred() } else {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { coinRefused = true }
                         }
                     }
@@ -2411,7 +2313,7 @@ struct ChatConversationView: View {
                 canDeleteForEveryone: chat.isGroup ? (m.isMine || MTGroup.shared.moderates(chat.name))
                                                    : chat.convId != nil && (m.isMine || MontanaConv.holds(convKey)),
                 ladder: m.isMine && !isChannel && chat.convId != nil && !MTRowLetter.ownRow(m.text),   // the rung and its moment over the menu; none for a note to oneself, nor a post's card
-                canDelete: !whole.contains { x in MTCoinSend.travels(x) },   // a coin letter on its way keeps its coins and its row (05.10)
+                canDelete: !whole.contains { x in MTApps.coins?.travels(x) == true },   // a coin letter on its way keeps its coins and its row (05.10)
                 // One road for the whole plate, one tombstone write and one history write (the critic R-1, 11.10.2026); «for
                 // everyone» finds every name already buried, so its notices write nothing more.
                 onDeleteMine: { store.deleteLocally(chat: chat.name, whole); close() },
@@ -2824,7 +2726,7 @@ struct ChatConversationView: View {
                             datePill(dayLabel(message.createdAt))   // new-day separator
                         }
                         if message.id == firstUnreadId { unreadDivider }   // unread separator
-                        if ChatStore.isMeshRoom(chat.name), !message.isFromMe, let who = MTMeshRoom.name(of: message.senderRef) {
+                        if ChatStore.isMeshRoom(chat.name), !message.isFromMe, let who = MTApps.mesh?.name(of: message.senderRef) {
                             // USER-DATA: the name a person gave themselves on the mesh wall.
                             Text(verbatim: who).font(.caption.weight(.semibold)).foregroundColor(.secondary).lineLimit(1)
                                 .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 18).padding(.top, 6)
@@ -2905,15 +2807,14 @@ struct ChatConversationView: View {
                                        // own stack, as a post opens whole, and the back leads home to the letters.
                                        enterGame(game)
                                    },
-                                   chessOpen: message.chessLetter.map { c in c.kind == .invite && !message.isFromMe
-                                       && MTChessSend.awaitsMe(c.game, rows: store.messages[chat.name] ?? []) } ?? false,
-                                   onChessDecline: { game in MTChessSend.decline(game, in: chat, store: store) },
+                                   chessOpen: message.gameLetter.map { c in c.invite && !message.isFromMe
+                                       && MTApps.chess?.awaitsMe(c.game, rows: store.messages[chat.name] ?? []) == true } ?? false,
+                                   onChessDecline: { game in MTApps.chess?.decline(game, in: chat, store: store) },
                                    onChessAccept: { game in acceptGame(game) },
-                                   chessStatus: message.chessLetter.flatMap { c in c.kind != .invite ? nil
-                                       : MTChessSend.state(c.game, rows: store.messages[chat.name] ?? []).flatMap { g in
-                                           g.status == .invited ? nil : MTChessWords.status(g) } },
+                                   chessStatus: message.gameLetter.flatMap { c in
+                                       c.invite ? MTApps.chess?.status(c.game, rows: store.messages[chat.name] ?? []) : nil },
                                    onTapWallPost: { _ in wallPage = message.isFromMe ? .person(chat) : .mine },   // mine stands on their wall, theirs on mine
-                                   onTapCoin: { coinMove = MTCoinMoveRoute(ref: message.mid, mine: message.isFromMe) },
+                                   onTapCoin: { coinMove = MTMoveRoute(ref: message.mid, mine: message.isFromMe) },
                                    onTapReply: { rid in jumpTo(rid) },
                                    tail: row.tail,
                                    quoteAuthor: message.replyToId.flatMap { rid in
@@ -3012,7 +2913,7 @@ struct ChatConversationView: View {
     /// reference draws a channel's posts (MTChannelPostLook); its owner writes in the chat's own field, a subscriber reads.
     private var isChannel: Bool { chat.isGroup && MTGroup.shared.kind(chat.name) == .channel }
     /// The coin of a group's field (MTGroup.takesCoins): a group's every writer, never a channel.
-    private var groupCoin: Bool { chat.isGroup && MTGroup.shared.takesCoins(chat.name) }
+    private var groupCoin: Bool { MTApps.coins != nil && chat.isGroup && MTGroup.shared.takesCoins(chat.name) }   // only where the coins stand (guard 4)
     /// A channel's subscriber: writes nothing into it -- no reply by the menu, by the swipe or by the feed's own swipe.
     private var readsOnly: Bool { isChannel && !MTGroup.shared.canWrite(chat.name) }
     /// The look of a channel's row: the channel's name over the words at the head of a run, the owner's count of people who saw it.
@@ -3149,8 +3050,8 @@ struct ChatConversationView: View {
         }
         // THE RED MINUS STANDS OVER THE WAY TO THE NEWEST (05.10.2026, MTPayPop): in a pair's ordinary feed, where a bubble pays.
         .overlay(alignment: .bottomTrailing) {
-            if !newestFirst, coinStands {
-                MTPayPop(chat: chat.name, pin: pin)
+            if !newestFirst, coinStands, let coins = MTApps.coins {
+                coins.payPop(chat: chat.name, pin: pin)
                     .padding(.trailing, 16 - (montanaTouchTarget - MontanaOctagon.composeHeight) / 2)
             }
         }
@@ -3480,7 +3381,7 @@ struct ChatConversationView: View {
                 }
             }
             // the sticker's name in the manifest (15.42); a file's own name (25.10)
-            let docName = item.docName ?? (item.sticker ? MontanaCardPlate.stickerName : nil)
+            let docName = item.docName ?? (item.sticker ? MontanaStickerBook.docName : nil)
             let kind = item.isFile ? "doc" : (item.video ? "vid" : "img")
             let qt: String? = (i == 0 && !quote.isEmpty) ? quote : nil   // the plate rides with the first picture
             let reply: MID? = qt == nil ? nil : answered?.id
@@ -3725,8 +3626,8 @@ struct ChatConversationView: View {
     @ViewBuilder private var composePreviews: some View {
         if let e = editingMessage { editPreview(e) }
         if let r = replyingTo { replyPreview(r) }
-        if composeMediaMode == ChatInputBar.coinMode, MTCoinSend.canPay(chat, store: store) || groupCoin {
-            MTCoinBalancePlate { composeMediaMode = "mic" }
+        if composeMediaMode == ChatInputBar.coinMode, let coins = MTApps.coins, coins.canPay(chat, store: store) || groupCoin {
+            coins.balancePlate { composeMediaMode = "mic" }
         }
         linkPlate
         mentionPlate
@@ -3775,7 +3676,6 @@ struct ChatConversationView: View {
                          // THE PLATE IS OPEN (the author's word 22.09): every action the «+» used to
                          // hide stands in the lower tier of the bar and is called by its own name.
                          actions: MTComposeActions(gallery: { openGallery() },
-                                                   card: { if groupLets("", photo: true) { modal = .card } },
                                                    file: { showFileImporter = true },
                                                    location: { if groupLets(MTPlaceLetter.road) { ui.placeAsk = MTPlaceAsk(chat: chat.name, conv: convKey) } },
                                                    contact: { if groupLets("👤") { modal = .contact } }),
@@ -3791,7 +3691,7 @@ struct ChatConversationView: View {
                          onSilent: { MTGroup.shared.setSilent(chat.name, on: !MTGroup.shared.silent(chat.name)); channelSilentTick += 1 },
                          part: part,
                          minting: ribbon,
-                         coins: MTCoinSend.canPay(chat, store: store) || groupCoin,
+                         coins: MTApps.coins?.canPay(chat, store: store) == true || groupCoin,
                          coinPicks: groupCoin,
                          onSendCoin: { n in sendCoin(n) })
         }
@@ -4111,51 +4011,14 @@ struct ChatConversationView: View {
 
     // row shown while recording a voice message: cancel · red dot + timer · send
     // photo taken by the camera → image message
-    /// The card is typed in the open, like a letter (15.43, the author's word): the plate on the
-    /// peer's screen fills in as the words come. The same gates and pace as the field's live
-    /// typing, the same word — the draft word with the card mark ahead; an old reader shows the text.
-    func sendCardDraft(_ t: String) {
-        guard let peer = cardDraftPipe else { return }
-        if t.isEmpty { draft.task?.cancel(); draft.task = nil; E2E.shared.sendDraftClear(to: peer); return }
-        guard ribbon && (store.peerInChat(chat.name) || store.typingChats.contains(chat.name)) else { return }
-        draft.pending = MontanaCardPlate.mark + t; draft.caret = -1; draft.replyMid = ""
-        if draft.task == nil {
-            let wait = max(0, 0.12 - Date().timeIntervalSince(draft.lastSent))
-            let box = draft
-            box.task = Task { @MainActor in
-                try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
-                box.lastSent = Date(); box.task = nil
-                E2E.shared.sendDraft(to: peer, text: box.pending, caret: -1, replyMid: "")
-            }
-        }
-    }
-
-    /// THE CARD AS A PHOTO (the author's word 28.09: «sent as a beautiful photo of the standard size»): the kept card
-    /// drawn at the card's standard proportions and sent down the picture road as any photo is; its words ride as the
-    /// caption under the card's mark, so every build reads them, and a build that knows the mark draws the photo alone and
-    /// offers the words to the contacts.
-    /// The pipe the card's live plate is said to: a pair's alone -- Saved Messages has no wire, and a group's key is no pipe (a group
-    /// streams no draft, handleDraftChange).
-    private var cardDraftPipe: String? { chat.isGroup || convKey.isEmpty ? nil : convKey }
-
     /// A KEY OF THE BAR ASKS THE GROUP BEFORE ITS PAGE OPENS (G.5): a right the group took from its members, or slow mode's wait, is
     /// said at the tap, as the field says it at the arrow, so nothing chosen on a page is lost to a refusal. `words` -- the shape of
-    /// what the key sends (words, or words with a link); `photo` -- the key sends a picture.
-    private func groupLets(_ words: String, photo: Bool = false) -> Bool {
+    /// what the key sends (words, or words with a link).
+    private func groupLets(_ words: String) -> Bool {
         guard chat.isGroup else { return true }
-        let why = photo ? MTGroup.shared.mediaRefusal(kind: "img", round: false, name: "card.jpg", caption: "", in: chat.name, store: store)
-                        : MTGroup.shared.refusal(words, in: chat.name, letter: true, store: store)
-        guard let why else { return true }
+        guard let why = MTGroup.shared.refusal(words, in: chat.name, letter: true, store: store) else { return true }
         groupRefusal = why
         return false
-    }
-
-    @MainActor func sendCardPhoto(_ card: MontanaBusinessCard) {
-        guard let jpeg = card.photo(), let name = saveChatPhotoTmp(jpeg) else { MontanaTrace.mark("card_photo", "FAIL render"); return }
-        _ = store.append(chat.name, Message(text: card.wire, isFromMe: true, time: nowHHMM(), imageFile: name,
-                                            deliveryStatus: .sending, senderRef: nil))
-        sendGatedMedia(fileName: name, kind: "img", caption: card.wire)
-        MontanaTrace.mark("card_photo", "bytes=\(jpeg.count) lines=\(card.lines.count)")
     }
 
     /// A MOVING PICTURE LEAVES AS A FILE (22.09): the picture road re-encodes to a still frame by
@@ -4228,11 +4091,11 @@ struct ChatConversationView: View {
         _ = store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
                                             replyText: quote.isEmpty ? nil : quote,
                                             imageFile: name,
-                                            docName: MontanaCardPlate.stickerName, deliveryStatus: .sending,
+                                            docName: MontanaStickerBook.docName, deliveryStatus: .sending,
                                             senderRef: nil, replyToId: answered?.id))
         // A sticker used is a sticker kept, and it moves to the front of the panel's strip (22.09).
         MontanaStickerBook.shared.adopt(file: name)
-        sendGatedMedia(fileName: name, kind: "img", docName: MontanaCardPlate.stickerName)
+        sendGatedMedia(fileName: name, kind: "img", docName: MontanaStickerBook.docName)
         MontanaTrace.mark("sticker_send", "bytes=\(png.count)")
         // THE PASSPORT RIDES BEHIND THE STICKER (22.09), named by the SAME letter the picture rides
         // under: on the other side the two meet by that name, and the menu grows its rows.
@@ -4306,7 +4169,7 @@ struct ChatConversationView: View {
     // the receiver dedups by mid, so a double tap cannot create a second bubble.
     func resendAny(_ m: Message) {
         // A COIN LETTER'S COINS CAME BACK WITH ITS RED (MTCoinSend.hold): the retry takes them again, or a short balance refuses it.
-        guard MTCoinSend.mayRetry(m) else { coinRefused = true; return }
+        guard MTApps.coins?.mayRetry(m) ?? true else { coinRefused = true; return }
         if m.videoFile != nil || m.imageFile != nil || m.audioFile != nil || m.docFile != nil {
             resendMedia(m); return
         }
@@ -4626,7 +4489,7 @@ struct ChatConversationView: View {
         // The one road out of the feed ([C-1], 19.09): the tombstone, the cargo and the list record
         // follow each row, as under the menu's «Delete for me».
         let picked = (store.messages[chat.name] ?? []).filter({ selectedMsgs.contains($0.id) })
-        let held = picked.contains { m in MTCoinSend.travels(m) }   // the store keeps them (the coin audit's first point, 05.10)
+        let held = picked.contains { m in MTApps.coins?.travels(m) == true }   // the store keeps them (the coin audit's first point, 05.10)
         for m in picked { delete(m) }
         selectingMsgs = false; selectedMsgs.removeAll()
         if held { DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { coinsTravel = true } }

@@ -166,15 +166,47 @@ enum MTLetterSeal {
     }()
     static func seal(_ mid: MID) -> String? {
         guard mid.hasPrefix("mid:") else { return nil }
-        return MTBoard.digest(domain + "\n" + mid)
+        return digest(domain + "\n" + mid)
+    }
+    /// SHA-256 OF A BODY, lowercase hex: the letter's seal, and the wall's seals and signatures of its posts and comments (S4c1:
+    /// it lives with the seal, which every edition carries; the wall calls it).
+    static func digest(_ body: String) -> String {
+        SHA256.hash(data: Data(body.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+    /// THE PRIME SUM OF A SEAL (02.10): the hex read as a number in base 29, a prime for each digit, summed -- the one gematria
+    /// of a letter's stamp and of a wall comment's line.
+    static func gematria(_ hex: String) -> Int {
+        let primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109]
+        var chars = Array(hex.lowercased())
+        if chars.isEmpty { return primes[0] }
+        var total = 0
+        while true {
+            var rem = 0
+            var next: [Character] = []
+            var started = false
+            for ch in chars {
+                guard let v = Int(String(ch), radix: 16) else { return total }
+                let cur = rem * 16 + v
+                let q = cur / 29
+                rem = cur % 29
+                if q != 0 || started {
+                    next.append(contentsOf: String(q, radix: 16))
+                    started = true
+                }
+            }
+            total += primes[rem]
+            if next.isEmpty { break }
+            chars = next
+        }
+        return total
     }
     /// The letter's mark, or nil for a row with no wire name: the seal's first eight hex digits and its prime sum
-    /// (MTBoard.gematria, the wall's own count).
+    /// (gematria, the one count, the wall's too).
     static func mark(_ m: Message) -> Mark? {
         let key = m.mid as NSString
         if let k = kept.object(forKey: key) { return k }
         guard let h = seal(m.mid) else { return nil }
-        let k = Mark(String(h.prefix(8)), MTBoard.gematria(h))
+        let k = Mark(String(h.prefix(8)), gematria(h))
         kept.setObject(k, forKey: key)
         return k
     }
@@ -230,8 +262,9 @@ struct MessageBubble: View, Equatable {
     @ObservedObject private var transfers = MTTransferBoard.shared
     // The answers under this letter, read live — the row is not rebuilt for them.
     @ObservedObject private var reactionBoard = MTReactionBoard.shared
-    /// The coins given on letters (MTCoinLedger): the coin total stands under the letter beside its answers (03.10).
-    @ObservedObject private var coinBook = MTLocalCoinLedger.shared
+    /// The coins given on letters: the coin total stands under the letter beside its answers (03.10), watched through the coin
+    /// door (slice S2b b7) -- the bubble is drawn again when the letters' coins change, never at a coin minted.
+    @ObservedObject private var coinWatch = MTApps.letterCoinsWatch
     @ObservedObject private var transcripts = MTVoiceTranscript.shared
     @State private var transcriptOpen = false
     private var mediaFileKey: String {
@@ -330,7 +363,7 @@ struct MessageBubble: View, Equatable {
             // otherwise a row could be called unchanged while what stands under it has changed.
             && MTReactionBoard.shared.shown(l.message).plates == MTReactionBoard.shared.shown(r.message).plates
             && MTReactionBoard.shared.shown(l.message).mine == MTReactionBoard.shared.shown(r.message).mine
-            && MTLocalCoinLedger.shared.coins(on: l.message.mid) == MTLocalCoinLedger.shared.coins(on: r.message.mid)
+            && MTApps.coins?.coinsOn(l.message.mid) == MTApps.coins?.coinsOn(r.message.mid)
             && l.player.playingFile == r.player.playingFile
     }
 
@@ -476,8 +509,8 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             return
         }
         // AN INVITATION THAT WAITS FOR MY ANSWER OPENS NOTHING (the author's word 06.10.2026 20:5x UTC): its two buttons decide.
-        if let game = message.chessLetter?.game { if !chessOpen { onTapChess(game) }; return }
-        if message.coinLetter != nil { onTapCoin(); return }   // a coin letter: its transaction (05.10)
+        if let game = message.gameLetter?.game { if !chessOpen { onTapChess(game) }; return }
+        if MTApps.coins?.isLetter(message) == true { onTapCoin(); return }   // a coin letter: its transaction (05.10)
         if let card = MTWallCard.of(message.text) { onTapWallPost(card); return }   // a post's card: its wall
         if message.imageFile != nil { onTapImage(imgFrameBox.rect == .zero ? nil : imgFrameBox.rect); return }
         if let v = message.videoFile, v.hasPrefix("vnote_") { onTapNote(v, noteFrameBox.rect == .zero ? nil : noteFrameBox.rect); return }   // the round note: its own window, never the player
@@ -583,21 +616,12 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 // ONE PLATE PER ANSWER, THE FACES ON IT: the same emoji from both sides is one plate
                 // with two faces, never two plates (a ForEach over repeated names drew one twice).
                 let plates = shown.reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
-                let coinsOn = coinBook.coins(on: message.mid)
+                let coinsOn = MTApps.coins?.coinsOn(message.mid) ?? 0
                 if !plates.isEmpty || coinsOn > 0 {
                     HStack(spacing: 4) {
                         // THE COINS ON THE LETTER (the author's word 03.10 13:40): the total given on it, on this phone's book.
-                        if coinsOn > 0 {
-                            HStack(spacing: 4) {
-                                MTMintCoin(spinning: false, side: 16)
-                                // USER-DATA: the number of coins given on this letter
-                                Text(verbatim: MTCoinText.count(coinsOn)).font(.system(size: 15, weight: .semibold).monospacedDigit())
-                            }
-                            .padding(.horizontal, 9).padding(.vertical, 4)
-                            .background(Color(white: 0.22))
-                            .clipShape(MontanaLongOctagon())
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel(Text("Coins"))
+                        if coinsOn > 0, let coins = MTApps.coins {
+                            coins.letterCoins(coinsOn)   // the coins' own plate (slice S2b b7)
                         }
                         ForEach(plates, id: \.self) { r in
                             // WHOSE PLATE (the author's word 20.09, [C-1]): the peer's face stands only on
@@ -693,22 +717,19 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     /// red burgundy Decline»): the invitation says who plays which colour with the clock (29.09); while it waits for this phone's
     /// answer the two buttons stand under it. No stake and no coins (the author's word 29.10.2026 19:31 UTC). A tap elsewhere opens
     /// the game.
-    private func chessBubble(_ chess: MTChessLetter) -> some View {
+    private func chessBubble(_ chess: MTGameLetter) -> some View {
         VStack(alignment: .trailing, spacing: 6) {
             HStack(spacing: 10) {
-                MTChessIcon().frame(width: 40, height: 40)
+                MTApps.chess?.icon(size: 40)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Chess").font(.headline)
-                    Text(chess.kind == .invite ? MTRowLetter.chessSeat(mine: message.isFromMe, seconds: chess.seconds ?? 0)
-                         : chess.end != nil ? (MTRowLetter.chessBanner(chess).map { String($0.drop { ch in ch == "♟" || ch == " " }) }
-                                               ?? String(localized: "Open game", bundle: MTLanguage.bundle))
-                         : String(localized: "Open game", bundle: MTLanguage.bundle)).font(.subheadline)
+                    Text(MTEditionLetters.game?.face(message.text, mine: message.isFromMe) ?? "").font(.subheadline)
                 }
                 Spacer(minLength: 0)
             }
             // THE ANSWER STANDS ON THE INVITATION (the author's word 06.10.2026 20:5x UTC: «decline records the decision, sends the
             // answer, and the bubble records it as declined too»): both phones read the same replay, so both bubbles say it.
-            if chess.kind == .invite, let chessStatus {
+            if chess.invite, let chessStatus {
                 Text(chessStatus).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
             }
             if chessOpen {
@@ -753,7 +774,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 .buttonStyle(.plain)
             } else if isGroup {
                 groupBubble()
-            } else if let chess = message.chessLetter {
+            } else if let chess = message.gameLetter {
                 chessBubble(chess)
             } else if let card = MTWallCard.of(message.text) {
                 wallCardBubble(card)
@@ -763,7 +784,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 // the card's second line said every letter mints a coin; the turn mints nothing, only the chain's second does.
                 VStack(alignment: .trailing, spacing: 4) {
                     HStack(spacing: 10) {
-                        MTMintCoin(side: 40, turn: 0)
+                        MTApps.coins?.coin(spinning: true, side: 40, turn: 0)
                         Text("Money flow has begun").font(.headline)
                     }
                     metaLine(onMedia: false)
@@ -771,16 +792,17 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 .background(bubbleFill).foregroundColor(bubbleText)
                 .clipShape(bubbleShape).overlay { bubbleOutline }
-            } else if let secret = MTSecretLetter.parse(message.text) {
-                // A SECRET SHARED FROM PASSWORDS (MTSecretLetter, the author's word 06.10.2026 14:4x UTC): the key and the title; the
-                // receiver's tap takes it into their own Passwords after the device owner's check.
+            } else if MTRowLetter.isSecret(message.text) {
+                // A SECRET SHARED FROM PASSWORDS (the author's word 06.10.2026 14:4x UTC): its face is the Passwords' own where their
+                // door stands -- the key, the title, and the receiver's tap that saves it after the device owner's check; an edition
+                // without Passwords draws the key and «Shared password» alone -- no title, no content, nothing saves it (link 15962).
                 VStack(alignment: .trailing, spacing: 4) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "key.fill").font(.title2)
-                        VStack(alignment: .leading, spacing: 2) {
-                            // USER-DATA: the title of the shared secret
-                            Text(verbatim: secret.title).font(.headline).lineLimit(2)
-                            Text(message.isMine ? "Shared from Passwords" : "Tap to save to Passwords").font(.subheadline)
+                    if let face = MTApps.passwords?.letterFace(message.text, mine: message.isMine) {
+                        face
+                    } else {
+                        HStack(spacing: 12) {
+                            Image(systemName: "key.fill").font(.title2)
+                            Text("Shared password").font(.headline)
                         }
                     }
                     metaLine(onMedia: false)
@@ -789,27 +811,12 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 .background(bubbleFill).foregroundColor(bubbleText)
                 .clipShape(bubbleShape).overlay { bubbleOutline }
                 .contentShape(Rectangle())
-                .onTapGesture { if !message.isMine { MTPasswordVault.shared.incoming = secret } }
-            } else if let coin = message.coinLetter {
-                // THE COIN LETTER'S BUBBLE (the author's word 03.10 13:52): our coin on its face, the number, and who it went to.
+                .onTapGesture { if !message.isMine { MTApps.passwords?.take(message.text) } }
+            } else if let face = MTApps.coins?.letterFace(message, failed: message.isMine && stampStatus == .failed) {
+                // THE COIN LETTER'S BUBBLE (the author's word 03.10 13:52): the plate and the line are the bubble's, the face is the
+                // coins' own (MTCoinLetterFace, slice S2b b6).
                 VStack(alignment: .trailing, spacing: 4) {
-                    HStack(spacing: 12) {
-                        MTMintCoin(spinning: false, side: 44)
-                        VStack(alignment: .leading, spacing: 2) {
-                            // THE COINS THAT LEFT OR CAME (the author's word 06.10.2026 20:2x UTC): mine went, a minus; theirs came, a
-                            // plus; a red letter's coins are back, the count alone.
-                            if message.isMine, stampStatus == .failed {
-                                // USER-DATA: the number of coins the letter carries
-                                Text(verbatim: MTCoinText.count(coin.c)).font(.title2.bold().monospacedDigit())
-                            } else {
-                                MTCoinDelta(coins: message.isMine ? -coin.c : coin.c)
-                            }
-                            // THE TIME THE COINS ARE (the author's word 19.10.2026 14:44 UTC: «in transfers both the time and the coins»).
-                            MTCoinTime(coins: coin.c)
-                            // NOT DELIVERED, RETURNED (the author's word 04.10.2026 22:40 UTC, MTCoinSend.hold): a red coin letter's coins are back.
-                            Text(message.isMine ? (stampStatus == .failed ? "Not delivered, coins returned" : "Coins sent") : "Coins received").font(.subheadline)
-                        }
-                    }
+                    face
                     metaLine(onMedia: false)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 8)
@@ -880,7 +887,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                                 pause = min(pause * 2, 5_000_000_000)
                             }
                         }
-                } else if message.docName == MontanaCardPlate.stickerName { stickerPlaceholder }
+                } else if message.docName == MontanaStickerBook.docName { stickerPlaceholder }
                 else {
                     // A row may not impersonate a picture. This legacy/corrupt-manifest path
                     // occupies no visual space and becomes visible only after real pixels decode.
@@ -928,8 +935,6 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 } else {
                     docBubble(df)
                 }
-            } else if message.text.hasPrefix(MontanaCardPlate.mark) {
-                cardBubble(String(message.text.dropFirst(MontanaCardPlate.mark.count)))
             } else if message.text.hasPrefix(MontanaWakePush.letterBlobMark) {
                 if message.lost {
                     lostLetterBubble      // the words never came, and are asked for no more (25.09)
@@ -952,14 +957,10 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     /// (the author's word 20.09) wears the same circle and saves every picture and video on it at
     /// once — it stands as soon as all of them are on disk and none is still riding.
     @ViewBuilder var saveBesideBadge: some View {
-        if !message.isMine, !anyProgress, !isGroup, message.text.hasPrefix(MontanaCardPlate.mark) {
-            // A CARD'S WORDS GO TO THE CONTACTS (the author's word 28.09): beside a card the person was given — its photo or
-            // its plate — the circle offers the platform's new-contact page filled from it; the photo saves from the viewer.
-            MTCardContactBadge(lines: MontanaCardLine.lines(of: message.text))
-        } else if !message.isMine, !anyProgress {
+        if !message.isMine, !anyProgress {
             let letters = isGroup ? members : [message]
             let files = letters.compactMap { m -> (file: String, video: Bool)? in
-                guard m.docName != MontanaCardPlate.stickerName,
+                guard m.docName != MontanaStickerBook.docName,
                       let f = m.imageFile ?? m.videoFile, !f.hasPrefix("vnote_") else { return nil }
                 return (f, m.videoFile != nil)
             }
@@ -967,19 +968,6 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 MTSaveMediaBadge(files: files)
             }
         }
-    }
-
-    /// The business card as a card (15.41, the author's word): the same plate the person wrote
-    /// it on — the emblem in the corner, the first line as the name, the rest as the details.
-    /// The letter itself stays plain text under the 📇 mark — every build reads it.
-    func cardBubble(_ body: String) -> some View {
-        return MontanaCardFace(lines: body.components(separatedBy: "\n"))
-            .overlay(alignment: .bottomTrailing) {
-                metaLine()
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Color.black.opacity(0.38), in: MontanaLongOctagon())
-                    .padding(10)
-            }
     }
 
     // call log row: type icon + direction + duration/missed
@@ -1663,15 +1651,12 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     // in the middle; a poster still on its way is a grey field of the video's own shape.
     func mediaBubble(picture: UIImage?, aspect: CGSize, isVideo: Bool, file: String) -> some View {
         // A sticker (the card) stands on its own: no fill, no rim — the plate is the picture.
-        let sticker = !isVideo && message.docName == MontanaCardPlate.stickerName
+        let sticker = !isVideo && message.docName == MontanaStickerBook.docName
         // A STICKER HAS ONE SIZE, NOT THE PICTURE'S (the author's word 22.09): three single glyphs
         // across, whatever the file's own pixels are.
         let fit = sticker ? MTStickerLook.box(aspect) : mediaBox(aspect)
         let cap = Self.plateCeiling
-        // THE CARD'S PHOTO STANDS ALONE (the author's word 28.09): its words are already on it; they ride as the caption for
-        // the contacts and for a build that does not know the mark, and are not drawn a second time under it.
-        let card = !isVideo && message.text.hasPrefix(MontanaCardPlate.mark)
-        let captionW = message.text.isEmpty || sticker || card ? 0 : captionNaturalWidth(cap: cap)
+        let captionW = message.text.isEmpty || sticker ? 0 : captionNaturalWidth(cap: cap)
         let box = CGSize(width: min(cap, max(fit.width, captionW)), height: fit.height)
         let narrow = !sticker && fit.width < box.width - 1
         return VStack(spacing: 0) {
@@ -1710,7 +1695,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 })
                 .overlay { mediaProgressOverlay }
                 .overlay(alignment: .bottomTrailing) {
-                    if message.text.isEmpty || card {
+                    if message.text.isEmpty {
                         metaLine(onMedia: true)
                         .foregroundColor(.white)
                         .padding(.horizontal, 7).padding(.vertical, 3)
@@ -1718,7 +1703,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                         .padding(6)
                     }
                 }
-            captionBar(width: box.width, text: card ? "" : nil)
+            captionBar(width: box.width, text: nil)
         }
         .frame(width: box.width)
         .background { if !sticker { bubbleFill } }
@@ -1824,14 +1809,14 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     enum SpeakerPlace { case inside, above, none }
     static func speakerPlace(_ m: Message, plate: Bool) -> SpeakerPlace {
         if plate { return .none }
-        if m.chessLetter != nil || MTWallCard.of(m.text) != nil || MTMoneyFlowRow.of(m.text) || MTSecretLetter.parse(m.text) != nil
-            || m.coinLetter != nil || releaseInfoOf(m.text) != nil || callInfoOf(m.text) != nil { return .above }
+        if m.gameLetter != nil || MTWallCard.of(m.text) != nil || MTMoneyFlowRow.of(m.text) || MTRowLetter.isSecret(m.text)
+            || MTApps.coins?.isLetter(m) == true || releaseInfoOf(m.text) != nil || callInfoOf(m.text) != nil { return .above }
         let files = m.imageFile != nil || m.videoFile != nil || m.audioFile != nil || m.docFile != nil
         if !files, bigEmojiText(m.text) != nil { return .above }
         if m.audioFile != nil || m.docFile != nil { return .above }
         if let v = m.videoFile { return v.hasPrefix("vnote_") ? .above : .none }
         if m.imageFile != nil { return .none }
-        if m.text.hasPrefix(MontanaCardPlate.mark) || m.text.hasPrefix(MontanaWakePush.letterBlobMark) { return .above }
+        if m.text.hasPrefix(MontanaWakePush.letterBlobMark) { return .above }
         if m.replyText == nil, MTPlaceLetter.parse(m.text) != nil { return .none }
         return .inside
     }
@@ -1922,8 +1907,8 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         // of the width so a single letter cannot take the whole screen.
         let ratio = max(0.75, min(3.0, CGFloat(card.w ?? 4) / CGFloat(max(card.h ?? 3, 1))))
         return Button {
-            // A YouTube card plays here, in YouTube's own player (MTYouTube); any other page opens where it lives.
-            if let u = URL(string: card.u), !MTYouTube.play(u, title: card.t) { UIApplication.shared.open(u) }
+            // A YouTube card plays here, in YouTube's own player where its door stands (MTApps.youtube); any other page opens where it lives.
+            if let u = URL(string: card.u), MTApps.youtube?.play(u, title: card.t) != true { UIApplication.shared.open(u) }
         } label: {
             HStack(alignment: .top, spacing: 6) {
                 RoundedRectangle(cornerRadius: 1.5)
@@ -2438,20 +2423,6 @@ struct MTComposeRow: View {
         }
         .padding(.horizontal).padding(.vertical, MTInputField.barPad)
         .environment(\.mtChatKeyboardGeometry, nil)
-    }
-}
-/// THE COINS THAT MOVED, SIGNED (the author's word 06.10.2026 20:2x UTC: «show the coins' transfer or top-up in the chat, plainly
-/// to the eye; fix the minuses and the pluses too»): what this phone's book lost or gained by a coin letter or a game's end -- the
-/// minus on red, the plus on green, the count whole, white on its capsule so it reads on either side's bubble.
-struct MTCoinDelta: View {
-    let coins: Int
-    var body: some View {
-        // USER-DATA: a signed count of coins
-        Text(verbatim: (coins < 0 ? "\u{2212}" : "+") + String(MTCoinText.count(coins).drop { ch in ch == "-" }))
-            .font(.title3.bold().monospacedDigit()).foregroundStyle(.white)
-            .lineLimit(1).minimumScaleFactor(0.6)
-            .padding(.horizontal, 10).padding(.vertical, 3)
-            .background(coins < 0 ? Color.red : Color.green, in: Capsule())
     }
 }
 
@@ -3632,14 +3603,17 @@ struct MTReleaseScroll<Meta: View>: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: open ? "Collapse" : "Expand", bundle: MTLanguage.bundle))
             }
-            Button {
-                MontanaTrace.mark("release", "tap build=\(build)")
-                if let u = URL(string: url) { UIApplication.shared.open(u) }
-            } label: {
-                MTDoorLabel(glyph: Image("Logo").resizable().scaledToFit(),
-                            word: Text(String(localized: "Update", bundle: MTLanguage.bundle)))
+            // The door to update stands only before a build newer than the one in hand (the room's own row has none).
+            if MontanaRelease.ownBuild < build, let u = URL(string: url), !url.isEmpty {
+                Button {
+                    MontanaTrace.mark("release", "tap build=\(build)")
+                    UIApplication.shared.open(u)
+                } label: {
+                    MTDoorLabel(glyph: Image("Logo").resizable().scaledToFit(),
+                                word: Text(String(localized: "Update", bundle: MTLanguage.bundle)))
+                }
+                .buttonStyle(MTLoginDoorStyle())
             }
-            .buttonStyle(MTLoginDoorStyle())
             HStack { Spacer(minLength: 0); meta() }
         }
         .padding(.horizontal, 14).padding(.top, 14).padding(.bottom, 9)

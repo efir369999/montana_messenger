@@ -139,6 +139,15 @@ actor MTCargoLane {
     }
 }
 
+/// A PIECE OF A FILE: its block's id and its own length -- a post's file, a chat's attachment and a track are read by them.
+struct MTPieceRef: Codable, Hashable { var bid: String; var cs: Int }
+
+/// A wall post by its id and the wall it stands on -- nil, my own.
+struct MTStreamPost: Equatable {
+    let id: String
+    let wall: String?
+}
+
 /// WHAT A PLAYER READS BEFORE THE FILE IS WHOLE: the file's pieces — their sizes in order, the key that opens them — and
 /// the folder the whole file stands in under its name. One shape for a post's file, a chat's attachment and a track.
 struct MTStreamSource: Equatable {
@@ -146,11 +155,11 @@ struct MTStreamSource: Equatable {
     let ext: String
     let size: Int
     let key: Data
-    let chunks: [MTBoardChunk]  // bid and the piece's own length, in order
+    let chunks: [MTPieceRef]  // bid and the piece's own length, in order
     let folder: URL
     /// The wall post the file is of, when it is one: a piece every door calls gone is said to the wall's owner, whose phone
     /// lays the post's files again (MTBoard.piecesGone) -- a player alone never said it, and the track stood at 0:00 for good.
-    var post: MTBoardPostRef? = nil
+    var post: MTStreamPost? = nil
 
     var url: URL {
         let safe = name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? name
@@ -162,7 +171,7 @@ struct MTStreamSource: Equatable {
 /// range is served from the pieces already laid in the file on disk, and the rest are brought by the lane — the piece the
 /// player waits for first (Need.play). Every piece brought is laid into the file at its place and marked in the file's own
 /// ledger beside it, so a play that stops half-way keeps what it brought and a launch later goes on from there; when every
-/// piece lies there the file is whole: it takes its name, and whoever asked is told. The container is the player's business,
+/// piece lies there the file is whole: it takes its name, and whoever asked is told. The container is the player's messenger,
 /// not ours: a video exported for the network (its header first) starts in a second; a track with its header at the end asks
 /// for the last piece first, and gets it. Nothing is brought that the player did not ask for.
 final class MTStreamLoader: NSObject, AVAssetResourceLoaderDelegate {
@@ -334,7 +343,7 @@ final class MTStreamLoader: NSObject, AVAssetResourceLoaderDelegate {
             }
             MontanaTrace.markFolded("stream_piece", "FAIL i=\(i) of \(source.chunks.count) name=\(String(source.name.prefix(20))) why=\(why)",
                                        window: 10, key: source.name)
-            if case .gone = answer, let post = source.post { MTBoard.piecesGone(post) }
+            if case .gone = answer, let post = source.post { MTApps.wall?.piecesGone(post) }
             return nil
         }
         // The disk refusing the piece costs the player nothing: it gets its bytes; the piece is simply not kept.

@@ -3,30 +3,18 @@ import UIKit
 import CryptoKit
 import MontanaBindings
 
-/// First contact with a claimed name.
+/// First contact: one encapsulation to a card's contact key.
 ///
-/// A name resolves into the ability to reach someone and NEVER into where they are. The slot of a
-/// name publishes one value — the contact key — and everything else follows from it: a stranger
-/// encapsulates to that key once, the holder decapsulates, and both then hold the same secret. From
-/// there the correspondence runs under ordinary tags, and a letter begun by a name differs from one
-/// begun by acquaintance in nothing an implementation or an observer can name.
+/// A card publishes one value -- the contact key -- and everything else follows from it: whoever scanned it
+/// encapsulates to that key once, the holder decapsulates, and both then hold the same secret. From there the
+/// correspondence runs under ordinary tags.
 enum MontanaFirstContact {
 
-    /// The pair a name publishes. The secret half never leaves the device; what the slot carries is
-    /// the encapsulation key alone. Derived per NAME, not per person: deriving it once per person
-    /// would join two names of one holder.
-    static func contactPair(masterSeed: Data, slot: Data) -> (root: Data, secret: Data)? {
-        var seed = [UInt8](repeating: 0, count: 64)
-        let rc = masterSeed.withUnsafeBytes { m -> Int32 in
-            slot.withUnsafeBytes { s -> Int32 in
-                guard let mb = m.bindMemory(to: UInt8.self).baseAddress,
-                      let sb = s.bindMemory(to: UInt8.self).baseAddress else { return -1 }
-                return mt_name_contact_seed(mb, masterSeed.count, sb, &seed)
-            }
-        }
-        guard rc == 0 else { return nil }
+    /// A card's pair from 64 bytes of seed: the encapsulation key it hands out and the secret half that
+    /// never leaves the device. The one derivation of a contact pair (article 15): the card and the tests read it.
+    static func pair(seed: [UInt8]) -> (root: Data, secret: Data)? {
         var pk = [UInt8](repeating: 0, count: 1184), sk = [UInt8](repeating: 0, count: 2400)
-        guard mt_mlkem_keypair_from_seed(seed, &pk, &sk) == 0 else { return nil }
+        guard seed.count == 64, mt_mlkem_keypair_from_seed(seed, &pk, &sk) == 0 else { return nil }
         return (Data(pk), Data(sk))
     }
 
@@ -114,64 +102,14 @@ enum MontanaFirstContact {
 }
 
 
-// ── Acquaintance, in the shape the set gives it ──────────────────────────────────────────────
+// ── Acquaintance by a card ──────────────────────────────────────────────────────────────────
 //
-// An invitation carries a NAME and nothing else.
-//
-// The contact key has one place — the slot of that name publishes it — and a link that carried a
-// copy would be a second place for one value. It would also pin a holder for good: a name is held
-// by renewal and can pass to somebody else, and a stranger scanning yesterday's paper would
-// encapsulate to whoever held it then, and the letter would go nowhere in silence.
-//
-// So a link resolves rather than carries: the name is normalized, the slot is computed from it,
-// and the key is read out of the plane of names at the moment of meeting — one reach per window,
-// bounded by a nullifier that names nobody.
-//
-// A person holding no name cannot be met at all, and that is the set speaking rather than a gap:
-// someone who never claimed a name is indistinguishable from someone who does not exist.
+// A card is the one road to meet somebody: the author's decision 613 (04.11.2026) took the @name out
+// whole -- no name is held, published, resolved or knocked at. One encapsulation to the card's contact
+// key, and from there the correspondence runs under ordinary tags.
 extension MontanaFirstContact {
 
-    static let invitationPrefix = "montana://"
-    /// THE NAME'S LINK IS A WEB LINK (24.09, the author's word: «a link to one's profile stands for good»; its home is
-    /// montana.quest/n/ by the author's word of 08.10.2026 -- the first domain never answered). A scheme is plain text in
-    /// every other messenger and in mail; montana.quest/n/ followed by the name is a link everywhere, opens this app through
-    /// the associated domain when it is installed, and lands on a page offering the app otherwise. A form of the first
-    /// domain handed out before still reads as the same name.
-    static let webNamePrefix = "https://montana.quest/n/"
-
-    /// What this person hands to a stranger: their name, in the form every messenger links. Nil when no
-    /// name is held — there is nothing to publish and nothing to resolve.
-    static func invitation() -> String? {
-        guard let n = MontanaNames.heldName, !n.isEmpty else { return nil }   // a lapsed name is handed to nobody (P5)
-        return webNamePrefix + n
-    }
-
-    /// The name inside an invitation, normalized as the set normalizes it, or nil when the text is
-    /// not an invitation. An address handed over in this shape is refused: it is not a name. A pasted
-    /// link may have lost its scheme or gained «www.», a query or a closing slash on the way; none of
-    /// them is part of a name, and a second path segment means it is not one.
-    static func name(inInvitation text: String) -> String? {
-        var t = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let low = t.lowercased()
-        let forms = [webNamePrefix, "https://www.montana.quest/n/", "http://montana.quest/n/", "http://www.montana.quest/n/",
-                     "montana.quest/n/", "www.montana.quest/n/",
-                     "https://pzr.me/", "https://www.pzr.me/", "http://pzr.me/", "http://www.pzr.me/", "pzr.me/", "www.pzr.me/",
-                     invitationPrefix]
-        guard let form = forms.first(where: { low.hasPrefix($0) }) else { return nil }
-        t = String(t.dropFirst(form.count))
-        if let cut = t.firstIndex(where: { $0 == "?" || $0 == "#" }) { t = String(t[..<cut]) }
-        if t.hasSuffix("/") { t.removeLast() }
-        guard !t.isEmpty, !t.contains("/") else { return nil }
-        return MontanaNames.normalize(t)
-    }
-
-    /// The slot a name occupies — where the plane of names is asked for its contact key.
-    static func slot(inInvitation text: String) -> Data? {
-        guard let n = name(inInvitation: text) else { return nil }
-        return MontanaNames.slot(normalized: n)
-    }
-
-    /// Meeting somebody whose contact key the plane of names has just answered with: one
+    /// Meeting the holder of a card's contact key: one
     /// encapsulation, and both sides hold the secret every later tag of this correspondence stands
     /// on. What comes back is the local name of that correspondence and the ciphertext the FIRST
     /// letter must carry — the holder derives the same secret from it and from nothing else.
@@ -190,24 +128,6 @@ extension MontanaFirstContact {
         MontanaWakePush.registerConvs()
         layPipeFace(conv: ref)   // the face goes beside the pipe at its birth: the other side wears it with the first letter
         return (ref, started.ciphertext)
-    }
-
-    /// The holder's side: a first letter arrived carrying its ciphertext, and the same secret comes
-    /// out of it. From here on the correspondence is indistinguishable from one begun by
-    /// acquaintance — the same tags, the same shape, the same everything.
-    static func accept(firstLetter ciphertext: Data, masterSeed: Data, confirmed: (Data) -> Bool) -> String? {
-        guard let n = MontanaNames.heldName, let sl = MontanaNames.slot(normalized: n),
-              let pair = contactPair(masterSeed: masterSeed, slot: sl),
-              let secret = accept(ciphertext: ciphertext, contactSecret: pair.secret, contactRoot: pair.root)
-        else { return nil }
-        // The same law as for cards: the garbage secret of a foreign letter does not open the seal.
-        guard confirmed(secret) else {
-            MontanaTrace.mark("first_ghost", "card=name"); return nil
-        }
-        let ref = MTPipeBook.establish(secret: secret)
-        if ref != nil { MontanaWakePush.registerConvs() }   // the pipe stood up -- subscriptions at once
-        if let ref { readPipeFace(conv: ref) }   // the beginner's face, laid beside the pipe at its birth
-        return ref
     }
 
     // ── THE FACE BESIDE THE PIPE (23.09, the author's word: «at the chat's creation — the name and the face at
@@ -258,341 +178,7 @@ extension MontanaFirstContact {
 }
 
 
-/// Resolving a name into the ability to reach its holder, and taking one.
-///
-/// The set puts one value at the slot of a claimed name — the contact root — and gives the ORDER of a
-/// slot to the chain. Until the chain carries names, the nodes carry the Canon's reveal and ONE node keeps
-/// the order (a door's «name» capability; which node keeps it is the nodes' own configuration, never the
-/// phone's). The keeper hands out no link of anybody's chain; the phone proves a name its own by reading
-/// the reveal under it and finding its own key there — and by nothing else (the critic's P1).
-enum MontanaNamePlane {
-    enum Answer {
-        case found(contactRoot: Data)
-        case unknown        // the keeper said that nobody holds it
-        case unreachable    // no door answered, or a door's memory disputes the keeper
-    }
-    enum Taking {
-        case taken(String)  // the keeper recorded it as this device's
-        case held           // somebody else holds it
-        case full           // the keeper's quota is spent
-        case busy           // the keeper asked to wait
-        case unreachable
-        case refused        // not a lawful name, or no seed to take it with
-    }
-
-    static func slot(of raw: String) -> Data? {
-        guard let n = MontanaNames.normalize(raw) else { return nil }
-        return MontanaNames.slot(normalized: n)
-    }
-
-    static func known(_ raw: String) -> Data? {
-        guard let n = MontanaNames.normalize(raw) else { return nil }
-        return MTPipeBook.contactRoot(forName: n)
-    }
-
-    /// The doors that carry the plane of names — by their own word (the capability map), in the network's
-    /// order, the elected first.
-    private static func doors() -> [String] { MontanaWakePush.orderedBases(for: "name") }
-
-    /// One question to one door. The code is knowledge in itself — 409 is «held», 404 is «nobody», 507 is
-    /// «full» — so it comes back whole, never folded into «failed».
-    private static func ask(_ door: String, _ path: String, _ body: [String: Any]) async -> (code: Int, obj: [String: Any]) {
-        guard let url = URL(string: door + path),   // SERVER-DEBT-ACK: the plane of names, carried by the nodes until the chain carries it
-              let payload = try? JSONSerialization.data(withJSONObject: body) else { return (-1, [:]) }
-        var req = URLRequest(url: url); req.httpMethod = "POST"   // SERVER-DEBT-ACK: the plane of names, carried by the nodes until the chain carries it
-        req.setValue("application/json", forHTTPHeaderField: "content-type")
-        req.httpBody = payload
-        req.timeoutInterval = MTNodeWire.postTimeoutS
-        guard let (d, resp) = try? await URLSession.shared.data(for: req),   // SERVER-DEBT-ACK: the plane of names, carried by the nodes until the chain carries it
-              let code = (resp as? HTTPURLResponse)?.statusCode else {
-            MontanaTrace.mark("name_ask", "\(path) unreachable at=\(URL(string: door)?.host ?? "-")")
-            return (-1, [:])
-        }
-        let obj = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] ?? [:]
-        return (code, obj)
-    }
-
-    /// A 404 is «nobody holds it» ONLY in the keeper's own words: a door that carries no names answers 404 too
-    /// («no such capability here», or an older node's «not found»), and on a cold start, before the doors have
-    /// named what they hold, those doors are asked as well — their 404 says nothing about the name.
-    private static func nobody(_ code: Int, _ obj: [String: Any]) -> Bool {
-        code == 404 && (obj["error"] as? String) == "no such name"
-    }
-
-    /// ONE DOOR AT A TIME (the critic's P10): the elected door first, the next only when a door is silent, fails,
-    /// or carries no names. Asking every door at once put one question before the keeper twice — once straight,
-    /// once through the other door.
-    private static func askFirst(_ path: String, _ body: [String: Any]) async -> (code: Int, obj: [String: Any]) {
-        var last: (code: Int, obj: [String: Any]) = (-1, [:])
-        for d in doors() {
-            let a = await ask(d, path, body)
-            if [200, 400, 409, 429, 507].contains(a.code) || nobody(a.code, a.obj) { return a }
-            last = a
-        }
-        return last
-    }
-
-    /// The contact root inside the Canon's reveal of `name` (serialize(name_reveal): the name's length, the
-    /// name zero-padded to 32, the blinding factor, the contact root), or nil when the bytes are not that.
-    /// A reveal of another name under this slot is refused here, whatever the door says.
-    static func root(inReveal d: Data, of name: String) -> Data? {
-        let b = [UInt8](d)
-        guard b.count == 1249 else { return nil }
-        let n = Int(b[0])
-        guard (4...32).contains(n), Array(b[1...n]) == Array(name.utf8),
-              b[(1 + n)..<33].allSatisfy({ $0 == 0 }) else { return nil }
-        return Data(b[65..<1249])
-    }
-
-    static func resolve(_ raw: String) async -> Answer {
-        guard let n = MontanaNames.normalize(raw), let sl = MontanaNames.slot(normalized: n) else { return .unknown }
-        let all = doors()
-        guard !all.isEmpty else { return fallback(n, why: "no door carries names") }
-        var remembered: Data? = nil
-        for d in all {
-            let (code, obj) = await ask(d, "/name-get", ["slot": sl.montanaHexString])
-            if code == 200, let b64 = obj["reveal"] as? String, let bytes = Data(base64Encoded: b64),
-               let r = root(inReveal: bytes, of: n) {
-                // A door's memory is not the keeper's word (the critic's P12): it stands only while no door says
-                // otherwise.
-                if (obj["stale"] as? Bool) == true { remembered = remembered ?? r; continue }
-                MTPipeBook.rememberName(n, contactRoot: r)
-                MontanaTrace.mark("name_resolve", "found")
-                return .found(contactRoot: r)
-            }
-            if nobody(code, obj) {
-                if remembered != nil {
-                    MontanaTrace.mark("name_resolve", "DISPUTED — a door's memory against the keeper's «nobody»")
-                    return .unreachable
-                }
-                MontanaTrace.mark("name_resolve", "nobody holds it")
-                return .unknown
-            }
-        }
-        if let r = remembered {
-            MontanaTrace.mark("name_resolve", "from a door's memory — the keeper is silent")
-            return .found(contactRoot: r)
-        }
-        return fallback(n, why: "no door answered")
-    }
-
-    /// The doors are silent: the root this device heard last — ONLY for a name already met here (the critic's P12),
-    /// and named in the diary, because a name may have changed hands since.
-    private static func fallback(_ n: String, why: String) -> Answer {
-        if let r = MTPipeBook.contactRoot(forName: n), MontanaMeeting.cardMet(root: r) != nil {
-            MontanaTrace.mark("name_resolve", "from memory, a name met before — \(why)")
-            return .found(contactRoot: r)
-        }
-        MontanaTrace.mark("name_resolve", "unreachable — \(why)")
-        return .unreachable
-    }
-
-    /// Whether the reveal under a name carries this device's own key — the one proof a phone has that a name it
-    /// believes its own is its own. Nil when the keeper did not answer.
-    private static func ownsSlot(_ name: String, master: Data) async -> Bool? {
-        guard let sl = MontanaNames.slot(normalized: name),
-              let mine = MontanaFirstContact.contactPair(masterSeed: master, slot: sl)?.root else { return nil }
-        let (code, obj) = await askFirst("/name-get", ["slot": sl.montanaHexString])
-        if code == 200, let b64 = obj["reveal"] as? String, let bytes = Data(base64Encoded: b64), (obj["stale"] as? Bool) != true {
-            return root(inReveal: bytes, of: name) == mine
-        }
-        if nobody(code, obj) { return false }
-        return nil
-    }
-
-    private enum Probe { case taken(step: Int, until: Double?), ours(step: Int), held, full, busy, unreachable, exhausted }
-
-    /// Taking a slot with the first link of this phone's chain the keeper has not seen. A chain is a function of the
-    /// seed and the slot and outlives its holding, so an earlier holding of the same seed may have published links:
-    /// the keeper answers «spent» for those, and the probe doubles (1, 2, 4, …) — a retaking wastes at most as many
-    /// links as were already spent.
-    private static func probe(_ p: MontanaNames.Prepared, from start: Int, master: Data) async -> Probe {
-        var k = max(0, start)
-        while k <= MontanaNames.chainLength {
-            let (code, obj) = await askFirst("/name-take", ["reveal": p.reveal.base64EncodedString(), "last": p.chain[k].montanaHexString])
-            switch code {
-            case 200: return .taken(step: k, until: obj["until"] as? Double)
-            case 409 where (obj["spent"] as? Bool) == true:
-                k = k == 0 ? 1 : k * 2
-            case 409:
-                switch await ownsSlot(p.name, master: master) {
-                case true?: return .ours(step: k)
-                case false?: return .held
-                case nil: return .unreachable
-                }
-            case 507: return .full
-            case 429: return .busy
-            default: return .unreachable
-            }
-        }
-        MontanaTrace.mark("name_take", "every probed link is spent")
-        return .exhausted
-    }
-
-    /// Taking a name at the keeper. The device holds it only once the keeper says so — or once the reveal under the
-    /// name proves to carry this device's own key; a new name releases the one held before it, and the release is
-    /// final (Identity: «releasing is not reversible»).
-    static func take(_ raw: String) async -> Taking {
-        guard let master = MontanaSeed.root,
-              let p = MontanaNames.prepare(raw, masterSeed: master) else { return .refused }
-        let recorded = MontanaNames.currentName
-        let former = (recorded != nil && recorded != p.name && MontanaNames.isHeld()) ? MontanaNames.nextRenewal(masterSeed: master) : nil
-        let start = recorded == p.name ? (MontanaNames.heldStep ?? -1) + 1 : 0
-        let window = UInt32(MTPipe.window())
-        switch await probe(p, from: start, master: master) {
-        case .taken(let step, let until):
-            MontanaNames.hold(p, window: window, step: step, until: until)
-            if let former { await release(slot: former.slot, link: former.link) }
-            return settle(p.name, master: master, trace: "taken at step \(step)")
-        case .ours(let step):
-            // Our own reveal stands under the name (a taking whose answer was lost, another device of this seed):
-            // held from here, and a renewal reads the keeper's step and term back.
-            MontanaNames.hold(p, window: window, step: step, until: nil)
-            if let former { await release(slot: former.slot, link: former.link) }
-            await renew(masterSeed: master)
-            return settle(p.name, master: master, trace: "ours again")
-        case .held: return .held
-        case .full: return .full
-        case .busy: return .busy
-        case .unreachable, .exhausted: return .unreachable
-        }
-    }
-
-    private static func settle(_ n: String, master: Data, trace: String) -> Taking {
-        if let root = MontanaNames.contactRoot(masterSeed: master) { MTPipeBook.rememberName(n, contactRoot: root) }
-        MTPipeBook.dropFirstIndex()   // the device listens at the point of the new name from this window
-        MontanaNames.keepInStep(masterSeed: master)
-        MontanaTrace.mark("name_take", trace)
-        DispatchQueue.main.async { NotificationCenter.default.post(name: .montanaNameChanged, object: nil) }
-        return .taken(n)
-    }
-
-    // ONE RENEWAL AT A TIME (the critic's P3): every return used to start its own, and links were published twice.
-    private static let renewGate = NSLock()
-    private static var renewing = false
-    private static func claimRenewal() -> Bool {
-        renewGate.lock(); defer { renewGate.unlock() }   // LOCK-OK: one flag in memory
-        if renewing { return false }
-        renewing = true
-        return true
-    }
-    private static func endRenewal() {
-        renewGate.lock(); renewing = false; renewGate.unlock()   // LOCK-OK: one flag in memory
-    }
-
-    /// Extends the term at the keeper with the next link. The step moves only when the keeper takes it, the term is
-    /// the keeper's word, and after every renewal the reveal under the name is read: a name that carries another key
-    /// is not this device's, whatever its chain says (the critic's P1).
-    static func renew(masterSeed: Data) async {
-        guard claimRenewal() else { MontanaTrace.mark("name_renew", "one renewal is already on its way"); return }
-        await renewOnce(masterSeed, again: true)
-        endRenewal()
-    }
-
-    private static func renewOnce(_ master: Data, again: Bool) async {
-        guard let n = MontanaNames.currentName, let step = MontanaNames.heldStep,
-              let ch = MontanaNames.heldChain(masterSeed: master), let sl = MontanaNames.slot(normalized: n) else { return }
-        let next = step + 1
-        guard next <= MontanaNames.chainLength else { MontanaTrace.mark("name_renew", "the chain is spent"); return }
-        let window = UInt32(MTPipe.window())
-        let (code, obj) = await askFirst("/name-renew", ["slot": sl.montanaHexString, "link": ch[next].montanaHexString])
-        switch code {
-        case 200 where (obj["again"] as? Bool) == true:
-            // The keeper already held that link: the answer to its publishing was lost. The term stands as the keeper
-            // says it; the renewal that was due is the link after it, once.
-            MontanaNames.renewed(step: next, window: nil, until: obj["until"] as? Double)
-            MontanaTrace.mark("name_renew", "again at step \(next)")
-            if again { await renewOnce(master, again: false) }
-        case 200:
-            MontanaNames.renewed(step: next, window: window, until: obj["until"] as? Double)
-            MontanaTrace.mark("name_renew", "ok step=\(next)")
-            if await ownsSlot(n, master: master) == false { lost("another key stands under the name") }
-        case 409:
-            switch await ownsSlot(n, master: master) {
-            case true?: await walk(from: next + 1, chain: ch, slot: sl)
-            case false?: lost("another chain holds the slot")
-            case nil: MontanaTrace.mark("name_renew", "409 and the reveal did not come — asked again at the next return")
-            }
-        case 404 where nobody(code, obj):
-            // The keeper holds no such name: the term lapsed unseen. It is taken again from the first link this phone
-            // has not published; a stranger who took it meanwhile answers «held», and the phone lets it go out loud.
-            guard let p = MontanaNames.prepare(n, masterSeed: master) else { return }
-            switch await probe(p, from: next, master: master) {
-            case .taken(let s, let until):
-                MontanaNames.hold(p, window: window, step: s, until: until)
-                MontanaTrace.mark("name_renew", "taken again at step \(s)")
-            case .ours(let s):
-                MontanaNames.hold(p, window: window, step: s, until: nil)
-            case .held:
-                lost("taken by another after a lapse")
-            default:
-                MontanaTrace.mark("name_renew", "the retaking did not go through — asked again at the next return")
-            }
-        default:
-            MontanaTrace.mark("name_renew", "code=\(code) — asked again at the next return")
-        }
-    }
-
-    /// The phone stands behind the keeper on its own chain (a copy restored, answers lost): it walks forward to the
-    /// link the keeper holds. Bounded: a phone that has not caught up in sixteen links is not on this chain.
-    private static func walk(from start: Int, chain ch: [Data], slot sl: Data) async {
-        let window = UInt32(MTPipe.window())
-        var k = start
-        while k <= min(start + 15, MontanaNames.chainLength) {
-            let (code, obj) = await askFirst("/name-renew", ["slot": sl.montanaHexString, "link": ch[k].montanaHexString])
-            if code == 200 {
-                let again = (obj["again"] as? Bool) == true
-                MontanaNames.renewed(step: k, window: again ? nil : window, until: obj["until"] as? Double)
-                if again, k + 1 <= MontanaNames.chainLength {
-                    let (c2, o2) = await askFirst("/name-renew", ["slot": sl.montanaHexString, "link": ch[k + 1].montanaHexString])
-                    if c2 == 200 { MontanaNames.renewed(step: k + 1, window: window, until: o2["until"] as? Double) }
-                }
-                MontanaTrace.mark("name_renew", "caught up at step \(k)")
-                return
-            }
-            if code != 409 { MontanaTrace.mark("name_renew", "the walk stopped code=\(code)"); return }
-            k += 1
-        }
-        lost("the keeper holds a chain this phone does not continue")
-    }
-
-    /// The name is not this device's any more. The record goes, the device stops listening at its point, the code
-    /// page falls back to the permanent card, and the person is told — never a silent disappearance.
-    private static func lost(_ why: String) {
-        MontanaNames.forget()
-        MontanaTrace.mark("name_lost", why)
-        MTPipeBook.dropFirstIndex()
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(name: .montanaNameChanged, object: nil)
-            NotificationCenter.default.post(name: .montanaMeetVerdict, object: nil,
-                                            userInfo: ["msg": "Your name is no longer yours: the node that keeps names holds another key under it."])
-        }
-    }
-
-    /// THE NAME LEAVES WITH THE ACCOUNT (App Review 5.1.1(v), 08.10.2026): the name this device holds is released at its keeper
-    /// as a new name releases the one before it -- with the next link of its chain, while the words still derive it.
-    static func releaseHeld() async {
-        guard MontanaNames.isHeld(), let master = MontanaSeed.root,
-              let held = MontanaNames.nextRenewal(masterSeed: master) else { return }
-        await release(slot: held.slot, link: held.link)
-    }
-    /// The name held before a new one: released with a link nobody has seen. A keeper out of reach leaves it to
-    /// lapse by its term — the device no longer renews it either way.
-    private static func release(slot: Data, link: Data) async {
-        let (code, obj) = await askFirst("/name-drop", ["slot": slot.montanaHexString, "link": link.montanaHexString])
-        if code == 200 { MontanaTrace.mark("name_release", "released") }
-        else if nobody(code, obj) { MontanaTrace.mark("name_release", "the keeper held nothing — it had lapsed") }
-        else { MontanaTrace.mark("name_release", "code=\(code) — the former name lapses by its term") }
-    }
-}
-
-extension Notification.Name { static let montanaNameChanged = Notification.Name("montanaNameChanged") }
-
-
-// ── The card: acquaintance when no name has been claimed ─────────────────────────────────────
-//
-// A name is the ordinary way to be met, and it needs the plane of names to answer with a contact
-// key.
+// ── The card: the one way to be met ─────────────────────────────────────────────────────────
 //
 // The card carries a fresh encapsulation key and nothing else. Not a name, not a number, nothing
 // that outlives the meeting: whoever photographs it over a shoulder learns one key that opens one
@@ -611,10 +197,10 @@ enum MontanaCard {
     /// daily one.
     static let permPrefix = "https://montana.quest/perp/"
     static let tempPrefix = "https://montana.quest/temp/"
-    /// ONE CARD, ONE NODE, TWO SITES (07.10.2026, carried over from MT Business): the Business writes its invitations on
-    /// montana.xxx, whose page opens Montana by montana://r/ where only Montana stands. This app writes montana.quest and
-    /// reads the /r/, /perp/ and /temp/ forms of both sites -- the hosts the Business reads -- so its own scanner opens a
-    /// Business code as well.
+    /// ONE CARD, ONE NODE, TWO SITES (07.10.2026, carried over from MT Messenger): the Messenger writes its invitations on
+    /// montana.xxx and the Protocol on montana.quest; a site's /r/ page opens an app by that app's scheme (montana:// the
+    /// Messenger's, mt-protocol:// the Protocol's, Code/Names.xcconfig). Each app reads the /r/, /perp/ and /temp/ forms of
+    /// both sites, so its own scanner opens the other's code as well.
     static let linkHosts = Set(["montana.quest", "montana.xxx", "www.montana.xxx"])
     /// Every written form an invitation is read from.
     static let readPrefixes: [String] =
@@ -848,15 +434,6 @@ enum MontanaCard {
         return permPrefix + invite.base64urlNoPad
     }
 
-    /// THE STANDING LINK (24.09, the author's word: «a link to one's profile that stands, instead of the
-    /// current permanent one»): the name's own web link when a name is held — readable, resolved by the plane
-    /// of names — and the permanent card otherwise.
-    static func offerStanding() -> String? {
-        // The permanent card is born and kept up either way: it is what every /perp/ link already out opens.
-        let card = offerPermanent()
-        return MontanaFirstContact.invitation() ?? card
-    }
-
     /// THE CARDS WEAR THE NAME OF TODAY (21.09): a rename re-mints the body of the permanent card and
     /// of the living daily one — the same key, the same link in everyone's hands, a new name behind
     /// it on the node. Without this the permanent card carried the callsign of the day it was born
@@ -1048,7 +625,7 @@ enum MontanaCard {
     /// time»): the term stamp was written before the answer, so a card whose three tries all failed stood off the node
     /// until the next launch or two hours later, and every scan of it in between was refused. A failed card tries once
     /// more twenty seconds later; a card no node took keeps no stamp, and the next showing of the code lays it again.
-    /// THE STAMP IS THE NODE'S WORD, NOT THE INTENT (06.10.2026, measured in MT Business, whose card code is this file's: T1
+    /// THE STAMP IS THE NODE'S WORD, NOT THE INTENT (06.10.2026, measured in MT Messenger, whose card code is this file's: T1
     /// scanned T2's code and T2 scanned T1's, and every node answered "gone" for both). T1's permanent card was born in a
     /// process the installer ended before its upload ran, and the term's stamp, written BEFORE the upload, kept every later
     /// showing from laying it for two hours -- the code on the screen named a card no node held. Carried over here on
@@ -1297,11 +874,10 @@ enum MontanaCard {
     }
     static func offer(seed: [UInt8]) -> String? {
         cardLock.lock(); defer { cardLock.unlock() }   // LOCK-OK: read-modify-write of the card-key record
-        var pk = [UInt8](repeating: 0, count: 1184), sk = [UInt8](repeating: 0, count: 2400)
-        guard mt_mlkem_keypair_from_seed(seed, &pk, &sk) == 0 else { return nil }
-        let root = Data(pk)
+        guard let p = MontanaFirstContact.pair(seed: seed) else { return nil }
+        let root = p.root
         var m = load()
-        m[root.base64urlNoPad] = Data(sk)   // the card key stays ONE key: the name does not name it
+        m[root.base64urlNoPad] = p.secret   // the card key stays ONE key: the name does not name it
         save(m)
         MTPipeBook.dropFirstIndex()   // one more node to listen at
         var payload = root
@@ -1591,8 +1167,6 @@ enum MontanaMeeting {
     /// the link parsed.
     static func meetKey(_ raw: String) -> String {
         if let inv = MontanaCard.invite(inShort: raw) { return inv.base64urlNoPad }
-        // A name has many written forms — alice, @alice, montana.quest/n/alice, montana://alice — and one gate: the name.
-        if case .name(let n) = MontanaConv.meeting(fromInput: raw) { return "name:" + n }
         return raw
     }
 
@@ -1610,18 +1184,16 @@ enum MontanaMeeting {
         return Data(base64urlNoPad: inv64)
     }
 
-    /// `nameless`: every door that carries names answered that nobody holds the name — said as such, not
-    /// as a link that «could not be opened».
-    enum Outcome { case opened(String); case spent; case refused; case nameless; case ownName }
+    enum Outcome { case opened(String); case spent; case refused }
 
-    /// One meeting per invitation -- at once, not "from memory afterwards". This door has three
-    /// entrances (a link tap, a code scan, a search by name), and two of them easily happen back to
+    /// One meeting per invitation -- at once, not "from memory afterwards". This door has two
+    /// entrances (a link tap and a code scan), and the two easily happen back to
     /// back: the 24.08 measurement gave TWO unfoldings of one invitation in two seconds and two
     /// identical conversations on both sides from one message. Meeting memory is written at the end,
     /// so a second meeting slipped past it; the latch holds the entrance until the first has finished.
     /// THE MEETING BOOK BY CARD ROOT. A link carries everything needed, so the birth of a tunnel must
     /// be a FUNCTION OF THE LINK: one root, one tunnel, by whichever way it was entered (tap, scan,
-    /// search by name, cold start, a repeat after the answer).
+    /// cold start, a repeat after the answer).
     ///
     /// Before, two records played this role, and both lost the answer sooner than it stopped being
     /// needed: scan memory was keyed by the INVITATION, which changes on the daily rotation; the
@@ -1827,58 +1399,10 @@ enum MontanaMeeting {
                 }
             }
             return .opened(met.reference)
-        case .name(let n):
-            // One's own name opens nothing: a correspondence with oneself is a ghost in both books.
-            if n == MontanaNames.currentName {
-                MontanaTrace.mark("meet_refused", "why=own-name")
-                return .ownName
-            }
-            let root: Data
-            switch await MontanaNamePlane.resolve(n) {
-            case .found(let r): root = r
-            case .unknown:
-                MontanaLog.event("NAME ✗ nobody holds this name")
-                MontanaTrace.mark("meet_refused", "why=name-unknown")
-                return .nameless
-            case .unreachable:
-                MontanaLog.event("NAME ✗ the plane of names did not answer")
-                MontanaTrace.mark("meet_refused", "why=name-unreachable")
-                return .refused
-            }
-            // ONE ROOT, ONE TUNNEL — for a name as for a card. The name's link is the standing link now, and a
-            // second tap on it after the first letter was answered would otherwise weave a second rope to the
-            // same person: the meeting book by root is asked first, the knocking point second.
-            if let known = cardMet(root: root), MTPipeBook.holds(known), !MTPipeBook.isDying(known) {
-                MontanaTrace.mark("meet_rescan", "name-book conv=\(String(known.prefix(10)))")
-                scanBook.put(gateKey, known)
-                return .opened(known)
-            }
-            if let existing = MTPipeBook.convKnocking(at: root), !MTPipeBook.isDying(existing) {
-                MontanaTrace.mark("meet_rescan", "root conv=\(String(existing.prefix(10)))")
-                rememberCardMet(root: root, conv: existing)
-                return .opened(existing)
-            }
-            guard let met = MontanaFirstContact.meet(contactRoot: root) else {
-                MontanaLog.event("NAME ✗ the contact root of the name does not open")
-                MontanaTrace.mark("meet_refused", "why=name-meet-failed")
-                return .refused
-            }
-            MTPipeBook.rememberFirst(met.ciphertext, for: met.reference)
-            rememberFirstMeta(conv: met.reference, invite: nil)
-            MTSamePair.ask(new: met.reference)   // one person, one conversation (24.09): the same question, by name
-            rememberCardMet(root: root, conv: met.reference)
-            scanBook.put(gateKey, met.reference)
-            // The name's link keeps the person in the book, as the permanent link it stands in for does
-            // (the author's word 17.09).
-            await MainActor.run {
-                MTNameBook.setName(conv: met.reference, n)
-                ContactsTabView.keepInBook(ref: met.reference)
-            }
-            return .opened(met.reference)
         case .refused:
-            MontanaLog.event("MEET ✗ refused: neither a name nor a card")
-            // The most frequent and formerly the most mute: the link is recognised neither as a name nor as a card.
-            MontanaTrace.mark("meet_refused", "why=neither-name-nor-card")
+            MontanaLog.event("MEET ✗ refused: not a card")
+            // The most frequent and formerly the most mute: the link is not recognised as a card.
+            MontanaTrace.mark("meet_refused", "why=not-a-card")
             return .refused
         }
     }
@@ -1906,6 +1430,10 @@ enum MontanaMeeting {
     /// The last link handled and when (main thread only: every door of a link lands there).
     private static var lastLink: (raw: String, at: Date)?
     static func handleLink(_ given: URL) { handleLink(given, chosen: false) }
+    /// A Montana link (montana://r/, coin, wall, pack): the app's text views hand it to this one entrance themselves, never to
+    /// the system's round -- in the Protocol montana:// is the Messenger's scheme (the author's word 16667), and a tap there
+    /// would leave the app.
+    static func isMontana(_ url: URL) -> Bool { url.scheme?.lowercased() == "montana" }
     static func handleLink(_ given: URL, chosen: Bool) {
         // The mark BEFORE all the guards: a tap that left no trace was impossible to investigate (F-6).
         MontanaTrace.mark("link_open", "len=\(given.absoluteString.count) scheme=\(given.scheme ?? "-")")
@@ -1914,6 +1442,16 @@ enum MontanaMeeting {
             MontanaTrace.mark("link_open", "handed over by another Montana app")
             handleLink(inner, chosen: true)
             return
+        }
+        // THE APP'S OWN SCHEME CARRIES THE LINK'S OWN FORM (the author's word 16667): a link under this app's scheme other than
+        // montana (mt-protocol://r/X in the Protocol) is the same link as montana://r/X, and goes the same road.
+        if let s = given.scheme?.lowercased(), s != "montana", MTSiblingApps.ownSchemes.contains(s),
+           var c = URLComponents(url: given, resolvingAgainstBaseURL: false) {
+            c.scheme = "montana"
+            if let same = c.url {
+                handleLink(same, chosen: chosen)
+                return
+            }
         }
         // WHICH MONTANA OPENS IT (MTSiblingApps, the author's word 11.10.2026 14:13 UTC): an invitation is asked first; the root
         // answers at once when no other Montana app stands, or asks the person in the platform's own dialog.
@@ -1929,7 +1467,7 @@ enum MontanaMeeting {
             url = j.url
             DispatchQueue.main.async { MTGroup.shared.waitJoin(j.g, j.mark) }
         }
-        if MTBoardComments.open(url) { return }
+        if MTApps.wall?.openComments(url) == true { return }
         // A WALL'S LINK IS NEVER AN INVITATION (02.10): a post this phone does not hold yet is said so -- the invitation road
         // below answered it «the invitation could not be opened».
         if url.scheme?.lowercased() == "montana", url.host?.lowercased() == "wall" {
@@ -1939,16 +1477,15 @@ enum MontanaMeeting {
         }
         // A COIN'S LINK OPENS THE WALLET (the author's word 03.10: «every Montana link of the coins is tappable, not only the
         // others'»): the coin letter's machine line is no invitation -- the invitation road below answered it «could not be opened».
-        if url.scheme?.lowercased() == "montana", url.host?.lowercased() == "coin" {
-            MontanaTrace.mark("link_done", "coin opens the wallet")
+        // Only where the coins stand (guard 4 of docs/APPS-API.md): an edition without them answers such a link as any unknown one.
+        if url.scheme?.lowercased() == "montana", url.host?.lowercased() == "coin", MTApps.coins != nil {
+            MontanaTrace.mark("link_done", "a value link opens its page")
             DispatchQueue.main.async { NotificationCenter.default.post(name: .montanaOpenWallet, object: nil) }
             return
         }
         let host = url.host?.lowercased() ?? ""
         let webForm = url.scheme?.lowercased() == "https"
-            && ((MontanaCard.linkHosts.contains(host) && ["/r/", "/perp/", "/temp/"].contains { url.path.hasPrefix($0) })
-                || ((host == "montana.quest" || host == "www.montana.quest") && url.path.hasPrefix("/n/") && url.path.count > 3)   // a name's link (08.10)
-                || ((host == "pzr.me" || host == "www.pzr.me") && url.path.count > 1))   // a name's link handed out before (24.09)
+            && MontanaCard.linkHosts.contains(host) && ["/r/", "/perp/", "/temp/"].contains { url.path.hasPrefix($0) }
         guard url.scheme?.lowercased() == "montana" || webForm else {
             // A mute refusal by scheme ate the tap whole: the trace kept one line "a link arrived" and
             // emptiness after it -- exactly what was seen on 24.08 on the seventeenth.
@@ -2019,12 +1556,6 @@ enum MontanaMeeting {
             case .refused:
                 MontanaTrace.mark("link_done", "refused")
                 verdict("The invitation could not be opened. Check the link or try again.")
-            case .nameless:
-                MontanaTrace.mark("link_done", "nameless")
-                verdict("Nobody holds this name.")
-            case .ownName:
-                MontanaTrace.mark("link_done", "own-name")
-                verdict("This is your own name.")
             }
         }
     }
@@ -2195,10 +1726,10 @@ final class MontanaMeetBook {
 // ════════════════════════════════════════════════════════════
 // THE OTHER MONTANA APPS ON THIS PHONE (the author's word 11.10.2026 14:13 UTC, No.62: «on scanning a QR code or following a link
 // it must check whether other Montana apps stand and ask in which to open, so I can make a chat by the link»). Montana and
-// Montana Business read one invitation -- one card on one node, two sites -- and each takes a link handed to it under its own
+// Montana Messenger read one invitation -- one card on one node, two sites -- and each takes a link handed to it under its own
 // scheme (scheme://open?link=base64url), at the same one entrance of a link on that side, as chosen. The platform says whether an
-// app stands only for the schemes this app names (LSApplicationQueriesSchemes); montana-messenger is the Messenger's own, for the
-// closing forks may still wear «montana».
+// app stands only for the schemes this app names (LSApplicationQueriesSchemes); both are owned by Code/Names.xcconfig
+// (MT_SCHEME_PROTOCOL, MT_SCHEME_MESSENGER) and read here from Info.plist.
 // ════════════════════════════════════════════════════════════
 enum MTSiblingApps {
     struct App: Identifiable, Equatable {
@@ -2206,14 +1737,20 @@ enum MTSiblingApps {
         let name: String
         var id: String { scheme }
     }
-    static let all = [App(scheme: "montana-messenger", name: "Montana"), App(scheme: "montana-business", name: "Montana Business")]   // NOT-UI: the products' own names
+    /// The products' schemes and names, read from Info.plist, where Code/Names.xcconfig puts them (constitution article 15, the
+    /// author's words 16049 and 16667: the «Open in» choice says the names under the icons; montana:// is the Messenger's,
+    /// mt-protocol:// the Protocol's) -- the code holds no scheme and no name of its own.
+    static let all = [App(scheme: info("MTSchemeProtocol"), name: info("MTNameProtocol")),
+                      App(scheme: info("MTSchemeMessenger"), name: info("MTNameMessenger"))]
+    private static func info(_ key: String) -> String { Bundle.main.object(forInfoDictionaryKey: key) as? String ?? "" }
     static let handHost = "open"   // NOT-UI: the host of a handed link
     /// This app's own schemes, as Info.plist states them.
     static let ownSchemes: Set<String> = {
         let types = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] ?? []
         return Set(types.flatMap { t in (t["CFBundleURLSchemes"] as? [String]) ?? [] }.map { s in s.lowercased() })
     }()
-    static var ownName: String { all.first { a in ownSchemes.contains(a.scheme) }?.name ?? "Montana" }
+    /// This app's own name: the one under its icon (on the Mac, Montana Core).
+    static var ownName: String { MontanaSafety.appName }
     /// The other Montana apps standing on this phone now.
     @MainActor static var others: [App] {
         all.filter { a in

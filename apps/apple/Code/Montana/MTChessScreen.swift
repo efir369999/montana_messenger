@@ -6,15 +6,6 @@ extension Message {
               imageFile == nil, videoFile == nil, audioFile == nil, docFile == nil else { return nil }
         return MTChessLetter.parse(text)
     }
-    /// A letter of a game after its invitation (MTChessLetter.isStep): the feed, the list record, the unread count and the
-    /// banner pass it by.
-    var isChessStep: Bool { chessLetter?.isStep == true }
-}
-
-struct MTChessOpen: Identifiable {
-    let id = UUID()
-    var chat: String? = nil
-    var game: String? = nil
 }
 
 /// A game on the chess page's stack: one with a correspondent, by its conversation and name, or the training game.
@@ -22,14 +13,6 @@ enum MTChessSelection: Hashable {
     case game(chat: String, id: String)
     case computer
     case timer
-}
-
-/// A GAME OPENED FROM ITS INVITATION (the author's word 29.09: «a tap on the invitation's bubble opens the game's page, as
-/// a post opens whole»): pushed on the conversation's own stack, as a post's whole letter is (MTLetterPage) -- the system's
-/// back leads home to the letters, and the chat is never closed under it.
-struct MTChessPush: Hashable, Identifiable {
-    let game: String
-    var id: String { game }
 }
 
 /// Who sits across the board: a correspondent through their conversation, or this phone's own engine.
@@ -139,7 +122,7 @@ enum MTChessWords {
     /// (MTChessGame.whiteIsMine) -- with the clock the game is played under.
     /// The invitation's seat and clock -- and nothing of coins (the author's word 29.10.2026 19:31 UTC: no coins in chess).
     static func seat(_ letter: MTChessLetter, mine: Bool) -> String {
-        MTRowLetter.chessSeat(mine: mine, seconds: letter.seconds ?? 0)
+        MTChessLetter.seat(mine: mine, seconds: letter.seconds ?? 0)
     }
     static func piece(_ p: MTChessPiece) -> String {
         switch (p.side, p.kind) {
@@ -157,7 +140,7 @@ enum MTChessWords {
         case (.black, .king): return String(localized: "Black king", bundle: MTLanguage.bundle)
         }
     }
-    static func control(_ seconds: Int) -> String { MTRowLetter.chessControl(seconds) }   // one vocabulary with the banner (MTRowLetter, 29.09)
+    static func control(_ seconds: Int) -> String { MTChessLetter.control(seconds) }   // one vocabulary with the banner (MTChessLetters.swift, 29.09)
     static func clock(_ ms: Int64) -> String {
         let seconds = max(0, (ms + 999) / 1000)
         return String(format: "%lld:%02lld", seconds / 60, seconds % 60)
@@ -423,7 +406,7 @@ struct MTChessComputerFace: View {
 }
 
 struct MTChessPage: View {
-    let open: MTChessOpen
+    let open: MTGameOpen
     @EnvironmentObject private var store: ChatStore
     @Environment(UIState.self) private var ui
     @ObservedObject private var computer = MTChessComputer.shared
@@ -625,7 +608,7 @@ private struct MTChessNewGame: View {
 
 struct MTChessGameScreen: View {
     let seat: MTChessSeat
-    /// Pushed from the conversation itself (MTChessPush): the chat mark goes back to it instead of raising a second one.
+    /// Pushed from the conversation itself (MTGamePush): the chat mark goes back to it instead of raising a second one.
     var inChat = false
     /// THE GAME ON THE SCREEN (29.09): the banner judge (MontanaApp.willPresent) shows no word of a game whose board the
     /// person is looking at.
@@ -1188,4 +1171,28 @@ private struct MTChessClock: View {
             if game.seconds > 0, game.remaining(side, elapsed: anchor.elapsed(at: now)) == 0 { expired() }
         }
     }
+}
+
+/// CHESS BEHIND ITS DOOR (MTApps.chess, docs/APPS-API.md, slice S4b): what this application answers shared code.
+final class MTChessAppDoor: MTChessDoor {
+    @MainActor func icon(size: CGFloat) -> AnyView { AnyView(MTChessIcon().frame(width: size, height: size)) }
+    @MainActor func page(_ open: MTGameOpen, ui: UIState, store: ChatStore) -> AnyView {
+        AnyView(MTChessPage(open: open).environment(ui).environmentObject(store))
+    }
+    @MainActor func board(_ game: String, in chat: Chat) -> AnyView {
+        AnyView(MTChessGameScreen(seat: .correspondent(chat, game: game), inChat: true))
+    }
+    var shownGame: String? { MTChessGameScreen.shownGame }
+    func awaitsMe(_ game: String, rows: [Message]) -> Bool { MTChessSend.awaitsMe(game, rows: rows) }
+    func status(_ game: String, rows: [Message]) -> String? {
+        MTChessSend.state(game, rows: rows).flatMap { g in g.status == .invited ? nil : MTChessWords.status(g) }
+    }
+    @MainActor func playedGame(in chat: Chat, store: ChatStore) -> String? { MTChessSend.playedGame(in: chat, store: store) }
+    @MainActor func invite(to chat: Chat, store: ChatStore) -> String? {
+        MTChessSend.invite(to: chat, seconds: MTChessSend.chatClock, store: store)
+    }
+    @MainActor func join(_ game: String, in chat: Chat, store: ChatStore) -> Bool { MTChessSend.join(game, in: chat, store: store) != nil }
+    @MainActor func decline(_ game: String, in chat: Chat, store: ChatStore) { MTChessSend.decline(game, in: chat, store: store) }
+    var dataKeys: [String] { [MTChessComputer.gameKey] }
+    var settingKeys: [String] { [MTChessComputer.levelKey] }
 }

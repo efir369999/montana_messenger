@@ -48,6 +48,41 @@ enum MTPostMeasure {
     }
 }
 
+/// THE PICTURE'S FRAME IN ITS POST (the author's word 24.09: «a preview with the editing of the photo — its size, the
+/// field of it the post shows»): the tile's shape, width over height, and the part of the picture the tile shows, in the
+/// picture's own proportions (0…1, the picture upright). The poster a post carries is cut to it, so a build that does
+/// not read the frame draws the same part; «fr» is a new name, unknown keys are skipped by every build's decoder.
+struct MTPictureFrame: Codable, Hashable {
+    var a: Double
+    var x: Double
+    var y: Double
+    var w: Double
+    var h: Double
+    /// The shapes a picture takes in a post: from 9:16 upright to 16:9 wide — a panorama shows its middle.
+    static let least = MTPostMeasure.narrowest
+    static let most = MTPostMeasure.widest
+    static let shapes: [Double] = [1, 4.0 / 5.0, 3.0 / 4.0, 9.0 / 16.0, 4.0 / 3.0, 16.0 / 9.0]
+    static func held(_ a: Double) -> Double { a.isFinite && 0 < a ? min(max(a, least), most) : 1 }
+    /// The largest part of a picture of this size in the shape a, around a centre (0…1), inside the picture.
+    static func around(_ cx: Double, _ cy: Double, shape: Double, of size: CGSize) -> MTPictureFrame {
+        let a = held(shape)
+        let own = 0 < size.height ? Double(size.width / size.height) : 1
+        var w = 1.0, h = 1.0
+        if a < own { w = a / own } else { h = own / a }
+        return MTPictureFrame(a: a, x: min(max(cx - w / 2, 0), 1 - w), y: min(max(cy - h / 2, 0), 1 - h), w: w, h: h)
+    }
+    /// A picture's own shape, whole — or, past the shapes a post takes, its middle.
+    static func own(_ size: CGSize) -> MTPictureFrame {
+        around(0.5, 0.5, shape: 0 < size.height ? Double(size.width / size.height) : 1, of: size)
+    }
+    /// A frame from another phone held to what a frame can be; nil when it cannot be one.
+    var valid: MTPictureFrame? {
+        guard [a, x, y, w, h].allSatisfy({ $0.isFinite }), Self.least - 0.01 <= a, a <= Self.most + 0.01,
+              0 <= x, 0 <= y, 0.01 <= w, 0.01 <= h, x + w <= 1.0001, y + h <= 1.0001 else { return nil }
+        return self
+    }
+}
+
 /// THE TRACK'S WAVE IS BORN WITH THE LETTER ([C-1], the author's word 16.09: the bars must stand
 /// at the send and at the receipt, from the chat and from the share sheet alike — never empty).
 /// The sender probes the file once — sixty points, the same probes the bubble draws — and the

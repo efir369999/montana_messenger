@@ -16,9 +16,15 @@ enum MontanaSafety {
     static let contactMail = "contact@montana.quest"
     static let abuseMail = contactMail
     static let supportMail = contactMail
-    static let site = "https://montana.quest"
+    /// THE EDITION'S OWN SITE (App Review 5.1.1(i), audit blocker 3): each edition names its own site, and its policy is the one on
+    /// it -- montana.quest/privacy/ is MT Protocol's (quest.montana.app), montana.xxx/privacy/ is Montana Messenger's
+    /// (xxx.montana.business); one app never opens the other's.
+    static let site = MTEdition.site
     static let privacy = site + "/privacy/"   // the policy on the site, in the languages the site speaks
     static let guide = "https://montana.xxx/faq/"   // the questions and answers on the site, in its three languages and as files agents read
+    /// THE APP'S OWN NAME IN ITS TERMS (App Review 1.2 and 2.3.7): the name the home screen shows, CFBundleDisplayName -- in Montana
+    /// Messenger «Montana» (decision 573; its one owner is Code/Names.xcconfig), so its terms name what the phone shows.
+    static let appName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Montana"
     static let source = "https://github.com/efir369999/montana_messenger"   // the specification and this app's code, open
     static var termsAccepted: Bool {
         UserDefaults.standard.integer(forKey: "termsAcceptedVersion") >= termsVersion
@@ -85,13 +91,13 @@ struct MontanaTermsView: View {
         VStack(spacing: 0) {
             List {
                 Section {
-                    Text("Montana is a messenger between people who chose to talk to each other. Every conversation is encrypted end to end; nobody but the people in it can read it.")
-                    Text("By using Montana you agree to these terms.")
+                    Text("\(MontanaSafety.appName) is a messenger between people who chose to talk to each other. Every conversation is encrypted end to end; nobody but the people in it can read it.")
+                    Text("By using \(MontanaSafety.appName) you agree to these terms.")
                 }.listRowBackground(MTGlassRowPlate()).foregroundColor(.primary)
                 Section("No tolerance for abuse") {
                     Text("There is no tolerance for objectionable content or abusive users: threats, harassment, hate speech, sexual content involving minors, spam and any content that breaks the law.")
-                    Text("You must be 18 or older to use Montana.")
-                    Text("A person who sends such content or abuses others is barred from Montana's relays and doors.")
+                    Text("You must be 18 or older to use \(MontanaSafety.appName).")
+                    Text("A person who sends such content or abuses others is barred from the relays and doors of \(MontanaSafety.appName).")
                 }.listRowBackground(MTGlassRowPlate()).foregroundColor(.primary)
                 Section("Your tools") {
                     Text("Block: a blocked person can no longer reach you — their letters and calls are refused on every road and never shown.")

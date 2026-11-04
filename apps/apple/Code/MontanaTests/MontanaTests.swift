@@ -181,41 +181,10 @@ final class MontanaTests: XCTestCase {
                      "a tag of one window does not answer in a distant one — two windows do not join")
     }
 
-    // An invitation carries a NAME and never a key or an address: the key has one place, the slot
-    // of that name, and a link that copied it would pin a holder who may no longer hold the name.
-    func testInvitationCarriesANameAndNothingElse() throws {
-        XCTAssertEqual(MontanaFirstContact.name(inInvitation: "montana://alice"), "alice")
-        XCTAssertEqual(MontanaFirstContact.name(inInvitation: "  montana://Alice  "), "alice",
-                       "a name is normalized as the set normalizes it")
-        XCTAssertNil(MontanaFirstContact.name(inInvitation: "montana://who/what"),
-                     "the invite carries the name and nothing that leads anywhere else")
-        XCTAssertNil(MontanaFirstContact.name(inInvitation: "hello"), "plain text is refused")
-        // The name's web link (24.09): the written form, and what a messenger or a hand does to it on the way.
-        XCTAssertEqual(MontanaFirstContact.name(inInvitation: "https://pzr.me/alice"), "alice")
-        XCTAssertEqual(MontanaFirstContact.name(inInvitation: "HTTPS://PZR.ME/Alice/"), "alice", "case and a closing slash are not the name")
-        XCTAssertEqual(MontanaFirstContact.name(inInvitation: "pzr.me/alice?utm=x"), "alice", "a lost scheme and a query are not the name")
-        XCTAssertEqual(MontanaFirstContact.name(inInvitation: "https://www.pzr.me/alice#top"), "alice")
-        XCTAssertNil(MontanaFirstContact.name(inInvitation: "https://pzr.me/alice/more"), "a second segment is not a name")
-        XCTAssertNil(MontanaFirstContact.name(inInvitation: "https://pzr.me/"), "an empty name is not a name")
-        XCTAssertNil(MontanaFirstContact.name(inInvitation: "https://montana.quest/alice"), "another domain is not the name's link")
-        XCTAssertNil(MontanaFirstContact.name(inInvitation: "https://pzr.meadow/alice"), "a domain that only begins alike is refused")
-        // The name's home since 08.10.2026, montana.quest/n/. Catches a reader that takes any path of the site for a name
-        // (a card's /r/), one that keeps a second segment, and one that forgot the forms a hand makes of the link.
-        XCTAssertEqual(MontanaFirstContact.name(inInvitation: MontanaFirstContact.webNamePrefix + "alice"), "alice")
-        XCTAssertEqual(MontanaFirstContact.name(inInvitation: "montana.quest/n/Alice/?utm=x"), "alice", "a lost scheme, a case, a slash and a query are not the name")
-        XCTAssertEqual(MontanaFirstContact.name(inInvitation: "https://www.montana.quest/n/alice#top"), "alice")
-        XCTAssertNil(MontanaFirstContact.name(inInvitation: "https://montana.quest/n/alice/more"), "a second segment is not a name")
-        XCTAssertNil(MontanaFirstContact.name(inInvitation: "https://montana.quest/r/alice"), "a card's path is not a name's")
-        XCTAssertNil(MontanaFirstContact.name(inInvitation: "https://montana.quest/n/"), "an empty name is not a name")
-        // serialize(name_reveal) for «alice», blind 0xDD, root 0xCC — the digest the node's test_names.py freezes too.
-        // Catches a reveal without its length byte, a padding before the name, a blind and a root swapped.
-        let rv = MontanaNames.reveal(name: "alice", blind: Data(repeating: 0xDD, count: 32), root: Data(repeating: 0xCC, count: 1184))
-        XCTAssertEqual(rv?.count, 1249)
-        XCTAssertEqual(rv.map { Data(SHA256.hash(data: $0)).montanaHexString },
-                       "b678ed125e3a466aac31dfa9153c2f33fa52427df173c188abbf66a7af9224ba", "the reveal drifted from the node's")
-        XCTAssertEqual(MontanaFirstContact.slot(inInvitation: "montana://alice"),
-                       MontanaNames.slot(normalized: "alice"),
-                       "an invitation resolves to the slot the plane of names is asked at")
+    // A card's knock is computed as the Canon freezes it: a knock computed differently lands where nobody listens, and
+    // the one who scanned a card and its holder never meet (decision 613: the card is the one road to meet).
+    func testTheKnockAgreesWithTheCanon() throws {
+        XCTAssertTrue(MontanaFirstContact.agreesWithCanon(), "the knock drifted from the Canon's vectors")
     }
 
     // base64url without padding writes and reads in one place — a round trip has to hold.
@@ -247,9 +216,8 @@ final class MontanaPhantomImpossibleTests: XCTestCase {
     // cryptography. Rejects an implementation where points are a bare set and the card must
     // be guessed by trial.
     func testTheDeliveryPointNamesTheCard() throws {
-        let master = Data(repeating: 0x42, count: 64)
-        let a = try XCTUnwrap(MontanaFirstContact.contactPair(masterSeed: master, slot: Data([1])))
-        let b = try XCTUnwrap(MontanaFirstContact.contactPair(masterSeed: master, slot: Data([2])))
+        let a = try XCTUnwrap(MontanaFirstContact.pair(seed: [UInt8](repeating: 1, count: 64)))
+        let b = try XCTUnwrap(MontanaFirstContact.pair(seed: [UInt8](repeating: 2, count: 64)))
         let w = MTPipe.window()
         let pa = try XCTUnwrap(MontanaFirstContact.knock(at: a.root, window: w))
         let pb = try XCTUnwrap(MontanaFirstContact.knock(at: b.root, window: w))
@@ -265,9 +233,8 @@ final class MontanaPhantomImpossibleTests: XCTestCase {
     // Rejects «accept = decrypt»: implicit-rejection garbage yields no confirmation — forging
     // one means finding a SHA-256 preimage.
     func testConfirmationCannotBeForgedByImplicitRejection() throws {
-        let master = Data(repeating: 0x42, count: 64)
-        let a = try XCTUnwrap(MontanaFirstContact.contactPair(masterSeed: master, slot: Data([1])))
-        let b = try XCTUnwrap(MontanaFirstContact.contactPair(masterSeed: master, slot: Data([2])))
+        let a = try XCTUnwrap(MontanaFirstContact.pair(seed: [UInt8](repeating: 1, count: 64)))
+        let b = try XCTUnwrap(MontanaFirstContact.pair(seed: [UInt8](repeating: 2, count: 64)))
         let started = try XCTUnwrap(MontanaFirstContact.begin(toward: a.root))
         let conf = MontanaFirstContact.firstConfirm(secret: started.secret, ct: started.ciphertext)
 
@@ -382,9 +349,8 @@ final class MontanaMeetBookTests: XCTestCase {
     // returns deterministic garbage, and without the seal one letter begets a phantom chat
     // with a secret nobody holds (precedent 25.08: 573b4987ea).
     func testAWrongCardYieldsGarbageAndTheSealRefusesIt() throws {
-        let master = Data(repeating: 0x42, count: 64)
-        let a = try XCTUnwrap(MontanaFirstContact.contactPair(masterSeed: master, slot: Data([1])))
-        let b = try XCTUnwrap(MontanaFirstContact.contactPair(masterSeed: master, slot: Data([2])))
+        let a = try XCTUnwrap(MontanaFirstContact.pair(seed: [UInt8](repeating: 1, count: 64)))
+        let b = try XCTUnwrap(MontanaFirstContact.pair(seed: [UInt8](repeating: 2, count: 64)))
 
         let started = try XCTUnwrap(MontanaFirstContact.begin(toward: a.root), "the scanner writes to card A")
         let sealed = try XCTUnwrap(MTPipe.sealBody(Data("mid\u{0}hello".utf8), sharedSecret: MTPipeKey(started.secret)))

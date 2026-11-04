@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>$(MONTANA_DISPLAY_NAME)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(MT_SCHEME_MESSENGER)</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>$(MT_SCHEME_PROTOCOL)</string>
+		<string>$(MT_SCHEME_MESSENGER)</string>
+	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>MTSchemeProtocol</key>
+	<string>$(MT_SCHEME_PROTOCOL)</string>
+	<key>MTSchemeMessenger</key>
+	<string>$(MT_SCHEME_MESSENGER)</string>
+	<key>MTNameProtocol</key>
+	<string>$(MT_NAME_PROTOCOL)</string>
+	<key>MTNameMessenger</key>
+	<string>$(MT_NAME_MESSENGER)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>The camera takes photos and videos for your chats, video messages and video calls, and scans a person's QR code.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID shows your 24-word recovery phrase.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your location is used only so you can send it in a chat.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>The microphone records voice messages, videos and calls.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Speech is recognised on your device to show a voice message as text when you ask. The audio never leaves your device.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Photos from your chats are saved to your library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Your recent photos and videos are shown so you can send one quickly.</string>
+	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+	<true/>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.xxx.montana.Business</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<false/>
+			<key>NSUbiquitousContainerName</key>
+			<string>$(MT_NAME_MESSENGER)</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>INSendMessageIntent</string>
+		<string>INStartCallIntent</string>
+		<string>INStartAudioCallIntent</string>
+		<string>INStartVideoCallIntent</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>$(MONTANA_APP_ID).wake</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>voip</string>
+		<string>audio</string>
+		<string>remote-notification</string>
+	</array>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
+</dict>
+</plist>

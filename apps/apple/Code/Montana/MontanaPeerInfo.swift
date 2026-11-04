@@ -122,9 +122,9 @@ enum MTMediaTab: Int, CaseIterable, Identifiable {
 /// EVERY LINK MONTANA BUILDS ANSWERS THE FINGER (the author's word 02.10 19:26: «share the chain from a post -- the link
 /// arrives crooked and cannot be tapped; every link built into Montana must be tappable»). A Montana link holds no dot, so
 /// the host gate below never showed it to the system's finder, and the finder's answer kept only the web's schemes: a post's
-/// short link (montana://wall/@name/12) rode a letter, a comment and a post as dead words. It is found here by its own
+/// link (montana://wall/post/...) rode a letter, a comment and a post as dead words. It is found here by its own
 /// scheme, up to the first space, the punctuation a sentence glues on left outside it. A game's letter is the board's card,
-/// not a link (MTChessLetter.link). This is the one finder: the letter's bubble, the letter's page, a post's words, a
+/// not a link (MTGameLetters.link). This is the one finder: the letter's bubble, the letter's page, a post's words, a
 /// comment, a person's words about themselves and the chat's list of links all read it.
 enum MTLinks {
     private static let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
@@ -177,7 +177,7 @@ enum MTLinks {
                 r.length -= 1
             }
             let s = ns.substring(with: r)
-            if s.lowercased().hasPrefix(MTChessLetter.link) { continue }
+            if let link = MTEditionLetters.game?.link, s.lowercased().hasPrefix(link) { continue }
             if let u = URL(string: s) { out.append(Hit(range: r, url: u)) }
         }
         for m in detector?.matches(in: text, range: all) ?? [] {
@@ -209,7 +209,7 @@ enum MTLinks {
         return a
     }
     /// A Montana link as a person reads it: the letters of a name stand as letters, not as the bytes a URL carries
-    /// (montana://wall/@%D0%9A... was the crooked link of 02.10). Any other link keeps its own spelling.
+    /// (a percent-escaped name was the crooked link of 02.10). Any other link keeps its own spelling.
     static func readable(_ u: URL) -> String {
         guard u.scheme?.lowercased() == "montana", let words = u.absoluteString.removingPercentEncoding else { return u.absoluteString }
         return words
@@ -363,7 +363,7 @@ struct MTPeerInfoData {
 @MainActor
 final class MTPeerInfoState: ObservableObject {
     @Published var editing = false
-    @Published var tab: MTMediaTab = .wall   // a page opens on its wall (the author's word 24.09)
+    @Published var tab: MTMediaTab = MTApps.wall == nil ? .media : .wall   // a page opens on its wall (the author's word 24.09), where it stands
     /// THE CONVERSATION, READ ONCE PER CHANGE (the author's word 18.09: the profile must open at
     /// once): merging and sorting every letter under every key on every pass of the body made the
     /// push wait; the screen refreshes it when the store's counts change, and the data reads it.
@@ -449,14 +449,13 @@ final class MTPeerInfoState: ObservableObject {
         let last = parts.count > 1 ? parts[1] : ""
 
         let c = ContactsTabView.MTContact(firstName: first, lastName: last, ref: conv,
-                                          name: "",   // a nick does not exist in the profile
+                                          name: "",
                                           addedAt: Date().timeIntervalSince1970)
         arr.append(c)
         if let d = try? JSONEncoder().encode(arr), let js = String(data: d, encoding: .utf8) {
             MontanaLocalVault.setString("mtContacts", js)
             MTNameBook.invalidateContacts()
         }
-        ContactsTabView.MTContact.upsertSystemCard(c)   // the card in the phone's address book
         objectWillChange.send()
     }
 

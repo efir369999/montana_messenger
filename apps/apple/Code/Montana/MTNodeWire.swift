@@ -438,6 +438,10 @@ enum MTNodeWire {
     /// stands this long on a door and not a second more. The caller's wait for a walk is
     /// derived from it (doors × this), never written beside it as a number of its own.
     static let postTimeoutS: TimeInterval = 5
+    /// THE MOST NAMES ONE /blob-have QUESTION CARRIES (04.11.2026, T1 on 2358: 3191 names, 214 KB, met 413 «bad body» at all four
+    /// doors at 16:19Z and 16:54Z): a node reads a body of 64 KiB at most (montana-home-node.py, MAX_BODY) and a name rides in 67
+    /// bytes of JSON, so 900 names (some 60 KB) always pass; a longer list is asked slice by slice (MontanaWakePush.blobsPresent).
+    static let haveSlice = 900
     /// THE DEADLINE OF A CARGO POST GROWS WITH THE CARGO (17.09): a 512 KB chunk is not a knock. The
     /// sheet stood every chunk on the knock's five seconds while the app used the session's sixty,
     /// and on a 2.5 Mbit/s cellular link with three chunks in flight each needed the whole five —

@@ -233,7 +233,7 @@ enum MontanaNodes {
         // A machine is not its own node. Its external address is in the list like anyone else's,
         // and a router that folds a connection back inside hands the node a channel to ITSELF:
         // the lamp goes green, the count of nodes grows, and there is nobody on the other side.
-        let ownExternal = MontanaPortMap.state.external
+        let ownExternal = MTApps.mesh?.routerDoor.external ?? ""
         let ownLan = MontanaPhoneNode.lanIP() ?? ""
         return raw.filter { $0.host != ownExternal && $0.host != ownLan }
     }

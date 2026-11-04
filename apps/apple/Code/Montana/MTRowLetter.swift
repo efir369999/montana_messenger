@@ -1,5 +1,32 @@
 import Foundation
 
+/// A LETTER OF A GAME, AS THE EDITION READS IT (docs/APPS-API.md, slice S4b): the reader of a game's letters the edition carries
+/// (MTEditionLetters.game), asked by both doors -- the app, and the extension, which holds one letter and no board. An edition that
+/// carries no game has no reader, and a game's letter is the words it shows.
+protocol MTGameLetters: Sendable {
+    /// The letter's game, read by the game's one parser; nil for a letter of no game.
+    func read(_ text: String) -> MTGameLetter?
+    /// What a banner says: the invitation and the end of a game ring; nil -- a step, which rings nothing.
+    func banner(_ text: String) -> String?
+    /// The words under the game's name in the letter's bubble: the seat an invitation gives, how the game ended, or the way in.
+    func face(_ text: String, mine: Bool) -> String
+    /// A game's letter in a list's row, and in a banner that hides the words.
+    var preview: String { get }
+    /// The machine line a game's letter ends with: the finder of links passes it by.
+    var link: String { get }
+}
+
+/// A game's letter as shared code sees it: its game, whether it invites, whether it ends the game.
+struct MTGameLetter: Equatable, Sendable {
+    let game: String
+    let invite: Bool
+    let ends: Bool
+    /// A letter after the invitation (29.09): the board reads it alone -- no row, no unread, no banner.
+    var step: Bool { !invite }
+    /// TWO LETTERS OF A GAME RING, AND ONLY TWO (the author's word 29.09): the invitation and the letter that ends the game.
+    var rings: Bool { invite || ends }
+}
+
 /// IS THIS LETTER A ROW, AND WHAT DOES THE ROW SAY? One vocabulary, one answer, and both doors
 /// ask it — the extension that meets a letter while the app is dead, and the app itself.
 ///
@@ -29,7 +56,7 @@ enum MTRowLetter {
     /// Does this letter change what a conversation's row shows?
     static func changesRow(_ text: String) -> Bool {
         guard !text.isEmpty else { return false }
-        if MTChessLetter.isStep(text) { return false }         // a step of a chess game is the board's, not the row's (29.09)
+        if game(text)?.step == true { return false }           // a step of a chess game is the board's, not the row's (29.09)
         if text.hasPrefix(sticker) { return true }             // a sticker is a message
         if text.hasPrefix(svc) {
             let token = String(text.dropFirst(svc.count).prefix(3))
@@ -62,68 +89,20 @@ enum MTRowLetter {
         MTWallCard.of(text) != nil || MTMoneyFlowRow.of(text) || text.hasPrefix(svc + "GE:")
     }
 
-    // ── THE CHESS WORDS OF A BANNER, one vocabulary for both doors (29.09) ──
-    /// TWO LETTERS OF A GAME RING (the author's word 29.09: «only two notices of chess -- you are invited, tap to enter;
-    /// and the game is over, with the result»): the invitation names the colour the receiver plays and the clock and asks
-    /// for the tap that enters; the closing letter names the receiver's outcome, the cause and the moves. Nil for a letter
-    /// that rings nothing (MTChessLetter.rings). Read by the app's banner door (MontanaNotify) and by the extension, which
-    /// holds one letter and no board -- the same words at both.
+    // ── THE LETTERS OF A GAME, one reader for both doors (29.09; slice S4b: the edition's reader, MTEditionLetters.game) ──
+    /// A letter of a game, as the edition reads it; nil for a letter of no game, and wherever the edition carries none.
+    static func game(_ text: String) -> MTGameLetter? { MTEditionLetters.game?.read(text) }
     /// THE BANNER'S WORDS, ONE FUNCTION (the author's word 06.10.2026 20:5x UTC: «natively, as in the chat -- any word, a transfer,
     /// a game -- one function»): what the banner of a letter says, for the app's banner door (MontanaNotify) and the extension alike
     /// -- a game's invitation and end, a coin letter's coins, a voice, a media letter, the words; nil -- a word of the machine, or a
     /// step of a game, that rings nothing.
     static func bannerWords(_ text: String, revealCaption: Bool = true) -> String? {
-        if let chess = MTChessLetter.parse(text) { return chessBanner(chess) }
+        if let games = MTEditionLetters.game, games.read(text) != nil { return games.banner(text) }
         if coinCount(text) != nil { return preview(text) }
         if text.hasPrefix("\u{200B}\u{200B}VC:") { return "🎤 " + String(localized: "Voice message", bundle: MTLanguage.bundle) }
         if text.hasPrefix("\u{200B}\u{200B}MD:") { return mediaWords(letter: text, revealCaption: revealCaption) }
         if let f = text.unicodeScalars.first, f.value == 0x200B || f.value == 0x2063 || f.value == 0x2064 { return nil }
         return text.isEmpty ? String(localized: "New message", bundle: MTLanguage.bundle) : text
-    }
-    static func chessBanner(_ letter: MTChessLetter) -> String? {
-        let mark = "♟ "
-        if letter.kind == .invite {
-            return mark + String(localized: "Chess invitation", bundle: MTLanguage.bundle) + " · "
-                + chessSeat(mine: false, seconds: letter.seconds ?? 0) + "\n"
-                + String(localized: "Tap to join", bundle: MTLanguage.bundle)
-        }
-        guard let end = letter.end else { return nil }
-        if end.outcome == .ended {
-            return mark + String(localized: "Chess", bundle: MTLanguage.bundle) + " · "
-                + String(localized: "Game ended", bundle: MTLanguage.bundle)
-        }
-        if end.outcome == .declined {
-            let word = end.cause == .withdrawn ? String(localized: "Invitation withdrawn", bundle: MTLanguage.bundle)
-                                               : String(localized: "Invitation declined", bundle: MTLanguage.bundle)
-            return mark + String(localized: "Chess", bundle: MTLanguage.bundle) + " · " + word
-        }
-        let outcome: String
-        switch end.mirrored {
-        case .won: outcome = String(localized: "You won", bundle: MTLanguage.bundle)
-        case .lost: outcome = String(localized: "You lost", bundle: MTLanguage.bundle)
-        default: outcome = String(localized: "Draw", bundle: MTLanguage.bundle)
-        }
-        let cause: String
-        switch end.cause {
-        case .mate: cause = String(localized: "Checkmate", bundle: MTLanguage.bundle)
-        case .stalemate: cause = String(localized: "Stalemate", bundle: MTLanguage.bundle)
-        case .resign: cause = String(localized: "Resignation", bundle: MTLanguage.bundle)
-        case .time: cause = String(localized: "Out of time", bundle: MTLanguage.bundle)
-        case .agreement: cause = String(localized: "By agreement", bundle: MTLanguage.bundle)
-        case .claim: cause = String(localized: "By claim", bundle: MTLanguage.bundle)
-        case .material: cause = String(localized: "Insufficient material", bundle: MTLanguage.bundle)
-        case .repetition: cause = String(localized: "Repetition", bundle: MTLanguage.bundle)
-        case .moves: cause = String(localized: "75-move rule", bundle: MTLanguage.bundle)
-        case .declined, .withdrawn, .ended: cause = ""
-        }
-        let full = (end.moves + 1) / 2
-        return mark + String(localized: "Game over", bundle: MTLanguage.bundle) + " · " + outcome
-            + (cause.isEmpty ? "" : " · " + cause) + " · " + String(localized: "Moves: \(full)", bundle: MTLanguage.bundle)
-    }
-    /// The seat an invitation gives, with the clock: the one who invites plays white (MTChessGame.whiteIsMine).
-    static func chessSeat(mine: Bool, seconds: Int) -> String {
-        (mine ? String(localized: "You play white", bundle: MTLanguage.bundle)
-              : String(localized: "You play black", bundle: MTLanguage.bundle)) + " · " + chessControl(seconds)
     }
     /// THE COIN LETTER'S NUMBER (MTCoinLetter, 03.10), read here by its shape alone: this file is the extension's too, and the
     /// extension does not carry the coin book. The first line is «🪙 N», the last the coin's machine line.
@@ -136,18 +115,22 @@ enum MTRowLetter {
     /// A LETTER OF A RETIRED KIND (MTRetired.letter), read by its machine line alone -- the one place of the rule, for the app
     /// (mtRetiredLetter) and the extension alike: it is buried unread and rings nothing.
     static func retiredLetter(_ text: String) -> Bool { MTRetired.letter(text) }
-    static func chessControl(_ seconds: Int) -> String {
-        seconds == 0 ? String(localized: "No clock", bundle: MTLanguage.bundle) : "\(seconds / 60):00"
+
+    /// A SECRET SH->ED FROM PASSWORDS, known by its machine line alone -- the key glyph first, the link on its last line: every
+    /// edition reads it so, the one without Passwords too, which draws it with no title and no content (link 15962).
+    static func isSecret(_ text: String) -> Bool {
+        guard text.hasPrefix("🔑 "), let line = text.split(separator: "\n", omittingEmptySubsequences: false).last else { return false }
+        return line.hasPrefix("montana://secret/1/")   // NOT-UI: the letter's machine line
     }
 
     static func preview(_ text: String) -> String {
         if text.hasPrefix(svc + "GE:") { return eventWords(text) ?? "" }
         if MTMoneyFlowRow.of(text) { return "🪙 " + String(localized: "Money flow has begun", bundle: MTLanguage.bundle) }
         if let c = MTWallCard.of(text) { return String(localized: "Wall post", bundle: MTLanguage.bundle) + (c.words.isEmpty ? "" : " · " + c.words) }
-        if MTChessLetter.parse(text) != nil { return "♟ " + String(localized: "Chess", bundle: MTLanguage.bundle) }
+        if let games = MTEditionLetters.game, games.read(text) != nil { return games.preview }
         if let n = coinCount(text) { return "🪙 " + String(n) + " " + String(localized: "coins", bundle: MTLanguage.bundle) }
         // A SECRET SHARED FROM PASSWORDS names nothing of itself in a list or a banner: no title, no content (06.10.2026).
-        if text.hasPrefix("🔑 "), text.contains("montana://secret/1/") { return "🔑 " + String(localized: "Shared password", bundle: MTLanguage.bundle) }   // NOT-UI: the letter's machine line
+        if isSecret(text) { return "🔑 " + String(localized: "Shared password", bundle: MTLanguage.bundle) }
         if text.hasPrefix(svc + "VC:") { return "\u{1F3A4} " + String(localized: "Voice message", bundle: MTLanguage.bundle) }
         if text.hasPrefix(svc + "MC:") { return "\u{1F4DE} " + String(localized: "Missed call", bundle: MTLanguage.bundle) }
         if text.hasPrefix(svc + "CL:") {

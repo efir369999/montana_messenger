@@ -386,10 +386,7 @@ extension MTTrackSource {
     @MainActor static func listen(_ s: MTTrackSource) {
         let list: [MusicTrack]
         if s == .walls {
-            let board = MTBoard.shared
-            let posts: [(post: MTBoardSeen, wall: String?)] = board.feed().map { it in (post: it.post, wall: it.owner) }
-                + board.posts(on: nil).map { p in (post: p, wall: String?.none) }
-            list = MTBoardPlaylist.tracks(posts)
+            list = MTApps.wall?.tracks() ?? []   // the wall's door (slice S4c2)
         } else {
             let lib = ChatStore.one().musicLibrary()
             list = s == .all ? lib : lib.filter { t in s.holds(t) }
@@ -659,7 +656,7 @@ struct MTPlayerHead: View {
             Picker(selection: $source) {
                 Label("All", systemImage: "music.note.list").tag(MTTrackSource.all)
                 Label("Chats", systemImage: "bubble.left.and.bubble.right").tag(MTTrackSource.chats)
-                Label("Walls", systemImage: "text.below.photo").tag(MTTrackSource.walls)
+                if MTApps.wall != nil { Label("Walls", systemImage: "text.below.photo").tag(MTTrackSource.walls) }   // a source only where the wall stands
                 Label("Folders", systemImage: "folder").tag(MTTrackSource.folders)
             } label: { EmptyView() }
             .pickerStyle(.inline)
@@ -962,11 +959,12 @@ struct MTMusicCover: View {
 /// insets, and on the app's icon it stands without the black contour -- do so on the cover»). The file of Media/ carries its glass
 /// inside a black field (x 107..916, y 110..876 of 1024), and drawn whole it stood in the plates as a glass square in a black
 /// frame (the author's picture 30.09 00:44). The home screen shows his pixels fitted to the icon's whole canvas (5dd2afeb: along
-/// every ray the rim lands on the icon's shape, nothing redrawn) -- that very picture, AppIcon.icon/Assets/logo.png byte for byte
-/// (sha256 b123ed40...), is the one the cover wears (AppIconPicture.imageset), cut by the icon's own shape. One owner of a track's
+/// every ray the rim lands on the icon's shape, nothing redrawn); since 03.11.2026 it is Montana Protocol's coin (the author's word 15590):
+/// his coin whole on the icon's black field, the platform drawing the rim -- that very picture, AppIcon.icon/Assets/logo.png byte for byte
+/// (sha256 05d748cd...), is the one the cover wears (AppIconPicture.imageset), cut by the icon's own shape. One owner of a track's
 /// picture for the plate, the playlist's rows and the lock screen; a track's own cover is always first.
 enum MTMusicArt {
-    static let asset = "AppIconPicture"
+    static let asset = MTEdition.cover
     static let icon: UIImage? = UIImage(named: asset)
     /// THE ICON'S OWN SHAPE: a rounded square whose corner is 22.37 % of its side -- the home screen's mask, the shape the picture
     /// was fitted to (5dd2afeb). Inside it no black of the author's field shows; a flatter rounding would show it at the corners.
@@ -1649,15 +1647,6 @@ enum MTTrackRow {
             .allowsHitTesting(false)
             .onAppear { MTTrackMeta.shared.load(t.file) }
     }
-    /// A VIDEO YOUTUBE'S SEARCH FOUND WEARS THE SAME FACE (MTYouTube, 17.10.2026): its play, its title in the plate, its length at
-    /// the plate's end -- the music page keeps one kind of row; the source is named over them (MTYouTube.head).
-    @MainActor static func face(_ f: MTYouTube.Found) -> some View {
-        // USER-DATA: the video's own title as YouTube gives it, and its length in digits
-        MTMiniFace(paused: true, title: f.t, runs: false, live: 0,
-                   side: { _ in 0 < f.s ? fmtDuration(Double(f.s)) : "" },
-                   onPlay: {}, onSeek: { _ in }, onSide: {}, onOpen: {})
-            .allowsHitTesting(false)
-    }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1851,14 +1840,6 @@ struct MusicTabView: View {
     var query = ""
     var reserve: CGFloat = 0   // the floating player's room at the rows' bottom (MontanaChatsList.playerReserve)
     @State private var pickFolder = false
-    /// YOUTUBE UNDER THE PERSON'S OWN TRACKS (the author's words 17.10.2026 13:3x-13:4x UTC: «from the big player's search, find
-    /// the music natively through our bot»; «search YouTube's music at once»): the words, once they settle, are asked of our
-    /// service (MTYouTube.search), and what it found stands under the page's own rows -- for the words it was found for alone.
-    @State private var tube: [MTYouTube.Found] = []
-    @State private var tubeWords = ""
-    private var tubeRows: [Chat] {
-        tubeWords == query.trimmingCharacters(in: .whitespacesAndNewlines) ? MTYouTube.rows(tube) : []
-    }
     /// NEWEST FIRST, AS THE CALLS (the critic 24.09): a folder lent last stands at the top where the person looks, in its
     /// own order, and the queue a tap starts is this very order — the next track is the row below.
     private var tracks: [MusicTrack] {
@@ -1887,17 +1868,10 @@ struct MusicTabView: View {
     /// cover and no second line: the mini has neither.
     @ViewBuilder private func cell(_ c: Chat) -> some View {
         if let t = track(c) { MTTrackRow.face(t) }   // the list's selection takes the touch: play(c)
-        else if c.name == MTYouTube.headRow { MTYouTube.head }
-        else if let f = MTYouTube.found(c, in: tube) { MTTrackRow.face(f) }
     }
     /// A tap on a row: the track plays with the list as the queue; a second tap on a track its keeper is bringing lets the
     /// bring go; on the standing row, outside its play and its plate, it rests the track or plays it on.
     private func play(_ c: Chat) {
-        if let f = MTYouTube.found(c, in: tube) {
-            MontanaTrace.mark("music_tab", "tap youtube")
-            MTYouTube.play(f.id, title: f.t, channel: f.c)
-            return
-        }
         guard let t = track(c) else { return }
         let p = VoicePlayer.shared
         if folders.fetching == t.file { folders.letGo(); return }
@@ -1918,7 +1892,7 @@ struct MusicTabView: View {
         let _ = MTFrameMeter.shared.body("music")   // the page's passes while a motion is measured
         let shown = tracks   // one pass of the search per pass of the page
         ZStack(alignment: .top) {
-            MontanaTimePanelList(panel: panel, rows: rows(shown) + tubeRows, fingerprint: rowPrint,
+            MontanaTimePanelList(panel: panel, rows: rows(shown), fingerprint: rowPrint,
                                  swipeLeading: { _ in [] }, swipeTrailing: { _ in [] },
                                  swipesEnabled: false,
                                  onOpen: play,   // the whole row is the button: a still track plays, the playing one rests or plays on
@@ -1928,7 +1902,7 @@ struct MusicTabView: View {
                                  numbered: true,   // the bar at the right while it scrolls, the track's number beside it (the author's word 24.09)
                                  focus: placeAsk.ask)
                 .environment(\.mtPaneLive, paneLive)
-            if shown.isEmpty, tubeRows.isEmpty {
+            if shown.isEmpty {
                 Group {
                     if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { Text("Your music will appear here") }
                     else { Text("Nothing found") }
@@ -1964,8 +1938,6 @@ struct MusicTabView: View {
         } message: { r in
             Text(r.words)
         }
-        // The words settle for nine tenths of a second before YouTube is asked: a word typed on cancels the ask before it leaves.
-        .task(id: query) { await findOnTube() }
         // AT EVERY OPENING OF THE PAGE (the walk's law), by the pane's choice: the page stands built in the row before it is
         // looked at (25.09), so its appearance is not its opening.
         .onChange(of: ui.pane, initial: true) { _, p in
@@ -1973,22 +1945,6 @@ struct MusicTabView: View {
             folders.walk()   // what was put into the lent folders since comes in
             MontanaTrace.mark("music_tab", "rows=\(tracks.count) playing=\(now.playing ? 1 : 0)")
         }
-    }
-}
-
-extension MusicTabView {
-    /// The ask of YouTube for the page's words: two letters at least, the words settled, one ask for one set of words.
-    fileprivate func findOnTube() async {
-        let words = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard 2 <= words.count else { tube = []; tubeWords = ""; return }
-        guard words != tubeWords else { return }
-        try? await Task.sleep(nanoseconds: 900_000_000)
-        if Task.isCancelled { return }
-        let found = await MTYouTube.search(words)
-        if Task.isCancelled { return }
-        tube = found ?? []
-        tubeWords = words
-        MontanaTrace.mark("youtube_search", found == nil ? "no answer" : "n=\(found?.count ?? 0)")
     }
 }
 

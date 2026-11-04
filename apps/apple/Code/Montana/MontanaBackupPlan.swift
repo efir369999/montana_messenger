@@ -280,7 +280,7 @@ struct MTDiskUse {
         walk(MontanaMediaStore.dir) { u, b in
             if named.contains(u.lastPathComponent) { use.chats += b } else { use.unnamed += b }
         }
-        walk(MTBoardLook.folder()) { _, b in use.walls += b }
+        walk(MTApps.wall?.folder) { _, b in use.walls += b }
         walk(try? MontanaBackup.shelf()) { _, b in use.shelf += b }
         walk(MTKeeping.folder) { _, b in use.kept += b }
         let lib = fm.urls(for: .libraryDirectory, in: .userDomainMask).first
@@ -397,7 +397,7 @@ struct CopyFilesPage: View {
                 ForEach(list, id: \.name) { f in
                     let takes = scope.takes(file: f.name)
                     let open = free(f.name)
-                    let deletable = true   // a file no letter names leaves this phone by itself (delete)
+                    let deletable = MTHomeShelf.bringing   // a file leaves this phone only on the word of a node that holds it (removeHeld): with no node, no bin (word 16428)
                     NavigationLink {
                         CopyFileView(file: f.name, title: whose(f.name), kind: kind, deletable: deletable) { delete(f.name) }
                     } label: {
@@ -464,7 +464,10 @@ struct CopyFilesPage: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                if choosing {
+                // Choosing serves only the bin, and the bin only a node that holds the files (MTHomeShelf.bringing, word 16428).
+                if !MTHomeShelf.bringing {
+                    EmptyView()
+                } else if choosing {
                     Button {
                         let names = Set(list.map(\.name))
                         chosen = chosen == names ? [] : names

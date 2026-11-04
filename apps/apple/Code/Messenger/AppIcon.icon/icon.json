@@ -1,0 +1,19 @@
+{
+  "fill": {
+    "automatic-gradient": "extended-srgb:0.00000,0.00000,0.00000,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "glass": false,
+          "image-name": "logo.png",
+          "name": "author"
+        }
+      ]
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

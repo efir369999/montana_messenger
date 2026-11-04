@@ -830,7 +830,7 @@ final class MontanaDeliveryEngine {
     private var shownCopy: (era: Int, items: [Item])?
     private func load() -> [Item] {
         if let held, heldEra == MTOutbox.era { return held }
-        let a = readItems().filter { !$0.text.hasPrefix(MTVPNWall.mark) }
+        let a = readItems().filter { !$0.text.hasPrefix(retiredWallMark) }
         hold(storeUnreadable ? nil : a)
         return a
     }
@@ -977,7 +977,7 @@ final class MontanaDeliveryEngine {
     func enqueue(to: String, chat: String, mid: String, text: String, silent: Bool,
                  kind: Kind = .letter, tag: String? = nil, headless: Bool = false,
                  quoteText: String? = nil, quoteMid: String? = nil, linkPreview: String? = nil) {
-        guard !text.hasPrefix(MTVPNWall.mark) else { return }   // retired automatic VPN sharing
+        guard !text.hasPrefix(retiredWallMark) else { return }   // retired automatic VPN sharing
         guard MontanaConv.holds(to) else {
             // A silent drop on the critical path is a phantom «sent»: the bubble looked fine
             // while the letter never entered the queue (the share-video manifest died exactly
@@ -1049,7 +1049,7 @@ final class MontanaDeliveryEngine {
             } else {
                 MontanaLog.event("DELIVERY +mid=\(mid.prefix(8)) queued=\(a.count)")
                 MontanaNotify.suggest(chat)   // the chat a person writes to is offered in the share sheet (once a day)
-                MTBoard.introduce(to: to)     // behind a letter of the person's own, the wall says it is read here (N2)
+                MTApps.wall?.introduce(to: to)     // behind a letter of the person's own, the wall says it is read here (N2)
             }
             attempt(mid)   // attempt = sending as an envelope through the node, at t=0
         }
@@ -1122,7 +1122,7 @@ final class MontanaDeliveryEngine {
                 // A receipted name or face is now what the peer's screen shows — the mark is written here.
                 if let conv = due { Announced.recordDelivered(text: letterText, to: conv) }
                 // A receipted page of my wall is the version that visitor holds (the critic's N5).
-                if let conv = due { MTBoard.delivered(text: letterText, to: conv) }
+                if let conv = due { MTApps.wall?.delivered(text: letterText, to: conv) }
                 // The tombstone is delivered — now the pipe can be buried for real.
                 if wasTombstone, let conv = due { MTPipeBook.forget(conv) }
                 // The letter is delivered — its media's shipping crate is of no use to anyone:
@@ -1407,7 +1407,7 @@ final class MontanaDeliveryEngine {
             let verdicts = store.rowVerdicts(facing.map { $0.mid })
             store.liftClockRed(riding: riding)   // once: the reds of silence an older build painted on letters still riding
             store.paintOrphanSending(queueMids: queueMids)
-            MTCoinSend.due(store)   // a coin letter of mine past its day gives its coins back (10.10)
+            MTApps.coins?.due(store)   // a coin letter of mine past its day gives its coins back (10.10)
             guard !facing.isEmpty else { return }
             self.q.async {
                 var a = self.load(); let n = a.count
@@ -1601,7 +1601,7 @@ final class MontanaDeliveryEngine {
         // receiver opening the app later had no way left to get it.
         // A COIN LETTER HAS NO END (the author's words 07.10.2026 15:4x UTC: «online or in cold storage, what difference -- they
         // must leave»): its coins ride with it until the receiver's receipt, and no clock hands them back.
-        if now - it.since > carry, MTCoinLetter.parse(it.text) == nil {
+        if now - it.since > carry, MTApps.coins?.isLetter(it.text) != true {
             a.remove(at: i); save(a)
             let chat = it.chat, m = it.mid, tries = it.tries, age = Int(now - it.since)
             if isBurialWord(it.text) { MTPipeBook.forget(it.to) }   // the tombstone or the closing word expired — the pipe goes with it

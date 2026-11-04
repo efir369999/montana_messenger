@@ -264,6 +264,7 @@ final class MTRoomPair: NSObject, RTCPeerConnectionDelegate, RTCDataChannelDeleg
         }
     }
     func peerConnection(_ pc: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {
+        guard MTLocalNetwork.admits(candidate: candidate.sdp) else { return }   // 15863
         let c = MTRoomICE(s: candidate.sdp, i: candidate.sdpMLineIndex, m: candidate.sdpMid)
         main { r, p in r.pairCandidate(p, pc: pc, c) }
     }
@@ -790,7 +791,6 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     func leave(why: String, tellGroup: Bool = true, systemEnded: Bool = false) {
         guard let r = live else { return }
         MainActor.assumeIsolated {
-            MTCallRecording.shared.finish(r.uuid)
             if let talk = talkElapsed {
                 ChatStore.live?.appendCallLog(peer: r.chat, video: r.cameraOn || r.screen || r.pairs.values.contains { $0.camera },
                     incoming: false, dur: talk.seconds, missed: false, call: talk.call)
@@ -1131,7 +1131,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         if gen == p.gen, let a = p.lastAnswer, let r = live { send(p, r, "answer", sdp: a); return }
         build(p) { [weak self] in
             guard let self, let pc = p.pc else { return }
-            pc.setRemoteDescription(RTCSessionDescription(type: .offer, sdp: sdp)) { err in
+            pc.setRemoteDescription(RTCSessionDescription(type: .offer, sdp: MTLocalNetwork.keep(sdp: sdp))) { err in
                 DispatchQueue.main.async {
                     guard err == nil, let r = self.live, r.pairs[p.seat] === p else {
                         MontanaTrace.mark("room_pair", "offer not taken \(err?.localizedDescription ?? "-")")
@@ -1252,7 +1252,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         case "answer":
             guard p.offerer, let sdp = inner.sdp, s.g == p.gen, !p.answered, let pc = p.pc else { return }
             p.answered = true
-            pc.setRemoteDescription(RTCSessionDescription(type: .answer, sdp: sdp)) { err in
+            pc.setRemoteDescription(RTCSessionDescription(type: .answer, sdp: MTLocalNetwork.keep(sdp: sdp))) { err in
                 DispatchQueue.main.async {
                     if err != nil { p.answered = false; return }
                     self.flushHeld(p)
@@ -1261,7 +1261,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         case "ice":
             // a candidate of a connection older than the pair's is a corpse; one of a newer connection waits for its offer
             guard s.g >= p.gen else { return }
-            for c in inner.ice ?? [] {
+            for c in inner.ice ?? [] where MTLocalNetwork.admits(candidate: c.s) {   // 15863
                 let cand = RTCIceCandidate(sdp: c.s, sdpMLineIndex: c.i, sdpMid: c.m)
                 if let pc = p.pc, pc.remoteDescription != nil, s.g == p.gen { pc.add(cand) { _ in } } else { p.heldIce.append(cand) }
             }
@@ -1482,19 +1482,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     }
 
     /// The screen's faces, in the order the people came in: mine among them, each with its own picture or its face.
-    func refreshRecording() {
-        guard let r = live, r.pairs.values.contains(where: { $0.linked }) else { return }
-        MainActor.assumeIsolated {
-            let recorder = MTCallRecording.shared
-            recorder.begin(uuid: r.uuid, id: r.attendanceID, chat: r.chat,
-                since: Date(timeIntervalSince1970: r.since), sendsToChat: true, timeline: r.timeline)
-            MTCallRecordingGate.mute(r.uuid, r.muted || !r.stage(r.me))
-            recorder.video(r.screenTrack ?? r.video, uuid: r.uuid, source: "video-local")
-            for p in r.pairs.values { recorder.video(p.remoteVideo, uuid: r.uuid, source: "video-" + p.seat) }
-        }
-    }
     private func refresh() {
-        refreshRecording()
         guard let r = live else { return }
         let m = MTRoomModel.shared
         let order = r.people.keys.sorted { a, b in Self.later((r.people[b] ?? 0, b), than: (r.people[a] ?? 0, a)) }
@@ -1604,7 +1592,6 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     func setMuted(_ on: Bool, tellSystem: Bool = true) {
         guard let r = live else { return }
         r.muted = on
-        MTCallRecordingGate.mute(r.uuid, on || !r.stage(r.me))
         r.audio?.isEnabled = !on && !r.held
         MTRoomModel.shared.muted = on
         tellAll()
@@ -1926,7 +1913,6 @@ struct MTRoomScreen: View {
             Color.black.ignoresSafeArea()
             VStack(spacing: 0) {
                 top
-                MTCallRecordingStatus()
                 if m.held {
                     // THE HELD ROOM SAYS SO (a phone call took the sound): the whole line is the way back
                     Button { MTGroupRoom.shared.resume() } label: {
@@ -1965,7 +1951,6 @@ struct MTRoomScreen: View {
                 .allowsHitTesting(false)
             }
         }
-        .modifier(MTCallRecordingConsent())
         .preferredColorScheme(.dark)
         .sheet(isPresented: $inviting) {
             MTRoomInviteSheet(chat: m.chat, kind: m.kind, video: m.camera, opening: false)

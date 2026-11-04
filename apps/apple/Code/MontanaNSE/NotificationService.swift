@@ -149,9 +149,8 @@ final class NotificationService: UNNotificationServiceExtension {
             openedQuiet = Self.isQuietText(rawText)
             cargoLetter = (mid, text)
             // A DELETION FOR EVERYONE (16.10.2026 No.72; the author's words «let deletion reach me by a silent push»; the recon's own
-            // road): the deleted letter's notice leaves the screen at the deletion's own push -- unless this person keeps what others
-            // delete (the app's mirror «keepsDeleted», MTLevelAccess) -- and the push wears no face of its own; the app lands the
-            // deletion from the stash above, by its one door.
+            // road): the deleted letter's notice leaves the screen at the deletion's own push, always (16165 p.5), and the push
+            // wears no face of its own; the app lands the deletion from the stash above, by its one door.
             if rawText.hasPrefix("\u{200B}\u{200B}DL:") {
                 Self.takeNoticeOff(String(rawText.dropFirst("\u{200B}\u{200B}DL:".count))) { contentHandler(Self.quietFace()) }
                 return
@@ -196,17 +195,17 @@ final class NotificationService: UNNotificationServiceExtension {
                 contentHandler(Self.quietFace())
                 return
             }
-            // TWO LETTERS OF A GAME RING (29.09, MTChessLetter.rings): the invitation and the letter that ends the game wear
+            // TWO LETTERS OF A GAME RING (29.09, MTGameLetter.rings): the invitation and the letter that ends the game wear
             // the chess words and name their game for the tap; a step an older build sent loud is stashed for the board
             // and swallowed here.
-            if let chess = MTChessLetter.parse(text) {
+            if let chess = MTRowLetter.game(text) {
                 guard chess.rings else {
                     Self.diagLine("chess step stashed silently mid=\(mid.prefix(8))")
                     contentHandler(Self.quietFace())
                     return
                 }
                 content.userInfo["game"] = chess.game
-                if chess.end != nil { content.userInfo["game_end"] = 1 }
+                if chess.ends { content.userInfo["game_end"] = 1 }
             }
             // A GROUP'S WORD (MTGroup in the app, 05.10): a letter and an invitation wear the group's own face, the tap opens the
             // group; an answer to a letter is stashed for the app without a face.
@@ -302,14 +301,14 @@ final class NotificationService: UNNotificationServiceExtension {
                 contentHandler(Self.quietFace())
                 return
             }
-            if let chess = MTChessLetter.parse(sc.text) {
+            if let chess = MTRowLetter.game(sc.text) {
                 guard chess.rings else {
                     Self.diagLine("chess step from the box stashed silently mid=\(sc.mid.prefix(8))")
                     contentHandler(Self.quietFace())
                     return
                 }
                 content.userInfo["game"] = chess.game
-                if chess.end != nil { content.userInfo["game_end"] = 1 }
+                if chess.ends { content.userInfo["game_end"] = 1 }
             }
             Self.diagLine("banner from the box: mid=\(sc.mid.prefix(8))")
             ready = Self.nativeFace(content, from: convKey, glyph: senderGlyph)
@@ -956,7 +955,7 @@ final class NotificationService: UNNotificationServiceExtension {
                         stashLetter(conv: ck, mid: f[0], text: text, name: f[2], glyph: f[3],
                                     qt: f[4], qm: f[5], lp: f[6], sentAt: Double(Int(atS) - opened.back * 60), author: f[7])
                         // A STEP OF A GAME IS NOT THE BANNER'S LETTER (29.09): stashed for the board, it never titles the banner.
-                        if MTChessLetter.isStep(text), MTChessLetter.parse(text)?.rings != true { got += 1; continue }
+                        if let g = MTRowLetter.game(text), g.step, !g.rings { got += 1; continue }
                         last = (ck, f[0], text, f[2], f[3]); got += 1
                     }
                 }
@@ -1225,7 +1224,7 @@ final class NotificationService: UNNotificationServiceExtension {
     /// A quiet service letter (receipt, typing, draft, profile, deletion): the badge must not
     /// grow on it. New senders do not ring these at all; this guards against older builds.
     private static func isQuietText(_ t: String) -> Bool {
-        if MTChessLetter.isStep(t) { return true }   // a step of a game turns no badge: the board is its reader (29.09)
+        if MTRowLetter.game(t)?.step == true { return true }   // a step of a game turns no badge: the board is its reader (29.09)
         if MTRowLetter.retiredLetter(t) { return true }   // a transfer letter turns no badge: the app buries it unread (10.10.2026)
         if t.hasPrefix("\u{200B}\u{200B}VC:") || t.hasPrefix("\u{200B}\u{200B}MD:")
             || t.hasPrefix("\u{200B}\u{200B}RG:") || t.hasPrefix("\u{200B}\u{200B}MC:") { return false }   // voice, media, call, missed call — loud
@@ -1303,14 +1302,11 @@ final class NotificationService: UNNotificationServiceExtension {
     }
 
     /// THE NOTICE OF A LETTER DELETED FOR EVERYONE LEAVES THE SCREEN (16.10.2026 No.72, the recon: the reference's extension takes a
-    /// deleted message's notice off at the deletion's own push), unless this person keeps what others delete -- the app's mirror of
-    /// MTLevelAccess.keepsDeleted. A notice is named by its letter's wire name (userInfo «mid», bare or «mid:»-led).
+    /// deleted message's notice off at the deletion's own push), always -- no phone keeps what others delete (16165 p.5). A notice
+    /// is named by its letter's wire name (userInfo «mid», bare or «mid:»-led).
     private static func takeNoticeOff(_ target: String, then done: @escaping () -> Void) {
         let bare = target.hasPrefix("mid:") ? String(target.dropFirst(4)) : target
-        guard !bare.isEmpty, MontanaKeychain.get("keepsDeleted") != Data([1]) else {
-            diagLine("deletion kept here mid=\(bare.prefix(8))")
-            done(); return
-        }
+        guard !bare.isEmpty else { done(); return }
         UNUserNotificationCenter.current().getDeliveredNotifications { list in
             let ids = list.filter { n in
                 let m = (n.request.content.userInfo["mid"] as? String) ?? ""

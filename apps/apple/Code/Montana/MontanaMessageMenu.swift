@@ -457,40 +457,9 @@ struct MessageContextOverlay: View {
                             divider
                         }
                         row("Reply", "arrowshape.turn.up.left", action: onReply)
-                        if let onCoin, !message.isMine {
+                        if let onCoin, !message.isMine, let coins = MTApps.coins {
                             divider
-                            HStack(spacing: 6) {
-                                Button { MTReactClock.act = "row:coin"; onCoin(1) } label: {
-                                    HStack(spacing: 8) {
-                                        Text("Give a coin").foregroundColor(.primary)
-                                        Spacer(minLength: 0)
-                                        MTMintCoin(spinning: false, side: 20)
-                                    }
-                                    .contentShape(Rectangle())
-                                }
-                            }
-                            .font(.system(size: 16))
-                            .padding(.horizontal, 14).padding(.top, 9)
-                            // THE THIRTEEN BOXES OF π AS THE AMOUNTS GIVEN (the author's word 03.10 22:02: «when sending, the same thirteen
-                            // boxes in the reaction»): every box the balance holds is one tap; the rest stand dimmed.
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 6) {
-                                    ForEach(MTPiLevels.all, id: \.self) { n in
-                                        let held = n <= MTCoinSplit.shared.available
-                                        Button { MTReactClock.act = "row:coin\(n)"; onCoin(n) } label: {
-                                            // USER-DATA: a box of coins to give, in its short form
-                                            Text(verbatim: "+" + MTPiLevels.short(n)).font(.system(size: 15, weight: .semibold).monospacedDigit())
-                                                .foregroundColor(.white)
-                                                .padding(.horizontal, 10).padding(.vertical, 6)
-                                                .background(Color(white: 0.3), in: Capsule())
-                                        }
-                                        .disabled(!held)
-                                        .opacity(held ? 1 : 0.4)
-                                    }
-                                }
-                                .padding(.horizontal, 14)
-                            }
-                            .padding(.bottom, 9)
+                            coins.giveRow(onCoin: onCoin)   // the coin and the levels of π to give (slice S2b b6)
                         }
                         if let onEditSticker {
                             divider; row("Edit sticker", "pencil.tip.crop.circle", action: onEditSticker)

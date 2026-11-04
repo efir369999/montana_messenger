@@ -3,20 +3,20 @@ import UIKit
 
 /// THE FOLDERS OVER THE CHATS (the author's words 17.10.2026 15:4x UTC: «badges over the chats, the groups and the channels, and
 /// their control in the settings»; «left of the chats, the groups and the channels a field All, every chat in it, the groups and
-/// the channels too -- and a category Bots, our bot in it»; «the groups and the channels one to one as in the reference»). The
+/// the channels too -- and a category Bots, our bot in it» -- the bot and its category taken out whole by the author's word 16283,
+/// 04.11.2026; «the groups and the channels one to one as in the reference»). The
 /// reference's own folders: All Chats and the person's folders, each the kinds of chats and the chats it takes and the states and the
 /// chats it leaves out; a tab's badge counts the folder's unread conversations and is blue while one of them is not muted. A setting
 /// of the person: kept in the vault and carried by the copy (SeedScope.settingKeys).
 struct MTChatFolder: Codable, Identifiable, Hashable {
     enum Kind: String, Codable, CaseIterable {
-        case contacts, nonContacts, groups, channels, bots
+        case contacts, nonContacts, groups, channels
         var title: String {
             switch self {
             case .contacts: return String(localized: "Contacts", bundle: MTLanguage.bundle)
             case .nonContacts: return String(localized: "Non-Contacts", bundle: MTLanguage.bundle)
             case .groups: return String(localized: "Groups", bundle: MTLanguage.bundle)
             case .channels: return String(localized: "Channels", bundle: MTLanguage.bundle)
-            case .bots: return String(localized: "Bots", bundle: MTLanguage.bundle)
             }
         }
         var glyph: String {
@@ -25,7 +25,6 @@ struct MTChatFolder: Codable, Identifiable, Hashable {
             case .nonContacts: return "person.crop.circle.badge.questionmark"
             case .groups: return "person.2"
             case .channels: return "megaphone"
-            case .bots: return "cpu"
             }
         }
         var tint: Color {
@@ -34,7 +33,6 @@ struct MTChatFolder: Codable, Identifiable, Hashable {
             case .nonContacts: return .teal
             case .groups: return .green
             case .channels: return .indigo
-            case .bots: return .purple
             }
         }
     }
@@ -81,7 +79,6 @@ struct MTChatFolder: Codable, Identifiable, Hashable {
         case .contacts, .nonContacts: return String(localized: "Chats", bundle: MTLanguage.bundle)
         case .groups: return String(localized: "Groups", bundle: MTLanguage.bundle)
         case .channels: return String(localized: "Channels", bundle: MTLanguage.bundle)
-        case .bots: return String(localized: "Bots", bundle: MTLanguage.bundle)
         }
     }
     /// The folder of one kind alone: the drawer's Groups and Channels open theirs, and its corner gives birth to that kind.
@@ -104,6 +101,21 @@ struct MTChatFolder: Codable, Identifiable, Hashable {
     }
 }
 
+extension MTChatFolder {
+    /// A KIND THIS BUILD NO LONGER KNOWS IS DROPPED, NOT THE FOLDERS (the author's word 16283, 04.11.2026: our bot and its category are
+    /// taken out whole): a folder kept naming «bots» reads on without it, so the person's folders never fall back to the first ones.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        preset = try c.decodeIfPresent(String.self, forKey: .preset).flatMap(Kind.init(rawValue:))
+        kinds = try c.decode([String].self, forKey: .kinds).compactMap(Kind.init(rawValue:))
+        chats = try c.decode([String].self, forKey: .chats)
+        leaves = try c.decode([Leave].self, forKey: .leaves)
+        excluded = try c.decode([String].self, forKey: .excluded)
+    }
+}
+
 /// The person's folders in the tabs' order, All Chats among them and never taken away.
 final class MTChatFolders: ObservableObject {
     static let shared = MTChatFolders()
@@ -119,16 +131,17 @@ final class MTChatFolders: ObservableObject {
 
     private init() {
         let raw = MontanaLocalVault.getString(Self.key) ?? ""
-        let kept = (try? JSONDecoder().decode([MTChatFolder].self, from: Data(raw.utf8))) ?? []
+        // A folder left taking nothing -- the bots' tab of a build before the author's word 16283 -- leaves on load.
+        let kept = ((try? JSONDecoder().decode([MTChatFolder].self, from: Data(raw.utf8))) ?? []).filter { f in f.isAll || f.takesAnything }
         folders = kept.contains(where: { f in f.isAll }) ? kept : Self.firstFolders
     }
-    /// THE FIRST TABS, in the author's order (17.10.2026): All, the chats, the groups, the channels, the bots.
+    /// THE FIRST TABS, in the author's order (17.10.2026): All, the chats, the groups, the channels -- the bots' tab went with the bot
+    /// (the author's word 16283, 04.11.2026).
     static let firstFolders: [MTChatFolder] = [
         .all,
         MTChatFolder(id: "chats", preset: .contacts, kinds: [.contacts, .nonContacts]),
         MTChatFolder(id: "groups", preset: .groups, kinds: [.groups]),
-        MTChatFolder(id: "channels", preset: .channels, kinds: [.channels]),
-        MTChatFolder(id: "bots", preset: .bots, kinds: [.bots])]
+        MTChatFolder(id: "channels", preset: .channels, kinds: [.channels])]
 
     func folder(_ id: String) -> MTChatFolder? { folders.first { f in f.id == id } }
     func folder(only kind: MTChatFolder.Kind) -> MTChatFolder? { folders.first { f in f.onlyKind == kind } }
@@ -159,7 +172,6 @@ final class MTChatFolders: ObservableObject {
     }
     /// What a conversation is to the folders -- one answer for the tabs, their badges and the folders' page.
     static func kind(of c: Chat, contacts: Set<String>?) -> MTChatFolder.Kind {
-        if c.name == MTBot.row { return .bots }
         if MTGroup.isKey(c.name) { return MTGroup.shared.kind(c.name) == .channel ? .channels : .groups }
         return contacts?.contains(c.convRef) == true ? .contacts : .nonContacts
     }
@@ -182,26 +194,6 @@ final class MTChatFolders: ObservableObject {
             if !store.mutedChats.contains(c.name) { loud = true }
         }
         return (count, loud)
-    }
-}
-
-/// OUR BOT (the author's word 17.10.2026 15:4x UTC: «a category Bots, and our bot there»): Montana's bot, the door to the wallet
-/// and to Montana as its Mini App. A row of the Bots folder and of All Chats; a tap opens the bot where it lives -- it speaks no letter
-/// here and keeps no conversation on this phone.
-enum MTBot {
-    static let row = "bot:MTBusiness_bot"
-    static let name = "MTBusiness_bot"   // the name the bot claimed where it lives
-    static let link = "https://t.me/MTBusiness_bot"
-    static var chat: Chat { Chat(name: row, lastMessage: "", time: "", unread: 0) }
-    static var model: ChatRowModel {
-        ChatRowModel(ref: row, color: .blue, title: name, face: montanaRoomFace, initial: "M", local: false, montana: false,
-                     presenceActive: false, selfFace: 0, selfGlyph: "", muted: false, blocked: false, status: nil, time: "",
-                     draft: nil, reaction: nil, reactionMine: false, mediaKind: nil, mediaFile: nil, mediaMine: false, picture: -1,
-                     preview: String(localized: "bot", bundle: MTLanguage.bundle), forced: false, unread: 0, pinned: false)
-    }
-    static func open() {
-        guard let u = URL(string: link) else { return }
-        UIApplication.shared.open(u)
     }
 }
 
@@ -330,10 +322,7 @@ struct MTFolderSettingsPage: View {
                        words: String(localized: "Only messages from groups.", bundle: MTLanguage.bundle)),
             Suggestion(id: "channels", folder: MTChatFolder(id: "", preset: .channels, kinds: [.channels]),
                        title: String(localized: "Channels", bundle: MTLanguage.bundle),
-                       words: String(localized: "Only messages from channels.", bundle: MTLanguage.bundle)),
-            Suggestion(id: "bots", folder: MTChatFolder(id: "", preset: .bots, kinds: [.bots]),
-                       title: String(localized: "Bots", bundle: MTLanguage.bundle),
-                       words: String(localized: "Only messages from bots.", bundle: MTLanguage.bundle))]
+                       words: String(localized: "Only messages from channels.", bundle: MTLanguage.bundle))]
         return offered.filter { s in !book.folders.contains { f in f.holdsAlike(s.folder) } }
     }
     private var contacts: Set<String>? { book.tellsContacts ? MTChatFolders.contactRefs() : nil }
@@ -606,18 +595,10 @@ struct MTFolderChatPicker: View {
     @Binding var folder: MTChatFolder
     @State private var query = ""
 
-    /// Every conversation a folder can name: the list's own, and our bot.
-    static func pool(_ store: ChatStore) -> [Chat] { store.listChats() + [MTBot.chat] }
-    static func title(_ c: Chat, store: ChatStore) -> String {
-        c.name == MTBot.row ? MTBot.name : MontanaAvatar.spokenName(store.title(for: c))
-    }
-    @ViewBuilder static func face(_ c: Chat, side: CGFloat) -> some View {
-        if c.name == MTBot.row {
-            MTChatFace(face: montanaRoomFace, color: .blue, initial: "M", local: false, size: side)
-        } else {
-            MTChatAvatar(chat: c, size: side)
-        }
-    }
+    /// Every conversation a folder can name: the list's own.
+    static func pool(_ store: ChatStore) -> [Chat] { store.listChats() }
+    static func title(_ c: Chat, store: ChatStore) -> String { MontanaAvatar.spokenName(store.title(for: c)) }
+    static func face(_ c: Chat, side: CGFloat) -> some View { MTChatAvatar(chat: c, size: side) }
 
     var body: some View {
         let q = query.trimmingCharacters(in: .whitespaces)

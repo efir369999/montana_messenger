@@ -70,14 +70,27 @@ enum MontanaPower {
         }
     }
     /// ONE OWNER OF THE HEAT'S ANSWER (16.10.2026, No.70, the critic's deep closure): the video ladder read the power facts on
-    /// its own tick and stepped down under heat; the call's recording, which draws both pictures a second time, read none and
-    /// drew on through a phone the system already called serious. The floor is reckoned by the one rule (Snapshot.ladderFloor)
+    /// its own tick and stepped down under heat. The floor is reckoned by the one rule (Snapshot.ladderFloor)
     /// whenever the heat, Low Power Mode, the battery or the charger changes, and every heavy work reads it here, on any thread:
     /// 0 -- free, 2 -- under pressure, 4 -- critical.
     private static let floorLock = NSLock()
     private static var floor = 0
     static var floorNow: Int { floorLock.lock(); defer { floorLock.unlock() }; return floor }
     private static func keepFloor(_ s: Snapshot) { floorLock.lock(); floor = s.ladderFloor; floorLock.unlock() }
+    /// A WORK OF GIGABYTES WAITS FOR THE CHARGER (the author's word 16391, 04.11.2026 17:07 UTC: «do not allow such a thing at the
+    /// root and fix it urgently»). T1 on 2358, 16:17-17:02Z: the copy kept by the people one writes to (MTKeeping) laid some 5 800
+    /// pieces of 512 KB on the nodes, ~850 a minute, each with its mirror -- on the battery, the processor at 100-170 %, the phone
+    /// serious, the tunnel killed for memory 17 times. Such a work runs only on the charger, outside Low Power Mode, at a heat no
+    /// higher than fair and on a path that is not metered, as the system's own copy waits for them. Nil -- go; else why it waits.
+    /// Main thread (the battery is the device's).
+    static func bulkHeld() -> String? {
+        let s = snapshot()
+        if !s.charging { return "battery" }
+        if s.lowPower { return "lowpower" }
+        if ProcessInfo.ThermalState.fair.rawValue < s.thermal.rawValue { return "thermal=" + thermalWord(s.thermal) }
+        if MontanaNetWitness.metered { return "metered" }
+        return nil
+    }
     static func thermalWord(_ t: ProcessInfo.ThermalState) -> String {
         switch t {
         case .nominal: return "nominal"

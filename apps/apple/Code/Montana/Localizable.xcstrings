@@ -1,6 +1,22 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Organizations": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Организации"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组织"
+          }
+        }
+      }
+    },
     "Earlier builds": {
       "extractionState": "manual",
       "localizations": {
@@ -101,23 +117,6 @@
         }
       }
     },
-    "Bots": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Боты"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "机器人"
-          }
-        }
-      }
-    },
     "Archived": {
       "extractionState": "manual",
       "localizations": {
@@ -131,23 +130,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "已归档"
-          }
-        }
-      }
-    },
-    "bot": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "бот"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "机器人"
           }
         }
       }
@@ -233,23 +215,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅显示来自频道的消息。"
-          }
-        }
-      }
-    },
-    "Only messages from bots.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Только сообщения от ботов."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "仅显示来自机器人的消息。"
           }
         }
       }
@@ -948,40 +913,6 @@
         }
       }
     },
-    "Deletion is forbidden on this phone": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удаление на этом телефоне запрещено"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这部手机上禁止删除"
-          }
-        }
-      }
-    },
-    "In Montana levels open functions: from level %lld a person can forbid deletion on their phone. Your level is %lld.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В Монтане уровни открывают функции: с уровня %1$lld человек может запретить удаление у себя. Ваш уровень — %2$lld."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Montana，等级会开放功能：从第 %1$lld 级起，可以禁止在自己的手机上删除消息。你的等级是 %2$lld。"
-          }
-        }
-      }
-    },
     "Current playlist": {
       "localizations": {
         "en": {
@@ -1646,38 +1577,6 @@
         }
       }
     },
-    "@name": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "@имя"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "@名字"
-          }
-        }
-      }
-    },
-    "@username": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "@ник"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "@用户名"
-          }
-        }
-      }
-    },
     "A backup holds every conversation and attachment this device keeps, sealed with the key your 24 words open. Keep the words: without them nobody can read it, and neither can you.": {
       "localizations": {
         "ru": {
@@ -1710,50 +1609,34 @@
         }
       }
     },
-    "A name is held by renewing its record, not by the life of a person: miss the renewal and the cell is free for whoever takes it next, the previous owner keeping no advantage. A name is not transferable — an operation of transfer does not exist. There is no arbitration: no trademarks, no complaints, no exceptions. Only your own addresses stand behind a name; a foreign address cannot be listed under it.": {
+    "A person who sends such content or abuses others is barred from the relays and doors of %@.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Имя держится продлением записи, а не жизнью человека: пропустили продление — ячейка свободна, её берёт следующий, и преимущества у прежнего владельца нет. Имя не передаётся — операции передачи не существует. Арбитража нет: ни товарных знаков, ни жалоб, ни исключений. За именем стоят только собственные адреса владельца; чужой адрес указать нельзя."
+            "value": "Тот, кто рассылает такое содержимое или злоупотребляет в отношении других, лишается доступа к узлам и дверям %@."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "名称靠续期记录维持，而非靠人的生命：错过续期，位置即空出，由下一个人取得，原持有者不享优先。名称不可转让——不存在转让操作。没有仲裁：没有商标、没有申诉、没有例外。名称背后只能是本人的地址；不能登记他人的地址。"
+            "value": "发送此类内容或滥用他人者将被禁止使用 %@ 的中继与入口。"
           }
         }
       }
     },
-    "A person who sends such content or abuses others is barred from Montana's relays and doors.": {
+    "Next-generation communication. Your identity comes from your secret phrase, and everything you send is encrypted on your device.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Тот, кто рассылает такое содержимое или злоупотребляет в отношении других, лишается доступа к узлам и дверям Montana."
+            "value": "Связь нового поколения. Личность — из вашей секретной фразы, всё, что вы отправляете, зашифровано на вашем устройстве."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "发送此类内容或滥用他人者将被禁止使用 Montana 的中继与入口。"
-          }
-        }
-      }
-    },
-    "A private messenger. Your identity comes from your secret phrase, and your chats are encrypted on your device.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Приватный мессенджер. Личность — из вашей секретной фразы, переписка зашифрована на вашем устройстве."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "私密通讯工具。您的身份源自您的助记词，聊天内容在您的设备上加密。"
+            "value": "新一代通信。您的身份源自您的助记词，您发送的一切都在您的设备上加密。"
           }
         }
       }
@@ -1939,22 +1822,6 @@
         }
       }
     },
-    "Add to Contacts": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Добавить в контакты"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加到通讯录"
-          }
-        }
-      }
-    },
     "Add to existing": {
       "localizations": {
         "ru": {
@@ -1983,23 +1850,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "地址"
-          }
-        }
-      }
-    },
-    "Addresses are no longer exchanged — ask for a username or a one-time card.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Адресами больше не обмениваются — попросите имя или разовую карточку."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不再交换地址——请索取用户名或一次性名片。"
           }
         }
       }
@@ -2108,22 +1958,6 @@
         }
       }
     },
-    "Anyone who holds a name can be written to by it.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Любому, у кого есть имя, можно написать по нему."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "任何持有名字的人，都可以通过名字联系到。"
-          }
-        }
-      }
-    },
     "App Library": {
       "extractionState": "manual",
       "localizations": {
@@ -2137,22 +1971,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "App 资源库"
-          }
-        }
-      }
-    },
-    "App icon": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Иконка приложения"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "应用图标"
           }
         }
       }
@@ -2475,159 +2293,6 @@
         }
       }
     },
-    "Each level opens functions of Montana. Level 7 opens Forbid deletion on my phone: a message your correspondent deletes for everyone stays on your phone, and their phone is told so. Level 7 also opens Record calls: calls are recorded by themselves on your phone and sent to the call's chat after your first consent. Level 8 opens your own node: a machine you own joins the Montana network through this app. All of them are in Settings, under Access by level.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Каждый уровень открывает функции Монтаны. Уровень 7 открывает Запрет удаления у меня: сообщение, которое собеседник удаляет у всех, остаётся на вашем телефоне, а телефон собеседника получает об этом уведомление. Ещё уровень 7 открывает Записывать звонки: звонки записываются сами на вашем телефоне и после вашего первого согласия отправляются в чат звонка. Уровень 8 открывает ваш собственный узел: машина, которой вы владеете, подключается к сети Монтаны через это приложение. Всё это — в Настройках, в разделе Доступ по уровню."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每个等级都会开放 Montana 的功能。7 级开放“禁止在我的手机上删除”：对方为所有人删除的消息会保留在你的手机上，对方的手机会收到通知。7 级还开放“录制通话”：首次同意后，通话会在你的手机上自动录制，并发送到通话所在的聊天。8 级开放你自己的节点：你拥有的机器通过本应用接入 Montana 网络。这些都在设置的“按等级开放”中。"
-          }
-        }
-      }
-    },
-    "Can I record a call below level 7?": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Можно ли записать звонок ниже уровня 7?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "低于 7 级时可以录制通话吗？"
-          }
-        }
-      }
-    },
-    "Yes. On every level a call can be recorded by the record button on the call screen, unless your correspondent's switch holds. From level 7 calls are recorded by themselves once you agree the first time, and you can turn it off in Settings, under Access by level.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Да. На любом уровне звонок можно записать кнопкой записи на экране звонка, если этого не запрещает переключатель собеседника. С уровня 7 звонки записываются сами после вашего первого согласия, и это можно выключить в Настройках, в разделе «Доступ по уровню»."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可以。任何等级都可以用通话界面上的录制按钮录制通话，除非对方的开关加以限制。从 7 级起，首次同意后通话会自动录制，您可以在设置的“按等级开放”中关闭。"
-          }
-        }
-      }
-    },
-    "Who can record a call with me?": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Кто может записать звонок со мной?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "谁可以录制与我的通话？"
-          }
-        }
-      }
-    },
-    "While your Record calls switch in Access by level is off, and below level 7 it stands off, a correspondent whose Global level is not above yours cannot record your calls: neither by themselves nor by the record button, which they do not see. A correspondent with a higher level records on their side only; your phone records nothing, and the chat is told that the call is being recorded. A version of Montana that does not say the switch forbids nothing.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пока ваш переключатель «Записывать звонки» в разделе «Доступ по уровню» выключен, а ниже уровня 7 он выключен всегда, собеседник, чей Глобальный уровень не выше вашего, не может записать ваши звонки: ни сам, ни кнопкой записи, которую он не видит. Собеседник с более высоким уровнем записывает только на своей стороне; ваш телефон ничего не записывает, а в чат приходит сообщение, что звонок записывается. Версия Монтаны, которая не сообщает о переключателе, ничего не запрещает."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当您在“按等级开放”中的“录制通话”开关关闭时（低于 7 级时它始终关闭），全局等级不高于您的对方无法录制您的通话：既不会自动录制，也无法使用录制按钮，对方看不到该按钮。等级更高的对方只在其一侧录制；您的手机不录制任何内容，聊天中会收到通话正在录制的提示。不告知该开关的 Montana 版本不作任何限制。"
-          }
-        }
-      }
-    },
-    "Who sends the recording to the chat?": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Кто отправляет запись в чат?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "谁将录音发送到聊天？"
-          }
-        }
-      }
-    },
-    "In a one-to-one call the caller sends the recording to the chat. When the caller does not record, the one who answered sends it, so a recorded call always reaches the chat, once.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В личном звонке запись в чат отправляет тот, кто позвонил. Если он не записывает, её отправляет тот, кто ответил, поэтому записанный звонок всегда попадает в чат, один раз."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一对一通话中，由主叫方将录音发送到聊天。主叫方未录制时，由接听方发送，因此录制的通话总会进入聊天，且只发送一次。"
-          }
-        }
-      }
-    },
-    "Can I take my copy back from my node below level 8?": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Можно ли забрать свою копию с узла ниже уровня 8?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "低于 8 级时可以从节点取回我的副本吗？"
-          }
-        }
-      }
-    },
-    "Yes. Setting up your node and sending copies to it open at level 8. Taking your copy back from it is open on every level.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Да. Настройка вашего узла и отправка копий на него открываются с уровня 8. Забрать свою копию с него можно на любом уровне."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "可以。设置你的节点并向它发送副本从 8 级开放。从节点取回你的副本在任何等级都可以。"
-          }
-        }
-      }
-    },
     "What is a Time Coin?": {
       "extractionState": "manual",
       "localizations": {
@@ -2842,38 +2507,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在询问您的节点…"
-          }
-        }
-      }
-    },
-    "At least 4 characters.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не короче 4 знаков."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "至少 4 个字符。"
-          }
-        }
-      }
-    },
-    "At most 32 characters.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не длиннее 32 знаков."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最多 32 个字符。"
           }
         }
       }
@@ -3705,22 +3338,6 @@
         }
       }
     },
-    "Business card": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Визитка"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名片"
-          }
-        }
-      }
-    },
     "By agreement": {
       "extractionState": "manual",
       "localizations": {
@@ -3790,18 +3407,18 @@
         }
       }
     },
-    "By using Montana you agree to these terms.": {
+    "By using %@ you agree to these terms.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пользуясь Montana, вы принимаете эти условия."
+            "value": "Пользуясь %@, вы принимаете эти условия."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用 Montana 即表示您同意这些条款。"
+            "value": "使用 %@ 即表示您同意这些条款。"
           }
         }
       }
@@ -4508,18 +4125,18 @@
         }
       }
     },
-    "Pictures are kept in memory so chats and walls open without waiting. They stay until you clear them here.": {
+    "Pictures are kept in memory so they open without waiting. They stay until you clear them here.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картинки хранятся в памяти, чтобы чаты и стены открывались без ожидания. Они остаются, пока вы не очистите их здесь."
+            "value": "Картинки хранятся в памяти, чтобы открываться без ожидания. Они остаются, пока вы не очистите их здесь."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "图片保存在内存中，让聊天和墙面无需等待即可打开。它们会一直保留，直到你在这里清除。"
+            "value": "图片保存在内存中，无需等待即可打开。它们会一直保留，直到你在这里清除。"
           }
         }
       }
@@ -4655,22 +4272,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "电脑，等级 %lld"
-          }
-        }
-      }
-    },
-    "Conditions of creation": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Условия создания"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "创建条件"
           }
         }
       }
@@ -5646,28 +5247,6 @@
         }
       }
     },
-    "Downloads": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Downloads"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скачивания"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下载次数"
-          }
-        }
-      }
-    },
     "Draft": {
       "localizations": {
         "en": {
@@ -5747,22 +5326,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "暮色"
-          }
-        }
-      }
-    },
-    "E-mail": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Почта"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "电子邮件"
           }
         }
       }
@@ -5929,22 +5492,6 @@
     },
     "English": {
       "localizations": {}
-    },
-    "Enter a username": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введите ник"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请输入用户名"
-          }
-        }
-      }
     },
     "Enter the 24 words separated by spaces, in the correct order.": {
       "localizations": {
@@ -6421,22 +5968,6 @@
         }
       }
     },
-    "From 4 to 32 characters: a–z, 0–9, «_» and «-». A name starts with a letter, never ends with a sign, and no two signs stand in a row. The name goes to whoever fixes it first: the seed phrase is enough — no application, no approval, no queue.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "От 4 до 32 знаков: a–z, 0–9, «_» и «-». Имя начинается с буквы, не заканчивается знаком, два знака подряд запрещены. Имя берёт тот, кто зафиксировал первым: достаточно сид-фразы — ни заявки, ни одобрения, ни очереди."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "4 至 32 个字符：a–z、0–9、「_」与「-」。名称以字母开头，不以符号结尾，且不得有两个相连的符号。谁先确立，名称就归谁：只需助记词——无需申请、无需批准、无需排队。"
-          }
-        }
-      }
-    },
     "From a file": {
       "localizations": {
         "ru": {
@@ -6648,22 +6179,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "玻璃"
-          }
-        }
-      }
-    },
-    "Gold on black": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Золото на чёрном"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "黑底金色"
           }
         }
       }
@@ -7298,38 +6813,6 @@
         }
       }
     },
-    "It does not end with a sign.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не заканчивается знаком."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不能以符号结尾。"
-          }
-        }
-      }
-    },
-    "It starts with a letter.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Начинается с буквы."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "以字母开头。"
-          }
-        }
-      }
-    },
     "Keep the invitation and moves in the conversation to continue this game.": {
       "localizations": {
         "ru": {
@@ -7476,22 +6959,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "稍后"
-          }
-        }
-      }
-    },
-    "Latin letters only: a–z, 0–9, «_» and «-».": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Только латиница: a–z, 0–9, «_» и «-»."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "仅限拉丁字母：a–z、0–9、「_」和「-」。"
           }
         }
       }
@@ -7697,22 +7164,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "流动"
-          }
-        }
-      }
-    },
-    "Liquid glass": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Жидкое стекло"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "液态玻璃"
           }
         }
       }
@@ -7965,22 +7416,6 @@
         }
       }
     },
-    "Mask": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Маска"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "面具"
-          }
-        }
-      }
-    },
     "Max": {
       "localizations": {
         "ru": {
@@ -8074,38 +7509,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "消息"
-          }
-        }
-      }
-    },
-    "Message by @username": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Написать по @нику"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "按 @用户名发消息"
-          }
-        }
-      }
-    },
-    "Message on Montana": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Написать в Montana"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Montana 上发消息"
           }
         }
       }
@@ -8813,22 +8216,6 @@
         }
       }
     },
-    "New invitation": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новое приглашение"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新的邀请"
-          }
-        }
-      }
-    },
     "New message": {
       "localizations": {
         "ru": {
@@ -9172,22 +8559,6 @@
         }
       }
     },
-    "No more names can be taken right now.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сейчас больше нельзя занять имя."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目前无法再取得名字。"
-          }
-        }
-      }
-    },
     "No moving pictures yet": {
       "localizations": {
         "ru": {
@@ -9271,22 +8642,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "对滥用零容忍"
-          }
-        }
-      }
-    },
-    "Nobody holds this name.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этим именем никто не владеет."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "没有人持有这个名字。"
           }
         }
       }
@@ -9623,22 +8978,6 @@
         }
       }
     },
-    "One-time invitation. It changes as soon as it is used.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Одноразовое приглашение. Оно меняется, как только им воспользовались."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一次性邀请。一经使用即更换。"
-          }
-        }
-      }
-    },
     "Online status": {
       "localizations": {
         "en": {
@@ -9727,24 +9066,24 @@
         }
       }
     },
-    "Only whether others see you online. Walls and pages come and go regardless.": {
+    "Only whether others see you online. Everything else comes and goes regardless.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Only whether others see you online. Walls and pages come and go regardless."
+            "value": "Only whether others see you online. Everything else comes and goes regardless."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Только видят ли вас другие в сети. Стены и страницы приходят и уходят независимо от этого."
+            "value": "Только видят ли вас другие в сети. Всё остальное приходит и уходит независимо от этого."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "仅决定他人是否能看到你在线。留言墙和页面的往来不受影响。"
+            "value": "仅决定他人是否能看到你在线。其他内容的往来不受影响。"
           }
         }
       }
@@ -9933,22 +9272,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "其他"
-          }
-        }
-      }
-    },
-    "Other ways to reach you": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Другие способы связи"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "其他联系方式"
           }
         }
       }
@@ -10234,28 +9557,6 @@
         }
       }
     },
-    "Phone": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Phone"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Телефон"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "电话"
-          }
-        }
-      }
-    },
     "Photo": {
       "localizations": {
         "ru": {
@@ -10509,18 +9810,18 @@
         }
       }
     },
-    "Point at a one-time card or a @username code": {
+    "Point at a one-time card": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Наведите на разовую карточку либо код @имени"
+            "value": "Наведите на разовую карточку"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "对准一次性名片或 @用户名 二维码"
+            "value": "对准一次性名片"
           }
         }
       }
@@ -10575,22 +9876,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "准备中"
-          }
-        }
-      }
-    },
-    "Preparing an invitation…": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готовлю приглашение…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在准备邀请…"
           }
         }
       }
@@ -11716,22 +11001,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "重试"
-          }
-        }
-      }
-    },
-    "Rights of ownership": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Права владения"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "所有权"
           }
         }
       }
@@ -13148,22 +12417,6 @@
         }
       }
     },
-    "Sync contacts": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Синхронизировать контакты"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "同步联系人"
-          }
-        }
-      }
-    },
     "System": {
       "localizations": {
         "ru": {
@@ -13213,22 +12466,6 @@
         }
       }
     },
-    "Take a name": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Занять имя"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "取一个名字"
-          }
-        }
-      }
-    },
     "Take back move": {
       "localizations": {
         "ru": {
@@ -13273,22 +12510,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "已恢复到本设备：对话 %lld 个，记录 %lld 条，附件 %lld 个。"
-          }
-        }
-      }
-    },
-    "Taking the name…": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Занимаем имя…"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在取得名字…"
           }
         }
       }
@@ -13797,22 +13018,6 @@
         }
       }
     },
-    "The link stays yours while you hold the name: whoever holds it can write to you.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ссылка ваша, пока вы держите имя: кто её знает, может вам написать."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "只要你持有这个名字，链接就属于你：任何拥有链接的人都可以给你写信。"
-          }
-        }
-      }
-    },
     "The measurement": {
       "localizations": {
         "ru": {
@@ -13825,70 +13030,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "测量"
-          }
-        }
-      }
-    },
-    "The name could not be checked right now. Try again.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сейчас не удалось проверить имя. Попробуйте ещё раз."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目前无法查询这个名字，请重试。"
-          }
-        }
-      }
-    },
-    "The node is busy. Try again in a minute.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Узел занят. Попробуйте через минуту."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "节点繁忙，请一分钟后重试。"
-          }
-        }
-      }
-    },
-    "The node is starting. An invitation appears as soon as it is up.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Узел поднимается. Приглашение появится, как только он будет готов."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "节点正在启动。就绪后即可生成邀请。"
-          }
-        }
-      }
-    },
-    "The node that keeps names cannot be reached. Try again.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Узел, который хранит имена, недоступен. Попробуйте ещё раз."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保存名字的节点无法连接，请重试。"
           }
         }
       }
@@ -14292,38 +13433,6 @@
         }
       }
     },
-    "This is your business card: keep it and hand it to anyone — your personal contacts and how to reach you: phone, e-mail and other ways. It leaves as a photo, and whoever receives it can save it to their contacts.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это ваша визитка: сохраните её и передавайте кому угодно — ваши личные контакты и как с вами связаться: телефон, почта и другие способы. Она уходит фотографией, и получатель может сохранить её в свои контакты."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这是您的名片：保存它并交给任何人——您的个人联系方式以及如何联系您：电话、电子邮件和其他方式。它以照片形式发送，收到的人可以将其保存到通讯录。"
-          }
-        }
-      }
-    },
-    "This is your own name.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это ваше собственное имя."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这是你自己的名字。"
-          }
-        }
-      }
-    },
     "This link is not a Montana invitation.": {
       "localizations": {
         "ru": {
@@ -14336,22 +13445,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "此链接不是 Montana 邀请。"
-          }
-        }
-      }
-    },
-    "This name is taken.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это имя уже занято."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这个名字已被占用。"
           }
         }
       }
@@ -14391,22 +13484,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "此帖子尚未在这部手机上。请打开作者的页面，然后再次点击链接。"
-          }
-        }
-      }
-    },
-    "This username does not fit the rules.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это имя не подходит по правилам."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "该用户名不符合规则。"
           }
         }
       }
@@ -14639,22 +13716,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "开启您的视频？"
-          }
-        }
-      }
-    },
-    "Two signs in a row are not allowed.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Два знака подряд запрещены."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不允许两个符号相连。"
           }
         }
       }
@@ -15915,22 +14976,6 @@
         }
       }
     },
-    "Until the network's chain carries names, a name and the key it is reached by are kept by one Montana node, which also decides who took a name first. Anyone can check a name they guess, one name at a time, and the node sees who asked; only whoever runs that node sees the whole list. Nothing else of you is kept there — not your address, not your chats — beyond the day the name was taken and last renewed. A name is optional — without one your account carries no identifier at all.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пока имена не несёт цепь сети, имя и ключ, по которому до вас доходят, хранит один узел Montana — он же решает, кто взял имя первым. Любой может проверить угаданное имя, по одному за раз, и узел видит, кто спросил; весь список видит только тот, кто держит этот узел. Больше ничего о вас там нет — ни адреса, ни переписки, — кроме дня, когда имя взято и когда продлено в последний раз. Имя необязательно — без него у вашей учётной записи нет никакого опознавателя."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在网络链承载名字之前，名字和用于联系你的密钥由一个 Montana 节点保存，它也决定谁先取得了某个名字。任何人都可以逐个查询自己猜到的名字，节点能看到是谁在查询；只有运营该节点的人能看到完整列表。那里不保存你的其他任何信息——没有你的地址，也没有你的聊天——只有名字被取得和最近一次续期的日期。名字是可选的——没有名字，你的账户就不带任何标识。"
-          }
-        }
-      }
-    },
     "Unverify": {
       "localizations": {
         "ru": {
@@ -15975,22 +15020,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在上传到 iCloud"
-          }
-        }
-      }
-    },
-    "Username": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Имя пользователя"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用户名"
           }
         }
       }
@@ -16536,22 +15565,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "网站"
-          }
-        }
-      }
-    },
-    "What a name does": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Что даёт имя"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名字的作用"
           }
         }
       }
@@ -17172,18 +16185,18 @@
         }
       }
     },
-    "You must be 18 or older to use Montana.": {
+    "You must be 18 or older to use %@.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пользоваться Montana можно только с 18 лет."
+            "value": "Пользоваться %@ можно только с 18 лет."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "您必须年满 18 岁才能使用 Montana。"
+            "value": "您必须年满 18 岁才能使用 %@。"
           }
         }
       }
@@ -17415,87 +16428,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "您的音乐将显示在这里"
-          }
-        }
-      }
-    },
-    "Your name @%@ has lapsed. Take it again, or another.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Срок имени @%@ истёк. Займите его снова или другое."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你的名字 @%@ 已过期。重新取得它，或另选一个。"
-          }
-        }
-      }
-    },
-    "Your name is no longer yours: the node that keeps names holds another key under it.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Имя больше не ваше: узел, который хранит имена, держит под ним другой ключ."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你的名字已不再属于你：保存名字的节点在它下面保存着另一个密钥。"
-          }
-        }
-      }
-    },
-    "Your name says who you are; the code opens the conversation.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Имя говорит, кто вы; код открывает переписку."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名字说明您是谁；二维码开启对话。"
-          }
-        }
-      }
-    },
-    "Your name: @%@, held until %@. Taking another releases it for good.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваше имя: @%@, закреплено до %@. Взяв другое, вы навсегда освободите это."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你的名字：@%@，持有至 %@。选用另一个名字会永久释放它。"
-          }
-        }
-      }
-    },
-    "Your name: @%@. Taking another releases it for good.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваше имя: @%@. Взяв другое, вы навсегда освободите это."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你的名字：@%@。选用另一个名字会永久释放它。"
           }
         }
       }
@@ -18887,22 +17819,6 @@
         }
       }
     },
-    "username": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "имя пользователя"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "用户名"
-          }
-        }
-      }
-    },
     "watching": {
       "localizations": {
         "en": {
@@ -19013,54 +17929,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "📷 快拍"
-          }
-        }
-      }
-    },
-    "Sunlight": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Солнечный свет"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "阳光"
-          }
-        }
-      }
-    },
-    "Juno": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Юнона"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "朱诺"
-          }
-        }
-      }
-    },
-    "Pyramid": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пирамида"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "金字塔"
           }
         }
       }
@@ -20796,34 +19664,34 @@
         }
       }
     },
-    "Name or invitation": {
+    "Your card": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Имя или приглашение"
+            "value": "Ваша карточка"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "名字或邀请"
+            "value": "您的名片"
           }
         }
       }
     },
-    "People reach you by either": {
+    "People reach you by its QR code or link": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "По любому из них вам пишут"
+            "value": "Вам пишут по её QR-коду или ссылке"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "别人可以凭其中任何一个给你写信"
+            "value": "别人凭它的二维码或链接给您写信"
           }
         }
       }
@@ -20856,22 +19724,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "节点只传递它们无法打开的信封"
-          }
-        }
-      }
-    },
-    "A name is public: anyone who knows it can write to you first, and your link montana.quest/n/ with the name opens a chat with you. It stays yours while the app renews it — open Montana at least once every six weeks.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Имя публично: любой, кто его знает, может написать вам первым, а ваша ссылка montana.quest/n/ с именем открывает чат с вами. Имя остаётся вашим, пока приложение его продлевает, — открывайте Montana хотя бы раз в шесть недель."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "名字是公开的：任何知道它的人都可以先给你写信，而带有名字的 montana.quest/n/ 链接会打开与你的聊天。只要应用为它续期，名字就一直属于你——每六周至少打开一次 Montana。"
           }
         }
       }
@@ -23562,6 +22414,22 @@
         }
       }
     },
+    "This seed phrase unlocks access to your account": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эта сид-фраза разблокирует доступ к вашему аккаунту"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此助记词可解锁对您账户的访问权限"
+          }
+        }
+      }
+    },
     "This seed phrase unlocks access to your wallet": {
       "localizations": {
         "ru": {
@@ -25513,18 +24381,18 @@
         }
       }
     },
-    "Montana is a messenger between people who chose to talk to each other. Every conversation is encrypted end to end; nobody but the people in it can read it.": {
+    "%@ is a messenger between people who chose to talk to each other. Every conversation is encrypted end to end; nobody but the people in it can read it.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Montana — мессенджер между людьми, которые сами решили говорить друг с другом. Каждый разговор зашифрован из конца в конец; никто, кроме его участников, прочесть его не может."
+            "value": "%@ — мессенджер между людьми, которые сами решили говорить друг с другом. Каждый разговор зашифрован из конца в конец; никто, кроме его участников, прочесть его не может."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Montana 是一款供彼此选择交谈的人使用的通讯软件。每一段对话都经过端到端加密；除对话参与者外，无人能读取。"
+            "value": "%@ 是一款供彼此选择交谈的人使用的通讯软件。每一段对话都经过端到端加密；除对话参与者外，无人能读取。"
           }
         }
       }
@@ -25545,18 +24413,18 @@
         }
       }
     },
-    "Your account is deleted: this device erases your 24-word identity, and your public name leaves Montana's nodes. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.": {
+    "Your account is deleted: this device erases your 24-word identity. Your history stays here sealed and opens again only from the same 24 words — on this device, or on another one that already holds a copy. Nobody keeps the words for you: write them down first: Settings → Privacy → Seed phrase. Deleting the app erases the history as well.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш аккаунт удаляется: это устройство стирает вашу личность из 24 слов, а ваше публичное имя уходит с узлов Montana. История остаётся здесь запечатанной и открывается снова только теми же 24 словами — на этом устройстве или на другом, где уже есть копия. Никто не хранит слова за вас: сначала запишите их: Настройки → Приватность → Сид-фраза. Удаление приложения стирает и историю."
+            "value": "Ваш аккаунт удаляется: это устройство стирает вашу личность из 24 слов. История остаётся здесь запечатанной и открывается снова только теми же 24 словами — на этом устройстве или на другом, где уже есть копия. Никто не хранит слова за вас: сначала запишите их: Настройки → Приватность → Сид-фраза. Удаление приложения стирает и историю."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你的账户将被删除：此设备会抹去你的 24 词身份，你的公开名称也会从 Montana 的节点中移除。你的历史记录会加密留在这里，只有用同样的 24 个词才能再次打开——在此设备上，或在已持有副本的另一台设备上。没有人替你保管这些词：请先写下来：设置 → 隐私 → 助记词。删除应用也会抹去历史记录。"
+            "value": "你的账户将被删除：此设备会抹去你的 24 词身份。你的历史记录会加密留在这里，只有用同样的 24 个词才能再次打开——在此设备上，或在已持有副本的另一台设备上。没有人替你保管这些词：请先写下来：设置 → 隐私 → 助记词。删除应用也会抹去历史记录。"
           }
         }
       }
@@ -26605,108 +25473,6 @@
         }
       }
     },
-    "Record calls": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Записывать звонки"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "录制通话"
-          }
-        }
-      }
-    },
-    "Record calls automatically?": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Записывать звонки автоматически?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自动录制通话？"
-          }
-        }
-      }
-    },
-    "Do not record": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не записывать"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不录制"
-          }
-        }
-      }
-    },
-    "This call is being recorded. The recording will be sent to this chat after the call.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот звонок записывается. После завершения запись будет отправлена в этот чат."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此通话正在录制。通话结束后，录制文件将发送到此聊天。"
-          }
-        }
-      }
-    },
-    "Call recording": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запись звонка"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通话录制"
-          }
-        }
-      }
-    },
-    "Call recording — incomplete": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запись звонка — неполная"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通话录制 — 不完整"
-          }
-        }
-      }
-    },
     "Recording": {
       "extractionState": "manual",
       "localizations": {
@@ -26720,188 +25486,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在录制"
-          }
-        }
-      }
-    },
-    "Recording interrupted": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запись прерывалась"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "录制曾中断"
-          }
-        }
-      }
-    },
-    "The call recording could not be saved yet. Montana will try again when you return to the app.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пока не удалось сохранить запись звонка. Монтана попробует снова, когда вы вернётесь в приложение."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通话录制暂时无法保存。返回应用时，Montana 将重试。"
-          }
-        }
-      }
-    },
-    "This call has no recording because no audio was received.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This call has no recording because no audio was received."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запись этого звонка отсутствует: звук не поступал."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此通话没有录音，因为未收到音频。"
-          }
-        }
-      }
-    },
-    "This phone is recording the call locally. Only the caller sends a recording to the chat.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This phone is recording the call locally. Only the caller sends a recording to the chat."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот телефон записывает разговор локально. Запись в чат отправляет только тот, кто позвонил."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "本机正在本地录制通话。只有主叫方会将录音发送到聊天。"
-          }
-        }
-      }
-    },
-    "Access by level": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Доступ по уровню"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "按等级开放"
-          }
-        }
-      }
-    },
-    "Forbid deletion on my phone": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запрет удаления у меня"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "禁止在我的手机上删除"
-          }
-        }
-      }
-    },
-    "A message your correspondent deletes for everyone stays on this phone, and their phone is told so.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сообщение, которое собеседник удаляет у всех, остаётся на этом телефоне, а телефон собеседника получает об этом уведомление."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "对方为所有人删除的消息会保留在这部手机上，对方的手机会收到通知。"
-          }
-        }
-      }
-    },
-    "Calls are recorded by themselves on this phone and sent to the call's chat after your first consent. While this is off, a correspondent whose level is not above yours cannot record your calls; one with a higher level records on their side only. The record button on the call screen works on every level unless the correspondent's switch holds.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Звонки записываются сами на этом телефоне и после вашего первого согласия отправляются в чат звонка. Пока это выключено, собеседник, чей уровень не выше вашего, не может записать ваши звонки; собеседник с более высоким уровнем записывает только на своей стороне. Кнопка записи на экране звонка работает на любом уровне, если её не держит переключатель собеседника."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "首次同意后，通话会在这部手机上自动录制，并发送到通话所在的聊天。关闭此项时，等级不高于您的对方无法录制您的通话；等级更高的对方只在其一侧录制。通话界面上的录制按钮在任何等级都可用，除非对方的开关加以限制。"
-          }
-        }
-      }
-    },
-    "Opens at level %lld. Your level is %lld.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Открывается на уровне %1$lld. Ваш уровень — %2$lld."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在第 %1$lld 级开放。你的等级是 %2$lld。"
-          }
-        }
-      }
-    },
-    "Their phone keeps the message you deleted for everyone. In Montana levels open functions: from level %lld a person can forbid deletion on their phone.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сообщение, которое вы удалили у всех, осталось на телефоне собеседника. В Монтане уровни открывают функции: с уровня %lld человек может запретить удаление у себя."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你为所有人删除的消息仍保留在对方的手机上。在 Montana，等级会开放功能：从第 %lld 级起，可以禁止在自己的手机上删除消息。"
           }
         }
       }
@@ -26923,40 +25507,6 @@
         }
       }
     },
-    "Stop recording": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Остановить запись"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "停止录制"
-          }
-        }
-      }
-    },
-    "Audio and video are saved on this phone. For a one-to-one call, the caller sends the recording to the chat, or the one who answered when the caller does not record. Room participants send their own recordings. Participants are notified. You can turn this off in Settings, Access by level, at any time.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Аудио и видео сохраняются на этом телефоне. В личном звонке запись в чат отправляет тот, кто позвонил, а если он не записывает — тот, кто ответил. Участники комнат отправляют собственные записи. Участники получают уведомление. Вы можете отключить запись в Настройках, в разделе «Доступ по уровню», в любой момент."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "音频和视频保存在本机。一对一通话中，由主叫方将录音发送到聊天；主叫方未录制时，由接听方发送。房间参与者各自发送录音。参与者会收到通知。您随时可以在设置的“按等级开放”中关闭录制。"
-          }
-        }
-      }
-    },
     "YouTube": {
       "localizations": {
         "ru": {
@@ -26969,22 +25519,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "YouTube"
-          }
-        }
-      }
-    },
-    "Connect a machine you own to the Montana network through this app: it is set up from here and copies of the whole phone go to it. Taking your copy back is open on every level.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Подключите свою машину к сети Монтаны через это приложение: она настраивается отсюда, и на неё уходят копии всего телефона. Забрать свою копию можно на любом уровне."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通过本应用将您自己的机器接入 Montana 网络：在这里设置，整部手机的副本会发送到它。在任何等级都可以取回您的副本。"
           }
         }
       }
@@ -28541,18 +27075,18 @@
         }
       }
     },
-    "Not in the first two weeks. From the first launch of this version on this phone with your 24 words, for 14 days the Fabric of Time stands at your ceiling, so your Global level follows your two other levels. TimeCoin and Access by level show the days left until the first count.": {
+    "Not in the first two weeks. From the first launch of this version on this phone with your 24 words, for 14 days the Fabric of Time stands at your ceiling, so your Global level follows your two other levels. TimeCoin shows the days left until the first count.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не в первые две недели. С первого запуска этой версии на этом телефоне с вашими 24 словами 14 дней Ткань времени стоит на вашем потолке, поэтому Глобальный уровень следует за двумя другими уровнями. Монета Времени и «Доступ по уровню» показывают, сколько дней осталось до первого счёта."
+            "value": "Не в первые две недели. С первого запуска этой версии на этом телефоне с вашими 24 словами 14 дней Ткань времени стоит на вашем потолке, поэтому Глобальный уровень следует за двумя другими уровнями. Монета Времени показывает, сколько дней осталось до первого счёта."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "前两周不会。从这台手机上用你的 24 个词首次启动此版本起的 14 天内，时间织网处于你的上限，因此你的全局等级随另外两个等级变化。时间币和“按等级开放”会显示距首次计算还剩几天。"
+            "value": "前两周不会。从这台手机上用你的 24 个词首次启动此版本起的 14 天内，时间织网处于你的上限，因此你的全局等级随另外两个等级变化。时间币会显示距首次计算还剩几天。"
           }
         }
       }
@@ -28701,18 +27235,18 @@
         }
       }
     },
-    "Your Global level is the lowest of three levels: the level of the chain of the person, which grows with your time on the network, the level of π, which grows with the coins you hold, and the Fabric of Time, which stands on the people you write to and call regularly in the last two weeks. You see it in TimeCoin, on the TimeChain page, and in Settings, under Access by level.": {
+    "Your Global level is the lowest of three levels: the level of the chain of the person, which grows with your time on the network, the level of π, which grows with the coins you hold, and the Fabric of Time, which stands on the people you write to and call regularly in the last two weeks. You see it in TimeCoin, on the TimeChain page.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш Глобальный уровень — наименьший из трёх уровней: уровня цепи Личности, который растёт с вашим временем в сети, уровня по Пи, который растёт с монетами, которые вы держите, и Ткани времени, которая стоит на людях, с которыми вы регулярно переписываетесь и созваниваетесь за последние две недели. Он виден в Монете Времени на странице TimeChain и в Настройках, в разделе Доступ по уровню."
+            "value": "Ваш Глобальный уровень — наименьший из трёх уровней: уровня цепи Личности, который растёт с вашим временем в сети, уровня по Пи, который растёт с монетами, которые вы держите, и Ткани времени, которая стоит на людях, с которыми вы регулярно переписываетесь и созваниваетесь за последние две недели. Он виден в Монете Времени на странице TimeChain."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你的全局等级是三个等级中最低的那个：个人链的等级，随你在网络上的时间增长；π 等级，随你持有的硬币增长；时间织网，建立在你过去两周经常发消息和通话的人之上。你可以在时间币的 TimeChain 页面，以及设置的“按等级开放”中看到它。"
+            "value": "你的全局等级是三个等级中最低的那个：个人链的等级，随你在网络上的时间增长；π 等级，随你持有的硬币增长；时间织网，建立在你过去两周经常发消息和通话的人之上。你可以在时间币的 TimeChain 页面看到它。"
           }
         }
       }
@@ -28893,18 +27427,18 @@
         }
       }
     },
-    "The copies and their shares made for iCloud, your node and your keepers leave this phone; the next round makes them again.": {
+    "The copies and their shares made for iCloud and your keepers leave this phone; the next round makes them again.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Копии и их доли, сделанные для iCloud, вашего узла и ваших хранителей, уйдут с телефона; следующий круг сделает их снова."
+            "value": "Копии и их доли, сделанные для iCloud и ваших хранителей, уйдут с телефона; следующий круг сделает их снова."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "为 iCloud、你的节点和你的保管人制作的副本及其分片将从此手机移除；下一轮会重新生成。"
+            "value": "为 iCloud 和你的保管人制作的副本及其分片将从此手机移除；下一轮会重新生成。"
           }
         }
       }
@@ -29081,22 +27615,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "节点已保存的内容将从本机移除。每张照片、视频和文件在您打开时从节点取回——在本机，或凭您的 24 个词在新手机上。"
-          }
-        }
-      }
-    },
-    "Set up your node in Settings, Your node: what it holds can then be cleared from this phone and comes back when you open it.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Настройте свой узел: Настройки, «Ваш узел». Тогда то, что он держит, можно стирать с телефона, и оно вернётся, когда вы его откроете."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请在「设置」中的「您的节点」设置节点：之后可从本机清除节点保存的内容，打开时即取回。"
           }
         }
       }
@@ -29613,22 +28131,6 @@
         }
       }
     },
-    "The writer can be reached only through a chat, and none could be opened: they gave no @name, or the name did not answer.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "До автора можно дойти только через чат, а открыть его не удалось: он не указал @имя, или имя не ответило."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "只能通过聊天联系作者，但无法打开聊天：对方未提供 @名称，或该名称没有回应。"
-          }
-        }
-      }
-    },
     "Nothing left your balance. Try again in a moment.": {
       "localizations": {
         "ru": {
@@ -29645,18 +28147,18 @@
         }
       }
     },
-    "Your key's node takes thirty records a minute, and this minute was full. Nothing left your balance. Try again in a minute." : {
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Узел вашего ключа принимает тридцать записей в минуту, и эта минута была занята. С баланса ничего не ушло. Попробуйте ещё раз через минуту."
+    "Your key's node takes thirty records a minute, and this minute was full. Nothing left your balance. Try again in a minute.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Узел вашего ключа принимает тридцать записей в минуту, и эта минута была занята. С баланса ничего не ушло. Попробуйте ещё раз через минуту."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "您的密钥节点每分钟接受三十条记录，这一分钟已满。余额未扣除任何金币。请一分钟后再试。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的密钥节点每分钟接受三十条记录，这一分钟已满。余额未扣除任何金币。请一分钟后再试。"
           }
         }
       }
@@ -29909,48 +28411,25 @@
         }
       }
     },
-    "A contact you save in Montana with a public name gets a card in the phone's Contacts. Off, no card is written.": {
+    "Messages, posts and comments from others with offensive words stay folded until you tap them.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A contact you save in Montana with a public name gets a card in the phone's Contacts. Off, no card is written."
+            "value": "Messages, posts and comments from others with offensive words stay folded until you tap them."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Контакт, сохранённый в Montana с публичным именем, получает карточку в Контактах телефона. Выключено — карточки не пишутся."
+            "value": "Сообщения, записи и комментарии других людей с оскорбительными словами свёрнуты, пока ты их не коснёшься."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你在 Montana 中保存的带公开名称的联系人会写入手机通讯录。关闭后，不再写入。"
-          }
-        }
-      }
-    },
-    "Messages, wall posts and comments from others with offensive words stay folded until you tap them.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Messages, wall posts and comments from others with offensive words stay folded until you tap them."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сообщения, записи на стене и комментарии других людей с оскорбительными словами свёрнуты, пока ты их не коснёшься."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "他人发送的含冒犯性词语的消息、墙帖和评论会被折叠，点按后才显示。"
+            "value": "他人发送的含冒犯性词语的消息、帖子和评论会被折叠，点按后才显示。"
           }
         }
       }
@@ -30158,6 +28637,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "每天一次，在 Montana 打开且仅通过 Wi-Fi 时，整个应用的密封备份会发送到您的节点。关闭时，不发送任何内容，也不会从节点删除任何内容。"
+          }
+        }
+      }
+    },
+    "Nothing more: every function of Montana is open on every level. The level shows your time on the network and your wallet.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ничего сверх: каждая функция Монтаны открыта на любом уровне. Уровень показывает ваше время в сети и ваш кошелёк."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有额外开启的功能：Montana 的每项功能在任何等级都开放。等级显示你在网络上的时间和你的钱包。"
+          }
+        }
+      }
+    },
+    "Video request sent": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запрос на видео отправлен"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视频请求已发送"
           }
         }
       }

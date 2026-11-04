@@ -35,9 +35,9 @@ enum MontanaHomeNode {
         MontanaLocalVault.setString(hostKey, clean)
         MontanaTrace.mark("home_node", "host set=" + (clean.isEmpty ? "0" : "1"))
     }
-    /// THE NODE JOINS AT LEVEL 8 (MTLevelAccess.ownNode, the author's word 17.10.2026 15:1x UTC): the person's switch is kept for
-    /// the day the level opens it, and the copies ride only then; taking one's own copy back asks no level (takeBack).
-    static var on: Bool { UserDefaults.standard.bool(forKey: switchKey) && MTLevelAccess.opens(.ownNode) }
+    /// THE NODE JOINS ON EVERY LEVEL (decision 606 (a), 04.11.2026): the copies ride while the person's switch is on, in an edition
+    /// that carries one's own node (MTEdition.ownNode); taking one's own copy back asks nothing (takeBack).
+    static var on: Bool { UserDefaults.standard.bool(forKey: switchKey) && MTEdition.ownNode }
     static func setOn(_ v: Bool) { UserDefaults.standard.set(v, forKey: switchKey) }
     static var last: Double { UserDefaults.standard.double(forKey: lastKey) }
     static func noteCopied(at t: Date) { UserDefaults.standard.set(t.timeIntervalSince1970, forKey: lastKey) }
@@ -183,8 +183,8 @@ enum MontanaHomeNode {
     /// The daily road rides Wi-Fi alone; the person's own tap may ride the cellular network.
     func send(urgent: Bool, cellular: Bool, _ done: @escaping (Result<MontanaBackup.Tally, MontanaBackup.Refusal>) -> Void = { _ in }) {
         guard !busy, CloudCopy.shared.sealing == nil else { return done(.failure(.stopped)) }   // one copy is sealed at a time
-        guard MTLevelAccess.opens(.ownNode) else {   // a copy goes to one's own node from level 8 (MTLevelAccess.ownNode)
-            MontanaTrace.mark("home_node", "send refused: below level " + String(MTLevelAccess.Feature.ownNode.level))
+        guard MTEdition.ownNode else {   // an edition without one's own node sends nothing to it (decision 531 (a))
+            MontanaTrace.mark("home_node", "send refused: no node in this edition")
             return done(.failure(.stopped))
         }
         guard let tok = MontanaHomeNode.tokenHex() else { return done(.failure(.noSeed)) }
@@ -346,13 +346,6 @@ struct HomeNodeView: View {
     @State private var login = "root"                  // NOT-UI: the machine's own default login
     @State private var password = ""
     @State private var settingUp = false
-    @ObservedObject private var person = MTPersonChain.shared
-    @ObservedObject private var split = MTCoinSplit.shared   // the available, the one number of the person's coins (fold-7)
-    @ObservedObject private var fabric = MTFabric.shared   // the Global Level is the lowest of three: it follows the fabric too (17.10)
-    /// The machine joins Montana's network from level 8 (MTLevelAccess.ownNode); its copy comes back on every level.
-    private var open: Bool { MTLevelAccess.opens(.ownNode) }
-    private var level: Int { MTPersonChain.global(person: person.level, balance: split.available) }
-    private var eight: Int { MTLevelAccess.Feature.ownNode.level }
 
     private struct Cap: Identifiable { let id: String; let word: LocalizedStringKey; let glyph: String }
     private static let capWords: [Cap] = [
@@ -408,21 +401,20 @@ struct HomeNodeView: View {
                 Button { setUp() } label: {
                     HStack { settingsToggleLabel("Set up your node", "wrench.and.screwdriver.fill", .blue); Spacer() }.contentShape(Rectangle())
                 }
-                .disabled(host.isEmpty || password.isEmpty || settingUp || !open)
+                .disabled(host.isEmpty || password.isEmpty || settingUp)
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Enter the address of a machine you own, its login and password: Montana puts its door on it and keeps only the digest of the certificate the machine makes for itself. The password is used once and kept nowhere.")
-                    if !open { Text("Opens at level \(eight). Your level is \(level).") }
                 }
             }
             .listRowBackground(MTGlassRowPlate())
             Section {
                 Toggle(isOn: switchBinding) { settingsToggleLabel("Copies to your node", "arrow.triangle.2.circlepath", .green) }
-                    .disabled(host.isEmpty || !open)
+                    .disabled(host.isEmpty)
                 Button { sendNow() } label: {
                     HStack { settingsToggleLabel("Send a copy now", "arrow.up.doc.fill", .green); Spacer() }.contentShape(Rectangle())
                 }
-                .disabled(host.isEmpty || node.sealing != nil || node.sending != nil || !open)
+                .disabled(host.isEmpty || node.sealing != nil || node.sending != nil)
                 Button { restore() } label: {
                     HStack { settingsToggleLabel("Restore from your node", "arrow.down.doc.fill", .orange); Spacer() }.contentShape(Rectangle())
                 }
@@ -430,7 +422,6 @@ struct HomeNodeView: View {
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Once a day, while Montana is open and on Wi-Fi only, a sealed copy of the whole app goes to your node. Off, nothing is sent and nothing is removed from the node.")
-                    if !open { Text("Opens at level \(eight). Your level is \(level).") }
                 }
             }
             .listRowBackground(MTGlassRowPlate())
@@ -453,7 +444,7 @@ struct HomeNodeView: View {
                 Button { keep.keep(cellular: true) } label: {
                     HStack { settingsToggleLabel("Keep files on your node now", "externaldrive.badge.plus", .green); Spacer() }.contentShape(Rectangle())
                 }
-                .disabled(host.isEmpty || keep.sending != nil || !open || !on)
+                .disabled(host.isEmpty || keep.sending != nil || !on)
             } header: {
                 Text("FILES ON YOUR NODE")
             } footer: {
@@ -530,7 +521,6 @@ struct HomeNodeView: View {
         if host != before || node.state == .unknown || node.state == .noHost { node.ask() }
     }
     private func setUp() {
-        guard open else { return }
         commit()
         settingUp = true
         let h = host, u = login.trimmingCharacters(in: .whitespaces).isEmpty ? "root" : login.trimmingCharacters(in: .whitespaces), pw = password   // NOT-UI
@@ -610,7 +600,7 @@ enum MTHomeShelf {
     private static let fileKeyLabel = Data("mt-home-file-key".utf8)     // NOT-UI: a file's own key
     static let chunk = MontanaMedia.chunkSize
 
-    /// Files go to the node while its copies do (the switch, level 8); taking one's own files back asks no level.
+    /// Files go to the node while its copies do (the switch); taking one's own files back asks nothing.
     static var keeping: Bool { MontanaHomeNode.on && bringing }
     static var bringing: Bool { !MontanaHomeNode.host.isEmpty && entropy() != nil }
     static func entropy() -> Data? {
@@ -857,7 +847,7 @@ enum MTHomeShelf {
     /// A video or a track of the book plays from its first pieces, as a letter's does (MTStreamLoader).
     static func streamSource(_ name: String) -> MTStreamSource? {
         guard let e = MTHomeBook.shared.entry(name), let en = entropy() else { return nil }
-        let pieces = e.p.enumerated().map { MTBoardChunk(bid: $0.element, cs: min(chunk, e.z - $0.offset * chunk)) }
+        let pieces = e.p.enumerated().map { MTPieceRef(bid: $0.element, cs: min(chunk, e.z - $0.offset * chunk)) }
         return MTStreamSource(name: name, ext: (name as NSString).pathExtension, size: e.z, key: fileKey(entropy: en, name: name),
                               chunks: pieces, folder: MontanaMediaStore.dir)
     }

@@ -32,11 +32,11 @@ struct MontanaPeerInfoScreen: View {
     @State private var roomAskVideo = false
     @State private var originalNameShown = false     // the edit page: their own name revealed under the fields (20.09)
     @State private var aboutTick = 0                 // their bio or link arrived (24.09): the face's lines are asked again
-    @State private var wallSheet: MTBoardSheet? = nil   // what the wall shows over the page (MTBoardPresenting, 25.09)
-    @State private var wallPage: MTBoardRoute? = nil    // a writer's page, opened from the wall
-    @State private var explorer: MTExplorerLink? = nil   // a transfer's record in the Explorer inside the app (the transactions' tab)
-    @State private var coinMove: MTCoinMoveRoute? = nil  // a coin letter's transaction page (the transactions' tab)
-    @ObservedObject private var coinHistory = MTCoinHistory.shared   // the transfers with this person, from the one fold of the coins
+    @State private var wallSheet: MTAppSheet? = nil   // what the wall shows over the page (MTPagePresenting, 25.09)
+    @State private var wallPage: MTPageRoute? = nil    // a writer's page, opened from the wall or from a group's people
+    @State private var explorer: MTWebLink? = nil   // a transfer's record in the Explorer inside the app (the transactions' tab)
+    @State private var coinMove: MTMoveRoute? = nil  // a coin letter's transaction page (the transactions' tab)
+    @ObservedObject private var transfersWatch = MTApps.transfersWatch   // the transfers with this person, from the one fold of the coins
     @StateObject private var face = MTFaceDock()   // the face starts at its circle and opens by a press -- the owner's rule for every page (24.09)
     @Environment(\.dismiss) private var dismiss
     private var letterCount: Int { (store.messages[chat.name]?.count ?? 0) + (chat.convId.flatMap { store.messages[$0]?.count } ?? 0) }
@@ -239,15 +239,15 @@ struct MontanaPeerInfoScreen: View {
         .scrollContentBackground(.hidden)
         // THE WALL'S SHEETS AND PAGES RISE FROM THE LIST, never from one of its rows (the critic 25.09): a row the list lets
         // go takes its sheet and its destination with it.
-        .modifier(MTBoardPresenting(sheet: $wallSheet, page: $wallPage))
+        .modifier(MTPagePresenting(sheet: $wallSheet, page: $wallPage))
         .modifier(MTGroupPageAsks(chat: chat, confirmLeave: $confirmLeave, removingSeat: $removingSeat, addingPeople: $addingPeople,
                                   confirmDissolve: $confirmDissolve, onGone: { dismiss(); ui.closeChat() }))
         .modifier(MTGroupClearAsk(chat: chat, asked: $confirmClear))
         .sheet(item: $roomAsk) { k in MTRoomInviteSheet(chat: chat.name, kind: k, video: roomAskVideo, opening: true) }
-        .sheet(item: $explorer) { link in MTExplorerSheet(url: link.url).ignoresSafeArea() }
+        .sheet(item: $explorer) { link in MTWebSheet(url: link.url).ignoresSafeArea() }
         .navigationDestination(isPresented: $channelPeople) { MTChannelPeoplePage(key: chat.name) }   // a channel's subscribers (17.10)
         .navigationDestination(isPresented: $channelAdmins) { MTChannelAdminsPage(key: chat.name) }   // a channel's administrators (17.10)
-        .navigationDestination(item: $coinMove) { r in MTCoinMovePage(route: r, peer: data.title) }
+        .navigationDestination(item: $coinMove) { r in MTApps.coins?.movePage(r, peer: data.title) }
         .navigationDestination(item: $adminSeat) { s in   // «Promote» and «Edit Admin Rights» open the admin's rights (G.6)
             MTGroupAdminRightsPage(chat: chat.name, seat: s, name: MTGroup.shared.pagePeople(chat.name).first { p in p.seat == s }?.name ?? MTGroup.memberWord,
                                    isNew: !MTGroup.shared.isAdmin(chat.name, seat: s))
@@ -872,8 +872,8 @@ struct MontanaPeerInfoScreen: View {
             .background(MTEdgeMark("tab-strip"))   // where the strip stands across the screen, said to the diary (24.09)
             // THE LOOK ASKS (the author's word 25.09: «entering the page must show the wall to everyone, at once»): the page asks
             // for the person's wall as it opens — the held page is drawn at once, the owner's fresh one takes its place (MTBoard.look).
-            .onAppear { if data.kind == .person { MTBoard.shared.look(data.conv) } }
-            .onChange(of: state.tab) { _, t in if t == .transactions { coinHistory.warm() } }   // the coins' fold, once, at the tab's opening
+            .onAppear { if data.kind == .person { MTApps.wall?.look(data.conv) } }
+            .onChange(of: state.tab) { _, t in if t == .transactions { MTApps.coins?.moment(.transfersAsked) } }   // the coins' fold, once, at the tab's opening
 
         // A GROUP'S «MEDIA» HOLDS ITS PHOTOS AND ITS VIDEOS TOGETHER, as the reference's pane does (the checklist's V.7)
         let items = isGroupPage && state.tab == .media
@@ -884,7 +884,7 @@ struct MontanaPeerInfoScreen: View {
         if state.tab == .wall, ChatStore.isLocalRoom(chat.name) || data.kind == .person {
             // THE WALL'S POSTS ARE THE LIST'S OWN ROWS (the critic 25.09, the author's screenshot: a hole between the tabs and
             // «Write on the wall»): one cell per post, each measured by itself; the list's margin is the wall's edge (24.09).
-            MTBoardRows(owner: ChatStore.isLocalRoom(chat.name) ? nil : data.conv, edge: 0, sheet: $wallSheet, page: $wallPage)
+            MTApps.wall?.rows(owner: ChatStore.isLocalRoom(chat.name) ? nil : data.conv, edge: 0, sheet: $wallSheet, page: $wallPage)
         } else if state.tab == .transactions {
             transactions(data)
         } else if items.isEmpty {
@@ -921,8 +921,9 @@ struct MontanaPeerInfoScreen: View {
     /// a coin letter its transaction's page. Read from the one fold of the coins (MTCoinHistory), never from the book here.
     @ViewBuilder private func transactions(_ data: MTPeerInfoData) -> some View {
         let peers = Set([data.conv, chat.name] + MTSamePair.folded(into: data.conv)).subtracting([""])
-        let lines = coinHistory.with(peers)
-        if coinHistory.fold == nil {
+        let read: [MTTransferLine]? = MTApps.coins.map { $0.transfers(with: peers) } ?? []   // no door: no transfers (slice S2b b7d)
+        let lines = read ?? []
+        if read == nil {
             ProgressView().frame(maxWidth: .infinity).padding(.vertical, 36)
         } else if lines.isEmpty {
             VStack(spacing: 10) {
@@ -947,8 +948,8 @@ struct MontanaPeerInfoScreen: View {
                                 }
                                 Spacer(minLength: 0)
                                 // USER-DATA: the move's coins, signed
-                                Text(verbatim: (0 < l.signed ? "+" : "") + MTCoinText.count(l.signed)).font(.body.monospacedDigit())
-                                    .foregroundColor(0 < l.signed ? .green : .white)
+                                Text(verbatim: l.said).font(.body.monospacedDigit())
+                                    .foregroundColor(l.credit ? .green : .white)
                             }
                             .contentShape(Rectangle())
                         }
@@ -959,8 +960,8 @@ struct MontanaPeerInfoScreen: View {
             }
         }
     }
-    struct MTTransferDay: Identifiable { let id: String; let lines: [MTCoinHistory.Line] }
-    private func transferDays(_ lines: [MTCoinHistory.Line]) -> [MTTransferDay] {
+    struct MTTransferDay: Identifiable { let id: String; let lines: [MTTransferLine] }
+    private func transferDays(_ lines: [MTTransferLine]) -> [MTTransferDay] {
         var out: [MTTransferDay] = []
         for l in lines {
             let d = MTDayLabel.of(l.at)
@@ -969,9 +970,11 @@ struct MontanaPeerInfoScreen: View {
         }
         return out
     }
-    private func openTransfer(_ l: MTCoinHistory.Line) {
-        if let tx = l.tx, let url = URL(string: MTCoinTx.link + tx) { explorer = MTExplorerLink(url: url) }
-        else { coinMove = MTCoinMoveRoute(ref: l.ref, mine: l.signed < 0) }
+    private func openTransfer(_ l: MTTransferLine) {
+        switch l.opens {
+        case .web(let url): explorer = MTWebLink(url: url)
+        case .move(let r): coinMove = r
+        }
     }
 
     /// THE PROFILE WEARS THE PLAYER'S DRESS (the author's word 22.09): a file, a link, a track and a
@@ -994,6 +997,7 @@ struct MontanaPeerInfoScreen: View {
     private var paneTabs: [MTMediaTab] {
         // a group's videos stand in its «Media», as the reference's panes have them (V.7)
         isGroupPage ? [.media, .files, .links, .music, .voice] : (isChannelPage ? [.media, .video, .files, .links, .music, .voice] : MTMediaTab.allCases)
+            .filter { t in (t != .wall || MTApps.wall != nil) && (t != .transactions || MTApps.coins != nil) }   // a pane only where its application stands
     }
     /// One step along the strip, stopping at its ends — the strip itself follows the tab.
     private func turnPane(_ step: Int) {
@@ -1107,7 +1111,7 @@ struct MontanaPeerInfoScreen: View {
                         Spacer(minLength: 0)
                         Text(m.time).font(.caption2).foregroundColor(.gray)
                     }
-                    .modifier(itemLaw(m, open: { if !MTYouTube.play(u) { UIApplication.shared.open(u) } }))
+                    .modifier(itemLaw(m, open: { if MTApps.youtube?.play(u, title: nil) != true { UIApplication.shared.open(u) } }))
                 }
             }
         }

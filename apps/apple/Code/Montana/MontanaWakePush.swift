@@ -448,7 +448,7 @@ enum MontanaWakePush {
     static func doorSpoke(_ b: String) {
         baseLock.lock()
         let revived = (deathStreak[b] ?? 0) > 0 || (signalDoorDead[b].map { $0 > Date() } ?? false)
-        // AN ANSWER ENDS THE REST TOO (07.10, the finding of the Business's №32, measured on T1 Business 61 18:30Z): the count and the
+        // AN ANSWER ENDS THE REST TOO (07.10, the finding of the Messenger's №32, measured on T1 Messenger 61 18:30Z): the count and the
         // streak were forgiven, the rest's moment stood -- four doors answered a second after the tunnel's drop and still rested a
         // minute, and a photo's chunks found «no live door» four rounds twice. The rule above says any answer forgives it.
         doorFails[b] = 0; deathStreak[b] = nil; signalDoorDead[b] = nil
@@ -477,7 +477,7 @@ enum MontanaWakePush {
         MontanaTrace.mark("door_alive", "\(host) answered after silence — the queue drains now")
         forgetGoneChunks("\(host) came back")
         MontanaDeliveryEngine.shared.drainOnDoorAlive(host)
-        DispatchQueue.main.async { MTBoard.shared.roadBack("door-alive") }   // a post's files the node did not take go again (25.09)
+        DispatchQueue.main.async { MTApps.wall?.roadBack("door-alive") }   // a post's files the node did not take go again (25.09)
         registerConvs()   // a door back from the dead gets the pairs it missed while it rested (20.09)
     }
     /// The knock lane keeps its own memory of silence, by host: it does not sit under the one death
@@ -2461,7 +2461,7 @@ enum MontanaWakePush {
         let t0 = Date()
         let asked = Set(bids)
         let answers = await withTaskGroup(of: Set<String>?.self) { group -> [Set<String>?] in
-            for b in doors { group.addTask { await Self.askHave(b, bids: bids, asked: asked) } }
+            for b in doors { group.addTask { await Self.askHaveSliced(b, bids: bids, asked: asked) } }
             var out: [Set<String>?] = []
             for await r in group { out.append(r) }
             return out
@@ -2471,6 +2471,16 @@ enum MontanaWakePush {
         MontanaTrace.markFolded("blob_have", "doors=\(doors.count) silent=\(silent) have=\(have.count)/\(bids.count) ms=\(Int(Date().timeIntervalSince(t0) * 1000))", window: 30)
         if have.count == bids.count { return have }
         return silent > 0 ? nil : have
+    }
+    /// One door asked slice by slice (MTNodeWire.haveSlice): one silent slice makes the door's answer «don't know», never «none».
+    private static func askHaveSliced(_ b: String, bids: [String], asked: Set<String>) async -> Set<String>? {
+        var have = Set<String>()
+        for start in stride(from: 0, to: bids.count, by: MTNodeWire.haveSlice) {
+            let slice = Array(bids[start..<min(start + MTNodeWire.haveSlice, bids.count)])
+            guard let part = await askHave(b, bids: slice, asked: asked) else { return nil }
+            have.formUnion(part)
+        }
+        return have
     }
     private static func askHave(_ b: String, bids: [String], asked: Set<String>) async -> Set<String>? {
         // The door was chosen by the blob capability (P-98): a store that never claimed it is not asked.
@@ -3242,7 +3252,7 @@ enum MontanaWakePush {
         guard agreesWithCanon() else { MontanaTrace.mark("wakepush_canon", "FAIL"); return }
         let refs = MTPipeBook.registrable(refusing: refused ?? ChatStore.refusedNow())
         // THE CARD RINGS ITS OWNER FOR A CALL TOO (11.10.2026, No.63, the author's word 18:5x UTC: «check T1's call at 18:55 to the iPad,
-        // Nana, Business: the call did not go through»; «calls perfect in every scenario»). A call to a pair in first contact has no pipe
+        // Nana, Messenger: the call did not go through»; «calls perfect in every scenario»). A call to a pair in first contact has no pipe
         // tag its callee listens on -- the card's owner holds no secret until the first letter's encapsulation reaches them -- and it rang
         // nobody: measured on both nodes 18:56:58-18:57:25Z, NO RECIPIENTS, the pipe's call rows held one row, the caller's own. The letters
         // already ring the owner at the card's tag (registerRound, F-2); the calls ring there now as well, and the caller's walk knocks
@@ -4488,7 +4498,7 @@ enum MontanaWakePush {
                         device: device, bornAtMS: bornAtMS)
     }
 
-    /// THE RING AT THE CARD (11.10.2026, No.63, the author's word 18:5x UTC: «check T1's call at 18:55 to the iPad, Nana, Business: the
+    /// THE RING AT THE CARD (11.10.2026, No.63, the author's word 18:5x UTC: «check T1's call at 18:55 to the iPad, Nana, Messenger: the
     /// call did not go through»). A pair in first contact has no pipe tag its callee listens on: the card's owner holds no secret until
     /// the first letter's encapsulation reaches them, and the ring went where the caller alone stood (measured on both nodes, 18:56:58 to
     /// 18:57:25Z: NO RECIPIENTS; the pipe's call rows held one row, the caller's own). The owner listens at the card's daily tag
@@ -5432,14 +5442,12 @@ struct MTClientRelease: Codable, Equatable {
         guard let r = latest, MontanaRelease.ownBuild < r.least else { return nil }
         return r
     }
+    /// THE DOCUMENT IS NAMED BY THE APP'S OWN BUNDLE (the author's word 16402, 04.11.2026 17:13 UTC: «why on T1 in build 111 of
+    /// Messenger I see no Montana system chat with the updates -- everyone must have it, totally, dependent on nothing»): a table
+    /// of bundles stood here and knew Messenger's old bundle, not xxx.montana.business, so Messenger never asked at all -- not
+    /// one RELEASE line on T1 (DEB8E963). The site writes updates/BUNDLE-CHANNEL.json for every app it publishes
+    /// (testflight_state.write); the bundle is read from the app itself, so an edition needs no table and no second name.
     private var bundle: String { Bundle.main.bundleIdentifier ?? "" }
-    private var client: String? {
-        switch bundle {
-        case "quest.montana.app": return "messenger"
-        case "quest.montana.business": return "business"
-        default: return nil
-        }
-    }
     private func installedChannel() async -> String? {
         if let channel { return channel }
         #if DEBUG
@@ -5482,22 +5490,21 @@ struct MTClientRelease: Codable, Equatable {
         // never told (T1: no «RELEASE told» for 2245 nor 2246, T2 told). The release already in hand lands first, every call.
         deliver()
         guard !asking else { return }
-        guard Date().timeIntervalSince(lastAsked) >= 30, let client else { return }
+        guard Date().timeIntervalSince(lastAsked) >= 30, !bundle.isEmpty else { return }
         asking = true
         defer { asking = false }
         guard let channel = await installedChannel() else { refuse("ask", channelMiss); return }
         if latest == nil, let data = UserDefaults.standard.data(forKey: Self.cacheKey),
            let kept = MTClientRelease.read(data, bundle: bundle, channel: channel) { accept(kept) }
         // Public metadata only; the site's release document has no account or device identifiers.
-        let site = "https://montana.xxx/updates/" + client + "-" + channel + ".json"
+        let site = "https://montana.xxx/updates/" + bundle + "-" + channel + ".json"
         var misses: [String] = []
         guard let siteMiss = await ask(site, channel: channel) else { lastAsked = Date(); return }
         misses.append(siteMiss)
-        if client == "messenger" {
-            for base in MontanaWakePush.orderedBases(for: "release").prefix(3) {
-                guard let nodeMiss = await ask(base + "/release", channel: channel) else { lastAsked = Date(); return }
-                misses.append(nodeMiss)
-            }
+        // The nodes mirror one document; it names its bundle, and MTClientRelease.read takes only this app's own.
+        for base in MontanaWakePush.orderedBases(for: "release").prefix(3) {
+            guard let nodeMiss = await ask(base + "/release", channel: channel) else { lastAsked = Date(); return }
+            misses.append(nodeMiss)
         }
         refuse("ask", misses.joined(separator: " "))
     }
@@ -5540,10 +5547,12 @@ struct MTClientRelease: Codable, Equatable {
         deliver()
     }
     private func deliver() {
-        guard let release = latest, release.build >= MontanaRelease.ownBuild else { return }
         guard let store = MontanaDeliveryEngine.shared.store, store.historyLoaded else {
-            refuse("tell", "build=\(release.build) history"); return
+            refuse("tell", "build=\(latest?.build ?? 0) history"); return
         }
+        // THE ROOM STANDS BEFORE ANY WORD OF THE NETWORK (the author's word 16402): the app's own build is its first row.
+        store.standMontanaRoom(build: MontanaRelease.ownBuild, version: MontanaRelease.ownVersion)
+        guard let release = latest, release.build >= MontanaRelease.ownBuild else { return }
         // The row is the deduplication owner: a missing store or a restored identity must
         // not consume a device-global "already told" flag before anything was delivered.
         guard store.appendRelease(build: release.build, version: release.version, notes: release.notes,
@@ -5557,6 +5566,7 @@ struct MTClientRelease: Codable, Equatable {
 
 enum MontanaRelease {
     static var ownBuild: Int { Int(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "") ?? 0 }
+    static var ownVersion: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "" }
     static func check(door: String) async {
         await MTReleaseState.shared.check(door: door)
         await MTLevelDistribution.shared.refresh()

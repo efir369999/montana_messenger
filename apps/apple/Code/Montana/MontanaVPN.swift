@@ -2012,7 +2012,7 @@ extension MontanaVPNStore {
 // The retired VPN-wall token remains recognizable for compatibility with live older builds.
 // It never imports, fetches, answers, or publishes configurations (author, 13.10.2026).
 enum MTVPNWall {
-    static let mark = "\u{200B}\u{200B}VW:"
+    static let mark = retiredWallMark   // the wire's one word (ContentView, slice S3b b2)
     static let keyPrefix = "montana://vpn-wall/"
     static func isWallKey(_ key: String?) -> Bool { key?.hasPrefix(keyPrefix) == true }
     @discardableResult

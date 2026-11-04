@@ -74,7 +74,7 @@ enum MontanaNotify {
         if text.hasPrefix("\u{2063}mtdraft:") { return "live-draft" }
         if text.hasPrefix("\u{2063}LB:") { return "letter-blob" }
         if isService(text) { return "service" }
-        if text.hasPrefix("♟ "), MTChessLetter.parse(text) != nil { return "chess" }   // a letter of a game, by the one parser (29.09)
+        if MTRowLetter.game(text) != nil { return "chess" }   // a letter of a game, by the edition's one reader (29.09, slice S4b)
         return "text"
     }
 
@@ -85,7 +85,7 @@ enum MontanaNotify {
     static func typeOnlyBody(_ t: String) -> String {
         if t.hasPrefix("\u{200B}\u{200B}VC:") { return "🎤 " + String(localized: "Voice message", bundle: MTLanguage.bundle) }
         if t.hasPrefix("\u{200B}\u{200B}MD:") { return MTRowLetter.mediaWords(letter: t, revealCaption: false) }
-        if MTChessLetter.parse(t) != nil { return "♟ " + String(localized: "Chess", bundle: MTLanguage.bundle) }
+        if let games = MTEditionLetters.game, games.read(t) != nil { return games.preview }
         return String(localized: "New message", bundle: MTLanguage.bundle)
     }
 
@@ -280,7 +280,7 @@ enum MontanaNotify {
 
     // ── app side: raise the banner for a message that just arrived over ANY layer ──
     // Called from the single inbound funnel. Delivery layer, delivery time and delivery order are
-    // none of this function's business: a message landed, the user is told.
+    // none of this function's messenger: a message landed, the user is told.
     /// Where the banner's title came from, said plainly — «from nobody» and «from a short address»
     /// are different defects with different fixes, and until this was recorded they looked alike.
     /// The step is the resolver's own answer, never a second reading beside it.
@@ -349,36 +349,6 @@ enum MontanaNotify {
         MontanaTrace.mark("notify", mid: nil, "kind=pin from=\(String(from.prefix(10)))")
         UNUserNotificationCenter.current().add(
             UNNotificationRequest(identifier: "pin-" + MTNoticeAlias.of(chat) + "-" + sid, content: final, trigger: nil)) { err in
-            if let err { MontanaTrace.mark("notify_failed", mid: nil, "err=\(err.localizedDescription)") }
-        }
-    }
-
-    /// MY DELETION WAS KEPT THERE (16.10.2026 No.72, MTLevelAccess.keepDeleted): the keeper's own word -- the correspondent's name
-    /// over the fact that the letter I deleted for everyone stays on their phone; one banner a conversation, a newer word in its place.
-    /// An album deleted for everyone is several letters, each kept by its own word: one banner a conversation in half a minute
-    /// (the critic 16.10, K3), not a sound for every letter.
-    @MainActor private static var keptToldAt: [String: Date] = [:]
-    @MainActor static func presentKept(from: String, chat: String) {
-        let ud = UserDefaults.standard
-        guard ud.object(forKey: "notifEnabled") as? Bool ?? true else {
-            MontanaTrace.mark("notify_skip", mid: nil, "why=disabled kind=kept")
-            return
-        }
-        if let at = keptToldAt[chat], Date().timeIntervalSince(at) < 30 {
-            MontanaTrace.mark("notify_skip", mid: nil, "why=kept-already-told")
-            return
-        }
-        keptToldAt[chat] = Date()
-        let content = UNMutableNotificationContent()
-        // THE WORD SAYS WHAT A LEVEL IS (the author's word 16.10.2026 15:29 UTC: «the system notification must briefly explain the
-        // essence of Montana's levels»): the fact, then the rule that made it.
-        let body = String(format: String(localized: "Their phone keeps the message you deleted for everyone. In Montana levels open functions: from level %lld a person can forbid deletion on their phone.", bundle: MTLanguage.bundle), MTLevelAccess.Feature.keepDeleted.level)
-        decorate(content, from: from, chat: chat, body: body, countUnread: false)
-        content.userInfo["kept"] = 1   // the foreground judge shows it in the open chat too: it is no letter the chat draws (K5)
-        let final = sendersFace(content, from: from)
-        MontanaTrace.mark("notify", mid: nil, "kind=kept from=\(String(from.prefix(10)))")
-        UNUserNotificationCenter.current().add(
-            UNNotificationRequest(identifier: "kept-" + MTNoticeAlias.of(chat), content: final, trigger: nil)) { err in
             if let err { MontanaTrace.mark("notify_failed", mid: nil, "err=\(err.localizedDescription)") }
         }
     }
@@ -492,9 +462,9 @@ enum MontanaNotify {
         if !showSender { content.title = "Montana" }
         // A GAME'S BANNER NAMES ITS GAME (29.09): the tap enters the game itself (MontanaOutsideOpen.pendingGame), and the
         // foreground judge tells a game's end -- which has no bubble in the chat -- from a letter the open chat shows.
-        if let chess = MTChessLetter.parse(text) {
+        if let chess = MTRowLetter.game(text) {
             content.userInfo["game"] = chess.game
-            if chess.end != nil { content.userInfo["game_end"] = 1 }
+            if chess.ends { content.userInfo["game_end"] = 1 }
         }
         let comm = showSender ? withCommunication(content, from: from) : nil
         let final = comm ?? content

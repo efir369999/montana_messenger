@@ -1,0 +1,16 @@
+/* The sentence a person reads when the system asks for a permission. The system localises
+   its own half -- the title and the buttons -- and shows THIS half exactly as written. The source is English
+   (Code/Messenger/Info.plist); this file is one language of it. No sentence names the app:
+   the system's title above it already does, by the name under the icon (Code/Names.xcconfig). */
+
+"NSCameraUsageDescription" = "Камера снимает фото и видео для чатов, видеосообщений и видеозвонков и сканирует QR-код человека.";
+"NSFaceIDUsageDescription" = "Face ID показывает 24 слова восстановления.";
+"NSLocationWhenInUseUsageDescription" = "Геопозиция нужна только чтобы вы могли отправить своё местоположение в чат.";
+"NSMicrophoneUsageDescription" = "Микрофон записывает голосовые сообщения, видео и звонки.";
+"NSSpeechRecognitionUsageDescription" = "Речь распознаётся на вашем устройстве, чтобы по вашему касанию показать голосовое сообщение текстом. Звук не покидает устройство.";
+"NSPhotoLibraryAddUsageDescription" = "Фото из чатов сохраняются в вашу галерею.";
+"NSPhotoLibraryUsageDescription" = "Последние фото и видео показываются, чтобы быстро отправить их в чат.";
+
+/* The name iCloud gives this app's storage (NSUbiquitousContainers in Info.plist), taken per language from this file only:
+   the product's own name, Code/Names.xcconfig MT_NAME_MESSENGER, held equal to it by tools/mt-names-check.py (rule 8). */
+"NSUbiquitousContainerName" = "Montana";

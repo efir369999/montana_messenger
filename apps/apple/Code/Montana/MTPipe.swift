@@ -757,40 +757,6 @@ enum MTPipeBook {
         return allByFreshness().filter { !d.contains($0) && !refused.contains($0) }   // a blocked person wakes nobody
     }
 
-    /// The contact key of a name this device has already met: knowing it costs no reach into the
-    /// space of slots, and it makes a second letter to that name as cheap as a first. It is kept
-    /// sealed under the key of the device and leaves it under no circumstance.
-    private static let namesKey = "pipeNameRoots"
-    private static var namesCache: [String: Data]?
-
-    private static func namesLoad() -> [String: Data]? {
-        // The same illness, the same rule: a decryption failure is not cached (class 22.08), and
-        // the store is read outside the lock (class 14.09).
-        cacheLock.lock()
-        let hit = namesCache
-        cacheLock.unlock()
-        if let hit { return hit }
-        guard let d = MontanaLocalVault.getDecrypted(namesKey) else { return nil }
-        let m = (try? JSONDecoder().decode([String: Data].self, from: d)) ?? [:]
-        cacheLock.lock()
-        if namesCache == nil { namesCache = m }
-        let now = namesCache ?? m
-        cacheLock.unlock()
-        return now
-    }
-
-    static func contactRoot(forName n: String) -> Data? { namesLoad()?[n] }
-
-    @discardableResult
-    static func rememberName(_ n: String, contactRoot root: Data) -> Bool {
-        if n.isEmpty || root.count != 1184 { return false }
-        var m = namesLoad() ?? [:]
-        m[n] = root
-        if let d = try? JSONEncoder().encode(m) { _ = MontanaLocalVault.setEncrypted(namesKey, d) }
-        cacheLock.lock(); namesCache = m; cacheLock.unlock()
-        return true
-    }
-
     // The local name of a correspondence -- what this device files a conversation under once an address is no longer allowed
     // to be that name -- is derived from the secret the two of them hold, so both devices of one person arrive at the same one,
     // and it NEVER leaves the device (MTPipeKey.reference). It is not an address, it cannot be handed out, and a stranger
@@ -1018,10 +984,6 @@ enum MTPipeBook {
         for r in MontanaCard.outstandingRoots() {
             for k in MTPipe.windows(around: w) { if let t = MontanaFirstContact.knock(at: r, window: k) { tags[t] = r } }
         }
-        if let master = MontanaSeed.root,
-           let mine = MontanaNames.contactRoot(masterSeed: master) {
-            for k in MTPipe.windows(around: w) { if let t = MontanaFirstContact.knock(at: mine, window: k) { tags[t] = mine } }
-        }
         firstLock.lock(); firstIndex = (w, tags); firstLock.unlock()
         // Where the points came from: correspondences awaiting a first answer, and cards handed
         // out and not yet spent. A device listening at nothing is a device nobody can reach, and
@@ -1030,12 +992,11 @@ enum MTPipeBook {
         return tags
     }
 
-    /// A card was spent or a name changed: the points this device listens at changed with them.
+    /// A card was spent: the points this device listens at changed with it.
     static func dropFirstIndex() { firstLock.lock(); firstIndex = nil; firstLock.unlock() }
-    /// A copy laid, or a seed changed (23.09): the name roots, the tags and the first-contact points are read
+    /// A copy laid, or a seed changed (23.09): the tags and the first-contact points are read
     /// again from the store — a first letter the copy carried knocks at its point from this moment.
     static func reread() {
-        cacheLock.lock(); namesCache = nil; cacheLock.unlock()
         dropIndex()
         dropFirstIndex()
         dropAwaiting()
