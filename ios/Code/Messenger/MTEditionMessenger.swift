@@ -5,7 +5,6 @@ import SwiftUI
 /// target, so the door is nil and shared code draws none of them (rule 4). The target's list of files is the switch between
 /// editions; a door of an application the Messenger lacks is not even declared here (MTApps.swift, MONTANA_MESSENGER; cuts C4-C6).
 enum MTEdition {
-    static let messenger: MTMessengerDoor? = nil   // no Organizations: no roster, shifts, supply or work chats (the author's word 04.11.2026 11:32 UTC, link 16078)
     // NO YOUTUBE PLAYS IN MESSENGER (App Review 5.2.2, critic of S5r, link 15358): a YouTube link opens where it lives -- its door
     // and uses stand under #if !MONTANA_MESSENGER (cut C4). No call is recorded in either edition (the author's word 16428,
     // 04.11.2026).

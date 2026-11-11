@@ -11,7 +11,6 @@ extension MTApplication {
         case .feed: return 4
         case .wallet: return -1   // the platform's wallet glyph in every style (the author's word 18.10.2026 07:3x UTC: «system, as the wallet, everywhere»)
         #endif
-        case .messenger: return 6   // the tile of the author's atlases the contact card wore until it left (decision 601)
         case .gallery: return 8
         #if !MONTANA_MESSENGER
         case .music: return 7
@@ -40,7 +39,6 @@ extension MTApplication {
         case .vpnWall, .meshWall: return ""
         case .p2pWall: return ""
         #endif
-        case .messenger: return "building.2.fill"   // an organisation, not a trade: the screen names no messenger (06.10)
         case .settings: return "gearshape.fill"
         }
     }

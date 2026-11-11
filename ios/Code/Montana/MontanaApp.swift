@@ -842,9 +842,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             MontanaTrace.mark("notify_judge", mid: jm.isEmpty ? nil : jm, "why=chat-open")
             completionHandler([]); return
         }
-        // A MUTED OR ARCHIVED CHAT SAYS NOTHING (MTQuietChats, the author's words 03.10 21:48): the defaults this read held no mute
+        // A MUTED OR ARCHIVED CHAT SAYS NOTHING (MTRing.chat, the author's words 03.10 21:48): the defaults this read held no mute
         // since the store keeps it in the vault and the keychain, so a muted chat's banner showed over the open app.
-        if MTQuietChats.holds(chat) {
+        if !MTRing.chat(chat) {
             MontanaTrace.mark("notify_judge", mid: jm.isEmpty ? nil : jm, "why=quiet")
             completionHandler([]); return
         }

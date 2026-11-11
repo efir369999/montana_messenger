@@ -5611,6 +5611,16 @@ struct MTClientRelease: Codable, Equatable {
     private var channelMiss = "channel"
     private var said: [String: String] = [:]
     nonisolated static let cacheKey = "mt.release.cache"
+    /// THE SOURCE OF UPDATES, ONE OWNER (11.11.2026, the author's words 19359 and 19364: «the button must be a permanent link to the
+    /// source of updates»): the release document this app's site publishes (MTEdition.site/updates), the one in hand or the one
+    /// kept from the last answer. The Montana room's Update button reads it alone, under every scroll, whatever build is in hand;
+    /// the scroll's own copy of the address (the room's own row has none) is never read.
+    var source: URL? {
+        if let r = latest { return URL(string: r.url) }
+        guard let d = UserDefaults.standard.data(forKey: Self.cacheKey),
+              let kept = try? JSONDecoder().decode(MTClientRelease.self, from: d) else { return nil }
+        return URL(string: kept.url)
+    }
     var updateURL: URL? {
         guard let r = latest, r.build > MontanaRelease.ownBuild else { return nil }
         return URL(string: r.url)

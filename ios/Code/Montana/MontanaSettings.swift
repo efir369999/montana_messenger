@@ -99,7 +99,6 @@ struct SettingsTabView: View {
     @AppStorage("statusEmoji") private var statusEmoji: String = ""
     private let testMode = false
     @State private var pickerItem: PhotosPickerItem?
-    @State private var cropSource: MTCropSource?   // the picked photo awaiting its circle
     @State private var refCopied = false
     @State private var showProfile = false
     @State private var activeSheet: SettingsSheet?
@@ -167,25 +166,13 @@ struct SettingsTabView: View {
                     ToolbarItem(placement: .topBarLeading) { MontanaCloseMark(action: onClose) }
                 }
             }
-            .onChange(of: pickerItem) { _, item in
-                Task {
-                    if let data = try? await item?.loadTransferable(type: Data.self),
-                       let img = UIImage(data: data) {
-                        cropSource = MTCropSource(image: img)   // the circle decides what the face keeps
-                    }
+            .mtFaceCrop($pickerItem) { jpeg in   // the one door of a face (MTFaceCropDoor)
+                if let name = saveToDocs(jpeg, ext: "jpg") {
+                    var list = (try? JSONDecoder().decode([String].self, from: Data(avatarGalleryJSON.utf8))) ?? []
+                    list.insert(name, at: 0)
+                    avatarGalleryJSON = String(data: (try? JSONEncoder().encode(list)) ?? Data(), encoding: .utf8) ?? ""
                 }
-            }
-            .fullScreenCover(item: $cropSource) { src in
-                MTAvatarCropView(image: src.image) { jpeg in
-                    cropSource = nil
-                    guard let jpeg else { return }
-                    if let name = saveToDocs(jpeg, ext: "jpg") {
-                        var list = (try? JSONDecoder().decode([String].self, from: Data(avatarGalleryJSON.utf8))) ?? []
-                        list.insert(name, at: 0)
-                        avatarGalleryJSON = String(data: (try? JSONEncoder().encode(list)) ?? Data(), encoding: .utf8) ?? ""
-                    }
-                    MontanaSelfFace.set(jpeg)
-                }
+                MontanaSelfFace.set(jpeg)
             }
             .sheet(item: $activeSheet) { s in
                 Group {

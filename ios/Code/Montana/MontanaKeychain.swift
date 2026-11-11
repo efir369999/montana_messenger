@@ -33,16 +33,27 @@ enum MontanaContour {
 /// and every String(localized:) by its bundle -- one with no bundle answers in the language the process was launched
 /// with, whatever was chosen since. The app's choice is mirrored into the shared keychain, so the extensions that
 /// carry this file (the banners, the share sheet) speak it too. Here, beside the keychain, for that reason alone.
-/// A CHAT THE PERSON SILENCED SAYS NOTHING (the author's words 03.10 21:48: «it annoys me that notifications come even when I
-/// turned the chat's sound off»; «and from the archive all the more»). One answer for the app and its notification extension,
-/// read from the mirrors the store writes into the shared keychain: the muted chats and the archived ones.
-enum MTQuietChats {
-    static func holds(_ conv: String) -> Bool {
-        guard !conv.isEmpty else { return false }
+/// WHETHER A WORD RINGS, ONE ANSWER (OZ 1 p.11-12, the author's words 19455, 19457, 19461: «the logic of ringing must have one
+/// owner too»). The group's wire (MTGroup.carry), the notification extension (its letter face, its group face, its settings) and
+/// the app (the foreground judge, its own banner) ask here and nowhere else; the face they draw is theirs, the verdict is this.
+enum MTRing {
+    /// A CHAT THE PERSON SILENCED SAYS NOTHING (the author's words 03.10 21:48: «it annoys me that notifications come even when I
+    /// turned the chat's sound off»; «and from the archive all the more»; 19457: a group, a channel and a person's chat alike).
+    /// Read from the mirrors the store writes into the shared keychain: the muted chats and the archived ones.
+    /// A MENTION RINGS THROUGH THE MUTE (stage R, as the reference rings one): the person was named in the group's letter.
+    static func chat(_ conv: String, mentioned: Bool = false) -> Bool {
+        guard !conv.isEmpty, !mentioned else { return true }
         for key in ["mutedChats", "archivedCold"] {
-            if let d = MontanaKeychain.get(key), let arr = try? JSONDecoder().decode([String].self, from: d), arr.contains(conv) { return true }
+            if let d = MontanaKeychain.get(key), let arr = try? JSONDecoder().decode([String].self, from: d), arr.contains(conv) { return false }
         }
-        return false
+        return true
+    }
+    /// A GROUP'S SYSTEM WORD SAYS NOTHING (the author's word 19455: «no notifications on system actions and system messages»):
+    /// a group's word rings as a letter (say) that is neither a silent post nor the past, or as a room's invitation to the very
+    /// seat it is carried to -- nothing else: an invitation into the group, a renewal of its face, title or rights, an
+    /// administrator named, an answer, a leaving, a taking out are all silent.
+    static func groupWord(_ t: String, invites: Bool, past: Bool) -> Bool {
+        !past && (t == "say" || (t == "room" && invites))
     }
 }
 

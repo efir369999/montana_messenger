@@ -13424,38 +13424,6 @@
         }
       }
     },
-    "You were added to the group": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вас добавили в группу"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "您已被加入群组"
-          }
-        }
-      }
-    },
-    "You were added to the channel": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вас добавили в канал"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "您已被加入频道"
-          }
-        }
-      }
-    },
     "Leave channel": {
       "localizations": {
         "ru": {

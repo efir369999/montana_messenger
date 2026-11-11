@@ -26,6 +26,13 @@ struct MTGroupMember: Codable, Equatable {
     var pipe: String
 }
 
+/// The face this phone last gave a group on a letter of its own (MTGroupState.faceGiven, MTGroup.dress).
+struct MTFaceGiven: Codable, Equatable {
+    var tag: String
+    var count: Int
+    var at: Double
+}
+
 /// A group as this phone holds it.
 struct MTGroupState: Codable, Equatable {
     var id: String
@@ -59,6 +66,12 @@ struct MTGroupState: Codable, Equatable {
     /// THE GROUP'S FACE ON THIS PHONE, a file of the avatars folder (17.10.2026): the group is its one owner, so the row, the copy
     /// and the notices read it here -- it used to live on the row alone and left with a row a copy did not carry.
     var face: String? = nil
+    /// THE FACES OF THE GROUP'S PEOPLE, EACH AS THE PERSON GAVE IT ON THEIR OWN LETTER (MTGroupWord.sf, 11.11.2026, the author's
+    /// words 19316 p.1 and 19387): by seat, a file of the avatars folder, and the tag it came under. Never on the wire.
+    var faces: [String: String]? = nil
+    var faceTags: [String: String]? = nil
+    /// The face this phone last gave the group on a letter of its own: its tag, the people counted then, when (MTGroup.dress).
+    var faceGiven: MTFaceGiven? = nil
     /// WHO READ THIS PHONE'S LETTERS, AND HOW FAR (the checklist's B.13): each reader's seat with the birth millisecond of the newest
     /// letter they read. This phone's own record, never on the wire; bounded by the group's people (I-14).
     var readBy: [String: Int64]? = nil
@@ -102,25 +115,11 @@ struct MTGroupState: Codable, Equatable {
     /// THE REACTIONS A CHANNEL TAKES (the reference's «Some Reactions»): the owner's list; absent -- every reaction (while it takes
     /// any, MTGroupState.reacts). Carried in its invitation (MTGroupWord.rl).
     var reactList: [String]? = nil
-    /// MONTANA MESSENGER (Sh.2, 06.10): the organisation whose chat this group is. Such a group has no carrier and no owner: it stands
-    /// on every phone the core says hears it, every phone writes its own letters to everyone in it, and a word is taken only from the
-    /// pipe of one of its people. Nil -- a Protocol group, carried by its owner; the Protocol never sets it.
-    var org: String? = nil
-    /// An organisation's channel: the seats whose letters the channel speaks -- its author and the administrators (chat.rs Letter).
-    var voices: [String]? = nil
-    /// The seats that take another's letter away and pin for everyone -- the organisation's administrators (chat.rs Delete).
-    var bosses: [String]? = nil
-    /// Every seat the core names in an organisation's chat, reached or not: its page lists them all (Sh.3).
-    var everyone: [String]? = nil
-    /// The owner of a carried group. An organisation's chat has no owner, so no owner's road (invitations, permissions, history,
-    /// requests, carrying on) ever opens for it.
-    var mine: Bool { owner.isEmpty && org == nil }
-    var mesh: Bool { org != nil }
+    /// The owner of the group: its phone carries every word of it to the group's people (MTGroup.carried).
+    var mine: Bool { owner.isEmpty }
     var canManage: Bool { mine && left != true }
-    /// A group's every person writes; a channel's owner and the administrators it named post (the reference's «Post Messages»);
-    /// an organisation's channel its voices.
+    /// A group's every person writes; a channel's owner and the administrators it named post (the reference's «Post Messages»).
     var canWrite: Bool {
-        if mesh { return left != true && (kind == .group || voices?.contains(me) == true) }
         return left != true && (kind == .group || mine
             || (admins?.contains(me) == true && !(adminTaken?[me] ?? []).contains(MTChannelRight.post.rawValue)))   // «Post Messages»
     }
@@ -209,6 +208,12 @@ struct MTGroupWord: Codable {
     /// with the group's face, a channel's post), so it rode unsigned and the seed's other device judged it as a stranger's. A build
     /// that does not read it skips the key.
     var au: String? = nil
+    /// THE SPEAKER'S OWN FACE ON ITS OWN LETTER (11.11.2026, the author's words 19316 p.1 «in groups the senders' avatars must be
+    /// seen -- on T1 they are, on T2 and T3 not» and 19387 «in a group everyone sees each other, not a road through the owner»):
+    /// small (MTGroup.speakerFaceSide), as the name rides it (n) -- from the person, never from the owner's hand; a carrier passes
+    /// it on unchanged with the letter. Only where the group's people may lack it (MTGroup.dress). A build that does not read it
+    /// skips the key.
+    var sf: String? = nil
 }
 
 /// ONE WHO ASKED TO JOIN BY THE LINK (the reference's «Member Requests»): the pipe the owner met them by, the name they gave and when.
@@ -320,6 +325,10 @@ final class MTGroup {
     static let nameLimit = 64
     static let faceSide: CGFloat = 160
     static let faceLimit = 24_000
+    /// A speaker's face on its letter (MTGroupWord.sf): the feed's face (MTSpeakerFace.faceSide) at three pixels a point.
+    static let speakerFaceSide: CGFloat = 96
+    /// A speaker gives its face again a day after it last did: one who came in since is not left with an initial.
+    static let faceAgain: Double = 24 * 3600
     /// [I-14]: a group is bounded by the people its owner carries to.
     static let peopleLimit = 200
     /// A copy outlives the queue's own term by a day and is let go with it.
@@ -401,7 +410,7 @@ final class MTGroup {
     /// to, a member's phone with the owner alone: whom it may see online at all. Nothing is asked of anyone here.
     func heldConversations(_ key: String) -> [String] {
         guard let g = state(key) else { return [] }
-        return g.mine || g.mesh ? g.members.map { MTSamePair.root($0.pipe) } : [MTSamePair.root(g.owner)]
+        return carried(g).map(MTSamePair.root)
     }
     /// Whether this phone may write into the group: everyone in a group, the owner alone in a channel.
     func canWrite(_ key: String) -> Bool {
@@ -422,10 +431,6 @@ final class MTGroup {
     /// The people of the group's page with their seats: the owner's phone lists everyone it carries to, a member's the owner.
     func shownSeats(_ key: String) -> [(seat: String, name: String)] {
         guard let g = state(key) else { return [] }
-        // An organisation's chat names every person the core names, by the name the organisation knows them by (Sh.3).
-        if g.mesh, let all = g.everyone {
-            return all.filter { $0 != g.me }.map { s in (s, shownName(pipe: g.members.first { $0.seat == s }?.pipe, said: g.names[s])) }
-        }
         if g.mine { return g.members.map { ($0.seat, shownName(pipe: $0.pipe, said: g.names[$0.seat])) } }
         return [(Self.ownerSeat, shownName(pipe: g.owner, said: g.names[Self.ownerSeat]))]
     }
@@ -434,7 +439,7 @@ final class MTGroup {
     func pagePeople(_ key: String) -> [(seat: String, name: String)] {
         guard let g = state(key) else { return [] }
         var out = shownSeats(key)
-        if !g.mine, !g.mesh {
+        if !g.mine {
             let spoke = g.names.filter { e in e.key != Self.ownerSeat && e.key != g.me && !out.contains(where: { o in o.seat == e.key }) }
             for (seat, n) in spoke.sorted(by: { $0.value.localizedCaseInsensitiveCompare($1.value) == .orderedAscending }) { out.append((seat, n)) }
         }
@@ -444,7 +449,7 @@ final class MTGroup {
     /// member's phone names the owner -- the others give their names by their own words.
     func shownPeople(_ key: String) -> [String] {
         guard let g = state(key) else { return [] }
-        if g.mine || g.mesh { return g.members.map { shownName(pipe: $0.pipe, said: g.names[$0.seat]) } }
+        if g.mine { return g.members.map { shownName(pipe: $0.pipe, said: g.names[$0.seat]) } }
         return [shownName(pipe: g.owner, said: g.names[Self.ownerSeat])]
     }
 
@@ -502,6 +507,41 @@ final class MTGroup {
     func speakerPipe(_ ref: String) -> String? {
         guard let at = seatOf(ref) else { return nil }
         return (!at.g.mine && at.seat == Self.ownerSeat) ? at.g.owner : at.g.members.first { m in m.seat == at.seat }?.pipe
+    }
+    /// THE FACE A SPEAKER WEARS IN A GROUP'S FEED, ONE ANSWER (11.11.2026, the author's words 19316 p.1 and 19387): the face the
+    /// person gave the group on their own letter (MTGroupState.faces), else the one this phone holds by their pipe. It read the
+    /// pipe alone, and a member's phone holds a pipe to the owner alone: on T2 and T3 every other speaker wore an initial.
+    func speakerFace(_ ref: String, store: ChatStore) -> String? {
+        guard let at = seatOf(ref) else { return nil }
+        if let f = at.g.faces?[at.seat], let file = MTNameBook.avatarFile(for: ref, local: f) { return file }
+        return speakerPipe(ref).flatMap { p in store.avatarFor(ref: p) }
+    }
+    /// MY FACE RIDES MY OWN LETTER WHERE THE GROUP'S PEOPLE MAY LACK IT: a new face, a person counted since, a day since -- else
+    /// the letter goes bare and the face costs nothing.
+    @MainActor
+    private func dress(_ w: inout MTGroupWord, in g: MTGroupState) {
+        guard g.kind == .group, let img = E2E.myAvatarData() else { return }
+        let tag = MontanaDeliveryEngine.Announced.faceTag(img)
+        let now = Date().timeIntervalSince1970
+        if let given = g.faceGiven, given.tag == tag, given.count == g.count, now - given.at < Self.faceAgain { return }
+        guard let small = Self.thumb(img, side: Self.speakerFaceSide) else { return }
+        w.sf = small
+        groups[g.id]?.faceGiven = MTFaceGiven(tag: tag, count: g.count, at: now)
+        saveGroups()
+    }
+    /// A speaker's face taken from their own letter, by seat: a repeat lays no second file, a new face takes the old one's place.
+    private static func takeFace(_ b64: String?, seat: String, into g: inout MTGroupState) -> Bool {
+        guard let b64, g.kind == .group else { return false }
+        let mark = Self.tag(ofFace: b64)
+        guard g.faceTags?[seat] != mark, let file = Self.face(b64) else { return false }
+        if let old = g.faces?[seat] { try? FileManager.default.removeItem(at: avatarsDirURL().appendingPathComponent(old)) }
+        var faces = g.faces ?? [:]
+        faces[seat] = file
+        g.faces = faces
+        var tags = g.faceTags ?? [:]
+        tags[seat] = mark
+        g.faceTags = tags
+        return true
     }
     private func seatOf(_ ref: String) -> (g: MTGroupState, seat: String)? {
         let parts = ref.dropFirst(Self.speakerHead.count).split(separator: "/", maxSplits: 1).map(String.init)
@@ -693,97 +733,13 @@ final class MTGroup {
         MontanaTrace.mark("group_mirrored", "words=\(words) letters=\(letters) groups=\(groups.count)")
     }
 
-    // -- an organisation's chat (Montana Messenger) ------------------------------------------------
-
-    /// AN ORGANISATION'S CHAT STANDS ON EVERY PHONE THAT HEARS IT (Sh.2, the author's word 06.10.2026 07:1x UTC: «a staff of a
-    /// hundred»): no invitation and no carrier. Its people are the core's, each by the pipe this phone holds with them; who speaks
-    /// in a channel and who takes another's letter away is the core's rule (chat.rs). A group of the same id held the old way
-    /// becomes this. The row is laid when the chat first stands here or is renamed -- never again, so a row the person deleted
-    /// stays deleted until the chat's next letter. Only Montana Messenger calls it; in the Protocol no group has an org.
-    @MainActor @discardableResult
-    func stand(org: String, id: String, kind: MTGroupKind, title: String, me: String, people: [MTGroupMember], count: Int,
-               voices: [String], bosses: [String], everyone: [String], names: [String: String], store: ChatStore) -> Chat? {
-        guard ready(), Self.isMark(id), Self.isSeat(me) else { return nil }
-        let name = Self.clean(title, Self.titleLimit)
-        guard !name.isEmpty else { return nil }
-        let held = groups[id]
-        var g = held ?? MTGroupState(id: id, kind: kind, title: name, owner: "", me: me, members: [], count: count, names: [:],
-                                     at: Date().timeIntervalSince1970)
-        g.kind = kind
-        g.title = name
-        g.owner = ""
-        g.me = me
-        g.members = Array(people.filter { $0.seat != me }.prefix(Self.peopleLimit))
-        g.count = min(count, Self.peopleLimit + 1)
-        g.left = nil
-        g.removed = nil
-        g.org = org
-        g.voices = kind == .channel ? voices : nil
-        g.bosses = bosses
-        g.everyone = Array(everyone.prefix(Self.peopleLimit + 1))
-        g.names = names   // the organisation's names: a letter's self-given name does not rename a colleague (heard)
-        guard g != held else { return nil }
-        groups[id] = g
-        saveGroups()
-        MontanaTrace.mark("group_roster", "people=\(g.members.count)/\(count) kind=\(kind.rawValue)")
-        if let held, held.mesh {   // a pipe opened since: that listener is caught up with this phone's own letters
-            let fresh = g.members.filter { m in !held.members.contains { $0.pipe == m.pipe } }
-            if !fresh.isEmpty { catchUp(g, to: fresh, store: store) }
-        }
-        guard held?.mesh != true || held?.title != name else { return nil }
-        return stand(g, face: nil, store: store)
-    }
-    /// The most of one's own letters a listener reached later is caught up with, per chat (Sh.2.1).
-    static let catchUpLimit = 200
-    /// A LISTENER REACHED LATER HEARS WHAT THIS PHONE SAID (Sh.2.1: the newcomer of a department, a phone whose pipe opened after
-    /// the letter): this phone's own letters of the copies' term go to them again under the letters' own names, silent, as the
-    /// past (hs); nobody carries another's words, so every speaker catches the newcomer up on their own. A letter the listener
-    /// holds already is a repeat there and stands as it stood.
-    @MainActor
-    private func catchUp(_ g: MTGroupState, to people: [MTGroupMember], store: ChatStore) {
-        let edge = Date().timeIntervalSince1970 - Self.copyLife
-        let mine = (store.messages[Self.key(of: g.id)] ?? []).filter {
-            $0.isFromMe && $0.mid.hasPrefix("mid:") && edge < $0.createdAt && Self.carries($0.text)
-        }.suffix(Self.catchUpLimit)
-        guard !mine.isEmpty else { return }
-        let me = Self.clean(E2E.myDisplayName(), Self.nameLimit)
-        for m in mine {
-            var w = MTGroupWord(t: "say", g: g.id, k: g.kind.rawValue, ti: g.title, n: me.isEmpty ? nil : me,
-                                id: String(m.mid.dropFirst(4)), s: g.me, tx: m.text,
-                                qt: (m.replyText ?? "").isEmpty ? nil : m.replyText)
-            w.hs = 1
-            for p in people { _ = carry(w, to: p.pipe, letter: "", own: false) }
-        }
-        MontanaTrace.mark("group_catchup", "letters=\(mine.count) people=\(people.count)")
-    }
-    /// The organisation's chats this phone holds, by their ids.
-    func meshGroups(org: String) -> [String] {
-        guard ready() else { return [] }
-        return groups.values.filter { $0.org == org }.map(\.id)
-    }
-    /// The chat no longer names this person (removed, another department): its rows stay readable, nothing is written in it.
-    @MainActor
-    func silence(_ id: String, store: ChatStore) {
-        guard ready(), var g = groups[id], g.mesh, g.left != true else { return }
-        g.left = true
-        groups[id] = g
-        saveGroups()
-        store.objectWillChange.send()   // the open chat trades its field for the note at once
-        MTGroupRoom.shared.groupGone(g.id)   // its room goes with the chat
-        MontanaTrace.mark("group_roster", "silenced")
-    }
-    /// The seat of one of an organisation's people, proven by the pipe the word came by -- never by a seat the word names.
-    private func meshSeat(_ g: MTGroupState, from root: String) -> String? {
-        g.members.first { MTSamePair.root($0.pipe) == root }?.seat
-    }
-
     // -- the wire ------------------------------------------------------------------------------
 
     /// One copy to one receiver, under a name of its own. A copy has no row of its own (headless): the row it carries stands in
-    /// the group's feed under the letter's name, and the group answers for it (rides) where the mirror law asks. A letter and an
-    /// invitation ring (the receiver's phone shows the group's face); an answer, a leaving and a taking out are silent words.
+    /// the group's feed under the letter's name, and the group answers for it (rides) where the mirror law asks. A letter and a
+    /// room's invitation to the seat it is carried to ring; every system word is silent -- the verdict is MTRing.groupWord's alone.
     @MainActor
-    private func carry(_ w: MTGroupWord, to pipe: String, letter: String, own: Bool, ring: Bool = false) -> String? {
+    private func carry(_ w: MTGroupWord, to pipe: String, letter: String, own: Bool) -> String? {
         var w = w
         w.au = Self.ownTag(w, pipe: pipe)   // signed by the person: the seed's other devices know the word as their own
         guard MontanaConv.holds(pipe), !ChatStore.refusesCold(pipe),
@@ -796,17 +752,35 @@ final class MTGroup {
         // A DELETION WAKES THE EXTENSION OF A BUILD THAT PROVED IT TAKES IT QUIETLY (E2E.deletionQuiet, 16.10.2026): the deleted letter's
         // notice leaves that screen at once; the copy waits for its receipt as every group word does.
         let wakes = w.t == "sig" && (w.tx ?? "").hasPrefix(deleteMark) && E2E.deletionQuiet(pipe)
+        // A ROOM'S INVITATION RINGS THE SEAT IT NAMES (MTGroupRoom): the owner's phone carries to a member's seat, a member's to the owner's.
+        let invites = w.t == "room" && w.rg == 1 && (w.ts ?? []).contains(seat(of: pipe, in: w.g) ?? "")
         MontanaDeliveryEngine.shared.enqueue(to: pipe, chat: pipe, mid: name, text: text,
-                                             silent: (!ring && w.t != "say" && w.t != "inv" && !wakes) || w.sl == 1 || w.hs == 1,   // a silent post, and the past (G.4), ring nothing
+                                             silent: !(MTRing.groupWord(w.t, invites: invites, past: w.sl == 1 || w.hs == 1) || wakes),   // a silent post, the past (G.4), a renewal and every system word ring nothing
                                              headless: true)   // a room's invitation rings where it is carried (07.10)
         MontanaTrace.mark("group_tx", mid: name, "t=\(w.t) to=\(String(pipe.prefix(10)))")
         return name
     }
 
+    /// WHOM THIS PHONE CARRIES A GROUP'S WORD TO, ONE ANSWER: the owner every member but `seat`, a member the owner alone.
+    private func carried(_ g: MTGroupState, except seat: String? = nil) -> [String] {
+        g.mine ? g.members.filter { $0.seat != seat }.map(\.pipe) : [g.owner]
+    }
+    /// WHOSE SEAT A PIPE CARRIES TO, ONE ANSWER: on the owner's phone the member that pipe holds; on a member's phone the owner's.
+    private func seat(of pipe: String, in gid: String) -> String? {
+        guard let g = groups[gid] else { return nil }
+        return g.mine ? g.members.first { $0.pipe == pipe }?.seat : Self.ownerSeat
+    }
+    /// WHOSE WORD THIS IS, ONE ANSWER, proven by the pipe it came by: on the owner's phone the member that pipe holds; on a
+    /// member's phone the seat the owner names, never this phone's own.
+    private func speakerSeat(_ g: MTGroupState, _ w: MTGroupWord, from root: String) -> String? {
+        if g.mine { return g.members.first { MTSamePair.root($0.pipe) == root }?.seat }
+        guard MTSamePair.root(g.owner) == root, let s = w.s, Self.isSeat(s), s != g.me else { return nil }
+        return s
+    }
     /// A letter to everyone this phone carries to in the group: the owner to every member but the speaker, a member to the owner.
     @MainActor @discardableResult
     private func spread(_ w: MTGroupWord, in g: MTGroupState, except seat: String?, own: Bool) -> Int {
-        let targets = g.mine || g.mesh ? g.members.filter { $0.seat != seat }.map(\.pipe) : [g.owner]
+        let targets = carried(g, except: seat)
         let names = targets.compactMap { carry(w, to: $0, letter: w.id ?? "", own: own) }
         for n in names { copies[n]?.of = names.count }
         if !names.isEmpty { saveCopies() }
@@ -830,11 +804,11 @@ final class MTGroup {
         var w = MTGroupWord(t: "say", g: g.id, k: g.kind.rawValue, ti: g.title, n: me.isEmpty ? nil : me, id: minted.mid, s: g.me, tx: text,
                             qt: (replyText ?? "").isEmpty ? nil : replyText, qm: (replyWireMid ?? "").isEmpty ? nil : replyWireMid)
         w.sl = g.kind == .channel && g.silent == true ? 1 : nil   // the bell in the owner's field (Silent Broadcast)
+        dress(&w, in: g)
         if spread(w, in: g, except: nil, own: true) == 0, let i = store.messages[key]?.firstIndex(where: { $0.mid == row.mid }) {
             // a group of its owner alone holds the letter here, as the reference's does (A.2); else nobody to carry to: honest red
             if Self.alone(g) { store.advance(key, i, to: .delivered) } else { store.putOut(key, i, because: .nobodyToCarry) }
         }
-        if g.mesh { MTApps.messenger?.said(group: g.id, mid: minted.mid, text: text) }   // its link in chain C
         return row
     }
 
@@ -850,8 +824,8 @@ final class MTGroup {
         let me = Self.clean(E2E.myDisplayName(), Self.nameLimit)
         var w = MTGroupWord(t: "say", g: g.id, k: g.kind.rawValue, ti: g.title, n: me.isEmpty ? nil : me, id: mid, s: g.me, tx: letter)
         w.sl = g.kind == .channel && g.silent == true ? 1 : nil   // the bell in the owner's field (Silent Broadcast)
+        dress(&w, in: g)
         let n = spread(w, in: g, except: nil, own: true)
-        if g.mesh { MTApps.messenger?.said(group: g.id, mid: mid, text: letter) }   // its link in chain C
         if n == 0, Self.alone(g), let i = store.messages[key]?.firstIndex(where: { r in r.isFromMe && r.mid == "mid:" + mid }) {
             store.advance(key, i, to: .delivered)   // a group of its owner alone holds the letter here (A.2)
             return true
@@ -955,9 +929,9 @@ final class MTGroup {
         w.ts = Array(seats.prefix(32))
         w.rg = ring ? 1 : 0   // said either way: a word naming no ring is read as an invitation of build 52-54
         if g.mine {
-            for m in g.members where seats.contains(m.seat) { _ = carry(w, to: m.pipe, letter: "", own: false, ring: ring) }
+            for m in g.members where seats.contains(m.seat) { _ = carry(w, to: m.pipe, letter: "", own: false) }
         } else {
-            _ = carry(w, to: g.owner, letter: "", own: false, ring: ring && seats.contains(Self.ownerSeat))
+            _ = carry(w, to: g.owner, letter: "", own: false)
         }
     }
 
@@ -1141,15 +1115,14 @@ final class MTGroup {
     }
     /// Whether a seat is an administrator the owner of a carried group named.
     func isAdmin(_ key: String, seat: String) -> Bool { state(key)?.admins?.contains(seat) == true }
-    /// Whether this phone moderates the group: its owner, an administrator the owner named, or -- in an organisation's chat -- an
-    /// administrator of the core. A moderator takes another's letter away for everyone.
+    /// Whether this phone moderates the group: its owner or an administrator the owner named. A moderator takes another's letter
+    /// away for everyone.
     func moderates(_ key: String) -> Bool {
         guard let g = state(key), g.left != true else { return false }   // a channel's administrators delete posts too (the reference's)
         return Self.adminCan(g, seat: g.me, .delete)   // a group's and a channel's by the right (G.6; a channel's «Delete Messages of Others»)
     }
     /// WHETHER A SEAT HOLDS AN ADMINISTRATOR'S RIGHT (G.6): the owner every one; an administrator the ones the owner did not take.
     static func adminCan(_ g: MTGroupState, seat: String, _ r: MTAdminRight) -> Bool {
-        if g.mesh { return g.bosses?.contains(seat) == true && (r == .delete || r == .pin) }   // chat.rs Delete: the core's administrators
         if seat == ownerSeat { return true }
         guard g.admins?.contains(seat) == true else { return false }
         return !(g.adminTaken?[seat] ?? []).contains(r.rawValue)
@@ -1231,7 +1204,7 @@ final class MTGroup {
     func typing(in key: String) {
         guard MontanaPresencePrivacy.sharing, let g = state(key), g.canWrite, g.kind == .group else { return }
         let me = Self.clean(E2E.myDisplayName(), Self.nameLimit)
-        throwTyping(MTGroupWord(t: "ty", g: g.id, n: me.isEmpty ? nil : me, s: g.me), to: g.mine || g.mesh ? g.members.map(\.pipe) : [g.owner], own: true)
+        throwTyping(MTGroupWord(t: "ty", g: g.id, n: me.isEmpty ? nil : me, s: g.me), to: carried(g), own: true)
     }
     private func throwTyping(_ w: MTGroupWord, to pipes: [String], own: Bool) {
         guard let d = try? JSONEncoder().encode(w), let js = String(data: d, encoding: .utf8) else { return }
@@ -1259,15 +1232,12 @@ final class MTGroup {
                 on.s = seat
                 throwTyping(on, to: g.members.filter { x in x.seat != seat }.map(\.pipe), own: false)
             }
-        } else if g.mesh {
-            guard let s = meshSeat(g, from: from), !E2E.shared.silenced(pipe) else { return .instant }
-            seat = s
         } else {
             guard MTSamePair.root(g.owner) == from, let s = w.s, Self.isSeat(s), s != g.me else { return .instant }
             seat = s
         }
         let name = Self.clean(w.n ?? "", Self.nameLimit)
-        if !g.mesh, !name.isEmpty, g.names[seat] != name {   // a person's name reaches the group from that person, as their letters bring it
+        if !name.isEmpty, g.names[seat] != name {   // a person's name reaches the group from that person, as their letters bring it
             g.names[seat] = name
             groups[w.g] = g
             saveGroups()
@@ -1555,7 +1525,6 @@ final class MTGroup {
     /// WHO PINS FOR EVERYONE: the owner, the administrators it named, and every member while the group lets its members pin -- the
     /// reference's own default for a new group. The one gate of a pin, asked where it is sent and wherever it lands.
     static func pins(_ g: MTGroupState, seat: String) -> Bool {
-        if g.mesh { return g.bosses?.contains(seat) == true || g.voices?.contains(seat) == true }   // Sh.3
         guard g.kind == .group else { return false }
         return adminCan(g, seat: seat, .pin) || !(g.barred ?? []).contains(MTGroupRight.pin.rawValue)
     }
@@ -1732,7 +1701,7 @@ final class MTGroup {
     func mentionable(_ key: String) -> [MTRoomPerson] {
         guard let g = state(key), g.kind == .group else { return [] }
         var out = shownSeats(key)
-        if !g.mine, !g.mesh {
+        if !g.mine {
             for (seat, n) in g.names where seat != Self.ownerSeat && !out.contains(where: { $0.seat == seat }) { out.append((seat, n)) }
         }
         return out.filter { $0.seat != g.me && $0.name != Self.memberWord }.map { MTRoomPerson(seat: $0.seat, name: $0.name) }
@@ -1757,8 +1726,7 @@ final class MTGroup {
 
     // -- the group's events: rows in the middle of its feed (stage R) ---------------------------------
 
-    /// AN EVENT OF THE GROUP STANDS IN ITS FEED (MTGroupEvent): laid on this phone, in the middle of the feed as the day is. An
-    /// organisation's chat takes its people from the core and lays only its calls.
+    /// AN EVENT OF THE GROUP STANDS IN ITS FEED (MTGroupEvent): laid on this phone, in the middle of the feed as the day is.
     @MainActor
     func lay(_ e: MTGroupEvent, store: ChatStore? = nil) {
         guard let st = store ?? ChatStore.live, let g = groups[e.g], g.kind == .group, let row = e.row else { return }
@@ -2018,7 +1986,7 @@ final class MTGroup {
     /// and a word of the group still on its way is answered as one whose road is over.
     @MainActor
     func leave(_ key: String, store: ChatStore) {
-        guard var g = state(key), !g.mine, !g.mesh, g.left != true else { return }
+        guard var g = state(key), !g.mine, g.left != true else { return }
         g.left = true
         groups[g.id] = g
         saveGroups()
@@ -2030,6 +1998,9 @@ final class MTGroup {
     /// The invitation's word again to every member: the title, the words about the group, the count, and a new face when one is
     /// given. Each member keeps their seat.
     /// `only` -- the seats the face goes to (the people just added); everyone else learns the count without it.
+    /// A RENEWAL RINGS NOBODY (11.11.2026, OZ 1 p.6, the author's word 19316 «no system errors at all» -- T2 and T3 rang an empty
+    /// banner when T1 set the group's face), AND NEITHER DOES AN INVITATION (19455: a system action rings nothing; T1 named Alice
+    /// an administrator and every member rang): the word is silent by MTRing.groupWord, the group stands in the list quietly.
     @MainActor
     private func tellAll(_ g: MTGroupState, face: String?, only: Set<String>? = nil, by actor: String = MTGroup.ownerSeat) {
         let me = Self.clean(E2E.myDisplayName(), Self.nameLimit)
@@ -2285,7 +2256,7 @@ final class MTGroup {
         g.reacts = w.rx == 0 ? false : nil
         g.talks = w.dc == 1 ? true : nil
         g.reactList = Self.reactionList(w.rl)
-        let tag = w.fc.map { f in String(f.count) + "-" + String(f.suffix(16)) }
+        let tag = w.fc.map(Self.tag(ofFace:))
         let newFace = tag != nil && tag != g.faceTag
         if newFace { g.faceTag = tag }
         groups[w.g] = g
@@ -2352,7 +2323,7 @@ final class MTGroup {
             g.reacts = w.rx == 0 ? false : nil
             g.talks = w.dc == 1 ? true : nil
             g.reactList = Self.reactionList(w.rl)
-            let tag = w.fc.map { String($0.count) + "-" + String($0.suffix(16)) }
+            let tag = w.fc.map(Self.tag(ofFace:))
             let newFace = tag != nil && tag != g.faceTag
             if newFace { g.faceTag = tag }
             groups[w.g] = g
@@ -2376,7 +2347,7 @@ final class MTGroup {
         g.reacts = w.rx == 0 ? false : nil
         g.talks = w.dc == 1 ? true : nil
         g.reactList = Self.reactionList(w.rl)
-        g.faceTag = w.fc.map { String($0.count) + "-" + String($0.suffix(16)) }
+        g.faceTag = w.fc.map(Self.tag(ofFace:))
         groups[w.g] = g
         saveGroups()
         stand(g, face: Self.face(w.fc), store: store)
@@ -2397,33 +2368,21 @@ final class MTGroup {
         let post = MTApps.wall?.isChannelPost(words) == true
         if post, g.kind != .channel || g.mine { return .refused }   // a wall's post rides a channel alone, from its owner
         #endif
-        let from = MTSamePair.root(pipe)
-        let seat: String
-        if g.mine {
-            guard let m = g.members.first(where: { MTSamePair.root($0.pipe) == from }) else { return .refused }
-            // A CHANNEL CARRIES ITS ADMINISTRATORS' POSTS (the reference's «Post Messages» right): the owner named them; anyone else
-            // only reads.
-            guard g.kind == .group || (g.admins?.contains(m.seat) == true
-                                          && !(g.adminTaken?[m.seat] ?? []).contains(MTChannelRight.post.rawValue)) else {   // «Post Messages»
-                MontanaTrace.mark("group_refused", "a member's letter in a channel is not carried")
-                return .refused
-            }
-            seat = m.seat
-        } else if g.mesh {
-            // AN ORGANISATION'S CHAT HAS NO CARRIER (Sh.2): a letter is taken from the pipe of one of its people alone, by the seat
-            // that pipe holds here; in its channel from its voices alone -- its author and the administrators (chat.rs Letter).
-            guard let s = meshSeat(g, from: from), g.kind == .group || g.voices?.contains(s) == true else {
-                MontanaTrace.mark("group_refused", "a carried chat's letter from no voice of it")
-                return .refused
-            }
-            seat = s
-        } else {
-            guard MTSamePair.root(g.owner) == from, let s = w.s, Self.isSeat(s), s != g.me else { return .refused }
-            seat = s
+        guard let seat = speakerSeat(g, w, from: MTSamePair.root(pipe)) else { return .refused }
+        // A CHANNEL CARRIES ITS ADMINISTRATORS' POSTS (the reference's «Post Messages» right): the owner named them; anyone else
+        // only reads.
+        guard !g.mine || g.kind == .group || (g.admins?.contains(seat) == true
+                                              && !(g.adminTaken?[seat] ?? []).contains(MTChannelRight.post.rawValue)) else {   // «Post Messages»
+            MontanaTrace.mark("group_refused", "a member's letter in a channel is not carried")
+            return .refused
         }
         let name = Self.clean(w.n ?? "", Self.nameLimit)
-        if !g.mesh, !name.isEmpty, g.names[seat] != name {   // a colleague keeps the organisation's name
+        var told = Self.takeFace(w.sf, seat: seat, into: &g)   // the speaker's own face, as their name (MTGroupWord.sf)
+        if !name.isEmpty, g.names[seat] != name {   // a person's name reaches the group from that person
             g.names[seat] = name
+            told = true
+        }
+        if told {
             groups[w.g] = g
             saveGroups()
         }
@@ -2461,8 +2420,9 @@ final class MTGroup {
                                        mentioned: g.kind == .group && Self.mentionsMe(words))   // a mention rings through the mute
         }
         if landed, g.mine {
-            let on = MTGroupWord(t: "say", g: g.id, k: g.kind.rawValue, ti: g.title, n: name.isEmpty ? nil : name, id: id, s: seat,
+            var on = MTGroupWord(t: "say", g: g.id, k: g.kind.rawValue, ti: g.title, n: name.isEmpty ? nil : name, id: id, s: seat,
                                  tx: words, qt: quote, qm: w.qm)
+            on.sf = w.sf   // the speaker's own face goes on with their letter, unchanged
             spread(on, in: g, except: seat, own: false)
         }
         return .held
@@ -2478,17 +2438,7 @@ final class MTGroup {
         guard let id = w.id, Self.isLetterName(id), let lp = w.tx, lp.utf8.count <= Self.cardLimit,
               let card = MTLinkPreview.parse(lp) else { return .refused }
         let from = MTSamePair.root(pipe)
-        let seat: String
-        if g.mine {
-            guard let m = g.members.first(where: { MTSamePair.root($0.pipe) == from }) else { return .refused }
-            seat = m.seat
-        } else if g.mesh {
-            guard let s = meshSeat(g, from: from) else { return .refused }
-            seat = s
-        } else {
-            guard MTSamePair.root(g.owner) == from, let s = w.s, Self.isSeat(s), s != g.me else { return .refused }
-            seat = s
-        }
+        guard let seat = speakerSeat(g, w, from: from) else { return .refused }
         let key = Self.key(of: g.id)
         let sid = "mid:" + id
         guard let row = store.messages[key]?.first(where: { r in r.mid == sid }) else {
@@ -2518,17 +2468,7 @@ final class MTGroup {
               var o = Self.json(body), (o["t"] as? String) == "id",
               let named = o["m"] as? String, MontanaStickerBook.bare(named) == id else { return .refused }
         let from = MTSamePair.root(pipe)
-        let seat: String
-        if g.mine {
-            guard let m = g.members.first(where: { MTSamePair.root($0.pipe) == from }) else { return .refused }
-            seat = m.seat
-        } else if g.mesh {
-            guard let s = meshSeat(g, from: from) else { return .refused }
-            seat = s
-        } else {
-            guard MTSamePair.root(g.owner) == from, let s = w.s, Self.isSeat(s), s != g.me else { return .refused }
-            seat = s
-        }
+        guard let seat = speakerSeat(g, w, from: from) else { return .refused }
         let key = Self.key(of: g.id)
         if let row = store.messages[key]?.first(where: { r in r.mid == "mid:" + id }), row.isFromMe || Self.author(row, in: g) != seat {
             MontanaTrace.mark("group_refused", "a passport past its sticker's speaker")
@@ -2550,17 +2490,7 @@ final class MTGroup {
         guard g.left != true else { return .refused }
         guard let id = w.id, Self.isLetterName(id), let words = w.tx, Self.answers(words) else { return .refused }
         let from = MTSamePair.root(pipe)
-        let seat: String
-        if g.mine {
-            guard let m = g.members.first(where: { MTSamePair.root($0.pipe) == from }) else { return .refused }
-            seat = m.seat
-        } else if g.mesh {
-            guard let s = meshSeat(g, from: from) else { return .refused }
-            seat = s
-        } else {
-            guard MTSamePair.root(g.owner) == from, let s = w.s, Self.isSeat(s), s != g.me else { return .refused }
-            seat = s
-        }
+        guard let seat = speakerSeat(g, w, from: from) else { return .refused }
         guard !answersHeard.contains(id) else { return .held }
         // A CHANNEL WHOSE OWNER TURNED REACTIONS OFF TAKES NONE (the reference's «Allow Reactions»): a subscriber's reaction ends here
         if words.hasPrefix(reactionMark), g.kind == .channel, g.reacts == false, seat != Self.ownerSeat, g.admins?.contains(seat) != true {
@@ -2676,7 +2606,7 @@ final class MTGroup {
                 let ring = w.rg == 1 || w.rg == nil
                 on.ts = ts
                 on.rg = ring ? 1 : 0
-                for m in g.members where ts.contains(m.seat) && m.seat != seat { _ = carry(on, to: m.pipe, letter: "", own: false, ring: ring) }
+                for m in g.members where ts.contains(m.seat) && m.seat != seat { _ = carry(on, to: m.pipe, letter: "", own: false) }
             } else {
                 spread(on, in: g, except: seat, own: false)
             }
@@ -2809,9 +2739,9 @@ final class MTGroup {
     private static func mintId() -> String { UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased() }
     private static func mintSeat() -> String { String(mintId().prefix(8)) }
     /// The face an invitation carries: small, so the word stays a letter and not a file.
-    private static func thumb(_ face: Data) -> String? {
+    private static func thumb(_ face: Data, side: CGFloat = faceSide) -> String? {
         guard !face.isEmpty, let ui = UIImage(data: face),
-              let d = ui.avatarResized(faceSide).jpegData(compressionQuality: 0.7) else { return nil }
+              let d = ui.avatarResized(side).jpegData(compressionQuality: 0.7) else { return nil }
         let b64 = d.base64EncodedString()
         return b64.count <= faceLimit ? b64 : nil
     }
@@ -2819,6 +2749,8 @@ final class MTGroup {
         guard let b64, b64.count <= faceLimit, let d = Data(base64Encoded: b64), UIImage(data: d) != nil else { return nil }
         return saveChatAvatar(d)
     }
+    /// The tag a face on the wire is known by -- its length and its tail: a repeat of the same word lays no second file.
+    static func tag(ofFace b64: String) -> String { String(b64.count) + "-" + String(b64.suffix(16)) }
 }
 
 

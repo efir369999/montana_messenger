@@ -132,7 +132,6 @@ struct ProfileView: View {
     private func leave() { mtLeavePage(montanaClose, dismiss) }
 
     @State private var pickerItem: PhotosPickerItem?
-    @State private var cropSource: MTCropSource?   // the picked photo awaiting its circle
     @State private var showAvatarGallery = false
     @State private var pageGround = false   // the page's ground being chosen (MTWallpaperPicker, the page's task)
     @State private var showPhotoPicker = false
@@ -302,23 +301,11 @@ struct ProfileView: View {
             .onChange(of: tName) { _, _ in saveFieldsSoon() }
             .onChange(of: tBio) { _, _ in saveFieldsSoon() }
             .onChange(of: tLink) { _, _ in saveFieldsSoon() }
-            .onChange(of: pickerItem) { _, item in
-                Task {
-                    if let data = try? await item?.loadTransferable(type: Data.self),
-                       let img = UIImage(data: data) {
-                        cropSource = MTCropSource(image: img)   // the circle decides what the face keeps
-                    }
+            .mtFaceCrop($pickerItem) { jpeg in   // the one door of a face (MTFaceCropDoor)
+                if let nm = saveToDocs(jpeg, ext: "jpg") {
+                    var list = loadAvatarGallery(); list.insert(nm, at: 0); saveAvatarGallery(list)
                 }
-            }
-            .fullScreenCover(item: $cropSource) { src in
-                MTAvatarCropView(image: src.image) { jpeg in
-                    cropSource = nil
-                    guard let jpeg else { return }
-                    if let nm = saveToDocs(jpeg, ext: "jpg") {
-                        var list = loadAvatarGallery(); list.insert(nm, at: 0); saveAvatarGallery(list)
-                    }
-                    MontanaSelfFace.set(jpeg)
-                }
+                MontanaSelfFace.set(jpeg)
             }
             .fullScreenCover(isPresented: $showAvatarGallery) {
                 AvatarGalleryView(
@@ -835,6 +822,37 @@ struct StoryViewer: View {
 struct MTCropSource: Identifiable {
     let id = UUID()
     let image: UIImage
+}
+
+/// THE ONE DOOR OF A FACE (11.11.2026, OZ 1 p.5, the author's word 19316 p.2: «the group's avatar settings by SSOT, as the
+/// person's»): every face set on this phone -- the person's own, a correspondent's, a group's, a channel's -- goes from the
+/// picker through the one crop (MTAvatarCropView). A screen hands over its picked item and takes the kept square; no screen
+/// loads, resizes or crops a face of its own (before: the group's page and its birth resized the photo uncut).
+struct MTFaceCropDoor: ViewModifier {
+    @Binding var item: PhotosPickerItem?
+    let kept: (Data) -> Void
+    @State private var source: MTCropSource?
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: item) { _, picked in
+                Task {
+                    if let data = try? await picked?.loadTransferable(type: Data.self), let img = UIImage(data: data) {
+                        source = MTCropSource(image: img)   // the circle decides what the face keeps
+                    }
+                }
+            }
+            .fullScreenCover(item: $source) { src in
+                MTAvatarCropView(image: src.image) { jpeg in
+                    source = nil
+                    if let jpeg { kept(jpeg) }
+                }
+            }
+    }
+}
+extension View {
+    func mtFaceCrop(_ item: Binding<PhotosPickerItem?>, kept: @escaping (Data) -> Void) -> some View {
+        modifier(MTFaceCropDoor(item: item, kept: kept))
+    }
 }
 
 // The avatar crop: the picked photo under the HEXAGON — pinch and pan set what the

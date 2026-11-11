@@ -1475,30 +1475,39 @@ extension MontanaArchive {
     /// Every conversation the sealed archive holds, opened under the seed: the head gives the
     /// address, the letters give the rows. A folder without a head (written by an older build)
     /// comes back as a transcript under its folder name — readable, not answerable.
-    static func restoreAll() -> [RestoredChat] { restore(folders: conversations()) }
+    static func restoreAll(held: Set<String>) -> [RestoredChat] { restore(folders: conversations(), held: held) }
 
-    /// folder label → address, for every correspondence the pipe book answers for.
-    static func refBook() -> [String: String] {
-        var m: [String: String] = [:]
-        for conv in MTPipeBook.all() { if let f = folderLabel(for: conv) { m[f] = conv } }
+    /// THE CONVERSATION A FOLDER IS, ONE OWNER (constitution article 15; 11.11.2026, OZ 1 p.10, the author's words 19418, 19434):
+    /// every block names its conversation by the hash of its reference (archive(): conv), and that name is matched against every
+    /// conversation this phone holds -- its pipes, its feed, its groups and channels, its own Saved Messages. A book of the pipes'
+    /// folder labels and an exception for Saved Messages stood here: a group's folder matched neither and came back as a second
+    /// chat, «Recovered history», beside the group itself. A transcript is only a folder whose conversation nobody here holds.
+    static func convBook(_ held: Set<String>) -> [Data: String] {
+        var all = Set(MTPipeBook.all())
+        all.formUnion(held)
+        all.insert(savedMessagesKey)
+        var m: [Data: String] = [:]
+        for c in all where !c.isEmpty { m[MontanaQueueKeys.sha256(Data(c.utf8))] = c }
         return m
     }
 
-    static func restore(folders: [String]) -> [RestoredChat] {
+    static func restore(folders: [String], held: Set<String>) -> [RestoredChat] {
         guard let (h, _, a) = keys() else { return [] }
-        let book = refBook()
+        let book = convBook(held)
         // THE ROAD BACK FLOORS BY THE LATER DAY (decision 188, E): the device's day or the trusted mark M, whichever is later
         let backDay = MTPipeBook.recoveryDay()
         var out: [RestoredChat] = []
         var headsS = 0, headsA = 0, headsN = 0, faces = 0, closedN = 0, reopenedN = 0
         for folder in folders {
             var ref: String? = nil
+            var named: String? = nil   // the conversation the blocks name (convBook)
             var name: String? = nil
             var items: [RestoredItem] = []
             var headSecret: MTPipeKey? = nil
             var closedThere = false, closedOnce = false
             for sealed in readLog(folder: folder) {
                 for it in openBlock(sealed, hk: h, acct: a) {
+                    if named == nil { named = book[it.conv] }
                     if it.dir == headDir {
                         guard let s = String(data: it.content, encoding: .utf8) else { continue }
                         // COMPAT-LOCAL: the head forms s:/a:/n: live only in the sealed archive on the
@@ -1535,14 +1544,8 @@ extension MontanaArchive {
                 if closedThere { ref = sec.reference }
                 else if let r = MTPipeBook.establish(pipe: sec, seal: false) { ref = r }
             }
-            // No head, or none this device can use: the folder name is the keyed hash of the
-            // address, so every correspondence the device still answers for names its own folder.
-            // This is what a healthy device relies on — a head is only for a device that lost its book.
-            if ref == nil, let known = book[folder] { ref = known }
-            // The person's own «Saved Messages» carries no head — there is no secret to hold for
-            // oneself — but its label derives from the seed alone, so a restored device names it
-            // itself instead of filing its own notes as a transcript of a stranger (T2, 07.09).
-            if ref == nil, folder == folderLabel(for: savedMessagesKey) { ref = savedMessagesKey }
+            // No head, or none this device can use: the blocks' own name of their conversation (convBook) is the answer.
+            if ref == nil { ref = named }
             guard !items.isEmpty || ref != nil else { continue }
             items.sort { $0.sentAt < $1.sentAt }
             if let ref = ref { ioQueue.async { rememberFolder(convRef: ref, folder: folder) } }   // the map is the queue's to write

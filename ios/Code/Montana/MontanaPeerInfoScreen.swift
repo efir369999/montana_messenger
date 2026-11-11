@@ -148,15 +148,8 @@ struct MontanaPeerInfoScreen: View {
         .onChange(of: store.peerNames[chat.convId ?? ""]) { _, _ in
             if !state.editing { state.refreshConversation(chat: chat, store: store) }
         }
-        .onChange(of: state.pickerItem) { _, item in
-            Task {
-                if let bytes = try? await item?.loadTransferable(type: Data.self),
-                   let ui = UIImage(data: bytes),
-                   let jpeg = ui.avatarResized(400).jpegData(compressionQuality: 0.85),
-                   let file = saveChatAvatar(jpeg) {
-                    state.draftPhoto = file
-                }
-            }
+        .mtFaceCrop($state.pickerItem) { jpeg in   // the one door of a face (MTFaceCropDoor)
+            if let file = saveChatAvatar(jpeg) { state.draftPhoto = file }
         }
         .sheet(isPresented: $showCardPicker) {
             ContactPicker { card in state.attachToExistingCard(card, conv: chat.convId ?? "") }

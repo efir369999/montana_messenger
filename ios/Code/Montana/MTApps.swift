@@ -35,23 +35,9 @@ enum MTApps {
     #if !MONTANA_MESSENGER
     static let wall: MTWallDoor? = MTEdition.wall
     #endif
-    static let messenger: MTMessengerDoor? = MTEdition.messenger
     #if !MONTANA_MESSENGER
     static let youtube: MTYouTubeDoor? = MTEdition.youtube
     #endif
-}
-
-/// THE MESSENGER DOOR (slice S5b-g): what the shared groups ask of Montana Messenger -- a letter of mine into a group that carries an
-/// organisation's chat writes its link in chain C. The Protocol holds no organisation's chat, and its door is nil.
-protocol MTMessengerDoor: AnyObject {
-    @MainActor func said(group: String, mid: String, text: String)
-    /// AN ORGANISATION'S WORD on a pipe (its chains, an invitation's ask for the roster): true when it was the Messenger's to read --
-    /// never a row of the pipe. Where no door stands the word is a newer build's and buried unread (mtUnknownServiceWord).
-    @MainActor func handle(_ text: String, from pipe: String, isFromMe: Bool, sid: String?, store: ChatStore) -> Bool
-    /// The store was laid again under the living (a copy, a seat lifted): the organisations are read from it again.
-    func reread()
-    /// THE ORGANISATIONS' PAGE (slice S5c-2): the library's Organizations tile and a joining link raise it over the tabs.
-    @MainActor func page() -> AnyView
 }
 
 #if !MONTANA_MESSENGER
@@ -121,11 +107,6 @@ enum MTLocalNetwork {
             .filter { !$0.hasPrefix("a=candidate:") || admits(candidate: String($0.dropFirst(2))) }
             .joined(separator: "\r\n")
     }
-}
-
-extension Notification.Name {
-    /// The organisations' page opens (a joining link, a banner): the shell raises it over the tabs where the Messenger door stands.
-    static let montanaOpenMessenger = Notification.Name("montanaOpenMessenger")
 }
 
 /// THE DOOR'S WATCH (slice S2b b7): a shared view is drawn again when what it reads behind a door changes, and names nothing of

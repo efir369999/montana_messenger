@@ -2510,7 +2510,7 @@ class ChatStore: ObservableObject {
         // holds every letter of theirs unread, and laid as it is it would stand the whole history on the icon.
         // Such a copy — no letter of theirs read but the archive's — takes the old rule's verdict from its own
         // marks, the last-seen map and the read set laid a moment ago; a copy of this era keeps its letters' word.
-        let ownWord = copied.values.contains { $0.contains { !$0.isFromMe && $0.isRead && !$0.mid.hasPrefix("arc:") } }
+        let ownWord = copied.values.contains { $0.contains { !$0.isFromMe && $0.isRead && !$0.mid.hasPrefix(MTRestoredMid.archive) } }
         let feed = ownWord ? copied : ChatStore.readByOldRule(copied, forced: forcedUnread)
         var merged = messages
         var added = 0, chats = 0
@@ -3565,6 +3565,8 @@ class ChatStore: ObservableObject {
         // back), and the archive is append-only: the old rule took «no rows» for «never held» and laid the erased letters back at
         // the next cold start. Every key the feed holds is the truth; the transcript fills only a key it does not hold.
         let occupied = Set(messages.keys)
+        // Every conversation this phone holds names its own folder (MontanaArchive.convBook): the feed's keys and its groups.
+        let held = occupied.union(MTGroup.shared.groups.keys.map(MTGroup.key(of:)))
         // THE ARCHIVE IS MEASURED AGAINST THE FEED (16.09): a letter the archive holds and the feed
         // does not is named with its count and its newest moment — measured here, never inserted (a
         // renamed file or an edited word reads as a gap too; the number says whether a letter was
@@ -3576,18 +3578,21 @@ class ChatStore: ObservableObject {
             // change (a block written, a chat born or emptied, a pipe, a row unasked) changes the face, and the archive is read.
             let asked = (UserDefaults.standard.stringArray(forKey: "mt.twin.asked") ?? []).count
             let face = folders == nil ? MontanaArchive.face(["feed=" + occupied.sorted().joined(separator: ","),
-                                                             "pipes=" + String(MTPipeBook.count), "asked=" + String(asked)]) : nil
+                                                             "pipes=" + String(MTPipeBook.count), "asked=" + String(asked), "held=" + String(held.count)]) : nil
             if let face, face == UserDefaults.standard.string(forKey: ChatStore.archiveFaceKey) {
                 MontanaTrace.mark("archive_same", "chats=" + String(occupied.count))
                 DispatchQueue.main.async { self?.afterPipes(grew: false) }
                 return
             }
             let pipesBefore = MTPipeBook.count
-            let found = folders.map { MontanaArchive.restore(folders: $0) } ?? MontanaArchive.restoreAll()
+            let found = folders.map { MontanaArchive.restore(folders: $0, held: held) } ?? MontanaArchive.restoreAll(held: held)
             if let face { UserDefaults.standard.set(face, forKey: ChatStore.archiveFaceKey) }
             // The heads re-establish the pipes of a copy just taken back: the roads wake for them at once.
             let grew = pipesBefore < MTPipeBook.count
             DispatchQueue.main.async { self?.afterPipes(grew: grew) }
+            // A FOLDER THAT NAMES ITS CONVERSATION HAS NO TRANSCRIPT: one an older pass laid for it is that conversation's second name.
+            let named = found.compactMap { rc in rc.ref.map { _ in ChatStore.transcriptKey(rc.folder) } }
+            if !named.isEmpty { DispatchQueue.main.async { self?.retireTranscripts(named) } }
             guard !found.isEmpty else { return }
             var gapChats = 0, gapRows = 0
             for rc in found {
@@ -3613,7 +3618,7 @@ class ChatStore: ObservableObject {
             // while this device holds no feed for it — the incremental merge waits for tombstones.
             var built: [(MontanaArchive.RestoredChat, [Message])] = []
             for rc in found {
-                let key = rc.ref ?? ("arc:" + rc.folder)
+                let key = rc.ref ?? ChatStore.transcriptKey(rc.folder)
                 guard !occupied.contains(key) else { continue }
                 var seen = Set<String>(); var rows: [Message] = []; rows.reserveCapacity(rc.items.count)
                 for it in rc.items {
@@ -3650,6 +3655,22 @@ class ChatStore: ObservableObject {
         }
     }
 
+    /// A TRANSCRIPT WHOSE FOLDER NAMES ITS CONVERSATION GOES (11.11.2026, OZ 1 p.10, the author's words 19418, 19434): the
+    /// conversation stands under its own key, the transcript was its second name. Its rows and its list record only -- the folder
+    /// and its files are the conversation's. Marked erased, so no later pass and no twin lays it again.
+    @MainActor
+    func retireTranscripts(_ keys: [String]) {
+        guard writes else { return }
+        let here = keys.filter { k in messages[k] != nil || listState[k] != nil }
+        guard !here.isEmpty else { return }
+        for k in here {
+            messages[k] = nil
+            noteListState(k, last: nil)
+            if !deletedChats.contains(k) { deletedChats.insert(k) }
+        }
+        MontanaTrace.mark("archive_named", "transcripts=" + String(here.count))
+    }
+
     /// On main, cheap: the rows are built already. A chat that gained rows meanwhile is skipped
     /// again (the snapshot is a moment old). A folder without a usable head is shown under
     /// «Recovered history» with the composer closed — the honest shape of an archive whose key
@@ -3672,7 +3693,7 @@ class ChatStore: ObservableObject {
         var faceCount: [Data: Int] = [:]
         for (rc, _) in built { if let f = rc.face { faceCount[f, default: 0] += 1 } }
         for (rc, arr) in built {
-            let key = rc.ref ?? ("arc:" + rc.folder)
+            let key = rc.ref ?? ChatStore.transcriptKey(rc.folder)
             // The build left out every key the feed held when the restore began (occupied); a row landed since wins here, and an
             // empty feed born since -- a chat without a correspondent opened meanwhile (seedIfNeeded) -- is no deletion.
             guard !deletedChats.contains(key), (messages[key] ?? []).isEmpty else { continue }
@@ -3720,7 +3741,7 @@ class ChatStore: ObservableObject {
         persist(messages, why: "archive")
         recalcBadge()
         NotificationCenter.default.post(name: .montanaChatsRestored, object: nil)
-        MontanaTrace.mark("archive_applied", "chats=\(built.count) rows=\(added) media=\(media) faces=\(faces) rows_changed=\(rowsChanged) keys=\(built.map { String(($0.0.ref ?? ("arc:" + $0.0.folder)).prefix(10)) }.joined(separator: ","))")
+        MontanaTrace.mark("archive_applied", "chats=\(built.count) rows=\(added) media=\(media) faces=\(faces) rows_changed=\(rowsChanged) keys=\(built.map { String(($0.0.ref ?? ChatStore.transcriptKey($0.0.folder)).prefix(10)) }.joined(separator: ","))")
         auditListAgainstFeed(stage: "restore")
     }
 
@@ -4413,7 +4434,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
     /// to exactly one conversation (the nameless share one word, and that word is nobody's). A recovered
     /// transcript («arc:») names no live conversation and has no old names.
     func legacyFolderNames(_ key: String) -> [String] {
-        if key.hasPrefix("arc:") { return [] }
+        if ChatStore.isTranscript(key) { return [] }
         let js = MontanaLocalVault.getString("chatsJSON") ?? ""
         let arr: [Chat]
         if let c = folderChatsCache, c.json == js { arr = c.chats }
@@ -4707,9 +4728,6 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         // A GROUP'S WORD (the author's words 05.10.2026, MTGroup): an invitation or a letter of a group its owner carries over the
         // pipes. It lands in the group's own feed, never as a row of the pipe; a build that does not know the token buries it unread.
         if MTGroup.handle(m.text, from: chat, isFromMe: m.isFromMe, sid: m.msgId, store: self) { return false }
-        // AN ORGANISATION'S WORD (Montana Messenger, its door): the chains one member carries to another, or an invitation's ask for
-        // the roster. Never a row of the pipe; where no door stands it is buried unread as a newer build's word.
-        if MTApps.messenger?.handle(m.text, from: chat, isFromMe: m.isFromMe, sid: m.msgId, store: self) == true { return false }
         #if !MONTANA_MESSENGER
         // THE RETIRED WALL'S WORD (29.09, retired 13.10): service by construction, buried unread ([P2P-COMPAT]).
         if m.text.hasPrefix(retiredWallMark) { return false }
@@ -6330,7 +6348,10 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
 
     /// A RECOVERED TRANSCRIPT: a conversation restored from the sealed archive whose key this device no longer holds,
     /// keyed «arc:» and its folder. COMPAT-LOCAL: the key never rides the wire — it names a restored folder here.
-    static func isTranscript(_ key: String) -> Bool { key.hasPrefix("arc:") }
+    /// A TRANSCRIPT'S KEY, ONE OWNER: the head and the folder of a conversation nobody on this phone holds (MontanaArchive.convBook).
+    nonisolated static let transcriptHead = "arc:"   // NOT-UI: a restored folder's row on this phone, never on the wire
+    nonisolated static func transcriptKey(_ folder: String) -> String { transcriptHead + folder }
+    static func isTranscript(_ key: String) -> Bool { key.hasPrefix(transcriptHead) }
 
     /// THE ONE ORDER of the chat list ([C-1], the author's word 07.09: «the share sheet lives by
     /// the chat's rule»): pinned first, then the freshest, then by name. The list draws by it and
@@ -7293,7 +7314,6 @@ enum SeedScope {
         VoicePlayer.shared.rereadRate()
         MTReactions.forgetOrder()
         MTGroup.shared.reread()
-        MTApps.messenger?.reread()
         MTChannelViews.shared.reread()
         MTChannelComments.shared.reread()
         MTWallpaper.Book.shared.rev += 1

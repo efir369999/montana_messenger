@@ -190,7 +190,7 @@ final class MTTurnDrag: ObservableObject {
     /// settings and the profile are one open page at a time, risen over the tabs in the chat's own
     /// sliding container and closed by the cross or by the screen-edge swipe. The network left this slot
     /// for the finger's row (the author's word 25.09): it is a page under the bar, as the calls are.
-    enum Page: String, Identifiable { case settings, profile, birth, messenger, notifications, keeping; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus; levels: the green shield's way (16.10)
+    enum Page: String, Identifiable { case settings, profile, birth, notifications, keeping; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus; levels: the green shield's way (16.10)
     var overlayPage: Page?
     /// The document page over everything (the author's word 19.09): the whole screen, above the tabs and the open chat.
     var docPage: MTDocOpen?
@@ -1545,7 +1545,7 @@ struct MTCountBadge: View {
 
 /// One catalogue owns the tiles, search rows and destinations of the app library.
 enum MTApplication: String, CaseIterable, Identifiable {
-    case messenger, contacts, calls
+    case contacts, calls
     #if !MONTANA_MESSENGER   // the Protocol's applications alone (cuts C5 and C6); the Protocol's order of the cases stands
     case feed
     #endif
@@ -1581,7 +1581,6 @@ enum MTApplication: String, CaseIterable, Identifiable {
         #if !MONTANA_MESSENGER
         case .chess: return MTApps.chess != nil
         #endif
-        case .messenger: return MTApps.messenger != nil
         #if !MONTANA_MESSENGER
         case .feed: return MTApps.wall != nil
         // THE P2P WALL'S OWN ROW stands where the globe is the VPN's (the author's word 03.11.2026 22:30 UTC, link 15844).
@@ -1609,7 +1608,6 @@ enum MTApplication: String, CaseIterable, Identifiable {
         case .meshWall: return String(localized: "Mesh wall", bundle: MTLanguage.bundle)
         case .p2pWall: return String(localized: "P2P wall", bundle: MTLanguage.bundle)
         #endif
-        case .messenger: return String(localized: "Organizations", bundle: MTLanguage.bundle)   // the person's organisations; the screen names no messenger (the author's word 06.10)
         case .settings: return String(localized: "Settings", bundle: MTLanguage.bundle)
         #if !MONTANA_MESSENGER
         case .chess: return String(localized: "Chess", bundle: MTLanguage.bundle)
@@ -1624,7 +1622,6 @@ enum MTApplication: String, CaseIterable, Identifiable {
         case .vpnWall, .meshWall, .feed, .p2pWall: return .montana   // the walls beside the feed: publications common to people (29.09)
         case .wallet: return .montana
         #endif
-        case .messenger: return .montana
         case .gallery: return .media
         #if !MONTANA_MESSENGER
         case .music, .chess: return .media
@@ -1750,7 +1747,6 @@ struct MontanaSideDrawer: View {
             case .meshWall: ui.pane = .mesh
             case .p2pWall: ui.pane = .p2p
             #endif
-            case .messenger: if MTApps.messenger != nil { ui.overlayPage = .messenger }
             case .settings: ui.settingsShown = true
             }
         }
@@ -2518,10 +2514,6 @@ struct MainTabView: View {
         #if !MONTANA_MESSENGER
         .onReceive(NotificationCenter.default.publisher(for: .montanaOpenWallet)) { _ in if MTApps.coins != nil { ui.walletPage = MTPageFlag(id: "wallet") } }
         #endif
-        // THE ORGANISATIONS' PAGE RAISED (a joining link, a banner): only where the Messenger door stands.
-        .onReceive(NotificationCenter.default.publisher(for: .montanaOpenMessenger)) { _ in
-            if MTApps.messenger != nil { ui.overlayChat = nil; ui.overlayPage = .messenger }
-        }
         .onReceive(NotificationCenter.default.publisher(for: .montanaAddPerson)) { _ in
             #if !MONTANA_MESSENGER
             ui.walletPage = nil
@@ -2548,7 +2540,6 @@ struct MainTabView: View {
         Group {
             switch p {
             case .settings: SettingsTabView(onClose: { ui.settingsShown = false })
-            case .messenger: if let b = MTApps.messenger { b.page() }   // the person's organisations, drawn behind the Messenger door (S5c-2)
             case .profile: MTMyPageFromDrawer()   // my page, the one «My profile» opens (the author's word 24.09)
             // ONE MORE PERSON (the second identity checklist, stage 1): the first screen as a page over the tabs; the node and
             // the questions that waited for a person are asked the moment the seed lands, as at a launch.

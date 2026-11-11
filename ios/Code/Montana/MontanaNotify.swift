@@ -172,17 +172,17 @@ enum MontanaNotify {
         content.userInfo["chat"] = MTNoticeAlias.of(chat)   // willPresent reads it back (MTNoticeAlias.open) to honour the open chat
         content.userInfo["from"] = MTNoticeAlias.of(from)
 
-        if countUnread, !MTQuietChats.holds(chat) {
+        if countUnread, MTRing.chat(chat) {
             var counts = MontanaKeychain.get("unreadCounts").flatMap { try? JSONDecoder().decode([String: Int].self, from: $0) } ?? [:]
             if !chat.isEmpty { counts[chat, default: 0] += 1 }
             content.badge = NSNumber(value: counts.values.reduce(0, +))
             MontanaKeychain.set("unreadCounts", (try? JSONEncoder().encode(counts)) ?? Data())
         }
 
-        let quiet = MTQuietChats.holds(chat)
+        let quiet = !MTRing.chat(chat)
         let soundOn = (MontanaKeychain.get("notifSound")?.first ?? 1) == 1
         content.sound = (soundOn && !quiet) ? .default : nil
-        if quiet { content.interruptionLevel = .passive; content.badge = nil }   // a muted or archived chat says nothing (MTQuietChats)
+        if quiet { content.interruptionLevel = .passive; content.badge = nil }   // a muted or archived chat says nothing (MTRing.chat)
     }
 
         // native rich style for messaging. Returns nil when the intent cannot be applied.
@@ -319,6 +319,7 @@ enum MontanaNotify {
             MontanaTrace.mark("notify_skip", mid: nil, "why=disabled kind=typing")
             return
         }
+        guard MTRing.chat(chat) else { MontanaTrace.mark("notify_skip", mid: nil, "why=quiet kind=typing"); return }
         typingLock.lock()
         let last = typingShownAt[chat] ?? .distantPast
         let fresh = Date().timeIntervalSince(last) > typingWindow
@@ -347,6 +348,7 @@ enum MontanaNotify {
             MontanaTrace.mark("notify_skip", mid: nil, "why=disabled kind=pin")
             return
         }
+        guard MTRing.chat(chat) else { MontanaTrace.mark("notify_skip", mid: nil, "why=quiet kind=pin"); return }
         let preview = ud.object(forKey: "notifPreview") as? Bool ?? true
         let body = "📌 " + (preview && !words.isEmpty ? words : String(localized: "Pinned a message", bundle: MTLanguage.bundle))
         let content = UNMutableNotificationContent()
@@ -369,6 +371,8 @@ enum MontanaNotify {
             MontanaTrace.mark("notify_skip", mid: nil, "why=disabled kind=group")
             return
         }
+        // A MUTED OR ARCHIVED GROUP RAISES NOTHING (MTRing.chat, 19457): the passive plate this left stayed in the list for good.
+        guard MTRing.chat(chat, mentioned: mentioned) else { MontanaTrace.mark("notify_skip", mid: nil, "why=quiet kind=group"); return }
         let key = copy.hasPrefix("mid:") ? String(copy.dropFirst(4)) : copy
         if !key.isEmpty, !MTShownOnce.claim(key) {   // the one atomic claim of both processes (MTShownOnce, 17.10.2026)
             MontanaTrace.mark("notify_skip", mid: key, "why=already-rang kind=group")
@@ -448,6 +452,8 @@ enum MontanaNotify {
             if !enabled { MontanaTrace.mark("notify_skip", mid: mid, "why=disabled kind=\(kind)") }
             return
         }
+        // A MUTED OR ARCHIVED CHAT RAISES NOTHING (MTRing.chat, 19457): the passive plate this left stayed in the list for good.
+        guard MTRing.chat(chat) else { MontanaTrace.mark("notify_skip", mid: mid, "why=quiet kind=\(kind)"); return }
         let key = mid.hasPrefix("mid:") ? String(mid.dropFirst(4)) : mid
         if !key.isEmpty {
             // ONE ATOMIC CLAIM FOR BOTH PROCESSES (17.10.2026, MTShownOnce): the notebook was a keychain item both processes rewrote

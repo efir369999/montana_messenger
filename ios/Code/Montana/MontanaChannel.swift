@@ -147,7 +147,7 @@ struct MTPickRow: View {
     }
 }
 
-/// The face of a group or a channel: the platform's photo picker in a circle, the picture brought to the avatar's size.
+/// The face of a group or a channel: the platform's photo picker in a circle, the picture through the one crop (MTFaceCropDoor).
 struct MTFacePicker: View {
     @Binding var face: Data
     @State private var pick: PhotosPickerItem?
@@ -164,13 +164,7 @@ struct MTFacePicker: View {
             }
             .frame(width: 60, height: 60).clipShape(Circle())
         }
-        .onChange(of: pick) { _, item in
-            Task {
-                if let data = try? await item?.loadTransferable(type: Data.self), let ui = UIImage(data: data) {
-                    face = ui.avatarResized(1080).jpegData(compressionQuality: 0.85) ?? data
-                }
-            }
-        }
+        .mtFaceCrop($pick) { jpeg in face = jpeg }   // the one door of a face (MTFaceCropDoor)
     }
 }
 

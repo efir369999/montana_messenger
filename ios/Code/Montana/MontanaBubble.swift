@@ -1031,7 +1031,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     /// THE WORD OF A NEW BUILD (the author's word 29.09): the Montana room's letter, drawn as the golden scroll (MTReleaseScroll).
     func releaseBubble(_ r: (build: Int, version: String, notes: [String], url: String)) -> some View {
         let title = String(localized: "New version", bundle: MTLanguage.bundle) + " " + (r.version.isEmpty ? "" : r.version + " ") + "(" + String(r.build) + ")"
-        return MTReleaseScroll(title: title, notes: r.notes, url: r.url, build: r.build, shape: bubbleShape) { metaLine(onMedia: true) }
+        return MTReleaseScroll(title: title, notes: r.notes, build: r.build, shape: bubbleShape) { metaLine(onMedia: true) }
     }
 
     #if !MONTANA_MESSENGER
@@ -1660,7 +1660,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                     .font(.system(size: 34)).foregroundColor(.white.opacity(0.9))
             }
             if let p = transfers.progress[file] {
-                // EVERY TILE C->IES ITS OWN PROGRESS, LIKE A SINGLE PLATE (the author's word 22.09):
+                // EVERY TILE CARRIES ITS OWN PROGRESS, LIKE A SINGLE PLATE (the author's word 22.09):
                 // the same ring and the same percent, fitted INSIDE the tile — never past its edges.
                 // A tile narrower than the pill (the mosaic cuts small ones) wears the ring alone;
                 // the percent joins it as soon as the tile has the room. The word (megabytes) and the
@@ -3626,7 +3626,6 @@ struct MTChatClip: View {
 struct MTReleaseScroll<Meta: View>: View {
     let title: String
     let notes: [String]
-    let url: String
     let build: Int
     let shape: BubbleShape
     @ViewBuilder let meta: () -> Meta
@@ -3635,9 +3634,32 @@ struct MTReleaseScroll<Meta: View>: View {
     static var rolled: Int { 2 }
     private var folds: Bool { notes.count > Self.rolled + 1 }
 
+    /// THE DOOR TO UPDATE STANDS UNDER THE SCROLL, A BUTTON OF ITS OWN, A PERMANENT LINK TO THE SOURCE (11.11.2026, the author's
+    /// words 19359 «make it under the bubble an independent button and do not allow this» and 19364 «a permanent link to the source
+    /// of updates»): it stood inside the plate, only before a build newer than the one in hand and only with the letter's own copy
+    /// of the address -- once T1, T2 and T3 took 134 (RELEASE seen build=134 own=134) and the room's own row of 134 carried none,
+    /// it was gone everywhere. It reads the one source (MTReleaseState.source) and stands under every scroll; the app's page
+    /// offers the newest. mt-release-door-check refuses a door inside the plate, behind the build, or on the letter's copy.
+    @ObservedObject private var release = MTReleaseState.shared
     var body: some View {
+        VStack(alignment: .center, spacing: 8) {
+            plate
+            if let u = release.source {
+                Button {
+                    MontanaTrace.mark("release", "tap build=\(build) own=\(MontanaRelease.ownBuild)")
+                    UIApplication.shared.open(u)
+                } label: {
+                    MTDoorLabel(glyph: Image("Logo").resizable().scaledToFit(),
+                                word: Text(String(localized: "Update", bundle: MTLanguage.bundle)))
+                }
+                .buttonStyle(MTLoginDoorStyle())
+            }
+        }
+    }
+
+    private var plate: some View {
         let shown = folds && !open ? Array(notes.prefix(Self.rolled)) : notes
-        VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Image(montanaRoomFace).resizable().scaledToFit()
                     .frame(width: 40, height: 40)
@@ -3675,17 +3697,6 @@ struct MTReleaseScroll<Meta: View>: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: open ? "Collapse" : "Expand", bundle: MTLanguage.bundle))
-            }
-            // The door to update stands only before a build newer than the one in hand (the room's own row has none).
-            if MontanaRelease.ownBuild < build, let u = URL(string: url), !url.isEmpty {
-                Button {
-                    MontanaTrace.mark("release", "tap build=\(build)")
-                    UIApplication.shared.open(u)
-                } label: {
-                    MTDoorLabel(glyph: Image("Logo").resizable().scaledToFit(),
-                                word: Text(String(localized: "Update", bundle: MTLanguage.bundle)))
-                }
-                .buttonStyle(MTLoginDoorStyle())
             }
             HStack { Spacer(minLength: 0); meta() }
         }

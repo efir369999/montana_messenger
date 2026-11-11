@@ -7,7 +7,7 @@ A simple, fast messenger for every day: chats, voice and video calls, groups and
 The app's page, its privacy policy, terms and support: https://montana.one
 
 This repository is the source of the iOS app as it is built for the App Store: the app, the client core it links and the part
-of the Montana protocol core it links, and nothing else. Staged from app 20f752ae71f4d22b5ebecb9d184f8921069a65cc, client core fd0c7a45155330057bbf0bb966ce2355430f7161, protocol core 35af7bc474e4aac0917ca9d2790a8daa04c0c853.
+of the Montana protocol core it links, and nothing else. Staged from app 4c20068e778b270f95b6a60e9226c66b020174ca, client core fd0c7a45155330057bbf0bb966ce2355430f7161, protocol core 35af7bc474e4aac0917ca9d2790a8daa04c0c853.
 
 ## Layout
 
@@ -41,8 +41,8 @@ for devices only (arm64): run the scheme MontanaMessenger on an iPhone, with you
 
 ## Verifying
 
-Build 1.0 (135) links two static libraries built from the revisions above with rustc 1.92.0. The release
-1.0-135 of this repository holds both as the build linked them (https://github.com/efir369999/montana_messenger/releases/tag/1.0-135):
+Build 1.0 (136) links two static libraries built from the revisions above with rustc 1.92.0. The release
+1.0-136 of this repository holds both as the build linked them (https://github.com/efir369999/montana_messenger/releases/tag/1.0-136):
 
 - libmt_bindings.a (core/Code), SHA-256 c446c063b70b88ee6c60fb8fce80ce71905a413344dddb5a7281999b88225c32
 - libmt_boundary.a (core/Montana-Core), SHA-256 fc0189289b3f0846132307d8b4d3db44e62ec4157333cd7e20cb52f248c72c5c

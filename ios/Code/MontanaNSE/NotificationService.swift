@@ -47,6 +47,7 @@ final class NotificationService: UNNotificationServiceExtension {
         }
         handler = contentHandler
         Self.servingId = request.identifier
+        Self.quietAt = nil
         Self.sweepQuiet()
         let began = Date()
         best = request.content.mutableCopy() as? UNMutableNotificationContent
@@ -142,28 +143,31 @@ final class NotificationService: UNNotificationServiceExtension {
                 contentHandler(Self.quietFace())
                 return
             }
+            // EVERY JUDGEMENT BELOW READS THE OPENED LETTER (11.11.2026, OZ 1 p.6): a long letter travels as its «LB:» reference, and a
+            // group's word inside it (a renewal with the group's face is 16 KB) was judged by the reference -- no group, a quiet face
+            // with empty words rang on T2 and T3. The reference itself is only the road to the words.
             let text = rawText.hasPrefix("\u{2063}LB:") ? (Self.resolveLongLetterSync(rawText) ?? rawText) : rawText
             Self.stashLetter(conv: conv, mid: mid, text: text, name: envName, glyph: envGlyph,
                              qt: envQt, qm: envQm, lp: envLp, author: envAuthor)
             openedMid = mid
-            openedQuiet = Self.isQuietText(rawText)
+            openedQuiet = Self.isQuietText(text)
             cargoLetter = (mid, text)
             // A DELETION FOR EVERYONE (16.10.2026 No.72; the author's words «let deletion reach me by a silent push»; the recon's own
             // road): the deleted letter's notice leaves the screen at the deletion's own push, always (16165 p.5), and the push
             // wears no face of its own; the app lands the deletion from the stash above, by its one door.
-            if rawText.hasPrefix("\u{200B}\u{200B}DL:") {
-                Self.takeNoticeOff(String(rawText.dropFirst("\u{200B}\u{200B}DL:".count))) { contentHandler(Self.quietFace()) }
+            if text.hasPrefix("\u{200B}\u{200B}DL:") {
+                Self.takeNoticeOff(String(text.dropFirst("\u{200B}\u{200B}DL:".count))) { contentHandler(Self.quietFace()) }
                 return
             }
             // A ring letter never wears a banner: the system call screen (voip road, 12.1)
             // is the one face of an incoming call. Old senders still send it loud — the
             // letter is stashed above, the banner is swallowed whole.
-            if rawText.hasPrefix("\u{200B}\u{200B}RG:") {
+            if text.hasPrefix("\u{200B}\u{200B}RG:") {
                 // THE SECOND BELL (13.09): a ring letter marked «b» is the caller's word that Apple
                 // kept the voip wake away — it wears the one banner of an incoming call; the tap
                 // opens the app, and the app rings natively while the seed is alive. The native
                 // ring, the missed letter and the call's end remove it by its name «bell-<tag>».
-                let json = String(rawText.dropFirst("\u{200B}\u{200B}RG:".count))
+                let json = String(text.dropFirst("\u{200B}\u{200B}RG:".count))
                 let o = json.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
                 if (o?["b"] as? Int) == 1, let seed = o?["s"] as? String, !seed.isEmpty, MontanaMissedCall.state(seed) == nil {
                     content.title = Self.title(conv: conv, envName: envName)
@@ -186,7 +190,7 @@ final class NotificationService: UNNotificationServiceExtension {
                 contentHandler(Self.quietFace())
                 return
             }
-            if Self.serveMissedLetter(rawText, mid: mid, conv: conv, name: envName, handler: contentHandler) { return }
+            if Self.serveMissedLetter(text, mid: mid, conv: conv, name: envName, handler: contentHandler) { return }
             // A TRANSFER LETTER RINGS NOTHING HERE (the author's word 10.10.2026 12:3x UTC: «transfers do not touch Montana at all»;
             // T1 12:24:29Z: an older build's transfer letter showed «New message» and its chat stood empty -- the app buries it
             // unread, MTRowLetter.retiredLetter): it is stashed for the app without a face and turns no badge.
@@ -211,10 +215,10 @@ final class NotificationService: UNNotificationServiceExtension {
             #endif
             // A GROUP'S WORD (MTGroup in the app, 05.10): a letter and an invitation wear the group's own face, the tap opens the
             // group; an answer to a letter is stashed for the app without a face.
-            let group = Self.groupFace(rawText, named: Self.prefOn("notifSender"))
-            if rawText.hasPrefix("\u{200B}\u{200B}GR:"), group == nil {
+            let group = Self.groupFace(text, named: Self.prefOn("notifSender"))
+            if text.hasPrefix("\u{200B}\u{200B}GR:"), group == nil {
                 Self.diagLine("group word stashed silently mid=\(mid.prefix(8))")
-                if let target = Self.groupDeletion(rawText) {   // a deletion in a group takes its letter's notice off too (16.10)
+                if let target = Self.groupDeletion(text) {   // a deletion in a group takes its letter's notice off too (16.10)
                     Self.takeNoticeOff(target) { contentHandler(Self.quietFace()) }
                     return
                 }
@@ -230,7 +234,7 @@ final class NotificationService: UNNotificationServiceExtension {
             content.body = group?.body ?? Self.bannerBody(text)
             if let group { openedQuiet = false; senderGlyph = ""; content.userInfo["mid"] = group.mid.isEmpty ? mid : group.mid }
             else { content.userInfo["mid"] = mid }     // the foreground judge suppresses a double by this
-            if let room = Self.invitedRoom(rawText) { content.userInfo["room"] = room }   // the tap goes into the room (MTGroupRoom)
+            if let room = Self.invitedRoom(text) { content.userInfo["room"] = room }   // the tap goes into the room (MTGroupRoom)
             convKey = group?.chat ?? conv
             // THE SYSTEM HEARS THE CONVERSATION'S ALIAS (MTNoticeAlias, 12.10.2026): the thread and the tap carry this phone's alias, the
             // app reads it back; the push's own sender address leaves the delivered notice.
@@ -363,16 +367,13 @@ final class NotificationService: UNNotificationServiceExtension {
             content.badge = nil
             content.interruptionLevel = .passive
             face = Self.faced(content, from: convKey, glyph: senderGlyph)
-        } else if !convKey.isEmpty, MTQuietChats.holds(convKey) {
-            // A MUTED OR ARCHIVED CHAT SAYS NOTHING (MTQuietChats): the sound alone was taken, the banner, the vibration and the lit
-            // screen stayed. An extension without the filtering entitlement cannot withhold a notification -- an empty content is
-            // still shown -- so the letter is handed over passive: no banner over what the person is doing, no sound, no vibration,
-            // no lit screen, no badge; it lies in the list alone.
-            Self.diagLine("quiet conv=\(convKey.prefix(10)) — passive, no banner, no sound, no badge")
-            content.sound = nil
-            content.badge = nil
-            content.interruptionLevel = .passive
-            face = Self.faced(content, from: convKey, glyph: senderGlyph)
+        } else if !MTRing.chat(convKey) {
+            // A MUTED OR ARCHIVED CHAT SAYS NOTHING (MTRing.chat; 19457: T3's muted group Party still lay in the list, 11.11 19:20 UTC):
+            // the passive letter face once handed over here stayed in the list for good. An extension without the filtering
+            // entitlement cannot withhold a notification, so it hands over the quiet plate it takes off itself (quietFace): no
+            // sound, no light, no badge, gone from the list a moment later; the letter is stashed for the app as every letter is.
+            Self.diagLine("quiet conv=\(convKey.prefix(10)) — quiet plate, taken off")
+            face = Self.quietFace()
         } else {
             // THE SHARE SHEET'S ORDER FOLLOWS THE LETTER (MTShareOrder): the chat goes up in the sheet's mirror as it goes up in the list.
             if !convKey.isEmpty, !openedQuiet { MTShareOrder.raise(convKey) }
@@ -484,7 +485,7 @@ final class NotificationService: UNNotificationServiceExtension {
         if !prefOn("notifPreview") { content.body = String(localized: "New message", bundle: MTLanguage.bundle) }
         // The fold reaches the banner (Guideline 1.2): the app's filter switch is mirrored here.
         else if prefOn("objectionableFilterOn"), MontanaContentFilter.flags(content.body) { content.body = String(localized: "Hidden by the filter", bundle: MTLanguage.bundle) }
-        if MTQuietChats.holds(conv) || !prefOn("notifSound") { content.sound = nil } // no sound
+        if !MTRing.chat(conv) || !prefOn("notifSound") { content.sound = nil } // no sound
         else { content.sound = .default }
     }
 
@@ -521,6 +522,9 @@ final class NotificationService: UNNotificationServiceExtension {
     private static let footprintCeilingMB: UInt64 = 16
     private static func afterDelivery(began: Date, collectBox: Bool, cargo: (mid: String, text: String)?) {
         var steps: [(String, () -> Void)] = []
+        // THE QUIET PLATE LEAVES BEFORE THE WAKE ENDS (OZ 1 p.12, decision 840): a process the system suspends the moment its work
+        // ends left it standing until the next wake; it waits out the plate's moment here and takes it off itself.
+        if quietAt != nil { steps.append(("quiet", { Self.takeQuietOff() })) }
         if collectBox { steps.append(("box", { _ = Self.fetchBoxSync(deadline: within(6, of: began)) })) }
         steps.append(("outgoing", { Self.knockOutgoingSync(deadline: within(6, of: began)) }))
         if let c = cargo { steps.append(("cargo", { Self.bringSmallCargoSync(mid: c.mid, text: c.text, began: began, deadline: within(8, of: began)) })) }
@@ -665,6 +669,7 @@ final class NotificationService: UNNotificationServiceExtension {
     // request down, so the plate is taken off the list: by this process a moment later, by the next wake on
     // its first line, and by the app when it next comes to the foreground (MontanaWakePush.drainInbox).
     static var servingId = ""
+    private static var quietAt: Date?
     static func quietFace() -> UNNotificationContent {
         let c = UNMutableNotificationContent()
         c.title = "Montana"   // NOT-UI: the app's own name, the same word in every language
@@ -675,6 +680,7 @@ final class NotificationService: UNNotificationServiceExtension {
         c.relevanceScore = 0
         c.threadIdentifier = "montana-quiet"   // NOT-UI: the group the quiet plates fall into, never shown
         let id = servingId
+        quietAt = Date()
         diagLine("quiet face id=\(id.prefix(8)) — no blank plate")
         guard !id.isEmpty else { return c }
         var ids: [String] = []
@@ -686,6 +692,14 @@ final class NotificationService: UNNotificationServiceExtension {
             UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [id])
         }
         return c
+    }
+    /// The quiet plate handed over this wake leaves the list within the wake: 1.5 s after the hand-over, so the system has shown it.
+    private static func takeQuietOff() {
+        guard let at = quietAt, !servingId.isEmpty else { return }
+        let wait = 1.5 - Date().timeIntervalSince(at)
+        if 0 < wait { Thread.sleep(forTimeInterval: wait) }
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [servingId])
+        diagLine("quiet plate taken off id=\(servingId.prefix(8))")
     }
     /// The quiet plates written down by earlier wakes leave the list (the request being served stays).
     static func sweepQuiet() {
@@ -1240,8 +1254,9 @@ final class NotificationService: UNNotificationServiceExtension {
     }
 
     /// A GROUP'S WORD (MTGroup in the app, 05.10): a letter's face is its group's title over its speaker's name and words -- a
-    /// channel's post speaks as the channel -- and an invitation's face names the group it opens. Nil for an answer to a letter
-    /// and for anything unreadable: those are stashed without a face.
+    /// channel's post speaks as the channel -- and a room's invitation names its room. Nil for every word MTRing.groupWord keeps
+    /// silent (a system word -- an invitation into the group among them --, an answer, a silent post, the past) and for anything
+    /// unreadable: those are stashed without a face.
     /// `named`: the person's Show sender -- off, the speaker and the asker go unnamed, as the app's banner (MontanaNotify.showsSender).
     private static func groupFace(_ raw: String, named: Bool) -> (title: String, body: String, chat: String, mid: String)? {
         let mark = "\u{200B}\u{200B}GR:"
@@ -1252,16 +1267,15 @@ final class NotificationService: UNNotificationServiceExtension {
         guard !title.isEmpty else { return nil }
         let chat = "grp:" + g   // COMPAT-LOCAL: the group's feed key on this phone (MTGroup.keyHead), never a word on the wire
         let channel = (o["k"] as? String) == "c"
+        // THE VERDICT IS MTRing's (OZ 1 p.11, 19455): an older build still sends a system word loud; it wears no face here.
+        let invites = o["ts"] is [Any] && (o["rg"] as? Int) != 0
+        guard MTRing.groupWord(t, invites: invites, past: (o["sl"] as? Int) == 1 || (o["hs"] as? Int) == 1) else { return nil }
         switch t {
         case "say":
             guard let tx = o["tx"] as? String, !tx.isEmpty else { return nil }
             let words = bannerBody(tx)
             let who = ((o["n"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             return (title, channel || who.isEmpty || !named ? words : who + ": " + words, chat, (o["id"] as? String) ?? "")
-        case "inv":
-            let body = channel ? String(localized: "You were added to the channel", bundle: MTLanguage.bundle)
-                               : String(localized: "You were added to the group", bundle: MTLanguage.bundle)
-            return (title, body, chat, "")
         case "room":
             // A ROOM'S INVITATION (MTGroupRoom, 07.10): it is carried to the seats it names alone (ts), so this phone is one of
             // them; the tap opens the group, where the bar over the chat is the way in. Every other room word stays silent.

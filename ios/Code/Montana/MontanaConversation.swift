@@ -4876,7 +4876,7 @@ struct MTChatAvatar: View {
 }
 
 /// THE SPEAKER'S FACE IN A GROUP'S FEED (the reference folder: the face of who wrote stands at the foot of their run): the person's
-/// own picture where this phone holds their pipe (the owner's phone, every member; a member's phone, the owner), else their initial
+/// own picture by the group's one answer (MTGroup.speakerFace: the face they gave on their own letter, else by their pipe), else their initial
 /// on the app's face in the colour every phone gives the speaker -- the faces' one palette (MontanaAvatar), by the speaker's name.
 struct MTSpeakerFace: View {
     @EnvironmentObject private var store: ChatStore
@@ -4891,7 +4891,7 @@ struct MTSpeakerFace: View {
         let initial = MontanaAvatar.initial(title: name, name: ref)
         if ref.isEmpty {
             Color.clear.frame(width: side, height: side)
-        } else if let face = MTGroup.shared.speakerPipe(ref).flatMap({ p in store.avatarFor(ref: p) }) {
+        } else if let face = MTGroup.shared.speakerFace(ref, store: store) {
             AvatarCircle(photoURL: face, color: Self.tint(ref), initial: initial, size: side)
         } else {
             MontanaHexagon().fill(Self.tint(ref))
