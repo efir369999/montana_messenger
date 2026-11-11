@@ -39,6 +39,25 @@ open ios/MontanaMessenger.xcodeproj
 fetch-webrtc.sh takes WebRTC.xcframework (webrtc-sdk 144.7559.10) only with the SHA-256 it pins. The frameworks are built
 for devices only (arm64): run the scheme MontanaMessenger on an iPhone, with your own team under Signing.
 
+## Verifying
+
+Build 1.0 (134) links two static libraries built from the revisions above with rustc 1.92.0. The release
+1.0-134 of this repository holds both as the build linked them (https://github.com/efir369999/montana_messenger/releases/tag/1.0-134):
+
+- libmt_bindings.a (core/Code), SHA-256 4ad3851916ee259ef67c72dab62f0dddc7de8f61fdbdcee08240ab498cbef511
+- libmt_boundary.a (core/Montana-Core), SHA-256 f1798f9ac45854fff49e22694dd1cd3232c6b37bf12fa4fddf1fbf8d72a2290b
+
+Build them as under Building, download the two archives beside the repository root and compare them (python3 alone):
+
+```sh
+python3 tools/compare-archives.py ios/Code/Frameworks/MontanaBindings.xcframework/ios-arm64/libmt_bindings.a libmt_bindings.a
+python3 tools/compare-archives.py ios/Code/Frameworks/MontanaCore.xcframework/ios-arm64/libmt_boundary.a libmt_boundary.a
+```
+
+A build from a clone has another SHA-256: the archives name the machine and the hour that built them (OpenSSL's build
+directory and its "built on", the build hashes in member and symbol names). The script pairs the members and reads each one:
+the bytes of every section equal, and the symbol names equal once those are set aside. It ends with SAME CODE.
+
 ## License
 
 MIT or Apache-2.0, at your option: LICENSE-MIT, LICENSE-APACHE.
