@@ -33,6 +33,22 @@ fi
 # The header include/montana_ffi.h is kept by hand (patches): cbindgen 0.29.4 regresses the opaque typedef
 # (WakeRegistry), so it is never regenerated here.
 
+# THE SAME BYTES FROM ANY FOLDER (decision 822 a, 11.11.2026): the library carries no path of this Mac. The tree is named
+# /montana and cargo's home /cargo in every file name the compiler writes; OpenSSL builds in one fixed folder (its install
+# folder is written into the library) and its «built on» is the epoch, not the clock: the repository a stranger clones has
+# commits of its own times, so no time of a commit could stand there. So anyone who builds this
+# commit, in any folder, gets the library the App Store build carries, byte for byte. One release build at a time: the
+# OpenSSL folder is shared. The tree's path is the physical one (pwd -P): the compiler sees /private/tmp, not /tmp.
+TREE="$(cd "$ROOT/.." && pwd -P)"
+export CARGO_ENCODED_RUSTFLAGS="--remap-path-prefix=$TREE=/montana"$'\x1f'"--remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}=/cargo"
+# The C the crates carry (ring builds its C and assembly with debug info always) is told the same two names; the flags are
+# shell-quoted, so a folder with a space stays one flag. OpenSSL writes its compiler flags into the library, so mt-crypto-native
+# hands it none of these (its folder is fixed already).
+export CC_SHELL_ESCAPED_FLAGS=1
+export TARGET_CFLAGS="'-ffile-prefix-map=$TREE=/montana' '-ffile-prefix-map=${CARGO_HOME:-$HOME/.cargo}=/cargo'"
+export MT_OPENSSL_BUILD_DIR=/tmp/montana-openssl
+export SOURCE_DATE_EPOCH=0
+
 echo "[1/3] cargo build device (device only, no simulator) (aarch64-apple-ios), edition $EDITION"
 # Cargo reads every .cargo/config.toml from the directory it starts in upwards; inside Code/ the workspace's own file and
 # one above the tree may disagree on env.RUST_TEST_THREADS and cargo stops. From Code/'s parent the workspace's file is not

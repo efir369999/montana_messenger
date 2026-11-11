@@ -190,7 +190,7 @@ final class MTTurnDrag: ObservableObject {
     /// settings and the profile are one open page at a time, risen over the tabs in the chat's own
     /// sliding container and closed by the cross or by the screen-edge swipe. The network left this slot
     /// for the finger's row (the author's word 25.09): it is a page under the bar, as the calls are.
-    enum Page: String, Identifiable { case settings, profile, birth, messenger, notifications, keeping, folders; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus; levels: the green shield's way (16.10)
+    enum Page: String, Identifiable { case settings, profile, birth, messenger, notifications, keeping; var id: String { rawValue } }   // birth: one more person of Montana, from the drawer's plus; levels: the green shield's way (16.10)
     var overlayPage: Page?
     /// The document page over everything (the author's word 19.09): the whole screen, above the tabs and the open chat.
     var docPage: MTDocOpen?
@@ -274,12 +274,9 @@ final class MTTurnDrag: ObservableObject {
     #else
     static var globePane: Pane { MTApps.vpn?.carried == true ? .vpn : .p2p }
     #endif
-    /// THE FOLDER CHOSEN ON THE CHATS PAGE, AND THE FOLDERS IN THEIR TABS' ORDER (the author's word 18.10.2026 07:2x UTC: «swipes
-    /// right and left on the chats page turn between the tabs too, and from the outermost go on to the other pages»): the page names
-    /// its folders here (ChatsListView), and the stroke reads them (turnStroke) -- All at every launch, as the reference.
-    var chatFolder = MTChatFolder.allID
-    var chatFolders: [String] = []
-    @ObservationIgnored private var folderTurn: Int?   // the stroke's folder step, read at its start: +1 the next, -1 the one before
+    // NO FOLDERS ON THE CHATS PAGE (the author's words 19110 and 19116, 11.11.2026: Groups and Channels go to the drawer, the strip
+    // under the time panel on the chats page goes entirely, and a stroke without the folders' strip turns the time panel's pages):
+    // a stroke on the chats page turns the pages, as on every page.
     /// THE PAGE'S OWN HOLDS (24.09): the chats page says whether something of its own stands open — the search, the
     /// selection, a row's menu, the gallery, the code page, the music's page, the deletion's sheet; nothing else
     /// knows them. The tabs do not turn while it holds.
@@ -313,7 +310,6 @@ final class MTTurnDrag: ObservableObject {
         return (offset < 0 ? -1 : 1) * (1 - 1 / ((abs(offset) * k / range) + 1)) * range
     }
     func turnStroke(_ state: UIGestureRecognizer.State, x: CGFloat, vx: CGFloat, width: CGFloat) {
-        if folderStroke(state, x: x, vx: vx, width: width) { return }
         let order = turnOrder
         guard let i = order.firstIndex(of: pane) else { return }
         // The stroke moves the pane from where it STOOD when the stroke began (the reference's fraction offset): a
@@ -342,28 +338,6 @@ final class MTTurnDrag: ObservableObject {
             settle(goes: goes, width: width)
         default: break
         }
-    }
-    /// A STROKE ON THE CHATS PAGE TURNS ITS FOLDERS FIRST: a stroke to the left goes to the next folder, to the right to the one
-    /// before, read once at the stroke's start; from the last folder to the left and the first to the right there is no folder
-    /// beside, and the stroke turns the pages as before. At the release the way is read as the pages read it: a moving finger says
-    /// the way, a still one the distance -- a third of the width.
-    private func folderStroke(_ state: UIGestureRecognizer.State, x: CGFloat, vx: CGFloat, width: CGFloat) -> Bool {
-        if state == .began {
-            folderTurn = nil
-            guard pane == .chats, let i = chatFolders.firstIndex(of: chatFolder), x != 0 else { return false }
-            let step = x < 0 ? 1 : -1
-            guard chatFolders.indices.contains(i + step) else { return false }
-            folderTurn = step
-            return true
-        }
-        guard let step = folderTurn else { return false }
-        guard state == .ended || state == .cancelled || state == .failed else { return true }
-        folderTurn = nil
-        let goes = state == .ended && (10 < abs(vx) ? (step > 0 ? vx < 0 : 0 < vx) : width / 3 < abs(x))
-        MontanaTrace.mark("tab_swipe", "folder step=\(step) dx=\(Int(x)) v=\(Int(vx)) goes=\(goes ? 1 : 0)")
-        guard goes, let i = chatFolders.firstIndex(of: chatFolder), chatFolders.indices.contains(i + step) else { return true }
-        withAnimation(.easeInOut(duration: 0.25)) { chatFolder = chatFolders[i + step] }
-        return true
     }
     /// THE ROLES SWAP AFTER THE SPRING, NOT BEFORE IT (the author's word 30.09 ~23:13: «systemically, without hand-written
     /// stories, super fast»): the spring carries the neighbour to the pane's place under the same roles, and at its end the
@@ -1731,7 +1705,8 @@ struct MontanaSideDrawer: View {
     private var hasSeed: Bool { MontanaSeed.hasSeed }
     // The library and its sliding container read exactly the same width, including after rotation.
     static func width(of container: CGFloat) -> CGFloat { round(container * 0.78) }
-    private var apps: [MTApplication] { MTApplication.allCases.filter { $0 != .groups && $0 != .channels && $0.carried } }
+    // Groups and Channels are the drawer's apps again, opening their own pages (the author's word 19110, 11.11.2026).
+    private var apps: [MTApplication] { MTApplication.allCases.filter(\.carried) }
     private var pins: Set<MTApplication> {
         Set(savedPins.split(separator: ",").compactMap { MTApplication(rawValue: String($0)) })
     }
@@ -2592,11 +2567,6 @@ struct MainTabView: View {
                 DataStorageView()
                     .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
             }
-            // A TAB'S MENU OPENS THE FOLDERS (the author's words 17.10.2026 15:4x UTC): the folders' page, its cross top left.
-            case .folders: NavigationStack {
-                MTFolderSettingsPage()
-                    .toolbar { ToolbarItem(placement: .topBarLeading) { MontanaCloseMark { ui.overlayPage = nil } } }
-            }
             }
         }
         .environment(ui).environmentObject(store)
@@ -3243,8 +3213,8 @@ enum MTRefusal: String {
 }
 
 /// THE MONTANA ROOM (the author's word 29.09): the room without an address where Montana itself speaks -- a new build in
-/// TestFlight, what changed, the button to update. The key is English and is not translated; the crown beside the name
-/// and the logo for a face are the room's dress (MTMontanaCrownMark, MTChatAvatar).
+/// TestFlight, what changed, the button to update. The key is English and is not translated; the seal beside the name
+/// and the logo for a face are the room's dress (MTMontanaSealMark, MTChatAvatar).
 let montanaRoomKey = "Montana"
 /// NO BANNER WHILE A PERSON PLAYS (the author's words 03.10: «Apple's notifications during the games and the minting fully off;
 /// only in the ordinary mode; in the games nowhere»). A game is what the screen shows: the open chat's own Money Flow, and what the

@@ -132,6 +132,23 @@ final class MTKeyboard: ObservableObject {
                 geometry.settle(announced: nil)
             })
         }
+        // THE KEYS CHANGE THEIR KIND IN SILENCE (the author's word 19195, 11.11.2026: «on T2 I chose the emoji on the keyboard
+        // and it stood over the input field -- the gravest violation»). T2, iOS 27.0.1, Messenger 134: `kb_show y=527` at
+        // 17:33:02, the emoji keys are 52 points taller than the letters, and the platform moved them with no will-change-frame,
+        // no will-show and no layout pass of the page -- nothing in the diary until the hide at 17:33:12 began from `y=475 h=451`:
+        // for ten seconds the keys covered the whole bar. The change of the input mode is the one word the platform says: the
+        // page is placed where the keys stand (settle reads the accessory the platform moved), and once more at the keys' own
+        // pace, when a keyboard that animates its new height has finished.
+        riders.append(NotificationCenter.default.addObserver(forName: UITextInputMode.currentInputModeDidChangeNotification,
+                                                             object: nil, queue: .main) { [weak view, weak geometry] n in
+            guard let view, view.window != nil, let geometry else { return }
+            MontanaTrace.mark("kb_mode", "lang=\((n.object as? UITextInputMode)?.primaryLanguage ?? "-") c=\(Int(geometry.coveredHeight)) guide=\(Int(geometry.guideCovered))")
+            geometry.settle(announced: nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + MTKeyboardSpring.duration(speed: 1)) { [weak view, weak geometry] in
+                guard let view, view.window != nil, let geometry else { return }
+                geometry.settle(announced: nil)
+            }
+        })
     }
 
     deinit { bag.forEach(NotificationCenter.default.removeObserver) }

@@ -7930,6 +7930,8 @@ struct CallOverlayView: View {
     private var chromeVisible: Bool { model.chromeVisible }
     /// THE CALL'S ADD MARK (the author's words 17.10.2026 20:22 UTC: «add to the current call more people from the user's contacts, up
     /// to 13 on a call», «from the call's page»): a connected call of two with no second line parked grows into a room.
+    /// MESSENGER'S CALL STAYS A CALL OF TWO (the author's word 19240, 11.11.2026): no add mark, no sheet, no room held for it.
+    #if !MONTANA_MESSENGER
     @State private var adding = false
     @State private var adds: [Chat] = []
     private var canAdd: Bool { model.state == "connected" ? !model.hasParked : false }
@@ -7940,6 +7942,7 @@ struct CallOverlayView: View {
         guard !people.isEmpty, let store = ChatStore.live else { return }
         MTGroupRoom.shared.grow(adding: people, store: store)
     }
+    #endif
     @Environment(\.verticalSizeClass) private var vClass
     private var landscape: Bool { vClass == .compact }
     /// The ground is one view (MTCallGround): the voice call, the sharer's own screen and the cover over
@@ -7967,11 +7970,13 @@ struct CallOverlayView: View {
         }
         // Whether the screen's owner is drawn again is said too (MTCallLive): the next frozen screen names its holder.
         // WHOM TO ADD TO THE CALL: the contacts this phone writes with, a tick each, the room's measure kept (MTCallAddSheet)
+        #if !MONTANA_MESSENGER
         .sheet(isPresented: $adding, onDismiss: addChosen) {
             if let store = ChatStore.live, let peer = model.peer {
                 MTCallAddSheet(peer: peer) { adds = $0 }.environmentObject(store)
             }
         }
+        #endif
         .modifier(MTCallSaid(event: "call_root", kv: "state=\(model.state) ring=\(model.peerRinging ? 1 : 0) lit=\(model.route.lit ? 1 : 0)"))
         // THE CAMERA REFUSAL IS SAID TO THE FACE (the author's word 20.09): the system alert with
         // the system road to Settings (UIApplication.openSettingsURLString). iOS restarts the app
@@ -8213,9 +8218,12 @@ struct CallOverlayView: View {
                     // room of one mark's size beside the fold. TWO MARKS ON EACH SIDE (the author's word 04.11.2026 15:47 UTC, No.16294):
                     // the fold and this room on the left, the add mark and the camera flip on the right -- each held by a room of its size
                     // when it is not there -- so the name stands in the centre with all the room between them.
+                    // Messenger has no add mark (the author's word 19240, 11.11.2026): one mark on each side, so no room balances it.
+                    #if !MONTANA_MESSENGER
                     if videoBranch {
                         Color.clear.frame(width: montanaTouchTarget, height: montanaTouchTarget)
                     }
+                    #endif
                     // THE NAME STANDS IN THE CENTRE OF THE TOP ROW ON A VIDEO CALL (the author's word 23.09: no words
                     // about the kind of call; the name as large as the marks, between the arrow and the camera flip).
                     // The block is the row's own height (MTCallTopTitle); the time stands under the row.
@@ -8226,12 +8234,14 @@ struct CallOverlayView: View {
                     }
                     // ADD TO THE CALL (the author's words 17.10.2026 20:22 UTC): the platform's own person-plus glyph on the marks' glass,
                     // no word, the 44 points of the platform's control that fires at the first lifting (MontanaCallMark)
+                    #if !MONTANA_MESSENGER
                     if canAdd {
                         MontanaCallMark(glyph: "person.badge.plus", label: "Add to Call") { adding = true }
                     } else if videoBranch {
                         // No add mark (the call is not connected, or a second line is parked): its room is held.
                         Color.clear.frame(width: montanaTouchTarget, height: montanaTouchTarget)
                     }
+                    #endif
                     if model.video {
                         MontanaCallMark(glyph: "camera.rotate", label: "Camera") { MontanaCall.shared.switchCamera() }
                     } else if videoBranch {

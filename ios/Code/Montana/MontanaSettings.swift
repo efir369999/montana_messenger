@@ -127,7 +127,6 @@ struct SettingsTabView: View {
                 .listRowBackground(MTGlassRowPlate())
                 Section {
                     NavigationLink { NotificationsView() } label: { navLabel("Notifications and Sounds", "bell.badge.fill", .red) }
-                    NavigationLink { MTFolderSettingsPage() } label: { navLabel("Chat Folders", "folder.fill", .blue) }   // the folders' tabs (17.10.2026)
                     NavigationLink { DataStorageView() } label: { navLabel("Data and Storage", "arrow.down.circle.fill", .indigo) }
                     NavigationLink { PrivacyView() } label: { navLabel("Privacy", "lock.fill", .gray) }
                     NavigationLink { AppearanceView() } label: { navLabel("Appearance", "paintbrush.fill", .blue) }

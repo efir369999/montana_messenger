@@ -280,14 +280,7 @@ final class ConnectionStatus: ObservableObject {
 }
 
 struct ChatsListView: View {
-    // THE FOLDERS' TABS (the author's words 17.10.2026 15:4x UTC): the chosen folder -- All at every launch, as the reference -- is
-    // the state's (UIState.chatFolder), so the page's stroke turns the folders before the pages (18.10.2026 07:2x UTC).
-    private var folderID: String {
-        get { ui.chatFolder }
-        nonmutating set { ui.chatFolder = newValue }
-    }
-    @ObservedObject private var folderBook = MTChatFolders.shared
-    @State private var removingFolder: MTChatFolder?
+    @ObservedObject private var folderBook = MTChatFolders.shared   // the Groups and Channels pages' folders (paneFolder)
     @ObservedObject private var release = MTReleaseState.shared
     @ObservedObject private var keep = MTKeeping.shared   // the crossed glyph of the copy with contacts (08.10)
     @ObservedObject private var playerGate = MontanaPlayerBar.Gate.shared   // the one bit; never the player's clock (the critic 22.09)
@@ -335,8 +328,8 @@ struct ChatsListView: View {
     /// condition each, read by the column and by the list alike. BOTH ARE THE CHATS PAGE'S OWN (the critic 23.09):
     /// the column stands over every page under the bar, and the chats' archive row stayed there when the contacts or
     /// the calls were chosen — their rows, running on under the bar since 1913, showed through its words.
-    private var storiesShown: Bool { ui.pane == .chats && folderID == MTChatFolder.allID && testMode && !searchActive && !storiesCollapsed }
-    private var archiveShown: Bool { ui.pane == .chats && folderID == MTChatFolder.allID && !archivedChats.isEmpty && archiveRevealed && !searchActive }
+    private var storiesShown: Bool { ui.pane == .chats && testMode && !searchActive && !storiesCollapsed }
+    private var archiveShown: Bool { ui.pane == .chats && !archivedChats.isEmpty && archiveRevealed && !searchActive }
     private var chatsTopBar: some View {
         MTGlassGroup {
         chatsTopBarPlate
@@ -997,32 +990,6 @@ struct ChatsListView: View {
             let known = folderBook.tellsContacts ? MTChatFolders.contactRefs() : nil
             let bare = folderBook.rows(of: folder, live: live, archived: archivedChats, store: store, contacts: known)
             VStack(spacing: 0) {
-                // THE FOLDERS' TABS IN PLACE OF THE SEGMENTS (the author's words 17.10.2026 15:4x UTC): All left of the chats, the
-                // groups and the channels, the bots after them, each with its badge, the folder's own menu on a hold (MTFolderTabs). The
-                // green shield left them for the interlocutor's bubble in the chat (MTKeepShield, the same hour). AS THE TIME PANEL
-                // (18.10.2026 07:2x UTC: «this strip of tabs over the chats' feed as the time panel, by its style and its place»): the
-                // panel's own plate and puck, at the panel's side margins, under it.
-                HStack(spacing: 6) {
-                    MTFolderTabs(tabs: folderTabs(live: live, contacts: known), chosen: folder.id,
-                                 pick: { id in
-                                     endSelecting()
-                                     withAnimation(.easeInOut(duration: 0.25)) { folderID = id }
-                                     ui.pane = .chats
-                                 },
-                                 menu: { id in AnyView(folderMenu(id, live: live, contacts: known)) })
-                }
-                .frame(minHeight: 44)
-                .padding(.horizontal, 12).padding(.vertical, 2)
-                // OVER THE FEED, AS THE TIME PANEL (the author's word 18.10.2026 11:4x UTC: «in 2241 the chats' panel still stands behind
-                // the chats' feed -- it must be as the time panel, over the feed»): the rows run on past the list's frame (MTChatListFrame,
-                // clipsToBounds off -- «what stands there covers them»), and this strip was drawn before them, so they slid over it. The
-                // time panel's own law (chatsFloating): drawn after the rows -- the order of drawing, not of layout.
-                .zIndex(1)
-                .onAppear { ui.chatFolders = folderBook.folders.map(\.id) }
-                .onChange(of: folderBook.folders.map(\.id)) { _, ids in
-                    ui.chatFolders = ids
-                    if !ids.contains(folderID) { folderID = MTChatFolder.allID }   // a folder taken away hands the page back to All
-                }
                 let empty = folder.isAll && bare.allSatisfy { c in ChatStore.isLocalRoom(c.name) } && archivedChats.isEmpty
                 let rows = empty ? bare + [Chat(name: Self.qrRow, lastMessage: "", time: "", unread: 0, status: "", convId: Self.qrRow)] : bare
                 MontanaTimePanelList(panel: timePanel(.chats, listEmpty: false, ownSearch: false), rows: rows,
@@ -1080,76 +1047,18 @@ struct ChatsListView: View {
                 // ── BOTTOM selection bar (Read all / Archive / Delete) ──
                 if selecting { selectionBar }
             }
-            .alert(removalTitle, isPresented: Binding(get: { removingFolder != nil }, set: { on in if !on { removingFolder = nil } }),
-                   presenting: removingFolder) { f in
-                Button("Remove", role: .destructive) {
-                    if folderID == f.id { folderID = MTChatFolder.allID }
-                    folderBook.remove(f.id)
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: { _ in
-                Text("This will remove the folder, your chats will not be deleted.")
-            }
         }
     }
 
-    /// The folder a page shows: the drawer's Groups and Channels open the folder of their kind; the chats page, the tab chosen.
+    /// The folder a page shows: the drawer's Groups and Channels open the folder of their kind; the chats page, every chat.
     private func paneFolder(_ p: UIState.Pane) -> MTChatFolder {
         switch p {
         case .groups: return folderBook.folder(only: .groups) ?? MTChatFolder(id: "groups", preset: .groups, kinds: [.groups])
         case .channels: return folderBook.folder(only: .channels) ?? MTChatFolder(id: "channels", preset: .channels, kinds: [.channels])
-        default: return folderBook.folder(folderID) ?? .all
+        default: return .all
         }
     }
-    /// The tabs and their badges: All Chats wears none, as the reference's; a folder counts its unread conversations.
-    private func folderTabs(live: [Chat], contacts: Set<String>?) -> [MTFolderTabs.Tab] {
-        folderBook.folders.map { f in
-            let badge = f.isAll ? (count: 0, loud: false)
-                : MTChatFolders.badge(folderBook.rows(of: f, live: live, archived: archivedChats, store: store, contacts: contacts), store: store)
-            return MTFolderTabs.Tab(id: f.id, title: f.shownTitle,
-                                    short: f.isAll ? String(localized: "All", bundle: MTLanguage.bundle) : f.shownTitle,
-                                    unread: badge.count, loud: badge.loud)
-        }
-    }
-    /// A hold on a tab, the reference's menu: a folder is edited, given chats, read and muted at once, or taken away; All Chats
-    /// opens the folders' page; and the tabs' order, when there are two tabs to order.
-    @ViewBuilder private func folderMenu(_ id: String, live: [Chat], contacts: Set<String>?) -> some View {
-        if let f = folderBook.folder(id), !f.isAll {
-            let rows = folderBook.rows(of: f, live: live, archived: archivedChats, store: store, contacts: contacts)
-            Button { openFolders(MTChatFolders.Opening(folder: id)) } label: { Label("Edit Folder", systemImage: "pencil") }
-            Button { openFolders(MTChatFolders.Opening(folder: id, addChats: true)) } label: { Label("Add Chats", systemImage: "plus") }
-            if rows.contains(where: { c in store.hasUnread(c.name) }) {
-                Button {
-                    for c in rows where store.hasUnread(c.name) { store.markRead(c.name, tellPeer: false) }
-                } label: { Label("Read All", systemImage: "checkmark.message") }
-            }
-            if !rows.isEmpty {
-                let muted = rows.allSatisfy { c in store.mutedChats.contains(c.name) }
-                Button {
-                    for c in rows where store.mutedChats.contains(c.name) == muted { store.toggleMuteChat(c.name) }
-                } label: {
-                    if muted { Label("Unmute All", systemImage: "bell") } else { Label("Mute All", systemImage: "bell.slash") }
-                }
-            }
-            Button(role: .destructive) { removingFolder = f } label: { Label("Remove", systemImage: "trash") }
-        } else {
-            Button { openFolders(MTChatFolders.Opening()) } label: { Label("Edit Folders", systemImage: "pencil") }
-        }
-        if 1 < folderBook.folders.count {
-            Divider()
-            Button { openFolders(MTChatFolders.Opening(reorder: true)) } label: {
-                Label("Reorder Tabs", systemImage: "arrow.left.arrow.right")
-            }
-        }
-    }
-    private func openFolders(_ o: MTChatFolders.Opening) {
-        folderBook.opening = o
-        ui.overlayPage = .folders
-    }
-    private var removalTitle: Text {
-        Text(String(format: String(localized: "Remove %@?", bundle: MTLanguage.bundle), removingFolder?.shownTitle ?? ""))
-    }
-    /// A folder no conversation matches, in the reference's words; a hold on its tab edits it.
+    /// A folder no conversation matches, in the reference's words: the Groups or the Channels page with none of its kind.
     private var folderEmpty: some View {
         VStack(spacing: 8) {
             Image(systemName: "folder").font(.system(size: 44)).foregroundStyle(.secondary)
@@ -2211,7 +2120,7 @@ struct ChatRow: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundColor(.primary)
                         .lineLimit(1)
-                    if model.montana { MTMontanaCrownMark(height: 18) }
+                    if model.montana { MTMontanaSealMark(height: 18) }
                     if MTGroup.isKey(model.ref) { MTRoomRowMark(chat: model.ref) }   // a group's living room (07.10)
                     CallInlineHandset(side: .red, peer: model.ref)
                     if model.muted {

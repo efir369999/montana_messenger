@@ -2046,7 +2046,7 @@ struct ChatConversationView: View {
                 HStack(spacing: 6) {
                     Text(MontanaAvatar.spokenName(store.title(for: chat))).font(.subheadline).bold().foregroundStyle(.primary)
                         .lineLimit(1).truncationMode(.tail)
-                    if ChatStore.isMontanaRoom(chat.name) { MTMontanaCrownMark(height: 16) }
+                    if ChatStore.isMontanaRoom(chat.name) { MTMontanaSealMark(height: 16) }
                 }
                 if chat.isGroup, let out = MTGroup.shared.outWords(chat.name) {
                     Text(out).font(.caption2).foregroundStyle(.secondary).lineLimit(1)   // the catalogue's words, read by MTGroup.outWords
@@ -4976,20 +4976,23 @@ struct MontanaChatFace: View {
             Text(MontanaAvatar.spokenName(store.title(for: chat)))
                 .font(rim ? .system(size: 17, weight: .semibold) : .body)
                 .foregroundColor(.primary).lineLimit(1).truncationMode(.tail)
-            if ChatStore.isMontanaRoom(chat.name) { MTMontanaCrownMark(height: rim ? 18 : 16) }
+            if ChatStore.isMontanaRoom(chat.name) { MTMontanaSealMark(height: rim ? 18 : 16) }
         }
     }
 }
 
-/// THE CROWN BESIDE THE NAME (the author's word 29.09): his own picture -- a pure golden volume like the knight of his
-/// poster, no frame and no square -- drawn from the asset «MontanaCrown» byte for byte, and nothing at all until his
-/// file lands there. No drawing of our own stands in for it.
-struct MTMontanaCrownMark: View {
+/// THE SEAL BESIDE THE NAME (the author's word 19246, 11.11: «to the right of the name Montana that writes about the updates
+/// there must be a check mark exactly the same», his picture: the blue scalloped seal with a white check). The room's one mark
+/// -- the chat's head, the chats list, the face rows -- drawn here alone; its blue is read off his picture (84, 160, 248).
+/// It stands where the crown of 29.09 waited for an asset that never landed.
+struct MTMontanaSealMark: View {
     let height: CGFloat
     var body: some View {
-        if let ui = UIImage(named: "MontanaCrown") {
-            Image(uiImage: ui).resizable().scaledToFit().frame(height: height).accessibilityHidden(true)
-        }
+        Image(systemName: "checkmark.seal.fill")
+            .symbolRenderingMode(.palette)
+            .foregroundStyle(Color.white, Color(red: 84 / 255, green: 160 / 255, blue: 248 / 255))
+            .font(.system(size: height))
+            .accessibilityHidden(true)
     }
 }
 

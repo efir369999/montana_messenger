@@ -23,9 +23,20 @@ if [ ! -x "$CARGO" ]; then
   exit 1
 fi
 
+# THE SAME BYTES FROM ANY FOLDER (decision 822 a, 11.11.2026): the library carries no path of this Mac. In every file name
+# the compiler writes, this tree is /montana/Montana-Core and the home of the downloaded crates is /cargo, so anyone who
+# builds this commit, in any folder, gets the library the App Store build carries, byte for byte. ROOT is already the
+# physical path, the one the compiler sees.
+export CARGO_ENCODED_RUSTFLAGS="--remap-path-prefix=$ROOT=/montana/Montana-Core"$'\x1f'"--remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}=/cargo"
+# The C the crates carry is built with debug info by some of them; it is told the same two names (shell-quoted flags).
+export CC_SHELL_ESCAPED_FLAGS=1
+export TARGET_CFLAGS="'-ffile-prefix-map=$ROOT=/montana/Montana-Core' '-ffile-prefix-map=${CARGO_HOME:-$HOME/.cargo}=/cargo'"
+
 echo "building the boundary for $TARGET"
-taskpolicy -b nice -n 19 "$CARGO" build --manifest-path "$ROOT/Cargo.toml" \
-  -p mt-boundary --release --target "$TARGET" --jobs 2
+# From the core's own folder: rustup picks the compiler by the folder it is called in, and rust-toolchain.toml here names the
+# one this build uses; called from anywhere else, a stranger's default compiler built other bytes.
+( cd "$ROOT" && taskpolicy -b nice -n 19 "$CARGO" build --manifest-path "$ROOT/Cargo.toml" \
+  -p mt-boundary --release --target "$TARGET" --jobs 2 )
 
 LIB="$ROOT/target/$TARGET/release/libmt_boundary.a"
 [ -f "$LIB" ] || { echo "the library was not built at $LIB" >&2; exit 1; }

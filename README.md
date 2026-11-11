@@ -7,7 +7,7 @@ A simple, fast messenger for every day: chats, voice and video calls, groups and
 The app's page, its privacy policy, terms and support: https://montana.one
 
 This repository is the source of the iOS app as it is built for the App Store: the app, the client core it links and the part
-of the Montana protocol core it links, and nothing else. Staged from app a9adf31100ffc6ec4908b2fdbb4dcf27ce378df3, client core a427e913d4ecfa6d34d1f923fd6ec783bcca17af, protocol core 2f5a1a220d8668104b53eb6b71f0b4a70a3319a8.
+of the Montana protocol core it links, and nothing else. Staged from app 20f752ae71f4d22b5ebecb9d184f8921069a65cc, client core fd0c7a45155330057bbf0bb966ce2355430f7161, protocol core 35af7bc474e4aac0917ca9d2790a8daa04c0c853.
 
 ## Layout
 
@@ -41,11 +41,11 @@ for devices only (arm64): run the scheme MontanaMessenger on an iPhone, with you
 
 ## Verifying
 
-Build 1.0 (134) links two static libraries built from the revisions above with rustc 1.92.0. The release
-1.0-134 of this repository holds both as the build linked them (https://github.com/efir369999/montana_messenger/releases/tag/1.0-134):
+Build 1.0 (135) links two static libraries built from the revisions above with rustc 1.92.0. The release
+1.0-135 of this repository holds both as the build linked them (https://github.com/efir369999/montana_messenger/releases/tag/1.0-135):
 
-- libmt_bindings.a (core/Code), SHA-256 4ad3851916ee259ef67c72dab62f0dddc7de8f61fdbdcee08240ab498cbef511
-- libmt_boundary.a (core/Montana-Core), SHA-256 f1798f9ac45854fff49e22694dd1cd3232c6b37bf12fa4fddf1fbf8d72a2290b
+- libmt_bindings.a (core/Code), SHA-256 c446c063b70b88ee6c60fb8fce80ce71905a413344dddb5a7281999b88225c32
+- libmt_boundary.a (core/Montana-Core), SHA-256 fc0189289b3f0846132307d8b4d3db44e62ec4157333cd7e20cb52f248c72c5c
 
 Build them as under Building, download the two archives beside the repository root and compare them (python3 alone):
 
@@ -54,9 +54,9 @@ python3 tools/compare-archives.py ios/Code/Frameworks/MontanaBindings.xcframewor
 python3 tools/compare-archives.py ios/Code/Frameworks/MontanaCore.xcframework/ios-arm64/libmt_boundary.a libmt_boundary.a
 ```
 
-A build from a clone has another SHA-256: the archives name the machine and the hour that built them (OpenSSL's build
-directory and its "built on", the build hashes in member and symbol names). The script pairs the members and reads each one:
-the bytes of every section equal, and the symbol names equal once those are set aside. It ends with SAME CODE.
+Both archives are built the same in any folder: the compiler names the tree /montana and the crates' home /cargo,
+and OpenSSL builds in /tmp/montana-openssl with "built on" the epoch. A build of yours from these revisions has the
+same SHA-256, and compare-archives.py ends with SAME BYTES. One build at a time: the OpenSSL folder is shared.
 
 ## License
 

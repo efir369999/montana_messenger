@@ -3,7 +3,10 @@
 
 usage: python3 tools/compare-archives.py MINE.a THEIRS.a
 
-A build from a clone does not give the shipped archive's SHA-256: the archive names the machine and the hour that built it
+Archives built by the core scripts from decision 822 a (11.11.2026) on name no folder and no hour: a build of the same
+revisions in any folder has the same SHA-256, and the script says SAME BYTES and reads nothing more.
+
+Before that, a build from a clone did not give the shipped archive's SHA-256: the archive named the machine and the hour that built it
 (OpenSSL's ENGINESDIR, MODULESDIR and "built on"; the crates' build hashes in member and symbol names; LLVM's .llvm.N
 suffixes of promoted local symbols). Every member is paired by its name with the build hash taken out and its Mach-O read:
 the bytes of every section must be equal, and its symbol names equal once those hashes are set aside. OpenSSL's two
@@ -75,8 +78,12 @@ def same(name, a, b):
 
 def main(mine, theirs):
     a, b = members(mine), members(theirs)
-    for path in (mine, theirs):
-        print("sha256", hashlib.sha256(open(path, "rb").read()).hexdigest(), path)
+    sums = [hashlib.sha256(open(path, "rb").read()).hexdigest() for path in (mine, theirs)]
+    for path, sha in zip((mine, theirs), sums):
+        print("sha256", sha, path)
+    if sums[0] == sums[1]:   # an archive built the same in any folder (decision 822 a): nothing left to read
+        print("SAME BYTES")
+        return 0
     if sorted(a) != sorted(b):
         print("DIFFERENT: member names", sorted(set(a).symmetric_difference(b))[:12])
         return 1

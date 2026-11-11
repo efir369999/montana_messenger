@@ -904,7 +904,9 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     /// holds with them, as every group is (MTGroup.create): its people see it in their list, and nobody outside it learns who is
     /// in it. The peer is told on the call's own road which room the call moves into and comes in by itself (moveIn); the people
     /// chosen are invited, and their phones ring with the invitation. The call of two ends by that rule, and the room -- the one
-    /// owner of a call of more than two -- takes the voices over.
+    /// owner of a call of more than two -- takes the voices over. Messenger has no add mark (the author's word 19240, 11.11.2026): it never grows a call, it
+    /// only comes into a room a peer grew (takeInline).
+    #if !MONTANA_MESSENGER
     @MainActor
     func grow(adding people: [Chat], store: ChatStore) {
         guard let peer = MontanaCall.shared.talkingWith, live == nil else { return }
@@ -962,6 +964,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         }
         if !moved { MontanaTrace.mark("room_refused", "grow -- the call would not carry the move") }
     }
+    #endif
 
     /// The peer's answer on the call's road (takeInline): its room key and the moment it comes in, as «key moment».
     static func comer(_ reply: String, seat: String) -> (seat: String, at: Double, pub: Data)? {
@@ -2490,6 +2493,8 @@ struct MTRoomInviteSheet: View {
 /// up to 13 on a call», «from the call's page»): the people this phone writes with, each by a tick -- the list a group is chosen
 /// from (MTGroupPickStep.reachable, MTPickRow), the peer left out. This phone and the peer are counted in: a row past the room's
 /// measure takes no tick. The tick at the top hands the people chosen over; the call grows once the sheet is gone (grow).
+/// Not in Messenger (the author's word 19240, 11.11.2026).
+#if !MONTANA_MESSENGER
 struct MTCallAddSheet: View {
     @EnvironmentObject private var store: ChatStore
     @Environment(\.dismiss) private var dismiss
@@ -2543,6 +2548,7 @@ struct MTCallAddSheet: View {
         if let i = chosen.firstIndex(of: ref) { chosen.remove(at: i) } else if chosen.count < Self.places { chosen.append(ref) }
     }
 }
+#endif
 
 /// THE ROOM OVER ITS CHAT: a group whose room lives shows it here -- its kind, how many are in, who invited me. The whole row is the
 /// way in, or back when this phone is in it; a line about the room (full, ended) stands here when no room screen is up.
