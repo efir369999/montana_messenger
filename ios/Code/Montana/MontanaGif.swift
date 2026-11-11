@@ -389,7 +389,7 @@ enum MontanaGifSearch {
 
     /// The doors that carry this capability, the elected one first — the tree's own one owner.
     private static func doors() -> [String] {
-        MontanaWakePush.electedFirst(MontanaWakePush.orderedBases(for: "gif"))
+        MTNodeWire.electedFirst(MontanaWakePush.orderedBases(for: "gif"), elected: MontanaWakePush.elected())
     }
 
     /// THE MAP OF WHAT THE DOORS CAN IS WAITED FOR, NOT GUESSED AT (23.09, measured on the

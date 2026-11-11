@@ -1275,7 +1275,7 @@ class ChatStore: ObservableObject {
     var uploadStatus: [String: String] { MTTransferBoard.shared.status }
     // ONE BIRTH POINT (the critic 22.09): a seat here is taken inside sendMediaToPeer alone. A second
     // birth (the transcode, for the cancel button) made the refusal of a living upload meet its own
-    // encode after the rename — the setter is private, the guard tools/mt-owner-check.py stands behind it.
+    // encode after the rename — the setter is private, the guard tools/mt-owners-check.py stands behind it.
     private(set) var uploadTasks: [String: Task<Void, Never>] = [:]     // cancelable send tasks keyed by file name
     var historyLoaded = false {   // the queue mirror (M-1/M-2) waits for this: an empty chat map is not «no rows»
         didSet {
@@ -1525,7 +1525,7 @@ class ChatStore: ObservableObject {
         MontanaTrace.mark("send_red", mid: sid.hasPrefix("mid:") ? String(sid.dropFirst(4)) : sid, "why=\(why.rawValue) was=\(cur.rawValue)")
         return setRung(chat, i, .failed)
     }
-    /// The rung written: the two doors above (advance, putOut) and nothing else write the ladder forward or into red.
+    /// The rung written, its one writer: the two doors above (advance, putOut) forward or into red, and the hand's road back (restartSend).
     @MainActor
     private func setRung(_ chat: String, _ i: Int, _ next: DeliveryStatus) -> Bool {
         messages[chat]?[i].deliveryStatus = next
@@ -1585,11 +1585,7 @@ class ChatStore: ObservableObject {
     func restartSend(_ chat: String, _ i: Int) {
         guard let list = messages[chat], i >= 0, i < list.count,
               list[i].deliveryStatus == .failed else { return }
-        messages[chat]?[i].deliveryStatus = .sending
-        stageMoved.insert(chat)
-        #if !MONTANA_MESSENGER
-        if let row = messages[chat]?[i], row.isFromMe { MTApps.coins?.hold(row, in: chat) }   // on its way again, a coin letter's coins taken again (05.10)
-        #endif
+        _ = setRung(chat, i, .sending)   // the one writer of the rung: its moment, the row's record and a coin letter's coins follow it
     }
 
     /// How long an upload may stay silent before it is declared unsent. A 512 KiB chunk
@@ -7166,6 +7162,8 @@ enum SeedScope {
 
         // the VPN's keys of this device alone come through its door (MTApps.vpn.deviceKeys, slice S3b b3)
         MTGroupRoom.bookKey,   // the group rooms this phone knows and their people's room keys (07.10.2026): live minutes, never a copy's
+        MTGroupRoom.standingKey, MTGroupRoom.announcedKey,   // the room keys named for the next room, mine and the seats' (nq, 11.11.2026): a room's secret, never a copy's
+        MTGroupRoom.overKey,   // the rooms that ended here (11.11.2026, the author's words 19800, 19801): this device's memory, never a copy's
         "filesPageFolder",   // the folder of the last file taken on this phone (MTFilesFolder, 27.10.2026): a path of this device's file system, never a copy's
         "pagesWall", "pagesWallRecent", "pagesWallBlur", MontanaWakePush.skewKey]
         + doorDeviceKeys

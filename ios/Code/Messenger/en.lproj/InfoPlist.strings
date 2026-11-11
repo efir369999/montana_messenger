@@ -3,5 +3,5 @@
    Code/Montana/LANG.lproj/InfoPlist.strings. This file gives it for the keys Code/Messenger/Info.plist asks. */
 
 /* The name iCloud gives this app's storage (NSUbiquitousContainers in Info.plist), taken per language from this file only:
-   the product's own name, Code/Names.xcconfig MT_NAME_MESSENGER, held equal to it by tools/mt-names-check.py (rule 8). */
+   the product's own name, Code/Names.xcconfig MT_NAME_MESSENGER, held equal to it by tools/mt-owners-check.py. */
 "NSUbiquitousContainerName" = "Montana";

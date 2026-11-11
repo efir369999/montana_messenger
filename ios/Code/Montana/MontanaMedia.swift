@@ -3363,6 +3363,23 @@ extension Notification.Name {
     static let montanaVoiceEndedAtEar = Notification.Name("montanaVoiceEndedAtEar")
 }
 
+/// ONE WRITER OF A WAV (constitution 15; OZ 2 p.4.10, the author's word 19199): sixteen-bit mono PCM -- the RIFF header,
+/// then the samples, every number little-endian. The ear tone (44.1 kHz) and the call's tones (8 kHz) hand it their samples;
+/// the bytes are those the two copies wrote, byte for byte. tools/owners.json holds it: one definition, one RIFF header.
+enum MontanaWAV {
+    static func pcm16Mono(_ samples: [Int16], rate: Int) -> Data {
+        var data = Data()
+        func le32(_ v: Int) { withUnsafeBytes(of: UInt32(v).littleEndian) { data.append(contentsOf: $0) } }
+        func le16(_ v: Int) { withUnsafeBytes(of: UInt16(v).littleEndian) { data.append(contentsOf: $0) } }
+        let bytes = samples.count * 2
+        data.append(contentsOf: Array("RIFF".utf8)); le32(36 + bytes); data.append(contentsOf: Array("WAVE".utf8))
+        data.append(contentsOf: Array("fmt ".utf8)); le32(16); le16(1); le16(1); le32(rate); le32(rate * 2); le16(2); le16(16)
+        data.append(contentsOf: Array("data".utf8)); le32(bytes)
+        for s in samples { withUnsafeBytes(of: s.littleEndian) { data.append(contentsOf: $0) } }
+        return data
+    }
+}
+
 /// THE EAR TONE (the author's word 14.09): a short two-note chime played THROUGH the audio
 /// session, so it follows the session's route — the receiver at the ear — and ignores the
 /// silent switch, unlike a system sound. Built in memory, no file.
@@ -3383,15 +3400,7 @@ enum MontanaEarTone {
                 samples.append(Int16(sin(2 * .pi * n.hz * t) * 0.12 * env * 32767))
             }
         }
-        var data = Data()
-        func le32(_ v: UInt32) { withUnsafeBytes(of: v.littleEndian) { data.append(contentsOf: $0) } }
-        func le16(_ v: UInt16) { withUnsafeBytes(of: v.littleEndian) { data.append(contentsOf: $0) } }
-        let bytes = UInt32(samples.count * 2)
-        data.append(contentsOf: Array("RIFF".utf8)); le32(36 + bytes); data.append(contentsOf: Array("WAVE".utf8))
-        data.append(contentsOf: Array("fmt ".utf8)); le32(16); le16(1); le16(1); le32(UInt32(rate)); le32(UInt32(rate) * 2); le16(2); le16(16)
-        data.append(contentsOf: Array("data".utf8)); le32(bytes)
-        samples.withUnsafeBytes { data.append(contentsOf: $0) }
-        player = try? AVAudioPlayer(data: data)
+        player = try? AVAudioPlayer(data: MontanaWAV.pcm16Mono(samples, rate: Int(rate)))
         player?.volume = 1
         let ok = player?.play() ?? false
         MontanaTrace.mark("voice_ear_reply", "tone played=\(ok ? 1 : 0)")

@@ -5839,22 +5839,11 @@ final class MontanaCall: NSObject {
 
     private func playDialSoundNow() { if peerRinging { playRingbackNow() } else { playDialToneNow() } }
 
-    /// ONE WRITER OF A CALL TONE'S FILE (15.10.2026, the critic of No.69): three tones carried three copies of the same
-    /// sixteen-bit mono 8 kHz header and of its byte helpers. The bytes written are the copies' own, byte for byte.
+    /// ONE FILE OF A CALL TONE (15.10.2026, the critic of No.69): the three tones hand their 8 kHz samples to the one WAV
+    /// writer, MontanaWAV (MontanaMedia.swift), and lay its bytes in a file of their name.
     private static func wavFile(_ name: String, _ samples: [Int16]) -> URL {
-        let sr = 8000
-        var data = Data()
-        func le32(_ v: Int) -> [UInt8] { [UInt8(v & 0xff), UInt8((v>>8) & 0xff), UInt8((v>>16) & 0xff), UInt8((v>>24) & 0xff)] }
-        func le16(_ v: Int) -> [UInt8] { [UInt8(v & 0xff), UInt8((v>>8) & 0xff)] }
-        let dataBytes = samples.count * 2
-        data.append(contentsOf: Array("RIFF".utf8)); data.append(contentsOf: le32(36 + dataBytes))
-        data.append(contentsOf: Array("WAVE".utf8)); data.append(contentsOf: Array("fmt ".utf8))
-        data.append(contentsOf: le32(16)); data.append(contentsOf: le16(1)); data.append(contentsOf: le16(1))
-        data.append(contentsOf: le32(sr)); data.append(contentsOf: le32(sr * 2)); data.append(contentsOf: le16(2)); data.append(contentsOf: le16(16))
-        data.append(contentsOf: Array("data".utf8)); data.append(contentsOf: le32(dataBytes))
-        for s in samples { data.append(contentsOf: le16(Int(s) & 0xffff)) }
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
-        try? data.write(to: url)
+        try? MontanaWAV.pcm16Mono(samples, rate: 8000).write(to: url)
         return url
     }
     private static var _ringbackURL: URL?

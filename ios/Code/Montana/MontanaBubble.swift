@@ -2519,7 +2519,7 @@ struct MTInputField: UIViewRepresentable {
     // message row, totally). Every number of the row lives here and nowhere else: the tier's height
     // (the field in one line and both buttons), the line of text, the font, the field's own insets,
     // the bar's breathing room, the ceiling. MontanaOctagon.composeHeight and the chat's cap READ
-    // these; a second literal anywhere is a second owner (mt-owner-check).
+    // these; a second literal anywhere is a second owner (mt-owners-check).
     static let tier: CGFloat = 36                      // the row: the field in one line, «+», the microphone
     static let fontSize: CGFloat = 17
     static var font: UIFont { .systemFont(ofSize: fontSize) }

@@ -2,7 +2,7 @@
 // one source of truth, it is an invariant ... do not allow several owners anywhere»). Every name a person reads as an app's own --
 // under the icon, on the share sheet, in the «Open in» choice between the two apps (the author's word 16049) -- is this file's line;
 // the project, both Info.plists and the code only read it. The project's base configuration (Debug and Release) is this file;
-// tools/mt-names-check.py keeps every other place a reader.
+// tools/mt-owners-check.py keeps every other place a reader (the facts of tools/owners.json).
 // THE BUILD'S NUMBER AND VERSION have their own owner beside the names (constitution article 15, the author's word 19159):
 #include "../Version.xcconfig"
 

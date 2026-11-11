@@ -930,7 +930,7 @@ extension MontanaArchive {
     /// This device's name in the pipe: the node rings every device of the pipe but the one that spoke.
     nonisolated static var twinDeviceRef: String { (MontanaSeed.twin ?? "") + "#" + E2E.deviceTag() }
     /// The one place a label of the seed's own pipe is signed: by this device, never by the person (P-118.1's one exception).
-    nonisolated static func twinSid(_ cw: String) -> String { MontanaWakePush.subId(cw, ref: twinDeviceRef) }
+    nonisolated static func twinSid(_ cw: String) -> String { MTNodeWire.subId(cw, ref: twinDeviceRef) }
     /// This device's name under any label of the box -- what it took is marked by it, never by the person (24.10.2026): the same
     /// derivation as the pipe's sid, one per label, so the node links no two labels of one device.
     nonisolated static func deviceSid(_ cw: String) -> String { twinSid(cw) }

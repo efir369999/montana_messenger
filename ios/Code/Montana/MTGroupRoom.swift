@@ -56,6 +56,10 @@ struct MTRoomEvent: Codable {
     /// THE SPEAKER'S OWN MOMENT OF COMING IN, when the word is said later than it (key, a reannouncement): the word's freshness is
     /// at, the seat's place in the room's order is s. A build that knows no s reads at, which stays inside the word's life.
     var s: Double? = nil
+    /// THE SPEAKER'S ROOM KEY FOR ITS NEXT ROOM (11.11.2026, OZ 1 p.7, the reconnaissance: Signal ringrtc group_call.rs:3804 -- who a
+    /// participant is, a key that came before on a proven road proves): rides open and in on the group's road, which proves whose it
+    /// is. The next room this seat comes into is entered with it, so every pair word to it is sealed at once -- no wait for its in.
+    var nq: String? = nil
 }
 
 /// A group's room as this phone knows it from the group's words. Kept sealed on this device (MTGroupRoom.bookKey) so a run that
@@ -83,7 +87,7 @@ struct MTRoomSignal: Codable {
     var r: String
     var f: String
     var t: String
-    /// offer, answer, ice, bye
+    /// offer, answer, ice, bye; on the room's own lane in and here
     var c: String
     var g: Int
     /// The ML-KEM-768 ciphertext to the receiver's room key, base64.
@@ -91,11 +95,18 @@ struct MTRoomSignal: Codable {
     /// The content under the key it carries (AES-256-GCM), base64.
     var x: String? = nil
     var at: Double
+    /// THE SEAT'S MOMENT OF COMING IN, on the room's own lane (in, here; 11.11.2026, OZ 1 p.3): at is the word's freshness, s the
+    /// seat's place in the room's order -- the very moment its word on the group's road names.
+    var s: Double? = nil
 }
 /// The content of a pair word.
 struct MTRoomInner: Codable {
     var sdp: String? = nil
     var ice: [MTRoomICE]? = nil
+    /// THE OFFER'S CHALLENGE (11.11.2026, OZ 1 p.7, critic 19567): 32 random bytes, base64, sealed inside the offer to its receiver's
+    /// room key; the answer carries them back. The seal hides a word but proves no sender -- anyone of the group may seal an answer to
+    /// the offerer's public key; only the one who opened the offer knows its challenge, so an answer without it is nobody's.
+    var n: String? = nil
 }
 
 /// A PAIR WORD IS SEALED TO ITS RECEIVER (07.10): each person in a room holds a room key of its own (ML-KEM-768, born when it comes
@@ -247,6 +258,9 @@ final class MTRoomPair: NSObject, RTCPeerConnectionDelegate, RTCDataChannelDeleg
     var restarts = 0
     var lastOffer: String?
     var lastAnswer: String?
+    /// The challenge my offers of this generation carry (the offerer) and the one the offer I answer carried (the answerer):
+    /// MTRoomInner.n, its one owner on each side.
+    var challenge: Data?
     /// The transport fingerprint of the connection the offers came from: another one is a connection built anew.
     var remoteFP: String?
     var level: Double = 0
@@ -298,6 +312,9 @@ final class MTRoomPair: NSObject, RTCPeerConnectionDelegate, RTCDataChannelDeleg
     func peerConnection(_ pc: RTCPeerConnection, didRemove candidates: [RTCIceCandidate]) {}
 }
 
+/// A room key minted for this phone's next room in a group (MTGroupRoom.standing).
+struct MTRoomStanding: Codable { var pub: Data; var sec: Data }
+
 /// The room this phone is in.
 final class MTRoomLive {
     let group: String
@@ -338,6 +355,8 @@ final class MTRoomLive {
     var wasAlone = false
     /// The comings in already handed my key (seat and moment): each is handed once.
     var keyed = Set<String>()
+    /// The comings in already answered on the room's lane (seat and moment): each hears my here once.
+    var laneAnswered = Set<String>()
     /// This phone's room key (MTRoomSeal), born with the room in hand and gone with it.
     var kemPub = Data()
     var kemSec = Data()
@@ -385,6 +404,20 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     private static func setLive(_ on: Bool) { liveLock.lock(); _live = on; liveLock.unlock() }
 
     private var seen: [String: MTRoomSeen] = [:]
+    /// THE ROOMS THAT ARE OVER HERE, by id, with the moment each ended (11.11.2026, OZ 1 p.8, the author's words 19800, 19801): the one
+    /// owner of «this room has ended». Measured on Messenger 136 at 21:24:31 UTC: T3 left last, said end and forgot the room; 0.13 s
+    /// later the key word of a seat already gone landed and bore the room anew -- a room of nobody stood in the group, T3 came into it
+    /// at 21:33:19, and its leaving, an out beside the ghost, could not end it. A word of a room that is over is a corpse: none brings
+    /// it back. Kept for staleAfter -- a word older than that is refused anyway -- and sealed beside the book (overKey), so a run that
+    /// starts again holds it too. bury is the only door that forgets an ended room.
+    private var over: [String: Double] = [:]
+    /// THIS PHONE'S ROOM KEY FOR ITS NEXT ROOM, by group (MTRoomEvent.nq): named on the group's road before it is used, spent by the
+    /// room it opens, gone with it -- each room has its own key, and its secret leaves with the room.
+    private var standing: [String: MTRoomStanding] = [:]
+    /// The other seats' keys for their next room, by group and seat, as their own words on the group's road named them.
+    private var announced: [String: [String: Data]] = [:]
+    static let standingKey = "mt.rooms.standing"
+    static let announcedKey = "mt.rooms.announced"
     /// The invitations already shown (room and asker): a repeat rings nothing.
     private var asked = Set<String>()
     /// [I-15] When each asker last rang this phone: one person's invitations ring once in two minutes, however many rooms they open.
@@ -406,9 +439,11 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     private override init() {
         super.init()
         lift()
+        liftKeys()
         let nc = NotificationCenter.default
         observers.append(nc.addObserver(forName: .montanaSeedForgotten, object: nil, queue: .main) { [weak self] _ in
             self?.seen = [:]   // another person's rooms are not this one's
+            self?.standing = [:]; self?.announced = [:]; self?.keepKeys()
             self?.publish()
         })
         observers.append(nc.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
@@ -431,6 +466,15 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     static func laneKey(_ key: Data, _ a: String, _ b: String) -> Data {
         var d = Data("mt-room-pair".utf8)
         d.append(key); d.append(Data(min(a, b).utf8)); d.append(0); d.append(Data(max(a, b).utf8))
+        return Data(SHA256.hash(data: d))
+    }
+    /// THE ROOM'S OWN LANE (11.11.2026, OZ 1 p.3; the reconnaissance: Signal ringrtc group_call.rs:3804 -- the fast road carries
+    /// presence alone): one lane per room, where a seat that came in says so the same second and those in answer once. A pair is born
+    /// from it at once; who the seat is, its own key proves -- the offer is sealed to it, the answer must know the offer's challenge.
+    static func roomLaneName(_ id: String) -> String { "room:" + id }
+    static func roomLaneKey(_ key: Data) -> Data {
+        var d = Data("mt-room-lane".utf8)
+        d.append(key)
         return Data(SHA256.hash(data: d))
     }
     /// The later of two to come in: the moment first, the seat for a tie -- the one order every phone computes alike.
@@ -490,6 +534,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         }
         let now = MontanaWakePush.nodeNow()
         guard now - e.at < Self.staleAfter else { return }
+        guard over[e.r] == nil else { MontanaTrace.mark("room_refused", "a word of a room that is over e=\(e.e)"); return }
         // the seat's own moment of coming in: s where the word names one (never later than the word itself), else the word's moment
         let came = e.s.map { min($0, e.at) } ?? e.at
         let key = e.k.flatMap { Data(base64Encoded: $0) }.flatMap { $0.count == 32 ? $0 : nil }
@@ -524,6 +569,12 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         let who = e.w ?? seat
         // the speaker's room key, from its own word on the group's road: every pair word to it is sealed to this key
         if e.e != "out", e.e != "end", let q = e.q.flatMap({ Data(base64Encoded: $0) }), q.count == MTRoomSeal.pubSize { s.keys[seat] = q }
+        // its key for its next room, named by its own word: the next room seals to it at once
+        if e.e != "out", e.e != "end", let nq = e.nq.flatMap({ Data(base64Encoded: $0) }), nq.count == MTRoomSeal.pubSize, seat != g.me,
+           announced[gid]?[seat] != nq {
+            announced[gid, default: [:]][seat] = nq
+            keepKeys()
+        }
         switch e.e {
         case "open":
             // a room is opened once, by its owner: an open for a room known here from another seat takes nothing over
@@ -572,7 +623,9 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         }
         if s.people[s.owner] == nil, !s.people.isEmpty { s.owner = Self.firstIn(s.people) }
         s.at = max(s.at, e.at)
-        if s.people.isEmpty { seen.removeValue(forKey: gid) } else { seen[gid] = s }
+        // a view that lost me does not bury the room I am in: only my own leaving ends it here
+        if let r = live, r.id == s.id, s.people[r.me] == nil { s.people[r.me] = r.since }
+        if s.people.isEmpty { bury(gid, s.id) } else { seen[gid] = s }
         MontanaTrace.mark("room_rx", "e=\(e.e) people=\(s.people.count) in=\(live?.id == s.id ? 1 : 0)")
         // THE ROOM IN THE GROUP'S FEED (stage R, the reference folder's rows): begun, once; ended, with how long it lived
         let begun = s
@@ -599,7 +652,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         r.people = s.people
         // a seat with a standing pair of ours is in the room whatever another view says: the living line is the witness
         for (seat, p) in r.pairs where p.linked && r.people[seat] == nil { r.people[seat] = p.moment }
-        let gained = s.keys.keys.filter { k in k != r.me && r.keys[k] == nil }
+        let gained = s.keys.keys.filter { k in k != r.me && r.keys[k] != s.keys[k] }   // came, or differs from the key named before
         for (k, v) in s.keys where k != r.me { r.keys[k] = v }
         // A KEY THAT CAME LETS MY WAITING OFFER GO AT ONCE (16.10.2026): an offer sealed to nobody waited for the beat's next turn
         for k in gained {
@@ -633,6 +686,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
             guard seat != r.me else { break }
             if speaker != seat, let p = r.pairs[seat], p.linked { r.people[seat] = p.moment; break }
             drop(seat, why: "out")
+            if speaker == seat { endIfLeftAlone() }
         case "end":
             leave(why: "ended", tellGroup: false)
             say("The call has ended")
@@ -653,15 +707,40 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     /// THE BOOK OF ROOMS IS KEPT, SEALED, ON THIS DEVICE (MontanaLocalVault, the device's key): the rooms this phone knows and their
     /// people's room keys -- this device's own, never a copy's (SeedScope.deviceKeys). A room older than its measure is not lifted.
     static let bookKey = "mt.rooms.seen"
+    /// The rooms that are over, sealed beside the book: a run that starts again still refuses a late word of a room that ended.
+    static let overKey = "mt.rooms.over"
     private func lift() {
+        if let o = MontanaLocalVault.getDecrypted(Self.overKey), let v = try? JSONDecoder().decode([String: Double].self, from: o) {
+            let now = MontanaWakePush.nodeNow()
+            over = v.filter { now - $0.value < Self.staleAfter }
+        }
         guard let d = MontanaLocalVault.getDecrypted(Self.bookKey),
               let book = try? JSONDecoder().decode([String: MTRoomSeen].self, from: d) else { return }
         seen = book.filter { fresh($0.value) && !$0.value.people.isEmpty }
         publish()
     }
+    private func liftKeys() {
+        if let d = MontanaLocalVault.getDecrypted(Self.standingKey), let s = try? JSONDecoder().decode([String: MTRoomStanding].self, from: d) { standing = s }
+        if let d = MontanaLocalVault.getDecrypted(Self.announcedKey), let a = try? JSONDecoder().decode([String: [String: Data]].self, from: d) { announced = a }
+    }
+    private func keepKeys() {
+        if let d = try? JSONEncoder().encode(standing) { _ = MontanaLocalVault.setEncrypted(Self.standingKey, d) }
+        if let d = try? JSONEncoder().encode(announced) { _ = MontanaLocalVault.setEncrypted(Self.announcedKey, d) }
+    }
+    /// THE ONE OWNER OF THIS PHONE'S ROOM KEYS: the room about to be entered takes the key named for it (spent here, never again),
+    /// or a fresh one where none was named; nextKey names the one after it.
+    private func roomKey(_ gid: String) -> (pub: Data, sec: Data)? {
+        if let s = standing.removeValue(forKey: gid) { keepKeys(); return (s.pub, s.sec) }
+        return MTRoomSeal.keypair()
+    }
+    private func nextKey(_ gid: String) -> String? {
+        if standing[gid] == nil, let kp = MTRoomSeal.keypair() { standing[gid] = MTRoomStanding(pub: kp.pub, sec: kp.sec); keepKeys() }
+        return standing[gid]?.pub.base64EncodedString()
+    }
     private func keep() {
         guard let d = try? JSONEncoder().encode(seen) else { return }
         MontanaLocalVault.setEncrypted(Self.bookKey, d)
+        if let o = try? JSONEncoder().encode(over) { _ = MontanaLocalVault.setEncrypted(Self.overKey, o) }
     }
 
     /// Every group's room as the bars over the chats show it.
@@ -693,7 +772,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
             return
         }
         guard admit() else { return }
-        guard let kp = mint?.kp ?? MTRoomSeal.keypair() else { say("The call could not start"); return }
+        guard let kp = mint?.kp ?? roomKey(g.id) else { say("The call could not start"); return }
         let id = mint?.id ?? named.flatMap { n in Self.isRoomId(n) ? n : nil } ?? Self.hex(Data(montanaRandom(16)))
         let key = mint?.key ?? Data(montanaRandom(32))
         let now = mint?.at ?? MontanaWakePush.nodeNow()
@@ -702,8 +781,10 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         if let c = comer, c.seat != g.me, Self.isSeat(c.seat), c.pub.count == MTRoomSeal.pubSize { s.people[c.seat] = c.at; s.keys[c.seat] = c.pub }
         seen[g.id] = s
         enter(s, group: g, chat: chat, video: video, kp: kp)
-        tell(MTRoomEvent(r: id, e: "open", m: kind.rawValue, k: key.base64EncodedString(), v: video ? 1 : 0, at: now, o: g.me,
-                         q: kp.pub.base64EncodedString()), in: chat)
+        var opened = MTRoomEvent(r: id, e: "open", m: kind.rawValue, k: key.base64EncodedString(), v: video ? 1 : 0, at: now, o: g.me,
+                                 q: kp.pub.base64EncodedString())
+        opened.nq = nextKey(g.id)
+        tell(opened, in: chat)
         MainActor.assumeIsolated { MTGroup.shared.lay(MTGroupEvent(e: "call", g: g.id, a: g.me, k: kind.rawValue, v: video ? 1 : 0, r: id)) }
         // the peer that moved with the call is in already: its pair stands now, its offer finds a pair to answer
         for seat in s.people.keys where seat != g.me { pairUp(seat) }
@@ -723,14 +804,16 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         // both sides then agree who came in later, and the owner holds the key its answer is sealed to.
         let minted = pendingMint?.room == s.id ? pendingMint : nil
         pendingMint = nil
-        guard let kp = minted?.kp ?? MTRoomSeal.keypair() else { say("The call could not start"); return }
+        guard let kp = minted?.kp ?? roomKey(g.id) else { say("The call could not start"); return }
         let now = minted?.at ?? MontanaWakePush.nodeNow()
         var s2 = s
         s2.people[g.me] = now; s2.at = now; s2.askedBy = nil; s2.keys[g.me] = kp.pub
         seen[g.id] = s2
         enter(s2, group: g, chat: chat, video: video && s.kind == .call, kp: kp)
-        tell(MTRoomEvent(r: s.id, e: "in", m: s.kind.rawValue, k: s.key.base64EncodedString(), v: video ? 1 : 0, at: now, o: s.owner,
-                         q: kp.pub.base64EncodedString()), in: chat)
+        var came = MTRoomEvent(r: s.id, e: "in", m: s.kind.rawValue, k: s.key.base64EncodedString(), v: video ? 1 : 0, at: now, o: s.owner,
+                               q: kp.pub.base64EncodedString())
+        came.nq = nextKey(g.id)
+        tell(came, in: chat)
         for seat in s.people.keys where seat != g.me { pairUp(seat) }
     }
 
@@ -749,6 +832,8 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         r.keys = s.keys.filter { $0.key != g.me }
         live = r
         Self.setLive(true)
+        MontanaWakePush.openRoomLane(Self.roomLaneName(r.id), secret: Self.roomLaneKey(r.key))
+        present(r, "in")
         let f = MontanaCall.shared.factory
         if r.stage(r.me) {
             r.audio = f.audioTrack(with: f.audioSource(with: RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)),
@@ -799,8 +884,15 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         MTCallAudioOwner.shared.release(r.uuid)
         live = nil
         Self.setLive(false)
+        MontanaWakePush.closeRoomLane(Self.roomLaneName(r.id))
         let streamEnds = r.kind == .live && r.owner == r.me
-        for p in r.pairs.values { command(p, streamEnds ? "end" : "bye"); send(p, r, "bye"); close(p) }   // the channel's word is the proven one
+        // THE FAREWELL LEAVES BEFORE ITS CONNECTION CLOSES (11.11.2026, OZ 1 p.8: T2 held a seat that had left): a close in the same
+        // breath as the channel's word dropped it, and the lane's bye was not believed by a standing pair. The voice stops now; the
+        // word goes on the channel and, sealed with the pair's challenge, on the lane; the connections close half a second later.
+        r.audio?.isEnabled = false
+        let farewell = Array(r.pairs.values)
+        for p in farewell { command(p, streamEnds ? "end" : "bye"); send(p, r, streamEnds ? "end" : "bye") }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in farewell.forEach { self?.close($0) } }
         r.pairs.removeAll()
         stopCamera(r)
         if r.screen { MTScreenShare.shared.dropPeer() }
@@ -815,9 +907,12 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         if tellGroup {
             tell(MTRoomEvent(r: r.id, e: ends ? "end" : "out", m: r.kind.rawValue, at: now, o: r.owner), in: r.chat)
         }
-        if var s = seen[r.group], s.id == r.id {
+        if ends {
+            bury(r.group, r.id)
+        } else if var s = seen[r.group], s.id == r.id {
             s.people.removeValue(forKey: r.me)
-            if ends { seen.removeValue(forKey: r.group) } else { s.at = now; seen[r.group] = s }
+            s.at = now
+            seen[r.group] = s
         }
         if !systemEnded { controller.request(CXTransaction(action: CXEndCallAction(call: r.uuid))) { _ in } }
         let m = MTRoomModel.shared
@@ -854,7 +949,16 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     func groupGone(_ gid: String) {
         if let r = live, r.group == gid { leave(why: "the group went") }
         seen.removeValue(forKey: gid)
+        standing.removeValue(forKey: gid); announced.removeValue(forKey: gid); keepKeys()
         publish()
+    }
+
+    /// The room ended here: forgotten from the group's view and remembered as over, so no late word bears it again.
+    private func bury(_ gid: String, _ id: String) {
+        if seen[gid]?.id == id { seen.removeValue(forKey: gid) }
+        let now = MontanaWakePush.nodeNow()
+        over = over.filter { now - $0.value < Self.staleAfter }
+        over[id] = now
     }
 
     /// The room's end in its group's feed: how long it lived, from its first moment known here.
@@ -870,12 +974,12 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     /// The owner closes the room for everyone in it.
     func endForEveryone() {
         guard let r = live, r.owner == r.me else { return }
-        for p in r.pairs.values { command(p, "end") }
+        for p in r.pairs.values { command(p, "end"); send(p, r, "end") }
         tell(MTRoomEvent(r: r.id, e: "end", m: r.kind.rawValue, at: MontanaWakePush.nodeNow(), o: r.owner), in: r.chat)
         ended(r)
         let gid = r.group
         leave(why: "ended for everyone", tellGroup: false)
-        seen.removeValue(forKey: gid)
+        bury(gid, r.id)
         publish()
     }
 
@@ -941,7 +1045,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         // 10:25:21Z -- nobody met. Now the room's id, key, this phone's room key and moment ride to the peer with the group's
         // invitation on the call's own road; the call of two stands until the peer answers that it comes in (MontanaCall.
         // moveIntoRoom), and the room opens with the peer's pair standing -- the voices move over in the seconds a pair takes.
-        guard let kp = MTRoomSeal.keypair() else { return }
+        guard let kp = roomKey(g.id) else { return }
         let mint = MTRoomMint(id: Self.hex(Data(montanaRandom(16))), key: Data(montanaRandom(32)), kp: kp, at: MontanaWakePush.nodeNow())
         let opened = MTRoomEvent(r: mint.id, e: "open", m: MTRoomKind.call.rawValue, k: mint.key.base64EncodedString(), v: video ? 1 : 0,
                                  at: mint.at, o: g.me, q: kp.pub.base64EncodedString())
@@ -989,7 +1093,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
             return nil
         }
         heard(open, group: gid, chat: chat, seat: MTGroup.ownerSeat, name: nil)
-        guard seen[gid]?.id == parts[1], let kp = MTRoomSeal.keypair() else { return nil }
+        guard seen[gid]?.id == parts[1], let kp = roomKey(gid) else { return nil }
         let at = MontanaWakePush.nodeNow()
         pendingMint = (parts[1], kp, at)
         MontanaTrace.mark("room", "inline -- the group and the room stand here, my key goes back")
@@ -1058,14 +1162,16 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
 
     /// A pair with one seat: born once, its lane opened; the later of the two offers. In a stream the watchers do not call each
     /// other -- everyone calls its owner.
-    private func pairUp(_ seat: String) {
+    private func pairUp(_ seat: String, at moment: Double? = nil) {
         guard let r = live, seat != r.me, r.pairs[seat] == nil, Self.isSeat(seat), r.stage(seat) || r.stage(r.me) else { return }
-        let mine = (r.people[r.me] ?? r.since, r.me), theirs = (r.people[seat] ?? 0, seat)
+        let mine = (r.people[r.me] ?? r.since, r.me), theirs = (r.people[seat] ?? moment ?? 0, seat)
         let p = MTRoomPair(seat: seat, lane: Self.laneName(r.id, r.me, seat), offerer: Self.later(mine, than: theirs), room: self)
-        p.moment = r.people[seat] ?? 0
+        p.moment = r.people[seat] ?? moment ?? 0
         p.gen = r.genFloor[seat] ?? 0
         if r.unlinked[seat] == nil { r.unlinked[seat] = Date() }
         r.pairs[seat] = p
+        // the key the seat named for this room before it came (nq): the pair's words are sealed at once
+        if r.keys[seat] == nil, let k = announced[r.group]?[seat] { r.keys[seat] = k }
         MontanaWakePush.openRoomLane(p.lane, secret: Self.laneKey(r.key, r.me, seat))
         if p.offerer { offer(p) }
         refresh()
@@ -1104,7 +1210,8 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
                 p.channel?.delegate = p
             }
             self.dress(p, r)
-            if restart { p.gen += 1; p.answered = false; p.restarts += 1; p.offers = 0 }
+            if restart { p.gen += 1; p.answered = false; p.restarts += 1; p.offers = 0; p.challenge = nil }
+            if p.challenge == nil { p.challenge = Data(montanaRandom(32)) }   // one challenge for every repeat of this generation's offer
             let c = RTCMediaConstraints(mandatoryConstraints: restart ? ["IceRestart": "true"] : nil, optionalConstraints: nil)
             pc.offer(for: c) { desc, err in
                 guard let desc else { MontanaTrace.mark("room_pair", "offer FAIL \(err?.localizedDescription ?? "-")"); return }
@@ -1215,18 +1322,45 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
 
     private func send(_ p: MTRoomPair, _ r: MTRoomLive, _ c: String, sdp: String? = nil, ice: [MTRoomICE]? = nil) {
         var s = MTRoomSignal(r: r.id, f: r.me, t: p.seat, c: c, g: p.gen, at: MontanaWakePush.nodeNow())
-        if sdp != nil || ice != nil {
-            guard let pub = r.keys[p.seat], let inner = try? JSONEncoder().encode(MTRoomInner(sdp: sdp, ice: ice)),
-                  let sealed = MTRoomSeal.seal(inner, to: pub, bind: Self.bind(r.id, r.me, p.seat, c, p.gen)) else {
+        let farewell = c == "bye" || c == "end"
+        if sdp != nil || ice != nil || farewell {
+            // the offer's challenge, its echo, and the farewell that proves itself by it (p.8): only the pair's two know it
+            let n = c == "offer" || c == "answer" || farewell ? p.challenge?.base64EncodedString() : nil
+            if let pub = r.keys[p.seat], let inner = try? JSONEncoder().encode(MTRoomInner(sdp: sdp, ice: ice, n: n)),
+               let sealed = MTRoomSeal.seal(inner, to: pub, bind: Self.bind(r.id, r.me, p.seat, c, p.gen)) {
+                s.ct = sealed.ct.base64EncodedString()
+                s.x = sealed.box.base64EncodedString()
+            } else if !farewell {
                 MontanaTrace.mark("room_pair", "c=\(c) waits: the seat's room key has not come yet")
                 if c == "ice", let ice { p.outIce.insert(contentsOf: ice, at: 0) }   // the candidates wait for the key (beat)
                 return
             }
-            s.ct = sealed.ct.base64EncodedString()
-            s.x = sealed.box.base64EncodedString()
         }
         guard let d = try? JSONEncoder().encode(s) else { return }
         MontanaWakePush.postSignal(p.lane, epoch: "room", payloadB64: d.base64EncodedString())
+    }
+
+    /// I AM IN THIS ROOM, said on its own lane: in when I come, here once to each who came. Presence alone, nothing sealed.
+    private func present(_ r: MTRoomLive, _ c: String) {
+        var s = MTRoomSignal(r: r.id, f: r.me, t: "", c: c, g: 0, at: MontanaWakePush.nodeNow())
+        s.s = r.since
+        guard let d = try? JSONEncoder().encode(s) else { return }
+        MontanaWakePush.postSignal(Self.roomLaneName(r.id), epoch: "room", payloadB64: d.base64EncodedString())
+    }
+    /// A SEAT SAID ON THE ROOM'S LANE THAT IT IS IN: its pair is born now, not when the group's word lands. The lane's key is the
+    /// room's, which the whole group may hold, so the word proves nobody and only asks for a pair: a seat is paired only when this
+    /// phone holds its own key already (named on the group's road), a pair that stands is not touched, and its tile waits until the
+    /// pair stands or the group's road names the seat. A false word costs a pair that never stands and goes with the beat.
+    private func presence(_ r: MTRoomLive, _ payload: Data) {
+        guard let s = try? JSONDecoder().decode(MTRoomSignal.self, from: payload), s.r == r.id, s.f != r.me, Self.isSeat(s.f),
+              s.c == "in" || s.c == "here", let m = s.s, MontanaWakePush.nodeNow() - s.at < Self.signalLife,
+              r.keys[s.f] != nil || announced[r.group]?[s.f] != nil else { return }
+        if r.pairs[s.f] == nil, r.pairs.count + 1 < Self.capacity {
+            MontanaTrace.mark("room_lane", "c=\(s.c) a seat is in -- its pair is born now")
+            pairUp(s.f, at: m)
+        }
+        // each who came hears once that I am here: one who knew the room from an older word learns of me
+        if s.c == "in", r.laneAnswered.insert(s.f + "/" + String(m)).inserted { present(r, "here") }
     }
 
     /// What a pair word's content is bound to: the room, from whom, to whom, its kind and the pair's generation.
@@ -1236,6 +1370,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
 
     /// A PAIR WORD FROM THE NODE (MontanaWakePush, epoch room): the lane is the room's, the content is mine alone (MTRoomSeal).
     func laneWord(conv: String, payload: Data) {
+        if let r = live, conv == Self.roomLaneName(r.id) { presence(r, payload); return }
         guard let s = try? JSONDecoder().decode(MTRoomSignal.self, from: payload), let r = live, s.r == r.id, s.t == r.me,
               conv == Self.laneName(r.id, r.me, s.f), MontanaWakePush.nodeNow() - s.at < Self.signalLife,
               let p = r.pairs[s.f] else { return }
@@ -1251,9 +1386,16 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         switch s.c {
         case "offer":
             guard !p.offerer, let sdp = inner.sdp, s.g >= p.gen else { return }
+            // the answer carries the offer's challenge back (an offer of an older build carries none: the answer then carries none)
+            p.challenge = inner.n.flatMap { Data(base64Encoded: $0) }.flatMap { $0.count == 32 ? $0 : nil }
             answer(p, sdp: sdp, gen: s.g)
         case "answer":
             guard p.offerer, let sdp = inner.sdp, s.g == p.gen, !p.answered, let pc = p.pc else { return }
+            // AN ANSWER IS THE SEAT'S ONLY WHEN IT KNOWS MY OFFER'S CHALLENGE (critic 19567): else another of the group stands between
+            guard let mine = p.challenge, inner.n.flatMap({ Data(base64Encoded: $0) }) == mine else {
+                MontanaTrace.mark("room_refused", "an answer without my offer's challenge")
+                return
+            }
             p.answered = true
             pc.setRemoteDescription(RTCSessionDescription(type: .answer, sdp: MTLocalNetwork.keep(sdp: sdp))) { err in
                 DispatchQueue.main.async {
@@ -1269,11 +1411,22 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
                 if let pc = p.pc, pc.remoteDescription != nil, s.g == p.gen { pc.add(cand) { _ in } } else { p.heldIce.append(cand) }
             }
         case "bye":
-            guard !p.linked else { return }   // a standing pair hears its bye on its own channel, never from the lane
+            // a standing pair believes a bye from the lane only when it carries the pair's challenge: none else of the group knows it
+            guard !p.linked || proven(p, inner) else { return }
             vanish(p.seat, tellGroup: false)
+            endIfLeftAlone()
+        case "end":
+            guard p.seat == r.owner, proven(p, inner) else { return }
+            leave(why: "ended by the owner", tellGroup: false)
+            say("The call has ended")
         default:
             break
         }
+    }
+    /// A pair word that knows the pair's challenge: said by the pair's other one (p.8).
+    private func proven(_ p: MTRoomPair, _ inner: MTRoomInner) -> Bool {
+        guard let mine = p.challenge else { return false }
+        return inner.n.flatMap { Data(base64Encoded: $0) } == mine
     }
     private func flushHeld(_ p: MTRoomPair) {
         guard let pc = p.pc, pc.remoteDescription != nil, !p.heldIce.isEmpty else { return }
@@ -1302,6 +1455,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         case .connected, .completed:
             p.linked = true; p.everLinked = true; p.lostAt = nil; p.restarts = 0
             r.unlinked.removeValue(forKey: p.seat)
+            if r.people[p.seat] == nil { r.people[p.seat] = p.moment }   // a seat paired from the room's lane: the living line witnesses it
             r.wasAlone = false
             if r.connectedAt == nil {
                 r.connectedAt = Date()
@@ -1362,13 +1516,17 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
             say("The call has ended")
         case "bye":
             vanish(p.seat, tellGroup: false)
+            endIfLeftAlone()
         default:
             break
         }
     }
 
     private func close(_ p: MTRoomPair) {
-        MontanaWakePush.closeRoomLane(p.lane)
+        // A LANE A LIVING PAIR HOLDS STAYS OPEN (11.11.2026, OZ 1 p.8, critic 19744): a pair's lane is named by the room and its two
+        // seats alone, so the close leave() defers by half a second would take the lane of the pair born by a return to the same room
+        // inside that half second; the lane goes only when no other pair of the room in hand stands on it.
+        if live?.pairs.values.contains(where: { $0 !== p && $0.lane == p.lane }) != true { MontanaWakePush.closeRoomLane(p.lane) }
         p.channel?.close(); p.channel = nil
         p.pc?.close(); p.pc = nil
         p.remoteVideo = nil; p.remoteAudio = nil
@@ -1389,6 +1547,22 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         close(p)
         MontanaTrace.mark("room_pair", "rebirth gen=\(p.gen + 1)")
         pairUp(seat)
+    }
+
+    /// THE LAST ONE IN A CALL EVERYONE ELSE SAID GOODBYE TO (11.11.2026, OZ 1 p.8, the author's word 19777: the call hangs on T3 after
+    /// it ended). Measured on Messenger 136 at 21:24 UTC: T1 and T2 left by hand, their pairs said bye, and T3 sat alone in a call of
+    /// nobody until it left by hand. A call whose every other seat said its farewell is over here too: this phone goes out as the
+    /// last one, and its end closes the room in the feed. A silence is no farewell -- a seat that fell silent keeps the room (vanish,
+    /// wasAlone); a stream waits for its watchers. The verdict waits one second for a word already on its way -- a seat that comes
+    /// back at once, or the group's word that moves this room into an earlier one -- and is read again over the same room.
+    private func endIfLeftAlone() {
+        guard let id = live?.id else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard let self, let r = self.live, r.id == id, r.kind == .call, r.pairs.isEmpty,
+                  r.people.keys.allSatisfy({ $0 == r.me }) else { return }
+            self.leave(why: "everyone said goodbye")
+            self.say("The call has ended")
+        }
     }
 
     /// A SEAT THAT LEFT OR FELL SILENT WITHOUT A WORD: its pair goes, and the first in the room says it went out -- for the bars.

@@ -854,7 +854,7 @@ enum MTShelfPost {
             for secret in own.values {
                 for w in (w0 - 1)...(w0 + 2) { labels.append(MontanaWakePush.convW(secret, window: w)) }
             }
-            pairs += labels.map { cw in ["conv": cw, "sid": MontanaWakePush.subId(cw, ref: p.twin)] }
+            pairs += labels.map { cw in ["conv": cw, "sid": MTNodeWire.subId(cw, ref: p.twin)] }
             ears.append(MTNodeWire.ShelfEar(seat: p.id, name: p.name, keys: keys))
         }
         MTNodeWire.writeShelfEars(ears)

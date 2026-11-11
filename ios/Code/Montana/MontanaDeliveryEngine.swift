@@ -87,8 +87,7 @@ final class MontanaDeliveryEngine {
     /// sender's claim, and a claim of a far year stood under every later letter of the chat for good. A letter of my own other
     /// device keeps its own moment.
     static let birthTolerance: Double = 120
-    static func letterMoment(mid: String, sentAt: Double?) -> Double { letterMoment(mid: mid, sentAt: sentAt, own: false) }
-    static func letterMoment(mid: String, sentAt: Double?, own: Bool) -> Double {
+    static func letterMoment(mid: String, sentAt: Double?, own: Bool = false) -> Double {
         let claimed = claimedMoment(mid: mid, sentAt: sentAt)
         return own ? claimed : min(claimed, Date().timeIntervalSince1970 + birthTolerance)
     }

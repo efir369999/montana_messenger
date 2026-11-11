@@ -1297,8 +1297,8 @@ enum MontanaBackupCloud {
     /// page wrote «app» — so the word comes from Apple's side, and the one word of it in our hands is the
     /// identifier. The copy lives in iCloud.quest.montana.Montana; the first container, «iCloud.» and the
     /// app's identifier, is still opened, so its copies are watched, taken back, and removed once iCloud
-    /// holds a newer one. The places that spell the new name — this line, the two entitlements and
-    /// Info.plist — are held equal by tools/mt-cloud-truth-check.py (rule 7).
+    /// holds a newer one. This line owns the new name; the entitlements and Info.plist read it, held
+    /// by tools/owners.json (mt-owners-check).
     static let container = "iCloud.quest.montana.Montana"                          // NOT-UI
     private static var firstContainer: String { "iCloud." + MontanaContour.appId }   // NOT-UI
     /// THE CONTAINER THIS EDITION WRITES TO (the critic of S7, 03.11.2026): the one its own Info.plist declares. The Protocol

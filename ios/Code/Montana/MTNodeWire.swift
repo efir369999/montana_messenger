@@ -196,12 +196,12 @@ enum MTNodeWire {
         return field.isEmpty ? nil : Data(base64Encoded: Data(field))
     }
     /// The phone's ONE elected door first (1638, the author's word: one live node per phone):
-    /// written by the app, read by every process that knocks without the live list.
-    static func electedFirst(_ list: [String]) -> [String] {
-        if let d = MontanaKeychain.get(electedKey), let e = String(data: d, encoding: .utf8), list.contains(e) {
-            return [e] + list.filter { $0 != e }
-        }
-        return list
+    /// written by the app, read by every process that knocks without the live list. The one order of doors with the elected
+    /// first: the app names its own election (MontanaWakePush.elected(), its memory before the mirror), every other process
+    /// reads the mirror in the shared keychain (the word of the author 19283: one owner).
+    static func electedFirst(_ list: [String], elected: String? = nil) -> [String] {
+        guard let e = elected ?? MontanaKeychain.get(electedKey).flatMap({ String(data: $0, encoding: .utf8) }), list.contains(e) else { return list }
+        return [e] + list.filter { $0 != e }
     }
     // ── THE SHELF'S EARS FOR THE EXTENSION (07.10, MTShelfPost) ─────────────
     /// The persons waiting on this phone's shelf -- their seat, their name and the keys their letters open with (a pipe's

@@ -873,7 +873,6 @@ final class NotificationService: UNNotificationServiceExtension {
     // The wire formulas live in MTNodeWire (the one owner, canon-held) — references, not
     // frozen copies (SSOT-CONSOLIDATE, the author's word 29.08).
     private static func rdvConvW(_ invite: Data, window: UInt64) -> String { MTNodeWire.rdvConvW(invite, window: window) }
-    private static func subId(_ conv: String, ref: String) -> String { MTNodeWire.subId(conv, ref: ref) }
     private static func b64urlData(_ s: String) -> Data? {
         var t = s.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
         while t.count % 4 != 0 { t += "=" }
@@ -903,14 +902,14 @@ final class NotificationService: UNNotificationServiceExtension {
                     let cw = rdvConvW(inv, window: w)
                     secretOf[cw] = secret; rdvLabels.insert(cw)
                     invOf[cw] = String(key.dropFirst(4))
-                    subs.append(cw); sids.append(subId(cw, ref: ref))
+                    subs.append(cw); sids.append(MTNodeWire.subId(cw, ref: ref))
                 }
             } else {
                 if isBlocked(key) { continue }   // a blocked person's letters stay in the box (15.09)
                 for w in MTNodeWire.boxDays(around: w0) {
                     let cw = secret.convW(day: w)
                     secretOf[cw] = secret; chatOf[cw] = key
-                    subs.append(cw); sids.append(subId(cw, ref: ref))
+                    subs.append(cw); sids.append(MTNodeWire.subId(cw, ref: ref))
                 }
             }
         }

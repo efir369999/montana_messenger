@@ -70,10 +70,10 @@ enum MontanaWakePush {
         let all = candidates()
         if !fresh { Task { await verifyBases() } }
         let good = all.filter { b in known[b].map { held in cap.map { held.contains($0) } ?? true } ?? false }
-        if !good.isEmpty { return electedFirst(good) }
+        if !good.isEmpty { return MTNodeWire.electedFirst(good, elected: elected()) }
         verifyLock.lock(); let mute = silentDoors; verifyLock.unlock()
         let unknown = all.filter { known[$0] == nil && !mute.contains($0) }
-        return electedFirst(unknown.isEmpty ? all : unknown)
+        return MTNodeWire.electedFirst(unknown.isEmpty ? all : unknown, elected: elected())
     }
 
     /// Doors PROVEN to hold a capability — no fallback to «every candidate». `bases(for:)` keeps
@@ -252,7 +252,7 @@ enum MontanaWakePush {
         }
         verifyLock.lock(); let known = capsOf; let mute = silentDoors; verifyLock.unlock()
         let good = out.filter { b in known[b].map { held in cap.map { held.contains($0) } ?? true } ?? false }
-        if !good.isEmpty { return electedFirst(good) }
+        if !good.isEmpty { return MTNodeWire.electedFirst(good, elected: elected()) }
         // 16.6.17 (F3) — A CAPABILITY ASKED BY NAME IS NOT GUESSED. Once the map knows the doors
         // and none of them holds the capability, the answer is «nobody», not «everybody»: the
         // fallback to unknown doors posted every call signal to the dead wss door too — 34
@@ -260,7 +260,7 @@ enum MontanaWakePush {
         // 16:16-18:23). The fallback stays for the cold start, when the map is still empty.
         if cap != nil, !known.isEmpty { return [] }
         let unknown = out.filter { !mute.contains($0) }
-        return electedFirst(unknown.isEmpty ? out : unknown)
+        return MTNodeWire.electedFirst(unknown.isEmpty ? out : unknown, elected: elected())
     }
 
     /// One address for a single request, chosen among those that hold the named capability.
@@ -377,10 +377,6 @@ enum MontanaWakePush {
         guard let d = MontanaKeychain.get(MTNodeWire.electedKey), let s = String(data: d, encoding: .utf8), !s.isEmpty else { return nil }
         baseLock.lock(); if chosenBase == nil { chosenBase = s }; baseLock.unlock()
         return s
-    }
-    static func electedFirst(_ doors: [String]) -> [String] {
-        guard let e = elected(), doors.contains(e) else { return doors }
-        return [e] + doors.filter { $0 != e }
     }
     // NOTHING BUT THE CHOICE UNDER THE LOCK: the keychain and the trace are asked outside it — a
     // lock that is not reentrant must never hold a call that could come back to it.
@@ -860,13 +856,12 @@ enum MontanaWakePush {
     // Formulas and frozen vectors — the node-wake checklist; the same set is frozen on the
     // accelerator (test_node_wake.py). The accelerator does NOT compute tags — only compares,
     // so a formula divergence would lose the subscription silently. The canon vector insures.
-    static func subId(_ conv: String, ref: String) -> String { MTNodeWire.subId(conv, ref: ref) }
     /// THIS DEVICE'S subscription id under a wire label — computed in ONE place from the twin
     /// reference, never from a variable passed along. A free variable is a variable a loop can
     /// shadow: build 1480 renamed the outer `addr` to `ref`, the pipes loop below (its variable was
     /// already `ref`) took it over, subscriptions went out under the PIPE's reference, the node could no longer tell
     /// the caller from the callee, and the caller rang itself.
-    private static func mySubId(_ cw: String) -> String { subId(cw, ref: twinRef) }
+    private static func mySubId(_ cw: String) -> String { MTNodeWire.subId(cw, ref: twinRef) }
     /// THE VERSION OF THE ID FORMULA rides in the registration digest: when the formula changes
     /// (as it did by the shadow of 1480, which registered ids of pipes), the digest changes and
     /// EVERY subscription is posted anew under the true id — the node forgets the false rows by
@@ -890,11 +885,11 @@ enum MontanaWakePush {
     /// V2 — concatenation without the second separator, CW — reading the window from the
     /// other end (BE) and a daily tag without its domain.
     static func agreesWithCanon() -> Bool {
-        subId("mt-conv-Q7", ref: "mtAddrZ93kLmNoPq") ==
+        MTNodeWire.subId("mt-conv-Q7", ref: "mtAddrZ93kLmNoPq") ==
             "e5438bfedc8b1fdcdadfb9f4d3995fac7722c0074f3a20ccd3e911ce5beb35de"
-        && subId("ab", ref: "c") ==
+        && MTNodeWire.subId("ab", ref: "c") ==
             "a279974b24ff1b84299330076b5f5858684d56733458de21b152aa8521c7a230"
-        && subId("a", ref: "bc") ==
+        && MTNodeWire.subId("a", ref: "bc") ==
             "c04b7d58e4c7aaca35800d119fd6fde021f95f7d3c9438e3ca46cd855afe6a8a"
         && MTNodeWire.convTag(daySecret: Data(0..<32), window: 29737) ==
             "43eaf2811da7947166d4e851e52c4ab89e09c8c92247370d3c734ef08ca1e6ea"
@@ -2523,7 +2518,7 @@ enum MontanaWakePush {
     /// bytes are going to.
     static func blobsPresent(_ bids: [String], everyStore: Bool = false) async -> Set<String>? {
         guard !bids.isEmpty else { return nil }
-        let doors = everyStore ? electedFirst(orderedBases(for: "blob")) : [base("blob")].filter { !$0.isEmpty }
+        let doors = everyStore ? MTNodeWire.electedFirst(orderedBases(for: "blob"), elected: elected()) : [base("blob")].filter { !$0.isEmpty }
         guard !doors.isEmpty else { return nil }
         let t0 = Date()
         let asked = Set(bids)
@@ -2599,7 +2594,7 @@ enum MontanaWakePush {
         guard !bids.isEmpty else { return true }
         // THE DROP GOES TO EVERY STORE (1638): the chunks lie on the one store the upload reached,
         // and a drop sent to another store was a free no-op that left them for the seven-day term.
-        let doors = electedFirst(orderedBases(for: "blob"))   // every store that names the capability, the elected first
+        let doors = MTNodeWire.electedFirst(orderedBases(for: "blob"), elected: elected())   // every store that names the capability, the elected first
         var landed = false, dropped = 0, free = bids
         for b in doors {
             free = unridden(free)
@@ -2843,7 +2838,7 @@ enum MontanaWakePush {
                 for w in span {
                     let cw = MontanaWakePush.rdvConvW(inv, window: w)
                     rdvLabels.insert(cw); secretOf[cw] = sec; invOf[cw] = inv.base64urlNoPad
-                    subs.append(cw); sids.append(MontanaWakePush.subId(cw, ref: owner))
+                    subs.append(cw); sids.append(MTNodeWire.subId(cw, ref: owner))
                 }
             }
             for (conv, secret) in pipes {
@@ -2854,7 +2849,7 @@ enum MontanaWakePush {
                 for w in span {
                     for cw in MontanaWakePush.convWs(secret, window: w) {
                         secretOf[cw] = secret; chatOf[cw] = conv
-                        subs.append(cw); sids.append(own ? MontanaArchive.twinSid(cw) : MontanaWakePush.subId(cw, ref: owner))
+                        subs.append(cw); sids.append(own ? MontanaArchive.twinSid(cw) : MTNodeWire.subId(cw, ref: owner))
                     }
                 }
             }
