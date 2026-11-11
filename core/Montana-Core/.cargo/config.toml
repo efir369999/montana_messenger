@@ -1,0 +1,5 @@
+# Compilation uses Cargo's available CPU parallelism at ordinary priority.
+# Proof tests run sequentially because each full trace has a large memory working set;
+# this does not constrain compiler jobs or put the process in the background class.
+[env]
+RUST_TEST_THREADS = { value = "1", force = true }

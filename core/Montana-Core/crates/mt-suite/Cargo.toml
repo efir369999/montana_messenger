@@ -1,0 +1,21 @@
+[package]
+name = "mt-suite"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+mt-codec = { workspace = true }
+sha3 = { workspace = true }
+libcrux-ml-dsa = { workspace = true }
+libcrux-ml-kem = { workspace = true }
+chacha20poly1305 = { workspace = true }
+zeroize = { workspace = true }
+getrandom = { workspace = true }
+
+[dev-dependencies]
+mt-conformance = { path = "../mt-conformance" }
+mt-state = { workspace = true }
+mt-codec = { workspace = true }
+sha2 = { workspace = true }

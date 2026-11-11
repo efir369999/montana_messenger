@@ -1,0 +1,35 @@
+[package]
+name = "mt-postman"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# Flat TCP+TLS transport of the postman (Montana P2P Network, Stage 1; spec §152
+# "TCP/TLS-443 is mandatory" -- operators cut non-443 UDP).
+# rustls/rcgen/tokio-rustls -- the same lock versions the production mt-net-transport pulls ([C-1] SSOT).
+# The QUIC-TLS transport hop = admission wrapper A-3 ([I-16]); the real security is the
+# E2E payload (opaque) + ML-DSA registration. Not consensus state.
+
+[dependencies]
+mt-overlay = { path = "../mt-overlay" }
+mt-crypto = { path = "../mt-crypto" }
+mt-state = { path = "../mt-state" }
+mt-codec = { path = "../mt-codec" }
+
+rustls = { version = "=0.23.40", default-features = false, features = ["ring", "std"] }
+tokio-rustls = { version = "=0.26.1", default-features = false, features = ["ring"] }
+rcgen = "=0.13.2"
+tokio = { version = "=1.44.2", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "sync"] }
+thiserror = "=1.0.69"
+getrandom = { workspace = true }
+
+[dev-dependencies]
+mt-rendezvous = { path = "../mt-rendezvous" }
+mainline = "=6.0.1"
+tokio = { version = "=1.44.2", features = ["rt-multi-thread", "macros", "time", "sync", "test-util"] }
+
+[[bin]]
+name = "postman-server"
+path = "src/bin/postman-server.rs"

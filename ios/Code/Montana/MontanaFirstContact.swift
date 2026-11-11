@@ -1,0 +1,1798 @@
+import Foundation
+import UIKit
+import CryptoKit
+import MontanaBindings
+
+/// First contact: one encapsulation to a card's contact key.
+///
+/// A card publishes one value -- the contact key -- and everything else follows from it: whoever scanned it
+/// encapsulates to that key once, the holder decapsulates, and both then hold the same secret. From there the
+/// correspondence runs under ordinary tags.
+enum MontanaFirstContact {
+
+    /// A card's pair from 64 bytes of seed: the encapsulation key it hands out and the secret half that
+    /// never leaves the device. The one derivation of a contact pair (article 15): the card and the tests read it.
+    static func pair(seed: [UInt8]) -> (root: Data, secret: Data)? {
+        var pk = [UInt8](repeating: 0, count: 1184), sk = [UInt8](repeating: 0, count: 2400)
+        guard seed.count == 64, mt_mlkem_keypair_from_seed(seed, &pk, &sk) == 0 else { return nil }
+        return (Data(pk), Data(sk))
+    }
+
+    /// Where a stranger knocks in this window. It takes the shape of any other tag and its own
+    /// domain, so it never collides with a tag standing on a secret two parties already hold.
+    static func knock(at contactRoot: Data, window: UInt64) -> Data? {
+        var out = [UInt8](repeating: 0, count: 16)
+        let rc = contactRoot.withUnsafeBytes { r -> Int32 in
+            guard let rb = r.bindMemory(to: UInt8.self).baseAddress else { return -1 }
+            return mt_name_first_tag(rb, contactRoot.count, window, &out)
+        }
+        return rc == 0 ? Data(out) : nil
+    }
+
+    /// The stranger's side: one encapsulation to the contact key, and the secret every later tag of
+    /// this correspondence stands on.
+    static func begin(toward contactRoot: Data) -> (ciphertext: Data, secret: Data)? {
+        var ct = [UInt8](repeating: 0, count: 1088), ss = [UInt8](repeating: 0, count: 32)
+        let rc = contactRoot.withUnsafeBytes { r -> Int32 in
+            guard let rb = r.bindMemory(to: UInt8.self).baseAddress else { return -1 }
+            return mt_mlkem_encaps(rb, &ct, &ss)
+        }
+        guard rc == 0 else { return nil }
+        guard let secret = firstSecret(ss: Data(ss), contactRoot: contactRoot, ciphertext: Data(ct)) else { return nil }
+        return (Data(ct), secret)
+    }
+
+    /// KEY CONFIRMATION. ML-KEM decapsulation does not refuse: on a foreign or corrupted ciphertext
+    /// the standard returns deterministic garbage (implicit rejection, FIPS 203).
+    /// So a pipe is not born from decapsulation alone -- the letter carries a value that cannot be
+    /// produced without the real shared secret short of finding a SHA-256 preimage. That is the
+    /// named cryptographic prohibition the law stands on.
+    static func firstConfirm(secret: Data, ct: Data) -> String {
+        MTNodeWire.firstConfirm(secret: secret, ct: ct)   // a secret at its birth; a pipe already held asks its owner (MTPipeKey.firstConfirm)
+    }
+
+    /// Constant-time comparison: an early-exit compare is a timing oracle over the secret.
+    static func sameConfirm(_ a: String, _ b: String) -> Bool {
+        let x = Array(a.utf8), y = Array(b.utf8)
+        guard x.count == y.count, !x.isEmpty else { return false }
+        var d: UInt8 = 0
+        for i in 0..<x.count { d |= x[i] ^ y[i] }
+        return d == 0
+    }
+
+    /// The holder's side: decapsulate what arrived and arrive at the same secret.
+    static func accept(ciphertext: Data, contactSecret: Data, contactRoot: Data) -> Data? {
+        var ss = [UInt8](repeating: 0, count: 32)
+        let rc = contactSecret.withUnsafeBytes { sk -> Int32 in
+            ciphertext.withUnsafeBytes { c -> Int32 in
+                guard let skb = sk.bindMemory(to: UInt8.self).baseAddress,
+                      let cb = c.bindMemory(to: UInt8.self).baseAddress else { return -1 }
+                return mt_mlkem_decaps(skb, cb, &ss)
+            }
+        }
+        guard rc == 0 else { return nil }
+        return firstSecret(ss: Data(ss), contactRoot: contactRoot, ciphertext: ciphertext)
+    }
+
+    /// The contact root enters the derivation so that two people writing to one name never land on
+    /// one secret, and the ciphertext enters it so that two letters from one stranger do not either.
+    private static func firstSecret(ss: Data, contactRoot: Data, ciphertext: Data) -> Data? {
+        var out = [UInt8](repeating: 0, count: 32)
+        let rc = ss.withUnsafeBytes { s -> Int32 in
+            contactRoot.withUnsafeBytes { r -> Int32 in
+                ciphertext.withUnsafeBytes { c -> Int32 in
+                    guard let sb = s.bindMemory(to: UInt8.self).baseAddress,
+                          let rb = r.bindMemory(to: UInt8.self).baseAddress,
+                          let cb = c.bindMemory(to: UInt8.self).baseAddress else { return -1 }
+                    return mt_name_first_secret(sb, ss.count, rb, contactRoot.count, cb, ciphertext.count, &out)
+                }
+            }
+        }
+        return rc == 0 ? Data(out) : nil
+    }
+
+    /// The frozen vectors of the set for the knock. A knock computed differently lands where nobody
+    /// listens, and the two sides never meet.
+    static func agreesWithCanon() -> Bool {
+        let root = Data(repeating: 0xCC, count: 1184)
+        guard let a = knock(at: root, window: 1000), let b = knock(at: root, window: 1001) else { return false }
+        return a.montanaHexString == "45468cdd9bcdebe6f622c46257c27fe3"
+            && b.montanaHexString == "2751a149c51e219b73fadc85ca8b107b"
+    }
+}
+
+
+// ── Acquaintance by a card ──────────────────────────────────────────────────────────────────
+//
+// A card is the one road to meet somebody: the author's decision 613 (04.11.2026) took the @name out
+// whole -- no name is held, published, resolved or knocked at. One encapsulation to the card's contact
+// key, and from there the correspondence runs under ordinary tags.
+extension MontanaFirstContact {
+
+    /// Meeting the holder of a card's contact key: one
+    /// encapsulation, and both sides hold the secret every later tag of this correspondence stands
+    /// on. What comes back is the local name of that correspondence and the ciphertext the FIRST
+    /// letter must carry — the holder derives the same secret from it and from nothing else.
+    static func meet(contactRoot root: Data) -> (reference: String, ciphertext: Data)? {
+        guard root.count == 1184, let started = begin(toward: root),
+              let ref = MTPipeBook.establish(secret: started.secret) else { return nil }
+        // The confirmation the first letter carries is made here, while the secret is whole, and kept beside the ciphertext
+        // until the answer (decision 188, #36): from eraseDay the book holds the floor, and a resend still confirms.
+        MTPipeBook.rememberConfirm(firstConfirm(secret: started.secret, ct: started.ciphertext), ct: started.ciphertext, for: ref)
+        // Where the first letter must be addressed. The other side cannot derive the pipe secret
+        // until that letter reaches them, so it cannot be addressed by the tag of the pipe.
+        MTPipeBook.rememberRoot(root, for: ref)
+        // The pipe appeared -- subscriptions (letters and voip) and extension mirrors refresh AT ONCE:
+        // without this the initiator lived unregistered until the next activation -- the answering
+        // receipt and the oncoming letter hit 404, and the NSE could not open the new pipe envelope.
+        MontanaWakePush.registerConvs()
+        layPipeFace(conv: ref)   // the face goes beside the pipe at its birth: the other side wears it with the first letter
+        return (ref, started.ciphertext)
+    }
+
+    // ── THE FACE BESIDE THE PIPE (23.09, the author's word: «at the chat's creation — the name and the face at
+    // once»). The side that was scanned read the scanner's name in the first letter itself, and the face only in a
+    // letter of its own, which the law of state letters holds back until the other side answers (state_pointless): a
+    // drawn initial for eight seconds (T3 17:15, measured). The one who begins a correspondence lays its face on the
+    // node the moment the pipe is born, under a name and a seal derived from the pipe's own secret — held by exactly
+    // the two of them; the other side reads it the moment the first letter hands it that secret. An empty seal says
+    // «no face». The node learns nothing the meeting has not shown it already — the same pair at the same moment,
+    // the size the face letter carries anyway. The face's name and key are derived at the pipe's birth by the secret's one
+    // owner and kept for good (MTPipeKey.kept: faceBid, faceKey).
+
+    /// The beginner's side, at the pipe's birth.
+    static func layPipeFace(conv: String) {
+        guard let kept = MTPipeBook.kept(for: conv) else { return }
+        let face = E2E.myAvatarData() ?? Data()
+        guard let sealed = MontanaDirect.seal(key: [UInt8](kept.faceKey), face) else { return }
+        let bid = kept.faceBid
+        Task.detached(priority: .userInitiated) {
+            let ok = await MontanaWakePush.putBlob(bid, data: sealed, over: true)
+            MontanaTrace.mark("pipe_face_up", "\(ok ? "ok" : "FAIL") bytes=\(face.count) conv=\(String(conv.prefix(10)))")
+        }
+    }
+
+    /// The accepting side, once per correspondence: asked at once and twice more across eight seconds (the face
+    /// may still be on its way up); a face that came first by the person's own letter is kept.
+    private static let pipeFaceLock = NSLock()
+    private static var pipeFaceAsked: Set<String> = []
+    static func readPipeFace(conv: String) {
+        pipeFaceLock.lock(); let first = pipeFaceAsked.insert(conv).inserted; pipeFaceLock.unlock()
+        guard first, let kept = MTPipeBook.kept(for: conv) else { return }
+        let bid = kept.faceBid, key = kept.faceKey
+        Task.detached(priority: .userInitiated) {
+            for (i, pause) in [UInt64(0), 2, 6].enumerated() {
+                if pause != 0 { try? await Task.sleep(nanoseconds: pause * 1_000_000_000) }
+                guard let sealed = await MontanaWakePush.getBlob(bid) else { continue }
+                guard let face = MontanaDirect.open(key: [UInt8](key), sealed), face.count <= 262_144 else {
+                    MontanaTrace.mark("pipe_face", "unreadable conv=\(String(conv.prefix(10)))"); return
+                }
+                if face.isEmpty { MontanaTrace.mark("pipe_face", "none conv=\(String(conv.prefix(10))) try=\(i + 1)"); return }
+                let worn = await MontanaCard.wearFace(face, conv: conv, onlyIfBare: true)
+                MontanaTrace.mark("pipe_face", "ok bytes=\(face.count) conv=\(String(conv.prefix(10))) try=\(i + 1) worn=\(worn ? 1 : 0)")
+                return
+            }
+            MontanaTrace.mark("pipe_face", "absent conv=\(String(conv.prefix(10)))")
+        }
+    }
+}
+
+
+// ── The card: the one way to be met ─────────────────────────────────────────────────────────
+//
+// The card carries a fresh encapsulation key and nothing else. Not a name, not a number, nothing
+// that outlives the meeting: whoever photographs it over a shoulder learns one key that opens one
+// correspondence with its owner, and learns nothing about any other. The secret both sides end up
+// with is derived exactly as the secret of a first letter is derived — one mechanism, one domain,
+// one set of frozen vectors.
+enum MontanaCard {
+
+    static let prefix = "montana://c/"
+    /// A rendezvous invitation: only 32 bytes in the code; the full meeting key is exchanged by the
+    /// sides through the storage node at the moment of the scan. The link is 30 times shorter, the QR coarse-module.
+    static let shortPrefix = "montana://r/"
+    /// THE LINK IS A WEB LINK (15.15, the author's word 07.09: «clickable always and everywhere»).
+    /// Each edition writes on its own cards site, MTEdition.cards (the Messenger montana.one, the Protocol montana.quest).
+    static let webPrefix = MTEdition.cards + "/r/"
+    /// THE KIND IN THE LINK (the author's word 17.09): /perp/ for the permanent link, /temp/ for the
+    /// daily one.
+    static let permPrefix = MTEdition.cards + "/perp/"
+    static let tempPrefix = MTEdition.cards + "/temp/"
+    /// ONE CARD, ONE NODE, EVERY SITE: the /r/ page of each site opens an app by that app's scheme (montana:// the Messenger's,
+    /// mt-protocol:// the Protocol's, Code/Names.xcconfig). Each app reads the /r/, /perp/ and /temp/ forms of every site, so a
+    /// card written on montana.quest or montana.xxx before still opens.
+    static let linkHosts = Set(["montana.one", "montana.quest", "montana.xxx", "www.montana.xxx"])
+    /// Every written form an invitation is read from.
+    static let readPrefixes: [String] =
+        linkHosts.sorted().flatMap { h in ["r", "perp", "temp"].map { k in "https://" + h + "/" + k + "/" } } + [shortPrefix]
+    private static let store = "cardKeys"
+    /// Result: the invitation exists on screen and on the node, the secret nowhere -- the scanner knocks
+    /// forever (precedent 19:00: rdv_up ok with cards=0).
+    static let cardLock = NSRecursiveLock()
+    /// UNDER THE LOCK — ONLY THE WORD IN MEMORY; THE VAULT FOLLOWS, IN ORDER (25.09, the tablet: two deaths at one
+    /// activation, 15:19:53 and 15:31, iPadOS's report 0x8BADF00D). A vault write is a synchronous broadcast: UserDefaults
+    /// posts its change on the writing thread, and every @AppStorage observer answers by taking SwiftUI's graph lock —
+    /// the lock the main thread holds for the whole of a screen update. The birth of the day's card wrote its record
+    /// under cardLock on a utility thread and stood there for the graph lock, while the main thread, inside the update
+    /// that sends the daily link to everyone, stood for cardLock: nobody moved, and the system ended the app ten seconds
+    /// after it left the screen. So no record reaches the vault under the lock: the lock covers the records in memory and
+    /// the ORDER of their writes, and each write leaves on one serial queue in that order — the vault's last word for a
+    /// record is the memory's, and a reader under the lock still sees the records as one snapshot. Every record is read
+    /// from the vault once; a copy laid over the store hands its values in by the same door (lay), and a departing
+    /// person's records leave by it (wipe), so no write of the moment before lands over either (tools/mt-lock-check.py,
+    /// rule 4). What is written here in memory is exactly what the vault will hold; nothing else reads these keys.
+    private static let cardIO = DispatchQueue(label: "montana.card.io", qos: .utility)
+    private static var held: [String: Data?] = [:]   // a record by its vault key: the truth once read; nil — the vault has none
+    private static var owned: [String] { [store, rdvStore, rdvPermKey, rdvCurrentKey, rdvBornKey, rdvTwinKey] }
+    /// A record, under cardLock: the memory's word, or the vault's on the first ask.
+    private static func record(_ key: String) -> Data? {
+        if let h = held[key] { return h }
+        let d = MontanaLocalVault.getDecrypted(key)
+        if MontanaDeviceKey.key != nil { held[key] = .some(d) }   // a sealed vault must not latch «nothing» (the class of 22.08)
+        return d
+    }
+    /// A record's new word, under cardLock: memory now, the vault next in order. False when the vault would refuse it
+    /// (no device key): nothing is promised that will not be kept.
+    @discardableResult
+    private static func write(_ key: String, _ d: Data) -> Bool {
+        guard MontanaDeviceKey.key != nil else { return false }
+        held[key] = .some(d)
+        cardIO.async {
+            if !MontanaLocalVault.setEncrypted(key, d) { MontanaTrace.mark("card_write", "REFUSED key=\(key)") }
+        }
+        return true
+    }
+    /// The vault keys the card store answers for — a copy lays their values through the store, never around it.
+    static func owns(_ key: String) -> Bool { owned.contains(key) }
+    /// A value laid by a copy: merged with what stands here by the copy's own law, written in order after every write
+    /// already on its way, and the memory holds it at once.
+    static func lay(_ key: String, _ d: Data, merge: ((Data) -> Data)? = nil) {
+        cardLock.lock(); defer { cardLock.unlock() }   // LOCK-OK: the read-modify-write of a laid record
+        let word: Data
+        if let merge, let have = record(key) { word = merge(have) } else { word = d }
+        write(key, word)
+    }
+    /// The store was replaced under the living: the records are read again — after every write on its way has landed.
+    static func forgetHeld() { cardIO.async { cardLock.lock(); held = [:]; cardLock.unlock() } }
+    /// A move between seats (MTSeats) goes on after every record already on its way has landed: the next step runs on the
+    /// main thread once the queue has written them, and the main thread never waits on the queue.
+    static func afterWrites(_ then: @escaping () -> Void) { cardIO.async { DispatchQueue.main.async(execute: then) } }
+    /// The person leaves: the records go by the same door, after every write already on its way.
+    static func wipe() {
+        cardIO.async {
+            for k in owned { UserDefaults.standard.removeObject(forKey: k) }
+            cardLock.lock(); held = [:]; cardLock.unlock()
+        }
+    }
+
+    static func isShort(_ text: String) -> Bool {
+        invite(inShort: text) != nil
+    }
+    static func invite(inShort text: String) -> Data? {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let form = readPrefixes.first(where: { p in t.hasPrefix(p) }) else { return nil }
+        let code = String(t.dropFirst(form.count))
+        guard let d = Data(base64urlNoPad: code), d.count == 32 else { return nil }
+        return d
+    }
+    private static func rdvKey(_ invite: Data) -> Data {
+        var m = Data("mt-rdv-k".utf8); m.append(0); m.append(invite)
+        return Data(SHA256.hash(data: m))
+    }
+    private static func rdvBid(_ invite: Data) -> String {
+        var m = Data("mt-rdv-a".utf8); m.append(0); m.append(invite)
+        return SHA256.hash(data: m).map { String(format: "%02x", $0) }.joined()
+    }
+
+    // ── THE PERMANENT CARD (the author's word 17.09): the same card, never rotated and never buried.
+    // The daily code is a temporary link; the permanent one is a standing address of one's own
+    // choosing — whoever holds it can always write. It lives in its own record so the daily rotation
+    // never tombs it; its secret lies in the one card-key store like every other card's.
+    private static let rdvPermKey = "rdvPermanent"
+    private static let permMagic = "mt-rdv-perm"
+    private static func permLoad() -> [String: Data] {
+        guard let d = record(rdvPermKey),
+              let m = try? JSONDecoder().decode([String: Data].self, from: d) else { return [:] }
+        return m
+    }
+    private static func permSave(_ m: [String: Data]) {
+        if let d = try? JSONEncoder().encode(m) { write(rdvPermKey, d) }
+    }
+    /// Every live invitation — the daily generations and the permanent one, this device's and the seed's other devices' (twinLoad):
+    /// the points listened at, the doorbell's subscriptions and the acceptance read them all.
+    private static func rdvAll() -> [String: Data] { ownAll().merging(twinLoad().mapValues { c in c.p }) { a, _ in a } }
+    /// The invitations this device gave birth to: only these are laid on the node again (reuploadRdv) -- a sibling's card is its own
+    /// device's to lay and to bury, or a spent link of the sibling would stand on the node again.
+    private static func ownAll() -> [String: Data] { rdvLoad().merging(permLoad()) { a, _ in a } }
+
+    // ── THE SEED'S OTHER DEVICES' CARDS (the author's word 18.10.2026 10:1x UTC: «on my Mac there is no chat that T1 has -- fix it at
+    // the root»). A card is born with a random key on the device that shows it. Measured 17.10.2026 18:12-18:33 UTC: Katana's first
+    // letter came by T1's daily link; T1 opened it (first_accept only-card) and the Mac, the same person, refused it fifty times
+    // («there is no card here for this introduction») -- the conversation was born on one device of the person. Every card a device
+    // gives birth to now rides to the seed's other devices in the pipe only they derive (the twin mirror, MontanaArchive.mirrorNote):
+    // they keep its secret beside their own (cardKeys: the points listened at, the acceptance by point) and its invitation in a record
+    // of its own (the doorbell, the acceptance by push), never in their daily record -- their own rotation buries nothing of the
+    // sibling's. A sibling's card lives its own day and the receiving generation after it.
+    private static let rdvTwinKey = "rdvTwin"
+    static let twinCardLife: TimeInterval = 2 * cardLifetimeSeconds + 3600
+    private struct TwinCard: Codable { let p: Data; let at: Double }
+    private static func twinLoad() -> [String: TwinCard] {
+        guard let d = record(rdvTwinKey), let m = try? JSONDecoder().decode([String: TwinCard].self, from: d) else { return [:] }
+        return m
+    }
+    /// THE LIVE CARDS GO TO THE SEED'S OTHER DEVICES: the daily one and the permanent one, each with its secret, in the pipe only the
+    /// seed's devices derive. Said at a birth and at every keeping-up; a repeat within the hour rides once (MontanaArchive.mirrorNote).
+    static func twinLiveCards() {
+        var out: [(inv: String, payload: Data, secret: Data)] = []
+        cardLock.lock()   // LOCK-OK: the card records read as one snapshot; the words leave after it
+        let keys = load()
+        if let cur = record(rdvCurrentKey).flatMap({ d in String(data: d, encoding: .utf8) }), let pl = rdvLoad()[cur],
+           let sk = keys[pl.prefix(1184).base64urlNoPad] { out.append((cur, pl, sk)) }
+        for (inv, pl) in permLoad() { if let sk = keys[pl.prefix(1184).base64urlNoPad] { out.append((inv, pl, sk)) } }
+        cardLock.unlock()
+        for c in out {
+            guard let d = try? JSONSerialization.data(withJSONObject: ["i": c.inv, "p": c.payload.base64EncodedString(),
+                                                                       "k": c.secret.base64EncodedString()]),
+                  let js = String(data: d, encoding: .utf8) else { continue }
+            MontanaArchive.mirrorNote(.init(c: MontanaArchive.twinCardPipe, m: c.inv, x: MontanaArchive.twinCardMark + js, o: 1))
+        }
+    }
+    /// A SIBLING'S CARD TAKEN (the twin mirror): its secret beside this device's own, its invitation in the sibling's record; a card
+    /// past its two days leaves both. The points listened at are counted again, and the doorbell learns a new invitation at once.
+    static func takeTwin(_ body: String) {
+        guard let d = body.data(using: .utf8), let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: String],
+              let inv = o["i"], Data(base64urlNoPad: inv)?.count == 32,
+              let pl = o["p"].flatMap({ s in Data(base64Encoded: s) }), 1184 <= pl.count, pl.count <= 1184 + nameLimit,
+              let sk = o["k"].flatMap({ s in Data(base64Encoded: s) }), !sk.isEmpty else { return }
+        let now = Date().timeIntervalSince1970
+        cardLock.lock()   // LOCK-OK: the two records rewritten as one step in memory; the vault follows in order
+        var twins = twinLoad()
+        var keys = load()
+        let fresh = twins[inv] == nil
+        if fresh { twins[inv] = TwinCard(p: pl, at: now) }
+        keys[pl.prefix(1184).base64urlNoPad] = sk
+        for (k, c) in twins where twinCardLife < now - c.at {
+            twins.removeValue(forKey: k)
+            keys.removeValue(forKey: c.p.prefix(1184).base64urlNoPad)
+        }
+        save(keys)
+        if let w = try? JSONEncoder().encode(twins) { write(rdvTwinKey, w) }
+        let n = twins.count
+        cardLock.unlock()
+        MTPipeBook.dropFirstIndex()
+        guard fresh else { return }
+        MontanaTrace.mark("rdv_twin", "taken cards=\(n)")
+        DispatchQueue.main.async { MontanaWakePush.registerConvs() }
+    }
+    private static func permBid(_ invite: Data) -> String {
+        var m = Data("mt-rdv-p".utf8); m.append(0); m.append(invite)
+        return SHA256.hash(data: m).map { String(format: "%02x", $0) }.joined()
+    }
+    private static func uploadPermMark(invite: Data) {
+        guard let sealed = MontanaDirect.seal(key: [UInt8](rdvKey(invite)), Data(permMagic.utf8)) else { return }
+        Task {
+            var ok = await MontanaWakePush.putBlob(permBid(invite), data: sealed, over: true)
+            MontanaTrace.mark("rdv_perm_up", "\(ok ? "ok" : "FAIL") bid=\(String(permBid(invite).prefix(8)))")
+            guard !ok else { return }
+            try? await Task.sleep(nanoseconds: 20_000_000_000)   // the permanent mark, like its card, tries once more
+            ok = await MontanaWakePush.putBlob(permBid(invite), data: sealed, over: true)
+            MontanaTrace.mark("rdv_perm_up", "\(ok ? "ok" : "FAIL") bid=\(String(permBid(invite).prefix(8))) late=1")
+        }
+    }
+    /// The scanner's side: was the link a permanent one? Asked once, after the meeting.
+    static func isPermanent(invite: Data) async -> Bool {
+        guard let sealed = await MontanaWakePush.getBlob(permBid(invite)),
+              let d = MontanaDirect.open(key: [UInt8](rdvKey(invite)), sealed) else { return false }
+        return d == Data(permMagic.utf8)
+    }
+    /// The offering side: did the letter come through the permanent card's point?
+    static func isPermanentRoot(_ root: Data) -> Bool {
+        cardLock.lock(); defer { cardLock.unlock() }   // LOCK-OK: one read of the permanent record
+        return permLoad().values.contains { $0.prefix(1184) == root }
+    }
+    /// The permanent link: born once, shown as long as the person keeps it, topped up by term.
+    static func offerPermanent() -> String? {
+        var live: (cur: String, inv: Data, payload: Data)? = nil
+        cardLock.lock()   // LOCK-OK: the permanent record and the card keys read as one snapshot
+        if let (cur, payload) = permLoad().first, let inv = Data(base64urlNoPad: cur),
+           load()[payload.prefix(1184).base64urlNoPad] != nil {
+            live = (cur, inv, payload)
+        }
+        cardLock.unlock()
+        if let live {
+            // THE BODY WEARS TODAY'S NAME AT EVERY SHOWING (21.09, measured: the tablet's card still carried
+            // the callsign of its birth after a rename, and the two-hourly refresh put that snapshot back
+            // on the node as it was). The record holds the key; the name is the profile's alone — the
+            // one owner — and is appended here, at the moment the link is shown.
+            let np = reminted(live.payload)
+            let renamed = np != live.payload
+            if renamed {
+                cardLock.lock(); permSave([live.cur: np]); cardLock.unlock()   // LOCK-OK: one rewrite of the permanent record
+                MontanaTrace.mark("rdv_reminted", "cards=1 name=1 at=show")
+            }
+            let last = UserDefaults.standard.double(forKey: "rdvPermUpOk")
+            if renamed || Date().timeIntervalSince1970 - last > 7200 {
+                uploadRdv(invite: live.inv, payload: np, stamp: "rdvPermUpOk")
+                uploadPermMark(invite: live.inv)
+            }
+            return permPrefix + live.cur
+        }
+        // The birth writes the permanent record as one step under the lock; the trace and the
+        // uploads run with the lock let go (tools/mt-lock-check.py). The randomness — the card
+        // seed and the invitation — is drawn BEFORE the lock (19.09): the first draw of a process
+        // gathers six sources, and under cardLock on the main thread it stood 4.6 s until the
+        // system's watchdog (1614).
+        guard let seed = cardSeed(), let invite = inviteBytes() else { return nil }
+        cardLock.lock()   // LOCK-OK: the birth of the permanent card writes its record as one step
+        guard let full = offer(seed: seed), let payload = payload(inCard: full) else { cardLock.unlock(); return nil }
+        permSave([invite.base64urlNoPad: payload])
+        cardLock.unlock()
+        uploadRdv(invite: invite, payload: payload, stamp: "rdvPermUpOk")
+        uploadPermMark(invite: invite)
+        MontanaTrace.mark("rdv_perm", "born")
+        twinLiveCards()   // the seed's other devices open what this card brings
+        return permPrefix + invite.base64urlNoPad
+    }
+
+    /// THE CARDS WEAR THE NAME OF TODAY (21.09): a rename re-mints the body of the permanent card and
+    /// of the living daily one — the same key, the same link in everyone's hands, a new name behind
+    /// it on the node. Without this the permanent card carried the callsign of the day it was born
+    /// for the rest of its life, and every scan named the person by it.
+    /// The card's key with the profile's name of this moment behind it — the only way a body is made.
+    private static func reminted(_ payload: Data) -> Data {
+        let mine = E2E.myDisplayName().trimmingCharacters(in: .whitespacesAndNewlines)
+        var p = payload.prefix(1184)
+        if !mine.isEmpty, let d = mine.data(using: .utf8), d.count <= nameLimit { p.append(d) }
+        return p
+    }
+    static func refreshCards() {
+        let mine = E2E.myDisplayName().trimmingCharacters(in: .whitespacesAndNewlines)
+        var ups: [(Data, Data, Bool)] = []
+        cardLock.lock()   // LOCK-OK: the two card records are rewritten as one step; the uploads run after
+        var perm = permLoad()
+        for (inv64, pl) in perm {
+            let np = reminted(pl)
+            guard np != pl, let inv = Data(base64urlNoPad: inv64) else { continue }
+            perm[inv64] = np; ups.append((inv, np, true))
+        }
+        if !ups.isEmpty { permSave(perm) }
+        var daily = rdvLoad()
+        let cur = record(rdvCurrentKey).flatMap { String(data: $0, encoding: .utf8) }
+        var dailyChanged = false
+        for (inv64, pl) in daily where inv64 == cur {
+            let np = reminted(pl)
+            guard np != pl, let inv = Data(base64urlNoPad: inv64) else { continue }
+            daily[inv64] = np; dailyChanged = true; ups.append((inv, np, false))
+        }
+        if dailyChanged { rdvSave(daily) }
+        cardLock.unlock()
+        for (inv, np, isPerm) in ups {
+            uploadRdv(invite: inv, payload: np)
+            if isPerm { uploadPermMark(invite: inv) }
+        }
+        if !ups.isEmpty { MontanaTrace.mark("rdv_reminted", "cards=\(ups.count) name=\(mine.isEmpty ? 0 : 1)") }
+    }
+
+    private static let rdvStore = "rdvCards"
+    private static func rdvLoad() -> [String: Data] {
+        guard let d = record(rdvStore),
+              let m = try? JSONDecoder().decode([String: Data].self, from: d) else { return [:] }
+        return m
+    }
+    @discardableResult private static func rdvSave(_ m: [String: Data]) -> Bool {
+        guard let d = try? JSONEncoder().encode(m) else { return false }
+        return write(rdvStore, d)
+    }
+
+    /// The short card is the ONE showing: the code is born instantly (invitation and key are local),
+    /// the key blob is poured onto the node in the background with retries and re-laid on every start
+    /// while the card lives -- a stale blob heals itself.
+    /// Privacy is unchanged: whoever knows the invitation gets ONLY the public key (one can write,
+    /// there is nothing to read with); the card secret never leaves the device, spending as always.
+    /// The vault key: the invitation of the LIVE card. One live code per device: showing the screen
+    /// does NOT change it, only SPENDING does. Before, every showing gave birth to a new card -- five
+    /// listening points accumulated, and a repeat introduction on a live chat started a twin chat.
+    private static let rdvCurrentKey = "rdvCurrent"
+
+    /// The author's word 22.08: the code, the link and their unfolding share ONE term -- exactly one
+    /// day. The code changes neither from a showing nor from a meeting; exactly 24 hours later the
+    /// next one is born, and the old gets a gravestone -- yesterday's link honestly answers "spent".
+    static let cardLifetimeSeconds: TimeInterval = 24 * 3600
+    private static let rdvBornKey = "rdvCurrentBorn"
+    /// The live daily link together with the moment it was born: what a correspondent may hand
+    /// on for us. Born is what makes the copy honest: the receiver knows when it dies.
+    static func currentShortWithBorn() -> (link: String, born: TimeInterval)? {
+        guard let link = offerShort() else { return nil }
+        cardLock.lock(); let mark = record(rdvBornKey); cardLock.unlock()   // LOCK-OK: one read of the birth mark
+        let born = mark.flatMap { String(data: $0, encoding: .utf8) }.flatMap { TimeInterval($0) }
+            ?? Date().timeIntervalSince1970
+        return (link, born)
+    }
+    private static func currentAge() -> TimeInterval? {
+        guard let d = record(rdvBornKey),
+              let s = String(data: d, encoding: .utf8), let t = TimeInterval(s) else { return nil }
+        return Date().timeIntervalSince1970 - t
+    }
+
+    /// THE LIVE CARDS STAY UP, BY TERM (24.09, the noticed point 1). The daily card's turn (rotateIfStale) had one
+    /// caller, applicationDidBecomeActive, which UIKit never calls: the card turned only when something asked for it, and
+    /// its blob and the permanent card's were topped up only at a showing. On every return to the person: the daily card
+    /// is born anew when its day is over (offerShort, whose birth rings its own doorbell), and each live card is topped
+    /// up at most once in two hours — never at every opening, which was a beacon of the owner's activity for the node (the
+    /// card audit, stage 24b). A permanent card is kept up only when the person holds one: none is born here.
+    static func keepLiveCardsUp() {
+        guard MontanaSeed.hasSeed else { return }   // SILENT-OK: the first screen — no identity, no card (the second critic's pass)
+        _ = offerShort()
+        if hasLivePermanent() { _ = offerPermanent() }
+        twinLiveCards()   // the seed's other devices hold every live card of this one
+    }
+    /// The permanent card the person holds, whole: its key in place. A record whose key is gone is no card, and
+    /// offerPermanent would give birth to another — a standing address changes only by the person's own hand.
+    private static func hasLivePermanent() -> Bool {
+        cardLock.lock(); defer { cardLock.unlock() }   // LOCK-OK: one read of the permanent record and the card keys
+        guard let payload = permLoad().first?.value else { return false }
+        return load()[payload.prefix(1184).base64urlNoPad] != nil
+    }
+
+    static func offerShort() -> String? {
+        // THE LIVE CARD IS READ UNDER THE LOCK, THE TOP-UP ACTS AFTER IT (16.09): the code screen asks
+        // this on the main thread; a receive holding the lock over a network call would stall it.
+        var live: (cur: String, inv: Data, payload: Data)? = nil
+        cardLock.lock()   // LOCK-OK: the two card records are read as one snapshot
+        let m0 = rdvLoad()
+        if let cur = record(rdvCurrentKey).flatMap({ String(data: $0, encoding: .utf8) }),
+           let payload = m0[cur], let inv = Data(base64urlNoPad: cur),
+           load()[payload.prefix(1184).base64urlNoPad] != nil,   // the secret is in place -- the card is whole
+           let age = currentAge(), age < cardLifetimeSeconds {   // and the day still has time to run
+            live = (cur, inv, payload)
+        }
+        cardLock.unlock()
+        if let live {
+            // Topping up goes BY TERM, not on every showing or activation: a per-showing top-up was a
+            // beacon of the owner's activity for the node (the card audit, stage 24b). Once in two hours
+            // is enough: the node blob lives for days, and the daily rotation lays out a new one itself.
+            let last = UserDefaults.standard.double(forKey: "rdvUpOk")
+            if Date().timeIntervalSince1970 - last > 7200 {
+                uploadRdv(invite: live.inv, payload: live.payload, stamp: "rdvUpOk")
+            }
+            return tempPrefix + live.cur
+        }
+        // The current one without a secret (a victim of the old race) is dead: a scanner would knock forever.
+        // From here the ordinary path: a new card, the old ones spent — the read-modify-write of both
+        // stores is one step under the lock. The randomness is drawn before it (19.09, see offerPermanent).
+        guard let seed = cardSeed(), let invite = inviteBytes() else { return nil }
+        cardLock.lock(); defer { cardLock.unlock() }   // LOCK-OK: the birth of a card rewrites both card records as one step
+        // THE BIRTH LOOKS AGAIN UNDER ITS LOCK (24.09, the second critic's pass): the snapshot above is read before the
+        // randomness, and two askers of one activation — the daily link to every correspondent on the main thread, the
+        // cards kept up off it — both found the day over and both gave birth: the second, working from the stale
+        // snapshot, erased the secret of yesterday's card while letters were still on their way to it, and left the
+        // first newborn a secret without a record. A card born meanwhile is the card.
+        let m = rdvLoad()
+        let prev = record(rdvCurrentKey).flatMap { String(data: $0, encoding: .utf8) }
+        if let prev, let pl = m[prev], load()[pl.prefix(1184).base64urlNoPad] != nil,
+           let age = currentAge(), age < cardLifetimeSeconds {
+            return tempPrefix + prev
+        }
+        guard let full = offer(seed: seed), let payload = payload(inCard: full) else { return nil }
+        // A new daily code extinguishes old LINKS immediately (a gravestone on the blob -- yesterday's
+        // tap answers "spent"), but the PREVIOUS generation still ACCEPTS: a letter honestly sent on
+        // its day and still travelling has no right to die of a rotation (E-1: a return from sleep
+        // longer than 24 h would kill travelling letters as first_miss). The previous secret lives
+        // until the next rotation; older ones are buried whole.
+        var keep: [String: Data] = [:]
+        if let prev, let pl = m[prev] { keep[prev] = pl }   // the receiving generation: the secret stays
+        keep[invite.base64urlNoPad] = payload
+        // A CARD THAT DID NOT SETTLE IS NO CARD (24.09, the second critic's pass): with the vault shut the writes fell
+        // through unread, every asker gave birth again, and the doorbell below — whose redraw asks again — made a loop of
+        // it. The birth counts once the vault will keep it — a device key in hand, the record's word in memory and its
+        // write on the queue (25.09); until then nothing is buried, laid on the node or rung for.
+        guard rdvSave(keep),
+              write(rdvCurrentKey, Data(invite.base64urlNoPad.utf8)),
+              write(rdvBornKey, Data(String(Date().timeIntervalSince1970).utf8)) else {
+            var keys = load(); if keys.removeValue(forKey: payload.prefix(1184).base64urlNoPad) != nil { save(keys) }
+            DispatchQueue.main.async { MontanaTrace.mark("rdv_born", "FAIL unsettled") }
+            return nil
+        }
+        for (inv64, pl) in m {
+            if let oldInv = Data(base64urlNoPad: inv64),
+               let tomb = MontanaDirect.seal(key: [UInt8](rdvKey(oldInv)), Data(spentMagic.utf8)) {
+                Task { _ = await MontanaWakePush.putBlob(rdvBid(oldInv), data: tomb, over: true) }
+            }
+            if inv64 == prev { continue }   // the receiving generation: the secret stays
+            let root64 = pl.prefix(1184).base64urlNoPad
+            var keys = load(); if keys.removeValue(forKey: root64) != nil { save(keys) }
+        }
+        MTPipeBook.dropFirstIndex()
+        // THE TERM STARTS AT THE BIRTH (24.09, the second critic's pass): the birth laid the card without its stamp, and
+        // the next asker laid it again at once, face and all.
+        cardIO.async {   // in order after the record; the term's stamp is the node's word, written by uploadRdv (07.10)
+            uploadRdv(invite: invite, payload: payload, stamp: "rdvUpOk")
+        }
+        // A NEW DAILY CARD RINGS ITS OWN DOORBELL (24.09, the noticed point 1): the turn registered the new invitation only
+        // through rotateIfStale, which no road called — a card born here stood unregistered at the node, and the first
+        // letter of whoever scanned it woke nobody, nor could the extension open it (mirrorSecrets). The registration and
+        // the code screen's redraw leave once the card's lock is let go.
+        DispatchQueue.main.async {
+            MontanaTrace.mark("rdv_born", "daily")
+            MontanaWakePush.registerConvs()
+            twinLiveCards()   // the seed's other devices open what this card brings
+            NotificationCenter.default.post(name: .montanaCardSpent, object: nil)   // the screen, if open, draws the new one
+        }
+        return tempPrefix + invite.base64urlNoPad
+    }
+
+    /// A CARD THAT DID NOT REACH THE NODE IS NOT COUNTED AS UP (23.09, the class of «the code did not work the first
+    /// time»): the term stamp was written before the answer, so a card whose three tries all failed stood off the node
+    /// until the next launch or two hours later, and every scan of it in between was refused. A failed card tries once
+    /// more twenty seconds later; a card no node took keeps no stamp, and the next showing of the code lays it again.
+    /// THE STAMP IS THE NODE'S WORD, NOT THE INTENT (06.10.2026, measured in MT Messenger, whose card code is this file's: T1
+    /// scanned T2's code and T2 scanned T1's, and every node answered "gone" for both). T1's permanent card was born in a
+    /// process the installer ended before its upload ran, and the term's stamp, written BEFORE the upload, kept every later
+    /// showing from laying it for two hours -- the code on the screen named a card no node held. Carried over here on
+    /// 07.10.2026: the stamp is written when a node took the card, and only while the card is still the seat's own (a person
+    /// may change seats while it flies); a card on its way is not sent again by the same process. The stamps carry new names
+    /// (rdvPermUpOk, rdvUpOk) that only a node's ok ever wrote, so a stamp an earlier build wrote before its upload decides nothing.
+    private static let flyLock = NSLock()
+    private static var flying = Set([String]())
+    private static func takeOff(_ bid: String) -> Bool {
+        flyLock.lock(); defer { flyLock.unlock() }   // LOCK-OK: one word in memory
+        return flying.insert(bid).inserted
+    }
+    private static func landed(_ bid: String) {
+        flyLock.lock()   // LOCK-OK: one word in memory
+        flying.remove(bid)
+        flyLock.unlock()
+    }
+    /// The card is still the one its stamp speaks for: the person's permanent card, or the current daily one.
+    private static func stillOwn(_ invite: Data, stamp: String) -> Bool {
+        cardLock.lock(); defer { cardLock.unlock() }   // LOCK-OK: one read of the card records
+        let code = invite.base64urlNoPad
+        if stamp == "rdvPermUpOk" { return permLoad()[code] != nil }
+        return record(rdvCurrentKey).flatMap { d in String(data: d, encoding: .utf8) } == code
+    }
+    private static func uploadRdv(invite: Data, payload: Data, stamp: String? = nil) {
+        let bid = rdvBid(invite)
+        guard takeOff(bid) else { return }   // this card is on its way already
+        guard let sealed = MontanaDirect.seal(key: [UInt8](rdvKey(invite)), payload) else { landed(bid); return }
+        Task {
+            defer { landed(bid) }
+            var ok = await MontanaWakePush.putBlob(bid, data: sealed, over: true)
+            MontanaTrace.mark("rdv_up", "\(ok ? "ok" : "FAIL") bid=\(String(bid.prefix(8)))")
+            if !ok {
+                try? await Task.sleep(nanoseconds: 20_000_000_000)
+                ok = await MontanaWakePush.putBlob(bid, data: sealed, over: true)
+                MontanaTrace.mark("rdv_up", "\(ok ? "ok" : "FAIL") bid=\(String(bid.prefix(8))) late=1")
+            }
+            // A card no node took keeps no stamp: the next showing lays it again.
+            if ok, let stamp, stillOwn(invite, stamp: stamp) { UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: stamp) }
+        }
+        uploadFace(invite: invite)
+    }
+
+    // ── The face beside the card (15.32, the author's word 07.09: «opening the link, I must
+    // already see the face»). The card carries the key and the name; the face rode only in the
+    // first letter after the meeting, so a fresh chat stood under a drawn initial. Whoever holds
+    // the link gets what the person hands out anyway at every first exchange.
+    private static func faceBid(_ invite: Data) -> String {
+        var m = Data("mt-rdv-f".utf8); m.append(0); m.append(invite)
+        return SHA256.hash(data: m).map { String(format: "%02x", $0) }.joined()
+    }
+    private static func faceKey(_ invite: Data) -> Data {
+        var m = Data("mt-rdv-fk".utf8); m.append(0); m.append(invite)
+        return Data(SHA256.hash(data: m))
+    }
+    private static func faceStamp(_ invite: Data) -> String { "rdvFaceUp:" + invite.base64urlNoPad }
+
+    /// The face goes up with the card and is topped up by term; the same face is not poured
+    /// again while its record is fresh. A cleared face leaves an empty blob — «no face» is an
+    /// answer, so yesterday's picture cannot outlive its owner's decision.
+    private static func uploadFace(invite: Data) {
+        let face = UserDefaults.standard.data(forKey: "avatarData") ?? Data()
+        let stamp = faceStamp(invite)
+        let fp = SHA256.hash(data: face).map { String(format: "%02x", $0) }.joined().prefix(16)
+        if let last = UserDefaults.standard.string(forKey: stamp) {
+            let parts = last.split(separator: ":")
+            if parts.count == 2, parts[0] == fp, let at = Double(parts[1]),
+               Date().timeIntervalSince1970 - at < 5 * 86400 { return }
+        } else if face.isEmpty { return }   // nothing lay beside the card, nothing to clear
+        guard let sealed = MontanaDirect.seal(key: [UInt8](faceKey(invite)), face) else { return }
+        Task {
+            let ok = await MontanaWakePush.putBlob(faceBid(invite), data: sealed, over: true)
+            if ok { UserDefaults.standard.set(fp + ":" + String(Date().timeIntervalSince1970), forKey: stamp) }
+            MontanaTrace.mark("rdv_face_up", "\(ok ? "ok" : "FAIL") bytes=\(face.count) bid=\(String(faceBid(invite).prefix(8)))")
+        }
+    }
+
+    /// The scanner's side: the face the inviter published under this invitation, or nil.
+    static func face(invite: Data) async -> Data? {
+        guard let sealed = await MontanaWakePush.getBlob(faceBid(invite)),
+              let d = MontanaDirect.open(key: [UInt8](faceKey(invite)), sealed),
+              !d.isEmpty, d.count <= 262_144 else { return nil }
+        return d
+    }
+
+    /// My face changed: every live card gets the new one beside it at once.
+    static func faceChanged() { reuploadRdv() }
+
+    /// Every live card goes onto the node again — a new face, a restored copy: a blob has no right to go stale before its
+    /// card. Spent ones are cleaned out by the spending (accept). Not at every opening: that is keepLiveCardsUp, by term.
+    static func reuploadRdv() {
+        for (inv64, payload) in ownAll() {
+            guard let inv = Data(base64urlNoPad: inv64) else { continue }
+            uploadRdv(invite: inv, payload: payload)
+        }
+        for inv64 in permLoad().keys { if let inv = Data(base64urlNoPad: inv64) { uploadPermMark(invite: inv) } }
+    }
+
+    private static func rdvForget(root: Data) {
+        cardLock.lock(); defer { cardLock.unlock() }   // LOCK-OK: read-modify-write of the invitation record and the current-card mark
+        var m = rdvLoad()
+        let before = m.count
+        let spent = m.filter { $0.value.prefix(1184) == root }.keys
+        m = m.filter { !($0.value.prefix(1184) == root) }
+        if m.count != before { rdvSave(m) }
+        // A link outlives a card: the node blob survived the spending, and a stale tap unfolded into
+        // an endless knock at a point nobody listens to. A gravestone under the same bid closes the
+        // unfolding with an honest "spent" (F-3).
+        for inv64 in spent {
+            guard let inv = Data(base64urlNoPad: inv64),
+                  let tomb = MontanaDirect.seal(key: [UInt8](rdvKey(inv)), Data(spentMagic.utf8)) else { continue }
+            Task {
+                UserDefaults.standard.removeObject(forKey: "rdvFaceUp:" + inv64)
+                let ok = await MontanaWakePush.putBlob(rdvBid(inv), data: tomb, over: true)
+                MontanaTrace.mark("rdv_tomb", "\(ok ? "ok" : "FAIL") inv=\(String(inv64.prefix(8)))")
+            }
+        }
+        // The current one is spent -- the code has served its one meeting: the screen, if open, draws a new one.
+        if let cur = record(rdvCurrentKey).flatMap({ String(data: $0, encoding: .utf8) }),
+           spent.contains(cur) {
+            write(rdvCurrentKey, Data())
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .montanaCardSpent, object: nil)
+            }
+        }
+    }
+
+    /// Scanning a short code: invitation -> blob from the node -> an ordinary card. From there the
+    /// whole introduction mechanics is as before, to the byte.
+    /// "Did not unfold" and "spent" are different answers (a rhyme with 6.8: a break is not "the node
+    /// said NO"): a break waits and retries, while a gravestone from a live node means "the card is
+    /// spent, the link is dead forever" -- and that is said to the person aloud, not to a journal (F-3, F-4).
+    enum ExpandAnswer { case card(String); case spent; case unreachable }
+    static let spentMagic = "mt-rdv-spent"
+
+    static func expand(short text: String) async -> ExpandAnswer {
+        guard let inv = invite(inShort: text) else {
+            MontanaTrace.mark("rdv_expand", "FAIL why=bad-invite")
+            return .unreachable
+        }
+        for attempt in 0..<4 {
+            if let sealed = await MontanaWakePush.getBlob(rdvBid(inv)),
+               let payload = MontanaDirect.open(key: [UInt8](rdvKey(inv)), sealed) {
+                if payload == Data(spentMagic.utf8) {
+                    MontanaTrace.mark("rdv_expand", "spent bid=\(String(rdvBid(inv).prefix(8)))")
+                    return .spent
+                }
+                if payload.count >= 1184, payload.count <= 1184 + nameLimit {
+                    MontanaTrace.mark("rdv_expand", "ok try=\(attempt + 1)")
+                    return .card(prefix + payload.base64urlNoPad)
+                }
+            }
+            if attempt < 3 { try? await Task.sleep(nanoseconds: 900_000_000) }
+        }
+        MontanaTrace.mark("rdv_expand", "FAIL bid=\(String(rdvBid(inv).prefix(8)))")
+        return .unreachable
+    }
+
+    private static func load() -> [String: Data] {
+        guard let d = record(store),
+              let m = try? JSONDecoder().decode([String: Data].self, from: d) else { return [:] }
+        return m
+    }
+    private static func save(_ m: [String: Data]) {
+        if let d = try? JSONEncoder().encode(m) { write(store, d) }
+    }
+
+    /// How many name bytes a card carries. The channel name announcement accepts the same: two bounds
+    /// for one value would drift apart, and one of the two names would come out cut.
+    /// The name from a card met again: the weakest witness, applied only past no dated word of the person.
+    @MainActor static func renameFromCard(_ c: String, conv: String) {
+        guard let n = MontanaCard.name(inCard: c) else { return }
+        MontanaDeliveryEngine.shared.store?.setPeerName(ref: conv, name: n, at: 0, source: "card-rescan")
+        MontanaTrace.mark("meet_rename", "conv=\(String(conv.prefix(10)))")
+    }
+    /// THE FACE COMES WITH THE NAME ON A RESCAN TOO (21.09, measured 13:49:59: the name stood at once, the face
+    /// only 5.5 s later — by the person's own word after the first letter, and never without one). The card's
+    /// face lies beside the card under the same invitation; whoever re-reads the name re-reads the face.
+    static func refaceFromCard(invite: Data, conv: String) async {
+        let face = await MontanaCard.face(invite: invite)
+        MontanaTrace.mark("rdv_face", face == nil ? "none conv=\(String(conv.prefix(10))) rescan" : "ok bytes=\(face?.count ?? 0) conv=\(String(conv.prefix(10))) rescan")
+        guard let face else { return }
+        // A CARD THAT WEARS MY FACE IS MINE (18.10.2026, Agent 93, T1 2242): its link came by the pipe my other device shares with this
+        // correspondent and was noted as theirs. Forgotten, it is neither read for a face again nor handed on as theirs.
+        if MontanaSelfFace.isMine(MontanaSelfFace.shaped(face)) { MTPeerLinks.forget(conv); return }
+        await wearFace(face, conv: conv)
+    }
+
+    /// A face fetched from the node goes on a conversation — the one road for the card's face and the pipe's.
+    /// `onlyIfBare`: a face that came first by the person's own letter is kept.
+    @discardableResult
+    static func wearFace(_ face: Data, conv: String, onlyIfBare: Bool = false) async -> Bool {
+        let shaped = MontanaSelfFace.shaped(face)
+        return await MainActor.run { () -> Bool in
+            guard let store = MontanaDeliveryEngine.shared.store else { return false }
+            if onlyIfBare, store.peerAvatars[conv] != nil { return false }
+            return store.setPeerAvatar(ref: conv, data: shaped, owned: true)   // the face its owner laid beside their own card
+        }
+    }
+
+    /// THE OFFERING SIDE, ONCE PER CORRESPONDENCE (23.09, the author's word: «when the one who scanned my page
+    /// writes, the page closes by itself»). Every road that accepts a first letter through a card — the live
+    /// point, the push box, the walk — ends here: the page showing THIS card is told (the person in front of it
+    /// has written), and the face laid beside the pipe is read.
+    private static let metLock = NSLock()
+    private static var metOnce: Set<String> = []
+    private static func offerMet(ref: String, root: Data) {
+        metLock.lock(); let first = metOnce.insert(ref).inserted; metLock.unlock()
+        guard first else { return }
+        // ONE PERSON, ONE CONVERSATION BY CONSTRUCTION (20.10, T1 «Petros twice» at a new chat): the accepting side asks
+        // too, over the pipe just accepted. Two scans crossing in the air each asked before the other pipe reached them, so
+        // neither question named it; now the later of a phone's two events — its scan or its acceptance — asks naming
+        // the other pipe (MTSamePair).
+        MTSamePair.ask(new: ref)
+        cardLock.lock()   // LOCK-OK: one read of the invitation records
+        let inv = rdvAll().first(where: { $0.value.prefix(1184) == root })?.key ?? ""
+        cardLock.unlock()
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .montanaCardMet, object: nil, userInfo: ["inv": inv])
+        }
+        MontanaFirstContact.readPipeFace(conv: ref)
+    }
+    static let nameLimit = 64
+
+    /// Offer a card. The keypair is drawn by the core, not by the app: the source of randomness and
+    /// its health tests belong to the protocol, not to whichever implementation is holding it.
+    ///
+    /// A card carries the key AND THE NAME of the one showing it. The name is not an "extra value" here:
+    /// a person hands the card to the very one they introduce themselves to, and without it the scanner
+    /// starts a conversation with a nameless peer while the name arrives later -- that is, the chat is
+    /// called something it is not for a while. The card carries nothing else: no address, no identifier, no term.
+    ///
+    /// The seed comes in from the caller, drawn with no lock in hand (19.09): the draw is the one
+    /// step of a card's birth that may cost a gather, and a gather under a lock is a stalled thread.
+    static func cardSeed() -> [UInt8]? {
+        var seed = [UInt8](repeating: 0, count: 64)
+        return mt_random_fast(&seed, seed.count) == 0 ? seed : nil
+    }
+    static func inviteBytes() -> Data? {
+        var invite = Data(count: 32)
+        let ok = invite.withUnsafeMutableBytes { b -> Int32 in
+            guard let p = b.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return -1 }
+            return mt_random_fast(p, 32)
+        }
+        return ok == 0 ? invite : nil
+    }
+    static func offer(seed: [UInt8]) -> String? {
+        cardLock.lock(); defer { cardLock.unlock() }   // LOCK-OK: read-modify-write of the card-key record
+        guard let p = MontanaFirstContact.pair(seed: seed) else { return nil }
+        let root = p.root
+        var m = load()
+        m[root.base64urlNoPad] = p.secret   // the card key stays ONE key: the name does not name it
+        save(m)
+        MTPipeBook.dropFirstIndex()   // one more node to listen at
+        var payload = root
+        let mine = E2E.myDisplayName().trimmingCharacters(in: .whitespacesAndNewlines)
+        if !mine.isEmpty, let d = mine.data(using: .utf8), d.count <= nameLimit { payload.append(d) }
+        return prefix + payload.base64urlNoPad
+    }
+
+    /// The alphabet a QR code packs at five and a half bits per character instead of eight. The
+    /// card is the same value either way; what changes is how many modules it takes to draw it.
+    private static let b45 = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:")
+    private static func b45decode(_ text: String) -> [UInt8]? {
+        let body = Array(text)
+        var bytes = [UInt8]()
+        var i = 0
+        while i < body.count {
+            let left = body.count - i
+            guard left >= 2, let c0 = b45.firstIndex(of: body[i]), let c1 = b45.firstIndex(of: body[i + 1]) else { return nil }
+            if left >= 3, let c2 = b45.firstIndex(of: body[i + 2]) {
+                let v = c0 + c1 * 45 + c2 * 2025
+                guard v <= 0xFFFF else { return nil }
+                bytes.append(UInt8(v >> 8)); bytes.append(UInt8(v & 0xFF))
+                i += 3
+            } else {
+                let v = c0 + c1 * 45
+                guard v <= 0xFF else { return nil }
+                bytes.append(UInt8(v))
+                i += 2
+            }
+        }
+        return bytes
+    }
+    static let qrPrefix = "MTC1:"
+    static let qrShortPrefix = "MTR1:"
+
+    /// The card as a code a camera reads quickly: a short prefix and the contact key in base45.
+    static func qrText(_ text: String) -> String? {
+        // A short invitation -- the LINK ITSELF goes into the code (55 characters): it is read both by
+        // our scanner and by the system camera (the montana:// scheme is registered -- it will offer to open).
+        // A special format at 32 bytes gives nothing while it weaned the camera off the link.
+        if isShort(text) { return text.trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard let root = payload(inCard: text) else { return nil }
+        var out = qrPrefix
+        var i = root.startIndex
+        while i < root.endIndex {
+            let a = Int(root[i])
+            let next = root.index(after: i)
+            if next < root.endIndex {
+                let v = a * 256 + Int(root[next])
+                out.append(b45[v % 45]); out.append(b45[(v / 45) % 45]); out.append(b45[v / 2025])
+                i = root.index(after: next)
+            } else {
+                out.append(b45[a % 45]); out.append(b45[a / 45])
+                i = next
+            }
+        }
+        return out
+    }
+
+    /// The scanner's side of the same form: back into the text every other node already reads.
+    static func text(fromQR scanned: String) -> String? {
+        let s = scanned.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.hasPrefix(qrShortPrefix) {
+            guard let bytes = b45decode(String(s.dropFirst(qrShortPrefix.count))), bytes.count == 32 else { return nil }
+            return webPrefix + Data(bytes).base64urlNoPad
+        }
+        guard s.hasPrefix(qrPrefix) else { return nil }
+        guard let bytes = b45decode(String(s.dropFirst(qrPrefix.count))) else { return nil }
+        guard bytes.count >= 1184, bytes.count <= 1184 + nameLimit else { return nil }
+        return prefix + Data(bytes).base64urlNoPad
+    }
+
+    /// Everything a card carries: the key and, if the one showing it named themselves, their name.
+    static func payload(inCard text: String) -> Data? {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard t.hasPrefix(prefix) else { return nil }
+        let body = String(t.dropFirst(prefix.count))
+        guard let d = Data(base64urlNoPad: body), d.count >= 1184, d.count <= 1184 + nameLimit else { return nil }
+        return d
+    }
+
+    /// The contact key inside a card, or nil when the text is not one.
+    static func root(inCard text: String) -> Data? {
+        guard let d = payload(inCard: text) else { return nil }
+        return d.prefix(1184)
+    }
+
+    /// The name the card holder introduced themselves by. Empty means they did not, and that is an
+    /// answer, not a gap: the conversation then honestly stands under a neutral caption.
+    static func name(inCard text: String) -> String? {
+        guard let d = payload(inCard: text), d.count > 1184,
+              let n = String(data: d.dropFirst(1184), encoding: .utf8) else { return nil }
+        let t = n.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? nil : t
+    }
+
+    /// The scanner's side: one encapsulation, and the correspondence exists. What comes back is the
+    /// local name of it and the ciphertext the first letter must carry.
+    static func meet(card text: String) -> (reference: String, ciphertext: Data)? {
+        guard let root = root(inCard: text) else {
+            MontanaTrace.mark("meet_refused", "side=scanner")
+            return nil
+        }
+        let met = MontanaFirstContact.meet(contactRoot: root)
+        MontanaTrace.mark(met != nil ? "meet_card" : "meet_refused", "side=scanner")
+        return met
+    }
+
+    /// The offering side: a first letter arrived carrying its ciphertext, and one of the cards this
+    /// device handed out opens it. A card that opened a letter is spent and forgotten — it existed
+    /// for one meeting, and keeping it would make it a standing address by another name.
+    /// Acceptance by DELIVERY POINT: the letter arrived in a mailbox opened under one card -- that one
+    /// is tried, exactly one. There is no walk, so there is no phantom candidate: ML-KEM on a foreign
+    /// key does not refuse (implicit rejection, FIPS 203) and always yields a plausible secret, so
+    /// "it decrypted" was never a proof. The proof is the body seal.
+    static func accept(firstLetter ct: Data, root: Data, confirmed: (Data) -> Bool) -> String? {
+        // THE LOCK COVERS THE LOOKUP ONLY (16.09): a meeting does not spend the card, nothing here writes
+        // the store — the key is copied out, and the decapsulation, the proof, the pipe's birth and the
+        // trace run with the lock let go, so the code screen on the main thread never waits behind a
+        // receive. Guard: tools/mt-lock-check.py.
+        let root64 = root.base64urlNoPad
+        cardLock.lock(); let sk = load()[root64]; cardLock.unlock()   // LOCK-OK: one read of the card-key record
+        guard let sk else { return nil }   // not my card's point -- the name path
+        guard let secret = MontanaFirstContact.accept(ciphertext: ct, contactSecret: sk, contactRoot: root),
+              confirmed(secret) else {
+            MontanaTrace.mark("first_ghost", "card=\(MontanaMeetBook.fp(root64)) by-point")
+            return nil
+        }
+        guard let ref = MTPipeBook.establish(secret: secret) else { return nil }
+        MontanaTrace.mark("first_accept", "ref=\(String(ref.prefix(10))) by-point")
+        MontanaWakePush.registerConvs()
+        MTPipeBook.rememberRoot(root, for: ref)
+        if isPermanentRoot(root) { ContactsTabView.keepInBook(ref: ref) }   // came by the permanent link: kept
+        MontanaTrace.mark("meet_accept", "side=offer")
+        offerMet(ref: ref, root: root)
+        return ref
+    }
+
+    /// Acceptance from a push: the card is named by the invitation that opened the letter's OUTER seal
+    /// in the extension -- trying it against other cards does not happen at all, and a body for the
+    /// seal is not needed here: the seal was already presented to the extension.
+    static func accept(firstLetter ct: Data, invite inv64: String, conf: String) -> String? {
+        cardLock.lock()   // LOCK-OK: one read of the invitation records
+        let root64 = rdvAll()[inv64].map { $0.prefix(1184).base64urlNoPad }
+        cardLock.unlock()
+        guard let root64 else {
+            MontanaTrace.mark("first_miss", "invite-unknown"); return nil
+        }
+        // The letter's outer seal is derived from the INVITATION, and an invitation is handed out by
+        // the person: whoever holds the link can assemble a letter with garbage ciphertext inside a
+        // genuine seal. So key confirmation is mandatory here -- there is no body seal on this path.
+        cardLock.lock(); let sk = load()[root64]; cardLock.unlock()   // LOCK-OK: one read of the card-key record; the work runs after it
+        guard let sk, let root = Data(base64urlNoPad: root64), root.count == 1184,
+              let secret = MontanaFirstContact.accept(ciphertext: ct, contactSecret: sk, contactRoot: root)
+        else {
+            MontanaTrace.mark("first_miss", "card=\(MontanaMeetBook.fp(root64)) only-card"); return nil
+        }
+        guard MontanaFirstContact.sameConfirm(conf, MontanaFirstContact.firstConfirm(secret: secret, ct: ct)) else {
+            MontanaTrace.mark("first_ghost", "card=\(MontanaMeetBook.fp(root64)) conf=\(conf.isEmpty ? "absent" : "bad")")
+            return nil
+        }
+        guard let ref = MTPipeBook.establish(secret: secret) else {
+            MontanaTrace.mark("first_miss", "card=\(MontanaMeetBook.fp(root64)) establish"); return nil
+        }
+        MontanaTrace.mark("first_accept", "ref=\(String(ref.prefix(10))) only-card")
+        MontanaWakePush.registerConvs()
+        MTPipeBook.rememberRoot(root, for: ref)
+        if isPermanentRoot(root) { ContactsTabView.keepInBook(ref: ref) }   // came by the permanent link: kept
+        MontanaTrace.mark("meet_accept", "side=offer")
+        offerMet(ref: ref, root: root)
+        return ref
+    }
+
+    static func accept(firstLetter ct: Data, confirmed: (Data) -> Bool) -> String? {
+        cardLock.lock(); let cards = load(); cardLock.unlock()   // LOCK-OK: one read of the card-key record; the walk runs after it
+        // A reception miss goes IN BLACK AND WHITE: frames arrive, and there is nothing to accept them
+        // with (the key store is empty or does not match). Precedent: a wipe took cardKeys away, the
+        // points went on listening to emptiness, the sender hammered first_stuck x61 -- and nobody said why.
+        if cards.isEmpty { MontanaTrace.mark("first_miss", "cards=0"); return nil }
+        for (rootB64, sk) in cards {
+            guard let root = Data(base64urlNoPad: rootB64), root.count == 1184,
+                  let secret = MontanaFirstContact.accept(ciphertext: ct, contactSecret: sk, contactRoot: root)
+            else { continue }
+            // ACCEPT MEANS PROVE, not decrypt. ML-KEM decapsulation on a FOREIGN key does not refuse --
+            // the standard returns deterministic garbage (implicit rejection). The letter was tried
+            // against ALL of the holder's cards (there are two: the current one and the previous
+            // generation), a foreign one "opened" too, and from ONE letter a phantom chat was born with
+            // a secret nobody holds: measured 25.08 -- one scan on T2, two first_accept on T1 119 ms
+            // apart (15f1bc66f4 real, 573b4987ea phantom, nonexistent on T2; dictionary order differs
+            // per call, so now one, now the other was accepted). The proof is the seal: the secret must
+            // open the letter body. A garbage secret never opens a seal.
+            // A garbage secret never opens the body seal.
+            guard confirmed(secret) else {
+                MontanaTrace.mark("first_ghost", "card=\(MontanaMeetBook.fp(rootB64))")
+                continue
+            }
+            guard let ref = MTPipeBook.establish(secret: secret) else { continue }
+            MontanaTrace.mark("first_accept", "ref=\(String(ref.prefix(10))) cards=\(cards.count)")
+            // The author's decision 22.08: the code is DAILY, a meeting does NOT spend it. The former
+            // "one meeting = one spend" match gave birth to a carousel: a letter spends the card ->
+            // a new one is born -> the next tap meets the new one -> a new twin chat (three first_accept
+            // in 11 seconds, 21:33). One code a day for everyone: as many people knock, as many pipes
+            // stand up -- the point lives by age, not by a meeting.
+            MontanaWakePush.registerConvs()   // the pipe stood up -- subscriptions at once (its own debounce)
+            MTPipeBook.rememberRoot(root, for: ref)
+            if isPermanentRoot(root) { ContactsTabView.keepInBook(ref: ref) }   // came by the permanent link: kept
+            MontanaTrace.mark("meet_accept", "side=offer")
+            offerMet(ref: ref, root: root)
+            return ref
+        }
+        MontanaTrace.mark("first_miss", "cards=\(cards.count) none-matched")
+        return nil
+    }
+
+    /// How many cards are outstanding — countable without opening anything.
+    static var outstanding: Int { load().count }
+
+    /// The contact keys of those cards. A card handed out is a node this device must listen at:
+    /// whoever scanned it addresses their first letter to the point derived from this very key.
+    static func outstandingRoots() -> [Data] {
+        load().keys.compactMap { Data(base64urlNoPad: $0) }.filter { $0.count == 1184 }
+    }
+
+    /// Invitations of live cards -- for wake subscriptions (F-2): the owner listens to the first
+    /// letter not only by a live channel but also by the accelerator node doorbell.
+    static func outstandingInvites() -> [Data] {
+        cardLock.lock(); defer { cardLock.unlock() }
+        return rdvAll().keys.compactMap { Data(base64urlNoPad: $0) }.filter { $0.count == 32 }
+    }
+}
+
+
+/// THE FACE AND THE CHAT MEET IN ONE PLACE (23.09): the face asked beside the unfolding and the conversation the
+/// meeting gives birth to arrive in either order, and whichever comes second puts the face on — a face in hand
+/// before the birth goes on at the birth, so a fresh chat is never shown under a drawn initial it does not need.
+final class MTFaceMeet: @unchecked Sendable {
+    private let lock = NSLock()
+    private var arrived = false
+    private var face: Data?
+    private var conv: String?
+
+    /// The face came back (nil: the card carries none) — the conversation to put it on, if it is born already.
+    func landed(_ f: Data?) -> String? {
+        lock.withLock { () -> String? in arrived = true; face = f; return conv }
+    }
+
+    /// The conversation is born; a face that came first goes on now.
+    func born(_ c: String) async {
+        let (ready, f) = lock.withLock { () -> (Bool, Data?) in conv = c; return (arrived, face) }
+        if ready { await Self.wear(f, on: c, at: "birth") }
+    }
+
+    static func wear(_ f: Data?, on conv: String, at: String) async {
+        guard let f else { MontanaTrace.mark("rdv_face", "none conv=\(String(conv.prefix(10))) at=\(at)"); return }
+        await MontanaCard.wearFace(f, conv: conv)
+        MontanaTrace.mark("rdv_face", "ok bytes=\(f.count) conv=\(String(conv.prefix(10))) at=\(at)")
+    }
+}
+
+
+// ── The ONE meeting resolver ────────────────────────────────────────────────────────────────
+//
+// Every node a person may hand something to — the scanner, a pasted line, a tapped montana://
+// link — comes HERE. One implementation of acceptance and one of refusal, because the nodes
+// diverged the moment there were two: the scanner remembered the ciphertext of the first
+// letter and the name-link node did not, so a correspondence begun by link could never open.
+// A second copy of this switch anywhere is that defect waiting to happen again.
+enum MontanaMeeting {
+
+    /// Meets whatever was handed over — a name or a one-time card — and returns the local
+    /// reference of the correspondence it opens. Anything shaped like a standing identifier of
+    /// a person is refused out loud: no such string exists in this tree, and no node accepts one.
+    /// My scans: invitation -> the conversation it opened. A repeat scan of THE SAME code does not
+    /// give birth to a second pipe (and a twin chat) but returns into the already open conversation.
+    private static let scannedKey = "rdvScanned"
+    /// The link book and the root book. Both are MontanaMeetBook: a record first lands in process
+    /// memory (which cannot refuse), then in the vault, and a vault refusal is named in the trace.
+    /// Precedent 25.08: two taps on ONE link in one process 68 seconds apart gave birth to a twin
+    /// chat -- both books stayed silent, and the trace could not name whether the record was lost or
+    /// the key missed. Now there is nothing to be silent with: process memory answers even with a
+    /// dead vault, and every miss and every write carries a key fingerprint.
+    static let scanBook = MontanaMeetBook(name: "scan", vaultKey: scannedKey)
+
+    /// The meeting key is THE LINK ITSELF (the author's decision 25.08: the link is the same however
+    /// many taps happen). An invitation, when it reads, gives a stable key; when unreadable, the whole
+    /// normalized string becomes the key. Dedup has no right to depend on whether something inside
+    /// the link parsed.
+    static func meetKey(_ raw: String) -> String {
+        if let inv = MontanaCard.invite(inShort: raw) { return inv.base64urlNoPad }
+        return raw
+    }
+
+    static func rememberScan(invite inv64: String, conv: String) {
+        scanBook.put(inv64, conv)
+    }
+    /// The invitation a conversation was born from goes to the delivery engine: ring the owner's
+    /// doorbell when the first letter is really on its way (F-2).
+    static func invite(forConv conv: String) -> Data? {
+        deadLock.lock()
+        let metaInv = metaLoad()[conv]?.inv
+        deadLock.unlock()
+        if let inv64 = metaInv { return Data(base64urlNoPad: inv64) }
+        guard let inv64 = scanBook.load().first(where: { $0.value == conv })?.key else { return nil }
+        return Data(base64urlNoPad: inv64)
+    }
+
+    enum Outcome { case opened(String); case spent; case refused }
+
+    /// One meeting per invitation -- at once, not "from memory afterwards". This door has two
+    /// entrances (a link tap and a code scan), and the two easily happen back to
+    /// back: the 24.08 measurement gave TWO unfoldings of one invitation in two seconds and two
+    /// identical conversations on both sides from one message. Meeting memory is written at the end,
+    /// so a second meeting slipped past it; the latch holds the entrance until the first has finished.
+    /// THE MEETING BOOK BY CARD ROOT. A link carries everything needed, so the birth of a tunnel must
+    /// be a FUNCTION OF THE LINK: one root, one tunnel, by whichever way it was entered (tap, scan,
+    /// cold start, a repeat after the answer).
+    ///
+    /// Before, two records played this role, and both lost the answer sooner than it stopped being
+    /// needed: scan memory was keyed by the INVITATION, which changes on the daily rotation; the
+    /// address root died together with the first letter (it was "where to address", not "whom we know").
+    /// Two meanings lived in one record -- and at either of the two boundaries the next tap wove a
+    /// SECOND rope to the same person: both sides got a twin chat, the second letter went into the
+    /// fresh one, the first hung. Here the meanings are separated: the address root stays as before
+    /// and dies as before, while this book remembers the acquaintance while the pipe lives.
+    private static let cardMetKey = "cardMetByRoot"
+    static let cardBook = MontanaMeetBook(name: "card", vaultKey: cardMetKey)
+
+    static func rememberCardMet(root: Data, conv: String) {
+        guard root.count == 1184, !conv.isEmpty else { return }
+        // Dead acquaintances do not pile up, but the sweeper judges ONLY the old: before, the filter
+        // stood AFTER the insert, and a lagging holds() view could eat a record just born.
+        cardBook.put(root.base64urlNoPad, conv, pruneOld: { MTPipeBook.holds($0) })
+    }
+    static func cardMet(root: Data) -> String? {
+        cardBook.get(root.base64urlNoPad)
+    }
+
+    private static let meetGate = NSLock()
+    private static var meetingNow: Set<String> = []
+
+    private static func takeGate(_ key: String) -> Bool {
+        meetGate.lock(); defer { meetGate.unlock() }
+        if meetingNow.contains(key) { return false }
+        meetingNow.insert(key); return true
+    }
+    private static func dropGate(_ key: String) {
+        meetGate.lock(); meetingNow.remove(key); meetGate.unlock()
+    }
+
+    static func meet(_ raw: String) async -> Outcome {
+        // ONE PERSON, ONE CONVERSATION (24.09, MTSamePair): a pipe folded into a conversation is never opened as a page.
+        let o = await meetOnce(raw)
+        if case .opened(let ref) = o { return .opened(MTSamePair.root(ref)) }
+        return o
+    }
+    private static func meetOnce(_ raw: String) async -> Outcome {
+        // A meeting decision is not taken from an UNREADABLE book. Sealed storage on a cold start
+        // answers with emptiness, and emptiness here read as "we are strangers" -- giving birth to a
+        // twin exactly when the person tapped a link right after launch (measured 24.08: a tap at the
+        // 860th millisecond of the app's life, and a second conversation stood beside the old one).
+        var waited = 0
+        while MontanaDeviceKey.key == nil, waited < 20 {
+            try? await Task.sleep(nanoseconds: 250_000_000); waited += 1
+        }
+        guard MontanaDeviceKey.key != nil else {
+            MontanaTrace.mark("meet_refused", "why=vault-closed")
+            return .refused
+        }
+        scanBook.drain(); cardBook.drain()
+        let gateKey = meetKey(raw)
+        if !takeGate(gateKey) {
+            // The same door is already opening. We wait for it and enter THAT conversation, not a second.
+            MontanaTrace.mark("meet_gate", "waiting")
+            for _ in 0..<40 {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                let done: String? = scanBook.get(gateKey)
+                if let done, MTPipeBook.holds(done), !MTPipeBook.isDying(done) {
+                    MontanaTrace.mark("meet_gate", "joined conv=\(String(done.prefix(10)))")
+                    return .opened(done)
+                }
+                var busy = false
+                meetGate.lock(); busy = meetingNow.contains(gateKey); meetGate.unlock()
+                if !busy { break }
+            }
+            guard takeGate(gateKey) else {
+                MontanaTrace.mark("meet_gate", "gave up")
+                return .refused
+            }
+        }
+        defer { dropGate(gateKey) }
+        var raw = raw
+        var scannedInvite: String? = nil
+        var faces: MTFaceMeet? = nil   // the face asked with the unfolding meets the chat born from it
+        // A short invitation unfolds into an ordinary card BEFORE the pipeline: the full key comes
+        // from the node, and the whole lower part of the introduction stays as before, to the byte.
+        if MontanaCard.isShort(raw) {
+            // A repeat tap or scan of THE SAME code returns into the conversation already born -- even
+            // while the first exchange is unfinished: before, every tap gave birth to a twin chat and
+            // ate the owner's card (F-5, a triple first_accept within a second). The knocking of the
+            // existing conversation's first letter continues by itself -- the delivery engine repeats it anyway.
+            // The link book is asked by the LINK KEY -- whether the invitation reads or not.
+            // The answer is named in the trace with the key fingerprint: the next twin, should there be
+            // one, will name its branch in one line instead of an hour of digging.
+            let known: String? = scanBook.get(gateKey)
+            let scanWord: String = {
+                guard let k = known else { return "miss" }
+                if MTPipeBook.isDying(k) { return "dying" }
+                return MTPipeBook.holds(k) ? "hit" : "gone"
+            }()
+            MontanaTrace.mark("meet_books", "key=\(MontanaMeetBook.fp(gateKey)) scan=\(scanWord) n=\(scanBook.count)")
+            // A dying conversation (a burial notice in flight) is NOT an entrance: a tap at 23:06:27
+            // brought it back, and four seconds later the pipe died under letters (a send_refused storm).
+            // The dead and the dying do not meet -- a fresh one is born, the link = a new empty chat.
+            if let known, MTPipeBook.holds(known), !MTPipeBook.isDying(known) {
+                MontanaTrace.mark("meet_rescan", "conv=\(String(known.prefix(10)))")
+                // A RESCAN RE-READS THE NAME (21.09, measured 16:35: the same link opened the same empty
+                // chat under the callsign of the first scan, and the card behind the link — which by now
+                // wore the person's current name — was never looked at). The body is fetched beside, the
+                // chat opens at once; the name enters the book as the weakest witness (never past a dated word).
+                let short = raw
+                Task.detached(priority: .utility) {
+                    if case .card(let full) = await MontanaCard.expand(short: short) { await MontanaCard.renameFromCard(full, conv: known) }
+                    if let inv = MontanaCard.invite(inShort: short) { await MontanaCard.refaceFromCard(invite: inv, conv: known) }
+                }
+                return .opened(known)
+            }
+            scannedInvite = MontanaCard.invite(inShort: raw)?.base64urlNoPad
+            // THE FACE STARTS WITH THE UNFOLDING (23.09, the author's word: «the name and the face at once, at the
+            // chat's creation»). It was asked only once the meeting had finished, so every fresh chat stood a third of
+            // a second under a drawn initial (T2 17:15:32, measured). The face and the card lie beside one invitation:
+            // asked together, the face is in hand when the pipe is born and goes on at the birth; a slower one goes
+            // on the moment it lands.
+            if let inv = MontanaCard.invite(inShort: raw) {
+                let meetFace = MTFaceMeet()
+                faces = meetFace
+                Task.detached(priority: .userInitiated) {
+                    let face = await MontanaCard.face(invite: inv)
+                    if let conv = meetFace.landed(face) { await MTFaceMeet.wear(face, on: conv, at: "landing") }
+                }
+            }
+            switch await MontanaCard.expand(short: raw) {
+            case .card(let full): raw = full
+            case .spent:
+                MontanaLog.event("CARD x the invitation is spent (the card was used)")
+                return .spent
+            case .unreachable:
+                MontanaLog.event("CARD x the invitation did not unfold (blob not found or would not open)")
+                MontanaTrace.mark("meet_refused", "why=expand-unreachable")
+                return .refused
+            }
+        }
+        switch MontanaConv.meeting(fromInput: raw) {
+        case .card(let c):
+            // Dedup by card ROOT: if the first letter to this point is already knocking, it is the same
+            // meeting, an entrance into it, not a second encapsulation (F-5, the regression root 21:10).
+            // One root, one tunnel. The meeting book is asked FIRST and outlives the answer to the
+            // first letter; the address root stays a second witness while the knocking goes on.
+            if let root = MontanaCard.root(inCard: c) {
+                let inBook = cardMet(root: root)
+                let knocking = MTPipeBook.convKnocking(at: root)
+                let cardWord: String = {
+                    guard let k = inBook else { return "miss" }
+                    if MTPipeBook.isDying(k) { return "dying" }
+                    return MTPipeBook.holds(k) ? "hit" : "gone"
+                }()
+                MontanaTrace.mark("meet_books", "root=\(MontanaMeetBook.fp(root.base64urlNoPad)) card=\(cardWord) "
+                    + "knock=\(knocking == nil ? "miss" : "hit") n=\(cardBook.count)")
+                if let known = inBook, MTPipeBook.holds(known), !MTPipeBook.isDying(known) {
+                    MontanaTrace.mark("meet_rescan", "card-book conv=\(String(known.prefix(10)))")
+                    scanBook.put(gateKey, known)
+                    await MontanaCard.renameFromCard(c, conv: known)
+                    await faces?.born(known)   // the face asked with the unfolding — a rescan re-reads it too
+                    return .opened(known)
+                }
+                if let existing = knocking, !MTPipeBook.isDying(existing) {
+                    MontanaTrace.mark("meet_rescan", "root conv=\(String(existing.prefix(10)))")
+                    await MontanaCard.renameFromCard(c, conv: existing)
+                    await faces?.born(existing)
+                    rememberCardMet(root: root, conv: existing)
+                    scanBook.put(gateKey, existing)
+                    return .opened(existing)
+                }
+                // A NEW tunnel is born -- and it is said aloud together with the key fingerprints.
+                MontanaTrace.mark("meet_new", "key=\(MontanaMeetBook.fp(gateKey)) root=\(MontanaMeetBook.fp(root.base64urlNoPad))")
+            }
+            // A card is met on the spot: one encapsulation, and the correspondence exists.
+            // The ciphertext waits for the first letter to carry it.
+            guard let met = MontanaCard.meet(card: c) else {
+                MontanaLog.event("CARD ✗ a card that does not open")
+                MontanaTrace.mark("meet_refused", "why=card-unopenable")
+                return .refused
+            }
+            MTPipeBook.rememberFirst(met.ciphertext, for: met.reference)
+            // The name arrives TOGETHER with the acquaintance, because it lies in the card itself.
+            // Before, it travelled as a separate letter after, and the conversation managed to live a
+            // while under a neutral caption -- while the person had named themselves long before the meeting.
+            // THE CARD'S NAME IS A SNAPSHOT OF ITS MINTING DAY (21.09, the critic: the permanent card was
+            // minted once and never again, so a chat was born under a person's first callsign). It enters
+            // the book as the weakest witness — it lands only in an empty book; the person's first word
+            // covers it and no older letter can bring it back.
+            if let n = MontanaCard.name(inCard: c) {
+                await MainActor.run { MontanaDeliveryEngine.shared.store?.setPeerName(ref: met.reference, name: n, at: 0, source: "card") }
+            }
+            // The face comes with the acquaintance too (15.32): asked together with the unfolding, it goes on at
+            // the chat's birth when it came first, and the moment it lands otherwise (MTFaceMeet).
+            await faces?.born(met.reference)
+            scanBook.put(gateKey, met.reference)
+            if let root = MontanaCard.root(inCard: c) { rememberCardMet(root: root, conv: met.reference) }
+            rememberFirstMeta(conv: met.reference, invite: scannedInvite)
+            // ONE PERSON, ONE CONVERSATION (24.09, MTSamePair): whether we already share a pipe is asked at once — the
+            // silent first letter, which carries the card's ciphertext to its owner.
+            MTSamePair.ask(new: met.reference)
+            // A permanent link keeps the person in the book (the author's word 17.09): the mark beside
+            // the card says so; asked once, after the meeting, and only by a build that knows to ask.
+            if let inv64 = scannedInvite, let inv = Data(base64urlNoPad: inv64) {
+                let conv = met.reference
+                Task.detached(priority: .utility) {
+                    if await MontanaCard.isPermanent(invite: inv) { await MainActor.run { ContactsTabView.keepInBook(ref: conv) } }
+                }
+            }
+            return .opened(met.reference)
+        case .refused:
+            MontanaLog.event("MEET ✗ refused: not a card")
+            // The most frequent and formerly the most mute: the link is not recognised as a card.
+            MontanaTrace.mark("meet_refused", "why=not-a-card")
+            return .refused
+        }
+    }
+
+    // -- the SSOT of the LINK entrance (montana://...) -- F-4, F-6, F-7, F-8 --
+    //
+    // A link, unlike a scan, comes from foreign hands: a keyboard capitalises the scheme, a messenger
+    // encodes bytes and glues punctuation on, and one can tap before an identity is born and after a
+    // card is spent. Each of those outcomes was silent; here each one has a voice.
+    static let pendingInviteKey = "pendingInvite"
+
+    static func normalizeLink(_ s: String) -> String {
+        var raw = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        // The messenger encoded the link bytes -- give them back as they were (F-7).
+        if raw.contains("%"), let d = raw.removingPercentEncoding { raw = d }
+        // Trailing punctuation stuck on during linkification (F-7).
+        while let last = raw.last, ".,;:!?)]}>»›\"'’”…".contains(last) { raw.removeLast() }
+        // The scheme is case-insensitive (RFC 3986); a keyboard capitalises the first word (F-6).
+        if let r = raw.range(of: "://") {
+            raw = raw[..<r.lowerBound].lowercased() + raw[r.lowerBound...]
+        }
+        return raw
+    }
+
+    /// The last link handled and when (main thread only: every door of a link lands there).
+    private static var lastLink: (raw: String, at: Date)?
+    static func handleLink(_ given: URL) { handleLink(given, chosen: false) }
+    /// A Montana link (montana://r/, coin, pack): the app's text views hand it to this one entrance themselves, never to
+    /// the system's round -- in the Protocol montana:// is the Messenger's scheme (the author's word 16667), and a tap there
+    /// would leave the app.
+    static func isMontana(_ url: URL) -> Bool { url.scheme?.lowercased() == "montana" }
+    static func handleLink(_ given: URL, chosen: Bool) {
+        // The mark BEFORE all the guards: a tap that left no trace was impossible to investigate (F-6).
+        MontanaTrace.mark("link_open", "len=\(given.absoluteString.count) scheme=\(given.scheme ?? "-")")
+        // A LINK HANDED OVER BY ANOTHER MONTANA APP (MTSiblingApps): the person chose this app there, and it opens here.
+        if let inner = MTSiblingApps.handedOver(given) {
+            MontanaTrace.mark("link_open", "handed over by another Montana app")
+            handleLink(inner, chosen: true)
+            return
+        }
+        // THE APP'S OWN SCHEME CARRIES THE LINK'S OWN FORM (the author's word 16667): a link under this app's scheme other than
+        // montana (mt-protocol://r/X in the Protocol) is the same link as montana://r/X, and goes the same road.
+        if let s = given.scheme?.lowercased(), s != "montana", MTSiblingApps.ownSchemes.contains(s),
+           var c = URLComponents(url: given, resolvingAgainstBaseURL: false) {
+            c.scheme = "montana"
+            if let same = c.url {
+                handleLink(same, chosen: chosen)
+                return
+            }
+        }
+        #if !MONTANA_MESSENGER   // Messenger names no other app and offers no «Open in» (the author's word 17130; review of build 120, R-7)
+        // WHICH MONTANA OPENS IT (MTSiblingApps, the author's word 11.10.2026 14:13 UTC): an invitation is asked first; the root
+        // answers at once when no other Montana app stands, or asks the person in the platform's own dialog.
+        if !chosen, MTSiblingApps.invites(given) {
+            let link = given.absoluteString
+            DispatchQueue.main.async { NotificationCenter.default.post(name: .montanaChooseApp, object: nil, userInfo: ["link": link]) }
+            return
+        }
+        #endif
+        // A GROUP'S INVITE LINK IS ITS OWNER'S CARD AND THE GROUP'S MARK (stage R.6, the reference folder's «Invite Link»):
+        // the mark waits for the meeting, and the card goes on by the one road of a link
+        var url = given
+        if let j = MTGroup.joinMark(in: given) {
+            url = j.url
+            DispatchQueue.main.async { MTGroup.shared.waitJoin(j.g, j.mark) }
+        }
+        #if !MONTANA_MESSENGER
+        if MTApps.wall?.openComments(url) == true { return }
+        // A POST'S LINK IS NEVER AN INVITATION (02.10): a post this phone does not hold yet is said so -- the invitation road
+        // below answered it «the invitation could not be opened».
+        if url.scheme?.lowercased() == "montana", url.host?.lowercased() == "wall" {
+            MontanaTrace.mark("link_done", "post not held")
+            verdict("This post is not on this phone yet. Open the writer's page, then tap the link again.")
+            return
+        }
+        #endif
+        #if !MONTANA_MESSENGER   // no coins in Messenger (cut C6): a coin's link is answered as any unknown one
+        // A COIN'S LINK OPENS THE WALLET (the author's word 03.10: «every Montana link of the coins is tappable, not only the
+        // others'»): the coin letter's machine line is no invitation -- the invitation road below answered it «could not be opened».
+        // Only where the coins stand (guard 4 of docs/APPS-API.md): an edition without them answers such a link as any unknown one.
+        if url.scheme?.lowercased() == "montana", url.host?.lowercased() == "coin", MTApps.coins != nil {
+            MontanaTrace.mark("link_done", "a value link opens its page")
+            DispatchQueue.main.async { NotificationCenter.default.post(name: .montanaOpenWallet, object: nil) }
+            return
+        }
+        #endif
+        let host = url.host?.lowercased() ?? ""
+        let webForm = url.scheme?.lowercased() == "https"
+            && MontanaCard.linkHosts.contains(host) && ["/r/", "/perp/", "/temp/"].contains { url.path.hasPrefix($0) }
+        guard url.scheme?.lowercased() == "montana" || webForm else {
+            // A mute refusal by scheme ate the tap whole: the trace kept one line "a link arrived" and
+            // emptiness after it -- exactly what was seen on 24.08 on the seventeenth.
+            MontanaTrace.mark("link_refused", "why=scheme scheme=\(url.scheme ?? "-")")
+            verdict("This link is not a Montana invitation.")
+            return
+        }
+        let raw = normalizeLink(url.absoluteString)
+        // ONE LINK IS HANDLED ONCE, WHICHEVER DOOR IT CAME BY (23.09): a universal link may be handed both as an
+        // activity and as a URL. The same link within three seconds is the same tap -- the first handling carries it.
+        if let l = lastLink, l.raw == raw, Date().timeIntervalSince(l.at) < 3 {
+            MontanaTrace.mark("link_open", "repeat within 3s -- the first handling carries it")
+            return
+        }
+        lastLink = (raw, Date())
+        // A SET'S LINK IS NOT AN INVITATION (22.09): it names a set and nobody else. The hand that
+        // passed it was remembered when the letter landed, so the set is asked of that hand and the
+        // page opens in that very conversation. A link from nowhere opens nothing: there is no
+        // register to ask, and no address is going to be guessed.
+        if let found = MontanaStickerPack.idIn(text: raw) {
+            let book = MontanaStickerBook.shared
+            MontanaTrace.mark("sticker_link", "opened pack=\(found.id.prefix(8))")
+            guard let giver = book.giver(of: found.id), !giver.isEmpty else {
+                verdict("Ask the person who sent this set for it.")
+                return
+            }
+            if !book.holds(found.id) {
+                book.meet(pack: found.id, title: found.title.isEmpty ? "Montana" : found.title, owner: giver, expected: 0)
+            }
+            MontanaStickerWire.ask(pack: found.id, from: giver, chat: giver)
+            MontanaStickerOpen.pack = found.id
+            MontanaOutsideOpen.chat(giver)
+            return
+        }
+        guard MontanaSeed.hasSeed else {
+            // There is no identity yet -- the invitation waits for it, and the person is told so (F-8).
+            UserDefaults.standard.set(raw, forKey: pendingInviteKey)
+            MontanaTrace.mark("link_wait", "identity=0")
+            verdict("Create your identity first — the invitation will open right after.")
+            return
+        }
+        resolveInvite(raw)
+    }
+
+    /// The identity is born -- the invitation that waited for it opens by itself (F-8).
+    static func replayPendingInvite() {
+        guard MontanaSeed.hasSeed,
+              let raw = UserDefaults.standard.string(forKey: pendingInviteKey), !raw.isEmpty else { return }
+        UserDefaults.standard.removeObject(forKey: pendingInviteKey)
+        resolveInvite(raw)
+    }
+
+    private static func resolveInvite(_ raw: String) {
+        // The link form is named BEFORE the meeting: "short" and "card" lead by different roads, and
+        // without this line one cannot say which way the matter went.
+        MontanaTrace.mark("link_shape", MontanaCard.isShort(raw) ? "short" : "long")
+        Task {
+            switch await meet(raw) {
+            case .opened(let ref):
+                MontanaTrace.mark("link_done", "opened conv=\(String(ref.prefix(10)))")
+                await MainActor.run {
+                    MontanaOutsideOpen.chat(ref)
+                    MTGroup.shared.askJoin(through: ref)   // a group's link: the join is asked of the owner just met (stage R.6)
+                }
+            case .spent:
+                MontanaTrace.mark("link_done", "spent")
+                verdict("Invitation expired. Ask for a new code.")
+            case .refused:
+                MontanaTrace.mark("link_done", "refused")
+                verdict("The invitation could not be opened. Check the link or try again.")
+            }
+        }
+    }
+
+    // -- First-knock metadata: born together with the knock, nothing to lose --
+    //
+    // Before, a conversation invitation lived only in scan memory (invitation -> conversation), and a
+    // lost record made a ghost unsilenceable: an audit had nothing to ask the node with. Now the
+    // metadata (invitation plus birth time) is written AT THE MOMENT of the meeting beside the point root.
+    private struct FirstMeta: Codable { var inv: String?; var born: UInt64 }
+    private static let firstMetaKey = "pipeFirstMeta"
+    private static func metaLoad() -> [String: FirstMeta] {
+        MontanaLocalVault.getDecrypted(firstMetaKey)
+            .flatMap { try? JSONDecoder().decode([String: FirstMeta].self, from: $0) } ?? [:]
+    }
+    private static func metaSave(_ m: [String: FirstMeta]) {
+        if let d = try? JSONEncoder().encode(m) { _ = MontanaLocalVault.setEncrypted(firstMetaKey, d) }
+    }
+    static func rememberFirstMeta(conv: String, invite inv64: String?) {
+        deadLock.lock(); defer { deadLock.unlock() }
+        var m = metaLoad()
+        if var e = m[conv] { if e.inv == nil { e.inv = inv64; m[conv] = e } }
+        else { m[conv] = FirstMeta(inv: inv64, born: UInt64(Date().timeIntervalSince1970)) }
+        metaSave(m)
+    }
+    /// The pipe died -- so does the meeting memory: the invitation binding and the metadata. Otherwise a
+    /// link tap resurrected a dead conversation (23:06), and an audit rang the doorbell on a foreign account.
+    static func forgetConv(_ conv: String) {
+        scanBook.removeValues { $0 == conv }
+        cardBook.removeValues { $0 == conv }
+        forgetFirstMeta(conv: conv)
+    }
+    /// A folded conversation's cards and links open the older one (MTSamePair, 24.09).
+    static func repoint(from newer: String, to older: String) {
+        scanBook.repoint(newer, to: older)
+        cardBook.repoint(newer, to: older)
+    }
+
+    static func forgetFirstMeta(conv: String) {
+        deadLock.lock(); defer { deadLock.unlock() }
+        var m = metaLoad()
+        guard m.removeValue(forKey: conv) != nil else { return }
+        metaSave(m)
+    }
+
+    // -- Dead knocks: giving up on a gravestone (class 6.8 -- only the provably dead is given up) --
+    //
+    // A first letter whose card was spent by ANOTHER encapsulation knocks forever and holds the queue
+    // ahead of the living (21:08: a live letter waited 3.5 minutes behind ghosts). Death is proven by
+    // a gravestone on the node: two consecutive "spent" answers with a pause -- the knocking is silenced.
+    private static var spentSeen: [String: Int] = [:]
+    private static var spentCheckedAt: [String: UInt64] = [:]
+    private static var deadSet: Set<String> = []
+    private static let deadLock = NSLock()
+
+    static func firstKnockAllowed(conv: String) -> Bool {
+        deadLock.lock(); defer { deadLock.unlock() }
+        return !deadSet.contains(conv)
+    }
+
+    /// Called by the delivery engine on a first-letter attempt: about once every 5 minutes it asks the
+    /// node whether a gravestone lies on the point. A link break resets the count -- only a "NO" silences.
+    /// A conversation without metadata (a legacy from before 922) gets it here.
+    /// NO HORIZON OF AGE (07.10, MTRefusal): a first contact older than seven days used to be declared dead, and every letter to it
+    /// went red at once -- an acquaintance the other side had not yet opened (a phone asleep, a second account in a seat not in
+    /// use) is not a refusal. Only the gravestone kills a knock; each letter ends by its own carriage.
+    static func auditFirst(conv: String) {
+        deadLock.lock()
+        let born = metaLoad()[conv]?.born
+        deadLock.unlock()
+        if born == nil { rememberFirstMeta(conv: conv, invite: nil) }
+        guard let inv = invite(forConv: conv) else { return }
+        let w = MTPipe.window() / 5
+        deadLock.lock()
+        let due = spentCheckedAt[conv] != w
+        if due { spentCheckedAt[conv] = w }
+        deadLock.unlock()
+        guard due else { return }
+        Task {
+            switch await MontanaCard.expand(short: "montana://r/" + inv.base64urlNoPad) {
+            case .spent:
+                deadLock.lock()
+                let n = (spentSeen[conv] ?? 0) + 1
+                spentSeen[conv] = n
+                if n >= 2 { deadSet.insert(conv) }
+                deadLock.unlock()
+                if n >= 2 { MontanaTrace.mark("first_dead", "conv=\(String(conv.prefix(10))) spent×\(n)") }
+            case .card, .unreachable:
+                deadLock.lock(); spentSeen[conv] = 0; deadLock.unlock()
+            }
+        }
+    }
+
+    /// A loud outcome instead of a journal line (F-4): the person tapped, so the person is answered.
+    private static func verdict(_ key: String) {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .montanaMeetVerdict, object: nil, userInfo: ["msg": key])
+        }
+    }
+}
+
+
+/// A meeting book one can trust. A record FIRST lands in process memory -- memory cannot refuse --
+/// then tries to land in the vault; a vault refusal is named in the trace (meet_put vault=refused)
+/// and arrives on the next write or on drain(). Reading is vault union memory, memory wins. The key
+/// fingerprint (a domain SHA-256, 4 bytes) makes records comparable in the trace without revealing
+/// the key. One implementation for both meeting books ([I-10]).
+final class MontanaMeetBook {
+    private let name: String
+    private let vaultKey: String
+    private let lock = NSRecursiveLock()
+    private var overlay: [String: String] = [:]
+    private var pendingVault = false
+    /// The vault is substituted in tests: the book must be provable on an invented vault.
+    var persist: (String, Data) -> Bool = { MontanaLocalVault.setEncrypted($0, $1) }
+    var restore: (String) -> Data? = { MontanaLocalVault.getDecrypted($0) }
+
+    init(name: String, vaultKey: String) { self.name = name; self.vaultKey = vaultKey }
+
+    private func storedLocked() -> [String: String] {
+        restore(vaultKey).flatMap { try? JSONDecoder().decode([String: String].self, from: $0) } ?? [:]
+    }
+    func load() -> [String: String] {
+        lock.lock(); defer { lock.unlock() }
+        return storedLocked().merging(overlay) { _, mem in mem }
+    }
+    func get(_ key: String) -> String? { load()[key] }
+    var count: Int { load().count }
+
+    /// pruneOld judges ONLY old records: a fresh one is laid after the sweep and cannot be eaten.
+    func put(_ key: String, _ value: String, pruneOld: (String) -> Bool = { _ in true }) {
+        lock.lock(); defer { lock.unlock() }
+        overlay[key] = value
+        persistLocked(pruneOld: pruneOld, fp: Self.fp(key))
+    }
+    func removeValues(_ dead: (String) -> Bool) {
+        lock.lock(); defer { lock.unlock() }
+        overlay = overlay.filter { !dead($0.value) }
+        persistLocked(pruneOld: { !dead($0) }, fp: "forget")
+    }
+    func repoint(_ newer: String, to older: String) {
+        lock.lock(); defer { lock.unlock() }
+        var moved = false
+        for (k, v) in storedLocked().merging(overlay, uniquingKeysWith: { _, mem in mem }) where v == newer { overlay[k] = older; moved = true }
+        if moved { persistLocked(pruneOld: { _ in true }, fp: "repoint") }
+    }
+    /// The vault recovered -- what did not arrive arrives. Called at every meeting entrance: cheap and timely.
+    func drain() {
+        lock.lock(); defer { lock.unlock() }
+        if pendingVault { persistLocked(pruneOld: { _ in true }, fp: "drain") }
+    }
+    private func persistLocked(pruneOld: (String) -> Bool, fp: String) {
+        var m = storedLocked().filter { pruneOld($0.value) }
+        m.merge(overlay) { _, mem in mem }
+        guard let d = try? JSONEncoder().encode(m), persist(vaultKey, d) else {
+            pendingVault = true
+            MontanaTrace.mark("meet_put", "book=\(name) fp=\(fp) n=\(m.count) vault=refused")
+            return
+        }
+        pendingVault = false
+        MontanaTrace.mark("meet_put", "book=\(name) fp=\(fp) n=\(m.count) vault=ok")
+    }
+    static func fp(_ key: String) -> String {
+        MTPipe.domained("mt-meet-fp", [Data(key.utf8)]).prefix(4).map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+// ════════════════════════════════════════════════════════════
+// THE OTHER MONTANA APPS ON THIS PHONE (the author's word 11.10.2026 14:13 UTC, No.62: «on scanning a QR code or following a link
+// it must check whether other Montana apps stand and ask in which to open, so I can make a chat by the link»). Montana and
+// Montana Messenger read one invitation -- one card on one node, two sites -- and each takes a link handed to it under its own
+// scheme (scheme://open?link=base64url), at the same one entrance of a link on that side, as chosen. The platform says whether an
+// app stands only for the schemes this app names (LSApplicationQueriesSchemes); both are owned by Code/Names.xcconfig
+// (MT_SCHEME_PROTOCOL, MT_SCHEME_MESSENGER) and read here from Info.plist.
+// ════════════════════════════════════════════════════════════
+enum MTSiblingApps {
+    // Messenger names no other app and offers no «Open in» (the author's word 17130; review of build 120, R-7): it keeps only the
+    // taking of a link the Protocol hands it under its own scheme (handHost, ownSchemes, handedOver).
+    #if !MONTANA_MESSENGER
+    struct App: Identifiable, Equatable {
+        let scheme: String
+        let name: String
+        var id: String { scheme }
+    }
+    /// The products' schemes and names, read from Info.plist, where Code/Names.xcconfig puts them (constitution article 15, the
+    /// author's words 16049 and 16667: the «Open in» choice says the names under the icons; montana:// is the Messenger's,
+    /// mt-protocol:// the Protocol's) -- the code holds no scheme and no name of its own.
+    static let all = [App(scheme: info("MTSchemeProtocol"), name: info("MTNameProtocol")),
+                      App(scheme: info("MTSchemeMessenger"), name: info("MTNameMessenger"))]
+    private static func info(_ key: String) -> String { Bundle.main.object(forInfoDictionaryKey: key) as? String ?? "" }
+    #endif
+    static let handHost = "open"   // NOT-UI: the host of a handed link
+    /// This app's own schemes, as Info.plist states them.
+    static let ownSchemes: Set<String> = {
+        let types = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] ?? []
+        return Set(types.flatMap { t in (t["CFBundleURLSchemes"] as? [String]) ?? [] }.map { s in s.lowercased() })
+    }()
+    #if !MONTANA_MESSENGER
+    /// This app's own name: the one under its icon (on the Mac, Montana Core).
+    static var ownName: String { MontanaSafety.appName }
+    /// The other Montana apps standing on this phone now.
+    @MainActor static var others: [App] {
+        all.filter { a in
+            guard !ownSchemes.contains(a.scheme), let u = URL(string: a.scheme + "://") else { return false }
+            return UIApplication.shared.canOpenURL(u)
+        }
+    }
+    #endif
+    /// A link handed over by another Montana app: the link inside it.
+    static func handedOver(_ url: URL) -> URL? {
+        guard let s = url.scheme?.lowercased(), ownSchemes.contains(s), url.host?.lowercased() == handHost,
+              let v = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { q in q.name == "link" })?.value,
+              let d = Data(base64urlNoPad: v), let link = String(data: d, encoding: .utf8) else { return nil }
+        return URL(string: link)
+    }
+    #if !MONTANA_MESSENGER
+    /// Whether a link begins a correspondence -- a card or a name, a group's mark aside: the one resolver of a scan and a paste.
+    static func invites(_ url: URL) -> Bool {
+        let bare = MTGroup.joinMark(in: url)?.url ?? url
+        if case .refused = MontanaConv.meeting(fromInput: MontanaMeeting.normalizeLink(bare.absoluteString)) { return false }
+        return true
+    }
+    /// The link handed to another Montana app, whole, under that app's own scheme.
+    @MainActor static func open(_ app: App, link: String) {
+        var c = URLComponents()
+        c.scheme = app.scheme
+        c.host = handHost
+        c.queryItems = [URLQueryItem(name: "link", value: Data(link.utf8).base64urlNoPad)]
+        guard let u = c.url else { return }
+        MontanaTrace.mark("open_in", "app=" + app.scheme + " len=" + String(link.count))
+        UIApplication.shared.open(u)
+    }
+    #endif
+}

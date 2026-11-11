@@ -1,0 +1,15 @@
+[package]
+name = "mt-names"
+version = "0.1.0"
+edition = "2021"
+
+# Names layer: pure functions, no network and no state (Montana Names, section XV, stage A).
+# unicode-normalization and caseless are not cryptography: they give a DETERMINISTIC mapping
+# of any input onto the allowed set [a-z0-9_-]. Without them "straße" and "strasse" would become different
+# names on different platforms, and that is a split of the layer.
+[dependencies]
+sha2 = { workspace = true }
+mt-mnemonic = { path = "../mt-mnemonic" }
+mt-merkle = { path = "../mt-merkle" }
+unicode-normalization = "=0.1.24"
+caseless = "=0.2.1"

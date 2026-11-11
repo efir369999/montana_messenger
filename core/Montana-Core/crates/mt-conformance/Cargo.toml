@@ -1,0 +1,43 @@
+[package]
+name = "mt-conformance"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+mt-proof = { workspace = true }
+montana-wallet = { path = "../montana-wallet" }
+mt-net = { workspace = true }
+mt-genesis = { workspace = true }
+mt-codec = { workspace = true }
+mt-merkle = { workspace = true }
+mt-seed = { workspace = true }
+mt-derive = { workspace = true }
+mt-state = { workspace = true }
+mt-store = { workspace = true }
+mt-suite = { workspace = true }
+mt-wire = { workspace = true }
+mt-pulse = { workspace = true }
+sha2 = { workspace = true }
+
+[build-dependencies]
+mt-proof = { workspace = true }
+montana-wallet = { path = "../montana-wallet" }
+mt-net = { workspace = true }
+mt-genesis = { workspace = true }
+mt-store = { workspace = true }
+# The graph of a build script is its own, so the recorder the completeness check needs stands here
+# and nowhere a node compiles.
+mt-codec = { workspace = true, features = ["witness"] }
+mt-merkle = { workspace = true }
+mt-seed = { workspace = true }
+mt-derive = { workspace = true }
+mt-state = { workspace = true }
+mt-suite = { workspace = true }
+mt-wire = { workspace = true }
+mt-pulse = { workspace = true }
+sha2 = { workspace = true }
+
+[dev-dependencies]
+mt-seed = { workspace = true }

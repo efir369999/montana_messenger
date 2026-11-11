@@ -1,0 +1,204 @@
+# Montana call signs — the rows are chosen one by one; the picker covers the WHOLE list.
+#
+# WHAT IT IS. A person who has claimed no name is still a person, and an address is not a way to
+# call one. Seven bits taken from an account reference pick one row here, and that row is what the
+# person is called until they claim a name of their own. Nobody issues it, nowhere is it
+# registered, and it costs nothing to carry.
+#
+# IT IS A CALL SIGN, NOT A NICKNAME. A nickname a person picks, and it is then about who they wish
+# to seem. A call sign is given, and it simply is — like height, like a date of birth — and there
+# is nothing in it to be shy of. Every rule of admission below serves that one feeling:
+#
+#   nothing domesticated and nothing man-made — nobody belongs to anyone, and no state made it;
+#   no young and no diminutive — there is nothing here to coo over;
+#   no prey — a living row either hunts or is left alone, the swan and the elephant included;
+#   no god, no hero, no country — no culture may say "this one is ours", and no row here can
+#     insult anyone;
+#   one word, no ornament — a tiger and a storm weigh the same, they are merely dangerous in
+#     different ways.
+#
+# What the set says to the person wearing it: you are not named something sweet and you are not
+# named something frightening — you are named something that was on this earth long before any
+# state and answers to nobody: a beast, a weather, a light in the sky, a stone.
+#
+# IT DOES NOT TELL PEOPLE APART, AND IT IS NOT MEANT TO. With this many rows, two people out of any
+# twenty will share a call sign, and that is not a defect: telling apart is what the address is
+# for, and a name is what the name layer is for. A call sign answers one question only — how to
+# address someone whose address you already hold.
+#
+# THE ADJECTIVE IS THE PERSON'S OWN. A second frozen list would double the surface the set has to
+# hold identical everywhere, would demand a translation in every language with gender agreement in
+# some of them, and would still not turn a label into an identifier. So there is no second list:
+# a person may put a word of their own in front of their call sign — any word, any language, as
+# long or as short as they like — and that word is theirs, not the set's. It is not derived, not
+# frozen, not agreed between implementations, and an implementation that ignores it stays correct.
+# This is also the only choice a call sign allows, and it is deliberately the person's.
+#
+# The Russian gender column exists for that word alone: a Russian adjective agrees with the noun,
+# and without the column a person would write "Могучий Рысь". Languages that do not inflect ignore
+# it.
+#
+# FROZEN. This list is a quantity of the set: every implementation of Montana holds it byte for
+# byte, in this order, because the order IS the index. Moving a row renames every unnamed person at
+# once; the set changes only by the author's word, and such a change knowingly reshuffles derived
+# call signs. Correcting a translation is allowed; the English
+# column is the source and the only part the derivation depends on.
+#
+# The rules yielded the core of the list; rows are appended at the tail and removed by the
+# author's word, with the index renumbered in place. Padding a list up to a round number is how
+# a rule turns into a decoration.
+#
+# columns: index<TAB>en<TAB>ru<TAB>ru_gender<TAB>zh-Hans
+#
+0	Tiger	Тигр	m	虎	🐅
+1	Lion	Лев	m	狮	🦁
+2	Leopard	Леопард	m	豹	🐆
+3	Jaguar	Ягуар	m	美洲豹	🐆
+4	Puma	Пума	f	美洲狮	🐈
+5	Cheetah	Гепард	m	猎豹	🐆
+6	Lynx	Рысь	f	猞猁	🐈
+7	Panther	Пантера	f	黑豹	🐈‍⬛
+8	Sable	Соболь	m	紫貂	🐿️
+9	Wolverine	Росомаха	f	狼獾	🦡
+10	Bear	Медведь	m	熊	🐻
+11	Eagle	Орёл	m	鹰	🦅
+12	GoldenEagle	Беркут	m	金雕	🦅
+13	SeaEagle	Орлан	m	海雕	🦅
+14	Condor	Кондор	m	神鹫	🦅
+15	Hawk	Ястреб	m	苍鹰	🦅
+16	Falcon	Сокол	m	隼	🦅
+17	Peregrine	Сапсан	m	游隼	🦅
+18	Owl	Сова	f	鸮	🦉
+19	Albatross	Альбатрос	m	信天翁	🕊️
+20	Crane	Журавль	m	鹤	🐦
+21	Swan	Лебедь	m	天鹅	🦢
+22	Whale	Кит	m	鲸	🐋
+23	Dolphin	Дельфин	m	海豚	🐬
+24	Shark	Акула	f	鲨	🦈
+25	Octopus	Осьминог	m	章鱼	🐙
+26	Crocodile	Крокодил	m	鳄	🐊
+27	Alligator	Аллигатор	m	短吻鳄	🐊
+28	Python	Питон	m	蟒	🐍
+29	Anaconda	Анаконда	f	水蚺	🐍
+30	Boa	Удав	m	蚺	🐍
+31	Cobra	Кобра	f	眼镜蛇	🐍
+32	Orangutan	Орангутан	m	红毛猩猩	🦧
+33	Elephant	Слон	m	象	🐘
+34	Rhinoceros	Носорог	m	犀牛	🦏
+35	Bison	Бизон	m	美洲野牛	🦬
+36	Wisent	Зубр	m	欧洲野牛	🦬
+37	Buffalo	Буйвол	m	水牛	🐃
+38	Scorpion	Скорпион	m	蝎	🦂
+39	Tarantula	Тарантул	m	狼蛛	🕷️
+40	Mantis	Богомол	m	螳螂	🦗
+41	Hornet	Шершень	m	大黄蜂	🐝
+42	Mustang	Мустанг	m	野马	🐎
+43	Wolf	Волк	m	狼	🐺
+44	Raven	Ворон	m	渡鸦	🐦‍⬛
+45	Irbis	Ирбис	m	雪豹	🐆
+46	Orca	Косатка	f	虎鲸	🐋
+47	Grizzly	Гризли	m	灰熊	🐻
+48	Gyrfalcon	Кречет	m	矛隼	🦅
+49	EagleOwl	Филин	m	雕鸮	🦉
+50	Mamba	Мамба	f	曼巴蛇	🐍
+51	KomodoDragon	Комодо	m	科莫多龙	🦎
+52	Gorilla	Горилла	f	大猩猩	🦍
+53	Barracuda	Барракуда	f	梭鱼	🐟
+54	Moray	Мурена	f	海鳝	🐟
+55	Monitor	Варан	m	巨蜥	🦎
+56	Harpy	Гарпия	f	角雕	🦅
+57	Coyote	Койот	m	郊狼	🐺
+58	Kite	Коршун	m	鸢	🦅
+59	Frigatebird	Фрегат	m	军舰鸟	🐦
+60	Mammoth	Мамонт	m	猛犸	🦣
+61	Tyrannosaurus	Тираннозавр	m	霸王龙	🦖
+62	Spinosaurus	Спинозавр	m	棘龙	🦕
+63	Storm	Шторм	m	风暴	🌩️
+64	Thunder	Гром	m	雷	⛈️
+65	Blizzard	Буран	m	暴风雪	🌨️
+66	Avalanche	Лавина	f	雪崩	🏔️
+67	Typhoon	Тайфун	m	台风	🌀
+68	Comet	Комета	f	彗星	☄️
+69	Meteor	Метеор	m	流星	☄️
+70	Pulsar	Пульсар	m	脉冲星	💫
+71	Tornado	Смерч	m	龙卷	🌪️
+72	Lightning	Молния	f	闪电	⚡
+73	Tsunami	Цунами	m	海啸	🌊
+74	Vortex	Вихрь	m	旋风	🌀
+75	Hail	Град	m	冰雹	🧊
+76	Eclipse	Затмение	n	日食	🌑
+77	Zenith	Зенит	m	天顶	🌞
+78	Quasar	Квазар	m	类星体	🌌
+79	Glacier	Ледник	m	冰川	🧊
+80	Cyclone	Циклон	m	气旋	🌀
+81	Surf	Прибой	m	拍岸浪	🏄
+82	Geyser	Гейзер	m	间歇泉	♨️
+83	Magma	Магма	f	岩浆	🌋
+84	Obsidian	Обсидиан	m	黑曜石	🪨
+85	Flint	Кремень	m	燧石	🪨
+86	Granite	Гранит	m	花岗岩	🪨
+87	Onyx	Оникс	m	缟玛瑙	⚫
+88	Agate	Агат	m	玛瑙	🔮
+89	Jade	Нефрит	m	玉	🟢
+90	Quartz	Кварц	m	石英	🔷
+91	Basalt	Базальт	m	玄武岩	🪨
+92	Jet	Гагат	m	煤玉	⬛
+93	Zircon	Циркон	m	锆石	💠
+94	Marble	Мрамор	m	大理石	🏛️
+95	Diamond	Алмаз	m	钻石	💎
+96	Sapphire	Сапфир	m	蓝宝石	🔵
+97	Ruby	Рубин	m	红宝石	🔴
+98	Emerald	Изумруд	m	祖母绿	💚
+99	Topaz	Топаз	m	黄玉	🟡
+100	Amber	Янтарь	m	琥珀	🟠
+101	Bolide	Болид	m	火流星	☄️
+102	Orbit	Орбита	f	轨道	🛰️
+103	Asteroid	Астероид	m	小行星	🪨
+104	Supernova	Сверхновая	f	超新星	💥
+105	Pole	Полюс	m	极点	🧭
+106	Horizon	Горизонт	m	地平线	🌅
+107	Sirius	Сириус	m	天狼星	⭐
+108	Vega	Вега	f	织女星	⭐
+109	Altair	Альтаир	m	牛郎星	⭐
+110	Mercury	Меркурий	m	水星	🟤
+111	Venus	Венера	f	金星	🟡
+112	Earth	Земля	f	地球	🌍
+113	Mars	Марс	m	火星	🔴
+114	Jupiter	Юпитер	m	木星	🟠
+115	Saturn	Сатурн	m	土星	🪐
+116	Uranus	Уран	m	天王星	🔵
+117	Neptune	Нептун	m	海王星	🔷
+118	Pluto	Плутон	m	冥王星	⚪
+119	Volcano	Вулкан	m	火山	🌋
+120	Crater	Кратер	m	陨石坑	🕳️
+121	Canyon	Каньон	m	峡谷	🏜️
+122	Sun	Солнце	n	太阳	☀️
+123	Moon	Луна	f	月球	🌙
+124	Galaxy	Галактика	f	星系	🌌
+125	Cosmos	Космос	m	宇宙	🌠
+126	Singularity	Сингулярность	f	奇点	🕳️
+127	Spider	Паук	m	蜘蛛	🕷️
+128	Unicorn	Единорог	m	独角兽	🦄
+129	Saurian	Ящер	m	蜥蜴	🦎
+130	Angel	Ангел	m	天使	😇
+131	Peacock	Павлин	m	孔雀	🦚
+132	Dove	Голубь	m	鸽	🕊️
+133	Dragon	Дракон	m	龙	🐉
+134	Fire	Огонь	m	火	🔥
+135	Water	Вода	f	水	💧
+136	Air	Воздух	m	气	🌬️
+137	Aether	Эфир	m	以太	✨
+138	Light	Свет	m	光	💡
+139	Star	Звезда	f	星	⭐
+140	Atom	Атом	m	原子	⚛️
+141	Rock	Скала	f	岩	🪨
+142	Dawn	Заря	f	霞	🌄
+143	Sunrise	Рассвет	m	黎明	🌅
+144	Sunset	Закат	m	日落	🌇
+145	Hammer	Молот	m	锤	🔨
+146	Axe	Топор	m	斧	🪓
+147	Shield	Щит	m	盾	🛡️
+148	Ronin	Ронин	m	浪人	⚔️
+149	Katana	Катана	f	武士刀	🗡️
+150	Carbon	Карбон	m	碳	⬛
+151	Ninja	Ниндзя	m	忍者	🥷

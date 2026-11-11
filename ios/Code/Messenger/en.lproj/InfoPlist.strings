@@ -1,0 +1,7 @@
+/* WRITTEN BY tools/mt-messenger-strings.py, never by hand. The sentence a person reads when the system asks for a
+   permission is the Protocol's own: the English in Code/Montana/Info.plist, every other language in
+   Code/Montana/LANG.lproj/InfoPlist.strings. This file gives it for the keys Code/Messenger/Info.plist asks. */
+
+/* The name iCloud gives this app's storage (NSUbiquitousContainers in Info.plist), taken per language from this file only:
+   the product's own name, Code/Names.xcconfig MT_NAME_MESSENGER, held equal to it by tools/mt-names-check.py (rule 8). */
+"NSUbiquitousContainerName" = "Montana";

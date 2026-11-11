@@ -1,0 +1,16 @@
+[package]
+name = "mt-bootstrap"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+mt-codec = { path = "../mt-codec" }
+mt-rendezvous = { path = "../mt-rendezvous" }
+thiserror = "=1.0.69"
+
+[dev-dependencies]
+hex = "=0.4.3"
+mainline = "=6.0.1"
+mt-bindings = { path = "../mt-bindings" }
+mt-overlay = { path = "../mt-overlay" }

@@ -1,0 +1,17 @@
+[package]
+name = "mt-pulse"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+mt-codec = { workspace = true }
+mt-genesis = { workspace = true }
+mt-derive = { workspace = true }
+mt-suite = { workspace = true }
+
+[dev-dependencies]
+mt-state = { workspace = true }
+mt-conformance = { path = "../mt-conformance" }
+sha2 = { workspace = true }

@@ -1,0 +1,25 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+Cargo.lock.bak
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Docker reproducibility build outputs
+/build-output-*/
+
+# Local node installation (when the operator keeps the installation inside the repo)
+/Montana/
+/Montana_Node/
+/montana-node/
+
+# local test-net runtime state (node data-dirs, windows, manifests) — not source
+localnet/

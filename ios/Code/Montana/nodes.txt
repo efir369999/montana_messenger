@@ -1,0 +1,8 @@
+# The doors: the first nodes a phone dials before it has learned any other.
+# One per line: host:port (port 443) or a wss:// address; lines starting with # are ignored.
+# Two domains in two countries, and a third door behind a content delivery network over a web socket,
+# so that one blocked name or address never closes every door at once.
+api.montana.quest:443
+montana.xxx:443
+
+wss://door.montana.quest/ws

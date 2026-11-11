@@ -1,0 +1,4 @@
+module MontanaBindings {
+    header "mt_bindings.h"
+    export *
+}
