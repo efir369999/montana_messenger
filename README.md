@@ -14,11 +14,11 @@ of the Montana protocol core it links, and nothing else. Staged from app 507d43e
 - ios/ -- the app: the targets MontanaMessenger (the app), MontanaMessengerNSE (notification service),
   MontanaMessengerShare (share extension) and MontanaMessengerBroadcast (screen broadcast), in
   ios/MontanaMessenger.xcodeproj, which holds these four targets alone.
-- core/Code/ -- the Rust crates of the client core, built into MontanaBindings.xcframework. This snapshot is staged
+- protocol/Code/ -- the Rust crates of the client core, built into MontanaBindings.xcframework. This snapshot is staged
   without the core's coin feature: the code only that feature compiles is not here.
-- core/Montana-Core/ -- the Rust crates of the Montana protocol core the app links as libmt_boundary.a
+- protocol/Montana-Protocol/ -- the Rust crates of the Montana protocol core the app links as libmt_boundary.a
   (MontanaCore.xcframework): the app's own node on the Montana network.
-- core/Montana wordlist.txt -- the canonical mnemonic wordlist core/Code/crates/mt-mnemonic compiles in.
+- protocol/Montana wordlist.txt -- the canonical mnemonic wordlist protocol/Code/crates/mt-mnemonic compiles in.
 
 ## Building
 
@@ -30,8 +30,8 @@ the repository root:
 rustup toolchain install 1.92.0
 rustup target add aarch64-apple-ios --toolchain 1.92.0
 mkdir -p ios/Code/Frameworks
-MT_EDITION=messenger bash core/Code/crates/mt-bindings/build-ios-xcframework.sh "$PWD/ios/Code/Frameworks/MontanaBindings.xcframework"
-MONTANA_PROTOCOL_CORE="$PWD/core/Montana-Core" bash ios/scripts/build-protocol-core.sh
+MT_EDITION=messenger bash protocol/Code/crates/mt-bindings/build-ios-xcframework.sh "$PWD/ios/Code/Frameworks/MontanaBindings.xcframework"
+MONTANA_PROTOCOL_CORE="$PWD/protocol/Montana-Protocol" bash ios/scripts/build-protocol-core.sh
 bash ios/fetch-webrtc.sh
 open ios/MontanaMessenger.xcodeproj
 ```
@@ -44,8 +44,8 @@ for devices only (arm64): run the scheme MontanaMessenger on an iPhone, with you
 Build 1.0 (138) links two static libraries built from the revisions above with rustc 1.92.0. The release
 1.0-138 of this repository holds both as the build linked them (https://github.com/efir369999/montana_messenger/releases/tag/1.0-138):
 
-- libmt_bindings.a (core/Code), SHA-256 c446c063b70b88ee6c60fb8fce80ce71905a413344dddb5a7281999b88225c32
-- libmt_boundary.a (core/Montana-Core), SHA-256 fc0189289b3f0846132307d8b4d3db44e62ec4157333cd7e20cb52f248c72c5c
+- libmt_bindings.a (protocol/Code), SHA-256 c446c063b70b88ee6c60fb8fce80ce71905a413344dddb5a7281999b88225c32
+- libmt_boundary.a (protocol/Montana-Protocol), SHA-256 fc0189289b3f0846132307d8b4d3db44e62ec4157333cd7e20cb52f248c72c5c
 
 Build them as under Building, download the two archives beside the repository root and compare them (python3 alone):
 
