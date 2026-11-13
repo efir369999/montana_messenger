@@ -7729,6 +7729,22 @@
         }
       }
     },
+    "Save": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
+          }
+        }
+      }
+    },
     "Saved": {
       "localizations": {
         "ru": {
@@ -17927,6 +17943,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "联系人留在您这里的部分也以同样方式加密：此手机无法打开，只有他们自己的 24 个单词才能打开。Montana 就是这样在不经过云端的情况下保管副本：人们互相保管加密的部分，除了主人，没有人能读取。"
+          }
+        }
+      }
+    },
+    "This person's page opens once the group's owner updates Montana.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Страница человека откроется, когда владелец группы обновит Montana."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群主更新 Montana 后，即可打开此人的页面。"
           }
         }
       }

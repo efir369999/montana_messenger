@@ -7,12 +7,12 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-/// A PLACE IS CHOSEN ON A MAP, NOT TYPED (the author's word 22.09: the button must open what the
-/// reference opens, one to one in look and in working). The page carries the map above and two
+/// A PLACE IS CHOSEN ON A MAP, NOT TYPED (the author's word 22.09: the button opens a map page,
+/// whole in look and in working). The page carries the map above and two
 /// things under it: THIS spot, with the accuracy the phone actually has, and what stands around.
 ///
 /// Everything on it is the platform's own: MKMapView for the map, MKLocalPointsOfInterestRequest
-/// for what stands around, CLLocationManager for the spot. The reference asks its own servers for
+/// for what stands around, CLLocationManager for the spot. A server of our own could be asked for
 /// the places; we ask the platform — the same list, and no third party in the road: no key, no
 /// account and no address of ours leaves the phone.
 struct MTPlace: Identifiable, Equatable {
@@ -27,7 +27,7 @@ struct MTPlace: Identifiable, Equatable {
     var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: latitude, longitude: longitude) }
     static func == (a: MTPlace, b: MTPlace) -> Bool { a.id == b.id }
 
-    /// THE COLOUR AND THE GLYPH COME FROM THE KIND OF PLACE, as the reference draws them: a park is
+    /// THE COLOUR AND THE GLYPH COME FROM THE KIND OF PLACE: a park is
     /// green, a shop is amber, a place to eat is amber, anything else wears the pin. One table, so
     /// no row invents a colour of its own.
     static func dress(_ category: MKPointOfInterestCategory?) -> (String, Color) {
@@ -202,7 +202,7 @@ final class MTPlaceFinder: ObservableObject {
     }
 
     /// The line under a name: the street and the number when the platform knows them, the town when
-    /// it does not — the shape the reference's second line wears.
+    /// it does not — the usual shape of a place's second line.
     static func street(_ p: MKPlacemark) -> String {
         var parts: [String] = []
         if let line = p.thoroughfare {
@@ -239,7 +239,7 @@ struct MTLocationMap: UIViewRepresentable {
     }
 
     /// The locate button is the platform's own (MKUserTrackingButton); the map kind is one system
-    /// button beside it, both on one material plate — the right edge the reference keeps.
+    /// button beside it, both on one material plate — at the map's right edge.
     private func addControls(to map: MKMapView) {
         let kind = UIButton(type: .system)
         kind.setImage(UIImage(systemName: "map"), for: .normal)
@@ -480,7 +480,7 @@ struct MTPlaceMapPlate: View {
     }
 }
 
-/// A PLACE OPENED FROM A LETTER (the author's word 23.09, the reference's own page): the map over
+/// A PLACE OPENED FROM A LETTER (the author's word 23.09): the map over
 /// the whole screen with the pin on the spot, the cross and the share in the bar, the platform's
 /// locate button and the map kind at the right edge, and a card below — the name, the street and
 /// how far it is from here, and the way there by car and on foot, each opened in the platform's Maps.
@@ -616,7 +616,7 @@ func mtSendPlace(_ store: ChatStore, _ c: CLLocationCoordinate2D, name: String?,
     _ = store.send(text: MTPlaceLetter.words(c, name: name, street: street), chat: ask.chat, convRef: ask.conv)
 }
 
-/// The page itself: the map, THIS spot, and what stands around — in that order, as the reference
+/// The page itself: the map, THIS spot, and what stands around — in that order, as a place page
 /// stands them. Its bar is its own: the cross on the left, the search on the right, and nothing
 /// else — the page no longer rides under the chat's bar, where the chat's back chevron and the
 /// chat's name were drawn over it (the author's word 23.09).

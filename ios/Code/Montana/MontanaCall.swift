@@ -1515,15 +1515,11 @@ final class MontanaCall: NSObject {
     /// watches blackness. The system holds the screen itself; no counter of ours is needed. On a
     /// call without video the screen lives as usual: the phone is at an ear, nothing to hold.
     /// The value is re-evaluated on every change of the video flag -- an offer may declare a call
-    /// a video call after it has already begun.
+    /// a video call after it has already begun. The screen has one door (MontanaScreenAwake, OZ 1 p.5,
+    /// constitution 15): a video call holds it by its name, and its end lets go of that name alone --
+    /// a voice tape or a group's room that holds the screen too is never put out by it.
     private func applyScreenHold() {
-        let want = isVideo && state != "idle"
-        DispatchQueue.main.async {
-            if UIApplication.shared.isIdleTimerDisabled != want {
-                UIApplication.shared.isIdleTimerDisabled = want
-                MontanaTrace.mark("screen_hold", want ? "on" : "off")
-            }
-        }
+        if isVideo && state != "idle" { MontanaScreenAwake.hold("video-call") } else { MontanaScreenAwake.release("video-call") }
     }
 
     private func beginBackgroundHold() {
@@ -1574,7 +1570,7 @@ final class MontanaCall: NSObject {
     private func endBackgroundHold() {
         setupBeat?.cancel(); setupBeat = nil
         DispatchQueue.main.async {
-            UIApplication.shared.isIdleTimerDisabled = false   // the call ended -- the screen lives by its own timeout again
+            MontanaScreenAwake.release("video-call")   // the call ended -- its hold on the screen goes, the others' stay
             if self.bgTask != .invalid {
                 UIApplication.shared.endBackgroundTask(self.bgTask); self.bgTask = .invalid
             }
@@ -1663,7 +1659,7 @@ final class MontanaCall: NSObject {
     /// and it decides once per call -- a later activation never undoes a person's choice.
     private var videoSpeakerDecided = false
     private func autoSpeakerOnVideo() {
-        // THE REFERENCE'S RULE: the loudspeaker is offered only when the sound stands at the ear;
+        // THE LOUDSPEAKER WAITS FOR THE EAR: the loudspeaker is offered only when the sound stands at the ear;
         // a headset, a speaker or a car already holds it and is never taken over (measured 11:05).
         guard !videoSpeakerDecided, isVideo, state == "connected", audioActive else { return }
         videoSpeakerDecided = true
@@ -2459,7 +2455,7 @@ final class MontanaCall: NSObject {
         guard state == "idle" else { return }
         // ONE CALL OF OURS AT A TIME (07.10): a group's room in hand is left first by its own hand, never put on hold by ours.
         if MTGroupRoom.isLive { MTGroupRoom.shared.say("Leave the group call first"); return }
-        // A blocked person is called by nobody (the reference's rule): their answer would be refused
+        // A blocked person is called by nobody: their answer would be refused
         // at the door anyway (measured 15.09 13:35 — the call rang them and died on the answer).
         if ChatStore.refusesNow(peer) { MontanaTrace.mark("call_refused", "blocked peer=\(String(peer.prefix(10)))"); return }
         // UNDER THE PERMITTED-LIST FILTER A CALL HAS NO ROAD (29.09): the doors may stand on a permitted cascade, the media
@@ -3394,33 +3390,6 @@ final class MontanaCall: NSObject {
             MontanaTrace.mark("call_gone", "rx state=\(state) epoch=\(String(ep.prefix(8)))")
             if endReason == "-" { endReason = "peer-gone" }
             endCall(silent: true)
-        case "call-room":
-            // THE PEER GREW THIS CALL INTO A ROOM (MTGroupRoom.grow, the author's words 17.10.2026 20:22 UTC: «add to the current call
-            // more people, up to 13 on a call»): the word names the group and the room. This phone ends the call of two in silence --
-            // the peer ends it too -- and comes into the room by itself the moment the group's words bring it (MTGroupRoom.moveIn),
-            // with its camera as it stood. An older build passes the word by and hears the call end; the room's invitation is its way.
-            guard from == peer, state == "connected" || state == "reconnecting", let word = reason else { return }
-            if let held = peerDevice, !held.isEmpty, device != held { return }   // only the device that is the call speaks for it
-            // The peer's answer to my move (MTGroupRoom.grow): it comes in -- the call of two ends here now.
-            if word.hasPrefix(Self.roomInHead) { roomAnswered(String(word.dropFirst(Self.roomInHead.count))); return }
-            let camera = isVideo ? !CallUIModel.shared.cameraOff : false
-            // THE ROOM RODE WITH THE WORD (grow): the group and the room stand here at once, and my room key goes back on this road
-            // before the call of two ends, so the owner's pair with me stands without the group's road.
-            let lines = word.split(separator: "\n", maxSplits: 1).map(String.init)
-            let back = lines.count == 2 ? MTGroupRoom.shared.takeInline(lines[0], lines[1], from: from) : nil
-            guard MTGroupRoom.shared.moveIn(lines.first ?? word, from: from, video: camera) else {
-                MontanaTrace.mark("call_room", "rx unreadable -- the call stays")
-                return
-            }
-            if let back {
-                var w = CallSignalOut(ctrl: "call-room")
-                w.reason = Self.roomInHead + back
-                w.targetDevice = peerDevice
-                sendSignal?(from, w)
-            }
-            MontanaTrace.mark("call_room", "rx -- the call moves into a room inline=\(back == nil ? 0 : 1)")
-            if endReason == "-" { endReason = "moved-to-room"; endDoor = "rule:moved-to-room" }
-            endCall(silent: true)
         case "call-end":
             if let pk = parked, from == pk.peer {
                 tlog("the parked call's peer hung up")
@@ -3728,41 +3697,6 @@ final class MontanaCall: NSObject {
 
     /// The person this phone talks with now: the peer of a connected call with no second line parked, nil otherwise.
     var talkingWith: String? { state == "connected" ? (parked == nil ? peer : nil) : nil }
-
-    /// THE CALL GROWS INTO A ROOM (MTGroupRoom.grow, the author's words 17.10.2026 20:22 UTC: «add to the current call more people
-    /// from the user's contacts, up to 13 on a call»): the peer is told on the call's own road which room of which group the call
-    /// moves into -- a word an older build passes by -- and the call of two ends by that rule. The room is the one owner of a call
-    /// of more than two; the word rides before the end on the same road, in its order.
-    /// THE CALL STANDS UNTIL THE PEER SAYS IT COMES (the author's word 18.10.2026 10:3x UTC: «adding must not interrupt the call»):
-    /// `carrying` -- the group's invitation and the room's open (MTGroupRoom.grow) ride after the word on a line of their own, which an
-    /// older build cannot read and so passes the move by as before; the peer's answer (its room key and moment, «in») ends the call of
-    /// two here by the rule and hands the answer on. A peer that says nothing in four seconds is an older build: the call ends then.
-    func moveIntoRoom(_ word: String, carrying inline: String?, answered: @escaping (String?) -> Void) -> Bool {
-        guard Thread.isMainThread, let p = talkingWith, roomAnswer == nil else { return false }
-        var w = CallSignalOut(ctrl: "call-room")
-        w.reason = inline.map { x in word + "\n" + x } ?? word
-        w.targetDevice = peerDevice
-        sendSignal?(p, w)
-        MontanaTrace.mark("call_room", "tx -- the call moves into a room inline=\(inline == nil ? 0 : 1)")
-        roomAnswer = answered
-        let ask = UUID()
-        roomAsk = ask
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in if self?.roomAsk == ask { self?.roomAnswered(nil) } }
-        return true
-    }
-    /// The move the four seconds belong to: a later move's wait is never cut by an earlier one's.
-    private var roomAsk: UUID?
-    /// The answer a grown call waits for (moveIntoRoom); taken once.
-    private var roomAnswer: ((String?) -> Void)?
-    /// The head of the peer's answer to a move: «in», then its room key and moment.
-    static let roomInHead = "in\n"
-    private func roomAnswered(_ reply: String?) {
-        guard let done = roomAnswer else { return }
-        roomAnswer = nil
-        MontanaTrace.mark("call_room", reply == nil ? "no answer -- the call of two ends by the rule" : "answered -- the peer comes in")
-        endByRule("moved-to-room")
-        done(reply)
-    }
 
     /// A RULE'S END NAMES THE RULE (23.09). A refused description, an offer that never came, a
     /// connection that did not build went through the hand's road and the summary said «cancelled»
@@ -5627,7 +5561,7 @@ final class MontanaCall: NSObject {
                 MontanaCall.shared.speakerOn = (out.current == .speaker)
                 MontanaTrace.mark("speaker", "\(out.current == .speaker ? "on" : "off") by=system route=\(out.ports) state=\(MontanaCall.stateSnapshot) tone=\(MontanaCall.shared.tonePlaying ? 1 : 0)")
             }
-            // THE PHONE'S OUTPUT TAKES THE PHONE'S MICROPHONE (the reference's rule; measured 15:43:
+            // THE PHONE'S OUTPUT TAKES THE PHONE'S MICROPHONE (measured 15:43:
             // the system menu put the sound on the loudspeaker, the headset's voice link kept the
             // microphone, and a second later «new device available» pulled the sound back to the
             // headset — twice). A choice of the phone or its loudspeaker is completed with the
@@ -6697,7 +6631,7 @@ final class CallUIModel: ObservableObject {
     @Published var video: Bool = false { didSet { armChromeFold("video") } }
     @Published var speaker: Bool = false
     @Published var audioExternal: Bool = false   // the sound stands in a headset, a speaker or a car (the route observer)
-    @Published var route = MontanaAudioRoute.Face(caption: "Speaker", icon: "speaker.wave.3.fill", lit: false, menu: false)   // the audio button's face
+    @Published var route = MontanaAudioRoute.Face.speaker(lit: false)   // the audio button's face
     /// THE CALL SCREEN IS FOLDED AND UNFOLDED THROUGH ONE DOOR THAT NAMES ITSELF (23.09: the diary saw the call screen
     /// born anew at 18:48:15 and 18:48:34 and could not say why). Every change is one line with the door that made it.
     @Published private(set) var minimized: Bool = false
@@ -7509,8 +7443,8 @@ final class MTCallFloat: NSObject, AVPictureInPictureControllerDelegate {
 
     /// ONE CONTROLLER PER VIEW THAT STANDS (23.09, T1 20:27 on 1914: possible=1, the shape set, and the system never
     /// tried to raise the window when the person went home, twice). It was born on the app's own window — covered by
-    /// the call's — and its source was swapped onto the call screen afterwards. The reference implementation births its
-    /// controller once, on the call screen that stands, only when a picture flows, and never swaps it; so does this: a
+    /// the call's — and its source was swapped onto the call screen afterwards. Now a
+    /// controller is born once and never swapped: a
     /// controller is born on the view that stands while a picture flows (mine or the peer's), and a change of that view
     /// births a new one. A standing window is never disturbed by a change behind it.
     private func refresh(_ why: String) {
@@ -7606,7 +7540,7 @@ final class MTCallFloat: NSObject, AVPictureInPictureControllerDelegate {
     /// window still stood as with the app folded -- I saw her on two screens»). T1 22:58:32-23:00:28: the window rose
     /// when the app left, the app came back at 22:59:15 and again at 22:59:47, and the window stood over it until the
     /// person tapped it (23:00:40-23:01:24 the same, 19 s over the app). The platform does not end a call's window
-    /// when its app returns; the app ends it, as the reference implementation does -- half a second after the return,
+    /// when its app returns; the app ends it itself -- half a second after the return,
     /// asked twice more while it still stands. Told by the app's one road of activation (the scene's phase), so the
     /// call's own file still listens to no activation (P-118.10). Our own ending unfolds nothing: the fold stays as the
     /// return set it (a screen share keeps its fold).
@@ -7917,21 +7851,6 @@ struct CallOverlayView: View {
     // peer's) keeps its own face, and there the pill carries End.
     private var videoBranch: Bool { model.video || MontanaCall.shared.isVideo }
     private var chromeVisible: Bool { model.chromeVisible }
-    /// THE CALL'S ADD MARK (the author's words 17.10.2026 20:22 UTC: «add to the current call more people from the user's contacts, up
-    /// to 13 on a call», «from the call's page»): a connected call of two with no second line parked grows into a room.
-    /// MESSENGER'S CALL STAYS A CALL OF TWO (the author's word 19240, 11.11.2026): no add mark, no sheet, no room held for it.
-    #if !MONTANA_MESSENGER
-    @State private var adding = false
-    @State private var adds: [Chat] = []
-    private var canAdd: Bool { model.state == "connected" ? !model.hasParked : false }
-    /// The people chosen are handed over once the sheet is gone: the call's window it stood in goes with the call of two.
-    private func addChosen() {
-        let people = adds
-        adds = []
-        guard !people.isEmpty, let store = ChatStore.live else { return }
-        MTGroupRoom.shared.grow(adding: people, store: store)
-    }
-    #endif
     @Environment(\.verticalSizeClass) private var vClass
     private var landscape: Bool { vClass == .compact }
     /// The ground is one view (MTCallGround): the voice call, the sharer's own screen and the cover over
@@ -7958,14 +7877,6 @@ struct CallOverlayView: View {
             else { MTCallLive(model: model) { _ in fullScreen } }
         }
         // Whether the screen's owner is drawn again is said too (MTCallLive): the next frozen screen names its holder.
-        // WHOM TO ADD TO THE CALL: the contacts this phone writes with, a tick each, the room's measure kept (MTCallAddSheet)
-        #if !MONTANA_MESSENGER
-        .sheet(isPresented: $adding, onDismiss: addChosen) {
-            if let store = ChatStore.live, let peer = model.peer {
-                MTCallAddSheet(peer: peer) { adds = $0 }.environmentObject(store)
-            }
-        }
-        #endif
         .modifier(MTCallSaid(event: "call_root", kv: "state=\(model.state) ring=\(model.peerRinging ? 1 : 0) lit=\(model.route.lit ? 1 : 0)"))
         // THE CAMERA REFUSAL IS SAID TO THE FACE (the author's word 20.09): the system alert with
         // the system road to Settings (UIApplication.openSettingsURLString). iOS restarts the app
@@ -8221,16 +8132,6 @@ struct CallOverlayView: View {
                     } else {
                         Spacer()
                     }
-                    // ADD TO THE CALL (the author's words 17.10.2026 20:22 UTC): the platform's own person-plus glyph on the marks' glass,
-                    // no word, the 44 points of the platform's control that fires at the first lifting (MontanaCallMark)
-                    #if !MONTANA_MESSENGER
-                    if canAdd {
-                        MontanaCallMark(glyph: "person.badge.plus", label: "Add to Call") { adding = true }
-                    } else if videoBranch {
-                        // No add mark (the call is not connected, or a second line is parked): its room is held.
-                        Color.clear.frame(width: montanaTouchTarget, height: montanaTouchTarget)
-                    }
-                    #endif
                     if model.video {
                         MontanaCallMark(glyph: "camera.rotate", label: "Camera") { MontanaCall.shared.switchCamera() }
                     } else if videoBranch {
@@ -8353,7 +8254,7 @@ struct CallOverlayView: View {
                 let audioBtn = CallAudioButton(model: model, side: m.side, col: m.col)
                 let videoBtn = gridBtn("Video", "video.fill",
                                        active: (model.video && !model.cameraOff) || model.videoAskPending || model.videoJoinPending, side: m.side, col: m.col) { MontanaCall.shared.toggleVideo() }
-                // THE MICROPHONE OFF IS SHOWN AS THE SYSTEM'S OWN CALL SHOWS IT (the author's word 24.09 with the reference):
+                // THE MICROPHONE OFF IS SHOWN AS THE SYSTEM'S OWN CALL SHOWS IT (the author's word 24.09):
                 // the lit plate with the crossed microphone in red; the press answers under the finger with a light tap.
                 let muteBtn = gridBtn("Mute", "mic.slash.fill",
                                       active: model.muted, activeGlyph: .red, side: m.side, col: m.col) {
@@ -8499,21 +8400,24 @@ struct CallOverlayView: View {
         }
         var body: some View {
             let f = model.route
-            let _ = MontanaTrace.markChanged("call_audio_control", "lit=\(f.lit ? 1 : 0) menu=\(f.menu ? 1 : 0)")
-            VStack(spacing: 8) {
-                ZStack {
-                    Image(systemName: f.icon).font(.system(size: side * 0.34, weight: .semibold))
-                        .foregroundColor(f.lit ? .black : MontanaOctagon.barGlyph)
-                        .montanaOctagonFace(square: true, bar: true, height: side, tint: f.lit ? .white : nil)
-                        // A plate is visual only. Its sibling below is the one and only control.
-                        .allowsHitTesting(false)
-                        .id(f.lit)
-                    routeControl(f, side: side)
+            let _ = MontanaTrace.markChanged("call_audio_control", "lit=\(f.lit ? 1 : 0) menu=\(f.menu ? 1 : 0) shown=\(f.shown ? 1 : 0)")
+            // No earpiece and nothing outside (861 = a): no button, and the row closes up around the rest.
+            if f.shown {
+                VStack(spacing: 8) {
+                    ZStack {
+                        Image(systemName: f.icon).font(.system(size: side * 0.34, weight: .semibold))
+                            .foregroundColor(f.lit ? .black : MontanaOctagon.barGlyph)
+                            .montanaOctagonFace(square: true, bar: true, height: side, tint: f.lit ? .white : nil)
+                            // A plate is visual only. Its sibling below is the one and only control.
+                            .allowsHitTesting(false)
+                            .id(f.lit)
+                        routeControl(f, side: side)
+                    }
+                    Text(LocalizedStringKey(f.caption))
+                        .font(.subheadline).foregroundColor(.white).lineLimit(1).minimumScaleFactor(0.7)
                 }
-                Text(LocalizedStringKey(f.caption))
-                    .font(.subheadline).foregroundColor(.white).lineLimit(1).minimumScaleFactor(0.7)
+                .frame(width: col)
             }
-            .frame(width: col)
         }
     }
     func gridBtn(_ caption: String, _ icon: String, active: Bool, tint: Color? = nil, activeGlyph: Color = .black,
@@ -8537,7 +8441,7 @@ struct CallOverlayView: View {
 
 
 
-/// The capture device, built after the proven reference implementation and owned by us.
+/// The capture device, written and owned by us.
 /// The stock library capturer swallows the refusal to add the camera input, keeps a session
 /// without a camera and reports a clean start; it also lets the capture session reconfigure
 /// the application audio session, which a CallKit call already owns — the receiver side
@@ -8673,8 +8577,8 @@ final class MontanaCamera: RTCVideoCapturer {
 
     @objc private func orientationChanged() { queue.async { [weak self] in self?.updateRotation() } }
 
-    /// Frame rotation by metadata, not by pixel shuffling. The angle table is the
-    /// reference's, including the separate front-camera branch in landscape.
+    /// Frame rotation by metadata, not by pixel shuffling. The angle table covers every
+    /// device orientation, including the separate front-camera branch in landscape.
     private func updateRotation() {
         let o = UIDevice.current.orientation
         switch o {
@@ -8688,8 +8592,8 @@ final class MontanaCamera: RTCVideoCapturer {
 }
 
 extension MontanaCamera: AVCaptureVideoDataOutputSampleBufferDelegate {
-    /// Every valid frame is delivered, warm-up included. The reference drops twelve while
-    /// exposure converges — half a second of black at 24 fps, and the person read it as
+    /// Every valid frame is delivered, warm-up included. Dropping the first twelve frames while
+    /// exposure converges was half a second of black at 24 fps, and the person read it as
     /// "the camera is not on". A darkening-to-bright frame IS the camera turning on (the
     /// system Camera shows exactly that), the lit-frame probe stays honest by variance,
     /// and the silence probe stops needing thirteen frames inside its 0.75 s window.
@@ -8827,7 +8731,7 @@ enum MontanaAudioRoute {
         return Reading(current: out, ports: outs.map { $0.portType.rawValue }.joined(separator: ","))
     }
 
-    /// THE AUDIO BUTTON WEARS THE SYSTEM CALL'S OWN WORDS (the author's word 24.09, the later one, with the reference
+    /// THE AUDIO BUTTON WEARS THE SYSTEM CALL'S OWN WORDS (the author's word 24.09, the later one, with a call's
     /// screenshot: «everything native and exactly as on a cellular call; the speaker button, not active -- the voice at
     /// the ear, pressed -- on the loudspeaker, with no sticky menus; headphones on -- the button is renamed natively and a
     /// press shows the native menu with the right source checked»). The phone alone: «Speaker», dark at the ear and lit
@@ -8836,11 +8740,21 @@ enum MontanaAudioRoute {
     /// only when such a device is there: the input a headset, a car or Bluetooth brings, or the sound already standing
     /// outside the phone. The route detector's «multiple routes» is not asked: it counts AirPlay devices on the network
     /// that never carry a call, and the phone alone turned into a menu that held only the phone and the loudspeaker.
+    /// A DEVICE WITH NO EARPIECE HAS NO SWITCH (decision 861 = a, the author's word 20038: on the iPad the speaker «does not turn off»):
+    /// an iPad has no voice at the ear, the sound always stands in its own loudspeaker, and a «Speaker» lit forever moved nothing.
+    /// Without a device outside it there is nothing to choose, so no button stands; a headset or Bluetooth brings «Audio» and the
+    /// system's menu, as on the phone. The one place that knows whether this device has an earpiece.
+    static var hasEarpiece: Bool { UIDevice.current.userInterfaceIdiom == .phone }
     struct Face: Equatable {
         let caption: String   // a catalogue word: «Speaker» with the phone alone, «Audio» with a device
         let icon: String      // an SF Symbol: the loudspeaker with the phone alone, where the sound is with a device
         let lit: Bool
         let menu: Bool
+        let shown: Bool       // false: no device outside and no earpiece -- nowhere to switch, no button (861 = a)
+        /// The loudspeaker's switch of the phone alone; on a device without an earpiece it is not shown.
+        static func speaker(lit: Bool) -> Face {
+            Face(caption: "Speaker", icon: "speaker.wave.3.fill", lit: lit, menu: false, shown: MontanaAudioRoute.hasEarpiece)
+        }
     }
     static func face() -> Face {
         let s = AVAudioSession.sharedInstance()
@@ -8850,9 +8764,9 @@ enum MontanaAudioRoute {
         let choice = ext != nil || (s.availableInputs ?? []).contains { $0.portType != .builtInMic }
         if choice {
             let icon = ext.map { glyph($0) } ?? (onSpeaker ? "speaker.wave.3.fill" : "iphone")
-            return Face(caption: "Audio", icon: icon, lit: ext != nil || onSpeaker, menu: true)
+            return Face(caption: "Audio", icon: icon, lit: ext != nil || onSpeaker, menu: true, shown: true)
         }
-        return Face(caption: "Speaker", icon: "speaker.wave.3.fill", lit: onSpeaker, menu: false)
+        return .speaker(lit: onSpeaker)
     }
     private static func glyph(_ p: AVAudioSessionPortDescription) -> String {
         switch p.portType {
@@ -9015,7 +8929,7 @@ enum MTCallUpright {
 /// call, the voice player and the chat's reply at the ear. One turned it off under another: the player, yielding to a
 /// newborn call, turned the sensor off one turn after the call had turned it on. Every hand now holds and lets go of
 /// the sensor here by its name, and the sensor is on while any hand holds it.
-/// NEVER OFF WHILE «NEAR» (the reference's rule): a switch turned off while the sensor is covered leaves the screen dark,
+/// NEVER OFF WHILE «NEAR»: a switch turned off while the sensor is covered leaves the screen dark,
 /// and the platform no longer hears the sensor that would light it again. With no hand left and the sensor covered, the
 /// switch waits for «far» and goes off then. Every change of the sensor and of the switch is a diary line (proximity):
 /// a dark screen now says who held the sensor and what the sensor said last.

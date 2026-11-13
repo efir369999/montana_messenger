@@ -16,6 +16,7 @@ struct MontanaPeerInfoScreen: View {
     @State private var report: MontanaReport? = nil   // Guideline 1.2: report this person
     @State private var awaitingLink = false            // «share contact» asked the peer for their link
     @State private var linkUnavailable = false
+    @State private var pageAway = false                // a group's person neither held nor met (OZ 1 p.8, decision 897 a)
     @State private var selecting = false               // the profile's own selection of media (the author's word 15.09)
     @State private var selected: Set<MID> = []
     @State private var menuMessage: Message? = nil
@@ -111,6 +112,7 @@ struct MontanaPeerInfoScreen: View {
         }
         .alert("Asking for the contact link…", isPresented: $awaitingLink) { Button("Cancel", role: .cancel) { awaitingLink = false } }
         .alert("The contact link is not available yet: the person must open Montana once.", isPresented: $linkUnavailable) { Button("OK", role: .cancel) {} }
+        .alert("This person's page opens once the group's owner updates Montana.", isPresented: $pageAway) { Button("OK", role: .cancel) {} }
         .montanaPageGround()   // my page's ground, as every page wears it (rule 30, 25.09)
         .navigationTitle(state.editing ? "Edit" : "")   // no word over the face (the author's word 22.09)
         .navigationBarTitleDisplayMode(.inline)
@@ -203,7 +205,7 @@ struct MontanaPeerInfoScreen: View {
                                  initial: data.initial,
                                  size: 100,
                                  title: state.editing ? nil : MontanaAvatar.spokenName(data.title),
-                                 // «N members, M online» under a group's name, as the reference's page says it (MTGroupPage.head)
+                                 // «N members, M online» under a group's name, as the group's page says it (MTGroupPage.head)
                                  subtitle: isGroupPage && !state.editing ? LocalizedStringKey(MTGroupPage.head(chat.name, store: store))
                                      : isChannelPage && !state.editing ? LocalizedStringKey(MTChannelPage.head(chat.name)) : nil,   // «N subscribers» (17.10)
                                  subtitleIsActive: data.subtitleIsActive,
@@ -267,7 +269,7 @@ struct MontanaPeerInfoScreen: View {
     private func sections(_ data: MTPeerInfoData) -> [MTInfoSection: [MTInfoRow]] {
         var out: [MTInfoSection: [MTInfoRow]] = [:]
 
-        // THE GROUP'S DESCRIPTION (the reference folder: the group page's info above its people): the owner's words, read by all
+        // THE GROUP'S DESCRIPTION (the group page's info above its people): the owner's words, read by all
         if data.kind == .group, let about = MTGroup.shared.state(chat.name)?.about, !about.isEmpty {
             out[.about] = [MTInfoRow(id: "group.about", kind: .labeledValue(value: about, caption: "description"))]
         }
@@ -283,12 +285,12 @@ struct MontanaPeerInfoScreen: View {
             let outside = MTGroup.shared.isOut(chat.name)
             let channel = MTGroup.shared.kind(chat.name) == .channel
             if owns && !outside {
-                // «Add Member» heads the people, as the reference folder's group page has it
+                // «Add Member» heads the people on the group page
                 rows.append(MTInfoRow(id: "members.add",
                                       kind: .action(title: "Add Member", icon: "person.badge.plus", destructive: false,
                                                     action: { addingPeople = true })))
                 if MTGroup.shared.manages(chat.name) {
-                    // THE GROUP'S INVITE LINK (stage R.6, the reference folder's «Invite Link»): the owner's card and the group's mark,
+                    // THE GROUP'S INVITE LINK (stage R.6, the group page's «Invite Link»): the owner's card and the group's mark,
                     // handed by the system's sheet; a reset ends every link given before
                     rows.append(MTInfoRow(id: "members.link",
                                           kind: .action(title: "Invite Link", icon: "link", destructive: false,
@@ -298,7 +300,7 @@ struct MontanaPeerInfoScreen: View {
                                                         action: { MTGroup.shared.resetInvite(chat.name) })))
                 }
             }
-            // THE ROLES, AS THE REFERENCE'S MEMBER LIST NAMES THEM (stage R.6): owner, admin, member; the owner's hold on a person
+            // THE ROLES, AS THE GROUP'S MEMBER LIST NAMES THEM (stage R.6): owner, admin, member; the owner's hold on a person
             // names or dismisses an administrator and takes the person out; an administrator's hold takes out a member who is none.
             let myGroup = MTGroup.shared.state(chat.name)
             let iAdmin = !owns && myGroup.map { MTGroup.shared.isAdmin(chat.name, seat: $0.me) } == true
@@ -331,7 +333,7 @@ struct MontanaPeerInfoScreen: View {
                                                     deeds: deeds)))
             }
             if owns, !channel {
-                // the owner's way out is the group's end for everyone (the reference folder: «Delete Group», «Delete for All»)
+                // the owner's way out is the group's end for everyone («Delete Group», «Delete for All»)
                 rows.append(MTInfoRow(id: "members.dissolve",
                                       kind: .action(title: "Delete Group", icon: "trash", destructive: true,
                                                     action: { confirmDissolve = true })))
@@ -374,7 +376,7 @@ struct MontanaPeerInfoScreen: View {
             settings.append(MTInfoRow(id: "settings.newContact",
                                       kind: .action(title: "Create new contact", icon: "person.crop.circle.badge.plus",
                                                     destructive: false,
-                                                    action: { state.addToContacts(conv: data.conv, title: data.title) })))
+                                                    action: { state.addToContacts(conv: data.conv) })))
             settings.append(MTInfoRow(id: "settings.existingContact",
                                       kind: .action(title: "Add to existing", icon: "person.crop.circle.badge.checkmark",
                                                     destructive: false,
@@ -401,10 +403,10 @@ struct MontanaPeerInfoScreen: View {
 
     /// A CHANNEL'S PAGE (MTChannelPage, the author's words 17.10.2026 15:4x UTC: «channels ... 1 to 1»): its own head, buttons and rows.
     private var isChannelPage: Bool { MTPeerKind(chat: chat) == .group && MTGroup.shared.kind(chat.name) == .channel }
-    /// A group's page, not a channel's: the reference's group page draws it (MTGroupPage), a channel keeps its own road.
+    /// A group's page, not a channel's: the group page draws it (MTGroupPage), a channel keeps its own road.
     private var isGroupPage: Bool { MTPeerKind(chat: chat) == .group && MTGroup.shared.kind(chat.name) == .group }
-    /// A CHANNEL'S ROWS, AS THE REFERENCE'S CHANNEL PAGE HAS THEM: its owner's «Subscribers» with their number and «Channel Settings»,
-    /// the invite link in the settings, as the reference keeps it; a subscriber sees no people of the channel.
+    /// A CHANNEL'S ROWS, AS ITS PAGE HAS THEM: its owner's «Subscribers» with their number and «Channel Settings»,
+    /// the invite link kept in the settings; a subscriber sees no people of the channel.
     private func channelRows() -> [MTInfoRow] {
         guard MTGroup.shared.manages(chat.name) else {
             // AN ADMINISTRATOR WHO MAY CHANGE THE CHANNEL'S INFO OR HAND ITS LINK opens the settings that carry them (MTChannelRight)
@@ -413,7 +415,7 @@ struct MontanaPeerInfoScreen: View {
                                                                         action: { state.editing = true }))]
         }
         let n = MTGroup.shared.people(chat.name) ?? 1
-        let admins = 1 + (MTGroup.shared.state(chat.name)?.admins?.count ?? 0)   // the reference counts its owner among them
+        let admins = 1 + (MTGroup.shared.state(chat.name)?.admins?.count ?? 0)   // the owner counts among them
         return [
             MTInfoRow(id: "channel.admins", kind: .disclosure(title: "Administrators", detail: LocalizedStringKey(String(admins)),
                                                               icon: "person.badge.shield.checkmark", tint: .gray, action: { channelAdmins = true })),
@@ -423,7 +425,7 @@ struct MontanaPeerInfoScreen: View {
                                                                 action: { state.editing = true })),
         ]
     }
-    /// THE PEOPLE OF A GROUP, AS THE REFERENCE'S PAGE LISTS THEM (MTGroupPage.lines): «Add Member» first for its owner, then every
+    /// THE PEOPLE OF A GROUP, AS ITS PAGE LISTS THEM (MTGroupPage.lines): «Add Member» first for its owner, then every
     /// person, with no header over them; the ways out stand in «More» and in the editor, as there.
     private func groupMemberRows() -> [MTInfoRow] {
         var rows: [MTInfoRow] = []
@@ -434,11 +436,27 @@ struct MontanaPeerInfoScreen: View {
         let lines = MTGroupPage.lines(chat.name, store: store, remove: { seat in removingSeat = seat },
                                       open: { c in personPage = .person(c) },
                                       write: { c in dismiss(); DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { ui.openChat(c) } },
-                                      promote: { seat in adminSeat = seat })
+                                      promote: { seat in adminSeat = seat },
+                                      reach: { conv, now in reached(conv, write: now) },
+                                      away: { pageAway = true })
         for line in lines { rows.append(MTInfoRow(id: "members." + line.seat, kind: .groupMember(line))) }
         return rows
     }
-    /// A GROUP'S «MORE», AS THE REFERENCE'S MENU HAS IT: «Report» for one who does not own it, «Clear Messages», then the way out in
+    /// A PERSON OF THE GROUP MET BY THE CARD THEY LAID (OZ 1 p.8): their page where the conversation already stands a row, a letter
+    /// to them at once when asked; a conversation with no row yet opens as the chat itself, as a met link opens.
+    private func reached(_ conv: String, write now: Bool) {
+        if let c = MTGroupPage.row(of: conv, store: store) {
+            if !now { personPage = .person(c); return }
+            dismiss()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { ui.openChat(c) }
+            return
+        }
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            NotificationCenter.default.post(name: .openChatRequest, object: nil, userInfo: ["address": conv])
+        }
+    }
+    /// A GROUP'S «MORE» MENU: «Report» for one who does not own it, «Clear Messages», then the way out in
     /// red -- «Leave Group» for a member, «Delete Group» for its owner -- each asked first.
     @ViewBuilder private var groupMore: some View {
         let g = MTGroup.shared.state(chat.name)
@@ -563,9 +581,9 @@ struct MontanaPeerInfoScreen: View {
                     // the system's menu behind it — the chat's wallpaper, chosen and previewed before it is set.
                     Menu {
                         if isGroupPage {
-                            groupMore   // the reference's menu of a group; the chat's background is a person's (the checklist's Zh.2)
+                            groupMore   // the group's «More» menu; the chat's background is a person's (the checklist's Zh.2)
                         } else if isChannelPage {
-                            // A SUBSCRIBER'S «MORE» ON A CHANNEL'S PAGE (the reference's): the report
+                            // A SUBSCRIBER'S «MORE» ON A CHANNEL'S PAGE: the report
                             Button { report = MontanaReport(peer: chat.name, peerName: store.title(for: chat), text: "", mid: "") } label: {
                                 Label("Report", systemImage: "exclamationmark.bubble")
                             }
@@ -592,7 +610,7 @@ struct MontanaPeerInfoScreen: View {
     /// The page's actions: a person's as they were; a group where calls are made (MTGroupRoom.kinds) adds its voice and video chat
     /// beside the message -- the same plates, the group's own room behind them.
     private func pageActions(_ data: MTPeerInfoData) -> [MTPeerAction] {
-        // A GROUP'S BUTTONS, AS THE REFERENCE'S GROUP PAGE HAS THEM: its voice chat where one may be held, its sound, its search, more.
+        // A GROUP'S BUTTONS ON ITS PAGE: its voice chat where one may be held, its sound, its search, more.
         if isChannelPage { return MTChannelPage.actions(chat.name, muted: store.mutedChats.contains(chat.name)) }
         if isGroupPage {
             let call: [MTPeerAction] = MTGroupRoom.shared.kinds(for: chat.name).contains(.call) ? [.voiceChat] : []
@@ -668,7 +686,7 @@ struct MontanaPeerInfoScreen: View {
             }
             .listRowBackground(MTGlassRowPlate())   // the editor's rows on the one glass, the page's ground under them (25.09)
             if MTGroup.shared.mayChangeInfo(chat.name) {
-                // THE DESCRIPTION, AS THE REFERENCE'S GROUP EDITOR HAS IT: written by the owner -- or a member the group lets (G.5) --
+                // THE DESCRIPTION IN THE GROUP'S EDITOR: written by the owner -- or a member the group lets (G.5) --
                 // carried to every member (MTGroup.renew)
                 Section {
                     TextField("Description", text: $state.draftNote, axis: .vertical)
@@ -687,7 +705,7 @@ struct MontanaPeerInfoScreen: View {
                 .listRowBackground(MTGlassRowPlate())
             }
             if isChannelPage, MTGroup.shared.manages(chat.name) {
-                // THE CHANNEL'S LINK AND ITS END, where the reference's channel settings keep them (the channels checklist, 6.2 and 6.9)
+                // THE CHANNEL'S LINK AND ITS END, where the channel's settings keep them (the channels checklist, 6.2 and 6.9)
                 Section {
                     NavigationLink { MTChannelInviteLinksPage(chat: chat.name) } label: { Label("Invite Links", systemImage: "link") }
                     NavigationLink { MTChannelDiscussionPage(key: chat.name) } label: { Label("Discussion", systemImage: "bubble.left.and.bubble.right") }
@@ -700,7 +718,7 @@ struct MontanaPeerInfoScreen: View {
                     }
                 }
                 .listRowBackground(MTGlassRowPlate())
-                // THE PEOPLE TAKEN OUT AND THE DEEDS (the reference's channel settings keep them under the links)
+                // THE PEOPLE TAKEN OUT AND THE DEEDS (the channel's settings keep them under the links)
                 Section {
                     NavigationLink { MTChannelRemovedPage(key: chat.name) } label: {
                         LabeledContent {
@@ -718,7 +736,7 @@ struct MontanaPeerInfoScreen: View {
                 .listRowBackground(MTGlassRowPlate())
             }
             if isGroupPage, MTGroup.shared.manages(chat.name) {
-                // THE GROUP'S LINK AND ITS END, where the reference's editor keeps them (the checklist's G.3 and G.11), its type first (G.2)
+                // THE GROUP'S LINK AND ITS END, where the group's editor keeps them (the checklist's G.3 and G.11), its type first (G.2)
                 Section {
                     NavigationLink { MTGroupTypePage(chat: chat.name) } label: {
                         HStack {
@@ -733,7 +751,7 @@ struct MontanaPeerInfoScreen: View {
                     NavigationLink { MTGroupInviteLinksPage(chat: chat.name) } label: { Label("Invite Links", systemImage: "link") }
                 }
                 .listRowBackground(MTGlassRowPlate())
-                // THE PAST FOR NEW MEMBERS, as the reference's editor names it (G.4): «Visible» or «Hidden»
+                // THE PAST FOR NEW MEMBERS, as the group's editor names it (G.4): «Visible» or «Hidden»
                 Section {
                     NavigationLink { MTGroupHistoryPage(chat: chat.name) } label: {
                         HStack {
@@ -745,7 +763,7 @@ struct MontanaPeerInfoScreen: View {
                     }
                 }
                 .listRowBackground(MTGlassRowPlate())
-                // WHAT THE MEMBERS MAY DO, as the reference's editor counts it (G.5): the rights left of all of them
+                // WHAT THE MEMBERS MAY DO, as the group's editor counts it (G.5): the rights left of all of them
                 Section {
                     NavigationLink { MTGroupPermissionsPage(chat: chat.name) } label: {
                         HStack {
@@ -756,7 +774,7 @@ struct MontanaPeerInfoScreen: View {
                     }
                 }
                 .listRowBackground(MTGlassRowPlate())
-                // THE ADMINISTRATORS, as the reference's editor lists them (G.6)
+                // THE ADMINISTRATORS, as the group's editor lists them (G.6)
                 Section {
                     NavigationLink { MTGroupAdminsPage(chat: chat.name) } label: {
                         HStack {
@@ -767,7 +785,7 @@ struct MontanaPeerInfoScreen: View {
                     }
                 }
                 .listRowBackground(MTGlassRowPlate())
-                // WHO ASKED TO JOIN BY THE LINK, as the reference's editor shows it while any wait (G.8)
+                // WHO ASKED TO JOIN BY THE LINK, as the group's editor shows it while any wait (G.8)
                 if !MTGroup.shared.requests(chat.name).isEmpty {
                     Section {
                         NavigationLink { MTGroupRequestsPage(chat: chat.name) } label: {
@@ -780,7 +798,7 @@ struct MontanaPeerInfoScreen: View {
                     }
                     .listRowBackground(MTGlassRowPlate())
                 }
-                // THE PEOPLE KEPT OUT, as the reference's editor lists them (G.7)
+                // THE PEOPLE KEPT OUT, as the group's editor lists them (G.7)
                 Section {
                     NavigationLink { MTGroupRemovedPage(key: chat.name) } label: {
                         HStack {
@@ -881,9 +899,9 @@ struct MontanaPeerInfoScreen: View {
             .onChange(of: state.tab) { _, t in if t == .transactions { MTApps.coins?.moment(.transfersAsked) } }   // the coins' fold, once, at the tab's opening
             #endif
 
-        // A GROUP'S «MEDIA» HOLDS ITS PHOTOS AND ITS VIDEOS TOGETHER, as the reference's pane does (the checklist's V.7)
+        // A GROUP'S «MEDIA» HOLDS ITS PHOTOS AND ITS VIDEOS TOGETHER, in one pane (the checklist's V.7)
         let items = isGroupPage && state.tab == .media
-            ? data.messages.filter { m in m.imageFile != nil || (m.videoFile != nil && !(m.videoFile ?? "").hasPrefix("vnote_")) }
+            ? data.messages.filter { m in m.imagery.map { !($0.video && $0.file.hasPrefix("vnote_")) } ?? false }
             : data.pane(state.tab)
         #if MONTANA_MESSENGER
         letters(data, items)
@@ -1023,10 +1041,10 @@ struct MontanaPeerInfoScreen: View {
                 .montanaOctagonFace(bar: true, height: Self.rowHeight)
         }
     }
-    /// The panes a page offers: a group's are the reference's -- its media, files, links, music and voices; the
+    /// The panes a page offers: a group's are its media, files, links, music and voices; the
     /// transactions are a person's (the checklist's Zh.1). Every other page keeps them all.
     private var paneTabs: [MTMediaTab] {
-        // a group's videos stand in its «Media», as the reference's panes have them (V.7)
+        // a group's videos stand in its «Media» pane (V.7)
         isGroupPage ? [.media, .files, .links, .music, .voice] : (isChannelPage ? [.media, .video, .files, .links, .music, .voice] : MTMediaTab.allCases)
             .filter { t in Self.carried(t) }   // a pane only where its application stands
     }
@@ -1077,7 +1095,7 @@ struct MontanaPeerInfoScreen: View {
         }
     }
 
-    /// Photos and videos in one grid, three to a row, as the reference's «Media» lays them (V.7): a video wears its poster and the
+    /// Photos and videos in one grid, three to a row, as the «Media» pane lays them (V.7): a video wears its poster and the
     /// play glyph, and opens in the system's player; a photo opens among the chat's pictures.
     @ViewBuilder private func mediaGrid(_ items: [Message], _ data: MTPeerInfoData) -> some View {
         ForEach(threes(items)) { row in

@@ -1678,7 +1678,7 @@ struct MTNoteTouchable: ViewModifier {
 /// window over the feed, the ring for the minute and the seconds under it. The held camera
 /// button below owns the gesture; a swipe up locks it hands-free. The one control here is the
 /// camera flip (the author's word 15.09) — the call screen's face, and a tap on the window
-/// itself flips too, as the reference does; the recording runs on through the flip.
+/// itself flips too; the recording runs on through the flip.
 struct MontanaVideoNoteHold: View {
     @ObservedObject var cam: MontanaVideoNoteCamera
     @State private var drag: CGSize = .zero
@@ -1744,7 +1744,7 @@ struct MontanaVideoNotePreview: UIViewRepresentable {
 }
 
 /// THE ROUND NOTE IS A SQUARE WITH THE CIRCLE BAKED IN (the critic's word 15.09, the
-/// reference's pipeline): every frame is oriented, scaled so its short side is the note's side,
+/// note's own pipeline): every frame is oriented, scaled so its short side is the note's side,
 /// cut to the centre square and masked with a circle over its own blurred, darkened copy; the
 /// file is 400×400. What the person saw in the window is what leaves; outside the circle the
 /// file holds no living picture, and any reader anywhere shows a circle.
@@ -1877,7 +1877,7 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
     }
     static let dualCapable = AVCaptureMultiCamSession.isMultiCamSupported
     private var savedBrightness: CGFloat?
-    static let side = 400                       // the note's circle, the reference's number
+    static let side = 400                       // the note's circle, its side in pixels
     static let canvas = 480                     // the file's square: the circle and the badge's room around it; a multiple of 16 — H.264 skews any other width
     static let inner = 144                      // the front camera's badge on the big circle's rim
     private var usedDual = false                // the note ends with the badge: its name says so (the poster's state)
@@ -1943,7 +1943,7 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
     }
     private var length: Double = 0
     private var lastSmall: CIImage?   // the badge camera's latest frame, composed into the big one's in dual mode
-    // the circle pipeline (the reference's CameraRoundVideoFilter, in CoreImage)
+    // the circle pipeline (a round-video filter, in CoreImage)
     // Born on the frames' queue by the first frame, as the session by the first hold (P-2): a chat that opens
     // records nothing and pays for no GPU context and no drawn discs on the main thread. Only q reads these three.
     private lazy var ci = CIContext(options: [.useSoftwareRenderer: false])
@@ -2138,7 +2138,7 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
             if pos == .front { frontIn = inp; frontConn = c } else { backIn = inp; backConn = c }
         }
     }
-    /// The note's calm 24 frames (the reference: preferLowerFramerate) are asked only of a format whose own
+    /// The note's calm 24 frames (a lower frame rate preferred) are asked only of a format whose own
     /// range holds them: outside every range the system answers with an exception nothing here can catch
     /// (23.09, the critic -- the fallback camera asked it of any format, the pair camera already asked first).
     private static func holds24(_ f: AVCaptureDevice.Format) -> Bool {
@@ -2177,7 +2177,7 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
         }
     }
     /// One camera (the fallback) on the session, inside a configuration: the old input leaves,
-    /// the new one enters at the note's calm frame rate (the reference: preferLowerFramerate).
+    /// the new one enters at the note's calm frame rate (a lower frame rate preferred).
     private func wireCamera(position: AVCaptureDevice.Position) {
         if let old = videoInput { session.removeInput(old); videoInput = nil }
         guard let cam = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
@@ -2301,8 +2301,8 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
         let n = Self.canvas
         let v = AVAssetWriterInput(mediaType: .video, outputSettings: [
             AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: n, AVVideoHeightKey: n,
-            // THE ENCODER AT THE CHOSEN STEP (the author's word 18.09): the High profile with CABAC, as the
-            // reference encodes its round video (1 Mbit/s there); the rate is the quality step's
+            // THE ENCODER AT THE CHOSEN STEP (the author's word 18.09): the High profile with CABAC, as a
+            // round video is usually encoded (at 1 Mbit/s); the rate is the quality step's
             // (0.9 / 1.5 / 2.5 Mbit/s); a key frame every two seconds, so a seek lands close and cheap.
             AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: MontanaNoteQuality.current.bitRate, AVVideoExpectedSourceFrameRateKey: 24,
                                               AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
@@ -2340,7 +2340,7 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
             .cropped(to: CGRect(x: 0, y: 0, width: n, height: n))
     }
     /// One frame → the canvas: the circle of the note's side in the middle, over the blurred
-    /// darkened copy that fills the canvas — the reference's filter, step by step.
+    /// darkened copy that fills the canvas — the circle filter, step by step.
     private func circled(_ src: CIImage) -> CIImage {
         let N = CGFloat(Self.canvas), n = CGFloat(Self.side)
         let ground = square(src, N)
@@ -2643,7 +2643,7 @@ struct DocPreview: View {
     }
 }
 
-/// THE FILE UNDER ITS OWN NAME (the reference's way): the store keeps a document under a hashed
+/// THE FILE UNDER ITS OWN NAME (the name the person gave it): the store keeps a document under a hashed
 /// name; the viewer and the share sheet are handed a hard link (a copy when linking is refused)
 /// named as the person named it, so the type comes from the real name and the title reads right.
 /// One link per document, remade on every open; the folder is the temporary one.
@@ -2725,7 +2725,7 @@ enum MTDocLink {
 /// the system's icon for the type, then the document's real first page (a PDF, a text, a sheet) —
 /// the same picture the Files app shows; a badge with the type's word in the type's colour stands
 /// on the tile's corner (red for PDF and slides, green for sheets, amber for archives, blue else —
-/// the colours the reference gives its files). Until a picture lands, or when none can be drawn,
+/// the colours files usually wear). Until a picture lands, or when none can be drawn,
 /// the coloured plate carries the word alone. Every picture is asked once and kept.
 struct MTFileIcon: View {
     let file: String

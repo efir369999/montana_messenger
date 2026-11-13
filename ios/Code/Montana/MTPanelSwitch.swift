@@ -4,7 +4,7 @@ import UIKit
 /// THE PANEL'S OWN SWITCH, ON THE PLATFORM'S OWN GLASS (the author's word 22.09: the same little
 /// panel -- GIF, stickers, emoji -- in liquid glass, with the settings beside it).
 ///
-/// The reference draws its own glass by hand: a UIVisualEffectView whose private CAFilter colour
+/// Glass can be drawn by hand: a UIVisualEffectView whose private CAFilter colour
 /// matrix is rewritten through NSClassFromString («LiquidLensView»). We take none of that -- the
 /// platform carries the material itself since iOS 26 (UIGlassEffect, UIKit), and below that the
 /// system's own thin material. A private filter is not a mechanism, it is a way around one.

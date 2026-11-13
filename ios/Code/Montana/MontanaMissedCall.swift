@@ -92,6 +92,11 @@ enum MontanaMissedCall {
         if let t = info["call_token"] as? String, let c = conv(forToken: t) { return c }
         return (info["chat"] as? String).map { c in MTNoticeAlias.open(c) }   // a letter's notice names its chat by this phone's alias
     }
+    /// A delivered notice speaks of this chat: by its call token, the alias its letter names, or its thread -- the one test the app
+    /// (MontanaNotify.removeBanners) and the extension (MTTwinRead.takeOff) both read.
+    static func speaks(_ c: UNNotificationContent, of chat: String) -> Bool {
+        !chat.isEmpty && (Self.chat(of: c.userInfo) == chat || MTNoticeAlias.open(c.threadIdentifier) == chat)
+    }
 
     /// The one look of a missed call (the author's word 09.09: one variant, never two): the red
     /// handset word, the face in the avatar slot — the photo when there is one, the red handset
@@ -144,5 +149,42 @@ enum MontanaMissedCall {
             }
         }
         return img.pngData()
+    }
+}
+
+/// A CHAT READ ON ONE DEVICE OF THE PERSON LEAVES THE SCREEN OF EVERY OTHER (OZ 1 p.14.7; the author's word 20712: notices read on
+/// one device are not doubled on another). The seed mirror's read mark (MontanaArchive.mirrorNote) rides a file and a silent push
+/// half a minute later, and a silent push wakes no extension and no sleeping app: the banners of a chat the person had read on the
+/// computer stayed on the phone until the app was opened. This word rides at the reading, alone, in the seed's own pipe
+/// (MontanaArchive.tellTwinsRead); the extension of the other device opens it with the pipe's secret the app mirrors under secretKey
+/// and takes off the chat's banners delivered no later than the reading, showing nothing. Compiled into the app and the extension.
+enum MTTwinRead {
+    static let mark = "\u{200B}\u{200B}TQ:"   // NOT-UI: a read word for this seed's devices alone, never on a pair's wire
+    static let secretKey = "wakeTwinPipe"   // NOT-UI: the seed pipe's secret in the shared keychain, for the extension alone
+    /// The drift of two devices' clocks a reading forgives: the chat stood open on the reading device, so a banner delivered here
+    /// seconds after the reading is of a letter read there too.
+    static let drift: Double = 10
+    static func letter(chat: String, at: Double) -> String? {
+        guard !chat.isEmpty, let d = try? JSONSerialization.data(withJSONObject: ["c": chat, "t": Int64(at * 1000)]),
+              let s = String(data: d, encoding: .utf8) else { return nil }
+        return mark + s
+    }
+    static func read(_ text: String) -> (chat: String, at: Double)? {
+        guard text.hasPrefix(mark), let d = String(text.dropFirst(mark.count)).data(using: .utf8),
+              let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any],
+              let c = o["c"] as? String, !c.isEmpty, let t = (o["t"] as? NSNumber)?.doubleValue else { return nil }
+        return (c, t / 1000)
+    }
+    /// The chat's banners delivered no later than the reading leave the screen; the count goes to the caller.
+    static func takeOff(chat: String, readAt: Double, then done: @escaping (Int) -> Void) {
+        guard !chat.isEmpty else { done(0); return }
+        let center = UNUserNotificationCenter.current(), edge = readAt + drift
+        center.getDeliveredNotifications { list in
+            let ids = list.filter { n in
+                n.date.timeIntervalSince1970 <= edge && MontanaMissedCall.speaks(n.request.content, of: chat)
+            }.map { n in n.request.identifier }
+            if !ids.isEmpty { center.removeDeliveredNotifications(withIdentifiers: ids) }
+            done(ids.count)
+        }
     }
 }

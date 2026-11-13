@@ -34,12 +34,14 @@ final class NotificationService: UNNotificationServiceExtension {
         let cpuAtStart = Self.runMicros()
         let bornAt = Date()
         let once = self.once
+        let served = request.identifier
         let contentHandler: (UNNotificationContent) -> Void = { content in
             guard once.take() else { Self.diagLine("hand-over refused: already delivered"); return }
             let now = Self.runMicros()
             let spent = cpuAtStart <= now ? now - cpuAtStart : 0
             Self.diagLine("cost: cpu_ms=\(spent / 1000) wall_ms=\(Int(Date().timeIntervalSince(bornAt) * 1000))")
-            system(content)
+            // A LETTER'S FACE LEAVES THE BOOK OF QUIET PLATES BEFORE IT IS HANDED OVER (OZ 1 p.12.2): no earlier wake's hand takes it off
+            if content.threadIdentifier == Self.quietThread { system(content) } else { Self.handFace(served) { system(content) } }
             // THE BANNER IS HANDED OVER BEFORE ANY OPTIONAL WALK (17.10.2026; T1 on 2222, 16.10: 37 «banner shown», 6 «cost» -- the
             // box, the outgoing knock and the cargo stood between the composed banner and this closure, the process died there, and
             // the system showed the node's bare push without the sender). This line, after the system's call, is the diary's proof.
@@ -47,7 +49,7 @@ final class NotificationService: UNNotificationServiceExtension {
         }
         handler = contentHandler
         Self.servingId = request.identifier
-        Self.quietAt = nil
+        Self.quietPlate = nil
         Self.sweepQuiet()
         let began = Date()
         best = request.content.mutableCopy() as? UNMutableNotificationContent
@@ -94,6 +96,16 @@ final class NotificationService: UNNotificationServiceExtension {
             content.body = Self.bannerBody(text)
             Self.diagLine("rdv-letter: stored and shown mid=\(rdv.mid.prefix(8))")
             Self.deliverWithAvatar(content, from: "", glyph: glyph, handler: contentHandler)
+            return
+        }
+        // A CHAT READ ON ANOTHER DEVICE OF THE PERSON (MTTwinRead, OZ 1 p.14.7; the author's word 20712): its banners delivered no
+        // later than the reading leave this screen, and the push wears no face of its own. Any other word of the seed's pipe is quiet.
+        if let envB64 = info["env"] as? String, let sealed = Data(base64Encoded: envB64),
+           let r = Self.openTwinRead(sealed, at: Self.sealMoment(info)) {
+            MTTwinRead.takeOff(chat: r.chat, readAt: r.at) { n in
+                Self.diagLine("twin read took notices off n=\(n)")
+                contentHandler(Self.quietFace())
+            }
             return
         }
         if let envB64 = info["env"] as? String, !envB64.isEmpty,
@@ -152,7 +164,7 @@ final class NotificationService: UNNotificationServiceExtension {
             openedMid = mid
             openedQuiet = Self.isQuietText(text)
             cargoLetter = (mid, text)
-            // A DELETION FOR EVERYONE (16.10.2026 No.72; the author's words «let deletion reach me by a silent push»; the recon's own
+            // A DELETION FOR EVERYONE (16.10.2026 No.72; the author's words «let deletion reach me by a silent push»; a silent
             // road): the deleted letter's notice leaves the screen at the deletion's own push, always (16165 p.5), and the push
             // wears no face of its own; the app lands the deletion from the stash above, by its one door.
             if text.hasPrefix("\u{200B}\u{200B}DL:") {
@@ -361,19 +373,22 @@ final class NotificationService: UNNotificationServiceExtension {
         if blocked {
             Self.diagLine("blocked conv=\(convKey.prefix(10)) — no banner")
             face = Self.quietFace()
+        } else if !MTRing.chat(convKey) {
+            // A MUTED OR ARCHIVED CHAT SAYS NOTHING (MTRing.chat; 19457: T3's muted group Party still lay in the list, 11.11 19:20 UTC):
+            // the passive letter face once handed over here stayed in the list for good. An extension without the filtering
+            // entitlement cannot withhold a notification, so it hands over the quiet plate it takes off itself (quietFace): no
+            // sound, no light, no badge, gone from the list a moment later; the letter is stashed for the app as every letter is.
+            // AND IT SAYS NOTHING AT A REPEAT EITHER (OZ 1 p.12.2; T1 12.11 19:59:27 UTC): the repeat stood first and handed a muted
+            // chat's letter its own face, which the quiet plate's hand of an earlier wake then took off -- the plate left on the screen
+            // opened nothing to the Author's taps. Every wake of a muted chat is the quiet plate.
+            Self.diagLine("quiet conv=\(convKey.prefix(10)) — quiet plate, taken off")
+            face = Self.quietFace()
         } else if !openedMid.isEmpty, !fresh || held {
             Self.diagLine("repeat mid=\(openedMid.prefix(8)) shown=\(!fresh) held=\(held) — quiet, same face")
             content.sound = nil
             content.badge = nil
             content.interruptionLevel = .passive
             face = Self.faced(content, from: convKey, glyph: senderGlyph)
-        } else if !MTRing.chat(convKey) {
-            // A MUTED OR ARCHIVED CHAT SAYS NOTHING (MTRing.chat; 19457: T3's muted group Party still lay in the list, 11.11 19:20 UTC):
-            // the passive letter face once handed over here stayed in the list for good. An extension without the filtering
-            // entitlement cannot withhold a notification, so it hands over the quiet plate it takes off itself (quietFace): no
-            // sound, no light, no badge, gone from the list a moment later; the letter is stashed for the app as every letter is.
-            Self.diagLine("quiet conv=\(convKey.prefix(10)) — quiet plate, taken off")
-            face = Self.quietFace()
         } else {
             // THE SHARE SHEET'S ORDER FOLLOWS THE LETTER (MTShareOrder): the chat goes up in the sheet's mirror as it goes up in the list.
             if !convKey.isEmpty, !openedQuiet { MTShareOrder.raise(convKey) }
@@ -524,7 +539,7 @@ final class NotificationService: UNNotificationServiceExtension {
         var steps: [(String, () -> Void)] = []
         // THE QUIET PLATE LEAVES BEFORE THE WAKE ENDS (OZ 1 p.12, decision 840): a process the system suspends the moment its work
         // ends left it standing until the next wake; it waits out the plate's moment here and takes it off itself.
-        if quietAt != nil { steps.append(("quiet", { Self.takeQuietOff() })) }
+        if let plate = quietPlate { steps.append(("quiet", { Self.takeQuietOff(plate) })) }
         if collectBox { steps.append(("box", { _ = Self.fetchBoxSync(deadline: within(6, of: began)) })) }
         steps.append(("outgoing", { Self.knockOutgoingSync(deadline: within(6, of: began)) }))
         if let c = cargo { steps.append(("cargo", { Self.bringSmallCargoSync(mid: c.mid, text: c.text, began: began, deadline: within(8, of: began)) })) }
@@ -669,7 +684,25 @@ final class NotificationService: UNNotificationServiceExtension {
     // request down, so the plate is taken off the list: by this process a moment later, by the next wake on
     // its first line, and by the app when it next comes to the foreground (MontanaWakePush.drainInbox).
     static var servingId = ""
-    private static var quietAt: Date?
+    // THE BOOK OF QUIET PLATES HAS ONE OWNER, THE KEYCHAIN LIST nseQuietIds (OZ 1 p.12.2): the delivered ids whose plate is a quiet one,
+    // read by this extension and by the app (MontanaWakePush.drainInbox). The node rings one letter by its mid, so two wakes may hand
+    // over under one id: T1 on 12.11 19:59:26-28 UTC, wake A handed the quiet plate of t1794513 and waited to take it off, wake B of
+    // the same process handed the letter's face under that id, and A's hand took B's plate off -- the plate the Author then tapped
+    // opened nothing. So a letter's face leaves the book before it is handed over, a taking-off takes only an id the book still holds
+    // under the mark of the wake that laid it, and one serial queue orders the book, the marks and the takings-off of this process.
+    static let quietThread = "montana-quiet"   // NOT-UI: the group the quiet plates fall into, never shown
+    private struct QuietPlate { let id: String; let at: Date; let mark: Int }
+    private static var quietPlate: QuietPlate?   // the quiet plate this wake composed
+    private static var marks: [String: Int] = [:]   // an id and the mark of the last quiet plate this process laid under it
+    private static var lastMark = 0
+    private static let plates = DispatchQueue(label: "montana.nse.quiet-plates")   // NOT-UI: the book's one order in this process
+    private static func book() -> [String] {
+        guard let d = MontanaKeychain.get("nseQuietIds"), let a = try? JSONDecoder().decode([String].self, from: d) else { return [] }
+        return a
+    }
+    private static func keep(_ ids: [String]) {
+        if let d = try? JSONEncoder().encode(ids) { MontanaKeychain.set("nseQuietIds", d) }
+    }
     static func quietFace() -> UNNotificationContent {
         let c = UNMutableNotificationContent()
         c.title = "Montana"   // NOT-UI: the app's own name, the same word in every language
@@ -678,35 +711,51 @@ final class NotificationService: UNNotificationServiceExtension {
         c.badge = nil
         c.interruptionLevel = .passive
         c.relevanceScore = 0
-        c.threadIdentifier = "montana-quiet"   // NOT-UI: the group the quiet plates fall into, never shown
+        c.threadIdentifier = quietThread
         let id = servingId
-        quietAt = Date()
         diagLine("quiet face id=\(id.prefix(8)) — no blank plate")
         guard !id.isEmpty else { return c }
-        var ids: [String] = []
-        if let d = MontanaKeychain.get("nseQuietIds"), let a = try? JSONDecoder().decode([String].self, from: d) { ids = a }
-        if !ids.contains(id) { ids.append(id) }
-        if ids.count > 64 { ids.removeFirst(ids.count - 64) }
-        if let d = try? JSONEncoder().encode(ids) { MontanaKeychain.set("nseQuietIds", d) }
-        DispatchQueue.global().asyncAfter(deadline: .now() + 1.2) {
-            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [id])
+        let plate: QuietPlate = plates.sync {
+            lastMark += 1
+            marks[id] = lastMark
+            keep(Array((book().filter { $0 != id } + [id]).suffix(64)))
+            return QuietPlate(id: id, at: Date(), mark: lastMark)
         }
+        quietPlate = plate
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1.2) { _ = takeOff(plate) }
         return c
     }
+    /// A letter's face goes out under `id`: the id leaves the book and its mark first, then `hand` gives the face to the system.
+    private static func handFace(_ id: String, _ hand: () -> Void) {
+        plates.sync {
+            marks[id] = nil
+            let ids = book()
+            if ids.contains(id) { keep(ids.filter { $0 != id }) }
+            hand()
+        }
+    }
+    /// Takes a wake's quiet plate off the list -- only while it is still that wake's: in the book, under its mark.
+    private static func takeOff(_ p: QuietPlate) -> Bool {
+        plates.sync {
+            guard marks[p.id] == p.mark, book().contains(p.id) else { return false }
+            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [p.id])
+            return true
+        }
+    }
     /// The quiet plate handed over this wake leaves the list within the wake: 1.5 s after the hand-over, so the system has shown it.
-    private static func takeQuietOff() {
-        guard let at = quietAt, !servingId.isEmpty else { return }
-        let wait = 1.5 - Date().timeIntervalSince(at)
+    private static func takeQuietOff(_ p: QuietPlate) {
+        let wait = 1.5 - Date().timeIntervalSince(p.at)
         if 0 < wait { Thread.sleep(forTimeInterval: wait) }
-        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [servingId])
-        diagLine("quiet plate taken off id=\(servingId.prefix(8))")
+        diagLine(takeOff(p) ? "quiet plate taken off id=\(p.id.prefix(8))" : "quiet plate kept id=\(p.id.prefix(8)) — a later face holds it")
     }
     /// The quiet plates written down by earlier wakes leave the list (the request being served stays).
     static func sweepQuiet() {
-        guard let d = MontanaKeychain.get("nseQuietIds"), let ids = try? JSONDecoder().decode([String].self, from: d),
-              !ids.isEmpty else { return }
-        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids.filter { $0 != servingId })
-        MontanaKeychain.set("nseQuietIds", Data())
+        plates.sync {
+            let ids = book()
+            guard !ids.isEmpty else { return }
+            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids.filter { $0 != servingId })
+            MontanaKeychain.set("nseQuietIds", Data())
+        }
     }
     /// Words on every plate handed over: a name that was only an emoji (the face goes to the circle, the title
     /// to MontanaAvatar.spokenName, which leaves nothing) or a text that resolved to nothing never reaches the
@@ -846,6 +895,18 @@ final class NotificationService: UNNotificationServiceExtension {
         if !name.isEmpty { row["n"] = name }
         if !glyph.isEmpty { row["g"] = glyph }
         MTLetterBox.lay(row, cap: 200)
+    }
+
+    /// The seed's own pipe (MTTwinRead.secretKey, the app's mirror): a letter it opens is a word of another device of the person, never
+    /// a correspondent's -- its read word, or a word with no chat that takes nothing off.
+    private static func openTwinRead(_ sealed: Data, at: Int) -> (chat: String, at: Double)? {
+        guard let s = MontanaKeychain.get(MTTwinRead.secretKey), !s.isEmpty else { return nil }
+        let secret = MTPipeKey(s)
+        for w in sealMinutes(at) {
+            guard let plain = openBlob(key: secret.bodyKey(window: w), sealed: sealed), plain.contains(0) else { continue }
+            return MTTwinRead.read(MTNodeWire.letterFields(plain)[1]) ?? (chat: "", at: 0)
+        }
+        return nil
     }
 
     private static func openWithOwnPipes(_ sealed: Data, at: Int)
@@ -1322,7 +1383,7 @@ final class NotificationService: UNNotificationServiceExtension {
         return true
     }
 
-    /// THE NOTICE OF A LETTER DELETED FOR EVERYONE LEAVES THE SCREEN (16.10.2026 No.72, the recon: the reference's extension takes a
+    /// THE NOTICE OF A LETTER DELETED FOR EVERYONE LEAVES THE SCREEN (16.10.2026 No.72: the extension takes a
     /// deleted message's notice off at the deletion's own push), always -- no phone keeps what others delete (16165 p.5). A notice
     /// is named by its letter's wire name (userInfo «mid», bare or «mid:»-led).
     private static func takeNoticeOff(_ target: String, then done: @escaping () -> Void) {

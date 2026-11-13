@@ -2,7 +2,7 @@
 //  MontanaHoldControl.swift
 //  Montana — a Montana messenger
 //
-//  THE HOLD BUTTON IS THE PLATFORM'S OWN CONTROL (the author's word 19.09, the reference's model).
+//  THE HOLD BUTTON IS THE PLATFORM'S OWN CONTROL (the author's word 19.09).
 //  Measured 16-19.09 on two phones under iOS 18: with the keyboard up, six recordings of six
 //  ended as «cancel» — the release of the finger was read as a slide away, the tape was thrown
 //  out, and the person tapped the button eight times more into silence. The old button was a
@@ -24,7 +24,7 @@ enum MontanaHoldVerdict: String {
 }
 
 final class MontanaHoldControl: UIControl, UIGestureRecognizerDelegate {
-    /// The reference's numbers. A press shorter than this is a tap; a longer one records.
+    /// The press's numbers. A press shorter than this is a tap; a longer one records.
     static let modeTimeout: TimeInterval = 0.19
     /// Cancel: a hundred points left at the release, a hundred and fifty on the way, or a flick
     /// left faster than four hundred points a second.
@@ -126,7 +126,7 @@ final class MontanaHoldControl: UIControl, UIGestureRecognizerDelegate {
     /// everything went crooked»). The press recogniser's .began reached this control 156-164 ms after the hit (T1 01:22:04.722 to
     /// .878 and 12:30:03.516 to .680 UTC), and the 190 ms mode timeout ran from .began: a tape rolled only from the 350th
     /// millisecond of a press, and a press of 200-340 ms -- a hold by any hand's reckoning -- was read as a tap and swapped the
-    /// glyph for the camera. The reference counts from beginTracking, the touch's first moment (TGModernConversationInputMicButton.m:712-743);
+    /// glyph for the camera. A control counts from beginTracking, the touch's first moment (UIControl);
     /// here that moment is the hit (hitTest), so the hit arms the control and the timeout runs from it. The recogniser's .began
     /// only confirms the finger and writes how late it came; when no hit was seen it arms as before.
     private var hitAt: CFAbsoluteTime = 0
@@ -172,7 +172,7 @@ final class MontanaHoldControl: UIControl, UIGestureRecognizerDelegate {
         guard processing else { return }
         guard began else { processing = false; onVerdict(.tap); return }
         var dx = min(0, p.x - touchLocation.x), dy = min(0, p.y - touchLocation.y)
-        // ONE AXIS DECIDES (the reference): a thumb rolling off the button diagonally is judged
+        // ONE AXIS DECIDES: a thumb rolling off the button diagonally is judged
         // by its dominant way, never as «left» and «up» at once.
         if abs(dy) < abs(dx) { dy = 0 } else { dx = 0 }
         let v = lastVelocity
@@ -189,7 +189,7 @@ final class MontanaHoldControl: UIControl, UIGestureRecognizerDelegate {
         guard processing else { return }
         processing = false
         guard began else { return }   // a tap the system took back: nothing recorded, nothing to say
-        // THE SYSTEM TOOK THE TOUCH, NOT THE PERSON (the reference): the tape is not thrown away —
+        // THE SYSTEM TOOK THE TOUCH, NOT THE PERSON: the tape is not thrown away —
         // a second later it locks and rolls on, and the arrow sends it.
         MontanaTrace.mark("hold_end", "verdict=lock why=system-cancel mount=\(MTHoldOverlayWindow.mountKind)")
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.onVerdict(.lock) }
@@ -208,7 +208,7 @@ final class MontanaHoldControl: UIControl, UIGestureRecognizerDelegate {
 /// owner's. It holds ONLY the finger that never left the button: a locked tape's arrow, pause
 /// and bin are the crown's own controls, in the crown's window — this one sleeps until the
 /// recording is over. NATIVE-CHECKED: the platform has no hold-to-record control of its own;
-/// the reference builds on UIControl's touch tracking; here the press recogniser carries the finger (08.11.2026).
+/// a control would build on UIControl's touch tracking; here the press recogniser carries the finger (08.11.2026).
 struct MontanaHoldButton: UIViewRepresentable {
     var enabled: Bool
     var lockWay: CGFloat

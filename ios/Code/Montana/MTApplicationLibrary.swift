@@ -31,8 +31,8 @@ extension MTApplication {
         case .chess: return ""
         #endif
         case .chats: return UIState.Glyph.chats
-        case .groups: return "person.3.fill"
-        case .channels: return "megaphone.fill"
+        case .groups: return UIState.Glyph.groups
+        case .channels: return UIState.Glyph.channels
         case .gallery: return UIState.Glyph.gallery
         #if !MONTANA_MESSENGER
         case .music: return UIState.Glyph.music

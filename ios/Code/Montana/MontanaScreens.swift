@@ -113,7 +113,7 @@ struct ArchivedChatsView: View {
 // ════════════════════════════════════════════════════════════
 
 // Devices (sessions)
-// ── QR device linking (Signal model): UI ──
+// ── QR device linking: UI ──
 // ── Stage 8: identity fingerprint verification (safety number) ──
 /// Which correspondences this person has checked face to face. The list is device-local and holds
 /// the local names of correspondences — there is no identifier of a person to hold instead.
@@ -599,7 +599,7 @@ struct SupportView: View {
 // CREATE A GROUP
 // ════════════════════════════════════════════════════════════
 /// THE GROUP IS BORN IN TWO STEPS, as the platform's messengers make it (the author's word 05.10.2026: «choose Contacts to add to
-/// the group, see the mechanics in the reference tree»): the people first, each chosen by a tick, then the group's name and face and the tick
+/// the group»): the people first, each chosen by a tick, then the group's name and face and the tick
 /// that creates it. Only a person this phone holds a pipe with stands in the list: a group letter rides each member's own pipe,
 /// and a person without one could be shown as a member and never receive a word.
 struct MTGroupPickStep: View {
@@ -630,7 +630,7 @@ struct MTGroupPickStep: View {
     var body: some View {
         NavigationStack {
             List {
-                // THE CHOSEN AS TOKENS OVER THE LIST, as the reference's token field keeps them (the checklist's A.1): a tap lets one go
+                // THE CHOSEN AS TOKENS OVER THE LIST, as a token field keeps them (the checklist's A.1): a tap lets one go
                 if !chosenChats.isEmpty {
                     Section {
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -662,7 +662,7 @@ struct MTGroupPickStep: View {
             }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always))
             .scrollContentBackground(.hidden).montanaPageGround()
-            // the reference's own titles: a new group, or the people added to one (a channel's, its subscribers)
+            // the titles: a new group, or the people added to one (a channel's, its subscribers)
             .navigationTitle(adding == nil ? LocalizedStringKey("New Group")
                              : (MTGroup.shared.kind(adding ?? "") == .channel ? LocalizedStringKey("Add Subscribers") : LocalizedStringKey("Add Members")))
             .navigationBarTitleDisplayMode(.inline)
@@ -672,7 +672,7 @@ struct MTGroupPickStep: View {
                     MontanaDoneMark {
                         if adding != nil { onCreate("", Data(), chosenChats); dismiss() } else { naming = true }
                     }
-                    // a new group may begin with nobody yet, as the reference's does (A.2); adding asks for someone to add
+                    // a new group may begin with nobody yet (A.2); adding asks for someone to add
                     .disabled(adding != nil && chosen.isEmpty).opacity(adding != nil && chosen.isEmpty ? 0.4 : 1)
                 }
             }
@@ -706,8 +706,8 @@ struct MTGroupPageAsks: ViewModifier {
         let channel = MTGroup.shared.kind(chat.name) == .channel
         let title = store.title(for: chat)
         content
-            // LEAVE GROUP (the reference folder: «Are you sure you want to leave and delete %@?»): the owner is told, the chat goes
-            // LEAVE CHANNEL (the reference's: «Are you sure you want to leave the channel %@?», «Leave Channel»): the owner is told and
+            // LEAVE GROUP («Are you sure you want to leave and delete %@?»): the owner is told, the chat goes
+            // LEAVE CHANNEL («Are you sure you want to leave the channel %@?», «Leave Channel»): the owner is told and
             // the channel leaves this phone, as a group does
             .confirmationDialog(channel ? Text("Are you sure you want to leave the channel \(title)?") : Text("Are you sure you want to leave and delete \(title)?"),
                                 isPresented: $confirmLeave, titleVisibility: .visible) {
@@ -717,8 +717,8 @@ struct MTGroupPageAsks: ViewModifier {
                     Button(role: .destructive) { MTGroup.shared.leaveAndErase(chat.name, store: store); onGone() } label: { Text("Leave Group") }
                 }
             }
-            // DELETE GROUP (the reference folder: «Delete for All»): every member's copy goes with the owner's
-            // DELETE CHANNEL (the reference's: «Wait! Deleting this channel will remove all members and all messages will be lost»)
+            // DELETE GROUP («Delete for All»): every member's copy goes with the owner's
+            // DELETE CHANNEL («Wait! Deleting this channel will remove all members and all messages will be lost»)
             .confirmationDialog(channel ? Text("Wait! Deleting this channel will remove all members and all messages will be lost. Delete the channel anyway?")
                                         : Text("Are you sure you want to delete the group \(title) and all of its messages for all members of the group?"),
                                 isPresented: $confirmDissolve, titleVisibility: .visible) {

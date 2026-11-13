@@ -375,7 +375,7 @@ enum E2EKeychain {
     // WhenUnlocked broke calls: CallKit runs with the screen off, the seed became unreadable, and
     // every action that carries its own proof died before it reached the wire — there is no session
     // to fall back on, so an unreadable seed is a dead phone (incident 22:54 UTC).
-    // AfterFirstUnlock — the industry standard for messengers with calls (Signal identity likewise).
+    // AfterFirstUnlock — the industry standard for messengers with calls.
     @discardableResult
     static func setDeviceOnly(_ key: String, _ data: Data) -> OSStatus {
         // Atomic: Update, if absent — Add. The former Delete→Add ignoring OSStatus had

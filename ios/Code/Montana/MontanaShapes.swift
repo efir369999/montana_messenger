@@ -105,8 +105,8 @@ enum MontanaOctagon {
     /// The bar plate's body under both skins where the system's glass is not drawn: a thin
     /// material that lets the ground behind blur through (the author's word 10.09).
     static var barMaterial: AnyShapeStyle { AnyShapeStyle(.ultraThinMaterial) }
-    /// NOTHING AROUND THE FIELD AND ITS BUTTONS (the author's word 21.09, the reference's panel:
-    /// NavigationBackgroundNode(color: .clear)): the compose panel has no ground of its own — the
+    /// NOTHING AROUND THE FIELD AND ITS BUTTONS (the author's word 21.09, a clear
+    /// panel): the compose panel has no ground of its own — the
     /// feed runs on under it (MTFeedFrame.underlap) and shows between the plates; the plates alone
     /// carry the glass. A ground was drawn here twice (solid, then a tint over material) — both gone.
     /// The bar's breathing room above and below it; the list's top inset is measured from the
@@ -258,7 +258,7 @@ struct MTLiveWave: View {
     /// THE PLATFORM'S RECORDER LINES (the author's word 22.09, its recorder beside ours): the system red,
     /// lines a point and a half wide with two between, mirrored about the middle, as many as the wave's
     /// own room holds — the newest at the right, the not-yet-recorded tail a faint dotted line. A line
-    /// is the linear amplitude of its 25 ms slot at the reference's scale (VoiceRecorder.shown: a sample
+    /// is the linear amplitude of its 25 ms slot at the one scale (VoiceRecorder.shown: a sample
     /// of 4000 is the height, a louder tape is scaled to its loudest word) — the sound itself: silence
     /// is a dot, a word is a spike, the loudest word is the height.
     static let line: CGFloat = 1
@@ -776,7 +776,7 @@ struct MTTapeSeatStyle: ButtonStyle {
 final class MTHoldOverlayState: ObservableObject {
     static let shared = MTHoldOverlayState()
     @Published var anchor: CGPoint = .zero   // the slot's centre, in screen coordinates — written by follow() alone
-    /// THE SLOT NAMES ITS OWN PLACE (the author's word 21.09, the reference's updateOverlay): the crown's
+    /// THE SLOT NAMES ITS OWN PLACE (the author's word 21.09): the crown's
     /// anchor is read from the control standing in the slot, through the platform's own conversion
     /// to the window — at the finger's arrival and at every move of the bar's node. A snapshot taken by
     /// the layout of the bar's tree went stale the moment the keys lifted the node by its layer
@@ -859,7 +859,7 @@ final class MTHoldOverlayState: ObservableObject {
     var lockWay: CGFloat = 72
     var maxScale: CGFloat = 1.28
     var holdClear: CGFloat = 81              // the swell's ceiling over the slot's centre
-    // THE VIDEO NOTE'S CHROME (the author's word 15.09, the reference): while a note records the
+    // THE VIDEO NOTE'S CHROME (the author's word 15.09): while a note records the
     // whole screen is dimmed from this window, and everything of the recording — the note, its
     // buttons, the strip with the seconds, the pause, the lock, the swollen button — is drawn here
     // ABOVE the dim. The note's own controls (the window, the flash, the flip, the dual, the bin,
@@ -869,7 +869,7 @@ final class MTHoldOverlayState: ObservableObject {
     var feed: CGRect = .zero                 // the visible feed on the screen: the note centres in it
     @Published var strip: CGRect = .zero     // the recording strip's place in the bar -- its measure in the bar is the one writer; the crown reads its head edge
     var touchable: [String: CGRect] = [:]    // where this window takes a touch: the recording's own controls
-    /// THE LOCKED TAPE'S CONTROLS ASK THE RECORDING'S OWNER (the reference's model): the crown
+    /// THE LOCKED TAPE'S CONTROLS ASK THE RECORDING'S OWNER: the crown
     /// draws the arrow, the pause and the bin and catches their taps in its own window; the
     /// owner (the chat's MontanaRecording) decides. Set by the screen that owns the tape.
     var onSend: (() -> Void)?
@@ -1085,7 +1085,7 @@ struct MTHoldOverlayView: View {
         .transition(.opacity)
         .allowsHitTesting(false)
     }
-    /// WHAT IS PRESSED AFTER THE LOCK LIVES HERE (the author's word 19.09, the reference's model):
+    /// WHAT IS PRESSED AFTER THE LOCK LIVES HERE (the author's word 19.09):
     /// controls of THIS window, caught where they are drawn. A tap no longer has to fall through
     /// the keyboard's window to the bar (measured 19.09 on iOS 18: it never did — six locked
     /// taps, not one arrived).
@@ -1238,7 +1238,7 @@ struct MTHoldOverlayView: View {
     }
 }
 
-/// The video note's chrome over the dim (the author's word 15.09, the reference's screen): the dim
+/// The video note's chrome over the dim (the author's word 15.09): the dim
 /// over the whole screen — white when the fill light is on — the note in the visible feed, the
 /// strip with the red dot and the seconds where the bar's strip stands; all bright above the dim.
 /// The bin is a control of this window; the pause, the lock plate and the arrow are the crown's,

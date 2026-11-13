@@ -383,7 +383,7 @@ enum MontanaNotify {
         let words = speaker.isEmpty || !showsSender ? body : speaker + ": " + body
         decorate(plate, from: chat, chat: chat, body: preview ? words : String(localized: "New message", bundle: MTLanguage.bundle), countUnread: false)
         plate.title = title
-        if mentioned {   // A MENTION RINGS THROUGH THE MUTE (stage R, as the reference rings one): the person was named
+        if mentioned {   // A MENTION RINGS THROUGH THE MUTE (stage R): the person was named
             plate.interruptionLevel = .active
             plate.sound = (MontanaKeychain.get("notifSound")?.first ?? 1) == 1 ? .default : nil
         }
@@ -413,7 +413,7 @@ enum MontanaNotify {
         center.getDeliveredNotifications { list in
             let ids = list.filter { n in
                 let c = n.request.content
-                if !conv.isEmpty, MontanaMissedCall.chat(of: c.userInfo) == conv || MTNoticeAlias.open(c.threadIdentifier) == conv { return true }
+                if MontanaMissedCall.speaks(c, of: conv) { return true }
                 guard !names.isEmpty else { return false }
                 if let m = c.userInfo["mid"] as? String, names.contains(m.hasPrefix("mid:") ? String(m.dropFirst(4)) : m) { return true }
                 let id = n.request.identifier

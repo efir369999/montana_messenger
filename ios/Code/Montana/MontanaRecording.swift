@@ -2,7 +2,7 @@
 //  MontanaRecording.swift
 //  Montana — a Montana messenger
 //
-//  ONE STATE OF A RECORDING, ONE OWNER (the author's word 19.09, the reference's model). The
+//  ONE STATE OF A RECORDING, ONE OWNER (the author's word 19.09). The
 //  tape's truth used to live in three places — four flags of the bar's button, the parent's
 //  «recording» flag and the crown's mirror — and every place they disagreed was a defect of its
 //  own: a lock taken two milliseconds after the start met a stale flag and was lost (14:45:07),

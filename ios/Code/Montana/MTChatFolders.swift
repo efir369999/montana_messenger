@@ -4,8 +4,8 @@ import UIKit
 /// THE FOLDERS OVER THE CHATS (the author's words 17.10.2026 15:4x UTC: «badges over the chats, the groups and the channels, and
 /// their control in the settings»; «left of the chats, the groups and the channels a field All, every chat in it, the groups and
 /// the channels too -- and a category Bots, our bot in it» -- the bot and its category taken out whole by the author's word 16283,
-/// 04.11.2026; «the groups and the channels one to one as in the reference»). The
-/// reference's own folders: All Chats and the person's folders, each the kinds of chats and the chats it takes and the states and the
+/// 04.11.2026; «the groups and the channels one to one»). The
+/// folders: All Chats and the person's folders, each the kinds of chats and the chats it takes and the states and the
 /// chats it leaves out; a tab's badge counts the folder's unread conversations and is blue while one of them is not muted. A setting
 /// of the person: kept in the vault and carried by the copy (SeedScope.settingKeys). NO FOLDERS' PAGE AND NO TABS (the author's
 /// words 19110 and 19116 and decision 831 = a, 11.11.2026): the chats page shows every chat, the drawer's Groups and Channels open

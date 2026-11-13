@@ -38,7 +38,7 @@ struct MontanaApp: App {
         MontanaHandoff.counted = MTDiskDoor.count   // the shared folders' bytes are named at the disk door in the app (01.11.2026)
         MTSeats.launch()   // a move between seats the last run did not finish is finished before any owner is born (the second identity checklist, 1.3)
         MontanaBirth.forgetUnfinished { SeedScope.forget() }   // a making left before its profile is no person (link 14680)
-        BT.dropStale()   // the bubble defaults' generation (the reference for everyone)
+        BT.dropStale()   // the bubble defaults' generation (one look for everyone)
         _ = LocalizedBundle.install; MTLanguage.mirror(); MontanaTrace.markOnce("app_init")
         MontanaVoiceOrb.warm()   // the orb's pipelines, off the main thread, before any chat asks
     }   // swap the localization bundle for live language switching (UIKit/NSE)

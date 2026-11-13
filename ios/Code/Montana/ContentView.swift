@@ -61,13 +61,13 @@ enum MontanaSkin: String, CaseIterable {
 // Appearance theme — SSOT default hex values (mirror the current Montana style), read by both
 // the chat bubbles and the Appearance editor so the preview matches the chat exactly.
 enum BT {
-    // THE ONE DEFAULT OF A BUBBLE (the author's word 11.09, the dark reference over a photo):
+    // THE ONE DEFAULT OF A BUBBLE (the author's word 11.09, the dark look over a photo):
     // theirs a translucent dark grey, mine a translucent blue, white letters on both, no rim,
     // the picture showing through. Every style starts here — «Montana» under the native skin wears the platform's own flat blue
     // on mine and its grey on theirs, with these white letters (the author's words 26.09 and 29.09),
     // «Custom» edits from it — so a chat and the editor's preview cannot tell two stories (1466:
     // the phone stood on «Custom» with the old muted-black defaults while only the «Montana»
-    // branch carried the reference).
+    // branch carried the new default).
     // The fill is as translucent as the editor's slider allows (the author's word 11.09: «the
     // most transparent by default»); fillFloor is that slider's lower bound — one number.
     static let fillFloor = 0.20
@@ -75,7 +75,7 @@ enum BT {
     static let pF1="6B6B6B", pF2="6B6B6B", pTx="FFFFFF", pOl="FFFFFF", pOlOp=0.0, pOlW=0.0, pOp=fillFloor
     static let bg1="000000", bg2="0A0A0A"
     /// The bubble defaults carry a generation (as the skin key does): values saved under the old
-    /// muted-black defaults are dropped once, so every device wakes on the reference; the
+    /// muted-black defaults are dropped once, so every device wakes on the one default; the
     /// person's own background stays.
     static let gen = "bubbleTheme.gen", genNow = "2"
     static let bubbleKeys = ["bubbleStyle", "cbMineFill1", "cbMineFill2", "cbMineOpacity", "cbMineText", "cbMineOutline",
@@ -138,13 +138,13 @@ let bubblePalette: [Color] = [
 
 // Controls visibility of the bottom menu (hide it when a chat is open)
 /// THE FINGER'S OFFSET OF THE PANES (the author's word 24.09: «do it right, with nothing left over» — the pages follow
-/// the finger as the reference's do): a thing of its own, watched by the slide alone (MTPaneSlide). The chats page reads
+/// the finger): a thing of its own, watched by the slide alone (MTPaneSlide). The chats page reads
 /// nothing of it, so its rows are not built again on every move of the finger; only the slide moves.
 final class MTTurnDrag: ObservableObject {
     @Published var x: CGFloat = 0   // the pane's offset: the finger's translation while it drags, the settle's after
     /// Where the pane STANDS this frame: the platform's own interpolation of `x` while a settle runs, written by the
     /// pane's shift as it is drawn (MTPaneShift), the same as `x` under the finger. Read once, at a stroke's start: a
-    /// stroke that lands mid-settle continues from here, as the reference reads its presentation layer. Nothing watches it.
+    /// stroke that lands mid-settle continues from here, read as the presentation layer stands. Nothing watches it.
     var shown: CGFloat = 0
 }
 
@@ -164,7 +164,7 @@ final class MTTurnDrag: ObservableObject {
     /// the feed») — the tab bar's tabs, moved up into the bar. One owner, read by the bar and the page.
     /// THE NETWORK IS DISBANDED INTO THREE APPLICATIONS (the author's word 29.09): the VPN under the globe, in the finger's row;
     /// the mesh and the P2P network are pages under the bar opened from the drawer.
-    enum Pane {
+    enum Pane: String {   // the name is the dynamic slot's memory (lastMedia)
         case chats, groups, channels, contacts, calls, p2p, gallery
         #if !MONTANA_MESSENGER
         case music       // the music page, the Protocol's alone (decision 793, 11.11.2026: Messenger plays a letter's audio file from its chat and carries no music page)
@@ -185,6 +185,19 @@ final class MTTurnDrag: ObservableObject {
         static let chats = "message"
         static let music = "play"
         static let gallery = "photo.on.rectangle.angled"
+        static let groups = "person.3"       // the groups' page, the bar's and the drawer's (the author's word 20720 p.2)
+        static let channels = "megaphone"    // the channels' page, the bar's and the drawer's (the author's word 20720 p.2)
+        /// The dynamic slot's glyph: the glyph of the page it stands for (UIState.mediaPane).
+        static func of(_ p: Pane) -> String {
+            switch p {
+            case .groups: return groups
+            case .channels: return channels
+            #if !MONTANA_MESSENGER
+            case .music: return music
+            #endif
+            default: return gallery
+            }
+        }
     }
     /// THE PAGES OVER THE TABS (the author's word 19.09: as native as the drawer and the chat): the
     /// settings and the profile are one open page at a time, risen over the tabs in the chat's own
@@ -216,7 +229,7 @@ final class MTTurnDrag: ObservableObject {
         set { if newValue { overlayPage = .settings } else if overlayPage == .settings { overlayPage = nil } }
     }
     /// THE SIDE DRAWER (the author's word 17.09): opened by the face top left or by a drag from the
-    /// screen's left edge; the page slides right over it, as the reference does.
+    /// screen's left edge; the page slides right over it.
     var drawerOpen = false
     /// THE FACE WITH THE NAME IN THE DRAWER OPENS MY PAGE (the author's word 24.09): the very page «My profile»
     /// opens from Settings (MontanaMyProfileView) — one page, one source, risen over the tabs like the settings.
@@ -232,28 +245,32 @@ final class MTTurnDrag: ObservableObject {
     var lastMedia: String = UserDefaults.standard.string(forKey: "lastMediaPane") ?? "music" {
         didSet { UserDefaults.standard.set(lastMedia, forKey: "lastMediaPane") }
     }
+    /// THE GROUPS AND THE CHANNELS STAND IN THE DYNAMIC SLOT TOO (the author's word 20720 p.2, 12.11.2026: «if I choose Groups or
+    /// Channels in the side panel, the time panel must show that very glyph, so it is clear where I am, and it takes the dynamic
+    /// one's place»): the slot's pages are the gallery, the groups and the channels (and the music in the Protocol); the chats keep
+    /// their own glyph.
+    #if MONTANA_MESSENGER
+    static let mediaPanes: [Pane] = [.gallery, .groups, .channels]   // no music page in Messenger (decision 793)
+    #else
+    static let mediaPanes: [Pane] = [.music, .gallery, .groups, .channels]
+    #endif
+    /// THE PAGE THE DYNAMIC GLYPH STANDS FOR, ONE ANSWER (the critic 24.09: the glyph is the standing page's while one of the slot's
+    /// pages stands): the standing page when it is the slot's, else the last opened of them.
+    var mediaPane: Pane {
+        if Self.mediaPanes.contains(pane) { return pane }
+        return Self.mediaPanes.first { $0.rawValue == lastMedia } ?? Self.mediaPanes[0]
+    }
+    /// A PAGE OF THE DYNAMIC SLOT IS CHOSEN, ONE DOOR (the drawer's row and the glyph's tap): the slot remembers it.
+    func ask(_ p: Pane) { lastMedia = p.rawValue; pane = p }
     /// THE MUSIC IS CHOSEN AS THE CALLS ARE (the author's word 23.09): the drawer's row and the dynamic glyph put the
     /// music page under the bar; its big page unfolds from the player's plate at the page's head.
     #if !MONTANA_MESSENGER
-    func askMusic() { lastMedia = "music"; pane = .music }
-    #endif
-    /// THE DYNAMIC GLYPH IS THE MUSIC'S WHILE THE MUSIC PAGE STANDS (the critic 24.09): the gallery opened over the music
-    /// page made the glyph the gallery's while the puck stood under it for the music, and the music's glyph was gone.
-    #if MONTANA_MESSENGER
-    var mediaIsMusic: Bool { false }   // no music page in Messenger (decision 793): the dynamic glyph is the gallery's alone
-    #else
-    var mediaIsMusic: Bool { pane == .music || (pane != .gallery && lastMedia != "gallery") }
+    func askMusic() { ask(.music) }
     #endif
     /// THE GALLERY IS A PAGE UNDER THE BAR TOO (the author's word 25.09): chosen as the music is, in the dynamic glyph's slot.
-    func askGallery() { lastMedia = "gallery"; pane = .gallery }
-    /// THE DYNAMIC GLYPH'S TAP: the page it stands for, opened again -- in Messenger the gallery alone (decision 793).
-    func askMedia() {
-        #if MONTANA_MESSENGER
-        askGallery()
-        #else
-        if mediaIsMusic { askMusic() } else { askGallery() }
-        #endif
-    }
+    func askGallery() { ask(.gallery) }
+    /// THE DYNAMIC GLYPH'S TAP: the page it stands for, opened again.
+    func askMedia() { ask(mediaPane) }
     /// THE TABS IN THE PANEL'S OWN ORDER (the author's word 24.09), left to right: the panes the puck stands under —
     /// the contacts, the calls, THE FEED under the logo between them and the chats (the author's word 25.09: «the feed page as
     /// whole as the chats, the calls and the contacts, turning sideways as they do»), the chats, the dynamic glyph's page --
@@ -261,9 +278,9 @@ final class MTTurnDrag: ObservableObject {
     /// (the author's word 25.09).
     var turnOrder: [Pane] {
         #if MONTANA_MESSENGER
-        return [.contacts, .calls, .chats, .gallery, Self.globePane]   // no music page in Messenger (decision 793)
+        return [.contacts, .calls, .chats, mediaPane, Self.globePane]   // the dynamic slot's page (mediaPane)
         #else
-        var row: [Pane] = [.contacts, .calls, .feed, .chats, mediaIsMusic ? .music : .gallery, Self.globePane]
+        var row: [Pane] = [.contacts, .calls, .feed, .chats, mediaPane, Self.globePane]
         if MTApps.wall == nil { row.removeAll { $0 == .feed } }   // the feed only where the wall stands (slice S4c2)
         return row
         #endif
@@ -292,19 +309,19 @@ final class MTTurnDrag: ObservableObject {
     /// THE ROW'S LEFT END (the author's word 25.09: «a swipe past the contacts opens the side panel»): the pane is the first
     /// of the row and nothing stands to its left -- a stroke to the right there is the drawer's, not the rubber band's.
     var turnAtRowStart: Bool { turnOrder.first == pane }
-    /// THE PAGES FOLLOW THE FINGER (the author's word 24.09; the reference's way). While the stroke runs the pane moves
+    /// THE PAGES FOLLOW THE FINGER (the author's word 24.09). While the stroke runs the pane moves
     /// by the finger's translation, and the tab beside it — the next on a stroke to the left, the one before on a
-    /// stroke to the right — slides in from its side; at the row's end the pane resists (the reference's rubber band).
-    /// At the release the way is read the reference's way — a moving finger says the way, a still one the distance —
+    /// stroke to the right — slides in from its side; at the row's end the pane resists (a rubber band).
+    /// At the release the way is read thus — a moving finger says the way, a still one the distance —
     /// and the roles swap WHERE THE PAGES STAND: the neighbour becomes the pane, the pane its neighbour on the other
     /// side, and both slide home; the pane is chosen exactly as the glyph's tap chooses it, and the puck follows it.
     let turnDrag = MTTurnDrag()
     struct TurnNeighbour: Equatable { let pane: Pane; let side: Int }   // side: +1 on the right, -1 on the left
     var turnNeighbour: TurnNeighbour?
     @ObservationIgnored private var settleToken = UUID()
-    @ObservationIgnored private var strokeBase: CGFloat = 0   // where the pane stood when the stroke began (the reference's fraction offset)
+    @ObservationIgnored private var strokeBase: CGFloat = 0   // where the pane stood when the stroke began (the stroke's fraction offset)
     private static let settleSpring = Animation.spring(response: 0.35, dampingFraction: 0.9)
-    /// The reference's rubber band at the row's end.
+    /// The rubber band at the row's end.
     private static func rubber(_ offset: CGFloat) -> CGFloat {
         let range: CGFloat = 600, k: CGFloat = 0.4
         return (offset < 0 ? -1 : 1) * (1 - 1 / ((abs(offset) * k / range) + 1)) * range
@@ -312,7 +329,7 @@ final class MTTurnDrag: ObservableObject {
     func turnStroke(_ state: UIGestureRecognizer.State, x: CGFloat, vx: CGFloat, width: CGFloat) {
         let order = turnOrder
         guard let i = order.firstIndex(of: pane) else { return }
-        // The stroke moves the pane from where it STOOD when the stroke began (the reference's fraction offset): a
+        // The stroke moves the pane from where it STOOD when the stroke began (the stroke's fraction offset): a
         // stroke that lands mid-settle continues the settle instead of cutting it to rest.
         switch state {
         case .began, .changed:
@@ -406,7 +423,7 @@ final class MTTurnDrag: ObservableObject {
     /// at it. No notification that only an open chat could hear, no delay to guess by.
     struct LetterAsk: Equatable { let chat: String; let mid: MID; let nonce = UUID() }
     var letterAsk: LetterAsk?
-    /// THE CHAT'S SEARCH ASKED FROM ITS PAGE (the reference's «Search» under a group's face): the chat by this name opens its search
+    /// THE CHAT'S SEARCH ASKED FROM ITS PAGE (the «Search» under a group's face): the chat by this name opens its search
     /// bar and lets the record go.
     var chatSearchAsk: String?
     func showLetter(_ c: Chat, _ mid: MID) {
@@ -851,8 +868,8 @@ final class MontanaSlideController: UIViewController, UIGestureRecognizerDelegat
             // during the interactive dismiss — the feed, the bar and the keyboard travel as one.
             // SwiftUI's own keyboard region is taken away from the tree: two owners of one edge were
             // two motions under one finger — the keyboard slid under the touch while the bar waited
-            // for a notification that never comes during a drag. (The reference reaches the same feel
-            // by moving the system keyboard window through a private class; the guide is the public word.)
+            // for a notification that never comes during a drag. (The same feel could come
+            // from moving the system keyboard window through a private class; the guide is the public word.)
             host.safeAreaRegions = [.container]
             host.view.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(host.view)
@@ -890,7 +907,7 @@ final class MontanaSlideController: UIViewController, UIGestureRecognizerDelegat
         edge.edges = .left; edge.delegate = self
         view.addGestureRecognizer(edge)
         // THE PAGE LEAVES FROM ITS CENTRE TOO (the author's word 18.10.2026 07:3x UTC: «the swipe out of a chat not only from the
-        // screen's edge but, as when a page is turned, from its centre, so that it catches»): the reference's own back stroke, by the
+        // screen's edge but, as when a page is turned, from its centre, so that it catches»): a back stroke of its own, by the
         // tabs' pan with no edge zone and to the right alone -- a stroke to the left stays the bubble's reply, a vertical one the
         // feed's, a sideways strip keeps its own; the same road as the edge's (pan), the same spring at the release.
         // A chat's page alone (the page of its own keyboard): a map or a document on this road keeps its own right stroke.
@@ -1010,19 +1027,19 @@ final class MontanaSlideController: UIViewController, UIGestureRecognizerDelegat
 // the environment; readers fall back to UIScreen only when no root has measured yet.
 /// The page lends its own geometry to the feed. No keyboard notifications, cached rest height,
 /// or search through private hosting views: the same guide owns both the page and its inset.
-/// THE KEYBOARD'S MOVE IS ONE TRANSITION, THE REFERENCE'S WAY (the author's word 20.09: «do it one to
+/// THE KEYBOARD'S MOVE IS ONE TRANSITION (the author's word 20.09: «do it one to
 /// one»). One notification → one transition for everything that moves: the bar (a UIKit node of its
 /// own, moved by its layer's position) and the feed (its offset) get the same spring that the keyboard
 /// itself is drawn with — CASpringAnimation mass 3 / stiffness 1000 / damping 500 over 0.5 s, linear
-/// timing (on the newest system — the reference's newer spring) — computed by Core Animation
+/// timing (on the newest system — the newer spring) — computed by Core Animation
 /// in the render server, the same process and tick that draws the keys: nothing sampled, no frame
 /// behind, no layout of ours per frame. Under a dragging finger the platform moves the keyboard and
 /// its guide; a point tied to the guide keeps the container laying out, and the same two things are
 /// placed at once, without a transition — their interactive offset. The guide is the one source of
 /// where the keyboard is.
 enum MTKeyboardSpring {
-    /// The reference's spring for the system keyboard curve (curve 7) — on the new system, its newer one.
-    /// `speed` 2 — the reference's settle after an interactive release: the same spring, twice as fast.
+    /// The spring of the system keyboard curve (curve 7) — on the new system, its newer one.
+    /// `speed` 2 — the settle after an interactive release: the same spring, twice as fast.
     static func animation(_ keyPath: String, from: Any, to: Any, speed: Float = 1) -> CASpringAnimation {
         let a = CASpringAnimation(keyPath: keyPath)
         a.speed = speed
@@ -1066,8 +1083,8 @@ final class MTChatKeyboardGeometry: NSObject {
     /// a transparent accessory of the bar's height puts that edge at the bar's top. Measured 1803
     /// (07:36:46): the keys stood still for the bar's 52 points of finger travel while the feed
     /// scrolled 1:1 — the newest letter slid 33 points under the bar and jumped back at the release.
-    /// The reference binds the keyboard's edge to the finger plus its input panel's height
-    /// (getWindowInputAccessoryHeight); here the platform's own accessory does the binding, and the
+    /// Binding the keyboard's edge to the finger plus the input panel's height by hand would need
+    /// the window's accessory height read privately; here the platform's own accessory does the binding, and the
     /// bar stays a node of the page — only its HEIGHT rides in the keyboard's frame.
     /// THE ACCESSORY IS THE FIELD'S TIER, A CONSTANT — NEVER THE BAR AS MEASURED, AND NOW BY
     /// CONSTRUCTION: it is given at birth and kept in a `let`, so a second owner cannot be written at
@@ -1173,7 +1190,7 @@ final class MTChatKeyboardGeometry: NSObject {
         let target = f.map { cover(announced: $0) } ?? guideCovered
         guard abs(target - covered) > 0.5 else { return }
         riding = true
-        // A release after a drag settles twice as fast (the reference's own rule); a move of the keys by themselves — the keyboard's pace.
+        // A release after a drag settles twice as fast (speed 2); a move of the keys by themselves — the keyboard's pace.
         let speed: Float = (feed?.cv.keyboardGestureActive ?? false) ? 2 : 1
         MontanaTrace.mark("kb_lift", "from=\(Int(covered)) to=\(Int(target)) spring speed=\(Int(speed))")
         place(target, speed: speed)
@@ -1219,7 +1236,7 @@ final class MTChatKeyboardGeometry: NSObject {
         }
     }
     /// `speed` nil — at once, no transition (the finger's frame). The spring BEGINS WITH THE CURRENT
-    /// STATE (the reference's rule): a move interrupted by the next one starts from where the layer
+    /// STATE: a move interrupted by the next one starts from where the layer
     /// actually is, not from the model it never reached.
     private func place(_ c: CGFloat, animated: Bool = false, speed: Float? = nil) {
         let moved = abs(c - covered) > 0.5
@@ -1264,7 +1281,7 @@ final class MTChatKeyboardGeometry: NSObject {
         }
     }
 }
-/// THE EDGE WASH OF THE REFERENCE (read 21.09 in WallpaperEdgeEffectNodeImpl): the polosa's content
+/// THE EDGE WASH (21.09): the polosa's content
 /// is THE WALLPAPER ITSELF — its gradient and its pattern, aligned to the page (offset −rect.minY) —
 /// at alpha 0.75 under a gradient mask: the letters near the edge sink into the ground. No colour of
 /// its own, no glass: the chat's ground drawn once more, cut to the edge's shape (solid at the screen's
@@ -1272,10 +1289,10 @@ final class MTChatKeyboardGeometry: NSObject {
 struct MTEdgeWash: View {
     enum Edge { case top, bottom }
     let edge: Edge
-    let fade: CGFloat      // the gradient's size, the reference's edge size
+    let fade: CGFloat      // the gradient's size, the edge's own size
     let solid: CGFloat     // the opaque run beyond the gradient, to the screen's edge
     static let alpha = 0.75
-    /// THE REFERENCE'S EDGE SIZES, ONE OWNER (23.09: the chat's washes and the chat list's fade read them): the top
+    /// THE EDGE SIZES, ONE OWNER (23.09: the chat's washes and the chat list's fade read them): the top
     /// wash fades over its last 80 and reaches 34 past the bar's lower edge; the bottom one fades in over 60 from 20
     /// above the panel's top.
     static let topFade: CGFloat = 80
@@ -1298,7 +1315,7 @@ struct MTEdgeWash: View {
             .allowsHitTesting(false)
     }
 }
-/// THE BAR IS A NODE OF ITS OWN (the reference's input panel node): a hosted tree of a fixed place in
+/// THE BAR IS A NODE OF ITS OWN (the input panel's node): a hosted tree of a fixed place in
 /// the page, moved by its layer with the keyboard — never laid out again for the move. Sized by its content.
 final class MTRiderView: UIView {
     var host: UIHostingController<AnyView>?
@@ -1519,7 +1536,7 @@ struct MTFeedGlyph: View {
     }
 }
 
-/// THE SIDE DRAWER (the author's word 17.09, «exactly as the reference»): a dark panel at the
+/// THE SIDE DRAWER (the author's word 17.09): a dark panel at the
 /// left — the face, the name, then the rows «Contacts» and «Chats» — lying under the page. The
 /// page slides right to reveal it: from the face top left, or from a drag that begins at the
 /// screen's left edge; a tap on the dimmed page or a drag back closes it.
@@ -1738,8 +1755,8 @@ struct MontanaSideDrawer: View {
             case .feed: if MTApps.wall != nil { ui.pane = .feed }
             #endif
             case .chats: ui.pane = .chats
-            case .groups: ui.pane = .groups
-            case .channels: ui.pane = .channels
+            case .groups: ui.ask(.groups)       // the groups' glyph takes the dynamic slot (the author's word 20720 p.2)
+            case .channels: ui.ask(.channels)
             case .gallery: ui.askGallery()
             #if !MONTANA_MESSENGER
             case .music: ui.askMusic()
@@ -2197,9 +2214,9 @@ final class MontanaDrawerController: UIViewController, UIGestureRecognizerDelega
         dim.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(pan(_:))))
         dim.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapClose)))
         // THE TABS TURN UNDER THE FINGER (the author's word 24.09: «from any screen, swipes move between the time
-        // panel's tabs — super carefully, nothing of the compound gestures inside the page may break; the reference
-        // does it, on the chats tab too: the turn from the page's centre, a chat's own swipe a little from the edge,
-        // along the chat»). The reference's own arbitration, its behaviour ported (MTTabPan): a pan that OWNS THE
+        // panel's tabs — super carefully, nothing of the compound gestures inside the page may break;
+        // on the chats tab too: the turn from the page's centre, a chat's own swipe a little from the edge,
+        // along the chat»). The arbitration (MTTabPan): a pan that OWNS THE
         // CENTRE of the page and leaves its edge zones — a sixth of the width, 22 to 80 points — to the rows' own
         // swipes and to the drawer's edge; every other pan of the page waits for it to fail (shouldBeRequiredToFailBy
         // below), and it fails at once on a vertical stroke, on a touch in an edge zone, over a view that owns its
@@ -2236,7 +2253,7 @@ final class MontanaDrawerController: UIViewController, UIGestureRecognizerDelega
     }
     /// The edge pan wins over the rows' own swipes and the scroll: THE PANS wait for it to fail — the
     /// platform's own rule for its back gesture; taps and presses wait for nothing (18.09, see the slide host).
-    /// THE TABS' PAN OWNS THE CENTRE the same way (24.09, the reference's rule): the rows' swipes and the scroll
+    /// THE TABS' PAN OWNS THE CENTRE the same way (24.09): the rows' swipes and the scroll
     /// wait for it too — and it fails at once wherever the page's own strokes live (MTTabPan). The edge pan waits
     /// for nothing: the tabs' pan is a pan and waits for it.
     func gestureRecognizer(_ g: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
@@ -2305,10 +2322,10 @@ final class MontanaDrawerController: UIViewController, UIGestureRecognizerDelega
     }
 }
 
-/// THE TABS' PAN (the author's word 24.09; the reference's folder pan, its behaviour ported and nothing of its
-/// mechanism): it owns the centre of the page and gives way at the edges — a sixth of the width, 22 to 80 points,
+/// THE TABS' PAN (the author's word 24.09; the pan between the time panel's folders, the whole of its
+/// mechanism our own): it owns the centre of the page and gives way at the edges — a sixth of the width, 22 to 80 points,
 /// where the rows' own swipes live and the drawer's edge stands — on a vertical stroke, over a view that owns its
-/// horizontal, and whenever the page holds. It validates a stroke as the reference does: flat at once when the
+/// horizontal, and whenever the page holds. It validates a stroke thus: flat at once when the
 /// first points run flat, down at once when they run down, the dominant way after ten points.
 final class MTTabPan: UIPanGestureRecognizer {
     var allowed: () -> Bool = { true }
@@ -2324,7 +2341,7 @@ final class MTTabPan: UIPanGestureRecognizer {
         maximumNumberOfTouches = 1
     }
     override func reset() { super.reset(); validated = false }
-    /// The edge zone the rows keep: a sixth of the width, 22 to 80 points (the reference's numbers).
+    /// The edge zone the rows keep: a sixth of the width, 22 to 80 points.
     static func edge(_ width: CGFloat) -> CGFloat { max(22, min(width / 6, 80)) }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -2338,7 +2355,7 @@ final class MTTabPan: UIPanGestureRecognizer {
     /// What stands under the touch, up the responder chain -- one walk, the platform's own: a view that owns its
     /// horizontal (the call pill's drag, MTHorizontalOwner; a strip that scrolls sideways), and a page PUSHED over the
     /// tabs inside their own stack (the archive, a person's page from the contacts): the nearest navigation controller
-    /// holds more than its root, and the reference turns its folders at the root alone (the critic's pass 24.09: the
+    /// holds more than its root, and the folders turn at the root alone (the critic's pass 24.09: the
     /// archive's rows lost their swipe to a turn of pages nobody saw).
     private static func refuses(_ hit: UIView?) -> Bool {
         var r: UIResponder? = hit
@@ -2372,7 +2389,7 @@ final class MTTabPan: UIPanGestureRecognizer {
     }
 }
 
-/// A VIEW THAT OWNS ITS HORIZONTAL (24.09, the reference's own mark on a view): the tabs' pan gives way over it and
+/// A VIEW THAT OWNS ITS HORIZONTAL (24.09, a mark on a view): the tabs' pan gives way over it and
 /// over everything inside it — the call pill that is dragged where it pleases. THE MARK IS A PROTOCOL (29.09, the mini
 /// player's plate): a platform control that is a horizontal by nature (the one slider of the app, MontanaSliderView) wears
 /// it too, since it cannot descend from this view.
@@ -3242,7 +3259,7 @@ let meshRoomKey = "Mesh wall"   // COMPAT-LOCAL: a key of this device's list, ne
 // and overriding it would break the conversation's audio routing.
 enum MontanaAudioSession {
     /// THE ONE RECORDING SESSION: a voice tape and a video note record through the same door — THE
-    /// REFERENCE'S ROAD (read 22.09 in ManagedAudioSession / ManagedAudioRecorder: the record type takes
+    /// RECORDING ROAD (22.09: the record type takes
     /// the plain mode and a raw RemoteIO microphone; no voice processing on a tape). The voice-chat mode
     /// was measured on 1855 (T1, voice_rec stop peak=49 mean=29 thousandths): the platform's level
     /// control held a twenty-second tape at −26 dBFS — a quiet tape. The plain microphone at its own
@@ -3366,7 +3383,7 @@ enum MontanaAudioSession {
             DispatchQueue.main.async(execute: play)
         }
     }
-    /// THE SESSION AT REST MIXES (16.10; the reference's road: its silent autoplay holds the ambient type, which mixes with the
+    /// THE SESSION AT REST MIXES (16.10; a silent autoplay holds the ambient type, which mixes with the
     /// others, and the category is the top holder's): nothing of ours holds the sound -- the ambient category, so whatever of
     /// ours plays without sound wakes nobody's music.
     private static func rest(_ s: AVAudioSession) {
@@ -3398,8 +3415,8 @@ enum MontanaAudioSession {
     // session in the playAndRecord category stands. This app raised that session at every tape, every note and every
     // voice at the ear -- and lowered it never; the background audio mode then kept it alive after the app folded, so
     // the car counted the talk until the process died.
-    // THE REFERENCE'S ROAD (read 28.09, the reference implementation's audio session manager: `holders`, `updateHolders`, `applyNoneDelayed`,
-    // and `applyNone` -- setActive(false, [.notifyOthersOnDeactivation]), overrideOutputAudioPort(.none),
+    // THE SESSION'S HOLDERS (28.09: a ledger of `holders`, recounted on every change, a delayed lowering,
+    // and the lowering itself -- setActive(false, [.notifyOthersOnDeactivation]), overrideOutputAudioPort(.none),
     // setPreferredInput(nil), one repeat after a pause): the session's users are HOLDERS. Every door that opens the
     // microphone road takes a NAMED hold in the same call that opens it -- a road cannot be opened past the ledger
     // ([C-1]) -- and the last such hold to go closes the road in that same moment: the category returns to plain
@@ -3458,7 +3475,7 @@ enum MontanaAudioSession {
         }
         MontanaTrace.mark("audio_hold", "session " + (ok ? "down" : "refused"))
         guard !ok, again else { return }
-        // A session whose input is still winding down answers «busy»: the reference waits and asks once more.
+        // A session whose input is still winding down answers «busy»: the session waits and asks once more.
         ledger.asyncAfter(deadline: .now() + 2) {
             guard holders.isEmpty, !MontanaCall.isBusy else { return }
             lowerSession(again: false)
@@ -3543,8 +3560,8 @@ final class MontanaNet {
     }
 }
 
-// The media send queue: one attachment per peer at a time. The reference achieves the same
-// with one predicate — «is there an unfinished upload ahead of me» — which yields both order
+// The media send queue: one attachment per peer at a time, held
+// by one predicate — «is there an unfinished upload ahead of me» — which yields both order
 // in the correspondence and a memory bound without a separate counter. Without the queue two
 // videos start compressing and uploading at once, and the system kills the app over memory.
 
@@ -3748,7 +3765,7 @@ struct Message: Identifiable, Codable {
     /// The wire spelling every build understands: a text forward rides with this quote; a
     /// reader that knows the mark draws the mark and never the quote.
     static let forwardedQuote = "↪︎ Forwarded message"
-    /// A FORWARD OF A CHANNEL'S POST NAMES ITS CHANNEL (the reference's «Forwarded from», 17.10.2026): the wire quote is this head and
+    /// A FORWARD OF A CHANNEL'S POST NAMES ITS CHANNEL («Forwarded from», 17.10.2026): the wire quote is this head and
     /// the channel's name; a build that does not know the head draws it as the quote it reads.
     static let forwardedFromHead = "↪︎ Forwarded from "
     /// THE ONE ANSWER «is this a forward» ([C-1]): the field, the local source, or the wire quote.
@@ -3758,6 +3775,22 @@ struct Message: Identifiable, Codable {
         guard let q = replyText, q.hasPrefix(Message.forwardedFromHead) else { return nil }
         let name = String(q.dropFirst(Message.forwardedFromHead.count).prefix(64))
         return name.isEmpty ? nil : name
+    }
+
+    /// THE FILE A LETTER CARRIES AND ITS KIND, ONE ANSWER (constitution 15, the author's word 20861): a letter carries one file
+    /// at most -- a picture, a video, a voice or a document -- and every reader asks here; no other place spells the four fields
+    /// (tools/mt-letter-file-check.py). The kind is the wire's own word: img, vid, aud, doc.
+    var attachment: (file: String, kind: String)? {
+        if let f = imageFile { return (f, "img") }
+        if let f = videoFile { return (f, "vid") }
+        if let f = audioFile { return (f, "aud") }
+        if let f = docFile { return (f, "doc") }
+        return nil
+    }
+    /// A picture or a video, the plate's own kinds: the album, its tiles and the media pane read it.
+    var imagery: (file: String, video: Bool)? {
+        guard let a = attachment, ["img", "vid"].contains(a.kind) else { return nil }
+        return (a.file, a.kind == "vid")
     }
 
     init(text: String, isFromMe: Bool, time: String, reactions: [String] = [],

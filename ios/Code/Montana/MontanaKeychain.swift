@@ -40,7 +40,7 @@ enum MTRing {
     /// A CHAT THE PERSON SILENCED SAYS NOTHING (the author's words 03.10 21:48: «it annoys me that notifications come even when I
     /// turned the chat's sound off»; «and from the archive all the more»; 19457: a group, a channel and a person's chat alike).
     /// Read from the mirrors the store writes into the shared keychain: the muted chats and the archived ones.
-    /// A MENTION RINGS THROUGH THE MUTE (stage R, as the reference rings one): the person was named in the group's letter.
+    /// A MENTION RINGS THROUGH THE MUTE (stage R): the person was named in the group's letter.
     static func chat(_ conv: String, mentioned: Bool = false) -> Bool {
         guard !conv.isEmpty, !mentioned else { return true }
         for key in ["mutedChats", "archivedCold"] {

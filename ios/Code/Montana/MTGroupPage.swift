@@ -1,14 +1,14 @@
 import SwiftUI
 
 // ════════════════════════════════════════════════════════════
-// A GROUP'S PAGE AS THE REFERENCE LAYS IT (the author's words 17.10.2026 15:4x-15:5x UTC: «channels and groups fully as in the
-// reference folder, 1 to 1»; «we do not need our own kinds of pages inside groups and channels -- everything as in the reference»):
+// A GROUP'S PAGE (the author's words 17.10.2026 15:4x-15:5x UTC on channels and groups: «1 to 1»; «we do not need our own kinds
+// of pages inside groups and channels»):
 // the head's count, the people's rows and the invite link's page. The group's state and its words stay MTGroup's; this file only
 // draws them, and the page (MontanaPeerInfoScreen) asks it for a group alone -- a channel keeps its own road.
 // ════════════════════════════════════════════════════════════
 
 enum MTGroupPage {
-    /// «N members, M online», the reference's head of a group, said once for the chat's top and the page alike: M is this phone and
+    /// «N members, M online», a group's head line, said once for the chat's top and the page alike: M is this phone and
     /// whoever of the group it sees online by the one ladder (presenceWord) -- the owner's phone everyone it carries to, a member's
     /// phone the owner; nothing is said of the others. A channel says its count alone.
     @MainActor
@@ -28,12 +28,14 @@ enum MTGroupPage {
         return store.listChats().first { c in !c.isGroup && MTSamePair.root(c.convRef) == root }
     }
 
-    /// THE PEOPLE OF A GROUP'S PAGE, AS THE REFERENCE LISTS THEM: the owner first, the administrators after, everyone else by name,
+    /// THE PEOPLE OF A GROUP'S PAGE, IN THEIR ORDER: the owner first, the administrators after, everyone else by name,
     /// this phone among them under its own name. Each row carries what this phone may do to the person: the owner names and
     /// dismisses administrators and takes anyone out; an administrator takes out a member who is none (MTGroup.kick asks the owner).
     @MainActor
     static func lines(_ key: String, store: ChatStore, remove: @escaping (String) -> Void, open: @escaping (Chat) -> Void,
-                      write: @escaping (Chat) -> Void, promote: @escaping (String) -> Void = { _ in }) -> [MTGroupMemberLine] {
+                      write: @escaping (Chat) -> Void, promote: @escaping (String) -> Void = { _ in },
+                      reach: @escaping (String, Bool) -> Void = { _, _ in },
+                      away: @escaping () -> Void = {}) -> [MTGroupMemberLine] {
         guard let g = MTGroup.shared.state(key) else { return [] }
         let owns = g.mine && g.left != true
         let iAdmin = !g.mine && g.left != true && MTGroup.adminCan(g, seat: g.me, .ban)   // «Ban Users» (G.6)
@@ -51,12 +53,31 @@ enum MTGroupPage {
             let ref = MTGroup.speaker(g.id, p.seat)
             let pipe = me ? nil : MTGroup.shared.speakerPipe(ref)
             let chat = pipe.flatMap { x in row(of: x, store: store) }
+            // A PERSON THIS PHONE HOLDS NO PIPE WITH, MET BY THE CARD THEY LAID (OZ 1 p.8, the author's decision 877 a): their page and
+            // a letter to them without being a contact; the one meeting road opens the conversation, or finds the one already open.
+            let met: ((Bool) -> Void)? = (me || chat != nil) ? nil : g.cards?[p.seat].map { (link: String) -> (Bool) -> Void in
+                { (now: Bool) in
+                    Task { @MainActor in
+                        guard case .opened(let conv) = await MontanaMeeting.meet(link) else {
+                            return MontanaTrace.mark("group_card", "met=0")
+                        }
+                        reach(conv, now)
+                    }
+                }
+            }
+            // A PERSON NEITHER HELD NOR MET (OZ 1 p.8, the author's decision 897 a): no pipe and no card yet, because the group's
+            // owner has not handed it on; the row answers the hand anyway and says the page waits for the owner's update.
+            let reachable: (() -> Void)? = chat.map { c in { open(c) } } ?? met.map { m in { m(false) } }
             let r = role(p.seat)
             let mayRemove = !me && (owns || (iAdmin && r == nil))
             var deeds: [MTMemberDeed] = []
-            if let chat { deeds.append(MTMemberDeed(id: "send", title: "Send Message", icon: "message") { write(chat) }) }
+            if let chat {
+                deeds.append(MTMemberDeed(id: "send", title: "Send Message", icon: "message") { write(chat) })
+            } else if let met {
+                deeds.append(MTMemberDeed(id: "send", title: "Send Message", icon: "message") { met(true) })
+            }
             if owns, !me, g.kind == .group {
-                // the admin's rights page, as the reference's «Promote» and «Edit Admin Rights» open it (G.6)
+                // the admin's rights page, as «Promote» and «Edit Admin Rights» open it (G.6)
                 if r == .admin {
                     deeds.append(MTMemberDeed(id: "rights", title: "Edit Admin Rights", icon: "person.badge.shield.checkmark") { promote(p.seat) })
                     deeds.append(MTMemberDeed(id: "dismiss", title: "Dismiss Admin", icon: "person.badge.minus") {
@@ -70,12 +91,12 @@ enum MTGroupPage {
             }
             let name = p.name.isEmpty ? MTGroup.memberWord : p.name
             return MTGroupMemberLine(seat: p.seat, name: name, me: me,
-                                     face: pipe.flatMap { x in store.avatarFor(ref: x) }, tint: MTSpeakerFace.tint(ref),
+                                     face: me ? nil : MTGroup.shared.speakerFace(ref, store: store), tint: MTSpeakerFace.tint(ref),
                                      presence: me ? String(localized: "online", bundle: MTLanguage.bundle)
                                                   : pipe.flatMap { x in store.presenceWord(x)?.text },
                                      role: r, rank: MTGroup.shared.rank(key, seat: p.seat), deeds: deeds,
                                      remove: mayRemove ? { remove(p.seat) } : nil,
-                                     open: chat.map { c in { open(c) } })
+                                     open: reachable ?? (me ? nil : away))
         }
     }
 }
@@ -94,11 +115,11 @@ struct MTGroupMemberLine {
     let deeds: [MTMemberDeed]
     /// The swipe's «Delete»: the person taken out of the group, asked first; nil where this phone may not.
     let remove: (() -> Void)?
-    /// The person's own page, where this phone holds their pipe.
+    /// The person's own page: where this phone holds their pipe, or met by the card they laid (OZ 1 p.8).
     let open: (() -> Void)?
 }
 
-/// A PERSON'S ROW ON A GROUP'S PAGE, AS THE REFERENCE DRAWS IT: the face, the name, whether they are online under it, the role on a
+/// A PERSON'S ROW ON A GROUP'S PAGE: the face, the name, whether they are online under it, the role on a
 /// capsule of its own colour at the right (owner in violet, admin in green); the row opens the person, a hold names the deeds, a swipe
 /// to the left takes them out.
 struct MTGroupMemberRow: View {
@@ -144,7 +165,7 @@ struct MTGroupMemberRow: View {
     }
 }
 
-/// THE GROUP'S INVITE LINK, AS THE REFERENCE'S PAGE KEEPS IT (stage R.6 laid the link; the author's word 17.10.2026 moves it here
+/// THE GROUP'S INVITE LINK, ON A PAGE OF ITS OWN (stage R.6 laid the link; the author's word 17.10.2026 moves it here
 /// from the group's page): the link, «Copy» and «Share» under it, and «Revoke Link» -- a new mark that ends every link given
 /// before (MTGroup.resetInvite), asked first. Whoever opens the link meets the owner by its card and asks with the mark.
 struct MTGroupInviteLinksPage: View {
@@ -213,7 +234,7 @@ struct MTGroupInviteLinksPage: View {
     }
 }
 
-/// «CLEAR MESSAGES» OF A GROUP, AS THE REFERENCE ASKS IT: every letter and event of the group's feed leaves this phone alone, after the
+/// «CLEAR MESSAGES» OF A GROUP: every letter and event of the group's feed leaves this phone alone, after the
 /// platform's own question; the others keep theirs.
 struct MTGroupClearAsk: ViewModifier {
     @EnvironmentObject private var store: ChatStore
@@ -227,7 +248,7 @@ struct MTGroupClearAsk: ViewModifier {
     }
 }
 
-/// THE LINE UNDER A GROUP'S NAME IN ITS CHAT (the reference's head): who types, while anyone does -- the green dot of the pair's own
+/// THE LINE UNDER A GROUP'S NAME IN ITS CHAT (the group's head): who types, while anyone does -- the green dot of the pair's own
 /// «typing…» beside it -- and «N members, M online» otherwise. A view of its own, so a typing word redraws this line, never the feed.
 struct MTGroupHeadLine: View {
     @EnvironmentObject private var store: ChatStore
@@ -245,7 +266,7 @@ struct MTGroupHeadLine: View {
     }
 }
 
-/// «N SEEN» OVER A GROUP LETTER'S MENU (the reference's small group, the checklist's B.13): how many read a letter of mine, and a tap
+/// «N SEEN» OVER A GROUP LETTER'S MENU (a small group, the checklist's B.13): how many read a letter of mine, and a tap
 /// opens their names under it; «Nobody Viewed» while none has.
 struct MTSeenByRow: View {
     let names: [String]
@@ -277,7 +298,7 @@ struct MTSeenByRow: View {
 }
 
 extension MTGroupRight {
-    /// The permission's row, in the reference's own words.
+    /// The permission's row, in the page's own words.
     var title: LocalizedStringKey {
         switch self {
         case .text: return "Send Messages"
@@ -296,7 +317,7 @@ extension MTGroupRight {
     }
 }
 
-/// THE GROUP'S PERMISSIONS, AS THE REFERENCE'S PAGE KEEPS THEM (the checklist's G.5): «What can members of this group do?» -- one
+/// THE GROUP'S PERMISSIONS, ON A PAGE OF THEIR OWN (the checklist's G.5): «What can members of this group do?» -- one
 /// switch a right, «Send Media» opening its own under it -- and «Slowmode» below; what the owner leaves goes to every member as the
 /// page closes (MTGroup.setRights), one word for all the changes.
 struct MTGroupPermissionsPage: View {
@@ -306,7 +327,7 @@ struct MTGroupPermissionsPage: View {
     @State private var slow = 0
     @State private var mediaOpen = false
     @State private var loaded = false
-    /// The reference's steps of slow mode: off, ten and thirty seconds, one, five and fifteen minutes, an hour.
+    /// The steps of slow mode: off, ten and thirty seconds, one, five and fifteen minutes, an hour.
     static let steps = [0, 10, 30, 60, 300, 900, 3600]
     /// «n/m», the rights left of all of them, as the editor's row says it.
     static func count(_ chat: String) -> String {
@@ -399,7 +420,7 @@ struct MTGroupPermissionsPage: View {
 }
 
 extension MTAdminRight {
-    /// The admin right's row, in the reference's own words.
+    /// The admin right's row, in the page's own words.
     var title: LocalizedStringKey {
         switch self {
         case .info: return "Change Group Info"
@@ -411,7 +432,7 @@ extension MTAdminRight {
     }
 }
 
-/// THE GROUP'S ADMINISTRATORS, AS THE REFERENCE'S PAGE LISTS THEM (the checklist's G.6): the owner first, every administrator with
+/// THE GROUP'S ADMINISTRATORS, ON A PAGE OF THEIR OWN (the checklist's G.6): the owner first, every administrator with
 /// its custom title or its role, each opening its rights; «Add Admin» chooses among the members.
 struct MTGroupAdminsPage: View {
     @EnvironmentObject private var store: ChatStore
@@ -480,7 +501,7 @@ struct MTGroupAdminPickPage: View {
     }
 }
 
-/// AN ADMINISTRATOR'S RIGHTS, AS THE REFERENCE'S PAGE KEEPS THEM (G.6): the custom title, «What can this admin do?» one switch a
+/// AN ADMINISTRATOR'S RIGHTS, ON A PAGE OF THEIR OWN (G.6): the custom title, «What can this admin do?» one switch a
 /// right, and «Dismiss Admin»; the checkmark names or renews the administrator, carried to every member (MTGroup.setAdmin).
 struct MTGroupAdminRightsPage: View {
     @EnvironmentObject private var store: ChatStore
@@ -549,7 +570,7 @@ struct MTGroupAdminRightsPage: View {
     }
 }
 
-/// THE GROUP'S REMOVED USERS, AS THE REFERENCE'S PAGE KEEPS THEM (the checklist's G.7): every person the owner or an administrator
+/// THE GROUP'S REMOVED USERS, ON A PAGE OF THEIR OWN (the checklist's G.7): every person the owner or an administrator
 /// took out, who cannot come back by the invite link; a swipe lets one back («Delete»), a hold adds one again («Add To Group»).
 struct MTGroupRemovedPage: View {
     @EnvironmentObject private var store: ChatStore
@@ -594,7 +615,7 @@ struct MTGroupRemovedPage: View {
     }
 }
 
-/// THE GROUP'S MEMBER REQUESTS, AS THE REFERENCE'S PAGE KEEPS THEM (the checklist's G.8): who asked to join by the link while it asks
+/// THE GROUP'S MEMBER REQUESTS, ON A PAGE OF THEIR OWN (the checklist's G.8): who asked to join by the link while it asks
 /// the owner first, the newest first -- «Add to Group» adds them by the owner's own road, «Dismiss» lets the request go.
 struct MTGroupRequestsPage: View {
     @EnvironmentObject private var store: ChatStore
@@ -648,8 +669,8 @@ struct MTGroupRequestsPage: View {
     }
 }
 
-/// CHAT HISTORY FOR NEW MEMBERS, AS THE REFERENCE'S PAGE ASKS IT (the checklist's G.4): «Visible» -- one added reads the group's newest
-/// words; «Hidden» -- they begin where they came in, the reference's default.
+/// CHAT HISTORY FOR NEW MEMBERS, ON A PAGE OF ITS OWN (the checklist's G.4): «Visible» -- one added reads the group's newest
+/// words; «Hidden» -- they begin where they came in, the default.
 struct MTGroupHistoryPage: View {
     let chat: String
     @State private var visible = false
@@ -687,8 +708,8 @@ struct MTGroupHistoryPage: View {
     }
 }
 
-/// THE GROUP'S TYPE, AS THE REFERENCE'S PAGE SAYS IT (the checklist's G.2): a group here is private -- joined by the owner's hand or
-/// by its invite link -- and the page says so in the reference's words, with the link under it. A public group is found by a search
+/// THE GROUP'S TYPE, ON A PAGE OF ITS OWN (the checklist's G.2): a group here is private -- joined by the owner's hand or
+/// by its invite link -- and the page says so in its own words, with the link under it. A public group is found by a search
 /// of all groups, and this network keeps no list of them: no server holds one, so no switch stands that could not keep its word.
 struct MTGroupTypePage: View {
     let chat: String

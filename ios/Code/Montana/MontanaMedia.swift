@@ -33,8 +33,8 @@ import Contacts
 // VOICE RECORDING — records a voice message into an .m4a file via the microphone.
 // ════════════════════════════════════════════════════════════
 /// THE SOUND OF A SPOKEN WORD, SET ONCE ([C-1], the author's word 18.09): the voice tape and the
-/// video note's sound track are the same speech through the same door. THE REFERENCE'S QUALITY (read
-/// 22.09: its tape is 48 kHz mono): 48 kHz mono, AAC at 64 kbit/s — eight kilobytes a second, the
+/// video note's sound track are the same speech through the same door. THE QUALITY (set
+/// 22.09): 48 kHz mono, AAC at 64 kbit/s — eight kilobytes a second, the
 /// voice whole and clean (the author's word 22.09). The files stay what they were (.m4a, .mov): every
 /// older build plays them as before.
 enum MontanaVoiceSound {
@@ -58,17 +58,17 @@ final class VoiceRecorder: NSObject, ObservableObject {
     static let levelCount = 240   // six seconds of 25 ms slots: the wave's room holds up to ~120 lines
     private var recorder: AVAudioRecorder?
     private var meter: CADisplayLink?
-    /// A line of the wave is one slot of time — the reference's 1200 samples at 48 kHz, 25 ms; the
+    /// A line of the wave is one slot of time — 1200 samples at 48 kHz, 25 ms; the
     /// reading is taken every frame and the slot keeps its loudest.
     static let slot: TimeInterval = 0.025
     private var slotStart: TimeInterval = 0
     /// THE WAVE IS THE SOUND ITSELF: a slot keeps the linear amplitude 10^(dB/20) of its loudest reading —
-    /// no curve, no floor. THE REFERENCE'S FULL LEVEL (read 22.09, ManagedAudioRecorder: micLevel =
+    /// no curve, no floor. THE FULL LEVEL (22.09: a mic level of
     /// peak / 4000 of an Int16): a sample of 4000 — −18 dBFS — is the whole height; louder than that a
-    /// tape's own loudest word is (the reference's waveform is scaled to its peak). One rule for the
+    /// tape's own loudest word is (the waveform is scaled to its peak). One rule for the
     /// lines and the swell.
-    static let referenceFull: Float = 4000 / 32767
-    static func shown(_ amp: Float, peak: Float) -> Float { min(1, amp / max(peak, referenceFull)) }
+    static let fullLevel: Float = 4000 / 32767
+    static func shown(_ amp: Float, peak: Float) -> Float { min(1, amp / max(peak, fullLevel)) }
     private var fileName: String?
     /// The finger is still down. A permission answer arrives on its own tick; a release in that
     /// gap used to stop a tape not yet started, and the tape then started without a finger and
@@ -184,8 +184,8 @@ final class VoiceRecorder: NSObject, ObservableObject {
         MontanaScreenAwake.hold("voice")
         MontanaTrace.mark("voice_rec", "start")
         // NATIVE-CHECKED: the clock and the wave are the recorder's own readings (currentTime,
-        // peakPower), asked at the screen's own pace (CADisplayLink, the reference's mic button's
-        // clock too) so no swing of the voice falls between two readings; a bar of the wave keeps
+        // peakPower), asked at the screen's own pace (CADisplayLink, the clock a record
+        // button keeps) so no swing of the voice falls between two readings; a bar of the wave keeps
         // the loudest reading of its slot (the author's word 21.09: the wave reacts to the sound as
         // the platform's recorder does).
         slotStart = 0
@@ -354,8 +354,8 @@ final class VoicePlayer: NSObject, ObservableObject {
     /// The chat's voices in feed order, set when one starts: auto-next walks it forward.
     var voiceQueue: [(file: String, sender: String, mine: Bool)] = []
     /// THE TRACK UNDER A VOICE OR A NOTE KEEPS ITS PLACE (the author's word 26.09: «the mini player must remember the place where it
-    /// stopped playing and not be reset by recording or listening to a voice or a video message»; the reference read the same day --
-    /// its media manager pauses the music's player when a voice starts and never stops it, and once the voice's player is gone the
+    /// stopped playing and not be reset by recording or listening to a voice or a video message»; the rule set the same day --
+    /// the media owner pauses the music's player when a voice starts and never stops it, and once the voice's player is gone the
     /// music's paused state is what its bar shows again). One sound plays at a time still: the track steps aside, paused, with its
     /// sound, its name and its place, while the voice or the note plays; when they end -- or are closed -- it comes back to the bar
     /// paused where it stood, and its play goes on from there. A new track chosen meanwhile lets it go.
@@ -418,7 +418,7 @@ final class VoicePlayer: NSObject, ObservableObject {
         }
         player?.onEnd = { [weak self] in self?.finished() }
         player?.rate = voice ? voiceRate : 1
-        // A LONG LISTEN GOES ON WHERE IT STOPPED (the reference's stored playback state, 26.09): a track of ten minutes and more, a
+        // A LONG LISTEN GOES ON WHERE IT STOPPED (a stored playback state, 26.09): a track of ten minutes and more, a
         // voice of five, starts at its kept moment (MTPlayPlaces); a stream starts where its pieces begin.
         if let p = player as? MTFileSound, let at = MTPlayPlaces.at(file, of: p.duration, voice: voice) {
             p.currentTime = at
@@ -613,8 +613,8 @@ final class VoicePlayer: NSObject, ObservableObject {
     func noteClosed() {
         DispatchQueue.main.async { [weak self] in self?.unpark() }
     }
-    /// A TAPE TAKES THE MICROPHONE, NOT THE PLACE (the author's word 26.09: «not reset by recording»; the reference pauses what
-    /// plays when a recording begins, and stops nothing): what plays pauses where it stands and stays on the bar; its play goes on
+    /// A TAPE TAKES THE MICROPHONE, NOT THE PLACE (the author's word 26.09: «not reset by recording»; a recording pauses what
+    /// plays when it begins, and stops nothing): what plays pauses where it stands and stays on the bar; its play goes on
     /// from there after the tape.
     func holdForTape() {
         playRequest += 1
@@ -921,7 +921,7 @@ final class VoicePlayer: NSObject, ObservableObject {
     }
 }
 
-/// WHERE A LONG LISTEN STOPPED (the reference's stored playback state, read 26.09 in its media manager: a track of ten minutes and
+/// WHERE A LONG LISTEN STOPPED (a stored playback state, 26.09: a track of ten minutes and
 /// more, a voice of five, keeps its moment when it stops -- between five seconds in and five before its end -- and the next play of
 /// the same file starts there). One owner, one key of the defaults, written when a listen stops, never by the clock, and bounded to
 /// the newest two hundred.
@@ -1217,9 +1217,8 @@ enum MTMosaic {
     /// What folds into a plate: a picture or a video; a round note, a voice, a file and a sticker do not.
     static func folds(_ m: Message) -> Bool {
         if m.docName == MontanaStickerBook.docName { return false }
-        if m.imageFile != nil { return true }
-        if let v = m.videoFile { return !v.hasPrefix("vnote_") }
-        return false
+        guard let v = m.imagery else { return false }
+        return !(v.video && v.file.hasPrefix("vnote_"))
     }
     /// The picture's own shape for the cut: the decoded picture, the video's poster, the video's
     /// track, else a square — the manifest preview already shapes a picture still on its way.
@@ -1425,16 +1424,17 @@ enum MontanaSavedToPhotos {
         a.append(f); if a.count > 4000 { a.removeFirst(a.count - 4000) }
         UserDefaults.standard.set(a, forKey: key)
     }
-    static func save(_ f: String, video: Bool) async -> Bool {
+    /// image: the picture already on screen (the viewer's), for a picture whose file docImage does not find (a post's).
+    static func save(_ f: String, video: Bool, image: UIImage? = nil) async -> Bool {
         let url = MontanaMediaVault.playableURL(f) ?? attachmentURL(f)
-        let img = video ? nil : docImage(f)
+        let img = video ? nil : (image ?? docImage(f))
         let ok: Bool = await withCheckedContinuation { c in
             PHPhotoLibrary.shared().performChanges({
                 if video { PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url) }
                 else if let img { PHAssetChangeRequest.creationRequestForAsset(from: img) }
             }) { done, _ in c.resume(returning: done) }
         }
-        if ok { note(f) }
+        if ok, !f.isEmpty { note(f) }
         MontanaTrace.mark("save_photos", "ok=\(ok ? 1 : 0) video=\(video ? 1 : 0)")
         return ok
     }
@@ -2353,7 +2353,7 @@ struct AttachSheet: View {
         }
         .onChange(of: recent.assets) { _, a in take(a) }
         // THE ALBUM IS THE ALBUM (the author's word 11.09): a photo opened from the picker is
-        // the same viewer the chat's photos open into — the strip, the swipes, the zoom — with
+        // the one viewer -- the swipes, the zoom, no strip of covers (20455 p.4) -- with
         // the pick's order at the top right; the circle there is the grid's circle.
         // IT RISES FROM BELOW WITH THE CAPTION AND THE SEND (the author's word 12.09): under the
         // album stand the caption field and the send button — pick in the album, write, send,
@@ -2365,7 +2365,7 @@ struct AttachSheet: View {
         VStack(spacing: 0) {
             MontanaPhotoViewer(image: assetImages.page(a.localIdentifier),
                                files: recent.assets.map(\.localIdentifier), startFile: a.localIdentifier,
-                               loader: { assetImages.page($0) }, coverLoader: { assetImages.cover($0) },
+                               loader: { assetImages.page($0) },
                                videoOf: { id in recent.assets.first { $0.localIdentifier == id }?.mediaType == .video },
                                play: { id in if let a = recent.assets.first(where: { $0.localIdentifier == id }) { MTAssetImages.play(a) } },
                                order: { selected.firstIndex(of: $0) },
@@ -2525,7 +2525,7 @@ final class MTAssetImages: ObservableObject {
         pendingPublish = true
         DispatchQueue.main.async { self.pendingPublish = false; self.objectWillChange.send() }
     }
-    /// The album's stand-in while its page decodes: the same bounded cache the tiles fill.
+    /// The page's stand-in while it decodes: the same bounded cache the tiles fill.
     func cover(_ id: String) -> UIImage? {
         if let c = Self.coverCache.object(forKey: id as NSString) { return c }
         guard !asked.contains("c:" + id), let a = asset(id) else { return nil }
@@ -3228,45 +3228,37 @@ final class MTPhotoShown: ObservableObject {
 }
 private struct MTPhotoLook: View {
     @ObservedObject var shown: MTPhotoShown
+    /// The letter's file, when the picture has one: Save lays it into Photos by the one road (MontanaSavedToPhotos).
+    let file: String?
     let onClose: () -> Void
-    var body: some View { MontanaPhotoViewer(image: shown.image, onClose: onClose) }
+    var body: some View {
+        let picture = shown.image
+        MontanaPhotoViewer(image: picture,
+                           onSave: { await MontanaSavedToPhotos.save(file ?? "", video: false, image: picture) },
+                           onShare: { if let picture { MTShare.present([picture]) } },
+                           onClose: onClose)
+    }
 }
 enum PhotoPresenter {
     private static weak var host: UIViewController?
-    /// ONE ROAD FOR A PICTURE AMONG PICTURES (the author's words 05.10.2026 11:04, 12:04 and 15:24 UTC: «photos dropped into the
-    /// chat -- paging by a tap at the edge or a swipe aside»; «by constitution 0, in the posts and everywhere one function»; «our
-    /// task of the edge taps, by constitution 0»): every tap on a picture -- a chat's, a post's, a correspondent's page -- comes
-    /// here with the pictures it stands among, oldest first, and opens OUR album (MontanaPhotoViewer: the system's page view
-    /// controller for the swipe, the tap in the outer 15 % turns the page, the native zoom, the pull that closes). The platform's
-    /// QuickLook viewer of 2116 drew its pages in another process, where a tap of ours never arrived (T1 18:13, among=48, no turn).
-    /// A lone picture, or one not among them, keeps the quick viewer. Every turn is a line of the diary (photo_page).
+    /// EVERY PICTURE IS SEEN ON ITS OWN (the author's word 20455 p.4, 12.11.2026: «when viewing a photo take the gallery away from
+    /// the bottom, so each photo can be seen properly on its own, saved or shared -- no Montana gallery while viewing anywhere
+    /// again»): a tap on a picture -- a chat's, a post's, a correspondent's page -- opens that one picture, its zoom, the pull that
+    /// closes, and Share and Save at the bottom; no album, no strip of covers. The pictures it stands among only say where its file
+    /// lies (a post's in the media store, a chat's where docImage finds it).
     static func present(_ file: String, among moments: [MTMoment]) {
-        guard 1 < moments.count, moments.contains(where: { m in m.id == file }) else { present(file); return }
-        // A post's pictures lie in the media store, a chat's where docImage finds them: a page is read from its moment's own file.
-        let urls = Dictionary(moments.map { m in (m.id, m.url) }, uniquingKeysWith: { a, _ in a })
-        let files = moments.map { m in m.id }
-        Task { @MainActor in
-            guard host == nil else {
-                MontanaTrace.markFolded("photo_look", "held -- one viewer stands, this tap is not a second one", window: 5); return
-            }
-            MontanaTrace.mark("photo_look", "album among=\(files.count) at=\(files.firstIndex(of: file) ?? -1)")
-            let h = MontanaHost.make(MontanaPhotoViewer(
-                image: docImageCached(file), files: files, startFile: file,
-                loader: { f in docImageCached(f) ?? urls[f].flatMap { u in UIImage(contentsOfFile: u.path) } },
-                onPage: { f in MontanaTrace.mark("photo_page", "at=\(files.firstIndex(of: f) ?? -1) of=\(files.count)") },
-                onClose: { if let s = PhotoPresenter.host { MTTop.dismiss(s, animated: false, kind: "photo") } }))
-            h.view.backgroundColor = .clear
-            h.modalPresentationStyle = .overFullScreen
-            host = h
-            MTTop.present(h, animated: false, kind: "photo")
+        if mtIsVideoName(file) { VideoPresenter.present(file); return }
+        let url = moments.first { m in m.id == file }?.url
+        present(now: docImageCached(file), file: file) {
+            await Task.detached(priority: .userInitiated) { docImage(file) ?? url.flatMap { u in UIImage(contentsOfFile: u.path) } }.value
         }
     }
     static func present(_ file: String) {
         if mtIsVideoName(file) { VideoPresenter.present(file); return }
-        present(now: docImageCached(file)) { await Task.detached(priority: .userInitiated) { docImage(file) }.value }
+        present(now: docImageCached(file), file: file) { await Task.detached(priority: .userInitiated) { docImage(file) }.value }
     }
     /// now shows at once; whole replaces it once decoded.
-    static func present(now: UIImage?, whole: @escaping () async -> UIImage?) {
+    static func present(now: UIImage?, file: String? = nil, whole: @escaping () async -> UIImage?) {
         Task { @MainActor in
             guard host == nil else {   // one viewer; a dropped tap is written down
                 MontanaTrace.markFolded("photo_look", "held -- one viewer stands, this tap is not a second one", window: 5); return
@@ -3276,15 +3268,15 @@ enum PhotoPresenter {
             guard let first else { MontanaTrace.mark("photo_look", "nothing to show"); return }
             guard host == nil else { MontanaTrace.markFolded("photo_look", "held -- a viewer rose while this one was decoded", window: 5); return }
             MontanaTrace.mark("photo_look", "open at_once=\(now == nil ? 0 : 1)")
-            let shown = rise(first)
+            let shown = rise(first, file: file)
             guard now != nil, let sharp = await whole() else { return }
             shown.image = sharp
         }
     }
     /// Only the view holds the host, so a closed viewer is gone at once, however long the sharp picture takes.
-    @MainActor private static func rise(_ first: UIImage) -> MTPhotoShown {
+    @MainActor private static func rise(_ first: UIImage, file: String?) -> MTPhotoShown {
         let shown = MTPhotoShown(first)
-        let h = MontanaHost.make(MTPhotoLook(shown: shown) {
+        let h = MontanaHost.make(MTPhotoLook(shown: shown, file: file) {
             if let s = PhotoPresenter.host { MTTop.dismiss(s, animated: false, kind: "photo") }
         })
         h.view.backgroundColor = .clear

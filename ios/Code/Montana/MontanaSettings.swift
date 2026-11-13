@@ -38,7 +38,7 @@ enum SettingsSheet: Int, Identifiable { case emoji, qr; var id: Int { rawValue }
 struct ScrollProbe: UIViewRepresentable {
     var onPull: (CGFloat) -> Void
     var onAttach: (UIScrollView) -> Void = { _ in }
-    /// The finger is released. The reference decides exactly here where to snap the header
+    /// The finger is released. Exactly here it is decided where the header snaps
     /// (scrollViewWillEndDragging → targetContentOffset), so it never rests in-between.
     var onDragEnd: (UIScrollView) -> Void = { _ in }
     func makeUIView(context: Context) -> UIView {
@@ -1063,7 +1063,7 @@ struct AppearanceView: View {
             }.listRowBackground(MTGlassRowPlate())
             // THE KEYS' LOOK (the author's word 21.09): the keys are drawn by the platform in its own
             // window and take no colour of ours — only their three looks. The panel around the field has
-            // no ground to colour (the reference's clear panel).
+            // no ground to colour (a clear panel).
             Section {
                 Picker("Keys", selection: $keyboardLook) {
                     Text("System").tag("system")
@@ -1249,7 +1249,7 @@ struct DataStorageView: View {
             }
             .listRowBackground(MTGlassRowPlate())
 
-            // THE CACHE, CLEARED AS THE REFERENCE CLEARS IT (the author's word 18.10.2026 17:1x UTC): what the person's own node
+            // THE CACHE, CLEARED (the author's word 18.10.2026 17:1x UTC): what the person's own node
             // holds leaves this phone, and comes back from the node at a look or a tap -- the node's word decides, asked anew.
             if MTHomeShelf.bringing {   // no node holds this phone's files (no row of one's own node, the author's word 16428): nothing to clear
                 Section {
@@ -1269,7 +1269,7 @@ struct DataStorageView: View {
                         .contentShape(Rectangle())
                     }
                     .disabled(homeKeep.clearing)
-                    // AS THE REFERENCE KEEPS ITS CACHE: a term for what nobody opened, a ceiling for the whole -- what leaves is what
+                    // HOW THE CACHE IS KEPT: a term for what nobody opened, a ceiling for the whole -- what leaves is what
                     // the node holds, asked anew.
                     VStack(alignment: .leading, spacing: 4) {
                         Picker(selection: $keepDays) {
@@ -2193,6 +2193,19 @@ extension MontanaSeed {
 
     static func forgetKeys() { MontanaLocalVault.setEncrypted(keysKey, Data()) }
 
+    /// THE MOMENT THIS PERSON CAME IN ON THIS PHONE (decision 865 = a, the author's word 20222: a restore's catch-up is the past).
+    /// A word born before it -- a group's letter, a room's word, an invitation -- is what this phone catches up on after the 24
+    /// words, never news: carried on, it rings nobody. Written by `enter` when a person is born or opened here, never by a lift (a
+    /// lifted seat brings its own moment back, SeedScope.seatKeys) and never by a copy (the past would be judged by another phone's
+    /// moment). Nil: the person came in before builds knew the moment, and nothing is judged by it.
+    static let enteredKey = "mt.seed.entered"
+    static var entered: Double? { let t = UserDefaults.standard.double(forKey: enteredKey); return 0 < t ? t : nil }
+    /// Whether a word born at `born` (ChatStore.birthMs) is older than this person's coming in on this phone.
+    static func before(_ born: Double?) -> Bool {
+        guard let b = born, let e = entered else { return false }
+        return b < e
+    }
+
 
     @discardableResult
     static func open(_ acc: MontanaSeedKeys.Keys) -> Bool {
@@ -2232,6 +2245,7 @@ extension MontanaSeed {
         }
         guard open(acc) else { return false }
         if let b = twin { SeedScope.change(to: b) }
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: enteredKey)   // the past ends here (865 a)
         MTSeats.born()
         return true
     }
@@ -2449,7 +2463,7 @@ struct MontanaOnboardingView: View {
             #endif
             if !recoverError.isEmpty { Text(LocalizedStringKey(recoverError)).foregroundColor(.red).font(.caption).multilineTextAlignment(.center) }
             Button {
-                let words = recoverInput.lowercased().split(whereSeparator: { $0 == " " || $0 == "\n" || $0 == "," }).map(String.init)
+                let words = recoverInput.lowercased().split(whereSeparator: { $0.isWhitespace || $0 == "," }).map(String.init)   // tab, U+00A0 and CR LF part words too (critic 5.1 K1)
                 if words.count != 24 { recoverError = "Exactly 24 words required (entered \(words.count))"; return }
                 recoverError = ""; recovering = true
                 let phrase = words.joined(separator: " ")

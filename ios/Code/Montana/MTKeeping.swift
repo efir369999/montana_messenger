@@ -351,6 +351,15 @@ enum MTKeepDerive {
         /// and four more by 11:00Z on 18.10, every one refused. A renewal or a light copy begun is one tried: the next waits the day.
         var triedAt: Double? = nil
         var lightTriedAt: Double? = nil
+        /// THE PROFILE THE LIGHT COPY CARRIES (decision 866 a; OZ 1 p.2-3, the author's word 19993): the tags of one's own face and name
+        /// when the copy was gathered. A copy laid at birth carried «Demo» without a face for a day: «Demo Akk» and the face never reached it.
+        var lightFace: String? = nil
+        var lightName: String? = nil
+        /// THE PEOPLE THE LIGHT COPY CARRIES (decision 866 a): one digest of the correspondents' names and faces and of the groups.
+        var lightPeople: String? = nil
+        /// THE CARD'S SHAPE THE LIGHT COPY WAS LAID IN (OZ 1 p.3.5): a build whose card first carries the values' moments lays its
+        /// light copy anew at once, so a device given an older value meets this one's moment and keeps the later.
+        var lightEngine: Int? = nil
     }
     private static let ownerKey = "mt.keep.owner"  // NOT-UI: sealed under the device key; the person's own (SeedScope.dataKeys)
     @Published private(set) var owner = Owner()
@@ -388,6 +397,21 @@ enum MTKeepDerive {
         NotificationCenter.default.addObserver(forName: UIDevice.batteryStateDidChangeNotification, object: nil, queue: .main) { _ in
             Task { @MainActor in MTKeeping.shared.tickSoon() }
         }
+        // One's own name or face changed (decision 866 a): the rhythm looks again in a minute, once for any number of changes.
+        _ = peopleWatch
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
+            Task { @MainActor in MTKeeping.shared.profileSoon() }
+        }
+    }
+    private var profilePending = false
+    func profileSoon() {
+        guard !profilePending else { return }
+        profilePending = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in self?.profilePending = false; self?.tick() }
+    }
+    /// The people are not in UserDefaults: while the app lives, the rhythm looks at them every ten minutes (decision 866 a).
+    private lazy var peopleWatch: Timer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
+        Task { @MainActor in MTKeeping.shared.tick() }
     }
     /// What the vault holds, read again: at launch, and after a copy laid this person's state of keeping.
     func reread() {
@@ -487,7 +511,14 @@ enum MTKeepDerive {
     func tick() {
         guard Self.mine, Self.told, Self.agrees, MontanaSeed.hasSeed else { return }
         let now = Date().timeIntervalSince1970
-        if !lighting, now - max(owner.lightAt ?? 0, owner.lightTriedAt ?? 0) >= 86_400 { layLight() }
+        let tags = Self.profileTags()
+        let moved = owner.lightFace != tags.face || owner.lightName != tags.name || owner.lightEngine != MontanaBackup.cardEngine
+        let since = now - max(owner.lightAt ?? 0, owner.lightTriedAt ?? 0)
+        let people = Self.peopleTag()
+        let met = owner.lightPeople != people
+        if !lighting, since >= 86_400 || (moved && since >= 60) || (met && since >= 600) {
+            layLight(tags, people: people)   // one's own name or face: a minute; the people and the groups: ten minutes
+        }
         guard !renewing else { return }
         if let g = owner.asking {
             if owner.yes.count >= MTKeepRing.most || (!owner.yes.isEmpty && now - owner.askedAt >= 600) { return renew(g) }
@@ -621,7 +652,7 @@ enum MTKeepDerive {
     /// correspondence -- sealed as every copy is, laid on the nodes and named by one letter in the pipe of light, once a day while
     /// the copy is kept. The pieces live a week there and the letter in the box as long, so a phone lost today is opened by the
     /// words alone tomorrow.
-    private func layLight() {
+    private func layLight(_ tags: (face: String, name: String), people: String) {
         guard !lighting else { return }
         lighting = true
         owner.lightTriedAt = Date().timeIntervalSince1970; saveOwner()
@@ -637,12 +668,25 @@ enum MTKeepDerive {
                     me.lighting = false
                     MontanaTrace.mark("keep_light", "refused " + String(describing: e))
                 case .success(let made):
-                    Task { await me.nameLight(made, g: g) }
+                    Task { await me.nameLight(made, g: g, tags: tags, people: people) }
                 }
             }
         }
     }
-    private func nameLight(_ made: MontanaBackup.Made, g: UInt64) async {
+    /// One's own face and name as their tags -- the very tags a correspondent's word compares (E2E.heardHeld).
+    static func profileTags() -> (face: String, name: String) {
+        (MontanaDeliveryEngine.Announced.wireTag(E2E.myAvatarData()), MontanaDeliveryEngine.Announced.nameWireTag(E2E.myDisplayName()))
+    }
+    /// The correspondents' names and faces (MTNameBook, the mirrors of ChatStore) and the groups (MTGroup) as one digest:
+    /// it moves when a person is met, a group is born, or someone shows a new name or face.
+    static func peopleTag() -> String {
+        let names = MTNameBook.declared.sorted { $0.key < $1.key }.map { $0.key + "=" + $0.value }
+        let faces = MTNameBook.published.sorted { $0.key < $1.key }.map { $0.key + "=" + $0.value }
+        let groups = MTGroup.shared.groups.keys.sorted()
+        let all = (names + [""] + faces + [""] + groups).joined(separator: "\n")
+        return SHA256.hash(data: Data(all.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+    private func nameLight(_ made: MontanaBackup.Made, g: UInt64, tags: (face: String, name: String), people: String) async {
         defer { MontanaBackup.discard(made); lighting = false }
         guard let master = MontanaSeed.root, let secret = MTKeepDerive.lightSecret(master),
               let digest = MontanaHomeNode.digest(of: made.url), var road = await Self.lay(made.url) else {
@@ -653,7 +697,7 @@ enum MTKeepDerive {
         // The sender of the pipe of light is named «light», never this person's own reference: a phone opening the same words reads
         // the box under that reference, and a letter of its own name the node would keep from it.
         guard await Self.knock(secret, road, sender: Self.lightName) else { return MontanaTrace.mark("keep_light", "no door boxed the road") }
-        owner.lightGen = g; owner.lightAt = Date().timeIntervalSince1970; saveOwner()
+        owner.lightGen = g; owner.lightAt = Date().timeIntervalSince1970; owner.lightFace = tags.face; owner.lightName = tags.name; owner.lightPeople = people; owner.lightEngine = MontanaBackup.cardEngine; saveOwner()
         MontanaTrace.mark("keep_light", "named g=\(g) bytes=\(made.tally.bytes) chats=\(made.tally.chats)")
     }
     nonisolated static let lightName = "light"   // NOT-UI: the name the pipe of light is heard and sent under
@@ -692,10 +736,11 @@ enum MTKeepDerive {
             }
             taking = .laying(0)
             let r: Result<MontanaBackup.Tally, MontanaBackup.Refusal> = await withCheckedContinuation { c in
-                MontanaBackup.restore(from: url, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .laying(f) } }) { c.resume(returning: $0) }
+                MontanaBackup.restore(from: url, ofMany: true, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .laying(f) } }) { c.resume(returning: $0) }
             }
             reread()
-            MontanaTrace.mark("keep_light", "laid=\(String(describing: r)) devices=\(roads.count)")
+            let own = (road["v"] as? String) == MontanaArchive.writerTagHex()   // this device's own copy, or another's
+            MontanaTrace.mark("keep_light", "laid=\(String(describing: r)) devices=\(roads.count) own=\(own) a=\(road["a"] as? String ?? "")")
             guard case .success = r else { continue }
             laid += 1
             if laid == 1 { let letIn = onLight; onLight = nil; letIn?() }
@@ -857,10 +902,15 @@ enum MTKeepDerive {
     /// (the keeper registers its slots' pipes, MontanaWakePush.registerRound); loud, the keeper's phone shows one banner with
     /// the owner's name (the notification extension), for a keeper whose app the system does not wake.
     nonisolated static func knock(_ secret: Data, _ o: [String: Any], silent: Bool = true, sender: String? = nil) async -> Bool {
-        guard let twin = sender ?? MontanaSeed.twin, let d = try? JSONSerialization.data(withJSONObject: o),
-              let s = String(data: d, encoding: .utf8) else { return false }
+        guard let d = try? JSONSerialization.data(withJSONObject: o), let s = String(data: d, encoding: .utf8) else { return false }
+        return await knockText(secret, keepMark + s, silent: silent, sender: sender)
+    }
+    /// One word of this person's own in a pipe, its text as given (a keeping word above; the seed's read word, MTTwinRead): the
+    /// one place here that seals such a letter's head.
+    nonisolated static func knockText(_ secret: Data, _ text: String, silent: Bool = true, sender: String? = nil) async -> Bool {
+        guard let twin = sender ?? MontanaSeed.twin else { return false }
         let mid = UUID().uuidString
-        guard let plain = MTNodeWire.padEnvelope(MTNodeWire.letterHead(mid: mid, text: keepMark + s, name: "", glyph: "")) else { return false }
+        guard let plain = MTNodeWire.padEnvelope(MTNodeWire.letterHead(mid: mid, text: text, name: "", glyph: "")) else { return false }
         let k = await MTNodeWire.knockLetter(secret: MTPipeKey(secret), twinRef: twin, mid: mid, plain: plain,
                                              doors: MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "box")), silent: silent)
         return k.boxed
@@ -897,7 +947,7 @@ enum MTKeepDerive {
         answeredBack[conv] = now
         let since = (o["a"] as? Double) ?? 0
         let rows = (store.messages[conv] ?? []).filter {
-            $0.createdAt > since && !$0.text.isEmpty && $0.imageFile == nil && $0.videoFile == nil && $0.audioFile == nil && $0.docFile == nil
+            $0.createdAt > since && !$0.text.isEmpty && $0.attachment == nil
         }
         guard !rows.isEmpty else { say(conv, ["w": "given", "c": 0]); return }
         // A letter of the asker rides with the author field it came with (Message.authorTag): their phone names it theirs by
@@ -1046,7 +1096,7 @@ enum MTKeepDerive {
                 }
                 taking = .laying(0)
                 let r: Result<MontanaBackup.Tally, MontanaBackup.Refusal> = await withCheckedContinuation { c in
-                    MontanaBackup.restore(from: out, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .laying(f) } }) { c.resume(returning: $0) }
+                    MontanaBackup.restore(from: out, ofMany: true, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .laying(f) } }) { c.resume(returning: $0) }
                 }
                 try? FileManager.default.removeItem(at: out)
                 reread()   // the copy laid this person's state of keeping too
@@ -1101,11 +1151,11 @@ extension ChatStore {
         var feed = messages[conv] ?? []
         // A letter both sides hold is known by its moment, its side and its words, as the archive's rows are: the other side
         // names it by its own identity, never by this one's.
-        let sig: (Message) -> String = { String(Int($0.createdAt)) + "@" + ($0.isFromMe ? "1" : "0") + "@" + $0.text }
+        let sig: (Message) -> String = { ChatStore.rowSig($0.createdAt, $0.isFromMe, $0.text) }
         let had = Set(feed.compactMap { $0.msgId }), seen = Set(feed.map(sig))
         // A GIVEN-BACK LETTER ASKS THE GRAVES OF ITS CONVERSATION (the critic R-6): its wire name -- inside the restored one -- and the
         // restored name itself, and the conversation's funeral; a letter erased here stays erased whoever gives it back.
-        let wire: (Message) -> String = { m in m.mid.hasPrefix(MTRestoredMid.given) ? String(m.mid.dropFirst(MTRestoredMid.given.count)) : m.mid }
+        let wire: (Message) -> String = { MTRestoredMid.wire($0.mid) }
         let add = ChatStore.allRead(rows.filter { m in
             !seen.contains(sig(m)) && !had.contains(m.mid) && !had.contains(wire(m))
                 && !buried(wire(m), in: conv) && !buried(m.mid, in: conv) && !diedBefore(wire(m), in: conv)

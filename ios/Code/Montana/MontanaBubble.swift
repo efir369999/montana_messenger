@@ -275,7 +275,7 @@ struct MessageBubble: View, Equatable {
     var onTapReply: (MID) -> Void = { _ in }
     var tail: Bool = true     // show the "tail" (on the last one in the group),
     var quoteAuthor: String? = nil   // the quoted letter's author name (heads the quote block)
-    /// The quoted letter's author's own colour in a group (the reference's group feed): the quote's line and name wear it.
+    /// The quoted letter's author's own colour in a group (the group feed): the quote's line and name wear it.
     var quoteTint: Color? = nil
     /// THE SPEAKER'S HEAD IN A GROUP (MTSpeakerHead): the first line inside a bubble of words, on the first letter of a run.
     var speaker: MTSpeakerHead? = nil
@@ -295,7 +295,7 @@ struct MessageBubble: View, Equatable {
     @ObservedObject private var transcripts = MTVoiceTranscript.shared
     @State private var transcriptOpen = false
     private var mediaFileKey: String {
-        message.videoFile ?? message.imageFile ?? message.audioFile ?? message.docFile ?? ""
+        message.attachment?.file ?? ""
     }
     var mediaProgress: Double? { transfers.progress[mediaFileKey] }
     var mediaStatus: String? { transfers.status[mediaFileKey] }
@@ -323,8 +323,8 @@ struct MessageBubble: View, Equatable {
     // its one tap finds the tile under the finger.
     var members: [Message] = []
     var onTileTap: (Message) -> Void = { _ in }
-    /// A CHANNEL'S POST (MTChannelPostLook, the author's words 17.10.2026 15:4x UTC: «channels ... 1 to 1 as in the reference
-    /// folder», «and the posts too»): drawn as one received whoever wrote it, wider, with the channel's name at the head of a run,
+    /// A CHANNEL'S POST (MTChannelPostLook, the author's words 17.10.2026 15:4x UTC: «channels ... 1 to 1»,
+    /// «and the posts too»): drawn as one received whoever wrote it, wider, with the channel's name at the head of a run,
     /// the eye in the stamp and the round beside it that hands the post on (onShare). Nil on every other letter.
     var post: MTChannelPostLook? = nil
     var onShare: () -> Void = {}
@@ -333,7 +333,7 @@ struct MessageBubble: View, Equatable {
     /// The side and the dress a letter is drawn in: a channel's post is drawn as received; the deeds -- the retry, the red mark --
     /// still ask message.isMine.
     private var drawnMine: Bool { post == nil && message.isMine }
-    /// The reference's channel post runs the row's width but the round's room beside it (45 points) and the feed's own edges.
+    /// A channel's post runs the row's width but the round's room beside it (45 points) and the feed's own edges.
     static let postRoom: CGFloat = 61
     /// The least width of a post of words that wears the comments' footer: the footer's glyph, words and chevron.
     static let commentsMin: CGFloat = 210
@@ -357,7 +357,7 @@ struct MessageBubble: View, Equatable {
     var groupStatus: DeliveryStatus { (MTLadder.lead(members) ?? message).deliveryStatus }
     var stampStatus: DeliveryStatus { isGroup ? groupStatus : message.deliveryStatus }
     var anyProgress: Bool {
-        isGroup ? members.contains { transfers.progress[$0.imageFile ?? $0.videoFile ?? ""] != nil } : mediaProgress != nil
+        isGroup ? members.contains { transfers.progress[$0.imagery?.file ?? ""] != nil } : mediaProgress != nil
     }
     @AppStorage("bubbleColorIndex") private var bubbleColorIndex: Int = 0
     @State private var thumbTick = 0   // async video preview ready → redraw the bubble
@@ -377,16 +377,14 @@ struct MessageBubble: View, Equatable {
             && l.message.edited == r.message.edited
             && l.message.isRead == r.message.isRead
             && l.message.heard == r.message.heard
-            && l.message.imageFile == r.message.imageFile
-            && l.message.videoFile == r.message.videoFile
-            && l.message.audioFile == r.message.audioFile
-            && l.message.docFile == r.message.docFile
+            && l.message.attachment?.file == r.message.attachment?.file
+            && l.message.attachment?.kind == r.message.attachment?.kind
             && l.tail == r.tail
             && l.speaker == r.speaker && l.quoteAuthor == r.quoteAuthor
             && l.members.map(\.id) == r.members.map(\.id)
             && l.members.map(\.text) == r.members.map(\.text)
             && l.members.map(\.deliveryStatus) == r.members.map(\.deliveryStatus)
-            && l.members.map { $0.imageFile ?? $0.videoFile } == r.members.map { $0.imageFile ?? $0.videoFile }
+            && l.members.map { $0.imagery?.file } == r.members.map { $0.imagery?.file }
             && l.textIsSelectable == r.textIsSelectable
             && l.post == r.post
             // The face of a letter is drawn from the board, so equality asks the board as well —
@@ -446,8 +444,7 @@ struct MessageBubble: View, Equatable {
     // Media send failure → red tappable "resend" banner.
     @ViewBuilder var failedResendBadge: some View {
         if message.isMine && stampStatus == .failed && !anyProgress,
-           message.msgId != nil || message.videoFile != nil || message.imageFile != nil
-               || message.audioFile != nil || message.docFile != nil {
+           message.msgId != nil || message.attachment != nil {
             HStack(spacing: 4) {
                 Image(systemName: "exclamationmark.arrow.circlepath").font(.system(size: 11, weight: .bold))
                 Text("Retry").font(.system(size: 11, weight: .semibold))
@@ -509,7 +506,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             // The plate's tap is the tile's (19.09): a tile still riding is harmless, like a single
             // riding letter; any other tile takes the single picture's own road (onTileTap).
             guard let point, let m = members.first(where: { tileFrames.rect(for: $0.id).contains(point) }) else { return }
-            if transfers.progress[m.imageFile ?? m.videoFile ?? ""] != nil {
+            if transfers.progress[m.imagery?.file ?? ""] != nil {
                 MontanaTrace.mark("upload_tap", "ignored — the tile keeps riding")
                 return
             }
@@ -525,14 +522,13 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             return
         }
         if message.isMine, message.deliveryStatus == .failed,
-           message.msgId != nil || message.imageFile != nil || message.videoFile != nil
-               || message.docFile != nil || message.audioFile != nil {
+           message.msgId != nil || message.attachment != nil {
             onResend(); return   // any failed bubble: tap = resend (the author's invariant 24.08)
         }
         // A CAPTIONED PICTURE OPENS ONLY FROM THE PICTURE (the author's word 22.09): the finger on the
         // words under it is a finger on words — nothing opens; the frame is the picture's own, measured
         // in the plate's space as the tiles' are.
-        if !message.text.isEmpty, message.imageFile != nil || message.videoFile != nil,
+        if !message.text.isEmpty, message.imagery != nil,
            let point, mediaPlateBox.rect != .zero, !mediaPlateBox.rect.contains(point) {
             MontanaTrace.markFolded("media_tap", "on the caption — nothing opens", window: 10)
             return
@@ -580,7 +576,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             bubbleUnderFinger.background { if !textIsSelectable { MTBubbleFrameAnchor(id: message.id) } }
         }
     }
-    /// THE COMMENTS' FOOTER OF A CHANNEL'S POST (the reference's: «Leave a Comment», or the number of comments, and the chevron),
+    /// THE COMMENTS' FOOTER OF A CHANNEL'S POST («Leave a Comment», or the number of comments, and the chevron),
     /// a plate of the bubble's own dress under it; the whole plate opens the thread.
     private func commentsPlate(_ n: Int) -> some View {
         Button(action: onComments) {
@@ -614,7 +610,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 // THE FORWARD MARK — ONE place for every kind of letter (the author's word 16.09):
                 // text, picture, video, voice, round note, file alike wear it above the bubble.
                 if message.isForwarded {
-                    // A CHANNEL'S POST NAMES ITS CHANNEL (the reference's «Forwarded from»); any other forward says it is one
+                    // A CHANNEL'S POST NAMES ITS CHANNEL («Forwarded from»); any other forward says it is one
                     if let from = message.forwardedFrom {
                         Label { Text("Forwarded from \(from)") } icon: { Image(systemName: "arrowshape.turn.up.right") }
                             .font(.caption).foregroundColor(.gray).lineLimit(1)
@@ -718,7 +714,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                     // the same finger, and no flag is needed. The tap stays the letter's own, in the
                     // bubble's OWN coordinate space: the tiles' frames and the finger are measured in
                     // it, so the feed's flips and the window's transforms never enter the comparison.
-                    // A Button inside the letter WINS over this tap (the reference fails its recogniser
+                    // A Button inside the letter WINS over this tap (the letter's recogniser fails
                     // over a button): a child's gesture takes precedence, so play, a reaction and save
                     // never also open the letter.
                     .gesture(SpatialTapGesture(coordinateSpace: .named(MessageBubble.plateSpace)).onEnded { v in
@@ -888,7 +884,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             releaseBubble(rel)
         } else if let ci = callInfoOf(message.text) {
             callBubble(ci)
-        } else if message.imageFile == nil, message.videoFile == nil, message.audioFile == nil, message.docFile == nil,
+        } else if message.attachment == nil,
                   let em = bigEmojiText(message.text) {
             // A ROW THAT OWNS A FILE IS A MEDIA ROW, WHATEVER ITS WORDS (29.09): a video shared from the gallery under a
             // caption of one to three emoji was drawn as the big glyphs alone — the file lay whole on both phones, the
@@ -1018,8 +1014,8 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             let letters = isGroup ? members : [message]
             let files = letters.compactMap { m -> (file: String, video: Bool)? in
                 guard m.docName != MontanaStickerBook.docName,
-                      let f = m.imageFile ?? m.videoFile, !f.hasPrefix("vnote_") else { return nil }
-                return (f, m.videoFile != nil)
+                      let v = m.imagery, !v.file.hasPrefix("vnote_") else { return nil }
+                return (v.file, v.video)
             }
             if files.count == letters.count, files.allSatisfy({ fileOnDisk($0.file) }) {
                 MTSaveMediaBadge(files: files)
@@ -1516,7 +1512,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     /// the shape is computed — an even quiet dotted line of the same geometry.
     func trackWave(width: CGFloat, color: Color) -> some View {
         let n = max(12, Int(width / 4))
-        let src = wave ?? (message.audioFile ?? message.docFile).flatMap(MTWaveform.cached) ?? []
+        let src = wave ?? message.attachment.flatMap { ["aud", "doc"].contains($0.kind) ? $0.file : nil }.flatMap(MTWaveform.cached) ?? []
         return HStack(alignment: .center, spacing: 2) {
             ForEach(0..<n, id: \.self) { i in
                 let amp: CGFloat = src.isEmpty ? 0.12
@@ -1609,7 +1605,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         let plateW = Self.plateCeiling
         let cut = MTMosaic.layout(maxSize: CGSize(width: plateW, height: plateW * 4 / 3), sizes: members.map(MTMosaic.size(of:)))
         let caption = groupCaption
-        // The plate is exactly the mosaic's width and the caption wraps inside it (the reference's
+        // The plate is exactly the mosaic's width and the caption wraps inside it (the plate's own
         // manner): the words never widen a plate of pictures.
         let width = cut.size.width
         return VStack(spacing: 0) {
@@ -1645,8 +1641,8 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     /// a tile without a picture yet stands grey; a riding tile wears its own small ring; a failed
     /// own tile wears the retry sign — the tap on it is the resend.
     @ViewBuilder func groupTile(_ m: Message, frame: CGRect, corners: RectangleCornerRadii) -> some View {
-        let file = m.imageFile ?? m.videoFile ?? ""
-        let isVideo = m.videoFile != nil
+        let file = m.imagery?.file ?? ""
+        let isVideo = m.imagery?.video ?? false
         let picture = MTLetterThumb.plate(file: file, isVideo: isVideo)
         ZStack {
             if let picture {
@@ -1702,7 +1698,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
 
     // ONE PLATE FOR A PICTURE AND A VIDEO (the author's word 20.09: the kind of data never chooses
     // the behaviour; measured: a vertical video's caption stood in a 130-point column while the same
-    // caption under a vertical photo widened the plate). The reference's model (the author's word
+    // caption under a vertical photo widened the plate). The model (the author's word
     // 15.09): the plate is as wide as the WIDEST of its contents — the picture fitted, or the
     // caption's own bubble — never the picture alone; a picture narrower than the plate (a portrait
     // under a long caption) keeps its fitted size in the middle and the sides are a mirrored blur of
@@ -1797,7 +1793,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         .overlay { bubbleOutline }
     }
 
-    /// THE PLACE A LETTER CARRIES (the author's word 23.09, the reference's own shape): the words
+    /// THE PLACE A LETTER CARRIES (the author's word 23.09, a shape of its own): the words
     /// «pin, name, link» every build sends are drawn here as the map with the pin on the spot and
     /// the time on it; a named place keeps its name and street under the map. A quoted letter stays
     /// words — the quote above must not vanish into a picture.
@@ -1862,9 +1858,9 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         }
     }
 
-    /// WHERE A GROUP'S SPEAKER IS NAMED (the reference's group feed): on the first line inside a bubble of words; over a file, a
+    /// WHERE A GROUP'S SPEAKER IS NAMED (the group feed): on the first line inside a bubble of words; over a file, a
     /// voice, a round note and every plate of our own; nowhere over a picture, a video, a plate of pictures or a place -- the
-    /// reference hides the name there. The branches are the body's own (bubble), asked in its order.
+    /// name stays hidden there. The branches are the body's own (bubble), asked in its order.
     enum SpeakerPlace { case inside, above, none }
     static func speakerPlace(_ m: Message, plate: Bool) -> SpeakerPlace {
         if plate { return .none }
@@ -1879,16 +1875,14 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         if MTMoneyFlowRow.of(m.text) { return .above }
         #endif
         if releaseInfoOf(m.text) != nil || callInfoOf(m.text) != nil { return .above }
-        let files = m.imageFile != nil || m.videoFile != nil || m.audioFile != nil || m.docFile != nil
-        if !files, bigEmojiText(m.text) != nil { return .above }
-        if m.audioFile != nil || m.docFile != nil { return .above }
-        if let v = m.videoFile { return v.hasPrefix("vnote_") ? .above : .none }
-        if m.imageFile != nil { return .none }
+        if m.attachment == nil, bigEmojiText(m.text) != nil { return .above }
+        if let a = m.attachment, ["aud", "doc"].contains(a.kind) { return .above }
+        if let v = m.imagery { return v.video && v.file.hasPrefix("vnote_") ? .above : .none }
         if m.text.hasPrefix(MontanaWakePush.letterBlobMark) { return .above }
         if m.replyText == nil, MTPlaceLetter.parse(m.text) != nil { return .none }
         return .inside
     }
-    /// The speaker's line at the top of a bubble of words, as the reference draws it: the name semibold at fourteen seventeenths
+    /// The speaker's line at the top of a bubble of words: the name semibold at fourteen seventeenths
     /// of the letter's size in the speaker's colour, the role's word a point smaller on a capsule of its own colour.
     @ViewBuilder var speakerHeadLine: some View {
         if let s = speaker {
@@ -1913,7 +1907,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         // so on short messages the time is not clipped, and on long ones there's no empty space.
         VStack(alignment: .leading, spacing: 2) {
             if let post, let head = post.head {
-                // USER-DATA: the channel's name at the head of a run of its posts (the reference's channel feed), in the speaker's head's size
+                // USER-DATA: the channel's name at the head of a run of its posts (the channel feed), in the speaker's head's size
                 Text(verbatim: head).font(.system(size: floor(MontanaTextSize.letterFont(.body).pointSize * 14 / 17), weight: .semibold))
                     .foregroundColor(post.tint).lineLimit(1)
             }
@@ -1955,7 +1949,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         .clipShape(bubbleShape)
         .overlay { bubbleOutline }
     }
-    // ── THE LINK CARD (the critic 22.09, the reference's own two shapes) ──
+    // ── THE LINK CARD (the critic 22.09, two shapes) ──
     // A small picture stands as a square beside the words; a big one lies across the card under them.
     // The card is a BUTTON, not a tap of ours: a button inside the letter wins over the letter's own
     // tap by the platform's rule, so the card opens from the first touch in a bubble that also carries
@@ -1963,7 +1957,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     func linkCard(_ card: MTLinkPreview) -> some View {
         let picture = linkCardImage(card)
         let wide = card.wide && picture != nil
-        // THE CARD IS DRAWN BY THE REFERENCE OWN NUMBERS (the author word 22.09: not a byte of
+        // THE CARD IS DRAWN BY ITS OWN NUMBERS (the author word 22.09: not a byte of
         // difference). The font is fourteen seventeenths of the letter own size — semibold for the
         // site name and the page title, regular for the words — the lines breathe by nine hundredths
         // of it, the three blocks stand with NO gap between them, and the picture keeps six points.
@@ -1988,11 +1982,11 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                     .fill(accent)
                     .frame(width: 3)
                 VStack(alignment: .leading, spacing: 0) {
-                    // THE WORDS GO AROUND THE SMALL PICTURE, as the reference lays them (22.09): the
+                    // THE WORDS GO AROUND THE SMALL PICTURE (22.09): the
                     // first lines are short by the picture's square and its six points, and the lines
                     // below it run the card's full width. The cutout is the platform's own
                     // (NSTextContainer.exclusionPaths); the line counts, the spacing and the square
-                    // are the reference's numbers.
+                    // are the card's own numbers.
                     ZStack(alignment: .topTrailing) {
                         MTLinkCardWords(blocks: cardBlocks(card, accent: accent),
                                         size: f,
@@ -2021,7 +2015,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         }
         .buttonStyle(.plain)
     }
-    /// The card's three blocks, in the reference's order and with its line counts: the site's own
+    /// The card's three blocks, in their order and with their line counts: the site's own
     /// name in the accent, the page's title in bold, its words plain.
     func cardBlocks(_ card: MTLinkPreview, accent: Color) -> [MTLinkCardWords.Block] {
         var out: [MTLinkCardWords.Block] = []
@@ -2067,7 +2061,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 : (drawnMine ? Color.white.opacity(0.75) : .gray))
         let clock = HStack(spacing: 3) {
             if let post {
-                // THE EYE AND ITS NUMBER BEFORE THE TIME (the reference's channel stamp): the owner's count of people (MTChannelViews)
+                // THE EYE AND ITS NUMBER BEFORE THE TIME (the channel's stamp): the owner's count of people (MTChannelViews)
                 Image(systemName: "eye").font(.system(size: 9, weight: .semibold)).accessibilityHidden(true)
                 Text(verbatim: MTChannelPostLook.count(post.views)).font(.caption2)   // USER-DATA: a count of people
             }
@@ -2389,7 +2383,7 @@ final class MTGrowTextView: UITextView {
     /// the last narrow probe stayed in the container, the view kept the width it already had, no layout
     /// followed — and the words went on wrapping at the probe's width while the plate was full width.
     /// Two writers of one value, the whole hole in the line. The height is measured on a stack of its
-    /// own now (heightForWords), exactly as the reference measures on its own text storage and never
+    /// own now (heightForWords), on its own text storage, and the measure never
     /// touches the one that displays. Here, and only here, the container takes the view's real width.
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -2408,7 +2402,7 @@ final class MTGrowTextView: UITextView {
             setContentOffset(CGPoint(x: contentOffset.x, y: top), animated: false)
         }
     }
-    /// THE MEASURE'S OWN STACK (the reference's measureInternal): its own storage, its own layout
+    /// THE MEASURE'S OWN STACK: its own storage, its own layout
     /// manager, its own container — so asking how tall the words are at ANY width can never change
     /// where the words on screen break.
     private let measureStorage = NSTextStorage()
@@ -2462,7 +2456,7 @@ final class MTGrowTextView: UITextView {
 /// Before, the height travelled through a binding a frame late (build 527's class), three places
 /// knew it (the model, the frame modifier, the measure), the width was learnt from layoutSubviews
 /// and the measure ran from there, and the height was even written to disk with the draft — four
-/// owners of a value that is a function of the text and the width. The model of the reference
+/// owners of a value that is a function of the text and the width. The one model
 /// stands: height = clamp(ceil(measured at the real width), one line, the ceiling); past the
 /// ceiling the field scrolls inside.
 /// THE ONE COMPOSE FIELD OUTSIDE THE CHAT (the author's word 22.09): the caption under a picture and the
@@ -2885,7 +2879,7 @@ struct EmojiInputPanel: View {
     @State private var searchWoke = false   // the search woke once on this page; a tab switched back does not wake it again
     @State private var scrollId: String? = "cat0"
     var body: some View {
-        // THE SWITCH STANDS AT THE BOTTOM, where the thumb is and where the reference keeps it
+        // THE SWITCH STANDS AT THE BOTTOM, where the thumb is
         // (the author's word 22.09, his own screenshot) -- the platform's own segmented control.
         VStack(spacing: 0) {
             if shownTab == 0 { emoji } else if shownTab == 1 { stickers } else { gifs }

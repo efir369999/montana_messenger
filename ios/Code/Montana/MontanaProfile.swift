@@ -1104,13 +1104,13 @@ struct MontanaPhotoViewer: View {
     let image: UIImage?
     var fallbackColor: Color = .gray
     var fallbackInitial: String = ""
-    /// THE PAGES AND THE STRIP OF COVERS (the picker, the author's word 11.09): a tap on a cover jumps. Empty for a single picture.
+    /// THE PAGES (the picker, the author's word 11.09): swiped aside, turned by a tap at the edge. Empty for a single picture. No
+    /// strip of covers stands under them (the author's word 20455 p.4: «no Montana gallery while viewing anywhere again»).
     var files: [String] = []
     var startFile: String = ""
     /// PAGES FROM ELSEWHERE THAN THE MEDIA STORE (the picker, the author's word 11.09): who draws
-    /// a page and its cover, whether it is a video and how it plays. Nil = the conversation's files.
+    /// a page, whether it is a video and how it plays. Nil = the conversation's files.
     var loader: ((String) -> UIImage?)? = nil
-    var coverLoader: ((String) -> UIImage?)? = nil
     var videoOf: ((String) -> Bool)? = nil
     var play: ((String) -> Void)? = nil
     /// THE PICK ORDER at the top right (the picker): nil = no circle; a tap on it toggles the pick.
@@ -1118,24 +1118,22 @@ struct MontanaPhotoViewer: View {
     var onToggle: ((String) -> Void)? = nil
     /// THE PAGE, TOLD OUTWARD (the picker's send button sends the page on screen when nothing is picked).
     var onPage: ((String) -> Void)? = nil
+    /// SAVE AND SHARE UNDER ONE PICTURE (the author's word 20455 p.4): the viewer of a picture seen on its own (PhotoPresenter)
+    /// gives both at the bottom; Save answers whether Photos took it. Nil -- no button (a face, the picker's album).
+    var onSave: (() async -> Bool)? = nil
+    var onShare: (() -> Void)? = nil
     var onClose: () -> Void
+    @State private var saved = false
     /// THE PAGE (the author's word 12.09: «what I opened is what I see, at once»): nil means the
     /// file the album opened on — the page is born equal to it and never turns to it later.
     @State private var pageState: String? = nil
     private var page: String { pageState ?? startFile }
     private var pageBinding: Binding<String> { Binding(get: { page }, set: { pageState = $0 }) }
-    /// The album manner (the author's word 10.09): the strip owns a band at the bottom and the
-    /// photo fits above it, never under it; one tap on the photo hides the strip and the buttons,
-    /// the next tap brings them back. A double tap stays the zoom.
+    /// The album manner (the author's word 10.09): one tap on the photo hides the buttons, the next
+    /// tap brings them back. A double tap stays the zoom.
     @State private var chrome = true
     private var paged: Bool { files.count > 1 }
-    /// THE COVER FLOW (the author's word 10.09): the strip is the album covers' scroll — the
-    /// centred cover large and flat, its neighbours turned in perspective and receding; the scroll
-    /// snaps to a cover, and the centred cover IS the page: one state feeds both.
-    private static let coverSide: CGFloat = 96
-    private static let stripHeight: CGFloat = 120
     private var bottomInset: CGFloat { max(VideoPresenter.topVC()?.view.safeAreaInsets.bottom ?? 34, 16) }
-    private var stripBand: CGFloat { Self.stripHeight + 10 + bottomInset }
     private func isVideo(_ f: String) -> Bool { videoOf?(f) ?? mtIsVideoName(f) }
     private func playPage(_ f: String) { (play ?? VideoPresenter.present)(f) }
     /// The picture of a page that costs nothing now: the bubble's decode cache, the poster of a
@@ -1191,8 +1189,6 @@ struct MontanaPhotoViewer: View {
                 // controller is lazy by construction: it asks for a neighbour only when the finger
                 // reaches for it.
                 MTAlbumPager(files: files, page: pageBinding, zoomed: $zoomed) { f in AnyView(pageView(f)) }
-                    .padding(.bottom, chrome ? stripBand : 0)   // the photo fits above the strip's band
-                    .animation(.easeInOut(duration: 0.22), value: chrome)
                     .offset(drag)
                     .onChange(of: pageState) { _, _ in zoomed = false; onPage?(page) }
             } else if !startFile.isEmpty {
@@ -1211,7 +1207,7 @@ struct MontanaPhotoViewer: View {
                         .foregroundColor(Color.accentColor))
             }
             if order != nil || paged {
-                // The picker's controls: the pick circle top right, the strip of covers under the page. One picture has none.
+                // The picker's control: the pick circle top right. One picture has none.
                 VStack(spacing: 10) {
                     if let order {
                         HStack {
@@ -1224,11 +1220,35 @@ struct MontanaPhotoViewer: View {
                         .padding(.top, max(VideoPresenter.topVC()?.view.safeAreaInsets.top ?? 47, 20))
                     }
                     Spacer()
-                    if paged { thumbStrip }
                 }
                 // The ZStack ignores the safe area, so the controls claim the bottom inset by hand.
                 .padding(.bottom, bottomInset)
                 .opacity(zoomed || abs(dy) > 8 || !chrome ? 0 : 1)   // steps aside the moment the hands work, or on a tap
+                .animation(.easeInOut(duration: 0.22), value: chrome)
+            }
+            if !paged, onSave != nil || onShare != nil {
+                VStack {
+                    Spacer()
+                    HStack {
+                        if let onShare {
+                            Button(action: onShare) {
+                                MTBarRoundMark(ringed: false) { MontanaBarGlyph(glyph: "square.and.arrow.up") }
+                            }
+                            .accessibilityLabel(Text("Share"))
+                        }
+                        Spacer()
+                        if let onSave {
+                            Button { Task { saved = await onSave() } } label: {
+                                MTBarRoundMark(ringed: false) { MontanaBarGlyph(glyph: saved ? "checkmark" : "square.and.arrow.down") }
+                            }
+                            .disabled(saved)
+                            .accessibilityLabel(saved ? Text("Saved") : Text("Save"))
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
+                .padding(.bottom, bottomInset + 8)
+                .opacity(zoomed || abs(dy) > 8 || !chrome ? 0 : 1)   // aside while the hands work, as the strip was
                 .animation(.easeInOut(duration: 0.22), value: chrome)
             }
         }
@@ -1238,11 +1258,8 @@ struct MontanaPhotoViewer: View {
         .simultaneousGesture(
             DragGesture()
                 .onChanged { v in
-                    // A drag that begins on the strip's band belongs to the strip: the photo
-                    // does not follow it (the author's word 10.09). An enlarged page belongs to
-                    // its own scroll view.
+                    // An enlarged page belongs to its own scroll view.
                     if zoomed || zoomOwnsPull { return }
-                    if paged, chrome, v.startLocation.y > MTScene.size().height - stripBand - 70 { return }
                     if pull == nil {
                         let dx = abs(v.translation.width), dy = abs(v.translation.height)
                         guard max(dx, dy) > 6 else { return }
@@ -1256,7 +1273,6 @@ struct MontanaPhotoViewer: View {
                     let wasPull = pull == true
                     pull = nil
                     if zoomed || zoomOwnsPull { return }
-                    if paged, chrome, v.startLocation.y > MTScene.size().height - stripBand - 70 { return }
                     guard wasPull else { return }
                     // A pull past the threshold closes the album at once — no flight back into the
                     // bubble, no thumbnail (the author's word 12.09).
@@ -1278,59 +1294,6 @@ struct MontanaPhotoViewer: View {
         MTAlbumPage(file: f, ready: pageImageCached(f), load: { pageImage(f) }, isVideo: isVideo(f),
                     active: f == page, onTap: { x in tap(x) }, onZoom: { if f == page { zoomed = $0 } },
                     onPlay: { playPage(f) })
-    }
-
-    /// The strip of covers: the current one stands larger with a golden rim, the strip
-    /// follows the page, a tap on a cover turns to it. A cover is a small picture born off the
-    /// main thread (MTCover) — never the page's full decode: sixty full decodes at the moment of
-    /// opening were the whole of «the album thinks before it opens» (the author's word 12.09).
-    private var thumbStrip: some View {
-        let side = Self.coverSide
-        return GeometryReader { g in
-            ScrollViewReader { reader in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: -side * 0.28) {   // the covers overlap as they recede
-                    ForEach(files, id: \.self) { f in
-                        MTCover(file: f, ready: coverLoader?(f), isVideo: isVideo(f))
-                        .frame(width: side, height: side)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .overlay {
-                            if isVideo(f) {
-                                Image(systemName: "play.fill").font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white).shadow(radius: 2)
-                            }
-                        }
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.25), lineWidth: 0.5))
-                        .visualEffect { content, proxy in
-                            // Distance from the strip's centre, -1…1 across one cover width: the
-                            // centred cover stands flat and full; a neighbour turns away and shrinks.
-                            let mid = proxy.frame(in: .scrollView).midX
-                            let vp = proxy.bounds(of: .scrollView)?.midX ?? mid
-                            let t = max(-1, min(1, (mid - vp) / (side * 1.1)))
-                            return content
-                                .rotation3DEffect(.degrees(Double(-t) * 55), axis: (x: 0, y: 1, z: 0), perspective: 0.55)
-                                .scaleEffect(1 - 0.28 * abs(t))
-                                .opacity(1 - 0.35 * abs(t))
-                        }
-                        .zIndex(f == page ? 1 : 0)
-                        .id(f)
-                        .onTapGesture { pageState = f }
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.viewAligned)
-            .scrollPosition(id: Binding<String?>(get: { page }, set: { if let v = $0 { pageState = v } }), anchor: .center)   // the centred cover is the page, the page is the centred cover
-            .safeAreaPadding(.horizontal, max(0, (g.size.width - side) / 2))
-            // THE STRIP IS BORN ON THE PAGE (the author's word 12.09: «the strip shows the first
-            // photo, not the current one»). The position binding above moves the strip when the
-            // page CHANGES; the strip's first layout it does not move — it stood on the first cover
-            // while the page stood on the opened file. So the strip is placed on the page by the
-            // reader the moment it is laid out: the same state, applied at birth, not on a change.
-            .onAppear { reader.scrollTo(page, anchor: .center) }
-            }
-        }
-        .frame(height: Self.stripHeight)
     }
 
 }

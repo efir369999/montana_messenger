@@ -936,6 +936,9 @@ enum MontanaWakePush {
         }
         // The pipes of the slots this phone keeps (MTKeeping): the extension opens a loud call in them and shows whose copy it is.
         for (name, secret) in MTKeeping.listening() { m[name] = secret }
+        // The seed's own pipe, for the extension's read word alone (MTTwinRead, OZ 1 p.14.7): never in the pipes' book, whose
+        // pickup in the extension would stash the seed's words as letters -- the app alone takes them (MontanaArchive.twinTakes).
+        if let s = MontanaArchive.twinSecret() { MontanaKeychain.set(MTTwinRead.secretKey, s) }
         MTPipeKey.mirror(m, alias: alias, day: MTPipeBook.floorDay())   // the pipe's one owner writes its mirror and reads it in the extensions
         // The share extension sends letters itself; the sender identity rides sealed inside
         // the envelope, so the mirror carries it the same way it carries the pipe secrets
@@ -2798,7 +2801,7 @@ enum MontanaWakePush {
         let stashed = await pickup(ear, buries: { chat, mid in
             // A BLOCKED PERSON'S LETTER IS BURIED HERE, NOT LEFT TO WAIT (the author's
             // question 15.09: after an unblock the letters of the block arrived — the
-            // reference delivers them never). The tombstone the feed already keeps for
+            // letters of a block are delivered never). The tombstone the feed already keeps for
             // «deleted for everyone» takes the letter's name, and the node is told to
             // drop it like a placed one; a later resend meets the tombstone.
             guard ChatStore.refusesNow(chat) else { return false }

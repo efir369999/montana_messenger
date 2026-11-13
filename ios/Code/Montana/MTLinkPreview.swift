@@ -13,13 +13,13 @@ struct MTLinkPreview: Codable {
     var t: String?         // page title (og:title, else <title>)
     var d: String?         // description (og:description)
     var i: String?
-    /// TWO SHAPES OF A CARD, AS THE REFERENCE DRAWS THEM (the critic 22.09): a small picture stands as
+    /// TWO SHAPES OF A CARD (the critic 22.09): a small picture stands as
     /// a square beside the words, a big one lies across the card under them. The SENDER decides, being
     /// the only one who ever saw the page — the receiver draws what the card says.
     var p: String?         // where the picture lives — read on its own road, after the words
     var w: Int?            // the picture own width in pixels (nil — no picture)
     var h: Int?            // and its height
-    var wide: Bool { (w ?? 0) >= 400 && (h ?? 0) >= 200 }   // the reference own threshold for «large by default»
+    var wide: Bool { (w ?? 0) >= 400 && (h ?? 0) >= 200 }   // the threshold for «large by default»
 
     var json: String? {
         guard let d = try? JSONEncoder().encode(self) else { return nil }
@@ -45,7 +45,7 @@ enum MTLinkPreviewBuilder {
         UserDefaults.standard.object(forKey: switchKey) as? Bool ?? true
     }
 
-    /// THE CARD IS SEEN BEFORE IT RIDES (the critic 22.09, the reference own panel above the field):
+    /// THE CARD IS SEEN BEFORE IT RIDES (the critic 22.09, a panel above the field):
     /// while a link stands in the field, this holder reads its page and the bar shows what will ride;
     /// the cross drops it for THIS letter alone. One reader, one holder — the send takes what it sees.
     @MainActor

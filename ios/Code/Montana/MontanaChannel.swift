@@ -1,8 +1,8 @@
 import SwiftUI
 import PhotosUI
 
-/// THE CHANNEL IS BORN IN THREE STEPS (the author's words 05.10.2026 16:0x UTC: «3. Channel -- see the mechanics in the reference
-/// tree»; 16:1x «real delivery to a channel from the phone»): what a channel is, then its face, name and description, then the
+/// THE CHANNEL IS BORN IN THREE STEPS (the author's words 05.10.2026 16:0x UTC: «3. Channel»;
+/// 16:1x «real delivery to a channel from the phone»): what a channel is, then its face, name and description, then the
 /// subscribers, each chosen by a tick. A channel is a group whose owner alone posts; its posts ride the pipe of each subscriber
 /// from this phone, so only a person this phone holds a pipe with can subscribe (MTGroupPickStep.reachable).
 struct MTChannelIntroStep: View {
@@ -12,7 +12,7 @@ struct MTChannelIntroStep: View {
 
     var body: some View {
         NavigationStack {
-            // THE REFERENCE'S INTRODUCTION (the author's words 17.10.2026 15:4x UTC: «1 to 1»): the picture, «What is a Channel?», its
+            // THE CHANNEL'S INTRODUCTION (the author's words 17.10.2026 15:4x UTC: «1 to 1»): the picture, «What is a Channel?», its
             // one sentence, and «Create Channel» at the foot.
             VStack(spacing: 18) {
                 Spacer()
@@ -169,11 +169,11 @@ struct MTFacePicker: View {
 }
 
 // ════════════════════════════════════════════════════════════
-// A CHANNEL'S FEED, AS THE REFERENCE DRAWS IT
+// A CHANNEL'S FEED
 // ════════════════════════════════════════════════════════════
 //
-// The author's words 17.10.2026 15:4x UTC: «channels and groups entirely as in the reference folder, 1 to 1», «and the posts too,
-// everything exactly as there», «we do not need our own kinds of pages inside groups and channels». A channel is a chat's feed:
+// The author's words 17.10.2026 15:4x UTC: «channels and groups ... 1 to 1», «and the posts too»,
+// «we do not need our own kinds of pages inside groups and channels». A channel is a chat's feed:
 // its posts stand one under another as letters do, every post drawn as one received -- the owner's own included -- with the
 // channel's name at the head of a run, the eye and its number in the stamp and a round beside it that hands the post on.
 
@@ -185,11 +185,11 @@ struct MTChannelPostLook: Hashable {
     var tint: Color
     /// How many people saw the post, as its owner counted them (MTChannelViews).
     var views: Int
-    /// Its writer's name, before the time, where the channel signs its posts (the reference's «Sign Messages»).
+    /// Its writer's name, before the time, where the channel signs its posts («Sign Messages»).
     var signature: String? = nil
-    /// The comments under it where the channel takes comments (the reference's footer «Leave a Comment» / «N Comments»); nil -- none.
+    /// The comments under it where the channel takes comments (the footer «Leave a Comment» / «N Comments»); nil -- none.
     var comments: Int? = nil
-    /// The reference's short count: «999», «1.2K», «3M» -- the tenth shown only where it is not a zero.
+    /// The short count: «999», «1.2K», «3M» -- the tenth shown only where it is not a zero.
     static func count(_ n: Int) -> String {
         let dot = Locale.current.decimalSeparator ?? "."
         func short(_ unit: Int, _ mark: String) -> String {
@@ -202,7 +202,7 @@ struct MTChannelPostLook: Hashable {
     }
 }
 
-/// THE EYE UNDER A CHANNEL'S POST (the reference's view counter: a post is born with one view, its author's, and every person
+/// THE EYE UNDER A CHANNEL'S POST (a view counter: a post is born with one view, its author's, and every person
 /// whose screen showed it adds one). No server counts. A subscriber's phone tells the owner which posts its screen showed
 /// (MTGroup.tellSeen); the owner counts each subscriber's seat once per post and carries the numbers that moved to every
 /// subscriber (MTGroup.tellCounts). The number is people, never openings: a seat is counted once, and a number only grows.
@@ -349,7 +349,7 @@ final class MTChannelViews: ObservableObject {
     }
 }
 
-/// THE ROUND BESIDE A CHANNEL'S POST (the reference: a round of glass thirty points across beside the post, its foot at the post's
+/// THE ROUND BESIDE A CHANNEL'S POST (a round of glass thirty points across beside the post, its foot at the post's
 /// foot, eight points away): it hands the post on by the menu's own «Forward». The finger keeps its 44 around the 30 drawn.
 struct MTChannelShareRound: View {
     let action: () -> Void
@@ -398,7 +398,7 @@ struct MTChannelGlass<S: Shape>: View {
     }
 }
 
-/// A SUBSCRIBER'S PANEL IN THE FIELD'S PLACE (the reference's channel panel): one wide round of glass across the middle saying
+/// A SUBSCRIBER'S PANEL IN THE FIELD'S PLACE (a channel's panel): one wide round of glass across the middle saying
 /// «Mute» or «Unmute» -- the channel's sound, the same switch as the list's swipe -- and a round of glass with the magnifier on
 /// the right, the chat's own search. A room as wide as the right round stands on the left, so the word stays in the middle.
 struct MTChannelSubscriberBar: View {
@@ -431,7 +431,7 @@ struct MTChannelSubscriberBar: View {
     }
 }
 
-/// A CHANNEL'S PAGE, AS THE REFERENCE LAYS IT (the author's words 17.10.2026 15:4x-15:5x UTC: «channels ... 1 to 1», «we do not need our
+/// A CHANNEL'S PAGE (the author's words 17.10.2026 15:4x-15:5x UTC: «channels ... 1 to 1», «we do not need our
 /// own kinds of pages inside channels»): the head's count and the buttons, said once here; the page (MontanaPeerInfoScreen) asks it
 /// for a channel alone, as it asks MTGroupPage for a group.
 enum MTChannelPage {
@@ -439,7 +439,7 @@ enum MTChannelPage {
     static func head(_ key: String) -> String {
         String(localized: "\(MTGroup.shared.people(key) ?? 1) subscribers", bundle: MTLanguage.bundle)
     }
-    /// The page's buttons, as the reference's channel page has them: the owner's live stream, the sound and the search; a subscriber's
+    /// The page's buttons, as a channel's page has them: the owner's live stream, the sound and the search; a subscriber's
     /// sound, search, the way out and more. A channel this phone is out of keeps the sound and the search.
     @MainActor
     static func actions(_ key: String, muted: Bool) -> [MTPeerAction] {
@@ -453,8 +453,8 @@ enum MTChannelPage {
     }
 }
 
-/// THE CHANNEL'S SUBSCRIBERS (the reference's «Subscribers» page, its owner's alone): «Add Subscribers» first, then every person the
-/// owner's phone carries the channel to, a hold or a swipe to take one out -- asked first, as the reference asks.
+/// THE CHANNEL'S SUBSCRIBERS (the «Subscribers» page, its owner's alone): «Add Subscribers» first, then every person the
+/// owner's phone carries the channel to, a hold or a swipe to take one out -- asked first.
 struct MTChannelPeoplePage: View {
     @EnvironmentObject private var store: ChatStore
     let key: String
@@ -516,7 +516,7 @@ struct MTChannelPeoplePage: View {
     }
 }
 
-/// THE CHANNEL'S INVITE LINK, WHERE THE REFERENCE'S CHANNEL SETTINGS KEEP IT: the link, «Copy» and «Share» under it, and «Revoke Link»
+/// THE CHANNEL'S INVITE LINK, IN THE CHANNEL'S SETTINGS: the link, «Copy» and «Share» under it, and «Revoke Link»
 /// -- a new mark that ends every link given before (MTGroup.resetInvite), asked first. Whoever opens the link meets the owner by its
 /// card and asks with the mark; the owner's phone adds them as a subscriber.
 struct MTChannelInviteLinksPage: View {
@@ -568,7 +568,7 @@ struct MTChannelInviteLinksPage: View {
     }
 }
 
-/// THE CHANNEL'S ADMINISTRATORS (the reference's «Administrators» page of a channel): «CHANNEL ADMINS» -- the owner first, then every
+/// THE CHANNEL'S ADMINISTRATORS (the «Administrators» page of a channel): «CHANNEL ADMINS» -- the owner first, then every
 /// administrator it named, a swipe or a hold to dismiss one -- «Add Admin» from the channel's subscribers, and «Sign Messages». An
 /// administrator posts into the channel and takes a post away (MTGroup: the owner carries their posts on, MTGroup.answered takes
 /// their deletions); the owner alone names them, by its invitation's word, so every phone reads the same list.
@@ -599,7 +599,7 @@ struct MTChannelAdminsPage: View {
                 }
                 .frame(minHeight: montanaTouchTarget)
                 ForEach(people.filter { admins.contains($0.seat) }) { p in
-                    NavigationLink {   // the owner opens an administrator's rights (the reference's «Admin Rights»)
+                    NavigationLink {   // the owner opens an administrator's rights («Admin Rights»)
                         MTChannelAdminRightsPage(key: key, seat: p.seat, name: p.name, isNew: false) { tick += 1 }
                     } label: {
                         HStack(spacing: 12) {
@@ -649,7 +649,7 @@ struct MTChannelAdminsPage: View {
             NavigationStack {
                 List {
                     ForEach(people.filter { !admins.contains($0.seat) && $0.seat != MTGroup.ownerSeat }) { p in
-                        NavigationLink {   // the rights first, then the naming (the reference's «Admin Rights» of a new admin)
+                        NavigationLink {   // the rights first, then the naming («Admin Rights» of a new admin)
                             MTChannelAdminRightsPage(key: key, seat: p.seat, name: p.name, isNew: true) { tick += 1; picking = false }
                         } label: {
                             HStack(spacing: 12) {
@@ -676,7 +676,7 @@ struct MTChannelAdminsPage: View {
     }
 }
 
-/// THE CHANNEL'S REACTIONS (the reference's «Reactions» page of a channel): «Allow Reactions» and its caption; on, «AVAILABLE
+/// THE CHANNEL'S REACTIONS (the «Reactions» page of a channel): «Allow Reactions» and its caption; on, «AVAILABLE
 /// REACTIONS» -- every reaction a tap in or out, every one taken while all stand chosen. Off, the post's menu on every subscriber's
 /// phone stands without its strip; a list, the strip offers it alone; the owner takes nothing else (MTGroup.answered).
 struct MTChannelReactionsPage: View {
@@ -741,7 +741,7 @@ struct MTChannelReactionsPage: View {
     }
 }
 
-/// THE CHANNEL'S REMOVED USERS (the reference's page): every person its owner took out, who cannot come back by the invite link; a
+/// THE CHANNEL'S REMOVED USERS (a page of their own): every person its owner took out, who cannot come back by the invite link; a
 /// swipe lets one back («Delete»), a hold adds one again («Add to Channel»).
 struct MTChannelRemovedPage: View {
     @EnvironmentObject private var store: ChatStore
@@ -786,7 +786,7 @@ struct MTChannelRemovedPage: View {
     }
 }
 
-/// THE CHANNEL'S RECENT ACTIONS (the reference's event log of a channel): the deeds of the last two days, the newest first, each a
+/// THE CHANNEL'S RECENT ACTIONS (a channel's event log): the deeds of the last two days, the newest first, each a
 /// sentence by the names known when it was done, and its moment. Its owner's phone writes them (MTGroupState.acts).
 struct MTChannelActionsPage: View {
     let key: String
@@ -820,7 +820,7 @@ struct MTChannelActionsPage: View {
         .scrollContentBackground(.hidden).montanaPageGround()
         .navigationTitle("Recent Actions").navigationBarTitleDisplayMode(.inline)
     }
-    /// The deed in the reference's words, its doer this phone's owner.
+    /// The deed in the log's words, its doer this phone's owner.
     static func words(_ a: MTChannelAct) -> String {
         let names = (a.p ?? []).joined(separator: ", ")
         let b = MTLanguage.bundle
@@ -855,7 +855,7 @@ struct MTChannelComment: Codable, Equatable, Identifiable {
     var mine: Bool
 }
 
-/// THE COMMENTS OF A CHANNEL'S POSTS ON THIS PHONE (the reference's discussion under a post): each post's comments by their one
+/// THE COMMENTS OF A CHANNEL'S POSTS ON THIS PHONE (a discussion under a post): each post's comments by their one
 /// names, in their order; the channel's carrier brings them (MTGroup.comment, commented). The person's own content, as letters are.
 final class MTChannelComments: ObservableObject {
     static let shared = MTChannelComments()
@@ -905,7 +905,7 @@ final class MTChannelComments: ObservableObject {
     }
 }
 
-/// THE COMMENTS OF A POST (the reference's thread of a channel's post): the post's words over the comments, each with its speaker's
+/// THE COMMENTS OF A POST (the thread of a channel's post): the post's words over the comments, each with its speaker's
 /// name in the speaker's colour, and the field «Comment» at the foot where the channel takes comments.
 struct MTChannelCommentsSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -953,7 +953,7 @@ struct MTChannelCommentsSheet: View {
             .toolbar { ToolbarItem(placement: .cancellationAction) { MontanaCloseMark { dismiss() } } }
             .safeAreaInset(edge: .bottom) {
                 if MTGroup.shared.talks(key), !MTGroup.shared.isOut(key) { VStack(spacing: 4) {
-                    // THE FIELD SAYS WHAT IS LEFT (the reference's slowmode words): one comment in thirty seconds (MTGroup.commentGap)
+                    // THE FIELD SAYS WHAT IS LEFT (slow mode's words): one comment in thirty seconds (MTGroup.commentGap)
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         let wait = MTGroup.shared.commentWait(key)
                         if 0 < wait {
@@ -984,7 +984,7 @@ struct MTChannelCommentsSheet: View {
     }
 }
 
-/// THE CHANNEL'S DISCUSSION (the reference's «Discussion» of a channel's settings): «Allow Comments» -- every post then wears its
+/// THE CHANNEL'S DISCUSSION (the «Discussion» of a channel's settings): «Allow Comments» -- every post then wears its
 /// comments' footer on every subscriber's phone. The comments ride the channel itself; no group hosts them.
 struct MTChannelDiscussionPage: View {
     let key: String
@@ -1005,7 +1005,7 @@ struct MTChannelDiscussionPage: View {
     }
 }
 
-/// AN ADMINISTRATOR'S RIGHTS IN A CHANNEL (the reference's «Admin Rights»): «WHAT CAN THIS ADMIN DO?» -- the rights the owner's
+/// AN ADMINISTRATOR'S RIGHTS IN A CHANNEL («Admin Rights»): «WHAT CAN THIS ADMIN DO?» -- the rights the owner's
 /// phone carries out (MTChannelRight), each a switch; «Dismiss Admin» for one named before. Done names the administrator with the
 /// rights left on; every subscriber hears it by the invitation's word.
 struct MTChannelAdminRightsPage: View {
@@ -1068,7 +1068,7 @@ struct MTChannelAdminRightsPage: View {
     }
 }
 
-/// A channel's administrator's right in the reference's words (MTChannelAdminRightsPage).
+/// A channel's administrator's right in the page's words (MTChannelAdminRightsPage).
 extension MTChannelRight {
     var title: LocalizedStringKey {
         switch self {

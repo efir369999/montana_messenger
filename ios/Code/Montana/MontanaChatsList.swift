@@ -416,7 +416,7 @@ struct ChatsListView: View {
             // player and the gallery; a tap opens that one again. Both are pages under the bar (the music 23.09, the
             // gallery 25.09), one of them in the row at a time, and the puck goes under the glyph for either.
             barSlot(Self.mediaSlot) { ui.askMedia() } label: {
-                Image(systemName: ui.mediaIsMusic ? UIState.Glyph.music : UIState.Glyph.gallery)
+                Image(systemName: UIState.Glyph.of(ui.mediaPane))
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(MontanaOctagon.barGlyph)
             }
@@ -523,8 +523,8 @@ struct ChatsListView: View {
     /// The slot the pane stands under — the puck's home when the page is chosen elsewhere (the drawer, the logo).
     private static func slot(of pane: UIState.Pane) -> Int? {
         switch pane {
-        case .chats, .groups, .channels: return chatsSlot; case .contacts: return contactsSlot; case .calls: return callsSlot
-        case .gallery: return mediaSlot
+        case .chats: return chatsSlot; case .contacts: return contactsSlot; case .calls: return callsSlot
+        case .gallery, .groups, .channels: return mediaSlot   // the dynamic slot's pages (UIState.mediaPanes)
         case .p2p: return pane == UIState.globePane ? globeSlot : nil
         #if !MONTANA_MESSENGER
         case .music: return mediaSlot
@@ -627,10 +627,12 @@ struct ChatsListView: View {
         let book = (try? JSONDecoder().decode([ContactsTabView.MTContact].self,
                                               from: Data((MontanaLocalVault.getString("mtContacts") ?? "").utf8))) ?? []
         let known = Set(ordered.compactMap(\.convId))
-        return book
-            .filter { c in !known.contains(c.ref) && c.fullName.lowercased().contains(q) }
-            .map { c in Chat(name: c.fullName.isEmpty ? MTNameBook.display(conv: c.ref) : c.fullName,
-                             lastMessage: "", time: "", unread: 0, status: "", convId: c.ref) }
+        // A CARD IS FOUND AND NAMED BY THE BOOK (OZ 1 p.14.1): the card's own name fields are a mirror, and a copy in them stood
+        // over the person's word here alone -- the chats, the page and the contacts tab read the book.
+        return book.compactMap { c -> Chat? in
+            guard !known.contains(c.ref), let n = MTNameBook.known(c.ref), n.lowercased().contains(q) else { return nil }
+            return Chat(name: n, lastMessage: "", time: "", unread: 0, status: "", convId: c.ref)
+        }
     }
 
     /// THE SEARCH IS A COMPUTATION, NOT A BODY (T1, 16:03-16:04Z, build 1949: three deaths on screen within a minute --
@@ -913,7 +915,7 @@ struct ChatsListView: View {
                 // A PAGE ONCE BUILT STAYS BUILT (the critic 25.09, the diaries of 1938 — T1: 59 to 131 ms of the main thread at
                 // the start of every stroke, the neighbour born anew each time, and 62 to 102 ms at every settle's end, the one
                 // that left torn down; T3: «the chats page flickers when I swipe» — the page slid in as a list born empty, its
-                // rows landing frames later). The reference keeps its pages; so do we: a page is built the first time it is
+                // rows landing frames later). The pages are kept: a page is built the first time it is
                 // looked at (no warm-up at the launch since 01.11.2026) and kept in the row, off the screen when not looked at; a stroke
                 // moves what stands and builds nothing that stands; a settle tears nothing down. A page not looked at keeps the
                 // pass it was last built by (MTPaneKeep) — nothing of it is diffed again — and its list applies nothing until it
@@ -1030,8 +1032,8 @@ struct ChatsListView: View {
                                separatorRow: { c in c.name != Self.qrRow })
                 // «Write» hangs over the rows, not over the bars below them: a player that
                 // appears pushes the button up with the rows (the author's word 14.09).
-                // ON THE LINE between the last two rows (the author's word 17.09): the pages' one corner (MTPageCorner), the reference.
-                // A folder of empty rows says so, as the reference's (MTFolderEmpty); All Chats has its card of the code instead.
+                // ON THE LINE between the last two rows (the author's word 17.09): the pages' one corner (MTPageCorner).
+                // A folder of empty rows says so (MTFolderEmpty); All Chats has its card of the code instead.
                 .overlay { if rows.isEmpty { folderEmpty } }
                 .mtPageAction(reserve: playerReserve, shown: !selecting && !searchActive) {
                     switch folder.onlyKind {
@@ -1058,7 +1060,7 @@ struct ChatsListView: View {
         default: return .all
         }
     }
-    /// A folder no conversation matches, in the reference's words: the Groups or the Channels page with none of its kind.
+    /// A folder no conversation matches, in its own words: the Groups or the Channels page with none of its kind.
     private var folderEmpty: some View {
         VStack(spacing: 8) {
             Image(systemName: "folder").font(.system(size: 44)).foregroundStyle(.secondary)
@@ -1907,7 +1909,7 @@ struct MTLetterThumb: View {
     }
     init?(message m: Message, side: CGFloat = 20) {
         guard let k = ChatStore.rowMediaKind(m) else { return nil }
-        self.init(kind: k, file: ChatStore.rowMediaFile(m), mine: m.isFromMe, side: side)
+        self.init(kind: k, file: m.attachment?.file, mine: m.isFromMe, side: side)
     }
     /// THE ONE PICTURE OF A LETTER IN SMALL (20.09, the author's word: one road on any phone and any
     /// iOS): a photo's small copy born from the file (16.09), else the poster the letter came with
@@ -2149,7 +2151,7 @@ struct ChatRow: View {
                     // bar (the author's word 15.09); the words then carry no glyph of their own.
                     // A DRAFT STANDS UNDER THE NAME (the author's word 20.09): unsent words are what the
                     // person will see first on opening, so the row shows them first — the word «Draft:»
-                    // in red and the text, in place of the last letter, the reference's own manner.
+                    // in red and the text, in place of the last letter.
                     if let d = model.draft {
                         (Text("Draft:").foregroundColor(.red) + Text(verbatim: " " + d).foregroundColor(.gray))   // USER-DATA: the draft text
                             .font(.system(size: 16))
@@ -2388,8 +2390,8 @@ extension EnvironmentValues {
 }
 
 /// THE PANE'S SHIFT, DRAWN BY THE PLATFORM'S OWN INTERPOLATION (the critic's pass 24.09): the offset as before, and the
-/// place it has reached this frame written back for the pane alone (MTTurnDrag.shown) -- the reference reads its
-/// presentation layer for the same end: a stroke that lands mid-settle continues from where the pages stand.
+/// place it has reached this frame written back for the pane alone (MTTurnDrag.shown) -- the presentation layer is read
+/// for the same end: a stroke that lands mid-settle continues from where the pages stand.
 struct MTPaneShift: GeometryEffect {
     var x: CGFloat
     let drag: MTTurnDrag?   // the pane's own; the neighbour writes nothing
@@ -2410,7 +2412,7 @@ struct MTPaneBox: View, Equatable {
     var body: some View { content.environment(\.mtPaneLive, live) }
 }
 
-/// THE PUCK RIDES WITH THE FINGER (the author's word 24.09; the reference's tab strip): under the chosen glyph while the
+/// THE PUCK RIDES WITH THE FINGER (the author's word 24.09; the tab strip): under the chosen glyph while the
 /// page stands, and on its way to the neighbour's glyph by the pane's own progress while the finger drags — the distance
 /// in slots, the progress the pane's offset over the page's width. Only this wrapper watches the offset; the bar does not.
 /// The roles are read fresh here too (the critic 24.09): the bar hands over only the slot it draws the puck in, and the

@@ -787,7 +787,7 @@ final class E2E {
     /// conversation (15.2: one post, not the three D-1 measured — 37% of the diary). The beat
     /// never dials: looking for a road is a letter's job (16.1.5: a beat every 20 s dialled a dead
     /// IPv6 door, four lines a beat). A blocked person hears nothing of me (the author's word
-    /// 15.09, the reference's rule): no presence, no typing, no draft, no name, no face — the one
+    /// 15.09): no presence, no typing, no draft, no name, no face — the one
     /// gate every road asks.
     func silenced(_ peer: String) -> Bool { store?.blockedChats.contains(peer) ?? false }
     private func speakPresence(to peer: String, _ text: String, why: String, alsoNode: Bool = false) {
@@ -966,6 +966,16 @@ final class E2E {
         guard E2E.appSaid == true, UIApplication.shared.applicationState != .background,
               Date().timeIntervalSince(E2E.clockSaidAt) > 600 else { return }   // SILENT-OK: nobody greeted, or said just now
         E2E.clockSaidAt = Date()
+        appPresence(open: true, again: true)
+    }
+    /// THE BOOK GREW UNDER A GREETING ALREADY SAID (12.11.2026, OZ 1 p.2.5, the author's word 20224: «the faces of the people come
+    /// back at once with the restore»). The archive stood the correspondences up after the greeting had left (iPad 11.11: app-front
+    /// at 23:39:00 to one, pipes_restored at 23:39:10), so the newcomers were neither greeted nor asked for their faces (faceTail)
+    /// until each chat was opened. The greeting is said again to the grown book, the ask riding it, while the application stands
+    /// before the person; nobody greeted yet -- the greeting still to come reads the grown book itself.
+    func peersGrew() {
+        guard E2E.appSaid == true, UIApplication.shared.applicationState != .background else { return }   // SILENT-OK: the greeting to come reads the grown book
+        MontanaTrace.mark("presence_grew", "the book grew under a greeting -- said again")
         appPresence(open: true, again: true)
     }
     /// THE APP'S WORD IS SAID ONCE PER STATE (24.09). The application comes back «active» without leaving (the notification
@@ -1432,7 +1442,7 @@ final class E2E {
 
     // The recipient could not decrypt (chain desync) → we ask the sender to recreate the session.
     // The sender received a rekey → reset the session and resend recent messages to this device.
-    // ── device linking (Signal model) ──
+    // ── device linking by QR ──
     // New device: prepare an offer for the QR and start waiting for the grant.
     func beginLinkOnNewDevice() -> LinkOffer? {
         guard let dev = currentDeviceId, let (priv, offer) = MontanaLink.makeOffer(deviceId: dev) else { return nil }
@@ -1518,6 +1528,7 @@ final class E2E {
     func broadcastName() {
         broadcastToPeers { sendNameIfNeeded(to: $0) }
         MontanaCard.refreshCards()   // the cards on the node wear the new name too (21.09)
+        Task { @MainActor in MTGroup.shared.giveCards() }   // and the card laid in each group (OZ 1 p.8)
     }
     private var lastProfilePush: [String: Date] = [:]
     // Peer reachable again: FORCE a fresh

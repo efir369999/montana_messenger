@@ -15,7 +15,7 @@ func mtCardDivider(inset: CGFloat) -> some View {
 // The sections of the profile, in the order they appear. A section that collects no rows is not
 // drawn, so the order is declared once here and the screen never decides placement by nesting.
 enum MTInfoSection: Int, CaseIterable, Identifiable {
-    case about     // a group's description, above its people (the reference folder's group page, stage R)
+    case about     // a group's description, above its people (the group page, stage R)
     case members
     case peerInfo
     case chatSettings
@@ -33,7 +33,7 @@ struct MTInfoRow: Identifiable {
         case action(title: LocalizedStringKey, icon: String, destructive: Bool, action: () -> Void)
         case toggle(title: LocalizedStringKey, icon: String, isOn: Binding<Bool>)
         case member(name: String, subtitle: LocalizedStringKey, removable: Bool, onRemove: () -> Void, deeds: [MTMemberDeed] = [])
-        /// A person of a group's page as the reference draws it (MTGroupMemberRow).
+        /// A person of a group's page (MTGroupMemberRow).
         case groupMember(MTGroupMemberLine)
     }
 
@@ -93,7 +93,7 @@ struct MTInfoRowView: View {
                 .padding(.horizontal, 14).padding(.top, 10).padding(.bottom, 4)
 
         case .labeledValue(let value, let caption):
-            // THE CAPTION OVER THE WORDS, as the reference's labelled row lays them (its label first, three points above the text)
+            // THE CAPTION OVER THE WORDS (the label first, three points above the text)
             VStack(alignment: .leading, spacing: 3) {
                 Text(caption).font(.caption).foregroundColor(.gray)
                 Text(value).foregroundColor(.primary).textSelection(.enabled)
@@ -162,7 +162,7 @@ struct MTInfoRowView: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
             .contentShape(Rectangle())
-            // THE PERSON'S DEEDS ON A HOLD (stage R.6, the reference folder's member menu): promote, dismiss, remove
+            // THE PERSON'S DEEDS ON A HOLD (stage R.6, the member menu): promote, dismiss, remove
             .contextMenu {
                 ForEach(deeds) { d in
                     Button(role: d.destructive ? .destructive : nil, action: d.action) { Label(d.title, systemImage: d.icon) }
@@ -176,7 +176,7 @@ struct MTInfoRowView: View {
     }
 }
 
-/// One deed over a person of a group on its page (stage R.6, the reference folder's member menu): promote, dismiss, remove.
+/// One deed over a person of a group on its page (stage R.6, the member menu): promote, dismiss, remove.
 struct MTMemberDeed: Identifiable {
     let id: String
     let title: LocalizedStringKey

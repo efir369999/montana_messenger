@@ -1,17 +1,17 @@
 import SwiftUI
 import UIKit
 
-/// THE WORDS OF A LINK CARD FLOW AROUND ITS SMALL PICTURE (the author's word 22.09: one to one with
-/// the reference). The reference lays its card as three text nodes, each given a CUTOUT in its top
-/// right corner -- the square the picture occupies -- and each node subtracts its own height from
+/// THE WORDS OF A LINK CARD FLOW AROUND ITS SMALL PICTURE (the author's word 22.09). The card is laid
+/// as three text blocks, each given a CUTOUT in its top
+/// right corner -- the square the picture occupies -- and each block subtracts its own height from
 /// what is left of that square, so the first lines are short and the lines below the picture run the
-/// card's full width (ChatMessageAttachedContentNode: TextNodeCutout(topRight:), inlineMediaEdgeInset
-/// = 6, the inline picture 54 by 54 at a four-point corner).
+/// card's full width (a cutout at the top right, an inline inset
+/// of 6, the inline picture 54 by 54 at a four-point corner).
 ///
 /// The platform carries that mechanism itself: NSTextContainer.exclusionPaths. So the card's words
-/// are one view of ours over UIKit's own text engine -- three blocks, the reference's own line
-/// counts (two for the site, five for the title, twelve for the words), its line spacing of nine
-/// hundredths, and its cutout arithmetic, measured in one pass through sizeThatFits.
+/// are one view of ours over UIKit's own text engine -- three blocks, their own line
+/// counts (two for the site, five for the title, twelve for the words), a line spacing of nine
+/// hundredths, and the cutout arithmetic, measured in one pass through sizeThatFits.
 struct MTLinkCardWords: UIViewRepresentable {
     struct Block {
         let text: String
@@ -86,7 +86,7 @@ final class MTLinkCardWordsView: UIView {
         ])
     }
 
-    /// THE REFERENCE'S OWN ARITHMETIC: the picture's square is taken out of the first block, what
+    /// THE CUTOUT ARITHMETIC: the picture's square is taken out of the first block, what
     /// remains of it out of the next, and so on -- so the words close under the picture, never beside
     /// a column of empty air.
     private func frames(for width: CGFloat) -> [CGRect] {

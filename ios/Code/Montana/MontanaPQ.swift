@@ -978,6 +978,7 @@ extension MontanaArchive {
             return MontanaTrace.mark("twin_hist", "the blocks did not reach the nodes n=\(n)")
         }
         road["w"] = "hist"; road["n"] = n; road["f"] = writerTag()?.montanaHexString ?? ""
+        if twinQuietHere { road["rq"] = 1 }   // this device's extension takes the read word quietly (MTTwinRead)
         guard await MTKeeping.knock(secret, road, silent: true, sender: twinDeviceRef) else {
             return MontanaTrace.mark("twin_hist", "no door boxed the letter n=\(n)")
         }
@@ -993,6 +994,10 @@ extension MontanaArchive {
     /// A row of the box in the pipe of this seed's devices is this file's own, never a letter of the feed.
     nonisolated static func twinTakes(_ row: [String: String]) -> Bool {
         guard row["c"] == twinPipe else { return false }
+        if let r = MTTwinRead.read(row["t"] ?? "") {   // a chat read on another device of the seed: its banners leave this screen (OZ 1 p.14.7)
+            MTTwinRead.takeOff(chat: r.chat, readAt: r.at) { n in MontanaTrace.mark("twin_read", "took notices off n=\(n)") }
+            return true
+        }
         guard let o = MTKeeping.word(row["t"] ?? ""), let mid = row["m"], !mid.isEmpty else { return true }
         switch o["w"] as? String {
         case "hist": Task.detached(priority: .utility) { await takeFromTwin(o, mid: mid) }
@@ -1001,9 +1006,50 @@ extension MontanaArchive {
         }
         return true
     }
+    // ── A CHAT READ HERE LEAVES THE OTHER DEVICES' SCREENS AT ONCE (OZ 1 p.14.7; the author's word 20712) ──
+    // The read mark of the mirror rides its file half a minute later and wakes nothing that sleeps; this word (MTTwinRead) rides at
+    // the reading, alone, in the same pipe. It is loud -- it wakes the other devices' extensions -- only when every other device of
+    // the seed heard within a month said its extension takes it quietly (rq on its mirror and history letters): an older extension
+    // opens nothing of the seed's pipe and would show the box's last letter instead. Silent, it still reaches a running app.
+    nonisolated static let twinDevicesKey = "mt.twin.devices"   // NOT-UI: each other device of the seed heard: [writer tag: [last heard, quiet]]
+    nonisolated private static let twinHeardFor: Double = 30 * 86_400
+    nonisolated static func tellTwinsRead(_ chat: String) {
+        guard let text = MTTwinRead.letter(chat: chat, at: Date().timeIntervalSince1970) else { return }
+        Task.detached(priority: .userInitiated) {
+            guard let secret = twinSecret() else { return }
+            let loud = twinsQuiet()
+            let boxed = await MTKeeping.knockText(secret, text, silent: !loud, sender: twinDeviceRef)   // the one sealer of a word of one's own
+            MontanaTrace.mark("twin_read", "told loud=\(loud ? 1 : 0) boxed=\(boxed ? 1 : 0)")
+        }
+    }
+    /// One other device of the seed at least was heard within the month, and every one heard said its extension takes the word quietly.
+    nonisolated static func twinsQuiet() -> Bool {
+        let now = Date().timeIntervalSince1970
+        let heard = ((UserDefaults.standard.dictionary(forKey: twinDevicesKey) as? [String: [Double]]) ?? [:])
+            .filter { e in e.value.count == 2 && now - e.value[0] < twinHeardFor }
+        return !heard.isEmpty && heard.values.allSatisfy { e in e[1] == 1 }
+    }
+    /// A mirror or history letter of another device of the seed: its writer tag is heard now, with what it said of its extension.
+    nonisolated static func heardTwin(_ o: [String: Any]) {
+        guard let f = o["f"] as? String, !f.isEmpty else { return }
+        let now = Date().timeIntervalSince1970
+        var m = ((UserDefaults.standard.dictionary(forKey: twinDevicesKey) as? [String: [Double]]) ?? [:])
+            .filter { e in e.value.count == 2 && now - e.value[0] < twinHeardFor }
+        m[f] = [now, (o["rq"] as? Int) == 1 ? 1 : 0]
+        UserDefaults.standard.set(m, forKey: twinDevicesKey)
+    }
+    /// This device's extension opens the seed's pipe: the app mirrored its secret (MontanaWakePush.mirrorSecrets), and the extension
+    /// ships with this build -- the Messenger's stays off the Mac.
+    nonisolated static var twinQuietHere: Bool {
+        #if MONTANA_MESSENGER
+        if ProcessInfo.processInfo.isMacCatalystApp || ProcessInfo.processInfo.isiOSAppOnMac { return false }
+        #endif
+        return MontanaKeychain.get(MTTwinRead.secretKey)?.isEmpty == false
+    }
     private static func takeFromTwin(_ o: [String: Any], mid: String) async {
         let mine = ioQueue.sync { writerTag()?.montanaHexString ?? "" }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
         guard (o["f"] as? String) != mine else { return }   // this device's own letter, heard back from the box
+        heardTwin(o)
         let seen = UserDefaults.standard.stringArray(forKey: twinSeenKey) ?? []
         guard !seen.contains(mid), let dir = try? MontanaBackup.shelf() else { return }
         let url = dir.appendingPathComponent(UUID().uuidString + ".twin")
@@ -1103,6 +1149,7 @@ extension MontanaArchive {
             return MontanaTrace.mark("twin_mirror", "the words did not reach the nodes n=\(batch.count)")
         }
         road["w"] = "lt"; road["n"] = batch.count; road["f"] = ioQueue.sync { writerTag()?.montanaHexString ?? "" }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
+        if twinQuietHere { road["rq"] = 1 }   // this device's extension takes the read word quietly (MTTwinRead)
         guard await MTKeeping.knock(secret, road, silent: true, sender: twinDeviceRef) else {
             ioQueue.async { mirrorSoon() }
             return MontanaTrace.mark("twin_mirror", "no door boxed the letter n=\(batch.count)")
@@ -1183,6 +1230,7 @@ extension MontanaArchive {
     private static func takeMirror(_ o: [String: Any], mid: String) async {
         let mine = ioQueue.sync { writerTag()?.montanaHexString ?? "" }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
         guard (o["f"] as? String) != mine else { return }   // this device's own letter, heard back from the box
+        heardTwin(o)
         let seen = UserDefaults.standard.stringArray(forKey: twinSeenKey) ?? []
         guard !seen.contains(mid), let dir = try? MontanaBackup.shelf() else { return }
         let url = dir.appendingPathComponent(UUID().uuidString + ".twin")

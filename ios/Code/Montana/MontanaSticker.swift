@@ -74,8 +74,8 @@ enum MontanaStickerCut {
 
     /// A STICKER IS LIGHT OR IT IS NOT A STICKER (the author's word 22.09). A cut of a photograph
     /// written as PNG weighs half a megabyte: PNG keeps photographic pixels losslessly, and a cut
-    /// of a photograph is photographic almost always. The reference keeps its stickers in WebP and
-    /// carries an encoder of its own for it; ImageIO READS WebP but does not WRITE it (measured:
+    /// of a photograph is photographic almost always. WebP would need
+    /// an encoder of our own; ImageIO READS WebP but does not WRITE it (measured:
     /// CGImageDestinationCopyTypeIdentifiers holds heic, png, jpeg -- no webp), so the platform's
     /// own light format with transparency is HEIC.
     ///

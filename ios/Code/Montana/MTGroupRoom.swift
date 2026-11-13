@@ -56,7 +56,7 @@ struct MTRoomEvent: Codable {
     /// THE SPEAKER'S OWN MOMENT OF COMING IN, when the word is said later than it (key, a reannouncement): the word's freshness is
     /// at, the seat's place in the room's order is s. A build that knows no s reads at, which stays inside the word's life.
     var s: Double? = nil
-    /// THE SPEAKER'S ROOM KEY FOR ITS NEXT ROOM (11.11.2026, OZ 1 p.7, the reconnaissance: Signal ringrtc group_call.rs:3804 -- who a
+    /// THE SPEAKER'S ROOM KEY FOR ITS NEXT ROOM (11.11.2026, OZ 1 p.7: who a
     /// participant is, a key that came before on a proven road proves): rides open and in on the group's road, which proves whose it
     /// is. The next room this seat comes into is entered with it, so every pair word to it is sealed at once -- no wait for its in.
     var nq: String? = nil
@@ -172,15 +172,6 @@ struct MTRoomTile: Identifiable, Equatable {
     /// Invited and not in yet: the row says «calling» while the others talk (the author's word 18.10.2026 10:3x UTC: «show the dialing
     /// status while the others go on talking»).
     var ringing = false
-}
-
-/// A ROOM MINTED BEFORE IT OPENS (a call of two growing into one, MTGroupRoom.grow): its id, its key, this phone's room key and its
-/// moment -- the peer is told all of it on the call's own road, and both sides agree from the first word who came in later.
-struct MTRoomMint {
-    let id: String
-    let key: Data
-    let kp: (pub: Data, sec: Data)
-    let at: Double
 }
 
 /// A group's live room as the bar over its chat shows it.
@@ -416,8 +407,12 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     private var standing: [String: MTRoomStanding] = [:]
     /// The other seats' keys for their next room, by group and seat, as their own words on the group's road named them.
     private var announced: [String: [String: Data]] = [:]
+    /// The moment of the word that named each announced key: words land in no order, and a late word of an older room never puts
+    /// back a key its seat has spent since.
+    private var announcedAt: [String: [String: Double]] = [:]
     static let standingKey = "mt.rooms.standing"
     static let announcedKey = "mt.rooms.announced"
+    static let announcedAtKey = "mt.rooms.announcedAt"
     /// The invitations already shown (room and asker): a repeat rings nothing.
     private var asked = Set<String>()
     /// [I-15] When each asker last rang this phone: one person's invitations ring once in two minutes, however many rooms they open.
@@ -443,7 +438,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         let nc = NotificationCenter.default
         observers.append(nc.addObserver(forName: .montanaSeedForgotten, object: nil, queue: .main) { [weak self] _ in
             self?.seen = [:]   // another person's rooms are not this one's
-            self?.standing = [:]; self?.announced = [:]; self?.keepKeys()
+            self?.standing = [:]; self?.announced = [:]; self?.announcedAt = [:]; self?.keepKeys()
             self?.publish()
         })
         observers.append(nc.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
@@ -468,7 +463,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         d.append(key); d.append(Data(min(a, b).utf8)); d.append(0); d.append(Data(max(a, b).utf8))
         return Data(SHA256.hash(data: d))
     }
-    /// THE ROOM'S OWN LANE (11.11.2026, OZ 1 p.3; the reconnaissance: Signal ringrtc group_call.rs:3804 -- the fast road carries
+    /// THE ROOM'S OWN LANE (11.11.2026, OZ 1 p.3: the fast road carries
     /// presence alone): one lane per room, where a seat that came in says so the same second and those in answer once. A pair is born
     /// from it at once; who the seat is, its own key proves -- the offer is sealed to it, the answer must know the offer's challenge.
     static func roomLaneName(_ id: String) -> String { "room:" + id }
@@ -534,6 +529,10 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         }
         let now = MontanaWakePush.nodeNow()
         guard now - e.at < Self.staleAfter else { return }
+        // A SEAT'S NEXT KEY RIDES EVEN A WORD OF A ROOM THAT IS OVER (12.11.2026, OZ 1 p.6-7): T3's in with its new key landed after
+        // its room's end and was refused whole, so the next room sealed T3's pair words to the key T3 had spent -- the video of the
+        // third came 61 s late, the voice chat's pair stood by a second offer. The room stays over; its speaker's key is taken.
+        heardNext(e, group: gid, seat: seat, me: g.me)
         guard over[e.r] == nil else { MontanaTrace.mark("room_refused", "a word of a room that is over e=\(e.e)"); return }
         // the seat's own moment of coming in: s where the word names one (never later than the word itself), else the word's moment
         let came = e.s.map { min($0, e.at) } ?? e.at
@@ -547,7 +546,14 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
             s = cur
             known = true
         } else {
-            guard e.e != "out", e.e != "end", let key else { return }   // nothing is known of the room and the word does not bring it
+            guard e.e != "out", e.e != "end", let key else {
+                // AN END HEARD BEFORE ITS ROOM (12.11.2026, OZ 1 p.4, the author's word 19993: a restored iPad showed a voice chat
+                // that had ended 26 minutes before): a box hands a room's words in no order, and an end of a room not known here was
+                // dropped, so the room's older words that landed after it bore it again. The end buries it at once -- its late words
+                // are refused like those of any room that is over.
+                if e.e == "end" { bury(gid, e.r); keep(); MontanaTrace.mark("room_refused", "an end before its room: buried") }
+                return   // nothing is known of the room and the word does not bring it
+            }
             let born = MTRoomSeen(id: e.r, kind: kind, key: key, owner: e.o ?? seat, video: e.v == 1, people: [:], since: came,
                                   at: e.at, askedBy: nil)
             if let cur = seen[gid], !cur.people.isEmpty, fresh(cur) {
@@ -569,12 +575,6 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         let who = e.w ?? seat
         // the speaker's room key, from its own word on the group's road: every pair word to it is sealed to this key
         if e.e != "out", e.e != "end", let q = e.q.flatMap({ Data(base64Encoded: $0) }), q.count == MTRoomSeal.pubSize { s.keys[seat] = q }
-        // its key for its next room, named by its own word: the next room seals to it at once
-        if e.e != "out", e.e != "end", let nq = e.nq.flatMap({ Data(base64Encoded: $0) }), nq.count == MTRoomSeal.pubSize, seat != g.me,
-           announced[gid]?[seat] != nq {
-            announced[gid, default: [:]][seat] = nq
-            keepKeys()
-        }
         switch e.e {
         case "open":
             // a room is opened once, by its owner: an open for a room known here from another seat takes nothing over
@@ -627,7 +627,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         if let r = live, r.id == s.id, s.people[r.me] == nil { s.people[r.me] = r.since }
         if s.people.isEmpty { bury(gid, s.id) } else { seen[gid] = s }
         MontanaTrace.mark("room_rx", "e=\(e.e) people=\(s.people.count) in=\(live?.id == s.id ? 1 : 0)")
-        // THE ROOM IN THE GROUP'S FEED (stage R, the reference folder's rows): begun, once; ended, with how long it lived
+        // THE ROOM IN THE GROUP'S FEED (stage R, the feed's service rows): begun, once; ended, with how long it lived
         let begun = s
         if firstSight, !begun.people.isEmpty {
             MainActor.assumeIsolated { MTGroup.shared.lay(MTGroupEvent(e: "call", g: gid, a: begun.owner, k: begun.kind.rawValue, v: begun.video ? 1 : 0, r: begun.id)) }
@@ -722,10 +722,12 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     private func liftKeys() {
         if let d = MontanaLocalVault.getDecrypted(Self.standingKey), let s = try? JSONDecoder().decode([String: MTRoomStanding].self, from: d) { standing = s }
         if let d = MontanaLocalVault.getDecrypted(Self.announcedKey), let a = try? JSONDecoder().decode([String: [String: Data]].self, from: d) { announced = a }
+        if let d = MontanaLocalVault.getDecrypted(Self.announcedAtKey), let a = try? JSONDecoder().decode([String: [String: Double]].self, from: d) { announcedAt = a }
     }
     private func keepKeys() {
         if let d = try? JSONEncoder().encode(standing) { _ = MontanaLocalVault.setEncrypted(Self.standingKey, d) }
         if let d = try? JSONEncoder().encode(announced) { _ = MontanaLocalVault.setEncrypted(Self.announcedKey, d) }
+        if let d = try? JSONEncoder().encode(announcedAt) { _ = MontanaLocalVault.setEncrypted(Self.announcedAtKey, d) }
     }
     /// THE ONE OWNER OF THIS PHONE'S ROOM KEYS: the room about to be entered takes the key named for it (spent here, never again),
     /// or a fresh one where none was named; nextKey names the one after it.
@@ -760,11 +762,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     /// A ROOM IS OPENED (the chat's phone mark: the kind, then the people chosen). This phone is in it at once; the group hears it
     /// opened and the chosen hear they are invited -- a way in, never a ring. A room living in the group is joined instead: one
     /// room per group.
-    /// `named` -- the room's id minted before it opens (grow: the peer of a call of two is told it first).
-    /// `mint` -- the whole room minted before it opens, and `comer` the peer of a call of two that already said it comes in (grow): its
-    /// seat, its moment and its room key, so the pair with it stands at once instead of waiting for the group's road.
-    func open(_ kind: MTRoomKind, video: Bool, in chat: String, invite seats: [String], named: String? = nil, mint: MTRoomMint? = nil,
-              comer: (seat: String, at: Double, pub: Data)? = nil) {
+    func open(_ kind: MTRoomKind, video: Bool, in chat: String, invite seats: [String]) {
         guard let g = MTGroup.shared.state(chat), kinds(for: chat).contains(kind) else { return }
         if let s = seen[g.id], !s.people.isEmpty, fresh(s) {
             join(chat, video: video)
@@ -772,13 +770,12 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
             return
         }
         guard admit() else { return }
-        guard let kp = mint?.kp ?? roomKey(g.id) else { say("The call could not start"); return }
-        let id = mint?.id ?? named.flatMap { n in Self.isRoomId(n) ? n : nil } ?? Self.hex(Data(montanaRandom(16)))
-        let key = mint?.key ?? Data(montanaRandom(32))
-        let now = mint?.at ?? MontanaWakePush.nodeNow()
-        var s = MTRoomSeen(id: id, kind: kind, key: key, owner: g.me, video: video, people: [g.me: now], since: now, at: now, askedBy: nil,
+        guard let kp = roomKey(g.id) else { say("The call could not start"); return }
+        let id = Self.hex(Data(montanaRandom(16)))
+        let key = Data(montanaRandom(32))
+        let now = MontanaWakePush.nodeNow()
+        let s = MTRoomSeen(id: id, kind: kind, key: key, owner: g.me, video: video, people: [g.me: now], since: now, at: now, askedBy: nil,
                            keys: [g.me: kp.pub])
-        if let c = comer, c.seat != g.me, Self.isSeat(c.seat), c.pub.count == MTRoomSeal.pubSize { s.people[c.seat] = c.at; s.keys[c.seat] = c.pub }
         seen[g.id] = s
         enter(s, group: g, chat: chat, video: video, kp: kp)
         var opened = MTRoomEvent(r: id, e: "open", m: kind.rawValue, k: key.base64EncodedString(), v: video ? 1 : 0, at: now, o: g.me,
@@ -786,8 +783,6 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         opened.nq = nextKey(g.id)
         tell(opened, in: chat)
         MainActor.assumeIsolated { MTGroup.shared.lay(MTGroupEvent(e: "call", g: g.id, a: g.me, k: kind.rawValue, v: video ? 1 : 0, r: id)) }
-        // the peer that moved with the call is in already: its pair stands now, its offer finds a pair to answer
-        for seat in s.people.keys where seat != g.me { pairUp(seat) }
         invite(seats)
     }
 
@@ -800,12 +795,8 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         if let r = live, r.id == s.id { show(true); return }
         guard s.people.count < Self.capacity else { say("This call is full"); return }
         guard admit() else { return }
-        // A CALL OF TWO MOVING IN comes with the room key and the moment it already gave its peer on the call's road (takeInline):
-        // both sides then agree who came in later, and the owner holds the key its answer is sealed to.
-        let minted = pendingMint?.room == s.id ? pendingMint : nil
-        pendingMint = nil
-        guard let kp = minted?.kp ?? roomKey(g.id) else { say("The call could not start"); return }
-        let now = minted?.at ?? MontanaWakePush.nodeNow()
+        guard let kp = roomKey(g.id) else { say("The call could not start"); return }
+        let now = MontanaWakePush.nodeNow()
         var s2 = s
         s2.people[g.me] = now; s2.at = now; s2.askedBy = nil; s2.keys[g.me] = kp.pub
         seen[g.id] = s2
@@ -832,6 +823,9 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         r.keys = s.keys.filter { $0.key != g.me }
         live = r
         Self.setLive(true)
+        // A GROUP'S CALL HOLDS THE SCREEN AS A CALL OF TWO DOES (the author's word 20455 p.5: «on a video call inside a group the
+        // screen must not go dark, as on a standard video call»): by its name, through the one door, until leave lets it go.
+        MontanaScreenAwake.hold("room")
         MontanaWakePush.openRoomLane(Self.roomLaneName(r.id), secret: Self.roomLaneKey(r.key))
         present(r, "in")
         let f = MontanaCall.shared.factory
@@ -884,6 +878,7 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         MTCallAudioOwner.shared.release(r.uuid)
         live = nil
         Self.setLive(false)
+        MontanaScreenAwake.release("room")
         MontanaWakePush.closeRoomLane(Self.roomLaneName(r.id))
         let streamEnds = r.kind == .live && r.owner == r.me
         // THE FAREWELL LEAVES BEFORE ITS CONNECTION CLOSES (11.11.2026, OZ 1 p.8: T2 held a seat that had left): a close in the same
@@ -924,14 +919,11 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
 
     /// A TAP ON A ROOM'S INVITATION (its banner): the way in -- at once when the room is known here, else the moment a word of it
     /// lands (a cold start from the banner reads the group's words after the tap); a minute later the tap is forgotten.
-    /// A call of two moved into a room (moveIn) waits here too, with the camera it had and the peer it moved with.
-    private var pendingJoin: (chat: String, room: String, at: Date, video: Bool, from: String?)?
-    /// The room key and the moment a call of two moving in already gave its peer (takeInline): its way in (join) takes them.
-    private var pendingMint: (room: String, kp: (pub: Data, sec: Data), at: Double)?
+    private var pendingJoin: (chat: String, room: String, at: Date)?
     func joinFromBanner(_ chat: String, room: String) {
         if let gid = MTGroup.id(of: chat), seen[gid]?.id == room, live?.id != room { join(chat, video: false); return }
         if live?.id == room { show(true); return }
-        pendingJoin = (chat, room, Date(), false, nil)
+        pendingJoin = (chat, room, Date())
     }
 
     /// THE ONE ANSWER TO A TAP ON A GROUP'S CALL (the chat's top, the group's page): a living room is the way in, or back when this
@@ -949,8 +941,18 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     func groupGone(_ gid: String) {
         if let r = live, r.group == gid { leave(why: "the group went") }
         seen.removeValue(forKey: gid)
-        standing.removeValue(forKey: gid); announced.removeValue(forKey: gid); keepKeys()
+        standing.removeValue(forKey: gid); announced.removeValue(forKey: gid); announcedAt.removeValue(forKey: gid); keepKeys()
         publish()
+    }
+
+    /// THE ONE DOOR OF A SEAT'S KEY FOR ITS NEXT ROOM (MTRoomEvent.nq), named by its own word on the group's road: any word but a
+    /// leaving names it, of a room alive or over, and a word older than the one that named the key held names nothing.
+    private func heardNext(_ e: MTRoomEvent, group gid: String, seat: String, me: String) {
+        guard e.e != "out", e.e != "end", seat != me, let nq = e.nq.flatMap({ Data(base64Encoded: $0) }), nq.count == MTRoomSeal.pubSize,
+              announced[gid]?[seat] != nq, (announcedAt[gid]?[seat] ?? 0) <= e.at else { return }
+        announced[gid, default: [:]][seat] = nq
+        announcedAt[gid, default: [:]][seat] = e.at
+        keepKeys()
     }
 
     /// The room ended here: forgotten from the group's view and remembered as over, so no late word bears it again.
@@ -1000,149 +1002,12 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
         if ring { say("Invitation sent") }
     }
 
-    // -- a call of two grows into a room ---------------------------------------------------------
-
-    /// A CALL OF TWO GROWS INTO A ROOM (the author's words 17.10.2026 20:22 UTC: «add to the current call more people from the
-    /// user's contacts, up to 13 on a call», «from the call's page»). A room's words, keys and invitations ride a group's road, so
-    /// the call is carried by a group this phone owns, born here of the peer and the people chosen -- each by the pipe this phone
-    /// holds with them, as every group is (MTGroup.create): its people see it in their list, and nobody outside it learns who is
-    /// in it. The peer is told on the call's own road which room the call moves into and comes in by itself (moveIn); the people
-    /// chosen are invited, and their phones ring with the invitation. The call of two ends by that rule, and the room -- the one
-    /// owner of a call of more than two -- takes the voices over. Messenger has no add mark (the author's word 19240, 11.11.2026): it never grows a call, it
-    /// only comes into a room a peer grew (takeInline).
-    #if !MONTANA_MESSENGER
-    @MainActor
-    func grow(adding people: [Chat], store: ChatStore) {
-        guard let peer = MontanaCall.shared.talkingWith, live == nil else { return }
-        let root = MTSamePair.root(peer)
-        var chosen: [Chat] = []
-        for c in people where !c.isGroup {
-            let r = MTSamePair.root(c.convRef)
-            if r != root, !chosen.contains(where: { MTSamePair.root($0.convRef) == r }) { chosen.append(c) }
-        }
-        // [I-14] the room's measure holds this phone, the peer and the people chosen
-        guard !chosen.isEmpty, chosen.count + 2 <= Self.capacity else { return }
-        // the group rides the pipe of each of its people: a peer this phone holds no pipe with could never be carried a word, and
-        // a group born without the peer would be a room the call never moves into
-        guard MontanaConv.holds(root), !ChatStore.refusesCold(root) else {
-            MontanaTrace.mark("room_refused", "grow -- no pipe with the peer")
-            return
-        }
-        let first = MTGroupPickStep.reachable(store).first { MTSamePair.root($0.convRef) == root }
-            ?? Chat(name: peer, lastMessage: "", time: "", unread: 0, convId: peer)
-        let title = String(localized: "Group Call", bundle: MTLanguage.bundle)
-        let row = MTGroup.shared.create(.group, title: title, face: Data(), people: [first] + chosen, store: store)
-        guard let key = row?.name, let g = MTGroup.shared.state(key),
-              let seat = g.members.first(where: { MTSamePair.root($0.pipe) == root })?.seat else {
-            MontanaTrace.mark("room_refused", "grow -- the group was not born")
-            return
-        }
-        let others = g.members.map(\.seat).filter { $0 != seat }
-        let video = MontanaCall.shared.isVideo ? !CallUIModel.shared.cameraOff : false
-        // THE ROOM IS MINTED BEFORE THE CALL SAYS IT MOVES (the author's word 18.10.2026 10:3x UTC: «adding to a call must not throw
-        // into a group and interrupt; it connects in the same call and shows the dialing while the others go on talking»). Measured
-        // 18.10 10:19:49Z: the call of two ended at the tap, T2 sat alone in the room, and T1 heard the room by the group's road at
-        // 10:25:21Z -- nobody met. Now the room's id, key, this phone's room key and moment ride to the peer with the group's
-        // invitation on the call's own road; the call of two stands until the peer answers that it comes in (MontanaCall.
-        // moveIntoRoom), and the room opens with the peer's pair standing -- the voices move over in the seconds a pair takes.
-        guard let kp = roomKey(g.id) else { return }
-        let mint = MTRoomMint(id: Self.hex(Data(montanaRandom(16))), key: Data(montanaRandom(32)), kp: kp, at: MontanaWakePush.nodeNow())
-        let opened = MTRoomEvent(r: mint.id, e: "open", m: MTRoomKind.call.rawValue, k: mint.key.base64EncodedString(), v: video ? 1 : 0,
-                                 at: mint.at, o: g.me, q: kp.pub.base64EncodedString())
-        var inline: String? = nil
-        if let inv = MTGroup.shared.invitationText(key, seat: seat), let od = try? JSONEncoder().encode(opened),
-           let os = String(data: od, encoding: .utf8), let js = try? JSONSerialization.data(withJSONObject: ["i": inv, "o": os]) {
-            inline = js.base64EncodedString()
-        }
-        let moved = MontanaCall.shared.moveIntoRoom(g.id + "/" + mint.id, carrying: inline) { [weak self] reply in
-            guard let self else { return }
-            let comer = reply.flatMap { r in Self.comer(r, seat: seat) }
-            MontanaTrace.mark("room", "grow people=\(g.count) video=\(video ? 1 : 0) peer=\(comer == nil ? "late" : "in")")
-            self.whenCallRests(40) { [weak self] in
-                guard let self else { return }
-                self.open(.call, video: video, in: key, invite: [], mint: mint, comer: comer)
-                guard self.live?.id == mint.id else { return }
-                self.invite([seat], ring: false)   // the peer comes in by itself: its invitation is the way back, never a ring
-                self.invite(others)
-            }
-        }
-        if !moved { MontanaTrace.mark("room_refused", "grow -- the call would not carry the move") }
-    }
-    #endif
-
-    /// The peer's answer on the call's road (takeInline): its room key and the moment it comes in, as «key moment».
-    static func comer(_ reply: String, seat: String) -> (seat: String, at: Double, pub: Data)? {
-        let parts = reply.split(separator: " ").map(String.init)
-        guard parts.count == 2, let pub = Data(base64Encoded: parts[0]), pub.count == MTRoomSeal.pubSize, let at = Double(parts[1]) else { return nil }
-        return (seat, at, pub)
-    }
-
-    /// THE ROOM HANDED ON THE CALL'S OWN ROAD (grow): the owner's invitation of this phone into the call's group and the room's open
-    /// ride in the move word itself. This phone stands the group and learns the room now, mints its own room key and its moment, and
-    /// gives both back on the same road (MontanaCall «call-room»), so the owner's pair with it stands before any group word lands.
-    /// Only the call's peer, owning the group it names, is believed; anything else leaves the move to the group's road as before.
-    func takeInline(_ head: String, _ payload: String, from peer: String) -> String? {
-        let parts = head.split(separator: "/").map(String.init)
-        guard parts.count == 2, Self.isRoomId(parts[0]), Self.isRoomId(parts[1]), live == nil, let store = ChatStore.live,
-              let d = Data(base64Encoded: payload), let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: String],
-              let inv = o["i"], let open = o["o"] else { return nil }
-        let gid = parts[0], chat = MTGroup.key(of: gid)
-        _ = MainActor.assumeIsolated { MTGroup.handle(inv, from: peer, isFromMe: false, sid: nil, store: store) }
-        guard let g = MTGroup.shared.state(chat), !g.mine, MTSamePair.root(g.owner) == MTSamePair.root(peer) else {
-            MontanaTrace.mark("room_refused", "inline -- the group did not stand")
-            return nil
-        }
-        heard(open, group: gid, chat: chat, seat: MTGroup.ownerSeat, name: nil)
-        guard seen[gid]?.id == parts[1], let kp = roomKey(gid) else { return nil }
-        let at = MontanaWakePush.nodeNow()
-        pendingMint = (parts[1], kp, at)
-        MontanaTrace.mark("room", "inline -- the group and the room stand here, my key goes back")
-        return kp.pub.base64EncodedString() + " " + String(at)
-    }
-
-    /// The call of two rests by its own road (the system's end): the room opens once the machine is idle, or says it could not.
-    private func whenCallRests(_ tries: Int, _ go: @escaping () -> Void) {
-        if MontanaCall.stateSnapshot == "idle" { go(); return }
-        guard tries > 0 else {
-            MontanaTrace.mark("room_refused", "grow -- the call of two did not rest")
-            say("The call could not start")
-            return
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.whenCallRests(tries - 1, go) }
-    }
-
-    /// THE PEER GREW OUR CALL INTO A ROOM (MontanaCall, the word «call-room»): the word names the group and the room. This phone
-    /// comes in by itself, with the camera it had in the call, the moment the group's words bring the room here (takePending).
-    func moveIn(_ word: String, from peer: String, video: Bool) -> Bool {
-        let parts = word.split(separator: "/").map(String.init)
-        guard parts.count == 2, Self.isRoomId(parts[0]), Self.isRoomId(parts[1]), live == nil else { return false }
-        let gid = parts[0]
-        pendingJoin = (MTGroup.key(of: gid), parts[1], Date(), video, peer)
-        MontanaTrace.mark("room", "move in -- waits for the room's word")
-        DispatchQueue.main.async { [weak self] in self?.takePending(gid) }   // the room may be known here already
-        return true
-    }
-
-    /// THE WAY IN THAT WAITED (a banner tapped before the room's word landed, a call of two moved into the room) opens once the
-    /// room is known here. A moved call comes only into a room of a group its peer owns, and only once the call of two rests; a
-    /// tap is kept a minute, a move two.
+    /// THE WAY IN THAT WAITED (a banner tapped before the room's word landed) opens once the room is known here; a tap is kept a minute.
     private func takePending(_ gid: String) {
         guard let pj = pendingJoin, live == nil, MTGroup.id(of: pj.chat) == gid, seen[gid]?.id == pj.room else { return }
-        guard Date().timeIntervalSince(pj.at) < (pj.from == nil ? 60 : 120) else { pendingJoin = nil; return }
-        if let from = pj.from {
-            let owner = MTGroup.shared.state(pj.chat)?.owner ?? ""
-            guard !owner.isEmpty, MTSamePair.root(owner) == MTSamePair.root(from) else {
-                pendingJoin = nil
-                MontanaTrace.mark("room_refused", "a moved call names a room of a group its peer does not own")
-                return
-            }
-            guard MontanaCall.stateSnapshot == "idle" else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in self?.takePending(gid) }
-                return
-            }
-        }
+        guard Date().timeIntervalSince(pj.at) < 60 else { pendingJoin = nil; return }
         pendingJoin = nil
-        join(pj.chat, video: pj.video)
+        join(pj.chat, video: false)
     }
 
     /// The owner asks one seat to fall silent.
@@ -2060,8 +1925,8 @@ struct MTRoomPill: View {
     }
 }
 
-/// THE ROOM, AS THE REFERENCE DRAWS ITS VIDEO CHAT (the author's word 16.10.2026: everything about groups -- atomic likeness to the
-/// reference's folder, the focus on group calls): the top bar -- the room's menu, its name and how many are in, the cross that folds
+/// THE ROOM'S VIDEO CHAT (the author's word 16.10.2026: everything about groups, the focus on group calls):
+/// the top bar -- the room's menu, its name and how many are in, the cross that folds
 /// it; the pictures in a grid of two and everyone in one list under them (this is you, speaking, listening, the microphone's mark),
 /// the way to invite at its end; five round controls at the bottom, the microphone in the middle. A tap on a picture shows it large.
 struct MTRoomScreen: View {
@@ -2070,7 +1935,7 @@ struct MTRoomScreen: View {
     @State private var inviting = false
     @State private var confirmEnd = false
 
-    /// The reference's own colours of the room: a control at rest, the top bar's glass, the list's plate, a heard voice, a lit control
+    /// The room's own colours: a control at rest, the top bar's glass, the list's plate, a heard voice, a lit control
     /// while my microphone is off and while it is on, the way out, the microphone's two gradients.
     static let rest = rgb(0x25272e, 0.72)
     static let bar = rgb(0x161616, 0.6)
@@ -2144,15 +2009,18 @@ struct MTRoomScreen: View {
     }
     /// Who may bring more people in: anyone in a chat, the owner alone in a stream.
     private var canInvite: Bool { m.kind == .call || m.amOwner }
-    /// The reference's lit control: blue while my microphone is off, green while it is on.
+    /// The loudspeaker's switch stands only where there is somewhere to switch: not with a device outside (its menu), not on a
+    /// device without an earpiece (decision 861 = a, MontanaAudioRoute.hasEarpiece).
+    private var speakerSwitch: Bool { callUI.route.shown && !callUI.route.menu }
+    /// The lit control: blue while my microphone is off, green while it is on.
     private var shine: Color { m.muted ? Self.blue : Self.green }
 
-    /// The reference's top bar: its menu on the left, the room's name and how many are in, the cross that folds the room on the right.
+    /// The top bar: its menu on the left, the room's name and how many are in, the cross that folds the room on the right.
     private var top: some View {
         HStack(spacing: 0) {
-            if !callUI.route.menu || canInvite || m.amOwner {
+            if speakerSwitch || canInvite || m.amOwner {
                 Menu {
-                    if !callUI.route.menu {
+                    if speakerSwitch {
                         Toggle(isOn: Binding(get: { callUI.route.lit }, set: { MTGroupRoom.shared.setSpeaker($0) })) {
                             Label("Speaker", systemImage: "speaker.wave.2.fill")
                         }
@@ -2222,7 +2090,7 @@ struct MTRoomScreen: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
-                    // the list fades into the controls, as the reference's does
+                    // the list fades into the controls
                     LinearGradient(colors: [Color.black.opacity(0), Color.black], startPoint: .top, endPoint: .bottom)
                         .frame(height: 80)
                         .allowsHitTesting(false)
@@ -2231,7 +2099,7 @@ struct MTRoomScreen: View {
         }
     }
 
-    /// The reference's grid of pictures: one across, else two to a row and the last one alone across; 4 points between; a row as tall
+    /// The grid of pictures: one across, else two to a row and the last one alone across; 4 points between; a row as tall
     /// as a picture is wide, never above 180.
     @ViewBuilder private func grid(width: CGFloat) -> some View {
         let p = m.tiles.filter { $0.camera || $0.screen }
@@ -2249,7 +2117,7 @@ struct MTRoomScreen: View {
         }
     }
 
-    /// Everyone in the room on one plate, as the reference lists its people, and the way to invite at its end.
+    /// Everyone in the room on one plate, and the way to invite at its end.
     private var people: some View {
         VStack(spacing: 0) {
             ForEach(Array(m.tiles.enumerated()), id: \.element.id) { i, t in
@@ -2277,12 +2145,15 @@ struct MTRoomScreen: View {
         .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 
-    /// The reference's bottom row: the sound's road (the camera's turn while it shows), the camera, the microphone in the middle, the
+    /// The bottom row: the sound's road (the camera's turn while it shows), the camera, the microphone in the middle, the
     /// screen, the way out -- 56 points each, as far apart as the width allows up to 33, the word under each in lower case.
     private var controls: some View {
         GeometryReader { geo in
-            let n: CGFloat = m.speaks ? 5 : 2
-            let gap = max(8, min(33, floor((geo.size.width - 32 - 56 * n) / (n - 1))))
+            // The first place is the camera's turn while it shows, else the sound's road -- none on a device without an
+            // earpiece and nothing outside (861 = a), and the row closes up.
+            let first = (m.speaks && m.camera && !m.screen) || callUI.route.shown
+            let n: CGFloat = (m.speaks ? 4 : 1) + (first ? 1 : 0)
+            let gap = max(8, min(33, floor((geo.size.width - 32 - 56 * n) / max(1, n - 1))))
             HStack(alignment: .top, spacing: gap) {
                 if m.speaks {
                     if m.camera, !m.screen {
@@ -2339,11 +2210,11 @@ struct MTRoomScreen: View {
                 word("Audio")
             }
             .frame(width: 56)
-        } else {
+        } else if callUI.route.shown {
             round56(callUI.route.icon, "Speaker", tint: lit ? shine : Self.rest) { MTGroupRoom.shared.setSpeaker(!lit) }
         }
     }
-    /// The microphone in the middle: the reference's round gradient -- blue while it is off, green while it is on.
+    /// The microphone in the middle: a round gradient -- blue while it is off, green while it is on.
     private var microphone: some View {
         Button { MTGroupRoom.shared.setMuted(!m.muted) } label: {
             VStack(spacing: 5) {
@@ -2379,7 +2250,7 @@ struct MTRoomScreen: View {
     }
 }
 
-/// One person of the room in its list, as the reference's row: the face (ringed green while the voice is heard), the name, what the
+/// One person of the room in its list: the face (ringed green while the voice is heard), the name, what the
 /// person does now -- this is you, connecting, speaking, listening -- and the microphone's mark. The owner's tap on another holds
 /// the owner's menu; anyone's tap on a person with a picture shows it large.
 struct MTRoomPersonRow: View {
@@ -2469,7 +2340,7 @@ struct MTRoomGlass: ViewModifier {
     }
 }
 
-/// One picture of the room, as the reference's: the camera or the screen on the plate's dark, the face when the picture is gone; the
+/// One picture of the room: the camera or the screen on the plate's dark, the face when the picture is gone; the
 /// microphone's mark, the owner's crown and the name at its foot; the green edge while the voice is heard.
 struct MTRoomTileView: View {
     let tile: MTRoomTile
@@ -2517,7 +2388,7 @@ struct MTRoomTileView: View {
     }
 }
 
-/// One person under the large picture, as the reference strings them: 84 points, the picture or the face, the microphone's mark; a
+/// One person under the large picture, in a string: 84 points, the picture or the face, the microphone's mark; a
 /// tap shows this one large.
 struct MTRoomThumb: View {
     let tile: MTRoomTile
@@ -2662,67 +2533,6 @@ struct MTRoomInviteSheet: View {
         if opening { MTGroupRoom.shared.open(kind, video: video, in: chat, invite: seats) } else { MTGroupRoom.shared.invite(seats) }
     }
 }
-
-/// WHOM TO ADD TO THE CALL (the author's words 17.10.2026 20:22 UTC: «add to the current call more people from the user's contacts,
-/// up to 13 on a call», «from the call's page»): the people this phone writes with, each by a tick -- the list a group is chosen
-/// from (MTGroupPickStep.reachable, MTPickRow), the peer left out. This phone and the peer are counted in: a row past the room's
-/// measure takes no tick. The tick at the top hands the people chosen over; the call grows once the sheet is gone (grow).
-/// Not in Messenger (the author's word 19240, 11.11.2026).
-#if !MONTANA_MESSENGER
-struct MTCallAddSheet: View {
-    @EnvironmentObject private var store: ChatStore
-    @Environment(\.dismiss) private var dismiss
-    /// The peer of the call of two.
-    let peer: String
-    var onAdd: ([Chat]) -> Void
-    @State private var chosen: [String] = []
-    @State private var query = ""
-
-    /// [I-14] The room's measure, this phone and the peer taken out.
-    static var places: Int { MTGroupRoom.capacity - 2 }
-    private var people: [Chat] {
-        let root = MTSamePair.root(peer)
-        return MTGroupPickStep.reachable(store).filter { MTSamePair.root($0.convRef) != root }
-    }
-    private var shown: [Chat] {
-        let q = query.trimmingCharacters(in: .whitespaces)
-        return q.isEmpty ? people : people.filter { store.title(for: $0).localizedCaseInsensitiveContains(q) }
-    }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    ForEach(shown) { c in
-                        let on = chosen.contains(c.convRef)
-                        Button { toggle(c.convRef) } label: { MTPickRow(chat: c, on: on) }
-                            .disabled(!on ? chosen.count >= Self.places : false)
-                    }
-                } footer: {
-                    Text("Up to \(MTGroupRoom.capacity) people on a call, you included. Everyone chosen is invited into the call.")
-                }
-                .listRowBackground(MTGlassRowPlate())
-            }
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always))
-            .scrollContentBackground(.hidden).montanaPageGround()
-            .navigationTitle("Add to Call").navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { MontanaCloseMark { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    MontanaDoneMark {
-                        onAdd(chosen.compactMap { ref in people.first { $0.convRef == ref } })
-                        dismiss()
-                    }.disabled(chosen.isEmpty).opacity(chosen.isEmpty ? 0.4 : 1)
-                }
-            }
-        }
-    }
-
-    private func toggle(_ ref: String) {
-        if let i = chosen.firstIndex(of: ref) { chosen.remove(at: i) } else if chosen.count < Self.places { chosen.append(ref) }
-    }
-}
-#endif
 
 /// THE ROOM OVER ITS CHAT: a group whose room lives shows it here -- its kind, how many are in, who invited me. The whole row is the
 /// way in, or back when this phone is in it; a line about the room (full, ended) stands here when no room screen is up.

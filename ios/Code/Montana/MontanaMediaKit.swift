@@ -376,8 +376,8 @@ enum MontanaMedia {
 // therefore we use FNV-1a and a pinned hex palette (SSOT for the avatar color).
 // MontanaAvatar lives in MontanaAvatarKit.swift -- the SSOT of a face for BOTH targets (App + NSE) [C-1].
 
-// Video compression before sending — parameters's (LegacyComponents
-// TGMediaVideoConverter, preset CompressedMedium): long side ≤848,
+// Video compression before sending — the parameters of a medium preset:
+// long side ≤848,
 // video H.264 1600 kbps, audio AAC 64 kbps. AVAssetReader/Writer (export presets
 // do not provide the system bitrate). progress 0..1 by track time.
 // A wait that ends exactly once: the previous hand-rolled read-write pairing resumed its

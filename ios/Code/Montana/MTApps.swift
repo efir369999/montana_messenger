@@ -503,7 +503,7 @@ extension Message {
     /// A letter of a game as the edition reads it (MTRowLetter.game): a forwarded, edited or answering letter, or one with a file, is none.
     var gameLetter: MTGameLetter? {
         guard !isForwarded, !edited, replyText == nil,
-              imageFile == nil, videoFile == nil, audioFile == nil, docFile == nil else { return nil }
+              attachment == nil else { return nil }
         return MTRowLetter.game(text)
     }
     /// A letter of a game after its invitation (MTGameLetter.step): the feed, the list record, the unread count and the banner pass

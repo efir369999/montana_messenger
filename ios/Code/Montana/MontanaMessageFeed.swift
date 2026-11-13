@@ -9,14 +9,14 @@ import Combine
 // compensates the offset, so the visible rows never move under the reader.
 // Cells host the existing SwiftUI bubbles untouched.
 // ═══════════════════════════════════════════════════════════════════════════
-/// The reference keeps the list's frame fixed and represents the keyboard by an inset.
+/// The list's frame stays fixed and the keyboard is represented by an inset.
 /// Its pan moves the messages once; changing that inset adds no second motion while tracking.
 struct MTFeedKeyboardLayout {
     let height: CGFloat
     let inset: CGFloat
     init(visibleHeight: CGFloat, coveredHeight: CGFloat, reserve: CGFloat) {
         let covered = max(0, coveredHeight)
-        // THE FRAME IS FIXED, THE KEYBOARD IS AN INSET (the reference's rule; the author's word 21.09:
+        // THE FRAME IS FIXED, THE KEYBOARD IS AN INSET (the author's word 21.09:
         // «the field now lies over the feed»). The frame used to grow by the covered height — right
         // while the page itself shrank to the keyboard's edge, wrong once the page stays whole and
         // the bar rises inside it: the grown frame put the newest letter back under the bar.
@@ -66,13 +66,13 @@ final class MTFeedCollectionView: UICollectionView {
         // THE KEYBOARD FOLLOWS THE FINGER (the author's word 20.09): the platform's own interactive
         // mode — the keyboard rides under the dragging touch, a release below its top edge lets it
         // go, a pull back up cancels. `.onDrag` tore it away whole at the first point of movement.
-        // The reference reaches the same feel by moving the system keyboard window through a
+        // The same feel could come from moving the system keyboard window through a
         // private class; here the one word of UIKit does it, and nothing of ours touches that window.
         keyboardDismissMode = .interactive
         // NO EDGE EFFECT OF THE SYSTEM'S (the author's word 21.09): the newest system blurs a list's
         // edge under the bar — and this list is flipped, so its «top» stands at the visual bottom and
         // the blur fell over the letters below the bar instead of the strip beneath it. The bar has
-        // no ground, the feed is clean on its whole height, as the reference draws it.
+        // no ground, the feed is clean on its whole height.
         mtHideEdgeEffects()
         transform = CGAffineTransform(scaleX: 1, y: -1)
         NotificationCenter.default.addObserver(self, selector: #selector(stopSpring), name: UIApplication.willResignActiveNotification, object: nil)
@@ -160,7 +160,7 @@ final class MTFeedFrame: UIView {
     }
     /// THE KEYBOARD'S TRANSITION REACHES THE FEED (20.09): the offset moves to where the covered
     /// edge puts it, and when the keys move by themselves its bounds ride the keyboard's spring —
-    /// the reference's list under the same transition as its input panel.
+    /// the list under the same transition as its input panel.
     func keyboardCovered(_ covered: CGFloat, speed: Float?) {
         let h = bounds.height
         guard h > 1 else { return }
@@ -346,11 +346,13 @@ final class MTFrameMeter {
     static func kind(of row: ChatConversationView.ChatRowVM) -> String {
         let m = row.message
         if !row.members.isEmpty { return "group" }
-        if m.imageFile != nil { return "photo" }
-        if m.videoFile != nil { return "video" }
-        if m.audioFile != nil { return "voice" }
-        if m.docFile != nil { return "doc" }
-        return "text"
+        switch m.attachment?.kind {
+        case "img": return "photo"
+        case "vid": return "video"
+        case "aud": return "voice"
+        case "doc": return "doc"
+        default: return "text"
+        }
     }
 
     /// EVERY MOTION OF THE SCREEN IS MEASURED BY THIS ONE METER (the author's word 25.09: «make the metrics show every
@@ -757,7 +759,7 @@ struct MTFeedListView: UIViewRepresentable {
             // cell's CONTENT VIEW is the hosting view, and it is what the play glyph's touch
             // names; its empty parts name nothing, so the touch falls to the cell itself. The
             // background is the feed and the cell — never the hosted content view.
-            // A TAP ANYWHERE (the author's word 21.09, the reference's list): the background, a cell,
+            // A TAP ANYWHERE (the author's word 21.09): the background, a cell,
             // a bubble's own content alike. A control inside claims its touch (MTTouchClaim), and the
             // tap's action, one turn later, leaves the keyboard to it.
             let bg = v === cv || v is UICollectionViewCell

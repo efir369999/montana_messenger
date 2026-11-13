@@ -849,6 +849,9 @@ enum MontanaBackup {
         }
         // The letters still on their way: laid back into the queue once their pipes stand again.
         if let q = SeedScope.outboxNow() { out[outboxTag] = without(people, json: q).base64EncodedString() }
+        // Each plain value with the moment it was set (OZ 1 p.3.5); a build before this one passes the tag by (layCard, default).
+        let stamped = moments().filter { out["s:" + $0.key] != nil || out["n:" + $0.key] != nil }
+        if !stamped.isEmpty, let j = try? JSONEncoder().encode(stamped) { out[momentsTag] = j.base64EncodedString() }
         guard let data = try? JSONEncoder().encode(out) else { return nil }
         return Card(data: data, count: out.count, skipped: skipped)
     }
@@ -907,10 +910,50 @@ enum MontanaBackup {
         return out
     }
 
+    /// ONE VALUE, ONE MOMENT (OZ 1 p.3.5; the author's word 19993 p.3: «Demo Akk» on T1 came back «Demo»). Two devices of one
+    /// person lay each other's copies, and a copy's age is no measure of what it holds: the iPad, restored by its words, laid a
+    /// light copy of its own 37 s later with the «Demo» it had been given -- a fresher copy than T1's «Demo Akk». So each plain
+    /// value (a string, a number) carries the moment it was set, and a copy laid as one of many yields where this device set the
+    /// value later. The book holds, for each key, the print of its value and its moment. Born on a phone that came in by its
+    /// words (MontanaSeed.entered), the values it finds were given by a copy: their moment is unknown, -1. Born on a phone from
+    /// before 865 a, the person set them there: 0. A value that no longer meets its print is stamped now.
+    static let momentsKey = "mt.card.moments"   // NOT-UI: the person's on this phone (SeedScope.seatKeys), never in a copy
+    private static let momentsTag = "t:moments"
+    /// The card's shape: 2 -- each plain value carries its moment. A light copy laid in an older shape is laid anew (MTKeeping.tick).
+    static let cardEngine = 2
+    static func moments() -> [String: Double] {
+        let ud = UserDefaults.standard
+        let held = ud.dictionary(forKey: momentsKey) as? [String: String]
+        var book = held ?? [:]
+        let first: Double = MontanaSeed.entered == nil ? 0 : -1
+        let now = Date().timeIntervalSince1970
+        var out: [String: Double] = [:]
+        for (k, v) in SeedScope.carried() where !SeedScope.joins(k) {
+            guard let s = plain(v) else { continue }
+            if let row = book[k]?.split(separator: " "), row.count == 2, row[0] == print8(s), let t = Double(row[1]) {
+                out[k] = t
+                continue
+            }
+            let t = held == nil ? first : now
+            book[k] = stamp(s, t)
+            out[k] = t
+        }
+        if book != held { ud.set(book, forKey: momentsKey) }
+        return out
+    }
+    private static func plain(_ v: Any) -> String? { (v as? String) ?? (v as? NSNumber)?.stringValue }
+    private static func print8(_ s: String) -> String { SHA256.hash(data: Data(s.utf8)).prefix(8).map { String(format: "%02x", $0) }.joined() }
+    private static func stamp(_ s: String, _ t: Double) -> String { print8(s) + " " + String(t) }
+
     private static func layCard(_ d: Data) -> Bool {
         guard MontanaDeviceKey.key != nil,
               let map = try? JSONDecoder().decode([String: String].self, from: d) else { return false }
         let ud = UserDefaults.standard
+        // ONE VALUE, ONE MOMENT (moments): the copy's moment of each plain value; a copy from a build before carries none (-1).
+        let at = map[momentsTag].flatMap { Data(base64Encoded: $0) }.flatMap { try? JSONDecoder().decode([String: Double].self, from: $0) } ?? [:]
+        let here = moments()
+        var book = (ud.dictionary(forKey: momentsKey) as? [String: String]) ?? [:]
+        var kept: [String] = []
         for (tagged, v) in map {
             let k = String(tagged.dropFirst(2))
             let joins = SeedScope.joins(k)
@@ -928,8 +971,11 @@ enum MontanaBackup {
                 guard let raw = Data(base64Encoded: v) else { continue }
                 let have = joins ? ud.data(forKey: k) : nil
                 ud.set(have.map { union(json: $0, raw, by: fields) } ?? raw, forKey: k)
-            case "s:": ud.set(v, forKey: k)
-            case "n:": ud.set(Double(v) ?? 0, forKey: k)
+            case "s:", "n:":
+                let t = at[k] ?? -1
+                if layingOfMany, let h = here[k], t < h { kept.append(k); continue }   // set here later: the copy's value is older
+                if tagged.hasPrefix("s:") { ud.set(v, forKey: k) } else { ud.set(Double(v) ?? 0, forKey: k) }
+                if let s = ud.object(forKey: k).flatMap(plain) { book[k] = stamp(s, t) }
             case "a:":
                 if let raw = Data(base64Encoded: v), let a = try? JSONDecoder().decode([String].self, from: raw) {
                     let have = joins ? ud.stringArray(forKey: k) : nil
@@ -956,6 +1002,8 @@ enum MontanaBackup {
             default: break
             }
         }
+        ud.set(book, forKey: momentsKey)
+        if !kept.isEmpty { MontanaTrace.mark("card_laid", "kept=\(kept.count) keys=" + kept.sorted().joined(separator: ",")) }
         return true
     }
 
@@ -997,13 +1045,19 @@ enum MontanaBackup {
     /// THE BAR OF A RESTORE MEASURES WHAT IT NAMES (the critic, 23.09: 2.9 GB came back under a spinner that
     /// stood on «Create backup»): the share of the copy's own frames already read and filed, from the first one.
     /// The person waits for it, so it runs at the priority of a person waiting.
-    static func restore(from url: URL, progress: @escaping (Double) -> Void = { _ in },
+    /// A COPY LAID AS ONE OF MANY (OZ 1 p.3.5): the light copies of every device of the words and the keepers' full copy
+    /// (MTKeeping) -- a plain value such a copy carries yields to the same value set here later (layCard, moments). A copy the
+    /// person takes back by hand, from a file or from iCloud, is the one they chose: its values stand, as before.
+    static func restore(from url: URL, ofMany: Bool = false, progress: @escaping (Double) -> Void = { _ in },
                         done: @escaping (Result<Tally, Refusal>) -> Void) {
         MontanaArchive.onOwnQueue(urgent: true) {
+            layingOfMany = ofMany   // read by layCard on this same queue, which runs one thing at a time
+            defer { layingOfMany = false }
             let r = apply(url, progress)
             DispatchQueue.main.async { done(r) }
         }
     }
+    private static var layingOfMany = false
 
     /// One reporter for both shapes: a share, spoken only when the whole percent moves.
     private final class Share {

@@ -1462,7 +1462,7 @@ enum MontanaMeeting {
             return
         }
         #endif
-        // A GROUP'S INVITE LINK IS ITS OWNER'S CARD AND THE GROUP'S MARK (stage R.6, the reference folder's «Invite Link»):
+        // A GROUP'S INVITE LINK IS ITS OWNER'S CARD AND THE GROUP'S MARK (stage R.6, the group page's «Invite Link»):
         // the mark waits for the meeting, and the card goes on by the one road of a link
         var url = given
         if let j = MTGroup.joinMark(in: given) {

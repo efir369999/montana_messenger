@@ -8,7 +8,7 @@ import UIKit
 // selection was tried first and named: it takes the whole block and offers one Copy, with nothing
 // to drag — that is copying a letter, not selecting text.
 //
-// The wait before the words are caught is 0.3 s — the reference client measures the same 0.3 s
+// The wait before the words are caught is 0.3 s — the same 0.3 s a text view waits
 // before it catches a word — so the selection arrives at the speed of the menu that opened it, and
 // the first thing caught is the WORD under the finger, not a bare caret. The recognizer that
 // measures the wait is our own: nothing is reset on the system's recognizers after their birth.
@@ -150,7 +150,7 @@ struct MTMessageText: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
-        // The word under the finger, caught after the same wait the reference client waits.
+        // The word under the finger, caught after the same 0.3 s wait.
         @objc func hold(_ g: UILongPressGestureRecognizer) {
             // SILENT-OK: a gesture reports every phase and a finger may land where there is no
             // text; not catching a word is the ordinary course of a touch, not a failed delivery.

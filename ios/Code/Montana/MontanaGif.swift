@@ -2,8 +2,8 @@ import SwiftUI
 import UIKit
 import ImageIO
 
-/// A MOVING PICTURE IS THE PLATFORM'S OWN WORK (22.09). The reference carries a renderer of its
-/// own for animation (rlottie, its multi-animation renderer, its frame cache) because it plays
+/// A MOVING PICTURE IS THE PLATFORM'S OWN WORK (22.09). A renderer of one's
+/// own for animation (rlottie, a multi-animation renderer, a frame cache) is there to play
 /// vector stickers and video files as well. A GIF needs none of that: ImageIO reads and plays the frames
 /// itself -- CGAnimateImageAtURLWithBlock over the source's own durations, one frame in memory at a time
 /// (MTGifView for a letter, MTGifLoopView for a tile of the choosing).
@@ -368,8 +368,8 @@ final class MontanaGifBook: ObservableObject {
 
 /// THE SEARCH FOR MOVING PICTURES GOES THROUGH OUR OWN NODE (the author's word 22.09, road B).
 ///
-/// The reference searches through its own server, which asks the picture house on the client's
-/// behalf -- the phone never speaks to the house. We keep that shape and change the server for
+/// The search goes through a server, which asks the picture house on the client's
+/// behalf -- the phone never speaks to the house. That server is
 /// our own node: the node holds the key, the node asks the house, and the house learns
 /// one address — the node's — never a person's. The phone opens no connection outside our own
 /// doors, and nothing of a conversation, a name or a letter is anywhere near this road.

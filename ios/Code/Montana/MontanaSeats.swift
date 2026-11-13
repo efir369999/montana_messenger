@@ -298,17 +298,21 @@ final class MTSeats: ObservableObject {
         #if !MONTANA_MESSENGER
         MTApps.wall?.drain()   // no wall write on its way lands over the lifted person's values (P-4)
         #endif
-        var moved = 0
+        var moved: [String] = []
         for f in SeedScope.seatFolders {
             let parked = shelf(of: f, in: id)
             guard FileManager.default.fileExists(atPath: parked.path), let p = place(of: f) else { continue }
-            if put(parked, at: p, strays: strays) { moved += 1 }
+            if put(parked, at: p, strays: strays) { moved.append(f) }
         }
         let ud = UserDefaults.standard
         for (k, v) in layer { ud.set(v, forKey: k) }
         for (k, d) in rec.chain where !MTRetired.keychain(k) { MontanaKeychain.set(k, d) }   // what left never comes back with a seat (decision 673 (a))
         guard MontanaSeed.setActive(mnemonic: rec.words) else {
-            MontanaTrace.mark("seat_lift", "REFUSED seed id=" + id)
+            // A REFUSED SEED FOLDS THE LIFT BACK (OZ 1 p.5.4, the critic K4): the folders go back to the shelf and the store is
+            // emptied, so the person who left is lifted again onto empty places -- never onto this person's folders and values.
+            for f in moved { if let p = place(of: f) { _ = put(p, at: shelf(of: f, in: id), strays: nil) } }
+            clearStore()
+            MontanaTrace.mark("seat_lift", "REFUSED seed id=" + id + " folded=" + String(moved.count))
             return false
         }
         MontanaLocalVault.commit()
@@ -316,7 +320,7 @@ final class MTSeats: ObservableObject {
         b.active = id
         write(b)
         MontanaTrace.mark("seat_lift", "id=" + id + " keys=" + String(layer.count) + " chain=" + String(rec.chain.count) +
-                             " folders=" + String(moved) + " ms=" + String(Int(Date().timeIntervalSince(t0) * 1000)))
+                             " folders=" + String(moved.count) + " ms=" + String(Int(Date().timeIntervalSince(t0) * 1000)))
         return true
     }
     /// The lifted person's memory: every owner reads the store again, the node and the wake door learn who is seated. The

@@ -237,9 +237,9 @@ enum MTLinks {
 // connecting a button later changes one case and leaves the row untouched.
 enum MTPeerAction: Int, CaseIterable, Identifiable {
     case message, audioCall, videoCall, more   // «More» (the author's word 22.09): the chat's wallpaper lives behind it
-    // A GROUP'S OWN BUTTONS, AS THE REFERENCE'S GROUP PAGE HAS THEM (the author's word 17.10.2026): its voice chat, its sound, its search.
+    // A GROUP'S OWN BUTTONS (the author's word 17.10.2026): its voice chat, its sound, its search.
     case voiceChat, mute, unmute, search
-    // A CHANNEL'S OWN BUTTONS, AS THE REFERENCE'S CHANNEL PAGE HAS THEM (17.10.2026): its owner's live stream, a subscriber's way out.
+    // A CHANNEL'S OWN BUTTONS (17.10.2026): its owner's live stream, a subscriber's way out.
     case liveStream, leave
 
     var id: Int { rawValue }
@@ -423,7 +423,7 @@ final class MTPeerInfoState: ObservableObject {
         // A GROUP'S NOTE IS ITS DESCRIPTION, read above: the row's own note written over it opened the editor empty, and «Done» carried
         // the empty words to every phone of the group (MTGroup.renew) -- the checklist's E.1.
         if kind != .group { draftNote = chat.note ?? "" }
-        // A group's page opens on its media, as the reference's does: the transactions are a person's (the checklist's Zh.1).
+        // A group's page opens on its media: the transactions are a person's (the checklist's Zh.1).
         if kind == .group, MTGroup.shared.kind(chat.name) == .group { tab = .media }
         draftPhoto = store.avatarFor(chat)
         draftMembers = chat.members
@@ -452,19 +452,20 @@ final class MTPeerInfoState: ObservableObject {
         let given = card.givenName.trimmingCharacters(in: .whitespaces)
         let family = card.familyName.trimmingCharacters(in: .whitespaces)
         if !(given + family).isEmpty { MTNameBook.setManual(conv: conv, first: given, last: family) }
-        addToContacts(conv: conv,
-                      title: [card.givenName, card.familyName].filter { !$0.isEmpty }.joined(separator: " "))
+        addToContacts(conv: conv)
     }
 
-    func addToContacts(conv: String, title: String) {
+    func addToContacts(conv: String) {
         let raw = MontanaLocalVault.getString("mtContacts") ?? ""
         var arr: [ContactsTabView.MTContact] = []
         if let d = raw.data(using: .utf8),
            let x = try? JSONDecoder().decode([ContactsTabView.MTContact].self, from: d) { arr = x }
         guard !arr.contains(where: { $0.ref == conv }) else { return }
-        let parts = title.split(separator: " ", maxSplits: 1).map(String.init)
-        // The card name is what the person sees; the address does not get into it (N-1 of the address inventory).
-        let first = parts.first ?? MTNameBook.display(conv: conv)
+        // THE CARD MIRRORS THE BOOK (MTNameBook.syncContact; OZ 1 p.14.1): its name fields hold the name my hand gave -- the
+        // rename book's -- or nothing, and never the address (N-1 of the address inventory). The page's title is the person's
+        // own word: copied here, one of their devices' names froze on the card as mine; the book answers at display time.
+        let parts = (MTNameBook.mine(conv) ?? "").split(separator: " ", maxSplits: 1).map(String.init)
+        let first = parts.first ?? ""
         let last = parts.count > 1 ? parts[1] : ""
 
         let c = ContactsTabView.MTContact(firstName: first, lastName: last, ref: conv,

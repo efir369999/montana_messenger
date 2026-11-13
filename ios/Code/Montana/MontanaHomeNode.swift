@@ -568,7 +568,7 @@ enum MTHomeShelf {
         return (Set(gone.keys), bytes)
     }
 
-    /// THE CACHE KEEPS ITSELF (the reference's «keep media» and «maximum cache size»): a file the node holds and nobody opened
+    /// THE CACHE KEEPS ITSELF (a «keep media» term and a «maximum cache size»): a file the node holds and nobody opened
     /// within the person's term leaves this phone, and past the person's ceiling the files opened longest ago leave first -- each
     /// only on the node's word asked now, as the hand's clearing.
     static func trimPass(days: Int, limitGB: Int) async -> (files: Int, bytes: Int)? {
@@ -772,7 +772,7 @@ final class MTHomeBook: @unchecked Sendable {
             }
         }
     }
-    /// A LOOK BRINGS IT BACK (as the reference does): a file the book names and this phone no longer holds comes from the
+    /// A LOOK BRINGS IT BACK: a file the book names and this phone no longer holds comes from the
     /// node when its bubble stands on the screen and the attachments of this network download by themselves; a tap always.
     nonisolated static func want(_ name: String) { Task { @MainActor in shared.bring(name, force: false) } }
     func bring(_ name: String, force: Bool) {
@@ -785,7 +785,7 @@ final class MTHomeBook: @unchecked Sendable {
                 MTHomeKeep.shared.bringing.remove(name)
                 guard ok, let store = ChatStore.live else { return }
                 let chat = store.messages.first { _, rows in
-                    rows.contains { m in [m.imageFile, m.videoFile, m.audioFile, m.docFile].contains(name) }
+                    rows.contains { m in m.attachment?.file == name }
                 }?.key
                 if let chat { store.fillMedia(chat, name: name) } else { store.objectWillChange.send() }
             }

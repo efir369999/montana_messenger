@@ -108,8 +108,10 @@ struct CopyInventory {
                 let rows = keyed.map { $0.1 }
                 var files: [String] = []
                 for (key, m) in keyed {
-                    let pairs: [(String?, MontanaBackup.Kind)] = [(m.imageFile, .photo), (m.videoFile, .video),
-                                                                  (m.audioFile, .voice), (m.docFile, .file)]
+                    let pairs: [(String?, MontanaBackup.Kind)] = m.attachment.map { a -> [(String?, MontanaBackup.Kind)] in
+                        let k: MontanaBackup.Kind = a.kind == "img" ? .photo : a.kind == "vid" ? .video : a.kind == "aud" ? .voice : .file
+                        return [(a.file, k)]
+                    } ?? []
                     for (f, k) in pairs {
                         guard let f, !f.isEmpty, !f.contains("/") else { continue }
                         inv.owner[f] = (chat.convRef, k)

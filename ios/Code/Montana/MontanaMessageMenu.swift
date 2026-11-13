@@ -36,8 +36,8 @@ import Contacts
 // — for one small plate. On a long letter that rebuild is what a person sees as slowness: the
 // answer was already in the model within milliseconds, and the drawing came later.
 //
-// The reference client does not rebuild the message for this: it keeps the reaction node and only
-// lays it out again. This is the same thing in our shape, and the same shape the transfer ring
+// The message is not rebuilt for this: the reaction node is kept and only
+// laid out again, here in our shape, and the same shape the transfer ring
 // already uses — the cell is not reconfigured per tick, the part that changed redraws itself.
 //
 // The store stays the one truth of what a letter holds; the board is its living face, written in
@@ -118,7 +118,7 @@ enum MTReactions {
         return vocabulary
     }
 
-    /// HOW MANY ANSWERS THE ROW HOLDS ON THIS SCREEN (20.09): the row is the one the reference
+    /// HOW MANY ANSWERS THE ROW HOLDS ON THIS SCREEN (20.09): the row is the one the menu
     /// draws — a capsule hugging its answers — and it never leaves the screen. Seven at 30 pt with
     /// their room are wider than a 375-point window, so the count is what fits the cloud's width:
     /// the glyph measured by the platform, the row's own spacing and padding, the chevron. Never
@@ -230,14 +230,14 @@ struct MessageContextOverlay: View {
     var onClose: () -> Void
     /// The letters of a media group under the menu: the bubble is drawn as the plate it is in the feed.
     var members: [Message] = []
-    /// WHO READ A LETTER OF MINE IN A GROUP (the reference's «N Seen», MTGroup.seenBy): nil anywhere else.
+    /// WHO READ A LETTER OF MINE IN A GROUP («N Seen», MTGroup.seenBy): nil anywhere else.
     var seenBy: [String]? = nil
-    /// A CHANNEL'S POST ON A SUBSCRIBER'S PHONE (the reference's menu there): the subscriber writes nothing into the channel, so no
+    /// A CHANNEL'S POST ON A SUBSCRIBER'S PHONE (a subscriber's menu): the subscriber writes nothing into the channel, so no
     /// reply and no pin stand -- the words, the post handed on, a report and the selection.
     var readsOnly = false
-    /// A CHANNEL WHOSE OWNER TURNED REACTIONS OFF (the reference's «Allow Reactions»): no strip of reactions stands over the post.
+    /// A CHANNEL WHOSE OWNER TURNED REACTIONS OFF («Allow Reactions»): no strip of reactions stands over the post.
     var reactionsAllowed = true
-    /// A CHANNEL THAT TAKES SOME REACTIONS (the reference's «Some Reactions»): the strip and the whole choice offer its list alone.
+    /// A CHANNEL THAT TAKES SOME REACTIONS («Some Reactions»): the strip and the whole choice offer its list alone.
     var reactionsOnly: [String]? = nil
     @State private var shown = false
     @State private var confirmingDelete = false
@@ -246,7 +246,7 @@ struct MessageContextOverlay: View {
     @State private var placeSaid = false
     @State private var rowFrame: CGRect = .zero   // the reactions row in window points — the diary compares the finger with it
     @State private var rowSize: CGSize = .zero    // the row's own size — the cloud reserves exactly this
-    /// THE ROW AS THE REFERENCE DRAWS IT (the author's word 20.09: «put the row back as it was»): a
+    /// THE ROW AS IT WAS DRAWN (the author's word 20.09: «put the row back as it was»): a
     /// capsule hugging its answers, ten points apart, the chevron last. It never leaves the screen by
     /// construction — the count of answers is what fits this window (MTReactions.fitCount). It is a
     /// node of its own beside the scrolling cloud, at the place the cloud reserves (see the cloud).
@@ -283,15 +283,15 @@ struct MessageContextOverlay: View {
             // 14.1 — THE WHOLE CLOUD IN ONE SCROLLING CONTAINER. Reactions, the bubble and the
             // list of actions are one picture: taller than the screen, it travels under the
             // finger instead of being cut off at both ends. The area that closes the menu lives
-            // INSIDE the container and under the cloud, exactly as the reference client keeps
-            // its dismiss node inside the scrolling node — otherwise the container would eat
+            // INSIDE the container and under the cloud, a dismiss node kept
+            // inside the scrolling node — otherwise the container would eat
             // every tap meant for the dim.
             // 14.3 — THE PICTURE STANDS ON THE VIEWPORT, NOT ON THE WINDOW, AND KEEPS ITS EDGES.
             // The window is the whole glass, notch and home line included; the viewport is what a
             // person can actually see. Measuring the empty ground by the window made it taller
             // than the place it lives in, so the picture rode a few points under the notch and the
             // home line and could never quite come to rest. It is measured by the viewport now,
-            // and the two edges are named once, here, in the numbers the reference client keeps:
+            // and the two edges are named once, here, in the numbers the menu keeps:
             // eight points below the status bar, ten above the home line.
             GeometryReader { geo in
                 let place = MTMenuPlace(viewportH: geo.size.height,
@@ -332,7 +332,7 @@ struct MessageContextOverlay: View {
                 .onChange(of: parts) { _, p in
                     guard !placeSaid, (p["cloud"] ?? 0) > 0, (p["reactions"] ?? 0) > 0 || !reactionsAllowed else { return }
                     placeSaid = true
-                    let kind = message.imageFile != nil ? "img" : message.videoFile != nil ? "vid" : message.audioFile != nil ? "aud" : message.docFile != nil ? "doc" : "text"
+                    let kind = message.attachment?.kind ?? "text"
                     let letter = letterTop.map { Int($0 - geo.frame(in: .global).minY) } ?? -1
                     let r = rowFrame
                     MontanaTrace.mark("menu_open", "kind=\(kind) mine=\(message.isMine ? 1 : 0) caption=\(message.text.isEmpty ? 0 : 1) top=\(Int(place.top ?? -1)) letter_top=\(letter) reactions_h=\(Int(p["reactions"] ?? 0)) cloud_h=\(Int(p["cloud"] ?? 0)) viewport=\(Int(geo.size.height)) row=\(Int(r.minX)),\(Int(r.minY)),\(Int(r.width)),\(Int(r.height)) win=\(Int(MTScene.size().width))x\(Int(MTScene.size().height))")
@@ -394,7 +394,7 @@ struct MessageContextOverlay: View {
                         // that is a child of a scrolling container answers only once the container has come
                         // to rest — the diary showed every tap in the first three seconds swallowed and the
                         // fourth taken, while the opened choice (a scroll of its own) answered at once. The
-                        // reference keeps its reaction strip as a node of its own beside the scrolling
+                        // reaction strip is a node of its own beside the scrolling
                         // content, moved with it: so here — the cloud reserves the row's size, the row stands
                         // outside the scroll at that place (reactionsRow), and follows the place as it moves.
                         Color.clear
