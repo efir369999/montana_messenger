@@ -3499,7 +3499,7 @@ struct ChatConversationView: View {
         let answered = replyingTo
         replyingTo = nil
         let quote = answered.map { ChatStore.listPreview($0) } ?? ""
-        let quoteMid = answered?.msgId.map { MontanaStickerBook.bare($0) } ?? ""
+        let quoteMid = answered?.msgId.map { MTMid.bare($0) } ?? ""
         // Pictures pasted together are one group too (19.09) — a sticker never folds, so a paste
         // that holds one stands on its own; a file between pictures ends their plate (MTStagedOrder.plates, 25.10).
         var slots = [MTMediaGroup.Slot?](repeating: nil, count: names.count)
@@ -4249,7 +4249,7 @@ struct ChatConversationView: View {
         let answered = replyingTo
         replyingTo = nil
         let quote = answered.map { ChatStore.listPreview($0) } ?? ""
-        let quoteMid = answered?.msgId.map { MontanaStickerBook.bare($0) } ?? ""
+        let quoteMid = answered?.msgId.map { MTMid.bare($0) } ?? ""
         _ = store.append(chat.name, Message(text: "", isFromMe: true, time: nowHHMM(),
                                             replyText: quote.isEmpty ? nil : quote,
                                             imageFile: name,
@@ -4339,7 +4339,7 @@ struct ChatConversationView: View {
         }
         if chat.isGroup { MTGroup.shared.resend(m, in: chat.name, store: store); return }   // a group's letter rides again on its own copies
         guard let sid = m.msgId else { return }
-        let bare = sid.hasPrefix("mid:") ? String(sid.dropFirst(4)) : sid
+        let bare = MTMid.bare(sid)
         store.settleByMid(conv: chat.name, mid: bare, .sending)
         MontanaDeliveryEngine.shared.retryNow(mid: bare, to: convKey, chat: chat.name, text: m.text)
     }
@@ -4740,7 +4740,7 @@ struct ChatConversationView: View {
         // when the letter leaves becomes the ending, not the words that already became the letter.
         draft.pending = val
         draft.caret = input.caret
-        draft.replyMid = replyingTo?.msgId.flatMap { $0.hasPrefix("mid:") ? String($0.dropFirst(4)) : nil } ?? ""
+        draft.replyMid = replyingTo?.msgId.flatMap(MTMid.wire) ?? ""
         // An empty field is a word too, and it is said AT ONCE and through every gate: emptiness
         // carries no letter to leak, and it is the only word whose loss leaves a ghost. It passes
         // the live-typing gate on purpose — that gate is about streaming the person's letters, and
@@ -4844,7 +4844,7 @@ struct ChatConversationView: View {
         composer.sent()
         _ = store.send(text: text, chat: chat.name, convRef: chat.convId ?? "",
                               replyText: replyingTo.map { ChatStore.listPreview($0) }, replyToId: replyingTo?.id,
-                              replyWireMid: replyingTo?.msgId.flatMap { $0.hasPrefix("mid:") ? String($0.dropFirst(4)) : nil },
+                              replyWireMid: replyingTo?.msgId.flatMap(MTMid.wire),
                               linkCard: seen, noLinkCard: refused)
         replyingTo = nil
     }

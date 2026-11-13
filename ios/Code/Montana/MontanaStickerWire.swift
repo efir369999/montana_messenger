@@ -43,7 +43,7 @@ enum MontanaStickerWire {
         if !quote.isEmpty { body["rq"] = quote; body["rm"] = quoteMid }
         if group {
             guard let d = try? JSONSerialization.data(withJSONObject: body), let js = String(data: d, encoding: .utf8) else { return }
-            MTGroup.shared.carryPassport(js, letter: MontanaStickerBook.bare(letter), in: chat)
+            MTGroup.shared.carryPassport(js, letter: MTMid.bare(letter), in: chat)
             return
         }
         send(body, to: peer, chat: chat)
@@ -112,7 +112,7 @@ enum MontanaStickerWire {
             // The letter may already stand: its plate is grown here, by the one owner of a late
             // quote (enrichQuote). Arriving first, the passport waits and the landing file asks it.
             if !quote.isEmpty, let store {
-                store.enrichQuote(chat, sid: "mid:" + MontanaStickerBook.bare(letter), qt: quote,
+                store.enrichQuote(chat, sid: "mid:" + MTMid.bare(letter), qt: quote,
                                   qm: (o["rm"] as? String) ?? "")
             }
             if !book.holds(pack) { book.meet(pack: pack, title: title, owner: owner, expected: (o["c"] as? Int) ?? 0) }

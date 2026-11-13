@@ -929,6 +929,7 @@ struct MTPagePreviewDress: View {
 
 struct AppearanceView: View {
     @AppStorage(MTGifPlay.reduceKey) private var gifReduce = false
+    @AppStorage(MontanaOctagon.barBottomKey) private var barBottom = MontanaOctagon.barBottomBirth   // the time panel's place (OZ 1 p.1.8.1)
     @AppStorage("keyboardLook") private var keyboardLook: String = "system"
 @AppStorage(MontanaSkin.key) private var skin = MontanaSkin.native.rawValue
     @AppStorage("bubbleStyle") private var bubbleStyle: String = "montana"
@@ -1030,6 +1031,15 @@ struct AppearanceView: View {
             }.listRowBackground(MTGlassRowPlate())
             // VOICE STYLE STANDS HIGH (link 14680 (6)).
             // The voice orb's own screen (the author's word 14.09): colours of both sides, the motion.
+            // THE TIME PANEL'S PLACE (OZ 1 p.1.8.1, the author's word 21179): at the top or at the bottom of the screen.
+            Section("Time panel") {
+                Picker("Time panel", selection: $barBottom) {
+                    Text("Top").tag(false)
+                    Text("Bottom").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
             Section("Voice message style") {
                 NavigationLink { MontanaVoiceOrbStyleView() } label: {
                     HStack(spacing: 12) {
@@ -1890,6 +1900,23 @@ struct PrivacyView: View {
     @State private var erasing = false   // the Messenger's deletion is on its way (forgetSeed)
     @State private var showSeed = false
     @Environment(UIState.self) private var ui
+    /// WHO MAY REACH ME (OZ 1 p.1.8, the author's word 21096): the four rules as MTPrivacy keeps them, read once as the page opens.
+    @State private var reach = Dictionary(uniqueKeysWithValues: MTPrivacy.Act.allCases.map { a in (a, MTPrivacy.rule(a)) })
+    private static func actName(_ a: MTPrivacy.Act) -> LocalizedStringKey {
+        switch a {
+        case .write: return "Who can message me"
+        case .call: return "Who can call me"
+        case .page: return "Who can see my page"
+        case .invite: return "Who can add me to groups and channels"
+        }
+    }
+    private static func whoName(_ w: MTPrivacy.Who) -> LocalizedStringKey {
+        switch w {
+        case .everyone: return "Everyone"
+        case .contacts: return "My contacts"
+        case .nobody: return "Nobody"
+        }
+    }
 
     /// A row in the phone-settings style: an icon in a coloured square, a name, the value on the right.
     private func icon(_ name: String, _ color: Color) -> some View {
@@ -1901,6 +1928,16 @@ struct PrivacyView: View {
 
     var body: some View {
         List {
+            // WHO MAY REACH ME (OZ 1 p.1.8, the author's word 21096: «who may write to me, call me, see my page, add me to a group or
+            // a channel -- Everyone, My contacts, Nobody»): a choice is the rule at once, obeyed on this phone (MTPrivacy).
+            Section {
+                ForEach(MTPrivacy.Act.allCases, id: \.self) { a in
+                    Picker(selection: Binding(get: { reach[a] ?? .everyone },
+                                              set: { w in reach[a] = w; MTPrivacy.set(a, w, contacts: MTChatFolders.contactRefs()) })) {
+                        ForEach(MTPrivacy.Who.allCases, id: \.self) { w in Text(Self.whoName(w)).tag(w) }
+                    } label: { Text(Self.actName(a)) }
+                }
+            } header: { Text("Who can reach me") }
             // The permission lives with the system, and the app does not flip it: iOS has no
             // call that would change local-network access. The row leads to where it changes
             // and shows what we can see: whether announcing ourselves on the network worked.

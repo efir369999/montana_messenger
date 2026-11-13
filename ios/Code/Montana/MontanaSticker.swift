@@ -312,20 +312,16 @@ final class MontanaStickerBook: ObservableObject {
 
     // -- what a letter says about itself -----------------------------------------------------
 
-    /// THE LETTER'S NAME HAS ONE SPELLING HERE (22.09): rows wear «mid:» before it and the wire
-    /// does not, so the book keeps the bare name and every asker is answered the same.
-    static func bare(_ letter: String) -> String {
-        letter.hasPrefix("mid:") ? String(letter.dropFirst(4)) : letter
-    }
+    // The book keeps a letter's bare name (MTMid.bare), so every asker is answered the same (22.09).
 
     func note(passport: Passport, for letter: String) {
-        let letter = Self.bare(letter)
+        let letter = MTMid.bare(letter)
         guard !letter.isEmpty else { return }
         passports[letter] = passport
         if 512 < passports.count, let first = passports.keys.first { passports.removeValue(forKey: first) }
         save()
     }
-    func passport(forLetter letter: String) -> Passport? { passports[Self.bare(letter)] }
+    func passport(forLetter letter: String) -> Passport? { passports[MTMid.bare(letter)] }
 
     /// WHO GAVE THE LINK (22.09): a pack link carries no address of anybody -- the giver is
     /// remembered at the moment the letter carrying it lands, and that is who the set is asked of.

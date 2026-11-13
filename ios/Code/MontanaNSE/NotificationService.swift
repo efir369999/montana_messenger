@@ -75,6 +75,7 @@ final class NotificationService: UNNotificationServiceExtension {
         var senderGlyph = ""
         var openedMid = ""
         var openedQuiet = false
+        var personal = true   // a person's letter, not a group's word: the rule of who may write to me is asked (OZ 1 p.1.8)
         var cargoLetter: (mid: String, text: String)? = nil   // the media letter whose small cargo this process brings (29.09)
         var collectBox = false   // the waiting envelopes of the box are collected behind the hand-over (17.10.2026)
         // A FIRST-MEETING letter: the envelope under the card key carries the encapsulation,
@@ -248,6 +249,7 @@ final class NotificationService: UNNotificationServiceExtension {
             else { content.userInfo["mid"] = mid }     // the foreground judge suppresses a double by this
             if let room = Self.invitedRoom(text) { content.userInfo["room"] = room }   // the tap goes into the room (MTGroupRoom)
             convKey = group?.chat ?? conv
+        personal = group == nil
             // THE SYSTEM HEARS THE CONVERSATION'S ALIAS (MTNoticeAlias, 12.10.2026): the thread and the tap carry this phone's alias, the
             // app reads it back; the push's own sender address leaves the delivered notice.
             content.threadIdentifier = MTNoticeAlias.of(convKey)
@@ -302,6 +304,7 @@ final class NotificationService: UNNotificationServiceExtension {
                 content.userInfo["chat"] = MTNoticeAlias.of(chat)
                 content.userInfo["from"] = nil
                 convKey = chat
+                personal = group == nil
                 Self.applySettings(content, conv: chat)
             }
             senderGlyph = glyph
@@ -357,7 +360,7 @@ final class NotificationService: UNNotificationServiceExtension {
         // THE BANNER FIRST, THE REST AFTER (17.10.2026): the outgoing knock (18.09) and the small cargo (29.09) that stood here, between
         // the composed banner and the hand-over, walk behind it now (afterDelivery) -- the process died in them and the system showed
         // the node's bare push with no sender (T1 on 2222, 16.10: 31 wakes of 37 without a «cost» line).
-        let blocked = !convKey.isEmpty && Self.isBlocked(convKey)
+        let blocked = !convKey.isEmpty && (Self.isBlocked(convKey) || (personal && !MTPrivacy.admits(.write, convKey)))
         // A RESENT LETTER RINGS NOTHING (02.10, the critic): the ledger answered «already shown» for the badge alone and
         // the banner went out anyway; a letter the app landed live was never in it. Shown or held -- quiet.
         // QUIET IS THE LETTER'S OWN FACE, NEVER AN EMPTY ONE (02.10 15:04, T1 on 2062): without the filtering entitlement an
@@ -372,6 +375,12 @@ final class NotificationService: UNNotificationServiceExtension {
         let face: UNNotificationContent
         if blocked {
             Self.diagLine("blocked conv=\(convKey.prefix(10)) — no banner")
+            face = Self.quietFace()
+        } else if !openedMid.isEmpty, MTShownOnce.buried(openedMid) {
+            // A LETTER BURIED HERE SAYS NOTHING (OZ 1 p.1.7, decision 913 = a; T1 13.11.2026 19:43:55 UTC): a letter deleted for
+            // everyone came again from the box a day later, its claim swept, and its words rang whole. The grave's byte stands in the
+            // shared claim (MTShownOnce.bury): the quiet plate, taken off -- no words, no sound, nothing left in the list.
+            Self.diagLine("grave mid=\(openedMid.prefix(8)) — quiet plate, taken off")
             face = Self.quietFace()
         } else if !MTRing.chat(convKey) {
             // A MUTED OR ARCHIVED CHAT SAYS NOTHING (MTRing.chat; 19457: T3's muted group Party still lay in the list, 11.11 19:20 UTC):
@@ -543,7 +552,7 @@ final class NotificationService: UNNotificationServiceExtension {
         if collectBox { steps.append(("box", { _ = Self.fetchBoxSync(deadline: within(6, of: began)) })) }
         steps.append(("outgoing", { Self.knockOutgoingSync(deadline: within(6, of: began)) }))
         if let c = cargo { steps.append(("cargo", { Self.bringSmallCargoSync(mid: c.mid, text: c.text, began: began, deadline: within(8, of: began)) })) }
-        steps.append(("sweep", { MTShownOnce.sweep() }))
+        // The shown-claims are swept by the app alone, by the term it owns (MontanaWakePush.letterReturns; OZ 1 p.1.7).
         for (name, step) in steps {
             let left = wakeBudgetS - Date().timeIntervalSince(began)
             guard 2 <= left else { diagLine("after: \(name) skipped — \(Int(left)) s left of the wake"); break }
@@ -1341,6 +1350,8 @@ final class NotificationService: UNNotificationServiceExtension {
             // them; the tap opens the group, where the bar over the chat is the way in. Every other room word stays silent.
             guard o["ts"] is [Any], let tx = o["tx"] as? String, let td = tx.data(using: .utf8),
                   let e = try? JSONSerialization.jsonObject(with: td) as? [String: Any], (e["e"] as? String) == "ask" else { return nil }
+            // a late invitation -- a call long over, carried to this phone after it -- rings nothing, as in the app (MTRing.askRings)
+            guard let at = (e["at"] as? NSNumber)?.doubleValue, MTRing.askRings(at: at, now: Date().timeIntervalSince1970) else { return nil }
             guard roomMayRing(chat) else { return nil }   // [I-15] one group's invitations ring once in two minutes
             let who = ((o["n"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let shown = who.isEmpty || !named ? String(localized: "Correspondent", bundle: MTLanguage.bundle) : who
@@ -1369,7 +1380,7 @@ final class NotificationService: UNNotificationServiceExtension {
         return r
     }
 
-    /// [I-15] A GROUP'S ROOM INVITATIONS RING ONCE IN TWO MINUTES (MTGroupRoom.askerPause, the app's own measure): however many
+    /// [I-15] A GROUP'S ROOM INVITATIONS RING ONCE IN TWO MINUTES (MTRing.askerPause, the app's own measure): however many
     /// rooms a member of the group opens and invites this phone to, the banners do not follow one another; the bar over the chat
     /// still shows the room. The ledger is this person's (nseRoomRang), ten minutes deep.
     private static func roomMayRing(_ chat: String) -> Bool {
@@ -1377,7 +1388,7 @@ final class NotificationService: UNNotificationServiceExtension {
         if let d = MontanaKeychain.get("nseRoomRang"), let m = try? JSONDecoder().decode([String: Double].self, from: d) { rang = m }
         let now = Date().timeIntervalSince1970
         rang = rang.filter { now - $0.value < 600 }
-        if let at = rang[chat], now - at < 120 { return false }
+        if let at = rang[chat], now - at < MTRing.askerPause { return false }
         rang[chat] = now
         if let d = try? JSONEncoder().encode(rang) { MontanaKeychain.set("nseRoomRang", d) }
         return true
@@ -1387,8 +1398,9 @@ final class NotificationService: UNNotificationServiceExtension {
     /// deleted message's notice off at the deletion's own push), always -- no phone keeps what others delete (16165 p.5). A notice
     /// is named by its letter's wire name (userInfo «mid», bare or «mid:»-led).
     private static func takeNoticeOff(_ target: String, then done: @escaping () -> Void) {
-        let bare = target.hasPrefix("mid:") ? String(target.dropFirst(4)) : target
+        let bare = MTMid.bare(target)
         guard !bare.isEmpty else { done(); return }
+        MTShownOnce.bury(bare)   // its repeats from the box ring nowhere, before the app has landed the deletion (OZ 1 p.1.7)
         UNUserNotificationCenter.current().getDeliveredNotifications { list in
             let ids = list.filter { n in
                 let m = (n.request.content.userInfo["mid"] as? String) ?? ""

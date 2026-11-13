@@ -164,7 +164,7 @@ final class MTTurnDrag: ObservableObject {
     /// the feed») — the tab bar's tabs, moved up into the bar. One owner, read by the bar and the page.
     /// THE NETWORK IS DISBANDED INTO THREE APPLICATIONS (the author's word 29.09): the VPN under the globe, in the finger's row;
     /// the mesh and the P2P network are pages under the bar opened from the drawer.
-    enum Pane: String {   // the name is the dynamic slot's memory (lastMedia)
+    enum Pane: String {
         case chats, groups, channels, contacts, calls, p2p, gallery
         #if !MONTANA_MESSENGER
         case music       // the music page, the Protocol's alone (decision 793, 11.11.2026: Messenger plays a letter's audio file from its chat and carries no music page)
@@ -187,17 +187,6 @@ final class MTTurnDrag: ObservableObject {
         static let gallery = "photo.on.rectangle.angled"
         static let groups = "person.3"       // the groups' page, the bar's and the drawer's (the author's word 20720 p.2)
         static let channels = "megaphone"    // the channels' page, the bar's and the drawer's (the author's word 20720 p.2)
-        /// The dynamic slot's glyph: the glyph of the page it stands for (UIState.mediaPane).
-        static func of(_ p: Pane) -> String {
-            switch p {
-            case .groups: return groups
-            case .channels: return channels
-            #if !MONTANA_MESSENGER
-            case .music: return music
-            #endif
-            default: return gallery
-            }
-        }
     }
     /// THE PAGES OVER THE TABS (the author's word 19.09: as native as the drawer and the chat): the
     /// settings and the profile are one open page at a time, risen over the tabs in the chat's own
@@ -237,60 +226,24 @@ final class MTTurnDrag: ObservableObject {
         get { overlayPage == .profile }
         set { if newValue { overlayPage = .profile } else if overlayPage == .profile { overlayPage = nil } }
     }
-    /// THE GALLERY IS CHOSEN AS THE MUSIC IS (the author's word 25.09: «the same as the network page»): a page under the bar
-    /// in the dynamic glyph's slot; nothing asks and nothing answers -- the page stands built in the row (askGallery).
-    /// THE DYNAMIC GLYPH ON THE TIME PANEL (the author's word 18.09): the last opened of the player
-    /// and the gallery stands in the panel's second slot, before the fixed calls glyph; the choice
-    /// outlives the launch.
-    var lastMedia: String = UserDefaults.standard.string(forKey: "lastMediaPane") ?? "music" {
-        didSet { UserDefaults.standard.set(lastMedia, forKey: "lastMediaPane") }
-    }
-    /// THE GROUPS AND THE CHANNELS STAND IN THE DYNAMIC SLOT TOO (the author's word 20720 p.2, 12.11.2026: «if I choose Groups or
-    /// Channels in the side panel, the time panel must show that very glyph, so it is clear where I am, and it takes the dynamic
-    /// one's place»): the slot's pages are the gallery, the groups and the channels (and the music in the Protocol); the chats keep
-    /// their own glyph.
-    #if MONTANA_MESSENGER
-    static let mediaPanes: [Pane] = [.gallery, .groups, .channels]   // no music page in Messenger (decision 793)
-    #else
-    static let mediaPanes: [Pane] = [.music, .gallery, .groups, .channels]
-    #endif
-    /// THE PAGE THE DYNAMIC GLYPH STANDS FOR, ONE ANSWER (the critic 24.09: the glyph is the standing page's while one of the slot's
-    /// pages stands): the standing page when it is the slot's, else the last opened of them.
-    var mediaPane: Pane {
-        if Self.mediaPanes.contains(pane) { return pane }
-        return Self.mediaPanes.first { $0.rawValue == lastMedia } ?? Self.mediaPanes[0]
-    }
-    /// A PAGE OF THE DYNAMIC SLOT IS CHOSEN, ONE DOOR (the drawer's row and the glyph's tap): the slot remembers it.
-    func ask(_ p: Pane) { lastMedia = p.rawValue; pane = p }
-    /// THE MUSIC IS CHOSEN AS THE CALLS ARE (the author's word 23.09): the drawer's row and the dynamic glyph put the
-    /// music page under the bar; its big page unfolds from the player's plate at the page's head.
+    /// THE MUSIC IS CHOSEN AS THE CALLS ARE (the author's word 23.09): the drawer's row and the player's plate put the music page
+    /// under the bar; its big page unfolds from the player's plate at the page's head. No slot of the panel remembers it any more
+    /// (the author's word 21178, decision 911 = a: the music, the gallery and the network only from the drawer).
     #if !MONTANA_MESSENGER
-    func askMusic() { ask(.music) }
+    func askMusic() { pane = .music }
     #endif
-    /// THE GALLERY IS A PAGE UNDER THE BAR TOO (the author's word 25.09): chosen as the music is, in the dynamic glyph's slot.
-    func askGallery() { ask(.gallery) }
-    /// THE DYNAMIC GLYPH'S TAP: the page it stands for, opened again.
-    func askMedia() { ask(mediaPane) }
-    /// THE TABS IN THE PANEL'S OWN ORDER (the author's word 24.09), left to right: the panes the puck stands under —
-    /// the contacts, the calls, THE FEED under the logo between them and the chats (the author's word 25.09: «the feed page as
-    /// whole as the chats, the calls and the contacts, turning sideways as they do»), the chats, the dynamic glyph's page --
-    /// the music while the glyph is the music's, else the gallery (25.09) -- and THE NETWORK under the globe at the row's end
-    /// (the author's word 25.09).
+    /// THE TABS IN THE PANEL'S OWN ORDER (the author's word 24.09), left to right: the contacts, the calls, THE FEED under the logo
+    /// where the wall stands (25.09), the chats, the groups and the channels (the author's words 21097 and 21176) -- one row for both
+    /// editions; no globe and no dynamic glyph (decision 911 = a).
     var turnOrder: [Pane] {
         #if MONTANA_MESSENGER
-        return [.contacts, .calls, .chats, .groups, .channels]   // the panel's own order, no globe (the author's word 21097)
+        return [.contacts, .calls, .chats, .groups, .channels]
         #else
-        var row: [Pane] = [.contacts, .calls, .feed, .chats, mediaPane, Self.globePane]
+        var row: [Pane] = [.contacts, .calls, .feed, .chats, .groups, .channels]
         if MTApps.wall == nil { row.removeAll { $0 == .feed } }   // the feed only where the wall stands (slice S4c2)
         return row
         #endif
     }
-    /// The globe's page: the network's page of the nodes; in the Protocol the VPN's where the device carries a tunnel.
-    #if MONTANA_MESSENGER
-    static let globePane: Pane = .p2p
-    #else
-    static var globePane: Pane { MTApps.vpn?.carried == true ? .vpn : .p2p }
-    #endif
     // NO FOLDERS ON THE CHATS PAGE (the author's words 19110 and 19116, 11.11.2026: Groups and Channels go to the drawer, the strip
     // under the time panel on the chats page goes entirely, and a stroke without the folders' strip turns the time panel's pages):
     // a stroke on the chats page turns the pages, as on every page.
@@ -1755,9 +1708,9 @@ struct MontanaSideDrawer: View {
             case .feed: if MTApps.wall != nil { ui.pane = .feed }
             #endif
             case .chats: ui.pane = .chats
-            case .groups: ui.ask(.groups)       // the groups' glyph takes the dynamic slot (the author's word 20720 p.2)
-            case .channels: ui.ask(.channels)
-            case .gallery: ui.askGallery()
+            case .groups: ui.pane = .groups
+            case .channels: ui.pane = .channels
+            case .gallery: ui.pane = .gallery
             #if !MONTANA_MESSENGER
             case .music: ui.askMusic()
             case .vpnWall: if let v = MTApps.vpn, v.carried { v.opened(); ui.pane = .vpn }

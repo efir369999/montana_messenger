@@ -242,6 +242,12 @@ final class MontanaDeliveryEngine {
             MontanaTrace.markFolded("rx_blocked", "door peer=\(String(from.prefix(10)))", window: 60, key: "door:" + from)
             return
         }
+        // WHO MAY WRITE TO ME (OZ 1 p.1.8): a person the rule refuses is refused as a blocked one -- buried, never a row.
+        if !own, !mirrored, ChatStore.privacyRefuses(text, from: from) {
+            store.bury(["mid:" + mid], in: from)
+            MontanaTrace.markFolded("rx_private", "door peer=\(String(from.prefix(10)))", window: 60, key: "private:" + from)
+            return
+        }
         // A LONG LETTER LANDS AS ITS WORDS, NEVER AS ITS REFERENCE (02.11.2026, the author's word 14853: «it is crooked and maybe
         // systemic -- fix it»; T1 on 2349, 19:25:13Z): the live channel brought a correspondent's long letter here and the door laid
         // its reference as a row -- «New message» under a turning wheel -- and its words came only when the chat was opened two
@@ -455,6 +461,8 @@ final class MontanaDeliveryEngine {
             // lands (the media branch presents it), never before.
             MontanaTrace.mark("notify_skip", mid: mid, "why=banner-after-bubble")
         } else {
+            // Only a standing row rings: the banner door alone asks it (MontanaNotify.present, ChatStore.stands; OZ 1 p.1.7,
+            // constitution 15) -- a second copy of that rule here was the 1184 critic's find.
             MontanaNotify.present(from: from, chat: from, text: text, mid: mid)
         }
         // The name (or callsign) goes to the other side by the same road and at once: a

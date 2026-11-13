@@ -373,7 +373,7 @@ enum MontanaNotify {
         }
         // A MUTED OR ARCHIVED GROUP RAISES NOTHING (MTRing.chat, 19457): the passive plate this left stayed in the list for good.
         guard MTRing.chat(chat, mentioned: mentioned) else { MontanaTrace.mark("notify_skip", mid: nil, "why=quiet kind=group"); return }
-        let key = copy.hasPrefix("mid:") ? String(copy.dropFirst(4)) : copy
+        let key = MTMid.bare(copy)
         if !key.isEmpty, !MTShownOnce.claim(key) {   // the one atomic claim of both processes (MTShownOnce, 17.10.2026)
             MontanaTrace.mark("notify_skip", mid: key, "why=already-rang kind=group")
             return
@@ -406,7 +406,7 @@ enum MontanaNotify {
     /// end, still stood on the lock screen in its own words. A banner names its chat (userInfo «chat», the thread) and its letter
     /// (userInfo «mid», the extension's and the call's; the app's own by its identifier: the name, «group-» and «pin-» forms).
     static func removeBanners(chat: String? = nil, letters: [String] = []) {
-        let names = Set(letters.map { m in m.hasPrefix("mid:") ? String(m.dropFirst(4)) : m }.filter { m in !m.isEmpty })
+        let names = Set(letters.map { m in MTMid.bare(m) }.filter { m in !m.isEmpty })
         let conv = chat ?? ""
         guard !conv.isEmpty || !names.isEmpty else { return }
         let center = UNUserNotificationCenter.current()
@@ -415,7 +415,7 @@ enum MontanaNotify {
                 let c = n.request.content
                 if MontanaMissedCall.speaks(c, of: conv) { return true }
                 guard !names.isEmpty else { return false }
-                if let m = c.userInfo["mid"] as? String, names.contains(m.hasPrefix("mid:") ? String(m.dropFirst(4)) : m) { return true }
+                if let m = c.userInfo["mid"] as? String, names.contains(MTMid.bare(m)) { return true }
                 let id = n.request.identifier
                 for p in ["mid:", "group-"] where id.hasPrefix(p) { if names.contains(String(id.dropFirst(p.count))) { return true } }
                 if names.contains(id) { return true }
@@ -454,7 +454,13 @@ enum MontanaNotify {
         }
         // A MUTED OR ARCHIVED CHAT RAISES NOTHING (MTRing.chat, 19457): the passive plate this left stayed in the list for good.
         guard MTRing.chat(chat) else { MontanaTrace.mark("notify_skip", mid: mid, "why=quiet kind=\(kind)"); return }
-        let key = mid.hasPrefix("mid:") ? String(mid.dropFirst(4)) : mid
+        let key = MTMid.bare(mid)
+        // THE BANNER IS THE SHADOW OF A STANDING ROW (OZ 1 p.1.7, decision 913 = a): the one law of every caller -- no row in the
+        // chat, no banner, whatever the caller believed (T1 13.11.2026 19:43:55 UTC: a letter the grave refused rang whole).
+        guard ChatStore.live?.stands(key, in: chat) == true else {
+            MontanaTrace.mark("notify_skip", mid: mid, "why=no-row kind=\(kind)")
+            return
+        }
         if !key.isEmpty {
             // ONE ATOMIC CLAIM FOR BOTH PROCESSES (17.10.2026, MTShownOnce): the notebook was a keychain item both processes rewrote
             // whole, and two readers of one moment both rang (about thirty pairs on 16.10); the claim is a file the kernel lets one

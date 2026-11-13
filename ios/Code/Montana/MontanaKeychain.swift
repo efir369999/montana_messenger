@@ -55,6 +55,52 @@ enum MTRing {
     static func groupWord(_ t: String, invites: Bool, past: Bool) -> Bool {
         !past && (t == "say" || (t == "room" && invites))
     }
+    /// A ROOM'S INVITATION IS A WORD OF ITS MOMENT (OZ 1 p.2.7, the author's word 21080: T2 on Messenger 147,
+    /// 13.11.2026 17:28:41 UTC, rang a group's invitation to a call long over). The app refused that ask a second later as a word of a room that is
+    /// over, while the notification extension rang it: the app held the moment (an ask older than two minutes rings nothing) and
+    /// the extension held none. The moment and the asker's pause are stated here, once; the app's room (MTGroupRoom.heard) and the
+    /// extension's group face both ask askRings. `now` is the caller's clock: the node's in the app, the phone's in the extension.
+    static let askLife: Double = 120
+    /// [I-15] One asker's invitations ring once in this long, however many rooms they open.
+    static let askerPause: Double = 120
+    static func askRings(at: Double, now: Double) -> Bool { now - at < askLife }
+}
+
+/// WHO MAY REACH ME, ONE ANSWER (OZ 1 p.1.8, the author's word 21096, decision 908 = a: «Settings, Privacy: who may write to me,
+/// call me, see my page, add me to a group or a channel -- Everyone, My contacts, Nobody»). The rule is kept on the receiver's
+/// phone and obeyed there: the app's doors (the letter's door, the call's word and the voip ring, the page's words, the group's
+/// invitation) and the notification extension ask here and nowhere else. The rules and the contacts' mirror stand in the shared
+/// keychain, so the extension reads the very record the app wrote; a rule never set reads Everyone. The callers pass a person's
+/// conversation: a group's word, a control word and a machine word are never a person reaching me and are never asked.
+enum MTPrivacy {
+    enum Act: String, CaseIterable { case write, call, page, invite }
+    enum Who: String, CaseIterable { case everyone, contacts, nobody }
+    private static let rulesKey = "privacyRules"        // NOT-UI: a keychain item's name; rows «act:who», Everyone left unwritten
+    private static let contactsKey = "privacyContacts"  // NOT-UI: a keychain item's name; the book's refs while a rule says contacts
+    static func rule(_ a: Act) -> Who {
+        let row = MTColdMirror.set(rulesKey).first { r in r.hasPrefix(a.rawValue + ":") }
+        return row.flatMap { r in Who(rawValue: String(r.dropFirst(a.rawValue.count + 1))) } ?? .everyone
+    }
+    static func admits(_ a: Act, _ conv: String) -> Bool {
+        switch rule(a) {
+        case .everyone: return true
+        case .nobody: return false
+        case .contacts: return MTColdMirror.set(contactsKey).contains(conv)
+        }
+    }
+    /// The app's side: one rule changed; the contacts' mirror follows it.
+    static func set(_ a: Act, _ who: Who, contacts: Set<String>) {
+        var rows = MTColdMirror.set(rulesKey).filter { r in !r.hasPrefix(a.rawValue + ":") }
+        if who != .everyone { rows.insert(a.rawValue + ":" + who.rawValue) }
+        MontanaKeychain.set(rulesKey, (try? JSONEncoder().encode(rows.sorted())) ?? Data())
+        mirror(contacts)
+    }
+    /// The book's refs stand in the keychain only while some rule reads them; otherwise the mirror is empty.
+    static func mirror(_ contacts: Set<String>) {
+        let read = Act.allCases.contains { a in rule(a) == .contacts }
+        let rows = read ? contacts.sorted() : []
+        MontanaKeychain.set(contactsKey, (try? JSONEncoder().encode(rows)) ?? Data())
+    }
 }
 
 enum MTLanguage {
@@ -243,12 +289,12 @@ enum MTHeldLetters {
     private static let cap = 1000
 
     static func holds(_ mid: String) -> Bool {
-        let m = bare(mid)
+        let m = MTMid.bare(mid)
         return !m.isEmpty && load().contains(m)
     }
 
     static func note(_ mid: String) {
-        let m = bare(mid)
+        let m = MTMid.bare(mid)
         guard !m.isEmpty else { return }
         var arr = load()
         guard !arr.contains(m) else { return }
@@ -257,7 +303,6 @@ enum MTHeldLetters {
         if let d = try? JSONEncoder().encode(arr) { MontanaKeychain.set(key, d) }
     }
 
-    private static func bare(_ mid: String) -> String { mid.hasPrefix("mid:") ? String(mid.dropFirst(4)) : mid }
 
     private static func load() -> [String] {
         guard let d = MontanaKeychain.get(key), let a = try? JSONDecoder().decode([String].self, from: d) else { return [] }
@@ -467,6 +512,15 @@ enum MTNoticeAlias {
 /// file and stays quiet. No lock is ever held -- a lock in the hand of a suspended process is 0xdead10cc. The file is named by the
 /// sha256 of the letter's bare name, so nothing of the wire names a file here; a claim older than a day leaves at the app's
 /// housekeeping and behind the extension's hand-over ([I-14]). Both processes compile this file.
+/// A LETTER'S BARE NAME HAS ONE OWNER (constitution 15; the author's words 21337, 21340, 13.11.2026): rows wear «mid:» before a
+/// letter's name and the wire, the box, the claims and the sticker book do not. This is the one rule that takes it off; every
+/// other place reads it, and mt-mid-owner-check refuses a second.
+enum MTMid {
+    static func bare(_ name: String) -> String { name.hasPrefix("mid:") ? String(name.dropFirst(4)) : name }
+    /// A row's letter name on the wire, or none for a row that never rode one (a local id).
+    static func wire(_ name: String) -> String? { name.hasPrefix("mid:") ? bare(name) : nil }
+}
+
 enum MTShownOnce {
     static var dir: URL? {
         guard let base = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: MontanaContour.appGroup) else { return nil }
@@ -477,9 +531,8 @@ enum MTShownOnce {
         }
         return d
     }
-    private static func bare(_ mid: String) -> String { mid.hasPrefix("mid:") ? String(mid.dropFirst(4)) : mid }
     private static func url(_ mid: String) -> URL? {
-        let m = bare(mid)
+        let m = MTMid.bare(mid)
         guard !m.isEmpty, let d = dir else { return nil }
         return d.appendingPathComponent(SHA256.hash(data: Data(m.utf8)).map { String(format: "%02x", $0) }.joined())
     }
@@ -487,7 +540,7 @@ enum MTShownOnce {
     /// one silently eaten.
     @discardableResult
     static func claim(_ mid: String) -> Bool {
-        guard !bare(mid).isEmpty else { return true }
+        guard !MTMid.bare(mid).isEmpty else { return true }
         guard let u = url(mid) else { return legacyClaim(mid) }
         let fd = open(u.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, S_IRUSR | S_IWUSR)
         if 0 <= fd {
@@ -501,7 +554,7 @@ enum MTShownOnce {
     /// The notebook of the builds before 17.10 (the keychain item nseShownMids, rewritten whole): the road only where the contour
     /// has no shared folder.
     private static func legacyClaim(_ mid: String) -> Bool {
-        let m = bare(mid)
+        let m = MTMid.bare(mid)
         var arr: [String] = []
         if let d = MontanaKeychain.get("nseShownMids"), let a = try? JSONDecoder().decode([String].self, from: d) { arr = a }
         guard !arr.contains(m) else { return false }
@@ -510,10 +563,28 @@ enum MTShownOnce {
         if let d = try? JSONEncoder().encode(arr) { MontanaKeychain.set("nseShownMids", d) }
         return true
     }
-    /// [I-14] A claim older than a day leaves: a letter's rings are a matter of seconds, its resends of hours at most.
-    static func sweep() {
+    /// A LETTER BURIED HERE RINGS NOWHERE (OZ 1 p.1.7, decision 913 = a; T1 13.11.2026 19:43:55 UTC: a letter deleted for everyone
+    /// 31 hours before came again from the box and rang whole): its claim carries the grave's byte, so the app's door finds it claimed
+    /// and the extension, which never sees the app's graves, hands over the quiet plate (MTShownOnce.buried).
+    static func bury(_ mid: String) {
+        guard !MTMid.bare(mid).isEmpty, let u = url(mid), !buried(mid) else { return }
+        let fd = open(u.path, O_WRONLY | O_CREAT | O_CLOEXEC, S_IRUSR | S_IWUSR)
+        guard 0 <= fd else { return }
+        _ = "g".withCString { p in write(fd, p, 1) }
+        close(fd)
+        try? FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: u.path)
+    }
+    /// Whether the letter is buried on this phone: its claim carries the grave's byte (a shown letter's claim is empty).
+    static func buried(_ mid: String) -> Bool {
+        guard let u = url(mid), let size = (try? FileManager.default.attributesOfItem(atPath: u.path))?[.size] as? NSNumber else { return false }
+        return 0 < size.intValue
+    }
+    /// [I-14] A claim leaves once its letter can come no more (OZ 1 p.1.7): a day stood here, and a letter deleted for everyone kept
+    /// coming from the box for 32 hours -- the claim swept, the seventh repeat rang. The term is the app's (MontanaWakePush.letterReturns);
+    /// the extension does not sweep.
+    static func sweep(after term: TimeInterval) {
         guard let d = dir, let names = try? FileManager.default.contentsOfDirectory(atPath: d.path) else { return }
-        let old = Date().addingTimeInterval(-86400)
+        let old = Date().addingTimeInterval(-term)
         for n in names {
             let u = d.appendingPathComponent(n)
             if let at = (try? u.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate, at < old {

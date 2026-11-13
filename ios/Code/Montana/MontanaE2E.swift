@@ -1231,6 +1231,11 @@ final class E2E {
                 }
                 continue
             }
+            // WHO MAY CALL ME (OZ 1 p.1.8): a call's birth word from a person the rule of calling refuses assembles nothing.
+            if cs.ctrl == "call", !MTPrivacy.admits(.call, peer) {
+                MontanaTrace.markFolded("rx_private", "call peer=\(String(peer.prefix(10)))", window: 60, key: "pcall:" + peer)
+                continue
+            }
             // A WORD OF ANOTHER CALL NEVER REACHES THE CALL IN HAND (24.09): an end, an ask for fresh checks, an answer of
             // a finished call used to be taken by the living call with the same person, since the pipe named no call. While
             // a call lives here, a named word of any other call is a corpse, as on the node's lane. With none living, the
@@ -1610,7 +1615,7 @@ final class E2E {
         // key at all (the profile's storage writes it at the first edit), and the whole word, the coin key with it, never
         // went -- every SEND of version 3 to them stopped on «no receiver key». Unread words leave b and l out of the word;
         // the key still goes.
-        let wordsHeld = MontanaSelf.holds("profileBio", "profileLink")
+        let wordsHeld = MontanaSelf.holds("profileBio", "profileLink") && MTPrivacy.admits(.page, peer)   // who may see my page (OZ 1 p.1.8)
         let bio = MTPeerAbout.myBio, link = MTPeerAbout.myLink
         if wordsHeld { sendAboutByDraft(to: peer, bio: bio, link: link) }   // the builds 1919-1921 read only the draft word's keys
         // MY COIN KEY RIDES THE SAME WORD (COIN-TX-V3 section 1): a SEND of version 3 commits to the receiver's key, so a
@@ -1709,7 +1714,7 @@ final class E2E {
     /// receipt, and only the receipt writes the mark (Announced.recordDelivered); only to a peer whose build reads the
     /// word, never to a blocked one. A picture still being made goes when it is ready (MTPageGround.prepare).
     func sendGroundIfNeeded(to peer: String, force: Bool = false) {
-        guard MontanaConv.holds(peer), !silenced(peer), Self.groundCapable(peer) else { return }   // COMPAT-GATED
+        guard MontanaConv.holds(peer), !silenced(peer), Self.groundCapable(peer), MTPrivacy.admits(.page, peer) else { return }   // COMPAT-GATED; who may see my page (OZ 1 p.1.8)
         guard let now = MTPageGround.mine() else { return }
         let key = MontanaDeliveryEngine.Announced.ground(to: peer)   // sentPg1_ -- this device's own (SeedScope)
         let held = UserDefaults.standard.string(forKey: key)
@@ -1751,7 +1756,7 @@ final class E2E {
     /// by definition, never received a face: T2 saw T1's name and a letter, never the picture
     /// (the author, 07.09 08:16).
     func sendFace(to refs: [String], requireFeed: Bool = true) {
-        let refs = refs.filter { !silenced($0) }   // a blocked person is shown no face
+        let refs = refs.filter { !silenced($0) && MTPrivacy.admits(.page, $0) }   // no face to a blocked person, nor to one my page is closed to (OZ 1 p.1.8)
         Task.detached(priority: .utility) { [weak self] in
             guard let self else { return }
             let feed = await MainActor.run { Set(self.store?.messages.keys.map { String($0) } ?? []) }

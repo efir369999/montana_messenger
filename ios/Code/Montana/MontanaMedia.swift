@@ -1542,7 +1542,7 @@ enum MontanaHousekeeping {
             E2E.shared.sweepMediaFiles()
             E2E.shared.sweepOrphanPipes()
             sweepRetiredDoor()
-            MTShownOnce.sweep()   // the claims of shown letters older than a day leave ([I-14], 17.10.2026)
+            MTShownOnce.sweep(after: MontanaWakePush.letterReturns)   // a claim leaves once its letter can come no more ([I-14]; OZ 1 p.1.7)
             MontanaLocalVault.settle()   // the vault's loads no key names any more leave ([I-14], 23.10.2026)
         }
     }
@@ -3230,12 +3230,21 @@ private struct MTPhotoLook: View {
     @ObservedObject var shown: MTPhotoShown
     /// The letter's file, when the picture has one: Save lays it into Photos by the one road (MontanaSavedToPhotos).
     let file: String?
+    /// THE PICTURES IT STANDS AMONG, PAGED BY THE FINGER (the author's word 21257 p.2, 13.11.2026: «when viewing a photo let it be
+    /// leafed right and left inside the chat, the group, the channel and so on, to move through the media inside»): the files of
+    /// the same chat or post, oldest first; a swipe aside turns to the next. Still no strip of covers (20455 p.4): each page is
+    /// one picture with its own Save and Share. Empty -- the one picture alone.
+    let pages: [String]
     let onClose: () -> Void
+    @State private var page: String? = nil
     var body: some View {
         let picture = shown.image
-        MontanaPhotoViewer(image: picture,
-                           onSave: { await MontanaSavedToPhotos.save(file ?? "", video: false, image: picture) },
-                           onShare: { if let picture { MTShare.present([picture]) } },
+        let at = page ?? file ?? ""
+        let first = at == (file ?? "")   // the tapped picture is held already; another page reads its own file
+        MontanaPhotoViewer(image: picture, files: pages, startFile: pages.isEmpty ? "" : (file ?? ""),
+                           onPage: { f in page = f },
+                           onSave: { await MontanaSavedToPhotos.save(at, video: false, image: first ? picture : nil) },
+                           onShare: { if let p = first ? picture : docImage(at) { MTShare.present([p]) } },
                            onClose: onClose)
     }
 }
@@ -3249,7 +3258,8 @@ enum PhotoPresenter {
     static func present(_ file: String, among moments: [MTMoment]) {
         if mtIsVideoName(file) { VideoPresenter.present(file); return }
         let url = moments.first { m in m.id == file }?.url
-        present(now: docImageCached(file), file: file) {
+        let pictures = moments.map(\.id).filter { f in !mtIsVideoName(f) }   // the pages a swipe turns (21257 p.2)
+        present(now: docImageCached(file), file: file, among: 1 < pictures.count && pictures.contains(file) ? pictures : []) {
             await Task.detached(priority: .userInitiated) { docImage(file) ?? url.flatMap { u in UIImage(contentsOfFile: u.path) } }.value
         }
     }
@@ -3258,7 +3268,7 @@ enum PhotoPresenter {
         present(now: docImageCached(file), file: file) { await Task.detached(priority: .userInitiated) { docImage(file) }.value }
     }
     /// now shows at once; whole replaces it once decoded.
-    static func present(now: UIImage?, file: String? = nil, whole: @escaping () async -> UIImage?) {
+    static func present(now: UIImage?, file: String? = nil, among pages: [String] = [], whole: @escaping () async -> UIImage?) {
         Task { @MainActor in
             guard host == nil else {   // one viewer; a dropped tap is written down
                 MontanaTrace.markFolded("photo_look", "held -- one viewer stands, this tap is not a second one", window: 5); return
@@ -3268,15 +3278,15 @@ enum PhotoPresenter {
             guard let first else { MontanaTrace.mark("photo_look", "nothing to show"); return }
             guard host == nil else { MontanaTrace.markFolded("photo_look", "held -- a viewer rose while this one was decoded", window: 5); return }
             MontanaTrace.mark("photo_look", "open at_once=\(now == nil ? 0 : 1)")
-            let shown = rise(first, file: file)
+            let shown = rise(first, file: file, pages: pages)
             guard now != nil, let sharp = await whole() else { return }
             shown.image = sharp
         }
     }
     /// Only the view holds the host, so a closed viewer is gone at once, however long the sharp picture takes.
-    @MainActor private static func rise(_ first: UIImage, file: String?) -> MTPhotoShown {
+    @MainActor private static func rise(_ first: UIImage, file: String?, pages: [String]) -> MTPhotoShown {
         let shown = MTPhotoShown(first)
-        let h = MontanaHost.make(MTPhotoLook(shown: shown, file: file) {
+        let h = MontanaHost.make(MTPhotoLook(shown: shown, file: file, pages: pages) {
             if let s = PhotoPresenter.host { MTTop.dismiss(s, animated: false, kind: "photo") }
         })
         h.view.backgroundColor = .clear

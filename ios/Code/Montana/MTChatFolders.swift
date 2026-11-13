@@ -8,8 +8,8 @@ import UIKit
 /// folders: All Chats and the person's folders, each the kinds of chats and the chats it takes and the states and the
 /// chats it leaves out; a tab's badge counts the folder's unread conversations and is blue while one of them is not muted. A setting
 /// of the person: kept in the vault and carried by the copy (SeedScope.settingKeys). NO FOLDERS' PAGE AND NO TABS (the author's
-/// words 19110 and 19116 and decision 831 = a, 11.11.2026): the chats page shows every chat, the drawer's Groups and Channels open
-/// the folder of their kind, and the folders are only read.
+/// words 19110 and 19116 and decision 831 = a, 11.11.2026): each page shows its own kind alone (the author's word 21137, 13.11.2026:
+/// the chats page the person's own chats, Groups the groups, Channels the channels), and the folders are only read.
 struct MTChatFolder: Codable, Identifiable, Hashable {
     enum Kind: String, Codable, CaseIterable {
         case contacts, nonContacts, groups, channels
@@ -29,6 +29,11 @@ struct MTChatFolder: Codable, Identifiable, Hashable {
     static let allID = "all"
     static let all = MTChatFolder(id: allID, leaves: [])
     var isAll: Bool { id == Self.allID }
+    /// THE THREE PAGES' FOLDERS, ONE OWNER EACH (OZ 1 p.1.11, the author's word 21137: «in the chats only chats, in the groups only
+    /// groups and in the channels only channels»): the first folders and the pages read these, none states them again.
+    static let chats = MTChatFolder(id: "chats", preset: .contacts, kinds: [.contacts, .nonContacts])
+    static let groups = MTChatFolder(id: "groups", preset: .groups, kinds: [.groups])
+    static let channels = MTChatFolder(id: "channels", preset: .channels, kinds: [.channels])
     /// The folder of one kind alone: the drawer's Groups and Channels open theirs, and its corner gives birth to that kind.
     var onlyKind: Kind? { kinds.count == 1 && chats.isEmpty ? kinds.first : nil }
     var takesAnything: Bool { !kinds.isEmpty || !chats.isEmpty }
@@ -72,11 +77,7 @@ final class MTChatFolders: ObservableObject {
     }
     /// THE FIRST TABS, in the author's order (17.10.2026): All, the chats, the groups, the channels -- the bots' tab went with the bot
     /// (the author's word 16283, 04.11.2026).
-    static let firstFolders: [MTChatFolder] = [
-        .all,
-        MTChatFolder(id: "chats", preset: .contacts, kinds: [.contacts, .nonContacts]),
-        MTChatFolder(id: "groups", preset: .groups, kinds: [.groups]),
-        MTChatFolder(id: "channels", preset: .channels, kinds: [.channels])]
+    static let firstFolders: [MTChatFolder] = [.all, .chats, .groups, .channels]
 
     func folder(_ id: String) -> MTChatFolder? { folders.first { f in f.id == id } }
     func folder(only kind: MTChatFolder.Kind) -> MTChatFolder? { folders.first { f in f.onlyKind == kind } }
@@ -88,7 +89,10 @@ final class MTChatFolders: ObservableObject {
         return Set(book.map { c in c.ref })
     }
     /// What a conversation is to the folders -- one answer for the tabs, their badges and the folders' page.
+    /// THE MONTANA ROOM IS A CHANNEL (OZ 1 p.1.5, the author's words 21257 and 21282, 13.11.2026: «the official Montana channel with
+    /// the updates must not stand in the list of chats -- it is a channel»): it is no MTGroup key, and it stood among the person's chats.
     static func kind(of c: Chat, contacts: Set<String>?) -> MTChatFolder.Kind {
+        if ChatStore.isMontanaRoom(c.name) { return .channels }
         if MTGroup.isKey(c.name) { return MTGroup.shared.kind(c.name) == .channel ? .channels : .groups }
         return contacts?.contains(c.convRef) == true ? .contacts : .nonContacts
     }

@@ -360,6 +360,8 @@ enum MTKeepDerive {
         /// THE CARD'S SHAPE THE LIGHT COPY WAS LAID IN (OZ 1 p.3.5): a build whose card first carries the values' moments lays its
         /// light copy anew at once, so a device given an older value meets this one's moment and keeps the later.
         var lightEngine: Int? = nil
+        /// THE ASKING A NEW ATTACHMENT MADE DUE (decision 872 = v, OZ 1 p.10.2): its copy goes on the battery (MontanaPower.bulkHeld).
+        var urgent: Bool? = nil
     }
     private static let ownerKey = "mt.keep.owner"  // NOT-UI: sealed under the device key; the person's own (SeedScope.dataKeys)
     @Published private(set) var owner = Owner()
@@ -529,9 +531,20 @@ enum MTKeepDerive {
             DispatchQueue.main.asyncAfter(deadline: .now() + 120) { [weak self] in self?.tick() }
             return
         }
-        guard now - max(owner.renewedAt, owner.triedAt ?? 0) >= 86_400 else { return }
-        if let why = MontanaPower.bulkHeld() { return MontanaTrace.markChanged("keep_ask", "held: " + why + " -- the copy waits for the charger") }
+        let fresh = attachmentDue(now)
+        guard fresh || now - max(owner.renewedAt, owner.triedAt ?? 0) >= 86_400 else { return }
+        if let why = MontanaPower.bulkHeld(onBattery: fresh) { return MontanaTrace.markChanged("keep_ask", "held: " + why + " -- the copy waits") }
+        owner.urgent = fresh ? true : nil
         ask()
+    }
+    /// THE FULL COPY FOLLOWS A NEW ATTACHMENT (decision 872 = v, OZ 1 p.10.2): the gif of 11.11.2026 19:21 UTC never reached the
+    /// restored iPad -- T1 laid no copy with it, its renewal waited the day and the charger. A letter whose attachment is newer
+    /// than the last copy asked or tried makes the copy due at once, ten minutes after that one at the least, so a run of
+    /// photos folds into one copy; the rhythm looks every ten minutes while the app lives (peopleWatch).
+    private func attachmentDue(_ now: Double) -> Bool {
+        let last = max(owner.renewedAt, owner.triedAt ?? 0, owner.askedAt)
+        guard now - last >= 600, let store = ChatStore.live else { return false }
+        return store.messages.values.contains { rows in (rows.last { r in r.attachment != nil }?.createdAt ?? 0) > last }
     }
     private func ask() {
         let people = candidates()
@@ -577,13 +590,14 @@ enum MTKeepDerive {
     }
     private func renew(_ g: UInt64) {
         guard !owner.yes.isEmpty, !renewing else { return }
-        if let why = MontanaPower.bulkHeld() {
+        let urgent = owner.urgent == true
+        if let why = MontanaPower.bulkHeld(onBattery: urgent) {
             MontanaTrace.markChanged("keep_copy", "held: " + why + " -- the copy waits for the charger")
             DispatchQueue.main.asyncAfter(deadline: .now() + 300) { [weak self] in self?.tick() }
             return
         }
         renewing = true
-        owner.asking = nil; owner.triedAt = Date().timeIntervalSince1970; saveOwner()
+        owner.asking = nil; owner.urgent = nil; owner.triedAt = Date().timeIntervalSince1970; saveOwner()
         // THE RING IN THE ORDER OF THE LATEST LETTER (Network): the people written to last stand first, a full ring at most.
         let rank: [String: Int] = Dictionary(people().enumerated().map { ($1, $0) }, uniquingKeysWith: { a, _ in a })
         let chosen = Array(owner.yes.sorted { (rank[$0] ?? Int.max) < (rank[$1] ?? Int.max) }.prefix(MTKeepRing.most))
@@ -597,7 +611,7 @@ enum MTKeepDerive {
                     me.renewing = false
                     MontanaTrace.mark("keep_copy", "refused " + String(describing: e))
                 case .success(let made):
-                    Task { await me.hand(made, g: g, keepers: chosen) }
+                    Task { await me.hand(made, g: g, keepers: chosen, urgent: urgent) }
                 }
             }
         }
@@ -605,7 +619,7 @@ enum MTKeepDerive {
     /// THE COPY HANDED AROUND THE RING: cut at the sixteen slots of a group (Canon: n is erasure_group), every share laid on the
     /// nodes ONCE and its road handed to each keeper of its slot -- the ring costs the network a copy and a third, whatever the
     /// number of keepers.
-    private func hand(_ made: MontanaBackup.Made, g: UInt64, keepers: [String]) async {
+    private func hand(_ made: MontanaBackup.Made, g: UInt64, keepers: [String], urgent: Bool) async {
         defer { MontanaBackup.discard(made); renewing = false }
         let n = MTKeepCode.group
         guard let master = MontanaSeed.root, let key = MTKeepDerive.keepKey(master),
@@ -617,8 +631,9 @@ enum MTKeepDerive {
         defer { for u in cut.shares { try? FileManager.default.removeItem(at: u) } }
         var roads: [Int: [String: Any]] = [:]
         for k in 0..<n {
-            // The charger taken away, the phone grown hot, a metered path: the rest of the copy waits for the next renewal.
-            if let why = MontanaPower.bulkHeld() {
+            // The charger taken away (unless a new attachment made the copy due), the phone grown hot, a metered path: the rest
+            // of the copy waits for the next renewal.
+            if let why = MontanaPower.bulkHeld(onBattery: urgent) {
                 return MontanaTrace.mark("keep_hand", "held at share \(k) of \(n): " + why + " -- the rest waits for the next renewal")
             }
             if let road = await Self.lay(cut.shares[k]) { roads[k] = road }
@@ -991,7 +1006,7 @@ enum MTKeepDerive {
             let wire = (e["i"] as? String).flatMap { $0.isEmpty ? nil : $0 }
             let claimedMine = (e["m"] as? Int ?? 0) == 0   // the other side's own letter is the other side's here
             if claimedMine {
-                let bare = wire.map { w in w.hasPrefix("mid:") ? String(w.dropFirst(4)) : w } ?? ""
+                let bare = wire.map { w in MTMid.bare(w) } ?? ""
                 guard !bare.isEmpty, MTLetterAuthor.mine((e["a"] as? String) ?? "", conv: conv, mid: bare, text: x) else {
                     unproven += 1
                     return nil

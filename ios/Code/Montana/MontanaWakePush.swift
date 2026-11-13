@@ -1499,7 +1499,7 @@ enum MontanaWakePush {
             .flatMap { try? JSONDecoder().decode([String: String].self, from: $0) } ?? [:]
         if let link { m[mid] = link } else if m.removeValue(forKey: mid) == nil { return }
         let alive = MontanaDeliveryEngine.shared.queuedMids()
-        let now = Date().timeIntervalSince1970, term = MontanaDeliveryEngine.carryDays * 86_400 + boxTerm
+        let now = Date().timeIntervalSince1970, term = letterReturns
         m = m.filter { e in
             if e.key == mid { return true }
             if let alive { return alive.contains(e.key) }
@@ -2395,6 +2395,10 @@ enum MontanaWakePush {
     /// The node box keeps a letter's row this long (BOX_TTL of the node store, 24 h on both nodes): a
     /// reference taken from the box is at most this old, and the cargo it names lives at least as long.
     static let boxTerm: TimeInterval = 24 * 3600
+    /// THE LONGEST A LETTER CAN COME AGAIN (OZ 1 p.1.7): its sender carries it the carriage, re-boxing it, and the box keeps it its
+    /// term past the last knock. The one owner of every clock that must outlive a letter's repeats: the cargo ledgers, a funeral's
+    /// moment, the shown-claims.
+    static let letterReturns: TimeInterval = MontanaDeliveryEngine.carryDays * 86_400 + boxTerm
     private static let ledgerLock = NSLock()
 
     private static func loadLedger() -> [String: [String]] {
@@ -2407,7 +2411,7 @@ enum MontanaWakePush {
     /// so nothing is left to release. A letter whose name carries no birth keeps its place: the orphan sweep is its end.
     private static func saveLedger(_ m: [String: [String]]) {
         let alive = MontanaDeliveryEngine.shared.queuedMids() ?? []
-        let now = Date().timeIntervalSince1970, term = MontanaDeliveryEngine.carryDays * 86_400 + boxTerm
+        let now = Date().timeIntervalSince1970, term = letterReturns
         let past: (String) -> Bool = { l in !alive.contains(l) && (ChatStore.birthMs(fromMid: l).map { b in term < now - b } ?? false) }
         var kept: [String: [String]] = [:]
         for (b, letters) in m {
@@ -3566,8 +3570,7 @@ enum MontanaWakePush {
         }
         if gone, rec["told"] == nil, !conv.isEmpty, conv != "rdv" {
             rec["told"] = now
-            MontanaDeliveryEngine.shared.enqueue(to: conv, chat: conv, mid: UUID().uuidString,
-                                                 text: cargoLostMark + mid, silent: true)
+            ChatStore.tellCargoLost(conv, letter: MTMid.bare(mid))
         }
         let delay = min(15.0 * pow(2.0, Double(n)), 3600.0)
         rec["next"] = now + delay

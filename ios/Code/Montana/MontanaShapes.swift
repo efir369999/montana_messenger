@@ -113,6 +113,15 @@ enum MontanaOctagon {
     /// bar as drawn, so these numbers are read here and nowhere else.
     static let barTopPad: CGFloat = 4
     static let barBottomPad: CGFloat = 2
+    /// WHERE THE TIME PANEL STANDS (OZ 1 p.1.8.1, the author's words 21179 and 21207: «in Appearance the choice -- the time panel at
+    /// the top, as now, or at the bottom»; «by default in Messenger at the bottom and in the Protocol at the top»): the person's
+    /// choice under one key; with none, the edition's own.
+    static let barBottomKey = "timePanelBottom"   // NOT-UI: a stored setting's name
+    #if MONTANA_MESSENGER
+    static let barBottomBirth = true
+    #else
+    static let barBottomBirth = false
+    #endif
 }
 
 /// The layered face of an octagon button (the author's word 09.09): a body lit from the top, an

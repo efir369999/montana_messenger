@@ -292,6 +292,7 @@ enum MTNameBook {
     static func invalidateContacts() {
         contactCache = nil
         bookLock.lock(); bookRefs = nil; bookLock.unlock()
+        MTPrivacy.mirror(MTChatFolders.contactRefs())   // the rule of my contacts reads the book (OZ 1 p.1.8)
         #if !MONTANA_MESSENGER
         // A WALL KEPT FOR CONTACTS FOLLOWS THE BOOK (the critic 25.09; MTWallDoor.bookChanged).
         MTApps.wall?.bookChanged()

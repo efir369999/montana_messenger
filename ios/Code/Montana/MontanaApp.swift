@@ -655,7 +655,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         }
         // A BLOCKED PERSON'S RING IS NO CALL (Guideline 1.2, measured 15.09 13:10: the wake posted
         // the ring past every gate): the report the system demands, and the end on top of it.
-        if let ring, !ring.conv.isEmpty, ChatStore.live?.refuses(ring.conv) ?? ChatStore.refusesCold(ring.conv) {
+        if let ring, !ring.conv.isEmpty, (ChatStore.live?.refuses(ring.conv) ?? ChatStore.refusesCold(ring.conv))
+            || (!MTGroup.isKey(ring.conv) && !MTPrivacy.admits(.call, ring.conv)) {   // and who may call me (OZ 1 p.1.8)
             MontanaTrace.mark("wakepush_vrx", "blocked — the mandatory report, no ring")
             MontanaCall.shared.reportDummyAndEnd(from: ring.conv, blocked: true, required: mustReport)
             return mustReport

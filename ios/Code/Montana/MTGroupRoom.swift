@@ -417,7 +417,6 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
     private var asked = Set<String>()
     /// [I-15] When each asker last rang this phone: one person's invitations ring once in two minutes, however many rooms they open.
     private var rangBy: [String: Double] = [:]
-    static let askerPause: Double = 120
     private(set) var live: MTRoomLive?
     var talkElapsed: (call: String, seconds: Int)? {
         guard let r = live, let since = r.connectedAt else { return nil }
@@ -584,11 +583,12 @@ final class MTGroupRoom: NSObject, CXProviderDelegate {
             s.video = e.v == 1
         case "ask":
             if s.people[seat] == nil { s.people[seat] = e.at }
-            // an invitation is a word of its moment: a late one, or the same asker's repeat, rings nothing
+            // an invitation is a word of its moment (MTRing.askRings): a late one, or the same asker's repeat, rings nothing
             let once = e.r + "/" + seat
-            let quiet = now - (rangBy[gid + "/" + seat] ?? 0) < Self.askerPause
+            let quiet = now - (rangBy[gid + "/" + seat] ?? 0) < MTRing.askerPause
             // a call of two moving into this room comes in by itself (moveIn): its invitation shows nothing
-            if e.to?.contains(g.me) == true, live?.id != s.id, now - e.at < 120, !asked.contains(once), !quiet, pendingJoin?.room != e.r {
+            if e.to?.contains(g.me) == true, live?.id != s.id, MTRing.askRings(at: e.at, now: now), !asked.contains(once), !quiet,
+               pendingJoin?.room != e.r {
                 asked.insert(once)
                 rangBy[gid + "/" + seat] = now
                 s.askedBy = seat

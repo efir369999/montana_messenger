@@ -1118,8 +1118,8 @@ struct MontanaPhotoViewer: View {
     var onToggle: ((String) -> Void)? = nil
     /// THE PAGE, TOLD OUTWARD (the picker's send button sends the page on screen when nothing is picked).
     var onPage: ((String) -> Void)? = nil
-    /// SAVE AND SHARE UNDER ONE PICTURE (the author's word 20455 p.4): the viewer of a picture seen on its own (PhotoPresenter)
-    /// gives both at the bottom; Save answers whether Photos took it. Nil -- no button (a face, the picker's album).
+    /// SAVE AND SHARE UNDER EVERY PICTURE (the author's word 20455 p.4): the viewer of a picture (PhotoPresenter) gives both at the
+    /// bottom of each page, for the page on screen; Save answers whether Photos took it. Nil -- no button (a face, the picker's album).
     var onSave: (() async -> Bool)? = nil
     var onShare: (() -> Void)? = nil
     var onClose: () -> Void
@@ -1190,7 +1190,7 @@ struct MontanaPhotoViewer: View {
                 // reaches for it.
                 MTAlbumPager(files: files, page: pageBinding, zoomed: $zoomed) { f in AnyView(pageView(f)) }
                     .offset(drag)
-                    .onChange(of: pageState) { _, _ in zoomed = false; onPage?(page) }
+                    .onChange(of: pageState) { _, _ in zoomed = false; saved = false; onPage?(page) }   // each page saves on its own
             } else if !startFile.isEmpty {
                 // A one-item library selection still has the video's play control and loader.
                 pageView(startFile).offset(drag)
@@ -1226,7 +1226,7 @@ struct MontanaPhotoViewer: View {
                 .opacity(zoomed || abs(dy) > 8 || !chrome ? 0 : 1)   // steps aside the moment the hands work, or on a tap
                 .animation(.easeInOut(duration: 0.22), value: chrome)
             }
-            if !paged, onSave != nil || onShare != nil {
+            if onSave != nil || onShare != nil {
                 VStack {
                     Spacer()
                     HStack {

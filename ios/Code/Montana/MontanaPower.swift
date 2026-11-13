@@ -82,10 +82,12 @@ enum MontanaPower {
     /// pieces of 512 KB on the nodes, ~850 a minute, each with its mirror -- on the battery, the processor at 100-170 %, the phone
     /// serious, the tunnel killed for memory 17 times. Such a work runs only on the charger, outside Low Power Mode, at a heat no
     /// higher than fair and on a path that is not metered, as the system's own copy waits for them. Nil -- go; else why it waits.
-    /// Main thread (the battery is the device's).
-    static func bulkHeld() -> String? {
+    /// Main thread (the battery is the device's). A COPY A NEW ATTACHMENT MADE DUE GOES ON THE BATTERY (decision 872 = v, OZ 1
+    /// p.10.2): onBattery lifts the charger alone; Low Power Mode, a heat above fair and a metered path hold it as they hold
+    /// every work of gigabytes.
+    static func bulkHeld(onBattery: Bool = false) -> String? {
         let s = snapshot()
-        if !s.charging { return "battery" }
+        if !s.charging, !onBattery { return "battery" }
         if s.lowPower { return "lowpower" }
         if ProcessInfo.ThermalState.fair.rawValue < s.thermal.rawValue { return "thermal=" + thermalWord(s.thermal) }
         if MontanaNetWitness.metered { return "metered" }

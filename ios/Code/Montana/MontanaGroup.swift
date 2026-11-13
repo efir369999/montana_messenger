@@ -866,6 +866,9 @@ final class MTGroup {
         var w = MTGroupWord(t: "say", g: g.id, k: g.kind.rawValue, ti: g.title, n: me.isEmpty ? nil : me, id: mid, s: g.me, tx: letter)
         w.sl = g.kind == .channel && g.silent == true ? 1 : nil   // the bell in the owner's field (Silent Broadcast)
         dress(&w, in: g)
+        if store.messages[key]?.contains(where: { r in r.isFromMe && r.mid == "mid:" + mid && 0 < r.deliveryStatus.rung }) == true {
+            w.hs = 1   // a kept file laid again under its carried letter (p.10.1): the row stands everywhere, nobody is rung
+        }
         let n = spread(w, in: g, except: nil, own: true)
         if n == 0, Self.alone(g), let i = store.messages[key]?.firstIndex(where: { r in r.isFromMe && r.mid == "mid:" + mid }) {
             store.advance(key, i, to: .delivered)   // a group of its owner alone holds the letter here (A.2)
@@ -920,7 +923,7 @@ final class MTGroup {
     func resend(_ m: Message, in key: String, store: ChatStore) {
         guard let g = state(key), g.canWrite, m.isFromMe,
               let i = store.messages[key]?.firstIndex(where: { $0.mid == m.mid }) else { return }
-        let letter = m.mid.hasPrefix("mid:") ? String(m.mid.dropFirst(4)) : m.mid
+        let letter = MTMid.bare(m.mid)
         store.restartSend(key, i)
         let waiting = copies.filter { $0.value.own && $0.value.group == g.id && $0.value.letter == letter }
         if waiting.isEmpty {
@@ -1975,7 +1978,7 @@ final class MTGroup {
             }
             let head = Self.speaker(g.id, "")
             for p in past.suffix(Self.historyLimit) {
-                let letter = p.mid.hasPrefix("mid:") ? String(p.mid.dropFirst(4)) : p.mid
+                let letter = MTMid.bare(p.mid)
                 let seat = p.isFromMe ? g.me : (p.senderRef.flatMap { r in r.hasPrefix(head) ? String(r.dropFirst(head.count)) : nil } ?? "")
                 guard Self.isLetterName(letter), Self.isSeat(seat), !fresh.contains(where: { f in f.seat == seat }) else { continue }
                 let name = seat == g.me ? me : (g.names[seat] ?? "")
@@ -1992,7 +1995,7 @@ final class MTGroup {
                     && MTGroupEvent.of(m.text) == nil && Self.carries(m.text)
             }
             for p in posts.suffix(10) {
-                let letter = p.mid.hasPrefix("mid:") ? String(p.mid.dropFirst(4)) : p.mid
+                let letter = MTMid.bare(p.mid)
                 guard Self.isLetterName(letter) else { continue }
                 let w = MTGroupWord(t: "say", g: g.id, k: g.kind.rawValue, ti: g.title, n: me.isEmpty ? nil : me, id: letter, s: g.me, tx: p.text,
                                     qt: (p.replyText ?? "").isEmpty ? nil : p.replyText)
@@ -2333,6 +2336,7 @@ final class MTGroup {
         case "lp": return carded(w, from: pipe, store: store)   // COMPAT-GATED: a letter's link card (17.10), an older build buries it
         case "sp": return passported(w, from: pipe, store: store)   // COMPAT-GATED: a sticker's passport (17.10), an older build buries it
         case "pc": return cardLaid(w, from: pipe)   // COMPAT-GATED: a member's card (OZ 1 p.8), laid only where the owner names seats
+        case "fk": return keptAsked(w, from: pipe, store: store)   // COMPAT-GATED: a restored phone asks a group letter's file again (OZ 1 p.10.1)
         default:
             MontanaTrace.mark("group_refused", "kind=\(String(w.t.prefix(8)))")   // a newer build's word: its road ends here
             return .refused
@@ -2482,6 +2486,12 @@ final class MTGroup {
         }
         let count = seats.map { s in s.count + 1 } ?? max(2, min(w.c ?? 2, Self.peopleLimit + 1))
         let ownerName = Self.clean(w.n ?? "", Self.nameLimit)
+        // WHO MAY ADD ME (OZ 1 p.1.8): a group or a channel new to this phone, or one I left, stands only by the rule of inviting;
+        // a renewal of a group I hold is no invitation.
+        if groups[w.g] == nil || groups[w.g]?.left == true, !MTPrivacy.admits(.invite, owner) {
+            MontanaTrace.mark("group_refused", "invitation refused by the rule of who may add me")
+            return .refused
+        }
         if var g = groups[w.g] {
             guard !g.mine, MTSamePair.root(g.owner) == owner else {
                 MontanaTrace.mark("group_refused", "invitation of a group held by another owner")
@@ -2588,7 +2598,10 @@ final class MTGroup {
         }
         let key = Self.key(of: g.id)
         let sid = "mid:" + id
-        guard store.messages[key]?.contains(where: { $0.mid == sid }) != true else { return .held }   // a repeat: the row stands
+        if let row = store.messages[key]?.first(where: { $0.mid == sid }) {   // a repeat: the row stands
+            refill(row, words: words, id: id, seat: seat, in: g, store: store)   // with new cargo, the row's file comes (p.10.1)
+            return .held
+        }
         if g.mine {
             // THE GROUP'S PERMISSIONS AT THE DOOR (G.5): the owner carries every letter, so the owner refuses what the members may not
             // send -- whatever a member's build shows -- and holds a letter that came before its slow mode's interval: it knocks again.
@@ -2630,6 +2643,57 @@ final class MTGroup {
         return .held
     }
 
+    // A GROUP LETTER'S FILE ASKED FOR AGAIN (OZ 1 p.10.1, the group's half; decisions 875 = a, 883 = a): a phone restored from the
+    // light copy holds the group's rows and none of their files, and a delivered letter's pieces have left the nodes. It asks by
+    // «fk» on the group's own road -- a member the owner, the owner every member; the letter's author lays the file again under the
+    // same name (ChatStore.serveKeptFile, carryMedia), the owner carries the new cargo on, and the row without its file takes it.
+    /// The asker's half (ChatStore.askKeptFile holds its clock): one word to everyone this phone carries to; its receipts move no row.
+    @MainActor
+    func askKeptFile(_ key: String, letter id: String) {
+        guard let g = state(key), g.left != true, Self.isLetterName(id) else { return }
+        let w = MTGroupWord(t: "fk", g: g.id, k: g.kind.rawValue, id: id)
+        let n = carried(g).compactMap { p in carry(w, to: p, letter: "", own: false) }.count
+        MontanaTrace.mark("kept_file", mid: id, "a group letter's file is asked n=\(n)")
+    }
+    /// The holder's half: the letter's author lays its file again (serveKeptFile keeps its own clock); the owner, not its author,
+    /// passes the ask to the author's seat once in the span; anyone else holds the word.
+    @MainActor
+    private func keptAsked(_ w: MTGroupWord, from pipe: String, store: ChatStore) -> Verdict {
+        guard let g = groups[w.g], g.left != true, let id = w.id, Self.isLetterName(id) else { return .refused }
+        let root = MTSamePair.root(pipe)
+        let road = g.mine ? g.members.contains { m in MTSamePair.root(m.pipe) == root } : MTSamePair.root(g.owner) == root
+        guard road else { return .refused }   // only the group's own road asks
+        let key = Self.key(of: g.id)
+        guard let row = store.messages[key]?.first(where: { $0.mid == "mid:" + id }), row.attachment != nil else { return .held }
+        if row.isFromMe {
+            store.serveKeptFile(mid: id, chat: key)
+            return .held
+        }
+        guard g.mine, let ref = row.senderRef, let to = speakerPipe(ref), MTSamePair.root(to) != root,
+              store.mayAskKeptFile("pass:" + id) else { return .held }
+        _ = carry(w, to: to, letter: "", own: false)
+        MontanaTrace.mark("kept_file", mid: id, "the ask passes to the letter's author")
+        return .held
+    }
+    /// A REPEAT WITH NEW CARGO (p.10.1): the author laid a letter's file again under its name. The row without its file takes it;
+    /// the owner carries the new cargo on once in the span, silent -- the row stands everywhere already. Only the row's own
+    /// speaker lays its cargo.
+    @MainActor
+    private func refill(_ row: Message, words: String, id: String, seat: String, in g: MTGroupState, store: ChatStore) {
+        guard words.hasPrefix(mediaMark), words != row.text, let file = row.attachment?.file,
+              row.senderRef == Self.speaker(g.id, seat) else { return }
+        let key = Self.key(of: g.id)
+        if !MontanaMediaStore.exists(file) {
+            MontanaTrace.mark("rx_refill", mid: id, "a group row stands without its file -- the new cargo is taken")
+            store.reconstructMedia(key, body: String(words.dropFirst(mediaMark.count)), isFromMe: false, time: row.time,
+                                   msgId: row.msgId, senderRef: row.senderRef)
+        }
+        guard g.mine, store.mayAskKeptFile("carry:" + id) else { return }
+        var on = MTGroupWord(t: "say", g: g.id, k: g.kind.rawValue, ti: g.title, id: id, s: seat, tx: words)
+        on.hs = 1   // the row stands everywhere: the new cargo rings nobody
+        spread(on, in: g, except: seat, own: false)
+    }
+
     /// A LETTER'S CARD (MTGroup.carryCard): it lands on its letter's row by the pair's one rule of a late card (ChatStore.enrichLinkPreview
     /// -- the words, then the picture once), and the owner carries it on. Only the letter's speaker names its card, and only for a link
     /// the letter's own words carry; a card that outran its letter waits for it a while (cardWait).
@@ -2668,7 +2732,7 @@ final class MTGroup {
         guard g.left != true else { return .refused }
         guard let id = w.id, Self.isLetterName(id), let body = w.tx, body.utf8.count <= Self.passportLimit,
               var o = Self.json(body), (o["t"] as? String) == "id",
-              let named = o["m"] as? String, MontanaStickerBook.bare(named) == id else { return .refused }
+              let named = o["m"] as? String, MTMid.bare(named) == id else { return .refused }
         let from = MTSamePair.root(pipe)
         guard let seat = speakerSeat(g, w, from: from) else { return .refused }
         let key = Self.key(of: g.id)
@@ -2901,7 +2965,7 @@ final class MTGroup {
         var sid = ""
         if text.hasPrefix(editMark) { sid = (json(String(text.dropFirst(editMark.count)))?["sid"] as? String) ?? "" }
         else if text.hasPrefix(deleteMark) { sid = String(text.dropFirst(deleteMark.count)) }
-        let bare = sid.hasPrefix("mid:") ? String(sid.dropFirst(4)) : sid
+        let bare = MTMid.bare(sid)
         return isLetterName(bare) ? "mid:" + bare : nil
     }
     /// The seat whose letter a row is: mine is this phone's seat, another's is named by its speaker's reference.

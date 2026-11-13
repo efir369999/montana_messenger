@@ -247,7 +247,7 @@ final class MTChannelViews: ObservableObject {
     }
     /// A post's one name without its wire head: the same on the owner's phone and on every subscriber's.
     static func letter(_ m: Message) -> String? {
-        let bare = m.mid.hasPrefix("mid:") ? String(m.mid.dropFirst(4)) : m.mid
+        let bare = MTMid.bare(m.mid)
         return MTGroup.isLetterName(bare) ? bare : nil
     }
     private static func trimmed<V>(_ page: [String: V]) -> [String: V] {
