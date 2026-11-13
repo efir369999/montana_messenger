@@ -435,9 +435,9 @@ struct MontanaPeerInfoScreen: View {
         }
         let lines = MTGroupPage.lines(chat.name, store: store, remove: { seat in removingSeat = seat },
                                       open: { c in personPage = .person(c) },
-                                      write: { c in dismiss(); DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { ui.openChat(c) } },
+                                      write: { c in reached(c.convRef, write: true) },
                                       promote: { seat in adminSeat = seat },
-                                      reach: { conv, now in reached(conv, write: now) },
+                                      refused: { linkUnavailable = true },
                                       away: { pageAway = true })
         for line in lines { rows.append(MTInfoRow(id: "members." + line.seat, kind: .groupMember(line))) }
         return rows

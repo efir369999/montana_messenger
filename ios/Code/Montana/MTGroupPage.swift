@@ -28,14 +28,64 @@ enum MTGroupPage {
         return store.listChats().first { c in !c.isGroup && MTSamePair.root(c.convRef) == root }
     }
 
+    /// HOW THIS PHONE REACHES ONE PERSON OF A GROUP, ONE ANSWER FOR EVERY PLACE THAT SHOWS THEM (OZ 1 p.8, the author's word 21091,
+    /// 13.11.2026: «the avatar does not press at all»): the page's row read the pipe and the card, the feed's face read the pipe
+    /// alone and fell silent where a member's phone holds none -- every speaker but the owner. Held by the pipe, met by the card the
+    /// person laid, or waiting for the owner to hand that card on; nil for this phone itself and for a seat of no group here.
+    @MainActor
+    static func way(_ key: String, seat: String, store: ChatStore) -> MTGroupReach? {
+        guard let g = MTGroup.shared.state(key), seat != g.me else { return nil }
+        if let pipe = MTGroup.shared.speakerPipe(MTGroup.speaker(g.id, seat)), let c = row(of: pipe, store: store) { return .held(c) }
+        if let link = g.cards?[seat] { return .card(link) }
+        return .away
+    }
+    /// The seat a speaker's mark names in this group (MTGroup.speaker), or nil for a mark of another group.
+    static func seat(of ref: String, in key: String) -> String? {
+        guard let id = MTGroup.id(of: key) else { return nil }
+        let head = MTGroup.speaker(id, "")
+        return ref.hasPrefix(head) && head.count < ref.count ? String(ref.dropFirst(head.count)) : nil
+    }
+    /// THE PAGE OF ONE MET BY THEIR CARD (the author's word 21096: «it must open the person's whole page -- write, call and so on»):
+    /// the conversation's row where it stands, else the row the chats list gives a conversation opened by its address.
+    @MainActor
+    static func page(of conv: String, store: ChatStore) -> Chat {
+        let root = MTSamePair.root(conv)
+        return row(of: root, store: store) ?? Chat(name: root, lastMessage: "", time: "", unread: 0, status: "", convId: root)
+    }
+    /// THE HAND ON A PERSON OF A GROUP, ONE ROAD FOR THE PAGE'S ROW AND THE FEED'S FACE (OZ 1 p.8): their whole page -- held, or met
+    /// by their card through the one meeting road -- else the line that the page waits for the owner. A hand is never answered by
+    /// nothing, and each goes into the trace with the place it was made and its way (group_tap).
+    @MainActor
+    static func hand(_ way: MTGroupReach, at place: String, key: String, write now: Bool, store: ChatStore,
+                     held: @escaping (Chat, Bool) -> Void, refused: @escaping () -> Void, away: @escaping () -> Void) {
+        switch way {
+        case .held(let c):
+            MontanaTrace.mark("group_tap", "at=\(place) way=chat")
+            held(c, now)
+        case .card(let link):
+            MontanaTrace.mark("group_tap", "at=\(place) way=card")
+            Task { @MainActor in
+                guard case .opened(let conv) = await MontanaMeeting.meet(link) else {
+                    MontanaTrace.mark("group_card", "met=0")
+                    return refused()
+                }
+                MontanaTrace.mark("group_card", "met=1")
+                held(page(of: conv, store: store), now)
+            }
+        case .away:
+            let g = MTGroup.shared.state(key)
+            MontanaTrace.mark("group_tap", "at=\(place) way=away seats=\(g?.seats?.count ?? -1) cards=\(g?.cards?.count ?? 0) round=\(g?.round ?? 0)")
+            away()
+        }
+    }
+
     /// THE PEOPLE OF A GROUP'S PAGE, IN THEIR ORDER: the owner first, the administrators after, everyone else by name,
     /// this phone among them under its own name. Each row carries what this phone may do to the person: the owner names and
     /// dismisses administrators and takes anyone out; an administrator takes out a member who is none (MTGroup.kick asks the owner).
     @MainActor
     static func lines(_ key: String, store: ChatStore, remove: @escaping (String) -> Void, open: @escaping (Chat) -> Void,
                       write: @escaping (Chat) -> Void, promote: @escaping (String) -> Void = { _ in },
-                      reach: @escaping (String, Bool) -> Void = { _, _ in },
-                      away: @escaping () -> Void = {}) -> [MTGroupMemberLine] {
+                      refused: @escaping () -> Void = {}, away: @escaping () -> Void = {}) -> [MTGroupMemberLine] {
         guard let g = MTGroup.shared.state(key) else { return [] }
         let owns = g.mine && g.left != true
         let iAdmin = !g.mine && g.left != true && MTGroup.adminCan(g, seat: g.me, .ban)   // «Ban Users» (G.6)
@@ -52,29 +102,19 @@ enum MTGroupPage {
             let me = p.seat == g.me
             let ref = MTGroup.speaker(g.id, p.seat)
             let pipe = me ? nil : MTGroup.shared.speakerPipe(ref)
-            let chat = pipe.flatMap { x in row(of: x, store: store) }
-            // A PERSON THIS PHONE HOLDS NO PIPE WITH, MET BY THE CARD THEY LAID (OZ 1 p.8, the author's decision 877 a): their page and
-            // a letter to them without being a contact; the one meeting road opens the conversation, or finds the one already open.
-            let met: ((Bool) -> Void)? = (me || chat != nil) ? nil : g.cards?[p.seat].map { (link: String) -> (Bool) -> Void in
+            // ONE ROAD TO A PERSON (OZ 1 p.8, MTGroupPage.way and hand): the row asks the very answer the feed's face asks
+            let reached = way(key, seat: p.seat, store: store)
+            let go: ((Bool) -> Void)? = reached.map { w in
                 { (now: Bool) in
-                    Task { @MainActor in
-                        guard case .opened(let conv) = await MontanaMeeting.meet(link) else {
-                            return MontanaTrace.mark("group_card", "met=0")
-                        }
-                        reach(conv, now)
-                    }
+                    hand(w, at: "page", key: key, write: now, store: store, held: { c, n in if n { write(c) } else { open(c) } },
+                         refused: refused, away: away)
                 }
             }
-            // A PERSON NEITHER HELD NOR MET (OZ 1 p.8, the author's decision 897 a): no pipe and no card yet, because the group's
-            // owner has not handed it on; the row answers the hand anyway and says the page waits for the owner's update.
-            let reachable: (() -> Void)? = chat.map { c in { open(c) } } ?? met.map { m in { m(false) } }
             let r = role(p.seat)
             let mayRemove = !me && (owns || (iAdmin && r == nil))
             var deeds: [MTMemberDeed] = []
-            if let chat {
-                deeds.append(MTMemberDeed(id: "send", title: "Send Message", icon: "message") { write(chat) })
-            } else if let met {
-                deeds.append(MTMemberDeed(id: "send", title: "Send Message", icon: "message") { met(true) })
+            if let go, reached?.writes == true {
+                deeds.append(MTMemberDeed(id: "send", title: "Send Message", icon: "message") { go(true) })
             }
             if owns, !me, g.kind == .group {
                 // the admin's rights page, as «Promote» and «Edit Admin Rights» open it (G.6)
@@ -96,7 +136,7 @@ enum MTGroupPage {
                                                   : pipe.flatMap { x in store.presenceWord(x)?.text },
                                      role: r, rank: MTGroup.shared.rank(key, seat: p.seat), deeds: deeds,
                                      remove: mayRemove ? { remove(p.seat) } : nil,
-                                     open: reachable ?? (me ? nil : away))
+                                     open: go.map { f in { f(false) } })
         }
     }
 }
@@ -117,6 +157,13 @@ struct MTGroupMemberLine {
     let remove: (() -> Void)?
     /// The person's own page: where this phone holds their pipe, or met by the card they laid (OZ 1 p.8).
     let open: (() -> Void)?
+}
+
+/// HOW A PERSON OF A GROUP IS REACHED FROM THIS PHONE (MTGroupPage.way): by the pipe it holds, by the card they laid, or not yet.
+enum MTGroupReach {
+    case held(Chat), card(String), away
+    /// Whether a letter can go to them from here: held or met by the card; one waiting for the owner cannot yet.
+    var writes: Bool { if case .away = self { return false }; return true }
 }
 
 /// A PERSON'S ROW ON A GROUP'S PAGE: the face, the name, whether they are online under it, the role on a

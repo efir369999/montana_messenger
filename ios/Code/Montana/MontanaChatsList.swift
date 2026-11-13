@@ -193,6 +193,26 @@ struct MTBarGlobe: View {
     }
 }
 
+#if MONTANA_MESSENGER
+/// THE LOGO SAYS THE NETWORK IN MESSENGER (the author's word 21097, 13.11.2026: «the green ring around the logo will mean that
+/// there is a connection to the network»): the globe left the time panel; the logo wears a green ring while this phone's node
+/// is up, and none while it is not. It reads the node itself, as the globe did, so the panel is not drawn again by it.
+struct MTBarLogo: View {
+    @ObservedObject private var node = MontanaPhoneNode.shared
+    var body: some View {
+        MTFeedGlyph(side: 36)
+            .overlay {
+                if node.nodeUp {
+                    if MontanaSkin.isNative { Circle().stroke(Color.green, lineWidth: 2) }
+                    else { MontanaHexagon().stroke(Color.green, lineWidth: 2) }
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(node.nodeUp ? Text("Connected") : Text("Disconnected"))
+    }
+}
+#endif
+
 /// THE RESULTS STAND ON THE KEYS BY THEMSELVES (23.09): the page watched the keyboard for this one padding, and every move
 /// of the keys — the chat open over the list raises and lowers them — drew the chat list again.
 struct MTSearchResultsFrame<Results: View>: View {
@@ -397,6 +417,10 @@ struct ChatsListView: View {
                 if barOpen { withAnimation(.easeInOut(duration: 0.2)) { ui.pane = MTApps.wall == nil ? .chats : .feed } } else { turnPanel(open: true, by: "logo") }
                 #endif
             } label: {
+                #if MONTANA_MESSENGER
+                MTBarLogo()   // the logo with the network's green ring (the author's word 21097)
+                    .overlay(alignment: .topTrailing) { if !barOpen { glyphBadge(panelBadge) } }
+                #else
                 MTFeedGlyph(side: 36)   // the feed's glyph is the logo, one drawing for the bar and the drawer
                     // THE BADGE ON THE TIME PANEL (the author's word 17.09): the unread chats and the
                     // missed calls, the platform's own corner badge — on the logo while folded, on
@@ -405,6 +429,7 @@ struct ChatsListView: View {
                     // NO SENDING MARK ON THE LOGO (the author's word 29.09: «and on the time logo's icon hung a blue send icon,
                     // remove it altogether»): a letter on its way shows its state on its own bubble (DeliveryStatus), never
                     // on the panel.
+                #endif
             }
             // The chats, right of the logo (the author's word 19.09): an outline, as every page's glyph (UIState.Glyph).
             barSlot(Self.chatsSlot) { withAnimation(.easeInOut(duration: 0.2)) { ui.pane = .chats } } label: {
@@ -412,6 +437,25 @@ struct ChatsListView: View {
                     .foregroundColor(MontanaOctagon.barGlyph)
                     .overlay(alignment: .topTrailing) { if barOpen { glyphBadge(store.unreadCounts.count) } }   // the unread, where the chats live
             }
+            #if MONTANA_MESSENGER
+            // THE GROUPS AND THE CHANNELS RIGHT OF THE CHATS, NO GLOBE (the author's word 21097, 13.11.2026: «right of the time panel
+            // the order of the buttons -- chats, groups, channels -- remove the globe entirely»): Messenger's panel names its three
+            // lists of conversations; the network is said by the logo's ring (MTBarLogo), the gallery and the network's page by the drawer.
+            barSlot(Self.groupsSlot) { withAnimation(.easeInOut(duration: 0.2)) { ui.ask(.groups) } } label: {
+                Image(systemName: UIState.Glyph.groups).font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(MontanaOctagon.barGlyph)
+                    .overlay(alignment: .topTrailing) {
+                        if barOpen { glyphBadge(store.unreadCounts.keys.filter { k in MTGroup.isKey(k) && MTGroup.shared.kind(k) != .channel }.count) }
+                    }
+            }
+            barSlot(Self.channelsSlot) { withAnimation(.easeInOut(duration: 0.2)) { ui.ask(.channels) } } label: {
+                Image(systemName: UIState.Glyph.channels).font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(MontanaOctagon.barGlyph)
+                    .overlay(alignment: .topTrailing) {
+                        if barOpen { glyphBadge(store.unreadCounts.keys.filter { k in MTGroup.shared.kind(k) == .channel }.count) }
+                    }
+            }
+            #else
             // THE DYNAMIC GLYPH, between the chats and the globe (the author's word 19.09): the last opened of the
             // player and the gallery; a tap opens that one again. Both are pages under the bar (the music 23.09, the
             // gallery 25.09), one of them in the row at a time, and the puck goes under the glyph for either.
@@ -433,6 +477,7 @@ struct ChatsListView: View {
             } label: {
                 MTBarGlobe()
             }
+            #endif
         }
         // THE PUCK IS BORN UNDER EVERY GLYPH (the author's word 24.09: «now and then the tab's selection circle turns
         // darker, lies over the tab's glyph, and what is under it cannot be seen»). The puck was the background of its
@@ -509,6 +554,10 @@ struct ChatsListView: View {
     private static let chatsSlot = 4
     private static let mediaSlot = 5
     private static let globeSlot = 6
+    #if MONTANA_MESSENGER
+    private static let groupsSlot = 5     // Messenger's panel right of the logo: chats, groups, channels (the author's word 21097)
+    private static let channelsSlot = 6
+    #endif
     /// The pages whose search narrows their own rows (the music, 24.09; the feed and the network, 25.09): no results over
     /// them, no pin.
     private static func searchesItself(_ p: UIState.Pane) -> Bool {
@@ -524,8 +573,14 @@ struct ChatsListView: View {
     private static func slot(of pane: UIState.Pane) -> Int? {
         switch pane {
         case .chats: return chatsSlot; case .contacts: return contactsSlot; case .calls: return callsSlot
+        #if MONTANA_MESSENGER
+        case .groups: return groupsSlot
+        case .channels: return channelsSlot
+        case .gallery, .p2p: return nil   // the drawer's pages: no glyph of theirs on Messenger's panel (the author's word 21097)
+        #else
         case .gallery, .groups, .channels: return mediaSlot   // the dynamic slot's pages (UIState.mediaPanes)
         case .p2p: return pane == UIState.globePane ? globeSlot : nil
+        #endif
         #if !MONTANA_MESSENGER
         case .music: return mediaSlot
         case .feed: return logoSlot

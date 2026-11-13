@@ -278,7 +278,7 @@ final class MTTurnDrag: ObservableObject {
     /// (the author's word 25.09).
     var turnOrder: [Pane] {
         #if MONTANA_MESSENGER
-        return [.contacts, .calls, .chats, mediaPane, Self.globePane]   // the dynamic slot's page (mediaPane)
+        return [.contacts, .calls, .chats, .groups, .channels]   // the panel's own order, no globe (the author's word 21097)
         #else
         var row: [Pane] = [.contacts, .calls, .feed, .chats, mediaPane, Self.globePane]
         if MTApps.wall == nil { row.removeAll { $0 == .feed } }   // the feed only where the wall stands (slice S4c2)

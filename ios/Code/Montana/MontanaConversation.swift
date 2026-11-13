@@ -1282,6 +1282,8 @@ struct ChatConversationView: View {
     @State private var askEraseGroup = false     // out of a group: «Delete and Exit» asks first (stage R)
     @AppStorage("composeMediaMode") private var composeMediaMode = "mic"
     @State private var personPage: MTPageRoute?   // a person's page over this chat, on its own stack: a group's speaker (30.09)
+    @State private var speakerAway = false        // a speaker neither held nor met: their page waits for the owner (OZ 1 p.8)
+    @State private var speakerUnreachable = false // a speaker's card did not open (OZ 1 p.8)
     #if !MONTANA_MESSENGER   // no coins in Messenger (cut C6)
     @State private var coinMove: MTMoveRoute?   // the move a coin letter's bubble opens, on this chat's own stack (05.10)
     #endif
@@ -2342,6 +2344,10 @@ struct ChatConversationView: View {
                 case .person(let c): MontanaPeerInfoScreen(chat: c, onSave: onChatUpdate).montanaMotionMeter()
                 default: MontanaMyProfileView().montanaMotionMeter()
                 }
+            }
+            .alert("This person's page opens once the group's owner updates Montana.", isPresented: $speakerAway) { Button("OK", role: .cancel) {} }
+            .alert("The contact link is not available yet: the person must open Montana once.", isPresented: $speakerUnreachable) {
+                Button("OK", role: .cancel) {}
             }
             .mtBoxed()
     }
@@ -3672,15 +3678,19 @@ struct ChatConversationView: View {
             }
         }
     }
-    /// A SPEAKER'S PAGE FROM THEIR FACE (the group feed): the person this phone holds a pipe with -- the owner's phone,
-    /// every member it carries to; a member's phone, the owner -- opens on this chat's own stack; nobody else is known here by more
-    /// than the name they gave.
+    /// A SPEAKER'S PAGE FROM THEIR FACE (the group feed), BY THE ONE ROAD OF THE GROUP'S PAGE (OZ 1 p.8, the author's word 21091:
+    /// «the avatar does not press at all»): the face read the pipe alone and returned in silence where a member's phone holds none --
+    /// every speaker but the owner. Now it asks MTGroupPage.way: held or met by the card -- the person's whole page on this chat's own
+    /// stack (the author's word 21096); neither -- the line that the page waits for the owner.
     private func openSpeaker(_ ref: String) {
-        guard let pipe = MTGroup.shared.speakerPipe(ref) else { return }
-        let root = MTSamePair.root(pipe)
-        guard let row = store.listChats().first(where: { c in !c.isGroup && MTSamePair.root(c.convRef) == root }) else { return }
         hideKeyboard()
-        personPage = .person(row)
+        guard let seat = MTGroupPage.seat(of: ref, in: chat.name), let way = MTGroupPage.way(chat.name, seat: seat, store: store) else {
+            return MontanaTrace.mark("group_tap", "at=feed way=none")
+        }
+        MTGroupPage.hand(way, at: "feed", key: chat.name, write: false, store: store,
+                         held: { c, _ in personPage = .person(c) },
+                         refused: { speakerUnreachable = true },
+                         away: { speakerAway = true })
     }
     /// A GROUP'S EVENT ROW (MTGroupEvent, stage R): a service row -- a capsule in the middle of the feed in the
     /// day's own dress; a voice chat's row is the way in while its room lives.
