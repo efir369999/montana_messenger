@@ -1,0 +1,25 @@
+{
+  "build": 111,
+  "notes": {
+    "en": [
+      "Video switched on during a call now appears on your own screen too, not only on your correspondent's.",
+      "The avatar mask is gone from calls; the video call's top row keeps two buttons on each side, and the name shrinks to fit between them.",
+      "The bot and the Bots folder are gone from the chats list."
+    ],
+    "ru": [
+      "Видео, включённое посреди звонка, теперь появляется и на вашем экране, а не только у собеседника.",
+      "Маска аватара из звонков убрана; в верхнем ряду видеозвонка по две кнопки с каждой стороны, имя ужимается, чтобы уместиться между ними.",
+      "Бот и папка «Боты» убраны из списка чатов."
+    ],
+    "zh-Hans": [
+      "通话中开启的视频现在也会显示在您自己的屏幕上，而不仅是对方的屏幕。",
+      "通话中的头像面具已移除；视频通话顶部一行两侧各有两个按钮，名字会缩小以适应其间的空间。",
+      "聊天列表中的机器人和“机器人”文件夹已移除。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No new server, network road or key leaving the device; the bot's chat kind and its folder are removed, and a stored folder of an unknown kind is dropped on load."
+    ]
+  }
+}

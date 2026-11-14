@@ -1,0 +1,29 @@
+{
+  "build": 147,
+  "notes": {
+    "en": [
+      "A group chat you deleted, such as the chat of a group call, no longer comes back by itself: only a new letter in it, or being added again, brings it back.",
+      "In a group, a tap on a member whose page cannot open yet says why: the page opens once the group's owner updates Montana.",
+      "On a device restored from a copy, a tap on a photo or video in a personal chat that came without its file asks its sender, and the file arrives again while the sender still has it.",
+      "Please check: delete the chat of a group call; after the update it does not come back.",
+      "Please check: in a group, tap a member who is not in your contacts: their page opens, or a line says it opens after the owner's update.",
+      "Please check: on a restored iPad, tap a photo without its file in a personal chat: it arrives."
+    ],
+    "ru": [
+      "Удалённый вами групповой чат, например чат группового звонка, больше не возвращается сам: вернуть его может только новое письмо в нём или повторное добавление.",
+      "В группе нажатие на участника, чья страница пока не открывается, объясняет причину: страница откроется, когда владелец группы обновит Montana.",
+      "На устройстве, восстановленном из копии, нажатие на фото или видео личного чата, пришедшее без файла, просит его у отправителя, и файл приходит снова, пока он есть у отправителя.",
+      "Проверьте: удалите чат группового звонка -- после обновления он не возвращается.",
+      "Проверьте: в группе нажмите на участника, которого нет в ваших контактах: открывается его страница или строка, что она откроется после обновления у владельца.",
+      "Проверьте: на восстановленном iPad нажмите на фото без файла в личном чате -- оно приходит."
+    ],
+    "zh-Hans": [
+      "您删除的群聊（例如群通话的聊天）不再自行回来：只有其中的新消息或再次被添加才会让它回来。",
+      "在群组中，点按暂时无法打开页面的成员时会说明原因：群主更新 Montana 后即可打开该页面。",
+      "在从副本恢复的设备上，点按个人聊天中没有文件的照片或视频会向发送者请求，只要发送者仍保留该文件，文件就会再次到达。",
+      "请检查：删除群通话的聊天，更新后它不会再回来。",
+      "请检查：在群组中点按不在您联系人中的成员：其页面打开，或显示一行说明群主更新后即可打开。",
+      "请检查：在恢复的 iPad 上，点按个人聊天中没有文件的照片：它会到达。"
+    ]
+  }
+}

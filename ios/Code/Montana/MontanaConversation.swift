@@ -1252,6 +1252,8 @@ struct ChatConversationView: View {
     // pinned messages of the current chat (for the banner)
     private var pinnedList: [Message] { store.pinnedMessages(chat.name) }
     static var autofocusNextOpen = false   // opened the chat from a notification → keyboard and cursor immediately
+    /// This chat's appearances in the run (the author's word 21656): a page born twice for one tap names itself (chat:appear birth=N).
+    static var births: [String: Int] = [:]
     @State private var inputFocused: Bool = false   // input focus (MTInputField drives the real first responder)
     @State private var headerTop: CGFloat = 0   // the bar's lower edge in the window: the blurred strip above covers the bar and ends here
     @State private var topBarSize: CGSize = .zero   // the compose node at the top of the turned feed, as laid out: what the pinned plate stands under
@@ -1438,6 +1440,34 @@ struct ChatConversationView: View {
     @AppStorage("cbBgType") private var cbBgTypeAS = "gradient"
     @AppStorage("cbBg1") private var cbBg1 = "000000"
     @AppStorage("cbBg2") private var cbBg2 = "0A0A0A"
+
+    /// THE FIRST CHAT OF A RUN STOOD 281-365 MS ON T1 (13.11.2026 23:14 UTC, build 2392, OZ 1 p.1.10): the stack of that frame was
+    /// __swift_instantiateConcreteTypeFromMangledNameV2 inside chatCore, bottomGroup and composePreviews -- the runtime built the
+    /// metadata of the page's nested generic types at the first tap, and every later chat of the run opened without that cost.
+    /// Every link is boxed (mtBoxed), so the body's type alone does not reach the links: each link's type is named here through a
+    /// closure that is never called, once, off the main thread, right after the launch (MontanaApp, beside MontanaSeed.warmRoot).
+    /// Type metadata is thread-safe and stays for the process; no view is built and no state is read. The cost is a trace line.
+    nonisolated static func warmTypes() {
+        DispatchQueue.global(qos: .utility).async {
+            let t0 = ProcessInfo.processInfo.systemUptime
+            var seen: [ObjectIdentifier] = []
+            func meta<T>(_ link: @MainActor (ChatConversationView) -> T) { seen.append(ObjectIdentifier(T.self)) }
+            // the chat list's row first: its body's types were built on the main thread at the launch, 380 ms on T1 (2392; OZ 1 p.1.1.3)
+            func row<T>(_ link: @MainActor (ChatRow) -> T) { seen.append(ObjectIdentifier(T.self)) }
+            row { $0.body }
+            meta { $0.body }; meta { $0.chatCoreL0 }; meta { $0.chatCoreL1 }; meta { $0.chatCoreL2 }; meta { $0.chatCoreM1 };
+            meta { $0.chatCoreM2 }; meta { $0.chatTop }; meta { $0.chatTitleDoor }; meta { $0.chatTitlePage };
+            meta { $0.chatTitleBubble }; meta { $0.chatCoreM3 }; meta { $0.chatCoreL3 }; meta { $0.chatCore };
+            meta { $0.searchBar }; meta { $0.savedChips }; meta { $0.messagesList }; meta { $0.unreadDivider };
+            meta { $0.pastedPreview }; meta { $0.mentionPlate }; meta { $0.linkPlate }; meta { $0.recoveredNote };
+            meta { $0.groupMutedNote }; meta { $0.closedNote }; meta { $0.groupDeleteBar }; meta { $0.channelJoinBar };
+            meta { $0.channelMuteBar }; meta { $0.bottomGroup }; meta { $0.rowGroup }; meta { $0.topFieldGround };
+            meta { $0.composePreviews }; meta { $0.composeSlot }; meta { $0.chatBackground }; meta { $0.logoPattern };
+            meta { $0.defaultBackground }; meta { $0.selectionTopBar }; meta { $0.selectionBar }; meta { $0.scheduleSheet }
+            let ms = Int((ProcessInfo.processInfo.systemUptime - t0) * 1000)
+            MontanaTrace.mark("chat_types", "links=\(seen.count) ms=\(ms)")
+        }
+    }
 
     @Environment(\.mtChatKeyboardGeometry) private var pageKeyboard
     var body: some View {
@@ -1699,55 +1729,63 @@ struct ChatConversationView: View {
         // of ours remembering to clear it. A flag left true opened the emoji instead of the keys.
         .onChange(of: inputFocused) { _, f in if !f, showEmoji { withAnimation { showEmoji = false } } }
         .onAppear {
-            ChatConversationView.autofocusNextOpen = false
-            store.healUnresolvedRows(chat.name)   // references left by older builds become words (15.45)
-            seenTick.arm(store.peerSeenAt[chat.name])   // 10-C.2
-            MontanaDeliveryEngine.shared.drainAll()   // instantly show what the notification decrypted
-            // The keyboard does NOT rise automatically (SSOT, stable across all entries): only on tapping the field -- the one
-            // exception is a chat of the money flow, below.
-            if chat.convId == nil { store.seedIfNeeded(chat.name) }
-            if MontanaConv.holds(chat.name) {
-                E2E.shared.sendAvatarIfNeeded(to: chat.name)
-                E2E.shared.sendNameIfNeeded(to: chat.name)
-                E2E.shared.sendAboutIfNeeded(to: chat.name)   // my bio and link, until the peer receipts them (24.09)
-            }
-            store.openConv = chat.name   // open chat — don't mark incoming as unread
-            if let t0 = MontanaOutsideOpen.tappedAt {
-                let ms = Int((ProcessInfo.processInfo.systemUptime - t0) * 1000)
-                let same = MontanaOutsideOpen.tappedFor == chat.name || MontanaOutsideOpen.tappedFor == (chat.convId ?? "")
-                MontanaTrace.mark("chat_open", "why=banner ms=\(ms) same=\(same ? 1 : 0) "
-                                     + "since_launch_ms=\(Int((ProcessInfo.processInfo.systemUptime - AppDelegate.launchedAt) * 1000))")
-                MontanaOutsideOpen.tappedAt = nil
-                MontanaOutsideOpen.openedAt = t0   // the feed's first frame closes the same clock
-                MontanaMainProbe.run("chat-open")   // the main thread's worst stall of the next twelve seconds, named
-            }
-            #if !MONTANA_MESSENGER   // no game in Messenger (cut C5)
-            // AN INVITATION LANDING IN THE OPEN CHAT RAISES NO BOARD (the author's words 06.10.2026 20:5x UTC, replacing «when both are
-            // in the chat, let them get into the game at once» of 30.09): it stands in the feed with its Accept and Decline.
-            // THE BANNER'S GAME RISES OVER THE CHAT (29.09): a tap on a chess banner enters the game itself -- unless it is an
-            // invitation that waits for this phone's answer: the chat is its place then, with its two buttons (06.10).
-            if let asked = MontanaOutsideOpen.pendingGame,
-               asked.chat == chat.name || MTSamePair.root(asked.chat) == MTSamePair.root(chat.convRef) {
-                MontanaOutsideOpen.pendingGame = nil
-                if let chess = MTApps.chess, !chess.awaitsMe(asked.game, rows: store.messages[chat.name] ?? []) {
-                    DispatchQueue.main.async { enterGame(asked.game) }
+            // THE OPENING IS MEASURED STEP BY STEP, EVERY TIME (the author's word 21656, 13.11.2026: «make the telemetry cover every
+            // scenario and measurement»): on T1 at 23:25 UTC (2392) a chat of the Protocol opened in 571-637 ms and no line said what
+            // this appearance cost, nor that the page appeared more than once for one tap. Each appearance writes one line -- main_step,
+            // or main_slow past 40 ms: what=chat:appear birth=N ms= parts= -- the birth counting this chat's appearances in the run.
+            ChatConversationView.births[chat.name, default: 0] += 1
+            MontanaMainProbe.step("chat:appear birth=\(ChatConversationView.births[chat.name] ?? 0)", always: true) {
+                ChatConversationView.autofocusNextOpen = false
+                MontanaMainProbe.step("heal") { store.healUnresolvedRows(chat.name) }   // references left by older builds become words (15.45)
+                seenTick.arm(store.peerSeenAt[chat.name])   // 10-C.2
+                MontanaMainProbe.step("drain") { MontanaDeliveryEngine.shared.drainAll() }   // instantly show what the notification decrypted
+                // The keyboard does NOT rise automatically (SSOT, stable across all entries): only on tapping the field -- the one
+                // exception is a chat of the money flow, below.
+                MontanaMainProbe.step("seed") { if chat.convId == nil { store.seedIfNeeded(chat.name) } }
+                MontanaMainProbe.step("profile") {
+                    guard MontanaConv.holds(chat.name) else { return }
+                    E2E.shared.sendAvatarIfNeeded(to: chat.name)
+                    E2E.shared.sendNameIfNeeded(to: chat.name)
+                    E2E.shared.sendAboutIfNeeded(to: chat.name)   // my bio and link, until the peer receipts them (24.09)
                 }
+                MontanaMainProbe.step("open-conv") { store.openConv = chat.name }   // open chat — don't mark incoming as unread
+                if let t0 = MontanaOutsideOpen.tappedAt {
+                    let ms = Int((ProcessInfo.processInfo.systemUptime - t0) * 1000)
+                    let same = MontanaOutsideOpen.tappedFor == chat.name || MontanaOutsideOpen.tappedFor == (chat.convId ?? "")
+                    MontanaTrace.mark("chat_open", "why=banner ms=\(ms) same=\(same ? 1 : 0) "
+                                         + "since_launch_ms=\(Int((ProcessInfo.processInfo.systemUptime - AppDelegate.launchedAt) * 1000))")
+                    MontanaOutsideOpen.tappedAt = nil
+                    MontanaOutsideOpen.openedAt = t0   // the feed's first frame closes the same clock
+                    MontanaMainProbe.run("chat-open")   // the main thread's worst stall of the next twelve seconds, named
+                }
+                #if !MONTANA_MESSENGER   // no game in Messenger (cut C5)
+                // AN INVITATION LANDING IN THE OPEN CHAT RAISES NO BOARD (the author's words 06.10.2026 20:5x UTC, replacing «when both are
+                // in the chat, let them get into the game at once» of 30.09): it stands in the feed with its Accept and Decline.
+                // THE BANNER'S GAME RISES OVER THE CHAT (29.09): a tap on a chess banner enters the game itself -- unless it is an
+                // invitation that waits for this phone's answer: the chat is its place then, with its two buttons (06.10).
+                if let asked = MontanaOutsideOpen.pendingGame,
+                   asked.chat == chat.name || MTSamePair.root(asked.chat) == MTSamePair.root(chat.convRef) {
+                    MontanaOutsideOpen.pendingGame = nil
+                    if let chess = MTApps.chess, !chess.awaitsMe(asked.game, rows: store.messages[chat.name] ?? []) {
+                        DispatchQueue.main.async { enterGame(asked.game) }
+                    }
+                }
+                #endif
+                MontanaMainProbe.step("trace-rows") { store.traceRows(chat.name) }   // display diagnostics: the feed's rows go to the journal on EVERY opening
+                if let cid = chat.convId, cid != chat.name { store.traceRows(cid) }   // a split key shows itself at once
+                // «unread» separator: the first letter of theirs not yet read — the letter's own word (23.09), taken
+                // before the opening reads them all
+                MontanaMainProbe.step("unread") { firstUnreadId = msgs.first(where: { !$0.isMine && !$0.isRead })?.id }
+                MontanaMainProbe.step("mark-read") { store.markRead(chat.name) }   // opened the chat → hide the unread counter
+                // restore the draft
+                if newMessage.isEmpty {
+                    newMessage = ChatStore.draft(chat.name)
+                }
+                // THE KEYS RISE IN A CHAT OF THE MONEY FLOW (the author's word 03.10 20:29: «when a chat with the time flow on is
+                // opened, let the keyboard be up by default»): the flow is a game of letters, so its chat opens ready to write -- the
+                // field on top takes the keys as the chat stands. Every other chat keeps the rule above: the keys only on a tap.
+                if ribbon, barWrites { DispatchQueue.main.async { inputFocused = true } }
             }
-            #endif
-            store.traceRows(chat.name)   // display diagnostics: the feed's rows go to the journal on EVERY opening
-            if let cid = chat.convId, cid != chat.name { store.traceRows(cid) }   // a split key shows itself at once
-            // «unread» separator: the first letter of theirs not yet read — the letter's own word (23.09), taken
-            // before the opening reads them all
-            firstUnreadId = msgs.first(where: { !$0.isMine && !$0.isRead })?.id
-            store.markRead(chat.name)   // opened the chat → hide the unread counter
-            // restore the draft
-            if newMessage.isEmpty {
-                newMessage = ChatStore.draft(chat.name)
-            }
-            // THE KEYS RISE IN A CHAT OF THE MONEY FLOW (the author's word 03.10 20:29: «when a chat with the time flow on is
-            // opened, let the keyboard be up by default»): the flow is a game of letters, so its chat opens ready to write -- the
-            // field on top takes the keys as the chat stands. Every other chat keeps the rule above: the keys only on a tap.
-            if ribbon, barWrites { DispatchQueue.main.async { inputFocused = true } }
         }
         .task(id: rowsKey) { await refreshMessageSearch() }
         .task(id: convKey) {
@@ -1762,24 +1800,26 @@ struct ChatConversationView: View {
             }
         }
         .onDisappear {
-            // The staged attachments die with the screen, so their files stop being held: a hold
-            // that outlived its screen would keep bytes nobody can reach for the life of the run.
-            MontanaMediaStore.release(pastedImages.map(\.name))
-            if rec.isRecording { rec.cancel(why: "chat-left") }   // a tape left recording behind a closed chat is nobody's (T1 16.09 07:32: it rolled on, the next one was refused)
-            rec.standDown()
-            if store.openConv == chat.name { store.openConv = nil }   // closed the chat -> presence farewell via openConv
-            draft.task?.cancel(); draft.task = nil
-            // The disk is not written here (20.09): the field wrote it at every change, and a snapshot at
-            // leaving was the second hand that put an old text back. Only the peer's bubble is frozen.
-            // THE CHECKPOINT SPEAKS THE DISK, NOT THIS INSTANCE'S MEMORY (21.09): the field writes
-            // the disk at every change and the send empties it; a second, stale instance of the
-            // screen leaving later still remembered the words that had already become a letter,
-            // and spoke them as a draft AFTER the ending — the ghost with a caret on the peer's screen.
-            let onDisk = ChatStore.draft(chat.name)
-            let d = onDisk.trimmingCharacters(in: .whitespaces)
-            let saved = (d.isEmpty || editingMessage != nil) ? "" : onDisk
-            // durable checkpoint: the peer's bubble freezes at exactly the field state
-            if chat.convId != nil, !chat.isGroup { E2E.shared.sendDraftCheckpoint(to: convKey, text: saved, caret: input.caret) }   // a group has no pipe to freeze a bubble on
+            MontanaMainProbe.step("chat:disappear", always: true) {   // the leaving is measured as the opening is (21656)
+                // The staged attachments die with the screen, so their files stop being held: a hold
+                // that outlived its screen would keep bytes nobody can reach for the life of the run.
+                MontanaMediaStore.release(pastedImages.map(\.name))
+                if rec.isRecording { rec.cancel(why: "chat-left") }   // a tape left recording behind a closed chat is nobody's (T1 16.09 07:32: it rolled on, the next one was refused)
+                rec.standDown()
+                MontanaMainProbe.step("close-conv") { if store.openConv == chat.name { store.openConv = nil } }   // closed the chat -> presence farewell via openConv
+                draft.task?.cancel(); draft.task = nil
+                // The disk is not written here (20.09): the field wrote it at every change, and a snapshot at
+                // leaving was the second hand that put an old text back. Only the peer's bubble is frozen.
+                // THE CHECKPOINT SPEAKS THE DISK, NOT THIS INSTANCE'S MEMORY (21.09): the field writes
+                // the disk at every change and the send empties it; a second, stale instance of the
+                // screen leaving later still remembered the words that had already become a letter,
+                // and spoke them as a draft AFTER the ending — the ghost with a caret on the peer's screen.
+                let onDisk = ChatStore.draft(chat.name)
+                let d = onDisk.trimmingCharacters(in: .whitespaces)
+                let saved = (d.isEmpty || editingMessage != nil) ? "" : onDisk
+                // durable checkpoint: the peer's bubble freezes at exactly the field state
+                if chat.convId != nil, !chat.isGroup { E2E.shared.sendDraftCheckpoint(to: convKey, text: saved, caret: input.caret) }   // a group has no pipe to freeze a bubble on
+            }
         }
         // THE WHOLE LIBRARY IS THE PLATFORM'S OWN PAGE (the author's word 22.09, given back after a page
         // of ours was tried and refused: «bring the system one back — there everything works»): its

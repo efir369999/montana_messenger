@@ -1,0 +1,19 @@
+{
+  "build": 115,
+  "notes": {
+    "en": [
+      "The call screen no longer freezes in the first call after the app starts: the mute button answers, the video request is shown to the caller, and the video comes on for both sides once the other side agrees. The screen now proves it was laid out again after every change and is born again at once when it was not."
+    ],
+    "ru": [
+      "Экран звонка больше не замирает в первом звонке после запуска приложения: кнопка выключения звука отвечает, запрос видео виден звонящему, а видео включается у обеих сторон, как только собеседник согласился. Экран теперь подтверждает, что перестроился после каждого изменения, и сразу рождается заново, если этого не произошло."
+    ],
+    "zh-Hans": [
+      "应用启动后的第一通通话中，通话界面不再卡住：静音按钮可以按下，呼叫方能看到视频请求，对方同意后双方的视频都会开启。界面现在会在每次变化后确认已重新布局，若未重新布局则立即重建。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No new server, network road or key leaving the device. The call window's host (MTCallHost, Code/Montana/MontanaCall.swift) counts its layouts; CallWindowPresenter raises a generation at every change of the call model, the screen's tree echoes it from inside its geometry, and a generation not echoed within 0.3 s is written to the diary (call_layout stall) and the window is born again, twice a call at most (call_window reborn)."
+    ]
+  }
+}

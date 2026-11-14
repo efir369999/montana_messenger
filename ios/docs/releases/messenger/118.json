@@ -1,0 +1,22 @@
+{
+  "build": 118,
+  "notes": {
+    "en": [
+      "Montana Messenger no longer carries the wall: its page, its post links and its rings are not part of the app.",
+      "The music page shows only tracks that play: the tracks of a lent folder that did not open stay out of the list, the queue and the shuffle until the folder opens again or is lent again with the plus, and the folder lent again takes its tracks back in their places."
+    ],
+    "ru": [
+      "Montana Messenger больше не несёт стену: её страница, ссылки на посты и кольца не входят в приложение.",
+      "Страница музыки показывает только треки, которые играют: треки одолженной папки, которая не открылась, не стоят ни в списке, ни в очереди, ни в разбросе, пока папка не откроется снова или не будет одолжена снова плюсом; одолженная снова папка возвращает свои треки на их места."
+    ],
+    "zh-Hans": [
+      "Montana Messenger 不再包含墙：墙的页面、帖子链接和圆环都不再属于本应用。",
+      "音乐页面只显示能播放的曲目：未能打开的借用文件夹中的曲目不会出现在列表、播放队列和随机播放中，直到该文件夹重新打开或用加号重新借用；重新借用的文件夹会把曲目放回原位。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No new server, network road or key leaving the device. A lent folder that does not open is told in the diary by its cause (MTMusicFolders.open: the bookmark's refusal or the platform's), naming no folder; its tracks stay in this device's own list (Application Support, excluded from backup) and the music list is written only when it changes."
+    ]
+  }
+}

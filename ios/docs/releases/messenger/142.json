@@ -1,0 +1,22 @@
+{
+  "build": 142,
+  "notes": {
+    "en": [
+      "Restoring an account from the 24 words: a letter your contact gave back before the restore copy arrived no longer stands twice in the chat -- the copy's own letter takes its place.",
+      "Please check: restore the account from the 24 words on the iPad while your contacts are online -- every letter of the conversation stands once; the name, your photo and your contacts' photos are in place."
+    ],
+    "ru": [
+      "Восстановление аккаунта из 24 слов: письмо, которое собеседник вернул до прихода копии для восстановления, больше не стоит в чате дважды -- его место занимает письмо из копии.",
+      "Проверьте: восстановите аккаунт из 24 слов на iPad, пока собеседники в сети -- каждое письмо переписки стоит один раз; имя, ваше фото и фото собеседников на месте."
+    ],
+    "zh-Hans": [
+      "用 24 个词恢复账户：联系人在恢复副本到达之前交还的消息，不再在聊天中出现两次——由副本中的消息取代它。",
+      "请检查：在联系人在线时，在 iPad 上用 24 个词恢复账户——对话中的每条消息只出现一次；名字、您的照片和联系人的照片都在。"
+    ]
+  },
+  "security": {
+    "en": [
+      "Restore: a row a correspondent gave back (mid given:) and the full copy's row of the same letter are known by one name, ChatStore.rowSig; the given row yields to the copy's row and its journal file is dropped (critic K3). No change to the wire format."
+    ]
+  }
+}

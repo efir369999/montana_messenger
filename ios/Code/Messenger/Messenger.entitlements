@@ -7,7 +7,6 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:montana.one</string>
-		<string>applinks:montana.quest</string>
 	</array>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>

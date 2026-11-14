@@ -35,6 +35,11 @@ private func mtUnprotect(_ url: URL) {
 enum MontanaLog {
     enum Channel: CaseIterable {
         case telemetry, trace
+        /// THE MEASURES KEEP A FILE OF THEIR OWN (the author's word 21659: «do not allow the loss of the measures»; OZ 1 p.1.1.6): the
+        /// trace filled its 512 KB in four to eight minutes of a person's work on T1 (2392, 13.11.2026) and the shipper takes each
+        /// finished file off the phone -- a motion measured ten minutes ago was no longer there to read. The screen's measures
+        /// (MontanaTrace.measures) are a few kilobytes an hour: in their own file they stand for days, and ship as the trace does.
+        case measure
         #if !MONTANA_MESSENGER
         case vpn   // the VPN's diary, the Protocol's alone (decision 651 = a)
         #endif
@@ -43,6 +48,7 @@ enum MontanaLog {
             switch self {
             case .telemetry: return "telemetry.log"
             case .trace:     return "trace.log"
+            case .measure:   return "measure.log"
             #if !MONTANA_MESSENGER
             case .vpn:       return "vpn.log"
             #endif
@@ -54,8 +60,21 @@ enum MontanaLog {
             switch self {
             case .telemetry: return 512 * 1024
             case .trace:     return 512 * 1024
+            case .measure:   return 512 * 1024
             #if !MONTANA_MESSENGER
             case .vpn:       return 256 * 1024
+            #endif
+            }
+        }
+        /// The shipper's two marks of the channel -- how far it has sent, and the birth of the file that offset measures -- named
+        /// here, by the channels' one owner (the author's word 21679): the shipper kept a list of its own of the files and the marks.
+        var ship: (mark: String, birth: String) {
+            switch self {
+            case .telemetry: return ("diagWmTele", "diagGenTele")
+            case .trace:     return ("diagWmTrace", "diagGenTrace")
+            case .measure:   return ("diagWmMeasure", "diagGenMeasure")
+            #if !MONTANA_MESSENGER
+            case .vpn:       return ("diagWmVpn", "diagGenVpn")
             #endif
             }
         }

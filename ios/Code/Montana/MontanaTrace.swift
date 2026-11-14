@@ -46,12 +46,16 @@ enum MontanaTrace {
     /// (23.09) could not be matched with any letter.
     static func shortMs(_ ms: Int64) -> String { String(String(ms).suffix(8)) }
 
+    /// THE SCREEN'S MEASURES, BY NAME (the author's word 21659; MontanaLog.Channel.measure): the lines that say what a motion, a
+    /// step of the main thread or a stall cost go to the measures' own file; every other line stays in the trace.
+    static let measures: Set<String> = ["motion", "frame_stack", "stall_tree", "feed_pass", "main_slow", "main_step", "main_probe",
+                                        "main_door", "chat_open", "chat_types", "letter_box"]
     static func mark(_ event: String, mid: String? = nil, _ kv: String = "") {
         guard enabled else { return }
         let now = Date()
         let ms = Int(now.timeIntervalSince(procStart) * 1000)
         let m = mid.map(Self.short) ?? "-"
-        MontanaLog.write(.trace, "|\(ms)|\(event)|\(m)|\(kv)")
+        MontanaLog.write(measures.contains(event) ? .measure : .trace, "|\(ms)|\(event)|\(m)|\(kv)")
         // AN ERROR CALLS FOR THE JOURNAL ITSELF. A breakdown must be reported in the hour it
         // happens, not a quarter of an hour later. The line describing the error is already here —
         // at the one point every mark passes through — so the decision "time to report" belongs

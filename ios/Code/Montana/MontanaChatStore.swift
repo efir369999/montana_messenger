@@ -3130,7 +3130,9 @@ class ChatStore: ObservableObject {
             // THE ROW SPEAKS EVERY LANGUAGE THE WORD CARRIES (19.10.2026, the author's word 08:4x UTC: «the text must be all in
             // the chosen system language»): a row born by a build that kept no translations stood in English under a Russian
             // title for good (T2, 2246). The same row, its same name, takes the languages the word brings now -- never a second row.
-            if let row = messages[montanaRoomKey]?[i], !l10n.isEmpty, releaseLanguages(row.text) != l10n {
+            // A ROW LAID WITHOUT WORDS TAKES THEM WHEN THEY COME (OZ 1 p.6): the app's own row of a build whose notes it did not carry.
+            if let row = messages[montanaRoomKey]?[i],
+               (!l10n.isEmpty && releaseLanguages(row.text) != l10n) || (!notes.isEmpty && releaseInfoOf(row.text)?.notes.isEmpty == true) {
                 messages[montanaRoomKey]?[i].text = releaseMark + json
                 if let healed = messages[montanaRoomKey]?[i] { _ = MTRowJournal.put(montanaRoomKey, healed) }
                 MontanaTrace.mark("release", "row stands build=\(build) — its languages filled in")
@@ -3156,8 +3158,14 @@ class ChatStore: ObservableObject {
     func standMontanaRoom(build: Int, version: String) {
         guard 0 < build else { return }
         if deletedChats.contains(montanaRoomKey) { deletedChats.remove(montanaRoomKey) }
+        // EVERY ROW SPEAKS ITS BUILD'S OWN WORDS (OZ 1 p.6): a row laid empty by an earlier build fills in from the notes' one owner.
+        for row in messages[montanaRoomKey] ?? [] {
+            guard let r = releaseInfoOf(row.text), r.notes.isEmpty, let own = MontanaRelease.notes(of: r.build) else { continue }
+            appendRelease(build: r.build, version: r.version, notes: own.en, l10n: own.l10n, url: r.url)
+        }
         guard !(messages[montanaRoomKey] ?? []).contains(where: { m in build <= (releaseInfoOf(m.text)?.build ?? 0) }) else { return }
-        if appendRelease(build: build, version: version, notes: [], l10n: [:], url: "") {
+        let own = MontanaRelease.notes(of: build)   // the app's own row is born with its words, never empty
+        if appendRelease(build: build, version: version, notes: own?.en ?? [], l10n: own?.l10n ?? [:], url: "") {
             MontanaTrace.mark("release", "the room stands build=\(build) -- the app's own row")
         }
     }
@@ -3243,19 +3251,34 @@ class ChatStore: ObservableObject {
         // One builder, built once per change of the history: the Calls tab read this on every
         // redraw, and every read walked every letter of every conversation on the main thread.
         if let memo = callLogMemo { return memo }
+        // ONLY THE CONVERSATIONS THAT MOVED ARE WALKED AGAIN (the author's words 21521, 21526, 13.11.2026 22:13 UTC: a chat opens at
+        // once): opening a chat loads its letters, the memo above is cleared, and the drawer's badge (missedCallsUnseen) walked every
+        // letter of every conversation on the main thread -- 1932 ms of one frame on T1 at 13.11.2026 22:11 UTC. A call letter is born
+        // once and never rewritten in place, so a conversation whose count, first and last letter stand holds the calls it held.
         var out: [CallRecord] = []
+        var kept: [String: CallsOfPeer] = [:]
         for (peer, list) in messages {
+            let first = list.first?.id ?? "", last = list.last?.id ?? ""
+            if let k = callsByPeer[peer], k.count == list.count, k.first == first, k.last == last {
+                out += k.rows; kept[peer] = k; continue
+            }
+            var rows: [CallRecord] = []
             for m in list {
                 if let ci = callInfoOf(m.text) {
-                    out.append(CallRecord(mid: m.id, peer: peer, video: ci.video, incoming: ci.incoming,
-                                          dur: ci.dur, missed: ci.missed, time: m.time, at: m.createdAt))
+                    rows.append(CallRecord(mid: m.id, peer: peer, video: ci.video, incoming: ci.incoming,
+                                           dur: ci.dur, missed: ci.missed, time: m.time, at: m.createdAt))
                 }
             }
+            kept[peer] = CallsOfPeer(count: list.count, first: first, last: last, rows: rows)
+            out += rows
         }
+        callsByPeer = kept
         let log = out.sorted { $0.at > $1.at }
         callLogMemo = log
         return log
     }
+    private struct CallsOfPeer { let count: Int; let first: String; let last: String; let rows: [CallRecord] }
+    private var callsByPeer: [String: CallsOfPeer] = [:]
     /// THE MUSIC LIBRARY, ONE BUILDER, BUILT ONCE PER CHANGE OF THE LETTERS OR OF THE LENT FOLDERS (the author's word
     /// 23.09: the music is a page under the bar now, and the page reads its tracks on every pass): the build walks every
     /// letter and asks the disk for every track's size, so it is kept until the letters change, as the call log is, or
@@ -3708,7 +3731,7 @@ class ChatStore: ObservableObject {
             // THE SAME ARCHIVE IS NOT READ TWICE (link 14244, MontanaArchive.face): a cold start whose archive, feed, pipe book and
             // asked rows stand as at the last whole reading would find the same gaps and build nothing, so it reads no log. Any
             // change (a block written, a chat born or emptied, a pipe, a row unasked) changes the face, and the archive is read.
-            let asked = (UserDefaults.standard.stringArray(forKey: "mt.twin.asked") ?? []).count
+            let asked = MontanaArchive.askedKeys.count
             let face = folders == nil ? MontanaArchive.face(["feed=" + occupied.sorted().joined(separator: ","),
                                                              "pipes=" + String(MTPipeBook.count), "asked=" + String(asked), "held=" + String(held.count)]) : nil
             if let face, face == UserDefaults.standard.string(forKey: ChatStore.archiveFaceKey) {
@@ -7117,6 +7140,8 @@ enum SeedScope {
     // Account content: conversations, profile, sync. Reset on account SWITCH.
     static let dataKeys: [String] = ["chatsJSON", "archivedJSON", "chatMessages", "pinnedMessages",
                            "mt.keep.owner",   // the keepers of my copy and its generation (MTKeeping): the person's own
+                           "mt.twin.self",   // the moments of one's own name, face and words said to the twins (MTTwinSelf, 884 = a)
+                           "mt.twin.book",   // the moments of the person's choices said to the twins, entry by entry (MTTwinSelf, 886 = a)
         "scheduledMsgs", "recentOrder", "orderSeq", "readChats", "pinnedChatsList", "forcedUnread",
         "mutedChats", "archivedNames", "deletedChats", "peerAvatars", "peerNames", "peerSeenAt", "peerGoneAt",
         "userName", "userLastName", "userUsername", "userBio", "userBirthday", "profileBio", "profileLink", "peerAbout",
@@ -7286,6 +7311,7 @@ enum SeedScope {
     ///   dead (a verdict of this network and this hour, not of the server), and the copy's own clock.
     static let deviceKeys: [String] = ["mt.keep.held",   // the parts this phone keeps for others (MTKeeping): never in this person's copy
                              "mt.birth.unfinished",   // the print of a making on this phone before its profile (MontanaBirth, link 14680): never a copy's
+                             "mt.search.face",   // the platform's search bar measured on this phone, under its system and language (MTSearchFace): never a copy's
                              MTKeeping.askedBackKey,   // the correspondences this phone asked to give back (MTKeeping): this device's own
                              "diagId", "diagHideRule", "diagWmTele", "diagWmTrace", "diagGenTele", "diagGenTrace",
         "mt.probe.at", "mt.probe.conf", "mt.probe.mode", "mt.probe.rot",
@@ -7711,7 +7737,10 @@ enum MontanaMainProbe {
     /// at every letter (what=rx:append), and the line named nothing inside it. A step run inside another reports its
     /// cost to the one around it, and the slow step's line carries its parts (a part under a millisecond is left out).
     nonisolated(unsafe) private static var parts: [String]?
-    nonisolated static func step(_ what: String, _ f: () -> Void) {
+    /// A STEP THAT ALWAYS SPEAKS (the author's word 21656, 13.11.2026: «make the telemetry cover every scenario and measurement»):
+    /// the line was written only past 40 ms, so an opening that cost 30 ms in each of three births said nothing. A step asked
+    /// with `always` writes its line at any cost -- main_step under the threshold, main_slow past it -- with its parts.
+    nonisolated static func step(_ what: String, always: Bool = false, _ f: () -> Void) {
         let was = crumb; crumb = what
         let outer = parts; parts = []
         let t0 = ProcessInfo.processInfo.systemUptime
@@ -7719,7 +7748,9 @@ enum MontanaMainProbe {
         let ms = Int((ProcessInfo.processInfo.systemUptime - t0) * 1000)
         let inner = parts ?? []
         parts = outer
-        if ms > 40 { MontanaTrace.mark("main_slow", "what=\(what) ms=\(ms)" + (inner.isEmpty ? "" : " parts=" + inner.joined(separator: ","))) }
+        if ms > 40 || always {
+            MontanaTrace.mark(ms > 40 ? "main_slow" : "main_step", "what=\(what) ms=\(ms)" + (inner.isEmpty ? "" : " parts=" + inner.joined(separator: ",")))
+        }
         if ms > 0 { parts?.append("\(what):\(ms)") }
         if ms > slowestMs { slowestMs = ms; slowest = what }
         crumb = was

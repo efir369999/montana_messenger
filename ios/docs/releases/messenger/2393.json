@@ -1,0 +1,17 @@
+{
+  "build": 2393,
+  "notes": {
+    "en": [
+      "The first chat after the app starts opens as fast as the next ones: the chat page's types are prepared in the background right after the launch.",
+      "Please check: start the app and open a chat with photos and voices at once -- it opens without a stall."
+    ],
+    "ru": [
+      "Первый чат после запуска открывается так же быстро, как следующие: типы страницы чата готовятся в фоне сразу после запуска.",
+      "Проверьте: запустите приложение и сразу откройте чат с фото и голосовыми -- он открывается без замирания."
+    ],
+    "zh-Hans": [
+      "启动后打开的第一个聊天与之后的一样快：聊天页面的类型在启动后立即于后台准备好。",
+      "请检查：启动应用后立即打开一个有照片和语音的聊天——它打开时不会卡顿。"
+    ]
+  }
+}

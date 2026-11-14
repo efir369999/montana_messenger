@@ -1,0 +1,23 @@
+{
+  "build": 94,
+  "notes": {
+    "en": [
+      "The privacy policy in Settings opens Montana Business's own policy on montana.xxx: organisations, the number administrators see and the location of work chats.",
+      "The terms of use call the app by its own name."
+    ],
+    "ru": [
+      "Политика конфиденциальности в Настройках открывает собственную политику Montana Business на montana.xxx: организации, номер, который видят администраторы, и местоположение в рабочих чатах.",
+      "Условия использования называют приложение его собственным именем."
+    ],
+    "zh-Hans": [
+      "“设置”中的隐私政策现在打开 Montana Business 自己在 montana.xxx 上的政策：组织、管理员可见的号码以及工作聊天中的位置。",
+      "使用条款以应用自己的名称称呼它。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The unused phone sign-in sheet is no longer compiled into Business.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

@@ -18133,18 +18133,99 @@
         }
       }
     },
-    "An anonymous messenger. Your identity comes from your secret phrase, and your chats are encrypted on your device.": {
+    "%lld more members": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more member"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more members"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ещё %lld участник"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ещё %lld участника"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ещё %lld участников"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ещё %lld участника"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "另有 %lld 名成员"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "They are listed once the group's owner updates Montana.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Анонимный мессенджер. Личность — из вашей секретной фразы, переписка зашифрована на вашем устройстве."
+            "value": "Они появятся в списке, когда владелец группы обновит Montana."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "匿名通讯工具。您的身份源自您的助记词，聊天内容在您的设备上加密。"
+            "value": "群主更新 Montana 后，他们将显示在列表中。"
+          }
+        }
+      }
+    },
+    "No phone number, no e-mail. Your identity comes from your secret phrase, and your chats are encrypted on your device.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без номера телефона и почты. Личность — из вашей секретной фразы, переписка зашифрована на вашем устройстве."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无需手机号，无需邮箱。您的身份源自您的助记词，聊天内容在您的设备上加密。"
           }
         }
       }

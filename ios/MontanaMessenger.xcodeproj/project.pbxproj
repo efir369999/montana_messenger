@@ -541,6 +541,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				MT6RE1EA5E5000000000B002,
 				7B7056ED4355D6C97159AF31,
 				559A635F1703D8FE7857CD03,
 				022338214046AA2799FA0E74,
@@ -1228,6 +1229,7 @@
 		951B4D712FE56DBC00F4327B = {
 			isa = PBXGroup;
 			children = (
+				MT6RE1EA5E5000000000F002,
 				MT919A000000000000000001,
 				951B4D7C2FE56DBC00F4327B,
 				951B4D7B2FE56DBC00F4327B,
@@ -2520,6 +2522,17 @@
 			lastKnownFileType = sourcecode.swift;
 			path = MTMessageText.swift;
 			sourceTree = "<group>";
+		};
+		MT6RE1EA5E5000000000B002 = {
+			isa = PBXBuildFile;
+			fileRef = MT6RE1EA5E5000000000F002;
+		};
+		MT6RE1EA5E5000000000F002 = {
+			isa = PBXFileReference;
+			lastKnownFileType = folder;
+			name = messenger;
+			path = docs/releases/messenger;
+			sourceTree = SOURCE_ROOT;
 		};
 		MT880B1C0DE0000000000001 = {
 			isa = PBXFileReference;

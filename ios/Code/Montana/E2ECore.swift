@@ -210,6 +210,15 @@ enum MontanaLocalVault {
         guard held.count == mark.count + 32, held.prefix(mark.count) == mark else { return nil }
         return held.dropFirst(mark.count).map { String(format: "%02x", $0) }.joined()
     }
+    /// A LOAD LEFT IN THE SETTINGS LEAVES FOR ITS FILE AT ITS FIRST READ (OZ 1 p.1.3, the author's word 21671; T1 2392, 13.11.2026
+    /// 23:25 UTC: the main thread stood 699 ms in the settings' plist; on T1 they weigh 1.67 MB, board.owned alone 406 KB). A value
+    /// from 64 KB on lies in the settings only when its file could not be written -- a full disk -- and nothing carried it out again:
+    /// the system parses the whole file at the first read of any setting. The read that finds such a value lays its file now, once;
+    /// the settings keep the 37 bytes that name it.
+    private static func carryOut(_ key: String, _ held: Data) {
+        store(key, held)
+        if let now = UserDefaults.standard.data(forKey: key), loadName(now) != nil { MontanaTrace.mark("vault_carried", "key=\(key) bytes=\(held.count)") }
+    }
     /// A value as the settings hold it, its load fetched where it lies: the sealed bytes; nil when the file it names is gone.
     static func resolved(_ held: Data) -> Data? {
         guard let name = loadName(held) else { return held }
@@ -283,7 +292,10 @@ enum MontanaLocalVault {
             MontanaTrace.mark("vault_load_missing", "key=\(key)")
             return nil
         }
-        if let opened = open(raw, Data(key.utf8)) { return opened }
+        if let opened = open(raw, Data(key.utf8)) {
+            if loadName(held) == nil, outOfLine <= raw.count { carryOut(key, held) }
+            return opened
+        }
         if let legacy = open(raw, Data()) { setEncrypted(key, legacy); return legacy }   // migration of blobs without AAD
         // It looks like a sealed block but does not open with OUR key -- this is foreign ciphertext
         // (the key changed or is unavailable), NOT a plaintext legacy. Re-sealing it as "legacy"

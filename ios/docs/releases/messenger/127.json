@@ -1,0 +1,25 @@
+{
+  "build": 127,
+  "notes": {
+    "en": [
+      "A report now reaches Montana through a node, also on a phone with no mail account; it is reviewed within 24 hours.",
+      "Delete account erases your history and its attachments on this device, asks the people who keep parts of your copy to drop them, and removes your copies from iCloud.",
+      "The question about your copy on first open also says that this phone keeps sealed parts for your contacts."
+    ],
+    "ru": [
+      "Жалоба теперь доходит до Montana через узел, даже на телефоне без почты; её рассматривают в течение 24 часов.",
+      "«Удалить аккаунт» стирает историю и вложения на этом устройстве, просит тех, кто хранит части вашей копии, удалить их и удаляет ваши копии из iCloud.",
+      "Вопрос о копии при первом открытии говорит и о том, что этот телефон хранит запечатанные части для ваших контактов."
+    ],
+    "zh-Hans": [
+      "举报现在通过节点送达 Montana，即使手机上没有邮件账户也可以；举报会在 24 小时内处理。",
+      "“删除账户”会清除此设备上的历史记录及其附件，请保管您副本部分的人删除这些部分，并删除您在 iCloud 中的副本。",
+      "首次打开时关于副本的询问也会说明：这部手机为您的联系人保存加密的部分。"
+    ]
+  },
+  "security": {
+    "en": [
+      "A report travels to a Montana node over the same HTTPS doors the app already uses (/report-put) and is carried one hop to the operators' machine; it holds the reporter's and the reported address, the reason, the reported message's text and the build, kept 30 days after the decision. No algorithm or key changes. Delete account sends each keeper the existing «release» word and removes only the copies in iCloud whose name proves them this person's."
+    ]
+  }
+}

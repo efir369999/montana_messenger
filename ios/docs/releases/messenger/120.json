@@ -1,0 +1,19 @@
+{
+  "build": 120,
+  "notes": {
+    "en": [
+      "Montana Messenger answers Apple's export question the way Apple's own form answers it: the app's end-to-end encryption uses published standard algorithms and the app is not sold in France, so no export document is needed and the build carries NO."
+    ],
+    "ru": [
+      "Montana Messenger отвечает Apple на вопрос об экспорте так, как отвечает сама форма Apple: сквозное шифрование приложения построено на опубликованных стандартных алгоритмах, во Франции приложение не продаётся, поэтому документ об экспорте не нужен и сборка несёт NO."
+    ],
+    "zh-Hans": [
+      "Montana Messenger 按 Apple 自己的表单作答出口问题：应用的端到端加密采用公开标准算法，且不在法国销售，因此无需出口文件，本版本标记为 NO。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No change to any algorithm, key or network road. ITSAppUsesNonExemptEncryption = false in Code/Messenger/Info.plist alone (decision 701 a): App Store Connect's App Encryption Documentation form, walked on 06.11.2026 (standard algorithms, not available in France), answered that no document is needed, so no compliance code exists and build 119 with true was refused (ITMS-90592). The TestFlight road no longer declares anything; tools/mt-apple-rules-check.py refuses true in either edition and any build setting beside the Info.plist."
+    ]
+  }
+}

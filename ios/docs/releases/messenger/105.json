@@ -1,0 +1,26 @@
+{
+  "build": 105,
+  "notes": {
+    "en": [
+      "Passwords are no longer part of the app: the side panel no longer shows them, and a password shared into a chat appears as a key marked «Shared password», with nothing to open or save.",
+      "Settings no longer mention walls: Data and storage shows no wall pictures, and the captions of the picture cache, online status and the content filter speak of the app as it is; the globe's page is headed «P2P network».",
+      "The Share sheet sends to your chats and no longer offers a wall."
+    ],
+    "ru": [
+      "Пароли больше не входят в приложение: боковая панель их не показывает, а пароль, присланный в чат, виден как ключ с подписью «Пароль от собеседника», без содержимого и без сохранения.",
+      "Настройки больше не упоминают стены: в «Данных и памяти» нет картинок стен, а подписи кэша картинок, статуса «в сети» и фильтра содержимого говорят о приложении таким, какое оно есть; страница глобуса называется «P2P сеть».",
+      "Лист «Поделиться» отправляет в ваши чаты и больше не предлагает стену."
+    ],
+    "zh-Hans": [
+      "密码已不再属于本应用：侧边栏不再显示密码，聊天中收到的密码只显示为带有“共享的密码”字样的钥匙，无法打开或保存。",
+      "设置中不再提及墙：“数据与存储”不再显示墙的图片，图片缓存、在线状态和内容过滤的说明文字都与应用的实际功能一致；地球图标的页面标题为“P2P 网络”。",
+      "“分享”面板只发送到你的聊天，不再提供墙。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The passwords vault, its page and its saving sheet are no longer compiled into the app; Face ID now guards only the 24-word recovery phrase.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

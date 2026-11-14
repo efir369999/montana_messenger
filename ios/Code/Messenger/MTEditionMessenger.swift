@@ -27,8 +27,10 @@ enum MTEdition {
     /// Protocol's): Messenger's own face on both sides -- its back, mirrored back by the turn, reads the same.
     static let pullFace = cover
     static let pullBack = cover
-    /// THE FIRST SCREEN'S LINE (the author's words 16364 and 16543, 04.11.2026: Montana is the anonymous messenger).
-    static let intro: LocalizedStringResource = "An anonymous messenger. Your identity comes from your secret phrase, and your chats are encrypted on your device."
+    /// THE FIRST SCREEN'S LINE NAMES WHAT IS NOT ASKED (the author's decision, link 21812, 14.11.2026, over his words 16364 and
+    /// 16543 of 04.11.2026): App Review Guideline 1.2 lists "random or anonymous chat" among what does not belong on the App
+    /// Store, so the line states the fact -- no phone number, no e-mail -- instead of the label.
+    static let intro: LocalizedStringResource = "No phone number, no e-mail. Your identity comes from your secret phrase, and your chats are encrypted on your device."
     /// DELETE ERASES (App Review 5.1.1(v); the author's decision (a), 10.11.2026): «Delete account» says what leaves -- the identity,
     /// the history and its attachments, the keepers' parts, the copies in iCloud -- and what a keeper who is away still holds.
     static let deletion: LocalizedStringResource = "Your account is deleted from this device: your 24-word identity, your history and its attachments are erased here, the people who keep parts of your copy are asked to drop them, and your copies in iCloud are removed. A contact who is offline keeps a sealed part that nothing but your 24 words can open. Your other devices keep what they hold. This cannot be undone."

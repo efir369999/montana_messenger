@@ -1,0 +1,34 @@
+{
+  "build": 135,
+  "notes": {
+    "en": [
+      "Switching to the emoji keyboard while typing no longer covers the input field: the field and the messages rise to the top of the emoji keys at once, and come back down when you switch to letters.",
+      "The call screen no longer has the add-participant button (the person with a plus in the top right corner).",
+      "The Montana chat, which tells about new versions, now shows a blue check seal to the right of its name -- in the chat's header and in the chats list.",
+      "Groups and Channels open from the side panel, each on its own page. The strip of folders on the chats page and Chat Folders in Settings are gone.",
+      "Please check: open a chat, tap the field, switch to the emoji keyboard and back several times -- the field always stands right above the keys; then type a word with emoji and send it. Then open Groups and Channels from the side panel. On a call, the top row holds only the fold arrow, the name and the camera flip. Look at the Montana chat: the blue seal stands right of its name."
+    ],
+    "ru": [
+      "Переключение на клавиатуру смайликов во время набора больше не закрывает поле ввода: поле и сообщения сразу поднимаются к верху клавиш смайликов и опускаются обратно при возврате к буквам.",
+      "На странице звонка больше нет кнопки добавления участника (человечек с плюсом в правом верхнем углу).",
+      "У чата Montana, который пишет об обновлениях, справа от имени теперь стоит синяя печать с галочкой -- в заголовке чата и в списке чатов.",
+      "Группы и Каналы открываются из боковой панели, каждый на своей странице. Полоски папок на странице чатов и «Папок с чатами» в Настройках больше нет.",
+      "Проверьте: откройте чат, нажмите на поле, несколько раз переключитесь на смайлики и обратно -- поле всегда стоит прямо над клавишами; затем наберите слово со смайликом и отправьте. Затем откройте Группы и Каналы из боковой панели. В звонке в верхнем ряду только стрелка сворачивания, имя и переворот камеры. Посмотрите на чат Montana: синяя печать стоит справа от имени."
+    ],
+    "zh-Hans": [
+      "输入时切换到表情键盘不再遮挡输入框：输入框和消息会立即升到表情键盘上方，切回字母键盘时随之回落。",
+      "通话页面右上角的添加参与者按钮（带加号的人像）已移除。",
+      "发布新版本消息的 Montana 聊天，现在在名字右侧显示蓝色认证标记——在聊天标题和聊天列表中都有。",
+      "群组和频道从侧边栏打开，各有独立页面。聊天页面的文件夹栏和设置中的“聊天文件夹”已移除。",
+      "请检查：打开聊天，点按输入框，多次在表情键盘和字母键盘之间切换——输入框始终紧贴在键盘上方；然后输入带表情的文字并发送。然后从侧边栏打开群组和频道。通话时顶部一行只有收起箭头、名字和翻转摄像头。查看 Montana 聊天：蓝色认证标记位于名字右侧。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No algorithm, key or network change: the chat page also listens to the system's change of the input mode (UITextInputMode.currentInputModeDidChangeNotification) and places the input bar on the keys' top read from the keyboard's own accessory; tools/mt-keyboard-drag-check.py, now in the build ring, refuses a rider without it.",
+      "No algorithm, key or network change: Messenger compiles none of the call's add mark, its sheet or the growing of a call of two into a room (MontanaCall.swift, MTGroupRoom.swift under #if !MONTANA_MESSENGER); coming into a room a Protocol peer grew stays. tools/mt-edition-check.py (MESSENGER_NEVER, in the build ring) refuses any compiled Messenger source that names them.",
+      "No algorithm, key or network change: the Montana room's mark beside its name is the system symbol checkmark.seal.fill, drawn by one view (MTMontanaSealMark) for the chat's head, the list and the face rows; it is a picture, not a character, so no name a person types can wear it.",
+      "Also carried from the Protocol's 2373 and 2374: the chat folders' strip, its menu and its Settings page are removed, Groups and Channels open from the side panel, and the build number has one owner, Version.xcconfig -- no algorithm, key or network change in either."
+    ]
+  }
+}

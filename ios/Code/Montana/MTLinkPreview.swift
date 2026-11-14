@@ -94,14 +94,25 @@ enum MTLinkPreviewBuilder {
     /// EVERY WEB LINK OF THE TEXT, IN ITS ORDER (the critic 22.09): the first link of a letter may be a
     /// page with nothing to say, and the letter then carried no card at all though its second link had
     /// a face. Service marks never reach here (the caller hands over plain outgoing text only).
+    /// ONE DETECTOR, AND A TEXT ASKED ONCE (OZ 1 p.1.4, the author's word 21671; T1 Messenger 13.11.2026 19:53 UTC): every drain
+    /// rebuilt the list's records, and each asked a newborn detector over the last letter of every chat on the main thread -- the
+    /// detector's birth and its tokenizer stood in the drain's stall. The detector is born once (immutable, its matching safe from
+    /// any thread), and a text's links are kept by the text: the same words always hold the same links.
+    nonisolated(unsafe) private static let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+    private static let linksLock = NSLock()
+    nonisolated(unsafe) private static var linksKept: [String: [URL]] = [:]
     static func webURLs(in text: String) -> [URL] {
-        guard let det = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return [] }
+        linksLock.lock(); let kept = linksKept[text]; linksLock.unlock()
+        if let kept { return kept }
+        guard let det = detector else { return [] }
         let r = NSRange(text.startIndex..., in: text)
-        return det.matches(in: text, options: [], range: r).compactMap { m in
+        let found: [URL] = det.matches(in: text, options: [], range: r).compactMap { m in
             guard let u = m.url, let sch = u.scheme?.lowercased(),
                   sch == "https" || sch == "http", u.host != nil else { return nil }
             return u
         }
+        linksLock.lock(); if 512 <= linksKept.count { linksKept.removeAll() }; linksKept[text] = found; linksLock.unlock()
+        return found
     }
     static func firstWebURL(in text: String) -> URL? { webURLs(in: text).first }
     /// The first link that HAS a face: each is asked in turn until one answers (the whole walk is

@@ -1,0 +1,29 @@
+{
+  "build": 2394,
+  "notes": {
+    "en": [
+      "Coming back to the app no longer freezes the screen: the system's upload session is prepared in the background (it could hold the screen for up to 10 seconds).",
+      "A chat opens lighter: the page under it and the side drawer are not redrawn at every change of the chats, and while the chat rises the feed lays out only the part already shown.",
+      "Incoming letters no longer hold the screen: read letters' files are removed in the background, the link finder is made once, and the extensions' diaries are read off the screen's thread.",
+      "The chat list scrolls without a stall: a row's small picture and the chain's last word are prepared in the background.",
+      "The app starts lighter: large saved values that stayed inside the settings move to files of their own, so the settings are read faster at launch.",
+      "Please check: leave the app and come back, then open several chats in a row -- nothing stalls."
+    ],
+    "ru": [
+      "Возврат в приложение больше не замораживает экран: системная сессия выгрузки готовится в фоне (она могла держать экран до 10 секунд).",
+      "Чат открывается легче: страница под ним и боковая шторка не перерисовываются при каждом изменении чатов, а лента во время подъёма чата раскладывает только уже показанную часть.",
+      "Входящие письма больше не держат экран: файлы прочитанных писем удаляются в фоне, поиск ссылок создаётся один раз, дневники расширений читаются вне потока экрана.",
+      "Список чатов прокручивается без замирания: малая картинка строки и последнее слово цепи готовятся в фоне.",
+      "Приложение запускается легче: крупные сохранённые значения, оставшиеся внутри настроек, переносятся в свои файлы, и настройки при запуске читаются быстрее.",
+      "Проверьте: выйдите из приложения и вернитесь, затем откройте несколько чатов подряд -- ничего не замирает."
+    ],
+    "zh-Hans": [
+      "返回应用时屏幕不再卡住：系统的上传会话改为在后台准备（它曾让屏幕停住最长 10 秒）。",
+      "聊天打开得更轻：其下方的页面和侧边抽屉不再随聊天的每次变化而重绘，聊天升起时消息列表只排布已显示的部分。",
+      "收到的信件不再卡住屏幕：已读信件的文件在后台删除，链接识别器只创建一次，扩展的日志在屏幕线程之外读取。",
+      "聊天列表滚动不再卡顿：行的小图和链的最后一句在后台准备。",
+      "应用启动更轻：留在设置内部的大型已存数据移入各自的文件，启动时读取设置更快。",
+      "请检查：离开应用再返回，然后连续打开几个聊天——没有任何卡顿。"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "build": 121,
+  "notes": {
+    "en": [
+      "Montana Messenger carries only what it shows: the code of features the Messenger does not have is no longer part of the app, and it no longer lists or offers to open other apps."
+    ],
+    "ru": [
+      "Montana Messenger несёт только то, что показывает: кода функций, которых в Мессенджере нет, в приложении больше нет, и оно больше не перечисляет другие приложения и не предлагает их открыть."
+    ],
+    "zh-Hans": [
+      "Montana Messenger 只包含它所展示的内容：Messenger 没有的功能，其代码已不再随应用提供；应用也不再列出或提议打开其他应用。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No change to any algorithm, key or network road. The coin, Money Flow and wallet code stands under #if !MONTANA_MESSENGER and is not compiled into the Messenger (cut C6); Code/Messenger/Info.plist no longer declares LSApplicationQueriesSchemes, so the Messenger queries no other app's URL scheme (R-7); its own URL scheme stays. tools/mt-names-check.py holds the plist; tools/mt-red-word-check.py holds the carriage: a Messenger letter ends at 30 days, the Protocol's coin letter rides to its receipt."
+    ]
+  }
+}

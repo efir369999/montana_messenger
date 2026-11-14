@@ -1,0 +1,22 @@
+{
+  "build": 143,
+  "notes": {
+    "en": [
+      "Restoring an account from the 24 words: the name you typed (for example «Demo Akk») is no longer replaced by an older one another device of the same words was given -- each setting carries the moment it was set, and the later one stands.",
+      "Please check: restore the account from the 24 words on the iPad -- the full name from the iPhone stands on both devices, your photo and your contacts' photos are in place."
+    ],
+    "ru": [
+      "Восстановление аккаунта из 24 слов: набранное имя (например «Demo Akk») больше не заменяется более старым, которое получило другое устройство тех же слов, -- каждая настройка несёт момент, когда её задали, и остаётся более поздняя.",
+      "Проверьте: восстановите аккаунт из 24 слов на iPad -- полное имя с iPhone стоит на обоих устройствах, ваше фото и фото собеседников на месте."
+    ],
+    "zh-Hans": [
+      "用 24 个词恢复账户：您输入的名字（例如「Demo Akk」）不再被同一组词的另一台设备收到的旧名字取代——每项设置都带有设置时刻，较晚的那个保留。",
+      "请检查：在 iPad 上用 24 个词恢复账户——iPhone 上的完整名字在两台设备上都保留，您的照片和联系人的照片都在。"
+    ]
+  },
+  "security": {
+    "en": [
+      "Copy card: each plain value (string, number) now carries the moment it was set (tag t:moments; a per-person book mt.card.moments in SeedScope.seatKeys, never in a copy). A copy laid as one of many (MTKeeping light and full copies) keeps a value set here later; a copy restored by hand from a file or iCloud lays its values as before. Older builds skip the tag. No change to the wire format of letters."
+    ]
+  }
+}

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Combine
 import CryptoKit
 import MontanaBindings
 import PhotosUI
@@ -33,43 +34,43 @@ struct MTSearchField: UIViewRepresentable {
     var placeholder = String(localized: "Search", bundle: MTLanguage.bundle)
     /// THE BAR'S OWN HEIGHT (26.09): measured once from the platform's bar in its minimal style -- the system's field with the
     /// system's room around it -- never below the finger's 44; the search row, the results under it and the head read this number.
-    static let height: CGFloat = {
-        let b = UISearchBar()
-        b.searchBarStyle = .minimal
-        b.sizeToFit()
-        return max(montanaTouchTarget, b.bounds.height)
-    }()
+    static let height: CGFloat = MTSearchFace.geometry.height
     /// THE SEARCH ROW'S SIDE PADDING (the pages' search row, searchBar): with the platform's own inset of the capsule (below) it names
     /// where the field's edge stands -- the edge the chat list's lines stand under (MTLibraryRow).
     static let rowPad: CGFloat = 12
     /// WHERE THE PLATFORM STANDS THE CAPSULE INSIDE ITS BAR (28.09): measured once from the platform's own bar in its minimal style,
     /// laid out at a phone's width; a bar the platform would not lay out without a window answers with its own margin.
-    static let capsuleInset: CGFloat = {
-        let b = UISearchBar(frame: CGRect(x: 0, y: 0, width: 390, height: 56))
-        b.searchBarStyle = .minimal
-        b.layoutIfNeeded()
-        let f = b.searchTextField.convert(b.searchTextField.bounds, to: b)
-        return f.width > 1 ? max(0, f.minX) : b.layoutMargins.left
-    }()
-    func makeUIView(context: Context) -> UISearchBar {
+    static let capsuleInset: CGFloat = MTSearchFace.geometry.inset
+    /// THE FIRST FRAME STANDS ON THE BAR'S PICTURE (OZ 2 p.1.3, decision 936 = a): the host shows the platform's bar as a run before
+    /// drew it and gives birth to the live bar a turn of the main queue later, so the run's first UISearchBar is not in the first frame.
+    func makeUIView(context: Context) -> MTSearchHost {
+        let co = context.coordinator
+        return MTSearchHost(make: { MTSearchField.bar(co) }, born: { bar in MTSearchField.apply(bar, co) })
+    }
+    static func bar(_ co: Coordinator) -> UISearchBar {
         let bar = UISearchBar()
         bar.searchBarStyle = .minimal
         bar.overrideUserInterfaceStyle = .dark   // the pages are dark on every phone: the bar is the dark platform's own
-        bar.placeholder = placeholder
-        bar.delegate = context.coordinator
+        bar.placeholder = co.parent.placeholder
+        bar.text = co.parent.text
+        bar.delegate = co
         bar.searchTextField.autocorrectionType = .no
         bar.setContentHuggingPriority(.defaultLow, for: .horizontal)
         bar.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        MTSearchFace.keep(bar)
         return bar
     }
-    func updateUIView(_ bar: UISearchBar, context: Context) {
+    func updateUIView(_ host: MTSearchHost, context: Context) {
         context.coordinator.parent = self
+        guard let bar = host.bar else { return }   // not born yet: at its birth it reads the coordinator's latest words
+        MTSearchField.apply(bar, context.coordinator)
+    }
+    static func apply(_ bar: UISearchBar, _ co: Coordinator) {
         // THE KEYBOARD IS ASKED FOR AFTER THE PASS, NEVER INSIDE IT (25.09). A first responder taken inside SwiftUI's update raised
         // the keyboard inside the layout transaction, and the platform answered on the main thread for 8 to 16 s until the watchdog
         // ended the run (T1 19:03Z three times, the 15 Pro Max 19:05Z and 19:11Z, 0x8BADF00D). The ask is a turn of the main queue
         // later, reads the field's latest wish from its coordinator, and asks only a field that stands in a window. ONE PANE OWNS
         // THE KEYBOARD (25.09): a page's field wants the keys only while its own pane holds the focus (searchFocusBinding).
-        let co = context.coordinator
         DispatchQueue.main.async {
             guard bar.window != nil else { return }
             let field = bar.searchTextField
@@ -77,8 +78,8 @@ struct MTSearchField: UIViewRepresentable {
             if !wants, field.isFirstResponder { field.resignFirstResponder() }
             if wants, !field.isFirstResponder { field.becomeFirstResponder() }
         }
-        if bar.text != text { bar.text = text }
-        if bar.placeholder != placeholder { bar.placeholder = placeholder }
+        if bar.text != co.parent.text { bar.text = co.parent.text }
+        if bar.placeholder != co.parent.placeholder { bar.placeholder = co.parent.placeholder }
     }
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     final class Coordinator: NSObject, UISearchBarDelegate {
@@ -233,6 +234,7 @@ struct MontanaTimePanelList: View {
     var holdsRow: ((Chat) -> Bool)? = nil   // the rows a hold may begin on; nil -- every row (see MTChatListView)
     var bottomReserve: CGFloat = 0
     var headFloats = false   // a row of the page stands between the bar and the list with no plate (the archive row)
+    var yieldsToChat = false  // the list stands still under an open chat (MTChatListView.yieldsToChat)
     var page = ""             // the page's name for the diary
     var fieldNames: [String]? = nil   // the names of the page's own print, for the diary; nil — by their places
     var numbered = false      // the rows' numbers beside the bar while the list scrolls (MTRowNumber)
@@ -247,7 +249,7 @@ struct MontanaTimePanelList: View {
                        onOpen: onOpen, rowContent: rowContent, headContent: panel.head,
                        onPull: onPull, onHold: onHold, holdsRow: holdsRow, onRefresh: panel.onRefresh, onSettled: panel.onSettled,
                        pinTop: panel.pinTop, bottomReserve: bottomReserve,
-                       runsToEdges: true, headFloats: headFloats, page: page, fieldNames: fieldNames, numbered: numbered, live: live,
+                       runsToEdges: true, headFloats: headFloats, page: page, fieldNames: fieldNames, numbered: numbered, live: live, yieldsToChat: yieldsToChat,
                        endFirst: endFirst, canvasRow: canvasRow, separatorRow: separatorRow, focus: focus)
             // The list's frame never follows the keyboard (the author's word 10.09): the container is a
             // scroll view of its own; the results take the keyboard into account themselves.
@@ -413,7 +415,7 @@ struct ChatsListView: View {
             barSlot(Self.chatsSlot) { withAnimation(.easeInOut(duration: 0.2)) { ui.pane = .chats } } label: {
                 Image(systemName: UIState.Glyph.chats).font(.system(size: 20, weight: .semibold))
                     .foregroundColor(MontanaOctagon.barGlyph)
-                    .overlay(alignment: .topTrailing) { if barOpen { glyphBadge(store.unreadCounts.count) } }   // the unread, where the chats live
+                    .overlay(alignment: .topTrailing) { if barOpen { glyphBadge(MTApplication.chats.badge(in: store)) } }   // a person's chats alone (OZ 1 p.5)
             }
             // THE GROUPS AND THE CHANNELS RIGHT OF THE CHATS, NO GLOBE, IN BOTH EDITIONS (the author's words 21097 and 21176, 13.11.2026:
             // «right of the time panel the order of the buttons -- chats, groups, channels -- remove the globe entirely»; «the same in the
@@ -423,14 +425,14 @@ struct ChatsListView: View {
                 Image(systemName: UIState.Glyph.groups).font(.system(size: 20, weight: .semibold))
                     .foregroundColor(MontanaOctagon.barGlyph)
                     .overlay(alignment: .topTrailing) {
-                        if barOpen { glyphBadge(store.unreadCounts.keys.filter { k in MTGroup.isKey(k) && MTGroup.shared.kind(k) != .channel }.count) }
+                        if barOpen { glyphBadge(MTApplication.groups.badge(in: store)) }   // the groups' unread over Groups (OZ 1 p.5)
                     }
             }
             barSlot(Self.channelsSlot) { withAnimation(.easeInOut(duration: 0.2)) { ui.pane = .channels } } label: {
                 Image(systemName: UIState.Glyph.channels).font(.system(size: 20, weight: .semibold))
                     .foregroundColor(MontanaOctagon.barGlyph)
                     .overlay(alignment: .topTrailing) {
-                        if barOpen { glyphBadge(store.unreadCounts.keys.filter { k in MTGroup.shared.kind(k) == .channel }.count) }
+                        if barOpen { glyphBadge(MTApplication.channels.badge(in: store)) }   // the channels' and the Montana room's over Channels (OZ 1 p.5)
                     }
             }
         }
@@ -1030,7 +1032,7 @@ struct ChatsListView: View {
                                holdsRow: { c in !selecting && c.name != Self.qrRow },
                                bottomReserve: playerReserve,
                                // The rows run on to the screen's edges, as the chat's letters: the panel list's own law (23.09).
-                               headFloats: storiesShown || archiveShown, page: "chats", fieldNames: MTChatListView.fieldNames,
+                               headFloats: storiesShown || archiveShown, yieldsToChat: true, page: "chats", fieldNames: MTChatListView.fieldNames,
                                // THE CHATS AS THE APP LIBRARY'S LIST (the author's words 28.09): the platform's plain list, every
                                // conversation a line with the platform's separator under it; the code's card stands alone, bare.
                                separatorRow: { c in c.name != Self.qrRow })
@@ -1949,16 +1951,30 @@ struct MTLetterThumb: View {
     /// WHETHER THE PICTURE IS THERE, in one number for the row's print: the file on disk, the poster
     /// on disk, or nothing yet. The cell used to be printed without it — a row configured before its
     /// picture existed kept the plate until something else about it changed (a relaunch, usually).
+    /// NEVER THE DISK ON THE MAIN THREAD (the words of the author 21521, 21526, 13.11.2026 22:13 UTC: a chat opens at once): the list
+    /// prints every row on each pass, and the passes under a chat being opened asked the disk for the file of each row on the main thread
+    /// -- 1790 ms of one frame on T1 at 13.11.2026 22:13 UTC under a busy disk. The place is the one owner's (MTMediaPlace, from memory);
+    /// a name of a row that moved asks the store for one more pass, which prints the row again -- never under an open chat (the list
+    /// stands still there, MTChatListView.chatOver, and the chat's closing applies what moved meanwhile).
     static func stamp(kind: String, file: String?) -> Int {
-        guard let f = file else { return 0 }
-        if kind == "img" || kind == "vid" || kind == "vnote" {
-            if FileManager.default.fileExists(atPath: attachmentURL(f).path) { return 2 }
-            if FileManager.default.fileExists(atPath: posterURL(f).path) { return 1 }
+        guard let f = file, kind == "img" || kind == "vid" || kind == "vnote" else { return 0 }
+        if listening == nil {
+            listening = MTMediaPlace.moved.sink { n in
+                guard shown.contains(n), !nudged, !MTChatListView.chatOver else { return }
+                nudged = true
+                DispatchQueue.main.async { nudged = false; ChatStore.live?.objectWillChange.send() }
+            }
         }
-        return 0
+        shown.insert(f)
+        return MTMediaPlace.of(f)
     }
+    private static var shown = Set<String>()   // the main thread's: the rows' pictures the list printed
+    private static var nudged = false
+    private static var listening: AnyCancellable?
     private var poster: UIImage? { Self.picture(kind: kind, file: file) }
+    @State private var told = 0   // a picture made off the main thread for this file draws the thumb again (OZ 1 p.1.5)
     var body: some View {
+        let _ = told
         let shape = RoundedRectangle(cornerRadius: side * 0.22)
         Group {
             switch kind {
@@ -1991,6 +2007,7 @@ struct MTLetterThumb: View {
             }
         }
         .frame(width: side, height: side)
+        .onReceive(MTMediaPlace.moved) { n in if n == file { told &+= 1 } }
     }
     /// A glyph in the system's own gray (the author's word 16.09), on a quiet plate.
     private func plate(_ glyph: String, _ shape: RoundedRectangle) -> some View {
@@ -2230,6 +2247,111 @@ struct MTSelectPill: View {
 struct MTRowHairline: View {
     var body: some View {
         Rectangle().fill(Color.white.opacity(0.14)).frame(height: 0.5).padding(.leading, 29)
+    }
+}
+
+/// THE SEARCH BAR'S PLACE (OZ 2 p.1.3, the author's word 21671, decision 936 = a; T1 2394, 13.11.2026 23:25 UTC and 14.11.2026 01:32 UTC:
+/// the run's first UISearchBar stood 380-400 ms on the main thread inside the chat list's first frame). With a picture kept for this
+/// system, text size and language, the first frame shows it and the live bar is born a turn of the main queue later; without one,
+/// or once a bar was born in this run, the live bar stands at once, as before.
+final class MTSearchHost: UIView {
+    private(set) var bar: UISearchBar?
+    private var face: UIImageView?
+    init(make: @escaping () -> UISearchBar, born: @escaping (UISearchBar) -> Void) {
+        super.init(frame: .zero)
+        setContentHuggingPriority(.defaultLow, for: .horizontal)
+        setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        guard !MTSearchFace.born, let picture = MTSearchFace.picture else { place(make(), born); return }
+        let f = UIImageView(image: picture)
+        f.contentMode = .scaleToFill
+        addSubview(f)
+        face = f
+        DispatchQueue.main.async { [weak self] in self?.place(make(), born) }
+    }
+    required init?(coder: NSCoder) { nil }
+    private func place(_ b: UISearchBar, _ born: (UISearchBar) -> Void) {
+        MTSearchFace.born = true
+        bar = b
+        b.frame = bounds
+        addSubview(b)
+        face?.removeFromSuperview()
+        face = nil
+        born(b)
+    }
+    override var intrinsicContentSize: CGSize { CGSize(width: UIView.noIntrinsicMetric, height: MTSearchField.height) }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        bar?.frame = bounds
+        face?.frame = bounds
+    }
+}
+
+/// THE BAR'S NUMBERS AND PICTURE, KEPT FROM A RUN BEFORE (decision 936 = a): measured once from the platform's own bar under the key
+/// of the system, the text size and the language, and read at launch without building one; a key never met measures as before.
+@MainActor enum MTSearchFace {
+    struct Geometry: Codable, Equatable { let key: String; let height: CGFloat; let inset: CGFloat; var left: CGFloat = 0; var right: CGFloat = 0 }
+    private static let defaultsKey = "mt.search.face"   // NOT-UI: the kept geometry's name
+    private static var file: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("mt-search-face.png")   // NOT-UI
+    }
+    static var born = false
+    private static var taking = false
+    static var key: String {
+        [UIDevice.current.systemVersion, UIApplication.shared.preferredContentSizeCategory.rawValue,
+         Locale.preferredLanguages.first ?? ""].joined(separator: "/")
+    }
+    private static var stored: Geometry? {
+        guard let d = UserDefaults.standard.data(forKey: defaultsKey) else { return nil }
+        return try? JSONDecoder().decode(Geometry.self, from: d)
+    }
+    static let geometry: Geometry = {
+        let k = key
+        if let g = stored, g.key == k { return g }
+        let b = UISearchBar()
+        b.searchBarStyle = .minimal
+        b.sizeToFit()
+        let height = max(montanaTouchTarget, b.bounds.height)
+        b.frame = CGRect(x: 0, y: 0, width: 390, height: 56)
+        b.layoutIfNeeded()
+        let f = b.searchTextField.convert(b.searchTextField.bounds, to: b)
+        let g = Geometry(key: k, height: height, inset: 1 < f.width ? max(0, f.minX) : b.layoutMargins.left)
+        if let d = try? JSONEncoder().encode(g) { UserDefaults.standard.set(d, forKey: defaultsKey) }
+        return g
+    }()
+    /// The picture of the bar under this key, stretched only across the plain middle of its capsule.
+    static let picture: UIImage? = {
+        let g = geometry
+        guard g.key == key, 0 < g.left, 0 < g.right, let u = file, let image = UIImage(contentsOfFile: u.path),
+              g.left + g.right < image.size.width else { return nil }
+        return image.resizableImage(withCapInsets: UIEdgeInsets(top: 0, left: g.left, bottom: 0, right: g.right), resizingMode: .stretch)
+    }()
+    /// The live bar, empty and at rest in its window, is drawn once for the runs after this one -- never in the first frame.
+    static func keep(_ bar: UISearchBar) {
+        guard picture == nil, !taking else { return }
+        taking = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            taking = false
+            let field = bar.searchTextField
+            guard bar.window != nil, 200 < bar.bounds.width, abs(bar.bounds.height - geometry.height) < 0.5,
+                  (bar.text ?? "").isEmpty, !field.isFirstResponder, let u = file else { return }
+            let f = field.convert(field.bounds, to: bar)
+            let font = field.font ?? UIFont.preferredFont(forTextStyle: .body)
+            let words = ((bar.placeholder ?? "") as NSString).size(withAttributes: [.font: font]).width
+            var g = geometry
+            g.left = ceil(f.minX + 44 + words)
+            g.right = ceil(bar.bounds.width - f.maxX + 44)
+            guard g.left + g.right < bar.bounds.width else { return }
+            let image = UIGraphicsImageRenderer(bounds: bar.bounds).image { _ in _ = bar.drawHierarchy(in: bar.bounds, afterScreenUpdates: false) }
+            store(image, g, to: u)
+        }
+    }
+    /// The picture and the numbers that name it leave the main thread: the file by the disk's one door, then the numbers.
+    nonisolated private static func store(_ image: UIImage, _ g: Geometry, to u: URL) {
+        DispatchQueue.global(qos: .utility).async {
+            guard let png = image.pngData(), let d = try? JSONEncoder().encode(g),
+                  MTDiskDoor.write(png, to: u, "search-face", options: [.atomic]) else { return }
+            UserDefaults.standard.set(d, forKey: defaultsKey)
+        }
     }
 }
 

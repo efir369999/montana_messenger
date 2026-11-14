@@ -4,6 +4,7 @@ import Foundation
 import CryptoKit
 import MontanaBindings
 import Security
+import UIKit
 
 enum MontanaPQ {
     // Sizes (spec Stage 1/5): ML-DSA pk 1952, ML-KEM pub 1184 / sk 2400.
@@ -1175,13 +1176,21 @@ extension MontanaArchive {
     nonisolated static let twinCardPipe = "twin:card"   // NOT-UI: the mirror's name for the cards' words, never a conversation
     nonisolated static let twinRowMark = "\u{200B}\u{200B}TW:"   // NOT-UI: one row given back, to this seed's devices alone
     private static let askedKey = "mt.twin.asked"   // NOT-UI: the keys this device already asked (SeedScope names it)
+    /// THE ASKED KEYS LIE IN THE VAULT, NOT IN THE SETTINGS (OZ 1 p.1.3, the author's word 21671): 4724 of them stood 326 KB in the
+    /// settings' plist on T1 (2392, its settings copied 14.11.2026 00:30 UTC), the second load after board.owned that the system
+    /// parses whole at the first read of any setting. The vault seals the list and lays it in a file from 64 KB on, the settings
+    /// keep the 37 bytes that name it, and the plain list an earlier build left is sealed at its first read (getStringArray).
+    nonisolated static var askedKeys: [String] {
+        get { MontanaLocalVault.getStringArray(askedKey) ?? [] }
+        set { MontanaLocalVault.setStringArray(askedKey, newValue) }
+    }
     /// The archive's key of a row's words, the same on every device of the seed: a hash of the words as the archive writes them.
     nonisolated static func rowHash(_ archived: String) -> String {
         SHA256.hash(data: Data(archived.utf8)).prefix(8).map { b in String(format: "%02x", b) }.joined()
     }
     /// The rows of a conversation the archive holds and the feed does not: asked once, two hundred at most a round.
     nonisolated static func askTwin(chat: String, items: [(s: Int, m: Bool, h: String)]) {
-        var asked = Set(UserDefaults.standard.stringArray(forKey: askedKey) ?? [])
+        var asked = Set(askedKeys)
         let fresh = Array(items.filter { i in !asked.contains(chat + "/" + String(i.s) + "/" + i.h) }.prefix(200))
         guard !fresh.isEmpty, let d = try? JSONSerialization.data(withJSONObject: ["i": fresh.map { i in [i.s, i.m ? 1 : 0, i.h] as [Any] }]),
               let js = String(data: d, encoding: .utf8) else { return }
@@ -1189,15 +1198,15 @@ extension MontanaArchive {
         // A SLICE IS NO PROPERTY LIST (the author's word 18.10.2026 11:0x UTC: «check why the app crashes on T1 and fix it urgently»):
         // T1 on 2240 died on screen every half minute from 11:08:52Z -- NSInvalidArgumentException «Attempt to insert non-property list
         // object ArraySlice([...]) for key mt.twin.asked»: suffix hands back an ArraySlice, and the settings store takes only arrays.
-        UserDefaults.standard.set(Array(Array(asked).suffix(5000)), forKey: askedKey)
+        askedKeys = Array(Array(asked).suffix(5000))
         mirrorNote(TwinWord(c: chat, m: UUID().uuidString, x: twinAskMark + js, o: 1))
         MontanaTrace.mark("twin_ask", "chat=\(String(chat.prefix(10))) rows=\(fresh.count)")
     }
     /// A row whose file did not come whole is asked again the next time the gap is measured.
     nonisolated static func unaskTwin(chat: String, s: Int, h: String) {
-        var asked = UserDefaults.standard.stringArray(forKey: askedKey) ?? []
+        var asked = askedKeys
         asked.removeAll { k in k == chat + "/" + String(s) + "/" + h }
-        UserDefaults.standard.set(asked, forKey: askedKey)
+        askedKeys = asked
     }
     /// One row given back: its words, and a file by the cargo road -- the file's pieces sealed under a fresh key, the key inside the
     /// pipe only the seed's devices open.
@@ -1607,5 +1616,217 @@ extension MontanaArchive {
     private static func folderName(forConv conv: Data) -> String? {
         (MontanaLocalVault.getDecrypted(folderMapKey)
             .flatMap { try? JSONDecoder().decode([String: String].self, from: $0) })?[conv.montanaHexString]
+    }
+}
+
+// ── ONE PERSON'S OWN NAME, FACE AND WORDS ON EVERY DEVICE OF THE SEED (the author's word 20677, decision 884 = a, OZ 1 p.2.4: on T1
+// «Kit» stood as another name -- each device kept its own userName and answered a peer with it, MontanaE2E.swift:741-746, so two
+// names of one key took turns on the peer's phone). One watcher of the person's own keys: what changed here rides the seed's twin
+// pipe as a word with its moment, and every device takes the later one; on a tie the larger print wins, so two devices that met
+// with two names settle on one. The peers hear the name the device now holds (heardHeld). Only the person's own keys ride.
+// AND THE PERSON'S CHOICES (decision 886 = a): the contacts, the names given by hand, the blocks, the pins, the sounds, the archive
+// of chats and whether presence is shown rode only the one-time copy (SeedScope.dataKeys) -- blocked on the phone, a person still
+// wrote to the Mac. Each entry of these books rides by itself with its moment: put or taken away here is said, a twin's entry is
+// taken when later than the one held here. An entry met for the first time is said at moment 0 and only joins -- a twin's older
+// word never lifts a block, a card or a pin that stands here, as a copy never does (SeedScope.unionKeys). The faces set by hand
+// are files of this device and stay its own. ──
+@MainActor
+enum MTTwinSelf {
+    static let keys = ["userName", "avatarData", "profileBio", "profileLink", "presenceSharing"]
+    static let books = ["pinnedChatsList", "mutedChats", "blockedChats", "archivedNames", "pinnedContacts", "archivedContacts",
+                        "manualNames", "mtContacts"]
+    nonisolated static let heldKey = "mt.twin.self"   // NOT-UI: the moment and the print of each own key last said (SeedScope.dataKeys)
+    nonisolated static let bookKey = "mt.twin.book"   // NOT-UI: each book's entries with the moment each was last said (SeedScope.dataKeys)
+    nonisolated static let mark = "\u{200B}\u{200B}TS:"   // NOT-UI: one own key or a book's entries with their moment, to this seed's devices alone
+    nonisolated static let pipe = "twin:self"   // NOT-UI: the mirror's name for the own keys' words, never a conversation
+    private struct Held: Codable, Equatable { var at: Double; var p: String }
+    private struct Mark: Codable, Equatable { var at: Double; var v: String? }   // v nil: the entry was taken away
+    private static let batch = 64   // the entries one word carries, so a word stays small
+    private static var watching = false, due = false
+    /// Once at launch: a change of any own key is looked at two seconds later, once for any number of changes (a copy laid, a
+    /// change of seed and clearData finish first).
+    static func watch() {
+        guard !watching else { return }
+        watching = true
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
+            Task { @MainActor in MTTwinSelf.soon() }
+        }
+        soon()
+    }
+    private static func soon() {
+        guard !due else { return }
+        due = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            due = false
+            look()
+        }
+    }
+    private static func held() -> [String: Held] {
+        guard let d = UserDefaults.standard.data(forKey: heldKey), let h = try? JSONDecoder().decode([String: Held].self, from: d) else { return [:] }
+        return h
+    }
+    private static func keep(_ h: [String: Held]) {
+        if let d = try? JSONEncoder().encode(h) { UserDefaults.standard.set(d, forKey: heldKey) }
+    }
+    private static func book() -> [String: [String: Mark]] {
+        guard let d = UserDefaults.standard.data(forKey: bookKey), let b = try? JSONDecoder().decode([String: [String: Mark]].self, from: d) else { return [:] }
+        return b
+    }
+    private static func keepBook(_ b: [String: [String: Mark]]) {
+        if let d = try? JSONEncoder().encode(b) { UserDefaults.standard.set(d, forKey: bookKey) }
+    }
+    /// A key's value as it stands here: the face as bytes, the words as text, the switch as 1 or 0; none and empty are one.
+    private static func bytes(_ k: String) -> Data {
+        let v = UserDefaults.standard.object(forKey: k)
+        if let d = v as? Data { return d }
+        if let s = v as? String { return Data(s.utf8) }
+        if let n = v as? NSNumber { return Data((n.boolValue ? "1" : "0").utf8) }
+        return Data()
+    }
+    private static func stamp(_ d: Data) -> String {
+        d.isEmpty ? "" : SHA256.hash(data: d).prefix(8).map { b in String(format: "%02x", b) }.joined()
+    }
+    /// A book as it stands here, entry by entry: a set's entry holds "", a name given by hand its text, a card nothing but itself
+    /// (its names are the book of names'). Nil -- not readable now (the device key not yet there), and nothing is said or taken.
+    private static func entries(_ k: String) -> [String: String]? {
+        guard UserDefaults.standard.object(forKey: k) != nil else { return [:] }
+        guard MontanaDeviceKey.key != nil else { return nil }
+        switch k {
+        case "manualNames":
+            return MontanaLocalVault.getDecrypted(k).flatMap { try? JSONDecoder().decode([String: String].self, from: $0) }
+        case "mtContacts":
+            let t = MontanaLocalVault.getString(k) ?? ""
+            if t.isEmpty { return [:] }
+            return (try? JSONDecoder().decode([ContactsTabView.MTContact].self, from: Data(t.utf8)))
+                .map { Dictionary($0.map { ($0.ref, "") }, uniquingKeysWith: { a, _ in a }) }
+        default:
+            return MontanaLocalVault.getStringArray(k).map { Dictionary($0.map { ($0, "") }, uniquingKeysWith: { a, _ in a }) }
+        }
+    }
+    private static func say(_ o: [String: Any], _ mid: String) {
+        guard let js = try? JSONSerialization.data(withJSONObject: o), let s = String(data: js, encoding: .utf8) else { return }
+        MontanaArchive.mirrorNote(.init(c: pipe, m: mid, x: mark + s, o: 1))
+    }
+    /// What changed here since it was last said goes to the twins. A key met for the first time is said at moment 0 -- older than
+    /// any change a person made -- and only when it holds something, so a fresh device never empties its twins.
+    static func look() {
+        guard MontanaArchive.twinSecret() != nil else { return }
+        var h = held()
+        let before = h, now = Date().timeIntervalSince1970
+        for k in keys {
+            let d = bytes(k), p = stamp(d)
+            if h[k]?.p == p { continue }
+            let at = h[k] == nil ? 0 : now
+            h[k] = Held(at: at, p: p)
+            if at == 0, p.isEmpty { continue }
+            let v = k == "avatarData" ? d.base64EncodedString() : (String(data: d, encoding: .utf8) ?? "")
+            say(["k": k, "v": v, "t": at], k + "." + String(Int64(at * 1000)))
+            MontanaTrace.mark("twin_self", "said \(k) at=\(Int64(at))")
+        }
+        if h != before { keep(h) }
+        var b = book()
+        let was = b
+        for k in books {
+            guard let cur = entries(k) else { continue }
+            let met = b[k] != nil, at = met ? now : 0
+            var marks = b[k] ?? [:], said: [[String: Any]] = []
+            for (e, v) in cur where marks[e]?.v != v {
+                marks[e] = Mark(at: at, v: v)
+                said.append(["e": e, "v": v])
+            }
+            for (e, m) in marks where m.v != nil && cur[e] == nil {
+                marks[e] = Mark(at: now, v: nil)
+                said.append(["e": e])
+            }
+            b[k] = marks
+            for i in stride(from: 0, to: said.count, by: batch) {
+                say(["k": k, "s": Array(said[i..<min(i + batch, said.count)]), "t": at], k + "." + String(Int64(at * 1000)) + "." + String(i))
+            }
+            if !said.isEmpty { MontanaTrace.mark("twin_self", "said \(k) n=\(said.count) at=\(Int64(at))") }
+        }
+        if b != was { keepBook(b) }
+    }
+    /// A twin's own key: taken only when later than the one held here (on a tie, when this one is empty or its print smaller); the
+    /// moment is kept BEFORE the value is written, so the watcher finds nothing to say back. A book's entries go to takeBook.
+    static func take(_ body: String, _ store: ChatStore) {
+        guard let js = body.data(using: .utf8), let o = (try? JSONSerialization.jsonObject(with: js)) as? [String: Any],
+              let k = o["k"] as? String, let t = (o["t"] as? NSNumber)?.doubleValue else { return }
+        if books.contains(k), let s = o["s"] as? [[String: Any]] { return takeBook(k, s, t, store) }
+        guard keys.contains(k), let v = o["v"] as? String else { return }
+        let d: Data
+        if k == "avatarData" {
+            guard let f = Data(base64Encoded: v), f.count <= 200_000, f.isEmpty ? true : UIImage(data: f) != nil else { return }
+            d = f
+        } else {
+            guard v.count <= 4096 else { return }
+            d = Data(v.utf8)
+        }
+        let p = stamp(d)
+        var h = held()
+        let mine = h[k] ?? Held(at: 0, p: stamp(bytes(k)))
+        guard mine.p != p else { return }
+        guard mine.at < t ? true : (mine.at == t ? (mine.p.isEmpty ? true : mine.p < p) : false) else {
+            return MontanaTrace.mark("twin_self", "kept \(k): the one here is later")
+        }
+        h[k] = Held(at: t, p: p)
+        keep(h)
+        if k == "avatarData" {
+            UserDefaults.standard.set(d, forKey: k)
+            MontanaSelfFace.invalidate()
+            NotificationCenter.default.post(name: .montanaRemirror, object: nil)
+        } else if k == "presenceSharing" {
+            MontanaPresencePrivacy.setSharing(v != "0")   // the one door of the switch: the beacons follow it
+        } else {
+            UserDefaults.standard.set(v, forKey: k)
+        }
+        MontanaTrace.mark("twin_self", "took \(k) at=\(Int64(t))")
+    }
+    /// A twin's entries of one book: each taken only when later than the one held here; on a tie an entry that stands wins over
+    /// its taking away, and of two names the larger. A book never met here is said first, at moment 0, so nothing of this device
+    /// is lost to the twin's word; the moments are kept before the book moves.
+    private static func takeBook(_ k: String, _ s: [[String: Any]], _ t: Double, _ store: ChatStore) {
+        if book()[k] == nil { look() }
+        guard let cur = entries(k) else { return }
+        var b = book(), marks = b[k] ?? [:], moved: [(String, String?)] = []
+        for x in s.prefix(batch) {
+            guard let e = x["e"] as? String, !e.isEmpty, e.count <= 256 else { continue }
+            let v = (x["v"] as? String).map { String($0.prefix(512)) }
+            let mine = marks[e] ?? Mark(at: 0, v: cur[e])
+            guard mine.v != v else { continue }
+            let tie = mine.at == t
+            let later = mine.at < t ? true : (tie ? (v.map { nv in mine.v.map { $0 < nv } ?? true } ?? false) : false)
+            guard later else { continue }
+            marks[e] = Mark(at: t, v: v)
+            moved.append((e, v))
+        }
+        guard !moved.isEmpty else { return }
+        b[k] = marks
+        keepBook(b)
+        for (e, v) in moved { lay(k, e, v, store) }
+        MontanaTrace.mark("twin_self", "took \(k) n=\(moved.count) at=\(Int64(t))")
+    }
+    /// An entry laid by the owner of its book, by the road a hand here would take: a block tells the peer, an archived chat
+    /// leaves the list, a name given by hand goes to the book of names and its card.
+    private static func lay(_ k: String, _ e: String, _ v: String?, _ s: ChatStore) {
+        let on = v != nil
+        switch k {
+        case "pinnedChatsList": if on { s.pinnedChats.insert(e) } else { s.pinnedChats.remove(e) }
+        case "mutedChats": if on { s.mutedChats.insert(e) } else { s.mutedChats.remove(e) }
+        case "pinnedContacts": if on { s.pinnedContacts.insert(e) } else { s.pinnedContacts.remove(e) }
+        case "archivedContacts": if on { s.archivedContacts.insert(e) } else { s.archivedContacts.remove(e) }
+        case "blockedChats": if s.blockedChats.contains(e) != on { s.toggleBlocked(e) }
+        case "archivedNames":
+            if on, let c = s.storedChats().first(where: { $0.name == e }) { s.archiveChat(c) }
+            else if !on, let c = s.storedArchived().first(where: { $0.name == e }) { s.unarchiveChat(c) }
+            else if on { s.archivedNames.insert(e) } else { s.archivedNames.remove(e) }
+        case "manualNames":
+            MTNameBook.setManual(conv: e, first: v ?? "", last: nil)
+            MTNameBook.syncContact(conv: e, first: v ?? "", last: nil)
+        case "mtContacts":
+            if on { ContactsTabView.keepInBook(ref: e) } else { ContactsTabView.dropFromBook([e]) }
+            NotificationCenter.default.post(name: .montanaChatsChanged, object: nil)
+        default: break
+        }
     }
 }

@@ -1,0 +1,19 @@
+{
+  "build": 122,
+  "notes": {
+    "en": [
+      "Montana Messenger carries only what it shows: the code of features the Messenger does not have is no longer part of the app, and it no longer lists or offers to open other apps."
+    ],
+    "ru": [
+      "Montana Messenger несёт только то, что показывает: кода функций, которых в Мессенджере нет, в приложении больше нет, и оно больше не перечисляет другие приложения и не предлагает их открыть."
+    ],
+    "zh-Hans": [
+      "Montana Messenger 只包含它所展示的内容：Messenger 没有的功能，其代码已不再随应用提供；应用也不再列出或提议打开其他应用。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No change to any algorithm, key or network road. The coin and wallet code stands under #if !MONTANA_MESSENGER and is not compiled into the Messenger (cut C6); a Protocol peer's coin letter is a retired kind there, known by the print of its machine line alone (MTRetired.letter), buried unread and ringing nothing. Code/Messenger/Info.plist no longer declares LSApplicationQueriesSchemes, so the Messenger queries no other app's URL scheme (R-7); its own URL scheme stays. tools/mt-messenger-clean.py now reads the names of the app's Swift reflection (__swift5_reflstr) besides its C strings, and refuses a coin's or a wallet's name there (R-6); tools/mt-names-check.py holds the plist."
+    ]
+  }
+}

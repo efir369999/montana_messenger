@@ -1,0 +1,28 @@
+{
+  "build": 132,
+  "notes": {
+    "en": [
+      "The Music page left Montana Messenger: its tile in the app library, its list of tracks and the folder lent from Files are gone, and the panel's media glyph shows the Gallery. The player's search button, «Show in playlist» and the «Folders» source led to that page and left with it.",
+      "An audio file sent in a chat plays as before: from its chat, in the mini player and the big player, and on the lock screen.",
+      "Under the hood: the client core no longer carries the unused organisations module. Nothing the app does has changed with it.",
+      "Please check: send an audio file in a chat and play it, lock the screen, pause and resume from the lock screen. Then look at the big player and its queue, and make sure there is no Music in the app library, in its search or in the panel. Gallery, chats, groups, calls and Settings as usual."
+    ],
+    "ru": [
+      "Страница «Музыка» ушла из Montana Messenger: нет её плитки в библиотеке приложений, списка треков и папки, выбранной в «Файлах», а значок медиа на панели показывает Галерею. Кнопка поиска в плеере, «Показать в плейлисте» и источник «Папки» вели на эту страницу и ушли вместе с ней.",
+      "Аудиофайл, присланный в чат, играет как прежде: из своего чата, в мини-плеере и в большом плеере, и на экране блокировки.",
+      "Внутри: клиентское ядро больше не несёт неиспользуемый модуль организаций. В работе приложения от этого ничего не изменилось.",
+      "Проверьте: отправьте аудиофайл в чат и включите его, заблокируйте экран, поставьте на паузу и продолжите с экрана блокировки. Затем посмотрите большой плеер и его очередь и убедитесь, что «Музыки» нет в библиотеке приложений, в её поиске и на панели. Галерея, чаты, группы, звонки и настройки -- как обычно."
+    ],
+    "zh-Hans": [
+      "“音乐”页面已从 Montana Messenger 中移除：应用库中的图块、曲目列表以及从“文件”中借用的文件夹都已取消，面板上的媒体图标显示相册。播放器中的搜索按钮、“在播放列表中显示”和“文件夹”来源原本通向该页面，也随之移除。",
+      "聊天中发送的音频文件照常播放：在其聊天中、在迷你播放器和大播放器中，以及在锁定屏幕上。",
+      "内部改动：客户端核心不再携带未使用的组织模块。应用的行为没有因此改变。",
+      "请检查：在聊天中发送并播放一个音频文件，锁定屏幕，在锁定屏幕上暂停并继续。然后查看大播放器及其队列，并确认应用库、应用库搜索和面板中都没有“音乐”。相册、聊天、群组、通话和设置照常检查。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No algorithm or key change. The unused organisations crate left the Messenger's client core and its bindings (decision 791): the functions the app calls are the same, and no key, label or wire format changed. The Music page is compiled out of Messenger (decision 793): the app no longer asks for a folder in Files, and a folder permission kept by an earlier build is neither read nor walked. It stays in this device's keychain unused. A file received in a chat is played from the app's own storage as before."
+    ]
+  }
+}

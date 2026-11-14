@@ -1510,10 +1510,25 @@ final class E2E {
 
     // ── Display name over E2E — the same pipeline as the avatar (send-once flag per peer,
     // keyed by MY address so an account switch re-sends; resend on change; reciprocity on receive).
+    /// THE NAME IS COMPUTED WHEN THE SETTINGS CHANGE, NOT AT EVERY ASK (the author's words 21660, 21671; OZ 1 p.1.1.1): every row of a
+    /// feed asks it -- a quote's author, a voice's sender -- and each ask read the defaults and scanned the word anew. The memo
+    /// falls at any change of the defaults (the platform's own notice), so a renamed profile answers with its new word at once.
+    private static let nameLock = NSLock()
+    nonisolated(unsafe) private static var nameMemo: String?
+    nonisolated(unsafe) private static var nameTurn = 0
+    private static let nameWatch: NSObjectProtocol = NotificationCenter.default.addObserver(
+        forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
+        nameLock.lock(); nameMemo = nil; nameTurn &+= 1; nameLock.unlock()
+    }
     static func myDisplayName() -> String {
+        _ = nameWatch
+        nameLock.lock(); let held = nameMemo; let turn = nameTurn; nameLock.unlock()
+        if let n = held { return n }
+        // The defaults are read outside the lock: under a lock stands only a word in memory. The turn refuses a word
+        // that was read before a change of the defaults and would be kept after it.
         let f = MTCrown.plain((UserDefaults.standard.string(forKey: "userName") ?? "").trimmingCharacters(in: .whitespaces))
-        let l = ""
-        let own = (f + " " + l).trimmingCharacters(in: .whitespaces)
+        let own = f.trimmingCharacters(in: .whitespaces)
+        nameLock.lock(); if turn == nameTurn { nameMemo = own }; nameLock.unlock()
         return own   // the profile's word, or nothing: no name of one's own stands behind it (the author's decision 613)
     }
     func displayName(for ref: String) -> String {

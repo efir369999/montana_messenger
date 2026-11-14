@@ -1,0 +1,19 @@
+{
+  "build": 119,
+  "notes": {
+    "en": [
+      "Montana Messenger answers Apple's export question as it is: the app carries its own end-to-end encryption by published standard algorithms beside the system's, and each build is declared so on its way to TestFlight."
+    ],
+    "ru": [
+      "Montana Messenger отвечает Apple на вопрос об экспорте как есть: приложение несёт своё сквозное шифрование стандартными открытыми алгоритмами рядом с системным, и каждая сборка объявляется так по дороге в TestFlight."
+    ],
+    "zh-Hans": [
+      "Montana Messenger 如实回答 Apple 的出口问题：本应用在系统加密之外自带基于公开标准算法的端到端加密，每个版本在进入 TestFlight 时都如此申报。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No change to any algorithm, key or network road. The answer ITSAppUsesNonExemptEncryption = true has one owner, Code/Messenger/Info.plist; the build settings no longer override it with NO (tools/mt-apple-rules-check.py refuses a second owner), and the TestFlight road ties a build that says true to the app's one export declaration (decision 627 b: standard algorithms, not in mainland China or France)."
+    ]
+  }
+}

@@ -180,6 +180,8 @@ final class MontanaDeliveryEngine {
         if w.x.hasPrefix(MontanaArchive.twinAskMark) { return store.giveTwinRows(w.c, asked: String(w.x.dropFirst(MontanaArchive.twinAskMark.count))) }
         // A card the seed's other device gave birth to: this device opens the introductions it brings (MontanaCard.takeTwin).
         if w.x.hasPrefix(MontanaArchive.twinCardMark) { return MontanaCard.takeTwin(String(w.x.dropFirst(MontanaArchive.twinCardMark.count))) }
+        // One's own name, face or words, or the person's choices, the seed's other device changed (decisions 884 = a, 886 = a): the later stands.
+        if w.x.hasPrefix(MTTwinSelf.mark) { return MTTwinSelf.take(String(w.x.dropFirst(MTTwinSelf.mark.count)), store) }
         if w.x.hasPrefix(MontanaArchive.twinRowMark) {
             return store.takeTwinRow(w.c, mid: w.m, own: w.o == 1, at: w.at ?? 0, body: String(w.x.dropFirst(MontanaArchive.twinRowMark.count)))
         }

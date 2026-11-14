@@ -1,0 +1,43 @@
+{
+  "build": 136,
+  "notes": {
+    "en": [
+      "In groups, every sender's photo now stands beside their messages on every phone, not only on the group owner's: the photo travels with the sender's own message.",
+      "A group's photo is chosen and cropped by the same screen as your own profile photo.",
+      "Setting a group's photo no longer sends the members an empty message or a system error message.",
+      "In the Montana chat, the Update button stands under the message about a new version as its own button, always leading to the source of updates.",
+      "No second chat «Recovered history» with pieces of a group's words appears beside the group after restoring the archive.",
+      "Group system actions -- adding a member, naming an administrator, changing the group's photo or title -- no longer send notifications.",
+      "A muted or archived chat -- a group, a channel or a person's chat -- no longer leaves notifications: a mention still reaches you.",
+      "Please check: in a group of three phones, write from each phone -- on every phone each message shows its sender's photo. Change the group's photo -- members get no empty message. Open the Montana chat: the Update button stands under the new-version message. Mute a group on one phone and write to it from another -- no notification stays. Name a member an administrator -- nobody gets a notification."
+    ],
+    "ru": [
+      "В группах фото отправителя теперь стоит рядом с его сообщениями на каждом телефоне, а не только у владельца группы: фото едет в собственном сообщении отправителя.",
+      "Фото группы выбирается и обрезается тем же экраном, что и ваше фото профиля.",
+      "Установка фото группы больше не шлёт участникам пустое сообщение или системное сообщение-ошибку.",
+      "В чате Montana кнопка «Обновиться» стоит под сообщением о новой версии отдельной кнопкой и всегда ведёт к источнику обновлений.",
+      "После восстановления архива рядом с группой больше не появляется второй чат «Восстановленная история» с кусками текста группы.",
+      "Системные действия группы -- добавление участника, назначение администратора, смена фото или названия -- больше не присылают уведомлений.",
+      "Чат без звука или в архиве -- группа, канал или личный чат -- больше не оставляет уведомлений; упоминание вас по-прежнему доходит.",
+      "Проверьте: в группе из трёх телефонов напишите с каждого -- на каждом телефоне у каждого сообщения фото его отправителя. Смените фото группы -- участникам не приходит пустое сообщение. Откройте чат Montana: под сообщением о новой версии стоит кнопка «Обновиться». Выключите звук группы на одном телефоне и напишите в неё с другого -- уведомление не остаётся. Назначьте участника администратором -- никому не приходит уведомление."
+    ],
+    "zh-Hans": [
+      "在群组中，每位发送者的头像现在会显示在每部手机上其消息旁边，而不仅是群主的手机上：头像随发送者自己的消息一同送达。",
+      "群组头像的选择和裁剪与您自己的个人头像使用同一界面。",
+      "设置群组头像不再向成员发送空消息或系统错误消息。",
+      "在 Montana 聊天中，“更新”按钮作为独立按钮位于新版本消息下方，始终指向更新来源。",
+      "恢复存档后，群组旁不再出现包含群组消息片段的第二个“恢复的历史”聊天。",
+      "群组系统操作——添加成员、任命管理员、更换群组头像或名称——不再发送通知。",
+      "已静音或已归档的聊天——群组、频道或个人聊天——不再留下通知；提及您的消息仍会送达。",
+      "请检查：在三部手机组成的群组中，分别从每部手机发消息——每部手机上每条消息都显示其发送者的头像。更换群组头像——成员不会收到空消息。打开 Montana 聊天：新版本消息下方有“更新”按钮。在一部手机上将群组静音，并从另一部手机发消息——不会留下通知。任命成员为管理员——没有人收到通知。"
+    ]
+  },
+  "security": {
+    "en": [
+      "Network change: a group letter may carry a small copy (96 by 96 pixels) of its sender's own profile photo in the field sf, encrypted as the letter itself is; it rides only when the photo changed, the group grew or a day passed, and the owner passes it on unchanged. A receiving phone keeps one photo per seat (MTGroup.speakerFace is the one answer the feed reads). tools/mt-speaker-face-check.py, in the build ring, refuses a feed that reads the photo elsewhere.",
+      "No algorithm or key change: the Update button under the Montana chat's release message reads its one source (MTReleaseState.source), not the letter's own address; tools/mt-release-door-check.py, in the build ring, refuses a scroll without it.",
+      "No algorithm or key change: the notification service judges a group letter by its opened text, and a group's photo change is carried silently; the unused organization chats code is removed.",
+      "No algorithm or key change: whether a word rings has one owner, MTRing (MontanaKeychain.swift), read by the group's wire, the notification service and the app; a group's system word is sent silently, and a muted chat's notice is taken off by the notification service within its wake. tools/mt-ring-owner-check.py, in the build ring, refuses a second owner."
+    ]
+  }
+}

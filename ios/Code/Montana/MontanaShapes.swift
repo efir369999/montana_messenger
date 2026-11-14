@@ -587,8 +587,10 @@ struct AvatarCircle: View {
     // SwiftUI may reuse a circle while its row changes.  The image therefore carries the file
     // it was decoded from: a photo of one person is never drawable for another row in that gap.
     @State private var decoded: (file: String, image: UIImage)? = nil
+    @State private var told = 0   // a small copy made off the main thread for this face draws the circle again (OZ 1 p.1.5)
 
     var body: some View {
+        let _ = told
         Group {
             if let image {
                 Image(uiImage: image).resizable().scaledToFill()   // the picture in hand
@@ -611,6 +613,7 @@ struct AvatarCircle: View {
         .frame(width: size, height: size)
         .clipShape(MontanaHexagon())
         .modifier(MTAvatarBadgeDecoration(who: who, size: size))
+        .onReceive(MTMediaPlace.moved) { n in if n == photoURL { told &+= 1 } }
         .task(id: photoURL) {
             decoded = nil
             guard size > 64, let s = photoURL, !Self.isAsset(s), !s.hasPrefix("http"), docImageCached(s) == nil else { return }

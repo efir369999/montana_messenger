@@ -1,0 +1,23 @@
+{
+  "build": 93,
+  "notes": {
+    "en": [
+      "Montana Business no longer records calls and no longer plays YouTube inside the app: a YouTube link opens where it lives.",
+      "Access by level shows no level 7 or level 8 functions in Business."
+    ],
+    "ru": [
+      "Montana Business больше не записывает звонки и не проигрывает YouTube внутри приложения: ссылка на YouTube открывается там, где она живёт.",
+      "В Business раздел «Доступ по уровням» не показывает функций уровней 7 и 8."
+    ],
+    "zh-Hans": [
+      "Montana Business 不再录制通话，也不再在应用内播放 YouTube：YouTube 链接会在其原本所在的地方打开。",
+      "在 Business 中，「按等级访问」不再显示第 7 级和第 8 级的功能。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The call recording and the YouTube player are not compiled into Business: their files are out of its target and their doors are nil.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

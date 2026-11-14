@@ -1,0 +1,23 @@
+{
+  "build": 96,
+  "notes": {
+    "en": [
+      "The app no longer carries the set-up files of a personal server: Business never offers one, so the package holds only what it uses.",
+      "The App Store page, its description and the notes for review live with the app's code."
+    ],
+    "ru": [
+      "Приложение больше не несёт файлы установки личного сервера: Business его не предлагает, и в пакете осталось только то, чем оно пользуется.",
+      "Страница в App Store, её описание и заметки для проверки хранятся вместе с кодом приложения."
+    ],
+    "zh-Hans": [
+      "应用不再携带个人服务器的安装文件：Business 从不提供个人服务器，安装包中只保留它实际使用的内容。",
+      "App Store 页面、其描述和审核说明与应用代码存放在一起。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No script ships inside the Business package.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

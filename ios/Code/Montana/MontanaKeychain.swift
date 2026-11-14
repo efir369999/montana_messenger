@@ -675,6 +675,11 @@ enum MTLetterBox {
     /// What this life has read: a file's name, its moment and row. A name read once is never opened again while it stands.
     private static var read: [String: (o: Int64, row: Row)] = [:]
     private static var moved = false
+    /// THE LETTERS LEAVE OFF THE MAIN THREAD (OZ 1 p.1.4, the author's word 21671; T1 Messenger 13.11.2026 23:14 UTC, 2392: the drain
+    /// stood in removefile, one letter's file at a time): a dropped name leaves what this life reads at once, under the lock, and its
+    /// file is removed in order on a queue of its own -- a drain that comes before the removal never reads the letter again.
+    private static let remover = DispatchQueue(label: "montana.letterbox.remover", qos: .utility)
+    private static var leaving = Set<String>()
 
     /// The key is born once, by one add the keychain admits from exactly one process; the other reads the one that stands.
     /// The keychain is asked outside the lock (a lock holds only memory): two threads that both find no key both add, the
@@ -753,11 +758,11 @@ enum MTLetterBox {
         moveLegacy(into: d)
         let names = (try? FileManager.default.contentsOfDirectory(atPath: d.path)) ?? []
         let here = Set(names)
-        lock.lock(); let known = read; lock.unlock()
+        lock.lock(); let known = read; let gone = leaving; lock.unlock()
         var out: [(String, Int64, Row)] = []
         var opened: [String: (o: Int64, row: Row)] = [:]
         var dead = 0
-        for n in names where n.count == 64 {
+        for n in names where n.count == 64 && !gone.contains(n) {
             if let k = known[n] { out.append((n, k.o, k.row)); continue }
             guard let data = try? Data(contentsOf: d.appendingPathComponent(n)) else { continue }
             // No key this moment (the keychain refused a read): the file is unread, not dead -- it stays for the next drain.
@@ -773,7 +778,13 @@ enum MTLetterBox {
     /// The letters leave the box -- after their rows are on disk, never before ([C-1]: the one remover).
     static func drop(_ mids: [String]) {
         guard let d = dir else { return }
-        for m in mids where !m.isEmpty { forget(name(m), in: d) }
+        let names = mids.filter { !$0.isEmpty }.map(name)
+        guard !names.isEmpty else { return }
+        lock.lock(); for n in names { read[n] = nil; leaving.insert(n) }; lock.unlock()
+        remover.async {
+            for n in names { forget(n, in: d) }
+            lock.lock(); leaving.subtract(names); lock.unlock()
+        }
     }
     /// A conversation erased: every letter of it leaves the box.
     static func dropChat(_ conv: String) {

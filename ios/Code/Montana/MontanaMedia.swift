@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Combine
 import CryptoKit
 import MontanaBindings
 import PhotosUI
@@ -1160,8 +1161,16 @@ extension MTWaveform {
     private static func fileURL(_ name: String) -> URL { MontanaPictures.url(name + ".wave") }
 
     /// What the shelf already holds — read in one move by the bubble's first frame.
+    /// THE MAIN THREAD READS NO WAVE FILE (OZ 1 p.1.10, decision 925 = a): a voice bubble's body asked the shelf on every pass, and a
+    /// wave never kept was read from the disk again each time. On the main thread the shelf answers from memory; a miss is read off
+    /// the main thread once (MTMediaPlace.fetch, a miss rests three seconds) and the bubble that wears the name draws again.
     static func cached(_ name: String) -> [Float]? {
         if let c = cache.object(forKey: name as NSString) as? [Float] { return c }
+        guard Thread.isMainThread else { return read(name) }
+        MTMediaPlace.fetch("wave:" + name, name: name) { read(name) != nil }
+        return nil
+    }
+    private static func read(_ name: String) -> [Float]? {
         guard let d = try? Data(contentsOf: fileURL(name)), !d.isEmpty else { return nil }
         let s = unpack(d)
         cache.setObject(s as NSArray, forKey: name as NSString)
@@ -1171,6 +1180,7 @@ extension MTWaveform {
     static func remember(_ name: String, _ s: [Float]) {
         cache.setObject(s as NSArray, forKey: name as NSString)
         try? pack(s).write(to: fileURL(name))
+        DispatchQueue.main.async { MTMediaPlace.moved.send(name) }
     }
 
     static func samples(_ name: String, bars: Int = MTWaveform.bars) async -> [Float]? {
@@ -1185,6 +1195,12 @@ extension MTWaveform {
 let musicDurCache = NSCache<NSString, NSNumber>()
 func musicFileDuration(_ name: String) -> Double {
     if let c = musicDurCache.object(forKey: name as NSString) { return c.doubleValue }
+    // THE MAIN THREAD OPENS NO TRACK (OZ 1 p.1.10, decision 925 = a): the length is asked of the file off the main thread, and the
+    // bubble that wears the name draws again with it.
+    if Thread.isMainThread {
+        MTMediaPlace.fetch("length:" + name, name: name) { musicFileDuration(name) >= 0 }
+        return 0
+    }
     let d = MontanaAudioDuration.of(attachmentURL(name))
     let v = d.isFinite ? d : 0
     musicDurCache.setObject(NSNumber(value: v), forKey: name as NSString)
@@ -1597,7 +1613,7 @@ enum MontanaMediaStore {
         }
         return d
     }
-    static func url(_ name: String) -> URL { dir.appendingPathComponent(name) }
+    static func url(_ name: String) -> URL { dir.appendingPathComponent(name, isDirectory: false) }   // a path is words, not a disk (MontanaPictures.url)
     static func exists(_ name: String) -> Bool {
         !name.isEmpty && FileManager.default.fileExists(atPath: url(name).path)
     }
@@ -1606,6 +1622,7 @@ enum MontanaMediaStore {
     static func put(_ name: String, data: Data) -> Bool {
         let ok = MTDiskDoor.write(data, to: url(name), "media-put", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         if ok { MTNameBook.forgetPictures() }   // a picture file appeared — the name book asks the disk afresh (15.14)
+        if ok { MTMediaPlace.told(name) }   // the place in memory learns it at once (OZ 1 p.1.10)
         return ok
     }
 
@@ -1621,10 +1638,12 @@ enum MontanaMediaStore {
         if FileManager.default.fileExists(atPath: dst.path) {
             guard (try? FileManager.default.replaceItemAt(dst, withItemAt: tmp)) != nil else { return false }
             stampArrival(dst)
+            MTMediaPlace.told(name)
             return true
         }
         guard (try? FileManager.default.moveItem(at: tmp, to: dst)) != nil else { return false }
         stampArrival(dst)
+        MTMediaPlace.told(name)   // the place in memory learns it at once (OZ 1 p.1.10)
         return true
     }
     /// A FILE ENTERS THE STORE BORN NOW (the critic 24.09). The cleanup spares a newborn by the birth the disk names
@@ -1644,6 +1663,7 @@ enum MontanaMediaStore {
             try? FileManager.default.removeItem(at: url(n))
             MontanaVideoMark.unmark(n)   // the «transcoded» mark has no life past its file
             MTDocLink.forget(n)   // a viewer's link alone kept the bytes alive after the file left (T1 18.10: 7.4 GB in tmp)
+            MTMediaPlace.told(n)   // the place in memory forgets it at once (OZ 1 p.1.10)
         }
     }
     /// THE SAME BYTES UNDER A SECOND NAME (20.09): a forward is a letter of its own and wears a file
@@ -1653,9 +1673,10 @@ enum MontanaMediaStore {
     static func clone(_ name: String, as fresh: String) -> Bool {
         guard exists(name), !fresh.isEmpty, fresh != name else { return false }
         if exists(fresh) { return true }
-        if (try? FileManager.default.linkItem(at: url(name), to: url(fresh))) != nil { stampArrival(url(fresh)); return true }
+        if (try? FileManager.default.linkItem(at: url(name), to: url(fresh))) != nil { stampArrival(url(fresh)); MTMediaPlace.told(fresh); return true }
         guard (try? FileManager.default.copyItem(at: url(name), to: url(fresh))) != nil else { return false }
         stampArrival(url(fresh))
+        MTMediaPlace.told(fresh)
         return true
     }
     static func names() -> Set<String> {
@@ -1768,7 +1789,7 @@ func docImage(_ s: String) -> UIImage? {
 // ── ATTACHMENTS: videos and files ──────────────────────────────────
 // path to an attachment file in the documents folder (by name)
 // Ephemeral media folder (tmp) — invisible in "Files", cleaned by the OS; permanent storage — sealed in Montana/Chats/<chat>/Media/.
-func mediaTmpURL(_ name: String) -> URL { FileManager.default.temporaryDirectory.appendingPathComponent(name) }
+func mediaTmpURL(_ name: String) -> URL { FileManager.default.temporaryDirectory.appendingPathComponent(name, isDirectory: false) }
 enum MontanaAudioDuration { static func of(_ url: URL) -> Double { CMTimeGetSeconds(AVURLAsset(url: url).duration) } }
 func voiceRecordURL(_ name: String) -> URL { mediaTmpURL(name) }   // recorder writes into the temporary folder, not the Documents root
 /// The path to a correspondence file — ONE ladder for the whole client ([C-1]).
@@ -1783,7 +1804,7 @@ func attachmentURL(_ name: String) -> URL {
     if MontanaMediaStore.exists(name) { return MontanaMediaStore.url(name) }
     let tmp = mediaTmpURL(name)
     if FileManager.default.fileExists(atPath: tmp.path) { return tmp }
-    return docsURL().appendingPathComponent(name)                  // fallback for old files
+    return docsURL().appendingPathComponent(name, isDirectory: false)   // fallback for old files
 }
 
 // save arbitrary data into documents, return the file name
@@ -1884,11 +1905,23 @@ func videoThumbCached(_ name: String) -> UIImage? {
     // the cache holds it after) keeps the frame AND the aspect present from the very first
     // render. The bubble never flips from a square placeholder to the real shape (the
     // author's rule 23.08: one thumbnail, correct aspect, always).
-    if let d = try? Data(contentsOf: posterURL(name)), let img = UIImage(data: d), img.size != .zero {
-        videoThumbCache.setObject(img, forKey: name as NSString)
-        return img
+    // ONCE, AND ONLY WHERE IT LIES (OZ 1 p.1.10, decision 925 = a): the main thread reads a poster the place knows is there
+    // (MTMediaPlace, from memory), once in a run; a poster not there, or not known yet, was read from the disk at every pass of
+    // every bubble -- it is asked off the main thread now, and the bubble that wears the name draws again when it comes.
+    if Thread.isMainThread {
+        let first = MTMediaPlace.of(name) != 0 && posterReadOnce.insert(name).inserted
+        guard first else {
+            MTMediaPlace.fetch("poster:" + name, name: name) { readPoster(name) != nil }
+            return nil
+        }
     }
-    return nil
+    return readPoster(name)
+}
+private var posterReadOnce = Set<String>()   // main thread only
+private func readPoster(_ name: String) -> UIImage? {
+    guard let d = try? Data(contentsOf: posterURL(name)), let img = UIImage(data: d), img.size != .zero else { return nil }
+    videoThumbCache.setObject(img, forKey: name as NSString)
+    return img
 }
 // A frame from the video for the manifest thumbnail.
 func videoPosterImage(_ url: URL) -> UIImage? {
@@ -1919,6 +1952,14 @@ enum MontanaSmallPicture {
         if let c = cache.object(forKey: name as NSString) { return c }
         if let d = try? Data(contentsOf: smallURL(name)), let ui = UIImage(data: d) {
             cache.setObject(ui, forKey: name as NSString); return ui
+        }
+        // THE SMALL COPY IS NEVER MADE ON THE MAIN THREAD (OZ 1 p.1.5, the author's word 21671; T1 13.11.2026 23:25 UTC, 2392: a frame
+        // of the chat list stood 224 ms in the system's thumbnailer and its encoder, for a row's picture): the main thread answers from
+        // memory or the small file, and a copy not yet made is made off it, by the one reader of missing pictures; the row, the reply
+        // bar and the face hear the name told (MTMediaPlace.moved) and draw again.
+        if Thread.isMainThread {
+            MTMediaPlace.fetch("small:" + name, name: name) { image(name) != nil }
+            return nil
         }
         // The file on disk, or the legacy one moved out of the archive into the store on this ask.
         guard let src = mtMediaFileURL(name) ?? MontanaMediaVault.playableURL(name), let made = thumbnail(src) else { return nil }
@@ -1962,14 +2003,20 @@ enum MontanaPictures {
         return d
     }
     static func url(_ file: String) -> URL {
-        let u = dir.appendingPathComponent(file)
-        // The one-time move from the temporary folder where the older builds kept it.
-        if !FileManager.default.fileExists(atPath: u.path) {
+        // A PATH IS WORDS, NOT A DISK (OZ 1 p.1.10, the author's words 21521, 21526, decision 925 = a: a chat opens at once): a path
+        // component given without isDirectory asks the disk whether it is a folder, and the bubbles of a chat ask this path in every
+        // pass -- 1650-1800 ms of one frame at each opening of a chat with a photo and voices on T1 at 13.11.2026 22:30 UTC.
+        let u = dir.appendingPathComponent(file, isDirectory: false)
+        // The one-time move from the temporary folder where the older builds kept it: asked once per name in a run, not at every pass.
+        movedLock.lock(); let first = moved.insert(file).inserted; movedLock.unlock()   // LOCK-OK: a word in memory
+        if first, !FileManager.default.fileExists(atPath: u.path) {
             let old = mediaTmpURL(file)
             if FileManager.default.fileExists(atPath: old.path) { try? FileManager.default.moveItem(at: old, to: u) }
         }
         return u
     }
+    private static var moved = Set<String>()
+    private static let movedLock = NSLock()
 }
 
 // The poster = the manifest thumbnail laid on disk beside the future file.
@@ -1999,6 +2046,12 @@ enum MTNoteFrame {
     /// The frame, once it was made: from memory, else from its file (then kept in memory).
     static func cached(_ name: String) -> UIImage? {
         if let f = frames.object(forKey: name as NSString) { return f }
+        // A frame not made yet was asked of the disk at every pass of the circle on the main thread (OZ 1 p.1.10, decision 925 = a):
+        // the main thread answers from memory, the file is read off it and the circle draws again.
+        if Thread.isMainThread {
+            MTMediaPlace.fetch("frame:" + name, name: name) { cached(name) != nil }
+            return nil
+        }
         guard let d = try? Data(contentsOf: url(name)), let img = UIImage(data: d), img.size != .zero else { return nil }
         frames.setObject(img, forKey: name as NSString)
         return img
@@ -2077,6 +2130,7 @@ enum MontanaVideoPoster {
             return
         }
         if let small = UIImage(data: d) { videoThumbCache.setObject(small, forKey: name as NSString) }
+        MTMediaPlace.told(name)   // the poster stands: the place in memory learns it, the bubble draws again (OZ 1 p.1.10)
     }
 
     /// The library's own frame for a picked video, under the name the row will wear. Off the main
@@ -2133,6 +2187,95 @@ enum MontanaVideoPoster {
 
 func fileOnDisk(_ name: String) -> Bool {
     FileManager.default.fileExists(atPath: attachmentURL(name).path)
+}
+
+/// WHERE A MEDIA FILE STANDS, KNOWN IN MEMORY -- ONE OWNER (OZ 1 p.1.10, decision 925 = a; the author's words 21521, 21526, 21566:
+/// a chat opens at once, and one chat opened slower than another). The bubbles asked the disk in their bodies, on the main thread, at
+/// every pass -- a few stats for each picture, voice and video -- and a chat of 87 letters with photos and voices stood 1650-1800 ms
+/// in one frame at each opening on T1 at 13.11.2026 22:30 UTC, while a chat of words opened in 343 ms. A body asks here and never the
+/// disk: 0 -- nothing yet, 1 -- the poster only, 2 -- the file. The store's two folders are listed once off the main thread; a name
+/// not known yet, or not yet whole, is asked off the main thread at most once in three seconds, and an answer that moved is told by
+/// its name (moved), so the one bubble that wears it draws again. The store's writers tell a name at once (told). A deed -- a play,
+/// a save, a share -- still asks the disk itself (fileOnDisk): the word in memory draws, the disk decides.
+enum MTMediaPlace {
+    /// A name whose place or picture moved, told on the main thread.
+    static let moved = PassthroughSubject<String, Never>()
+    private static var known: [String: Int] = [:]
+    private static var askedAt: [String: TimeInterval] = [:]
+    private static var asking = Set<String>()
+    private static var fetching = Set<String>()
+    private static var missedAt: [String: TimeInterval] = [:]
+    private static var warmed = false
+    private static let lock = NSLock()
+    private static let queue = DispatchQueue(label: "montana.media-place", qos: .userInitiated)
+    private static let rest: TimeInterval = 3
+
+    static func of(_ name: String) -> Int {
+        guard !name.isEmpty else { return 0 }
+        let now = ProcessInfo.processInfo.systemUptime
+        lock.lock()   // LOCK-OK: a word in memory
+        let k = known[name]
+        let ask = k != 2 && !asking.contains(name) && rest <= now - (askedAt[name] ?? -rest)
+        if ask { asking.insert(name) }
+        let warm = !warmed
+        warmed = true
+        lock.unlock()
+        if warm { queue.async { list() } }
+        if ask { queue.async { probe(name) } }
+        return k ?? 0
+    }
+    static func onDisk(_ name: String) -> Bool { of(name) == 2 }
+    /// The launch's one look: two listings instead of a question per name.
+    static func warm() {
+        lock.lock(); let first = !warmed; warmed = true; lock.unlock()   // LOCK-OK: a word in memory
+        if first { queue.async { list() } }
+    }
+    /// A writer of the store says a name changed: it is asked again off the main thread, whatever was known.
+    static func told(_ name: String) {
+        guard !name.isEmpty else { return }
+        lock.lock(); askedAt[name] = nil; let ask = asking.insert(name).inserted; lock.unlock()   // LOCK-OK: a word in memory
+        if ask { queue.async { probe(name) } }
+    }
+    /// A picture a body found missing from its cache (a wave, a frame, a length): read off the main thread, one read per key at a
+    /// time; a read that found nothing rests three seconds (the negative word), and a read that found it tells the name.
+    static func fetch(_ key: String, name: String, _ read: @escaping () -> Bool) {
+        let now = ProcessInfo.processInfo.systemUptime
+        lock.lock()   // LOCK-OK: a word in memory
+        let go = !fetching.contains(key) && rest <= now - (missedAt[key] ?? -rest)
+        if go { fetching.insert(key) }
+        lock.unlock()
+        guard go else { return }
+        queue.async {
+            let got = read()
+            lock.lock()   // LOCK-OK: a word in memory
+            fetching.remove(key)
+            missedAt[key] = got ? nil : ProcessInfo.processInfo.systemUptime
+            lock.unlock()
+            if got { DispatchQueue.main.async { moved.send(name) } }
+        }
+    }
+    private static func list() {
+        let fm = FileManager.default
+        let files = (try? fm.contentsOfDirectory(atPath: MontanaMediaStore.dir.path)) ?? []
+        let pics = (try? fm.contentsOfDirectory(atPath: MontanaPictures.dir.path)) ?? []
+        let tail = ".poster.jpg"
+        lock.lock()   // LOCK-OK: a word in memory
+        for f in files where !f.hasPrefix(".") && known[f] == nil { known[f] = 2 }
+        for p in pics where p.hasSuffix(tail) {
+            let n = String(p.dropLast(tail.count))
+            if known[n] == nil { known[n] = 1 }
+        }
+        lock.unlock()
+    }
+    private static func probe(_ name: String) {
+        let fm = FileManager.default
+        let v = fm.fileExists(atPath: attachmentURL(name).path) ? 2 : (fm.fileExists(atPath: posterURL(name).path) ? 1 : 0)
+        lock.lock()   // LOCK-OK: a word in memory
+        let was = known[name] ?? 0
+        known[name] = v; asking.remove(name); askedAt[name] = ProcessInfo.processInfo.systemUptime
+        lock.unlock()
+        if was != v { DispatchQueue.main.async { moved.send(name) } }
+    }
 }
 
 func videoThumbAsync(_ name: String) async -> UIImage? {

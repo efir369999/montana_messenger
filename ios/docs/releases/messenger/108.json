@@ -1,0 +1,23 @@
+{
+  "build": 108,
+  "notes": {
+    "en": [
+      "The contact card is gone: no card with a phone number or an e-mail is made, kept or sent in a chat.",
+      "A track paused on the locked screen now plays again from the same place."
+    ],
+    "ru": [
+      "Визитка убрана: карточка с телефоном и почтой больше не создаётся, не хранится и не отправляется в чат.",
+      "Трек, поставленный на паузу на заблокированном экране, снова включается с того же места."
+    ],
+    "zh-Hans": [
+      "名片已移除：不再创建、保存或在聊天中发送带有电话号码或电子邮件的名片。",
+      "在锁定屏幕上暂停的曲目现在可以从同一位置继续播放。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The app declares that it uses encryption (ITSAppUsesNonExemptEncryption = YES): its end-to-end post-quantum encryption is its own, not the system's.",
+      "The phone-number service's address is gone from Info.plist; no new server, network road or key leaving the device."
+    ]
+  }
+}

@@ -374,7 +374,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         DispatchQueue.global(qos: .utility).async { MontanaCard.keepLiveCardsUp() }   // the day's card turns on time, off the screen's thread
         MontanaWakePush.registerConvs()   // the door's standing map: only what changed leaves
         Task { await MontanaWakePush.flushPendingDrops() }   // the boxes a drop failed to empty are asked again
-        MontanaBlobUpload.sweepOrphanBodies()   // orphan handoff bodies mute the cargo check; a newborn body is spared
+        MontanaBlobUpload.sweepOrphanBodies()   // orphan handoff bodies mute the cargo check; a newborn body is spared (the sweep leaves the main thread by itself)
         // The tunnel is read at every return, not only when its page opens: a tunnel that stands is asked what its
         // reconnect says, and what the extension wrote while the app was away (a death, a raise by the system) rides.
         #if !MONTANA_MESSENGER
@@ -422,6 +422,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         AppDelegate.launchedAt = ProcessInfo.processInfo.systemUptime
         MontanaTelemetry.shared.install()   // crashes/hangs/events → Montana/Diagnostics/telemetry.log
         MontanaSeed.warmRoot()   // the key's root ready off the main thread before the first screen asks (decision 494, link 14170)
+        ChatConversationView.warmTypes()   // the chat page's types built off the main thread before the first chat (OZ 1 p.1.10)
         // THE TOUCH DIARY STAYS ON OUR OWN PHONES (App Review 2.5.14, 08.10.2026: a record of a person's activity needs their
         // explicit consent): the Debug builds the Mac puts on the author's phones write every touch and every field's editing
         // (24.09); a build from TestFlight or the App Store writes none.
@@ -429,6 +430,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         MTTouchDiary.start()
         #endif
         MTTop.watch()   // the owner of the modal stack names what stands at every return, lets a system sheet go when the app leaves (25.09)
+        MTTwinSelf.watch()   // one's own name, face and words ride to the seed's other devices (decision 884 = a, OZ 1 p.2.4)
         MTVideoTrace.sink = { MontanaTelemetry.shared.event($0) }   // the video conveyor is visible in the metric
         MontanaDiagShip.kick()   // stage 8-N: beta telemetry to the node, anonymous by construction
         MontanaTrace.onFailure = { MontanaDiagShip.shipOnFailure() }   // an error does not wait the quarter hour

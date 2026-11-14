@@ -1,0 +1,20 @@
+{
+  "build": 104,
+  "notes": {
+    "en": [
+      "Nothing changes on screen: the page of the network between phones nearby, which this app never showed, is no longer part of it."
+    ],
+    "ru": [
+      "На экране ничего не меняется: страница сети между телефонами рядом, которую это приложение никогда не показывало, больше не входит в него."
+    ],
+    "zh-Hans": [
+      "界面没有变化：本应用从未显示过的附近手机之间网络的页面，已不再包含在应用中。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The page of the network between phones nearby, its switch and its words are no longer compiled into the app; it already used no Bluetooth and no local network.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

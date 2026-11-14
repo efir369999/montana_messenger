@@ -1,0 +1,22 @@
+{
+  "build": 129,
+  "notes": {
+    "en": [
+      "The pull-to-refresh mark in the chat list now turns Montana Messenger's own picture.",
+      "The app carries only what it shows: pictures and code of features Montana Messenger does not have are no longer in it. Nothing you use has changed -- please check chats, groups, calls, the icon styles of the library (white, Montana OS, gold) and Settings as usual."
+    ],
+    "ru": [
+      "Знак обновления в списке чатов теперь вращает собственную картинку Montana Messenger.",
+      "Приложение несёт только то, что показывает: картинок и кода функций, которых в Montana Messenger нет, в нём больше нет. Всё, чем вы пользуетесь, осталось прежним -- проверьте, как обычно, чаты, группы, звонки, стили иконок библиотеки (белые, Montana OS, золотые) и настройки."
+    ],
+    "zh-Hans": [
+      "聊天列表中的下拉刷新标记现在旋转 Montana Messenger 自己的图片。",
+      "应用只携带它所显示的内容：Montana Messenger 没有的功能的图片和代码已不在其中。您使用的一切都没有变化——请照常检查聊天、群组、通话、资料库的图标样式（白色、Montana OS、金色）和设置。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No algorithm, key or network change. Code and pictures of features this edition does not have are compiled out or left out of its bundle; the labels keys are derived from are unchanged, so every existing key, chat and copy stays readable."
+    ]
+  }
+}

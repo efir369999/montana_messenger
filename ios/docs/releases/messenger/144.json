@@ -1,0 +1,31 @@
+{
+  "build": 144,
+  "notes": {
+    "en": [
+      "New groups show their chat history to new members by default; the owner can still hide it.",
+      "The Montana updates channel looks like a channel: a tap on it shows the current description and the link to the site.",
+      "Photos are viewed one at a time, with no strip of thumbnails below, and with Share and Save buttons.",
+      "The screen no longer goes dark during a group call, just as in a call of two.",
+      "Please check: a new group with Chat History, a tap on the Montana channel's name, a photo in a chat, a group video call of a few minutes."
+    ],
+    "ru": [
+      "В новых группах история чата по умолчанию видна новым участникам; владелец может её скрыть.",
+      "Канал обновлений Монтаны оформлен как канал: по нажатию -- актуальное описание и ссылка на сайт.",
+      "Фото смотрится по одному, без ленты миниатюр снизу, с кнопками «Поделиться» и «Сохранить».",
+      "Во время группового звонка экран больше не гаснет -- как в звонке вдвоём.",
+      "Проверьте: новая группа и её «История чата», нажатие на имя канала Монтаны, фото в чате, групповой видеозвонок несколько минут."
+    ],
+    "zh-Hans": [
+      "新群组默认向新成员显示聊天记录；群主仍可隐藏。",
+      "Montana 更新频道以频道形式呈现：点击即可看到当前简介和网站链接。",
+      "照片逐张查看，底部不再有缩略图条，并带有“分享”和“保存”按钮。",
+      "群组通话期间屏幕不再变暗，与双人通话相同。",
+      "请检查：新群组及其“聊天记录”、点击 Montana 频道名称、聊天中的照片、持续几分钟的群组视频通话。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The screen's idle timer has one owner (MontanaScreenAwake): a call of two and a group's room hold it by name, and the end of one no longer releases another's hold. Save writes into Photos through the existing road (MontanaSavedToPhotos). No change to the wire format."
+    ]
+  }
+}

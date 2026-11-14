@@ -559,6 +559,13 @@ struct MTChatListView: UIViewRepresentable {
     /// Whether the page this list stands on is looked at (mtPaneLive, 25.09): off the screen, nothing is applied past the
     /// first snapshot — the rows it was born with stand ready for the moment it slides in.
     var live = true
+    /// THE LIST UNDER AN OPEN CHAT STANDS STILL (OZ 1 p.1.10, decision 925 = a, (5)): the chats' list stands under the chat, unseen,
+    /// and every pass of the store printed and diffed all its rows on the main thread while the chat opened and while it was read --
+    /// the stacks of T1 at 13.11.2026 22:30 UTC caught the rows' prints under the opening chat. A list that yields to the chat applies
+    /// nothing while one stands over it (chatOver, the main thread's word, said by UIState.openChat and closeChat); the closing
+    /// asks the store for one pass, and what moved meanwhile is applied as the list comes back into sight.
+    var yieldsToChat = false
+    static var chatOver = false
     /// The list opens at its end once its first rows are applied (the gallery, 25.09) -- MTChatListFrame.showEnd.
     var endFirst = false
     /// THE ROWS AS ONE CANVAS, AS THE SETTINGS' SECTIONS (the author's words 26.09: «round the first and the last so that it
@@ -620,7 +627,7 @@ struct MTChatListView: UIViewRepresentable {
         context.coordinator.view = self
         // A LIST NOT LOOKED AT APPLIES NOTHING PAST ITS FIRST SNAPSHOT (25.09, mtPaneLive): its page stands off the screen with
         // the rows it last showed; the first pass after it is looked at applies what changed meanwhile.
-        if live || !context.coordinator.appliedOnce { context.coordinator.apply(rows: rows, head: headPrint) }
+        if (live && !(yieldsToChat && Self.chatOver)) || !context.coordinator.appliedOnce { context.coordinator.apply(rows: rows, head: headPrint) }
         // THE INSETS HAVE ONE OWNER, THE FRAME: the run-on, the player's room and the spinner's gap together.
         host.page = page
         host.runsToEdges = runsToEdges

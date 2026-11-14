@@ -1,0 +1,29 @@
+{
+  "build": 134,
+  "notes": {
+    "en": [
+      "The pages of signing in and creating an identity stand on black, and every word on them is white and larger, so everything reads easily: no grey text from the first screen to the chats. Black is the default background.",
+      "Montana Messenger no longer shows a folder of its own in the Files app. The folder held only the app's sealed chat logs and diagnostic files, which no other app can open, so it is gone.",
+      "Sending a file in a chat works as before: tap the attachment button, choose a file from Files or iCloud Drive in the system picker, and it is sent.",
+      "Please check: create a new identity and read every page up to the chats. Then open the Files app and make sure there is no Montana Messenger folder under On My iPhone. Then send a document from Files or iCloud Drive in any chat and open it on the other side. Chats, groups, calls and Settings as usual."
+    ],
+    "ru": [
+      "Страницы входа и создания личности стоят на чёрном, и каждое слово на них белое и крупнее, чтобы всё читалось легко: от первого экрана до чатов нет серого текста. Чёрный -- фон по умолчанию.",
+      "Montana Messenger больше не показывает свою папку в приложении «Файлы». В ней лежали только запечатанные журналы чатов и файлы диагностики приложения, которые не открыть другим приложением, поэтому её больше нет.",
+      "Отправка файла в чат работает как прежде: нажмите кнопку вложения, выберите файл в «Файлах» или iCloud Drive в системном окне выбора, и он уйдёт.",
+      "Проверьте: создайте новую личность и прочитайте каждую страницу до чатов. Затем откройте «Файлы» и убедитесь, что в разделе «На iPhone» нет папки Montana Messenger. Затем отправьте документ из «Файлов» или iCloud Drive в любом чате и откройте его на другой стороне. Чаты, группы, звонки и настройки -- как обычно."
+    ],
+    "zh-Hans": [
+      "登录和创建身份的页面采用黑色背景，所有文字均为白色且更大，便于阅读：从第一个屏幕到聊天，没有灰色文字。黑色为默认背景。",
+      "Montana Messenger 不再在“文件”应用中显示自己的文件夹。该文件夹只存放应用加密封存的聊天日志和诊断文件，其他应用无法打开，因此已将其移除。",
+      "在聊天中发送文件照常进行：点按附件按钮，在系统选择器中从“文件”或 iCloud 云盘选择文件，即可发送。",
+      "请检查：创建一个新身份并阅读直到聊天的每个页面。然后打开“文件”应用，确认“我的 iPhone”下没有 Montana Messenger 文件夹。接着在任意聊天中从“文件”或 iCloud 云盘发送一个文档，并在另一端打开。聊天、群组、通话和设置照常检查。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No algorithm or key change. Code/Messenger/Info.plist drops UIFileSharingEnabled and LSSupportsOpeningDocumentsInPlace: iOS no longer lists the app's Documents in Files, so the sealed chat logs and the diary's files are not offered to anyone through Files (the author's word 18855). The files themselves, their sealing and where they live are unchanged; a file for a chat is still picked by the system document picker.",
+      "The pages of signing in and creating an identity change only their colours and type sizes (the author's word 18938); the default ground is black; tools/mt-birth-ground-check.py refuses a grey word on that path."
+    ]
+  }
+}

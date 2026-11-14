@@ -1,0 +1,26 @@
+{
+  "build": 148,
+  "notes": {
+    "en": [
+      "In a group, a tap on a speaker's face in the chat now opens that person's whole page, as a tap on their row on the group's page does -- with Send Message and Call -- even when they are not in your contacts.",
+      "The group's owner hands every member's page on again after an update, so a page that did not open before opens by itself.",
+      "The time panel: right of the logo stand Chats, Groups and Channels; the globe is gone, and a green ring around the logo says the phone is connected to the network.",
+      "Please check: in a group, tap the face of someone who is not in your contacts: their page opens.",
+      "Please check: the panel shows Chats, Groups, Channels right of the logo, and the logo has a green ring while you are online."
+    ],
+    "ru": [
+      "В группе нажатие на лицо говорящего в чате теперь открывает полную страницу этого человека, как и нажатие на его строку на странице группы -- с «Написать» и «Позвонить», даже если его нет в ваших контактах.",
+      "Владелец группы после обновления заново передаёт участникам страницы всех людей группы, поэтому страница, которая раньше не открывалась, откроется сама.",
+      "Панель времени: справа от логотипа стоят Чаты, Группы и Каналы; глобуса больше нет, а зелёное кольцо вокруг логотипа означает, что телефон подключён к сети.",
+      "Проверьте: в группе нажмите на лицо человека, которого нет в ваших контактах -- открывается его страница.",
+      "Проверьте: справа от логотипа -- Чаты, Группы, Каналы, а вокруг логотипа зелёное кольцо, пока вы в сети."
+    ],
+    "zh-Hans": [
+      "在群组中，点按聊天里发言者的头像现在会打开此人的完整页面，与在群组页面点按其所在行相同——包含“发消息”和“通话”，即使此人不在您的联系人中。",
+      "群主更新后会再次向成员传递群内每个人的页面，因此之前无法打开的页面会自行打开。",
+      "时间面板：标志右侧依次为聊天、群组和频道；地球图标已移除，标志周围的绿色圆环表示手机已连接到网络。",
+      "请检查：在群组中点按不在您联系人中的人的头像：其页面打开。",
+      "请检查：标志右侧为聊天、群组、频道，在线时标志周围有绿色圆环。"
+    ]
+  }
+}

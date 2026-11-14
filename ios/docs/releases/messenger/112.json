@@ -1,0 +1,50 @@
+{
+  "build": 112,
+  "notes": {
+    "en": [
+      "Names with @ are gone: no public @name, no search or link by @name, and the people you add are no longer written into your phone's Contacts. A contact is shared through the system's own picker, so Montana asks for no access to Contacts.",
+      "Adding a person speaks only of your card: people reach you by its QR code or link, and the first screen of each app says what it is.",
+      "The Your node field is gone from Data and Storage, and clearing the copies no longer speaks of a node of your own.",
+      "Turning video on during a voice call no longer stalls: requests that cross are settled at once, a phone already in video answers by itself, and the Video button shows the other camera joining.",
+      "Video in a voice call: the asker sees «Video request sent»; once the other person accepts, video comes on at both ends and stays until each turns off their own camera; turning your camera off never stops the other person's video, and a yes that arrives after a long wait still turns the video on.",
+      "Levels are gone from Messenger: no level badge at avatars, no level section in Settings, and no level is shared in chats or calls.",
+      "The Montana room with updates stands for everyone: the build in your hands is its first row, even before the network answers.",
+      "The Update button appears only when a newer build is out.",
+      "The copy kept by the people you write to is laid only on the charger, outside Low Power Mode, with the phone cool and not on a metered network: no more heat on the battery.",
+      "Asking the nodes which files they hold goes in slices of 900 names, so a large library is no longer refused."
+    ],
+    "ru": [
+      "Имена с @ убраны: нет публичного @имени, нет поиска и ссылок по @имени, а добавленные вами люди больше не записываются в Контакты телефона. Контакт отправляется через системное окно выбора, поэтому Montana не просит доступа к Контактам.",
+      "Добавление человека говорит только о вашей карточке: вас находят по её QR-коду или ссылке, а первый экран каждого приложения говорит, что оно такое.",
+      "Поле «Ваш узел» убрано из «Данных и памяти», а очистка копий больше не говорит о собственном узле.",
+      "Включение видео во время аудиозвонка больше не зависает: встречные просьбы решаются сразу, телефон, уже идущий с видео, отвечает сам, а кнопка «Видео» показывает, что камера собеседника подключается.",
+      "Видео в аудиозвонке: у спросившего видна плашка «Запрос на видео отправлен»; после согласия видео включается у обоих и идёт, пока каждый сам не выключит свою камеру; выключение своей камеры больше не гасит видео собеседника, а согласие, пришедшее после долгого ожидания, тоже включает видео.",
+      "Уровни из Мессенджера убраны: у аватаров нет значка уровня, в Настройках нет раздела уровней, уровень не передаётся ни в чатах, ни в звонках.",
+      "Комната Монтана с обновлениями есть у каждого: сборка в ваших руках -- её первая строка, ещё до ответа сети.",
+      "Кнопка «Обновить» появляется только когда вышла более новая сборка.",
+      "Копия у собеседников кладётся только на зарядке, вне энергосбережения, когда телефон не горячий и сеть не лимитная: телефон больше не греется на батарее.",
+      "Вопрос узлам, какие файлы у них есть, идёт долями по 900 имён -- большая медиатека больше не получает отказ."
+    ],
+    "zh-Hans": [
+      "带 @ 的名字已移除：没有公开的 @名字，不能按 @名字 搜索或链接，您添加的人也不再写入手机的通讯录。联系人通过系统自带的选择器分享，因此 Montana 不请求访问通讯录。",
+      "添加联系人时只涉及您的名片：别人通过它的二维码或链接找到您，每个应用的首屏都说明它是什么。",
+      "“你的节点”字段已从“数据与存储”中移除，清除副本时也不再提及自己的节点。",
+      "语音通话中开启视频不再卡住：双方同时发出的请求会立即解决，已在视频中的手机会自动回应，“视频”按钮会显示对方摄像头正在加入。",
+      "语音通话中的视频：发起方会看到“视频请求已发送”；对方接受后，双方的视频都会开启，直到各自关闭自己的摄像头；关闭自己的摄像头不再停止对方的视频，长时间等待后才到达的同意也会开启视频。",
+      "Messenger 已移除等级：头像旁不再显示等级徽章，设置中没有等级部分，聊天和通话中也不再传送等级。",
+      "带有更新的 Montana 房间对每个人都存在：您手中的版本是它的第一行，甚至在网络回应之前。",
+      "只有在有更新的版本发布时才会出现“更新”按钮。",
+      "由联系人保存的副本只在充电时、非低电量模式、手机不过热且非计量网络时才会上传：手机不再在电池供电时发热。",
+      "向节点询问其持有哪些文件时按每次 900 个名称分批进行，大型媒体库不再被拒绝。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No new server, network road or key leaving the device. The keeper of names is asked nothing and no @name is published; the app holds no Contacts access (NSContactsUsageDescription is gone from Info.plist, and tools/mt-apple-rules-check.py refuses it back), and the book of others' @names and the cards it wrote are erased on the phone (MTNameBook.forgetClaimedNames).",
+      "No new server, network road or key leaving the device. A video request is answered from the call's own state (CallUIModel.videoJoinPending, a 40 s join window); no new message kind.",
+      "No new server, network road or key leaving the device; Messenger stops publishing its level to the nodes and stops sending it in chats and call capabilities.",
+      "No new server or key leaving the device. The update document is read by the app's own bundle (updates/BUNDLE-CHANNEL.json) from montana.xxx and the nodes, as before; the app accepts only a document naming its own bundle. The keeping copy now waits for charger, cool phone and an unmetered path (MontanaPower.bulkHeld).",
+      "The video consent stays a word between the two phones (call-video-ask, call-video-ok, call-camera-off): no new server, road or key; a yes is taken only within 120 s of one's own ask, and turning one's camera off rests only one's own capture."
+    ]
+  }
+}

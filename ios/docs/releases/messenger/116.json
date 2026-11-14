@@ -1,0 +1,19 @@
+{
+  "build": 116,
+  "notes": {
+    "en": [
+      "Montana Messenger now carries the messenger alone: the pages, settings and network roads of the other Montana applications are no longer part of it."
+    ],
+    "ru": [
+      "Montana Messenger теперь несёт только мессенджер: страницы, настройки и сетевые дороги других приложений Монтаны больше не входят в него."
+    ],
+    "zh-Hans": [
+      "Montana Messenger 现在只包含信使本身：其他 Montana 应用的页面、设置和网络通道不再属于它。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No new server, network road or key leaving the device. Montana Messenger is compiled with the condition MONTANA_MESSENGER in the app and in its three extensions (Share, notifications, screen broadcast); the code of the Protocol's network applications stands outside it (#if !MONTANA_MESSENGER), the app reads no foreign network interface, and it publishes the addresses of its own Wi-Fi, wired and cellular links alone (MontanaOverlayBook.candidates). The Protocol's behaviour is unchanged."
+    ]
+  }
+}

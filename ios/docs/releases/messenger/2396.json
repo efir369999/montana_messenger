@@ -1,0 +1,23 @@
+{
+  "build": 2396,
+  "notes": {
+    "en": [
+      "A chat with very long letters opens and closes without a stall: a long letter is now drawn away from the screen's thread, piece by piece, only where the screen shows it -- it looks exactly as before.",
+      "The first screen now says what Messenger never asks for: no phone number, no e-mail.",
+      "The app opens faster: the search field no longer holds the first screen -- it stands as it was the moment the app opens, and comes alive right after.",
+      "Please check: open the chat with the longest letters and leave it several times in a row -- nothing stalls."
+    ],
+    "ru": [
+      "Чат с очень длинными письмами открывается и закрывается без замирания: длинное письмо теперь рисуется вне потока экрана, по частям и только там, где его видно на экране, -- выглядит оно так же, как прежде.",
+      "Первый экран теперь говорит, чего Мессенджер никогда не спрашивает: без номера телефона и почты.",
+      "Приложение открывается быстрее: поле поиска больше не задерживает первый экран -- оно стоит на месте с первого мгновения и оживает сразу следом.",
+      "Проверьте: откройте чат с самыми длинными письмами и выйдите из него несколько раз подряд -- ничего не замирает."
+    ],
+    "zh-Hans": [
+      "包含很长信件的聊天打开和关闭都不再卡顿：长信件现在在屏幕线程之外分块绘制，只绘制屏幕上可见的部分——外观与之前完全相同。",
+      "首屏现在说明信使从不索取的信息：无需手机号，无需电子邮件。",
+      "应用打开更快：搜索栏不再拖慢首屏——应用打开的瞬间它就在原位，随即可用。",
+      "请检查：打开信件最长的聊天，连续进出几次——没有任何卡顿。"
+    ]
+  }
+}

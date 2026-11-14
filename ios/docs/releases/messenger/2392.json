@@ -1,0 +1,29 @@
+{
+  "build": 2392,
+  "notes": {
+    "en": [
+      "A chat opens at once: a bubble no longer asks the disk while it is drawn -- where each photo, voice and video lies is known in memory and learned off the screen's thread.",
+      "The rest of a long chat is laid after the chat has risen, in small parts, so the opening does not stall.",
+      "The chats list stands still under an open chat and catches up when the chat is closed.",
+      "The calls log reads again only the chats that changed.",
+      "Please check: open a chat with photos and voices -- it opens as fast as a chat of words.",
+      "Please check: close the chat -- the list shows its last letter and unread count at once."
+    ],
+    "ru": [
+      "Чат открывается сразу: пузырь больше не спрашивает диск, пока рисуется, -- где лежит каждое фото, голосовое и видео, известно в памяти и узнаётся вне потока экрана.",
+      "Остаток длинного чата ложится после подъёма чата, небольшими частями, и открытие не замирает.",
+      "Список чатов под открытым чатом стоит на месте и догоняет, когда чат закрыт.",
+      "Журнал звонков перечитывает только изменившиеся чаты.",
+      "Проверьте: откройте чат с фото и голосовыми -- он открывается так же быстро, как чат из слов.",
+      "Проверьте: закройте чат -- список сразу показывает последнее письмо и счёт непрочитанных."
+    ],
+    "zh-Hans": [
+      "聊天立即打开：气泡在绘制时不再查询磁盘——每张照片、语音和视频的位置都保存在内存中，并在屏幕线程之外获知。",
+      "长聊天的其余部分在聊天升起之后分小批放置，打开时不再卡顿。",
+      "打开聊天时，下面的聊天列表保持不动，关闭聊天后立即更新。",
+      "通话记录只重新读取有变化的聊天。",
+      "请检查：打开一个有照片和语音的聊天——它和纯文字聊天打开得一样快。",
+      "请检查：关闭聊天——列表立即显示最后一封信和未读数。"
+    ]
+  }
+}

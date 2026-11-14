@@ -366,9 +366,16 @@ final class MTTurnDrag: ObservableObject {
     func openChat(_ c: Chat, jump: MID? = nil) {
         overlayJump = jump
         MTFrameMeter.shared.moveBegan()   // the chat's rise, to the platform's own end (25.09)
+        MTChatListView.chatOver = true   // the chats' list stands still under the chat (OZ 1 p.1.10)
         withAnimation(.easeOut(duration: 0.25), completionCriteria: .logicallyComplete) { overlayChat = c } completion: {
             MTFrameMeter.shared.moveEnded("chat:open")
         }
+    }
+    /// The chats' list comes back into sight: it applies again, and one pass of the store lays what moved under the chat (OZ 1 p.1.10).
+    func listBack() {
+        guard MTChatListView.chatOver else { return }
+        MTChatListView.chatOver = false
+        ChatStore.live?.objectWillChange.send()
     }
     /// «SHOW IN CHAT» — THE ONE ROAD ([C-1], the author's word 18.09: it worked now and then). The
     /// profile's menu, the player bar and the list all ask here: the chat already open jumps to the
@@ -385,6 +392,7 @@ final class MTTurnDrag: ObservableObject {
     }
     func closeChat() {
         MTFrameMeter.shared.moveBegan()
+        listBack()
         withAnimation(.easeOut(duration: 0.22), completionCriteria: .logicallyComplete) { overlayChat = nil } completion: {
             MTFrameMeter.shared.moveEnded("chat:close")
         }
@@ -624,6 +632,7 @@ struct ChatOverlay: View {
         handle: handle,
         keyboardPinned: true,   // the chat's floor is the keyboard's edge (the author's word 20.09)
         onClosed: {
+            ui.listBack()
             if let onClose { onClose() }
             else { ui.overlayChat = nil; ui.overlayJump = nil }
         })   // removed without animation (removal .identity): the slide was the exit
@@ -1602,10 +1611,11 @@ enum MTApplication: String, CaseIterable, Identifiable {
     func badge(in store: ChatStore) -> Int {
         switch self {
         case .calls: return store.missedCallsUnseen
-        // THE GROUPS AND THE CHANNELS ARE APPS OF THEIR OWN (the author's words 06.10.2026 08:5x-09:0x UTC): each counts the unread of its own rows.
-        case .chats: return store.unreadCounts.keys.filter { !MTGroup.isKey($0) }.count
-        case .groups: return store.unreadCounts.keys.filter { MTGroup.isKey($0) && MTGroup.shared.kind($0) != .channel }.count
-        case .channels: return store.unreadCounts.keys.filter { MTGroup.shared.kind($0) == .channel }.count
+        // THE GROUPS AND THE CHANNELS ARE APPS OF THEIR OWN (the author's words 06.10.2026 08:5x-09:0x UTC): each counts the unread of its own
+        // rows, by the one answer of a row's list (MTChatFolders.room, OZ 1 p.5): the Montana room counts over Channels, not over Chats.
+        case .chats: return store.unreadCounts.keys.filter { MTChatFolders.room(of: $0) == nil }.count
+        case .groups: return store.unreadCounts.keys.filter { MTChatFolders.room(of: $0) == .groups }.count
+        case .channels: return store.unreadCounts.keys.filter { MTChatFolders.room(of: $0) == .channels }.count
         default: return 0
         }
     }
@@ -1665,7 +1675,9 @@ struct MontanaSideDrawer: View {
     @AppStorage("userName") private var selfName = ""
     @State private var sections: [MTLibrarySection] = []
     @Environment(UIState.self) private var ui
-    @EnvironmentObject private var store: ChatStore
+    // THE DRAWER DOES NOT HEAR THE STORE (the author's word 21655, OZ 1 p.1): it held the whole ChatStore for its counts, and
+    // every pass of the store rebuilt it under a closed drawer -- on T1 at 13.11.2026 23:25 UTC (2392) the body of the drawer
+    // stood in a chat's opening frame of 631 ms. The counts hear the store by themselves (MTDrawerCount, MTDrawerCounts).
     @AppStorage("avatarData") private var avatarData: Data = Data()
     @ObservedObject private var seats = MTSeats.shared   // the persons of Montana waiting on this phone's shelf
     @State private var leaving = false
@@ -1779,16 +1791,19 @@ struct MontanaSideDrawer: View {
     /// count -- in one scroll view of the platform's, «Settings» and the build's number at its foot. The icons' grid stays a
     /// choice, made in Settings, Appearance, Application icons (MTLibraryIconStyleView).
     var body: some View {
+        let _ = MTFrameMeter.shared.body("drawer")   // the drawer's passes while a motion is measured (the author's word 21656)
         GeometryReader { g in
             let full = g.size.width + g.safeAreaInsets.leading + g.safeAreaInsets.trailing
             let width = max(0, Self.width(of: full) - g.safeAreaInsets.leading)
             if icons {
                 VStack(spacing: 8) {
                     faces.zIndex(1)
-                    MTLibrarySearch(sections: sections, indexed: false, icons: true,
-                                    columns: max(1, Int((width - 16) / 104)),
-                                    pins: pins, badges: badges, select: open, command: perform,
-                                    header: AnyView(EmptyView()), footer: AnyView(version))
+                    MTDrawerCounts(apps: apps) { badges in
+                        MTLibrarySearch(sections: sections, indexed: false, icons: true,
+                                        columns: max(1, Int((width - 16) / 104)),
+                                        pins: pins, badges: badges, select: open, command: perform,
+                                        header: AnyView(EmptyView()), footer: AnyView(version))
+                    }
                 }
                 .padding(.top, 8)
                 .frame(width: width)
@@ -1809,9 +1824,6 @@ struct MontanaSideDrawer: View {
             sections = MTLibrarySection.ordered(apps: apps, query: "", searching: false, pins: pins)
         }
         .onChange(of: ui.drawerOpen) { _, value in if value { leaving = false } }
-    }
-    private var badges: [MTApplication: Int] {
-        Dictionary(uniqueKeysWithValues: apps.map { ($0, $0.badge(in: store)) })
     }
     /// The 1949 column: the faces at the head, the rows, «Settings» pressed to the foot with the build's number under it.
     private var column: some View {
@@ -1838,7 +1850,7 @@ struct MontanaSideDrawer: View {
             HStack(spacing: 22) {
                 MTApplicationIcon(app: app, side: 30)
                 Text(app.title).font(.system(size: 22, weight: .bold)).foregroundColor(.primary).lineLimit(1)
-                MTCountBadge(badges[app] ?? 0)
+                MTDrawerCount(app: app)
             }
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1846,6 +1858,20 @@ struct MontanaSideDrawer: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+/// One application's count in the drawer: the one view of the drawer's rows that hears the store (the author's word 21655).
+private struct MTDrawerCount: View {
+    @EnvironmentObject private var store: ChatStore
+    let app: MTApplication
+    var body: some View { MTCountBadge(app.badge(in: store)) }
+}
+/// The counts of the icons' grid: the store is heard here, the drawer around it stays still (the author's word 21655).
+private struct MTDrawerCounts<Content: View>: View {
+    @EnvironmentObject private var store: ChatStore
+    let apps: [MTApplication]
+    @ViewBuilder let content: ([MTApplication: Int]) -> Content
+    var body: some View { content(Dictionary(uniqueKeysWithValues: apps.map { ($0, $0.badge(in: store)) })) }
 }
 
 private struct MTLibraryHeading: View {
@@ -2369,7 +2395,13 @@ struct MainTabView: View {
     private static var staleSweepDone = false
     init() { MontanaTrace.markOnce("tabs_init") }   // measure: when SwiftUI began building the tabs
     @State private var ui = UIState()
-    @StateObject private var store = ChatStore.one()   // one store for every window (ChatStore.one)
+    @MainActor private final class Hold: ObservableObject { let store = ChatStore.one() }
+    // THE ROOT HOLDS THE STORE AND DOES NOT HEAR IT (the author's words 21660, 21671; OZ 1 p.1.1.2): as a state object the store woke
+    // this body at every pass of its own -- 72 passes in 134 frames of a chat's opening on T1 (2392, 13.11.2026 23:25 UTC) -- though
+    // the body reads no published word of it: it hands the store down, and each page below hears what it shows. The hold never
+    // publishes; it keeps the store alive for the window, born once, as before.
+    @StateObject private var hold = Hold()
+    private var store: ChatStore { hold.store }   // one store for every window (ChatStore.one)
     @Environment(\.scenePhase) private var scenePhase
     // tick for sending scheduled messages (check once every 15s, on main)
     private let scheduleTick = Timer.publish(every: 15, on: .main, in: .common).autoconnect()
@@ -2616,6 +2648,20 @@ struct ContactsTabView: View {
         }
         MontanaTrace.mark("book_keep", "ref=\(String(ref.prefix(10))) — by the permanent link")
     }
+    /// OUT OF THE BOOK, the one road (the tab's deleted person and a twin's word, decision 886 = a): the cards leave, and the
+    /// names given them by hand with them. An unreadable book is left as it stands.
+    static func dropFromBook(_ refs: Set<String>) {
+        let raw = MontanaLocalVault.getString("mtContacts") ?? ""
+        guard !refs.isEmpty, !raw.isEmpty, let list = try? JSONDecoder().decode([MTContact].self, from: Data(raw.utf8)) else { return }
+        let kept = list.filter { !refs.contains($0.ref) }
+        if kept.count != list.count, let d = try? JSONEncoder().encode(kept) {
+            MontanaLocalVault.setString("mtContacts", String(data: d, encoding: .utf8) ?? "")
+            MTNameBook.invalidateContacts()
+        }
+        for a in refs {
+            MTNameBook.setManual(conv: a, first: nil, last: nil)
+        }
+    }
     /// A ROW OF THE TAB: a person as the chats tab lists them, and the card of the book behind
     /// them when there is one; a card not yet written to stands after the list.
     private struct MTPerson: Identifiable {
@@ -2679,11 +2725,7 @@ struct ContactsTabView: View {
     }
     /// The card of the book goes with the conversation: a deleted person leaves the tab whole.
     private func dropCards(_ refs: Set<String>) {
-        guard !refs.isEmpty else { return }
-        save(contactsList.filter { !refs.contains($0.ref) })
-        for a in refs {
-            MTNameBook.setManual(conv: a, first: nil, last: nil)
-        }
+        ContactsTabView.dropFromBook(refs)
     }
     /// DELETE — the chats tab's road (ChatStore.deleteChat) and the card with it.
     private func delete(_ chat: Chat, forBoth: Bool) {

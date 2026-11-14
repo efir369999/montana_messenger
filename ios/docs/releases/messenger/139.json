@@ -1,0 +1,22 @@
+{
+  "build": 139,
+  "notes": {
+    "en": [
+      "On an iPad, which has no earpiece, a call no longer shows a Speaker button that could not be turned off: the sound always plays through the iPad's own speaker, and with headphones or Bluetooth the Audio button and its menu appear as on the iPhone.",
+      "Please check: on the iPad make a call and a group call -- there is no Speaker button, the row of buttons closes up; connect headphones -- the Audio button appears."
+    ],
+    "ru": [
+      "На iPad, у которого нет разговорного динамика, в звонке больше нет кнопки «Динамик», которая не выключалась: звук всегда идёт через динамик iPad, а с наушниками или Bluetooth появляется кнопка «Аудио» с меню, как на iPhone.",
+      "Проверьте: на iPad позвоните и сделайте групповой звонок -- кнопки «Динамик» нет, ряд кнопок сомкнут; подключите наушники -- появляется кнопка «Аудио»."
+    ],
+    "zh-Hans": [
+      "在没有听筒的 iPad 上，通话中不再显示无法关闭的“扬声器”按钮：声音始终通过 iPad 自带的扬声器播放；连接耳机或蓝牙后，会像在 iPhone 上一样出现“音频”按钮及其菜单。",
+      "请检查：在 iPad 上拨打普通通话和群组通话——没有“扬声器”按钮，按钮行自动靠拢；连接耳机——出现“音频”按钮。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No network or protocol change: MontanaAudioRoute.hasEarpiece is the one place that knows whether the device has an earpiece; MontanaAudioRoute.Face.shown hides the loudspeaker switch where there is nothing to switch (decision 861 = a, the author's word 20038)."
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import UIKit
 
 // ════════════════════════════════════════════════════════════
@@ -66,6 +67,10 @@ struct MTGroupState: Codable, Equatable {
     /// THE GROUP'S FACE ON THIS PHONE, a file of the avatars folder (17.10.2026): the group is its one owner, so the row, the copy
     /// and the notices read it here -- it used to live on the row alone and left with a row a copy did not carry.
     var face: String? = nil
+    /// THE FULL FACE THIS PHONE WEARS (OZ 1 p.1): the invitation's «blob.key» it came by -- the same word is not fetched again.
+    var faceFull: String? = nil
+    /// The owner told every member its full face once (OZ 1 p.1): a face given before Protocol 2390 rode the small one alone.
+    var fullFaced: Bool? = nil
     /// THE FACES OF THE GROUP'S PEOPLE, EACH AS THE PERSON GAVE IT ON THEIR OWN LETTER (MTGroupWord.sf, 11.11.2026, the author's
     /// words 19316 p.1 and 19387): by seat, a file of the avatars folder, and the tag it came under. Never on the wire.
     var faces: [String: String]? = nil
@@ -235,6 +240,10 @@ struct MTGroupWord: Codable {
     /// THE OWNER'S ROUND on a group's «inv» (MTGroupState.round, OZ 1 p.8): a build that does not read it skips the key and lays its
     /// card as before.
     var rr: Int? = nil
+    /// THE GROUP'S FULL FACE beside the small one on an «inv» (OZ 1 p.1, the author's word 20586: the group's picture was blurred
+    /// when opened): the node's blob name and its key, hex, as «blob.key» (MTGroup.layFullFace). A build that does not read it skips
+    /// the key and wears the small face as before.
+    var ff: String? = nil
 }
 
 /// ONE WHO ASKED TO JOIN BY THE LINK («Member Requests»): the pipe the owner met them by, the name they gave and when.
@@ -432,10 +441,18 @@ final class MTGroup {
     }
     func kind(_ key: String) -> MTGroupKind? { state(key)?.kind }
     /// The people in the group, the owner included -- the head of the group's chat and its page say this number. A group's number
-    /// is its page's list and this phone, one owner (OZ 1 p.1: the head said 11 and the list 6); a channel's is its owner's count.
+    /// is its page's list, this phone and those its owner counts but names to no one (OZ 1 p.1: the head said 11 and the list 6;
+    /// OZ 1 p.4, the author's word 21000: the rest are in the group all the same); a channel's is its owner's count.
     func people(_ key: String) -> Int? {
         guard let g = state(key) else { return nil }
-        return g.kind == .group ? pagePeople(key).count + 1 : g.count
+        return g.kind == .group ? pagePeople(key).count + 1 + unnamed(key) : g.count
+    }
+    /// THE PEOPLE A MEMBER'S PHONE CANNOT LIST (OZ 1 p.4, the author's word 21000, the Protocol group «Kirovakan»): an owner that
+    /// names no seats -- an iPhone before Protocol 2385, or Android -- counts its people (MTGroupState.count) and names only whoever
+    /// spoke; the rest are counted and never invented. None on the owner's phone, none where the owner named every seat.
+    func unnamed(_ key: String) -> Int {
+        guard let g = state(key), g.kind == .group, !g.mine, g.seats == nil else { return 0 }
+        return max(0, g.count - pagePeople(key).count - 1)
     }
     /// The conversations this phone holds with people of the group, by their roots -- the owner's phone with everyone it carries
     /// to, a member's phone with the owner alone: whom it may see online at all. Nothing is asked of anyone here.
@@ -623,16 +640,19 @@ final class MTGroup {
                              members: members, count: members.count + 1, names: [:], at: Date().timeIntervalSince1970)
         if kind == .group { g.history = true }   // A NEW GROUP SHOWS ITS PAST TO NEW MEMBERS (the author's word 20455 p.2)
         g.round = MontanaRelease.ownBuild   // its invitations below name the seats and the round (OZ 1 p.1, p.8)
+        g.fullFaced = true   // and carry the full face beside the small one (OZ 1 p.1)
         groups[id] = g
         saveGroups()
         let row = stand(g, face: face.isEmpty ? nil : saveChatAvatar(face), store: store, revive: true)
         lay(MTGroupEvent(e: "made", g: id, a: Self.ownerSeat, t: name), store: store)   // «You created the group»
         let thumb = Self.thumb(face)
+        let full = thumb == nil ? nil : Self.layFullFace(face)   // the picture itself, laid once (OZ 1 p.1)
         let me = Self.clean(E2E.myDisplayName(), Self.nameLimit)
         for m in members {
             var w = MTGroupWord(t: "inv", g: id, k: kind.rawValue, ti: name, ds: g.about.isEmpty ? nil : g.about, fc: thumb,
                                 c: g.count, me: m.seat, n: me.isEmpty ? nil : me)
             Self.nameSeats(&w, g)   // every member's seat and the owner's round (OZ 1 p.1, p.8)
+            w.ff = full
             _ = carry(w, to: m.pipe, letter: "", own: false)
         }
         MontanaTrace.mark("group_born", "kind=\(kind.rawValue) people=\(g.count)")
@@ -2052,6 +2072,9 @@ final class MTGroup {
         let me = Self.clean(E2E.myDisplayName(), Self.nameLimit)
         // the group's link, minted once, for the administrators who may invite by it (G.6)
         let link = (g.admins ?? []).contains(where: { s in Self.adminCan(g, seat: s, .invite) }) ? inviteLink(Self.key(of: g.id))?.absoluteString : nil
+        // the picture itself beside the small face, laid once for every member it rides to (OZ 1 p.1)
+        let full = face == nil ? nil : g.face.flatMap { f in try? Data(contentsOf: avatarsDirURL().appendingPathComponent(f)) }
+            .flatMap(Self.layFullFace)
         for m in g.members {
             let fc = (only == nil || only?.contains(m.seat) == true) ? face : nil
             var w = MTGroupWord(t: "inv", g: g.id, k: g.kind.rawValue, ti: g.title, ds: g.about.isEmpty ? nil : g.about, fc: fc,
@@ -2068,6 +2091,7 @@ final class MTGroup {
             w.dc = g.kind == .channel && g.talks == true ? 1 : nil   // a channel's subscribers comment (Allow Comments)
             w.rl = g.kind == .channel ? g.reactList : nil   // the reactions a channel takes (Some Reactions)
             Self.nameSeats(&w, g)   // every member's seat and the owner's round: the page and the head say the same (OZ 1 p.1, p.8)
+            w.ff = fc == nil ? nil : full   // the full face rides with the small one alone (OZ 1 p.1)
             _ = carry(w, to: m.pipe, letter: "", own: false)
         }
     }
@@ -2179,6 +2203,14 @@ final class MTGroup {
             groups[id]?.round = MontanaRelease.ownBuild
             saveGroups()
             if let told = groups[id], !told.members.isEmpty { tellAll(told, face: nil) }
+        }
+        // THE FULL FACE ONCE TO THOSE WHO HOLD THE SMALL ONE (OZ 1 p.1): a face given before Protocol 2390 rode the small one alone.
+        for id in groups.keys.sorted() {
+            guard let g = groups[id], g.mine, g.left != true, g.fullFaced != true, !g.members.isEmpty, let f = g.face,
+                  let d = try? Data(contentsOf: avatarsDirURL().appendingPathComponent(f)) else { continue }
+            tellAll(g, face: Self.thumb(d))
+            groups[id]?.fullFaced = true
+            saveGroups()
         }
         giveCards()
     }
@@ -2445,6 +2477,7 @@ final class MTGroup {
         groups[w.g] = g
         saveGroups()
         stand(g, face: newFace ? Self.face(w.fc) : nil, store: store, revive: fresh)   // the sibling's birth of a group, never its renewal
+        wearFullFace(w, store: store)
         if fresh { lay(MTGroupEvent(e: "made", g: g.id, a: Self.ownerSeat, t: title), store: store) }
         if renamed { lay(MTGroupEvent(e: "named", g: g.id, a: Self.ownerSeat, t: title), store: store) }
     }
@@ -2528,6 +2561,7 @@ final class MTGroup {
             groups[w.g] = g
             saveGroups()
             stand(g, face: newFace ? Self.face(w.fc) : nil, store: store, revive: back)   // a renewal leaves a row put away; being added again brings it
+            wearFullFace(w, store: store)
             // the service rows: added again, a new name, a new face -- each the owner's deed
             if back { lay(MTGroupEvent(e: "added", g: g.id, a: Self.ownerSeat, p: [seat]), store: store) }
             let actor = w.s.flatMap { s in Self.isSeat(s) ? s : nil } ?? Self.ownerSeat   // a member's renewal, named by the owner (G.5)
@@ -2560,6 +2594,7 @@ final class MTGroup {
         groups[w.g] = g
         saveGroups()
         stand(g, face: Self.face(w.fc), store: store, revive: true)   // the group is born here
+        wearFullFace(w, store: store)
         lay(MTGroupEvent(e: "added", g: g.id, a: Self.ownerSeat, p: [seat]), store: store)   // «X added you»
         giveCards()   // this phone's own card, where the owner names seats (OZ 1 p.8)
         MontanaTrace.mark("group_rx", "invitation kind=\(kind.rawValue) people=\(count) from=\(String(pipe.prefix(10)))")
@@ -3016,6 +3051,49 @@ final class MTGroup {
     private static func face(_ b64: String?) -> String? {
         guard let b64, b64.count <= faceLimit, let d = Data(base64Encoded: b64), UIImage(data: d) != nil else { return nil }
         return saveChatAvatar(d)
+    }
+    /// A GROUP'S FULL FACE (OZ 1 p.1, the author's word 20586: the group's picture was blurred when opened -- a member held the
+    /// invitation's small face alone and drew it large): the invitation keeps the small face so the word stays a letter; the picture
+    /// goes up to the node once, sealed under a fresh key, named by its content, and the invitation hands the name and the key over
+    /// the pipe. The node holds it a week (BLOB_TTL) and reads nothing.
+    static let fullFaceSide: CGFloat = 1024
+    static let fullFaceLimit = 1_048_576
+    private static func layFullFace(_ face: Data) -> String? {
+        guard let ui = UIImage(data: face), let full = ui.avatarResized(fullFaceSide).jpegData(compressionQuality: 0.8),
+              full.count <= fullFaceLimit else { return nil }
+        var key = [UInt8](repeating: 0, count: 32)
+        guard SecRandomCopyBytes(kSecRandomDefault, 32, &key) == errSecSuccess, let sealed = MontanaDirect.seal(key: key, full) else { return nil }
+        let bid = MontanaMedia.blobIdHex(sealed)
+        Task.detached(priority: .utility) {
+            let ok = await MontanaWakePush.putBlob(bid, data: sealed)
+            MontanaTrace.mark("group_face_up", "\(ok ? "ok" : "FAIL") bytes=\(full.count)")
+        }
+        return bid + "." + MontanaHomeNode.hex(Data(key))
+    }
+    /// A MEMBER WEARS THE GROUP'S FULL FACE (OZ 1 p.1): asked of the node at once and twice more across half a minute (the owner's
+    /// put may still be on its way up); the small face stays until it comes, and a face given since leaves it unworn.
+    @MainActor
+    private func wearFullFace(_ w: MTGroupWord, store: ChatStore) {
+        guard let ff = w.ff, let tag = w.fc.map(Self.tag(ofFace:)), groups[w.g]?.faceFull != ff else { return }
+        let part = ff.split(separator: ".").map(String.init)
+        guard part.count == 2, part[0].count == 64, part[0].allSatisfy(\.isHexDigit),
+              let key = MontanaOverlayBook.hexData(part[1]), key.count == 32 else { return }
+        let id = w.g
+        Task { @MainActor in
+            for pause in [UInt64(0), 5, 25] {
+                if pause != 0 { try? await Task.sleep(nanoseconds: pause * 1_000_000_000) }
+                guard let sealed = await MontanaWakePush.getBlob(part[0]) else { continue }
+                guard let full = MontanaDirect.open(key: [UInt8](key), sealed), full.count <= Self.fullFaceLimit,
+                      UIImage(data: full) != nil else { return MontanaTrace.mark("group_face", "unreadable") }
+                guard var g = self.groups[id], g.faceTag == tag else { return MontanaTrace.mark("group_face", "a newer face stands") }
+                g.faceFull = ff
+                self.groups[id] = g
+                self.saveGroups()
+                self.stand(g, face: saveChatAvatar(full), store: store, revive: false)
+                return MontanaTrace.mark("group_face", "full bytes=\(full.count)")
+            }
+            MontanaTrace.mark("group_face", "absent")
+        }
     }
     /// The tag a face on the wire is known by -- its length and its tail: a repeat of the same word lays no second file.
     static func tag(ofFace b64: String) -> String { String(b64.count) + "-" + String(b64.suffix(16)) }

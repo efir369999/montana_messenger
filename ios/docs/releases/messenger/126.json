@@ -1,0 +1,19 @@
+{
+  "build": 126,
+  "notes": {
+    "en": [
+      "Montana's site is now montana.one: the privacy policy, terms, support and the contact address contact@montana.one; invitation links are written on montana.one, and links on montana.quest still open."
+    ],
+    "ru": [
+      "Сайт Montana теперь montana.one: политика конфиденциальности, условия, поддержка и адрес contact@montana.one; ссылки-приглашения пишутся на montana.one, а ссылки на montana.quest по-прежнему открываются."
+    ],
+    "zh-Hans": [
+      "Montana 的网站现为 montana.one：隐私政策、条款、支持以及联系地址 contact@montana.one；邀请链接写在 montana.one 上，montana.quest 上的链接仍可打开。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No change to any algorithm, key or network road: the nodes keep api.montana.quest and door.montana.quest (decision 756 = a). Only the site, the cards' host (MTEdition.cards), the associated domain applinks:montana.one and the contact mailbox move; montana.one serves the association file naming this bundle only."
+    ]
+  }
+}

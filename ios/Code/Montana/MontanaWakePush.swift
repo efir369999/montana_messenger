@@ -3617,6 +3617,7 @@ enum MontanaWakePush {
     /// before. A drain asked for and not yet begun takes every letter laid in the box before it begins; an ask that comes
     /// after it began is a drain of its own.
     private static let drainLock = NSLock()
+    private static let drainPrologue = DispatchQueue(label: "montana.drain.prologue", qos: .utility)   // the extensions' diaries (OZ 1 p.1.4)
     private static var drainAsked = false
     static func drainInboxSoon() {
         drainLock.lock(); let first = !drainAsked; drainAsked = true; drainLock.unlock()
@@ -3641,25 +3642,30 @@ enum MontanaWakePush {
         // actually in the store.
         // THE EXTENSION'S DIARY IS TAKEN WHOLE (17.10.2026, MTExtensionDiary): the file is renamed first, so a breath drawn during
         // the drain waits in a new file for the next one; the keychain item of the builds before is read once more and zeroed.
-        for line in MTExtensionDiary.drain() { MontanaTrace.mark("nse_diag", line) }
-        if let d = MontanaKeychain.get("nseDiag"),
-           let a = try? JSONDecoder().decode([String].self, from: d), !a.isEmpty {
-            for line in a { MontanaTrace.mark("nse_diag", line) }
-            MontanaKeychain.set("nseDiag", Data())
-        }
-        // THE QUIET PLATES LEAVE THE LIST (03.10): a letter the extension kept quiet still wears a passive plate,
-        // since an empty content shows bare without Apple's filtering entitlement; its request is written down
-        // and taken off here, the moment the person is in the app.
-        if let d = MontanaKeychain.get("nseQuietIds"),
-           let ids = try? JSONDecoder().decode([String].self, from: d), !ids.isEmpty {
-            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids)
-            MontanaKeychain.set("nseQuietIds", Data())
-            MontanaTrace.mark("nse_quiet", "removed=\(ids.count)")
-        }
-        if let d = MontanaKeychain.get("shareDiag"),
-           let a = try? JSONDecoder().decode([String].self, from: d), !a.isEmpty {
-            for line in a { MontanaTrace.mark("share_diag", line) }
-            MontanaKeychain.set("shareDiag", Data())
+        // THE PROLOGUE LEAVES THE MAIN THREAD (OZ 1 p.1.4, the author's word 21671): the extensions' diaries and the quiet plates are
+        // keychain round trips and a file's rename at every drain, and nothing of the drain waits for them -- they go, in order, on
+        // a queue of their own.
+        drainPrologue.async {
+            for line in MTExtensionDiary.drain() { MontanaTrace.mark("nse_diag", line) }
+            if let d = MontanaKeychain.get("nseDiag"),
+               let a = try? JSONDecoder().decode([String].self, from: d), !a.isEmpty {
+                for line in a { MontanaTrace.mark("nse_diag", line) }
+                MontanaKeychain.set("nseDiag", Data())
+            }
+            // THE QUIET PLATES LEAVE THE LIST (03.10): a letter the extension kept quiet still wears a passive plate,
+            // since an empty content shows bare without Apple's filtering entitlement; its request is written down
+            // and taken off here, the moment the person is in the app.
+            if let d = MontanaKeychain.get("nseQuietIds"),
+               let ids = try? JSONDecoder().decode([String].self, from: d), !ids.isEmpty {
+                UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids)
+                MontanaKeychain.set("nseQuietIds", Data())
+                MontanaTrace.mark("nse_quiet", "removed=\(ids.count)")
+            }
+            if let d = MontanaKeychain.get("shareDiag"),
+               let a = try? JSONDecoder().decode([String].self, from: d), !a.isEmpty {
+                for line in a { MontanaTrace.mark("share_diag", line) }
+                MontanaKeychain.set("shareDiag", Data())
+            }
         }
         // The box empties ONLY when there is someone to hand to: on cold start the drain used
         // to outrun the engine's and the store's birth — letters were broadcast into the void
@@ -3818,7 +3824,7 @@ enum MontanaWakePush {
             NotificationCenter.default.post(name: .montanaIncoming, object: nil, userInfo: ui)
             handled.append(m)
         }
-        if !handled.isEmpty { inboxDrop(handled) }
+        MontanaMainProbe.step("drop") { if !handled.isEmpty { inboxDrop(handled) } }   // the drain's own parts are named (OZ 1 p.1.1.4)
         MontanaTrace.mark("wakepush_drain", "letters=\(taken)")
         // THE LIST IS MEASURED AGAINST THE FEED ONCE THE DRAINED LETTERS HAVE LANDED (17.09): the audit
         // at launch ran before they reached the feed and could not tell a lost letter from one still
@@ -3828,13 +3834,13 @@ enum MontanaWakePush {
         // included, nothing kept — and then measured. Detection without this step was theatre.
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             guard let store = MontanaDeliveryEngine.shared.store else { return }
-            store.reconcileListWithFeed(store.messages, keepDoorRecords: false)
+            MontanaMainProbe.step("list-reconcile") { store.reconcileListWithFeed(store.messages, keepDoorRecords: false) }   // OZ 1 p.1.4
             if taken > 0 { store.auditListAgainstFeed(stage: "drained") }
         }
         // NOW the overlay may die: the letters it described are through the ordinary door and
         // their writer owns the list record again. Before this line it was the freshest truth
         // on the device (stage 9 + the author's word 29.08 — no stale flicker at cold start).
-        MontanaKeychain.delete("chatListOverlay")
+        MontanaMainProbe.step("overlay") { MontanaKeychain.delete("chatListOverlay") }
         // The number needs no cleanup here: the landing door incremented the ONE record, and the
         // app rewrites that record wholesale on its next recount — once the history those letters
         // now belong to has actually been read AND this box has been emptied ([C-1]).
@@ -4695,12 +4701,23 @@ final class MontanaBlobUpload: NSObject, URLSessionDataDelegate {
     static var wakeCompletion: (() -> Void)?
     private static let sessionId = "quest.montana.app.blob-up"
 
-    private lazy var session: URLSession = {
+    /// THE SESSION IS BORN OFF THE MAIN THREAD, ONCE (the author's words 21655, 21657; T1 13.11.2026 23:23 UTC, 2392): a background
+    /// session is made by asking the system's daemon, and the first to ask was the main thread at every return to the person
+    /// (appBecameActive, the orphan sweep) -- it stood 302 ms there, and 10 196 ms once. The sweep asks from a utility queue
+    /// now, and the lock makes the birth one for every thread that asks.
+    private let sessionLock = NSLock()
+    private var sessionBorn: URLSession?
+    private var session: URLSession {
+        sessionLock.lock()
+        defer { sessionLock.unlock() }
+        if let s = sessionBorn { return s }
         let c = URLSessionConfiguration.background(withIdentifier: Self.sessionId)
         c.isDiscretionary = false
         c.sessionSendsLaunchEvents = true
-        return URLSession(configuration: c, delegate: self, delegateQueue: nil)
-    }()
+        let s = URLSession(configuration: c, delegate: self, delegateQueue: nil)
+        sessionBorn = s
+        return s
+    }
 
     private var bodyDir: URL {
         let d = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -4769,7 +4786,11 @@ final class MontanaBlobUpload: NSObject, URLSessionDataDelegate {
     /// method UIKit never calls, and a crashed handoff muted the check for its letter indefinitely).
     /// A BODY BORN A MOMENT AGO IS NO ORPHAN (24.09): the sweep now runs beside a queue that may be laying a body this very
     /// instant — the file comes before its task — so a body younger than five minutes is left to its task.
-    static func sweepOrphanBodies() {
+    /// THE SWEEP LEAVES THE MAIN THREAD BY ITSELF (the author's words 21657, 21679; OZ 1 p.1.1.7): both who ask it -- the return to the
+    /// person and the relaunch for the session's events (reconnect) -- stand on the main thread, and the session's birth waits for
+    /// the system's daemon (10 196 ms on T1, 2392). The hop is here, once, not at each of them.
+    static func sweepOrphanBodies() { DispatchQueue.global(qos: .utility).async { sweepNow() } }
+    private static func sweepNow() {
         shared.session.getAllTasks { tasks in
             let live = Set(tasks.compactMap { $0.taskDescription })
             let dir = shared.bodyDir
@@ -5108,10 +5129,7 @@ enum MontanaDiagShip {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Montana/Diagnostics")
         var gone = 0
-        var journals = ["telemetry.log", "trace.log"]
-        #if !MONTANA_MESSENGER
-        journals.append("vpn.log")   // the VPN's diary, the Protocol's alone (decision 651 = a)
-        #endif
+        let journals = MontanaLog.Channel.allCases.map(\.file)   // the channels' owner names the files (the author's word 21679)
         for n in journals + journals.map({ $0 + ".prev" }) {
             let u = dir.appendingPathComponent(n)
             guard FileManager.default.fileExists(atPath: u.path) else { continue }
@@ -5228,10 +5246,7 @@ enum MontanaDiagShip {
         let fm = FileManager.default
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Montana/Diagnostics")
-        var journals = [("telemetry.log", "diagWmTele", "diagGenTele"), ("trace.log", "diagWmTrace", "diagGenTrace")]
-        #if !MONTANA_MESSENGER
-        journals.append(("vpn.log", "diagWmVpn", "diagGenVpn"))   // the VPN's diary, the Protocol's alone (decision 651 = a)
-        #endif
+        let journals = MontanaLog.Channel.allCases.map { ($0.file, $0.ship.mark, $0.ship.birth) }   // the channels' owner names the files and the marks (the author's word 21679)
         for (name, wmKey, genKey) in journals {
             let url = dir.appendingPathComponent(name)
             // ONE WATERMARK, BOUND TO THE FILE IT MEASURES (25.09). The offset alone could not tell a rotated file
@@ -5758,6 +5773,27 @@ struct MTClientRelease: Codable, Equatable {
 enum MontanaRelease {
     static var ownBuild: Int { Int(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "") ?? 0 }
     static var ownVersion: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "" }
+    /// A BUILD'S OWN WORDS, FROM THEIR ONE OWNER (OZ 1 p.6, the author's words 21412, 21414, 21415, 21417: the Protocol's update
+    /// messages in the Montana room stood empty on T1, T2 and T3 -- the app laid its own build's row with no words and waited for the
+    /// network's, which a build put on directly never hears before its row, and an older build's word is refused as history). The
+    /// notes of build N have one owner, as its number has (Version.xcconfig): docs/releases/N.json, the file the TestFlight road
+    /// writes as whatsNew (tools/mt-edition.py, notes). Its edition's folder rides inside the app as a folder of the project's
+    /// resources, and the room reads it here, keeping no copy.
+    #if MONTANA_MESSENGER
+    static let notesFolder = "messenger"
+    #else
+    static let notesFolder = "releases"
+    #endif
+    static func notes(of build: Int) -> (en: [String], l10n: [String: [String]])? {
+        guard 0 < build, let url = Bundle.main.url(forResource: String(build), withExtension: "json", subdirectory: notesFolder),
+              let data = try? Data(contentsOf: url), let doc = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let words = doc["notes"] as? [String: Any], let en = words["en"] as? [String], !en.isEmpty else { return nil }
+        var l10n = [String: [String]]()
+        for (lang, said) in words where lang != "en" {
+            if let lines = said as? [String], !lines.isEmpty { l10n[lang] = lines }
+        }
+        return (en, l10n)
+    }
     static func check(door: String) async {
         await MTReleaseState.shared.check(door: door)
         #if !MONTANA_MESSENGER   // no levels in Messenger (decision 618 (b), cut C3a)

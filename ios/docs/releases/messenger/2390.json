@@ -1,0 +1,35 @@
+{
+  "build": 2390,
+  "notes": {
+    "en": [
+      "One build number for Messenger and the Protocol: both are 2390, built from the same code.",
+      "A group's picture opens sharp: the members receive the full picture, not the small one stretched.",
+      "Every unread badge stands over its own icon on the time panel: chats over Chats, groups over Groups, channels and the official Montana channel over Channels.",
+      "The official Montana channel's update messages are never empty: each build carries its own notes, and earlier messages that stood empty fill in.",
+      "A group whose owner has not updated yet shows how many members it has, with a row saying how many are not listed yet.",
+      "Please check: open a group with a picture -- the picture is sharp, not blurred.",
+      "Please check: get a message in a chat, a group and a channel -- each badge stands over its own icon.",
+      "Please check: open the Montana channel -- the update messages show what changed."
+    ],
+    "ru": [
+      "Один номер сборки у Мессенджера и Протокола: обе -- 2390, из одного кода.",
+      "Картинка группы открывается чёткой: участники получают полную картинку, а не растянутую маленькую.",
+      "Каждый значок непрочитанного стоит над своей иконкой на панели времени: чаты над Чатами, группы над Группами, каналы и официальный канал Монтаны над Каналами.",
+      "Сообщения об обновлениях в официальном канале Монтаны больше не пустые: каждая сборка несёт свои заметки, и прежние пустые сообщения заполняются.",
+      "Группа, владелец которой ещё не обновился, показывает, сколько в ней участников, и строку о том, сколько ещё не показаны.",
+      "Проверьте: откройте группу с картинкой -- картинка чёткая, не размытая.",
+      "Проверьте: получите сообщение в чате, группе и канале -- каждый значок стоит над своей иконкой.",
+      "Проверьте: откройте канал Монтаны -- сообщения об обновлениях показывают, что изменилось."
+    ],
+    "zh-Hans": [
+      "信使与协议使用同一构建号：均为 2390，来自同一份代码。",
+      "群组图片打开时清晰：成员收到完整图片，而不是被拉伸的小图。",
+      "每个未读标记都显示在时间面板上对应的图标上方：聊天在“聊天”上方，群组在“群组”上方，频道和 Montana 官方频道在“频道”上方。",
+      "Montana 官方频道的更新消息不再为空：每个构建都带有自己的说明，之前为空的消息也会被补全。",
+      "群主尚未更新的群组会显示成员总数，并有一行说明还有多少成员尚未列出。",
+      "请检查：打开带图片的群组 -- 图片清晰，不模糊。",
+      "请检查：在聊天、群组和频道中各收到一条消息 -- 每个标记都在对应的图标上方。",
+      "请检查：打开 Montana 频道 -- 更新消息显示了变更内容。"
+    ]
+  }
+}

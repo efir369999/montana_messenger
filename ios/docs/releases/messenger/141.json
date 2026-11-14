@@ -1,0 +1,22 @@
+{
+  "build": 141,
+  "notes": {
+    "en": [
+      "Switching between accounts on one phone: if the phone's keychain refuses the account being opened, everything of it goes back to its place and the account you left opens as it was -- the two accounts never mix.",
+      "Please check: on a phone with two accounts, switch between them several times -- each opens with its own chats, name and photo, and nothing of one shows in the other."
+    ],
+    "ru": [
+      "Переключение аккаунтов на одном телефоне: если связка ключей телефона отказывает открываемому аккаунту, всё его возвращается на место, и открывается прежний аккаунт, как был -- два аккаунта не смешиваются.",
+      "Проверьте: на телефоне с двумя аккаунтами несколько раз переключитесь между ними -- каждый открывается со своими чатами, именем и фото, и ничего от одного не видно в другом."
+    ],
+    "zh-Hans": [
+      "在同一部手机上切换账户：如果手机的钥匙串拒绝正在打开的账户，它的一切都会回到原处，您离开的账户原样打开——两个账户不会混在一起。",
+      "请检查：在有两个账户的手机上多次切换——每个账户都打开自己的聊天、名字和照片，一个账户的内容不会出现在另一个里。"
+    ]
+  },
+  "security": {
+    "en": [
+      "Seats: MTSeats.liftStore folds a lift back when the seed is refused -- the lifted folders return to the shelf and the store is cleared before the person who left is lifted again (critic K4). No change to the wire format."
+    ]
+  }
+}

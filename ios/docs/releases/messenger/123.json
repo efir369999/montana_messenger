@@ -1,0 +1,19 @@
+{
+  "build": 123,
+  "notes": {
+    "en": [
+      "The voice button is rebuilt so the press reaches it: on iOS 27.0.1 a press on the microphone did not reach the button at all, so holding it recorded nothing. The press is now taken by the button's own platform recogniser, and its whole area is declared touchable."
+    ],
+    "ru": [
+      "Кнопка голосового переделана так, чтобы нажатие до неё доходило: на iOS 27.0.1 нажатие на микрофон вообще не доходило до кнопки, и удержание ничего не записывало. Теперь нажатие принимает собственный системный распознаватель кнопки, а вся её площадь объявлена зоной касания."
+    ],
+    "zh-Hans": [
+      "语音按钮已重做，使按压能够到达按钮：在 iOS 27.0.1 上，按下麦克风根本无法到达按钮，按住也录不到任何内容。现在按压由按钮自身的系统识别器接收，并且其整个区域都被声明为可触控。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No change to any algorithm, key or network road. MontanaHoldControl tracks the press through a UILongPressGestureRecognizer (minimum duration 0, cancels and delays nothing) instead of UIControl's beginTracking, with the same thresholds and verdicts; the slot carries contentShape(Rectangle()). The diary on the device gains hold_hit (the point and the enabled flag where the platform hands a finger to the button) and hold_down by=press -- coordinates only, no content."
+    ]
+  }
+}

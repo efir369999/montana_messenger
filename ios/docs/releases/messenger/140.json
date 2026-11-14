@@ -1,0 +1,34 @@
+{
+  "build": 140,
+  "notes": {
+    "en": [
+      "Restoring an account from the 24 words: no separate group call chat appears any more -- a group call is started only from its group's chat, and an old invitation the network still held no longer creates a chat.",
+      "After a restore your other devices are no longer woken by notifications about old group messages and group calls: what the restored device catches up on arrives silently.",
+      "The faces of your contacts come back right after a restore, without opening each chat; your own name and photo reach the restore copy within a minute of being changed.",
+      "A voice chat that has already ended no longer hangs in a group after a restore, and the message field and call button respond.",
+      "The 24 words are accepted when pasted with tabs, non-breaking spaces or Windows line breaks.",
+      "Please check: after the update, change the name and photo on the main device, wait a minute, restore the account from the 24 words on the iPad -- the name, your photo and your contacts' photos are in place, there is no separate group call chat, no voice chat hangs in the group, and the other devices show no notifications."
+    ],
+    "ru": [
+      "Восстановление аккаунта из 24 слов: отдельный чат группового звонка больше не появляется -- групповой звонок начинается только из чата его группы, а старое приглашение, лежавшее в сети, чат больше не создаёт.",
+      "После восстановления другие ваши устройства больше не получают уведомлений о старых сообщениях групп и групповых звонках: то, что восстановленное устройство догоняет, приходит тихо.",
+      "Аватарки собеседников возвращаются сразу после восстановления, без входа в каждый чат; ваши имя и фото попадают в копию для восстановления в течение минуты после изменения.",
+      "Закончившийся голосовой чат больше не висит в группе после восстановления, поле ввода и кнопка звонка нажимаются.",
+      "24 слова принимаются и при вставке с табуляцией, неразрывными пробелами или переводами строк Windows.",
+      "Проверьте: после обновления смените имя и фото на основном устройстве, подождите минуту, восстановите аккаунт из 24 слов на iPad -- имя, ваше фото и фото собеседников на месте, отдельного чата группового звонка нет, в группе не висит голосовой чат, на других устройствах нет уведомлений."
+    ],
+    "zh-Hans": [
+      "用 24 个词恢复账户：不再出现单独的群组通话聊天——群组通话只能从其群组聊天中发起，网络中保留的旧邀请也不再创建聊天。",
+      "恢复后，您的其他设备不再收到关于旧群组消息和群组通话的通知：恢复的设备补收的内容会静默到达。",
+      "恢复后联系人的头像会立即回来，无需逐个打开聊天；您自己的名字和照片在更改后一分钟内进入恢复副本。",
+      "恢复后，已结束的语音聊天不再挂在群组中，输入框和通话按钮可以点击。",
+      "粘贴 24 个词时，即使带有制表符、不间断空格或 Windows 换行，也能被接受。",
+      "请检查：更新后，在主设备上更改名字和照片，等待一分钟，在 iPad 上用 24 个词恢复账户——名字、您的照片和联系人的照片都在，没有单独的群组通话聊天，群组中没有挂着的语音聊天，其他设备上没有通知。"
+    ]
+  },
+  "security": {
+    "en": [
+      "Restore: MontanaSeed.entered, the moment a person came in on this phone (written by MontanaSeed.enter alone, kept with the seat, never in a copy), is the one sign of a restore's catch-up -- a group's letter or room word born before it is carried on with hs=1 (no ring), an invitation born before it births no group (decision 865 = a). The light copy carries one's own name and face within a minute and the people within ten (decision 866 = a). No change to the wire format."
+    ]
+  }
+}

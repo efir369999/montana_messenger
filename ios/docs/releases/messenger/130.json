@@ -1,0 +1,28 @@
+{
+  "build": 130,
+  "notes": {
+    "en": [
+      "Voice messages under the lock: the controls of a locked recording no longer vanish. They now follow the recording itself, not the piece of the bar they were drawn from, and a moment after the lock the app checks that they stand on the screen and can be pressed. The cross, the play and the pause are one size, on one line inside the recording's bubble, with even steps between them, and each wears the blue ring.",
+      "Photos and voice messages leave at once: what you send no longer waits in line behind the app's own background uploads, and a piece no longer stands for up to a minute at a node that takes no byte -- it goes to the next one. An attachment is laid on every node, including one that was resting a moment ago; and when the receiver reports an attachment lost, it is sent again once and a second check no longer takes the repair away.",
+      "A call that reaches the phone late -- for example after it had no data during a cellular call -- now shows who called and leaves one missed call in the phone's list instead of a nameless failed call.",
+      "Please check: record a voice message, lock it, turn the screen and back, press pause, play, the cross and send; send a photo and a voice message after the app has been in the background; chats, groups, calls and Settings as usual."
+    ],
+    "ru": [
+      "Голосовые под замком: кнопки записи под замком больше не пропадают. Теперь они следят за самой записью, а не за куском панели, из которого рисовались, и через мгновение после замка приложение проверяет, что они стоят на экране и нажимаются. Крестик, плей и пауза -- одного размера, на одной линии внутри пузыря записи, с ровным шагом между ними, и каждая в синей обводке.",
+      "Фото и голосовые уходят сразу: то, что отправляете вы, больше не стоит в очереди за фоновыми выгрузками самого приложения, и кусок больше не ждёт до минуты у узла, который не берёт ни байта, -- он идёт к следующему. Вложение кладётся на каждый узел, включая тот, что минуту назад отдыхал; а когда получатель сообщает, что вложение потеряно, оно отправляется заново один раз, и вторая проверка больше не отменяет починку.",
+      "Звонок, который дошёл до телефона с опозданием -- например, когда во время сотового разговора не было данных, -- теперь показывает, кто звонил, и оставляет один пропущенный в списке телефона вместо безымянного сбоя.",
+      "Проверьте: запишите голосовое, поставьте на замок, поверните экран и обратно, нажмите паузу, плей, крестик и отправку; отправьте фото и голосовое после того, как приложение побыло в фоне; чаты, группы, звонки и настройки -- как обычно."
+    ],
+    "zh-Hans": [
+      "锁定录音时的语音消息：锁定录音的按钮不再消失。它们现在跟随录音本身，而不是绘制它们的那一段输入栏；锁定后片刻，应用会检查它们是否在屏幕上并且可以按下。取消、播放和暂停按钮大小一致，位于录音气泡内的同一条线上，间距均匀，每个按钮都有蓝色圆环。",
+      "照片和语音消息立即发出：您发送的内容不再排在应用自身后台上传的后面，一个分片也不再在不接收任何字节的节点上等待长达一分钟——它会转到下一个节点。附件会存放到每个节点上，包括刚才还在休息的节点；当接收方报告附件丢失时，它会重新发送一次，第二次检查不再撤销这次修复。",
+      "迟到的来电——例如手机在蜂窝通话期间没有数据时——现在会显示来电者，并在手机的通话记录中留下一条未接来电，而不是一条没有名字的失败通话。",
+      "请检查：录制语音消息，锁定，将屏幕旋转再转回，按暂停、播放、取消和发送；在应用进入后台之后发送照片和语音消息；聊天、群组、通话和设置照常检查。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No algorithm or key change. A call envelope is still opened only by the pipe's key of a minute; a wake of another minute is also tried at the minute the node stamped it -- the stamp chooses the minute, the seal still proves the sender, and the call's own age still buries a stale call (one missed line for one call). MTBulkPuts gives each cargo places of its own and the person's put the way before the app's quiet puts; MTPutPulse reads a node's silence from the bytes sent; a resting node is asked last instead of being left out, so a copy reaches every node; the sender's cargo check asks one question for a letter at a time and its verdict names the letter by its birth. Five dictionary entries no screen reads were removed and two diagnostic words renamed; the labels keys are derived from are unchanged, so every existing key, chat and copy stays readable."
+    ]
+  }
+}

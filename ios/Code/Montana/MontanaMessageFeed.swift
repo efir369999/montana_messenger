@@ -362,6 +362,8 @@ final class MTFrameMeter {
     /// (motion what=… frames= fps= worst_ms= late=). Two motions at once are one line, named by the first to end.
     func moveBegan() { begin(rows: 0) }
     func moveEnded(_ what: String) { end(what, mark: "motion") }
+    /// A motion or a gesture is measured now: the screen moves (the feed's rest waits for it, OZ 1 p.1.10).
+    var moving: Bool { link != nil }
 
     /// From a control's action to the first frame after it: the wait the finger feels.
     func tap(_ what: String) {
@@ -407,6 +409,8 @@ final class MTFrameMeter {
             MontanaTrace.mark("frame_stack", stack)
             if kept { MontanaLog.event("FRAMES stack " + stack) }
         }
+        let tree = stalls.tree()
+        if 0 < tree.samples { MontanaTrace.mark("stall_tree", "what=\(what) samples=\(tree.samples) every_ms=8 top=" + tree.line) }
     }
 
     func end(on scrollView: UIScrollView) {
@@ -461,9 +465,30 @@ final class MTStallWatch {
     private var caughtBeat: CFTimeInterval = -1
     private var caught: [(ms: Int, frames: [String])] = []
     private var thread: Thread?
+    /// EVERY STALL SAMPLED THROUGH, NOT ONCE (OZ 1 p.1, T1 13.11.2026 23:25 UTC, build 2392): a chat of the Protocol opened in one
+    /// frame of 571-637 ms, and the single stack caught at its 48th ms named another corner of SwiftUI each time -- a glass effect,
+    /// a paragraph style, the drawer's safe area: one sample of six hundred milliseconds names nothing. While the main thread stands
+    /// past the threshold it is read every 8 ms; every function on the stack counts once per sample, by its image and its start,
+    /// and the motion's line is followed by the heaviest (stall_tree), read by atos against the phone's own symbols.
+    private var samples = 0
+    private var weight: [String: Int] = [:]
+    /// A frame as its function: the image and the function's start, so the samples of one function meet in one count.
+    static func function(_ frame: String) -> String {
+        let parts = frame.split(separator: " ")
+        guard let place = parts.first else { return frame }
+        guard parts.count == 2, let plus = parts[1].lastIndex(of: "+"), let into = Int(parts[1][parts[1].index(after: plus)...]),
+              let at = place.lastIndex(of: "+"), let off = Int(place[place.index(after: at)...]) else { return String(place) }
+        return String(place[..<at]) + "+" + String(off - into)
+    }
+    /// The heaviest functions of the stalls since start(), each with its samples: one line, read after stop().
+    func tree(top: Int = 40) -> (samples: Int, line: String) {
+        lock.lock(); let n = samples, w = weight; lock.unlock()
+        let heavy = w.sorted { a, b in a.value == b.value ? a.key < b.key : b.value < a.value }.prefix(top)
+        return (n, heavy.map { "\($0.value):\($0.key)" }.joined(separator: ","))
+    }
 
     func start() {
-        lock.lock(); running = true; lastBeat = CACurrentMediaTime(); caughtBeat = -1; caught = []; lock.unlock()
+        lock.lock(); running = true; lastBeat = CACurrentMediaTime(); caughtBeat = -1; caught = []; samples = 0; weight = [:]; lock.unlock()
         if thread == nil {
             let t = Thread { [weak self] in self?.watch() }
             t.name = "montana.stall-watch"; t.stackSize = 256 * 1024; t.qualityOfService = .userInteractive
@@ -489,13 +514,18 @@ final class MTStallWatch {
             guard on else { wake.wait(); continue }
             usleep(8_000)
             lock.lock()
-            let beat = lastBeat, fresh = caughtBeat != beat, room = caught.count < cap, still = running
+            let beat = lastBeat, still = running, more = samples < 400
             lock.unlock()
-            guard still, fresh, room, threshold < CACurrentMediaTime() - beat else { continue }
+            guard still, more, threshold < CACurrentMediaTime() - beat else { continue }
             let frames = MTMainStack.capture(limit: 64)
             let ms = Int((CACurrentMediaTime() - beat) * 1000)
+            let functions = Set(frames.map(Self.function))
             lock.lock()
-            if running, caughtBeat != beat, caught.count < cap { caughtBeat = beat; caught.append((ms, frames)) }
+            if running {
+                if caughtBeat != beat, caught.count < cap { caughtBeat = beat; caught.append((ms, frames)) }
+                samples += 1
+                for f in functions { weight[f, default: 0] += 1 }
+            }
             lock.unlock()
         }
     }
@@ -798,6 +828,8 @@ struct MTFeedListView: UIViewRepresentable {
         /// end, where the reader does not stand -- no birth, the reader held where the first pass put them.
         static let firstScreenRows = 12
         private var restPending = false
+        private var restLaid = 0    // the rows the rest has laid so far, part by part
+        private var restWaits = 0   // the turns the rest waited for the chat's rise
 
         init(_ v: MTFeedListView) { self.view = v }
 
@@ -845,14 +877,28 @@ struct MTFeedListView: UIViewRepresentable {
             MTMainDoor.enter("feed-first") { self.applyNow(rows: rows) }
         }
 
+        /// THE REST COMES AFTER THE RISE, IN PARTS (OZ 1 p.1.10, decision 925 = a, (4)): the rest of the feed was laid whole on the
+        /// turn after the first screen -- inside the chat's rise -- and cost 270 ms of one frame at the opening of a chat of 87 letters
+        /// on T1 at 13.11.2026 22:30 UTC. It waits now while the screen moves (the rise, a fling; at most 40 frames), and then comes 24
+        /// rows a turn from the newest end, each part a frame of its own. A whole pass of the model (an arrival, a change) ends the parts.
         private func applyRest() {
             guard restPending else { return }
-            restPending = false
+            if MTFrameMeter.shared.moving, restWaits < 40 {
+                restWaits += 1
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0 / 60) { [weak self] in self?.applyRest() }
+                return
+            }
+            let all = view.rows
+            restLaid += Self.firstScreenRows * 2
+            let whole = all.count <= restLaid
+            let part = whole ? all : view.newestOnTop ? Array(all.suffix(restLaid)) : Array(all.prefix(restLaid))
+            restPending = !whole
             stampNow = Int.min   // the first pass stood for the whole model; the rest of it is still to be laid
-            MTMainDoor.enter("feed-rest") { self.applyNow(rows: self.view.rows) }
+            MTMainDoor.enter("feed-rest") { self.applyNow(rows: part, part: true) }
+            if !whole { DispatchQueue.main.async { [weak self] in self?.applyRest() } }
         }
 
-        private func applyNow(rows: [ChatConversationView.ChatRowVM]) {
+        private func applyNow(rows: [ChatConversationView.ChatRowVM], part: Bool = false) {
             guard let cv, let ds = dataSource else { return }
             // A snapshot must not pin the feed under the dragging finger. Apply the latest model
             // once the native gesture ends, including arrivals and media height changes.
@@ -860,14 +906,31 @@ struct MTFeedListView: UIViewRepresentable {
             if appliedOnce, view.stamp == stampNow { finishScrollIfPending(); return }   // nothing the feed draws from has moved
             stampNow = view.stamp
             let firstScreen = !appliedOnce && rows.count > Self.firstScreenRows
-            restPending = firstScreen
+            // A WHOLE PASS WHILE THE PARTS ARE LAID KEEPS TO THE PARTS (the author's word 21655, OZ 1 p.1): on T1 at 13.11.2026
+            // 23:25 UTC (2392) a chat of 87 letters opened with one frame of 571-637 ms, three passes of 141 ms, 23 cells in it. A pass
+            // of the model during the rise (store:1) took the whole model and ended the parts, and everything the layout's estimate
+            // reached was hosted in the very frame the parts exist to spare. It lays now only what the parts have laid -- the newest
+            // end, where an arrival lands -- and the parts go on.
+            let held = !part && restPending && restLaid < rows.count
+            if !part, !held { restPending = firstScreen; restLaid = Self.firstScreenRows; restWaits = 0 }
+            let cut = firstScreen ? Self.firstScreenRows : held ? restLaid : rows.count
             // The newest end: the slice's front on the keys (the feed is flipped, its first item the visual bottom), its back
             // when turned.
-            let rows = !firstScreen ? rows
-                : view.newestOnTop ? Array(rows.suffix(Self.firstScreenRows)) : Array(rows.prefix(Self.firstScreenRows))
+            let rows = rows.count <= cut ? rows
+                : view.newestOnTop ? Array(rows.suffix(cut)) : Array(rows.prefix(cut))
             if firstScreen { DispatchQueue.main.async { [weak self] in self?.applyRest() } }
             let applyBegan = CACurrentMediaTime()
-            defer { MTFrameMeter.shared.applied(ms: (CACurrentMediaTime() - applyBegan) * 1000) }
+            let given = rows.count
+            defer {
+                let ms = (CACurrentMediaTime() - applyBegan) * 1000
+                MTFrameMeter.shared.applied(ms: ms)
+                // EVERY PASS OF THE FEED PAST A QUARTER OF A FRAME NAMES ITSELF (the author's word 21656): the motion's line gave
+                // the passes' sum alone (applies=3 apply_ms=141) -- which pass cost it, of how many rows, was not said.
+                if 4 <= ms {
+                    MontanaTrace.mark("feed_pass", "rows=\(given) of=\(view.rows.count) part=\(part ? 1 : 0) held=\(held ? 1 : 0) "
+                                      + "first=\(firstScreen ? 1 : 0) ms=\(Int(ms))")
+                }
+            }
             rowsNow = rows
             rowsById = Dictionary(rows.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
             dayTop = -1

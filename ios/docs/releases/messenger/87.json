@@ -1,0 +1,23 @@
+{
+  "build": 87,
+  "notes": {
+    "en": [
+      "Montana Business is now built from the same source as Montana: chats, calls, groups and media receive every fix together with Montana.",
+      "The organisation's own pages and sign-in by phone number stay as they were; the app has its own icon."
+    ],
+    "ru": [
+      "Montana Business теперь собирается из того же исходного кода, что и Montana: чаты, звонки, группы и медиа получают каждое исправление вместе с Montana.",
+      "Собственные страницы организации и вход по номеру телефона остаются прежними; у приложения своя иконка."
+    ],
+    "zh-Hans": [
+      "Montana Business 现在与 Montana 使用同一份源代码构建：聊天、通话、群组和媒体会与 Montana 同时获得每一项修复。",
+      "组织自己的页面和手机号登录保持不变；应用拥有自己的图标。"
+    ]
+  },
+  "security": {
+    "en": [
+      "One source tree for both editions: a fix to end-to-end encryption, delivery or calls lands in Business in the same commit as in Montana.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

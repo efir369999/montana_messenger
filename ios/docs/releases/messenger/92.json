@@ -1,0 +1,23 @@
+{
+  "build": 92,
+  "notes": {
+    "en": [
+      "Montana Business now has its own string catalogue: every word on screen belongs to the business edition, and nothing of the Montana coin or wallet is shown.",
+      "Calls are not recorded in Business; iCloud and the privacy manifest are set as the App Store registration requires."
+    ],
+    "ru": [
+      "У Montana Business теперь свой каталог строк: каждое слово на экране принадлежит деловому изданию, а монеты и кошелёк Montana в нём не показываются.",
+      "Звонки в Business не записываются; iCloud и манифест приватности настроены так, как требует регистрация в App Store."
+    ],
+    "zh-Hans": [
+      "Montana Business 现在拥有自己的字符串目录：屏幕上的每个词都属于商务版，其中不显示 Montana 的代币和钱包。",
+      "Business 中的通话不会被录音；iCloud 和隐私清单已按 App Store 注册要求设置。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The coins' keys and words stand behind the edition's door: the Business binary carries no coin tile, mark or key path.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

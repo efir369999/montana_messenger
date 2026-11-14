@@ -1,0 +1,19 @@
+{
+  "build": 125,
+  "notes": {
+    "en": [
+      "The diagnostics question is asked once per install: after a no, an update no longer asks again; the switch in Settings, Privacy turns it on at any time."
+    ],
+    "ru": [
+      "Вопрос о диагностике задаётся один раз за установку: после «нет» обновление больше не спрашивает снова; переключатель в Настройках, Приватность включает её в любой момент."
+    ],
+    "zh-Hans": [
+      "诊断问题每次安装只询问一次：选择“否”之后，更新不再重复询问；随时可在“设置 › 隐私”中的开关开启。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No change to any algorithm, key or network road. MontanaDiagConsent.shouldAsk outside Debug asks only while no answer was ever stored (diagAskedBuild absent); Debug keeps the per-build question. App Review 5.1.1(iv), decision 743 (747). The diary still leaves the phone only while the switch is on."
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "build": 2391,
+  "notes": {
+    "en": [
+      "One build number for Messenger and the Protocol: both are 2391, built from the same code.",
+      "One person is one on every device of the seed: the name, face, bio, link and presence switch changed on one device stand on all of them, the later change winning.",
+      "The person's choices ride to the person's other devices entry by entry: pinned, muted, blocked and archived chats, pinned and archived contacts, the contacts and the names given by hand. A block set on the phone holds on the Mac too.",
+      "An entry met for the first time only joins: another device's older word never lifts a block, a contact or a pin that stands here.",
+      "Please check: rename yourself on one device -- the other devices show the new name.",
+      "Please check: block a chat on the phone -- on the Mac it is blocked too."
+    ],
+    "ru": [
+      "Один номер сборки у Мессенджера и Протокола: обе -- 2391, из одного кода.",
+      "Одна личность -- одна на всех устройствах сида: имя, лицо, описание, ссылка и показ присутствия, изменённые на одном устройстве, стоят на всех, побеждает более позднее изменение.",
+      "Выбор человека едет на другие его устройства запись за записью: закреплённые, без звука, заблокированные и архивные чаты, закреплённые и архивные контакты, сами контакты и имена, данные вручную. Блокировка на телефоне держится и на Маке.",
+      "Запись, встреченная впервые, только добавляется: более старое слово другого устройства никогда не снимает блокировку, контакт или закрепление, которые стоят здесь.",
+      "Проверьте: смените своё имя на одном устройстве -- другие устройства показывают новое имя.",
+      "Проверьте: заблокируйте чат на телефоне -- на Маке он тоже заблокирован."
+    ],
+    "zh-Hans": [
+      "信使与协议使用同一构建号：均为 2391，来自同一份代码。",
+      "同一个人在其种子的所有设备上都是同一个人：在一台设备上更改的名字、头像、简介、链接和在线状态开关会出现在所有设备上，以较晚的更改为准。",
+      "个人的选择会逐条同步到其其他设备：置顶、静音、屏蔽和归档的聊天，置顶和归档的联系人，联系人本身以及手动设置的名字。在手机上设置的屏蔽在 Mac 上同样有效。",
+      "首次遇到的条目只会被加入：另一台设备较旧的记录永远不会解除此处已有的屏蔽、联系人或置顶。",
+      "请检查：在一台设备上修改自己的名字 -- 其他设备显示新名字。",
+      "请检查：在手机上屏蔽一个聊天 -- 在 Mac 上它同样被屏蔽。"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "build": 97,
+  "notes": {
+    "en": [
+      "The app is now called Montana Messenger on the home screen, in every permission request and in its terms -- the same name as on the App Store.",
+      "Invitations to an organisation are links on montana.quest, and phone confirmation goes through id.montana.quest.",
+      "The app no longer carries the set-up files of a personal server: Business never offers one, so the package holds only what it uses.",
+      "The App Store page, its description and the notes for review live with the app's code."
+    ],
+    "ru": [
+      "Приложение теперь называется Montana Messenger на домашнем экране, в каждом запросе разрешения и в условиях -- так же, как в App Store.",
+      "Приглашения в организацию -- ссылки на montana.quest, подтверждение номера идёт через id.montana.quest.",
+      "Приложение больше не несёт файлы установки личного сервера: Business его не предлагает, и в пакете осталось только то, чем оно пользуется.",
+      "Страница в App Store, её описание и заметки для проверки хранятся вместе с кодом приложения."
+    ],
+    "zh-Hans": [
+      "应用现在在主屏幕、每个权限请求和使用条款中都名为 Montana Messenger——与 App Store 中的名称一致。",
+      "加入组织的邀请链接位于 montana.quest，号码确认通过 id.montana.quest 进行。",
+      "应用不再携带个人服务器的安装文件：Business 从不提供个人服务器，安装包中只保留它实际使用的内容。",
+      "App Store 页面、其描述和审核说明与应用代码存放在一起。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The service the app talks to is the same node and key as before, now under montana.quest; no new server.",
+      "No script ships inside the Business package.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "build": 103,
+  "notes": {
+    "en": [
+      "The name under the icon and in the share sheet is now Montana, the same as on montana.xxx.",
+      "The card with your contacts that you send in a chat is now called a contact card.",
+      "The app no longer uses Bluetooth or the local network and no longer asks for either; the separate network walls are gone from the side menu, and the network stays as the globe in the time panel."
+    ],
+    "ru": [
+      "Под иконкой и в меню «Поделиться» приложение теперь называется Montana, как на montana.xxx.",
+      "В английском интерфейсе визитка теперь называется contact card.",
+      "Приложение больше не использует Bluetooth и локальную сеть и не запрашивает к ним доступ; отдельные стены сети убраны из бокового меню, сеть осталась глобусом в панели времени."
+    ],
+    "zh-Hans": [
+      "图标下方和分享菜单中的名称现为 Montana，与 montana.xxx 上一致。",
+      "在英文界面中，名片现在称为 contact card。",
+      "应用不再使用蓝牙和本地网络，也不再请求相关权限；独立的网络墙已从侧边菜单移除，网络仍以时间面板中的地球图标呈现。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The name under the icon, names inside the code and one English word on screen change.",
+      "Bluetooth, discovery of devices nearby and every address of the local network are removed from the app: it no longer asks for Bluetooth or local network access, and a call pairs over no local address.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

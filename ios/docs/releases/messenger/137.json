@@ -1,0 +1,33 @@
+{
+  "build": 137,
+  "notes": {
+    "en": [
+      "In a group call, a phone that comes in is connected within about a second from the group's second call on: its connection is born the moment it says it is in, on the call's own lane, without waiting for the group's message.",
+      "A phone that leaves a group call disappears at once on every other phone: its voice stops first, its goodbye reaches the others, and only then does its connection close.",
+      "When the owner ends a call for everyone, every phone hears it at once, on the call's own connection and on its lane.",
+      "Phones need this build or a later one to call each other in groups: a phone on an earlier build does not connect to one on this build.",
+      "Please check: in a group of three phones (T1, T2, T3) start a call, end it, and start a second one: the phone that joins is heard within a second. Leave the call on T2 -- its tile disappears at once on T1 and T3. The owner ends the call for everyone -- it ends on every phone."
+    ],
+    "ru": [
+      "В групповом звонке вошедший телефон соединяется примерно за секунду, начиная со второго звонка группы: его соединение рождается в тот же миг, когда он говорит, что вошёл, по собственной линии звонка, не дожидаясь сообщения группы.",
+      "Вышедший из группового звонка телефон сразу пропадает на всех остальных: сначала смолкает его голос, прощание доходит до остальных, и только затем закрывается соединение.",
+      "Когда владелец завершает звонок для всех, это сразу слышат все телефоны -- по самому соединению звонка и по его линии.",
+      "Для групповых звонков телефонам нужна эта сборка или новее: телефон на более ранней сборке не соединится с телефоном на этой.",
+      "Проверьте: в группе из трёх телефонов (т1, т2, т3) начните звонок, завершите его и начните второй: вошедший телефон слышен в пределах секунды. Выйдите из звонка на т2 -- его плитка сразу пропадает на т1 и т3. Владелец завершает звонок для всех -- он завершается на каждом телефоне."
+    ],
+    "zh-Hans": [
+      "在群组通话中，从群组的第二次通话起，加入的手机约一秒内即可连接：它一宣布加入，其连接便在通话自己的通道上建立，无需等待群组消息。",
+      "离开群组通话的手机会立即从其他所有手机上消失：先停止其声音，告别送达其他人后，连接才关闭。",
+      "群主为所有人结束通话时，所有手机会立即收到，经由通话连接本身及其通道。",
+      "群组通话需要各手机使用此版本或更新版本：旧版本的手机无法与此版本的手机连接。",
+      "请检查：在三部手机（T1、T2、T3）的群组中发起通话，结束后再发起第二次：加入的手机在一秒内可被听到。在 T2 上离开通话——其画面立即从 T1 和 T3 上消失。群主为所有人结束通话——每部手机上的通话都结束。"
+    ]
+  },
+  "security": {
+    "en": [
+      "Network change: a group call's open and in words on the group's road carry nq, the ML-KEM-768 public key the seat will use in its next room of that group; the group's road proves whose it is. Its secret stays sealed on the phone (MontanaLocalVault) and is spent by that one room; MTGroupRoom.roomKey and nextKey are its only owners.",
+      "Network change: each room has its own lane, room:ID, keyed by SHA-256 over mt-room-lane and the room key. It carries presence alone (in, here), unsealed; a pair is born from it only for a seat whose key the group's road has already named, and a seat's tile waits until its pair stands.",
+      "Protocol change: an offer carries 32 random bytes (n) sealed to its receiver; the offerer accepts an answer only when it carries them back, and a standing pair believes a bye or end on the lane only when it is sealed with them. Answers from earlier builds carry none and are refused. tools/mt-room-lane-check.py, in the build ring, refuses a tree that drops either rule."
+    ]
+  }
+}

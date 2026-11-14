@@ -298,6 +298,8 @@ struct MessageBubble: View, Equatable {
         message.attachment?.file ?? ""
     }
     var mediaProgress: Double? { transfers.progress[mediaFileKey] }
+    /// The files this bubble wears: its own, or every tile's on a plate (MTMediaPlace.moved).
+    private var placeNames: [String] { isGroup ? members.compactMap { $0.attachment?.file } : [mediaFileKey] }
     var mediaStatus: String? { transfers.status[mediaFileKey] }
     var onCancel: () -> Void = {}      // cancel the upload (cross button)
     @State private var scrubPos: Double? = nil   // finger on the track bar: live motion until release
@@ -605,6 +607,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     }
     var body: some View {
         HStack {
+            let _ = thumbTick   // a told name (MTMediaPlace.moved) draws every part of the bubble again: the voice, the track, the tiles
             if drawnMine { Spacer(minLength: 38) }
             VStack(alignment: drawnMine ? .trailing : .leading, spacing: 3) {
                 // THE FORWARD MARK — ONE place for every kind of letter (the author's word 16.09):
@@ -627,6 +630,8 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 // the default's white words. The bubble's colours are the dark platform's, so the bubble wears the dark appearance
                 // itself; the ground around it keeps its own ink.
                 bubbleColumn
+                    // A NAME WHOSE PLACE OR PICTURE MOVED (MTMediaPlace.moved, OZ 1 p.1.10): the bubble that wears it draws again.
+                    .onReceive(MTMediaPlace.moved) { n in if placeNames.contains(n) { thumbTick += 1 } }
                     .environment(\.colorScheme, .dark)
                     .frame(maxWidth: bubbleCeiling, alignment: drawnMine ? .trailing : .leading)
                     .modifier(MTShareBeside(on: post != nil, action: onShare))
@@ -742,6 +747,9 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             // where the link lies; everything else of the letter keeps the tap it had (MTLinkedText).
             MTLinkedText(text: MTRowLetter.words(s), font: font, color: UIColor(bubbleText),
                          linkColor: UIColor(MontanaNativeBubble.link(mine: drawnMine)))
+        } else if MTTiledLetter.isLong(s) {
+            // A LONG LETTER'S WORDS ARE DRAWN AWAY FROM THE MAIN THREAD (MTTiledLetter, 14.11): the same words, font and colour.
+            MTTiledLetterText(text: s, font: font, color: UIColor(bubbleText))
         } else {
             Text(s).montanaTextScale()   // the letters follow the person's size; nothing else does
         }
@@ -928,7 +936,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                     // bubble was drawn again without its picture, and the ask below never ran again -- its key, the file and its
                     // presence, had not changed. The key now says whether the picture stands drawn: a bubble drawn without it
                     // asks again, whatever emptied the cache.
-                    .task(id: "\(f)|\(fileOnDisk(f))|\(ready == nil)") {
+                    .task(id: "\(f)|\(MTMediaPlace.onDisk(f))|\(ready == nil)") {
                         // THE PICTURE IS ASKED UNTIL IT COMES (29.09, the iPhone 17 at 13:16Z: a picture just sent stood as a
                         // grey plate for the life of the process while the same file opened in the viewer). A refusal of the
                         // decoder at the row's birth is a moment, not a verdict: the ask repeats at a growing pause while the
@@ -950,7 +958,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 // A row may not impersonate a picture. This legacy/corrupt-manifest path
                 // occupies no visual space and becomes visible only after real pixels decode.
                 EmptyView()
-                    .task(id: "\(f)|\(fileOnDisk(f))") {
+                    .task(id: "\(f)|\(MTMediaPlace.onDisk(f))") {
                         guard fileOnDisk(f) else { return }
                         var pause: UInt64 = 300_000_000
                         for turn in 0..<6 {
@@ -977,7 +985,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                             isVideo: true, file: vf)
                     // The key includes the fact of the file's presence: when the download finishes the
                     // key changes and the poster recomputes; once, it stayed empty and the plate fell to 4:3.
-                    .task(id: "\(vf)|\(fileOnDisk(vf))") {
+                    .task(id: "\(vf)|\(MTMediaPlace.onDisk(vf))") {
                         for _ in 0..<5 {
                             if await videoThumbAsync(vf) != nil { thumbTick += 1; return }
                             try? await Task.sleep(nanoseconds: 3_000_000_000)
@@ -1017,7 +1025,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                       let v = m.imagery, !v.file.hasPrefix("vnote_") else { return nil }
                 return (v.file, v.video)
             }
-            if files.count == letters.count, files.allSatisfy({ fileOnDisk($0.file) }) {
+            if files.count == letters.count, files.allSatisfy({ MTMediaPlace.onDisk($0.file) }) {
                 MTSaveMediaBadge(files: files)
             }
         }
@@ -1098,7 +1106,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     /// bars at a 25-px pitch (2 points at 4), the wave to the time 50 (0.14), the time to the rim 89 (0.25).
     func voiceCapsuleBubble(_ file: String) -> some View {
         let mine = player.playingFile == file
-        let onDisk = fileOnDisk(file)
+        let onDisk = MTMediaPlace.onDisk(file)   // memory, never the disk, in a body (OZ 1 p.1.10)
         let length = message.audioDuration
         let width = MessageBubble.voiceWaveWidth(length, window: mtWin.width > 0 ? mtWin.width : MTScene.size().width)
         return VStack(alignment: drawnMine ? .trailing : .leading, spacing: 8) {
@@ -1274,7 +1282,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         let badgeLeft = corner.map { $0 % 2 == 0 } ?? false
         let badgeTop = corner.map { $0 < 2 } ?? false
         return VStack(alignment: .trailing, spacing: 4 + (corner != nil && !badgeTop ? over : 0)) {
-            MontanaNotePlayback(file: file, side: side, onDisk: fileOnDisk(file), thumbTick: thumbTick, frameBox: noteFrameBox)
+            MontanaNotePlayback(file: file, side: side, onDisk: MTMediaPlace.onDisk(file), thumbTick: thumbTick, frameBox: noteFrameBox)
             // Under the circle, one line as under the orb: the progress bottom-left while the note
             // rides (the author's word 21.09), the stamp at the right.
             HStack(spacing: 0) {
@@ -1290,7 +1298,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         .padding(.trailing, corner != nil && !badgeLeft ? over : 0)
         .padding(.top, badgeTop ? over : 0)
         // The circle asks until it wears the note's own frame (MTNoteFrame.wear); the landing changes the key.
-        .task(id: "\(file)|\(fileOnDisk(file))") { await MTNoteFrame.wear(file) { thumbTick += 1 } }
+        .task(id: "\(file)|\(MTMediaPlace.onDisk(file))") { await MTNoteFrame.wear(file) { thumbTick += 1 } }
     }
 
     /// A MOVING PICTURE PLAYS WHERE IT LANDED (23.09). It rides the document road -- the only one that
@@ -1301,7 +1309,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
         // NOTHING IS DECODED HERE (23.09): the body runs on every render of the feed, and decoding the
         // whole gif in it was the glitch and the 417 MB of 1901. The plate's shape is the file's own
         // header; the frames are the platform animator's, one at a time, while the bubble is on screen.
-        let url: URL? = fileOnDisk(file) ? attachmentURL(file) : nil
+        let url: URL? = MTMediaPlace.onDisk(file) ? attachmentURL(file) : nil
         let shape = url.flatMap { MontanaGif.size(at: $0) }
         // A STICKER OF THE HOUSE IS A STICKER, NOT A PICTURE IN A BUBBLE: no fill, no rim, and the
         // one size every sticker of ours wears -- three single glyphs across (MTStickerLook).
@@ -1386,7 +1394,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
     func audioBubble(_ file: String, voice: Bool) -> some View {
         let mine = player.playingFile == file
         let isPlaying = mine && !player.paused
-        let onDisk = FileManager.default.fileExists(atPath: attachmentURL(file).path)
+        let onDisk = MTMediaPlace.onDisk(file)   // memory, never the disk, in a body (OZ 1 p.1.10)
         let total = mine ? player.duration : (voice ? message.audioDuration : (onDisk ? musicFileDuration(file) : 0))
         let trackName = voice ? String(localized: "Voice message", bundle: MTLanguage.bundle) : (message.docName ?? file)
         // The bubble's width — from the minimum to the track caption's width +30% (ceiling — a share of the window).
@@ -1652,7 +1660,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 Image(systemName: isVideo ? "video" : "photo").font(.system(size: 26)).foregroundColor(.gray)
             }
             if isVideo {
-                Image(systemName: fileOnDisk(file) ? "play.circle.fill" : "arrow.down.circle.fill")
+                Image(systemName: MTMediaPlace.onDisk(file) ? "play.circle.fill" : "arrow.down.circle.fill")
                     .font(.system(size: 34)).foregroundColor(.white.opacity(0.9))
             }
             if let p = transfers.progress[file] {
@@ -1733,7 +1741,7 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                 // layer, without sound, round and round, while the letter stands on the screen (MTChatClip); a tap is the system's full
                 // player. The file is not here yet — the download arrow: a play on nothing produced a crossed-out button.
                 if isVideo {
-                    if fileOnDisk(file) {
+                    if MTMediaPlace.onDisk(file) {
                         MTChatClip(file: file).frame(width: box.width, height: box.height)
                     } else {
                         Image(systemName: "arrow.down.circle.fill")

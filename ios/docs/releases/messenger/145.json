@@ -1,0 +1,29 @@
+{
+  "build": 145,
+  "notes": {
+    "en": [
+      "In a group, the number of members in the header and the member list are the same: both come from the one list the group's owner gives.",
+      "From a group you can open the page of any member and write to them, even if they are not in your contacts.",
+      "A notification of a muted chat no longer hangs on the screen, and a tap on a notification opens its chat.",
+      "Please check: open a group as a member -- the number in the header equals the list; tap a member, open their page and write to them; tap a fresh notification."
+    ],
+    "ru": [
+      "В группе число участников в шапке и список участников совпадают: оба берутся из одного списка, который даёт владелец группы.",
+      "Из группы открывается страница любого участника, и ему можно написать, даже если его нет в ваших контактах.",
+      "Уведомление беззвучного чата больше не зависает на экране, а нажатие на уведомление открывает его чат.",
+      "Проверьте: откройте группу как участник -- число в шапке равно списку; нажмите на участника, откройте его страницу и напишите ему; нажмите на свежее уведомление."
+    ],
+    "zh-Hans": [
+      "在群组中，标题中的成员人数与成员列表一致：两者都来自群主提供的同一份名单。",
+      "在群组中可以打开任何成员的页面并给他们发消息，即使对方不在您的联系人中。",
+      "静音聊天的通知不再停留在屏幕上，点击通知即可打开其聊天。",
+      "请检查：以成员身份打开群组——标题中的人数等于列表人数；点击某位成员，打开其页面并给他发消息；点击一条新通知。"
+    ]
+  },
+  "security": {
+    "en": [
+      "A group's invitation (inv) now names every member's seat (MTGroupWord.ps), never a pipe; each member lays its permanent card («pc», COMPAT-GATED, only where the owner names seats), the owner hands the cards on, and a member writes to another by the existing meeting road (MontanaMeeting.meet). Older builds skip both keys.",
+      "The notification extension keeps its quiet plates in one book under one queue, and a wake takes off only the plate it laid. No change to the wire format of letters."
+    ]
+  }
+}

@@ -92,9 +92,16 @@ final class MTChatFolders: ObservableObject {
     /// THE MONTANA ROOM IS A CHANNEL (OZ 1 p.1.5, the author's words 21257 and 21282, 13.11.2026: «the official Montana channel with
     /// the updates must not stand in the list of chats -- it is a channel»): it is no MTGroup key, and it stood among the person's chats.
     static func kind(of c: Chat, contacts: Set<String>?) -> MTChatFolder.Kind {
-        if ChatStore.isMontanaRoom(c.name) { return .channels }
-        if MTGroup.isKey(c.name) { return MTGroup.shared.kind(c.name) == .channel ? .channels : .groups }
+        if let room = room(of: c.name) { return room }
         return contacts?.contains(c.convRef) == true ? .contacts : .nonContacts
+    }
+    /// THE LIST A CONVERSATION STANDS IN ON THE TIME PANEL, ONE ANSWER (OZ 1 p.5, the author's word 21393: «every notification in its
+    /// place, over its own icon»): the Montana room and every channel -- Channels, a group -- Groups, nil -- a person's chat (Chats).
+    /// The folders, the tabs' badges and the panel's glyphs read it here.
+    static func room(of name: String) -> MTChatFolder.Kind? {
+        if ChatStore.isMontanaRoom(name) { return .channels }
+        if MTGroup.isKey(name) { return MTGroup.shared.kind(name) == .channel ? .channels : .groups }
+        return nil
     }
     /// A folder's rows in the chats' one order: the rows of the list, and the archived ones where the folder keeps them.
     func rows(of f: MTChatFolder, live: [Chat], archived: [Chat], store: ChatStore, contacts: Set<String>?) -> [Chat] {

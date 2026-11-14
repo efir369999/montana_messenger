@@ -1,0 +1,23 @@
+{
+  "build": 98,
+  "notes": {
+    "en": [
+      "The share sheet now calls the app Montana Messenger, as the home screen does.",
+      "The icon is the Montana sign on glass again."
+    ],
+    "ru": [
+      "Меню «Поделиться» теперь называет приложение Montana Messenger, как и домашний экран.",
+      "Иконка снова знак Монтаны на стекле."
+    ],
+    "zh-Hans": [
+      "分享菜单现在也将应用称为 Montana Messenger，与主屏幕一致。",
+      "图标恢复为玻璃上的 Montana 标志。"
+    ]
+  },
+  "security": {
+    "en": [
+      "Only the name a person sees and the icon change.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "build": 107,
+  "notes": {
+    "en": [
+      "Organizations are no longer part of the app: no organizations page, roster, departments, shifts, supply or work chats, and no location sharing with a chat's managers.",
+      "Sign-in by phone number is gone: your identity is your 24-word phrase and nothing else; the app asks for no phone number and no bot confirms one.",
+      "Location is used only to send a place in a chat by your own touch, while the app is open."
+    ],
+    "ru": [
+      "Организации больше не входят в приложение: нет страницы организаций, списка людей, отделов, смен, снабжения и рабочих чатов, нет передачи геопозиции руководителям чата.",
+      "Вход по номеру телефона убран: ваша личность -- только 24 слова; приложение не спрашивает номер, и никакой бот его не подтверждает.",
+      "Геопозиция нужна только чтобы отправить место в чат своим касанием, пока приложение открыто."
+    ],
+    "zh-Hans": [
+      "组织功能已不再属于本应用：没有组织页面、人员名单、部门、班次、供应或工作聊天，也不再向聊天管理者共享位置。",
+      "手机号登录已移除：你的身份只有 24 个助记词；应用不再询问手机号，也没有机器人确认手机号。",
+      "位置仅用于在应用打开时，由你亲自点击在聊天中发送一个地点。"
+    ]
+  },
+  "security": {
+    "en": [
+      "The organizations' code (nine files) and both phone-door files are no longer compiled into the app; the confirmation service, the other app's door and the background location mode are gone from Info.plist.",
+      "No new server, network road or key leaving the device; one road fewer: no number leaves the phone."
+    ]
+  }
+}

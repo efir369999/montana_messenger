@@ -17,6 +17,7 @@ struct MontanaPeerInfoScreen: View {
     @State private var awaitingLink = false            // «share contact» asked the peer for their link
     @State private var linkUnavailable = false
     @State private var pageAway = false                // a group's person neither held nor met (OZ 1 p.8, decision 897 a)
+    @State private var unnamedAway = false             // the people a group's owner counts but names to no one (OZ 1 p.4, word 21000)
     @State private var selecting = false               // the profile's own selection of media (the author's word 15.09)
     @State private var selected: Set<MID> = []
     @State private var menuMessage: Message? = nil
@@ -49,7 +50,11 @@ struct MontanaPeerInfoScreen: View {
     /// ONE PAGE, ONE DRESS WHEREVER IT OPENS (the author's word 25.09: «the page has one owner — nothing is redrawn»): the page
     /// wears its own tint, the chat's; pushed from the chats page it wore that page's gold and looked another page. Said here,
     /// around the screen, so the screen's long chain stays the one the compiler already reads.
-    var body: some View { screen.tint(.primary) }
+    var body: some View {
+        screen.tint(.primary)
+            // the people a group's owner counts but names to no one (OZ 1 p.4, word 21000), outside the screen's long chain
+            .alert("They are listed once the group's owner updates Montana.", isPresented: $unnamedAway) { Button("OK", role: .cancel) {} }
+    }
     @ViewBuilder private var screen: some View {
         let data = self.data
         // THE PAGE IS THE PLATFORM'S GROUPED LIST (the author's word 18.09: native, in the app's
@@ -440,6 +445,12 @@ struct MontanaPeerInfoScreen: View {
                                       refused: { linkUnavailable = true },
                                       away: { pageAway = true })
         for line in lines { rows.append(MTInfoRow(id: "members." + line.seat, kind: .groupMember(line))) }
+        // THE PEOPLE THE OWNER COUNTS BUT NAMES TO NO ONE (OZ 1 p.4, the author's word 21000): one row says how many, a hand on it says why
+        let unnamed = MTGroup.shared.unnamed(chat.name)
+        if 0 < unnamed {
+            rows.append(MTInfoRow(id: "members.unnamed", kind: .disclosure(title: "\(unnamed) more members", detail: "", icon: "person.2",
+                                                                           tint: .gray, action: { unnamedAway = true })))
+        }
         return rows
     }
     /// A PERSON OF THE GROUP MET BY THE CARD THEY LAID (OZ 1 p.8): their page where the conversation already stands a row, a letter

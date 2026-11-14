@@ -1,0 +1,38 @@
+{
+  "build": 2389,
+  "notes": {
+    "en": [
+      "One build number for Messenger and the Protocol: both are 2389, built from the same code.",
+      "A message deleted for everyone no longer comes back as a notification: a banner rings only for a message that stands in the chat.",
+      "The official Montana channel with the updates stands among the channels, not among the chats.",
+      "A photo opened in a chat, a group or a channel turns to the next or the previous picture of the same chat with a swipe right or left; Save and Share stand under each one.",
+      "A phone restored from a copy asks for a group message's photo, video or gif again and receives it.",
+      "A new photo, video or gif refreshes your full copy at once, without waiting for the charger.",
+      "Please check: ask someone to send you a message and delete it for everyone -- no notification about it comes again, even a day later.",
+      "Please check: the Montana channel is on the Channels page and not on the Chats page.",
+      "Please check: open a photo in a chat with several photos and swipe left and right."
+    ],
+    "ru": [
+      "Один номер сборки у Мессенджера и Протокола: обе -- 2389, из одного кода.",
+      "Сообщение, удалённое для всех, больше не возвращается уведомлением: баннер звенит только о сообщении, которое стоит в чате.",
+      "Официальный канал Монтаны с обновлениями стоит среди каналов, а не среди чатов.",
+      "Фото, открытое в чате, группе или канале, листается вправо и влево по картинкам того же чата; под каждой -- Сохранить и Поделиться.",
+      "Телефон, восстановленный из копии, снова просит фото, видео или гиф из сообщения группы и получает его.",
+      "Новое фото, видео или гиф сразу обновляет полную копию, не дожидаясь зарядки.",
+      "Проверьте: попросите прислать вам сообщение и удалить его для всех -- уведомление о нём больше не приходит, даже через сутки.",
+      "Проверьте: канал Монтаны -- на странице Каналы, а не на странице Чаты.",
+      "Проверьте: откройте фото в чате с несколькими фото и листайте влево и вправо."
+    ],
+    "zh-Hans": [
+      "信使与协议使用同一构建号：均为 2389，来自同一份代码。",
+      "已为所有人删除的消息不再以通知形式返回：只有显示在聊天中的消息才会发出横幅提醒。",
+      "Montana 官方更新频道显示在频道中，而不是聊天中。",
+      "在聊天、群组或频道中打开的照片可左右滑动，浏览同一聊天中的其他图片；每张图片下方都有保存和分享。",
+      "从备份恢复的手机会重新请求群组消息中的照片、视频或动图，并能收到。",
+      "新的照片、视频或动图会立即更新您的完整备份，无需等待充电。",
+      "请检查：请人给您发一条消息并为所有人删除 -- 即使一天后也不会再收到关于它的通知。",
+      "请检查：Montana 频道位于频道页面，而不在聊天页面。",
+      "请检查：在有多张照片的聊天中打开一张照片，左右滑动。"
+    ]
+  }
+}

@@ -102,7 +102,12 @@ struct MTMessageText: UIViewRepresentable {
     // The width handed back already holds every line, so nothing can re-wrap inside it, and there
     // is nothing left to cut.
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: MTMessageTextView, context: Context) -> CGSize? {
-        let limit = max(proposal.width ?? MTMessageText.widestBubble, 1)
+        MTMessageText.fitted(proposal, text: text, font: font)
+    }
+
+    /// The one answer of every letter's words to a proposed size (the menu's, a link's, a long letter's): the box, never wider than offered.
+    static func fitted(_ proposal: ProposedViewSize, text: String, font: UIFont) -> CGSize {
+        let limit = max(proposal.width ?? widestBubble, 1)
         let box = MTMessageText.box(of: text, font: font, maxWidth: limit)
         return CGSize(width: min(box.width, limit), height: max(box.height, ceil(font.lineHeight)))
     }
@@ -120,8 +125,13 @@ struct MTMessageText: UIViewRepresentable {
     static func box(of text: String, font: UIFont, maxWidth: CGFloat, lines: Int) -> CGSize {
         let key = "\(font.fontName)/\(font.pointSize)/\(maxWidth)/\(lines)/\(text)" as NSString
         if let kept = keptBoxes.object(forKey: key) { return kept.size }
+        let began = CACurrentMediaTime()
         let size = laidBox(of: text, font: font, maxWidth: maxWidth, lines: lines)
         keptBoxes.setObject(KeptBox(size), forKey: key)
+        // A long letter's first measure is the one layout still made where it is asked: its cost is said by name, once per box.
+        if MTTiledLetter.isLong(text) {
+            MontanaTrace.mark("letter_box", "bytes=\(text.utf8.count) ms=\(Int((CACurrentMediaTime() - began) * 1000)) main=\(Thread.isMainThread)")
+        }
         return size
     }
     private static func laidBox(of text: String, font: UIFont, maxWidth: CGFloat, lines: Int) -> CGSize {
@@ -258,9 +268,125 @@ struct MTLinkedText: UIViewRepresentable {
 
     /// The same measure the menu's words use ([C-1]): the box the lines actually occupy.
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: MTLinkTextView, context: Context) -> CGSize? {
-        let limit = max(proposal.width ?? MTMessageText.widestBubble, 1)
-        let box = MTMessageText.box(of: text, font: font, maxWidth: limit)
-        return CGSize(width: min(box.width, limit), height: max(box.height, ceil(font.lineHeight)))
+        MTMessageText.fitted(proposal, text: text, font: font)
+    }
+}
+
+/// A LONG LETTER IS DRAWN AWAY FROM THE MAIN THREAD (the author's words of 14.11.2026 01:35 UTC, «there are very long letters in
+/// this chat», and of the same night, «there must be no stalls at all»; decision 931: the look stays, a chat's letter never folds).
+/// Measured on T1, build 2394: SwiftUI drew such a letter as one text inside the main thread's commit at every appearance of
+/// its chat and at every leaving -- up to 275 ms in one frame, 19-22 of about 30 samples of each opening. Here the platform's
+/// tiled layer draws the same words through the TextKit stack that measures them (MTMessageText.box): tile by tile, on its own
+/// threads, only what the screen shows; the lines are laid out there too, once, and kept. The main thread draws nothing.
+enum MTTiledLetter {
+    /// From here a letter is long: a kilobyte of words is a dozen lines and more; under it SwiftUI's own text costs less than a frame.
+    static let bytes = 1024
+    static func isLong(_ s: String) -> Bool { bytes <= s.utf8.count }
+}
+
+/// The laid lines of one long letter at one width: a TextKit stack of its own, touched by one thread at a time.
+final class MTTiledLetterPage {
+    private let gate = NSLock()
+    private let storage: NSTextStorage
+    private let layout = NSLayoutManager()
+    private let container: NSTextContainer
+    private init(text: String, font: UIFont, ink: UIColor, width: CGFloat) {
+        storage = NSTextStorage(string: text, attributes: [.font: font, .foregroundColor: ink])
+        container = NSTextContainer(size: CGSize(width: width, height: 1_000_000))
+        container.lineFragmentPadding = 0
+        layout.addTextContainer(container)
+        storage.addLayoutManager(layout)
+    }
+    /// The lines under a tile: laid out for the first tile that asks, kept for every later one.
+    func draw(_ tile: CGRect) {
+        gate.lock(); defer { gate.unlock() }
+        let glyphs = layout.glyphRange(forBoundingRect: tile, in: container)
+        layout.drawGlyphs(forGlyphRange: glyphs, at: .zero)
+    }
+    /// A PAGE IS KEPT BY ITS INPUTS, as the box is: a chat opened again draws its tiles from lines already laid.
+    private static let pages: NSCache<NSString, MTTiledLetterPage> = {
+        let c = NSCache<NSString, MTTiledLetterPage>(); c.countLimit = 8; return c
+    }()
+    static func kept(text: String, font: UIFont, ink: UIColor, width: CGFloat) -> MTTiledLetterPage {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        _ = ink.getRed(&r, green: &g, blue: &b, alpha: &a)
+        let key = "\(font.fontName)/\(font.pointSize)/\(width)/\(r),\(g),\(b),\(a)/\(text)" as NSString
+        if let page = pages.object(forKey: key) { return page }
+        let page = MTTiledLetterPage(text: text, font: font, ink: ink, width: width)
+        pages.setObject(page, forKey: key)
+        return page
+    }
+}
+
+/// The platform's tiled layer: it asks for each tile on a thread of its own and keeps what it drew.
+final class MTTiledLetterTiles: CATiledLayer {
+    override class func fadeDuration() -> CFTimeInterval { 0 }   // the words stand at once, as drawn text does
+    private let gate = NSLock()
+    private var held: MTTiledLetterPage?
+    var page: MTTiledLetterPage? {
+        get { gate.lock(); defer { gate.unlock() }; return held }
+        set { gate.lock(); held = newValue; gate.unlock() }
+    }
+    override func draw(in ctx: CGContext) {
+        guard let page else { return }
+        UIGraphicsPushContext(ctx)
+        page.draw(ctx.boundingBoxOfClipPath)
+        UIGraphicsPopContext()
+    }
+}
+
+/// The view of a long letter's words: it holds what to draw and hands the tiles their page; it draws nothing itself.
+final class MTTiledLetterView: UIView {
+    override class var layerClass: AnyClass { MTTiledLetterTiles.self }
+    private var words: (text: String, font: UIFont, color: UIColor)?
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isOpaque = false
+        backgroundColor = .clear
+        isAccessibilityElement = true
+        accessibilityTraits = .staticText
+        layer.needsDisplayOnBoundsChange = true
+        (layer as? CATiledLayer)?.tileSize = CGSize(width: 1024, height: 1024)
+        // The ink follows the light and the dark: a new colour is a new page.
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (v: MTTiledLetterView, _: UITraitCollection) in v.setNeedsLayout() }
+    }
+    required init?(coder: NSCoder) { nil }
+    func show(_ text: String, _ font: UIFont, _ color: UIColor) {
+        if let w = words, w.font == font, w.color == color, w.text == text { return }
+        words = (text, font, color)
+        accessibilityLabel = text
+        setNeedsLayout()
+    }
+    /// The touch is never the words': the bubble's tap, the feed's hold, the reply swipe and the scroll keep all they had.
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool { false }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard let words, 1 < bounds.width, let tiles = layer as? MTTiledLetterTiles else { return }
+        tiles.contentsScale = max(traitCollection.displayScale, 1)
+        let page = MTTiledLetterPage.kept(text: words.text, font: words.font,
+                                         ink: words.color.resolvedColor(with: traitCollection), width: bounds.width)
+        if tiles.page !== page {
+            tiles.page = page
+            tiles.setNeedsDisplay()
+        }
+    }
+}
+
+/// The words of a long letter in the feed: the same words, font and colour as the drawn text of a short one.
+struct MTTiledLetterText: UIViewRepresentable {
+    let text: String
+    let font: UIFont
+    let color: UIColor
+    func makeUIView(context: Context) -> MTTiledLetterView {
+        let v = MTTiledLetterView()
+        v.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        v.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        return v
+    }
+    func updateUIView(_ v: MTTiledLetterView, context: Context) { v.show(text, font, color) }
+    /// The same measure every letter's words use ([C-1]): the box the lines actually occupy.
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: MTTiledLetterView, context: Context) -> CGSize? {
+        MTMessageText.fitted(proposal, text: text, font: font)
     }
 }
 

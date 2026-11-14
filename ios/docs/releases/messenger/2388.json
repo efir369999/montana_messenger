@@ -1,0 +1,32 @@
+{
+  "build": 2388,
+  "notes": {
+    "en": [
+      "One build number for Messenger and the Protocol: both are 2388, built from the same code.",
+      "Settings, Privacy: choose who may message you, call you, see your page and add you to groups and channels -- Everyone, My contacts or Nobody. Your phone obeys the choice.",
+      "Settings, Appearance: the time panel at the top or at the bottom of the screen. Messenger starts with it at the bottom, the Protocol at the top.",
+      "Each page shows only its own kind: Chats only personal chats, Groups only groups, Channels only channels.",
+      "The time panel is the same in the Protocol and in Messenger: Chats, Groups and Channels right of the logo; the globe is gone, and the logo's green ring says the phone is connected to the network. Music, the gallery and the network open from the side panel.",
+      "Please check: in Privacy set Who can message me to My contacts, and ask someone not in your contacts to write -- the letter does not arrive.",
+      "Please check: in Appearance switch the time panel to the other edge -- it moves, and the chats run under it."
+    ],
+    "ru": [
+      "Один номер сборки у Мессенджера и Протокола: обе -- 2388, из одного кода.",
+      "Настройки -- Приватность: выберите, кто может вам писать, звонить, видеть вашу страницу и добавлять вас в группы и каналы -- Все, Мои контакты или Никто. Выбор исполняет ваш телефон.",
+      "Настройки -- Оформление: панель времени сверху или снизу экрана. В Мессенджере по умолчанию снизу, в Протоколе сверху.",
+      "Каждая страница показывает только свой вид: в Чатах только личные чаты, в Группах только группы, в Каналах только каналы.",
+      "Панель времени одинакова в Протоколе и Мессенджере: справа от логотипа Чаты, Группы и Каналы; глобуса нет, зелёное кольцо логотипа означает подключение к сети. Музыка, галерея и сеть открываются из боковой панели.",
+      "Проверьте: в Приватности поставьте «Кто может мне писать» -- «Мои контакты» и попросите написать человека не из контактов -- письмо не приходит.",
+      "Проверьте: в Оформлении переставьте панель времени к другому краю -- она переезжает, и чаты идут под ней."
+    ],
+    "zh-Hans": [
+      "信使与协议使用同一构建号：均为 2388，来自同一份代码。",
+      "设置 -- 隐私：选择谁可以给您发消息、打电话、查看您的主页以及将您添加到群组和频道 -- 所有人、我的联系人或没有人。由您的手机执行此选择。",
+      "设置 -- 外观：时间面板位于屏幕顶部或底部。信使默认在底部，协议默认在顶部。",
+      "每个页面只显示自己的类型：聊天只显示个人聊天，群组只显示群组，频道只显示频道。",
+      "协议与信使的时间面板相同：标志右侧为聊天、群组和频道；地球图标已移除，标志的绿色圆环表示已连接到网络。音乐、图库和网络从侧边栏打开。",
+      "请检查：在隐私中将“谁可以给我发消息”设为“我的联系人”，请不在联系人中的人发消息 -- 消息不会送达。",
+      "请检查：在外观中将时间面板移到另一边 -- 面板随之移动，聊天在其下方滚动。"
+    ]
+  }
+}

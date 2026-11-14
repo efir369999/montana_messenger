@@ -1,0 +1,26 @@
+{
+  "build": 101,
+  "notes": {
+    "en": [
+      "The whole interface is now in Russian and Chinese as well as English.",
+      "The share sheet calls the app Montana Messenger, as the home screen does.",
+      "The icon is the Montana Messenger icon, the same as on the App Store page."
+    ],
+    "ru": [
+      "Весь интерфейс теперь и на русском, и на китайском, а не только на английском.",
+      "Меню «Поделиться» называет приложение Montana Messenger, как и домашний экран.",
+      "Иконка -- иконка Montana Messenger, та же, что на странице App Store."
+    ],
+    "zh-Hans": [
+      "整个界面现在除英文外，还有俄文和中文。",
+      "分享菜单将应用称为 Montana Messenger，与主屏幕一致。",
+      "图标为 Montana Messenger 图标，与 App Store 页面上的相同。"
+    ]
+  },
+  "security": {
+    "en": [
+      "Only the words a person reads, the name and the icon change.",
+      "No new server, network road or key leaving the device."
+    ]
+  }
+}

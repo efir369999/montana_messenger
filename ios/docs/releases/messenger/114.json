@@ -1,0 +1,19 @@
+{
+  "build": 114,
+  "notes": {
+    "en": [
+      "The app has one name everywhere: the permission questions no longer name it (the system already shows its name above them), and its iCloud folder is called Montana, as under the icon."
+    ],
+    "ru": [
+      "У приложения одно имя везде: вопросы о разрешениях больше не называют его (система и так пишет имя над ними), а папка в iCloud называется Montana, как под иконкой."
+    ],
+    "zh-Hans": [
+      "应用在各处只有一个名字：权限提示不再写出应用名（系统已在提示上方显示它），其 iCloud 文件夹名为 Montana，与图标下的名字一致。"
+    ]
+  },
+  "security": {
+    "en": [
+      "No new server, network road or key leaving the device. Each product's name is stated once (Code/Names.xcconfig: MT_NAME_PROTOCOL, MT_NAME_MESSENGER); the iCloud folder reads it, no purpose string names an app, and tools/mt-names-check.py (rules 8 and 9) holds the store page and the site to the same owner."
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "build": 133,
+  "notes": {
+    "en": [
+      "Montana Messenger no longer shows a folder of its own in the Files app. The folder held only the app's sealed chat logs and diagnostic files, which no other app can open, so it is gone.",
+      "Sending a file in a chat works as before: tap the attachment button, choose a file from Files or iCloud Drive in the system picker, and it is sent.",
+      "Please check: open the Files app and make sure there is no Montana Messenger folder under On My iPhone. Then send a document from Files or iCloud Drive in any chat and open it on the other side. Chats, groups, calls and Settings as usual."
+    ],
+    "ru": [
+      "Montana Messenger больше не показывает свою папку в приложении «Файлы». В ней лежали только запечатанные журналы чатов и файлы диагностики приложения, которые не открыть другим приложением, поэтому её больше нет.",
+      "Отправка файла в чат работает как прежде: нажмите кнопку вложения, выберите файл в «Файлах» или iCloud Drive в системном окне выбора, и он уйдёт.",
+      "Проверьте: откройте «Файлы» и убедитесь, что в разделе «На iPhone» нет папки Montana Messenger. Затем отправьте документ из «Файлов» или iCloud Drive в любом чате и откройте его на другой стороне. Чаты, группы, звонки и настройки -- как обычно."
+    ]
+  },
+  "security": {
+    "en": [
+      "No algorithm or key change. Code/Messenger/Info.plist drops UIFileSharingEnabled and LSSupportsOpeningDocumentsInPlace: iOS no longer lists the app's Documents in Files, so the sealed chat logs and the diary's files are not offered to anyone through Files (the author's word 18855). The files themselves, their sealing and where they live are unchanged; a file for a chat is still picked by the system document picker."
+    ]
+  }
+}
