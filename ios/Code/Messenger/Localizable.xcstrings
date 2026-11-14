@@ -18214,6 +18214,38 @@
         }
       }
     },
+    "Not on this phone yet": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока нет на этом телефоне"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未在此手机上"
+          }
+        }
+      }
+    },
+    "This file is kept on your other device with the same 24 words. It comes here when that device is online.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот файл хранится на вашем другом устройстве с теми же 24 словами. Он придёт сюда, когда то устройство будет в сети."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此文件保存在使用相同 24 个词的另一台设备上。该设备在线后，文件会传到这里。"
+          }
+        }
+      }
+    },
     "No phone number, no e-mail. Your identity comes from your secret phrase, and your chats are encrypted on your device.": {
       "localizations": {
         "ru": {

@@ -1,0 +1,20 @@
+{
+  "build": 2402,
+  "notes": {
+    "en": [
+      "A letter of yours that reached your other device without its signature, and stood there on the correspondent's side, moves to your side as soon as your own copy of it arrives.",
+      "Your other device now gives back every letter it is asked for, a pair's named letters too, and a file it could not hand over is tried again four times instead of being dropped; Saved Messages appears on a device that never wrote to itself.",
+      "Please check: write from the phone to a person and to Saved Messages, then open both on the Mac -- your letters stand on the right, theirs on the left, and the photo is in Saved Messages."
+    ],
+    "ru": [
+      "Ваше письмо, дошедшее до другого вашего устройства без подписи и вставшее там на сторону собеседника, переходит на вашу сторону, как только приходит ваша же копия этого письма.",
+      "Другое ваше устройство теперь отдаёт каждое запрошенное письмо, и именные письма пары тоже, а файл, который не удалось передать, пробует ещё четыре раза, а не теряет; Избранное появляется и на устройстве, которое само себе не писало.",
+      "Проверьте: напишите с телефона собеседнику и в Избранное, затем откройте оба чата на Маке -- ваши письма справа, его слева, фото в Избранном."
+    ],
+    "zh-Hans": [
+      "您的消息若未带签名到达您的另一台设备并显示在对方一侧，一旦您自己的副本到达，便会移到您这一侧。",
+      "您的另一台设备现在会交还每一条被请求的消息，包括双人聊天中有名称的消息；无法交出的文件会再尝试四次，而不是丢弃；从未给自己发过消息的设备上也会出现“收藏”。",
+      "请检查：用手机给联系人和“收藏”发消息，然后在 Mac 上打开这两个聊天——您的消息在右侧，对方的在左侧，照片在“收藏”中。"
+    ]
+  }
+}

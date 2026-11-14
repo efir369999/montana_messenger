@@ -3845,6 +3845,17 @@ struct Message: Identifiable, Codable {
         self.fwdFrom = fwdFrom
         self.forwarded = forwarded
     }
+    /// THE SAME ROW ON THE PERSON'S OWN SIDE (ChatStore.takeMySide): the side is a constant of a row, so the row walks the one
+    /// road a row is kept and read by -- written, the side changed, read back -- and is born again mine, read and sent (its
+    /// first rung is a birth's, P-13); every other field stays as it stood.
+    func onMySide() -> Message? {
+        guard let d = try? JSONEncoder().encode(self), var o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] else { return nil }
+        o[CodingKeys.isFromMe.rawValue] = true
+        o[CodingKeys.isRead.rawValue] = true
+        o[CodingKeys.deliveryStatus.rawValue] = DeliveryStatus.sent.rawValue
+        guard let back = try? JSONSerialization.data(withJSONObject: o) else { return nil }
+        return try? JSONDecoder().decode(Message.self, from: back)
+    }
 
     // safe reading of saved messages (new fields may be absent)
     enum CodingKeys: String, CodingKey { case id, text, isFromMe, time, reactions, replyText, isRead, imageFile, videoFile, audioFile, audioDuration, docFile, docName, deliveryStatus, edited, msgId, senderRef = "senderAddress", createdAt, replyToId, transport, linkPreview, statusAt, forwarded, groupKey, groupIndex, groupCount, myReact, peerReact, lost, heard, authorTag = "au" }

@@ -1613,6 +1613,13 @@ struct ChatConversationView: View {
         .overlay { MTApps.coins?.flowBegins(tick: flowBegun) }
         #endif
         .safeAreaInset(edge: .top) { if selectingMsgs { selectionTopBar } }
+        // THE TWIN'S SILENCE (OZ 1 p.1.4.2): the file of a Saved Messages row is kept on the seed's other device and has not come yet.
+        .alert("Not on this phone yet", isPresented: Binding(
+            get: { chat.name == savedMessagesKey && store.twinSilent != nil },
+            set: { if !$0 { store.twinSilent = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: { Text("This file is kept on your other device with the same 24 words. It comes here when that device is online.") }
         #if !MONTANA_MESSENGER   // no coins in Messenger (cut C6)
         .alert(coinSaid(.short), isPresented: $coinRefused) {
             Button("OK", role: .cancel) {}

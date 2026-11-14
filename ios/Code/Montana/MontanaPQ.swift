@@ -1191,9 +1191,11 @@ extension MontanaArchive {
     /// The rows of a conversation the archive holds and the feed does not: asked once, two hundred at most a round.
     /// THE NAME OF ONE ASK, ONE OWNER: the ask and its undoing read it here. Saved Messages asks under a name of its own since 2397
     /// (the author's word 21972): before it the other device gave back no named row of Saved Messages, and the rows asked then
-    /// stood «asked» for ever -- a new name asks them once more of a device that now answers.
+    /// stood «asked» for ever -- a new name asks them once more of a device that now answers. Every conversation asks under 2402's
+    /// name (OZ 1, the critic of 22541): before it the other device gave back no named row of a pair, and the six rows the Mac
+    /// asked of T1 (archive_gap 21:20 missing=6) stood «asked» for ever.
     nonisolated private static func askedName(_ chat: String, _ s: Int, _ h: String) -> String {
-        (chat == savedMessagesKey ? chat + "#2397" : chat) + "/" + String(s) + "/" + h
+        chat + "#2402/" + String(s) + "/" + h
     }
     nonisolated static func askTwin(chat: String, items: [(s: Int, m: Bool, h: String)]) {
         var asked = Set(askedKeys)
@@ -1229,15 +1231,28 @@ extension MontanaArchive {
         o["k"] = f.kind; o["f"] = f.name
         if let n = f.docName { o["n"] = n }
         if 0 < f.duration { o["d"] = f.duration }
+        // NO ROW IS LOST IN SILENCE (OZ 1, the critic of 22541): a row whose file this device does not hold is given as words with
+        // its file's name -- the twin lays it and says the file it has not been given (2401) -- and a file the nodes refused is laid
+        // again, four tries over twelve minutes, each said.
         let url = MontanaMediaStore.url(f.name)
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            guard let d = try? JSONSerialization.data(withJSONObject: o), let js = String(data: d, encoding: .utf8) else { return }
+            mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at))
+            return MontanaTrace.mark("twin_answer", mid: mid, "no file here -- the row is given without it")
+        }
         let given = o
         Task.detached(priority: .utility) {
-            guard let road = await MTKeeping.lay(url) else { return MontanaTrace.mark("twin_answer", "a file did not reach the nodes") }
-            var all = given
-            all["road"] = road
-            guard let d = try? JSONSerialization.data(withJSONObject: all), let js = String(data: d, encoding: .utf8) else { return }
-            mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at))
+            for (n, wait) in ([0, 30, 120, 600] as [UInt64]).enumerated() {
+                if 0 < wait { try? await Task.sleep(nanoseconds: wait * 1_000_000_000) }
+                guard let road = await MTKeeping.lay(url) else {
+                    MontanaTrace.mark("twin_answer", mid: mid, "a file did not reach the nodes try=\(n + 1)")
+                    continue
+                }
+                var all = given
+                all["road"] = road
+                guard let d = try? JSONSerialization.data(withJSONObject: all), let js = String(data: d, encoding: .utf8) else { return }
+                return mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at))
+            }
         }
     }
 

@@ -120,8 +120,10 @@ final class MontanaDeliveryEngine {
             MontanaTrace.markFolded("rx_own", "word of another device of these words kind=\(kind) -- applied to nobody", window: 30, key: kind)
             return
         }
+        // MY LETTER THAT LANDED ON THEIR SIDE TAKES MINE (OZ 1 p.1.1, ChatStore.takeMySide): the same name, now said mine by the
+        // seed's own word, turns the standing row instead of being refused as a copy.
         guard store.messages[from]?.contains(where: { $0.msgId == sid }) != true else {
-            MontanaTrace.mark("rx_own", mid: mid, "the row already stands")
+            MontanaTrace.mark("rx_own", mid: mid, store.takeMySide(from, sid: sid, text: text) ? "the row stood on their side -- now mine" : "the row already stands")
             return
         }
         // A letter my other device took away stays away, whichever of its two words came first; one born before the

@@ -47,6 +47,9 @@ class ChatStore: ObservableObject {
     // the FIRST message of the chat, then the list repainted).
     @Published var listState: [String: [String: String]] = [:]
     private var listStateLoaded = false
+    /// THE TWIN'S SILENCE (OZ 1 p.1.4.2): the Saved Messages row whose file the seed's other device has not given -- the plaque says
+    /// where the file is instead of the tap doing nothing. Set by askKeptFile, cleared by the plaque's own button.
+    @Published var twinSilent: String?
     func loadListStateOnce() {
         guard !listStateLoaded else { return }
         listStateLoaded = true
@@ -212,6 +215,10 @@ class ChatStore: ObservableObject {
         if let last = arr.last, !ChatStore.before(row, last) { arr.append(row) }
         else { arr.insert(row, at: arr.firstIndex(where: { ChatStore.before(row, $0) }) ?? arr.count) }
         messages[chat] = arr
+        // EVERY ROW'S BIRTH SAYS ITS SIDE AND ITS MOMENT (OZ 1 p.1.1, the author's word 22333: «on the Mac my replies and the
+        // correspondent's letters both stand on the left»): no line said on which side a row was born, so the screen could not be
+        // read back from the diary; the road that brought it is the line before this one.
+        MontanaTrace.mark("row_born", mid: String(row.mid.dropFirst(4)), "chat=\(String(chat.prefix(10))) mine=\(row.isFromMe ? 1 : 0) at=\(hhmm(at: row.createdAt))")
         return row
     }
     /// THE ONE WAY A ROW LEAVES THE FEED ([C-1], the author's word 19.09: Saved Messages wore a
@@ -1741,11 +1748,23 @@ class ChatStore: ObservableObject {
         // for the row by its archive key (MontanaArchive.askTwin) and gives the file by the cargo road (giveTwinRows, takeTwinRow).
         if hit.0 == savedMessagesKey {
             guard mayAskKeptFile("twin:" + sid) else {
-                MontanaTrace.mark("kept_file", mid: sid, "a Saved Messages row asked its twin within the span -- nothing sent")
+                MontanaTrace.mark("kept_file", mid: sid, "a Saved Messages row asked its twin within the span -- the plaque says where the file is")
+                Task { @MainActor in self.twinSilent = sid }
                 return
             }
             MontanaArchive.askTwin(chat: hit.0, items: [(Int(hit.1.createdAt), hit.1.isFromMe, MontanaArchive.rowHash(Self.archivedText(hit.1) ?? ""))])
             MontanaTrace.mark("kept_file", mid: sid, "a Saved Messages row asks the seed's other device for its file")
+            // The twin answers within seconds when it is awake; a file still missing after the wait is the twin's silence, and the
+            // person is told where the file is kept (the plaque), not left with a tap that did nothing.
+            let file = kept.file
+            Task { @MainActor [weak self] in
+                for _ in 0..<15 {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    if MontanaMediaStore.exists(file) { return }
+                }
+                self?.twinSilent = sid
+                MontanaTrace.mark("kept_file", mid: sid, "the seed's other device gave no file within the wait -- the plaque stands")
+            }
             return
         }
         // A RESTORED ROW ASKS BY ITS FILE'S SEAL (OZ 2 p.1.1, the author's words 22141, 22151): its arc: name lives on this phone
@@ -3520,6 +3539,12 @@ class ChatStore: ObservableObject {
                 return r
             }
         }
+        let left = settleUnread(chat)
+        MontanaTrace.mark("twin_read", "chat=\(String(chat.prefix(10))) left=\(left)")
+    }
+    /// The count of a conversation follows the letters of theirs left unread in it, and its banners leave with the last one.
+    @discardableResult
+    private func settleUnread(_ chat: String) -> Int {
         let left = messages[chat]?.filter { m in !m.isFromMe && !m.isRead }.count ?? 0
         if left == 0, forcedUnread.contains(chat) { forcedUnread.remove(chat) }
         if !forcedUnread.contains(chat), unreadCounts[chat] != (left == 0 ? nil : left) {
@@ -3527,7 +3552,25 @@ class ChatStore: ObservableObject {
             ChatStore.updateBadge(unreadCounts, missed: missedCallsUnseen)
         }
         if left == 0 { MontanaNotify.removeBanners(chat: chat) }
-        MontanaTrace.mark("twin_read", "chat=\(String(chat.prefix(10))) left=\(left)")
+        return left
+    }
+    /// MY LETTER THAT STOOD ON THEIR SIDE TAKES MINE (OZ 1 p.1.1, the author's word 22333): the box gives a letter its side by its
+    /// author field (MTPipeKey.authorHolds), and a letter of mine that rode unsigned -- its device had not yet derived the author
+    /// key, or an older build wrote it -- landed here as the correspondent's, on the left, and the seed's own word for the same
+    /// name met «the row already stands». The seed's word is the truth: the row keeps every field, stands on my side, read, and
+    /// the count follows. Only the same words turn (the critic of 1217): a correspondent who sent a letter under the name of
+    /// mine before my copy came would else stand on my side with their own words; such a row stays theirs, said.
+    func takeMySide(_ chat: String, sid: String, text: String) -> Bool {
+        guard let i = messages[chat]?.firstIndex(where: { $0.msgId == sid }), let old = messages[chat]?[i], !old.isFromMe else { return false }
+        guard old.text == text else {
+            MontanaTrace.mark("rx_own", mid: String(sid.dropFirst(4)), "their row under my letter's name holds other words -- it stays theirs")
+            return false
+        }
+        guard let mine = old.onMySide() else { return false }
+        messages[chat]?[i] = mine
+        _ = MTRowJournal.put(chat, mine)
+        settleUnread(chat)
+        return true
     }
 
     /// THE SEED'S OTHER DEVICE ASKS FOR ROWS ITS ARCHIVE HOLDS AND ITS FEED DOES NOT (MontanaArchive.askTwin): each row held here
@@ -3542,10 +3585,11 @@ class ChatStore: ObservableObject {
             want.insert(String(sec) + "|" + String(side) + "|" + h)
         }
         var given = 0
-        // A NAMED LETTER OF SAVED MESSAGES IS GIVEN BACK TOO (the author's word 21972, 14.11.2026: «sent to Saved from T1, nothing
-        // on the Mac»): a pair's named letter rode the mirror at its birth, so only the nameless past was asked here; a letter to
-        // Saved Messages rode no mirror before 2397, and the Mac asked for it (twin_ask chat=Saved Mess) and was given nothing.
-        for m in rows where !m.mid.hasPrefix("mid:") || chat == savedMessagesKey {
+        // EVERY ROW ASKED IS GIVEN BACK BY ITS NAME (the author's word 21972, 14.11.2026: «sent to Saved from T1, nothing on the
+        // Mac»; OZ 1, the critic of 22541): a named letter of Saved Messages rode no mirror before 2397, and a pair's named letter
+        // that rode it and was lost on the way stood missing on the Mac for good (archive_gap 21:20 feed=7 archive=25 missing=6) --
+        // the asker asks only what its feed lacks, and takeTwinRow lays no second row of a name or archive key.
+        for m in rows {
             guard 0 < m.createdAt, let t = Self.archivedText(m),
                   want.contains(String(Int(m.createdAt)) + "|" + (m.isFromMe ? "1" : "0") + "|" + MontanaArchive.rowHash(t)) else { continue }
             giveToTwin(chat, m)
@@ -3564,7 +3608,8 @@ class ChatStore: ObservableObject {
     /// device of the seed. The archive already holds the row: it is not written there twice.
     func takeTwinRow(_ chat: String, mid: String, own: Bool, at: Double, body: String) {
         guard let d = body.data(using: .utf8), let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any],
-              0 < at, !mid.isEmpty, let rows = messages[chat], !rows.contains(where: { m in m.mid == mid }), !buried(mid, in: chat) else { return }
+              0 < at, !mid.isEmpty, let rows = messages[chat] ?? savedBirth(chat), !rows.contains(where: { m in m.mid == mid }),
+              !buried(mid, in: chat) else { return }
         let text = o["t"] as? String ?? "", sr = o["sr"] as? String
         var row = Message(text: text, isFromMe: own, time: hhmm(at: at), isRead: true, deliveryStatus: .delivered,
                           msgId: mid, senderRef: sr, createdAt: at, transport: "node")
@@ -3599,11 +3644,15 @@ class ChatStore: ObservableObject {
                 return MontanaTrace.mark("twin_row", "a file did not come whole -- asked again at the next gap")
             }
             await MainActor.run { [weak self] in
-                guard let self, let now = self.messages[chat], !now.contains(where: { m in m.mid == mid }), !self.buried(mid, in: chat) else { return }
+                guard let self, let now = self.messages[chat] ?? self.savedBirth(chat), !now.contains(where: { m in m.mid == mid }),
+                      !self.buried(mid, in: chat) else { return }
                 if lays { self.layTwinRow(chat, row) } else { self.bump(chat) }   // a standing row only wears its file now
             }
         }
     }
+    /// SAVED MESSAGES IS BORN BY THE TWIN'S ROW (OZ 1, the critic of 22541): a device that never wrote to itself holds no Saved
+    /// Messages, and the row its twin gave left silently; a person's conversation is born only by its pipe, never here.
+    private func savedBirth(_ chat: String) -> [Message]? { chat == savedMessagesKey ? [] : nil }
     private func layTwinRow(_ chat: String, _ row: Message) {
         let placed = placeRow(chat, row)
         _ = MTRowJournal.put(chat, placed)
