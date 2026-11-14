@@ -371,18 +371,15 @@ struct ChatsListView: View {
             // a refused permission -- are gone; the crossed speaker and the crossed people stay, each with its own way.
             barSlot(0) {
                 if let url = release.updateURL { UIApplication.shared.open(url) }
-                else if MTNotifyAllowed.shared.refused { openNotifications() }
                 else if keep.offShown { ui.overlayPage = .keeping }
                 else { openDrawer() }
             } label: {
-                Image(systemName: release.updateURL != nil ? "arrow.down.circle.fill" :
-                      (MTNotifyAllowed.shared.refused ? "speaker.slash" : (keep.offShown ? "person.2.slash" : UIState.Glyph.drawer)))
+                Image(systemName: release.updateURL != nil ? "arrow.down.circle.fill" : (keep.offShown ? "person.2.slash" : UIState.Glyph.drawer))
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(MontanaOctagon.barGlyph)
             }
             .accessibilityLabel(release.updateURL != nil ? Text("Update Montana") :
-                                (MTNotifyAllowed.shared.refused ? Text("Notifications are off") :
-                                 (keep.offShown ? Text("Keep my copy with my contacts") : Text("App Library"))))
+                                (keep.offShown ? Text("Keep my copy with my contacts") : Text("App Library")))
             .task { await release.refresh() }
             // The contacts, left of the logo (the author's word 19.09).
             barSlot(Self.contactsSlot) { withAnimation(.easeInOut(duration: 0.2)) { ui.pane = .contacts } } label: {
@@ -410,6 +407,17 @@ struct ChatsListView: View {
                     // THE BADGE ON THE TIME PANEL (the author's word 17.09): the unread chats and the missed calls, on the logo while
                     // folded, on the chats and the calls glyphs while unfolded. No sending mark on the logo (the author's word 29.09).
                     .overlay(alignment: .topTrailing) { if !barOpen { glyphBadge(panelBadge) } }
+            }
+            // THE MUTED SOUND IS A BADGE OVER THE LOGO, NOT A BUTTON TAKEN (the author's word 21970, 14.11.2026, a picture of the
+            // Mac: «remove the replacement of this button and make the notice of the sound turned off appear over the time logo
+            // as a badge»). The first slot keeps its own glyph and way whatever the system answered; while the notifications are
+            // refused, a small crossed speaker stands over the logo's top-leading edge and opens the notifications' page.
+            .overlay(alignment: .top) {
+                if MTNotifyAllowed.shared.refused {
+                    Button { openNotifications() } label: { MTMutedBadge().offset(x: -16, y: -4) }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Notifications are off"))
+                }
             }
             // The chats, right of the logo (the author's word 19.09): an outline, as every page's glyph (UIState.Glyph).
             barSlot(Self.chatsSlot) { withAnimation(.easeInOut(duration: 0.2)) { ui.pane = .chats } } label: {

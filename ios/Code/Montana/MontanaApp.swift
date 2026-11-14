@@ -1709,6 +1709,9 @@ final class MontanaTelemetry {
         // the run, it must not become a record of the person.
         MontanaTrace.mark("audit_launch",
             "identity=\(MontanaSeed.hasSeed ? 1 : 0) bundle=\(Bundle.main.bundleIdentifier ?? "?")")
+        // NO PERSON, NO ROW AND NO PLATE (the author's word 21886 p.2): asked only of a readable keychain -- before the first
+        // unlock a person's seed reads as none, and their rows must stand.
+        if UIApplication.shared.isProtectedDataAvailable, !MontanaSeed.hasSeed, !MTSeats.anyParked { MontanaWakePush.leaveDoorsWithoutPerson() }
         DispatchQueue.global(qos: .utility).async {
             MontanaTrace.mark("audit_canon",
                 "pipe=\(MTPipe.agreesWithCanon() ? 1 : 0) knock=\(MontanaFirstContact.agreesWithCanon() ? 1 : 0) heal=\(MTPipeHealKeys.agree() ? 1 : 0)")

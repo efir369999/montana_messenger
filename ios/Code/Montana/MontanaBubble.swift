@@ -554,7 +554,10 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             // A MOVING PICTURE IS STOPPED OR PLAYED BY THE FINGER, NOT OPENED (the author's word 23.09): a tap on
             // a playing one stops it on its frame, a tap on a standing one plays three cycles. The state is the
             // book's (MTGifPlay), by the file, so no rebuild of this bubble can reset it.
-            if MontanaGif.isGif(message.docName ?? df) || MontanaGif.isGif(df) {
+            // A GIF WITHOUT ITS FILE IS ASKED FOR, NOT PLAYED (the author's words 22062, 22098, 14.11.2026: «every phone is a keeper»;
+            // T1 after the reinstall held no GIF file, and a tap only toggled the play of nothing). Without its file the tap takes the
+            // document's road -- onTapDoc asks the letter's keeper again (retryOneMedia, askKeptFile), as every other kind does.
+            if MontanaGif.isGif(message.docName ?? df) || MontanaGif.isGif(df), MTMediaPlace.onDisk(df) {
                 let playing = MTGifPlay.shared.toggle(attachmentURL(df))
                 MontanaTrace.markFolded("gif_tap", playing ? "playing three cycles" : "stopped", window: 10)
                 return

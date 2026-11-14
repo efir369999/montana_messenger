@@ -1873,6 +1873,10 @@ class ChatStore: ObservableObject {
         }
         #endif
         if st == .sending { restartSend(chat, i) } else { advance(chat, i, to: st) }
+        // A FILE OF SAVED MESSAGES REACHES THE SEED'S OTHER DEVICES AS ITS WORDS DO (the author's word 21972, 14.11.2026): its media
+        // road ends here «sent» with no correspondent, and the row is given to the twin by its name -- here, where every media road
+        // settles, and not inside the shared road itself (tools/mt-commitmsg-check.py: a change there is proven on every kind).
+        if st == .sent, chat == savedMessagesKey, let row = messages[chat]?.first(where: { $0.attachment?.file == file }) { giveToTwin(chat, row) }
     }
     /// A media row of mine refused by a word (MTRefusal) -- the media roads' one road into red.
     @MainActor
@@ -3444,14 +3448,22 @@ class ChatStore: ObservableObject {
             want.insert(String(sec) + "|" + String(side) + "|" + h)
         }
         var given = 0
-        for m in rows where !m.mid.hasPrefix("mid:") {
+        // A NAMED LETTER OF SAVED MESSAGES IS GIVEN BACK TOO (the author's word 21972, 14.11.2026: «sent to Saved from T1, nothing
+        // on the Mac»): a pair's named letter rode the mirror at its birth, so only the nameless past was asked here; a letter to
+        // Saved Messages rode no mirror before 2397, and the Mac asked for it (twin_ask chat=Saved Mess) and was given nothing.
+        for m in rows where !m.mid.hasPrefix("mid:") || chat == savedMessagesKey {
             guard 0 < m.createdAt, let t = Self.archivedText(m),
                   want.contains(String(Int(m.createdAt)) + "|" + (m.isFromMe ? "1" : "0") + "|" + MontanaArchive.rowHash(t)) else { continue }
-            let file = m.attachment.map { a in (kind: a.kind, name: a.file, docName: m.docName, duration: m.audioDuration) }
-            MontanaArchive.giveTwin(chat: chat, mid: m.mid, text: m.text, own: m.isFromMe, at: m.createdAt, senderRef: m.senderRef, file: file)
+            giveToTwin(chat, m)
             given += 1
         }
         MontanaTrace.mark("twin_answer", "chat=\(String(chat.prefix(10))) asked=\(want.count) given=\(given)")
+    }
+    /// ONE ROW TO THE SEED'S OTHER DEVICES, BY ITS NAME: its words, and its file by the cargo road (MontanaArchive.giveTwin). The
+    /// answer to the twin's ask and the birth of a letter in Saved Messages give a row this one way.
+    func giveToTwin(_ chat: String, _ m: Message) {
+        let file = m.attachment.map { a in (kind: a.kind, name: a.file, docName: m.docName, duration: m.audioDuration) }
+        MontanaArchive.giveTwin(chat: chat, mid: m.mid, text: m.text, own: m.isFromMe, at: m.createdAt, senderRef: m.senderRef, file: file)
     }
     /// A ROW THE SEED'S OTHER DEVICE GAVE BACK: laid by its own birth, once -- never over a row of the same name or the same archive
     /// key standing here, never over its tombstone; a file comes by the cargo road into the store under the name it bears on every
@@ -7031,6 +7043,9 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
                           createdAt: Double(minted.ms) / 1000.0, replyToId: replyToId,
                           transport: MontanaPhoneNode.shared.transport(to: convRef ?? chat)?.rawValue)
         append(chat, msg)
+        // SAVED MESSAGES REACH THE SEED'S OTHER DEVICES AT THEIR BIRTH (the author's word 21972): the room has no wire, so no queue
+        // and no mirror carried its letter -- the Mac of the same seed never saw what T1 wrote there. It rides the twin's own road.
+        if chat == savedMessagesKey { giveToTwin(chat, msg) }
         #if !MONTANA_MESSENGER
         if Self.isMeshRoom(chat) { MTApps.mesh?.say(text) }   // the mesh wall's words ride the radio to everyone on the mesh (29.09)
         #endif

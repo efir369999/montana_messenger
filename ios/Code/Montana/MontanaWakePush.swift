@@ -3464,6 +3464,22 @@ enum MontanaWakePush {
         }
     }
 
+    /// A PHONE WITH NO PERSON KEEPS NO ROW (T1 14.11.2026, Messenger 2394, the author's word 21886 p.2: «on the app deleted and just
+    /// installed a notification hangs -- not even signed in»). The keychain outlives the app: the reinstall found the last install's
+    /// token (wakepush_token changed=0) with no seed beside it, so the install boundary forgot no one and withdrew nothing, every
+    /// notify machine went on ringing the token for the forgotten person, and the extension, holding no key, laid its quiet plate,
+    /// which no drain of a person ever takes off. A launch with no person withdraws the rows of the token it finds and forgets the
+    /// token once every door has said yes; the plates already laid leave the screen. A person who signs in registers anew.
+    static func leaveDoorsWithoutPerson() {
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        let had = [ownTokenKey, voipTokenKey].filter { MontanaKeychain.get($0) != nil }
+        guard !had.isEmpty else { return }
+        withdrawTokenRowsEverywhere { every in
+            MontanaTrace.mark("wakepush_unreg", "no person every=\(every ? 1 : 0) keys=\(had.count)")
+            if every { had.forEach { MontanaKeychain.delete($0) } }
+        }
+    }
+
     /// Letters the extension stored from pushes — into the chat by the same reception road as
     /// any incoming (.montanaIncoming, mid dedup at the receiver). Called on activation.
     /// A long letter whose blob is not yet reachable waits in the inbox like any pushed letter.

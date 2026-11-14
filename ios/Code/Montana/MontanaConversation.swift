@@ -1307,7 +1307,14 @@ struct ChatConversationView: View {
             guard earReply else { MontanaTrace.mark("voice_ear_reply", "left before the tone ended"); return }
             if UIDevice.current.proximityState {
                 MTHoldOverlayState.shared.previewFile = nil   // a new tape was never heard
-                rec.begin(.voice, why: "ear"); MontanaTrace.mark("voice_ear_reply", "record")
+                // A TAPE WITH NO FINGER STANDS LOCKED FROM ITS FIRST SECOND (T1 13.11.2026 14:38 UTC, the author's word 21886
+                // p.1: «at the ear, no recording, and the buttons vanished from the bar»). Begun at the ear the tape rolled in
+                // the held shape with no finger to hold it: the strip covered the field and the crown stood hidden (it rises for
+                // a finger or a lock, MTHoldOverlayState.settle), so its controls came only with the lock taken when the phone
+                // left the ear -- a far the page did not hear left a tape with no bin, no arrow and no field. The lock is taken
+                // at once, as for a tape the app folded under (a refused begin leaves nothing to lock); leaving the ear pauses it.
+                rec.begin(.voice, why: "ear"); rec.lock(why: "ear")
+                MontanaTrace.mark("voice_ear_reply", "record")
             }
             else { MontanaTrace.mark("voice_ear_reply", "far after the tone"); endEarReply() }
         }

@@ -2254,18 +2254,26 @@ enum MTMediaPlace {
             if got { DispatchQueue.main.async { moved.send(name) } }
         }
     }
+    /// THE LOOK TELLS WHOM IT ANSWERS (the author's words 22009, 22055-22064, 14.11.2026: a GIF stood as a dark plate in the
+    /// Messenger on T1, T2 and T3 while its file lay whole on the phone). A body asked while the launch's look was on its way was
+    /// answered 0; the look then wrote the name as present, and the name's own probe found it already written and told no one --
+    /// was == v. A picture or a video asks again by itself; a GIF only listens, and in the Messenger nothing else draws its bubble
+    /// again, so it stood dark for good. A name the look learns while someone asked it is told, as a probe tells it.
     private static func list() {
         let fm = FileManager.default
         let files = (try? fm.contentsOfDirectory(atPath: MontanaMediaStore.dir.path)) ?? []
         let pics = (try? fm.contentsOfDirectory(atPath: MontanaPictures.dir.path)) ?? []
         let tail = ".poster.jpg"
+        var learnt: [String] = []
         lock.lock()   // LOCK-OK: a word in memory
-        for f in files where !f.hasPrefix(".") && known[f] == nil { known[f] = 2 }
+        for f in files where !f.hasPrefix(".") && known[f] == nil { known[f] = 2; learnt.append(f) }
         for p in pics where p.hasSuffix(tail) {
             let n = String(p.dropLast(tail.count))
-            if known[n] == nil { known[n] = 1 }
+            if known[n] == nil { known[n] = 1; learnt.append(n) }
         }
+        let asked = learnt.filter { asking.contains($0) || askedAt[$0] != nil }
         lock.unlock()
+        if !asked.isEmpty { DispatchQueue.main.async { asked.forEach { moved.send($0) } } }
     }
     private static func probe(_ name: String) {
         let fm = FileManager.default
@@ -3532,17 +3540,21 @@ enum MontanaEarTone {
     private static var player: AVAudioPlayer?
     static func play() {
         let rate = 44_100.0
-        // ONE DULL LOW NOTE (the author's word 16.09: as a dictaphone marks the start of a tape —
-        // duller and quieter than the three bright notes that stood here): 320 Hz, a seventh of a
-        // second, a soft rise and a long fall, an eighth of the amplitude.
-        let notes: [(hz: Double, s: Double)] = [(320, 0.14)]
+        // THE DICTAPHONE'S OWN START (the author's word 21984, 14.11.2026: «a short, dull bell, pleasant to the ear, as the native one
+        // of Apple's Voice Memos, that my voice message began»; before it 16.09: duller than three bright notes). The one note of 320 Hz
+        // at an eighth of the amplitude stood under the hearing at the receiver. Two soft notes upward, as the recorder's start sounds
+        // -- A4 then D5, 70 and 130 ms -- each struck softly and dying fast, a quiet second harmonic for warmth, no bright edge.
+        let notes: [(hz: Double, s: Double)] = [(440, 0.07), (587.33, 0.13)]
         var samples: [Int16] = []
         for n in notes {
             let count = Int(rate * n.s)
             for i in 0..<count {
                 let t = Double(i) / rate
-                let env = min(1, Double(i) / 900, Double(count - i) / 3000)   // no clicks, no edge at all
-                samples.append(Int16(sin(2 * .pi * n.hz * t) * 0.12 * env * 32767))
+                let attack = min(1, Double(i) / 220)                     // 5 ms: struck, never clicked
+                let tail = min(1, Double(count - i) / 400)               // the last 9 ms close to silence
+                let env = attack * tail * exp(-t * 18)                   // the strike dies fast: dull, not ringing
+                let wave = sin(2 * .pi * n.hz * t) + 0.18 * sin(4 * .pi * n.hz * t)
+                samples.append(Int16(wave * 0.36 * env * 32767))
             }
         }
         player = try? AVAudioPlayer(data: MontanaWAV.pcm16Mono(samples, rate: Int(rate)))

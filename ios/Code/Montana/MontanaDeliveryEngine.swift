@@ -833,8 +833,17 @@ final class MontanaDeliveryEngine {
     /// it changes and the disk takes it once, after the line's turn; a copy of a forgotten person's era is never written back.
     private var held: [Item]?
     private var heldEra = -1
-    private var flushQueued = false
+    private var flush: DispatchWorkItem?
     private var unwritten = 0
+    /// The names the disk holds since the last write: a name it lacks is a letter born since, written at once.
+    private var writtenMids = Set<String>()
+    /// THE DISK TAKES A REMOVAL WITHIN TEN SECONDS, A BIRTH AT ONCE (OZ 2 p.1.4, the author's word 21967, 14.11.2026: «the Protocol
+    /// on the Mac hangs and hangs the computer today»). The Mac on 2394 (iMac, 8 GB): a queue of 44 letters weighing 9.1 MB sealed
+    /// whole about sixty times a minute (queue_written n=60), 2148 MB written in MetricKit's report, 23 of its 26 samples in
+    /// MTOutbox.write from here -- each receipt that took one letter off wrote the whole file again. A letter born must reach the
+    /// disk before anything (a run that dies must not lose it); a letter taken off may wait: a run that dies before the write tries
+    /// it once more, and the receiver keeps one copy by its name.
+    private static let quietWrite: TimeInterval = 10
     /// What a reader off the line sees: the line's newest copy, handed over under a lock that guards one assignment.
     private let shown = NSLock()
     private var shownCopy: (era: Int, items: [Item])?
@@ -910,16 +919,20 @@ final class MontanaDeliveryEngine {
         }
         hold(a)
         unwritten += 1
-        guard !flushQueued else { return }
-        flushQueued = true
-        q.async { [self] in
-            flushQueued = false
+        let born = a.contains { !writtenMids.contains($0.mid) }
+        if flush != nil, !born { return }   // a write already waits, and nothing new was born
+        flush?.cancel()
+        let w = DispatchWorkItem { [self] in
+            flush = nil
             guard let items = held else { return }
             guard heldEra == MTOutbox.era else { hold(nil); return }   // the person was forgotten: nothing of theirs goes back
             MontanaTrace.markFolded("queue_written", "items=\(items.count) changes=\(unwritten)", window: 60)
             unwritten = 0
             persist(items)
+            writtenMids = Set(items.map(\.mid))
         }
+        flush = w
+        q.asyncAfter(deadline: .now() + (born ? 0 : Self.quietWrite), execute: w)
     }
     /// A TRY IS COUNTED, NOT WRITTEN (15.10.2026, iPhone 17 Pro Max on 2210: 1073.75 MB written in 28 minutes, the system's
     /// disk-writes report; 23 of our 35 write samples sealed the whole queue in MTOutbox.write from here). A try moves only the

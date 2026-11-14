@@ -1189,12 +1189,18 @@ extension MontanaArchive {
         SHA256.hash(data: Data(archived.utf8)).prefix(8).map { b in String(format: "%02x", b) }.joined()
     }
     /// The rows of a conversation the archive holds and the feed does not: asked once, two hundred at most a round.
+    /// THE NAME OF ONE ASK, ONE OWNER: the ask and its undoing read it here. Saved Messages asks under a name of its own since 2397
+    /// (the author's word 21972): before it the other device gave back no named row of Saved Messages, and the rows asked then
+    /// stood «asked» for ever -- a new name asks them once more of a device that now answers.
+    nonisolated private static func askedName(_ chat: String, _ s: Int, _ h: String) -> String {
+        (chat == savedMessagesKey ? chat + "#2397" : chat) + "/" + String(s) + "/" + h
+    }
     nonisolated static func askTwin(chat: String, items: [(s: Int, m: Bool, h: String)]) {
         var asked = Set(askedKeys)
-        let fresh = Array(items.filter { i in !asked.contains(chat + "/" + String(i.s) + "/" + i.h) }.prefix(200))
+        let fresh = Array(items.filter { i in !asked.contains(askedName(chat, i.s, i.h)) }.prefix(200))
         guard !fresh.isEmpty, let d = try? JSONSerialization.data(withJSONObject: ["i": fresh.map { i in [i.s, i.m ? 1 : 0, i.h] as [Any] }]),
               let js = String(data: d, encoding: .utf8) else { return }
-        for i in fresh { asked.insert(chat + "/" + String(i.s) + "/" + i.h) }
+        for i in fresh { asked.insert(askedName(chat, i.s, i.h)) }
         // A SLICE IS NO PROPERTY LIST (the author's word 18.10.2026 11:0x UTC: «check why the app crashes on T1 and fix it urgently»):
         // T1 on 2240 died on screen every half minute from 11:08:52Z -- NSInvalidArgumentException «Attempt to insert non-property list
         // object ArraySlice([...]) for key mt.twin.asked»: suffix hands back an ArraySlice, and the settings store takes only arrays.
@@ -1205,7 +1211,7 @@ extension MontanaArchive {
     /// A row whose file did not come whole is asked again the next time the gap is measured.
     nonisolated static func unaskTwin(chat: String, s: Int, h: String) {
         var asked = askedKeys
-        asked.removeAll { k in k == chat + "/" + String(s) + "/" + h }
+        asked.removeAll { k in k == askedName(chat, s, h) }
         askedKeys = asked
     }
     /// One row given back: its words, and a file by the cargo road -- the file's pieces sealed under a fresh key, the key inside the
@@ -1648,7 +1654,12 @@ enum MTTwinSelf {
     static func watch() {
         guard !watching else { return }
         watching = true
-        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
+        // THE SETTINGS' WORD IS HEARD ON THE THREAD THAT WROTE, NEVER BY WAITING FOR MAIN (the author's word 22012, 14.11.2026, the
+        // Mac hung again: sample of 2396 -- main in MTNameBook.admitDeclared waited on montana.names.declaredAt, which wrote the vault,
+        // and the defaults' word, given to an observer on the main queue, waited for main). A write of the settings off main posts
+        // this word on its own thread; an observer on .main makes that write wait for main, so any main that waits for such a
+        // writer stands forever. The observer only hands a turn to the main actor, and that needs no main queue to be heard.
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
             Task { @MainActor in MTTwinSelf.soon() }
         }
         soon()

@@ -401,7 +401,8 @@ enum MTKeepDerive {
         }
         // One's own name or face changed (decision 866 a): the rhythm looks again in a minute, once for any number of changes.
         _ = peopleWatch
-        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
+        // Heard on the writer's thread, never on .main: a write off main would wait for main (P-212, MTTwinSelf.watch).
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: nil) { _ in
             Task { @MainActor in MTKeeping.shared.profileSoon() }
         }
     }

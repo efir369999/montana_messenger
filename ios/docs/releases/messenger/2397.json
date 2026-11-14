@@ -1,0 +1,44 @@
+{
+  "build": 2397,
+  "notes": {
+    "en": [
+      "The input field no longer hangs when you open stickers or GIFs, and the app no longer closes on that page: the screen is laid out after the keyboard has changed, not in the middle of the change.",
+      "An app installed anew with no account signed in asks the notification servers to forget the address its last install left, and clears its old notifications.",
+      "A voice reply recorded at the ear keeps its buttons: the recording stands with its send, bin and pause from its first second, so nothing vanishes from the bar.",
+      "Saved Messages reach your other devices: a note written on the phone appears on the Mac with the same account, and a note the other device missed is given back when it asks.",
+      "Notifications turned off no longer take the place of a button on the top panel: a small crossed-speaker badge stands over the logo and opens the notification settings.",
+      "The side panel closes with a sideways swipe from anywhere on it.",
+      "Replying at the ear starts with a short, soft two-note sound, like the start of a recording in Voice Memos.",
+      "The Protocol on the Mac no longer weighs down the computer: the queue of outgoing letters is written to disk at once only when a new letter is born, and the rest at most every ten seconds, instead of the whole file at every receipt.",
+      "The Protocol on the Mac no longer freezes: a write of the settings away from the screen's thread no longer waits for that thread, which was waiting for it in turn.",
+      "Please check: in a chat open the stickers, then GIFs, then the letters again, several times in a row -- the field answers at once.",
+      "Please check: listen to a voice message with the phone at your ear, reply after the tone, then take the phone away -- the recording waits with all its buttons."
+    ],
+    "ru": [
+      "Поле ввода больше не зависает при открытии стикеров и GIF, и приложение больше не закрывается на этой странице: экран раскладывается после смены клавиатуры, а не посреди неё.",
+      "Заново поставленное приложение без входа в аккаунт просит серверы уведомлений забыть адрес, оставленный прежней установкой, и убирает свои старые уведомления.",
+      "Ответ голосом, записанный у уха, не теряет кнопок: запись с первой секунды стоит с отправкой, корзиной и паузой, с панели ничего не пропадает.",
+      "Избранное доходит до других ваших устройств: заметка, написанная на телефоне, появляется на Маке с тем же аккаунтом, а пропущенная заметка отдаётся по запросу другого устройства.",
+      "Выключенные уведомления больше не занимают место кнопки на верхней панели: маленький значок перечёркнутого динамика стоит над логотипом и открывает настройки уведомлений.",
+      "Боковая панель закрывается свайпом в сторону из любого её места.",
+      "Ответ у уха начинается коротким мягким сигналом из двух нот, как начало записи в Диктофоне.",
+      "Протокол на Маке больше не нагружает компьютер: очередь исходящих писем пишется на диск сразу только при рождении нового письма, а остальное -- не чаще раза в десять секунд, вместо всего файла на каждую квитанцию.",
+      "Протокол на Маке больше не зависает намертво: запись настроек вне главного потока больше не ждёт главный поток, который в это время ждал её саму.",
+      "Проверьте: в чате откройте стикеры, затем GIF, затем снова буквы, несколько раз подряд -- поле отвечает сразу.",
+      "Проверьте: прослушайте голосовое, приложив телефон к уху, ответьте после сигнала и отведите телефон -- запись ждёт со всеми кнопками."
+    ],
+    "zh-Hans": [
+      "打开贴纸或 GIF 时输入框不再卡住，应用也不再在该页面关闭：屏幕在键盘切换完成之后再排版，而不是在切换过程中。",
+      "重新安装且未登录账户的应用会请求通知服务器忘记上一次安装留下的地址，并清除其旧通知。",
+      "贴耳录制的语音回复不再丢失按钮：录音从第一秒起就带有发送、删除和暂停，栏上不会有任何按钮消失。",
+      "收藏会同步到你的其他设备：在手机上写下的笔记会出现在使用同一账户的 Mac 上，另一台设备遗漏的笔记在其请求时补发。",
+      "关闭通知后不再占用顶部面板的按钮位置：一个带斜线扬声器的小徽标显示在标志上方，点按可打开通知设置。",
+      "在侧边栏任意位置横向滑动即可将其关闭。",
+      "贴耳回复以短促柔和的双音提示开始，就像语音备忘录开始录音时一样。",
+      "Mac 上的 Protocol 不再拖慢电脑：发件队列只有在新信件产生时才立即写入磁盘，其余改动最多每十秒写一次，而不是每次回执都重写整个文件。",
+      "Mac 上的 Protocol 不再卡死：在主线程之外写入设置时不再等待主线程，而主线程此时正等待这次写入。",
+      "请检查：在聊天中打开贴纸，再打开 GIF，再切回字母，连续几次——输入框立即响应。",
+      "请检查：贴耳收听语音消息，在提示音后回复，然后拿开手机——录音带着所有按钮在等待。"
+    ]
+  }
+}

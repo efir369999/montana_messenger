@@ -1522,6 +1522,18 @@ struct MTCountBadge: View {
     }
 }
 
+/// THE MUTED SOUND'S BADGE (the author's word 21970, 14.11.2026): while the system refuses the notifications, a small crossed
+/// speaker stands over the time panel's logo, the size and the solid fill of the count badge, never in the place of a button.
+struct MTMutedBadge: View {
+    var body: some View {
+        Image(systemName: "speaker.slash.fill")
+            .font(.system(size: 10, weight: .bold)).foregroundColor(.white)
+            .frame(width: 20, height: 20)
+            .background(Color.red, in: Circle())
+            .drawingGroup()   // solid on the glass, as the count badge (glyphBadge)
+    }
+}
+
 /// One catalogue owns the tiles, search rows and destinations of the app library.
 enum MTApplication: String, CaseIterable, Identifiable {
     case contacts, calls
@@ -2163,6 +2175,7 @@ final class MontanaDrawerController: UIViewController, UIGestureRecognizerDelega
     var turnAllowed: (() -> Bool)?                 // the state's word: nothing over the tabs, nothing held by the page
     var atRowStart: (() -> Bool)?                  // the state's word: the pane is the first of the row (a stroke to the right there is the drawer's)
     private var strokeIsDrawer: Bool? = nil        // whose the tabs' stroke is -- the drawer's or the pages' -- decided at its first move
+    private var away: UIPanGestureRecognizer?       // the open drawer's own sideways stroke (swipeAway)
     private var width: CGFloat { MontanaSideDrawer.width(of: view.bounds.width) }   // the drawer's own rule, one owner
     init(page: AnyView, drawer: AnyView) {
         pageHost = MontanaHost.make(page)
@@ -2192,6 +2205,13 @@ final class MontanaDrawerController: UIViewController, UIGestureRecognizerDelega
         view.addGestureRecognizer(edge)
         dim.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(pan(_:))))
         dim.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapClose)))
+        // THE OPEN DRAWER CLOSES BY A SIDEWAYS STROKE ANYWHERE ON IT (the author's word 21981, 14.11.2026: «a swipe from left to
+        // right from any place of the side panel must close it»): the drawer itself took no stroke -- only the page's strip beside
+        // it did. Its own pan begins only on a flat stroke, so the list's vertical scroll and its rows' presses keep theirs.
+        let a = UIPanGestureRecognizer(target: self, action: #selector(swipeAway(_:)))
+        a.delegate = self
+        drawerHost.view.addGestureRecognizer(a)
+        away = a
         // THE TABS TURN UNDER THE FINGER (the author's word 24.09: «from any screen, swipes move between the time
         // panel's tabs — super carefully, nothing of the compound gestures inside the page may break;
         // on the chats tab too: the turn from the page's centre, a chat's own swipe a little from the edge,
@@ -2242,7 +2262,21 @@ final class MontanaDrawerController: UIViewController, UIGestureRecognizerDelega
     /// platform's: it neither waits for the edge pan nor yields to it, and whichever began first
     /// took the touch — the back swipe died on the cover. The edge pan recognises alongside it.
     func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
-        g is UIScreenEdgePanGestureRecognizer && !(other is UIPanGestureRecognizer)
+        g === away || (g is UIScreenEdgePanGestureRecognizer && !(other is UIPanGestureRecognizer))
+    }
+    /// The drawer's own stroke starts only while it stands open and only flat: a vertical stroke stays the list's.
+    func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
+        guard g === away, let p = g as? UIPanGestureRecognizer else { return true }
+        let v = p.velocity(in: view)
+        return isOpen && abs(v.y) < abs(v.x)
+    }
+    /// A flat stroke on the open drawer, either way, past 40 points or quick, closes it -- one line in the diary.
+    @objc private func swipeAway(_ g: UIPanGestureRecognizer) {
+        guard g.state == .ended else { return }
+        let dx = g.translation(in: view).x, vx = g.velocity(in: view).x
+        guard 40 < abs(dx) || 300 < abs(vx) else { return }
+        MontanaTrace.mark("drawer", "swipe-away dx=\(Int(dx)) v=\(Int(vx))")
+        settle(false, velocity: 0, notify: true)
     }
     private func apply(_ x: CGFloat) {
         let w = width, t = max(0, min(w, x))

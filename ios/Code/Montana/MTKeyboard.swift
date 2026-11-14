@@ -70,6 +70,14 @@ final class MTKeyboard: ObservableObject {
             if let p = self?.panel, p.window != nil, abs(p.bounds.height - h) > 1 {
                 MontanaTrace.mark("panel_gap", "region=\(Int(h)) panel=\(Int(p.bounds.height))")
             }
+            // OUR OWN PANEL IS NOT THE KEYS (T2 14.11.2026, the same hang): the frame announced while the panel stands as the
+            // input view is the panel's own height coming back, and the panel takes this height -- so it measured itself, grew,
+            // was put on again and was announced again. The keys' height is learned from the keys alone.
+            if let p = self?.panel, p.window != nil {
+                MontanaTrace.markFolded("kb_echo", "panel=\(Int(p.bounds.height)) region=\(Int(h))", window: 30)
+                if self?.isUp != true { self?.isUp = true }
+                return
+            }
             self?.heights[Self.sideways(f.cgRectValue)] = h
             // A VALUE WRITTEN AGAIN IS NOT NEWS (the critic 22.09). Both of these are published, and a
             // publisher fires on every WRITE, not on every change: the platform announces the keyboard
@@ -143,7 +151,15 @@ final class MTKeyboard: ObservableObject {
                                                              object: nil, queue: .main) { [weak view, weak geometry] n in
             guard let view, view.window != nil, let geometry else { return }
             MontanaTrace.mark("kb_mode", "lang=\((n.object as? UITextInputMode)?.primaryLanguage ?? "-") c=\(Int(geometry.coveredHeight)) guide=\(Int(geometry.guideCovered))")
-            geometry.settle(announced: nil)
+            // THE PAGE IS PLACED AFTER THE PASS THAT CHANGED THE KEYS, NEVER INSIDE IT (T2 14.11.2026 12:38-12:42 UTC, Messenger
+            // 2394, iOS 27.2.1, the author's words 21902, 21905, 21909: the field hung and the app died on the stickers' page).
+            // The platform says this word synchronously from inside the field's own update (a panel put on, reloadInputViews);
+            // a layout taken here ran the tree that was updating, which put the panel on again -- one recursion, 90 s of the
+            // processor in 113 (MetricKit: MTKeyboardRider.sizeThatFits, MTInputField.updateUIView, this closure, settle).
+            DispatchQueue.main.async { [weak view, weak geometry] in
+                guard let view, view.window != nil, let geometry else { return }
+                geometry.settle(announced: nil)
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + MTKeyboardSpring.duration(speed: 1)) { [weak view, weak geometry] in
                 guard let view, view.window != nil, let geometry else { return }
                 geometry.settle(announced: nil)
