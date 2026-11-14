@@ -655,23 +655,9 @@ final class VoicePlayer: NSObject, ObservableObject {
             toggle(n.file, title: n.sender, voice: true)
             return
         }
-        if isVoice {
-            // The reply at the ear follows the PEER's voice only (the author's word 14.09): one's
-            // own voice, listened back, asks for no answer.
-            let theirs = voiceQueue.first { $0.file == playingFile }.map { !$0.mine } ?? false
-            // THE EAR IS A WINDOW, NOT AN INSTANT (T1 09.11.2026, the author's word 17930: «listened and hold it at the ear as
-            // usual -- it does not record either»): the reply asked the sensor at the very tick of the sound's end, and a head
-            // that moved as the voice fell silent read «far». A «near» within the last second and a half counts as the ear
-            // (MTProximity.nearWithin, the sensor's one owner); the tone then plays, and the recording asks the sensor once more
-            // after it (beginEarReply). Every reading stands in the line, so a reply that did not come names its reason.
-            let near = UIDevice.current.proximityState
-            let recent = MTProximity.nearWithin(1.5)
-            let atEar = proximityArmed && theirs && recent
-            MontanaTrace.mark("voice_end", "queue=\(voiceQueue.count) ear=\(atEar ? 1 : 0) theirs=\(theirs ? 1 : 0) armed=\(proximityArmed ? 1 : 0) near=\(near ? 1 : 0) recent=\(recent ? 1 : 0)")
-            stop()
-            if atEar { NotificationCenter.default.post(name: .montanaVoiceEndedAtEar, object: nil) }
-            return
-        }
+        // THE EAR ONLY LISTENS (the author's word 22169, 14.11.2026, replacing 21984 and the reply of 14.09: «listened -- and
+        // that is all, the voice stops»): the chat's last voice ends in silence, at the ear or not -- no tone, no tape.
+        if isVoice { MontanaTrace.mark("voice_end", "queue=\(voiceQueue.count)") }
         stop()
     }
 
@@ -3511,13 +3497,8 @@ final class VideoKeeperDelegate: NSObject, AVPlayerViewControllerDelegate {
     }
 }
 
-extension Notification.Name {
-    /// The chat's last voice ended while the phone was at the ear: the reply is recorded there.
-    static let montanaVoiceEndedAtEar = Notification.Name("montanaVoiceEndedAtEar")
-}
-
 /// ONE WRITER OF A WAV (constitution 15; OZ 2 p.4.10, the author's word 19199): sixteen-bit mono PCM -- the RIFF header,
-/// then the samples, every number little-endian. The ear tone (44.1 kHz) and the call's tones (8 kHz) hand it their samples;
+/// then the samples, every number little-endian. The call's tones (8 kHz) hand it their samples;
 /// the bytes are those the two copies wrote, byte for byte. tools/owners.json holds it: one definition, one RIFF header.
 enum MontanaWAV {
     static func pcm16Mono(_ samples: [Int16], rate: Int) -> Data {
@@ -3530,36 +3511,5 @@ enum MontanaWAV {
         data.append(contentsOf: Array("data".utf8)); le32(bytes)
         for s in samples { withUnsafeBytes(of: s.littleEndian) { data.append(contentsOf: $0) } }
         return data
-    }
-}
-
-/// THE EAR TONE (the author's word 14.09): a short two-note chime played THROUGH the audio
-/// session, so it follows the session's route — the receiver at the ear — and ignores the
-/// silent switch, unlike a system sound. Built in memory, no file.
-enum MontanaEarTone {
-    private static var player: AVAudioPlayer?
-    static func play() {
-        let rate = 44_100.0
-        // THE DICTAPHONE'S OWN START (the author's word 21984, 14.11.2026: «a short, dull bell, pleasant to the ear, as the native one
-        // of Apple's Voice Memos, that my voice message began»; before it 16.09: duller than three bright notes). The one note of 320 Hz
-        // at an eighth of the amplitude stood under the hearing at the receiver. Two soft notes upward, as the recorder's start sounds
-        // -- A4 then D5, 70 and 130 ms -- each struck softly and dying fast, a quiet second harmonic for warmth, no bright edge.
-        let notes: [(hz: Double, s: Double)] = [(440, 0.07), (587.33, 0.13)]
-        var samples: [Int16] = []
-        for n in notes {
-            let count = Int(rate * n.s)
-            for i in 0..<count {
-                let t = Double(i) / rate
-                let attack = min(1, Double(i) / 220)                     // 5 ms: struck, never clicked
-                let tail = min(1, Double(count - i) / 400)               // the last 9 ms close to silence
-                let env = attack * tail * exp(-t * 18)                   // the strike dies fast: dull, not ringing
-                let wave = sin(2 * .pi * n.hz * t) + 0.18 * sin(4 * .pi * n.hz * t)
-                samples.append(Int16(wave * 0.36 * env * 32767))
-            }
-        }
-        player = try? AVAudioPlayer(data: MontanaWAV.pcm16Mono(samples, rate: Int(rate)))
-        player?.volume = 1
-        let ok = player?.play() ?? false
-        MontanaTrace.mark("voice_ear_reply", "tone played=\(ok ? 1 : 0)")
     }
 }

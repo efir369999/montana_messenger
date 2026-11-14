@@ -2633,6 +2633,11 @@ final class MTGroup {
         }
         let key = Self.key(of: g.id)
         let sid = "mid:" + id
+        // A RESTORED ROW TAKES ITS LETTER'S NAME AND ITS SPEAKER (OZ 2 p.1.2): the file laid again for a seal lands in the row the
+        // archive laid back -- its file's seal is this letter's name -- and no second row is born.
+        if words.hasPrefix(mediaMark), store.messages[key]?.contains(where: { $0.mid == sid }) != true {
+            store.nameRestoredRow(key, sid: sid, speaker: Self.speaker(g.id, seat))
+        }
         if let row = store.messages[key]?.first(where: { $0.mid == sid }) {   // a repeat: the row stands
             refill(row, words: words, id: id, seat: seat, in: g, store: store)   // with new cargo, the row's file comes (p.10.1)
             return .held
@@ -2685,7 +2690,11 @@ final class MTGroup {
     /// The asker's half (ChatStore.askKeptFile holds its clock): one word to everyone this phone carries to; its receipts move no row.
     @MainActor
     func askKeptFile(_ key: String, letter id: String) {
-        guard let g = state(key), g.left != true, Self.isLetterName(id) else { return }
+        // A RESTORED ROW ASKS BY ITS FILE'S SEAL (OZ 2 p.1.2): its arc: name is no letter name and was dropped here without a word.
+        guard let g = state(key), g.left != true, Self.isLetterName(id) || MTRestoredMid.sealOf(id) != nil else {
+            MontanaTrace.mark("kept_file", mid: id, "a group letter's file is not asked -- no group held or no name to ask by")
+            return
+        }
         let w = MTGroupWord(t: "fk", g: g.id, k: g.kind.rawValue, id: id)
         let n = carried(g).compactMap { p in carry(w, to: p, letter: "", own: false) }.count
         MontanaTrace.mark("kept_file", mid: id, "a group letter's file is asked n=\(n)")
@@ -2694,12 +2703,16 @@ final class MTGroup {
     /// passes the ask to the author's seat once in the span; anyone else holds the word.
     @MainActor
     private func keptAsked(_ w: MTGroupWord, from pipe: String, store: ChatStore) -> Verdict {
-        guard let g = groups[w.g], g.left != true, let id = w.id, Self.isLetterName(id) else { return .refused }
+        guard let g = groups[w.g], g.left != true, let id = w.id, Self.isLetterName(id) || MTRestoredMid.sealOf(id) != nil else { return .refused }
         let root = MTSamePair.root(pipe)
         let road = g.mine ? g.members.contains { m in MTSamePair.root(m.pipe) == root } : MTSamePair.root(g.owner) == root
         guard road else { return .refused }   // only the group's own road asks
         let key = Self.key(of: g.id)
-        guard let row = store.messages[key]?.first(where: { $0.mid == "mid:" + id }), row.attachment != nil else { return .held }
+        // A seal finds the letter whose wire name seals to it (OZ 2 p.1.2); a letter name finds its own row.
+        let seal = MTRestoredMid.sealOf(id)
+        guard let row = store.messages[key]?.first(where: { m in
+            seal.map { m.mid.hasPrefix("mid:") && ChatStore.fileSeal(m.mid) == $0 } ?? (m.mid == "mid:" + id)
+        }), row.attachment != nil else { return .held }
         if row.isFromMe {
             store.serveKeptFile(mid: id, chat: key)
             return .held

@@ -317,6 +317,10 @@ final class MontanaDeliveryEngine {
         // found nothing there; the person's own «hello» of 10.10, brought back by the twin mirror, stood twice under one name,
         // rang a banner with the person's own name and the feed died on the repeated identifier.
         let home = MTSamePair.root(from)
+        // A RESTORED ROW TAKES THIS LETTER'S NAME FIRST (OZ 2 p.1.1): its sender laid the file again for a seal it was asked by.
+        if text.hasPrefix(mediaMark), store.messages[home]?.contains(where: { $0.msgId == sid }) != true {
+            store.nameRestoredRow(home, sid: sid)
+        }
         if store.messages[home]?.contains(where: { $0.msgId == sid }) == true {
             if let qt = quoteText, !qt.isEmpty { store.enrichQuote(home, sid: sid, qt: qt, qm: quoteMid) }
             if let lp = linkPreview, !lp.isEmpty { store.enrichLinkPreview(home, sid: sid, lp: lp) }

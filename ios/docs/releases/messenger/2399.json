@@ -1,0 +1,29 @@
+{
+  "build": 2399,
+  "notes": {
+    "en": [
+      "Files of a chat restored from the seed phrase come back: a photo, video, GIF, voice or document received before the restore is asked of its sender by its file's seal, and the sender's phone lays it again into the same row -- no second row is born.",
+      "In groups, the file of a restored letter is asked on the group's own road and lands in the same row, with its speaker's name.",
+      "A voice message heard at the ear is only heard: when it ends, the playback stops -- no tone sounds and no recording starts.",
+      "A file that comes again for an old letter after a restore no longer rings a new-message banner.",
+      "Please check: restore an account from its seed phrase and open a photo or GIF received before the restore -- it loads from its sender.",
+      "Please check: listen to a voice message to its end with the phone at your ear -- it stops, and nothing starts recording."
+    ],
+    "ru": [
+      "Файлы чатов, восстановленных по сид-фразе, возвращаются: фото, видео, гифка, голосовое или документ, полученные до восстановления, запрашиваются у отправителя по печати файла, и телефон отправителя кладёт их заново в ту же строку -- второй строки не появляется.",
+      "В группах файл восстановленного письма запрашивается по дороге самой группы и ложится в ту же строку, с именем говорящего.",
+      "Голосовое, прослушанное у уха, только слушается: по его концу воспроизведение останавливается -- без сигнала и без начала записи.",
+      "Файл, пришедший заново к старому письму после восстановления, больше не звонит баннером нового сообщения.",
+      "Проверьте: восстановите аккаунт по сид-фразе и откройте фото или гифку, полученные до восстановления, -- они загружаются от отправителя.",
+      "Проверьте: прослушайте голосовое до конца, приложив телефон к уху, -- оно останавливается, и запись не начинается."
+    ],
+    "zh-Hans": [
+      "通过助记词恢复的聊天文件会回来：恢复之前收到的照片、视频、GIF、语音或文档会凭文件印记向发送者请求，发送者的手机会将其重新放回同一行——不会产生第二行。",
+      "在群组中，恢复的信件文件通过群组自己的通道请求，并以发言者的名字落入同一行。",
+      "贴耳收听的语音消息只是收听：播放结束时即停止——没有提示音，也不会开始录音。",
+      "恢复后为旧信件重新到达的文件不再弹出新消息横幅。",
+      "请检查：通过助记词恢复账户，打开恢复之前收到的照片或 GIF——它会从发送者处加载。",
+      "请检查：将手机贴在耳边把语音消息听完——播放停止，且不会开始录音。"
+    ]
+  }
+}

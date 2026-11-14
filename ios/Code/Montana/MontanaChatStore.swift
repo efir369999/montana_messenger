@@ -1490,6 +1490,22 @@ class ChatStore: ObservableObject {
         }) else { return }
         messages[chat]?[i].msgId = "mid:\(mid)"
     }
+    /// A RESTORED ROW TAKES ITS LETTER'S NAME (OZ 2 p.1.1): a letter with a file comes under a name no row here holds, and a row
+    /// laid back from the archive without its file wears a file whose seal is that name's -- it is the same letter. The row takes
+    /// the wire name, so the copy refills it (rx_refill) and no second row is born.
+    /// A group's row takes its speaker with the name (MTGroup.heard): the archive kept no speaker, and the group's refill lays
+    /// cargo only into its own speaker's row.
+    @MainActor
+    func nameRestoredRow(_ chat: String, sid: String, speaker: String? = nil) {
+        let seal = ChatStore.fileSeal(sid)
+        guard let i = messages[chat]?.firstIndex(where: { m in
+            guard !m.isFromMe, m.mid.hasPrefix(MTRestoredMid.archive), let f = m.attachment?.file else { return false }
+            return !MontanaMediaStore.exists(f) && ChatStore.fileSeal(ofFile: f) == seal
+        }) else { return }
+        messages[chat]?[i].msgId = sid
+        if let speaker, messages[chat]?[i].senderRef == nil { messages[chat]?[i].senderRef = speaker }
+        MontanaTrace.mark("kept_file", mid: MTMid.bare(sid), "a restored row takes its letter's name -- the copy refills it")
+    }
 
     // ── THE DELIVERY LADDER: ONE DOOR, ONE ORDER ([C-1]) ─────────────────────────────────
     // clock — the letter is ours, no proof;
@@ -1685,7 +1701,7 @@ class ChatStore: ObservableObject {
     static func tellCargoLost(_ chat: String, letter bare: String) {
         if MTGroup.isKey(chat) {
             Task { @MainActor in MTGroup.shared.askKeptFile(chat, letter: bare) }
-            MontanaTrace.mark("kept_file", mid: bare, "a group letter's cargo is gone -- the group's own road asks its author")
+            MontanaTrace.mark("kept_file", mid: bare, "a group letter's cargo is gone -- handed to the group's own road")
             return
         }
         MontanaDeliveryEngine.shared.enqueue(to: chat, chat: chat, mid: UUID().uuidString, text: cargoLostMark + bare, silent: true)
@@ -1699,7 +1715,20 @@ class ChatStore: ObservableObject {
               !reconstructInFlight.contains(sid) else { return }
         let arr = (try? JSONSerialization.jsonObject(with: Data(pendingMediaJSON.utf8)) as? [[String: String]]) ?? []
         guard !arr.contains(where: { $0["sid"] == sid }) else { return }
-        let bare = MTMid.bare(sid)
+        // A RESTORED ROW ASKS BY ITS FILE'S SEAL (OZ 2 p.1.1, the author's words 22141, 22151): its arc: name lives on this phone
+        // alone, and its sender holds no letter by it (T3 14.11.2026 14:39:58 UTC: «no letter of mine with a file by this name»).
+        // Its file is named by the letter's wire name (mediaFileName), so that name's seal finds the letter on the sender's phone.
+        // The clock is the word's own: an ask by the arc: name said nothing and holds no repeat.
+        let bare: String
+        if sid.hasPrefix(MTRestoredMid.archive) {
+            guard let seal = Self.fileSeal(ofFile: kept.file) else {
+                MontanaTrace.mark("kept_file", mid: sid, "a restored row's file carries no seal -- nobody to ask by it")
+                return
+            }
+            bare = MTRestoredMid.seal + seal
+        } else {
+            bare = MTMid.bare(sid)
+        }
         guard mayAskKeptFile("ask:" + bare) else {
             MontanaTrace.mark("kept_file", mid: bare, "asked within the span -- nothing sent")
             return
@@ -1710,7 +1739,14 @@ class ChatStore: ObservableObject {
     /// asking; the file still on this disk is laid again under the same letter name, once in the span.
     @MainActor
     func serveKeptFile(mid: String, chat: String) {
-        let mine: (Message) -> Bool = { $0.isFromMe && ($0.mid == mid || $0.msgId == "mid:" + mid) }
+        // A RESTORED PHONE ASKS BY A SEAL (OZ 2 p.1.1): the letter of mine whose wire name seals to it; the file goes again under
+        // that letter's own name (letterMidFor), and the restored row takes the name there (nameRestoredRow).
+        let seal = MTRestoredMid.sealOf(mid)
+        let mine: (Message) -> Bool = { m in
+            guard m.isFromMe else { return false }
+            if let seal { return m.mid.hasPrefix("mid:") && ChatStore.fileSeal(m.mid) == seal }
+            return m.mid == mid || m.msgId == "mid:" + mid
+        }
         let home = MTSamePair.root(chat)
         let key = messages[chat]?.contains(where: mine) == true ? chat : home
         guard let row = messages[key]?.first(where: mine), let kept = row.attachment else {
@@ -5520,6 +5556,10 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         // the manifest blob failed to open on the first try).
         if let mref = obj["mref"] as? String, let mkB64 = obj["mk"] as? String,
            let mk = Data(base64Encoded: mkB64) {
+            // AN OLD LETTER REFILLED RINGS NOTHING (OZ 2 p.1.1 and p.1.5, the author's words 22141, 22151): a row that stood before
+            // its cargo came -- a restored row whose file its sender laid again -- is no news, and a wiped phone's notebook of shown
+            // letters is empty; the banner is for a letter that arrives (a new one has no row before its manifest opens).
+            let stood = msgId.map { sid in (messages[chat] ?? []).contains { $0.msgId == sid } } ?? false
             Task { [weak self] in
                 guard let self else { return }
                 var full: String? = nil
@@ -5585,7 +5625,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
                         // stands in the chat BEFORE its notification, always.
                         // The ring decision belongs to the ONE notebook judge (P-26), not to
                         // a transport guess: a background push never rang anything by itself.
-                        if !isFromMe, let sid = msgId {
+                        if !isFromMe, !stood, let sid = msgId {
                             // The banner reads the LETTER's envelope — the same text the
                             // banner door always rendered as «Video». Handing it the full
                             // manifest leaked raw JSON into the notification (precedent
@@ -5842,10 +5882,24 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         return rows.suffix(40).reversed().filter { !$0.isFromMe }.prefix(12)
             .contains { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) == want }
     }
+    /// THE ONE SEAL OF A RECEIVED FILE'S NAME (constitution 15; OZ 2 p.1.1, the author's words 22141, 22151): the 16 hex of
+    /// sha256 over the letter's wire name a received file is named by (mediaFileName). A row laid back from the archive keeps
+    /// its file's name and not its letter's, and this seal is the one tie between them.
+    static func fileSeal(_ seed: String) -> String {
+        SHA256.hash(data: Data(seed.utf8)).prefix(8).map { String(format: "%02x", $0) }.joined()
+    }
+    /// The seal a received file's name carries -- the 16 hex before its extension, under a received file's prefix; nil for a
+    /// name that carries none (a sent file is named by a fresh UUID).
+    static func fileSeal(ofFile name: String) -> String? {
+        guard ["att_", "voice_", "vnote_"].contains(where: { name.hasPrefix($0) }) else { return nil }
+        let seal = String((name as NSString).deletingPathExtension.suffix(16))
+        guard seal.count == 16, seal.allSatisfy({ $0.isHexDigit && !$0.isUppercase }) else { return nil }
+        return seal
+    }
     // A message's file name is derived deterministically: a repeated download writes the same file.
     func mediaFileName(kind: String, ext extIn: String, seed: String, round: Bool = false, badge: String? = nil) -> String {
         let ext = MTMediaFileSuffix.of(extIn, kind: kind)
-        let h = SHA256.hash(data: Data(seed.utf8)).prefix(8).map { String(format: "%02x", $0) }.joined()
+        let h = ChatStore.fileSeal(seed)
         // A round video note keeps its roundness in its name here too (the author's word 10.09):
         // the manifest's r flag becomes the vnote_ prefix the bubble reads; the dual note's badge
         // corner (rb) rides in after it — vnote_D + tl|tr|bl|br — so the window is drawn with it.
@@ -7859,6 +7913,13 @@ enum MontanaMainProbe {
 enum MTRestoredMid {
     static let archive = "arc:"   // NOT-UI: a restored row's name on this phone, never on the wire
     static let given = "given:"   // NOT-UI: a given-back row's name on this phone, never on the wire
+    static let seal = "seal:"     // NOT-UI: a restored row's ask on the wire -- the seal of its file's name (ChatStore.fileSeal)
+    /// The seal a restored row's ask names (seal: and 16 hex), nil for any other name -- the one reader of the word.
+    static func sealOf(_ word: String) -> String? {
+        guard word.hasPrefix(seal) else { return nil }
+        let s = String(word.dropFirst(seal.count))
+        return s.count == 16 && s.allSatisfy({ $0.isHexDigit && !$0.isUppercase }) ? s : nil
+    }
     static func holds(_ name: String) -> Bool { name.hasPrefix(archive) || name.hasPrefix(given) }
     /// The wire name inside a given-back row's name -- the one unwrap MTKeeping, MTWalletCore and the restore read (OZ 1 p.5.5).
     static func wire(_ name: String) -> String { name.hasPrefix(given) ? String(name.dropFirst(given.count)) : name }

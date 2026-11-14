@@ -1295,40 +1295,6 @@ struct ChatConversationView: View {
     private var pinReserve: CGFloat { selectingMsgs ? 0 : pinBarSize.height }   // what the pinned plate and a room's row cover
     private var pinEdge: CGFloat { selectingMsgs || pinBarSize.height < 0.5 ? 0 : pinBarBottom }   // the feed's top rests under it
 
-    /// The last voice ended at the ear: a tone in the ear, and the reply records at the ear.
-    func beginEarReply() {
-        // EVERY WAY OUT IS A LINE (T1 09.11.2026, the author's word 17930): a reply that did not come left no trace but «nothing».
-        guard !rec.isRecording else { MontanaTrace.mark("voice_ear_reply", "busy -- a tape already rolls"); return }
-        earReply = true
-        MTProximity.hold("ear-reply", true)   // the sensor stays with the chat now (its one owner, 24.09)
-        MontanaEarTone.play()   // through the session: the receiver at the ear, silent switch or not
-        MontanaTrace.mark("voice_ear_reply", "tone")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            guard earReply else { MontanaTrace.mark("voice_ear_reply", "left before the tone ended"); return }
-            if UIDevice.current.proximityState {
-                MTHoldOverlayState.shared.previewFile = nil   // a new tape was never heard
-                // A TAPE WITH NO FINGER STANDS LOCKED FROM ITS FIRST SECOND (T1 13.11.2026 14:38 UTC, the author's word 21886
-                // p.1: «at the ear, no recording, and the buttons vanished from the bar»). Begun at the ear the tape rolled in
-                // the held shape with no finger to hold it: the strip covered the field and the crown stood hidden (it rises for
-                // a finger or a lock, MTHoldOverlayState.settle), so its controls came only with the lock taken when the phone
-                // left the ear -- a far the page did not hear left a tape with no bin, no arrow and no field. The lock is taken
-                // at once, as for a tape the app folded under (a refused begin leaves nothing to lock); leaving the ear pauses it.
-                rec.begin(.voice, why: "ear"); rec.lock(why: "ear")
-                MontanaTrace.mark("voice_ear_reply", "record")
-            }
-            else { MontanaTrace.mark("voice_ear_reply", "far after the tone"); endEarReply() }
-        }
-    }
-    func endEarReply() {
-        guard earReply else { return }
-        earReply = false
-        MTProximity.hold("ear-reply", false)
-        MontanaTrace.mark("voice_ear_reply", rec.voice.isRecording ? "paused len=\(Int(rec.voice.elapsed))" : "nothing")
-        guard rec.voice.isRecording else { rec.cancel(why: "ear-empty"); return }   // no tape rolled (permission, or the phone left before the start)
-        rec.voice.pause()
-        rec.lock(why: "ear")   // the send screen: the crown's arrow sends, its bin cancels, pause/record above the arrow
-    }
-
     /// The chat's voices, oldest first, stand behind the one that starts: auto-next walks them.
     func playVoice(_ file: String) {
         let msgs = store.messages[chat.name] ?? []
@@ -3959,17 +3925,9 @@ struct ChatConversationView: View {
                 MontanaTrace.mark("voice_preview", "closed and playing")
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .montanaVoiceEndedAtEar)) { _ in beginEarReply() }
-        .onReceive(NotificationCenter.default.publisher(for: UIDevice.proximityStateDidChangeNotification)) { _ in
-            if earReply, !UIDevice.current.proximityState { endEarReply() }   // the phone left the ear: the tape stands, the screen decides
-        }
     }
     @State private var reportSheet: MontanaReport? = nil   // Guideline 1.2
     @State private var landed = false        // the opening landing ran (once per opening, 18.09)
-    /// THE REPLY AT THE EAR (the author's word 14.09): the chat's last voice ended with the phone
-    /// at the ear — a tone in the ear, then the tape rolls; taking the phone away pauses the tape
-    /// and leaves the recording on screen, hands-free, to send or to bin.
-    @State private var earReply = false
     @State private var holdHint = false     // a press too short for a tape: the field says «hold to record»
     #if !MONTANA_MESSENGER   // no coins in Messenger, nor their Money Flow (cut C6)
     @State private var coinRefused = false  // coins asked past the balance: the book refused (03.10)
