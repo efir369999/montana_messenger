@@ -963,13 +963,17 @@ enum MTKeepDerive {
         answeredBack[conv] = now
         let since = (o["a"] as? Double) ?? 0
         let rows = (store.messages[conv] ?? []).filter {
-            $0.createdAt > since && !$0.text.isEmpty && $0.attachment == nil
+            // A FILE'S ROW OF MINE RIDES TOO (OZ 2 p.1.4.1, the author's words 22141, 22151): the file I sent, under the wire name it
+            // went by -- the asker takes it as its received letter and asks the file by the seal of that name (serveKeptFile).
+            $0.createdAt > since && (($0.attachment == nil && !$0.text.isEmpty)
+                || ($0.isFromMe && $0.attachment != nil && ($0.msgId ?? "").hasPrefix("mid:")))
         }
         guard !rows.isEmpty else { say(conv, ["w": "given", "c": 0]); return }
         // A letter of the asker rides with the author field it came with (Message.authorTag): their phone names it theirs by
         // their own key, never by this phone's word.
         let list: [[String: Any]] = rows.map { r in
-            var e: [String: Any] = ["i": r.msgId ?? "", "m": r.isFromMe ? 1 : 0, "t": r.createdAt, "x": r.text]
+            var e: [String: Any] = ["i": r.msgId ?? "", "m": r.isFromMe ? 1 : 0, "t": r.createdAt, "x": r.attachment == nil ? r.text : ""]
+            if r.attachment != nil, let md = ChatStore.archivedText(r) { e["md"] = md }   // no "x": a build before this one skips the row
             if !r.isFromMe, let a = r.authorTag, !a.isEmpty { e["a"] = a }
             return e
         }
@@ -1003,7 +1007,21 @@ enum MTKeepDerive {
         let since = store.messages[conv]?.filter { $0.createdAt < at }.map(\.createdAt).max() ?? 0
         var unproven = 0
         let rows: [Message] = list.compactMap { e in
-            guard let t = e["t"] as? Double, t > since, let x = e["x"] as? String, !x.isEmpty else { return nil }
+            guard let t = e["t"] as? Double, t > since else { return nil }
+            // A FILE'S ROW OF THE OTHER SIDE (OZ 2 p.1.4.1): the giver's own sent file is this phone's received one, named by the
+            // letter's wire name as a received file is (mediaFileName), so its seal finds the letter on the giver (serveKeptFile).
+            if let md = e["md"] as? String, md.hasPrefix(mediaMark) {
+                guard (e["m"] as? Int ?? 0) == 1, let wire = e["i"] as? String, wire.hasPrefix("mid:"),
+                      let rec = try? JSONDecoder().decode(ArchivedMedia.self, from: Data(md.dropFirst(mediaMark.count).utf8)),
+                      ["img", "vid", "aud", "doc"].contains(rec.k) else { return nil }
+                let name = store.mediaFileName(kind: rec.k, ext: (rec.f as NSString).pathExtension, seed: wire)
+                return Message(text: rec.cap ?? "", isFromMe: false, time: hhmm(at: t), isRead: true,
+                               imageFile: rec.k == "img" ? name : nil, videoFile: rec.k == "vid" ? name : nil,
+                               audioFile: rec.k == "aud" ? name : nil, audioDuration: rec.d ?? 0,
+                               docFile: rec.k == "doc" ? name : nil, docName: rec.n,
+                               deliveryStatus: .read, msgId: MTRestoredMid.given + wire, createdAt: t)
+            }
+            guard let x = e["x"] as? String, !x.isEmpty else { return nil }
             let wire = (e["i"] as? String).flatMap { $0.isEmpty ? nil : $0 }
             let claimedMine = (e["m"] as? Int ?? 0) == 0   // the other side's own letter is the other side's here
             if claimedMine {

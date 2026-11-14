@@ -1,0 +1,32 @@
+{
+  "build": 2400,
+  "notes": {
+    "en": [
+      "Your own files sent before a restore come back: the phone asks the correspondent for them by the second, kind and place of the letter, and the correspondent's phone lays its copy into the same row -- no second row is born.",
+      "In groups, your own files after a restore come back the same way: the group asks, and only the holder of your letter lays its copy back to you.",
+      "Files your correspondent sent are given back with their rows when a chat is restored, and each file loads by the seal of its letter.",
+      "A photo, video, GIF or document in Saved Messages after a restore is asked of your other device of the same seed phrase and lands in the same row.",
+      "A photo or a word shared into Saved Messages from another app now reaches your other device of the same seed phrase.",
+      "Please check: restore the account from the seed phrase and open a photo you sent before the restore, in a chat and in a group -- it loads.",
+      "Please check: restore the account, open Saved Messages and tap a photo without its file -- it loads from your other device."
+    ],
+    "ru": [
+      "Свои файлы, отправленные до восстановления, возвращаются: телефон просит их у собеседника по секунде, виду и месту письма, и телефон собеседника кладёт свою копию в ту же строку -- второй строки не появляется.",
+      "В группах свои файлы после восстановления возвращаются так же: группа спрашивает, и только держатель вашего письма кладёт копию обратно вам.",
+      "Файлы, которые прислал собеседник, при восстановлении чата отдаются вместе со строками, и каждый файл загружается по печати своего письма.",
+      "Фото, видео, гифка или документ в Избранном после восстановления запрашиваются у вашего второго устройства с той же сид-фразой и ложатся в ту же строку.",
+      "Фото или слово, отправленное в Избранное из другого приложения (Поделиться), теперь доходит и до вашего второго устройства с той же сид-фразой.",
+      "Проверьте: восстановите аккаунт по сид-фразе и откройте фото, отправленное до восстановления, -- в чате и в группе: оно загружается.",
+      "Проверьте: восстановите аккаунт, откройте Избранное и нажмите на фото без файла -- оно загружается с вашего другого устройства."
+    ],
+    "zh-Hans": [
+      "恢复前您自己发送的文件会回来：手机按信件的秒数、类型和位置向对方请求，对方的手机把副本放回同一行，不会产生第二行。",
+      "在群组中，恢复后您自己的文件以同样方式回来：群组发出请求，只有持有您信件的人把副本放回给您。",
+      "恢复聊天时，对方发来的文件会连同对应行一起交还，每个文件按其信件的印记加载。",
+      "恢复后，“收藏”中的照片、视频、动图或文档会向使用同一助记词的另一台设备请求，并放入同一行。",
+      "从其他应用分享到“收藏”的照片或文字，现在也会传到使用同一助记词的另一台设备。",
+      "请检查：用助记词恢复账号，在聊天和群组中打开恢复前发送的照片——它会加载。",
+      "请检查：恢复账号后打开“收藏”，点按没有文件的照片——它会从您的另一台设备加载。"
+    ]
+  }
+}

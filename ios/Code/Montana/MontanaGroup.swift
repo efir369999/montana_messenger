@@ -378,6 +378,9 @@ final class MTGroup {
 
     private(set) var groups: [String: MTGroupState] = [:]
     private var copies: [String: MTGroupCopy] = [:]
+    /// MY COPY OF ANOTHER'S LETTER GOES BACK TO ITS RESTORED AUTHOR ALONE (OZ 2 p.1.2.4): the asker's pipe by its speaker, kept
+    /// for this run while the copy uploads (keptAsked to carryMedia); a copy nobody asked for is never carried.
+    private var ownLays: [String: String] = [:]
     /// The names of the newest answers already applied: a repeat of a copy is applied once, and carried on once.
     private var answersHeard: [String] = []
     /// [I-15] A MEMBER'S ROOM WORDS ARE TAKEN AT A PERSON'S PACE (07.10, the rooms of Montana Messenger), by the clock of the phone
@@ -878,6 +881,19 @@ final class MTGroup {
     /// keeps them, no single receipt takes them away -- and its manifest leaves to everyone this phone carries to, as a word does.
     @MainActor
     func carryMedia(_ letter: String, mid: String, in key: String, store: ChatStore) -> Bool {
+        // ANOTHER'S LETTER LAID BACK TO ITS RESTORED AUTHOR (OZ 2 p.1.2.4): the copy goes as «fo» under its author's seat to the
+        // pipe that asked, never to the group. Its row is another's: no answer of this send may paint it red, so the send says yes.
+        if store.messages[key]?.contains(where: { r in !r.isFromMe && r.mid == "mid:" + mid }) == true {
+            guard let g = state(key), let row = store.messages[key]?.first(where: { r in !r.isFromMe && r.mid == "mid:" + mid }),
+                  let ref = row.senderRef, let to = ownLays[ref], let at = seatOf(ref), letter.hasPrefix(mediaMark), Self.isLetterName(mid) else {
+                MontanaTrace.mark("kept_file", mid: mid, "a copy of another's letter nobody asked for -- not carried")
+                return true
+            }
+            let back = MTGroupWord(t: "fo", g: g.id, k: g.kind.rawValue, id: mid, s: at.seat, tx: letter)
+            let sent = carry(back, to: to, letter: "", own: false) != nil
+            MontanaTrace.mark("kept_file", mid: mid, "a copy laid back to its restored author sent=\(sent ? 1 : 0)")
+            return true
+        }
         guard let g = state(key), canWrite(key), Self.carries(letter), letter.hasPrefix(mediaMark), Self.isLetterName(mid) else {
             MontanaTrace.mark("group_refused", "media -- group=\(state(key) == nil ? 0 : 1) chat=\(String(key.prefix(12)))")
             return false
@@ -2369,6 +2385,7 @@ final class MTGroup {
         case "sp": return passported(w, from: pipe, store: store)   // COMPAT-GATED: a sticker's passport (17.10), an older build buries it
         case "pc": return cardLaid(w, from: pipe)   // COMPAT-GATED: a member's card (OZ 1 p.8), laid only where the owner names seats
         case "fk": return keptAsked(w, from: pipe, store: store)   // COMPAT-GATED: a restored phone asks a group letter's file again (OZ 1 p.10.1)
+        case "fo": return keptLaid(w, from: pipe, store: store)   // COMPAT-GATED: my own letter's copy laid back after a restore (OZ 2 p.1.2.4)
         default:
             MontanaTrace.mark("group_refused", "kind=\(String(w.t.prefix(8)))")   // a newer build's word: its road ends here
             return .refused
@@ -2691,7 +2708,7 @@ final class MTGroup {
     @MainActor
     func askKeptFile(_ key: String, letter id: String) {
         // A RESTORED ROW ASKS BY ITS FILE'S SEAL (OZ 2 p.1.2): its arc: name is no letter name and was dropped here without a word.
-        guard let g = state(key), g.left != true, Self.isLetterName(id) || MTRestoredMid.sealOf(id) != nil else {
+        guard let g = state(key), g.left != true, Self.isLetterName(id) || MTRestoredMid.sealOf(id) != nil || MTRestoredMid.ownOf(id) != nil else {
             MontanaTrace.mark("kept_file", mid: id, "a group letter's file is not asked -- no group held or no name to ask by")
             return
         }
@@ -2703,11 +2720,20 @@ final class MTGroup {
     /// passes the ask to the author's seat once in the span; anyone else holds the word.
     @MainActor
     private func keptAsked(_ w: MTGroupWord, from pipe: String, store: ChatStore) -> Verdict {
-        guard let g = groups[w.g], g.left != true, let id = w.id, Self.isLetterName(id) || MTRestoredMid.sealOf(id) != nil else { return .refused }
+        guard let g = groups[w.g], g.left != true, let id = w.id, Self.isLetterName(id) || MTRestoredMid.sealOf(id) != nil || MTRestoredMid.ownOf(id) != nil else { return .refused }
         let root = MTSamePair.root(pipe)
         let road = g.mine ? g.members.contains { m in MTSamePair.root(m.pipe) == root } : MTSamePair.root(g.owner) == root
         guard road else { return .refused }   // only the group's own road asks
         let key = Self.key(of: g.id)
+        // A RESTORED AUTHOR ASKS FOR ITS OWN LETTER'S FILE (OZ 2 p.1.2.4, the author's words 22141, 22151): its row of mine there is
+        // named by a UUID, mine here by the letter's name. The asker's seat is the one its pipe holds -- a member on the owner's
+        // phone, the owner on a member's; its letter of that kind born in [second, second+120], the place-th, goes back to it alone.
+        if MTRestoredMid.ownOf(id) != nil {
+            guard let asker = g.mine ? g.members.first(where: { m in MTSamePair.root(m.pipe) == root })?.seat : Self.ownerSeat else { return .refused }
+            ownLays[Self.speaker(g.id, asker)] = pipe
+            store.serveKeptFile(mid: id, chat: key, speaker: Self.speaker(g.id, asker))
+            return .held
+        }
         // A seal finds the letter whose wire name seals to it (OZ 2 p.1.2); a letter name finds its own row.
         let seal = MTRestoredMid.sealOf(id)
         guard let row = store.messages[key]?.first(where: { m in
@@ -2721,6 +2747,31 @@ final class MTGroup {
               store.mayAskKeptFile("pass:" + id) else { return .held }
         _ = carry(w, to: to, letter: "", own: false)
         MontanaTrace.mark("kept_file", mid: id, "the ask passes to the letter's author")
+        return .held
+    }
+    /// MY OWN GROUP LETTER'S FILE LAID BACK (OZ 2 p.1.2.4): a copy of my letter from the group's own road -- the owner's pipe on a
+    /// member's phone, a member's on the owner's -- under my own seat, for a row of mine this phone asked by own:. My restored row
+    /// takes the letter's name (nameOwnRestoredRow) and the copy fills it (reconstructMedia); no second row is born, nothing rings.
+    @MainActor
+    private func keptLaid(_ w: MTGroupWord, from pipe: String, store: ChatStore) -> Verdict {
+        guard let g = groups[w.g], g.left != true, let id = w.id, Self.isLetterName(id), let words = w.tx, Self.carries(words),
+              words.hasPrefix(mediaMark), w.s == g.me else { return .refused }
+        let root = MTSamePair.root(pipe)
+        let laid = g.mine ? g.members.contains { m in MTSamePair.root(m.pipe) == root } : MTSamePair.root(g.owner) == root
+        guard laid else { return .refused }   // only the group's own road lays
+        let key = Self.key(of: g.id)
+        let sid = "mid:" + id
+        let body = String(words.dropFirst(mediaMark.count))
+        if store.messages[key]?.contains(where: { $0.msgId == sid }) != true {
+            let manifest = (try? JSONSerialization.jsonObject(with: Data(body.utf8))) as? [String: Any]
+            store.nameOwnRestoredRow(key, sid: sid, kind: manifest?["k"] as? String)
+        }
+        guard let row = store.messages[key]?.first(where: { $0.msgId == sid && $0.isFromMe }) else {
+            MontanaTrace.mark("kept_file", mid: id, "a copy of my letter for no row of mine this phone asked by -- not taken")
+            return .held
+        }
+        store.reconstructMedia(key, body: body, isFromMe: false, time: row.time, msgId: sid, senderRef: nil)
+        MontanaTrace.mark("kept_file", mid: id, "my restored group row takes my letter's copy")
         return .held
     }
     /// A REPEAT WITH NEW CARGO (p.10.1): the author laid a letter's file again under its name. The row without its file takes it;

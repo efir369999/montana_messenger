@@ -1499,12 +1499,34 @@ class ChatStore: ObservableObject {
     func nameRestoredRow(_ chat: String, sid: String, speaker: String? = nil) {
         let seal = ChatStore.fileSeal(sid)
         guard let i = messages[chat]?.firstIndex(where: { m in
-            guard !m.isFromMe, m.mid.hasPrefix(MTRestoredMid.archive), let f = m.attachment?.file else { return false }
+            guard !m.isFromMe, MTRestoredMid.holds(m.mid), let f = m.attachment?.file else { return false }
             return !MontanaMediaStore.exists(f) && ChatStore.fileSeal(ofFile: f) == seal
         }) else { return }
         messages[chat]?[i].msgId = sid
         if let speaker, messages[chat]?[i].senderRef == nil { messages[chat]?[i].senderRef = speaker }
         MontanaTrace.mark("kept_file", mid: MTMid.bare(sid), "a restored row takes its letter's name -- the copy refills it")
+    }
+    /// MY OWN RESTORED ROW TAKES MY LETTER'S NAME (OZ 2 p.1.1(d)): a letter from the correspondent under a name no row here holds
+    /// is its copy of a file I sent when this phone asked by own: for a second within two minutes before the letter's birth. My
+    /// row laid back from the archive without its file, born in that span, of the manifest's kind when it names one (a big file's
+    /// stub names none), the latest of them, takes the name; its file takes the letter's file name when the whole manifest
+    /// opens (reconstructMedia), and the refill lays the file into it.
+    @MainActor
+    func nameOwnRestoredRow(_ chat: String, sid: String, kind: String?) {
+        guard let born = ChatStore.birthMs(fromMid: sid).map({ Int($0) }) else { return }
+        let asked = (MontanaLocalVault.getString(Self.keptFileAsksKey).flatMap { $0.data(using: .utf8) }
+            .flatMap { try? JSONDecoder().decode([String: Double].self, from: $0) } ?? [:]).keys
+            .filter { $0.hasPrefix("ask:" + MTRestoredMid.own) }
+        let rows = messages[chat] ?? []
+        let open = rows.indices.filter { j in
+            let m = rows[j], at = Int(m.createdAt)
+            guard m.isFromMe, m.mid.hasPrefix(MTRestoredMid.archive), let f = m.attachment, !MontanaMediaStore.exists(f.file),
+                  kind == nil || f.kind == kind, at <= born, born - at <= 120 else { return false }
+            return asked.contains { $0.hasPrefix("ask:" + MTRestoredMid.own + String(at) + "." + f.kind + ".") }
+        }
+        guard let top = open.map({ Int(rows[$0].createdAt) }).max(), let i = open.first(where: { Int(rows[$0].createdAt) == top }) else { return }
+        messages[chat]?[i].msgId = sid
+        MontanaTrace.mark("kept_file", mid: MTMid.bare(sid), "my restored row takes my letter's name -- its correspondent laid my file again")
     }
 
     // ── THE DELIVERY LADDER: ONE DOOR, ONE ORDER ([C-1]) ─────────────────────────────────
@@ -1711,16 +1733,40 @@ class ChatStore: ObservableObject {
     /// asked by the one word of a gone cargo (tellCargoLost), a group's letter on the group's own road.
     private func askKeptFile(_ sid: String) {
         guard let hit = messages.lazy.compactMap({ kv in kv.value.first { $0.msgId == sid }.map { (kv.key, $0) } }).first,
-              !hit.1.isFromMe, let kept = hit.1.attachment, !MontanaMediaStore.exists(kept.file),
+              !hit.1.isFromMe || sid.hasPrefix(MTRestoredMid.archive), let kept = hit.1.attachment, !MontanaMediaStore.exists(kept.file),
               !reconstructInFlight.contains(sid) else { return }
         let arr = (try? JSONSerialization.jsonObject(with: Data(pendingMediaJSON.utf8)) as? [[String: String]]) ?? []
         guard !arr.contains(where: { $0["sid"] == sid }) else { return }
+        // A SAVED MESSAGES ROW HAS NO SENDER TO ASK (OZ 1 p.1.4.2): its file is the seed's other device's alone -- that device is asked
+        // for the row by its archive key (MontanaArchive.askTwin) and gives the file by the cargo road (giveTwinRows, takeTwinRow).
+        if hit.0 == savedMessagesKey {
+            guard mayAskKeptFile("twin:" + sid) else {
+                MontanaTrace.mark("kept_file", mid: sid, "a Saved Messages row asked its twin within the span -- nothing sent")
+                return
+            }
+            MontanaArchive.askTwin(chat: hit.0, items: [(Int(hit.1.createdAt), hit.1.isFromMe, MontanaArchive.rowHash(Self.archivedText(hit.1) ?? ""))])
+            MontanaTrace.mark("kept_file", mid: sid, "a Saved Messages row asks the seed's other device for its file")
+            return
+        }
         // A RESTORED ROW ASKS BY ITS FILE'S SEAL (OZ 2 p.1.1, the author's words 22141, 22151): its arc: name lives on this phone
         // alone, and its sender holds no letter by it (T3 14.11.2026 14:39:58 UTC: «no letter of mine with a file by this name»).
         // Its file is named by the letter's wire name (mediaFileName), so that name's seal finds the letter on the sender's phone.
         // The clock is the word's own: an ask by the arc: name said nothing and holds no repeat.
         let bare: String
-        if sid.hasPrefix(MTRestoredMid.archive) {
+        if hit.1.isFromMe {
+            // MY OWN RESTORED ROW ASKS ITS CORRESPONDENT (OZ 2 p.1.1(d), the author's words 22141, 22151): a file I sent is named
+            // by a fresh UUID here and by my letter's name there, and the archive kept neither that name nor the file. Both sides
+            // still share the letter's second and kind: the ask names them and this row's place among my restored rows of that
+            // second and kind, and the correspondent lays its copy again under my letter's name (serveKeptFile).
+            // A group row of mine asks the same way on the group's own road (OZ 2 p.1.2.4): a member the owner, the owner every
+            // member; the holder of my letter lays its copy back to me alone (MTGroup.keptAsked, carryMedia, keptLaid).
+            let at = Int(hit.1.createdAt)
+            let same = (messages[hit.0] ?? []).filter { m in
+                m.isFromMe && m.mid.hasPrefix(MTRestoredMid.archive) && Int(m.createdAt) == at && m.attachment?.kind == kept.kind
+            }
+            let place = same.firstIndex { $0.mid == hit.1.mid } ?? 0
+            bare = MTRestoredMid.own + String(at) + "." + kept.kind + "." + String(place)
+        } else if MTRestoredMid.holds(sid) {
             guard let seal = Self.fileSeal(ofFile: kept.file) else {
                 MontanaTrace.mark("kept_file", mid: sid, "a restored row's file carries no seal -- nobody to ask by it")
                 return
@@ -1738,7 +1784,7 @@ class ChatStore: ObservableObject {
     /// The holder's half: a «cargo gone» word about a letter that no longer rides here (delivered, receipted) is a restored phone
     /// asking; the file still on this disk is laid again under the same letter name, once in the span.
     @MainActor
-    func serveKeptFile(mid: String, chat: String) {
+    func serveKeptFile(mid: String, chat: String, speaker: String? = nil) {
         // A RESTORED PHONE ASKS BY A SEAL (OZ 2 p.1.1): the letter of mine whose wire name seals to it; the file goes again under
         // that letter's own name (letterMidFor), and the restored row takes the name there (nameRestoredRow).
         let seal = MTRestoredMid.sealOf(mid)
@@ -1748,8 +1794,20 @@ class ChatStore: ObservableObject {
             return m.mid == mid || m.msgId == "mid:" + mid
         }
         let home = MTSamePair.root(chat)
-        let key = messages[chat]?.contains(where: mine) == true ? chat : home
-        guard let row = messages[key]?.first(where: mine), let kept = row.attachment else {
+        // A RESTORED PHONE ASKS FOR ITS OWN FILE (OZ 2 p.1.1(d)): the letter it sent me, of its kind, born in its second or within
+        // two minutes after it (a name is minted after its row is born), the place-th of them; my copy goes again under that
+        // letter's own name (letterMidFor), and its restored row takes the name there (nameOwnRestoredRow).
+        let own = MTRestoredMid.ownOf(mid)
+        let theirs: (String) -> Message? = { c in
+            guard let own else { return nil }
+            let rows = (self.messages[c] ?? []).filter { m in
+                !m.isFromMe && m.mid.hasPrefix("mid:") && m.attachment?.kind == own.kind && (own.at...(own.at + 120)).contains(Int(m.createdAt))
+                    && (speaker == nil || m.senderRef == speaker)   // in a group, the asker's own letters alone (OZ 2 p.1.2.4)
+            }.sorted { $0.createdAt < $1.createdAt }
+            return own.k < rows.count ? rows[own.k] : nil
+        }
+        let key = own != nil ? (theirs(chat) != nil ? chat : home) : (messages[chat]?.contains(where: mine) == true ? chat : home)
+        guard let row = own != nil ? theirs(key) : messages[key]?.first(where: mine), let kept = row.attachment else {
             MontanaTrace.mark("kept_file", mid: mid, "no letter of mine with a file by this name -- nothing to lay")
             return
         }
@@ -3520,8 +3578,17 @@ class ChatStore: ObservableObject {
             default: row.docFile = name; row.docName = o["n"] as? String ?? name; row.text = ""
             }
         }
-        guard let sig = Self.archiveSig(row), !rows.contains(where: { m in Self.archiveSig(m) == sig }) else { return }
-        guard kind != nil, !MontanaMediaStore.exists(name), let road = o["road"] as? [String: Any] else { return layTwinRow(chat, row) }
+        guard let sig = Self.archiveSig(row) else { return }
+        // A ROW STANDING WITHOUT ITS FILE TAKES THE FILE ALONE (OZ 1 p.1.4.2): a restored Saved Messages row stands from the archive
+        // by the same key (second, side, words and file name) and holds no file; the twin's copy fills it and lays no second row.
+        let standing = rows.first(where: { m in Self.archiveSig(m) == sig })
+        let fileless = standing?.attachment.map { a in !MontanaMediaStore.exists(a.file) } ?? false
+        guard standing == nil || fileless else { return }
+        guard kind != nil, !MontanaMediaStore.exists(name), let road = o["road"] as? [String: Any] else {
+            if standing == nil { layTwinRow(chat, row) }
+            return
+        }
+        let lays = standing == nil
         let fileName = name, s = Int(at), h = MontanaArchive.rowHash(Self.archivedText(row) ?? "")
         Task.detached(priority: .utility) {
             guard let dir = try? MontanaBackup.shelf() else { return }
@@ -3533,7 +3600,7 @@ class ChatStore: ObservableObject {
             }
             await MainActor.run { [weak self] in
                 guard let self, let now = self.messages[chat], !now.contains(where: { m in m.mid == mid }), !self.buried(mid, in: chat) else { return }
-                self.layTwinRow(chat, row)
+                if lays { self.layTwinRow(chat, row) } else { self.bump(chat) }   // a standing row only wears its file now
             }
         }
     }
@@ -5652,6 +5719,22 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             MontanaLog.event("RX-MEDIA FAIL: the manifest did not parse (\(body.count) chars)")
             return
         }
+        // MY OWN ROW REFILLED BY ITS CORRESPONDENT READS THE LETTER'S FILE NAME (OZ 2 p.1.1(d)): its name came first
+        // (nameOwnRestoredRow), its file was named by a UUID that lies nowhere now; the copy is written under the letter's file
+        // name, and the row reads it there. A row of another kind keeps its file -- the trace names it.
+        if !isFromMe, let sid = msgId, let i = messages[chat]?.firstIndex(where: { $0.msgId == sid && $0.isFromMe }),
+           let f = messages[chat]?[i].attachment, !MontanaMediaStore.exists(f.file) {
+            if f.kind == kind {
+                let name = mediaFileName(kind: kind, ext: (obj["e"] as? String) ?? "", seed: sid, round: (obj["r"] as? Bool) ?? false, badge: obj["rb"] as? String)
+                if kind == "img" { messages[chat]?[i].imageFile = name }
+                else if kind == "vid" { messages[chat]?[i].videoFile = name }
+                else if kind == "aud" { messages[chat]?[i].audioFile = name }
+                else { messages[chat]?[i].docFile = name }
+                MontanaTrace.mark("kept_file", mid: MTMid.bare(sid), "my restored row reads its letter's file name")
+            } else {
+                MontanaTrace.mark("kept_file", mid: MTMid.bare(sid), "my restored row is of another kind -- its file stays")
+            }
+        }
         // The letter's placeholder is set on the manifest's first arrival and survives
         // relaunch, so «the message already exists» used to mean «we no longer download the
         // file» — and a broken reception NEVER resumed. Refusal now only when the file
@@ -6786,6 +6869,10 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
                                                     transport: MontanaPhoneNode.shared.transport(to: peer)?.rawValue, proven: false)
                     }
                     if let handed { self.fillMedia(peer, name: handed) }   // the file is whole: duration, caches, no ring
+                    // A FILE SHARED INTO SAVED MESSAGES REACHES THE SEED'S OTHER DEVICES TOO (OZ 1 p.1.4.2, the author's word 22365; T1
+                    // 14.11.2026 16:06 UTC, the sheet's «send SKIP no-secret peer=Saved Mess»): the row is born here, past setMediaStatus
+                    // where the media roads give it to the twin, and the Mac never saw it.
+                    if peer == savedMessagesKey, let row = self.messages[peer]?.first(where: { $0.msgId == "mid:" + itemMid }) { self.giveToTwin(peer, row) }
                     if peer != savedMessagesKey {
                         if !uploaded {
                             // THE SHEET COULD NOT UPLOAD (17.09, the critic): the pieces never reached the node and
@@ -6918,6 +7005,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         placeRow(chat, msg)
         MTRowJournal.put(chat, msg)   // on disk before the share leaves its box (16.09)
         bump(chat)
+        if chat == savedMessagesKey { giveToTwin(chat, msg) }   // a word shared into Saved Messages rides the twin's road as a typed one does
         Task { @MainActor in self.noteListState(chat, last: self.lastLetter(chat)) }   // the list record follows the newest (stage 9, 17.09)
     }
 
@@ -7919,6 +8007,14 @@ enum MTRestoredMid {
         guard word.hasPrefix(seal) else { return nil }
         let s = String(word.dropFirst(seal.count))
         return s.count == 16 && s.allSatisfy({ $0.isHexDigit && !$0.isUppercase }) ? s : nil
+    }
+    static let own = "own:"       // NOT-UI: a restored row of mine asks its correspondent -- own: its second, kind and place
+    /// A restored own row's ask (own:SECOND.KIND.PLACE), nil for any other word -- the one reader of it.
+    static func ownOf(_ word: String) -> (at: Int, kind: String, k: Int)? {
+        guard word.hasPrefix(own) else { return nil }
+        let p = word.dropFirst(own.count).split(separator: ".").map(String.init)
+        guard p.count == 3, let at = Int(p[0]), ["img", "vid", "aud", "doc"].contains(p[1]), let k = Int(p[2]), (0..<64).contains(k) else { return nil }
+        return (at, p[1], k)
     }
     static func holds(_ name: String) -> Bool { name.hasPrefix(archive) || name.hasPrefix(given) }
     /// The wire name inside a given-back row's name -- the one unwrap MTKeeping, MTWalletCore and the restore read (OZ 1 p.5.5).

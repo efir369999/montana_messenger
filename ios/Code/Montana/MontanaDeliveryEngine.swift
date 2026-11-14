@@ -321,6 +321,11 @@ final class MontanaDeliveryEngine {
         if text.hasPrefix(mediaMark), store.messages[home]?.contains(where: { $0.msgId == sid }) != true {
             store.nameRestoredRow(home, sid: sid)
         }
+        // MY OWN RESTORED ROW TAKES MY LETTER'S NAME (OZ 2 p.1.1(d)): the correspondent laid my file again for an own: ask.
+        if text.hasPrefix(mediaMark), store.messages[home]?.contains(where: { $0.msgId == sid }) != true {
+            let manifest = (try? JSONSerialization.jsonObject(with: Data(text.dropFirst(mediaMark.count).utf8))) as? [String: Any]
+            store.nameOwnRestoredRow(home, sid: sid, kind: manifest?["k"] as? String)
+        }
         if store.messages[home]?.contains(where: { $0.msgId == sid }) == true {
             if let qt = quoteText, !qt.isEmpty { store.enrichQuote(home, sid: sid, qt: qt, qm: quoteMid) }
             if let lp = linkPreview, !lp.isEmpty { store.enrichLinkPreview(home, sid: sid, lp: lp) }
