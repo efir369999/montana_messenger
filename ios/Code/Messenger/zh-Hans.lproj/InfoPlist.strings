@@ -2,8 +2,8 @@
    permission is the Protocol's own: the English in Code/Montana/Info.plist, every other language in
    Code/Montana/LANG.lproj/InfoPlist.strings. This file gives it for the keys Code/Messenger/Info.plist asks. */
 
-"NSCameraUsageDescription" = "相机用于在聊天中拍摄照片和视频、录制视频消息、进行视频通话，以及扫描他人的二维码。";
-"NSFaceIDUsageDescription" = "面容 ID 用于显示你的 24 个恢复词。";
+"NSCameraUsageDescription" = "相机用于在聊天中拍摄照片和视频、录制视频消息、进行视频通话，扫描他人的二维码，以及扫描你要连接的自己设备的二维码。";
+"NSFaceIDUsageDescription" = "面容 ID 用于显示你的 24 个恢复词，并确认连接你自己的设备。";
 "NSLocationWhenInUseUsageDescription" = "你的位置仅用于让你在聊天中发送它。";
 "NSMicrophoneUsageDescription" = "麦克风用于录制语音消息、视频和通话。";
 "NSPhotoLibraryAddUsageDescription" = "聊天中的照片会保存到你的相册。";

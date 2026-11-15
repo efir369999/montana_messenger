@@ -2739,6 +2739,8 @@ enum MontanaWakePush {
     /// minute does not walk the same dead row a thousand minutes deep again.
     private static var sealedRows = Set<String>()
     static func fetchBox() async {
+        holdTwinLane()   // the seed's own lane, held from the first pickup on (OZ 1 p.1)
+        MontanaArchive.wantHistory()   // the receiver's cursor of history, named to the seed's devices (OZ 1 p.2)
         // ONE pickup in flight: parallel ones (activation + hatching) staged a storm of 34
         // requests a second and split the letters between themselves (precedent 02:46:15). A
         // second call leaves a trail — and the pickup repeats once when the first finishes.
@@ -4025,13 +4027,26 @@ enum MontanaWakePush {
     /// a group carried by its owner hold no pipe between them, so their lane is sealed by a key the two derive from the room's key
     /// and their two seats; it is named here by the room, never written into the book of pipes, and asked only while the room lives.
     private static var roomConvs = Set<String>()
+    /// THE SEED'S OWN LANE STANDS WHILE THE APP RUNS (OZ 1 p.1, the author's words 22320, 22581 and 22631: heal the root, not the
+    /// sores). The node tells a held lane «box» the very millisecond a letter is boxed (the node's /wake) and the app fetches at
+    /// once (THE STORE'S HINT, below); the lane stood for a call, an open chat, a board and a room's pair, never for the pipe of the
+    /// seed's devices -- so a Mac learned what the phone sent only when its window came forward (22581). One long question every
+    /// twelve seconds, the price of one open chat, keeps every running device of the seed hearing the others the same second.
+    private static var twinConvs = Set<String>()
+    static func holdTwinLane() {
+        sigQ.async {
+            guard !twinConvs.contains(MontanaArchive.twinPipe), MontanaArchive.twinSecret() != nil else { return }
+            twinConvs.insert(MontanaArchive.twinPipe)
+            ensureSigTimer("twin")
+        }
+    }
     /// EVERY CONVERSATION WHOSE LANE IS HELD -- a call, an open chat, a room's pair: the one union the lane's turns ask, read on
     /// sigQ as the sets are. Each holder owns its own set; the lane dies only when every set is empty.
     private static var heldConvs: Set<String> {
         #if MONTANA_MESSENGER
-        return sigConvs.union(chatConvs).union(roomConvs)
+        return sigConvs.union(chatConvs).union(roomConvs).union(twinConvs)
         #else
-        return sigConvs.union(chatConvs).union(boardConvs).union(roomConvs)   // and a board on the screen
+        return sigConvs.union(chatConvs).union(boardConvs).union(roomConvs).union(twinConvs)   // and a board on the screen
         #endif
     }
     /// A conversation whose letters ride the lane beside the box: its chat stands on the screen here.
@@ -4055,6 +4070,7 @@ enum MontanaWakePush {
     /// The key a lane is sealed by: a pipe's own, or a room pair's.
     private static func laneSecret(_ conv: String) -> MTPipeKey? {
         if let s = MTPipeBook.key(for: conv) { return s }
+        if conv == MontanaArchive.twinPipe { return MontanaArchive.twinListening()[conv] }   // the seed's own lane, its one key
         roomLock.lock(); defer { roomLock.unlock() }
         return roomSecrets[conv]
     }

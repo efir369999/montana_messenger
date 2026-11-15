@@ -355,6 +355,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     /// a real sleep.
     private static var away = true   // the launch is the first return
     static func appBecameActive() {
+        // A JOINED DEVICE READS ITS TERM AT EVERY RETURN (OZ 1 p.4): a Mac stays open for weeks, and a launch alone would let it keep
+        // an identity the phone has not spoken to for longer than its term; offline too.
+        if MTLinkedDevices.expired { MTLinkedDevices.end("the phone was not heard for its term") }
         #if !MONTANA_MESSENGER
         MTApps.vpn?.moment(.shown)   // the quiet beats of the VPN page live while the app stands on the screen (29.09)
         #endif

@@ -815,18 +815,20 @@ extension MontanaArchive {
     /// A sealed blob arrived. If it opens under this person's history key it is a block of their own
     /// history and is filed; otherwise it belongs to another path and this returns false untouched.
     @discardableResult
-    static func absorb(_ sealed: Data) -> Bool {
-        guard let (h, _, a) = keys(), let conv = peekConv(sealed, hk: h, acct: a) else { return false }
+    static func absorb(_ sealed: Data) -> Bool { fileBlock(sealed).taken }
+    /// The filing itself, with the folder a block of this person's history now stands in (nil when it was taken unfiled).
+    private static func fileBlock(_ sealed: Data) -> (taken: Bool, folder: String?) {
+        guard let (h, _, a) = keys(), let conv = peekConv(sealed, hk: h, acct: a) else { return (false, nil) }
         // A block of a conversation this person deleted is theirs and is not filed: it is taken, so no other road keeps it.
         if deletedHere(conv) {
             MontanaTrace.markFolded("archive_refused", "a block of a deleted conversation is not filed", window: 60)
-            return true
+            return (true, nil)
         }
         // A HEAD WITH THE ESTABLISHED SECRET IS NOT FILED FROM THE FLOOR DAY (25.10.2026, decision 191): the twin's copy of an
         // old head would lay the secret under the seed again after this device's pass took it out (dropSecretHeads).
         if MTPipeBook.floorDay() >= MTPipeKey.eraseDay, onlySecretHeads(openBlock(sealed, hk: h, acct: a)) {
             MontanaTrace.markFolded("archive_refused", "a head with the established secret is not filed from the floor day", window: 60)
-            return true
+            return (true, nil)
         }
         let folder = folderName(forConv: conv) ?? conv.montanaHexString
         let base = rootURL.path
@@ -846,7 +848,7 @@ extension MontanaArchive {
             // twin's rows reach the feed instead of resting sealed beside it (Stage 6, both ends).
             NotificationCenter.default.post(name: .montanaArchiveIngested, object: nil, userInfo: ["folder": folder])
         }
-        return rc >= 0
+        return (rc >= 0, rc >= 0 ? folder : nil)
     }
 
     /// THE BLOCKS OF A DELETED CONVERSATION ARE NOT FILED AGAIN (the critic B-4; the author's words 11.10.2026 17:1x UTC: «check the
@@ -901,13 +903,15 @@ extension MontanaArchive {
         return out.isEmpty ? nil : out
     }
 
-    private static func blockSeq(of sealed: Data) -> UInt64? {
+    private static func blockSeq(of sealed: Data) -> UInt64? { blockMark(of: sealed)?.seq }
+    /// A block's writer tag (hex, the «f» of a history letter) and its number in that writer's log.
+    private static func blockMark(of sealed: Data) -> (writer: String, seq: UInt64)? {
         var tag = [UInt8](repeating: 0, count: 4)
         var seq: UInt64 = 0
         let rc = sealed.withUnsafeBytes { sp in
             mt_archive_block_id(sp.bindMemory(to: UInt8.self).baseAddress, sealed.count, &tag, &seq)
         }
-        return rc == 0 ? seq : nil
+        return rc == 0 ? (Data(tag).montanaHexString, seq) : nil
     }
 
     // ── the person's other devices through the box (the author's word 11.10.2026 09:1x UTC, No.60: «do it») ──
@@ -951,25 +955,24 @@ extension MontanaArchive {
             }
         }
     }
-    private static func layForTwins() async {
+    private static func layForTwins(from want: [String: UInt64]? = nil) async {
         let gathered: (Data, [String: UInt64], Int, Bool)? = ioQueue.sync {   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
             guard let wt = writerTag() else { return nil }
-            let cursor = (MontanaLocalVault.getDecrypted(boxedKey)
+            let cursor = want ?? (MontanaLocalVault.getDecrypted(boxedKey)
                 .flatMap { try? JSONDecoder().decode([String: UInt64].self, from: $0) }) ?? [:]
-            var blob = Data(), tops: [String: UInt64] = [:], n = 0, more = false
+            var blob = Data(), tops: [String: UInt64] = [:], starts: [String: UInt64] = [:], n = 0, more = false
             for chat in conversations() {
                 if twinCap < blob.count { more = true; break }
                 let from = cursor[chat] ?? 0
                 guard let stream = export(chat: chat, writerTag: wt, fromSeq: from) else { continue }
                 var top = from
                 for (seq, sealed) in stream {
-                    var len = UInt32(sealed.count).littleEndian
-                    blob.append(Data(bytes: &len, count: 4)); blob.append(sealed)
+                    blob.append(framed(sealed))
                     top = max(top, seq + 1); n += 1
                 }
-                if top != from { tops[chat] = top }
+                if top != from { tops[chat] = top; starts[chat] = from }
             }
-            return (blob, tops, n, more)
+            return (runsRecord(starts) + blob, tops, n, more)
         }
         guard let (blob, tops, n, more) = gathered, 0 < n, let secret = twinSecret(),
               let dir = try? MontanaBackup.shelf() else { return }
@@ -980,6 +983,7 @@ extension MontanaArchive {
         }
         road["w"] = "hist"; road["n"] = n; road["f"] = writerTag()?.montanaHexString ?? ""
         if twinQuietHere { road["rq"] = 1 }   // this device's extension takes the read word quietly (MTTwinRead)
+        MTLinkedDevices.stamp(&road)   // its kind, and the phone's term for its joined devices (OZ 1 p.4)
         guard await MTKeeping.knock(secret, road, silent: true, sender: twinDeviceRef) else {
             return MontanaTrace.mark("twin_hist", "no door boxed the letter n=\(n)")
         }
@@ -989,7 +993,11 @@ extension MontanaArchive {
             for (k, v) in tops { cursor[k] = max(cursor[k] ?? 0, v) }
             if let d = try? JSONEncoder().encode(cursor) { MontanaLocalVault.setEncrypted(boxedKey, d) }
         }
-        MontanaTrace.mark("twin_hist", "laid blocks=\(n) bytes=\(blob.count) more=\(more ? 1 : 0)")
+        MontanaTrace.mark("twin_hist", "laid blocks=\(n) bytes=\(blob.count) more=\(more ? 1 : 0) asked=\(want == nil ? 0 : 1)")
+        if more, var next = want {   // a named cursor is walked to its end, round by round
+            for (k, v) in tops { next[k] = v }
+            return await layForTwins(from: next)
+        }
         if more { twinSoon() }
     }
     /// A row of the box in the pipe of this seed's devices is this file's own, never a letter of the feed.
@@ -1003,6 +1011,8 @@ extension MontanaArchive {
         switch o["w"] as? String {
         case "hist": Task.detached(priority: .utility) { await takeFromTwin(o, mid: mid) }
         case "lt": Task.detached(priority: .utility) { await takeMirror(o, mid: mid) }   // COMPAT-GATED: an older build takes it unread
+        case "hw": Task.detached(priority: .utility) { await giveHistory(o) }   // COMPAT-GATED: an older build takes it unread
+        case "end": if (o["t"] as? String) == writerTagHex() { MTLinkedDevices.end("the phone ended the session") }   // COMPAT-GATED: an older build takes it unread
         default: break
         }
         return true
@@ -1032,12 +1042,14 @@ extension MontanaArchive {
     }
     /// A mirror or history letter of another device of the seed: its writer tag is heard now, with what it said of its extension.
     nonisolated static func heardTwin(_ o: [String: Any]) {
-        guard let f = o["f"] as? String, !f.isEmpty else { return }
+        guard let f = o["f"] as? String, !f.isEmpty, !MTLinkedDevices.endedAgain(f) else { return }   // an ended device is told again, never listed
         let now = Date().timeIntervalSince1970
+        let kept = max(twinHeardFor, Double(MTLinkedDevices.days) * 86_400)   // the book keeps a device the phone's term long (OZ 1 p.4)
         var m = ((UserDefaults.standard.dictionary(forKey: twinDevicesKey) as? [String: [Double]]) ?? [:])
-            .filter { e in e.value.count == 2 && now - e.value[0] < twinHeardFor }
+            .filter { e in e.value.count == 2 && now - e.value[0] < kept }
         m[f] = [now, (o["rq"] as? Int) == 1 ? 1 : 0]
         UserDefaults.standard.set(m, forKey: twinDevicesKey)
+        MTLinkedDevices.heard(f, days: o["e"] as? Int, kind: o["d"] as? String)   // a joined device counts its term again from the phone's letter
     }
     /// This device's extension opens the seed's pipe: the app mirrored its secret (MontanaWakePush.mirrorSecrets), and the extension
     /// ships with this build -- the Messenger's stays off the Mac.
@@ -1046,6 +1058,113 @@ extension MontanaArchive {
         if ProcessInfo.processInfo.isMacCatalystApp || ProcessInfo.processInfo.isiOSAppOnMac { return false }
         #endif
         return MontanaKeychain.get(MTTwinRead.secretKey)?.isEmpty == false
+    }
+    // ── THE CURSOR OF HISTORY STANDS WITH THE RECEIVER (OZ 1 p.2; the author's words 22583 and 22631: heal the root) ──
+    // The giver's cursor (boxedKey) moved when a node boxed the letter, and a box keeps a day and the pipe's last 64 letters
+    // (the node's /wake): a device away longer, or behind more, lost those blocks for good -- the head of a pipe among them, and
+    // its chat stood «recovered from the archive without its key» (22583). Now each device keeps, per folder and per writer, the
+    // next block it lacks, and names it to the others in one word (hw) at its pickups; each giver lays its own blocks from there.
+    // The cursor moves only over a whole run (THE RUNS OF A LETTER, below), never by the highest number heard.
+    // A block is immutable and named by its writer and number, so a repeat is filed as held and changes nothing.
+    private static let heldKey = "mt.history.held"   // NOT-UI: [folder: [writer tag: the next block this device lacks]]
+    private static let heldLock = NSLock()
+    private static var heldMap: [String: [String: UInt64]]?
+    private static var heldDirty = false
+    private static func heldRead() -> [String: [String: UInt64]] {
+        if let m = heldMap { return m }
+        let m = MontanaLocalVault.getDecrypted(heldKey).flatMap { d in try? JSONDecoder().decode([String: [String: UInt64]].self, from: d) } ?? [:]
+        heldMap = m
+        return m
+    }
+    private static func noteHeld(folder: String, _ sealed: Data, runFrom: UInt64) {
+        guard let (w, seq) = blockMark(of: sealed) else { return }
+        heldLock.withLock {
+            var m = heldRead()
+            let at = m[folder]?[w] ?? 0
+            guard runFrom <= at, at <= seq else { return }
+            m[folder, default: [:]][w] = seq + 1
+            heldMap = m; heldDirty = true
+        }
+    }
+    /// THE RUNS OF A LETTER (Agent 1220): a block's number is counted per device across every folder (the core's seq.bin), so
+    /// within one folder the numbers skip by nature, and a hole cannot be read off them. Each «hist» letter therefore opens with
+    /// one record that names, per folder, the number its run starts from; the run holds every block of that writer in that folder
+    /// from there on. The receiver moves its cursor only over a run that starts at or below it -- a letter that came after a lost
+    /// one leaves the cursor at the hole, and the next «hw» asks from there. An older build opens the record as a block of nobody's
+    /// history and passes it by. The record rides inside the sealed blob (MTKeeping.lay), never beside it.
+    private static let runsMark = Data("mt-twin-runs".utf8) + Data([0])
+    /// One record of a letter: its length, four bytes little-endian, then the record.
+    private static func framed(_ d: Data) -> Data {
+        var len = UInt32(d.count).littleEndian
+        return Data(bytes: &len, count: 4) + d
+    }
+    private static func runsRecord(_ starts: [String: UInt64]) -> Data {
+        guard !starts.isEmpty, let j = try? JSONEncoder().encode(starts) else { return Data() }
+        return framed(runsMark + j)
+    }
+    private static func runsOf(_ record: Data) -> [String: UInt64]? {
+        guard record.starts(with: runsMark) else { return nil }
+        return try? JSONDecoder().decode([String: UInt64].self, from: record.dropFirst(runsMark.count))
+    }
+    private static func keepHeld() {
+        let m: [String: [String: UInt64]]? = heldLock.withLock {
+            guard heldDirty else { return nil }
+            heldDirty = false
+            return heldMap
+        }
+        if let m, let d = try? JSONEncoder().encode(m) { _ = MontanaLocalVault.setEncrypted(heldKey, d) }
+    }
+    private static var wantedAt: Double = 0   // guarded by heldLock
+    /// The word that names this device's cursor to the seed's other devices: at a pickup, at most once in ten minutes. A word too
+    /// long for a letter rides the cargo road.
+    nonisolated static func wantHistory() {
+        let t = Date().timeIntervalSince1970
+        let go: Bool = heldLock.withLock {
+            guard t - wantedAt > 600 else { return false }
+            wantedAt = t
+            return true
+        }
+        guard go else { return }
+        Task.detached(priority: .utility) {
+            guard let secret = twinSecret(), let mine = writerTag()?.montanaHexString else { return }
+            keepHeld()
+            let held = heldLock.withLock { heldRead() }
+            var o: [String: Any] = ["w": "hw", "f": mine]
+            if twinQuietHere { o["rq"] = 1 }   // the book of devices keeps this mark: a cursor word without it would clear it
+            MTLinkedDevices.stamp(&o)   // the cursor word is the device's sign of life on every rise: its kind, and the phone's term (OZ 1 p.4)
+            let body = (try? JSONEncoder().encode(held)) ?? Data("{}".utf8)
+            if body.count <= 2000 {
+                o["c"] = String(data: body, encoding: .utf8) ?? "{}"
+            } else {
+                guard let dir = try? MontanaBackup.shelf() else { return }
+                let url = dir.appendingPathComponent(UUID().uuidString + ".want")
+                defer { try? FileManager.default.removeItem(at: url) }
+                guard MTDiskDoor.write(body, to: url, "twin-want"), let road = await MTKeeping.lay(url) else {
+                    return MontanaTrace.mark("twin_want", "the cursor did not reach the nodes")
+                }
+                for (k, v) in road { o[k] = v }
+            }
+            let boxed = await MTKeeping.knock(secret, o, silent: true, sender: twinDeviceRef)
+            MontanaTrace.mark("twin_want", "folders=\(held.count) bytes=\(body.count) boxed=\(boxed ? 1 : 0)")
+        }
+    }
+    /// Another device of the seed named its cursor: this device's own blocks are laid from there, every folder this device holds.
+    private static func giveHistory(_ o: [String: Any]) async {
+        let mine = ioQueue.sync { writerTag()?.montanaHexString ?? "" }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
+        guard !mine.isEmpty, let f = o["f"] as? String, f != mine else { return }
+        heardTwin(o)   // a device that only reads is heard too: the phone lists it, a joined one counts its term from here (OZ 1 p.4)
+        guard MTLinkedDevices.ended[f] == nil else { return }   // an ended device is told again (heardTwin), never given history
+        var body = (o["c"] as? String).flatMap { s in s.data(using: .utf8) }
+        if body == nil, o["mref"] != nil, let dir = try? MontanaBackup.shelf() {
+            let url = dir.appendingPathComponent(UUID().uuidString + ".want")
+            defer { try? FileManager.default.removeItem(at: url) }
+            if await MTKeeping.fetch(o, to: url) { body = try? Data(contentsOf: url) }
+        }
+        guard let body, let held = try? JSONDecoder().decode([String: [String: UInt64]].self, from: body) else {
+            return MontanaTrace.mark("twin_want", "the cursor did not come whole")
+        }
+        let want = ioQueue.sync { Dictionary(uniqueKeysWithValues: conversations().map { c in (c, held[c]?[mine] ?? 0) }) }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
+        await layForTwins(from: want)
     }
     private static func takeFromTwin(_ o: [String: Any], mid: String) async {
         let mine = ioQueue.sync { writerTag()?.montanaHexString ?? "" }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
@@ -1058,7 +1177,8 @@ extension MontanaArchive {
         guard await MTKeeping.fetch(o, to: url), let blob = try? Data(contentsOf: url) else {
             return MontanaTrace.mark("twin_hist", "the blocks did not come whole")
         }
-        var i = 0, filed = 0
+        var i = 0, filed = 0, whole = true
+        var runs: [String: UInt64]?
         let bytes = [UInt8](blob)
         while i + 4 <= bytes.count {
             let len = Int(UInt32(bytes[i]) | UInt32(bytes[i+1]) << 8 | UInt32(bytes[i+2]) << 16 | UInt32(bytes[i+3]) << 24)
@@ -1066,9 +1186,13 @@ extension MontanaArchive {
             guard 0 < len, i + len <= bytes.count else { break }
             let sealed = Data(bytes[i..<(i + len)])
             i += len
-            if ioQueue.sync(execute: { absorb(sealed) }) { filed += 1 }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
+            if runs == nil, let r = runsOf(sealed) { runs = r; continue }
+            let (taken, folder) = ioQueue.sync { fileBlock(sealed) }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
+            if taken { filed += 1 } else { whole = false }   // a block that did not file breaks every run after it
+            if whole, let folder, let from = runs?[folder] { noteHeld(folder: folder, sealed, runFrom: from) }
         }
         UserDefaults.standard.set(Array((seen + [mid]).suffix(512)), forKey: twinSeenKey)
+        keepHeld()
         MontanaTrace.mark("twin_hist", "taken blocks=\(filed)")
     }
 
@@ -1151,6 +1275,7 @@ extension MontanaArchive {
         }
         road["w"] = "lt"; road["n"] = batch.count; road["f"] = ioQueue.sync { writerTag()?.montanaHexString ?? "" }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
         if twinQuietHere { road["rq"] = 1 }   // this device's extension takes the read word quietly (MTTwinRead)
+        MTLinkedDevices.stamp(&road)   // its kind, and the phone's term for its joined devices (OZ 1 p.4)
         guard await MTKeeping.knock(secret, road, silent: true, sender: twinDeviceRef) else {
             ioQueue.async { mirrorSoon() }
             return MontanaTrace.mark("twin_mirror", "no door boxed the letter n=\(batch.count)")

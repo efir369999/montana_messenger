@@ -7576,6 +7576,9 @@ enum SeedScope {
         "mt.history.folders", "mt.history.heads.form", "mt.history.nameheads", "mt.history.pushed",
         "archiveSecretHeadsPurged",   // this person's archive had its old secret heads taken out (MontanaArchive.dropSecretHeads, 25.10)
         "mt.history.boxed", "mt.history.twinSeen",   // the history laid for this seed's other devices, and theirs filed here (11.10)
+        "mt.history.held",   // per folder and writer, the next block of history this device lacks (OZ 1 p.2): this device's cursor
+        MTLinkedDevices.daysKey, MTLinkedDevices.phoneKey,   // the phone's term for its joined devices; on a joined one, its phone (OZ 1 p.4)
+        MTLinkedDevices.namesKey, MTLinkedDevices.endedKey,   // the kinds of the seed's devices heard, and the sessions ended here (OZ 1 p.4)
         "mt.group.mirrored.1",   // this device gave this person's groups to the seed's other devices (the twin mirror, 18.10)
         "mt.twin.asked",   // the rows this device asked of the seed's other devices (the twin's past, 18.10)
         MontanaArchive.twinDevicesKey,   // the seed's other devices heard, and whether their extension takes a read word quietly (OZ 1 p.14.7)

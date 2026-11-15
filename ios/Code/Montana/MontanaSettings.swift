@@ -118,16 +118,23 @@ struct SettingsTabView: View {
             List {
                 // THE 24 WORDS AT THE HEAD (the author's word 08.10.2026: «bring the seed up to the top of Settings»):
                 // the one thing nobody can give back stands first; Privacy keeps its own row beside the account's deletion.
-                Section {
-                    NavigationLink { SeedShowView().montanaMotionMeter() } label: { navLabel("Save 24 words", "key.horizontal.fill", .gray) }
-                } footer: {
-                    Text("Write the 24 words down and keep them: on a new phone your identity and your saved history open only from them.")
+                // A JOINED DEVICE SHOWS NO WORDS (OZ 1 p.4, spec §0): the words stand on the phone alone.
+                if !MTLinkedDevices.joinsOnly {
+                    Section {
+                        NavigationLink { SeedShowView().montanaMotionMeter() } label: { navLabel("Save 24 words", "key.horizontal.fill", .gray) }
+                    } footer: {
+                        Text("Write the 24 words down and keep them: on a new phone your identity and your saved history open only from them.")
+                    }
+                    .listRowBackground(MTGlassRowPlate())
                 }
-                .listRowBackground(MTGlassRowPlate())
                 Section {
                     NavigationLink { NotificationsView() } label: { navLabel("Notifications and Sounds", "bell.badge.fill", .red) }
                     NavigationLink { DataStorageView() } label: { navLabel("Data and Storage", "arrow.down.circle.fill", .indigo) }
                     NavigationLink { PrivacyView() } label: { navLabel("Privacy", "lock.fill", .gray) }
+                    // THE PHONE KEEPS THE DEVICES (the author's word 22627): a joined device joins nothing and draws no row.
+                    if !MTLinkedDevices.joinsOnly {
+                        NavigationLink { DevicesView() } label: { navLabel("Devices", "laptopcomputer.and.iphone", .blue) }
+                    }
                     NavigationLink { AppearanceView() } label: { navLabel("Appearance", "paintbrush.fill", .blue) }
                     NavigationLink { LanguagePickerView() } label: { navLabel("Language", "globe", .cyan) }
                 }
@@ -1849,6 +1856,156 @@ enum MTSystemAccess {
     }
 }
 
+// ── SETTINGS -- DEVICES (OZ 1 p.4; the author's word 22627) ──
+// The phone joins a Mac by the QR the Mac shows (MTDeviceLink), lists the seed's devices it hears (MTLinkedDevices.list), ends a
+// session, and chooses the term after which a joined device that has not heard it ends itself. Both screens show one number before
+// anything is given, and nothing is given before the person's own Face ID or passcode on this phone.
+struct DevicesView: View {
+    private enum Stage { case idle, seeking, confirm, giving, given, notFound, noPasscode, failed }
+    @AppStorage(MTLinkedDevices.daysKey) private var days = MTLinkedDevices.defaultDays
+    @State private var devices = MTLinkedDevices.list
+    @State private var scanning = false
+    @State private var stage = Stage.idle
+    @State private var key: MTDeviceLink.Key?
+    @State private var ending: MTLinkedDevices.Device?
+
+    private static func termName(_ d: Int) -> LocalizedStringKey {
+        switch d {
+        case 7: return "1 week"
+        case 30: return "1 month"
+        case 91: return "3 months"
+        default: return "6 months"
+        }
+    }
+    private static func symbol(_ kind: String) -> String {
+        switch kind {
+        case "Mac": return "laptopcomputer"
+        case "iPad": return "ipad"
+        default: return "iphone"
+        }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                Button { key = nil; stage = .idle; scanning = true } label: {
+                    Label("Connect a device", systemImage: "qrcode.viewfinder")
+                }
+                .disabled(stage == .seeking || stage == .giving)
+                linkRow
+            } footer: {
+                Text("A device you connect gets your whole identity. On it choose «Sign in by QR» and scan its code with this phone.")
+            }
+            .listRowBackground(MTGlassRowPlate())
+            Section {
+                if devices.isEmpty {
+                    Text("No other device of yours has been heard yet.").foregroundColor(.gray)
+                }
+                ForEach(devices) { d in
+                    HStack(spacing: 12) {
+                        Image(systemName: Self.symbol(d.kind)).foregroundColor(.primary).frame(width: 29)
+                        VStack(alignment: .leading, spacing: 2) {
+                            if d.kind.isEmpty { Text("Device") } else { Text(verbatim: d.kind) }   // USER-DATA: a product name its letters carried (Mac, iPhone, iPad), never translated
+                            Text(d.heard, format: .relative(presentation: .named)).font(.footnote).foregroundColor(.gray)
+                        }
+                        Spacer()
+                        if d.ends {   // a phone or an iPad of the same seed keeps its identity: nothing to end there
+                            Button(role: .destructive) { ending = d } label: { Text("End session").foregroundColor(.red) }
+                                .buttonStyle(.borderless)
+                        }
+                    }
+                }
+            } header: { Text("Devices") }
+            .listRowBackground(MTGlassRowPlate())
+            Section {
+                Picker("End inactive sessions automatically", selection: $days) {
+                    ForEach(MTLinkedDevices.choices, id: \.self) { d in Text(Self.termName(d)).tag(d) }
+                }
+            } footer: {
+                Text("A connected device that has not heard this phone for this long ends its session itself, offline too.")
+            }
+            .listRowBackground(MTGlassRowPlate())
+        }
+        .foregroundColor(.primary)
+        .scrollContentBackground(.hidden)
+        .montanaPageGround()
+        .navigationTitle("Devices")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { devices = MTLinkedDevices.list }
+        .sheet(isPresented: $scanning) {
+            QRScannerView { code in
+                guard MTDeviceLink.parse(code) != nil else { return }   // a code of another kind leaves the scanner open
+                scanning = false
+                seek(code)
+            }
+            .ignoresSafeArea()
+        }
+        .alert("End this device's session?", isPresented: Binding(get: { ending != nil }, set: { on in if !on { ending = nil } })) {
+            Button("End session", role: .destructive) {
+                if let d = ending { MTLinkedDevices.endSession(d.id) }
+                ending = nil
+                devices = MTLinkedDevices.list
+            }
+            Button("Cancel", role: .cancel) { ending = nil }
+        } message: {
+            Text("The device erases your identity from itself as soon as it hears this phone; one kept offline erases it at the end of its term.")
+        }
+    }
+
+    @ViewBuilder private var linkRow: some View {
+        switch stage {
+        case .idle: EmptyView()
+        case .seeking:
+            HStack(spacing: 10) { ProgressView(); Text("Looking for the device…").foregroundColor(.gray) }
+        case .confirm:
+            if let k = key {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Check that the other screen shows \(k.check)").font(.headline)
+                    Text("This device will get your whole identity: your words and your chats. Connect only your own device.")
+                        .font(.footnote).foregroundColor(.gray)
+                    Button { connect(k) } label: { Text("Connect").bold() }
+                        .buttonStyle(.borderedProminent)
+                }
+                .padding(.vertical, 4)
+            }
+        case .giving:
+            HStack(spacing: 10) { ProgressView(); Text("Connecting…").foregroundColor(.gray) }
+        case .given:
+            Text("The device is connected.").foregroundColor(.green)
+        case .notFound:
+            Text("The device was not found. Show a new code on it and scan again.").foregroundColor(.red)
+        case .noPasscode:
+            Text("Set a passcode on this phone — without it no device can be connected.").foregroundColor(.red)
+        case .failed:
+            Text("The device could not be connected. Check the network and try again.").foregroundColor(.red)
+        }
+    }
+
+    /// The new device's key, from its box and held against the QR (MTDeviceLink.key): a key the QR does not name is never found.
+    private func seek(_ code: String) {
+        stage = .seeking; key = nil
+        Task { @MainActor in
+            guard let k = await MTDeviceLink.key(of: code) else { stage = .notFound; return }
+            key = k; stage = .confirm
+        }
+    }
+    /// AN ABSENT CHECK IS A FAILED CHECK (as SeedShowView): the words leave this phone only after its owner's Face ID or passcode.
+    private func connect(_ k: MTDeviceLink.Key) {
+        let ctx = LAContext(); var err: NSError?
+        guard ctx.canEvaluatePolicy(.deviceOwnerAuthentication, error: &err) else { stage = .noPasscode; return }
+        ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: String(localized: "Connect a device", bundle: MTLanguage.bundle)) { ok, _ in
+            Task { @MainActor in
+                guard ok else { return }
+                stage = .giving
+                guard await MTDeviceLink.give(k) else { stage = .failed; return }
+                MTLinkedDevices.connected(k)
+                devices = MTLinkedDevices.list
+                key = nil; stage = .given
+            }
+        }
+    }
+}
+
 struct PrivacyView: View {
     /// The device forgets the person: content, identity and seed leave as one. In Montana the forgetting is
     /// wholly local; in the Messenger the keepers are asked to drop my parts and my iCloud copies leave too
@@ -1867,12 +2024,7 @@ struct PrivacyView: View {
             erasing = true
             await MTKeeping.shared.releaseAllForDeletion(within: 15)
             let _: Int = await withCheckedContinuation { c in CloudWatch.shared.leaveAllOwn(within: 15) { c.resume(returning: $0) } }
-            MontanaBackup.sweep(all: true)
-            let store = ChatStore.live
-            let convs = store.map { Array($0.messages.keys) } ?? []
-            await withCheckedContinuation { c in MontanaArchive.eraseForDeletion(convRefs: convs, alone: !MTSeats.anyParked) { c.resume() } }
-            store?.wipeLocal()
-            SeedScope.forget()
+            await MTLinkedDevices.eraseHere()   // the one local erase (constitution 15)
             erasing = false
             ui.settingsShown = false
             #else
@@ -1880,6 +2032,16 @@ struct PrivacyView: View {
             guard let store = ChatStore.live else { SeedScope.forget(); ui.settingsShown = false; return }
             store.sealForForget { SeedScope.forget(); ui.settingsShown = false }
             #endif
+        }
+    }
+    /// A JOINED DEVICE FORGETS ONLY ITSELF (decision 974 over the author's word 22722; the frame 22627: the identity lives on the
+    /// phone): no keepers, no iCloud, no row of the nodes -- the account stays the phone's, which alone deletes it.
+    private func endThisSession() {
+        Task { @MainActor in
+            erasing = true
+            await MTLinkedDevices.eraseHere()   // the one local erase (constitution 15)
+            erasing = false
+            ui.settingsShown = false
         }
     }
     @AppStorage("readReceiptsEnabled") private var readReceipts = true
@@ -1897,6 +2059,7 @@ struct PrivacyView: View {
     // act taught the person that one of them was reversible. The button stands here, on the
     // Privacy page, next to the seed phrase it erases (the author's word 18.09).
     @State private var confirmForget = false
+    @State private var confirmEnd = false   // a joined device ends its own session (decision 974)
     @State private var erasing = false   // the Messenger's deletion is on its way (forgetSeed)
     @State private var showSeed = false
     @Environment(UIState.self) private var ui
@@ -2081,20 +2244,25 @@ struct PrivacyView: View {
             }
             .listRowBackground(MTGlassRowPlate())
 
-            Section {
-                NavigationLink { SeedShowView().montanaMotionMeter() } label: {
-                    HStack(spacing: 12) {
-                        icon("key.horizontal.fill", .gray)
-                        Text("Seed phrase").foregroundColor(.primary)
+            if !MTLinkedDevices.joinsOnly {   // a joined device shows no words (OZ 1 p.4)
+                Section {
+                    NavigationLink { SeedShowView().montanaMotionMeter() } label: {
+                        HStack(spacing: 12) {
+                            icon("key.horizontal.fill", .gray)
+                            Text("Seed phrase").foregroundColor(.primary)
+                        }
                     }
                 }
+                .listRowBackground(MTGlassRowPlate())
             }
-            .listRowBackground(MTGlassRowPlate())
 
             Section {
-                Button(role: .destructive) { confirmForget = true } label: {
-                    Text("Delete account").foregroundColor(.red)
-                        .frame(maxWidth: .infinity, alignment: .center)
+                Button(role: .destructive) { if MTLinkedDevices.joinsOnly { confirmEnd = true } else { confirmForget = true } } label: {
+                    Group {
+                        if MTLinkedDevices.joinsOnly { Text("End session") } else { Text("Delete account") }   // decision 974
+                    }
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
             .listRowBackground(MTGlassRowPlate())
@@ -2102,7 +2270,7 @@ struct PrivacyView: View {
         .alert("Delete account?", isPresented: $confirmForget) {
             // The words come first: a person who has no phrase must leave here toward it,
             // not past the edge from which there is no return.
-            Button("Show seed phrase") { showSeed = true }
+            if !MTLinkedDevices.joinsOnly { Button("Show seed phrase") { showSeed = true } }   // a joined device shows no words (OZ 1 p.4)
             Button("Delete account", role: .destructive) { forgetSeed() }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -2119,6 +2287,12 @@ struct PrivacyView: View {
                 rest
             }
             #endif
+        }
+        .alert("End this device's session?", isPresented: $confirmEnd) {   // a joined device forgets only itself (decision 974)
+            Button("End session", role: .destructive) { endThisSession() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This device erases your identity and your chats from itself. Your account stays on your phone.")
         }
         .sheet(isPresented: $showSeed) {
             NavigationStack { SeedShowView() }.preferredColorScheme(.dark).montanaMotionMeter()
@@ -2310,6 +2484,9 @@ struct MontanaOnboardingView: View {
     @State private var nodeHost = ""                      // the person's own node, named beside the words
     #endif
     @State private var takingWord: LocalizedStringKey = "Opening your identity…"
+    @State private var linkOffer: MTDeviceLink.Offer?   // the QR this device shows to be joined by the phone (OZ 1 p.3)
+    @State private var linking = false
+    @State private var linkFailed = false
     #if !MONTANA_MESSENGER
     @ObservedObject private var homeNode = HomeNodeWatch.shared   // the node's copy on its way back, for the bar
     #endif
@@ -2338,6 +2515,7 @@ struct MontanaOnboardingView: View {
                     case 2: seed
                     case 4: recover
                     case 5: takingBack
+                    case 6: linkPage
                     default: EmptyView()
                     }
                 } }.padding(24)
@@ -2383,6 +2561,7 @@ struct MontanaOnboardingView: View {
         case 1: return { step = 0 }
         case 2: return { step = 1 }
         case 4: return { step = 0; recoverError = "" }
+        case 6: return { step = 0; recoverError = ""; linkOffer = nil }
         default: return nil
         }
     }
@@ -2456,6 +2635,12 @@ struct MontanaOnboardingView: View {
             Spacer()
             // EVERY ACT OF THE PATH IS A DOOR (the author's word 29.09, 23:25: the buttons in the new style of our OS): the one plate of the doors
             // (MTLoginDoorStyle), the main act on the platform's blue glass, the second on its clear glass; gold is the sign's alone.
+            // AN IDENTITY IS BORN ONLY ON THE PHONE (the author's word 22627): the Mac signs in by the phone's QR alone -- no «Create»,
+            // no words typed; the phone gives them sealed to this device (MTDeviceLink).
+            if MTLinkedDevices.joinsOnly {
+                Button { guarded { step = 6 } } label: { Text("Sign in by QR") }
+                    .buttonStyle(MTLoginDoorStyle(tint: MontanaOctagon.platformBlue))
+            } else {
             Button { guarded(own: true) { createSeed() } } label: {
                 HStack(spacing: 8) {
                     if creating { ProgressView().tint(.white) }
@@ -2465,6 +2650,7 @@ struct MontanaOnboardingView: View {
             .buttonStyle(MTLoginDoorStyle(tint: MontanaOctagon.platformBlue)).disabled(creating)
             Button { guarded { step = 4 } } label: { Text("Open identity") }
                 .buttonStyle(MTLoginDoorStyle())
+            }
             Text(MontanaVersion.footer)
                 .font(.footnote).foregroundColor(.white).padding(.top, 2)
         }
@@ -2502,9 +2688,23 @@ struct MontanaOnboardingView: View {
             Button {
                 let words = recoverInput.lowercased().split(whereSeparator: { $0.isWhitespace || $0 == "," }).map(String.init)   // tab, U+00A0 and CR LF part words too (critic 5.1 K1)
                 if words.count != 24 { recoverError = "Exactly 24 words required (entered \(words.count))"; return }
-                recoverError = ""; recovering = true
-                let phrase = words.joined(separator: " ")
-                Task.detached {
+                openWords(words.joined(separator: " "))
+            } label: {
+                HStack(spacing: 8) {
+                    if recovering { ProgressView().tint(.white) }
+                    Text(recovering ? "Restoring…" : "Restore")
+                }
+            }
+            .buttonStyle(MTLoginDoorStyle(tint: MontanaOctagon.platformBlue)).disabled(recovering)
+            Spacer()
+        }
+    }
+
+    /// THE ONE WAY INTO AN IDENTITY BY ITS WORDS (OZ 1 p.3; constitution 15): the words typed under «Restore» and the words a phone
+    /// gave by QR open here alike -- the seed, the boundary between two people, and the history taken back.
+    private func openWords(_ phrase: String, joined: (() -> Void)? = nil) {
+        recoverError = ""; recovering = true
+        Task.detached {
                     let t0 = Date()
                     let acc = MontanaSeedKeys.keys(from: phrase)
                     let ms = Int(Date().timeIntervalSince(t0) * 1000)
@@ -2517,6 +2717,7 @@ struct MontanaOnboardingView: View {
                                 return
                             }
                             MontanaTrace.mark("seed_opened", "ms=\(ms)")
+                            joined?()
                             #if MONTANA_MESSENGER
                             takeFromKeepers()   // no own node in Messenger (word 16428)
                             #else
@@ -2527,15 +2728,44 @@ struct MontanaOnboardingView: View {
                             recoverError = "Invalid phrase. Check the words and their order."
                         }
                     }
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    if recovering { ProgressView().tint(.white) }
-                    Text(recovering ? "Restoring…" : "Restore")
-                }
-            }
-            .buttonStyle(MTLoginDoorStyle(tint: MontanaOctagon.platformBlue)).disabled(recovering)
+        }
+    }
+
+    var linkPage: some View {
+        VStack(spacing: 16) {
             Spacer()
+            Image(systemName: "qrcode").font(.system(size: 46)).foregroundColor(Color.accentColor)
+            Text("Sign in by QR").font(.title3.bold()).foregroundColor(.white)
+            Text("On your phone open Settings — Devices — Connect a device, and scan this code.")
+                .font(.subheadline).foregroundColor(.white).multilineTextAlignment(.center)
+            if let o = linkOffer {
+                MontanaQRCode(payload: Data(o.code.utf8), side: 240, corner: 12)
+                Text("Check that the phone shows \(o.check)").font(.footnote).foregroundColor(.white)
+            } else if linkFailed {
+                Text("The code could not be made. Check the network and try again.")
+                    .font(.caption).foregroundColor(.red).multilineTextAlignment(.center)
+                Button { startLink() } label: { Text("Try again") }.buttonStyle(MTLoginDoorStyle())
+            } else {
+                ProgressView().tint(.white)
+            }
+            if recovering { ProgressView().tint(.white) }
+            if !recoverError.isEmpty { Text(LocalizedStringKey(recoverError)).foregroundColor(.red).font(.caption).multilineTextAlignment(.center) }
+            Spacer()
+        }
+        .onAppear { if linkOffer == nil, !linking { startLink() } }
+    }
+    /// One QR at a time: a code that lived its ten minutes gives way to a new one while the page stands.
+    private func startLink() {
+        linkFailed = false; linkOffer = nil; linking = true
+        Task { @MainActor in
+            guard let o = await MTDeviceLink.offer() else { linking = false; linkFailed = true; return }
+            linkOffer = o
+            let g = await MTDeviceLink.gift(for: o)
+            linking = false
+            guard step == 6 else { return }
+            guard let g else { startLink(); return }
+            linkOffer = nil
+            openWords(g.words) { MTLinkedDevices.joined(g) }
         }
     }
 

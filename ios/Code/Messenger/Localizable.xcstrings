@@ -18246,6 +18246,390 @@
         }
       }
     },
+    "Sign in by QR": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войти по QR"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过二维码登录"
+          }
+        }
+      }
+    },
+    "On your phone open Settings — Devices — Connect a device, and scan this code.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На телефоне откройте Настройки — Устройства — Подключить устройство и отсканируйте этот код."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在手机上打开 设置 — 设备 — 连接设备，然后扫描此二维码。"
+          }
+        }
+      }
+    },
+    "Check that the phone shows %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте, что телефон показывает %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请确认手机显示 %@"
+          }
+        }
+      }
+    },
+    "The code could not be made. Check the network and try again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код не удалось создать. Проверьте сеть и попробуйте снова."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法生成二维码。请检查网络后重试。"
+          }
+        }
+      }
+    },
+    "Devices": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройства"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设备"
+          }
+        }
+      }
+    },
+    "Connect a device": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключить устройство"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接设备"
+          }
+        }
+      }
+    },
+    "A device you connect gets your whole identity. On it choose «Sign in by QR» and scan its code with this phone.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключённое устройство получает всю вашу личность. Выберите на нём «Войти по QR» и отсканируйте его код этим телефоном."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接的设备将获得您的完整身份。在该设备上选择「通过二维码登录」，然后用本手机扫描其二维码。"
+          }
+        }
+      }
+    },
+    "No other device of yours has been heard yet.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Других ваших устройств пока не слышно."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂未发现您的其他设备。"
+          }
+        }
+      }
+    },
+    "Device": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设备"
+          }
+        }
+      }
+    },
+    "End session": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершить сеанс"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结束会话"
+          }
+        }
+      }
+    },
+    "End inactive sessions automatically": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Автоматически завершать неактивные"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动结束不活跃的会话"
+          }
+        }
+      }
+    },
+    "A connected device that has not heard this phone for this long ends its session itself, offline too.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключённое устройство, не слышавшее этот телефон так долго, само завершает сеанс — и без сети."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已连接的设备若在此期间未收到本手机的消息，将自行结束会话，离线时也是如此。"
+          }
+        }
+      }
+    },
+    "End this device's session?": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершить сеанс этого устройства?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结束此设备的会话？"
+          }
+        }
+      }
+    },
+    "The device erases your identity from itself as soon as it hears this phone; one kept offline erases it at the end of its term.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство сотрёт вашу личность, как только услышит этот телефон; устройство вне сети сотрёт её по истечении срока."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设备一收到本手机的消息就会删除您的身份；离线的设备会在期限届满时删除。"
+          }
+        }
+      }
+    },
+    "Looking for the device…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ищем устройство…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在查找设备…"
+          }
+        }
+      }
+    },
+    "Check that the other screen shows %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте, что на другом экране %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请确认另一块屏幕显示 %@"
+          }
+        }
+      }
+    },
+    "This device will get your whole identity: your words and your chats. Connect only your own device.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это устройство получит всю вашу личность: слова и чаты. Подключайте только своё устройство."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该设备将获得您的完整身份：助记词和聊天。请只连接您自己的设备。"
+          }
+        }
+      }
+    },
+    "The device is connected.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство подключено."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设备已连接。"
+          }
+        }
+      }
+    },
+    "The device was not found. Show a new code on it and scan again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство не найдено. Покажите на нём новый код и отсканируйте снова."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到设备。请在其上显示新的二维码后重新扫描。"
+          }
+        }
+      }
+    },
+    "Set a passcode on this phone — without it no device can be connected.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установите код-пароль на этом телефоне — без него устройство не подключить."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请为本手机设置密码——没有密码无法连接设备。"
+          }
+        }
+      }
+    },
+    "The device could not be connected. Check the network and try again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство не удалось подключить. Проверьте сеть и попробуйте снова."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法连接设备。请检查网络后重试。"
+          }
+        }
+      }
+    },
+    "3 months": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 месяца"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 个月"
+          }
+        }
+      }
+    },
+    "6 months": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6 месяцев"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6 个月"
+          }
+        }
+      }
+    },
+    "This device erases your identity and your chats from itself. Your account stays on your phone.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это устройство сотрёт с себя вашу личность и чаты. Аккаунт останется на вашем телефоне."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此设备将从自身抹掉你的身份和聊天。你的账户仍保留在你的手机上。"
+          }
+        }
+      }
+    },
     "No phone number, no e-mail. Your identity comes from your secret phrase, and your chats are encrypted on your device.": {
       "localizations": {
         "ru": {

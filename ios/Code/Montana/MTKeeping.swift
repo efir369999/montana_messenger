@@ -1277,3 +1277,238 @@ struct MTKeepingSection: View {
         .listRowBackground(MTGlassRowPlate())
     }
 }
+
+
+// ── A DEVICE JOINS BY QR (OZ 1 p.3-4; the author's words 22607 and 22627: an identity is born only on the phone; the Mac and the web
+// sign in by QR) ──
+// The new device draws a QR of 64 bytes: a one-time secret L and the SHA-256 of a one-time ML-KEM-768 key whose secret half lives in
+// this process alone. It lays the key in a box named by L; the phone that scanned the QR takes the key from there, checks it against
+// the QR -- a node cannot swap it -- and lays back the 24 words sealed to that key. Nothing new is made: the seal is MTRoomSeal, the box
+// is a pipe of the keeping road (MTKeeping.knock, the pickup), and the words open by the one function of «Restore». A photo of the QR
+// opens the box but not the gift: it is sealed to a key whose secret half never leaves the new device's memory. The box lives ten
+// minutes; the QR is one-time. Both screens show one number of six digits, so the person sees they joined these two screens.
+enum MTDeviceLink {
+    static let scheme = "montana:link:1:"   // NOT-UI: the QR's own prefix
+    static let boxName = "link"   // NOT-UI: the name the link box is heard under, never a pipe of the book
+    static let life: TimeInterval = 600
+    /// The new device's side of one joining: the secret of the box, the one-time key, and the name it knocks under.
+    struct Offer {
+        let l: Data, pub: Data, sec: Data, ref: String, at: Date
+        var code: String { MTDeviceLink.scheme + (l + MTDeviceLink.digest(pub)).base64urlNoPad }
+        var check: String { MTDeviceLink.check(l, pub) }
+    }
+    /// What the phone gives: the words, the phone's writer tag, and the days after which a device the phone has not heard ends itself.
+    struct Gift { let words: String; let phone: String; let days: Int }
+    /// What the phone took from the box, held against the QR: the new device's key, its writer tag and kind, and the number of both screens.
+    struct Key { let l: Data, pub: Data, tag: String, kind: String; var check: String { MTDeviceLink.check(l, pub) } }
+
+    static func digest(_ d: Data) -> Data { Data(SHA256.hash(data: d)) }
+    static func boxSecret(_ l: Data) -> Data {
+        var d = Data("mt-link-box".utf8); d.append(0); d.append(l)   // LOCAL-HASH-OK: the link box's own label
+        return digest(d)
+    }
+    static func bind(_ l: Data, _ pub: Data) -> Data {
+        var d = Data("mt-link".utf8); d.append(0); d.append(l); d.append(digest(pub))
+        return d
+    }
+    static func check(_ l: Data, _ pub: Data) -> String {
+        var d = Data("mt-link-check".utf8); d.append(0); d.append(l); d.append(pub)   // LOCAL-HASH-OK: the number both screens show
+        let n = digest(d).prefix(4).reduce(UInt32(0)) { a, b in a &* 256 &+ UInt32(b) } % 1_000_000
+        return String(format: "%06u", n)   // NOT-UI: six digits
+    }
+    static func parse(_ code: String) -> (l: Data, commit: Data)? {
+        guard code.hasPrefix(scheme), let d = Data(base64urlNoPad: String(code.dropFirst(scheme.count))), d.count == 64 else { return nil }
+        return (Data(d.prefix(32)), Data(d.suffix(32)))
+    }
+    private static func freshRef() -> String { "link#" + montanaRandom(8).montanaHexString }   // NOT-UI: a name for one joining
+    private static func words(in l: Data, ref: String, keep: Bool) async -> [[String: Any]] {
+        var rows: [[String: String]] = []
+        let ear = MontanaWakePush.BoxEar(invites: [], pipes: [boxName: MTPipeKey(boxSecret(l))], owner: ref)
+        _ = await MontanaWakePush.pickup(ear, buries: nil, keep: { row in rows.append(row); return keep })
+        return rows.compactMap { r in MTKeeping.word(r["t"] ?? "") }
+    }
+
+    // ── the new device ──
+    static func offer() async -> Offer? {
+        guard let kp = MTRoomSeal.keypair() else { return nil }
+        let o = Offer(l: montanaRandom(32), pub: kp.pub, sec: kp.sec, ref: freshRef(), at: Date())
+        // The writer tag rides beside the key: the phone lists this device by it, and a session it ended long ago is lifted by a
+        // joining anew (MTLinkedDevices.connected). The tag is outside the QR's commitment -- a node that swaps it only keeps an
+        // ended device of its own choosing ended, the same limit as a device kept offline (spec §0).
+        let word: [String: Any] = ["w": "lk", "v": 1, "pk": kp.pub.base64urlNoPad, "f": MontanaArchive.writerTagHex(), "d": MTLinkedDevices.kind]
+        let laid = await MTKeeping.knock(boxSecret(o.l), word, silent: true, sender: o.ref)
+        MontanaTrace.mark("link_offer", "boxed=\(laid ? 1 : 0)")
+        return laid ? o : nil
+    }
+    /// The gift of the phone, read every three seconds while the QR lives; nil when it did not come.
+    static func gift(for o: Offer) async -> Gift? {
+        let bound = bind(o.l, o.pub)
+        while Date().timeIntervalSince(o.at) < life, !Task.isCancelled {
+            for w in await words(in: o.l, ref: o.ref, keep: true) where (w["w"] as? String) == "lg" {
+                guard let ct = (w["ct"] as? String).flatMap({ s in Data(base64urlNoPad: s) }),
+                      let box = (w["b"] as? String).flatMap({ s in Data(base64urlNoPad: s) }),
+                      let plain = MTRoomSeal.open(box, ct: ct, sec: o.sec, bind: bound),
+                      let g = (try? JSONSerialization.jsonObject(with: plain)) as? [String: Any],
+                      let s = g["s"] as? String else {
+                    MontanaTrace.mark("link_gift", "a gift that does not open here")
+                    continue
+                }
+                MontanaTrace.mark("link_gift", "opened")
+                return Gift(words: s, phone: g["p"] as? String ?? "", days: g["e"] as? Int ?? MTLinkedDevices.defaultDays)
+            }
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+        }
+        return nil
+    }
+
+    // ── the phone ──
+    /// The new device's key, taken from the box and held against the QR: a key the QR does not name is never sealed to.
+    static func key(of code: String) async -> Key? {
+        guard let (l, commit) = parse(code) else { return nil }
+        let ref = freshRef()
+        for _ in 0..<10 {
+            // The key stays in the box (a public key; the gift is sealed to a secret that never leaves the new device): a joining that
+            // failed on the phone is scanned again from the same QR, never met with «not found» while the Mac still shows it.
+            for w in await words(in: l, ref: ref, keep: true) where (w["w"] as? String) == "lk" {
+                if let pk = (w["pk"] as? String).flatMap({ s in Data(base64urlNoPad: s) }), pk.count == MTRoomSeal.pubSize, digest(pk) == commit {
+                    return Key(l: l, pub: pk, tag: w["f"] as? String ?? "", kind: w["d"] as? String ?? "")
+                }
+                MontanaTrace.mark("link_key", "a key the QR does not name")
+            }
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+        }
+        return nil
+    }
+    /// The words, sealed to the new device's key alone; only after the person's own Face ID or passcode on the phone (the caller).
+    static func give(_ k: Key) async -> Bool {
+        guard let words = MontanaSeed.mnemonic else { return false }
+        let g: [String: Any] = ["s": words, "p": MontanaArchive.writerTagHex(), "e": MTLinkedDevices.days]
+        guard let plain = try? JSONSerialization.data(withJSONObject: g),
+              let sealed = MTRoomSeal.seal(plain, to: k.pub, bind: bind(k.l, k.pub)) else { return false }
+        let o: [String: Any] = ["w": "lg", "v": 1, "ct": sealed.ct.base64urlNoPad, "b": sealed.box.base64urlNoPad]
+        let laid = await MTKeeping.knock(boxSecret(k.l), o, silent: true, sender: freshRef())
+        MontanaTrace.mark("link_give", "boxed=\(laid ? 1 : 0)")
+        return laid
+    }
+}
+
+/// THE DEVICES OF ONE IDENTITY (the author's word 22627: Settings -- Devices; a device not heard ends itself after 1 week, 1, 3 or 6
+/// months). The phone's choice rides in each gift; the list of devices is the one book of the seed's devices heard (twinDevicesKey).
+enum MTLinkedDevices {
+    static let daysKey = "mt.link.days"   // NOT-UI: the phone's choice: a device not heard this many days ends itself
+    static let defaultDays = 182
+    static let choices = [7, 30, 91, 182]
+    static var days: Int {
+        let d = UserDefaults.standard.integer(forKey: daysKey)
+        return 0 < d ? d : defaultDays
+    }
+    static let phoneKey = "mt.link.phone"   // NOT-UI: on a device joined by QR: the phone's writer tag, its days, when it was last heard
+    /// THE MAC AND THE WEB ARE JOINED DEVICES (22627): they sign in by the phone's QR and never bring an identity into being.
+    static var joinsOnly: Bool { ProcessInfo.processInfo.isMacCatalystApp || ProcessInfo.processInfo.isiOSAppOnMac }
+    /// THE KIND OF A JOINED DEVICE (constitution 15): its letters name it so, and only a device of this kind erases itself on the
+    /// word end -- a phone or an iPad of the same seed keeps its identity, so the phone never offers to end it.
+    static let joinedKind = "Mac"   // NOT-UI: a product name
+    /// The kind this device's letters name it by in the phone's list: the platform's own product name.
+    static var kind: String {
+        if joinsOnly { return joinedKind }
+        return UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"   // NOT-UI: product names
+    }
+    /// THE ONE STAMP OF A LETTER IN THE SEED'S PIPE (constitution 15): its kind, and on the phone the term of its joined devices.
+    static func stamp(_ o: inout [String: Any]) {
+        o["d"] = kind
+        if !joinsOnly { o["e"] = days }
+    }
+    static let namesKey = "mt.link.names"   // NOT-UI: [writer tag: the kind its letters named]
+    static let endedKey = "mt.link.ended"   // NOT-UI: on the phone: [writer tag: when the person ended its session]
+    static var names: [String: String] { (UserDefaults.standard.dictionary(forKey: namesKey) as? [String: String]) ?? [:] }
+    static var ended: [String: Double] { (UserDefaults.standard.dictionary(forKey: endedKey) as? [String: Double]) ?? [:] }
+    /// One device of the seed in the phone's list: its writer tag, its kind, when it was last heard.
+    struct Device: Identifiable {
+        let id: String; let kind: String; let heard: Date
+        var ends: Bool { kind == MTLinkedDevices.joinedKind }   // only a joined device obeys the word end (MTLinkedDevices.end)
+    }
+    /// THE LIST IS THE BOOK OF THE SEED'S DEVICES HEARD (twinDevicesKey, its one owner MontanaArchive.heardTwin), within the term,
+    /// without the sessions ended here, the last heard first.
+    static var list: [Device] {
+        let now = Date().timeIntervalSince1970, term = Double(days) * 86_400
+        let book = (UserDefaults.standard.dictionary(forKey: MontanaArchive.twinDevicesKey) as? [String: [Double]]) ?? [:]
+        let n = names, gone = ended
+        return book.compactMap { e in
+            guard e.value.count == 2, now - e.value[0] < term, gone[e.key] == nil else { return nil }
+            return Device(id: e.key, kind: n[e.key] ?? "", heard: Date(timeIntervalSince1970: e.value[0]))
+        }.sorted { a, b in b.heard < a.heard }
+    }
+    /// The phone gave its words to this device: a session ended here before is lifted, and the device stands in the list at once.
+    static func connected(_ k: MTDeviceLink.Key) {
+        guard !k.tag.isEmpty else { return }
+        var e = ended; e[k.tag] = nil
+        UserDefaults.standard.set(e, forKey: endedKey)
+        MontanaArchive.heardTwin(["f": k.tag, "d": k.kind])
+    }
+    /// «End session»: the word end in the seed's pipe names the device; it erases itself on hearing it (MontanaArchive.twinTakes).
+    static func endSession(_ tag: String) {
+        var e = ended; e[tag] = Date().timeIntervalSince1970
+        UserDefaults.standard.set(e, forKey: endedKey)
+        tellEnd(tag)
+    }
+    private static func tellEnd(_ tag: String) {
+        Task.detached(priority: .userInitiated) {
+            guard let secret = MontanaArchive.twinSecret() else { return }
+            let told = await MTKeeping.knock(secret, ["w": "end", "t": tag], silent: true, sender: MontanaArchive.twinDeviceRef)
+            MontanaTrace.mark("link_end", "told=\(told ? 1 : 0)")
+        }
+    }
+    private static let toldLock = NSLock()
+    private static var toldAt: [String: Double] = [:]
+    /// AN ENDED DEVICE STILL HEARD IS TOLD AGAIN (a box keeps a day: a Mac away longer never read the first word): at most once in
+    /// ten minutes; it never returns to the list.
+    static func endedAgain(_ tag: String) -> Bool {
+        guard ended[tag] != nil else { return false }
+        let now = Date().timeIntervalSince1970
+        let due: Bool = toldLock.withLock {
+            guard 600 < now - (toldAt[tag] ?? 0) else { return false }
+            toldAt[tag] = now
+            return true
+        }
+        if due { tellEnd(tag) }
+        return true
+    }
+    static func joined(_ g: MTDeviceLink.Gift) {
+        UserDefaults.standard.set(["p": g.phone, "e": g.days, "h": Date().timeIntervalSince1970], forKey: phoneKey)
+    }
+    /// A letter of the seed's other device was heard: when it is the phone that joined this device, its days count again from now,
+    /// under the choice its letter carries.
+    static func heard(_ tag: String, days: Int?, kind: String?) {
+        if let kind, !kind.isEmpty, kind.count < 17, names[tag] != kind {
+            var n = names; n[tag] = kind
+            UserDefaults.standard.set(n, forKey: namesKey)
+        }
+        guard var m = UserDefaults.standard.dictionary(forKey: phoneKey), (m["p"] as? String) == tag else { return }
+        m["h"] = Date().timeIntervalSince1970
+        if let days, MTLinkedDevices.choices.contains(days) { m["e"] = days }
+        UserDefaults.standard.set(m, forKey: phoneKey)
+    }
+    /// THE DEVICE FORGETS THE PERSON HERE ALONE (constitution 15: one owner of the local erase): the shelf, the archive's folders,
+    /// the store and the seed leave this device; nothing is asked of the keepers or the cloud. «Delete account» runs it after its
+    /// own releases; an ended session and a term run out run it alone -- the person's copies stay for the phone.
+    @MainActor static func eraseHere() async {
+        MontanaBackup.sweep(all: true)
+        let store = ChatStore.live
+        let convs = store.map { s in Array(s.messages.keys) } ?? []
+        await withCheckedContinuation { c in MontanaArchive.eraseForDeletion(convRefs: convs, alone: !MTSeats.anyParked) { c.resume() } }
+        store?.wipeLocal()
+        for k in [phoneKey, namesKey, endedKey] { UserDefaults.standard.removeObject(forKey: k) }
+        SeedScope.forget()
+    }
+    /// The phone ended this device's session (its word «end» in the seed's pipe), or the term ran out: only a joined device ends.
+    static func end(_ why: String) {
+        guard joinsOnly else { return }
+        MontanaTrace.mark("link_end", why)
+        Task { @MainActor in await eraseHere() }
+    }
+    /// A joined device the phone has not heard for its days ends itself -- offline too (the author's word 22627).
+    static var expired: Bool {
+        guard let m = UserDefaults.standard.dictionary(forKey: phoneKey), let h = m["h"] as? Double, let e = m["e"] as? Int else { return false }
+        return Double(e) * 86_400 < Date().timeIntervalSince1970 - h
+    }
+}

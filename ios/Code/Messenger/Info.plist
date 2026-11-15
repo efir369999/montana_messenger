@@ -18,9 +18,9 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>The camera takes photos and videos for your chats, video messages and video calls, and scans a person's QR code.</string>
+	<string>The camera takes photos and videos for your chats, video messages and video calls, scans a person's QR code, and scans the code of your own device you connect.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Face ID shows your 24-word recovery phrase.</string>
+	<string>Face ID shows your 24-word recovery phrase and confirms connecting your own device.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used only so you can send it in a chat.</string>
 	<key>NSMicrophoneUsageDescription</key>

@@ -248,7 +248,7 @@ enum MTNodeWire {
             let r = await post("/wake", make: {
                 guard let env = sealBlob(key: secret.bodyKey(window: minuteWindow()), plain) else { return [:] }
                 var body: [String: Any] = ["conv": cw, "from_id": sub, "mid": mid, "env": env.base64EncodedString()]
-                if silent { body["silent"] = true }   // a service word (a receipt from the shelf, MTShelfPost) rings nobody
+                if silent { body["silent"] = true }   // a service word: a background push wakes the receiver's app, no banner (the notifier's /push)
                 return body
             }, doors: [d], attempts: 1)
             code = r.code
