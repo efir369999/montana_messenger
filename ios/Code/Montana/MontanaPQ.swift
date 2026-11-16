@@ -1133,7 +1133,10 @@ extension MontanaArchive {
         }
         guard go else { return }
         Task.detached(priority: .utility) {
-            guard let secret = twinSecret(), let mine = writerTag()?.montanaHexString else { return }
+            guard let secret = twinSecret(), let mine = writerTag()?.montanaHexString else {
+                heldLock.withLock { if wantedAt == t { wantedAt = 0 } }   // keys not derived yet (the first pickup comes before them): the window stays unspent, the next pickup names the cursor
+                return
+            }
             keepHeld()
             let held = heldLock.withLock { heldRead() }
             var o: [String: Any] = ["w": "hw", "f": mine]
