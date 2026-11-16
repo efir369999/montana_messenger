@@ -3132,7 +3132,7 @@ final class MTGroup {
             let ok = await MontanaWakePush.putBlob(bid, data: sealed)
             MontanaTrace.mark("group_face_up", "\(ok ? "ok" : "FAIL") bytes=\(full.count)")
         }
-        return bid + "." + MontanaHomeNode.hex(Data(key))
+        return bid + "." + Data(key).montanaHexString
     }
     /// A MEMBER WEARS THE GROUP'S FULL FACE (OZ 1 p.1): asked of the node at once and twice more across half a minute (the owner's
     /// put may still be on its way up); the small face stays until it comes, and a face given since leaves it unworn.

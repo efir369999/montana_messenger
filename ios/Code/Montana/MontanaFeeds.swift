@@ -2686,13 +2686,17 @@ enum MTDocLink {
         let chats = all.filter { l in !postLinkPrefixes.contains { p in l.name.hasPrefix(p) } }
         var freed: Int64 = 0, back = 0
         for l in posts { forget(l.name); freed += l.bytes }
+        #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893)
         MTHomeBook.shared.ensure()
         let book = MTHomeBook.shared.all()
         let asked = chats.compactMap { l in book[l.name]?.p }.flatMap { p in p }
         let held = asked.isEmpty ? Set<String>() : (await MTHomeShelf.have(asked) ?? Set<String>())
+        #endif
         for l in chats {
             if MontanaMediaStore.exists(l.name) { forget(l.name); freed += l.bytes; continue }
+            #if !MONTANA_MESSENGER
             if let e = book[l.name], !held.isEmpty, e.p.allSatisfy(held.contains) { forget(l.name); freed += l.bytes; continue }
+            #endif
             // the only copy: it goes back into the store, and stays here when the store refuses it
             if MontanaMediaStore.adopt(from: l.file, name: l.name) { back += 1; forget(l.name) }
         }

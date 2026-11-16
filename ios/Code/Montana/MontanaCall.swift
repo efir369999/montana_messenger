@@ -8865,7 +8865,7 @@ struct MontanaRoutePicker: UIViewRepresentable {
 /// is shown: an audio call on a phone holds the whole scene upright through the app's one answer to «which
 /// orientations» (AppDelegate), and the scene is asked to turn upright at once when the call rises in a landscape hand.
 /// A video call, a folded call and a tablet keep the orientations the app declares. Every change is a diary line
-/// (call_upright).
+/// (call_upright). A rolling voice or video tape holds the turn here too (holdTape, diary line tape_turn): one owner of the turn.
 enum MTCallUpright {
     private(set) static var held = false
     /// The orientations the app declares for this kind of device (its Info.plist lists), read once: the answer
@@ -8888,8 +8888,34 @@ enum MTCallUpright {
         if mask.isEmpty { return pad ? .all : .allButUpsideDown }
         return mask
     }()
+    /// THE TAPE HOLDS THE TURN TOO (the author's word 22837, 16.11.2026 10:44 UTC: «while a voice message is recorded and the
+    /// screen turns, the buttons vanish -- fix it and turn the rotation off while a voice or a video message is recorded»). A turn
+    /// under a rolling tape rebuilt the compose bar beneath the finger and the tape's buttons were lost. While MontanaRecording
+    /// holds a tape the scene keeps the orientation it stands in at the tape's start -- nothing turns at the start, nothing
+    /// turns under the finger -- and is freed when the tape goes idle. The call's upright hold stands above it.
+    private(set) static var tape: UIInterfaceOrientationMask? = nil
     /// The app's answer now; AppDelegate asks it for every window.
-    static var mask: UIInterfaceOrientationMask { held ? .portrait : declared }
+    static var mask: UIInterfaceOrientationMask { held ? .portrait : (tape ?? declared) }
+    /// MontanaRecording holds the turn for its tape (true) or lets it go (false).
+    static func holdTape(_ on: Bool) {
+        guard on != (tape != nil) else { return }   // SILENT-OK: nothing changed
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        if on {
+            let standing = (scenes.first { $0.activationState == .foregroundActive } ?? scenes.first)?.effectiveGeometry.interfaceOrientation
+            switch standing {
+            case .landscapeLeft: tape = .landscapeLeft
+            case .landscapeRight: tape = .landscapeRight
+            case .portraitUpsideDown: tape = .portraitUpsideDown
+            default: tape = .portrait
+            }
+        } else {
+            tape = nil
+        }
+        MontanaTrace.mark("tape_turn", on ? "held" : "free")
+        for scene in scenes {
+            for w in scene.windows { w.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations() }
+        }
+    }
     /// Holds the phone upright or frees it; the scene learns at once and turns upright if it stood in landscape.
     @discardableResult
     static func apply(_ upright: Bool) -> Bool {

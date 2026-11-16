@@ -1210,11 +1210,13 @@ struct DataStorageView: View {
     @State private var disk: MTDiskUse? = nil                 // what this phone holds, measured on its disk (MTDiskUse)
     @State private var clearingShelf = false
     @State private var releasing = false   // the person's word on the opened files left behind (MTDocLink.release)
+    @State private var cacheWord: LocalizedStringKey? = nil   // what a clearing freed, told by the one alert «Cache» of this page
+    #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893)
     @ObservedObject private var homeKeep = MTHomeKeep.shared   // the files on the person's own node, in the node's own word (18.10)
     @State private var clearingCache = false
-    @State private var cacheWord: LocalizedStringKey? = nil
     @AppStorage(MTHomeKeep.keepDaysKey) private var keepDays = 0
     @AppStorage(MTHomeKeep.limitKey) private var cacheLimit = 0
+    #endif
     private func measureDisk(_ inv: CopyInventory) {
         let named = Set(inv.owner.keys)
         DispatchQueue.global(qos: .utility).async {
@@ -1266,6 +1268,7 @@ struct DataStorageView: View {
             }
             .listRowBackground(MTGlassRowPlate())
 
+            #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893)
             // THE CACHE, CLEARED (the author's word 18.10.2026 17:1x UTC): what the person's own node
             // holds leaves this phone, and comes back from the node at a look or a tap -- the node's word decides, asked anew.
             if MTHomeShelf.bringing {   // no node holds this phone's files (no row of one's own node, the author's word 16428): nothing to clear
@@ -1327,12 +1330,8 @@ struct DataStorageView: View {
                 } message: {
                     Text("Only what your node holds leaves this phone; what it does not hold stays.")
                 }
-                .alert("Cache", isPresented: Binding(get: { cacheWord != nil }, set: { if !$0 { cacheWord = nil } })) {
-                    Button("OK") { cacheWord = nil }
-                } message: {
-                    if let w = cacheWord { Text(w) }
-                }
             }
+            #endif
 
             // WHAT THIS PHONE HOLDS, MEASURED ON ITS DISK (the author's word 18.10.2026 07:2x UTC: «on T1 Montana weighs 20 GB, I cannot
             // see what weighs so much nor how to clean it, and Data and Storage shows other numbers»): the sum is the phone's own, each
@@ -1410,12 +1409,19 @@ struct DataStorageView: View {
                     }
                 }
             } message: {
-                let opened = Text("Copies a viewer was handed when you opened a file. A file your node holds leaves; one it does not hold yet goes back to your chats for your node.")
-                #if MONTANA_MESSENGER
-                opened
+                #if MONTANA_MESSENGER   // no own node in Messenger (decision 942 a): every opened file goes back to the chats
+                Text("Copies a viewer was handed when you opened a file. They go back to your chats.")
                 #else
+                let opened = Text("Copies a viewer was handed when you opened a file. A file your node holds leaves; one it does not hold yet goes back to your chats for your node.")
                 Text("\(opened) Videos of other people's walls leave too: their walls keep them, not your node.")
                 #endif
+            }
+            // ONE ALERT TELLS WHAT A CLEARING FREED (the opened files here, the node's cache in the Protocol's section above): it
+            // stood on the cache's section alone, so Messenger, which has none, never said what «Clear opened files» freed.
+            .alert("Cache", isPresented: Binding(get: { cacheWord != nil }, set: { if !$0 { cacheWord = nil } })) {
+                Button("OK") { cacheWord = nil }
+            } message: {
+                if let w = cacheWord { Text(w) }
             }
 
             Section {
@@ -1599,7 +1605,9 @@ struct DataStorageView: View {
         .onChange(of: plan) { _, p in p.save() }
         .onAppear {
             CopyInventory.gather { inv in inventory = inv; measureDisk(inv) }
+            #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893)
             homeKeep.ask()
+            #endif
             MontanaBackupCloud.ready { r in
                 cloudReady = r
                 if r { cloud.start() }

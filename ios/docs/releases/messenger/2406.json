@@ -1,0 +1,17 @@
+{
+  "build": 2406,
+  "notes": {
+    "en": [
+      "The Messenger is lighter: code it never used is gone from the app. Messages, calls, groups and channels travel as before.",
+      "Please check: messages, calls and a restore from the 24 words work as before."
+    ],
+    "ru": [
+      "Мессенджер стал легче: из приложения ушёл код, которым он не пользовался. Сообщения, звонки, группы и каналы ходят как прежде.",
+      "Проверьте: сообщения, звонки и восстановление по 24 словам работают как прежде."
+    ],
+    "zh-Hans": [
+      "Messenger 更轻了：应用中从未使用的代码已被移除。消息、通话、群组和频道照常传递。",
+      "请检查：消息、通话以及用 24 个词恢复均与以前一样正常工作。"
+    ]
+  }
+}

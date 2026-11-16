@@ -705,7 +705,7 @@ enum MTKeepDerive {
     private func nameLight(_ made: MontanaBackup.Made, g: UInt64, tags: (face: String, name: String), people: String) async {
         defer { MontanaBackup.discard(made); lighting = false }
         guard let master = MontanaSeed.root, let secret = MTKeepDerive.lightSecret(master),
-              let digest = MontanaHomeNode.digest(of: made.url), var road = await Self.lay(made.url) else {
+              let digest = MontanaBackup.digest(of: made.url), var road = await Self.lay(made.url) else {
             return MontanaTrace.mark("keep_light", "the light copy did not reach the nodes")
         }
         road["w"] = "light"; road["g"] = Int(g); road["d"] = digest; road["v"] = MontanaArchive.writerTagHex()   // the device that laid it
@@ -746,7 +746,7 @@ enum MTKeepDerive {
             defer { try? FileManager.default.removeItem(at: url) }
             taking = .fetching(0)
             guard await Self.fetch(road, to: url, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .fetching(f) } }),
-                  MontanaHomeNode.digest(of: url) == d else {
+                  MontanaBackup.digest(of: url) == d else {
                 MontanaTrace.mark("keep_light", "a light copy did not come whole")
                 continue
             }
@@ -840,7 +840,7 @@ enum MTKeepDerive {
         guard heldBytes(except: conv) + sameCopy.values.reduce(0, { $0 + $1.bytes }) + size <= Self.budget,
               let dest = Self.partURL(key) else { return MontanaTrace.mark("keep_part", "refused in silence") }
         let landing = dest.appendingPathExtension("part")
-        guard await Self.fetch(o, to: landing), MontanaHomeNode.digest(of: landing) == head.shareDigest.montanaHexString else {
+        guard await Self.fetch(o, to: landing), MontanaBackup.digest(of: landing) == head.shareDigest.montanaHexString else {
             try? FileManager.default.removeItem(at: landing)
             return MontanaTrace.mark("keep_part", "the part did not come whole")
         }
@@ -980,7 +980,7 @@ enum MTKeepDerive {
         guard let body = try? JSONSerialization.data(withJSONObject: list), let dir = try? MontanaBackup.shelf() else { return }
         let url = dir.appendingPathComponent(UUID().uuidString + ".given")
         defer { try? FileManager.default.removeItem(at: url) }
-        guard (try? body.write(to: url)) != nil, let digest = MontanaHomeNode.digest(of: url), var road = await Self.lay(url) else {
+        guard (try? body.write(to: url)) != nil, let digest = MontanaBackup.digest(of: url), var road = await Self.lay(url) else {
             return MontanaTrace.mark("keep_back", "the letters did not reach the nodes")
         }
         road["w"] = "given"; road["c"] = rows.count; road["d"] = digest
@@ -999,7 +999,7 @@ enum MTKeepDerive {
               let d = o["d"] as? String, let dir = try? MontanaBackup.shelf() else { return }
         let url = dir.appendingPathComponent(UUID().uuidString + ".given")
         defer { try? FileManager.default.removeItem(at: url) }
-        guard await Self.fetch(o, to: url), MontanaHomeNode.digest(of: url) == d, let data = try? Data(contentsOf: url),
+        guard await Self.fetch(o, to: url), MontanaBackup.digest(of: url) == d, let data = try? Data(contentsOf: url),
               let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]], let store = ChatStore.live else {
             return MontanaTrace.mark("keep_back", "the given letters did not come whole")
         }
@@ -1105,7 +1105,7 @@ enum MTKeepDerive {
                 let id = head.copyDigest.montanaHexString + "." + String(k)
                 guard answers[id] == nil else { continue }
                 let url = dir.appendingPathComponent(UUID().uuidString + ".keep")
-                guard await Self.fetch(o, to: url), MontanaHomeNode.digest(of: url) == head.shareDigest.montanaHexString else {
+                guard await Self.fetch(o, to: url), MontanaBackup.digest(of: url) == head.shareDigest.montanaHexString else {
                     try? FileManager.default.removeItem(at: url); continue
                 }
                 answers[id] = Answer(head: head, url: url)
@@ -1123,7 +1123,7 @@ enum MTKeepDerive {
                 let list = same.map { (slot: $0.head.slot, n: $0.head.n, url: $0.url) }
                 let length = h0.length
                 let built = await Task.detached(priority: .userInitiated, operation: { MTKeepCode.rebuild(list, length: length, into: out) }).value
-                guard built, MontanaHomeNode.digest(of: out) == h0.copyDigest.montanaHexString else {
+                guard built, MontanaBackup.digest(of: out) == h0.copyDigest.montanaHexString else {
                     try? FileManager.default.removeItem(at: out)
                     MontanaTrace.mark("keep_build", "generation=\(h0.generation) did not stand")
                     continue

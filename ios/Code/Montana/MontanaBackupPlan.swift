@@ -407,7 +407,7 @@ struct CopyFilesPage: View {
                 ForEach(list, id: \.name) { f in
                     let takes = scope.takes(file: f.name)
                     let open = free(f.name)
-                    let deletable = MTHomeShelf.bringing   // a file leaves this phone only on the word of a node that holds it (removeHeld): with no node, no bin (word 16428)
+                    let deletable = Self.nodeHolds   // a file leaves this phone only on the word of a node that holds it (removeHeld): with no node, no bin (word 16428)
                     NavigationLink {
                         CopyFileView(file: f.name, title: whose(f.name), kind: kind, deletable: deletable) { delete(f.name) }
                     } label: {
@@ -472,10 +472,11 @@ struct CopyFilesPage: View {
         .montanaPageGround()   // my page's ground, as the drawer and my page wear it (25.09)
         .navigationTitle(Self.title(kind))
         .navigationBarTitleDisplayMode(.inline)
+        #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893): choosing serves only the bin, the bin only a node
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                // Choosing serves only the bin, and the bin only a node that holds the files (MTHomeShelf.bringing, word 16428).
-                if !MTHomeShelf.bringing {
+                // Choosing serves only the bin, and the bin only a node that holds the files (nodeHolds, word 16428).
+                if !Self.nodeHolds {
                     EmptyView()
                 } else if choosing {
                     Button {
@@ -517,6 +518,7 @@ struct CopyFilesPage: View {
         } message: {
             Text("Your node does not hold \(stayed) of the chosen files yet: they stay on this phone.")
         }
+        #endif
     }
 
     private func delete(_ file: String) { deleteMany([file]) }
@@ -525,6 +527,7 @@ struct CopyFilesPage: View {
     /// the node. The chosen files leave this phone now on the node's word asked at that moment (MTHomeShelf.removeHeld); every letter
     /// stays, and a file comes back from the node when it is opened. A file the node does not hold whole stays, and the page says so.
     private func deleteMany(_ many: Set<String>) {
+        #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893): without it nothing reaches here
         guard !many.isEmpty else { return }
         Task { @MainActor in
             let r = await MTHomeShelf.removeHeld(many)
@@ -534,6 +537,16 @@ struct CopyFilesPage: View {
             stayed = many.count - gone.count
             MontanaTrace.mark("backup_plan", "removed files=\(gone.count) of=\(many.count) node=\(r == nil ? 0 : 1) kind=\(kind.rawValue)")
         }
+        #endif
+    }
+    /// One's own node holds this phone's files, so a file may leave the phone on its word (MTHomeShelf.bringing); Messenger
+    /// carries no own node (decision 942 a, word 21893), and draws no bin.
+    private static var nodeHolds: Bool {
+        #if MONTANA_MESSENGER
+        return false
+        #else
+        return MTHomeShelf.bringing
+        #endif
     }
     static func title(_ k: MontanaBackup.Kind) -> LocalizedStringKey { CopyKindsPage.face(k).0 }
 }
@@ -573,6 +586,7 @@ struct CopyFileView: View {
         .montanaPageGround()   // my page's ground, as the drawer and my page wear it (25.09)
         .navigationTitle(title.map { Text(verbatim: $0) } ?? Text(CopyFilesPage.title(kind)))   // USER-DATA: the correspondent's name
         .navigationBarTitleDisplayMode(.inline)
+        #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893): the bin stands only where a node holds the file
         .toolbar {
             if deletable {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -588,6 +602,7 @@ struct CopyFileView: View {
         } message: {
             Text("Your node keeps it, and it comes back when you open it. The letter stays.")
         }
+        #endif
         .task {
             let f = file
             let found = await Task.detached(priority: .userInitiated) { () -> URL? in

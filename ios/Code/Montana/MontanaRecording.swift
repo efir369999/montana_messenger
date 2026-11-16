@@ -134,6 +134,7 @@ final class MontanaRecording: ObservableObject {
     private func move(_ to: Phase, why: String) {
         MontanaTrace.mark("rec_state", "\(name(phase))→\(name(to)) why=\(why) tape=\(tapeId)")
         phase = to
+        MTCallUpright.holdTape(to != .idle)   // no turn under a rolling tape (the author's word 22837): one owner of the turn
     }
     private func name(_ p: Phase) -> String {
         switch p {

@@ -5471,6 +5471,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
     /// taps, and touches what that one touches — so whatever compiled before compiles now.
     func retryOneMedia(_ msgId: String?) {
         // A FILE YOUR NODE KEEPS COMES BACK FROM IT (18.10): the cache cleared it from this phone, the book names its pieces.
+        #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893)
         if let sid = msgId, !sid.isEmpty,
            let row = messages.values.lazy.compactMap({ rows in rows.first { $0.msgId == sid } }).first,
            let file = row.attachment?.file,
@@ -5478,6 +5479,7 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             Task { @MainActor in MTHomeKeep.shared.bring(file, force: true) }
             return
         }
+        #endif
         if let sid = msgId, !sid.isEmpty {
             var arr = (try? JSONSerialization.jsonObject(with: Data(pendingMediaJSON.utf8)) as? [[String: String]]) ?? []
             if let i = arr.firstIndex(where: { $0["sid"] == sid }), arr[i]["gone"] == "1" {
@@ -6146,10 +6148,12 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
             return (src, { [weak self] in self?.mediaLanded(chat, name: name, msgId: sid, isFromMe: mine, docName: docName) })
         }
         // A file your node keeps plays from its first pieces there (MTHomeShelf), and lands as the bring would.
+        #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893)
         if let src = MTHomeShelf.streamSource(name) {
             let chat = messages.first { _, rows in rows.contains { $0.attachment?.file == name } }?.key
             return (src, { [weak self] in if let chat { self?.fillMedia(chat, name: name) } })
         }
+        #endif
         return nil
     }
     func fillMedia(_ chat: String, name: String) {
@@ -7462,7 +7466,6 @@ enum SeedScope {
         MTGifPlay.reduceKey,   // the person's «Reduce GIF animation» (link 14680, 02.11.2026), as their other looks
         "notifEnabled", "notifSound", "notifPreview", "notifSender", "notifLockName",
         "autoDownloadCellular", "autoDownloadWiFi",
-        MTHomeKeep.keepDaysKey, MTHomeKeep.limitKey,   // the person's term and ceiling of the cache their node backs (18.10.2026)
         MTChatFolders.key,   // the person's folders over the chats, their tabs' order (17.10.2026)
         "presenceSharing", "readReceiptsEnabled", "liveTypingEnabled", "linkPreviewsEnabled",
         "objectionableFilterOn", "termsAcceptedVersion", "barredPeers",
@@ -7474,7 +7477,6 @@ enum SeedScope {
         "cardKind", "timePanelOpen", MontanaOctagon.barBottomKey,
         "mt.net.tab2", "exitReachability",   // the VPN's own settings come through its door (MTApps.vpn.settingKeys, slice S3b b3)
         "mt.backup.icloud", "mt.backup.icloud.replace", "mt.backup.plan",
-        "mt.home.node", "mt.home.node.on", "mt.home.node.pin",   // the person's own node, its daily copies and the digest of its certificate (28.09)
         MTLevelShow.shownKey]   // retired switch, retained for old copies; reputation is always shown (14.10)
         + doorSettingKeys
     /// The settings of the applications behind a door, each list named by its door (mt-copy-scope-check reads them there); one
@@ -7491,6 +7493,11 @@ enum SeedScope {
         #endif
         #if !MONTANA_MESSENGER
         lists.append(MTApps.wall?.settingKeys)   // the wall's two rules and the VPN wall's (slice S4c2)
+        #endif
+        #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893)
+        // the person's own node, its daily copies and the digest of its certificate (28.09), and the term and ceiling of the
+        // cache it backs (18.10.2026)
+        lists.append([MontanaHomeNode.hostKey, MontanaHomeNode.switchKey, MontanaHomeNode.pinKey, MTHomeKeep.keepDaysKey, MTHomeKeep.limitKey])
         #endif
         return lists.compactMap { $0 }.flatMap { $0 }
     }()

@@ -12720,22 +12720,6 @@
         }
       }
     },
-    "iCloud holds no copy of this identity yet.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "В iCloud пока нет копии этой личности."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud 中尚无此身份的副本。"
-          }
-        }
-      }
-    },
     "iCloud holds your copy": {
       "localizations": {
         "ru": {
@@ -12764,22 +12748,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "iCloud 拒绝上传：%@"
-          }
-        }
-      }
-    },
-    "iCloud refused: %@": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud отказал: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud 已拒绝：%@"
           }
         }
       }
@@ -17324,70 +17292,6 @@
         }
       }
     },
-    "Select All": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выбрать все"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "全选"
-          }
-        }
-      }
-    },
-    "Clear cache": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Очистить кеш"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清除缓存"
-          }
-        }
-      }
-    },
-    "CACHE": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "КЕШ"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "缓存"
-          }
-        }
-      }
-    },
-    "Clear the cache?": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Очистить кеш?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "清除缓存？"
-          }
-        }
-      }
-    },
     "Cache": {
       "localizations": {
         "ru": {
@@ -17400,38 +17304,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "缓存"
-          }
-        }
-      }
-    },
-    "Keep media": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Хранить медиа"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保留媒体"
-          }
-        }
-      }
-    },
-    "3 days": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 дня"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 天"
           }
         }
       }
@@ -17464,54 +17336,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 个月"
-          }
-        }
-      }
-    },
-    "Forever": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Всегда"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "永久"
-          }
-        }
-      }
-    },
-    "Maximum cache size": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Максимальный размер кеша"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最大缓存大小"
-          }
-        }
-      }
-    },
-    "No limit": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Без предела"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无限制"
           }
         }
       }
@@ -17612,22 +17436,6 @@
         }
       }
     },
-    "Remove %lld files from this phone?": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Убрать с телефона файлов: %lld?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "从此手机移除 %lld 个文件？"
-          }
-        }
-      }
-    },
     "Remove from this phone": {
       "localizations": {
         "ru": {
@@ -17640,22 +17448,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "从此手机移除"
-          }
-        }
-      }
-    },
-    "Remove from this phone?": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Убрать с телефона?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "从此手机移除？"
           }
         }
       }
@@ -18626,6 +18418,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "此设备将从自身抹掉你的身份和聊天。你的账户仍保留在你的手机上。"
+          }
+        }
+      }
+    },
+    "Copies a viewer was handed when you opened a file. They go back to your chats.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копии, которые получал просмотр, когда вы открывали файл. Они возвращаются в ваши чаты."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开文件时查看器拿到的副本。它们会回到您的聊天中。"
           }
         }
       }

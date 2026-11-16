@@ -63,7 +63,6 @@
 				4BBC98E3290E0612E4050C7C,
 				29CF60B10DF63462893B5F86,
 				55A432944A739FF9AAD1C7FD,
-				57EF715E678BF514A51E53A3,
 				99B71AEDA99B09C1000AD37A,
 				83BF17BCC3D9F0B20CFFEBA9,
 				F6C1373B6091B56FAAF514E5,
@@ -117,8 +116,6 @@
 				B3F6C3574688BDF3B134AB2E,
 				62115FE56E7647A189906182,
 				78B12D7F4F334CC04365F441,
-				D82B3264D63E5E84ABD1635C,
-				F6883C2554800DA6BF30F971,
 				50BA1EA6102F22285627F54E,
 				0E171184A1F8BF381B8751A9,
 				A6C2C0BF8B5CBCDA3E4E569E,
@@ -816,10 +813,6 @@
 					"$(MONTANA_FRAMEWORKS_DIR)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				"HEADER_SEARCH_PATHS[sdk=iphoneos*]" = (
-					"$(inherited)",
-					"$(MONTANA_FRAMEWORKS_DIR)/MontanaCore.xcframework/ios-arm64/Headers",
-				);
 				INFOPLIST_FILE = Code/Messenger/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -840,20 +833,14 @@
 					"$(inherited)",
 					"-lresolv",
 				);
-				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
-					"$(inherited)",
-					"-lresolv",
-					"$(MONTANA_FRAMEWORKS_DIR)/MontanaCore.xcframework/ios-arm64/libmt_boundary.a",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos*]" = "$(inherited) MONTANA_PROTOCOL_CORE MONTANA_MESSENGER";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos*]" = "$(inherited) MONTANA_MESSENGER";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "Code/Montana/Montana-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -874,10 +861,6 @@
 		55A432944A739FF9AAD1C7FD = {
 			isa = PBXBuildFile;
 			fileRef = F2B7C1DECD82FADF4312E8C4;
-		};
-		57EF715E678BF514A51E53A3 = {
-			isa = PBXBuildFile;
-			fileRef = CE17CA53C0BD4CA38F0E86E2;
 		};
 		5A1CD69C9D14ED79B08F125E = {
 			isa = PBXFileReference;
@@ -1048,25 +1031,11 @@
 			isa = PBXBuildFile;
 			fileRef = MT01A0C0DE0000000000000001;
 		};
-		7A0E1D0E4E0001A7A0E1D0E4 = {
-			isa = PBXFileReference;
-			includeInIndex = 1;
-			lastKnownFileType = sourcecode.swift;
-			path = MontanaHomeNode.swift;
-			sourceTree = "<group>";
-		};
 		7A0E1D0E4E0003A7A0E1D0E4 = {
 			isa = PBXFileReference;
 			includeInIndex = 1;
 			lastKnownFileType = sourcecode.swift;
 			path = MontanaAppleID.swift;
-			sourceTree = "<group>";
-		};
-		7A0E1D0E4E0005A7A0E1D0E4 = {
-			isa = PBXFileReference;
-			includeInIndex = 1;
-			lastKnownFileType = sourcecode.swift;
-			path = MontanaNodeSetup.swift;
 			sourceTree = "<group>";
 		};
 		7A23518EC0B995777D30DFCC = {
@@ -1330,7 +1299,6 @@
 				51E315A8751E4384927BF548,
 				B375F36B469E46CCA6463E4B,
 				F2B7C1DECD82FADF4312E8C4,
-				CE17CA53C0BD4CA38F0E86E2,
 				2FF026E80059D9D5ED01349B,
 				MT01A0C0DE0000000000000031,
 				951B4D812FE56DC000F4327B,
@@ -1347,8 +1315,6 @@
 				D0E1F2A3B4C50A01D0E1F2A3,
 				D0E1F2A3B4C50B01D0E1F2A3,
 				D0E1F2A3B4C50B03D0E1F2A3,
-				7A0E1D0E4E0005A7A0E1D0E4,
-				7A0E1D0E4E0001A7A0E1D0E4,
 				7A0E1D0E4E0003A7A0E1D0E4,
 				5EA7C0DE5EA70001A5EA7C0D,
 				D0E1F2A3B4C50A03D0E1F2A3,
@@ -1615,10 +1581,6 @@
 					"$(MONTANA_FRAMEWORKS_DIR)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				"HEADER_SEARCH_PATHS[sdk=iphoneos*]" = (
-					"$(inherited)",
-					"$(MONTANA_FRAMEWORKS_DIR)/MontanaCore.xcframework/ios-arm64/Headers",
-				);
 				INFOPLIST_FILE = Code/Messenger/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -1639,20 +1601,14 @@
 					"$(inherited)",
 					"-lresolv",
 				);
-				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
-					"$(inherited)",
-					"-lresolv",
-					"$(MONTANA_FRAMEWORKS_DIR)/MontanaCore.xcframework/ios-arm64/libmt_boundary.a",
-				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(MONTANA_APP_ID)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos*]" = "$(inherited) MONTANA_PROTOCOL_CORE MONTANA_MESSENGER";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos*]" = "$(inherited) MONTANA_MESSENGER";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "Code/Montana/Montana-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -2090,13 +2046,6 @@
 			isa = PBXBuildFile;
 			fileRef = 417C03549593A0C11B04104E;
 		};
-		CE17CA53C0BD4CA38F0E86E2 = {
-			isa = PBXFileReference;
-			includeInIndex = 1;
-			lastKnownFileType = sourcecode.swift;
-			path = MTNetworkNode.swift;
-			sourceTree = "<group>";
-		};
 		CE6C89C8BDD67F18B40DFC75 = {
 			isa = PBXFileReference;
 			includeInIndex = 1;
@@ -2235,10 +2184,6 @@
 		D780451867C49B83750D51DC = {
 			isa = PBXBuildFile;
 			fileRef = 1123CE856835F476BF7C5CFA;
-		};
-		D82B3264D63E5E84ABD1635C = {
-			isa = PBXBuildFile;
-			fileRef = 7A0E1D0E4E0005A7A0E1D0E4;
 		};
 		D967272185DF252C432428EA = {
 			isa = PBXFileReference;
@@ -2469,10 +2414,6 @@
 			lastKnownFileType = sourcecode.swift;
 			path = MontanaPlates.swift;
 			sourceTree = "<group>";
-		};
-		F6883C2554800DA6BF30F971 = {
-			isa = PBXBuildFile;
-			fileRef = 7A0E1D0E4E0001A7A0E1D0E4;
 		};
 		F6C1373B6091B56FAAF514E5 = {
 			isa = PBXBuildFile;

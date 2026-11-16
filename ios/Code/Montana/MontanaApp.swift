@@ -494,8 +494,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         CopyInventory.tickSoon()   // after the feed is read: a plan that leaves something out needs the letters
         #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (word 16428)
         HomeNodeWatch.shared.tickSoon()   // the person's own node: the daily copy, when it is named and switched on (28.09)
-        #endif
         MTHomeKeep.shared.tickSoon()      // the files on it: the pass over Wi-Fi, or the book back on a new phone (18.10)
+        #endif
         MTKeeping.shared.tickSoon()       // the copy kept by the people one writes to: the daily renewal, when the person chose it (08.10)
         return true
     }

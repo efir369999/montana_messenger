@@ -363,8 +363,8 @@ enum MTTimeChain {
         defer { putting = false }
         putAt = Date().timeIntervalSince1970
         dirty = false
-        let token = MontanaHomeNode.hex(k.token)
-        let id = MontanaHomeNode.hex(Data(SHA256.hash(data: sealed)))
+        let token = k.token.montanaHexString
+        let id = Data(SHA256.hash(data: sealed)).montanaHexString
         var laid = 0
         for door in MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "vault")) {
             let gone = Array(stale.union(mine[door].map { p in [p] } ?? [])).filter { p in p != id }
@@ -380,7 +380,7 @@ enum MTTimeChain {
     private func gather() async {
         guard let k = MTSeedVault.personRow() else { return }
         let gen = MTSeatTurn.now
-        let token = MontanaHomeNode.hex(k.token)
+        let token = k.token.montanaHexString
         for door in MontanaWakePush.oneDoorPerNode(MontanaWakePush.orderedBases(for: "vault")) {
             guard case let (200, o?) = await MTSeedVault.post(door + "/vault-get", ["token": token, "have": Array(opened.keys.prefix(256))], timeout: 6),
                   let held = o["held"] as? [String] else { continue }
@@ -389,7 +389,7 @@ enum MTTimeChain {
             var got: [Span] = []
             for x in (o["pieces"] as? [[String: Any]]) ?? [] {
                 guard let id = x["piece"] as? String, let b = (x["blob"] as? String).flatMap({ s in Data(base64Encoded: s) }),
-                      MontanaHomeNode.hex(Data(SHA256.hash(data: b))) == id,   // a piece is its own name
+                      Data(SHA256.hash(data: b)).montanaHexString == id,   // a piece is its own name
                       let box = try? ChaChaPoly.SealedBox(combined: b),
                       let plain = try? ChaChaPoly.open(box, using: k.seal, authenticating: Self.aad),
                       let p = try? JSONDecoder().decode(Piece.self, from: plain), let l = Data(base64Encoded: p.lane) else { continue }

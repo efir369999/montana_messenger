@@ -3157,6 +3157,7 @@ enum MontanaWakePush {
         if let d = MontanaBlobStore.get(bid) { return .found(d) }
         // A PIECE OF ONE'S OWN NODE IS ASKED THERE AND ONLY THERE (18.10): the book names it (MTHomeBook); the doors never
         // carried it, and they never hear its name.
+        #if !MONTANA_MESSENGER   // one's own node is the Protocol's alone (decision 942 a, word 21893)
         if MTHomeBook.shared.holds(bid) {
             if let d = await MTHomeShelf.get(bid) {
                 MontanaBlobStore.put(bid, d)
@@ -3166,6 +3167,7 @@ enum MontanaWakePush {
             MontanaTrace.mark("home_get", "FAIL id=\(String(bid.prefix(8))) -- your node did not give it")
             return .unreachable
         }
+        #endif
         var unreachableTries = 0, busyTries = 0
         while unreachableTries < 3 && busyTries < 6 {
             // The receive lane has already stopped new work, but an answer can finish exactly

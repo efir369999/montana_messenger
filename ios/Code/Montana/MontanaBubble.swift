@@ -950,7 +950,12 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                             let got = await Task.detached(priority: .userInitiated) { docImage(f) }.value
                             if Task.isCancelled { return }
                             if got != nil { thumbTick += 1; return }
-                            guard fileOnDisk(f) else { MTHomeKeep.want(f); return }   // not here yet: its landing changes the key and asks anew; a file your node keeps is asked there
+                            guard fileOnDisk(f) else {   // not here yet: its landing changes the key and asks anew
+                                #if !MONTANA_MESSENGER   // a file your node keeps is asked there; one's own node is the Protocol's alone (decision 942 a, word 21893)
+                                MTHomeKeep.want(f)
+                                #endif
+                                return
+                            }
                             if turn == 5 { MontanaTrace.mark("bubble_blank", "kind=img file=\(String(f.prefix(20))) -- the file lies here, six asks gave no picture"); return }
                             try? await Task.sleep(nanoseconds: pause)
                             pause = min(pause * 2, 5_000_000_000)

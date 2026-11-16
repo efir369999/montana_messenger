@@ -225,6 +225,22 @@ enum MontanaBackup {
         return v
     }
     private static func hex(_ d: SHA256Digest) -> String { d.map { String(format: "%02x", $0) }.joined() }
+    /// SHA-256 of a file, a megabyte in hand at a time: the digest a keeper's copy and a node's file are checked by (one owner;
+    /// it left MontanaHomeNode with decision 942 a -- Messenger carries no own node, its keepers check copies by it still).
+    static func digest(of url: URL) -> String? {
+        guard let fh = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? fh.close() }
+        var h = SHA256()
+        while true {
+            let more: Bool = autoreleasepool {
+                guard let d = ((try? fh.read(upToCount: 1 << 20)) ?? nil), !d.isEmpty else { return false }
+                h.update(data: d)
+                return true
+            }
+            if !more { break }
+        }
+        return hex(h.finalize())   // the engine's own hex: the copy's stand compiles this file without MontanaIdentity
+    }
 
     /// THE FROZEN VECTORS OF THE SEAL (Pass 25, an independent oracle). A container's key is a value a
     /// second implementation must reproduce byte for byte, or the two write copies neither can open.
