@@ -1017,6 +1017,7 @@ extension MontanaArchive {
         case "jn": heardJoining(o)   // COMPAT-GATED: an older build takes it unread; a device joined by QR, its copy's cursors held (OZ 1 p.6)
         case "pr": Task.detached(priority: .utility) { await comparePrints(o) }   // COMPAT-GATED: an older build takes it unread; the prints of the chats (OZ 1 p.8)
         case "ck": Task.detached(priority: .utility) { await takeKeys(o) }   // COMPAT-GATED: an older build takes it unread; a chat's keys whose print differs (OZ 1 p.8)
+        case "sl": heardLanded(o)   // COMPAT-GATED: an older build takes it unread; a row of Saved Messages or its file stands on the seed's other device (OZ 1 p.1.5)
         case "end": if (o["t"] as? String) == writerTagHex() { MTLinkedDevices.end("the phone ended the session", said: o["at"] as? Double) } else if let t = o["t"] as? String, let at = o["at"] as? Double { MTLinkedDevices.heardEnds([t: at]) }   // COMPAT-GATED: an older build takes it unread
         default: break
         }
@@ -1780,8 +1781,8 @@ extension MontanaArchive {
         var o: [String: Any] = ["w": "sv", "f": writerTagHex(), "c": w.c, "m": w.m, "x": x, "at": w.at ?? 0]
         if w.o == 1 { o["o"] = 1 }
         let boxed = await MTKeeping.knock(secret, o, silent: true, sender: twinDeviceRef)
-        let ms = Int(Date().timeIntervalSince(t0) * 1000), road = x == w.x ? 0 : 1
-        MontanaTrace.mark("twin_saved", mid: w.m, boxed ? "told ms=\(ms) road=\(road)" : "not boxed road=\(road) -- the mirror carries it")
+        let ms = Int(Date().timeIntervalSince(t0) * 1000), road = x == w.x ? 0 : 1, name = String(w.m.prefix(12))
+        MontanaTrace.mark("twin_saved", mid: w.m, boxed ? "told ms=\(ms) road=\(road) m=\(name)" : "not boxed road=\(road) m=\(name) -- the mirror carries it")
     }
     /// A row of Saved Messages the seed's other device told at its birth: laid here by its name, by the mirror's one landing road.
     private static func takeSaved(_ o: [String: Any]) async {
@@ -1790,7 +1791,27 @@ extension MontanaArchive {
         heardTwin(o)
         let w = TwinWord(c: savedMessagesKey, m: m, x: x, o: (o["o"] as? Int) == 1 ? 1 : nil, at: o["at"] as? Double)
         await MainActor.run { MontanaDeliveryEngine.shared.landMirrored(w) }
-        MontanaTrace.mark("twin_saved", mid: m, "taken")
+        // THE LETTER WAS HEARD; WHERE ITS ROW LANDS IS SAID THERE (OZ 1 p.1.4): this word stood as «taken» whatever became of the
+        // row. The row laid says twin_row, the row refused says twin_row dropped, the file says media_fill.
+        let road = x.contains("\"road\":") ? 1 : 0, name = String(m.prefix(12))
+        MontanaTrace.mark("twin_saved", mid: m, "heard road=\(road) m=\(name)")
+    }
+    /// The word sl: a row of Saved Messages, or its file, stands on this device -- said to the seed's other devices, so the one
+    /// that wrote it holds its twin's own word that the row landed, not the node's word that a letter was boxed (OZ 1 p.1.5).
+    nonisolated static func tellLanded(mid: String, file: Bool) {
+        Task.detached(priority: .utility) {
+            guard let secret = twinSecret() else { return }
+            let what = file ? "file" : "row", name = String(mid.prefix(12))
+            let o: [String: Any] = ["w": "sl", "f": writerTagHex(), "m": mid, "k": what]
+            let boxed = await MTKeeping.knock(secret, o, silent: true, sender: twinDeviceRef)
+            MontanaTrace.mark("twin_saved", mid: mid, "landed here \(what) m=\(name) told=\(boxed ? 1 : 0)")
+        }
+    }
+    /// Another device of the seed said a row of Saved Messages, or its file, stands there.
+    private static func heardLanded(_ o: [String: Any]) {
+        guard let f = o["f"] as? String, !f.isEmpty, f != writerTagHex(), let m = o["m"] as? String, !m.isEmpty else { return }
+        let what = (o["k"] as? String) == "file" ? "file" : "row", name = String(m.prefix(12))
+        MontanaTrace.mark("twin_saved", mid: m, "landed at=\(String(f.prefix(8))) \(what) m=\(name)")
     }
 
     /// The words of the seed's other device: each lands here by the one landing road, in the order that device heard them. A

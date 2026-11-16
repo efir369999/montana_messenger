@@ -965,7 +965,12 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
             else {
                 // A row may not impersonate a picture. This legacy/corrupt-manifest path
                 // occupies no visual space and becomes visible only after real pixels decode.
-                EmptyView()
+                // THE PICTURE IS ASKED BY A VIEW THAT LIVES (OZ 1 p.1.3, the author's words 23513 and 23540, 16.11.2026: a photo put
+                // into Saved Messages on T1 at 18:53:52 UTC changed the chat's small picture on the Mac and never stood in the chat).
+                // The ask hung on a view that is nothing, and the platform runs no task and no appearance for such a view (measured
+                // 16.11.2026: three of three never ran there, three of three ran on a clear view of no size). A row the seed's other
+                // device gives carries no poster, so it always came here, and its file lay whole in the store with nobody to read it.
+                Color.clear.frame(width: 0, height: 0)
                     .task(id: "\(f)|\(MTMediaPlace.onDisk(f))") {
                         guard fileOnDisk(f) else { return }
                         var pause: UInt64 = 300_000_000
@@ -973,7 +978,10 @@ struct MTSaveBeside<Badge: View>: ViewModifier {
                             guard docImageCached(f) == nil else { thumbTick += 1; return }
                             let got = await Task.detached(priority: .userInitiated) { docImage(f) }.value
                             if Task.isCancelled { return }
-                            if got != nil { thumbTick += 1; return }
+                            if got != nil {
+                                MontanaTrace.markFolded("bubble_filled", "kind=img file=\(String(f.prefix(20))) -- a row born without a poster wears its picture", window: 30, key: "filled:" + f)
+                                thumbTick += 1; return
+                            }
                             if turn == 5 {
                                 MontanaTrace.mark("image_absent", "file=\(String(f.prefix(20))) — no renderable image, no plate")
                                 return

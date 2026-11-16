@@ -3639,7 +3639,9 @@ class ChatStore: ObservableObject {
     /// device of the seed. The archive already holds the row: it is not written there twice.
     func takeTwinRow(_ chat: String, mid: String, own: Bool, at: Double, body: String) {
         guard let d = body.data(using: .utf8), let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any],
-              0 < at, !mid.isEmpty, let rows = messages[chat] ?? savedBirth(chat), !buried(mid, in: chat) else { return }
+              0 < at, !mid.isEmpty, let rows = messages[chat] ?? savedBirth(chat), !buried(mid, in: chat) else {
+            return twinRowDropped(chat, mid, "no chat here, a grave over its name, or a letter that names no row")
+        }
         // A ROW OF THIS NAME STANDING WITHOUT ITS FILE TAKES THE FILE (OZ 1 p.1): Saved Messages lays a row at its first letter, the
         // file's road comes in the second letter of the same name; a row of the name standing whole is a repeat.
         let named = rows.first(where: { m in m.mid == mid })
@@ -3648,7 +3650,9 @@ class ChatStore: ObservableObject {
                           msgId: mid, senderRef: sr, createdAt: at, transport: "node")
         let kind = o["k"] as? String, name = o["f"] as? String ?? ""
         if let kind {
-            guard ["img", "vid", "aud", "doc"].contains(kind), !name.isEmpty, !name.contains("/"), !name.hasPrefix(".") else { return }
+            guard ["img", "vid", "aud", "doc"].contains(kind), !name.isEmpty, !name.contains("/"), !name.hasPrefix(".") else {
+                return twinRowDropped(chat, mid, "a file of no known kind or name")
+            }
             switch kind {
             case "img": row.imageFile = name; row.docName = o["n"] as? String
             case "vid": row.videoFile = name
@@ -3656,7 +3660,7 @@ class ChatStore: ObservableObject {
             default: row.docFile = name; row.docName = o["n"] as? String ?? name; row.text = ""
             }
         }
-        guard let sig = Self.archiveSig(row) else { return }
+        guard let sig = Self.archiveSig(row) else { return twinRowDropped(chat, mid, "a row of no words and no file") }
         // A ROW STANDING WITHOUT ITS FILE TAKES THE FILE ALONE (OZ 1 p.1.4.2): a restored Saved Messages row stands from the archive
         // by the same key (second, side, words and file name) and holds no file; the twin's copy fills it and lays no second row.
         let standing = named ?? rows.first(where: { m in Self.archiveSig(m) == sig })
@@ -3687,13 +3691,25 @@ class ChatStore: ObservableObject {
                 guard let self, let now = self.messages[chat] ?? self.savedBirth(chat), !self.buried(mid, in: chat) else { return }
                 // a standing row only wears its file now -- one laid by its first letter while the file came, too
                 if lays && !now.contains(where: { m in m.mid == mid }) { self.layTwinRow(chat, row) } else { self.bump(chat) }
+                // THE FILE STANDS THROUGH THE ONE «FILE IS READY» POINT (OZ 1 p.1.3, the author's word 23540): whichever road filled
+                // the file, the caches go, the store says it changed and the diary names the file (media_fill); the twin's road used
+                // to move the chat's order alone. And the device that wrote the row hears its twin's own word that the file stands.
+                self.fillMedia(chat, name: fileName)
+                if chat == savedMessagesKey, Date().timeIntervalSince1970 - at < 3600 { MontanaArchive.tellLanded(mid: mid, file: true) }
             }
         }
     }
     /// SAVED MESSAGES IS BORN BY THE TWIN'S ROW (OZ 1, the critic of 22541): a device that never wrote to itself holds no Saved
     /// Messages, and the row its twin gave left silently; a person's conversation is born only by its pipe, never here.
     private func savedBirth(_ chat: String) -> [Message]? { chat == savedMessagesKey ? [] : nil }
+    /// A ROW OF THE TWIN'S THAT IS NOT LAID SAYS SO (OZ 1 p.1.4, the author's word 23540): the diary said «taken» for a letter whose
+    /// row left here in silence. Folded: one word in half a minute for a chat.
+    private func twinRowDropped(_ chat: String, _ mid: String, _ why: String) {
+        MontanaTrace.markFolded("twin_row", "dropped chat=\(String(chat.prefix(10))) m=\(String(mid.prefix(12))): \(why)", window: 30, key: "twin-drop:" + chat)
+    }
     private func layTwinRow(_ chat: String, _ row: Message) {
+        // a row of Saved Messages born within the hour is told back to the device that wrote it (OZ 1 p.1.5); the past a heal lays is not
+        if chat == savedMessagesKey, Date().timeIntervalSince1970 - row.createdAt < 3600 { MontanaArchive.tellLanded(mid: row.mid, file: false) }
         let placed = placeRow(chat, row)
         _ = MTRowJournal.put(chat, placed)
         bump(chat)

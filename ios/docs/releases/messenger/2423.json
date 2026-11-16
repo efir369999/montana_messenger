@@ -1,0 +1,14 @@
+{
+  "build": 2423,
+  "notes": {
+    "en": [
+      "A photo you put into Saved Messages on one of your devices now appears inside the chat on your other devices; before, only the small picture of the chat in the list changed and the photo itself stayed unseen."
+    ],
+    "ru": [
+      "Фото, отправленное в Избранное на одном вашем устройстве, теперь появляется внутри чата на других ваших устройствах; прежде менялась только маленькая картинка чата в списке, а само фото оставалось невидимым."
+    ],
+    "zh-Hans": [
+      "您在一台设备上存入“收藏”的照片，现在会显示在您其他设备的聊天中；此前只有列表里聊天的小图发生变化，照片本身却看不到。"
+    ]
+  }
+}
