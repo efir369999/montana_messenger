@@ -15,9 +15,8 @@ enum MTEdition {
     // -- no badge at the avatar, no line of levels in Settings, no level said to a pair, none published to the nodes' table.
     /// MONTANA MESSENGER'S SITE (App Review 5.1.1(i); the author's words 18128, 18136 and 18155, 10.11.2026: montana.one is the
     /// Messenger's own site, on Amsterdam): its page, its own privacy policy montana.one/privacy/ and its release feed /updates/.
+    /// Its cards too (MontanaFirstContact): montana.one serves /r/ /perp/ /temp/ and the association file naming this bundle.
     static let site = "https://montana.one"
-    /// THE MESSENGER'S CARDS are on its own site: montana.one serves /r/ /perp/ /temp/ and the association file naming this bundle.
-    static let cards = site
     /// MONTANA MESSENGER'S FACE (App Review 2.3.7, one face everywhere; decision 549, no coins): its own icon, never Montana
     /// Protocol's coin -- the shared catalog serves both targets, so the Messenger's pictures stand in its own catalog
     /// (Code/Messenger/MessengerAssets.xcassets, rendered by ictool from Code/Messenger/AppIcon.icon).

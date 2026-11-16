@@ -192,15 +192,15 @@ enum MontanaCard {
     /// sides through the storage node at the moment of the scan. The link is 30 times shorter, the QR coarse-module.
     static let shortPrefix = "montana://r/"
     /// THE LINK IS A WEB LINK (15.15, the author's word 07.09: «clickable always and everywhere»).
-    /// Each edition writes on its own cards site, MTEdition.cards (the Messenger montana.one, the Protocol montana.quest).
-    static let webPrefix = MTEdition.cards + "/r/"
+    /// Each edition writes on its own site, MTEdition.site (the Messenger montana.one, the Protocol montana.xxx; the author's word 22847).
+    static let webPrefix = MTEdition.site + "/r/"
     /// THE KIND IN THE LINK (the author's word 17.09): /perp/ for the permanent link, /temp/ for the
     /// daily one.
-    static let permPrefix = MTEdition.cards + "/perp/"
-    static let tempPrefix = MTEdition.cards + "/temp/"
+    static let permPrefix = MTEdition.site + "/perp/"
+    static let tempPrefix = MTEdition.site + "/temp/"
     /// ONE CARD, ONE NODE, EVERY SITE: the /r/ page of each site opens an app by that app's scheme (montana:// the Messenger's,
     /// mt-protocol:// the Protocol's, Code/Names.xcconfig). Each app reads the /r/, /perp/ and /temp/ forms of every site, so a
-    /// card written on montana.quest or montana.xxx before still opens.
+    /// card written on montana.quest before (the Protocol's cards until the author's word 22847) still opens; none is written there.
     static let linkHosts = Set(["montana.one", "montana.quest", "montana.xxx", "www.montana.xxx"])
     /// Every written form an invitation is read from.
     static let readPrefixes: [String] =

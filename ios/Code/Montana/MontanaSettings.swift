@@ -1876,6 +1876,7 @@ struct DevicesView: View {
     @State private var stage = Stage.idle
     @State private var key: MTDeviceLink.Key?
     @State private var ending: MTLinkedDevices.Device?
+    @State private var endingAll = false
 
     private static func termName(_ d: Int) -> LocalizedStringKey {
         switch d {
@@ -1917,11 +1918,13 @@ struct DevicesView: View {
                             Text(d.heard, format: .relative(presentation: .named)).font(.footnote).foregroundColor(.gray)
                         }
                         Spacer()
-                        if d.ends {   // a phone or an iPad of the same seed keeps its identity: nothing to end there
-                            Button(role: .destructive) { ending = d } label: { Text("End session").foregroundColor(.red) }
-                                .buttonStyle(.borderless)
-                        }
+                        // EVERY SESSION ENDS (the author's word 22854): a joined Mac erases itself, a device of the words leaves the list
+                        Button(role: .destructive) { ending = d } label: { Text("End session").foregroundColor(.red) }
+                            .buttonStyle(.borderless)
                     }
+                }
+                if !devices.isEmpty {
+                    Button(role: .destructive) { endingAll = true } label: { Text("End all sessions").foregroundColor(.red) }
                 }
             } header: { Text("Devices") }
             .listRowBackground(MTGlassRowPlate())
@@ -1956,7 +1959,20 @@ struct DevicesView: View {
             }
             Button("Cancel", role: .cancel) { ending = nil }
         } message: {
-            Text("The device erases your identity from itself as soon as it hears this phone; one kept offline erases it at the end of its term.")
+            if ending?.joined == true {
+                Text("The device erases your identity from itself as soon as it hears this phone; one kept offline erases it at the end of its term.")
+            } else {
+                Text("The device leaves this list. A device that signed in with your seed phrase keeps it and your chats; to remove them, delete the account on that device.")
+            }
+        }
+        .alert("End all other sessions?", isPresented: $endingAll) {
+            Button("End all sessions", role: .destructive) {
+                MTLinkedDevices.endAll()
+                devices = MTLinkedDevices.list
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Every device leaves this list. A connected Mac erases your identity from itself as soon as it hears this phone; a device that signed in with your seed phrase keeps it and your chats.")
         }
     }
 
@@ -2006,8 +2022,7 @@ struct DevicesView: View {
                 guard ok else { return }
                 stage = .giving
                 guard await MTDeviceLink.give(k) else { stage = .failed; return }
-                MTLinkedDevices.connected(k)
-                devices = MTLinkedDevices.list
+                devices = MTLinkedDevices.list   // the device stands in the list by its first letter in the seed's pipe
                 key = nil; stage = .given
             }
         }

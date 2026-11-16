@@ -1012,7 +1012,7 @@ extension MontanaArchive {
         case "hist": Task.detached(priority: .utility) { await takeFromTwin(o, mid: mid) }
         case "lt": Task.detached(priority: .utility) { await takeMirror(o, mid: mid) }   // COMPAT-GATED: an older build takes it unread
         case "hw": Task.detached(priority: .utility) { await giveHistory(o) }   // COMPAT-GATED: an older build takes it unread
-        case "end": if (o["t"] as? String) == writerTagHex() { MTLinkedDevices.end("the phone ended the session") }   // COMPAT-GATED: an older build takes it unread
+        case "end": if (o["t"] as? String) == writerTagHex() { MTLinkedDevices.end("the phone ended the session", said: o["at"] as? Double) }   // COMPAT-GATED: an older build takes it unread
         default: break
         }
         return true
@@ -1042,7 +1042,7 @@ extension MontanaArchive {
     }
     /// A mirror or history letter of another device of the seed: its writer tag is heard now, with what it said of its extension.
     nonisolated static func heardTwin(_ o: [String: Any]) {
-        guard let f = o["f"] as? String, !f.isEmpty, !MTLinkedDevices.endedAgain(f) else { return }   // an ended device is told again, never listed
+        guard let f = o["f"] as? String, !f.isEmpty, !MTLinkedDevices.endedAgain(f, joined: o["j"] as? Double) else { return }   // an ended device is told again, never listed
         let now = Date().timeIntervalSince1970
         let kept = max(twinHeardFor, Double(MTLinkedDevices.days) * 86_400)   // the book keeps a device the phone's term long (OZ 1 p.4)
         var m = ((UserDefaults.standard.dictionary(forKey: twinDevicesKey) as? [String: [Double]]) ?? [:])

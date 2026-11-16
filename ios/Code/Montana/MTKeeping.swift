@@ -1297,10 +1297,11 @@ enum MTDeviceLink {
         var code: String { MTDeviceLink.scheme + (l + MTDeviceLink.digest(pub)).base64urlNoPad }
         var check: String { MTDeviceLink.check(l, pub) }
     }
-    /// What the phone gives: the words, the phone's writer tag, and the days after which a device the phone has not heard ends itself.
-    struct Gift { let words: String; let phone: String; let days: Int }
-    /// What the phone took from the box, held against the QR: the new device's key, its writer tag and kind, and the number of both screens.
-    struct Key { let l: Data, pub: Data, tag: String, kind: String; var check: String { MTDeviceLink.check(l, pub) } }
+    /// What the phone gives: the words, the phone's writer tag, the days after which a device the phone has not heard ends itself, and
+    /// the phone's clock at the giving -- the joining's own moment: a word end said before it never reaches it (MTLinkedDevices.end).
+    struct Gift { let words: String; let phone: String; let days: Int; let at: Double? }
+    /// What the phone took from the box, held against the QR: the new device's key, and the number of both screens.
+    struct Key { let l: Data, pub: Data; var check: String { MTDeviceLink.check(l, pub) } }
 
     static func digest(_ d: Data) -> Data { Data(SHA256.hash(data: d)) }
     static func boxSecret(_ l: Data) -> Data {
@@ -1332,10 +1333,11 @@ enum MTDeviceLink {
     static func offer() async -> Offer? {
         guard let kp = MTRoomSeal.keypair() else { return nil }
         let o = Offer(l: montanaRandom(32), pub: kp.pub, sec: kp.sec, ref: freshRef(), at: Date())
-        // The writer tag rides beside the key: the phone lists this device by it, and a session it ended long ago is lifted by a
-        // joining anew (MTLinkedDevices.connected). The tag is outside the QR's commitment -- a node that swaps it only keeps an
-        // ended device of its own choosing ended, the same limit as a device kept offline (spec §0).
-        let word: [String: Any] = ["w": "lk", "v": 1, "pk": kp.pub.base64urlNoPad, "f": MontanaArchive.writerTagHex(), "d": MTLinkedDevices.kind]
+        // THE KEY ALONE RIDES THE BOX (OZ 2, 16.11.2026): before the words this device has no writer tag of its own -- E2E.deviceTag
+        // reads the seed, and every new device named the one tag of «ios-pending». The phone listed that tag (a session no button
+        // reached) while the device's own tag, ended before, stayed ended and was told end at each joining. The phone lists the device
+        // by its first letter in the seed's pipe; a joining anew lifts an older end by the gift's moment (MTLinkedDevices.endedAgain).
+        let word: [String: Any] = ["w": "lk", "v": 1, "pk": kp.pub.base64urlNoPad]
         let laid = await MTKeeping.knock(boxSecret(o.l), word, silent: true, sender: o.ref)
         MontanaTrace.mark("link_offer", "boxed=\(laid ? 1 : 0)")
         return laid ? o : nil
@@ -1354,7 +1356,7 @@ enum MTDeviceLink {
                     continue
                 }
                 MontanaTrace.mark("link_gift", "opened")
-                return Gift(words: s, phone: g["p"] as? String ?? "", days: g["e"] as? Int ?? MTLinkedDevices.defaultDays)
+                return Gift(words: s, phone: g["p"] as? String ?? "", days: g["e"] as? Int ?? MTLinkedDevices.defaultDays, at: g["t"] as? Double)
             }
             try? await Task.sleep(nanoseconds: 3_000_000_000)
         }
@@ -1371,7 +1373,7 @@ enum MTDeviceLink {
             // failed on the phone is scanned again from the same QR, never met with «not found» while the Mac still shows it.
             for w in await words(in: l, ref: ref, keep: true) where (w["w"] as? String) == "lk" {
                 if let pk = (w["pk"] as? String).flatMap({ s in Data(base64urlNoPad: s) }), pk.count == MTRoomSeal.pubSize, digest(pk) == commit {
-                    return Key(l: l, pub: pk, tag: w["f"] as? String ?? "", kind: w["d"] as? String ?? "")
+                    return Key(l: l, pub: pk)
                 }
                 MontanaTrace.mark("link_key", "a key the QR does not name")
             }
@@ -1382,7 +1384,7 @@ enum MTDeviceLink {
     /// The words, sealed to the new device's key alone; only after the person's own Face ID or passcode on the phone (the caller).
     static func give(_ k: Key) async -> Bool {
         guard let words = MontanaSeed.mnemonic else { return false }
-        let g: [String: Any] = ["s": words, "p": MontanaArchive.writerTagHex(), "e": MTLinkedDevices.days]
+        let g: [String: Any] = ["s": words, "p": MontanaArchive.writerTagHex(), "e": MTLinkedDevices.days, "t": Date().timeIntervalSince1970]
         guard let plain = try? JSONSerialization.data(withJSONObject: g),
               let sealed = MTRoomSeal.seal(plain, to: k.pub, bind: bind(k.l, k.pub)) else { return false }
         let o: [String: Any] = ["w": "lg", "v": 1, "ct": sealed.ct.base64urlNoPad, "b": sealed.box.base64urlNoPad]
@@ -1413,19 +1415,22 @@ enum MTLinkedDevices {
         if joinsOnly { return joinedKind }
         return UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"   // NOT-UI: product names
     }
-    /// THE ONE STAMP OF A LETTER IN THE SEED'S PIPE (constitution 15): its kind, and on the phone the term of its joined devices.
+    /// THE ONE STAMP OF A LETTER IN THE SEED'S PIPE (constitution 15): its kind; on the phone the term of its joined devices, on a
+    /// joined device the moment of its joining by the phone's clock (the phone lifts an end older than it, endedAgain).
     static func stamp(_ o: inout [String: Any]) {
         o["d"] = kind
-        if !joinsOnly { o["e"] = days }
+        if joinsOnly { if let j = joinedAt { o["j"] = j } } else { o["e"] = days }
     }
     static let namesKey = "mt.link.names"   // NOT-UI: [writer tag: the kind its letters named]
     static let endedKey = "mt.link.ended"   // NOT-UI: on the phone: [writer tag: when the person ended its session]
     static var names: [String: String] { (UserDefaults.standard.dictionary(forKey: namesKey) as? [String: String]) ?? [:] }
     static var ended: [String: Double] { (UserDefaults.standard.dictionary(forKey: endedKey) as? [String: Double]) ?? [:] }
-    /// One device of the seed in the phone's list: its writer tag, its kind, when it was last heard.
+    /// One device of the seed in the phone's list: its writer tag, its kind, when it was last heard. EVERY SESSION ENDS (the author's
+    /// word 22854): ending takes any device off the list; a joined one erases itself on the word end, a device that holds the words
+    /// keeps them (MTLinkedDevices.end).
     struct Device: Identifiable {
         let id: String; let kind: String; let heard: Date
-        var ends: Bool { kind == MTLinkedDevices.joinedKind }   // only a joined device obeys the word end (MTLinkedDevices.end)
+        var joined: Bool { kind == MTLinkedDevices.joinedKind }   // the one kind that erases itself on the word end
     }
     /// THE LIST IS THE BOOK OF THE SEED'S DEVICES HEARD (twinDevicesKey, its one owner MontanaArchive.heardTwin), within the term,
     /// without the sessions ended here, the last heard first.
@@ -1438,32 +1443,35 @@ enum MTLinkedDevices {
             return Device(id: e.key, kind: n[e.key] ?? "", heard: Date(timeIntervalSince1970: e.value[0]))
         }.sorted { a, b in b.heard < a.heard }
     }
-    /// The phone gave its words to this device: a session ended here before is lifted, and the device stands in the list at once.
-    static func connected(_ k: MTDeviceLink.Key) {
-        guard !k.tag.isEmpty else { return }
-        var e = ended; e[k.tag] = nil
-        UserDefaults.standard.set(e, forKey: endedKey)
-        MontanaArchive.heardTwin(["f": k.tag, "d": k.kind])
-    }
     /// «End session»: the word end in the seed's pipe names the device; it erases itself on hearing it (MontanaArchive.twinTakes).
     static func endSession(_ tag: String) {
         var e = ended; e[tag] = Date().timeIntervalSince1970
         UserDefaults.standard.set(e, forKey: endedKey)
         tellEnd(tag)
     }
+    /// «End all sessions» (the author's word 22854): every device of the list, each by the one door of a single end.
+    static func endAll() { for d in list { endSession(d.id) } }
+    /// The word end carries the moment of the ending: a device joined anew after it never obeys it (MTLinkedDevices.end).
     private static func tellEnd(_ tag: String) {
+        let at = ended[tag] ?? Date().timeIntervalSince1970
         Task.detached(priority: .userInitiated) {
             guard let secret = MontanaArchive.twinSecret() else { return }
-            let told = await MTKeeping.knock(secret, ["w": "end", "t": tag], silent: true, sender: MontanaArchive.twinDeviceRef)
+            let told = await MTKeeping.knock(secret, ["w": "end", "t": tag, "at": at], silent: true, sender: MontanaArchive.twinDeviceRef)
             MontanaTrace.mark("link_end", "told=\(told ? 1 : 0)")
         }
     }
     private static let toldLock = NSLock()
     private static var toldAt: [String: Double] = [:]
     /// AN ENDED DEVICE STILL HEARD IS TOLD AGAIN (a box keeps a day: a Mac away longer never read the first word): at most once in
-    /// ten minutes; it never returns to the list.
-    static func endedAgain(_ tag: String) -> Bool {
-        guard ended[tag] != nil else { return false }
+    /// ten minutes; it never returns to the list -- unless a phone of the seed joined it anew after the end (its letter's moment of
+    /// joining, `joined`, by the phone's clock): that session stands, and the end is lifted.
+    static func endedAgain(_ tag: String, joined: Double?) -> Bool {
+        guard let at = ended[tag] else { return false }
+        if let joined, at < joined {
+            var e = ended; e[tag] = nil
+            UserDefaults.standard.set(e, forKey: endedKey)
+            return false
+        }
         let now = Date().timeIntervalSince1970
         let due: Bool = toldLock.withLock {
             guard 600 < now - (toldAt[tag] ?? 0) else { return false }
@@ -1474,8 +1482,11 @@ enum MTLinkedDevices {
         return true
     }
     static func joined(_ g: MTDeviceLink.Gift) {
-        UserDefaults.standard.set(["p": g.phone, "e": g.days, "h": Date().timeIntervalSince1970], forKey: phoneKey)
+        let now = Date().timeIntervalSince1970
+        UserDefaults.standard.set(["p": g.phone, "e": g.days, "h": now, "j": g.at ?? now], forKey: phoneKey)
     }
+    /// On a joined device: the moment the phone gave it the words, by the phone's clock (an older phone's gift -- by this one's).
+    static var joinedAt: Double? { UserDefaults.standard.dictionary(forKey: phoneKey)?["j"] as? Double }
     /// A letter of the seed's other device was heard: when it is the phone that joined this device, its days count again from now,
     /// under the choice its letter carries.
     static func heard(_ tag: String, days: Int?, kind: String?) {
@@ -1500,9 +1511,13 @@ enum MTLinkedDevices {
         for k in [phoneKey, namesKey, endedKey] { UserDefaults.standard.removeObject(forKey: k) }
         SeedScope.forget()
     }
-    /// The phone ended this device's session (its word «end» in the seed's pipe), or the term ran out: only a joined device ends.
-    static func end(_ why: String) {
+    /// The phone ended this device's session (its word «end» in the seed's pipe, `said` its moment), or the term ran out: only a
+    /// joined device ends, and never on a word said before its joining -- the box keeps an older end a day (OZ 2, 16.11.2026).
+    static func end(_ why: String, said: Double? = nil) {
         guard joinsOnly else { return }
+        if let said, let j = joinedAt, said < j {
+            return MontanaTrace.mark("link_end", "older than the joining said=\(Int(said)) joined=\(Int(j))")
+        }
         MontanaTrace.mark("link_end", why)
         Task { @MainActor in await eraseHere() }
     }

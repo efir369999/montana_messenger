@@ -18438,6 +18438,70 @@
         }
       }
     },
+    "End all sessions": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершить все сеансы"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结束所有会话"
+          }
+        }
+      }
+    },
+    "End all other sessions?": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершить все другие сеансы?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结束所有其他会话？"
+          }
+        }
+      }
+    },
+    "The device leaves this list. A device that signed in with your seed phrase keeps it and your chats; to remove them, delete the account on that device.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устройство уйдёт из списка. Устройство, вошедшее по вашей сид-фразе, сохраняет её и чаты; чтобы убрать их, удалите аккаунт на самом устройстве."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该设备将从此列表中移除。用您的助记词登录的设备仍保留助记词和聊天；如需移除，请在该设备上删除账户。"
+          }
+        }
+      }
+    },
+    "Every device leaves this list. A connected Mac erases your identity from itself as soon as it hears this phone; a device that signed in with your seed phrase keeps it and your chats.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все устройства уйдут из списка. Подключённый Mac сотрёт вашу личность, как только услышит этот телефон; устройство, вошедшее по вашей сид-фразе, сохраняет её и чаты."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有设备都将从此列表中移除。已连接的 Mac 一收到本手机的消息就会删除您的身份；用您的助记词登录的设备仍保留助记词和聊天。"
+          }
+        }
+      }
+    },
     "No phone number, no e-mail. Your identity comes from your secret phrase, and your chats are encrypted on your device.": {
       "localizations": {
         "ru": {
