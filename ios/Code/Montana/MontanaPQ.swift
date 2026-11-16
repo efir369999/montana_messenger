@@ -944,6 +944,32 @@ extension MontanaArchive {
         guard let s = twinSecret() else { return [:] }
         return [twinPipe: MTPipeKey(s)]
     }
+    // ── THE SEED'S WORD BY THE LIVE WIRE (OZ 1 p.1.8, the author's words 23559 and 23560, 16.11.2026) ──
+    // A word of the seed's pipe went by one road: a knock at a node's door, the doors in turn, and the other device took it out of
+    // the box (measured 16.11.2026 on T1 and the Mac: told in 5.2 s, taken 14-17 s later), while both devices held standing
+    // channels that carry a person's letter in milliseconds. The pipe of the seed's devices stands in no book of pipes and must
+    // not, so the wire never knew its tag and carried such a frame on as a stranger's. The wire asks the tag here.
+    private static let twinTagLock = NSLock()
+    private static var twinTagsHeld: (window: UInt64, tags: [Data])? = nil
+    /// Whether a tag of the wire is the seed's pipe's in an accepted window. Held for the minute: every frame under a tag asks.
+    nonisolated static func twinTagged(_ tag: Data) -> Bool {
+        let w = MTPipe.window()
+        twinTagLock.lock(); defer { twinTagLock.unlock() }
+        if let held = twinTagsHeld, held.window == w { return held.tags.contains(tag) }
+        guard let s = twinSecret() else { return false }
+        let key = MTPipeKey(s)
+        let tags = MTPipe.windows(around: w).flatMap { key.tags(window: $0) }
+        twinTagsHeld = (w, tags)
+        return tags.contains(tag)
+    }
+    /// A word of the seed's pipe heard on the wire: opened by the seed's key, landed by the one door the box lands at.
+    nonisolated static func twinWired(_ sealed: Data) {
+        guard let s = twinSecret(), let got = MontanaPhoneNode.openBody(sealed, secret: MTPipeKey(s)) else {
+            return MontanaTrace.mark("twin_wire", "refused -- the seed's seal did not match")
+        }
+        MontanaTrace.mark("twin_wire", mid: got.mid, "heard bytes=\(sealed.count)")
+        _ = twinTakes(["c": twinPipe, "t": got.text, "m": got.mid])
+    }
     private static var twinDue = false
     /// A block was written: the other devices get it within half a minute, in one letter with whatever came beside it.
     static func twinSoon() {
@@ -1254,7 +1280,9 @@ extension MontanaArchive {
             readMirror()
             let reads = w.x.hasPrefix(twinReadMark)
             if reads { mirror.removeAll { e in e.c == w.c && e.x.hasPrefix(twinReadMark) } }
-            let now = Date().timeIntervalSince1970, name = w.c + "/" + w.m + "/" + String(w.x.prefix(24))
+            // THE NAME OF A WORD IS ALL OF IT (OZ 1 p.9): an edit of a row rides under the row's own name, and its first words alone
+            // named it a repeat of the row for an hour.
+            let now = Date().timeIntervalSince1970, name = w.c + "/" + w.m + "/" + rowHash(w.x)
             guard reads || 3600 < now - (mirrorGiven[name] ?? 0) else { return }
             mirrorGiven[name] = now
             if 2000 < mirrorGiven.count { mirrorGiven = mirrorGiven.filter { e in now - e.value < 3600 } }
@@ -1722,9 +1750,11 @@ extension MontanaArchive {
     /// One row given back: its words, and a file by the cargo road -- the file's pieces sealed under a fresh key, the key inside the
     /// pipe only the seed's devices open.
     nonisolated static func giveTwin(chat: String, mid: String, text: String, own: Bool, at: Double, senderRef: String?,
-                                     file: (kind: String, name: String, docName: String?, duration: Double)?, now: Bool = false) {
+                                     file: (kind: String, name: String, docName: String?, duration: Double)?, now: Bool = false,
+                                     parts: [String: Any] = [:]) {
         var o: [String: Any] = [:]
         if !text.isEmpty { o["t"] = text }
+        if !parts.isEmpty { o["r"] = parts }   // the whole row: its quote, card, forward, album, answer, edit (OZ 1 p.9)
         if let sr = senderRef { o["sr"] = sr }
         guard let f = file else {
             guard !text.isEmpty, let d = try? JSONSerialization.data(withJSONObject: o), let js = String(data: d, encoding: .utf8) else { return }
@@ -1749,6 +1779,13 @@ extension MontanaArchive {
         // within a second. The word is queued at once with its file named, and the mirror lays the file before it rides.
         guard let d = try? JSONSerialization.data(withJSONObject: o), let js = String(data: d, encoding: .utf8) else { return }
         mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at, fl: f.name), saved: now)
+    }
+    /// A ROW DELETED HERE, SAID TO THE SEED'S OTHER DEVICES BY ITS NAME (OZ 1 p.9, the author's word 23611): there it is buried and
+    /// its row goes; a row of Saved Messages rides at once.
+    nonisolated static func giveTwinGone(chat: String, mid: String, own: Bool, at: Double) {
+        guard let d = try? JSONSerialization.data(withJSONObject: ["x": 1]), let js = String(data: d, encoding: .utf8) else { return }
+        mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: 0 < at ? at : Date().timeIntervalSince1970),
+                   saved: chat == savedMessagesKey)
     }
 
     // ── SAVED MESSAGES BY A ROAD OF ITS OWN (OZ 1 p.1, the author's words 23326-23327: «total sync of Saved Messages by a separate
@@ -1780,9 +1817,13 @@ extension MontanaArchive {
         guard let secret = twinSecret() else { return }
         var o: [String: Any] = ["w": "sv", "f": writerTagHex(), "c": w.c, "m": w.m, "x": x, "at": w.at ?? 0]
         if w.o == 1 { o["o"] = 1 }
+        // THE STANDING CHANNELS FIRST, THE KNOCK BESIDE THEM (OZ 1 p.1.8 and p.1.2): the wire carries the word in milliseconds to a
+        // device that is awake; the knock boxes the same word for one that sleeps. The row is laid by its name once.
+        let wired = MTKeeping.wire(secret, o)
+        if wired { MontanaTrace.mark("twin_wire", mid: w.m, "sent w=sv m=\(String(w.m.prefix(12)))") }
         let boxed = await MTKeeping.knock(secret, o, silent: true, sender: twinDeviceRef)
         let ms = Int(Date().timeIntervalSince(t0) * 1000), road = x == w.x ? 0 : 1, name = String(w.m.prefix(12))
-        MontanaTrace.mark("twin_saved", mid: w.m, boxed ? "told ms=\(ms) road=\(road) m=\(name)" : "not boxed road=\(road) m=\(name) -- the mirror carries it")
+        MontanaTrace.mark("twin_saved", mid: w.m, boxed ? "told ms=\(ms) road=\(road) wire=\(wired ? 1 : 0) m=\(name)" : "not boxed road=\(road) wire=\(wired ? 1 : 0) m=\(name) -- the mirror carries it")
     }
     /// A row of Saved Messages the seed's other device told at its birth: laid here by its name, by the mirror's one landing road.
     private static func takeSaved(_ o: [String: Any]) async {
@@ -1803,8 +1844,9 @@ extension MontanaArchive {
             guard let secret = twinSecret() else { return }
             let what = file ? "file" : "row", name = String(mid.prefix(12))
             let o: [String: Any] = ["w": "sl", "f": writerTagHex(), "m": mid, "k": what]
+            let wired = MTKeeping.wire(secret, o)   // the answer rides the standing channels too (OZ 1 p.1.8)
             let boxed = await MTKeeping.knock(secret, o, silent: true, sender: twinDeviceRef)
-            MontanaTrace.mark("twin_saved", mid: mid, "landed here \(what) m=\(name) told=\(boxed ? 1 : 0)")
+            MontanaTrace.mark("twin_saved", mid: mid, "landed here \(what) m=\(name) told=\(boxed ? 1 : 0) wire=\(wired ? 1 : 0)")
         }
     }
     /// Another device of the seed said a row of Saved Messages, or its file, stands there.

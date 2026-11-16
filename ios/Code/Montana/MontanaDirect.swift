@@ -1225,6 +1225,10 @@ final class MontanaDirect {
         let tag16 = Data(of.dst.prefix(16))
         let underTag = of.dst.suffix(16).allSatisfy { $0 == 0 }
         let addressed = underTag ? MTPipeBook.addressed(byTag: tag16) : nil
+        // THE TAG OF THE SEED'S OWN PIPE IS MINE TOO (OZ 1 p.1.8, the author's words 23559 and 23560, 16.11.2026): that pipe stands
+        // in no book of pipes, so a word of the seed's other device under its tag was carried on as a stranger's, never opened here.
+        let twin = underTag && addressed == nil && MontanaArchive.twinTagged(tag16)
+        if twin { MontanaTrace.mark("of_mine", mid: nil, "by=seed-pipe") }
         switch addressed {
         case .pipe(let c)?:
             MontanaTrace.mark("of_mine", mid: nil, "by=pipe conv=\(String(c.prefix(10)))")
@@ -1235,7 +1239,7 @@ final class MontanaDirect {
         }
         if false { }
         else if mine.contains(of.dst) { MontanaTrace.mark("of_mine", mid: nil, "by=window-pos") }
-        if !mine.contains(of.dst), addressed == nil {
+        if !mine.contains(of.dst), addressed == nil, !twin {
             // The frame goes on -- to the neighbour whose claim stands CLOSEST to the target in the
             // same order. So the set commands, and so the step converges: every hop halves the
             // distance, and the path comes out as a logarithm of the population. Here stood "pass it
@@ -1409,6 +1413,8 @@ final class MontanaDirect {
                 NotificationCenter.default.post(name: .montanaIncoming, object: nil, userInfo: ui)
             }
         } else if let (tag, sealed) = MontanaPhoneNode.parseEnvelope(plain) {
+            // A word of the seed's own pipe: opened by the seed's key, landed by the door the box lands at (OZ 1 p.1.8).
+            if twin { MontanaArchive.twinWired(sealed); return }
             // A conversation is named by the LETTER LABEL, not by the channel it arrived on. While the
             // channel named it, a letter through an intermediary landed in a conversation with the
             // intermediary -- that is, delivery rested on the path being direct. The label stands on a

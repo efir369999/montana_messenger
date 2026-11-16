@@ -412,12 +412,15 @@ struct ChatsListView: View {
             // Mac: «remove the replacement of this button and make the notice of the sound turned off appear over the time logo
             // as a badge»). The first slot keeps its own glyph and way whatever the system answered; while the notifications are
             // refused, a small crossed speaker stands over the logo's top-leading edge and opens the notifications' page.
-            // RIGHT OF THE COIN (the author's word 23242, 16.11.2026): the badge stands at the logo's trailing edge, larger, with
-            // the platform's 44-point tap area.
-            .overlay(alignment: .trailing) {
+            // OVER THE TIME SYMBOL, AS A BADGE (the author's word 23651, 16.11.2026, a picture: «as a badge over the time symbol, not
+            // crooked like this»): right of the coin it stood on the chats' glyph. Its centre is the logo's top-trailing corner, where
+            // the platform puts a glyph's badge (glyphBadge: 18 right of the logo's centre, 12 up); while the folded logo wears the
+            // count there, the top-leading corner.
+            .overlay {
                 if MTNotifyAllowed.shared.refused {
-                    Button { openNotifications() } label: { MTMutedBadge().offset(x: 30) }
+                    Button { openNotifications() } label: { MTMutedBadge() }
                         .buttonStyle(.plain)
+                        .offset(x: !barOpen && 0 < panelBadge ? -18 : 18, y: -12)
                         .accessibilityLabel(Text("Notifications are off"))
                 }
             }

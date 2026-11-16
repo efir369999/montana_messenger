@@ -4446,13 +4446,17 @@ struct ChatConversationView: View {
             store.noteForwardSource(chat: target.name, id: sent.id, from: chat.name)
             return
         }
-        store.append(target.name, Message(text: m.text, isFromMe: true, time: nowHHMM(),
-                                          replyText: isChannel ? fwdQuote : nil,   // this phone's row names the channel (the media's wire says «fw» alone)
-                                          imageFile: kind == "img" ? f : nil, videoFile: kind == "vid" ? f : nil,
-                                          audioFile: kind == "aud" ? f : nil, audioDuration: m.audioDuration,
-                                          docFile: kind == "doc" ? f : nil, docName: m.docName,
-                                          deliveryStatus: target.convId == nil ? .sent : .sending,
-                                          senderRef: nil, fwdFrom: chat.name, forwarded: true))
+        let row = Message(text: m.text, isFromMe: true, time: nowHHMM(),
+                          replyText: isChannel ? fwdQuote : nil,   // this phone's row names the channel (the media's wire says «fw» alone)
+                          imageFile: kind == "img" ? f : nil, videoFile: kind == "vid" ? f : nil,
+                          audioFile: kind == "aud" ? f : nil, audioDuration: m.audioDuration,
+                          docFile: kind == "doc" ? f : nil, docName: m.docName,
+                          deliveryStatus: target.convId == nil ? .sent : .sending,
+                          senderRef: nil, fwdFrom: chat.name, forwarded: true)
+        store.append(target.name, row)
+        // A FORWARD INTO SAVED MESSAGES REACHES THE SEED'S OTHER DEVICES AT ITS BIRTH (OZ 1 p.9): its file rides no media road
+        // whose end gives the row to the twin, so the forward gives it here.
+        if target.name == savedMessagesKey { store.giveToTwin(target.name, row) }
         guard target.convId != nil else { return }   // SILENT-OK: a room without an address has no wire, as in sendVoice
         MontanaTrace.mark("forward", "kind=\(kind) to=\(String(conv.prefix(10)))")
         sendMediaOverE2E(fileName: f, kind: kind, docName: m.docName, caption: m.text, peer: conv, chatKey: target.name)
@@ -4576,6 +4580,7 @@ struct ChatConversationView: View {
         let added = target.myReact == e
         store.noteReaction(chat.name, added ? e : nil, mine: true, on: target)   // the row wears the answer
         MontanaTrace.mark("react_put", "\(e) added=\(added) rows=\(list.count) ms=\(Int((Date().timeIntervalSince1970 - began) * 1000))")
+        if chat.name == savedMessagesKey { store.savedChanged(chat.name, target.id) }   // the seed's other devices show the answer (OZ 1 p.9)
         // sync to the peer over E2E (bound by serverId, fallback — by text)
         guard chat.convId != nil else { return }
         let peer = convKey

@@ -1040,6 +1040,22 @@ enum MTKeepDerive {
         guard let d = try? JSONSerialization.data(withJSONObject: o), let s = String(data: d, encoding: .utf8) else { return false }
         return await knockText(secret, keepMark + s, silent: silent, sender: sender)
     }
+    /// THE SAME WORD ON THE LIVE WIRE (OZ 1 p.1.8, the author's words 23559 and 23560, 16.11.2026: «the nodes are an additional
+    /// channel, the main one must be direct», «build»): the word a knock boxes at a node's door rides at the same instant as a
+    /// letter's envelope under the pipe's tag of this minute on every standing channel -- a channel to the other device itself
+    /// where one stands, the carriers' wire else. Its form and its size are a letter's own: the same frame byte, tag and sealed
+    /// fields, and no padding to one measure, which would mark the seed's word among letters; the carriers' threshold is a
+    /// letter's too. False: no carrier stands, or the word is past one letter's measure -- the knock carries it alone then.
+    nonisolated static func wire(_ secret: Data, _ o: [String: Any]) -> Bool {
+        guard let d = try? JSONSerialization.data(withJSONObject: o), let s = String(data: d, encoding: .utf8) else { return false }
+        guard MontanaPath.networkPathAssembled(owners: MontanaDirect.shared.ownerRefsOfLiveChannels(excluding: MontanaSeed.twin ?? "")) else { return false }
+        let mid = UUID().uuidString, key = MTPipeKey(secret), w = MTPipe.window()
+        let head = MTNodeWire.letterHead(mid: mid, text: keepMark + s, name: "", glyph: "")
+        guard head.count <= MTNodeWire.envelopeSize, let sealed = MTPipe.sealBody(head, sharedSecret: key, window: w) else { return false }
+        let tag = key.tag(window: w)
+        var envelope = Data([MontanaPhoneNode.letterFrame]); envelope.append(tag); envelope.append(sealed)
+        return MontanaDirect.shared.sendUnderTag(tag, payload: envelope, mid: mid)
+    }
     /// One word of this person's own in a pipe, its text as given (a keeping word above; the seed's read word, MTTwinRead): the
     /// one place here that seals such a letter's head.
     nonisolated static func knockText(_ secret: Data, _ text: String, silent: Bool = true, sender: String? = nil) async -> Bool {

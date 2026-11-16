@@ -1522,16 +1522,16 @@ struct MTCountBadge: View {
     }
 }
 
-/// THE MUTED SOUND'S BADGE (the author's words 21970, 14.11.2026, and 23242, 16.11.2026: «right of the coin button, in Apple's
-/// style, larger, with a larger tap area»): while the system refuses the notifications, a crossed speaker in the platform's red
-/// circle stands right of the time panel's logo, never in the place of a button; the badge is 26 points, its tap area 44.
+/// THE MUTED SOUND'S BADGE (the author's words 21970, 14.11.2026, 23242 and 23651, 16.11.2026, a picture: «a badge over the time
+/// symbol, not crooked like this»): while the system refuses the notifications, a crossed speaker in the platform's red badge
+/// stands at the time logo's corner as the count badge stands on a glyph (MTCountBadge): 20 points, solid on the glass, no ring;
+/// its tap area is the platform's 44.
 struct MTMutedBadge: View {
     var body: some View {
         Image(systemName: "speaker.slash.fill")
-            .font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
-            .frame(width: 26, height: 26)
+            .font(.system(size: 10, weight: .bold)).foregroundColor(.white)
+            .frame(width: 20, height: 20)
             .background(Color.red, in: Circle())
-            .overlay(Circle().stroke(Color.white.opacity(0.9), lineWidth: 1.5))
             .drawingGroup()   // solid on the glass, as the count badge (glyphBadge)
             .frame(width: 44, height: 44)
             .contentShape(Rectangle())
@@ -3795,6 +3795,9 @@ struct Message: Identifiable, Codable {
     /// nor make it, and a correspondence given back carries it, so the writer's phone names its own letters by its own key and
     /// never by this phone's word (MTKeeping.takeGiven, the critic R-6). Absent on my own rows and on older ones.
     var authorTag: String? = nil
+    /// THE MOMENT A ROW OF SAVED MESSAGES LAST CHANGED (OZ 1 p.9, the author's word 23611): an edit or an answer stamps it, and the
+    /// seed's other device keeps the later state; 0 = as it was born.
+    var changedAt: Double = 0
     /// The wire spelling every build understands: a text forward rides with this quote; a
     /// reader that knows the mark draws the mark and never the quote.
     static let forwardedQuote = "↪︎ Forwarded message"
@@ -3862,7 +3865,7 @@ struct Message: Identifiable, Codable {
     }
 
     // safe reading of saved messages (new fields may be absent)
-    enum CodingKeys: String, CodingKey { case id, text, isFromMe, time, reactions, replyText, isRead, imageFile, videoFile, audioFile, audioDuration, docFile, docName, deliveryStatus, edited, msgId, senderRef = "senderAddress", createdAt, replyToId, transport, linkPreview, statusAt, forwarded, groupKey, groupIndex, groupCount, myReact, peerReact, lost, heard, authorTag = "au" }
+    enum CodingKeys: String, CodingKey { case id, text, isFromMe, time, reactions, replyText, isRead, imageFile, videoFile, audioFile, audioDuration, docFile, docName, deliveryStatus, edited, msgId, senderRef = "senderAddress", createdAt, replyToId, transport, linkPreview, statusAt, forwarded, groupKey, groupIndex, groupCount, myReact, peerReact, lost, heard, authorTag = "au", changedAt = "ch" }
     init(from c0: Decoder) throws {
         let c = try c0.container(keyedBy: CodingKeys.self)
         legacyId = (try? c.decode(UUID.self, forKey: .id))?.uuidString
@@ -3902,6 +3905,7 @@ struct Message: Identifiable, Codable {
         lost = (try? c.decode(Bool.self, forKey: .lost)) ?? false
         heard = (try? c.decode(Bool.self, forKey: .heard)) ?? false
         authorTag = try? c.decode(String.self, forKey: .authorTag)
+        changedAt = (try? c.decode(Double.self, forKey: .changedAt)) ?? 0
     }
 
     func encode(to encoder: Encoder) throws {
@@ -3921,6 +3925,7 @@ struct Message: Identifiable, Codable {
         if lost { try c.encode(lost, forKey: .lost) }   // absent = false: older readers of the store see no new key
         if heard { try c.encode(heard, forKey: .heard) }
         try c.encodeIfPresent(authorTag, forKey: .authorTag)   // absent = none: older readers of the store skip the key
+        if 0 < changedAt { try c.encode(changedAt, forKey: .changedAt) }   // absent = 0: older readers of the store skip the key
         if let groupKey {   // absent = a letter on its own; older readers of the store skip the keys
             try c.encode(groupKey, forKey: .groupKey)
             try c.encode(groupIndex, forKey: .groupIndex)
@@ -3937,6 +3942,12 @@ struct Message: Identifiable, Codable {
     /// exist, and none does. An envelope names no sender now, so there is nothing to compare and
     /// nothing to get wrong.
     var isMine: Bool { isFromMe }
+    /// WHAT OF A ROW STAYS ON THIS DEVICE (OZ 1 p.9): its rung, its read mark, its road, its clock, and what the twin's word already
+    /// names by keys of its own -- the words, the side, the birth, the sender and the file. Every other field rides to the seed's
+    /// other devices (ChatStore.twinParts). The row's coding is its owner: the file's four fields are named here alone (LETTER-FILE).
+    static let twinLocalKeys: Set<String> = Set([CodingKeys.id, .text, .isFromMe, .time, .isRead, .imageFile, .videoFile,
+        .audioFile, .audioDuration, .docFile, .docName, .deliveryStatus, .msgId, .senderRef, .createdAt, .transport, .statusAt, .lost,
+        .heard].map { k in k.rawValue })
 }
 
 // ════════════════════════════════════════════════════════════

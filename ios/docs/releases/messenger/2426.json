@@ -1,0 +1,20 @@
+{
+  "build": 2426,
+  "notes": {
+    "en": [
+      "What you put into Saved Messages on one of your devices now goes to your other devices at once over the live connection they already hold, instead of standing in a relay's queue; a device that sleeps still gets it the way it did.",
+      "Everything in Saved Messages now looks the same on all your devices: an edit, a reaction or a deletion on one device shows on the others, a forwarded photo or file arrives there too, and replies, link cards, forwards and albums keep their look.",
+      "When notifications are off, a small red badge now sits on the corner of the time symbol instead of a circle beside it."
+    ],
+    "ru": [
+      "То, что вы кладёте в Избранное на одном вашем устройстве, теперь сразу уходит на другие ваши устройства по уже стоящему живому соединению, а не ждёт в очереди узла; спящее устройство получает это прежней дорогой.",
+      "Всё в Избранном теперь выглядит одинаково на всех ваших устройствах: правка, реакция или удаление на одном устройстве видны на других, пересланное фото или файл приходит туда тоже, а ответы, карточки ссылок, пересылки и альбомы сохраняют свой вид.",
+      "Когда уведомления выключены, маленький красный бейдж теперь стоит на углу символа времени, а не кружком рядом с ним."
+    ],
+    "zh-Hans": [
+      "您在一台设备上存入“收藏”的内容，现在会通过设备已有的实时连接立即送达您的其他设备，不再在节点处排队；处于休眠的设备仍按原来的方式收到。",
+      "“收藏”中的一切现在在您的所有设备上保持一致：在一台设备上的编辑、回应或删除会显示在其他设备上，转发的照片或文件也会送达，回复、链接卡片、转发和相册保持原样。",
+      "通知关闭时，时间符号的角上现在显示一个小红色标记，而不是旁边的圆圈。"
+    ]
+  }
+}

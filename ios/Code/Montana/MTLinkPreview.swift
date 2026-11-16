@@ -564,6 +564,9 @@ final class MTLinkCards {
         if let i = store.messages[chat]?.firstIndex(where: { $0.msgId == "mid:\(mid)" }),
            store.messages[chat]?[i].linkPreview != card {
             store.messages[chat]?[i].linkPreview = card   // ONE touch of the feed, and only when it changes
+            // THE CARD OF A SAVED MESSAGES ROW REACHES THE SEED'S OTHER DEVICES (OZ 1 p.9, the critic of Agent 1258): the row was
+            // given at its birth, the card lands later, and the twin showed the link without it.
+            if let id = store.messages[chat]?[i].id { store.savedChanged(chat, id) }   // the card rides to the twin
         }
         if MTGroup.isKey(chat) {
             MTGroup.shared.carryCard(card, letter: mid, in: chat, store: store)
@@ -586,6 +589,7 @@ final class MTLinkCards {
                 if let i = store.messages[chat]?.firstIndex(where: { $0.msgId == "mid:\(mid)" }),
                    store.messages[chat]?[i].linkPreview != json {
                     store.messages[chat]?[i].linkPreview = json
+                    if let id = store.messages[chat]?[i].id { store.savedChanged(chat, id) }   // the card rides to the twin
                 }
                 if MTGroup.isKey(chat) {
                     MTGroup.shared.carryCard(json, letter: mid, in: chat, store: store)   // the picture rides to the group as the words did

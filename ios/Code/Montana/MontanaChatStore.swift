@@ -126,7 +126,7 @@ class ChatStore: ObservableObject {
     // the critic R-1): a selection of N letters went through this road one by one -- N tombstone writes, each the whole list
     // encoded, sealed and handed to the defaults, and N blocking history writes, all on the main thread. The rows leave by one
     // pass per chat, the tombstones by one write (bury), and the history leaves for the disk on its own queue at once.
-    func deleteLocally(_ letters: [(chat: String, msg: Message)]) {
+    func deleteLocally(_ letters: [(chat: String, msg: Message)], tell: Bool = true) {
         var rowsByChat: [String: Set<MID>] = [:]
         var namesByChat: [String: [String]] = [:], names: [String] = [], blobs: [String] = []
         for (chat, m) in letters {
@@ -157,6 +157,13 @@ class ChatStore: ObservableObject {
         guard !rowsByChat.isEmpty else { return }
         for (chat, ids) in rowsByChat { dropRows(chat) { r in ids.contains(r.id) } }
         for (chat, sids) in namesByChat { bury(sids, in: chat) }
+        // A ROW OF SAVED MESSAGES DELETED HERE GOES ON THE SEED'S OTHER DEVICES TOO (OZ 1 p.9, the author's word 23611): its name
+        // rides at once; there it is buried, and its row goes by this same road, told nobody again.
+        if tell {
+            for (chat, m) in letters where chat == savedMessagesKey && rowsByChat[chat]?.contains(m.id) == true {
+                MontanaArchive.giveTwinGone(chat: chat, mid: m.mid, own: m.isFromMe, at: m.createdAt)
+            }
+        }
         MontanaNotify.removeBanners(letters: names)   // the lock screen keeps no word of a letter that is gone
         if !blobs.isEmpty { MontanaBlobStore.drop(blobs) }
         save(blocking: false)
@@ -3632,7 +3639,33 @@ class ChatStore: ObservableObject {
     func giveToTwin(_ chat: String, _ m: Message, born: Bool = true) {
         let file = m.attachment.map { a in (kind: a.kind, name: a.file, docName: m.docName, duration: m.audioDuration) }
         MontanaArchive.giveTwin(chat: chat, mid: m.mid, text: m.text, own: m.isFromMe, at: m.createdAt, senderRef: m.senderRef, file: file,
-                                now: born && chat == savedMessagesKey)
+                                now: born && chat == savedMessagesKey, parts: Self.twinParts(m))
+    }
+    /// WHAT OF A ROW STAYS ON THIS DEVICE (OZ 1 p.9): the row's own coding names it (Message.twinLocalKeys, constitution 15).
+    private static var twinLocalKeys: Set<String> { Message.twinLocalKeys }
+    /// THE PARTS OF A ROW ITS TWIN SHOWS (OZ 1 p.9, the author's word 23611: «any data in Saved Messages shown on every device»):
+    /// every field the row is kept by -- its quote, card, forward, album, answer, edit and moment -- read by the row's own coding
+    /// (Message.encode), never a second list of fields.
+    static func twinParts(_ m: Message) -> [String: Any] {
+        guard let d = try? JSONEncoder().encode(m), let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] else { return [:] }
+        return o.filter { e in !twinLocalKeys.contains(e.key) }
+    }
+    /// The same row wearing the parts its twin gave: written, the parts laid over, read back -- by the one road a row is kept by.
+    static func wearingTwinParts(_ m: Message, _ parts: [String: Any]) -> Message? {
+        guard let d = try? JSONEncoder().encode(m), var o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] else { return nil }
+        // A KEY THE GIVEN ROW NO LONGER HOLDS GOES HERE TOO (OZ 1 p.9, the critic of Agent 1258): an answer taken back is written
+        // as no key at all (myReact is written only when present), and the twin kept naming the old answer as its own.
+        for k in o.keys where !twinLocalKeys.contains(k) && parts[k] == nil { o[k] = nil }
+        for (k, v) in parts where !twinLocalKeys.contains(k) { o[k] = v }
+        guard let back = try? JSONSerialization.data(withJSONObject: o) else { return nil }
+        return try? JSONDecoder().decode(Message.self, from: back)
+    }
+    /// A ROW OF SAVED MESSAGES CHANGED HERE (OZ 1 p.9, the author's word 23611): an edit or an answer stamps the row's moment and
+    /// rides to the seed's other devices at once by the row's name; the later state stands there.
+    func savedChanged(_ chat: String, _ id: MID) {
+        guard chat == savedMessagesKey, let i = messages[chat]?.firstIndex(where: { m in m.id == id }) else { return }
+        messages[chat]?[i].changedAt = Date().timeIntervalSince1970
+        if let row = messages[chat]?[i] { giveToTwin(chat, row) }
     }
     /// A ROW THE SEED'S OTHER DEVICE GAVE BACK: laid by its own birth, once -- never over a row of the same name or the same archive
     /// key standing here, never over its tombstone; a file comes by the cargo road into the store under the name it bears on every
@@ -3641,6 +3674,12 @@ class ChatStore: ObservableObject {
         guard let d = body.data(using: .utf8), let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any],
               0 < at, !mid.isEmpty, let rows = messages[chat] ?? savedBirth(chat), !buried(mid, in: chat) else {
             return twinRowDropped(chat, mid, "no chat here, a grave over its name, or a letter that names no row")
+        }
+        // A ROW DELETED ON THE SEED'S OTHER DEVICE (OZ 1 p.9): buried here by its name, its row gone by the one road of a deletion,
+        // told nobody again.
+        if (o["x"] as? Int) == 1 {
+            if let gone = rows.first(where: { m in m.mid == mid }) { deleteLocally([(chat, gone)], tell: false) } else { bury([mid], in: chat) }
+            return MontanaTrace.mark("twin_row", mid: mid, "gone -- deleted on the seed's other device")
         }
         // A ROW OF THIS NAME STANDING WITHOUT ITS FILE TAKES THE FILE (OZ 1 p.1): Saved Messages lays a row at its first letter, the
         // file's road comes in the second letter of the same name; a row of the name standing whole is a repeat.
@@ -3657,14 +3696,28 @@ class ChatStore: ObservableObject {
             case "img": row.imageFile = name; row.docName = o["n"] as? String
             case "vid": row.videoFile = name
             case "aud": row.audioFile = name; row.audioDuration = o["d"] as? Double ?? 0; row.text = ""
-            default: row.docFile = name; row.docName = o["n"] as? String ?? name; row.text = ""
+            default: row.docFile = name; row.docName = o["n"] as? String ?? name; if isControlMarker(text) { row.text = "" }   // a caption stays (OZ 1 p.9)
             }
         }
+        // THE WHOLE ROW (OZ 1 p.9): its quote, its card, its forward, its album, its answer and its edit, by the row's own coding.
+        if let r = o["r"] as? [String: Any], let worn = Self.wearingTwinParts(row, r) { row = worn }
         guard let sig = Self.archiveSig(row) else { return twinRowDropped(chat, mid, "a row of no words and no file") }
         // A ROW STANDING WITHOUT ITS FILE TAKES THE FILE ALONE (OZ 1 p.1.4.2): a restored Saved Messages row stands from the archive
         // by the same key (second, side, words and file name) and holds no file; the twin's copy fills it and lays no second row.
         let standing = named ?? rows.first(where: { m in Self.archiveSig(m) == sig })
         let fileless = standing?.attachment.map { a in !MontanaMediaStore.exists(a.file) } ?? false
+        // A NEWER STATE OF A ROW STANDING HERE IS WORN BY IT (OZ 1 p.9, the author's word 23611): an edit or an answer on the seed's
+        // other device stamped the row's moment; the later stands, and an older copy given back by the gap's healing is a repeat.
+        // The row's file stays as it stands here.
+        if let named, named.changedAt < row.changedAt, let i = messages[chat]?.firstIndex(where: { m in m.mid == mid }) {
+            var now = named
+            if let worn = Self.wearingTwinParts(now, Self.twinParts(row)) { now = worn }
+            now.text = row.text
+            messages[chat]?[i] = now
+            bump(chat)
+            if lastLetter(chat)?.id == mid { noteListState(chat, last: lastLetter(chat)) }
+            MontanaTrace.mark("twin_row", mid: mid, "changed at=\(Int(row.changedAt))")
+        }
         guard standing == nil || fileless else { return }
         guard kind != nil, !MontanaMediaStore.exists(name), let road = o["road"] as? [String: Any] else {
             if standing == nil { layTwinRow(chat, row) }
@@ -4370,8 +4423,9 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         messages[chat]?[i].text = newText
         messages[chat]?[i].edited = true
         if lastLetter(chat)?.id == id { noteListState(chat, last: lastLetter(chat)) }   // the list row follows the words
+        if chat == savedMessagesKey { savedChanged(chat, id) }   // the seed's other devices show the edit (OZ 1 p.9)
         // A letter of one's own, with a wire name, in a conversation with a wire: only that can be
-        // edited on the other screen. A note to oneself has no second screen; a row restored from the
+        // edited on the other screen. A note to oneself reaches its twin above, never a wire; a row restored from the
         // archive («arc:») was never a letter of this wire and has no name the peer would know.
         guard !Self.isLocalRoom(chat), row.isMine, let sid = row.msgId, sid.hasPrefix("mid:") else { return }
         let body: [String: String] = ["sid": String(sid.dropFirst(4)), "tx": newText]
