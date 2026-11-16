@@ -1046,6 +1046,7 @@ struct MTComposeMark: View {
     }
 }
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// THE SYMBOL OF SENDING TIME (the author's words 05.10.2026 15:3x-15:5x UTC: «save it in Media and use it always as the symbol of
 /// sending time»; «use only our send symbol, a touch larger and in proportion to the text»): the author's own file, byte for byte
 /// (Media/IMG_3066.png, the asset TimeSend), drawn at the height it is given -- the one owner of the mark wherever time is sent.
@@ -1055,6 +1056,7 @@ struct MTTimeSendMark: View {
         Image("TimeSend").renderingMode(.original).resizable().scaledToFit().frame(height: height).accessibilityHidden(true)
     }
 }
+#endif
 
 struct MTHoldOverlayView: View {
     @ObservedObject private var st = MTHoldOverlayState.shared
@@ -1390,6 +1392,7 @@ struct MTMarkTouch: UIViewRepresentable {
         c.onPress = { p in pressed.wrappedValue = p }
     }
 }
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// THE ONE SHARE BUTTON OF THE APP (the author's word 25.09: «make this button the system's native share, one owner in the
 /// whole app»): the platform's share glyph on the platform's glass -- the bar marks' own face (MontanaCallMark) -- and the
 /// sheet born by its one owner (MTShare). The items are read at the tap, never before.
@@ -1403,6 +1406,7 @@ struct MTShareButton: View {
         }
     }
 }
+#endif
 /// «Done»: the platform's own checkmark (the author's word 16.09), one glyph for every sheet and
 /// screen that closes or confirms — drawn by the one bar mark.
 struct MontanaDoneMark: View {

@@ -9649,38 +9649,6 @@
         }
       }
     },
-    "The track could not be read.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Трек не удалось прочитать."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法读取该曲目。"
-          }
-        }
-      }
-    },
-    "The folder of this track did not open. Lend it again with the plus.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Папка этого трека не открылась. Дайте к ней доступ снова плюсом."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此曲目所在的文件夹未能打开。请用加号重新授予访问权限。"
-          }
-        }
-      }
-    },
     "The two phones could not open a path for the voice. Try again in a moment.": {
       "extractionState": "manual",
       "localizations": {
@@ -12592,22 +12560,6 @@
         }
       }
     },
-    "iCloud Drive is off on this device.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "На этом устройстве выключен iCloud Drive."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此设备上的 iCloud Drive 已关闭。"
-          }
-        }
-      }
-    },
     "iCloud Drive is off on this device: Settings, your name, iCloud, iCloud Drive (%@).": {
       "localizations": {
         "ru": {
@@ -12620,22 +12572,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "此设备已关闭 iCloud 云盘：设置 → 你的姓名 → iCloud → iCloud 云盘（%@）。"
-          }
-        }
-      }
-    },
-    "iCloud asks you to sign in to your Apple Account again.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud просит снова войти в Apple Account."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud 要求您重新登录 Apple 账户。"
           }
         }
       }
@@ -12668,22 +12604,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "iCloud 无法连接其服务器（%@）。连接恢复后会自动继续；使用蜂窝网络时，iCloud 可能会等待 Wi-Fi。"
-          }
-        }
-      }
-    },
-    "iCloud could not reach its servers; the track is still in iCloud. Try again on Wi-Fi.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud не смог связаться со своими серверами; трек остаётся в iCloud. Попробуйте ещё раз по Wi-Fi."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iCloud 无法连接到其服务器；曲目仍在 iCloud 中。请在 Wi-Fi 下重试。"
           }
         }
       }

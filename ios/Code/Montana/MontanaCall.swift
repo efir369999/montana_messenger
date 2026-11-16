@@ -8366,15 +8366,6 @@ struct CallOverlayView: View {
         }
     }
 
-    struct MTRoutePicker: UIViewRepresentable {
-        func makeUIView(context: Context) -> AVRoutePickerView {
-            let v = AVRoutePickerView()
-            v.activeTintColor = UIColor.white
-            v.tintColor = .white
-            return v
-        }
-        func updateUIView(_ v: AVRoutePickerView, context: Context) {}
-    }
     // THE CHAT'S OWN GLASS (the author's word 21.09): every call button stands on the face the chat's
     // buttons stand on — montanaOctagonFace, liquid glass where the system has it, the thin material
     // with a rim before — tinted for End / Accept / Decline and lit white when active. One face for

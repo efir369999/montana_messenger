@@ -56,6 +56,7 @@ struct MTGlassCirclePlate: View {
     }
 }
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// A SHEET OF GLASS (25.09): the page behind shows through the system's own glass where it has it, the thin material before —
 /// the ground of the new post's page, a tree of its own on the platform's sheet (its host's own view is clear).
 struct MTGlassSheet: ViewModifier {
@@ -67,3 +68,4 @@ struct MTGlassSheet: ViewModifier {
         }
     }
 }
+#endif

@@ -390,6 +390,7 @@ struct MTTiledLetterText: UIViewRepresentable {
     }
 }
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// Only posts fold (the author's word 27.09). Chat bubbles show their whole text as in 1960.
 /// The post's font and actual proposed width decide the fold through the same TextKit stack that draws its words.
 enum MTPostFold {
@@ -420,6 +421,7 @@ enum MTPostFold {
         return laid.location + laid.length == layout.numberOfGlyphs ? count : cap + 1
     }
 }
+#endif
 
 /// A letter opened whole: its name in the feed and its words.
 struct MTLetterRead: Hashable, Identifiable {

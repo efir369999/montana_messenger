@@ -261,6 +261,7 @@ struct SettingsTabView: View {
 // SETTINGS SUB-SCREENS
 // ════════════════════════════════════════════════════════════
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// A document of Montana, opened in the platform's own browser sheet inside the app (MTWebSheet); the whole row is the target.
 struct MTDocumentRow: View {
     let title: String
@@ -279,6 +280,7 @@ struct MTDocumentRow: View {
         .foregroundColor(.primary)
     }
 }
+#endif
 
 // Notifications and sounds
 struct NotificationsView: View {

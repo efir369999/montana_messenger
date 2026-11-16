@@ -43,6 +43,7 @@ struct MontanaPeer: Identifiable, Hashable {
     }
 }
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 // Rotating discovery label (spec s.3 §13 stage 5). What a device broadcasts on a shared network must
 // mean nothing to a stranger: the human name and the reference used to go out in clear, so anyone
 // on a café Wi-Fi could read who was in the room. The label is derived from the owner's own address and
@@ -75,6 +76,7 @@ enum MontanaLocalTag {
         return MTPipeBook.match(d, at: at) ?? MTPipeBook.convAwaiting(firstContactTag: d, at: at)
     }
 }
+#endif
 
 /// Montana mesh transport over the network FFI (mt_client_*).
 /// Synchronous FFI calls — run on a background queue (block_on inside).

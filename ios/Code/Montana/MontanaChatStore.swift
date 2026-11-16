@@ -3272,6 +3272,9 @@ class ChatStore: ObservableObject {
         bump(montanaRoomKey)
         Task { @MainActor in self.noteListState(montanaRoomKey, last: self.lastLetter(montanaRoomKey)) }
         recalcBadge()
+        #if MONTANA_MESSENGER
+        keepNewestRelease()
+        #endif
         return true
     }
 
@@ -3282,6 +3285,9 @@ class ChatStore: ObservableObject {
     /// app itself; a room put away comes back; the network's word of the same build fills its changes in (appendRelease).
     func standMontanaRoom(build: Int, version: String) {
         guard 0 < build else { return }
+        #if MONTANA_MESSENGER
+        defer { keepNewestRelease() }   // the official channel shows the newest build alone
+        #endif
         if deletedChats.contains(montanaRoomKey) { deletedChats.remove(montanaRoomKey) }
         // EVERY ROW SPEAKS ITS BUILD'S OWN WORDS (OZ 1 p.6): a row laid empty by an earlier build fills in from the notes' one owner.
         for row in messages[montanaRoomKey] ?? [] {
@@ -3294,6 +3300,26 @@ class ChatStore: ObservableObject {
             MontanaTrace.mark("release", "the room stands build=\(build) -- the app's own row")
         }
     }
+
+    #if MONTANA_MESSENGER
+    /// THE OFFICIAL CHANNEL SHOWS THE NEWEST BUILD ALONE (the author's words 23818, 23820 and 23821, 16.11.2026 22:29 UTC: «in
+    /// the Messenger show in the channel of the latest builds only the last clean one, with no doubtful mentions»; «it is the
+    /// official channel»). A fresh install reads its own build's row, and a row of an older build spoke of what that build left
+    /// out -- words a reviewer could take for a hidden feature (2.3.1(a)). Every row of an older build leaves the feed and the
+    /// journal, when the channel stands and when a newer build's row lands; tools/mt-apple-rules-check.py keeps both calls.
+    func keepNewestRelease() {
+        let rows = messages[montanaRoomKey] ?? []
+        guard let newest = rows.compactMap({ releaseInfoOf($0.text)?.build }).max() else { return }
+        let older = rows.filter { m in (releaseInfoOf(m.text)?.build ?? newest) < newest }
+        guard !older.isEmpty else { return }
+        for m in older { MTRowJournal.drop(montanaRoomKey, mid: m.mid) }
+        let gone = Set(older.map { $0.id })
+        dropRows(montanaRoomKey) { gone.contains($0.id) }
+        save(blocking: false)
+        recalcBadge()
+        MontanaTrace.mark("release", "the channel keeps build=\(newest) alone, \(older.count) older rows gone")
+    }
+    #endif
 
     #if !MONTANA_MESSENGER
     /// A POST ON A WALL OF THE PAIR, IN THEIR CHAT (the author's word 30.09): the one birth of its row (MTWallCard). The writer's

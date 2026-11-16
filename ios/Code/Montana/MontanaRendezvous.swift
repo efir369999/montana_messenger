@@ -1,5 +1,6 @@
 import Foundation
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// A rendezvous for a call.
 ///
 /// Neither side has an address, so neither can be dialled. What both of them CAN do is compute the
@@ -31,3 +32,4 @@ enum MontanaRendezvous {
         MTPipe.holder(of: point, among: machines)
     }
 }
+#endif

@@ -33,28 +33,10 @@ struct CallICE: Codable { var candidate: String; var sdpMid: String?; var sdpMLi
 // rec, lv (20.10.2026) are retired with the call's recording (the author's word 16428, 04.11.2026): an older build's word is skipped.
 struct CallCaps: Codable { var tier: String?; var ver: Int?; var opus_max: Int?; var hw_aec: Bool?; var sframe: Bool?; var av: Bool?; var rejoin: Bool?
     var fc: String? }
-struct E2EPlain: Codable { var body: String; var conv: String; var mid: String?; var ts: Int?
-    var ctrl: String?; var sdp: CallSDP?; var candidate: CallICE?; var video: Bool?; var caps: CallCaps?; var call_seed: String? }
 struct E2ESession: Codable { var blob: String }
 struct E2EKeyState: Codable {
     var deviceId: String
     var spkId: Int; var spkPub: String; var spkSk: String
-}
-struct E2EPeerDevice: Codable {
-    var deviceId: String
-    var signPub: String
-    var appKemPub: String
-    var appKemSig: String
-
-    /// A device the channel is ALREADY open with: seal takes the ratchet from sessions by
-    /// "reference|deviceId" and needs no key material, which is only used when a channel is first
-    /// built. This lets a letter go without asking the network for a key bundle.
-    /// Empty keys are safe here: if the session turns out to be missing, seal returns nil on the
-    /// key-size check (1952/1184/1184) and the letter goes to the queue for a retry, where the
-    /// bundle is fetched again.
-    static func sessionOnly(_ deviceId: String) -> E2EPeerDevice {
-        E2EPeerDevice(deviceId: deviceId, signPub: "", appKemPub: "", appKemSig: "")
-    }
 }
 
 // ── Device linking: transferring the history key between devices of one account via

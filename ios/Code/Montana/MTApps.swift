@@ -109,6 +109,7 @@ enum MTLocalNetwork {
     }
 }
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// THE DOOR'S WATCH (slice S2b b7): a shared view is drawn again when what it reads behind a door changes, and names nothing of
 /// the application -- the door hands the change, the watch passes it on. Each thing watched has its own watch, so a view wakes
 /// only for what it reads (a bubble never at a coin minted).
@@ -118,6 +119,7 @@ enum MTLocalNetwork {
         held = changes?.sink { [weak self] in self?.objectWillChange.send() }
     }
 }
+#endif
 
 #if !MONTANA_MESSENGER   // no coins in Messenger (cut C6)
 /// What a shared view watches behind the coin door (slice S2b b7): the letters' coins, the book's own count by letter; my available
@@ -553,6 +555,7 @@ struct MTCoinAbout {
 }
 #endif
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// THE APPLICATION'S MOMENTS an application behind its door answers: shared code says when, the application says what.
 /// The seat's moments (slice S2b b2): the person leaving the seat, the person forgotten with no other seat, a person seated.
 /// The seed forgetting (slice S2b b7c): what the seed stands in on the nodes leaves while its words still derive the names.
@@ -564,11 +567,15 @@ enum MTAppMoment {
     case tunnelConnected
     #endif
 }
+#endif
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// A PAGE OF THE WEB INSIDE THE APP (the author's word 12.10.2026 10:1x UTC: «inside the Explorer at once in the app»; slice S2b b7d:
 /// the browser is no coins' own -- a document of Montana opens in it too): the platform's own browser sheet over the page, never a
 /// jump out of the app.
 struct MTWebLink: Identifiable { let url: URL; var id: String { url.absoluteString } }
+#endif
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 struct MTWebSheet: UIViewControllerRepresentable {
     let url: URL
     static func open(_ url: URL) {
@@ -577,3 +584,4 @@ struct MTWebSheet: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> SFSafariViewController { SFSafariViewController(url: url) }
     func updateUIViewController(_ vc: SFSafariViewController, context: Context) {}
 }
+#endif

@@ -551,28 +551,3 @@ enum MTNameBook {
 }
 
 
-// -- A short invitation: first contact without an address ---------------------
-// A post-quantum key bundle is ~10 KB and DOES NOT FIT into a scannable code (the bound is ~3 KB).
-// So the invitation carries 32 bytes of secret and the cell coordinates, while the bundle travels on
-// the SECOND step: the guest puts theirs into the cell, the owner answers with theirs. Exactly the
-// same resolution as in SMP, where the first message into a queue carries the sender key.
-//
-// The cell keys are derived by BOTH sides from one invitation secret -- so the card need carry
-// neither the 4 KB write-permission key nor the 1184 bytes of the postman key.
-struct MontanaInviteShort: Codable {
-    var host: String        // the postman address, for example 192.0.2.1:8445
-    var secret: String      // 32 bytes in hexadecimal -- the cell keys are derived from it
-    static let prefix = "mt:v:"
-
-    func encoded() -> String {
-        guard let d = try? JSONEncoder().encode(self) else { return "" }
-        return Self.prefix + d.base64EncodedString()
-    }
-    static func decode(_ s: String) -> MontanaInviteShort? {
-        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard t.hasPrefix(prefix), let d = Data(base64Encoded: String(t.dropFirst(prefix.count))),
-              let i = try? JSONDecoder().decode(MontanaInviteShort.self, from: d),
-              MontanaQueueKeys.hexToData(i.secret).count == 32, !i.host.isEmpty else { return nil }
-        return i
-    }
-}

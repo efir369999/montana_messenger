@@ -2330,6 +2330,7 @@ struct VideoGridThumb: View {
     }
 }
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 // video from the gallery → a copy in the app's documents
 struct ChatMovie: Transferable {
     let url: URL
@@ -2345,6 +2346,7 @@ struct ChatMovie: Transferable {
         }
     }
 }
+#endif
 
 // the latest photos/videos from the phone gallery (for the feed in the attachments panel)
 final class RecentMedia: NSObject, ObservableObject, PHPhotoLibraryChangeObserver {

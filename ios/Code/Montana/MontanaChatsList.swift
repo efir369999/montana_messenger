@@ -258,6 +258,7 @@ struct MontanaTimePanelList: View {
     }
 }
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 // ════════════════════════════════════════════════════════════
 // CHATSLISTVIEW — MAIN SCREEN: CHAT LIST
 // ════════════════════════════════════════════════════════════
@@ -287,6 +288,7 @@ final class ConnectionStatus: ObservableObject {
         return "\(sec)s"
     }
 }
+#endif
 
 struct ChatsListView: View {
     @ObservedObject private var folderBook = MTChatFolders.shared   // the Groups and Channels pages' folders (paneFolder)

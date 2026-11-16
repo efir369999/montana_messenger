@@ -57,6 +57,7 @@ enum MontanaTransport: String {
     }
 }
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 // SSOT canonical transport icon ([I-10]/[C-1]): the ONE place any transport icon is drawn — chats
 // header, Montana Network page, and message bubbles all use this. Two colours only: green = on,
 // red = off. Do NOT inline Image(systemName:) for a transport icon anywhere else.
@@ -85,6 +86,7 @@ struct MontanaTransportIcon: View {
         }
     }
 }
+#endif
 
 // Stage-1 protocol layer (spec s.3 §5): NetMessage multiplex (§5.0), OverlayFrame (§5.2),
 // registration frames (§5.3) and the §5.1 proof-of-ownership. All rides INSIDE the Noise_PQ

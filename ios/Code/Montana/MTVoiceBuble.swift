@@ -594,45 +594,6 @@ public enum MontanaVoiceOrb {
     }
 }
 
-/// THE TAPE'S SECONDS UNDER ITS CIRCLE (the author's word 21.09, one row for the voice and the note): the
-/// pulsing red dot and the time, drawn once; the circle's owner hangs it under the rim by `drop`.
-struct MTTapeSeconds: View {
-    let elapsed: Double      // the tape's own length
-    let paused: Bool         // the tape stands: the dot stops pulsing
-    @State private var pulse = false
-    static let drop: CGFloat = 28   // from the circle's rim down to the row's centre
-    static let row: CGFloat = 36    // the room the row takes under a circle (the note's stage counts it)
-    var body: some View {
-        HStack(spacing: 10) {
-            Circle().fill(.red).frame(width: 10, height: 10)
-                .opacity(paused ? 1 : (pulse ? 0.2 : 1))
-                .animation(paused ? .default : .easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: pulse)
-            // USER-DATA: a duration.
-            Text(verbatim: fmtDuration(elapsed))
-                .font(.system(.title2, design: .monospaced)).foregroundColor(.white)
-        }
-        .onAppear { pulse = true }
-    }
-}
-
-/// The voice's circle (the author's word 14.09, its place the crown's since 21.09): the liquid orb in
-/// the middle of the VISIBLE part — keys up or down — and under it the pulsing red dot with the seconds.
-/// Drawn by the crown (MTHoldOverlayView) at st.orb; the tape is read live.
-struct MontanaVoiceRecordHold: View {
-    @ObservedObject var voice: VoiceRecorder
-    @ObservedObject private var style = MontanaVoiceOrbStyle.shared
-    private static let orbSide: CGFloat = 160   // the ball itself, rim on the frame
-
-    var body: some View {
-        ZStack {
-            LiquidOrbView(state: style.state(mine: true), rimRadius: LiquidOrbView.fullRim, animating: !voice.paused)   // my own voice
-                .frame(width: Self.orbSide, height: Self.orbSide)
-            MTTapeSeconds(elapsed: voice.elapsed, paused: voice.paused)
-                .offset(y: Self.orbSide / 2 + MTTapeSeconds.drop)
-        }
-    }
-}
-
 /// The orb over a voice message in the feed (the author's word 14.09): the same animation on
 /// both sides, born from the module rather than shipped as bytes — nothing new rides the wire,
 /// every build sees the voice as before. Half the frame rate of the hold: a feed may hold several.

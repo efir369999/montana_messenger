@@ -30,7 +30,7 @@ struct MontanaApp: App {
     #if !MONTANA_MESSENGER   // Messenger names no other app and offers no «Open in» (the author's word 17130; review of build 120, R-7)
     @State private var chooseLink: String?   // an invitation waiting for the person to choose the Montana app that opens it
     #endif
-    @State private var diagAsk = false   // the diagnostics yes, asked at the install and at every update (MontanaDiagConsent)
+    @State private var diagAsk = false   // the diagnostics yes, asked once per install, at every build in Debug (MontanaDiagConsent.shouldAsk)
     @AppStorage("AppLanguage") private var appLang = ""   // "" = follow system
     init() {
         // Before any screen: an installation that has just appeared must not inherit a person.

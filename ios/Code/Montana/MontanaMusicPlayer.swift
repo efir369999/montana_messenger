@@ -1643,6 +1643,7 @@ final class MTMarqueeView: UIView {
 }
 
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// ONE ROW OF A TRACK, ONE OWNER (the author's word 01.10 00:06: «under the big player the same list as on the music page, by one
 /// function with one owner»; T1 on 2049: one fling of the big player's playlist ran its row 953 times -- each row watched the
 /// whole store of readings and the player's face and drew itself again at every reading, and the music page scrolls the same
@@ -1676,6 +1677,7 @@ enum MTTrackRow {
             .onAppear { MTTrackMeta.shared.load(t.file) }
     }
 }
+#endif
 
 // ════════════════════════════════════════════════════════════
 // THE MUSIC PAGE UNDER THE BAR (the author's word 23.09): the music is a page as the calls are — the
@@ -1684,6 +1686,7 @@ enum MTTrackRow {
 // right that pours a folder's music in.
 // ════════════════════════════════════════════════════════════
 
+#if !MONTANA_MESSENGER   // Messenger draws and calls none of it (the author's word 23726)
 /// WHAT PLAYS, AND ONLY THAT (23.09): the music page and its rows watch which track stands in the
 /// player and whether it plays — never the player's clock, which ticks four times a second (the critic 22.09, the law
 /// of MontanaPlayerBar.Gate). Three of the player's own published words, and nothing else.
@@ -1706,6 +1709,7 @@ final class MTNowPlaying: ObservableObject {
             .store(in: &bag)
     }
 }
+#endif
 
 /// WHAT A TRACK CARRIES ITSELF (the author's word 23.09: «the music file's cover, when it has one»): its cover, its
 /// name, its artist and its length — read from the file's own tags by the platform (AVURLAsset), off the main thread,
@@ -1978,6 +1982,7 @@ struct MusicTabView: View {
 }
 #endif
 
+#if !MONTANA_MESSENGER   // the folders lent to the music are the Protocol's alone (the author's word 23726; decision 793)
 /// THE FOLDERS LENT TO THE MUSIC (the author's word 24.09: «the folders chosen by the plus are not added to Saved
 /// Messages — access is only given, so that it reads from there locally»). The plus LENDS a folder: the platform's own
 /// permission for it is kept — the security-scoped URL the document picker hands over, saved as a minimal bookmark in
@@ -2544,3 +2549,23 @@ struct MusicTabView: View {
         DispatchQueue.main.async { MainActor.assumeIsolated { MTMusicFolders.shared.walked(changed: changed, lend: lend) } }
     }
 }
+#else
+/// MESSENGER LENDS NO FOLDER (the author's word 23726; decision 793): the plus that lends a folder to the music stands on the
+/// Protocol's music page alone, so no track of the Messenger lies in a lent folder. Every question the player and the chats
+/// ask of one is answered here as the folders' own code answers a track that is not lent, and nothing of the folders --
+/// their walk, their keeper's fetch, their words -- is compiled into the Messenger.
+@MainActor final class MTMusicFolders {
+    static let shared = MTMusicFolders()
+    let fetching: String? = nil
+    nonisolated static func isLent(_ file: String) -> Bool { false }
+    nonisolated static func url(_ file: String) -> URL? { nil }
+    nonisolated static func size(_ file: String) -> Int? { nil }
+    nonisolated static func art(_ file: String) -> URL? { nil }
+    nonisolated static func local(_ file: String) -> Bool { true }
+    nonisolated static func closed(_ file: String) -> Bool { false }
+    nonisolated static func refuseClosed() {}
+    nonisolated static func tracks() -> (rev: Int, list: [MusicTrack]) { (0, []) }
+    nonisolated static func needsFetch(_ file: String) -> Bool { false }
+    nonisolated static func bring(_ file: String, then: @escaping () -> Void) { then() }
+}
+#endif
