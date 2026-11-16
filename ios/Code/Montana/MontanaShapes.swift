@@ -665,18 +665,20 @@ struct MTAvatarBadgeRow: View {
     @Environment(\.mtBalanceAlreadyVisible) private var balanceVisible
     var body: some View {
         if who == MTAvatarBadges.me {
-            MTAvatarBadgesMine(size: size, coinsOn: !balanceVisible)
+            MTAvatarBadgesMine(size: size)
         } else {
             MTAvatarBadgesTold(conv: who, size: size, coinsOn: !balanceVisible)
         }
     }
 }
-/// MY BADGES (slice S2b b7b): my available and my Global Level. The available is the coins' own, read and watched through their door
-/// (it beats each second, so it has a watch of its own); unread, neither it nor the level is said, and with no door the wallet is no
+/// MY BADGES (slice S2b b7b): my Global Level. The available is the coins' own, read and watched through their door (it beats each
+/// second, so it has a watch of its own) as a term of the level; unread, the level is not said, and with no door the wallet is no
 /// term of the level (link 14822).
+/// NO BALANCE ON ONE'S OWN FACE (the author's word 16.11.2026 12:50 UTC, link 23011: «remove this badge from the avatar's circle,
+/// here and from the side panel» -- the «5.6 million» pill over Saved Messages and in the side panel): one's own coins are said by
+/// the wallet alone, and one's own face wears the level only.
 private struct MTAvatarBadgesMine: View {
     let size: CGFloat
-    let coinsOn: Bool
     @ObservedObject private var balance = MTApps.balanceWatch
     @ObservedObject private var person = MTPersonChain.shared
     @ObservedObject private var fabric = MTFabric.shared   // the Global Level is the lowest of three: it follows the fabric too (17.10)
@@ -684,7 +686,7 @@ private struct MTAvatarBadgesMine: View {
         let door = MTApps.coins
         let read = door.map { $0.walletLevel != nil } ?? true
         let available = door?.available
-        MTAvatarBadgePair(coins: coinsOn && read && door?.shown == true ? available : nil,
+        MTAvatarBadgePair(coins: nil,
             level: read ? person.level.map { MTPersonChain.global(person: $0, wallet: available.map(MTFabricRules.walletLevel) ?? Int.max) } : nil,
             size: size)
             .onAppear { person.prime() }

@@ -364,18 +364,39 @@ enum MTNodeWire {
     /// network — the fastest first. The sheet used to walk a stored list in a fixed order, five
     /// seconds per dead door; the app knocks every door on a network change and keeps the ones
     /// that answer. One judgement now, for both.
-    static func judgedDoors(_ candidates: [String], cap: String? = nil, timeout: TimeInterval = 4) async -> [String] {
-        await withTaskGroup(of: (String, Int)?.self) { group -> [String] in
+    /// NO SILENT DOOR HOLDS THE JUDGEMENT (OZ 4, the author's words 23029 and 23030): it ends a moment (grace) after the first door
+    /// answers. A door still unheard then is not judged dead -- it is walked last, in the roster's order; a door that refused or
+    /// failed stays aside. T1, 16.11.2026 13:06 UTC: four seconds spent on one silent door (doors up=4 of=5 ms=4009) before the
+    /// sender's chat was written.
+    private enum Judged { case door(String, Int), refused(String), closed }
+    static func judgedDoors(_ candidates: [String], cap: String? = nil, timeout: TimeInterval = 4,
+                            grace: TimeInterval = 0.3) async -> [String] {
+        await withTaskGroup(of: Judged.self) { group -> [String] in
             for b in candidates {
                 group.addTask {
-                    guard let h = await health(b, timeout: timeout) else { return nil }
-                    if let cap, let caps = h.caps, !caps.contains(cap) { return nil }
-                    return (b, h.ms)
+                    guard let h = await health(b, timeout: timeout) else { return .refused(b) }
+                    if let cap, let caps = h.caps, !caps.contains(cap) { return .refused(b) }
+                    return .door(b, h.ms)
                 }
             }
             var good: [(String, Int)] = []
-            for await r in group { if let r { good.append(r) } }
-            return good.sorted { $0.1 < $1.1 }.map(\.0)
+            var refused: Set<String> = []
+            var closing = false
+            judging: while let r = await group.next() {
+                switch r {
+                case .door(let b, let ms):
+                    good.append((b, ms))
+                    if !closing, good.count + refused.count < candidates.count {
+                        closing = true
+                        group.addTask { try? await Task.sleep(nanoseconds: UInt64(grace * 1_000_000_000)); return .closed }
+                    }
+                case .refused(let b): refused.insert(b)
+                case .closed: break judging
+                }
+            }
+            group.cancelAll()
+            let up = good.sorted { $0.1 < $1.1 }.map(\.0)
+            return up + candidates.filter { b in !up.contains(b) && !refused.contains(b) }
         }
     }
 

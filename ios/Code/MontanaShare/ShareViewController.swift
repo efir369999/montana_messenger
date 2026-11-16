@@ -463,7 +463,10 @@ final class SharePickerController: UIViewController, UICollectionViewDataSource,
             ? attachments.filter { $0.hasItemConformingToTypeIdentifier(urlT) || $0.hasItemConformingToTypeIdentifier(textT) }
             : attachments
         Task {
-            await ShareSend.judgeDoors()   // the doors of THIS network, judged now -- one behaviour on any network (16.09)
+            // THE DOORS ARE JUDGED WHILE THE ITEMS ARE PREPARED (OZ 4, the author's words 23029 and 23030): the judgement came first and
+            // held every share until its slowest door answered (t1, 16.11.2026 13:06 UTC: four seconds before the sender's chat). It runs
+            // beside the preparing and the sender's chat now, and is awaited at the first step onto the network.
+            let judging = Task { await ShareSend.judgeDoors() }   // the doors of THIS network, judged now -- one behaviour on any network (16.09)
             var items: [[String: Any]] = []
             // Strictly one at a time. Starting every item at once, under a memory limit of about 120 MB, loses the whole batch to
             // a single failure. A sequence gives order, bounded memory and isolation: the item that fails is skipped.
@@ -527,6 +530,7 @@ final class SharePickerController: UIViewController, UICollectionViewDataSource,
             // THEN THE NETWORK. The pieces go to the node from HERE, once per item. "Sending" is network truth: the bar moves only
             // when a piece is on the node. An item whose upload fails keeps uploaded=false and gets no letter; the app re-sends it
             // from the shelf on its own road (share_resend). The sheet never buys delivery with a hang and never drops the item.
+            await judging.value   // the doors of this network, before the first step onto it
             await MainActor.run { self.stage = "upload" }
             var uploadedAt: [Bool] = Array(repeating: false, count: lettered.count)
             var failed = 0

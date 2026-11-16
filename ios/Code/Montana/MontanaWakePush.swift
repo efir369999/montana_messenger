@@ -6106,18 +6106,25 @@ final class MTPutPulse: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     private let lock = NSLock()
     private var at = Date()
     private var whole = false
+    private var spoke = false
     private let heard: (@Sendable () -> Void)?
+    /// A DOOR THAT TOOK NO BYTE IS SILENT IN A MOMENT (OZ 3, the author's words 23029 and 23030). T1, 16.11.2026 09:57:14 UTC:
+    /// three pieces of a photo stood five seconds (postTimeoutS) on two doors that never took a byte, and the living third door,
+    /// called only then, took each in 0.3 s. A door that answers hands its first bytes to the wire in a few hundred milliseconds;
+    /// one that took none by firstByteS calls the next door in. A door that moves bytes keeps the whole post deadline, so a
+    /// healthy slow link is still never uploaded twice.
+    static let firstByteS: TimeInterval = 1.5
     init(heard: (@Sendable () -> Void)?) { self.heard = heard }
     func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64,
                     totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
         lock.lock()
-        at = Date(); whole = totalBytesExpectedToSend > 0 && totalBytesSent >= totalBytesExpectedToSend
+        at = Date(); spoke = true; whole = totalBytesExpectedToSend > 0 && totalBytesSent >= totalBytesExpectedToSend
         lock.unlock()
         heard?()
     }
     func silent(pieceDeadline: TimeInterval) -> Bool {
         lock.lock(); defer { lock.unlock() }
-        let patience = whole ? max(MTNodeWire.postTimeoutS, pieceDeadline / 2) : MTNodeWire.postTimeoutS
+        let patience = !spoke ? Self.firstByteS : whole ? max(MTNodeWire.postTimeoutS, pieceDeadline / 2) : MTNodeWire.postTimeoutS
         return Date().timeIntervalSince(at) > patience
     }
 }

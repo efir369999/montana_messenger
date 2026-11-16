@@ -231,7 +231,7 @@ extension View {
         dynamicTypeSize(MontanaTextSize.lock).buttonStyle(MontanaShapeKeeper())
             .environment(\.openURL, OpenURLAction { url in
                 guard MontanaMeeting.isMontana(url) else { return .systemAction }
-                MontanaMeeting.handleLink(url)
+                MontanaMeeting.openInside(url)
                 return .handled
             })
     }

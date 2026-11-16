@@ -1219,11 +1219,17 @@ extension MontanaArchive {
         var q: Int? = nil        // its place in this device's queue, never read by the other
     }
     nonisolated static let twinReadMark = "\u{200B}\u{200B}TR:"   // NOT-UI: a read mark for this seed's devices alone, never on a pair's wire
-    private static var mirror: [TwinWord] = []   // the archive's queue alone touches it
-    private static var mirrorRead = false, mirrorDue = false, mirrorNext = 0
+    private static var mirror: [TwinWord] = []   // the mirror's queue alone touches it
+    private static var mirrorRead = false, mirrorNext = 0, mirrorLaying = false
+    private static var mirrorDue: Double? = nil   // the moment the called lay runs, while one is called
     private static var mirrorGiven: [String: Double] = [:]   // a name given within the hour: a later copy of it by another road stays
     private static let mirrorKept = 4000      // [I-14]: a device away for long is given the newest, the history road keeps the rest
     private static let mirrorRound = 500
+    // THE MIRROR HAS A QUEUE OF ITS OWN (OZ 1 p.6, the author's word 23053 p.1: «Saved Messages: the text came late, the media
+    // did not come»): on the archive's queue a word waited behind a whole copy being sealed -- T1, 16.11.2026: a photo laid in
+    // Saved Messages waited 45 seconds behind the copy and 30 for the round, and reached the Mac 74 seconds after it was born.
+    // The mirror's words and its file touch nothing of the archive.
+    private static let mirrorQueue = DispatchQueue(label: "montana.archive.mirror", qos: .userInitiated)
     private static var mirrorFile: URL { rootURL.appendingPathComponent("twin-mirror.json") }
     private static func readMirror() {
         guard !mirrorRead else { return }
@@ -1235,15 +1241,16 @@ extension MontanaArchive {
         guard let d = try? JSONEncoder().encode(mirror) else { return }
         try? d.write(to: mirrorFile, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
-    /// A word for the seed's other devices: on disk beside the history until it rode, laid within half a minute with whatever came
-    /// beside it. A repeat of a queued word is not queued twice; a newer read mark of a conversation stands for the older.
+    /// A word for the seed's other devices: on disk beside the history until it rode. One's own letter -- to a pair or to Saved
+    /// Messages -- is laid within a second; what came from others and the read marks ride together within half a minute. A
+    /// repeat of a queued word is not queued twice; a newer read mark of a conversation stands for the older.
     nonisolated static func mirrorNote(_ w: TwinWord) {
-        ioQueue.async {
+        mirrorQueue.async {
             readMirror()
             let reads = w.x.hasPrefix(twinReadMark)
             if reads { mirror.removeAll { e in e.c == w.c && e.x.hasPrefix(twinReadMark) } }
             let now = Date().timeIntervalSince1970, name = w.c + "/" + w.m + "/" + String(w.x.prefix(24))
-            guard reads || now - (mirrorGiven[name] ?? 0) > 3600 else { return }
+            guard reads || 3600 < now - (mirrorGiven[name] ?? 0) else { return }
             mirrorGiven[name] = now
             if 2000 < mirrorGiven.count { mirrorGiven = mirrorGiven.filter { e in now - e.value < 3600 } }
             var e = w
@@ -1252,39 +1259,45 @@ extension MontanaArchive {
             mirror.append(e)
             if mirrorKept < mirror.count { mirror.removeFirst(mirror.count - mirrorKept) }
             keepMirror()
-            mirrorSoon()
+            mirrorSoon(w.o == 1 && !reads ? 1 : 30)
         }
     }
-    private static func mirrorSoon() {
-        guard !mirrorDue else { return }
-        mirrorDue = true
-        ioQueue.asyncAfter(deadline: .now() + 30) {
-            mirrorDue = false
+    /// The next lay, in `wait` seconds: a sooner call stands for a later one, and a lay on its way is never run twice at once.
+    private static func mirrorSoon(_ wait: Double = 30) {
+        let at = Date().timeIntervalSince1970 + wait
+        if let due = mirrorDue, due <= at { return }
+        mirrorDue = at
+        mirrorQueue.asyncAfter(deadline: .now() + wait) {
+            guard mirrorDue == at else { return }   // a sooner call took its place
+            mirrorDue = nil
+            guard !mirrorLaying else { return mirrorSoon(1) }
+            mirrorLaying = true
             Task.detached(priority: .utility) { await layMirror() }
         }
     }
     private static func layMirror() async {
-        let batch: [TwinWord] = ioQueue.sync { readMirror(); return Array(mirror.prefix(mirrorRound)) }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
+        let batch: [TwinWord] = mirrorQueue.sync { readMirror(); return Array(mirror.prefix(mirrorRound)) }   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
         guard !batch.isEmpty, let secret = twinSecret(), let body = try? JSONEncoder().encode(batch),
-              let dir = try? MontanaBackup.shelf() else { return }
+              let dir = try? MontanaBackup.shelf() else { return mirrorQueue.async { mirrorLaying = false } }
         let url = dir.appendingPathComponent(UUID().uuidString + ".twin")
         defer { try? FileManager.default.removeItem(at: url) }
         guard (try? body.write(to: url)) != nil, var road = await MTKeeping.lay(url) else {
-            ioQueue.async { mirrorSoon() }
+            mirrorQueue.async { mirrorLaying = false; mirrorSoon() }
             return MontanaTrace.mark("twin_mirror", "the words did not reach the nodes n=\(batch.count)")
         }
-        road["w"] = "lt"; road["n"] = batch.count; road["f"] = ioQueue.sync { writerTag()?.montanaHexString ?? "" }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
+        road["w"] = "lt"; road["n"] = batch.count; road["f"] = writerTagHex()
         if twinQuietHere { road["rq"] = 1 }   // this device's extension takes the read word quietly (MTTwinRead)
         MTLinkedDevices.stamp(&road)   // its kind, and the phone's term for its joined devices (OZ 1 p.4)
         guard await MTKeeping.knock(secret, road, silent: true, sender: twinDeviceRef) else {
-            ioQueue.async { mirrorSoon() }
+            mirrorQueue.async { mirrorLaying = false; mirrorSoon() }
             return MontanaTrace.mark("twin_mirror", "no door boxed the letter n=\(batch.count)")
         }
         let top = batch.compactMap(\.q).max() ?? -1
-        let left: Int = ioQueue.sync {   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
+        let left: Int = mirrorQueue.sync {   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
             mirror.removeAll { e in (e.q ?? -1) <= top }
             keepMirror()
-            if !mirror.isEmpty { mirrorSoon() }
+            mirrorLaying = false
+            if !mirror.isEmpty { mirrorSoon(1) }
             return mirror.count
         }
         MontanaTrace.mark("twin_mirror", "laid words=\(batch.count) left=\(left)")

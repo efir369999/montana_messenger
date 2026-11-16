@@ -492,7 +492,7 @@ final class MTTextLinks: NSObject, UITextViewDelegate {
         #if !MONTANA_MESSENGER
         if let wall = MTApps.wall?.linkAction(url) { return wall }
         #endif
-        if MontanaMeeting.isMontana(url) { return UIAction { _ in MontanaMeeting.handleLink(url) } }
+        if MontanaMeeting.isMontana(url) { return UIAction { _ in MontanaMeeting.openInside(url) } }
         return defaultAction
     }
     #if !MONTANA_MESSENGER

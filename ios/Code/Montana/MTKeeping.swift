@@ -391,6 +391,12 @@ enum MTKeepDerive {
     /// The first screen lets the person in the moment the light copy is laid (App: «once the light copy is laid»).
     var onLight: (() -> Void)? = nil
     private var takingTask: Task<Void, Never>? = nil
+    /// The light roads tried in this taking, by digest (a laid one, or an old one that did not come whole): never fetched again.
+    private var lightSeen: Set<String> = []
+    /// A light copy of another device laid in this taking: ten minutes without the phone's own let the person in with it.
+    private var lightLaid = false
+    /// What the phone's light copy laid in this taking: the tally a joined device's walk ends with.
+    private var lightTally = MontanaBackup.Tally()
     private var roads: [String: (at: Double, road: [String: Any])] = [:]
 
     private init() {
@@ -519,7 +525,10 @@ enum MTKeepDerive {
         let since = now - max(owner.lightAt ?? 0, owner.lightTriedAt ?? 0)
         let people = Self.peopleTag()
         let met = owner.lightPeople != people
-        if !lighting, since >= 86_400 || (moved && since >= 60) || (met && since >= 600) {
+        // A JOINED DEVICE NAMES NO COPY WHILE IT TAKES ONE, NOR ONE WITHOUT A CHAT (decision 989 = a): the Mac named its empty copy,
+        // 127 MB without a chat, three times in seven minutes while the phone's was coming (16.11), and filled the doors with it.
+        let named = MTLinkedDevices.joinedPhone == nil || (!isTaking && !(ChatStore.live?.messages.isEmpty ?? true))
+        if !lighting, named, since >= 86_400 || (moved && since >= 60) || (met && since >= 600) {
             layLight(tags, people: people)   // one's own name or face: a minute; the people and the groups: ten minutes
         }
         guard !renewing else { return }
@@ -689,6 +698,16 @@ enum MTKeepDerive {
             }
         }
     }
+    /// THE COPY FOR A JOINING (decision 989 = a; the author's words 23015, 23019):
+    /// the phone that gave its words names a light copy at once, whatever the day's rhythm -- the history has one owner at a joining,
+    /// the phone, and the joined device waits for a copy named after the gift, never an old one the doors may have let go (the
+    /// copy a day old was evicted by a node's full shelf, and the Mac found every door «gone»). A copy already on its way is
+    /// named after the gift too.
+    func lightForLink() {
+        guard Self.agrees, MontanaSeed.hasSeed, !lighting else { return }
+        layLight(Self.profileTags(), people: Self.peopleTag())
+        MontanaTrace.mark("keep_light", "for a joining")
+    }
     /// One's own face and name as their tags -- the very tags a correspondent's word compares (E2E.heardHeld).
     static func profileTags() -> (face: String, name: String) {
         (MontanaDeliveryEngine.Announced.wireTag(E2E.myAvatarData()), MontanaDeliveryEngine.Announced.nameWireTag(E2E.myDisplayName()))
@@ -710,6 +729,7 @@ enum MTKeepDerive {
         }
         road["w"] = "light"; road["g"] = Int(g); road["d"] = digest; road["v"] = MontanaArchive.writerTagHex()   // the device that laid it
         road["a"] = Bundle.main.bundleIdentifier ?? ""   // and the app on it: two apps of one phone are two writers of the same words
+        road["at"] = Int(Date().timeIntervalSince1970)   // the moment it was named: a joined device waits for one named after its gift
         // The sender of the pipe of light is named «light», never this person's own reference: a phone opening the same words reads
         // the box under that reference, and a letter of its own name the node would keep from it.
         guard await Self.knock(secret, road, sender: Self.lightName) else { return MontanaTrace.mark("keep_light", "no door boxed the road") }
@@ -720,9 +740,14 @@ enum MTKeepDerive {
     /// THE LIGHT COPY TAKEN BACK: the pipe of light read, and the newest road OF EVERY DEVICE that names one there taken -- two
     /// devices of the same words count their generations each from one, so the highest number is no measure across them, and
     /// the poorer copy could stand in for the richer. Each is checked by its digest and laid, the largest first; a copy
-    /// laid merges and erases nothing, so one laid after another adds only what it alone holds. The person stands in their
-    /// correspondences from the first laid. The box keeps the letters: the next phone of the same words reads them too.
-    private func takeLight(_ secret: Data, dir: URL) async -> Bool {
+    /// laid merges and erases nothing, so one laid after another adds only what it alone holds. The box keeps the letters: the
+    /// next phone of the same words reads them too.
+    /// ONE OWNER OF THE HISTORY AT A JOINING (decision 989 = a; the author's words 23015, 23019): on a device joined by QR the
+    /// phone is that owner -- its copy named after the gift (lightForLink; two minutes of slack for the two clocks) is laid first
+    /// and alone lets the person in, and the device's own copies are never taken back (the Mac took its own empty one, 16.11).
+    /// On a phone that opened its words any copy is the owner's, and the first laid lets the person in. True once the owner's copy
+    /// is laid. A road tried once is not fetched again (lightSeen) -- the phone's own fresh one alone, if it did not come whole.
+    private func takeLight(_ secret: Data, dir: URL, phone: (tag: String, at: Double)?) async -> Bool {
         var rows: [[String: String]] = []
         let ear = MontanaWakePush.BoxEar(invites: [], pipes: [Self.lightName: MTPipeKey(secret)], owner: MontanaSeed.twin ?? "")
         _ = await MontanaWakePush.pickup(ear, buries: nil, keep: { row in rows.append(row); return false })
@@ -732,14 +757,23 @@ enum MTKeepDerive {
             // count their generations each from one, and one standing for both laid a copy without the other's profile (T1:
             // the name, the face and the page's ground stayed behind).
             let v = (o["v"] as? String ?? "") + "/" + (o["a"] as? String ?? "")
-            if (o["g"] as? Int ?? 0) >= (newest[v]?["g"] as? Int ?? -1) { newest[v] = o }
+            if (newest[v]?["g"] as? Int ?? -1) <= (o["g"] as? Int ?? 0) { newest[v] = o }
         }
-        let roads = newest.values.sorted { ($0["z"] as? Int ?? 0) > ($1["z"] as? Int ?? 0) }
+        let mine = MontanaArchive.writerTagHex()
+        func fresh(_ o: [String: Any]) -> Bool {
+            guard let phone else { return true }
+            return (o["v"] as? String) == phone.tag && phone.at - 120 <= Double(o["at"] as? Int ?? 0)
+        }
+        let roads = newest.values.filter { o in
+            guard let d = o["d"] as? String, !lightSeen.contains(d) else { return false }
+            if phone != nil, (o["v"] as? String) == mine { return false }   // a joined device's own copy is never the history
+            return true
+        }.sorted { a, b in fresh(a) == fresh(b) ? (b["z"] as? Int ?? 0) < (a["z"] as? Int ?? 0) : fresh(a) }
         guard !roads.isEmpty else {
-            MontanaTrace.mark("keep_light", "the pipe of light holds no road")
+            MontanaTrace.mark("keep_light", phone == nil ? "the pipe of light holds no road" : "no new road; the phone's copy is awaited")
             return false
         }
-        var laid = 0
+        var owned = false
         for road in roads {
             guard let d = road["d"] as? String else { continue }
             let url = dir.appendingPathComponent(UUID().uuidString + "." + MontanaBackup.ext)
@@ -747,22 +781,26 @@ enum MTKeepDerive {
             taking = .fetching(0)
             guard await Self.fetch(road, to: url, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .fetching(f) } }),
                   MontanaBackup.digest(of: url) == d else {
+                if phone == nil || !fresh(road) { lightSeen.insert(d) }   // the phone's fresh copy is fetched again
                 MontanaTrace.mark("keep_light", "a light copy did not come whole")
                 continue
             }
+            lightSeen.insert(d)
             taking = .laying(0)
             let r: Result<MontanaBackup.Tally, MontanaBackup.Refusal> = await withCheckedContinuation { c in
                 MontanaBackup.restore(from: url, ofMany: true, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .laying(f) } }) { c.resume(returning: $0) }
             }
             reread()
-            let own = (road["v"] as? String) == MontanaArchive.writerTagHex()   // this device's own copy, or another's
-            MontanaTrace.mark("keep_light", "laid=\(String(describing: r)) devices=\(roads.count) own=\(own) a=\(road["a"] as? String ?? "")")
-            guard case .success = r else { continue }
-            laid += 1
-            if laid == 1 { let letIn = onLight; onLight = nil; letIn?() }
+            let own = (road["v"] as? String) == mine   // this device's own copy, or another's
+            MontanaTrace.mark("keep_light", "laid=\(String(describing: r)) devices=\(roads.count) own=\(own) phone=\(phone == nil ? "-" : fresh(road) ? "1" : "0") a=\(road["a"] as? String ?? "")")
+            guard case .success(let tally) = r else { continue }
+            lightLaid = true
+            if fresh(road), !owned { owned = true; lightTally = tally; letIn() }
         }
-        return laid > 0
+        return owned
     }
+    /// The first screen lets the person in (onLight), once.
+    private func letIn() { let l = onLight; onLight = nil; l?() }
 
     // ── the cargo road of a part ──
     /// A PART ON THE CARGO ROAD: sealed in pieces under a fresh key and put on the nodes, and its list of pieces sealed as one
@@ -942,6 +980,9 @@ enum MTKeepDerive {
     /// THE REQUEST: once a copy is laid, every correspondence of a person it names is asked in its own pipe, with the moment of
     /// the last letter laid there; the answer is awaited a week, as long as the pieces it rides live.
     private func askBack() {
+        // A JOINED DEVICE ASKS NOBODY (the author's word 23053 p.2): its history comes from the phone alone; the people one writes
+        // to are never asked to give letters back to it.
+        guard MTLinkedDevices.joinedPhone == nil else { return MontanaTrace.mark("keep_back", "a joined device asks nobody") }
         let now = Date().timeIntervalSince1970
         var asked = askedBack().filter { now - $0.value < 7 * 86_400 }
         var n = 0
@@ -1057,6 +1098,29 @@ enum MTKeepDerive {
     }
     var isTaking: Bool { takingTask != nil }
 
+    /// THE PHONE'S COPY IS THE HISTORY OF A JOINED DEVICE (decision 989 = a; the author's word 23053 p.2: only from the phone, and
+    /// whole): the pipe of light is read every 30 seconds until the phone's copy for this joining lies, every two minutes after
+    /// ten; ten minutes without it let the person in with what another device's copy laid, and the reading goes on. Nobody the
+    /// person writes to is asked and no keeper is called; six hours without the phone's copy end the walk.
+    private func takeFromPhone(_ ls: Data?, dir: URL, phone: (tag: String, at: Double), began: Double) async
+        -> Result<MontanaBackup.Tally, MontanaBackup.Refusal> {
+        guard let ls else { taking = .failed; return .failure(.noSeed) }
+        var last = 0.0
+        while !Task.isCancelled {
+            let now = Date().timeIntervalSince1970
+            if (now - began < 600 ? 30.0 : 120.0) <= now - last {
+                last = now
+                if await takeLight(ls, dir: dir, phone: phone) { taking = .done; return .success(lightTally) }
+                if 600 <= now - began, lightLaid { letIn() }
+                taking = .calling(have: 0, need: 0)
+            }
+            if 6 * 3600 < Date().timeIntervalSince1970 - began { taking = .failed; return .failure(.empty) }
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+        }
+        taking = .idle
+        return .failure(.stopped)
+    }
+
     private struct Answer { let head: MTKeepDerive.Head; let url: URL }
     private func callAndBuild() async -> Result<MontanaBackup.Tally, MontanaBackup.Refusal> {
         guard Self.agrees, let master = MontanaSeed.root,
@@ -1069,8 +1133,12 @@ enum MTKeepDerive {
         var lastCall = 0.0, lastLoud = 0.0
         let began = Date().timeIntervalSince1970
         taking = .fetching(0)
+        let ls = MTKeepDerive.lightSecret(master)
+        lightSeen = []; lightLaid = false
+        // A JOINED DEVICE TAKES ITS HISTORY FROM THE PHONE ALONE (the author's word 23053 p.2): no keeper is called, no push rings.
+        if let phone = MTLinkedDevices.joinedPhone { return await takeFromPhone(ls, dir: dir, phone: phone, began: began) }
         // THE LIGHT COPY FIRST (Network «The light copy»): the pipe of light is read before any call, and the person is let in.
-        if let ls = MTKeepDerive.lightSecret(master), await takeLight(ls, dir: dir) { askBack() }   // the pipes it named are asked to give back
+        if let ls, await takeLight(ls, dir: dir, phone: nil) { askBack() }   // the pipes it named are asked to give back
         taking = .calling(have: 0, need: 0)
         defer { for a in answers.values { try? FileManager.default.removeItem(at: a.url) } }
         while !Task.isCancelled {
@@ -1390,6 +1458,7 @@ enum MTDeviceLink {
         let o: [String: Any] = ["w": "lg", "v": 1, "ct": sealed.ct.base64urlNoPad, "b": sealed.box.base64urlNoPad]
         let laid = await MTKeeping.knock(boxSecret(k.l), o, silent: true, sender: freshRef())
         MontanaTrace.mark("link_give", "boxed=\(laid ? 1 : 0)")
+        if laid { await MTKeeping.shared.lightForLink() }   // the history's one owner lays the copy for this joining (decision 989 = a)
         return laid
     }
 }
@@ -1487,6 +1556,11 @@ enum MTLinkedDevices {
     }
     /// On a joined device: the moment the phone gave it the words, by the phone's clock (an older phone's gift -- by this one's).
     static var joinedAt: Double? { UserDefaults.standard.dictionary(forKey: phoneKey)?["j"] as? Double }
+    /// On a joined device: the phone that joined it, its writer tag and the gift's moment -- its copy is the history (decision 989 = a).
+    static var joinedPhone: (tag: String, at: Double)? {
+        guard let p = UserDefaults.standard.dictionary(forKey: phoneKey)?["p"] as? String, !p.isEmpty, let j = joinedAt else { return nil }
+        return (p, j)
+    }
     /// A letter of the seed's other device was heard: when it is the phone that joined this device, its days count again from now,
     /// under the choice its letter carries.
     static func heard(_ tag: String, days: Int?, kind: String?) {

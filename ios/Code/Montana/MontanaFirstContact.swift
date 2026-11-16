@@ -1433,7 +1433,19 @@ enum MontanaMeeting {
     /// A Montana link (montana://r/, coin, pack): the app's text views hand it to this one entrance themselves, never to
     /// the system's round -- in the Protocol montana:// is the Messenger's scheme (the author's word 16667), and a tap there
     /// would leave the app.
-    static func isMontana(_ url: URL) -> Bool { url.scheme?.lowercased() == "montana" }
+    static func isMontana(_ url: URL) -> Bool { url.scheme?.lowercased() == "montana" || isWebCard(url) }
+    /// A MONTANA LINK IN ITS WEB FORM (OZ 3, the author's word 23034): https on a Montana site, /r/ /perp/ /temp/. The app opens
+    /// it itself: handed to the system, a tap on a group's link in a chat left the app for the site's page, and the page's way
+    /// back dropped the group's mark (t3, 16.11.2026 13:07 UTC: the link opened the owner's chat, and no join was asked).
+    static func isWebCard(_ url: URL) -> Bool {
+        url.scheme?.lowercased() == "https" && MontanaCard.linkHosts.contains(url.host?.lowercased() ?? "")
+            && ["/r/", "/perp/", "/temp/"].contains { url.path.hasPrefix($0) }
+    }
+    /// A MONTANA LINK TAPPED INSIDE MONTANA OPENS INSIDE (OZ 3 p.4, the author's word 16.11.2026 13:18 UTC, link 23046: «if the link
+    /// comes inside Montana it must be an inner link and not throw you over; only an outer one goes through the site»): a tap in
+    /// a letter or a text of this app is the person's choice of this app already -- no site, no «which app» dialog. A link from
+    /// outside (a universal link, another app) keeps handleLink(_:) and its choice.
+    static func openInside(_ url: URL) { handleLink(url, chosen: true) }
     static func handleLink(_ given: URL, chosen: Bool) {
         // The mark BEFORE all the guards: a tap that left no trace was impossible to investigate (F-6).
         MontanaTrace.mark("link_open", "len=\(given.absoluteString.count) scheme=\(given.scheme ?? "-")")
@@ -1489,10 +1501,7 @@ enum MontanaMeeting {
             return
         }
         #endif
-        let host = url.host?.lowercased() ?? ""
-        let webForm = url.scheme?.lowercased() == "https"
-            && MontanaCard.linkHosts.contains(host) && ["/r/", "/perp/", "/temp/"].contains { url.path.hasPrefix($0) }
-        guard url.scheme?.lowercased() == "montana" || webForm else {
+        guard isMontana(url) else {
             // A mute refusal by scheme ate the tap whole: the trace kept one line "a link arrived" and
             // emptiness after it -- exactly what was seen on 24.08 on the seventeenth.
             MontanaTrace.mark("link_refused", "why=scheme scheme=\(url.scheme ?? "-")")
