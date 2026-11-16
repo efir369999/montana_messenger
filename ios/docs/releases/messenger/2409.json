@@ -1,0 +1,20 @@
+{
+  "build": 2409,
+  "notes": {
+    "en": [
+      "A video message no longer freezes while it records: when the camera stops under the tape, it starts again by itself and the stopped stretch stays out of the note.",
+      "The app's diagnostic diary reaches the developer even when its one diaries machine is out of the phone's reach: it goes through any other node of the network.",
+      "Please check: record several video messages in a row, long and short -- the picture moves the whole length of each."
+    ],
+    "ru": [
+      "Видеосообщение больше не застывает при записи: если камера останавливается под лентой, она сама запускается снова, а остановленный кусок не попадает в сообщение.",
+      "Дневник диагностики приложения доходит до разработчика, даже когда его единственная машина дневников недоступна телефону: он идёт через любой другой узел сети.",
+      "Проверьте: запишите несколько видеосообщений подряд, длинных и коротких -- картинка движется всю длину каждого."
+    ],
+    "zh-Hans": [
+      "视频消息录制时不再卡住画面：如果相机在录制中停止，会自动重新启动，停止的片段不会进入消息。",
+      "即使唯一的日志机器无法从手机访问，应用的诊断日志也能通过网络中的任何其他节点送达开发者。",
+      "请检查：连续录制几条长短不一的视频消息——每条的画面全程都在动。"
+    ]
+  }
+}

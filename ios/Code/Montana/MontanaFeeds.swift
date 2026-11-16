@@ -1930,6 +1930,10 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
     private var request = 0
     private var requested = false
     private var previewPending = false
+    private var frameAt: CFTimeInterval = 0   // the moment the last frame came: the frames' queue writes it, the timer reads it
+    private var frameWait: CFTimeInterval = 0 // the camera woke at this moment and its first frame is awaited (0 -- none awaited)
+    private var smallAt: CFTimeInterval = 0   // the badge camera's last frame in dual mode: the frames' queue writes it, the timer reads it
+    private var sessionWords: [NSObjectProtocol] = []   // the session's own words heard (hearSession)
     private func wants(_ ticket: Int) -> Bool {
         lock.lock(); defer { lock.unlock() }
         return requested && request == ticket
@@ -2047,6 +2051,7 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
         }
         if !configured {
             configured = true
+            hearSession()
             session.automaticallyConfiguresApplicationAudioSession = false
             session.beginConfiguration()
             if Self.dualCapable { wireBothCameras() } else {
@@ -2066,6 +2071,9 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
         backConn?.isEnabled = !front || dual
         guard wants(ticket) else { stopSession(); return }
         if !session.isRunning { session.startRunning() }
+        let born = CACurrentMediaTime()
+        lock.lock(); frameAt = born; frameWait = born; smallAt = born; lock.unlock()   // the watch over the frames counts from the camera's waking
+        MontanaTrace.mark("vnote_camera", "running=" + (session.isRunning ? "1" : "0") + " tape=" + String(ticket))
         // The finger may have lifted while the camera woke: nothing to record then.
         guard wants(ticket) else { stopSession(); return }
         // Born in its final form (480, H.264 High at the chosen rate, AAC); the finished note carries the
@@ -2086,8 +2094,11 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
             // frames (CMTime), as the voice's currentTime; the timer only asks it ten times a second.
             self.timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
                 guard let self else { return }
-                self.lock.lock(); let d = self.length; self.lock.unlock()
+                let now = CACurrentMediaTime()
+                let both = Self.dualCapable && self.dual
+                self.lock.lock(); let d = self.length; let circle = now - self.frameAt; let badge = both ? now - self.smallAt : 0; self.lock.unlock()
                 self.elapsed = d
+                if Self.stallSeconds < max(circle, badge) { self.revive(max(circle, badge), badge: circle < badge) }
                 if d >= Self.maxSeconds { self.finish() }   // the note's length
             }
         }
@@ -2227,7 +2238,7 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
         sessionQueue.async {
             self.frontConn?.isEnabled = f || d
             self.backConn?.isEnabled = !f || d
-            self.q.async { self.lastSmall = nil }
+            self.q.async { self.lastSmall = nil; self.lock.lock(); self.smallAt = CACurrentMediaTime(); self.lock.unlock() }
         }
     }
     /// Front ↔ back while the note records (the author's word 15.09): the writer keeps its clock,
@@ -2402,8 +2413,13 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
             if dual {
                 // The big circle's camera composes the frame; the badge's camera only leaves its latest.
                 let big = (output === frontOut) == front
-                if big { if let s = lastSmall { emit(nested(big: img, small: s), pts) } }
-                else if output === frontOut || output === backOut { lastSmall = img }
+                // The big camera never waits for the badge: until the badge's first frame (the session's waking, a flip,
+                // dual turned on) the circle goes alone, so the picture never stands still for the badge (OZ 4).
+                if big { emit(lastSmall.map { nested(big: img, small: $0) } ?? circled(img), pts) }
+                else if output === frontOut || output === backOut {
+                    lastSmall = img
+                    lock.lock(); smallAt = CACurrentMediaTime(); lock.unlock()
+                }
             } else if (output === frontOut) == front, output === frontOut || output === backOut {
                 emit(circled(img), pts)
             }
@@ -2442,11 +2458,15 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
                 }
             }
         }
+        let now = CACurrentMediaTime()
         lock.lock()
+        frameAt = now
+        let waited = frameWait; frameWait = 0
         let show = requested && !previewPending
         let ticket = request
         if show { previewPending = true }
         lock.unlock()
+        if 0 < waited { MontanaTrace.mark("vnote_frames", String(format: "first frame after %.0f ms", (now - waited) * 1000)) }
         guard show else { return }
         guard let cg = ci.createCGImage(window, from: window.extent) else {
             lock.lock(); previewPending = false; lock.unlock(); return
@@ -2512,6 +2532,56 @@ final class MontanaVideoNoteCamera: NSObject, ObservableObject,
                 MontanaNoteBadgeTrack.write(words, into: mediaTmpURL(name)) { MontanaTrace.mark("vnote_track", $0); deliver() }
             } else { deliver() }
         }
+    }
+    // THE CAMERA SAYS WHY IT STOPS, AND A STOPPED CAMERA RISES AGAIN (the author's word 22943, 16.11.2026: T1 2407 at
+    // 11:56:52 UTC recorded a note 49 s long whose picture stood still after its first frame -- the writer took one frame and
+    // no sound, vnote_close len=0 snd=0.0, while the next note a second later recorded whole). The session had stopped under
+    // the tape and nothing here heard it: the system's word of a runtime error or an interruption went to nobody, the diary
+    // did not name it, and the tape ran on over a frozen picture. The session's words are heard now, each one a line in the
+    // diary (vnote_session); a session that stopped while a note is wanted starts again; and frames that stop with no word
+    // at all are a stopped camera too -- past stallSeconds without a frame the session starts anew (vnote_stall). The file's
+    // clock skips the silence as it skips a pause, so no frozen stretch stays inside the note. In dual mode each camera
+    // is watched on its own: the circle by frameAt, the badge by smallAt -- a frozen badge is a frozen picture too.
+    static let stallSeconds: CFTimeInterval = 1.5
+    private func hearSession() {
+        sessionWords = [AVCaptureSession.runtimeErrorNotification, AVCaptureSession.wasInterruptedNotification,
+                        AVCaptureSession.interruptionEndedNotification].map { name in
+            NotificationCenter.default.addObserver(forName: name, object: session, queue: nil) { [weak self] note in
+                self?.sessionQueue.async { self?.heard(note) }
+            }
+        }
+    }
+    deinit { sessionWords.forEach(NotificationCenter.default.removeObserver) }
+    private func heard(_ note: Notification) {
+        let interrupted = note.name == AVCaptureSession.wasInterruptedNotification
+        let why = note.name == AVCaptureSession.runtimeErrorNotification
+            ? "error=" + ((note.userInfo?[AVCaptureSessionErrorKey] as? NSError).map { "\($0.domain) \($0.code)" } ?? "-")
+            : interrupted ? "interrupted reason=" + ((note.userInfo?[AVCaptureSessionInterruptionReasonKey] as? Int).map(String.init) ?? "-")
+            : "interruption ended"
+        lock.lock(); let wanted = requested; lock.unlock()
+        let rise = wanted && !interrupted && !session.isRunning
+        MontanaTrace.mark("vnote_session", "\(why) running=\(session.isRunning ? 1 : 0) wanted=\(wanted ? 1 : 0)\(rise ? " -- started again" : "")")
+        if rise { startAgain() }
+    }
+    /// The frames stood past stallSeconds while the tape lives (the main thread's timer): the session starts anew, once a
+    /// silence -- the watch counts again from now.
+    private func revive(_ quiet: CFTimeInterval, badge: Bool) {
+        let now = CACurrentMediaTime()
+        lock.lock(); frameAt = now; smallAt = now; let ticket = request; lock.unlock()
+        sessionQueue.async {
+            guard self.wants(ticket) else { return }
+            MontanaTrace.mark("vnote_stall", (badge ? "badge" : "circle") + String(format: " quiet=%.1fs running=%ld -- started again", quiet, self.session.isRunning ? 1 : 0))
+            self.startAgain()
+        }
+    }
+    /// The session anew under a living tape (sessionQueue): the file's clock will skip the silence as it skips a pause.
+    private func startAgain() {
+        q.async { if !self.standing, self.pauseAt == nil, let at = self.lastSource { self.pauseAt = at; self.resumeFix = true } }
+        if session.isRunning { session.stopRunning() }
+        session.startRunning()
+        let now = CACurrentMediaTime()
+        lock.lock(); frameAt = now; frameWait = now; smallAt = now; lock.unlock()
+        MontanaTrace.mark("vnote_camera", "again running=" + (session.isRunning ? "1" : "0"))
     }
     private func stopSession() {
         lock.lock(); let ticket = request; lock.unlock()

@@ -4947,6 +4947,16 @@ enum MontanaDiagShip {
     // (MontanaLog.hide), so a second anonymiser would be a second owner of one rule — and
     // the first place the two rules diverge ([C-1]).
 
+    /// THE DIARY HAS MORE THAN ONE ROAD TO ITS MACHINE (the author's word 22949, 16.11.2026: «no holes in the telemetry»). The
+    /// diaries live on one machine, and every other door forwards /diag-put to it in one hop while naming diag=false
+    /// (montana-node-store.py, DIAG_FORWARD), so a phone that reaches the diaries machine goes straight there. But a phone
+    /// that could not reach it walked that one door alone: T1 on 2407 at 11:56:18 UTC wrote «refused=no-answer -- every
+    /// door» while api.montana.quest answered every signal beside it, and its diaries stood on the phone for the 900 s
+    /// pause. The doors that hold diag go first; after them the doors that say they carry diaries on (the cap «diaghop»,
+    /// proven by their own answer -- doorsHolding, never «any door that answered», P-98).
+    static func diaryDoors(_ own: [String]) -> [String] {
+        own + MontanaWakePush.doorsHolding("diaghop").filter { !own.contains($0) }
+    }
     /// The ONE door outward ([C-1]). Both the live file and the one finished after rotation
     /// leave through it, so the node address, the body shape and the request's politeness are decided in one place.
     private static func put(_ lines: [String], file name: String) async -> Bool {
@@ -4986,7 +4996,8 @@ enum MontanaDiagShip {
         await MTBulkPuts.shared.enter(MTBulkPuts.service, quiet: true)
         defer { Task { await MTBulkPuts.shared.leave(MTBulkPuts.service, quiet: true) } }
         var lastCode = -1
-        for b in MontanaWakePush.bases(for: "diag") {
+        let own = MontanaWakePush.bases(for: "diag")
+        for b in diaryDoors(own) {
             guard let u = URL(string: b + "/diag-put") else { continue }   // SERVER-DEBT-ACK: the accelerator node (rung 4), not the delivery road
             var req = URLRequest(url: u); req.httpMethod = "POST"   // SERVER-DEBT-ACK: the accelerator node (rung 4)
             req.setValue("application/json", forHTTPHeaderField: "content-type")
@@ -5004,7 +5015,9 @@ enum MontanaDiagShip {
             }
             lastCode = code
             guard code == 200 else {
-                MontanaWakePush.baseFailed(b, code: code)   // a refusal is an answer; only 5xx counts as silence
+                // A refusal is an answer; only 5xx counts as silence -- and only from a door that keeps diaries: a forwarding
+                // door's 503 says the diaries machine is out of ITS reach, not that the door is dead for the signals it carries.
+                if own.contains(b) { MontanaWakePush.baseFailed(b, code: code) }
                 continue
             }
             // LANDED MEANS EVERY LINE LANDED (the author's word 17968, 09.11.2026). A node's 200 with «dropped» -- its day cap of
