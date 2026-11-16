@@ -42,11 +42,13 @@ struct MusicTrack: Equatable {
 
 /// THE LIBRARY LANDED (P-2, OZ1): the build walks off the main thread (ChatStore.musicBuilt), and its landing moves the
 /// music page alone -- the chats, which observe the store, are not redrawn for it.
+#if !MONTANA_MESSENGER   // the music page's shelf is the Protocol's alone (the author's words 23867 and 23868)
 final class MTMusicShelf: ObservableObject {   // moved on the main thread alone (musicBuilt lands there)
     static let shared = MTMusicShelf()
     @Published private(set) var rev = 0
     func landed() { rev &+= 1 }
 }
+#endif
 
 /// Every music file in every chat, in feed order — the player's search space and the queue
 /// a search pick plays through.
@@ -2554,9 +2556,11 @@ struct MusicTabView: View {
 /// Protocol's music page alone, so no track of the Messenger lies in a lent folder. Every question the player and the chats
 /// ask of one is answered here as the folders' own code answers a track that is not lent, and nothing of the folders --
 /// their walk, their keeper's fetch, their words -- is compiled into the Messenger.
-@MainActor final class MTMusicFolders {
-    static let shared = MTMusicFolders()
-    let fetching: String? = nil
+/// THE NAME OF THE FOLDERS IS NOT IN THE MESSENGER (the author's words 23867 and 23868): the shared calls keep the name
+/// MTMusicFolders, a name of the compiler alone, and what the Messenger compiles is this answer: every track it plays
+/// lies in its own chats.
+typealias MTMusicFolders = MTChatTracks
+@MainActor enum MTChatTracks {
     nonisolated static func isLent(_ file: String) -> Bool { false }
     nonisolated static func url(_ file: String) -> URL? { nil }
     nonisolated static func size(_ file: String) -> Int? { nil }

@@ -3456,7 +3456,9 @@ class ChatStore: ObservableObject {
                     guard let self else { return }
                     self.musicShown = (list, byFile)   // a list overtaken still stands better than none
                     if self.musicGen == gen { self.musicMemo = (lent.rev, list, byFile) }
-                    MTMusicShelf.shared.landed()
+                    #if !MONTANA_MESSENGER
+                    MTMusicShelf.shared.landed()   // the music page is the Protocol's alone
+                    #endif
                 }
             }
         }
