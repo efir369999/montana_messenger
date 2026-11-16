@@ -412,9 +412,11 @@ struct ChatsListView: View {
             // Mac: «remove the replacement of this button and make the notice of the sound turned off appear over the time logo
             // as a badge»). The first slot keeps its own glyph and way whatever the system answered; while the notifications are
             // refused, a small crossed speaker stands over the logo's top-leading edge and opens the notifications' page.
-            .overlay(alignment: .top) {
+            // RIGHT OF THE COIN (the author's word 23242, 16.11.2026): the badge stands at the logo's trailing edge, larger, with
+            // the platform's 44-point tap area.
+            .overlay(alignment: .trailing) {
                 if MTNotifyAllowed.shared.refused {
-                    Button { openNotifications() } label: { MTMutedBadge().offset(x: -16, y: -4) }
+                    Button { openNotifications() } label: { MTMutedBadge().offset(x: 30) }
                         .buttonStyle(.plain)
                         .accessibilityLabel(Text("Notifications are off"))
                 }

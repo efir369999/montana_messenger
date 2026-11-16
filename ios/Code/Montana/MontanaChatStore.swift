@@ -1740,7 +1740,8 @@ class ChatStore: ObservableObject {
     /// asked by the one word of a gone cargo (tellCargoLost), a group's letter on the group's own road.
     private func askKeptFile(_ sid: String) {
         guard let hit = messages.lazy.compactMap({ kv in kv.value.first { $0.msgId == sid }.map { (kv.key, $0) } }).first,
-              !hit.1.isFromMe || sid.hasPrefix(MTRestoredMid.archive), let kept = hit.1.attachment, !MontanaMediaStore.exists(kept.file),
+              !hit.1.isFromMe || sid.hasPrefix(MTRestoredMid.archive) || hit.0 == savedMessagesKey,   // a Saved Messages row is one's own and still asks its twin (OZ 1 p.5)
+              let kept = hit.1.attachment, !MontanaMediaStore.exists(kept.file),
               !reconstructInFlight.contains(sid) else { return }
         let arr = (try? JSONSerialization.jsonObject(with: Data(pendingMediaJSON.utf8)) as? [[String: String]]) ?? []
         guard !arr.contains(where: { $0["sid"] == sid }) else { return }
@@ -3590,26 +3591,58 @@ class ChatStore: ObservableObject {
         // that rode it and was lost on the way stood missing on the Mac for good (archive_gap 21:20 feed=7 archive=25 missing=6) --
         // the asker asks only what its feed lacks, and takeTwinRow lays no second row of a name or archive key.
         for m in rows {
-            guard 0 < m.createdAt, let t = Self.archivedText(m),
-                  want.contains(String(Int(m.createdAt)) + "|" + (m.isFromMe ? "1" : "0") + "|" + MontanaArchive.rowHash(t)) else { continue }
-            giveToTwin(chat, m)
+            guard let k = Self.archiveKey(m), want.contains(k) else { continue }
+            giveToTwin(chat, m, born: false)   // an answer rides the mirror alone: two hundred rows never ride as two hundred letters
             given += 1
         }
         MontanaTrace.mark("twin_answer", "chat=\(String(chat.prefix(10))) asked=\(want.count) given=\(given)")
     }
+    /// THE ARCHIVE KEY OF A ROW, ONE OWNER (constitution 15): its second, its side, the hash of its words as the archive writes
+    /// them -- what the twin's ask is answered by (giveTwinRows) and a chat's print is made of (OZ 1 p.8).
+    static func archiveKey(_ m: Message) -> String? {
+        guard 0 < m.createdAt, let t = archivedText(m) else { return nil }
+        return String(Int(m.createdAt)) + "|" + (m.isFromMe ? "1" : "0") + "|" + MontanaArchive.rowHash(t)
+    }
+    /// A chat's keys, each once, in order: what its print hashes and what the word ck names (OZ 1 p.8).
+    static func archiveKeys(_ rows: [Message]) -> [String] { Array(Set(rows.compactMap { m in archiveKey(m) })).sorted() }
+    /// A CHAT WHOSE PRINT DIFFERED ON THE SEED'S OTHER DEVICE (OZ 1 p.8, MontanaArchive.comparePrints): it named the keys of its
+    /// rows. Each row held here under a key it lacks is given back by its name (giveToTwin), each key it holds that this device
+    /// lacks is asked (askTwin) -- the roads of the archive's gap; a row buried there is never laid over its tombstone.
+    func healTwin(_ chat: String, theirs: Set<String>) {
+        var mine = Set<String>(), given = 0
+        for m in messages[chat] ?? [] {
+            guard let k = Self.archiveKey(m) else { continue }
+            mine.insert(k)
+            if !theirs.contains(k), given < 200 {
+                giveToTwin(chat, m, born: false)
+                given += 1
+            }
+        }
+        let lack: [(s: Int, m: Bool, h: String)] = theirs.subtracting(mine).compactMap { k in
+            let p = k.split(separator: "|", omittingEmptySubsequences: false)
+            guard p.count == 3, let s = Int(p[0]) else { return nil }
+            return (s, p[1] == "1", String(p[2]))
+        }
+        if !lack.isEmpty { MontanaArchive.askTwin(chat: chat, items: lack) }
+        MontanaTrace.mark("twin_heal", "chat=\(String(chat.prefix(10))) mine=\(mine.count) theirs=\(theirs.count) gave=\(given) asked=\(lack.count)")
+    }
     /// ONE ROW TO THE SEED'S OTHER DEVICES, BY ITS NAME: its words, and its file by the cargo road (MontanaArchive.giveTwin). The
     /// answer to the twin's ask and the birth of a letter in Saved Messages give a row this one way.
-    func giveToTwin(_ chat: String, _ m: Message) {
+    /// A row of Saved Messages at its birth rides at once by a letter of its own as well (OZ 1 p.1, MontanaArchive.savedNow).
+    func giveToTwin(_ chat: String, _ m: Message, born: Bool = true) {
         let file = m.attachment.map { a in (kind: a.kind, name: a.file, docName: m.docName, duration: m.audioDuration) }
-        MontanaArchive.giveTwin(chat: chat, mid: m.mid, text: m.text, own: m.isFromMe, at: m.createdAt, senderRef: m.senderRef, file: file)
+        MontanaArchive.giveTwin(chat: chat, mid: m.mid, text: m.text, own: m.isFromMe, at: m.createdAt, senderRef: m.senderRef, file: file,
+                                now: born && chat == savedMessagesKey)
     }
     /// A ROW THE SEED'S OTHER DEVICE GAVE BACK: laid by its own birth, once -- never over a row of the same name or the same archive
     /// key standing here, never over its tombstone; a file comes by the cargo road into the store under the name it bears on every
     /// device of the seed. The archive already holds the row: it is not written there twice.
     func takeTwinRow(_ chat: String, mid: String, own: Bool, at: Double, body: String) {
         guard let d = body.data(using: .utf8), let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any],
-              0 < at, !mid.isEmpty, let rows = messages[chat] ?? savedBirth(chat), !rows.contains(where: { m in m.mid == mid }),
-              !buried(mid, in: chat) else { return }
+              0 < at, !mid.isEmpty, let rows = messages[chat] ?? savedBirth(chat), !buried(mid, in: chat) else { return }
+        // A ROW OF THIS NAME STANDING WITHOUT ITS FILE TAKES THE FILE (OZ 1 p.1): Saved Messages lays a row at its first letter, the
+        // file's road comes in the second letter of the same name; a row of the name standing whole is a repeat.
+        let named = rows.first(where: { m in m.mid == mid })
         let text = o["t"] as? String ?? "", sr = o["sr"] as? String
         var row = Message(text: text, isFromMe: own, time: hhmm(at: at), isRead: true, deliveryStatus: .delivered,
                           msgId: mid, senderRef: sr, createdAt: at, transport: "node")
@@ -3626,7 +3659,7 @@ class ChatStore: ObservableObject {
         guard let sig = Self.archiveSig(row) else { return }
         // A ROW STANDING WITHOUT ITS FILE TAKES THE FILE ALONE (OZ 1 p.1.4.2): a restored Saved Messages row stands from the archive
         // by the same key (second, side, words and file name) and holds no file; the twin's copy fills it and lays no second row.
-        let standing = rows.first(where: { m in Self.archiveSig(m) == sig })
+        let standing = named ?? rows.first(where: { m in Self.archiveSig(m) == sig })
         let fileless = standing?.attachment.map { a in !MontanaMediaStore.exists(a.file) } ?? false
         guard standing == nil || fileless else { return }
         guard kind != nil, !MontanaMediaStore.exists(name), let road = o["road"] as? [String: Any] else {
@@ -3641,12 +3674,19 @@ class ChatStore: ObservableObject {
             defer { try? FileManager.default.removeItem(at: tmp) }
             guard await MTKeeping.fetch(road, to: tmp), MontanaMediaStore.adopt(from: tmp, name: fileName) else {
                 MontanaArchive.unaskTwin(chat: chat, s: s, h: h)
-                return MontanaTrace.mark("twin_row", "a file did not come whole -- asked again at the next gap")
+                // A FILE THAT DID NOT COME IS ASKED AT ONCE (OZ 1 p.5, the author's words 23268, 23280: the photo stood in the list
+                // and not in the chat): the gap's measure never sees a row standing without its file, and the row waited for a tap
+                // that asked nobody. The twin is asked again by the row's key, once a span (mayAskKeptFile, the tap's own clock).
+                await MainActor.run { [weak self] in
+                    guard self?.mayAskKeptFile("twin:" + mid) == true else { return }
+                    MontanaArchive.askTwin(chat: chat, items: [(s, own, h)])
+                }
+                return MontanaTrace.mark("twin_row", "a file did not come whole -- the twin is asked again")
             }
             await MainActor.run { [weak self] in
-                guard let self, let now = self.messages[chat] ?? self.savedBirth(chat), !now.contains(where: { m in m.mid == mid }),
-                      !self.buried(mid, in: chat) else { return }
-                if lays { self.layTwinRow(chat, row) } else { self.bump(chat) }   // a standing row only wears its file now
+                guard let self, let now = self.messages[chat] ?? self.savedBirth(chat), !self.buried(mid, in: chat) else { return }
+                // a standing row only wears its file now -- one laid by its first letter while the file came, too
+                if lays && !now.contains(where: { m in m.mid == mid }) { self.layTwinRow(chat, row) } else { self.bump(chat) }
             }
         }
     }
@@ -3735,14 +3775,22 @@ class ChatStore: ObservableObject {
     /// the journal names the feed's rows — the count and the tail (mid + kind). «The bubble
     /// landed, the author saw nothing» stops being an argument: either the row is absent
     /// (removal leaves traces) or it is there — and the defect is in drawing.
+    /// A ROW NAMES ITS KIND AND ITS OWN NAME, AND THE FEED ITS PRINT (OZ 1 p.4 and p.7, the Mac 16.11.2026 15:56:11 UTC): a row of
+    /// Saved Messages given by the twin carries its file beside empty words, and every name of T1 begins «mid:t179» -- the tail read
+    /// «text» six times while the photo stood in it, and «the photo is not in the chat» could not be told from «it was never laid».
+    /// The kind is read from the row's file (img, vid, aud, doc; «!» when the file is not here), the name by its last eight signs.
+    /// The print is the hash of the feed's archive keys (second, side, the hash of the words), the same on every device of the seed
+    /// for the same rows: two devices that show one chat alike write one print.
     func traceRows(_ key: String) {
         let a = messages[key] ?? []
         let tail = a.suffix(6).map { m -> String in
-            let id = String((m.msgId ?? "-").prefix(8))
-            let kind = m.text.hasPrefix(mediaMark) ? "media" : "text"
-            return id + ":" + kind
+            let id = String((m.msgId ?? "-").suffix(8))
+            guard let f = m.attachment else { return id + ":" + (m.text.hasPrefix(mediaMark) ? "media" : "text") }
+            return id + ":" + f.kind + (MontanaMediaStore.exists(f.file) ? "" : "!")
         }.joined(separator: ",")
-        MontanaTrace.mark("chat_rows", "key=\(String(key.prefix(10))) n=\(a.count) tail=[\(tail)]")
+        let keys = a.compactMap { m in Self.archivedText(m).map { t in String(Int(m.createdAt)) + (m.isFromMe ? "1" : "0") + MontanaArchive.rowHash(t) } }
+        let fp = MontanaArchive.rowHash(keys.sorted().joined(separator: ","))
+        MontanaTrace.mark("chat_rows", "key=\(String(key.prefix(10))) n=\(a.count) keys=\(keys.count) print=\(fp) tail=[\(tail)]")
     }
 
     /// THE HISTORY-WRITE CORE: a seal failure (an instant of busy keychain — no key) is NOT
@@ -7841,8 +7889,11 @@ enum SeedScope {
             if Thread.isMainThread { aside() } else { DispatchQueue.main.sync(execute: aside) }
         }
         #endif
+        // THE PERSON'S VALUES LEAVE WITH THEM, SEATED OR ALONE (OZ 1 p.11, the author's word 23183): alone, the device key
+        // goes below, and the seat's values sealed under it -- groups.copies, pipeKept, pipeSecrets -- stood on unreadable;
+        // the Mac's next person found its groups' store shut by them. Their items of the keychain leave only with others seated.
+        for k in ud.dictionaryRepresentation().keys where MTSeats.layerHolds(k) { ud.removeObject(forKey: k) }
         if seated {
-            for k in ud.dictionaryRepresentation().keys where MTSeats.layerHolds(k) { ud.removeObject(forKey: k) }
             for k in seatKeychain { MontanaKeychain.delete(k) }
         }
         MontanaSeed.clear(); if !seated { MontanaDeviceKey.reset() }; E2E.forgetDeviceTag()

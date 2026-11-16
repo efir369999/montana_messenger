@@ -315,6 +315,15 @@ enum MontanaLocalVault {
         }
         return raw
     }
+    /// A VALUE SEALED UNDER A KEY THAT IS GONE (OZ 1 p.11, the author's word 23183; the Mac 16.11.2026 14:33 UTC:
+    /// vault_foreign_seal key=groups.copies x102, group_unread at every read): the device key is at hand and the value is a
+    /// sealed box it does not open. The key is drawn anew only when the keychain said «no such item», so the key that sealed
+    /// the value never comes back: the value is lost, not waiting. A key not at hand (an unlock race) is never «lost».
+    static func lost(_ key: String) -> Bool {
+        guard MontanaDeviceKey.key != nil, let held = UserDefaults.standard.data(forKey: key),
+              let box = resolved(held), (try? ChaChaPoly.SealedBox(combined: box)) != nil else { return false }
+        return open(box, Data(key.utf8)) == nil && open(box, Data()) == nil
+    }
     // String: write encrypted; read with one-time migration of legacy String (@AppStorage stored plaintext).
     @discardableResult
     static func setString(_ key: String, _ s: String) -> Bool { setEncrypted(key, Data(s.utf8)) }

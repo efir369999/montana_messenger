@@ -1,0 +1,20 @@
+{
+  "build": 2414,
+  "notes": {
+    "en": [
+      "On a slow connection -- through a tunnel or on weak cellular -- a photo or a file sent in a chat is no longer given up when the nodes take a moment longer to answer: a quiet node only calls the next one in, and a node is dropped only after its full wait.",
+      "While the backup of your history is uploading, its extra copies for the other nodes now go one at a time and only when nothing of yours is sending -- photos, links and calls go first; a copy that fails is written to the diary with its cause.",
+      "Please check: on cellular, send a photo right in a chat and watch it leave."
+    ],
+    "ru": [
+      "На медленной связи -- через туннель или на слабой сотовой -- фото или файл, отправленные в чате, больше не бросаются, когда узлам нужно чуть больше времени на ответ: тихий узел только зовёт следующий, а узел снимается лишь после полного ожидания.",
+      "Пока выкладывается резервная копия истории, её дополнительные копии для других узлов идут теперь по одной и только когда ничего вашего не отправляется -- фото, ссылки и звонки идут первыми; неудавшаяся копия записывается в дневник с причиной.",
+      "Проверьте: на сотовой связи отправьте фото прямо в чате и посмотрите, что оно уходит."
+    ],
+    "zh-Hans": [
+      "在慢速连接下（经由隧道或弱蜂窝网络），聊天中发送的照片或文件不再因节点稍慢应答而被放弃：沉默的节点只会唤起下一个节点，节点只有在完整等待之后才会被放弃。",
+      "在上传历史备份时，供其他节点使用的额外副本现在逐个发送，且仅在您自己没有任何内容发送时进行——照片、链接和通话优先；失败的副本会连同原因写入日志。",
+      "请检查：在蜂窝网络下直接在聊天中发送一张照片，观察它是否发出。"
+    ]
+  }
+}

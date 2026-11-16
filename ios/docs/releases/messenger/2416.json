@@ -1,0 +1,23 @@
+{
+  "build": 2416,
+  "notes": {
+    "en": [
+      "Your groups and channels now come to the Mac joined by QR even where an earlier session on that Mac was ended: the old session's sealed leftovers no longer hold the groups' list shut.",
+      "Ending a session on a device now takes every value of that person off it, not only the chats -- nothing stays behind under a key that is gone.",
+      "A backup's piece now leaves the phone once: the machine that takes it lays the copies on the other machines itself, retrying a machine that does not answer -- a third of the phone's traffic for a backup.",
+      "Please check: end the session on the Mac, sign in again by the phone's QR, and compare the list of groups and channels with the phone."
+    ],
+    "ru": [
+      "Ваши группы и каналы теперь приходят на Мак, вошедший по QR, даже если прежний сеанс на этом Маке был завершён: запечатанные остатки старого сеанса больше не держат список групп закрытым.",
+      "Завершение сеанса на устройстве теперь убирает с него все значения этого человека, а не только чаты, -- ничего не остаётся под ключом, которого уже нет.",
+      "Кусок резервной копии теперь уходит с телефона один раз: машина, принявшая его, сама кладёт копии на другие машины и повторяет к машине, которая не ответила, -- трафик телефона на копию втрое меньше.",
+      "Проверьте: завершите сеанс на Маке, войдите заново по QR с телефона и сравните список групп и каналов с телефоном."
+    ],
+    "zh-Hans": [
+      "您的群组和频道现在会出现在通过二维码登录的 Mac 上，即使这台 Mac 上之前的会话已被结束：旧会话留下的加密残留不再把群组列表锁住。",
+      "在设备上结束会话现在会移除此人的所有数据，而不仅仅是聊天——不会有任何内容留在已不存在的密钥之下。",
+      "备份的数据块现在只从手机发出一次：接收它的机器会自行把副本放到其他机器上，并对未响应的机器重试——手机用于备份的流量减少到三分之一。",
+      "请检查：在 Mac 上结束会话，用手机二维码重新登录，并将群组和频道列表与手机对比。"
+    ]
+  }
+}

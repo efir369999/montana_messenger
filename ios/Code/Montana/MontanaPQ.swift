@@ -355,7 +355,8 @@ enum MontanaArchive {
         if hk != nil { done(); return }
         ioQueue.async { _ = keys(); DispatchQueue.main.async(execute: done) }
     }
-    static func warm() { whenReady {} }
+    /// The mirror's words a run left on disk ride once the keys stand (OZ 1 p.9): before, they waited for a new word to call the lay.
+    static func warm() { whenReady { mirrorResume() } }
     /// Runs `done` on main once every write queued so far is on disk. The door out waits on
     /// it: a head still in the queue when the seed leaves is a head never written — and the
     /// main thread never blocks on the queue (the layout law, section 6).
@@ -1011,8 +1012,12 @@ extension MontanaArchive {
         switch o["w"] as? String {
         case "hist": Task.detached(priority: .utility) { await takeFromTwin(o, mid: mid) }
         case "lt": Task.detached(priority: .utility) { await takeMirror(o, mid: mid) }   // COMPAT-GATED: an older build takes it unread
+        case "sv": Task.detached(priority: .userInitiated) { await takeSaved(o) }   // COMPAT-GATED: an older build takes it unread; the mirror brings the row
         case "hw": Task.detached(priority: .utility) { await giveHistory(o) }   // COMPAT-GATED: an older build takes it unread
-        case "end": if (o["t"] as? String) == writerTagHex() { MTLinkedDevices.end("the phone ended the session", said: o["at"] as? Double) }   // COMPAT-GATED: an older build takes it unread
+        case "jn": heardJoining(o)   // COMPAT-GATED: an older build takes it unread; a device joined by QR, its copy's cursors held (OZ 1 p.6)
+        case "pr": Task.detached(priority: .utility) { await comparePrints(o) }   // COMPAT-GATED: an older build takes it unread; the prints of the chats (OZ 1 p.8)
+        case "ck": Task.detached(priority: .utility) { await takeKeys(o) }   // COMPAT-GATED: an older build takes it unread; a chat's keys whose print differs (OZ 1 p.8)
+        case "end": if (o["t"] as? String) == writerTagHex() { MTLinkedDevices.end("the phone ended the session", said: o["at"] as? Double) } else if let t = o["t"] as? String, let at = o["at"] as? Double { MTLinkedDevices.heardEnds([t: at]) }   // COMPAT-GATED: an older build takes it unread
         default: break
         }
         return true
@@ -1049,6 +1054,7 @@ extension MontanaArchive {
             .filter { e in e.value.count == 2 && now - e.value[0] < kept }
         m[f] = [now, (o["rq"] as? Int) == 1 ? 1 : 0]
         UserDefaults.standard.set(m, forKey: twinDevicesKey)
+        if let ed = o["ed"] as? [String: Double] { MTLinkedDevices.heardEnds(ed) }   // the sessions ended ride every letter (OZ 1 p.7)
         MTLinkedDevices.heard(f, days: o["e"] as? Int, kind: o["d"] as? String)   // a joined device counts its term again from the phone's letter
     }
     /// This device's extension opens the seed's pipe: the app mirrored its secret (MontanaWakePush.mirrorSecrets), and the extension
@@ -1117,10 +1123,11 @@ extension MontanaArchive {
     private static var wantedAt: Double = 0   // guarded by heldLock
     /// The word that names this device's cursor to the seed's other devices: at a pickup, at most once in ten minutes. A word too
     /// long for a letter rides the cargo road.
-    nonisolated static func wantHistory() {
+    nonisolated static func wantHistory(soon: Bool = false) {
         let t = Date().timeIntervalSince1970
         let go: Bool = heldLock.withLock {
-            guard t - wantedAt > 600 else { return false }
+            let floor: Double = soon ? 20 : mirrorHole ? 20 : 600   // a hole of the mirror is named within twenty seconds
+            guard floor < t - wantedAt else { return false }
             wantedAt = t
             return true
         }
@@ -1132,20 +1139,16 @@ extension MontanaArchive {
             var o: [String: Any] = ["w": "hw", "f": mine]
             if twinQuietHere { o["rq"] = 1 }   // the book of devices keeps this mark: a cursor word without it would clear it
             MTLinkedDevices.stamp(&o)   // the cursor word is the device's sign of life on every rise: its kind, and the phone's term (OZ 1 p.4)
+            let lc = mirrorCursors()
+            if !lc.isEmpty { o["lc"] = lc }   // the mirror's cursor rides the same word (OZ 1 p.2)
             let body = (try? JSONEncoder().encode(held)) ?? Data("{}".utf8)
-            if body.count <= 2000 {
-                o["c"] = String(data: body, encoding: .utf8) ?? "{}"
-            } else {
-                guard let dir = try? MontanaBackup.shelf() else { return }
-                let url = dir.appendingPathComponent(UUID().uuidString + ".want")
-                defer { try? FileManager.default.removeItem(at: url) }
-                guard MTDiskDoor.write(body, to: url, "twin-want"), let road = await MTKeeping.lay(url) else {
-                    return MontanaTrace.mark("twin_want", "the cursor did not reach the nodes")
-                }
-                for (k, v) in road { o[k] = v }
+            guard let road = await wordRoad(body, inline: "c", "twin-want") else {
+                return MontanaTrace.mark("twin_want", "the cursor did not reach the nodes")
             }
+            for (k, v) in road { o[k] = v }
             let boxed = await MTKeeping.knock(secret, o, silent: true, sender: twinDeviceRef)
             MontanaTrace.mark("twin_want", "folders=\(held.count) bytes=\(body.count) boxed=\(boxed ? 1 : 0)")
+            await tellPrints(secret, mine)   // the prints of the chats ride beside the cursor word (OZ 1 p.8)
         }
     }
     /// Another device of the seed named its cursor: this device's own blocks are laid from there, every folder this device holds.
@@ -1154,13 +1157,8 @@ extension MontanaArchive {
         guard !mine.isEmpty, let f = o["f"] as? String, f != mine else { return }
         heardTwin(o)   // a device that only reads is heard too: the phone lists it, a joined one counts its term from here (OZ 1 p.4)
         guard MTLinkedDevices.ended[f] == nil else { return }   // an ended device is told again (heardTwin), never given history
-        var body = (o["c"] as? String).flatMap { s in s.data(using: .utf8) }
-        if body == nil, o["mref"] != nil, let dir = try? MontanaBackup.shelf() {
-            let url = dir.appendingPathComponent(UUID().uuidString + ".want")
-            defer { try? FileManager.default.removeItem(at: url) }
-            if await MTKeeping.fetch(o, to: url) { body = try? Data(contentsOf: url) }
-        }
-        guard let body, let held = try? JSONDecoder().decode([String: [String: UInt64]].self, from: body) else {
+        await giveMirror(o, from: f)   // the mirror's letters it lacks, from this device's book (OZ 1 p.1-2)
+        guard let body = await wordBody(o, inline: "c"), let held = try? JSONDecoder().decode([String: [String: UInt64]].self, from: body) else {
             return MontanaTrace.mark("twin_want", "the cursor did not come whole")
         }
         let want = ioQueue.sync { Dictionary(uniqueKeysWithValues: conversations().map { c in (c, held[c]?[mine] ?? 0) }) }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
@@ -1217,11 +1215,14 @@ extension MontanaArchive {
         var qm: String? = nil
         var lp: String? = nil
         var q: Int? = nil        // its place in this device's queue, never read by the other
+        var fl: String? = nil    // a row's file still to lay: the mirror lays it on the person's road before the word rides (OZ 1 p.9)
+        var ft: Int? = nil       // the tries of that file, never read by the other
     }
     nonisolated static let twinReadMark = "\u{200B}\u{200B}TR:"   // NOT-UI: a read mark for this seed's devices alone, never on a pair's wire
     private static var mirror: [TwinWord] = []   // the mirror's queue alone touches it
     private static var mirrorRead = false, mirrorNext = 0, mirrorLaying = false
     private static var mirrorDue: Double? = nil   // the moment the called lay runs, while one is called
+    private static var mirrorFiling = false   // a row's file is on its way to the nodes (layFile); the mirror's queue alone touches it
     private static var mirrorGiven: [String: Double] = [:]   // a name given within the hour: a later copy of it by another road stays
     private static let mirrorKept = 4000      // [I-14]: a device away for long is given the newest, the history road keeps the rest
     private static let mirrorRound = 500
@@ -1244,7 +1245,7 @@ extension MontanaArchive {
     /// A word for the seed's other devices: on disk beside the history until it rode. One's own letter -- to a pair or to Saved
     /// Messages -- is laid within a second; what came from others and the read marks ride together within half a minute. A
     /// repeat of a queued word is not queued twice; a newer read mark of a conversation stands for the older.
-    nonisolated static func mirrorNote(_ w: TwinWord) {
+    nonisolated static func mirrorNote(_ w: TwinWord, saved: Bool = false) {
         mirrorQueue.async {
             readMirror()
             let reads = w.x.hasPrefix(twinReadMark)
@@ -1259,6 +1260,7 @@ extension MontanaArchive {
             mirror.append(e)
             if mirrorKept < mirror.count { mirror.removeFirst(mirror.count - mirrorKept) }
             keepMirror()
+            if saved { savedNow(e) }   // a row of Saved Messages rides at once by its own letter (OZ 1 p.1)
             mirrorSoon(w.o == 1 && !reads ? 1 : 30)
         }
     }
@@ -1275,33 +1277,392 @@ extension MontanaArchive {
             Task.detached(priority: .utility) { await layMirror() }
         }
     }
+    /// The words a run left on disk ride at the next launch.
+    nonisolated static func mirrorResume() { mirrorQueue.async { readMirror(); if !mirror.isEmpty { mirrorSoon(1) } } }
+    /// A ROW'S FILE IS LAID BESIDE THE ROUND, NEVER IN FRONT OF IT (OZ 1 p.9): one file at a time, while the words ready ride.
+    private static func fileSoon(_ w: TwinWord) {
+        let go: Bool = mirrorQueue.sync {   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
+            guard !mirrorFiling else { return false }
+            mirrorFiling = true
+            return true
+        }
+        guard go else { return }
+        Task.detached(priority: .userInitiated) {
+            let laid = await layFile(w).done
+            mirrorQueue.async { mirrorFiling = false; mirrorSoon(laid ? 1 : 30) }
+        }
+    }
+    /// The file of a row given to the twin (giveTwin), laid on the cargo road as the person's own put and its road written into
+    /// the word on disk: a run that ends on the way lays it again at the next launch, and a road laid is never laid twice. A file
+    /// no longer here, or refused eight times, lets the word ride as words with its file's name, said.
+    private static func layFile(_ w: TwinWord) async -> (done: Bool, x: String?) {
+        guard let name = w.fl, let q = w.q else { return (true, nil) }
+        let url = MontanaMediaStore.url(name)
+        let here = FileManager.default.fileExists(atPath: url.path)
+        let t0 = Date()
+        var road: [String: Any]? = nil
+        if here { road = await MTKeeping.layOwn(url) }
+        let x = road.flatMap { r in rowWithRoad(w.x, r) }
+        let ms = Int(Date().timeIntervalSince(t0) * 1000)
+        let tries: Int = mirrorQueue.sync {   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
+            guard let i = mirror.firstIndex(where: { e in e.q == q }) else { return 0 }
+            let n = (mirror[i].ft ?? 0) + 1
+            if let x { mirror[i].x = x; mirror[i].fl = nil; mirror[i].ft = nil }
+            else if !here || 8 <= n { mirror[i].fl = nil }
+            else { mirror[i].ft = n }   // a file the nodes refused is laid again at the next round
+            keepMirror()
+            return n
+        }
+        MontanaTrace.mark("twin_file", mid: w.m, x != nil ? "laid ms=\(ms)" : !here ? "no file here -- the row rides without it" : "a file did not reach the nodes try=\(tries)")
+        return (x != nil || !here, x)
+    }
+    /// A row's words with the road of its file: the one place a road is written into a row given to the twin.
+    private static func rowWithRoad(_ x: String, _ road: [String: Any]) -> String? {
+        guard x.hasPrefix(twinRowMark), let d = String(x.dropFirst(twinRowMark.count)).data(using: .utf8),
+              var o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] else { return nil }
+        o["road"] = road
+        guard let all = try? JSONSerialization.data(withJSONObject: o), let js = String(data: all, encoding: .utf8) else { return nil }
+        return twinRowMark + js
+    }
     private static func layMirror() async {
-        let batch: [TwinWord] = mirrorQueue.sync { readMirror(); return Array(mirror.prefix(mirrorRound)) }   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
-        guard !batch.isEmpty, let secret = twinSecret(), let body = try? JSONEncoder().encode(batch),
+        let (batch, busy): ([TwinWord], Set<Int>) = mirrorQueue.sync { readMirror(); return (Array(mirror.prefix(mirrorRound)), savedFiling) }   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
+        if let w = batch.first(where: { w in w.fl != nil && !busy.contains(w.q ?? -1) }) { fileSoon(w) }
+        let ready = batch.filter { w in w.fl == nil }
+        guard !ready.isEmpty, let secret = twinSecret(), let body = try? JSONEncoder().encode(ready),
               let dir = try? MontanaBackup.shelf() else { return mirrorQueue.async { mirrorLaying = false } }
         let url = dir.appendingPathComponent(UUID().uuidString + ".twin")
         defer { try? FileManager.default.removeItem(at: url) }
-        guard (try? body.write(to: url)) != nil, var road = await MTKeeping.lay(url) else {
+        guard (try? body.write(to: url)) != nil, var road = await MTKeeping.layOwn(url) else {
             mirrorQueue.async { mirrorLaying = false; mirrorSoon() }
-            return MontanaTrace.mark("twin_mirror", "the words did not reach the nodes n=\(batch.count)")
+            return MontanaTrace.mark("twin_mirror", "the words did not reach the nodes n=\(ready.count)")
         }
-        road["w"] = "lt"; road["n"] = batch.count; road["f"] = writerTagHex()
+        road["w"] = "lt"; road["n"] = ready.count; road["f"] = writerTagHex()
         if twinQuietHere { road["rq"] = 1 }   // this device's extension takes the read word quietly (MTTwinRead)
         MTLinkedDevices.stamp(&road)   // its kind, and the phone's term for its joined devices (OZ 1 p.4)
+        mirrorQueue.sync { numberLetter(&road) }   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue; the road is in the book before the box
         guard await MTKeeping.knock(secret, road, silent: true, sender: twinDeviceRef) else {
             mirrorQueue.async { mirrorLaying = false; mirrorSoon() }
-            return MontanaTrace.mark("twin_mirror", "no door boxed the letter n=\(batch.count)")
+            return MontanaTrace.mark("twin_mirror", "no door boxed the letter n=\(ready.count)")
         }
-        let top = batch.compactMap(\.q).max() ?? -1
+        let sent = Set(ready.compactMap(\.q))   // a word whose file is still on its way stays in the queue
         let left: Int = mirrorQueue.sync {   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
-            mirror.removeAll { e in (e.q ?? -1) <= top }
+            mirror.removeAll { e in sent.contains(e.q ?? -1) }
             keepMirror()
             mirrorLaying = false
             if !mirror.isEmpty { mirrorSoon(1) }
             return mirror.count
         }
-        MontanaTrace.mark("twin_mirror", "laid words=\(batch.count) left=\(left)")
+        MontanaTrace.mark("twin_mirror", "laid words=\(ready.count) left=\(left) sn=\(road["sn"] as? Int ?? 0)")
     }
+    // ── THE MIRROR'S BOOK: A NUMBER FOR EVERY LETTER, A CURSOR ON EVERY DEVICE (OZ 1 p.1-2, the author's words 23282 and 23284:
+    // «build the sync properly, not "someone took it or not"») ──
+    // A mirror letter was a box letter and nothing more: its words left this device's queue the moment a node boxed it
+    // (layMirror), a box keeps a pipe's last 64 letters for a day (the node's /wake), and the receiver knew the last 512 letters'
+    // names alone -- a device away longer, or behind more, lost those words for good. Now each mirror letter of a device takes
+    // the next number of that device's run, and the device keeps the letter's road in its book until every other device of the
+    // seed named a cursor past it (six days at most: the pieces live a week on the nodes). Each device keeps, per writer and
+    // run, the number up to which it took every letter and the numbers it took above it; a repeat is never fetched again, a
+    // hole is named at once in the cursor word (hw, wantHistory), and the writer lays the letters after that number again by the
+    // same roads. A number the writer no longer holds is named by its oldest («lo»); the history (hist) and the twin's ask
+    // (askTwin) carry what it held. A book lost starts a new run, so no cursor skips its letters as old.
+    private struct MirrorLaid: Codable { var sn: Int; var at: Double; var road: Data }
+    // first: the letter that started this cursor, when a letter started it -- a joined device's copy may name a lower one (OZ 1
+    // p.6). Optional, as the book's holds: a book written before them still opens, and keeps its run.
+    private struct MirrorCursor: Codable { var c: Int; var above: [Int] = []; var at: Double; var first: Int? = nil }
+    private struct MirrorBook: Codable {
+        var run = ""                             // this device's run of numbers
+        var next = 1                             // the number this device's next mirror letter takes
+        var laid: [MirrorLaid] = []              // this device's letters, kept for the devices that have not taken them
+        var took: [String: MirrorCursor] = [:]   // writer tag + "/" + run: what this device took of it
+        var peers: [String: Int] = [:]           // another device's tag: its cursor on this device's run, as its last word said
+        var holds: [MirrorCursor]? = nil         // a joining's cursor on this device's run: the letters after it stay a day (OZ 1 p.6)
+    }
+    private static var book: MirrorBook?   // the mirror's queue alone touches it
+    private static var bookFile: URL { rootURL.appendingPathComponent("twin-mirror-book.json") }
+    private static let bookKept = 1000, bookDays: Double = 6 * 86_400
+    private static var mirrorHole = false   // guarded by heldLock: a hole stands, and the cursor word goes within twenty seconds
+    private static func readBook() -> MirrorBook {
+        if let b = book { return b }
+        var b = (try? Data(contentsOf: bookFile)).flatMap { d in try? JSONDecoder().decode(MirrorBook.self, from: d) } ?? MirrorBook()
+        if b.run.isEmpty { b.run = montanaRandom(4).montanaHexString }
+        book = b
+        return b
+    }
+    private static func keepBook(_ b: MirrorBook) {
+        book = b
+        guard let d = try? JSONEncoder().encode(b) else { return }
+        MTDiskDoor.write(d, to: bookFile, "mirror-book", options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+    /// Mirror-queue only: a letter every other device heard within the month took, or older than its pieces, leaves the book.
+    private static func trimBook(_ b: inout MirrorBook, _ now: Double) {
+        let devices = ((UserDefaults.standard.dictionary(forKey: twinDevicesKey) as? [String: [Double]]) ?? [:])
+            .filter { e in e.value.count == 2 && now - e.value[0] < twinHeardFor }.keys
+        b.holds = b.holds.map { hs in Array(hs.filter { h in now - h.at < holdFor }.suffix(8)) }
+        let held = b.holds?.map { h in h.c }.min() ?? Int.max   // a joining's device is heard only after the copy lies
+        let low = min(held, devices.isEmpty ? 0 : (devices.map { f in b.peers[f] ?? 0 }.min() ?? 0))
+        b.laid.removeAll { e in e.sn <= low || bookDays < now - e.at }
+        if bookKept < b.laid.count { b.laid.removeFirst(b.laid.count - bookKept) }
+        b.took = b.took.filter { e in now - e.value.at < twinHeardFor }
+    }
+    /// Mirror-queue only: the next number of this device's run is written into the letter, and the letter's road into the book.
+    private static func numberLetter(_ road: inout [String: Any]) {
+        var b = readBook()
+        let now = Date().timeIntervalSince1970
+        road["sn"] = b.next; road["se"] = b.run
+        if let d = try? JSONSerialization.data(withJSONObject: road) { b.laid.append(MirrorLaid(sn: b.next, at: now, road: d)) }
+        b.next += 1
+        trimBook(&b, now)
+        keepBook(b)
+    }
+    /// The writer's run, when the writer's build numbers its letters.
+    private static func runOf(_ o: [String: Any]) -> String? {
+        guard let f = o["f"] as? String, !f.isEmpty, let se = o["se"] as? String, !se.isEmpty else { return nil }
+        return f + "/" + se
+    }
+    /// Mirror-queue only: this device took that letter already.
+    private static func tookLetter(_ run: String, _ sn: Int) -> Bool {
+        guard let t = readBook().took[run] else { return false }
+        return sn <= t.c || t.above.contains(sn)
+    }
+    /// Mirror-queue only: a letter taken (sn), or the writer's oldest held number (lo) closing what it can no longer give. The
+    /// first letter of a run starts its cursor there: what came before rides the history and the phone's copy. True while a
+    /// hole of the last hour stands on any run.
+    private static func takeLetter(_ run: String, sn: Int?, lo: Int?) -> Bool {
+        var b = readBook()
+        let now = Date().timeIntervalSince1970
+        if let start = b.took[run]?.c ?? sn.map({ n in n - 1 }) {
+            var t = b.took[run] ?? MirrorCursor(c: start, at: now, first: sn)
+            if let lo, t.c + 1 < lo {
+                MontanaTrace.mark("twin_mirror", "the writer holds no more \(t.c + 1)..\(lo - 1) run=\(run)")
+                t.c = lo - 1
+            }
+            if let sn, t.c < sn, !t.above.contains(sn) { t.above.append(sn) }
+            t.above.sort()
+            while let first = t.above.first, first <= t.c + 1 { t.c = max(t.c, first); t.above.removeFirst() }
+            t.at = now
+            b.took[run] = t
+            keepBook(b)
+        }
+        return b.took.values.contains { t in !t.above.isEmpty && now - t.at < 3600 }
+    }
+    /// A hole stands: the cursor word names it within twenty seconds, and every pickup names it again until it closes.
+    private static func noteHole(_ hole: Bool) {
+        heldLock.withLock { mirrorHole = hole }
+        if hole { wantHistory(soon: true) }
+    }
+    /// The cursor word's part of the mirror: per writer and run, the number up to which every letter was taken.
+    nonisolated static func mirrorCursors() -> [String: Int] {
+        mirrorQueue.sync { readBook().took.mapValues { t in t.c } }   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
+    }
+    /// Another device named its cursor on this device's run: the letters after it are laid again from the book, by their roads,
+    /// 64 at most a word; a cursor below the book's oldest is told that oldest.
+    private static func giveMirror(_ o: [String: Any], from f: String) async {
+        guard let lc = o["lc"] as? [String: Int], let secret = twinSecret() else { return }
+        let mine = writerTagHex()
+        let again: [[String: Any]] = mirrorQueue.sync {   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
+            var b = readBook()
+            guard let c = lc[mine + "/" + b.run] else { return [] }
+            b.peers[f] = c
+            trimBook(&b, Date().timeIntervalSince1970)
+            keepBook(b)
+            let lo = b.laid.first?.sn ?? b.next
+            let rows: [[String: Any]] = b.laid.filter { e in c < e.sn }.prefix(64).compactMap { e in
+                guard var r = (try? JSONSerialization.jsonObject(with: e.road)) as? [String: Any] else { return nil }
+                r["lo"] = lo
+                return r
+            }
+            if rows.isEmpty, c + 1 < lo { return [["w": "lt", "f": mine, "se": b.run, "lo": lo]] }   // nothing to lay: the oldest, named
+            return rows
+        }
+        guard !again.isEmpty else { return }
+        var boxed = 0
+        for r in again { if await MTKeeping.knock(secret, r, silent: true, sender: twinDeviceRef) { boxed += 1 } }
+        MontanaTrace.mark("twin_mirror", "laid again letters=\(again.count) boxed=\(boxed) to=\(String(f.prefix(8)))")
+    }
+    // ── A JOINING BY QR READS THE SAME BOOK (OZ 1 p.6; the author's words 23183, 23239, 23260; decision 989 = a) ──
+    // The phone's light copy is a picture of the history at one moment. The joined device started its cursor on the phone's run at
+    // the first letter it heard, so the letters laid between the picture and that letter were taken by nobody, and a writer's book
+    // let them go once every device it knew had passed them. Now the copy names the mirror's cursors as they stood when it was
+    // gathered (copyCursors); every writer holds its letters after that cursor a day for the joining (the phone at once, the
+    // others on the word jn); and the joined device takes the copy's cursors as its own the moment the copy lies
+    // (cursorsFromCopy): what came after the picture is laid again from the books, what the copy holds is a repeat the one
+    // landing road files once.
+    private static let holdFor: Double = 86_400
+    /// The mirror's cursors as a copy gathered now stands: this device's own run up to the last number it gave, and every other
+    /// writer's run as far as this device took it. For a joining, this device's letters after it are held a day. `done` runs on
+    /// the main thread.
+    nonisolated static func copyCursors(holding: Bool, _ done: @escaping @Sendable ([String: Int]) -> Void) {
+        let mine = writerTagHex()
+        mirrorQueue.async {
+            var b = readBook()
+            var lc = b.took.mapValues { t in t.c }
+            if !mine.isEmpty { lc[mine + "/" + b.run] = b.next - 1 }
+            if holding { hold(&b, b.next - 1) }
+            DispatchQueue.main.async { done(lc) }
+        }
+    }
+    /// Mirror-queue only: this device's letters after `c` stay in its book a day, whatever cursors it heard.
+    private static func hold(_ b: inout MirrorBook, _ c: Int) {
+        let now = Date().timeIntervalSince1970
+        b.holds = (b.holds ?? []) + [MirrorCursor(c: c, at: now)]
+        trimBook(&b, now)
+        keepBook(b)
+        MontanaTrace.mark("twin_mirror", "held for a joining from sn=\(c + 1)")
+    }
+    /// The phone gave its words: the seed's other devices hold their letters after the copy's cursors a day too, and this one
+    /// (`here`) when its copy was gathered before the joining.
+    nonisolated static func tellJoining(_ lc: [String: Int], here: Bool = false) {
+        let mine = writerTagHex()
+        if here { mirrorQueue.async { var b = readBook(); if let c = lc[mine + "/" + b.run] { hold(&b, c) } } }
+        Task.detached(priority: .userInitiated) {
+            guard let secret = twinSecret() else { return }
+            let told = await MTKeeping.knock(secret, ["w": "jn", "f": mine, "lc": lc], silent: true, sender: twinDeviceRef)
+            MontanaTrace.mark("twin_mirror", "a joining told runs=\(lc.count) boxed=\(told ? 1 : 0)")
+        }
+    }
+    /// Another device of the seed gave its words to a new one: this device's letters after the cursor its copy names stay a day.
+    private static func heardJoining(_ o: [String: Any]) {
+        let mine = writerTagHex()
+        guard let lc = o["lc"] as? [String: Int], !mine.isEmpty, (o["f"] as? String) != mine else { return }
+        mirrorQueue.async {
+            var b = readBook()
+            guard let c = lc[mine + "/" + b.run] else { return }
+            hold(&b, c)
+        }
+    }
+    /// On a device joined by QR the phone's copy lies: its cursors are this device's own. A cursor this device started at a
+    /// letter heard before the copy lay goes back to the copy's -- the letters between are asked, the ones taken stay taken --
+    /// and the cursor is named at once.
+    nonisolated static func cursorsFromCopy(_ lc: [String: Int]) {
+        let mine = writerTagHex() + "/"
+        mirrorQueue.async {
+            var b = readBook()
+            let now = Date().timeIntervalSince1970
+            var back = 0
+            for (run, c) in lc where !run.hasPrefix(mine) {
+                guard var t = b.took[run] else { b.took[run] = MirrorCursor(c: c, at: now); continue }
+                guard let first = t.first, c + 1 < first, first <= t.c else { continue }
+                t.above = Array(Set(t.above + Array(first...t.c))).sorted()
+                t.c = c; t.first = nil; t.at = now
+                b.took[run] = t
+                back += 1
+            }
+            keepBook(b)
+            MontanaTrace.mark("twin_mirror", "cursors from the phone's copy runs=\(lc.count) back=\(back)")
+            heldLock.withLock { wantedAt = 0; if 0 < back { mirrorHole = true } }
+            wantHistory(soon: true)
+        }
+    }
+    // ── THE PRINT OF EVERY CHAT (OZ 1 p.8; the author's words 23282, 23284: «build the sync properly») ──
+    // The book's numbers say what a device took of the others' letters, never what its chats hold: a row no letter carried, a
+    // letter of a book lost, a copy laid around a hole stayed a silent difference. Now each device names, in a word of its own
+    // (pr), the print of every chat it holds -- the count of its rows and a hash of their archive keys (ChatStore.archiveKey:
+    // second, side, words), the same on every device that holds the same rows; the last two minutes are left out, they are on
+    // their way. A device that hears a print unlike its own names that chat's keys to it (ck); that one gives back each row the
+    // keys lack and asks each key it lacks, by the roads of the archive's gap (ChatStore.healTwin), and says it (twin_heal).
+    // Every comparison is said in the diary (twin_print): equal prints on two devices are the proof of the same chats.
+    private static var printedAt: Double = 0   // guarded by heldLock
+    private static var healedPrints: [String: (pair: String, at: Double)] = [:]   // guarded by heldLock: device/chat -- its last heal
+    /// A word's body inline in its letter, within the envelope's measure (MTNodeWire.envelopeSize, the letter's head beside it).
+    private static let printInline = 1200
+    /// THE ONE DOOR OF A WORD'S BODY (constitution 15): inline under `key` within the envelope's measure, or laid on the nodes and
+    /// named by its road. The cursor word took 2000 bytes inline, and with its other fields a full envelope boxed nothing.
+    private static func wordRoad(_ body: Data, inline key: String, _ name: String) async -> [String: Any]? {
+        if body.count <= printInline { return [key: String(decoding: body, as: UTF8.self)] }
+        guard let dir = try? MontanaBackup.shelf() else { return nil }
+        let url = dir.appendingPathComponent(UUID().uuidString + ".want")
+        defer { try? FileManager.default.removeItem(at: url) }
+        guard MTDiskDoor.write(body, to: url, name) else { return nil }
+        return await MTKeeping.lay(url)
+    }
+    /// The body a word of the seed carries: inline under `key`, or fetched by its road.
+    private static func wordBody(_ o: [String: Any], inline key: String) async -> Data? {
+        if let s = o[key] as? String { return Data(s.utf8) }
+        guard o["mref"] != nil, let dir = try? MontanaBackup.shelf() else { return nil }
+        let url = dir.appendingPathComponent(UUID().uuidString + ".want")
+        defer { try? FileManager.default.removeItem(at: url) }
+        guard await MTKeeping.fetch(o, to: url) else { return nil }
+        return try? Data(contentsOf: url)
+    }
+    /// This device's chats as the seed's devices compare them: a chat's tag (a hash of its key) -- its key, its print, its keys.
+    private static func chatPrints() async -> [String: (chat: String, print: String, keys: [String])] {
+        let settled = Date().timeIntervalSince1970 - 120
+        let all: [String: [String]] = await MainActor.run {
+            (ChatStore.live?.messages ?? [:]).compactMapValues { rows in
+                rows.isEmpty ? nil : ChatStore.archiveKeys(rows.filter { m in m.createdAt < settled })
+            }
+        }
+        var out: [String: (chat: String, print: String, keys: [String])] = [:]
+        for (chat, keys) in all { out[rowHash("chat/" + chat)] = (chat, String(keys.count) + "." + rowHash(keys.joined(separator: "\n")), keys) }
+        return out
+    }
+    /// The word pr: this device's print of every chat it holds, beside the cursor word, at most once in five minutes.
+    private static func tellPrints(_ secret: Data, _ mine: String) async {
+        let t = Date().timeIntervalSince1970
+        let go: Bool = heldLock.withLock {
+            guard 300 < t - printedAt else { return false }
+            printedAt = t
+            return true
+        }
+        guard go else { return }
+        let prints = await chatPrints().mapValues { p in p.print }
+        guard !prints.isEmpty, let body = try? JSONEncoder().encode(prints) else { return }
+        guard let road = await wordRoad(body, inline: "p", "twin-print") else {
+            return MontanaTrace.mark("twin_print", "the prints did not reach the nodes")
+        }
+        var o: [String: Any] = ["w": "pr", "f": mine]
+        for (k, v) in road { o[k] = v }
+        let boxed = await MTKeeping.knock(secret, o, silent: true, sender: twinDeviceRef)
+        MontanaTrace.mark("twin_print", "told chats=\(prints.count) bytes=\(body.count) boxed=\(boxed ? 1 : 0)")
+    }
+    /// Another device's prints: every chat both hold is compared and the count said; a chat that differs names its keys to that
+    /// device, once in half an hour for the same two prints.
+    private static func comparePrints(_ o: [String: Any]) async {
+        guard let f = o["f"] as? String, !f.isEmpty, f != writerTagHex(), MTLinkedDevices.ended[f] == nil else { return }
+        guard let body = await wordBody(o, inline: "p"), let theirs = try? JSONDecoder().decode([String: String].self, from: body) else {
+            return MontanaTrace.mark("twin_print", "the prints did not come whole")
+        }
+        let mine = await chatPrints()
+        var same = 0, differ: [String] = []
+        for (tag, p) in theirs {
+            guard let m = mine[tag] else { continue }   // a chat this device does not hold: the history and the copy bring it
+            if m.print == p { same += 1 } else { differ.append(tag) }
+        }
+        MontanaTrace.mark("twin_print", "from=\(String(f.prefix(8))) theirs=\(theirs.count) mine=\(mine.count) same=\(same) differ=\(differ.count)")
+        let now = Date().timeIntervalSince1970
+        for tag in differ {
+            guard let m = mine[tag], let p = theirs[tag] else { continue }
+            let pair = m.print + "/" + p, slot = f + "/" + tag
+            let due: Bool = heldLock.withLock {
+                if let h = healedPrints[slot], h.pair == pair, now - h.at < 1800 { return false }
+                healedPrints[slot] = (pair, now)
+                return true
+            }
+            guard due else { continue }
+            MontanaTrace.mark("twin_print", "chat=\(String(m.chat.prefix(10))) mine=\(m.print) theirs=\(p) -- its keys go")
+            await tellKeys(m.chat, m.keys, to: f)
+        }
+    }
+    /// The word ck: a chat's archive keys, to the one device whose print of it differed.
+    private static func tellKeys(_ chat: String, _ keys: [String], to f: String) async {
+        guard let secret = twinSecret(), let road = await wordRoad(Data(keys.joined(separator: "\n").utf8), inline: "k", "twin-keys") else {
+            return MontanaTrace.mark("twin_print", "the keys did not reach the nodes")
+        }
+        var o: [String: Any] = ["w": "ck", "f": writerTagHex(), "to": f, "ch": chat]
+        for (k, v) in road { o[k] = v }
+        let boxed = await MTKeeping.knock(secret, o, silent: true, sender: twinDeviceRef)
+        MontanaTrace.mark("twin_print", "keys told chat=\(String(chat.prefix(10))) n=\(keys.count) boxed=\(boxed ? 1 : 0)")
+    }
+    /// A chat's keys named to this device: it heals the chat by them (ChatStore.healTwin).
+    private static func takeKeys(_ o: [String: Any]) async {
+        let mine = writerTagHex()
+        guard let f = o["f"] as? String, !f.isEmpty, f != mine, (o["to"] as? String) == mine, MTLinkedDevices.ended[f] == nil,
+              let chat = o["ch"] as? String, !chat.isEmpty else { return }
+        guard let body = await wordBody(o, inline: "k") else { return MontanaTrace.mark("twin_print", "the keys did not come whole") }
+        let theirs = Set(String(decoding: body, as: UTF8.self).split(separator: "\n").map(String.init))
+        await MainActor.run { ChatStore.live?.healTwin(chat, theirs: theirs) }
+    }
+
     // ── THE PAST THE TWIN MISSED (the author's words 18.10.2026 07:3x UTC: «on T1 there is no media of yesterday 14:33 in the chat, on
     // the Mac there is»; 09:1x «finish and close every item»): the mirror carries what lands from now on; what one device took before
     // it stands in that device's archive, which the other files (twin_hist) and measures against its feed (archive_gap) but never
@@ -1357,13 +1718,13 @@ extension MontanaArchive {
     /// One row given back: its words, and a file by the cargo road -- the file's pieces sealed under a fresh key, the key inside the
     /// pipe only the seed's devices open.
     nonisolated static func giveTwin(chat: String, mid: String, text: String, own: Bool, at: Double, senderRef: String?,
-                                     file: (kind: String, name: String, docName: String?, duration: Double)?) {
+                                     file: (kind: String, name: String, docName: String?, duration: Double)?, now: Bool = false) {
         var o: [String: Any] = [:]
         if !text.isEmpty { o["t"] = text }
         if let sr = senderRef { o["sr"] = sr }
         guard let f = file else {
             guard !text.isEmpty, let d = try? JSONSerialization.data(withJSONObject: o), let js = String(data: d, encoding: .utf8) else { return }
-            mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at))
+            mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at), saved: now)
             return
         }
         o["k"] = f.kind; o["f"] = f.name
@@ -1371,34 +1732,77 @@ extension MontanaArchive {
         if 0 < f.duration { o["d"] = f.duration }
         // NO ROW IS LOST IN SILENCE (OZ 1, the critic of 22541): a row whose file this device does not hold is given as words with
         // its file's name -- the twin lays it and says the file it has not been given (2401) -- and a file the nodes refused is laid
-        // again, four tries over twelve minutes, each said.
+        // again by the mirror itself from its queue on disk, eight tries, each said (layFile, OZ 1 p.9).
         let url = MontanaMediaStore.url(f.name)
         guard FileManager.default.fileExists(atPath: url.path) else {
             guard let d = try? JSONSerialization.data(withJSONObject: o), let js = String(data: d, encoding: .utf8) else { return }
-            mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at))
+            mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at), saved: now)
             return MontanaTrace.mark("twin_answer", mid: mid, "no file here -- the row is given without it")
         }
-        let given = o
-        Task.detached(priority: .utility) {
-            for (n, wait) in ([0, 30, 120, 600] as [UInt64]).enumerated() {
-                if 0 < wait { try? await Task.sleep(nanoseconds: wait * 1_000_000_000) }
-                guard let road = await MTKeeping.lay(url) else {
-                    MontanaTrace.mark("twin_answer", mid: mid, "a file did not reach the nodes try=\(n + 1)")
-                    continue
-                }
-                var all = given
-                all["road"] = road
-                guard let d = try? JSONSerialization.data(withJSONObject: all), let js = String(data: d, encoding: .utf8) else { return }
-                return mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at))
-            }
-        }
+        // THE FILE RIDES WITH ITS WORD, ON DISK, ON THE PERSON'S ROAD (OZ 1 p.9, the author's word 23159: «in 2413 the media of
+        // Saved Messages still do not arrive»): the word used to wait in memory for its file, laid as the keeping's quiet cargo
+        // behind the copy's hundreds of pieces -- a run that ended on the way lost the row for good, while the text beside it rode
+        // within a second. The word is queued at once with its file named, and the mirror lays the file before it rides.
+        guard let d = try? JSONSerialization.data(withJSONObject: o), let js = String(data: d, encoding: .utf8) else { return }
+        mirrorNote(TwinWord(c: chat, m: mid, x: twinRowMark + js, o: own ? 1 : nil, at: at, fl: f.name), saved: now)
     }
 
-    /// The words of the seed's other device: each lands here by the one landing road, in the order that device heard them.
+    // ── SAVED MESSAGES BY A ROAD OF ITS OWN (OZ 1 p.1, the author's words 23326-23327: «total sync of Saved Messages by a separate
+    // road, so that it depends on nothing and syncs at once on every device») ──
+    // A row born in Saved Messages waited for the mirror: a second for the round, its words laid as a file on the nodes and fetched
+    // back by the other device, and a file laid in front of its words, one file at a time behind any other. Now the row's words ride
+    // at its birth inside one letter of the seed's pipe -- no file of words, no round, no queue -- and the other device lays the row
+    // by its name the moment it hears the letter; a row with a file is laid at once without it, and the road of its file follows in
+    // a second letter of the same name, the file laid at once and never behind another. The mirror still carries the same row by
+    // the same name, never laid twice: a letter lost on the way, or words past one letter's measure, is a delay, never a loss.
+    private static var savedFiling = Set<Int>()   // the mirror's queue alone touches it: files Saved Messages lays itself
+    /// Mirror-queue only: the row just queued rides at once by its own letter, and its file is laid beside the mirror.
+    private static func savedNow(_ w: TwinWord) {
+        if w.fl != nil, let q = w.q { savedFiling.insert(q) }
+        Task.detached(priority: .userInitiated) {
+            await tellSaved(w, w.x)
+            guard w.fl != nil else { return }
+            let laid = await layFile(w)
+            mirrorQueue.async {
+                if let q = w.q { savedFiling.remove(q) }
+                mirrorSoon(1)
+            }
+            if let x = laid.x { await tellSaved(w, x) }
+        }
+    }
+    /// One letter of Saved Messages in the seed's pipe: the row's words, and its file's road once laid.
+    private static func tellSaved(_ w: TwinWord, _ x: String) async {
+        let t0 = Date()
+        guard let secret = twinSecret() else { return }
+        var o: [String: Any] = ["w": "sv", "f": writerTagHex(), "c": w.c, "m": w.m, "x": x, "at": w.at ?? 0]
+        if w.o == 1 { o["o"] = 1 }
+        let boxed = await MTKeeping.knock(secret, o, silent: true, sender: twinDeviceRef)
+        let ms = Int(Date().timeIntervalSince(t0) * 1000), road = x == w.x ? 0 : 1
+        MontanaTrace.mark("twin_saved", mid: w.m, boxed ? "told ms=\(ms) road=\(road)" : "not boxed road=\(road) -- the mirror carries it")
+    }
+    /// A row of Saved Messages the seed's other device told at its birth: laid here by its name, by the mirror's one landing road.
+    private static func takeSaved(_ o: [String: Any]) async {
+        guard (o["f"] as? String) != writerTagHex(), (o["c"] as? String) == savedMessagesKey, let m = o["m"] as? String, !m.isEmpty,
+              let x = o["x"] as? String, x.hasPrefix(twinRowMark) else { return }
+        heardTwin(o)
+        let w = TwinWord(c: savedMessagesKey, m: m, x: x, o: (o["o"] as? Int) == 1 ? 1 : nil, at: o["at"] as? Double)
+        await MainActor.run { MontanaDeliveryEngine.shared.landMirrored(w) }
+        MontanaTrace.mark("twin_saved", mid: m, "taken")
+    }
+
+    /// The words of the seed's other device: each lands here by the one landing road, in the order that device heard them. A
+    /// numbered letter this device took is not fetched again, and a hole it shows is asked at once (the mirror's book, above).
     private static func takeMirror(_ o: [String: Any], mid: String) async {
         let mine = ioQueue.sync { writerTag()?.montanaHexString ?? "" }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
         guard (o["f"] as? String) != mine else { return }   // this device's own letter, heard back from the box
         heardTwin(o)
+        let run = runOf(o), sn = o["sn"] as? Int, lo = o["lo"] as? Int
+        if let run {
+            if o["mref"] == nil { return noteHole(mirrorQueue.sync { takeLetter(run, sn: nil, lo: lo) }) }   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
+            if let sn, mirrorQueue.sync(execute: { tookLetter(run, sn) }) {   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
+                return MontanaTrace.markFolded("twin_mirror", "a letter taken before -- not fetched again sn=\(sn)", window: 30)
+            }
+        }
         let seen = UserDefaults.standard.stringArray(forKey: twinSeenKey) ?? []
         guard !seen.contains(mid), let dir = try? MontanaBackup.shelf() else { return }
         let url = dir.appendingPathComponent(UUID().uuidString + ".twin")
@@ -1409,7 +1813,8 @@ extension MontanaArchive {
         }
         UserDefaults.standard.set(Array((seen + [mid]).suffix(512)), forKey: twinSeenKey)
         await MainActor.run { for w in words { MontanaDeliveryEngine.shared.landMirrored(w) } }
-        MontanaTrace.mark("twin_mirror", "taken words=\(words.count)")
+        MontanaTrace.mark("twin_mirror", "taken words=\(words.count) sn=\(sn ?? 0)")
+        if let run { noteHole(mirrorQueue.sync { takeLetter(run, sn: sn, lo: lo) }) }   // MAIN-SAFE-SYNC: a detached task waits on the mirror's queue, never the main thread
     }
 
     /// Wire name of a sealed block: the same name a media chunk gets, computed by the same core

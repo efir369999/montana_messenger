@@ -412,8 +412,14 @@ final class MTGroup {
     private func load() {
         let held = MontanaLocalVault.getDecrypted(Self.stateKey).flatMap { try? JSONDecoder().decode([String: MTGroupState].self, from: $0) }
         let kept = MontanaLocalVault.getDecrypted(Self.copiesKey).flatMap { try? JSONDecoder().decode([String: MTGroupCopy].self, from: $0) }
-        unread = (held == nil && UserDefaults.standard.data(forKey: Self.stateKey) != nil)
-            || (kept == nil && UserDefaults.standard.data(forKey: Self.copiesKey) != nil)
+        // A STORE SEALED UNDER A KEY THAT IS GONE IS AN EMPTY ONE (OZ 1 p.11, the author's word 23183): the Mac after its
+        // session ended held groups.copies under the device key the ending erased; it never opened, every read named the
+        // store unread, and the groups a light copy laid stood without a row (standAll waits for ready). The next write lays
+        // the store anew under the key at hand.
+        let lost = [Self.stateKey, Self.copiesKey].filter { MontanaLocalVault.lost($0) }
+        unread = (held == nil && UserDefaults.standard.data(forKey: Self.stateKey) != nil && !lost.contains(Self.stateKey))
+            || (kept == nil && UserDefaults.standard.data(forKey: Self.copiesKey) != nil && !lost.contains(Self.copiesKey))
+        if !lost.isEmpty { MontanaTrace.mark("group_lost", "keys=" + lost.joined(separator: ",")) }
         if unread { MontanaTrace.mark("group_unread", "the groups' store did not open -- read again before use") }
         groups = held ?? [:]
         let edge = Date().timeIntervalSince1970 - Self.copyLife
@@ -1709,6 +1715,10 @@ final class MTGroup {
     /// A JOIN THAT WAITS FOR ITS MEETING: the link's group and mark, taken off the link before the card is met (MontanaMeeting.handleLink)
     /// and asked of the owner the moment the meeting opens its conversation; ten minutes at most.
     private var waitingJoin: (g: String, mark: String, at: Date)?
+    /// THE LINK OPENS THE GROUP ITSELF (OZ 2 p.5, the author's word 23167: «the link must take me to the group itself and open
+    /// it»): T3 16.11.2026 14:48 UTC tapped a group's link in a chat, the owner's phone added it, and T3 stayed in the owner's
+    /// chat. The group a link asked for opens the moment it is born here or given back; ten minutes at most.
+    private var openingJoin: (g: String, at: Date)?
     /// The link's group mark, if it carries one, and the link without it -- which goes on to the meeting. Read on any thread.
     nonisolated static func joinMark(in url: URL) -> (url: URL, g: String, mark: String)? {
         guard var parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
@@ -1728,10 +1738,17 @@ final class MTGroup {
     }
     /// The meeting opened its conversation: the waiting join is asked of the owner over it -- at once when the pipe holds, else
     /// a few seconds later, a minute at most.
+    /// The conversation the link opens: the group itself when this phone already holds it -- nothing is asked then -- else the
+    /// owner's, until the group is born here (openIfAsked).
     @MainActor
-    func askJoin(through pipe: String) {
-        guard let j = waitingJoin, Date().timeIntervalSince(j.at) < 600 else { return }
+    func askJoin(through pipe: String) -> String? {
+        guard let j = waitingJoin, Date().timeIntervalSince(j.at) < 600 else { return nil }
         waitingJoin = nil
+        if let g = groups[j.g], g.left != true {
+            MontanaTrace.mark("group_link", "the group is held here -- it opens")
+            return Self.key(of: g.id)
+        }
+        openingJoin = (j.g, Date())
         let me = Self.clean(E2E.myDisplayName(), Self.nameLimit)
         let w = MTGroupWord(t: "jn", g: j.g, n: me.isEmpty ? nil : me, id: ChatStore.mintMid().mid, tx: j.mark)   // COMPAT-GATED
         Task { @MainActor in
@@ -1742,6 +1759,15 @@ final class MTGroup {
             let sent = self.carry(w, to: pipe, letter: "", own: false) != nil
             MontanaTrace.mark("group_link", "join asked sent=\(sent ? 1 : 0)")
         }
+        return nil
+    }
+    /// The group a link asked for is born here, or given back: it opens by the one road into a conversation (OZ 2 p.5).
+    @MainActor
+    private func openIfAsked(_ id: String) {
+        guard let o = openingJoin, o.g == id, Date().timeIntervalSince(o.at) < 600 else { return }
+        openingJoin = nil
+        MontanaTrace.mark("group_link", "the group asked by its link opens")
+        MontanaOutsideOpen.chat(Self.key(of: id))
     }
     /// One who opened the group's link asks at the owner's phone: the mark must be the group's standing one; then the person is
     /// added by the owner's own road, and everyone reads that they joined by the link.
@@ -2581,6 +2607,7 @@ final class MTGroup {
             wearFullFace(w, store: store)
             // the service rows: added again, a new name, a new face -- each the owner's deed
             if back { lay(MTGroupEvent(e: "added", g: g.id, a: Self.ownerSeat, p: [seat]), store: store) }
+            if back { openIfAsked(g.id) }   // a group asked by its link and given back opens (OZ 2 p.5)
             let actor = w.s.flatMap { s in Self.isSeat(s) ? s : nil } ?? Self.ownerSeat   // a member's renewal, named by the owner (G.5)
             if renamed { lay(MTGroupEvent(e: "named", g: g.id, a: actor, t: title), store: store) }
             if newFace, hadFace, !back { lay(MTGroupEvent(e: "face", g: g.id, a: actor), store: store) }
@@ -2615,6 +2642,7 @@ final class MTGroup {
         lay(MTGroupEvent(e: "added", g: g.id, a: Self.ownerSeat, p: [seat]), store: store)   // «X added you»
         giveCards()   // this phone's own card, where the owner names seats (OZ 1 p.8)
         MontanaTrace.mark("group_rx", "invitation kind=\(kind.rawValue) people=\(count) from=\(String(pipe.prefix(10)))")
+        openIfAsked(g.id)   // the group a link asked for opens the moment it is born (OZ 2 p.5)
         return .held
     }
 

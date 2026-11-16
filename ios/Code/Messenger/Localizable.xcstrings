@@ -18310,22 +18310,6 @@
         }
       }
     },
-    "The device is connected.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Устройство подключено."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设备已连接。"
-          }
-        }
-      }
-    },
     "The device was not found. Show a new code on it and scan again.": {
       "localizations": {
         "ru": {

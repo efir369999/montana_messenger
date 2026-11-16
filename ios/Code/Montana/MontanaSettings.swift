@@ -1943,6 +1943,10 @@ struct DevicesView: View {
         .navigationTitle("Devices")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { devices = MTLinkedDevices.list }
+        // A DEVICE JOINED OR HEARD STANDS IN THE LIST AT ONCE (OZ 1 p.6, the author's word 23250): the list was read when the page
+        // opened, and a Mac joined from it stood out of it until the page was opened again. The book is read anew every two seconds
+        // while the page is shown -- never by the settings' own word, which waits for the main queue (P-212).
+        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in devices = MTLinkedDevices.list }
         .sheet(isPresented: $scanning) {
             QRScannerView { code in
                 guard MTDeviceLink.parse(code) != nil else { return }   // a code of another kind leaves the scanner open
@@ -1994,8 +1998,7 @@ struct DevicesView: View {
             }
         case .giving:
             HStack(spacing: 10) { ProgressView(); Text("Connecting…").foregroundColor(.gray) }
-        case .given:
-            Text("The device is connected.").foregroundColor(.green)
+        case .given: EmptyView()   // the device stands in the list below as soon as its first letter is heard (the author's word 23250)
         case .notFound:
             Text("The device was not found. Show a new code on it and scan again.").foregroundColor(.red)
         case .noPasscode:

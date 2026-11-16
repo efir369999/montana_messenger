@@ -1522,15 +1522,19 @@ struct MTCountBadge: View {
     }
 }
 
-/// THE MUTED SOUND'S BADGE (the author's word 21970, 14.11.2026): while the system refuses the notifications, a small crossed
-/// speaker stands over the time panel's logo, the size and the solid fill of the count badge, never in the place of a button.
+/// THE MUTED SOUND'S BADGE (the author's words 21970, 14.11.2026, and 23242, 16.11.2026: «right of the coin button, in Apple's
+/// style, larger, with a larger tap area»): while the system refuses the notifications, a crossed speaker in the platform's red
+/// circle stands right of the time panel's logo, never in the place of a button; the badge is 26 points, its tap area 44.
 struct MTMutedBadge: View {
     var body: some View {
         Image(systemName: "speaker.slash.fill")
-            .font(.system(size: 10, weight: .bold)).foregroundColor(.white)
-            .frame(width: 20, height: 20)
+            .font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
+            .frame(width: 26, height: 26)
             .background(Color.red, in: Circle())
+            .overlay(Circle().stroke(Color.white.opacity(0.9), lineWidth: 1.5))
             .drawingGroup()   // solid on the glass, as the count badge (glyphBadge)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
     }
 }
 

@@ -1562,8 +1562,9 @@ enum MontanaMeeting {
             case .opened(let ref):
                 MontanaTrace.mark("link_done", "opened conv=\(String(ref.prefix(10)))")
                 await MainActor.run {
-                    MontanaOutsideOpen.chat(ref)
-                    MTGroup.shared.askJoin(through: ref)   // a group's link: the join is asked of the owner just met (stage R.6)
+                    // a group's link: the join is asked of the owner just met (stage R.6), and the group itself opens -- at once when
+                    // this phone holds it, else the moment it is born here (OZ 2 p.5, the author's word 23167)
+                    MontanaOutsideOpen.chat(MTGroup.shared.askJoin(through: ref) ?? ref)
                 }
             case .spent:
                 MontanaTrace.mark("link_done", "spent")
