@@ -266,6 +266,18 @@ enum MontanaLog {
         MontanaKeychain.set("nseLog", d)
     }
 
+    /// THE DIARY LEAVES WITH THE PERSON (MTNothingLeft; the author's word: «erase everything clean»). Its files leave on its own
+    /// queue -- a line handed in before is written and goes with them, a line after begins the next diary -- the crash handler's
+    /// descriptor follows the new file, and the salt and the labels held in memory go, so no label of the life before is drawn again.
+    static func eraseDiary() {
+        tagLock.lock(); tagCache.removeAll(); tagLock.unlock()
+        saltCache = nil
+        q.async {
+            let d = dir
+            for n in (try? FileManager.default.contentsOfDirectory(atPath: d.path)) ?? [] { try? FileManager.default.removeItem(at: d.appendingPathComponent(n)) }
+            onTelemetryRotate?()
+        }
+    }
     /// Every line handed in so far is on disk when this returns: a process that leaves by its own word would
     /// otherwise take the queue's tail with it. MAIN-SAFE-SYNC: called once, by the install road's prepare, a moment
     /// before exit; the queue holds only file appends and never waits on the main thread -- the wait is the diary's tail.

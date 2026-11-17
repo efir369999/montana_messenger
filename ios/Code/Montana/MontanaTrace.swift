@@ -5,7 +5,7 @@ import Foundation
 /// event belongs to a concrete message ("-" otherwise)
 enum MontanaTrace {
     // Real process exec time (kinfo_proc) — captures dyld+runtime before our first Swift line.
-    private static let procStart: Date = {
+    static let procStart: Date = {   // the one owner of this process's start: the diary's rule reads it (MontanaDiagShip)
         var info = kinfo_proc()
         var size = MemoryLayout<kinfo_proc>.stride
         var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]

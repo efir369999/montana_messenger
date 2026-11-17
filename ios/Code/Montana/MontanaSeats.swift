@@ -15,8 +15,14 @@ import UIKit
         #endif
         now &+= 1
     }
+    /// A PERSON SEATED, OR NOBODY AFTER A DELETION, READS NOTHING OF THE ONE WHO LEFT (OZ 1 p.5; the author's word 24080: one owner
+    /// for both editions). P1 on Messenger 2435, 17.11.2026 17:02 UTC: the seconds of the life before stayed in memory, and a node's
+    /// answer wrote them back into the folder the erase had just emptied. The person's seconds leave memory here, in every edition.
     static func seated() {
         now &+= 1
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
+        MTPersonChain.shared.reread()   // the one owner of the person's seconds leaving memory
+        #endif
         #if !MONTANA_MESSENGER   // no coins in Messenger (cut C6)
         MTApps.coins?.moment(.seated)   // every owner of coins then reads the seated person's own
         #endif
@@ -716,6 +722,9 @@ final class MTSeats: ObservableObject {
         MontanaTrace.mark("seat_forgotten", "left=" + String(b.seats.count))
         DispatchQueue.main.async { shared.refresh() }
     }
+
+    /// The person's places drawn empty after the whole erase of a phone left with no person (MTNothingLeft).
+    static func drawPlaces() { drawEmptyPlaces(like: nil) }
 
     /// THE INSTALL BOUNDARY (E2ECore.swift, MontanaInstall): the keychain outlives the app, and a person who deleted it meant
     /// every person on it to be forgotten. The records and the book leave; the folders left with the app's container.

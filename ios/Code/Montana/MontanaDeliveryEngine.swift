@@ -216,6 +216,11 @@ final class MontanaDeliveryEngine {
                  transport: String?,
                  quoteText: String? = nil, quoteMid: String? = nil, linkPreview: String? = nil,
                  sentAt: Double? = nil, own: Bool = false, author: String? = nil, mirrored: Bool = false) {
+        // ONE OWNER OF «MINE» (OZ 1 p.4, the author's word 23989: «the second chat was renamed Demo too -- that is the identity's own
+        // name, not the correspondent's»): every road ends here, so the letter's author field is read here -- the live channel, a
+        // first letter, Bluetooth and the box alike. On 2431 the live channel told nothing and T1's words in two chats of the iPad
+        // landed as the correspondents', the envelope's name, the person's own, standing over theirs (source envelope below).
+        let own = own || (author.map { MTLetterAuthor.mine($0, conv: from, mid: mid, text: text) } ?? false)
         // A WORD OF THEIRS ENDS THE INTRODUCTION (26.09): every road lands here, so the proof is read here, before
         // the row lands and its receipt leaves -- a receipt to a peer still in the introduction waits for the pipe.
         // The queue turns at once from the knock at their point to the node and the wake.
@@ -289,9 +294,11 @@ final class MontanaDeliveryEngine {
         if !mirrored, !own, Self.mirrors(text) {
             MontanaArchive.mirrorNote(.init(c: from, m: mid, x: text, at: sentAt, qt: quoteText, qm: quoteMid, lp: linkPreview))
         }
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
         // THE FABRIC OF TIME: a live act of the correspondent may be answered by a testimony (MTFabric.heard); the device that took it
         // from the box answers, the mirror's copy does not.
         if !mirrored, !own, MTFabricRules.isLiveAct(text) { MTFabric.shared.heard(from) }
+        #endif
         let sid = "mid:\(mid)"
         // THE PERSON'S OWN LETTER FROM ANOTHER OF THEIR DEVICES (MTPipeKey.authorHolds, 11.10.2026, No.62): a word the same
         // words wrote is mine, whichever device wrote it and whatever road brought it -- never the correspondent's name, face,
@@ -370,7 +377,9 @@ final class MontanaDeliveryEngine {
             // The envelope's word is a WITNESS of the person's name at the moment the letter was sealed
             // (21.09): it enters the book with that moment, and a letter that slept in the box cannot
             // rename a person back past a fresher word.
-            if let sn = senderName, !sn.isEmpty, sn.count <= 64 { store.setPeerName(ref: from, name: sn, at: ChatStore.birthMs(fromMid: mid) ?? sentAt ?? 0, source: "envelope") }
+            // A letter with an author field is told mine or theirs only by the person's author key: while it is not derived yet the
+            // envelope names nobody -- a word of the seed's other device would rename the correspondent with the person's own name.
+            if let sn = senderName, !sn.isEmpty, sn.count <= 64, author == nil || MTLetterAuthor.key != nil { store.setPeerName(ref: from, name: sn, at: ChatStore.birthMs(fromMid: mid) ?? sentAt ?? 0, source: "envelope") }
             // The envelope's glyph is buried unread: the face is derived from the name ([C-1], 20.09).
         }
         // A missed-call marker letter is an ORDINARY feed row with call styling: the same
@@ -1051,8 +1060,10 @@ final class MontanaDeliveryEngine {
             // THE TWIN MIRROR: what the person sends rides to the seed's other devices under its name (MontanaArchive.mirrorNote); a
             // receipt and a read mark are this device's word to the correspondent, and an intent rides as its letter (promotePiece).
             // A silent word that is not a marked one stays here: on the other device the own road would stand it as a row.
+            #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
             // THE FABRIC OF TIME: a live act this phone leaves for a correspondent (MTFabric.spoke); an intent is a media letter's.
             if kind == .piece || MTFabricRules.isLiveAct(text) { Task { @MainActor in MTFabric.shared.spoke(to) } }
+            #endif
             if kind == .letter, Self.mirrors(text), !text.hasPrefix(deliveryReceiptMark), !text.hasPrefix(readReceiptMark),
                !silent || isControlMarker(text) {
                 MontanaArchive.mirrorNote(.init(c: to, m: mid, x: text, o: 1, at: Date().timeIntervalSince1970,

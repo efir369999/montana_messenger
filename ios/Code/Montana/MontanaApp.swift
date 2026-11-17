@@ -35,6 +35,7 @@ struct MontanaApp: App {
     init() {
         // Before any screen: an installation that has just appeared must not inherit a person.
         MontanaInstall.forgetLeftoverSeed { SeedScope.forget() }
+        MTNothingLeft.again("launch")   // a phone erased whole is swept again before any owner is born, until a seed comes
         MontanaHandoff.counted = MTDiskDoor.count   // the shared folders' bytes are named at the disk door in the app (01.11.2026)
         MTSeats.launch()   // a move between seats the last run did not finish is finished before any owner is born (the second identity checklist, 1.3)
         MontanaBirth.forgetUnfinished { SeedScope.forget() }   // a making left before its profile is no person (link 14680)
@@ -361,9 +362,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         #if !MONTANA_MESSENGER
         MTApps.vpn?.moment(.shown)   // the quiet beats of the VPN page live while the app stands on the screen (29.09)
         #endif
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
         // The level the words say is read before the first of them (MTLevelShow, 11.10): otherwise the seconds are read at the
         // first node's answer, and the greeting would carry no level and take it from every pair. The observer runs on the main queue.
         if MTLevelShow.on { MainActor.assumeIsolated { MTPersonChain.shared.prime() } }
+        #endif
         E2E.shared.appPresence(open: true)       // «I am here» to every correspondence — once per state
         guard away else { return }               // SILENT-OK: the shade, a sheet, Face ID — the person never left
         away = false
@@ -392,6 +395,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         away = true                           // the next activation is a return
         E2E.shared.appPresence(open: false)   // the farewell
         MontanaDiagShip.shipNow()   // leaving the person — say it now, another occasion may not come
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
         // THE MINTING GOES ON WHILE THE APP IS AWAY, AT THE GLOBAL LEVEL OF THIS MOMENT (the author's word 10.10.2026 12:0x UTC;
         // MTPersonChain.left, as the Wallet has it): every node's answer of every road feeds the chain's last second
         // (MontanaWakePush.learnSkew), so the leave names the second the app was last on the network, not a coin answer minutes
@@ -400,6 +404,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             let person = MTPersonChain.shared
             person.left()
         }
+        #endif
     }
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {

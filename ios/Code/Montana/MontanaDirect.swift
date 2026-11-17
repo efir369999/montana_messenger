@@ -1446,7 +1446,7 @@ final class MontanaDirect {
             let au = MontanaPhoneNode.author(of: sealed, conv: from)
             DispatchQueue.main.async {
                 var ui: [String: Any] = ["from": from, "mid": mid, "text": text, "transport": tr]
-                if let au { ui["author"] = au }
+                if let au { ui["author"] = au }   // mine or theirs is told by its one owner (MontanaDeliveryEngine.receive)
                 if let n = snm { ui["senderName"] = n }
                 if let g = sgl { ui["senderGlyph"] = g }
                     if let q = qt, !q.isEmpty { ui["quoteText"] = q }

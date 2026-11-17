@@ -157,6 +157,15 @@ class ChatStore: ObservableObject {
         guard !rowsByChat.isEmpty else { return }
         for (chat, ids) in rowsByChat { dropRows(chat) { r in ids.contains(r.id) } }
         for (chat, sids) in namesByChat { bury(sids, in: chat) }
+        // THE DELETION IS AN EVENT OF THE CHAT'S CHAIN (OZ 1 p.1.2): the archive names each row gone, so no reading of the log on any
+        // device of the seed lays it again; a deletion a twin told is already an event of the twin's own chain.
+        if tell {
+            for (chat, ids) in rowsByChat where archivable(chat) {
+                let keys = letters.filter { l in l.chat == chat && ids.contains(l.msg.id) }.compactMap { l in Self.archiveKey(l.msg) }
+                MontanaArchive.goneHead(convRef: chat, legacy: legacyFolderNames(chat), keys: keys)
+                takeChainGone([(chat, Set(keys))])
+            }
+        }
         // A ROW OF SAVED MESSAGES DELETED HERE GOES ON THE SEED'S OTHER DEVICES TOO (OZ 1 p.9, the author's word 23611): its name
         // rides at once; there it is buried, and its row goes by this same road, told nobody again.
         if tell {
@@ -1760,7 +1769,7 @@ class ChatStore: ObservableObject {
                 Task { @MainActor in self.twinSilent = sid }
                 return
             }
-            MontanaArchive.askTwin(chat: hit.0, items: [(Int(hit.1.createdAt), hit.1.isFromMe, MontanaArchive.rowHash(Self.archivedText(hit.1) ?? ""))])
+            MontanaArchive.askTwin(chat: hit.0, items: [MontanaArchive.rowParts(hit.1.createdAt, hit.1.isFromMe, Self.archivedText(hit.1) ?? "")])
             MontanaTrace.mark("kept_file", mid: sid, "a Saved Messages row asks the seed's other device for its file")
             // The twin answers within seconds when it is awake; a file still missing after the wait is the twin's silence, and the
             // person is told where the file is kept (the plaque), not left with a tap that did nothing.
@@ -2196,6 +2205,17 @@ class ChatStore: ObservableObject {
     // a bucket every conversation asks (anyConversation), never grown.
     private var graves: [String: [String]] = [:]          // conversation -> names, in the order this phone buried them
     private var graveSets: [String: Set<String>] = [:]
+    /// THE ONE QUESTION «IS THIS ROW DELETED» (OZ 1 p.2, the author's word 24317): a deletion is named by the row's wire name in the
+    /// graves (a letter the box gives again) and by its archive key in the chat's chain (MontanaArchive.goneHead, the event every
+    /// device of the seed reads). Every road that lays a row asks this one door, never the graves alone: a device restored by the
+    /// seed holds the chain's keys before any grave, and the twin's rows and the letters given back laid deleted rows again.
+    private var chainGone: [String: Set<String>] = [:]   // the chain's gone keys as read here, by conversation
+    func takeChainGone(_ heads: [(String, Set<String>)]) { for (chat, keys) in heads { chainGone[Self.graveKey(chat), default: []].formUnion(keys) } }
+    func rowGone(_ m: Message, in chat: String) -> Bool {
+        if buried(m.mid, in: chat) || buried(MTRestoredMid.wire(m.mid), in: chat) { return true }
+        guard let k = Self.archiveKey(m) else { return false }
+        return chainGone[Self.graveKey(chat)]?.contains(k) == true
+    }
     private static let tombstonesKept = 4000
     private static let gravesKey = "graves"   // NOT-UI: sealed [[conversation, names…]], each conversation's names oldest first
     private static let legacyGravesKey = "deletedMids"   // NOT-UI: the global list of the builds before, read once
@@ -3617,8 +3637,8 @@ class ChatStore: ObservableObject {
               let items = o["i"] as? [[Any]], let rows = messages[chat], !rows.isEmpty else { return }
         var want = Set<String>()
         for i in items.prefix(200) {
-            guard i.count == 3, let sec = i[0] as? Int, let side = i[1] as? Int, let h = i[2] as? String else { continue }
-            want.insert(String(sec) + "|" + String(side) + "|" + h)
+            guard i.count == 3, let sec = i[0] as? Int, let side = i[1] as? Int, 0 <= side, side <= 1, let h = i[2] as? String else { continue }
+            want.insert(MontanaArchive.rowKey(sec: sec, mine: side == 1, hash: h))
         }
         var given = 0
         // EVERY ROW ASKED IS GIVEN BACK BY ITS NAME (the author's word 21972, 14.11.2026: «sent to Saved from T1, nothing on the
@@ -3636,7 +3656,7 @@ class ChatStore: ObservableObject {
     /// them -- what the twin's ask is answered by (giveTwinRows) and a chat's print is made of (OZ 1 p.8).
     static func archiveKey(_ m: Message) -> String? {
         guard 0 < m.createdAt, let t = archivedText(m) else { return nil }
-        return String(Int(m.createdAt)) + "|" + (m.isFromMe ? "1" : "0") + "|" + MontanaArchive.rowHash(t)
+        return MontanaArchive.rowKey(m.createdAt, m.isFromMe, t)
     }
     /// A chat's keys, each once, in order: what its print hashes and what the word ck names (OZ 1 p.8).
     static func archiveKeys(_ rows: [Message]) -> [String] { Array(Set(rows.compactMap { m in archiveKey(m) })).sorted() }
@@ -3644,6 +3664,7 @@ class ChatStore: ObservableObject {
     /// rows. Each row held here under a key it lacks is given back by its name (giveToTwin), each key it holds that this device
     /// lacks is asked (askTwin) -- the roads of the archive's gap; a row buried there is never laid over its tombstone.
     func healTwin(_ chat: String, theirs: Set<String>) {
+        guard chat != montanaRoomKey else { return }   // the Montana room is each device's own (OZ 1 p.1.4)
         var mine = Set<String>(), given = 0
         for m in messages[chat] ?? [] {
             guard let k = Self.archiveKey(m) else { continue }
@@ -3699,6 +3720,7 @@ class ChatStore: ObservableObject {
     /// key standing here, never over its tombstone; a file comes by the cargo road into the store under the name it bears on every
     /// device of the seed. The archive already holds the row: it is not written there twice.
     func takeTwinRow(_ chat: String, mid: String, own: Bool, at: Double, body: String) {
+        guard chat != montanaRoomKey else { return twinRowDropped(chat, mid, "the Montana room is each device's own") }
         guard let d = body.data(using: .utf8), let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any],
               0 < at, !mid.isEmpty, let rows = messages[chat] ?? savedBirth(chat), !buried(mid, in: chat) else {
             return twinRowDropped(chat, mid, "no chat here, a grave over its name, or a letter that names no row")
@@ -3730,6 +3752,7 @@ class ChatStore: ObservableObject {
         // THE WHOLE ROW (OZ 1 p.9): its quote, its card, its forward, its album, its answer and its edit, by the row's own coding.
         if let r = o["r"] as? [String: Any], let worn = Self.wearingTwinParts(row, r) { row = worn }
         guard let sig = Self.archiveSig(row) else { return twinRowDropped(chat, mid, "a row of no words and no file") }
+        guard !rowGone(row, in: chat) else { return twinRowDropped(chat, mid, "the chat's chain names the row gone") }
         // A ROW STANDING WITHOUT ITS FILE TAKES THE FILE ALONE (OZ 1 p.1.4.2): a restored Saved Messages row stands from the archive
         // by the same key (second, side, words and file name) and holds no file; the twin's copy fills it and lays no second row.
         let standing = named ?? rows.first(where: { m in Self.archiveSig(m) == sig })
@@ -3752,7 +3775,7 @@ class ChatStore: ObservableObject {
             return
         }
         let lays = standing == nil
-        let fileName = name, s = Int(at), h = MontanaArchive.rowHash(Self.archivedText(row) ?? "")
+        let fileName = name, parts = MontanaArchive.rowParts(at, own, Self.archivedText(row) ?? ""), s = parts.s, h = parts.h
         Task.detached(priority: .utility) {
             guard let dir = try? MontanaBackup.shelf() else { return }
             let tmp = dir.appendingPathComponent(UUID().uuidString + ".twin")
@@ -3769,7 +3792,7 @@ class ChatStore: ObservableObject {
                 return MontanaTrace.mark("twin_row", "a file did not come whole -- the twin is asked again")
             }
             await MainActor.run { [weak self] in
-                guard let self, let now = self.messages[chat] ?? self.savedBirth(chat), !self.buried(mid, in: chat) else { return }
+                guard let self, let now = self.messages[chat] ?? self.savedBirth(chat), !self.rowGone(row, in: chat) else { return }
                 // a standing row only wears its file now -- one laid by its first letter while the file came, too
                 if lays && !now.contains(where: { m in m.mid == mid }) { self.layTwinRow(chat, row) } else { self.bump(chat) }
                 // THE FILE STANDS THROUGH THE ONE «FILE IS READY» POINT (OZ 1 p.1.3, the author's word 23540): whichever road filled
@@ -3885,7 +3908,7 @@ class ChatStore: ObservableObject {
             guard let f = m.attachment else { return id + ":" + (m.text.hasPrefix(mediaMark) ? "media" : "text") }
             return id + ":" + f.kind + (MontanaMediaStore.exists(f.file) ? "" : "!")
         }.joined(separator: ",")
-        let keys = a.compactMap { m in Self.archivedText(m).map { t in String(Int(m.createdAt)) + (m.isFromMe ? "1" : "0") + MontanaArchive.rowHash(t) } }
+        let keys = a.compactMap { m in Self.archiveKey(m) }
         let fp = MontanaArchive.rowHash(keys.sorted().joined(separator: ","))
         MontanaTrace.mark("chat_rows", "key=\(String(key.prefix(10))) n=\(a.count) keys=\(keys.count) print=\(fp) tail=[\(tail)]")
     }
@@ -4041,8 +4064,11 @@ class ChatStore: ObservableObject {
             // asked rows stand as at the last whole reading would find the same gaps and build nothing, so it reads no log. Any
             // change (a block written, a chat born or emptied, a pipe, a row unasked) changes the face, and the archive is read.
             let asked = MontanaArchive.askedKeys.count
+            // THE PAST SEALED ONCE ON THE SOURCE (OZ 1 p.1.2): on a device whose history no copy laid, a row its archive holds and its
+            // feed does not is a row deleted before deletions were events -- named gone once, so the chain and the feed are one.
+            let sealing = !UserDefaults.standard.bool(forKey: MontanaBackup.copyLaidKey) && !UserDefaults.standard.bool(forKey: ChatStore.pastSealedKey)
             let face = folders == nil ? MontanaArchive.face(["feed=" + occupied.sorted().joined(separator: ","),
-                                                             "pipes=" + String(MTPipeBook.count), "asked=" + String(asked), "held=" + String(held.count)]) : nil
+                                                             "pipes=" + String(MTPipeBook.count), "asked=" + String(asked), "held=" + String(held.count), "chain=g2"]) : nil
             if let face, face == UserDefaults.standard.string(forKey: ChatStore.archiveFaceKey) {
                 MontanaTrace.mark("archive_same", "chats=" + String(occupied.count))
                 DispatchQueue.main.async { self?.afterPipes(grew: false) }
@@ -4059,6 +4085,7 @@ class ChatStore: ObservableObject {
             if !named.isEmpty { DispatchQueue.main.async { self?.retireTranscripts(named) } }
             guard !found.isEmpty else { return }
             var gapChats = 0, gapRows = 0
+            var seal: [(String, [String])] = []
             for rc in found {
                 guard let key = rc.ref, let have = feedSigs[key], !have.isEmpty else { continue }
                 var seen = Set<String>(); var missing: [MontanaArchive.RestoredItem] = []
@@ -4069,13 +4096,24 @@ class ChatStore: ObservableObject {
                 }
                 guard !missing.isEmpty else { continue }
                 gapChats += 1; gapRows += missing.count
+                if sealing { seal.append((key, missing.map { it in MontanaArchive.rowKey(it.sentAt, it.mine, it.text) })) }
                 // The seed's other device is asked for these rows by their names (MontanaArchive.askTwin): it gives back what it holds.
-                MontanaArchive.askTwin(chat: key, items: missing.map { it in (Int(it.sentAt), it.mine, MontanaArchive.rowHash(it.text)) })
+                MontanaArchive.askTwin(chat: key, items: missing.map { it in MontanaArchive.rowParts(it.sentAt, it.mine, it.text) })
                 let newest = missing.map { $0.sentAt }.max() ?? 0
                 let media = missing.filter { $0.text.hasPrefix(mediaMark) }.count
                 MontanaTrace.mark("archive_gap", "chat=\(String(key.prefix(10))) feed=\(have.count) archive=\(rc.items.count) missing=\(missing.count) media=\(media) theirs=\(missing.filter { !$0.mine }.count) newest=\(hhmm(at: newest))")
             }
             if gapRows > 0 { MontanaTrace.mark("archive_gap", "total chats=\(gapChats) rows=\(gapRows)") }
+            // THE CHAIN'S DELETIONS FOLD INTO THE FEED (OZ 1 p.1.2): a row the chain names gone leaves a feed that still holds it.
+            let folds: [(String, Set<String>)] = found.compactMap { rc in
+                guard let key = rc.ref, occupied.contains(key), !rc.gone.isEmpty else { return nil }
+                return (key, rc.gone)
+            }
+            if !folds.isEmpty { DispatchQueue.main.async { self?.foldGone(folds) } }
+            // THE CHAIN'S KEYS ARE HELD FOR EVERY ROAD THAT LAYS A ROW (OZ 1 p.2): a chat the feed does not hold yet is named too.
+            let heads: [(String, Set<String>)] = found.compactMap { rc in rc.ref.flatMap { key in rc.gone.isEmpty ? nil : (key, rc.gone) } }
+            if !heads.isEmpty { DispatchQueue.main.async { self?.takeChainGone(heads) } }
+            if sealing { DispatchQueue.main.async { self?.sealPast(seal) } }
             // Rows go only into chats the feed does not hold, with rows or without: a held chat is
             // the truth (its edits, its deletions for everyone) and the archive must not
             // resurrect what the person removed. A twin's later blocks join a chat this way only
@@ -4117,6 +4155,32 @@ class ChatStore: ObservableObject {
                 self.applyRestored(built)
             }
         }
+    }
+
+    nonisolated static let pastSealedKey = "mt.history.past.sealed"   // NOT-UI: the past was sealed into the chain once (SeedScope names it)
+    /// The rows the chain names gone leave the feed by the one road of a deletion, told nobody: the event is already in the chain.
+    @MainActor
+    func foldGone(_ folds: [(String, Set<String>)]) {
+        var gone: [(chat: String, msg: Message)] = []
+        for (chat, keys) in folds {
+            for m in messages[chat] ?? [] { if let k = Self.archiveKey(m), keys.contains(k) { gone.append((chat, m)) } }
+        }
+        guard !gone.isEmpty else { return }
+        deleteLocally(gone, tell: false)
+        MontanaTrace.mark("archive_gone", "feed rows=\(gone.count)")
+    }
+    /// The source's past deletions named gone in their chains, once.
+    @MainActor
+    func sealPast(_ seal: [(String, [String])]) {
+        guard writes else { return }
+        UserDefaults.standard.set(true, forKey: Self.pastSealedKey)
+        var n = 0
+        for (chat, keys) in seal where archivable(chat) {
+            MontanaArchive.goneHead(convRef: chat, legacy: legacyFolderNames(chat), keys: keys)
+            takeChainGone([(chat, Set(keys))])
+            n += keys.count
+        }
+        MontanaTrace.mark("archive_gone", "past sealed rows=\(n) chats=\(seal.count)")
     }
 
     /// A TRANSCRIPT WHOSE FOLDER NAMES ITS CONVERSATION GOES (11.11.2026, OZ 1 p.10, the author's words 19418, 19434): the
@@ -4225,6 +4289,15 @@ class ChatStore: ObservableObject {
             lastDrainedAudit = now
         }
         MontanaMainProbe.crumb = "list-audit"; defer { MontanaMainProbe.crumb = "" }
+        // A DELETED CHAT HOLDS NO FEED (OZ 1 p.1, the author's words 24228, 24302: «everything else -- clean it up, at the root»):
+        // T1 2442 held the feed of grp:80, a group the person had put away (MontanaGroup.stand keeps a put-away group's state),
+        // with no row to open it by; its folder stood, and the seed's other devices were told it (MontanaPQ.chatPrints). A deleted
+        // chat's leftover goes by the one road a deletion takes, at every audit, before the books are counted.
+        let graveFeed = messages.keys.filter { deletedChats.contains($0) && !Self.isLocalRoom($0) && !(messages[$0] ?? []).isEmpty }
+        if !graveFeed.isEmpty {
+            for k in graveFeed { removeConversationLocally(k) }
+            MontanaTrace.mark("grave_feed", "erased=\(graveFeed.count) keys=" + graveFeed.map { String($0.prefix(10)) }.sorted().joined(separator: ","))
+        }
         // THE LIST IS BOTH ITS SHELVES (23.09): the rows standing and the rows in the archive — the store's own two
         // decodes; an archived conversation is no feed without a row. A SHELF THAT DOES NOT READ SAYS SO (err) and is
         // not counted as an empty one (the critic 24.09).
@@ -4252,8 +4325,18 @@ class ChatStore: ObservableObject {
         let labelKeyed = rowKeys.filter { MontanaArchive.isLabel($0) && !MontanaConv.holds($0) && !closedChats.contains($0) }.count
         let folders = Set(MontanaArchive.conversations())
         // COMPAT-LOCAL: the archive row key never rides the wire — it names a restored folder on this device.
-        let answered = Set(shownKeys.compactMap { k -> String? in Self.isTranscript(k) ? String(k.dropFirst(4)) : ((MontanaConv.holds(k) || closedChats.contains(k)) ? MontanaArchive.labelIfWarm(for: k) : nil) })
+        let answered = Set(shownKeys.compactMap { k -> String? in Self.isTranscript(k) ? String(k.dropFirst(4)) : ((MontanaConv.holds(k) || closedChats.contains(k) || MTGroup.isKey(k) || Self.isLocalRoom(k)) ? MontanaArchive.labelIfWarm(for: k) : nil) })
+        // A ROOM'S FOLDER IS ANSWERED BY ITS ROW (OZ 1 p.1, the author's word 24302): T1 2443 counted the folder of its own
+        // room as an orphan -- the erasure spared it, but the count named a live chat a leftover.
         let orphans = folders.subtracting(answered)
+        // THE ORPHANS GO AT ONCE (OZ 1 p.1.1, the author's word 24228; MontanaArchive.eraseOrphanFolders): a folder that no key
+        // the store names at all -- row, archived row, feed, record, group, closed chat -- answers for is erased. Only with the
+        // keys warm and both shelves read: a cold label or an unread shelf would name a live chat an orphan.
+        if !orphans.isEmpty, rowsRead != nil, archivedRead != nil, MontanaArchive.labelIfWarm(for: savedMessagesKey) != nil {
+            let keysNamed = rowKeys.union(shownKeys).union(feedKeys).union(listState.keys).union(groupKeys).union(closedChats)
+            let named = Set(keysNamed.compactMap { k -> String? in Self.isTranscript(k) ? String(k.dropFirst(4)) : MontanaArchive.labelIfWarm(for: k) })
+            MontanaArchive.eraseOrphanFolders(orphans.subtracting(named))
+        }
         // THE RECORD AND THE FEED AGREE ON THE LAST LETTER (16.09): a list row wearing the words of a
         // letter the feed does not hold is the very shape of a lost letter, and the counts of chats
         // above never saw it (T1 after 18:26Z: feed_no_row=0 with a phantom standing in the list).
@@ -4272,6 +4355,14 @@ class ChatStore: ObservableObject {
             }
         }
         let line = "stage=\(stage) rows=\(rowsRead == nil ? "err" : String(rows.count)) archived=\(archivedRead == nil ? "err" : String(archivedRows.count)) feed=\(feedKeys.count) folders=\(folders.count) held=\(held.count) dup_rows=\(dupRows) feed_no_row=\(feedWithoutRow.count) derived=\(derived) row_no_feed=\(rowWithoutFeed.count) label_keyed=\(labelKeyed) transcripts=\(shownKeys.filter { Self.isTranscript($0) }.count) orphan_folders=\(orphans.count) record_ahead=\(recordAhead) ahead=\(ahead.joined(separator: ",")) orphans=\(orphans.sorted().map { String($0.prefix(6)) }.joined(separator: ","))"
+        // THE ROWS BY THEIR KIND (OZ 1 p.1.1, the author's word 24228): T1 2439 stood 7 rows with letters where the author sees two
+        // chats; the diary names each kind so a row of no chat is seen, not guessed.
+        if stage != "drained" {
+            let g = shownKeys.filter { MTGroup.isKey($0) }.count, r = shownKeys.filter { Self.isLocalRoom($0) }.count
+            let t = shownKeys.filter { Self.isTranscript($0) }.count, c = shownKeys.filter { closedChats.contains($0) }.count
+            let p = shownKeys.filter { MontanaConv.holds($0) && !MTGroup.isKey($0) }.count
+            MontanaTrace.mark("list_kinds", "stage=\(stage) shown=\(shownKeys.count) group=\(g) room=\(r) transcript=\(t) closed=\(c) pipe=\(p) feed=" + feedKeys.map { String($0.prefix(6)) }.sorted().joined(separator: ","))
+        }
         var kinds = Set<String>()
         if dupRows > 0 { kinds.insert("dup") }
         if labelKeyed > 0 { kinds.insert("label") }
@@ -5223,7 +5314,9 @@ MontanaLocalVault.setEncrypted("scheduledMsgs", d)
         // THE FABRIC OF TIME'S WORD (the author's word 17.10.2026 19:50 UTC, MTFabric): a testimony of a call the peer signed at its
         // close, and the peer's ceiling and estimate. Checked whole before it counts (MTFabric.received); never a row, never receipted.
         if m.text.hasPrefix(fabricMark) {
+            #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
             if !m.isFromMe { MTFabric.shared.received(String(m.text.dropFirst(fabricMark.count)), from: chat, at: wordAt) }
+            #endif
             return false
         }
         // THE PEER'S BIO AND LINK AS STATE (24.09) — the same road as the name: applied if it is the latest word, and
@@ -7622,8 +7715,7 @@ enum SeedScope {
         "voiceRate", "voiceOrb.look", "vnoteCorner", "miniTimeRemaining", "reactionUse",
         "cardKind", "timePanelOpen", MontanaOctagon.barBottomKey,
         "mt.net.tab2", "exitReachability",   // the VPN's own settings come through its door (MTApps.vpn.settingKeys, slice S3b b3)
-        "mt.backup.icloud", "mt.backup.icloud.replace", "mt.backup.plan",
-        MTLevelShow.shownKey]   // retired switch, retained for old copies; reputation is always shown (14.10)
+        "mt.backup.icloud", "mt.backup.icloud.replace", "mt.backup.plan"]
         + doorSettingKeys
     /// The settings of the applications behind a door, each list named by its door (mt-copy-scope-check reads them there); one
     /// expression of its own, so the compiler types the long list above and this one apart (link 15426).
@@ -7644,6 +7736,9 @@ enum SeedScope {
         // the person's own node, its daily copies and the digest of its certificate (28.09), and the term and ceiling of the
         // cache it backs (18.10.2026)
         lists.append([MontanaHomeNode.hostKey, MontanaHomeNode.switchKey, MontanaHomeNode.pinKey, MTHomeKeep.keepDaysKey, MTHomeKeep.limitKey])
+        #endif
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
+        lists.append([MTLevelShow.shownKey])   // the levels' retired switch, retained for old copies; reputation is always shown (14.10)
         #endif
         return lists.compactMap { $0 }.flatMap { $0 }
     }()
@@ -7669,6 +7764,7 @@ enum SeedScope {
     /// · the dead calls' seeds, the tunnel's clock and the place its diary was carried to, the roads the tunnel judged
     ///   dead (a verdict of this network and this hour, not of the server), and the copy's own clock.
     static let deviceKeys: [String] = ["mt.keep.held",   // the parts this phone keeps for others (MTKeeping): never in this person's copy
+                             MontanaSeed.erasedKey,   // the whole erase still owed on this phone (MTNothingLeft): this device's own, never a copy's
                              "mt.birth.unfinished",   // the print of a making on this phone before its profile (MontanaBirth, link 14680): never a copy's
                              "mt.search.face",   // the platform's search bar measured on this phone, under its system and language (MTSearchFace): never a copy's
                              MTKeeping.askedBackKey,   // the correspondences this phone asked to give back (MTKeeping): this device's own
@@ -7716,7 +7812,6 @@ enum SeedScope {
     /// was announced to whom, the name of the record a build before kept for this person in the Apple Account (withdrawn with
     /// the identity), the copies' clocks (a copy is named by its owner's proof, one per person).
     static let seatKeys = [
-        MTLevelAccess.lastKey,   // the last Global Level this phone knew of this person (16.10.2026): this person's, read anew by a copy
         "peerFaceOwned",   // the digests of the faces the correspondents themselves sent (ChatStore.faceOwned, 04.10): this person's
         "faceHealCards",   // the card link last read for each correspondent's face (ChatStore.healFacesFromCards, 18.10): this person's
         MontanaArchive.forgottenKey,   // the erased conversations' folders whose marks are gone (MontanaArchive.deleteChatFolder, 18.10)
@@ -7736,6 +7831,7 @@ enum SeedScope {
         "mt.twin.asked",   // the rows this device asked of the seed's other devices (the twin's past, 18.10)
         MontanaArchive.twinDevicesKey,   // the seed's other devices heard, and whether their extension takes a read word quietly (OZ 1 p.14.7)
         "mt.archive.face",   // the face of this person's archive at its last whole reading (link 14244)
+        MontanaBackup.copyLaidKey, ChatStore.pastSealedKey,   // a copy laid this device's history; the past sealed into the chain (OZ 1 p.1.2)
         "mt.endpoint.book", "rdvPermUpOk", "rdvUpOk", "rdvPermUpAt", "rdvUpAt", "pendingInvite",
         MontanaDeliveryEngine.pendingKey, "orphanDelivered", "handoffTaken",
         "longLetterRefs", "nodeChunkLedger", "nodeChunkOrphanSince", "wakeUnsentDrops",
@@ -7753,6 +7849,7 @@ enum SeedScope {
         keys += MTApps.coins?.seatKeys ?? []   // the balances and levels the pairs told this person (guard 4)
         keys += MTApps.wall?.seatKeys ?? []   // the walls' pages held here and the moments first seen (slice S4c2)
         keys += MTApps.vpn?.seatKeys ?? []   // the VPN wall's retired asking, the Protocol's alone (decision 651 = a)
+        keys += [MTLevelAccess.lastKey]   // the last Global Level this phone knew of this person (16.10.2026): this person's; the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
         #endif
         return keys
     }()
@@ -7773,15 +7870,14 @@ enum SeedScope {
     /// the person's TimeChain and the folders of the Protocol's own applications (doorSeatFolders). The copy's guard
     /// (tools/mt-copy-scope-check.py) holds every carried folder here and every staying one of the person (SEAT_STAYS).
     static let seatFolders = ["AS:Avatars", "AS:Wallpapers", "AS:Montana/Media", "AS:Montana/Pictures", "DOC:stories",
-        "DOC:Montana/Chats", "AS:MontanaHistory", "AS:MontanaJournal", "GROUP:delivery", "GROUP:inbox",
-        "DOC:Montana/TimeChain"]
+        "DOC:Montana/Chats", "AS:MontanaHistory", "AS:MontanaJournal", "GROUP:delivery", "GROUP:inbox"]
         + doorSeatFolders
     #if MONTANA_MESSENGER
     private static let doorSeatFolders: [String] = []
     #else
     /// The files of the posts being written (cut C6d): the wall's load lets go of every file no draft of the person seated
-    /// names, so a parked person's drafts would lose theirs.
-    private static let doorSeatFolders = ["AS:Montana/WallDrafts"]
+    /// names, so a parked person's drafts would lose theirs; and the person's TimeChain, the Protocol's alone (OZ 1, the author's word 24154).
+    private static let doorSeatFolders = ["AS:Montana/WallDrafts", "DOC:Montana/TimeChain"]
         + (MTApps.coins?.seatFolders ?? [])   // the person's coin book, named by the coins' door (guard 4)
     #endif
     // Per-chat keys of the era before the sealed maps (SC-05): collapsed once, forgotten with the person.
@@ -7949,6 +8045,15 @@ enum SeedScope {
         if 0 < c { MontanaTrace.mark("retired_keychain", "forgot=\(c)") }
         let n = MTRetired.forgetValues()
         if n > 0 { MontanaTrace.mark("retired_values", "forgot=\(n)") }
+        #if MONTANA_MESSENGER   // AN OLDER BUILD'S FOLDER LEAVES THE PHONE (OZ 1, the author's word 24154): Messenger keeps no
+        // TimeChain, and the folder an older Messenger kept under Documents goes whole, known by its print, never by a name.
+        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let root = URL(fileURLWithPath: MontanaPaths.root, isDirectory: true, relativeTo: docs)
+            let old = ((try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []).filter(MTRetired.folder)
+            let gone = old.filter { n in (try? FileManager.default.removeItem(at: URL(fileURLWithPath: n, isDirectory: true, relativeTo: root))) != nil }.count
+            if 0 < gone { MontanaTrace.mark("retired_folders", "forgot=\(gone)") }
+        }
+        #endif
     }
     static func forget() {
         // THE NODE FORGETS THIS PHONE'S ROWS WITH THE PERSON (11.10.2026, No.61): the device key goes below, and with it the only

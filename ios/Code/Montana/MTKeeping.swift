@@ -2,6 +2,7 @@ import Foundation
 import CryptoKit
 import SwiftUI
 import UIKit
+import UserNotifications
 import MontanaBindings
 
 // THE COPY KEPT BY THE PEOPLE ONE WRITES TO (the author's words 08.10.2026, 16:2x-17:3x UTC: «restore by the words fully, byte
@@ -395,6 +396,8 @@ enum MTKeepDerive {
     var onboardingWaits = false
     private var renewing = false
     private var lighting = false
+    /// «Delete account» is under way (releaseAllForDeletion): a light copy finished now is taken off, never named (nameLight).
+    fileprivate var leaving = false
     private var lightJoining = false   // a phone gave its words while a light copy was on its way: that copy holds for the joining
     /// The first screen lets the person in the moment the light copy is laid (App: «once the light copy is laid»).
     var onLight: (() -> Void)? = nil
@@ -512,6 +515,7 @@ enum MTKeepDerive {
     /// drops my part (heard, drop); the words are waited for while they are still in the queue, `within` seconds at most, because
     /// the queue leaves with the seed. A keeper who is away keeps a sealed part nothing but these 24 words can open -- the alert says so.
     func releaseAllForDeletion(within: Double) async {
+        leaving = true; await sayGone()
         let mids = Set(owner.keepers.keys.compactMap { say($0, ["w": "release"]) })
         let gone = (owner.laid ?? []) + (owner.lightLaid ?? [])
         owner = Owner(generation: owner.generation); saveOwner()
@@ -525,6 +529,17 @@ enum MTKeepDerive {
         }
         let left = await MontanaDeliveryEngine.shared.stillQueued(mids)
         MontanaTrace.mark("keep_release_all", left ? "some words still wait: their keepers are away" : "every keeper was told")
+    }
+    /// THE DEVICE THAT LEAVES SAYS SO IN THE PIPE OF LIGHT (OZ 1 p.6; the author's words 24013, 24016, 24017). P1 on Messenger 2433,
+    /// 17.11.2026 16:18 UTC: the words opened after «Delete account» laid the copy that very device had named 12 seconds before it
+    /// left -- the unlay dropped its 12 pieces, yet one store still gave them whole -- and the old names, the chats of the life
+    /// before and the group's old face came back over the phone's. The word «gone» names this writer and its moment: a device
+    /// opening the words takes no copy this writer named before it (takeLight), whatever store still holds the pieces.
+    private func sayGone() async {
+        guard let master = MontanaSeed.root, let secret = MTKeepDerive.lightSecret(master) else { return }
+        let told = await Self.knock(secret, ["w": "gone", "v": MontanaArchive.writerTagHex(), "a": Bundle.main.bundleIdentifier ?? "",
+                                             "at": Int(Date().timeIntervalSince1970)], sender: Self.lightName)
+        MontanaTrace.mark("keep_light", "gone told=" + (told ? "1" : "0"))
     }
     /// THE OWNER'S RHYTHM: a renewal is due a day after the last; it asks the people I write to, waits ten minutes for one yes
     /// at least (a full ring goes at once), and an hour without one leaves the copy where it stands until tomorrow.
@@ -762,6 +777,13 @@ enum MTKeepDerive {
         if !lc.isEmpty { road["lc"] = lc }   // the mirror's cursors the copy stands on: the joined device goes on from them (OZ 1 p.6)
         // The sender of the pipe of light is named «light», never this person's own reference: a phone opening the same words reads
         // the box under that reference, and a letter of its own name the node would keep from it.
+        // A COPY NAMED WHILE THE PERSON LEAVES IS NEVER THE HISTORY (OZ 1 p.6): «Delete account» began, or the words changed, while
+        // its pieces were on their way -- they leave the nodes again and nothing names them.
+        guard !leaving, MontanaSeed.root == master else {
+            let back = Self.roadsOf([road])
+            Task.detached(priority: .utility) { await Self.unlay(back) }
+            return MontanaTrace.mark("keep_light", "the person left while the copy was laid -- taken off")
+        }
         guard await Self.knock(secret, road, sender: Self.lightName) else { return MontanaTrace.mark("keep_light", "no door boxed the road") }
         owner.lightGen = g; owner.lightAt = Date().timeIntervalSince1970; owner.lightFace = tags.face; owner.lightName = tags.name; owner.lightPeople = people; owner.lightEngine = MontanaBackup.cardEngine
         // THE LAST TWO LIGHT COPIES STAY: a device in the middle of taking the one before still finds it whole.
@@ -788,36 +810,48 @@ enum MTKeepDerive {
     /// is on T1 -- it must sync as the sign-in by QR does»). The demo identity's iPad laid another device's copy and then its own
     /// copy of an earlier life with the same words on top of it (keep_light own=true): 23 rows of that life came back into three
     /// chats, and the group's face with them. A device that opened its words now asks the seed's other devices for a picture of
-    /// now (askTwinsLight, the word lw); `since` is that asking: only another device's copy named after it is taken, and it alone
-    /// is the history. When none comes, the newest copy by its moment is the history, alone. No older picture is laid over the
-    /// owner's -- it would bring back what the person deleted since. The owner's cursors are this device's own (cursorsFromCopy),
+    /// now (askTwinsLight, the word lw) and awaits nothing (the author's words 23957, 23959: «nothing is awaited, it all happens at
+    /// once»; «restore the current at once»): the newest copy ANOTHER device named is the history, alone, taken at once -- this
+    /// device's own copy of an earlier life stands only where no other device named one (2431: the iPad laid its own copy of the
+    /// life before, Alice's chat old, five chats missing). The owner's cursors are this device's own (cursorsFromCopy),
     /// so every letter after the picture comes from the books, as on a joined device.
     private func takeLight(_ secret: Data, dir: URL, phone: (tag: String, at: Double)?, since: Double? = nil) async -> Bool {
         var rows: [[String: String]] = []
         let ear = MontanaWakePush.BoxEar(invites: [], pipes: [Self.lightName: MTPipeKey(secret)], owner: MontanaSeed.twin ?? "")
         _ = await MontanaWakePush.pickup(ear, buries: nil, keep: { row in rows.append(row); return false })
         var newest: [String: [String: Any]] = [:]
-        for o in rows.compactMap({ Self.word($0["t"] ?? "") }) where (o["w"] as? String) == "light" {
+        let words = rows.compactMap { Self.word($0["t"] ?? "") }
+        // THE WRITERS THAT LEFT (sayGone): the moment each said «gone»; no copy it named before is the history.
+        var gone: [String: Int] = [:]
+        for o in words where (o["w"] as? String) == "gone" {
+            let v = (o["v"] as? String ?? "") + "/" + (o["a"] as? String ?? "")
+            gone[v] = max(gone[v] ?? 0, o["at"] as? Int ?? 0)
+        }
+        var left = 0
+        for o in words where (o["w"] as? String) == "light" {
             // THE NEWEST ROAD OF EVERY WRITER, A DEVICE AND THE APP ON IT (09.10.2026): two apps of one phone and the same words
             // count their generations each from one, and one standing for both laid a copy without the other's profile (T1:
             // the name, the face and the page's ground stayed behind).
             let v = (o["v"] as? String ?? "") + "/" + (o["a"] as? String ?? "")
+            if let at = gone[v], (o["at"] as? Int ?? 0) <= at { left += 1; continue }   // named before its writer left (sayGone)
             if (newest[v]?["g"] as? Int ?? -1) <= (o["g"] as? Int ?? 0) { newest[v] = o }
         }
+        if !gone.isEmpty { MontanaTrace.mark("keep_light", "gone writers=" + String(gone.count) + " copies passed=" + String(left)) }
         let mine = MontanaArchive.writerTagHex()
         func fresh(_ o: [String: Any]) -> Bool {
             let at = Double(o["at"] as? Int ?? 0)
             if let phone { return (o["v"] as? String) == phone.tag && phone.at - 120 <= at }
-            if let since { return (o["v"] as? String) != mine && since - 120 <= at }   // another device's picture named after the asking
             return true
         }
+        let others = newest.values.contains { ($0["v"] as? String) != mine }   // another device of these words named a copy
         let roads = newest.values.filter { o in
             guard let d = o["d"] as? String, !lightSeen.contains(d) else { return false }
+            if let since, Double(o["at"] as? Int ?? 0) < since { return false }   // words opened: only a picture named for this asking
             if phone != nil, (o["v"] as? String) == mine { return false }   // a joined device's own copy is never the history
-            if phone == nil, since != nil, !fresh(o) { return false }   // words opened here wait for the picture of now
+            if phone == nil, others, (o["v"] as? String) == mine { return false }   // words opened here: an earlier life's own copy is never the history
             return true
         }.sorted { a, b in
-            if phone == nil, since == nil { return (b["at"] as? Int ?? 0) < (a["at"] as? Int ?? 0) }   // the newest picture first
+            if phone == nil { return (b["at"] as? Int ?? 0) < (a["at"] as? Int ?? 0) }   // the newest picture first
             return fresh(a) == fresh(b) ? (b["z"] as? Int ?? 0) < (a["z"] as? Int ?? 0) : fresh(a)
         }
         guard !roads.isEmpty else {
@@ -832,7 +866,7 @@ enum MTKeepDerive {
             taking = .fetching(0)
             guard await Self.fetch(road, to: url, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .fetching(f) } }),
                   MontanaBackup.digest(of: url) == d else {
-                if !fresh(road) || (phone == nil && since == nil) { lightSeen.insert(d) }   // the fresh copy awaited is fetched again
+                if !fresh(road) || phone == nil { lightSeen.insert(d) }   // the fresh copy awaited is fetched again
                 MontanaTrace.mark("keep_light", "a light copy did not come whole")
                 continue
             }
@@ -1234,16 +1268,24 @@ enum MTKeepDerive {
         return .failure(.stopped)
     }
 
-    /// The words opened here (the author's words 23891, 23893): the seed's other devices are asked for a picture of now, and it is
-    /// awaited a while -- a device whose app sleeps hears the asking only when it wakes; then the newest copy there stands for it.
-    private static let freshWait: Double = 90
-    private func takeOpened(_ ls: Data, dir: URL, began: Double) async -> Bool {
+    /// THE WORDS OPENED HERE TAKE ONLY A PICTURE OF NOW (OZ 1 p.2, the author's words 24326, 24327, 24328: «a crooked copy must not
+    /// be possible by the architecture; the history atomic, one and true»): P1 2442 asked the seed's devices and laid, ten seconds
+    /// later, the newest copy the one door it reached held -- an older picture of 238 records -- while T1 had named its picture of
+    /// now seven seconds before on a door that did not answer. Only a copy named for this asking is the history; an older one is
+    /// never laid. The asking is said once more after a minute, never more (each one makes the asked device name a copy). No
+    /// device of the seed naming one in two minutes, the keepers' newest copy is the history (callAndBuild), and nothing else.
+    private func takeOpened(_ ls: Data, dir: URL) async -> Bool {
+        let asked = Date().timeIntervalSince1970
         MontanaArchive.askTwinsLight()
-        while !Task.isCancelled, Date().timeIntervalSince1970 - began < Self.freshWait {
-            try? await Task.sleep(nanoseconds: 15_000_000_000)
-            if await takeLight(ls, dir: dir, phone: nil, since: began) { return true }
+        var again = false
+        while !Task.isCancelled, Date().timeIntervalSince1970 - asked < 120 {
+            if await takeLight(ls, dir: dir, phone: nil, since: asked - 60) { return true }
+            if !again, 60 <= Date().timeIntervalSince1970 - asked { again = true; MontanaArchive.askTwinsLight() }
+            taking = .calling(have: 0, need: 0)
+            try? await Task.sleep(nanoseconds: 10_000_000_000)
         }
-        return await takeLight(ls, dir: dir, phone: nil)
+        MontanaTrace.mark("keep_light", "words opened: no device of the seed named a picture of now in 120 s -- the keepers are called")
+        return false
     }
 
     private struct Answer { let head: MTKeepDerive.Head; let url: URL }
@@ -1263,7 +1305,10 @@ enum MTKeepDerive {
         // A JOINED DEVICE TAKES ITS HISTORY FROM THE PHONE ALONE (the author's word 23053 p.2): no keeper is called, no push rings.
         if let phone = MTLinkedDevices.joinedPhone { return await takeFromPhone(ls, dir: dir, phone: phone, began: began) }
         // THE LIGHT COPY FIRST (Network «The light copy»): the pipe of light is read before any call, and the person is let in.
-        if let ls, await takeOpened(ls, dir: dir, began: began) { askBack() }   // the pipes it named are asked to give back
+        // ONE OWNER OF THE HISTORY (OZ 1 p.2, the author's words 24326, 24328): the picture of now is the whole history, and nothing
+        // is laid over it -- the keepers' copy, of an older generation, laid on top of the light one made a second owner. The keepers
+        // are called only when no device of the seed named a picture.
+        if let ls, await takeOpened(ls, dir: dir) { taking = .done; return .success(lightTally) }   // the picture is whole: nobody is asked to give back (OZ 1 p.1.5)
         taking = .calling(have: 0, need: 0)
         defer { for a in answers.values { try? FileManager.default.removeItem(at: a.url) } }
         while !Task.isCancelled {
@@ -1385,7 +1430,7 @@ extension ChatStore {
         let wire: (Message) -> String = { MTRestoredMid.wire($0.mid) }
         let add = ChatStore.allRead(rows.filter { m in
             !seen.contains(sig(m)) && !had.contains(m.mid) && !had.contains(wire(m))
-                && !buried(wire(m), in: conv) && !buried(m.mid, in: conv) && !diedBefore(wire(m), in: conv)
+                && !rowGone(m, in: conv) && !diedBefore(wire(m), in: conv)
         })
         guard !add.isEmpty else { return 0 }
         feed.append(contentsOf: add)
@@ -1728,6 +1773,8 @@ enum MTLinkedDevices {
         store?.wipeLocal()
         for k in [phoneKey, namesKey, endedKey] { UserDefaults.standard.removeObject(forKey: k) }
         SeedScope.forget()
+        if !MTSeats.anyParked { MTNothingLeft.erase("here") }   // alone on the phone: nothing of the person stays (MTNothingLeft)
+        MTKeeping.shared.leaving = false   // the person left: the next words name their copies again
     }
     /// The phone ended this device's session (its word «end» in the seed's pipe, `said` its moment), or the term ran out: only a
     /// joined device ends, and never on a word said before its joining -- the box keeps an older end a day (OZ 2, 16.11.2026).
@@ -1753,5 +1800,84 @@ enum MTLinkedDevices {
     static var expired: Bool {
         guard let m = UserDefaults.standard.dictionary(forKey: phoneKey), let h = m["h"] as? Double, let e = m["e"] as? Int else { return false }
         return Double(e) * 86_400 < Date().timeIntervalSince1970 - h
+    }
+}
+
+/// NOTHING OF A PERSON OUTLIVES THEIR DELETION ON A PHONE THEY WERE ALONE ON (OZ 1 p.5; the author's words 23953 and 24000: «make
+/// it so there are no leftovers at all»). P1 on Messenger 2432, 17.11.2026 15:36 UTC: «Delete account» took the chats and the
+/// history -- 34 files of 176 -- and left the keys of the light copies (twin-mirror-book.json), a chat's photo with its thumbnails,
+/// 14 correspondents' faces, a vault file, the person's TimeChain, 14 background uploads, the names, faces, pins and push
+/// registrations in the settings, the network's cache and the system's pictures of the screen, and the store went on writing after
+/// it. The forgetting knew the person's folders and keychain items only as a seat to park (SeedScope.forget erases seatKeychain
+/// only when others are seated, MTSeats.leaveForgotten moves the folders only then): alone, it moved nothing and erased nothing,
+/// and a file no list named was nobody's to erase. This is the one erase of a phone left with no person: every file of the app's
+/// containers, every value of its settings, every item of its keychain -- what a new install holds -- and the diary with them (the
+/// author's word: «erase everything clean»). It runs again 3 s and 30 s later and at every launch until a seed comes (MontanaSeed.erasedKey), so a write
+/// already on its way when the person left is swept too.
+enum MTNothingLeft {
+    /// What the walk passes, by its place under the app's home or its group: the diary's folder (it leaves on its own queue,
+    /// MontanaLog.eraseDiary), the settings' file (its values leave one by one below), the system's own caches of the launch and of
+    /// the background session, and the Protocol's coin books set aside (MTCoinPlace.setAside).
+    private static let kept = keptPlaces()
+    private static func keptPlaces() -> Set<String> {
+        var places = Set(["Documents/Montana/Diagnostics", "Library/Preferences", "Library/Caches/com.apple.dyld", "Library/Caches/com.apple.nsurlsessiond"])
+        #if !MONTANA_MESSENGER
+        places.insert("Library/Application Support/Montana/CoinsForgotten")   // the Protocol's coin books set aside
+        #endif
+        return places
+    }
+    /// The values that stay: the install's mark, the language of the screen, the erase still owed, and the diary's rule already
+    /// applied -- taken away, the shipper's next pass emptied the new diary as one written before the rule, and the erase's own line
+    /// went with it (P1 on Messenger 2435, 17.11.2026 17:02 UTC: no erase_whole line on the device nor on the node).
+    private static func keeps(_ key: String) -> Bool {
+        [MontanaSeed.erasedKey, MontanaInstall.K, MontanaDiagShip.ruleKey, "AppLanguage", "AppleLanguages"].contains(key)
+    }
+    /// The person left and nobody waits on the shelf: everything goes now, and the erase stays owed until a seed comes.
+    static func erase(_ why: String) {
+        UserDefaults.standard.set(true, forKey: MontanaSeed.erasedKey)
+        sweep(why)
+        for after in [3, 30] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(after)) { again(why + "+" + String(after)) }
+        }
+    }
+    /// The erase owed -- at a launch before any owner is born, and after the erase itself -- while no seed came since.
+    static func again(_ why: String) {
+        guard UserDefaults.standard.bool(forKey: MontanaSeed.erasedKey) else { return }
+        sweep(why)
+    }
+    private static func sweep(_ why: String) {
+        MontanaLog.eraseDiary()   // first: the line below opens the diary of the phone with no person
+        MontanaBlobUpload.shared.callBackAll()
+        URLCache.shared.removeAllCachedResponses()
+        HTTPCookieStorage.shared.removeCookies(since: .distantPast)
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        var files = clear(URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true), "tmp")
+        for top in [FileManager.SearchPathDirectory.documentDirectory, .libraryDirectory] {
+            guard let u = FileManager.default.urls(for: top, in: .userDomainMask).first else { continue }
+            files += clear(u, u.lastPathComponent)
+        }
+        if let group = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: MontanaContour.appGroup) { files += clear(group, "") }
+        let ud = UserDefaults.standard
+        let values = (ud.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "") ?? [:]).keys.filter { !keeps($0) }
+        for k in values { ud.removeObject(forKey: k) }
+        let chain = MontanaKeychain.forgetAll(), left = MontanaKeychain.forgetAll()   // left: asked again, what still stands
+        MontanaDeviceKey.reset()
+        MTSeats.drawPlaces()   // the person's places stand empty, as after a seat's forgetting
+        MontanaTrace.mark("erase_whole", "why=" + why + " files=" + String(files) + " values=" + String(values.count) + " chain=" + String(chain) + " left=" + String(left))
+    }
+    /// Every item under a folder leaves, but a kept place and the way to it; a link is never followed (a Mac's container links the
+    /// person's own folders).
+    private static func clear(_ dir: URL, _ path: String) -> Int {
+        let fm = FileManager.default
+        var gone = 0
+        for n in (try? fm.contentsOfDirectory(atPath: dir.path)) ?? [] where !n.hasPrefix(".com.apple") {
+            let p = path.isEmpty ? n : path + "/" + n
+            let u = dir.appendingPathComponent(n)
+            guard !kept.contains(p), (try? fm.destinationOfSymbolicLink(atPath: u.path)) == nil else { continue }
+            if kept.contains(where: { $0.hasPrefix(p + "/") }) { gone += clear(u, p); continue }
+            if (try? fm.removeItem(at: u)) != nil { gone += 1 }
+        }
+        return gone
     }
 }

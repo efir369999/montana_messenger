@@ -32,7 +32,10 @@ struct CallICE: Codable { var candidate: String; var sdpMid: String?; var sdpMLi
 // its testimony of the call, and the identifier of the call its caller drew (Canon, «The testimony of a call»). Old builds skip both.
 // rec, lv (20.10.2026) are retired with the call's recording (the author's word 16428, 04.11.2026): an older build's word is skipped.
 struct CallCaps: Codable { var tier: String?; var ver: Int?; var opus_max: Int?; var hw_aec: Bool?; var sframe: Bool?; var av: Bool?; var rejoin: Bool?
-    var fc: String? }
+    #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154): Messenger names no call for a testimony
+    var fc: String?
+    #endif
+}
 struct E2ESession: Codable { var blob: String }
 struct E2EKeyState: Codable {
     var deviceId: String
@@ -469,7 +472,7 @@ enum E2EStore {
 /// created, already active, with a seed they never saw. UserDefaults dies with the app, so its
 /// silence is the one honest sign of a fresh install, and it is read once, before any screen.
 enum MontanaInstall {
-    private static let K = "mt.install.marker"
+    static let K = "mt.install.marker"   // NOT-UI: the install's mark (MTNothingLeft keeps it)
     static func forgetLeftoverSeed(_ wipe: () -> Void) {
         let ud = UserDefaults.standard
         guard !ud.bool(forKey: K) else { return }
@@ -478,6 +481,12 @@ enum MontanaInstall {
             NSLog("[install] fresh install over a leftover keychain — the previous identity is forgotten")
             wipe()
         }
+        // NOTHING OF A PREVIOUS INSTALL STAYS (the author's word 23953): with or without a seed left, every keychain item leaves,
+        // and a device key read above is not kept in memory over the erasure (MontanaKeychain.forgetAll).
+        let gone = MontanaKeychain.forgetAll()
+        MontanaDeviceKey.reset()
+        NSLog("[install] fresh install -- \(gone) keychain items of a previous install erased")
+        MontanaTrace.mark("install_fresh", "keychain_erased=" + String(gone) + " left=" + String(MontanaKeychain.forgetAll()))   // the proof: asked again, nothing of the install before stands
         ud.set(true, forKey: K)
     }
 }
@@ -512,6 +521,9 @@ enum MontanaBirth {
 // Everything in the app (account_id, keys, signature) is derived FROM HERE.
 enum MontanaSeed {
     private static let MN = "mt_active_mnemonic"
+    /// THE WHOLE ERASE OWED (MTNothingLeft): set when a phone left with no person was erased whole, lifted by the next seed --
+    /// until then every launch sweeps again what a write on its way laid after the erase.
+    static let erasedKey = "mt.erase.pending"   // NOT-UI: SeedScope names it among this device's own
     private static let EN = "mt_active_entropy"   // legacy store, erased on sight
     private static let RT = "mt_active_root"      // the words' stretched root, beside them (decision 494 = (b))
     // The root is kept in ONE representation: the words a person wrote down. The entropy is
@@ -523,6 +535,7 @@ enum MontanaSeed {
     // it on the next launch, and nothing before that moment says a word.
     @discardableResult
     static func setActive(mnemonic: String, entropy: Data? = nil) -> Bool {
+        UserDefaults.standard.removeObject(forKey: erasedKey)   // a seed came: no erase is owed any more (MTNothingLeft)
         E2EKeychain.setDeviceOnly(MN, Data(mnemonic.utf8))   // AfterFirstUnlockThisDeviceOnly (calls with the screen off)
         forgetRoot()   // the root of the words before is no root of these
         E2EKeychain.delete(EN)

@@ -242,6 +242,25 @@ enum MontanaKeychain {
         return gone.count
     }
 
+    /// A NEW INSTALL INHERITS NOTHING (the author's word 23953: «after the identity is deleted and the app is deleted, everything is
+    /// cleared without a trace»). The system keeps an app's keychain items past the app's deletion; the install's first launch erased
+    /// them only when a seed was left, so an identity deleted before the app left the rest standing -- the diary's salt (the iPad's
+    /// labels stayed the same across two lives, 2428 and 2431), the cold mirrors of names and faces, the device's key. Every item
+    /// this app reaches on this device leaves, of every class (a certificate and its key leave as two); a synchronized item lives on other devices too and is not touched.
+    @discardableResult static func forgetAll() -> Int {
+        var gone = 0
+        for c in [kSecClassGenericPassword, kSecClassInternetPassword, kSecClassKey, kSecClassCertificate] {
+            var q: [String: Any] = [kSecClass as String: c, kSecReturnAttributes as String: true, kSecMatchLimit as String: kSecMatchLimitAll]
+            q.merge(sameEverywhere) { a, _ in a }
+            var out: AnyObject?
+            if SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess { gone += (out as? [[String: Any]])?.count ?? 0 }
+            q[kSecReturnAttributes as String] = nil
+            q[kSecMatchLimit as String] = nil
+            SecItemDelete(q as CFDictionary)
+        }
+        return gone
+    }
+
     /// AN ITEM BORN ONCE (01.11.2026, MTLetterBox): an add and never an update -- the keychain admits exactly one creator, whichever
     /// process it is, and the other's add finds the item standing and changes nothing.
     @discardableResult static func addOnce(_ key: String, _ data: Data) -> Bool {
@@ -425,8 +444,18 @@ enum MTRetired {
     #else
     private static let editionLines: Set<String> = []
     #endif
+    #if MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154): what an older Messenger kept of it leaves
+    /// The levels an older Messenger kept: the retired switch, the last Global Level of the person, the levels' table.
+    private static let editionValues: Set<String> = ["32b12642543b8b1e", "42dcfacd74281b41", "6fff1ea668927b35"]
+    /// The person's TimeChain folder an older Messenger kept under Documents, by both its spellings.
+    private static let editionFolders: Set<String> = ["6a6bebd756434840", "3d37e294f1f21a97"]
+    /// A folder of what left, by its print: SeedScope.forgetRetired takes it off the phone whole.
+    static func folder(_ name: String) -> Bool { editionFolders.contains(print(name)) }
+    #else
+    private static let editionValues: Set<String> = []
+    #endif
 
-    static func value(_ key: String) -> Bool { values.contains(print(key)) }
+    static func value(_ key: String) -> Bool { values.union(editionValues).contains(print(key)) }
     /// A keychain item of what left, by its print: the vault of the Passwords (decision 673 (a)); MontanaKeychain.forgetRetired erases it.
     private static let keychainItems: Set<String> = ["9a59fadd4343ec4b"]
     static func keychain(_ key: String) -> Bool { keychainItems.contains(print(key)) }

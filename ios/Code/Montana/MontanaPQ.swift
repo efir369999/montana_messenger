@@ -747,14 +747,16 @@ extension MontanaArchive {
     /// for the same conversation never got its pipe head again (writeHeadIn: heads[folder] == form; rememberFolder: the map
     /// unchanged), so a restore by seed laid a transcript nobody could answer, and its blocks below the old cursors never reached
     /// the other devices. Queue-only, beside the removal.
-    private static func forgetFolderMarks(convRef: String, folder: String) {
+    private static func forgetFolderMarks(convRef: String?, folder: String) {
         for key in [headsKey, nameHeadsKey] {
             var marks = (MontanaLocalVault.getDecrypted(key).flatMap { d in try? JSONDecoder().decode([String: String].self, from: d) }) ?? [:]
             if marks.removeValue(forKey: folder) != nil, let d = try? JSONEncoder().encode(marks) { MontanaLocalVault.setEncrypted(key, d) }
         }
-        let conv = MontanaQueueKeys.sha256(Data(convRef.utf8)).montanaHexString
         var map = (MontanaLocalVault.getDecrypted(folderMapKey).flatMap { d in try? JSONDecoder().decode([String: String].self, from: d) }) ?? [:]
-        if map.removeValue(forKey: conv) != nil, let d = try? JSONEncoder().encode(map) { MontanaLocalVault.setEncrypted(folderMapKey, d) }
+        let mapped = map.count
+        if let convRef { map[MontanaQueueKeys.sha256(Data(convRef.utf8)).montanaHexString] = nil }
+        map = map.filter { $0.value != folder }   // an orphan is known by its folder alone
+        if map.count != mapped, let d = try? JSONEncoder().encode(map) { MontanaLocalVault.setEncrypted(folderMapKey, d) }
         for key in [cursorKey, boxedKey] {
             var cursor = (MontanaLocalVault.getDecrypted(key).flatMap { d in try? JSONDecoder().decode([String: UInt64].self, from: d) }) ?? [:]
             if cursor.removeValue(forKey: folder) != nil, let d = try? JSONEncoder().encode(cursor) { MontanaLocalVault.setEncrypted(key, d) }
@@ -762,6 +764,31 @@ extension MontanaArchive {
         MontanaTrace.mark("archive_forget", "folder=" + String(folder.prefix(8)) + " marks cleared")
     }
 
+    /// NO FOLDER OUTLIVES ITS CONVERSATION (OZ 1 p.1.1; the author's word 24228, 17.11.2026: «do not let them appear -- they must be
+    /// erased at once from memory and from everywhere, and no orphans born, by the architecture»). T1 2439 held 16 folders under
+    /// Chats for its two chats, the group and the channel: 14 were named by no conversation of the list, the other device's blocks
+    /// were filed into them again (18:29 UTC) and every light copy carried them to the next device. The list is the one owner of
+    /// a folder's life: the audit names the folders no conversation answers for, and here each goes with its marks. A folder
+    /// written in the last ten minutes is spared -- a first letter's row, or a copy being laid, may be on its way; the next pass
+    /// takes it. Sealed labels only: an old-named folder is sealed first (sealOrphanFolderNames) and taken by the next pass.
+    static func eraseOrphanFolders(_ labels: Set<String>) {
+        guard !labels.isEmpty else { return }
+        ioQueue.async {
+            let chats = rootURL.appendingPathComponent(MontanaPaths.chats)
+            let now = Date()
+            var gone = 0, spared = 0
+            for label in labels.sorted() where isLabel(label) {
+                let dir = chats.appendingPathComponent(sanitizeName(label))
+                let log = dir.appendingPathComponent(MontanaPaths.log)
+                if let at = (try? FileManager.default.attributesOfItem(atPath: log.path))?[.modificationDate] as? Date,
+                   now.timeIntervalSince(at) < 600 { spared += 1; continue }
+                guard (try? FileManager.default.removeItem(at: dir)) != nil else { continue }
+                forgetFolderMarks(convRef: nil, folder: label)
+                gone += 1
+            }
+            if 0 < gone + spared { MontanaTrace.mark("archive_orphans", "erased=\(gone) spared=\(spared)") }
+        }
+    }
     /// Conversations this device holds, by their folder name under Chats/.
     static func conversations() -> [String] {
         let chats = rootURL.appendingPathComponent(MontanaPaths.chats)
@@ -831,7 +858,20 @@ extension MontanaArchive {
             MontanaTrace.markFolded("archive_refused", "a head with the established secret is not filed from the floor day", window: 60)
             return (true, nil)
         }
-        let folder = folderName(forConv: conv) ?? conv.montanaHexString
+        // A BLOCK FILES ONLY UNDER A CONVERSATION THIS DEVICE HOLDS (OZ 1 p.1.3, the author's word 24343): P1 2445 filed the mirror's
+        // blocks of other lives' chats under the chat's hash -- 8 folders no row answers for, sealed and erased round after round.
+        // A conversation the book names (its pipe, a held chat, Saved Messages) files under its label; a block of no conversation
+        // held here is taken unfiled, as a deleted one's is.
+        let folder: String
+        if let named = folderName(forConv: conv) {
+            folder = named
+        } else if let ref = convBook(heldLock.withLock { heldHint })[conv], let label = folderLabel(for: ref) {
+            folder = label
+            ioQueue.async { _ = resolveFolder(convRef: ref, legacy: []) }
+        } else {
+            MontanaTrace.markFolded("archive_refused", "a block of no conversation held here is not filed", window: 60)
+            return (true, nil)
+        }
         let base = rootURL.path
         logLock.lock()
         let rc = base.withCString { bp in folder.withCString { cn in
@@ -1102,6 +1142,7 @@ extension MontanaArchive {
     // A block is immutable and named by its writer and number, so a repeat is filed as held and changes nothing.
     private static let heldKey = "mt.history.held"   // NOT-UI: [folder: [writer tag: the next block this device lacks]]
     private static let heldLock = NSLock()
+    private static var heldHint: Set<String> = []   // guarded by heldLock: the conversations the last reading of the archive held (fileBlock)
     private static var heldMap: [String: [String: UInt64]]?
     private static var heldDirty = false
     private static func heldRead() -> [String: [String: UInt64]] {
@@ -1149,6 +1190,7 @@ extension MontanaArchive {
         if let m, let d = try? JSONEncoder().encode(m) { _ = MontanaLocalVault.setEncrypted(heldKey, d) }
     }
     private static var wantedAt: Double = 0   // guarded by heldLock
+    private static var givenTo: [String: (want: [String: UInt64], at: Double)] = [:]   // guarded by heldLock: the cursor last answered to each device
     /// The word that names this device's cursor to the seed's other devices: at a pickup, at most once in ten minutes. A word too
     /// long for a letter rides the cargo road.
     nonisolated static func wantHistory(soon: Bool = false) {
@@ -1193,6 +1235,16 @@ extension MontanaArchive {
             return MontanaTrace.mark("twin_want", "the cursor did not come whole")
         }
         let want = ioQueue.sync { Dictionary(uniqueKeysWithValues: conversations().map { c in (c, held[c]?[mine] ?? 0) }) }   // MAIN-SAFE-SYNC: a detached task waits on the archive's queue, never the main thread
+        // ONE ANSWER TO ONE CURSOR (OZ 1 p.1; the author's word 24131). P1 on Messenger 2436, 17.11.2026 17:43 UTC: the words opened read
+        // a day of the other device's cursor words from the box at once, every one asking from the same place, and each laid the same
+        // 13 blocks on the nodes again -- thirty in a second. A cursor already answered to its device is not laid again for ten minutes.
+        let now = Date().timeIntervalSince1970
+        let fresh: Bool = heldLock.withLock {
+            if let g = givenTo[f], g.want == want, now - g.at < 600 { return false }
+            givenTo[f] = (want, now)
+            return true
+        }
+        guard fresh else { return MontanaTrace.markFolded("twin_hist", "the same cursor answered already", window: 60) }
         await layForTwins(from: want)
     }
     private static func takeFromTwin(_ o: [String: Any], mid: String) async {
@@ -1568,7 +1620,11 @@ extension MontanaArchive {
     nonisolated static func askTwinsLight() {
         let mine = writerTagHex()
         Task.detached(priority: .userInitiated) {
-            guard let secret = twinSecret() else { return }
+            // THE ASKING NEVER LEAVES SILENT (the author's words 23923, 23957: the iPad stood at 0 % for 90 s on 2431): the words were
+            // opened a moment before, the history key was not derived yet, twinSecret said nil and nobody was asked. Off the main
+            // thread the keys are derived here, once; a seed that gives none is said.
+            _ = keys()   // the asking derives the keys
+            guard let secret = twinSecret() else { return MontanaTrace.mark("keep_light", "words opened: no history key -- nobody asked") }
             let told = await MTKeeping.knock(secret, ["w": "lw", "f": mine, "at": Int(Date().timeIntervalSince1970)], silent: true, sender: twinDeviceRef)
             MontanaTrace.mark("keep_light", "words opened: the seed's devices asked boxed=\(told ? 1 : 0)")
         }
@@ -1641,8 +1697,12 @@ extension MontanaArchive {
     /// This device's chats as the seed's devices compare them: a chat's tag (a hash of its key) -- its key, its print, its keys.
     private static func chatPrints() async -> [String: (chat: String, print: String, keys: [String])] {
         let settled = Date().timeIntervalSince1970 - 120
+        // A DELETED CHAT IS TOLD TO NO DEVICE (OZ 1 p.1, the author's word 24302): its print would stand it again on the seed's other devices.
         let all: [String: [String]] = await MainActor.run {
-            (ChatStore.live?.messages ?? [:]).compactMapValues { rows in
+            // THE MONTANA ROOM IS EACH DEVICE'S OWN (OZ 1 p.1.4, the author's word 24343): its rows are this build's words, kept by
+            // keepNewestRelease; told as a print, P1 2445 took six rows of other devices' builds where T1 holds one.
+            let gone = (ChatStore.live?.deletedChats ?? []).union([montanaRoomKey])
+            return (ChatStore.live?.messages ?? [:]).filter { !gone.contains($0.key) }.compactMapValues { rows in
                 rows.isEmpty ? nil : ChatStore.archiveKeys(rows.filter { m in m.createdAt < settled })
             }
         }
@@ -1932,6 +1992,37 @@ extension MontanaArchive {
     // the correspondence — a block holds only sha256(address), and the folder name is a keyed
     // hash, so without the head a restored chat would be a transcript nobody can answer.
 
+    /// A ROW LEAVES THE HISTORY BY AN EVENT OF ITS OWN CHAIN (OZ 1 p.1.2, the author's words 24247, 24257 and 24259 of 17.11.2026:
+    /// one owner of the history, restored by its chronology and never by a copy laid once; no divergence between the source and
+    /// the restored account): a deletion appends a head naming the row by its archive key; the log rides to the seed's other
+    /// devices as every block does, and every reading of the log folds it -- the row stands nowhere after its event.
+    nonisolated static let goneMark = "g:"   // NOT-UI: a head naming a row that left the history
+    /// THE ARCHIVE KEY OF A ROW, ONE OWNER (constitution 15): its second, its side, the hash of its words as the archive writes them.
+    /// The twin's ask names a row by these three parts (askTwin), and its answer reads the key here as well (giveTwinRows).
+    nonisolated static func rowKey(sec: Int, mine: Bool, hash: String) -> String {
+        String(sec) + "|" + (mine ? "1" : "0") + "|" + hash
+    }
+    /// THE PARTS OF A ROW'S NAME, ONE OWNER (constitution 15; the author's word of 17.11.2026 19:2x UTC: «no manual work»): what the
+    /// twin's ask carries (askTwin) and what the key joins -- no caller takes the second, the side or the hash by its own hand.
+    nonisolated static func rowParts(_ at: Double, _ mine: Bool, _ archived: String) -> (s: Int, m: Bool, h: String) {
+        (Int(at), mine, rowHash(archived))
+    }
+    /// The key of a row by its moment and its words as the archive writes them.
+    nonisolated static func rowKey(_ at: Double, _ mine: Bool, _ archived: String) -> String {
+        let p = rowParts(at, mine, archived)
+        return rowKey(sec: p.s, mine: p.m, hash: p.h)
+    }
+    /// The rows that left, each named once in its conversation's folder.
+    static func goneHead(convRef: String, legacy: [String], keys: [String]) {
+        guard !keys.isEmpty else { return }
+        ioQueue.async {
+            guard let folder = resolveFolder(convRef: convRef, legacy: legacy) else { return }
+            for k in keys { appendHead(convRef: convRef, folder: folder, content: Data((goneMark + k).utf8)) }
+            MontanaTrace.mark("archive_gone", "folder=\(folder.prefix(8)) rows=\(keys.count)")
+        }
+        twinSoon()   // the event reaches this seed's other devices at once: deleted here is deleted everywhere
+    }
+
     /// dir of a head item.
     static let headDir: UInt8 = 2
     private static let headsKey = "mt.history.heads.form"
@@ -2092,7 +2183,7 @@ extension MontanaArchive {
     }
 
     struct RestoredItem { let mine: Bool; let sentAt: Double; let text: String }
-    struct RestoredChat { let folder: String; let ref: String?; let name: String?; let face: Data?; let items: [RestoredItem] }
+    struct RestoredChat { let folder: String; let ref: String?; let name: String?; let face: Data?; let items: [RestoredItem]; var gone: Set<String> = [] }
     /// The correspondent's face, sealed beside their letters under the media key of the seed.
     static let faceBlob = "face"
     /// The face file of the open avatar store, read here (off the screen file) and sealed into
@@ -2201,18 +2292,20 @@ extension MontanaArchive {
     }
 
     static func restore(folders: [String], held: Set<String>) -> [RestoredChat] {
+        heldLock.withLock { heldHint = held }
         guard let (h, _, a) = keys() else { return [] }
         let book = convBook(held)
         // THE ROAD BACK FLOORS BY THE LATER DAY (decision 188, E): the device's day or the trusted mark M, whichever is later
         let backDay = MTPipeBook.recoveryDay()
         var out: [RestoredChat] = []
-        var headsS = 0, headsA = 0, headsN = 0, faces = 0, closedN = 0, reopenedN = 0
+        var headsS = 0, headsA = 0, headsN = 0, faces = 0, closedN = 0, reopenedN = 0, goneN = 0
         for folder in folders {
             var ref: String? = nil
             var named: String? = nil   // the conversation the blocks name (convBook)
             var name: String? = nil
             var items: [RestoredItem] = []
             var headSecret: MTPipeKey? = nil
+            var gone = Set<String>()
             var closedThere = false, closedOnce = false
             for sealed in readLog(folder: folder) {
                 for it in openBlock(sealed, hk: h, acct: a) {
@@ -2237,6 +2330,8 @@ extension MontanaArchive {
                         } else if s.hasPrefix("n:") {
                             headsN += 1
                             name = String(s.dropFirst(2))
+                        } else if s.hasPrefix(goneMark) {
+                            gone.insert(String(s.dropFirst(goneMark.count)))
                         } else if ref == nil, MontanaConv.holds(s) {
                             ref = s
                         }
@@ -2255,14 +2350,16 @@ extension MontanaArchive {
             }
             // No head, or none this device can use: the blocks' own name of their conversation (convBook) is the answer.
             if ref == nil { ref = named }
+            if !gone.isEmpty { items.removeAll { it in gone.contains(rowKey(it.sentAt, it.mine, it.text)) }; goneN += gone.count }
             guard !items.isEmpty || ref != nil else { continue }
             items.sort { $0.sentAt < $1.sentAt }
             if let ref = ref { ioQueue.async { rememberFolder(convRef: ref, folder: folder) } }   // the map is the queue's to write
             let face = ref == nil ? nil : getMedia(folder: folder, blobId: faceBlob)
             if face != nil { faces += 1 }
-            out.append(RestoredChat(folder: folder, ref: ref, name: name, face: face, items: items))
+            out.append(RestoredChat(folder: folder, ref: ref, name: name, face: face, items: items, gone: gone))
         }
         MontanaTrace.mark("archive_restore", "chats=\(out.count) rows=\(out.reduce(0) { $0 + $1.items.count }) headed=\(out.filter { $0.ref != nil }.count) heads=s\(headsS)/a\(headsA)/n\(headsN) faces=\(faces) closed=\(closedN) reopened=\(reopenedN)")
+        if 0 < goneN { MontanaTrace.mark("archive_gone", "folded=\(goneN)") }
         return out
     }
     private static func folderName(forConv conv: Data) -> String? {

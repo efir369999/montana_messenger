@@ -296,7 +296,12 @@ struct MTDiskUse {
         let lib = fm.urls(for: .libraryDirectory, in: .userDomainMask).first
         let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first
         walk(MTDocLink.folder) { _, b in use.opened += b }
-        for h in [MTHistoryFile.folder, MontanaArchive.rootURL, MTTimeChainPlace.dir()] { walk(h) { _, b in use.history += b } }
+        #if MONTANA_MESSENGER   // no TimeChain in Messenger (OZ 1, the author's word 24154)
+        let histories = [MTHistoryFile.folder, MontanaArchive.rootURL]
+        #else
+        let histories = [MTHistoryFile.folder, MontanaArchive.rootURL, MTTimeChainPlace.dir()]
+        #endif
+        for h in histories { walk(h) { _, b in use.history += b } }
         walk(avatarsDirURL()) { _, b in use.faces += b }
         for root in [lib, docs, fm.temporaryDirectory] { walk(root) { _, b in use.other += b } }
         return use

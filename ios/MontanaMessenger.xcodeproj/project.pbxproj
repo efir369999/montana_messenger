@@ -58,9 +58,6 @@
 				2FCEF621F81F57DDCFB4CCDF,
 				0DD1A6BD59948A10FE0D6018,
 				9ECC6FFBF50CDCA452936F9E,
-				1A781A10DD5D9CA3ED499611,
-				7877F286092C8DB5C64B26D3,
-				4BBC98E3290E0612E4050C7C,
 				29CF60B10DF63462893B5F86,
 				55A432944A739FF9AAD1C7FD,
 				99B71AEDA99B09C1000AD37A,
@@ -374,10 +371,6 @@
 			isa = PBXBuildFile;
 			fileRef = D0E1F2A3B4C50305D0E1F2A3;
 		};
-		1A781A10DD5D9CA3ED499611 = {
-			isa = PBXBuildFile;
-			fileRef = 29618A09E125454D8FD8DABE;
-		};
 		1A7F45FBE0316462AF5659C2 = {
 			isa = PBXBuildFile;
 			fileRef = AA11D00R5TXTF11EREF00009;
@@ -478,13 +471,6 @@
 			includeInIndex = 1;
 			lastKnownFileType = sourcecode.swift;
 			path = ShareViewController.swift;
-			sourceTree = "<group>";
-		};
-		29618A09E125454D8FD8DABE = {
-			isa = PBXFileReference;
-			includeInIndex = 1;
-			lastKnownFileType = sourcecode.swift;
-			path = MTFabric.swift;
 			sourceTree = "<group>";
 		};
 		29CF60B10DF63462893B5F86 = {
@@ -747,10 +733,6 @@
 			path = MTKeeping.swift;
 			sourceTree = "<group>";
 		};
-		4BBC98E3290E0612E4050C7C = {
-			isa = PBXBuildFile;
-			fileRef = B375F36B469E46CCA6463E4B;
-		};
 		4C37D71D4B47A83AA9E3F9A4 = {
 			isa = PBXFileReference;
 			includeInIndex = 1;
@@ -776,13 +758,6 @@
 		5198A1BB8042068A6A261F2E = {
 			isa = PBXBuildFile;
 			fileRef = 162A17343466499E9EA2F946;
-		};
-		51E315A8751E4384927BF548 = {
-			isa = PBXFileReference;
-			includeInIndex = 1;
-			lastKnownFileType = sourcecode.swift;
-			path = MTPersonChain.swift;
-			sourceTree = "<group>";
 		};
 		522DF558E066395A91A30261 = {
 			isa = PBXSourcesBuildPhase;
@@ -1014,10 +989,6 @@
 			lastKnownFileType = sourcecode.swift;
 			path = MontanaFeeds.swift;
 			sourceTree = "<group>";
-		};
-		7877F286092C8DB5C64B26D3 = {
-			isa = PBXBuildFile;
-			fileRef = 51E315A8751E4384927BF548;
 		};
 		78B12D7F4F334CC04365F441 = {
 			isa = PBXBuildFile;
@@ -1295,9 +1266,6 @@
 				BB080FE117D80FC777885A90,
 				C8FD24AEC0AABE83BE15882C,
 				MT01A0C0DE0000000000000001,
-				29618A09E125454D8FD8DABE,
-				51E315A8751E4384927BF548,
-				B375F36B469E46CCA6463E4B,
 				F2B7C1DECD82FADF4312E8C4,
 				2FF026E80059D9D5ED01349B,
 				MT01A0C0DE0000000000000031,
@@ -1860,13 +1828,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 0B37078E041C453EC08BBE8B;
 			remoteInfo = MontanaMessengerShare;
-		};
-		B375F36B469E46CCA6463E4B = {
-			isa = PBXFileReference;
-			includeInIndex = 1;
-			lastKnownFileType = sourcecode.swift;
-			path = MTLevels.swift;
-			sourceTree = "<group>";
 		};
 		B3F6C3574688BDF3B134AB2E = {
 			isa = PBXBuildFile;

@@ -1010,7 +1010,9 @@ final class MontanaCall: NSObject {
         MontanaTrace.mark("call_hold", "parked ended reason=\(reason == .remoteEnded ? "remote" : "other")")
         provider.reportCall(with: pk.uuid, endedAt: nil, reason: reason)
         pk.pc?.close()
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
         weaveClosed(pk.seed.map { s in String(s.base64EncodedString().prefix(16)) }, peer: pk.peer, connected: pk.connectedAt != nil)
+        #endif
         MontanaCall.burySeed(pk.seed?.base64EncodedString())
     }
 
@@ -1583,9 +1585,11 @@ final class MontanaCall: NSObject {
         // enabling exists below (call-key / call-key-ok -> sframeAuthorized); flipping this flag
         // is a change of live call behaviour and is accepted on two phones, not blind.
         var caps = CallCaps(tier: "ios-native", ver: 1, opus_max: 64000, hw_aec: true, sframe: false, av: false, rejoin: true)
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
         // THE FABRIC'S WORD (17.10.2026, MTWeave): the call's identifier, drawn by its caller; older builds skip the key. Whom a
         // testimony of the call names is the correspondence's own secret (MTFabric), never a word of the caps (18.10.2026).
         caps.fc = weaveCall()?.montanaHexString
+        #endif
         return caps
     }
     /// WHAT THE FAR BUILD CAN DO IS LEARNED FROM EVERY WORD OF THE CALL IN HAND (24.09 23:14, T3): a call born by the wake
@@ -1593,13 +1597,16 @@ final class MontanaCall: NSObject {
     /// rebuilds -- its run, ended by iOS for a privacy switch, came back and said «call-gone» instead of going back in.
     /// A capability, once said, stands for the call; cleanup forgets it.
     private func learnPeerCaps(_ caps: CallCaps?) {
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
         learnWeave(caps)
+        #endif
         if caps?.av == true { peerReadsVoipAnswer = true }
         if caps?.rejoin == true, !peerRebuilds {
             peerRebuilds = true
             holdOnDisk(force: true)   // the record says it at once: a run that dies now goes back into the call
         }
     }
+    #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
     /// THE FABRIC'S CALLS (the author's word 17.10.2026 19:50 UTC «a new level that sets the global one, named Fabric of Time»;
     /// MTWeave): each call this machine holds, by its name -- the active one and a parked one apart -- with what the fabric weighs
     /// of it. A far word heard before the call is named waits under the empty name. Main thread only, as every field (K-1).
@@ -1645,6 +1652,7 @@ final class MontanaCall: NSObject {
         guard connected, let peer else { return }
         MainActor.assumeIsolated { MTFabric.shared.callClosed(conv: peer, weave: w) }
     }
+    #endif
 
     // ── Audio session for the call (category/mode; activation done by CallKit) ──
 
@@ -2998,7 +3006,9 @@ final class MontanaCall: NSObject {
             if let cs = callSeed, let d = Data(base64Encoded: cs) { self.callSeed = d }
             self.peer = from; self.isVideo = video ?? false
             self.isInitiator = false; dropPendingIce(); bornSetup(heldForPeerWord: false)
+            #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
             learnWeave(caps)   // the caller's identifier of the call and the hash its person is named by (MTWeave)
+            #endif
             self.startedAt = Date(); self.connectedAt = nil; self.answeredAt = nil
             bornOutcome()
             self.cameraDeniedTold = false
@@ -3828,8 +3838,10 @@ final class MontanaCall: NSObject {
         finishingTimeline?.mark("call.cleanup.begin")
         ended = true
         let talked = talkElapsed?.call   // the call's name: its row lands once
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
         weaveClosed(callEpoch, peer: peer, connected: connectedAt != nil)   // the fabric weighs a call of two that connected (MTWeave)
         weaves[""] = nil
+        #endif
         // No door may leave the summary without a reason. A door that did not name itself is
         // named by the state it came through — a fact, not a guess.
         if endReason == "-" { endReason = "unnamed-\(state)" }
@@ -4903,7 +4915,9 @@ final class MontanaCall: NSObject {
             var pictureNow: [String: Int] = [:]   // each incoming video stream's frames (its bytes without a frame count)
             var outBytes = 0, outFrames = 0, outLimit = "-"
             var captureDurations: [Double] = [], playoutDurations: [Double] = []
+            #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
             var voice: [(id: String, seconds: Double, energy: Double, received: Double, concealed: Double)] = []   // the far voice (MTWeave)
+            #endif
             var outAudio = 0, net = "?"   // 24.09: what the voice sends
             #if !MONTANA_MESSENGER
             var tun = 0   // whether the pair rides our tunnel
@@ -4971,6 +4985,7 @@ final class MontanaCall: NSObject {
                             aBytes = bytes; aLost = lost
                             aJitMs = Int(((s.values["jitter"] as? Double) ?? -0.001) * 1000)
                         }
+                        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
                         // THE FAR VOICE FOR THE FABRIC (App: «the seconds of the person's voice the signer's device received»): every
                         // received voice stream's own counters -- played seconds, their energy, samples received and made up.
                         if let sec = (s.values["totalSamplesDuration"] as? NSNumber)?.doubleValue,
@@ -4978,6 +4993,7 @@ final class MontanaCall: NSObject {
                            let got = (s.values["totalSamplesReceived"] as? NSNumber)?.doubleValue {
                             voice.append((s.id, sec, energy, got, (s.values["concealedSamples"] as? NSNumber)?.doubleValue ?? 0))
                         }
+                        #endif
                     } else if media == "video" {
                         let frames = (s.values["framesReceived"] as? NSNumber)?.intValue ?? (s.values["framesDecoded"] as? NSNumber)?.intValue
                         pictureNow[s.id] = frames ?? bytes
@@ -5016,7 +5032,9 @@ final class MontanaCall: NSObject {
             // and the deadline anew, and the dead call stood for a minute more, swallowing the peer's new call. A pair
             // answers only when its own count grows past its last sighting; a pair seen for the first time answers by any
             // byte (checks are not counted); a pair that left says nothing.
+            #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
             self.weaveHears(voice)
+            #endif
             let pathAnswered = pathNow.contains { id, bytes in bytes > (self.pathSeen[id] ?? 0) }
             self.pathSeen = pathNow
             let inNow = aBytes + vBytes

@@ -9975,22 +9975,6 @@
         }
       }
     },
-    "TimeChain": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TimeChain"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TimeChain"
-          }
-        }
-      }
-    },
     "Timer overshoot": {
       "extractionState": "manual",
       "localizations": {

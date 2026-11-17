@@ -1417,6 +1417,7 @@ enum MontanaWakePush {
         f.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
         return f
     }()
+    #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
     /// THE PERSON'S SECOND ON THE NETWORK (MTPersonChain): a node's answer of any road is a second of the words on the network,
     /// fed once a second at most, so the chain's last second is the app's last on the network and the leave mints from it.
     private static let personLock = NSLock()
@@ -1430,10 +1431,13 @@ enum MontanaWakePush {
         }
         if go { DispatchQueue.main.async { MTPersonChain.shared.answered(resp) } }
     }
+    #endif
     static func learnSkew(from resp: URLResponse?) {
         guard let hdr = (resp as? HTTPURLResponse)?.value(forHTTPHeaderField: "Date"),
               let server = httpDateFormatter.date(from: hdr) else { return }
+        #if !MONTANA_MESSENGER   // the TimeChain is the Protocol's alone (OZ 1, the author's word 24154)
         if let resp { personFeed(resp) }
+        #endif
         MTPipeBook.heard(nodeDate: server)   // the clock guard of the first floor: c of this run, and M (decision 188, #38)
         let skew = Int(Date().timeIntervalSince(server) * 1000)
         let tolMs = Int(clockSlackS * 1000)
@@ -4788,6 +4792,11 @@ final class MontanaBlobUpload: NSObject, URLSessionDataDelegate {
         return d
     }
 
+    /// THE PERSON LEFT THE PHONE (MTNothingLeft): every upload the system still carries for them is called back; the bodies leave
+    /// with the caches. Off the main thread: the session's birth asks the system's daemon.
+    func callBackAll() {
+        DispatchQueue.global(qos: .utility).async { self.session.getAllTasks { tasks in tasks.forEach { $0.cancel() } } }
+    }
     /// Hand a sealed chunk to the system. Idempotent per bid: an existing body file means the
     /// task is already enqueued (the node dedups by content name anyway).
     func enqueue(bid: String, sealed: Data) {
@@ -5207,7 +5216,7 @@ enum MontanaDiagShip {
     /// open — and would ride to the node on the first catch-up. They are truncated once, on
     /// the first launch of the build where the rule appeared. Diagnostics loses its past; the
     /// person loses nothing, because no correspondence, keys or content live in these files.
-    private static let ruleKey = "diagHideRule"
+    static let ruleKey = "diagHideRule"   // the erase keeps it (MTNothingLeft.keeps): said again, the rule would empty the new diary
     private static func forgetJournalsWrittenBeforeTheRule() {
         guard ud.string(forKey: ruleKey) != "1" else { return }
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -5216,7 +5225,11 @@ enum MontanaDiagShip {
         let journals = MontanaLog.Channel.allCases.map(\.file)   // the channels' owner names the files (the author's word 21679)
         for n in journals + journals.map({ $0 + ".prev" }) {
             let u = dir.appendingPathComponent(n)
-            guard FileManager.default.fileExists(atPath: u.path) else { continue }
+            // A journal this process wrote is under the rule whatever the value says: the value leaves with a fresh install and
+            // with the erase, and the first pass emptied the very lines that proved them (P1, Messenger 2435, 17.11.2026 17:20 UTC:
+            // install_fresh gone half a second after it was written). Only a file older than this process predates the rule.
+            guard let at = (try? FileManager.default.attributesOfItem(atPath: u.path))?[.modificationDate] as? Date,
+                  at < MontanaTrace.procStart else { continue }
             try? Data().write(to: u); gone += 1
         }
         ud.set(0, forKey: "diagWmTele"); ud.set(0, forKey: "diagWmTrace")

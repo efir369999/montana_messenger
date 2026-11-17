@@ -51,6 +51,9 @@ import MontanaBindings
 // each before one record sealed alone, AAD = that 48-byte header and u64 LE index, info
 // "mt-backup-key-v1" -- is still READ and never written: every copy a person made before stays a copy.
 enum MontanaBackup {
+    /// A COPY LAID THIS DEVICE'S HISTORY (OZ 1 p.1.2), one owner (constitution 15): the restore that lays a card sets it; the chat
+    /// store reads it -- a device whose history a copy laid seals no past of its own (ChatStore.sealPast); SeedScope names it.
+    nonisolated static let copyLaidKey = "mt.history.copy.laid"   // NOT-UI: a copy laid this device's history
     static let ext = "mtbak"                     // NOT-UI: the container's own extension
     static let chunkBytes = 1 << 20              // a megabyte: nothing larger is ever held in memory
     /// Every frame of a version-2 copy, sealed, is exactly this long: a keeper counts frames and learns
@@ -1315,6 +1318,7 @@ enum MontanaBackup {
         // back, or a conversation deleted long ago rises out of the blocks.
         if let c = taker.card, !layCard(c) { return .failure(.noVault) }
         let laid = taker.card != nil
+        if laid { UserDefaults.standard.set(true, forKey: copyLaidKey) }   // this device's history is no source (OZ 1 p.1.2)
         let landed = taker.landed
         let feed = taker.feed.flatMap { SeedScope.decodeFeed($0) }
         let outbox = taker.card.flatMap { cardOutbox($0) }
