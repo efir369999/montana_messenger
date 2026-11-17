@@ -783,7 +783,16 @@ enum MTKeepDerive {
     /// and alone lets the person in, and the device's own copies are never taken back (the Mac took its own empty one, 16.11).
     /// On a phone that opened its words any copy is the owner's, and the first laid lets the person in. True once the owner's copy
     /// is laid. A road tried once is not fetched again (lightSeen) -- the phone's own fresh one alone, if it did not come whole.
-    private func takeLight(_ secret: Data, dir: URL, phone: (tag: String, at: Double)?) async -> Bool {
+    /// THE WORDS OPENED ON A NEW DEVICE TAKE ONE PICTURE, AS A JOINING BY QR DOES (the author's words 23891 and 23893, 16.11.2026:
+    /// «in Bob's chat the texts doubled and the group's old face stayed»; «Alice's chat came back old by the words, not the last that
+    /// is on T1 -- it must sync as the sign-in by QR does»). The demo identity's iPad laid another device's copy and then its own
+    /// copy of an earlier life with the same words on top of it (keep_light own=true): 23 rows of that life came back into three
+    /// chats, and the group's face with them. A device that opened its words now asks the seed's other devices for a picture of
+    /// now (askTwinsLight, the word lw); `since` is that asking: only another device's copy named after it is taken, and it alone
+    /// is the history. When none comes, the newest copy by its moment is the history, alone. No older picture is laid over the
+    /// owner's -- it would bring back what the person deleted since. The owner's cursors are this device's own (cursorsFromCopy),
+    /// so every letter after the picture comes from the books, as on a joined device.
+    private func takeLight(_ secret: Data, dir: URL, phone: (tag: String, at: Double)?, since: Double? = nil) async -> Bool {
         var rows: [[String: String]] = []
         let ear = MontanaWakePush.BoxEar(invites: [], pipes: [Self.lightName: MTPipeKey(secret)], owner: MontanaSeed.twin ?? "")
         _ = await MontanaWakePush.pickup(ear, buries: nil, keep: { row in rows.append(row); return false })
@@ -797,14 +806,20 @@ enum MTKeepDerive {
         }
         let mine = MontanaArchive.writerTagHex()
         func fresh(_ o: [String: Any]) -> Bool {
-            guard let phone else { return true }
-            return (o["v"] as? String) == phone.tag && phone.at - 120 <= Double(o["at"] as? Int ?? 0)
+            let at = Double(o["at"] as? Int ?? 0)
+            if let phone { return (o["v"] as? String) == phone.tag && phone.at - 120 <= at }
+            if let since { return (o["v"] as? String) != mine && since - 120 <= at }   // another device's picture named after the asking
+            return true
         }
         let roads = newest.values.filter { o in
             guard let d = o["d"] as? String, !lightSeen.contains(d) else { return false }
             if phone != nil, (o["v"] as? String) == mine { return false }   // a joined device's own copy is never the history
+            if phone == nil, since != nil, !fresh(o) { return false }   // words opened here wait for the picture of now
             return true
-        }.sorted { a, b in fresh(a) == fresh(b) ? (b["z"] as? Int ?? 0) < (a["z"] as? Int ?? 0) : fresh(a) }
+        }.sorted { a, b in
+            if phone == nil, since == nil { return (b["at"] as? Int ?? 0) < (a["at"] as? Int ?? 0) }   // the newest picture first
+            return fresh(a) == fresh(b) ? (b["z"] as? Int ?? 0) < (a["z"] as? Int ?? 0) : fresh(a)
+        }
         guard !roads.isEmpty else {
             MontanaTrace.mark("keep_light", phone == nil ? "the pipe of light holds no road" : "no new road; the phone's copy is awaited")
             return false
@@ -817,7 +832,7 @@ enum MTKeepDerive {
             taking = .fetching(0)
             guard await Self.fetch(road, to: url, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .fetching(f) } }),
                   MontanaBackup.digest(of: url) == d else {
-                if phone == nil || !fresh(road) { lightSeen.insert(d) }   // the phone's fresh copy is fetched again
+                if !fresh(road) || (phone == nil && since == nil) { lightSeen.insert(d) }   // the fresh copy awaited is fetched again
                 MontanaTrace.mark("keep_light", "a light copy did not come whole")
                 continue
             }
@@ -833,7 +848,8 @@ enum MTKeepDerive {
             lightLaid = true
             if fresh(road), !owned {
                 owned = true; lightTally = tally; letIn()
-                if phone != nil { MontanaArchive.cursorsFromCopy(road["lc"] as? [String: Int] ?? [:]) }   // the same book from here (OZ 1 p.6)
+                MontanaArchive.cursorsFromCopy(road["lc"] as? [String: Int] ?? [:])   // the same book from here, joined or opened (OZ 1 p.6)
+                if phone == nil { break }   // words opened here: the owner's picture alone is the history
             }
         }
         return owned
@@ -1218,6 +1234,18 @@ enum MTKeepDerive {
         return .failure(.stopped)
     }
 
+    /// The words opened here (the author's words 23891, 23893): the seed's other devices are asked for a picture of now, and it is
+    /// awaited a while -- a device whose app sleeps hears the asking only when it wakes; then the newest copy there stands for it.
+    private static let freshWait: Double = 90
+    private func takeOpened(_ ls: Data, dir: URL, began: Double) async -> Bool {
+        MontanaArchive.askTwinsLight()
+        while !Task.isCancelled, Date().timeIntervalSince1970 - began < Self.freshWait {
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            if await takeLight(ls, dir: dir, phone: nil, since: began) { return true }
+        }
+        return await takeLight(ls, dir: dir, phone: nil)
+    }
+
     private struct Answer { let head: MTKeepDerive.Head; let url: URL }
     private func callAndBuild() async -> Result<MontanaBackup.Tally, MontanaBackup.Refusal> {
         guard Self.agrees, let master = MontanaSeed.root,
@@ -1235,7 +1263,7 @@ enum MTKeepDerive {
         // A JOINED DEVICE TAKES ITS HISTORY FROM THE PHONE ALONE (the author's word 23053 p.2): no keeper is called, no push rings.
         if let phone = MTLinkedDevices.joinedPhone { return await takeFromPhone(ls, dir: dir, phone: phone, began: began) }
         // THE LIGHT COPY FIRST (Network «The light copy»): the pipe of light is read before any call, and the person is let in.
-        if let ls, await takeLight(ls, dir: dir, phone: nil) { askBack() }   // the pipes it named are asked to give back
+        if let ls, await takeOpened(ls, dir: dir, began: began) { askBack() }   // the pipes it named are asked to give back
         taking = .calling(have: 0, need: 0)
         defer { for a in answers.values { try? FileManager.default.removeItem(at: a.url) } }
         while !Task.isCancelled {

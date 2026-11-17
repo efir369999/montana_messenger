@@ -1041,6 +1041,7 @@ extension MontanaArchive {
         case "sv": Task.detached(priority: .userInitiated) { await takeSaved(o) }   // COMPAT-GATED: an older build takes it unread; the mirror brings the row
         case "hw": Task.detached(priority: .utility) { await giveHistory(o) }   // COMPAT-GATED: an older build takes it unread
         case "jn": heardJoining(o)   // COMPAT-GATED: an older build takes it unread; a device joined by QR, its copy's cursors held (OZ 1 p.6)
+        case "lw": heardWordsOpened(o)   // COMPAT-GATED: an older build takes it unread; words opened on a new device ask a picture of now
         case "pr": Task.detached(priority: .utility) { await comparePrints(o) }   // COMPAT-GATED: an older build takes it unread; the prints of the chats (OZ 1 p.8)
         case "ck": Task.detached(priority: .utility) { await takeKeys(o) }   // COMPAT-GATED: an older build takes it unread; a chat's keys whose print differs (OZ 1 p.8)
         case "sl": heardLanded(o)   // COMPAT-GATED: an older build takes it unread; a row of Saved Messages or its file stands on the seed's other device (OZ 1 p.1.5)
@@ -1560,6 +1561,27 @@ extension MontanaArchive {
             var b = readBook()
             guard let c = lc[mine + "/" + b.run] else { return }
             hold(&b, c)
+        }
+    }
+    /// WORDS OPENED ON A NEW DEVICE ASK THE PICTURE OF NOW (the author's words 23891, 23893): that device takes its history as a
+    /// device joined by QR does -- from a copy named after its asking (MTKeeping.takeOpened), with the cursors it stands on.
+    nonisolated static func askTwinsLight() {
+        let mine = writerTagHex()
+        Task.detached(priority: .userInitiated) {
+            guard let secret = twinSecret() else { return }
+            let told = await MTKeeping.knock(secret, ["w": "lw", "f": mine, "at": Int(Date().timeIntervalSince1970)], silent: true, sender: twinDeviceRef)
+            MontanaTrace.mark("keep_light", "words opened: the seed's devices asked boxed=\(told ? 1 : 0)")
+        }
+    }
+    /// Another device opened these words: this one names its picture of now, as for a joining. A device that holds no history,
+    /// or is taking one itself, names nothing -- an empty copy named now would stand as the owner. An asking ten minutes old is past.
+    private static func heardWordsOpened(_ o: [String: Any]) {
+        guard (o["f"] as? String) != writerTagHex(), Date().timeIntervalSince1970 - Double(o["at"] as? Int ?? 0) < 600 else { return }
+        Task { @MainActor in
+            guard !MTKeeping.shared.isTaking, !(ChatStore.live?.messages.isEmpty ?? true) else {
+                return MontanaTrace.mark("keep_light", "asked by words opened elsewhere -- no history here to name")
+            }
+            MTKeeping.shared.lightForLink()
         }
     }
     /// On a device joined by QR the phone's copy lies: its cursors are this device's own. A cursor this device started at a
