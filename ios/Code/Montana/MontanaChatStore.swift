@@ -46,6 +46,9 @@ class ChatStore: ObservableObject {
     // seconds while the history was still decrypting (precedent: notification tap showed
     // the FIRST message of the chat, then the list repainted).
     @Published var listState: [String: [String: String]] = [:]
+    /// THE SHARE OF EACH RESTORING CHAT COME BACK (OZ 1 p.1.2, the author's word 24552: «every chat in the list has its own share
+    /// of loading»), 0 to 1, written by the keeping (MTKeeping.noteBack) and read by the row (restoringLine); memory only.
+    @Published var restoreShare: [String: Double] = [:]
     private var listStateLoaded = false
     /// THE TWIN'S SILENCE (OZ 1 p.1.4.2): the Saved Messages row whose file the seed's other device has not given -- the plaque says
     /// where the file is instead of the tap doing nothing. Set by askKeptFile, cleared by the plaque's own button.
@@ -262,6 +265,44 @@ class ChatStore: ObservableObject {
     /// A person's conversation whose only trace in the list is a name (nameOnly) and which holds no letter here: no row.
     func letterless(_ conv: String) -> Bool {
         !conv.isEmpty && !MTGroup.isKey(conv) && Self.nameOnly(listState[conv]) && (messages[conv]?.isEmpty ?? true)
+    }
+    /// THE CHATS OF A RESTORE STAND AT ONCE, EMPTY (OZ 1 p.1.1-1.2, the author's words 24507, 24552): a person's conversation the
+    /// keepers' book names, holding no letter here, stands in the list on a record of its own -- its name and the mark «rs» -- until
+    /// its first letter writes the record anew (listRecord) and the mark goes with it. A chat is still born by a letter (OZ 1 p.1.9):
+    /// these were born on the person's other phone, and the mark says their letters are on the way.
+    @MainActor
+    func standRestoring(_ chats: [(ref: String, name: String?)]) -> [String] {
+        var stood: [String] = []
+        for c in chats where !deletedChats.contains(c.ref) && !MTGroup.isKey(c.ref) && (messages[c.ref] ?? []).isEmpty {
+            if let n = c.name, !n.isEmpty, n.count <= 64 { setPeerName(ref: c.ref, name: n, at: 0, source: "archive") }
+            var rec = listState[c.ref] ?? [:]
+            guard rec["p"] == nil else { continue }
+            rec["rs"] = Self.restoringMark
+            if let n = MTNameBook.known(c.ref), !n.isEmpty { rec["n"] = n }
+            listState[c.ref] = rec
+            stood.append(c.ref)
+        }
+        if !stood.isEmpty { persistListState() }
+        MontanaTrace.mark("restore_rows", "stood=\(stood.count) of \(chats.count)")
+        return stood
+    }
+    /// The correspondent gave nothing back: the row says so and stays on its name.
+    @MainActor
+    func restoringEnded(_ conv: String) {
+        guard var rec = listState[conv], let rs = rec["rs"], rs != Self.restoringNone else { return }
+        rec["rs"] = Self.restoringNone
+        listState[conv] = rec
+        persistListState()
+    }
+    nonisolated static let restoringMark = "w"   // NOT-UI: the letters of a restored chat are on their way
+    nonisolated static let restoringNone = "e"   // NOT-UI: none came back
+    /// The words of a restoring chat's row (OZ 1 p.1.2): its share while its letters come, or that none came.
+    func restoringLine(_ c: Chat) -> String? {
+        let conv = c.convRef
+        guard let rs = listState[conv]?["rs"], (messages[conv] ?? []).isEmpty else { return nil }
+        if rs == Self.restoringNone { return String(localized: "No letters came back to this chat", bundle: MTLanguage.bundle) }
+        let share = String(Int(((restoreShare[conv] ?? 0) * 100).rounded())) + "%"
+        return String(localized: "Restoring the history: \(share)", bundle: MTLanguage.bundle)
     }
     /// EVERY RECORD REBUILT FROM THE FEED by the one builder (the law: what stands last in the chat
     /// stands in the list). `keepDoorRecords` — at history load, while the box may still hold the
@@ -2832,6 +2873,9 @@ class ChatStore: ObservableObject {
             MontanaDeliveryEngine.shared.adoptRestored(items)
         }
         guard grew else { return }
+        // The rows of the pipes just re-established are drawn now (OZ 1, the author's word 24568): their letters stood in the feed
+        // before the heads were read, and the list shows a person's chat only once its pipe is held.
+        objectWillChange.send()
         MontanaWakePush.registerConvs()
         MontanaWakePush.fetchBoxKick()
         MontanaCard.reuploadRdv()
@@ -3055,11 +3099,13 @@ class ChatStore: ObservableObject {
                             // A PEER NAMED WITH MY OWN NAME BY NO WORD OF THEIRS is a contradiction by
                             // construction: the only door for a declared name is the peer's own letter or
                             // ring, and no such word stands in this history. Build 1480's echo of the
-                            // caller's own ring wrote it (12.09). The name leaves — the book, the card and
-                            // the list with it — and the next word of the peer names them again.
+                            // caller's own ring wrote it (12.09). THE NAME IS ASKED AGAIN, NEVER
+                            // EMPTIED (OZ 1 p.1.6; the author's word 24443, 17.11.2026: «the correspondent's name must never be absent»):
+                            // emptied, the chat read «Correspondent» until the peer spoke again. The name stands until the peer's own word
+                            // replaces it; my name goes again, theirs comes back by the held tag of every presence word (E2E.heardHeld),
+                            // and the one door (MTNameBook.admitDeclared) lets no echo of my own name in again.
                             DispatchQueue.main.async {
-                                self.setPeerName(ref: chat, name: "", at: Date().timeIntervalSince1970, source: "repair")
-                                MontanaTrace.mark("name_repair", "own name stood on \(String(chat.prefix(10))) — cleared")
+                                MontanaTrace.mark("name_repair", "own name stood on \(String(chat.prefix(10))) — asked again")
                                 E2E.shared.resendProfileOnReconnect(to: chat)   // my name goes again; the peer's comes back by reciprocity
                             }
                         }
@@ -4039,6 +4085,10 @@ class ChatStore: ObservableObject {
     }
     // ── THE ARCHIVE → FEED ROAD (15.10) ─────────────────────────────────────────
     private var ingestedFolders = Set<String>()
+    /// THE ARCHIVE WAS READ WHOLE IN THIS LAUNCH (OZ 1, the author's word 24568): the pipes of a copy just laid stand only once
+    /// their heads are read (restoreFromArchive). P1 2451 audited the list 22 ms before that reading and named the folders of
+    /// two chats orphans; the sweep waits for it.
+    private var archiveReadWhole = false
     nonisolated static let archiveFaceKey = "mt.archive.face"   // NOT-UI: the face of the archive last read whole (SeedScope names it)
     private var ingestWork: DispatchWorkItem?
 
@@ -4071,7 +4121,10 @@ class ChatStore: ObservableObject {
                                                              "pipes=" + String(MTPipeBook.count), "asked=" + String(asked), "held=" + String(held.count), "chain=g2"]) : nil
             if let face, face == UserDefaults.standard.string(forKey: ChatStore.archiveFaceKey) {
                 MontanaTrace.mark("archive_same", "chats=" + String(occupied.count))
-                DispatchQueue.main.async { self?.afterPipes(grew: false) }
+                DispatchQueue.main.async {
+                    self?.archiveReadWhole = true
+                    self?.afterPipes(grew: false)
+                }
                 return
             }
             let pipesBefore = MTPipeBook.count
@@ -4079,7 +4132,11 @@ class ChatStore: ObservableObject {
             if let face { UserDefaults.standard.set(face, forKey: ChatStore.archiveFaceKey) }
             // The heads re-establish the pipes of a copy just taken back: the roads wake for them at once.
             let grew = pipesBefore < MTPipeBook.count
-            DispatchQueue.main.async { self?.afterPipes(grew: grew) }
+            let whole = folders == nil
+            DispatchQueue.main.async {
+                if whole { self?.archiveReadWhole = true }
+                self?.afterPipes(grew: grew)
+            }
             // A FOLDER THAT NAMES ITS CONVERSATION HAS NO TRANSCRIPT: one an older pass laid for it is that conversation's second name.
             let named = found.compactMap { rc in rc.ref.map { _ in ChatStore.transcriptKey(rc.folder) } }
             if !named.isEmpty { DispatchQueue.main.async { self?.retireTranscripts(named) } }
@@ -4332,7 +4389,7 @@ class ChatStore: ObservableObject {
         // THE ORPHANS GO AT ONCE (OZ 1 p.1.1, the author's word 24228; MontanaArchive.eraseOrphanFolders): a folder that no key
         // the store names at all -- row, archived row, feed, record, group, closed chat -- answers for is erased. Only with the
         // keys warm and both shelves read: a cold label or an unread shelf would name a live chat an orphan.
-        if !orphans.isEmpty, rowsRead != nil, archivedRead != nil, MontanaArchive.labelIfWarm(for: savedMessagesKey) != nil {
+        if !orphans.isEmpty, archiveReadWhole, rowsRead != nil, archivedRead != nil, MontanaArchive.labelIfWarm(for: savedMessagesKey) != nil {
             let keysNamed = rowKeys.union(shownKeys).union(feedKeys).union(listState.keys).union(groupKeys).union(closedChats)
             let named = Set(keysNamed.compactMap { k -> String? in Self.isTranscript(k) ? String(k.dropFirst(4)) : MontanaArchive.labelIfWarm(for: k) })
             MontanaArchive.eraseOrphanFolders(orphans.subtracting(named))
@@ -7715,7 +7772,8 @@ enum SeedScope {
         "voiceRate", "voiceOrb.look", "vnoteCorner", "miniTimeRemaining", "reactionUse",
         "cardKind", "timePanelOpen", MontanaOctagon.barBottomKey,
         "mt.net.tab2", "exitReachability",   // the VPN's own settings come through its door (MTApps.vpn.settingKeys, slice S3b b3)
-        "mt.backup.icloud", "mt.backup.icloud.replace", "mt.backup.plan"]
+        "mt.backup.icloud", "mt.backup.icloud.replace", "mt.backup.plan",
+        MontanaBackupCloud.askedKey]   // the question of iCloud, asked once on its own (OZ 1 p.1.3)
         + doorSettingKeys
     /// The settings of the applications behind a door, each list named by its door (mt-copy-scope-check reads them there); one
     /// expression of its own, so the compiler types the long list above and this one apart (link 15426).

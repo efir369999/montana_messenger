@@ -2928,6 +2928,7 @@ struct MontanaOnboardingView: View {
             Spacer()
             Image(systemName: "arrow.down.circle.fill").font(.system(size: 46)).foregroundColor(Color.accentColor)
             Text(takingWord).font(.title3.bold()).foregroundColor(.white).multilineTextAlignment(.center)
+            MTKeepWalkLines()
             if case .calling(let have, let need) = keep.taking, need > 0, keepLaying == nil {
                 Text("Parts in hand: \(have) of \(need)").foregroundColor(.white).font(.subheadline)
             }

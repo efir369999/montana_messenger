@@ -15132,6 +15132,150 @@
         }
       }
     },
+    "Your other device answered with your history": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваше другое устройство ответило вашей историей"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的另一台设备已回传您的历史记录"
+          }
+        }
+      }
+    },
+    "Your other devices did not answer in two minutes": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Другие ваши устройства не ответили за две минуты"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的其他设备在两分钟内没有回应"
+          }
+        }
+      }
+    },
+    "Asking your other devices": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спрашиваем ваши другие устройства"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在询问您的其他设备"
+          }
+        }
+      }
+    },
+    "No node took the asking yet": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ни один узел ещё не принял запрос"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚无节点接收此请求"
+          }
+        }
+      }
+    },
+    "Asked the people who keep your copy: %lld of %lld": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спросили тех, кто хранит вашу копию: %lld из %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已询问保管您副本的人：%lld/%lld"
+          }
+        }
+      }
+    },
+    "Called them loudly: %lld": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Позвали их громко: %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已大声呼叫：%lld"
+          }
+        }
+      }
+    },
+    "A copy did not come whole. Asking again": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копия пришла не целиком. Спрашиваем снова"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "副本未完整到达，正在重新请求"
+          }
+        }
+      }
+    },
+    "Downloading your history": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загружаем вашу историю"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在下载您的历史记录"
+          }
+        }
+      }
+    },
+    "Laying your history on this device": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Раскладываем вашу историю на этом устройстве"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在将您的历史记录放到此设备上"
+          }
+        }
+      }
+    },
     "The copy came back": {
       "localizations": {
         "ru": {
@@ -15192,22 +15336,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在恢复账户：打开 Montana，归还您保管的那部分副本"
-          }
-        }
-      }
-    },
-    "Keep your copy with your contacts?": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Хранить вашу копию у собеседников?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "让联系人保管您的副本？"
           }
         }
       }
@@ -17765,38 +17893,6 @@
         }
       }
     },
-    "Your copy lives only on phones, never in a cloud: this is Montana's own way of keeping it. It is sealed with your 24 words and cut into parts, and the people you write to keep the parts for you: each sees only a size, never a word. On a new phone your 24 words bring the parts back, and your conversations with them.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваша копия живёт только на телефонах, а не в облаке: так Montana хранит её по-своему. Она запечатана вашими 24 словами и разрезана на части, а части хранят для вас ваши собеседники: каждый видит лишь размер, ни одного слова. На новом телефоне ваши 24 слова возвращают части — и вашу переписку с ними."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "您的副本只存在于手机上，而不在云端：这是 Montana 自己的保管方式。它用您的 24 个单词加密并切分成若干部分，由与您通信的人为您保管：每个人只能看到大小，看不到任何一个字。在新手机上，您的 24 个单词会取回这些部分，以及你们之间的对话。"
-          }
-        }
-      }
-    },
-    "Your copy lives only on phones, never in a cloud: this is Montana's own way of keeping it. It is sealed with your 24 words and cut into parts, and the people you write to keep the parts for you: each sees only a size, never a word. On a new phone your 24 words bring the parts back, and your conversations with them. In the same way this phone keeps sealed parts for your contacts, up to 1 GB, and cannot open them. Both switches are in Settings → Data and Storage.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваша копия живёт только на телефонах, а не в облаке: так Montana хранит её по-своему. Она запечатана вашими 24 словами и разрезана на части, а части хранят для вас ваши собеседники: каждый видит лишь размер, ни одного слова. На новом телефоне ваши 24 слова возвращают части — и вашу переписку с ними. Так же и этот телефон хранит запечатанные части ваших собеседников — до 1 ГБ — и открыть их не может. Оба переключателя — в Настройки → Данные и память."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "您的副本只存在于手机上，而不在云端：这是 Montana 自己的保管方式。它用您的 24 个单词加密并切分成若干部分，由与您通信的人为您保管：每个人只能看到大小，看不到任何一个字。在新手机上，您的 24 个单词会取回这些部分，以及你们之间的对话。同样，此手机也为您的联系人保管加密的部分，最多 1 GB，且无法打开它们。两个开关都在“设置 → 数据和存储”中。"
-          }
-        }
-      }
-    },
     "The parts your contacts leave with you are sealed the same way: this phone cannot open them, and only their own 24 words can. This is how Montana keeps copies with no cloud in between: people hold each other's sealed parts, and no one but the owner can ever read them.": {
       "localizations": {
         "ru": {
@@ -18386,6 +18482,134 @@
           "stringUnit": {
             "state": "translated",
             "value": "所有设备都将从此列表中移除。已连接的 Mac 一收到本手机的消息就会删除您的身份；用您的助记词登录的设备仍保留助记词和聊天。"
+          }
+        }
+      }
+    },
+    "This way your copy lives only on phones: Montana's nodes keep none of it. It is sealed with your 24 words and cut into parts, and the people you write to keep the parts for you: each sees only a size, never a word. On a new phone your 24 words bring the parts back, and your conversations with them.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Так ваша копия живёт только на телефонах: узлы Montana не хранят из неё ничего. Она запечатана вашими 24 словами и разрезана на части, а части хранят для вас ваши собеседники: каждый видит лишь размер, ни одного слова. На новом телефоне ваши 24 слова возвращают части — и вашу переписку с ними."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这样，您的副本只存在于手机上：Montana 的节点不保存其中任何内容。它用您的 24 个单词加密并切分成若干部分，由与您通信的人为您保管：每个人只能看到大小，看不到任何一个字。在新手机上，您的 24 个单词会取回这些部分，以及你们之间的对话。"
+          }
+        }
+      }
+    },
+    "Keep in iCloud": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранить в iCloud"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存在 iCloud"
+          }
+        }
+      }
+    },
+    "Keep an encrypted copy with your contacts?": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранить зашифрованную копию у собеседников?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由联系人保管加密备份？"
+          }
+        }
+      }
+    },
+    "Your history is sealed with your 24 words and cut into parts; the people you write to keep the parts and see only their size, never a word. On a new phone your 24 words bring your conversations back from them. This phone also keeps sealed parts for your contacts, up to 1 GB, and cannot open them. Montana's nodes keep no copy. It is in Settings → Data and Storage.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "История запечатывается вашими 24 словами и делится на части; собеседники хранят части и видят только их размер, ни одного слова. На новом телефоне 24 слова возвращают переписку от них. Этот телефон тоже хранит запечатанные части ваших собеседников, до 1 ГБ, и не может их открыть. Узлы Монтаны копий не хранят. Это в Настройки → Данные и память."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的聊天记录以您的 24 个词加密并分成若干部分；与您聊天的人保管这些部分，只能看到大小，看不到任何内容。在新手机上，您的 24 个词会从他们那里取回您的对话。这部手机也为您的联系人保管加密部分，最多 1 GB，且无法打开。Montana 的节点不保存任何副本。可在 设置 → 数据和存储 中更改。"
+          }
+        }
+      }
+    },
+    "Keep a copy in iCloud?": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранить копию в iCloud?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 iCloud 中保存备份？"
+          }
+        }
+      }
+    },
+    "Once a day a copy sealed with your 24 words goes to the iCloud storage of your Apple Account; nobody else can open it, and on a new phone your 24 words bring it back. It is in Settings → Data and Storage.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Раз в день копия, запечатанная вашими 24 словами, уходит в хранилище iCloud вашего Apple Account; никто другой её не откроет, а на новом телефоне 24 слова её вернут. Это в Настройки → Данные и память."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每天一次，以您的 24 个词加密的备份会存入您 Apple 账户的 iCloud 存储；其他人都无法打开，在新手机上您的 24 个词会将其取回。可在 设置 → 数据和存储 中更改。"
+          }
+        }
+      }
+    },
+    "No letters came back to this chat": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переписка этого чата не вернулась"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此聊天没有取回任何消息"
+          }
+        }
+      }
+    },
+    "Restoring the history: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстановление истории: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在恢复聊天记录：%@"
           }
         }
       }

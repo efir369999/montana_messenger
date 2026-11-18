@@ -1135,10 +1135,10 @@ final class NotificationService: UNNotificationServiceExtension {
         let t0 = Date()
         for it in loud.prefix(6) {
             if Date() >= deadline { break }
-            guard let secret = MTPipeKey.mirrored(it.to, in: secrets),
+            guard let author = MTNodeWire.mirroredAuthorKey(), let secret = MTPipeKey.mirrored(it.to, in: secrets),   // no author key, no letter: the app sends it signed (24464)
                   let plain = MTNodeWire.padEnvelope(MTNodeWire.letterHead(mid: it.mid, text: it.wire ?? it.text, name: name, glyph: glyph,
                                                                             quoteText: it.qt, quoteMid: it.qm,
-                                                                            author: MTNodeWire.mirroredAuthorKey(), secret: secret)) else { skipped += 1; continue }
+                                                                            author: author, secret: secret)) else { skipped += 1; continue }
             tried += 1
             let sem = DispatchSemaphore(value: 0)
             let box = KnockBox()

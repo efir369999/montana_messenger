@@ -247,6 +247,9 @@ enum MTKeepDerive {
     /// light_secret = HKDF-Expand(master_seed, "mt-keep-light", 32): the pipe of light, the owner's alone, in which the road of
     /// the light copy is named.
     static func lightSecret(_ master: Data) -> Data? { expand(master, Array("mt-keep-light".utf8)) }
+    /// book_key = HKDF-Expand(master_seed, "mt-keep-book", 32): it seals the keepers' book (OZ 1 p.1.1); a keeper holds the sealed
+    /// book and cannot open it.
+    static func bookKey(_ master: Data) -> Data? { expand(master, Array("mt-keep-book".utf8)) }
 
     /// head = k_1B || n_1B || generation_8B_LE || length_8B_LE || SHA-256(container) || SHA-256(share): eighty-two bytes.
     struct Head: Equatable {
@@ -382,6 +385,8 @@ enum MTKeepDerive {
         /// whole, with nothing to send again -- a phone woken for seconds by a push answers in those seconds.
         var road: [String: String]? = nil
         var roadAt: Double? = nil
+        /// THE OWNER'S BOOK, SEALED UNDER THE OWNER'S SEED (OZ 1 p.1.1): held unread and given back with every answer.
+        var book: Data? = nil
     }
     nonisolated private static let heldKey = "mt.keep.held"   // NOT-UI: this device's own (SeedScope.deviceKeys)
     @Published private(set) var held: [String: Held] = [:]
@@ -391,6 +396,34 @@ enum MTKeepDerive {
     /// a bar from its first frame (the author's word 09.10.2026: «the progress bar must show at once, now it spins long before»).
     enum Taking: Equatable { case idle, fetching(Double), calling(have: Int, need: Int), laying(Double), done, failed }
     @Published fileprivate(set) var taking: Taking = .idle
+    /// THE RESTORE SAYS WHAT IT DOES (the author's words 24484, 24486, 17.11.2026 23:17-23:19 UTC: «show on the restore screen
+    /// what is happening»): who was asked, who answered, what came and what did not -- the screen reads this alone (MTKeepWalkLines).
+    struct Walk: Equatable {
+        var devicesAsked = 0         // the times the seed's other devices were asked for a picture of now
+        var devicesReached = false   // a door boxed that asking
+        var devicesSilent = false    // two minutes passed and no device named a picture
+        var named = 0                // the copies a device named for this asking
+        var broken = 0               // the copies and parts that did not come whole
+        var slots = 0, boxed = 0     // the keepers' pipes called, and those a door boxed
+        var rung = 0                 // the keepers rung loudly
+    }
+    @Published fileprivate(set) var walk = Walk()
+    /// The keepers' book of this walk is laid (layBook): the next answers carry the same book.
+    private var bookLaid = false
+    /// THE SHARE OF A CHAT COME BACK (OZ 1 p.1.2), written where the list reads it (ChatStore.restoreShare): a step of five percent
+    /// redraws the list, nil when the letters are laid or none came.
+    private func noteBack(_ conv: String, _ f: Double?) {
+        guard let store = ChatStore.live else { return }
+        let was = store.restoreShare[conv]
+        if let f {
+            guard was.map({ Int($0 * 20) != Int(f * 20) }) ?? true else { return }
+            store.restoreShare[conv] = f
+        } else if was != nil {
+            store.restoreShare[conv] = nil
+        }
+    }
+    /// The asking of the seed's devices was said (MontanaArchive.askTwinsLight), boxed on a door or not.
+    func devicesAsked(boxed: Bool) { walk.devicesAsked += 1; if boxed { walk.devicesReached = true } }
 
     /// The first screen waits for the copy (MontanaOnboardingView.takeFromKeepers) until the person walks on without it.
     var onboardingWaits = false
@@ -402,6 +435,7 @@ enum MTKeepDerive {
     /// The first screen lets the person in the moment the light copy is laid (App: «once the light copy is laid»).
     var onLight: (() -> Void)? = nil
     private var takingTask: Task<Void, Never>? = nil
+    private var takingRound = 0   // the walk that owns takingTask; a stopped one ends without touching it
     /// The light roads tried in this taking, by digest (a laid one, or an old one that did not come whole): never fetched again.
     private var lightSeen: Set<String> = []
     /// A light copy of another device laid in this taking: ten minutes without the phone's own let the person in with it.
@@ -541,23 +575,25 @@ enum MTKeepDerive {
                                              "at": Int(Date().timeIntervalSince1970)], sender: Self.lightName)
         MontanaTrace.mark("keep_light", "gone told=" + (told ? "1" : "0"))
     }
+    /// THE PICTURE LAID FOR AN ASKING DEVICE IS A RELAY'S LETTER, NOT A COPY (the author's words 24371, 24376): ten minutes after
+    /// it was named it leaves the nodes, taken or not; the copies an older build laid by its daily rhythm leave at this build's first look.
+    private func unlayLight(_ now: Double) {
+        guard let laid = owner.lightLaid, !laid.isEmpty, 600 <= now - (owner.lightAt ?? 0) else { return }
+        owner.lightLaid = nil; saveOwner()
+        Task.detached(priority: .utility) { await Self.unlay(laid) }
+        MontanaTrace.mark("keep_light", "relayed taken off roads=" + String(laid.count))
+    }
     /// THE OWNER'S RHYTHM: a renewal is due a day after the last; it asks the people I write to, waits ten minutes for one yes
     /// at least (a full ring goes at once), and an hour without one leaves the copy where it stands until tomorrow.
     func tickSoon() { DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in self?.tick() } }
     func tick() {
-        guard Self.mine, Self.told, Self.agrees, MontanaSeed.hasSeed else { return }
         let now = Date().timeIntervalSince1970
-        let tags = Self.profileTags()
-        let moved = owner.lightFace != tags.face || owner.lightName != tags.name || owner.lightEngine != MontanaBackup.cardEngine
-        let since = now - max(owner.lightAt ?? 0, owner.lightTriedAt ?? 0)
-        let people = Self.peopleTag()
-        let met = owner.lightPeople != people
-        // A JOINED DEVICE NAMES NO COPY WHILE IT TAKES ONE, NOR ONE WITHOUT A CHAT (decision 989 = a): the Mac named its empty copy,
-        // 127 MB without a chat, three times in seven minutes while the phone's was coming (16.11), and filled the doors with it.
-        let named = MTLinkedDevices.joinedPhone == nil || (!isTaking && !(ChatStore.live?.messages.isEmpty ?? true))
-        if !lighting, named, since >= 86_400 || (moved && since >= 60) || (met && since >= 600) {
-            layLight(tags, people: people)   // one's own name or face: a minute; the people and the groups: ten minutes
-        }
+        unlayLight(now)   // first, whatever the person chose: an older build's copies leave the nodes too
+        guard Self.mine, Self.told, Self.agrees, MontanaSeed.hasSeed else { return }
+        // NO COPY OF THE HISTORY STANDS ON THE NODES (the author's words 24369-24371 and 24376, 17.11.2026: «the nodes are relays
+        // only and must hold nothing»; «copies only at the users, only current ones, and the restore only by them»): no light copy
+        // is laid by a rhythm -- not daily, not for one's own new name or face, not for a new person. A picture of now is laid only
+        // for a device that asks it (lightForLink) and leaves the nodes once taken (takeLight) or ten minutes after (unlayLight).
         guard !renewing else { return }
         if let g = owner.asking {
             if owner.yes.count >= MTKeepRing.most || (!owner.yes.isEmpty && now - owner.askedAt >= 600) { return renew(g) }
@@ -624,6 +660,14 @@ enum MTKeepDerive {
         }
         owner.keepers[conv] = k; saveOwner()
         MontanaTrace.mark("keep_held", "slot=\(o["k"] as? Int ?? k.slot) whole=\(k.held)")
+        // THE SHARES ARE A RELAY'S LETTER, NOT A COPY (OZ 1 p.1.2; decision 1058, the author's words 24379, 24394, 24436): once
+        // every keeper of the ring holds its slots whole, the shares leave the nodes -- the copy lives on the keepers' phones alone,
+        // and a keeper who stays silent leaves them to the node's own term of seven days.
+        if !owner.keepers.isEmpty, owner.keepers.values.allSatisfy(\.held), let laid = owner.laid, !laid.isEmpty {
+            owner.laid = nil; saveOwner()
+            Task.detached(priority: .utility) { await Self.unlay(laid) }
+            MontanaTrace.mark("keep_held", "every keeper holds: shares taken off roads=\(laid.count)")
+        }
     }
     private func renew(_ g: UInt64) {
         guard !owner.yes.isEmpty, !renewing else { return }
@@ -678,6 +722,10 @@ enum MTKeepDerive {
             }
             if let road = await Self.lay(cut.shares[k]) { roads[k] = road }
         }
+        // THE KEEPERS' BOOK RIDES WITH THE PARTS (OZ 1 p.1.1): sealed under the seed, put once on the nodes and named in every part;
+        // it leaves the nodes with the shares (owner.laid, unlay).
+        let book = await Self.putBook(master, convs: people())
+        if let book { roads[-1] = ["mref": book, "mk": ""] }
         var sent: [String: Keeper] = [:]
         var parts = 0
         for (i, conv) in keepers.enumerated() {
@@ -688,6 +736,7 @@ enum MTKeepDerive {
                 var o: [String: Any] = ["w": "part", "k": k, "n": n, "s": secret.base64EncodedString(),
                                         "h": head.bytes.montanaHexString, "e": MTKeepDerive.seal(key, head).montanaHexString]
                 for (a, b) in road { o[a] = b }
+                if let book { o["b"] = book }
                 say(conv, o)
                 parts += 1
             }
@@ -705,12 +754,23 @@ enum MTKeepDerive {
         MontanaTrace.mark("keep_hand", "g=\(g) keepers=\(sent.count) parts=\(parts) laid=\(roads.count) bytes=\(cut.length)")
     }
 
+    /// The keepers' book sealed under the book key and put on the nodes as one piece, named by its digest.
+    private static func putBook(_ master: Data, convs: [String]) async -> String? {
+        guard let key = MTKeepDerive.bookKey(master), let plain = MontanaArchive.keepersBook(convs),
+              let sealed = MTNodeWire.sealBlob(key: [UInt8](key), plain), sealed.count <= bookMost else { return nil }
+        let id = MontanaMedia.blobIdHex(sealed)
+        guard await MontanaWakePush.putBlob(id, data: sealed) else { return nil }
+        MontanaTrace.mark("keep_book", "put people=\(convs.count) bytes=\(sealed.count)")
+        return id
+    }
+    /// A book past this measure is no book of names: the keeper does not hold it.
+    nonisolated static let bookMost = 262_144
+
     // ── the light copy (Network «The light copy»; the author's word 08.10.2026 20:5x UTC: «the person, the face, the name and
     // everything else back by the words [...]») ──
     /// THE COPY WITHOUT ITS ATTACHMENTS -- every letter, every room, the profile, the faces and the head of every
-    /// correspondence -- sealed as every copy is, laid on the nodes and named by one letter in the pipe of light, once a day while
-    /// the copy is kept. The pieces live a week there and the letter in the box as long, so a phone lost today is opened by the
-    /// words alone tomorrow.
+    /// correspondence -- sealed as every copy is, laid on the relay and named by one letter in the pipe of light, only for a
+    /// device of these words that asks it (a joining by QR, words opened); it never stays there (unlayLight, takeLight).
     /// THE COPY IS A PICTURE ON THE MIRROR'S CURSOR (OZ 1 p.6): the cursors are read before the copy is gathered, so a word
     /// after them rides the mirror again and none falls between; a copy for a joining is sealed at once (urgent).
     private func layLight(_ tags: (face: String, name: String), people: String, joining: Bool = false) {
@@ -786,12 +846,11 @@ enum MTKeepDerive {
         }
         guard await Self.knock(secret, road, sender: Self.lightName) else { return MontanaTrace.mark("keep_light", "no door boxed the road") }
         owner.lightGen = g; owner.lightAt = Date().timeIntervalSince1970; owner.lightFace = tags.face; owner.lightName = tags.name; owner.lightPeople = people; owner.lightEngine = MontanaBackup.cardEngine
-        // THE LAST TWO LIGHT COPIES STAY: a device in the middle of taking the one before still finds it whole.
-        let lights = (owner.lightLaid ?? []) + Self.roadsOf([road])
-        owner.lightLaid = Array(lights.suffix(2))
+        // THE PICTURE IS A RELAY'S LETTER (the author's words 24371, 24376): it stands ten minutes for the device that asked it,
+        // then leaves the nodes (unlayLight); the device that takes it takes it off at once (takeLight).
+        owner.lightLaid = (owner.lightLaid ?? []) + Self.roadsOf([road])
         saveOwner()
-        let older = Array(lights.dropLast(2))
-        if !older.isEmpty { Task.detached(priority: .utility) { await Self.unlay(older) } }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 610) { [weak self] in self?.tick() }
         MontanaTrace.mark("keep_light", "named g=\(g) bytes=\(made.tally.bytes) chats=\(made.tally.chats)")
     }
     nonisolated static let lightName = "light"   // NOT-UI: the name the pipe of light is heard and sent under
@@ -854,6 +913,7 @@ enum MTKeepDerive {
             if phone == nil { return (b["at"] as? Int ?? 0) < (a["at"] as? Int ?? 0) }   // the newest picture first
             return fresh(a) == fresh(b) ? (b["z"] as? Int ?? 0) < (a["z"] as? Int ?? 0) : fresh(a)
         }
+        walk.named = max(walk.named, roads.count)
         guard !roads.isEmpty else {
             MontanaTrace.mark("keep_light", phone == nil ? "the pipe of light holds no road" : "no new road; the phone's copy is awaited")
             return false
@@ -867,10 +927,14 @@ enum MTKeepDerive {
             guard await Self.fetch(road, to: url, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .fetching(f) } }),
                   MontanaBackup.digest(of: url) == d else {
                 if !fresh(road) || phone == nil { lightSeen.insert(d) }   // the fresh copy awaited is fetched again
+                walk.broken += 1
                 MontanaTrace.mark("keep_light", "a light copy did not come whole")
                 continue
             }
             lightSeen.insert(d)
+            // TAKEN, IT LEAVES THE RELAY (the author's words 24371, 24376): the pieces go from the nodes the moment they are here.
+            let taken = Self.roadsOf([road])
+            Task.detached(priority: .utility) { await Self.unlay(taken) }
             taking = .laying(0)
             let r: Result<MontanaBackup.Tally, MontanaBackup.Refusal> = await withCheckedContinuation { c in
                 MontanaBackup.restore(from: url, ofMany: true, progress: { f in Task { @MainActor in MTKeeping.shared.taking = .laying(f) } }) { c.resume(returning: $0) }
@@ -1013,12 +1077,15 @@ enum MTKeepDerive {
         }
         try? FileManager.default.removeItem(at: dest)
         guard (try? FileManager.default.moveItem(at: landing, to: dest)) != nil else { return }
+        // THE OWNER'S BOOK, HELD UNREAD (OZ 1 p.1.1): sealed under the owner's seed, it goes back with every answer.
+        var book: Data? = nil
+        if let b = o["b"] as? String, let d = await MontanaWakePush.getBlob(b), d.count <= Self.bookMost, MontanaMedia.blobIdHex(d) == b { book = d }
         // A RENEWAL REPLACES (Network): this person's parts of an older copy leave as the newer one arrives.
         for (old, h) in held where Self.convOf(old) == conv && old != key && generation(h) < head.generation { dropKey(old) }
         let now = Date().timeIntervalSince1970
         var road: [String: String] = ["z": String(size)]
         for name in ["bk", "mref", "mk"] { road[name] = o[name] as? String ?? "" }
-        held[key] = Held(slot: k, n: n, secret: secret, head: hd, seal: seal, bytes: size, at: now, road: road, roadAt: now)
+        held[key] = Held(slot: k, n: n, secret: secret, head: hd, seal: seal, bytes: size, at: now, road: road, roadAt: now, book: book)
         roads[key] = nil
         saveHeld()
         MontanaWakePush.registerConvs()   // the slot's pipe rings this phone from now on: a call wakes it by a push
@@ -1068,17 +1135,21 @@ enum MTKeepDerive {
         let task = UIApplication.shared.beginBackgroundTask(withName: "keep-answer")
         defer { if task != .invalid { UIApplication.shared.endBackgroundTask(task) } }
         var road: [String: Any]
-        // The owner's road is ridden while it stands: a newer generation takes the older off the nodes (unlay), and a keeper
-        // that missed the newer part lays its own.
-        if let r = h.road, let at = h.roadAt, now - at < 6 * 86_400, let z = Int(r["z"] ?? ""), z == h.bytes, await Self.stands(r["mref"] ?? "") {
-            road = ["z": z, "bk": r["bk"] ?? "", "mref": r["mref"] ?? "", "mk": r["mk"] ?? ""]   // the owner's pieces, alive a week
-        } else if let r = roads[conv], now - r.at < 86_400 {
-            road = r.road   // the pieces live a week on the nodes: a day's answers share them
+        // THE KEEPER LAYS ITS OWN PART FOR A CALL, A RELAY'S LETTER (OZ 1 p.1.2, decision 1058): the owner's shares left the
+        // nodes once every keeper held them, and the device that takes an answer takes it off the nodes at once (callAndBuild);
+        // a day's answers share one road only while it still stands.
+        if let r = roads[conv], now - r.at < 86_400, await Self.stands(r.road["mref"] as? String ?? "") {
+            road = r.road
         } else {
             guard let fresh = await Self.lay(url) else { return MontanaTrace.mark("keep_answer", "the part did not reach the nodes") }
             road = fresh; roads[conv] = (now, fresh)
         }
         road["w"] = "answer"; road["h"] = h.head.montanaHexString; road["e"] = h.seal.montanaHexString
+        // The owner's book rides beside the part, put again: the nodes' term may have taken it (OZ 1 p.1.1).
+        if let b = h.book {
+            let id = MontanaMedia.blobIdHex(b)
+            if await MontanaWakePush.putBlob(id, data: b) { road["b"] = id }
+        }
         guard await Self.knock(h.secret, road) else { return MontanaTrace.mark("keep_answer", "no door boxed it") }
         h.answeredAt = now; held[conv] = h; saveHeld()
         MontanaTrace.mark("keep_answer", "slot=\(h.slot) of \(h.n)")
@@ -1183,11 +1254,19 @@ enum MTKeepDerive {
     /// name as theirs is theirs; one they name as mine stands as mine only when the author field it rode with is made again
     /// under this person's key (MTLetterAuthor.mine) -- else it is not laid at all, and the count says so.
     private func takeGiven(_ conv: String, _ o: [String: Any]) async {
-        guard let at = askedBack()[conv], Date().timeIntervalSince1970 - at < 7 * 86_400, (o["c"] as? Int ?? 0) > 0,
-              let d = o["d"] as? String, let dir = try? MontanaBackup.shelf() else { return }
+        guard let at = askedBack()[conv], Date().timeIntervalSince1970 - at < 7 * 86_400 else { return }
+        // NOTHING TO GIVE BACK (OZ 1 p.1.2): the chat's row says so and stands on its name.
+        guard (o["c"] as? Int ?? 0) > 0 else {
+            noteBack(conv, nil)
+            ChatStore.live?.restoringEnded(conv)
+            return
+        }
+        guard let d = o["d"] as? String, let dir = try? MontanaBackup.shelf() else { return }
+        noteBack(conv, 0.01)
         let url = dir.appendingPathComponent(UUID().uuidString + ".given")
         defer { try? FileManager.default.removeItem(at: url) }
-        guard await Self.fetch(o, to: url), MontanaBackup.digest(of: url) == d, let data = try? Data(contentsOf: url),
+        let share: @Sendable (Double) -> Void = { f in Task { @MainActor in MTKeeping.shared.noteBack(conv, 0.01 + f * 0.94) } }
+        guard await Self.fetch(o, to: url, progress: share), MontanaBackup.digest(of: url) == d, let data = try? Data(contentsOf: url),
               let list = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]], let store = ChatStore.live else {
             return MontanaTrace.mark("keep_back", "the given letters did not come whole")
         }
@@ -1223,6 +1302,8 @@ enum MTKeepDerive {
             return Message(text: x, isFromMe: claimedMine, time: hhmm(at: t), isRead: true, deliveryStatus: claimedMine ? .sent : .read, msgId: mid, createdAt: t)
         }
         let laid = store.layGivenBack(conv, rows)
+        noteBack(conv, nil)
+        if (store.messages[conv] ?? []).isEmpty { store.restoringEnded(conv) }
         MontanaTrace.mark("keep_back", "took=\(laid) of \(list.count) unproven_mine=\(unproven) conv=" + String(conv.prefix(10)))
     }
 
@@ -1233,15 +1314,21 @@ enum MTKeepDerive {
     /// or after six hours without one.
     func takeBack(_ done: @escaping (Result<MontanaBackup.Tally, MontanaBackup.Refusal>) -> Void = { _ in }) {
         guard takingTask == nil else { return }
+        takingRound += 1
+        let round = takingRound
         takingTask = Task {
             let r = await callAndBuild()
+            guard round == takingRound else { return }   // stopped: a newer walk owns the handle and the screen
             takingTask = nil
             done(r)
         }
     }
+    /// The walk stops, and the next takeBack begins a new one (P1 on Messenger 2450, 17.11.2026 23:29 UTC: the walk of an erased
+    /// person outlived the erase, and the new restore, refused by the guard above, never asked the devices).
     func stopTaking() {
-        takingTask?.cancel(); takingTask = nil
-        if case .calling = taking { taking = .idle }
+        guard let t = takingTask else { return }
+        t.cancel(); takingTask = nil; takingRound += 1
+        taking = .idle; walk = Walk()
     }
     var isTaking: Bool { takingTask != nil }
 
@@ -1264,8 +1351,7 @@ enum MTKeepDerive {
             if 6 * 3600 < Date().timeIntervalSince1970 - began { taking = .failed; return .failure(.empty) }
             try? await Task.sleep(nanoseconds: 15_000_000_000)
         }
-        taking = .idle
-        return .failure(.stopped)
+        return .failure(.stopped)   // stopped by stopTaking, which said idle itself: a newer walk may own the screen already
     }
 
     /// THE WORDS OPENED HERE TAKE ONLY A PICTURE OF NOW (OZ 1 p.2, the author's words 24326, 24327, 24328: «a crooked copy must not
@@ -1284,11 +1370,31 @@ enum MTKeepDerive {
             taking = .calling(have: 0, need: 0)
             try? await Task.sleep(nanoseconds: 10_000_000_000)
         }
-        MontanaTrace.mark("keep_light", "words opened: no device of the seed named a picture of now in 120 s -- the keepers are called")
+        walk.devicesSilent = true
+        MontanaTrace.mark("keep_light", "words opened: no device of the seed named a picture of now in 120 s -- the keepers' copy is the history")
         return false
     }
 
     private struct Answer { let head: MTKeepDerive.Head; let url: URL }
+    /// THE KEEPERS' BOOK LAID HERE (OZ 1 p.1.1): its pipes re-established, each chat it names standing empty in the list with its
+    /// share (ChatStore.standRestoring), and each correspondent asked at once for the letters (askBack).
+    private func layBook(_ id: String, master: Data) async -> Bool {
+        guard let key = MTKeepDerive.bookKey(master), let sealed = await MontanaWakePush.getBlob(id), MontanaMedia.blobIdHex(sealed) == id,
+              let plain = MTNodeWire.openBlob(key: [UInt8](key), sealed: sealed) else { return false }
+        let chats = MontanaArchive.keepersPipes(plain)
+        let stood = ChatStore.live?.standRestoring(chats) ?? []
+        for ref in stood { noteBack(ref, 0) }
+        askBack()
+        MontanaTrace.mark("keep_book", "laid pipes=\(chats.count) stood=\(stood.count)")
+        return true
+    }
+    /// The keepers' pipes called once, each boxed where a door takes it.
+    private func callKeepers(_ secrets: [Data]) async {
+        var boxed = 0
+        for s in secrets { if await Self.knock(s, ["w": "call"]) { boxed += 1 } }
+        walk.slots = secrets.count; walk.boxed = boxed
+        MontanaTrace.mark("keep_call", "slots=\(secrets.count) boxed=\(boxed)")
+    }
     private func callAndBuild() async -> Result<MontanaBackup.Tally, MontanaBackup.Refusal> {
         guard Self.agrees, let master = MontanaSeed.root,
               let key = MTKeepDerive.keepKey(master), let dir = try? MontanaBackup.shelf() else { taking = .failed; return .failure(.noSeed) }
@@ -1300,14 +1406,20 @@ enum MTKeepDerive {
         var lastCall = 0.0, lastLoud = 0.0
         let began = Date().timeIntervalSince1970
         taking = .fetching(0)
+        walk = Walk()
         let ls = MTKeepDerive.lightSecret(master)
-        lightSeen = []; lightLaid = false
+        lightSeen = []; lightLaid = false; bookLaid = false
         // A JOINED DEVICE TAKES ITS HISTORY FROM THE PHONE ALONE (the author's word 23053 p.2): no keeper is called, no push rings.
         if let phone = MTLinkedDevices.joinedPhone { return await takeFromPhone(ls, dir: dir, phone: phone, began: began) }
         // THE LIGHT COPY FIRST (Network «The light copy»): the pipe of light is read before any call, and the person is let in.
         // ONE OWNER OF THE HISTORY (OZ 1 p.2, the author's words 24326, 24328): the picture of now is the whole history, and nothing
         // is laid over it -- the keepers' copy, of an older generation, laid on top of the light one made a second owner. The keepers
-        // are called only when no device of the seed named a picture.
+        // are laid only when no device of the seed named a picture.
+        // EVERY ONE IS ASKED AT ONCE (the author's word 24486: «ask all the nodes and devices, so as not to get stuck»): the keepers
+        // are called with the devices, never two minutes after them; their parts wait in the box, read below only when no device
+        // named a picture of now. Taken, a part leaves the nodes; one never read leaves them by the relay's term (HOLD).
+        lastCall = Date().timeIntervalSince1970
+        Task { await self.callKeepers(secrets) }
         if let ls, await takeOpened(ls, dir: dir) { taking = .done; return .success(lightTally) }   // the picture is whole: nobody is asked to give back (OZ 1 p.1.5)
         taking = .calling(have: 0, need: 0)
         defer { for a in answers.values { try? FileManager.default.removeItem(at: a.url) } }
@@ -1315,14 +1427,12 @@ enum MTKeepDerive {
             let now = Date().timeIntervalSince1970
             if now - lastCall >= 120 {
                 lastCall = now
-                var boxed = 0
-                for s in secrets { if await Self.knock(s, ["w": "call"]) { boxed += 1 } }
-                MontanaTrace.mark("keep_call", "slots=\(secrets.count) boxed=\(boxed)")
+                await callKeepers(secrets)
             }
-            // IF NEEDED, A LOUD PUSH (the author's word 08.10.2026 19:4x UTC): six minutes of silence from a slot, and the call
-            // in its pipe rings the keeper's screen with the owner's name, every ten minutes -- a phone whose app the person
-            // closed hears no silent push at all. The slots that answered the newest copy are rung no more.
-            if now - began >= 360, now - lastLoud >= 600 {
+            // A LOUD PUSH (the author's word 08.10.2026 19:4x UTC; decision 1063 = b, 17.11.2026 23:31 UTC): the call in a slot's
+            // pipe rings the keeper's screen with the owner's name once a minute for the first ten minutes, then every ten minutes
+            // -- a phone whose app the person closed hears no silent push at all. The slots that answered the newest copy are rung no more.
+            if now - lastLoud >= (now - began < 600 ? 60 : 600) {
                 lastLoud = now
                 let newest = answers.values.max(by: { $0.head.generation < $1.head.generation })?.head
                 let heard = Set(answers.values.filter { $0.head.copyDigest == newest?.copyDigest }.map { $0.head.slot })
@@ -1330,6 +1440,7 @@ enum MTKeepDerive {
                 for k in 0..<(newest?.n ?? MTKeepDerive.slots) where !heard.contains(k) {
                     if await Self.knock(secrets[k], ["w": "call", "loud": 1], silent: false) { rung += 1 }
                 }
+                walk.rung = rung
                 MontanaTrace.mark("keep_call", "loud rung=\(rung) heard=\(heard.count)")
             }
             var rows: [[String: String]] = []
@@ -1340,6 +1451,8 @@ enum MTKeepDerive {
                       let o = Self.word(row["t"] ?? ""), (o["w"] as? String) == "answer",
                       let hd = (o["h"] as? String).flatMap({ Data(montanaHex: $0) }), let head = MTKeepDerive.Head(hd), head.slot == k,
                       let seal = (o["e"] as? String).flatMap({ Data(montanaHex: $0) }), seal == MTKeepDerive.seal(key, head) else { continue }
+                // THE CHATS FIRST (OZ 1 p.1.1): the first answer that carries the owner's book stands every chat it names, empty.
+                if !bookLaid, let b = o["b"] as? String, await layBook(b, master: master) { bookLaid = true }
                 let id = head.copyDigest.montanaHexString + "." + String(k)
                 guard answers[id] == nil else { continue }
                 let url = dir.appendingPathComponent(UUID().uuidString + ".keep")
@@ -1348,6 +1461,9 @@ enum MTKeepDerive {
                 }
                 answers[id] = Answer(head: head, url: url)
                 MontanaTrace.mark("keep_took", "slot=\(k) of \(head.n) generation=\(head.generation)")
+                // The answer was a letter to this device alone: taken, it leaves the nodes at once (OZ 1 p.1.2, decision 1058).
+                let taken = Self.roadsOf([o])
+                Task.detached(priority: .utility) { await Self.unlay(taken) }
             }
             // The copies in hand, the newest first; a copy stands when its parts hold twelve cells of every group.
             let copies = Dictionary(grouping: Array(answers.values), by: { $0.head.copyDigest })
@@ -1385,8 +1501,7 @@ enum MTKeepDerive {
             if Date().timeIntervalSince1970 - began > 6 * 3600 { taking = .failed; return .failure(.empty) }
             try? await Task.sleep(nanoseconds: 15_000_000_000)
         }
-        taking = .idle
-        return .failure(.stopped)
+        return .failure(.stopped)   // stopped by stopTaking, which said idle itself: a newer walk may own the screen already
     }
 }
 
@@ -1451,6 +1566,37 @@ extension ChatStore {
 /// SAID HERE AND NOWHERE ELSE (the author's word 17977-17978, 09.11.2026): the notice «N keeps a sealed part of their copy on
 /// this phone» is gone -- a banner about someone's part on your phone read as control. The footers below say it plainly, as
 /// what it is: Montana's own way of keeping copies with no cloud in between.
+/// THE STEPS OF THE RESTORE ON ITS SCREEN (the author's words 24484, 24486): one line a step, said as it happens -- who was
+/// asked, who answered, what came and what did not.
+struct MTKeepWalkLines: View {
+    @ObservedObject var keep = MTKeeping.shared
+    var body: some View {
+        let w = keep.walk
+        VStack(alignment: .leading, spacing: 6) {
+            if 0 < w.devicesAsked {
+                if 0 < w.named { row("checkmark.circle", Text("Your other device answered with your history")) }
+                else if w.devicesSilent { row("minus.circle", Text("Your other devices did not answer in two minutes")) }
+                else if w.devicesReached { row("clock", Text("Asking your other devices")) }
+                else { row("exclamationmark.triangle", Text("No node took the asking yet")) }
+            }
+            if 0 < w.slots {
+                row(0 < w.boxed ? "person.2" : "exclamationmark.triangle", Text("Asked the people who keep your copy: \(w.boxed) of \(w.slots)"))
+            }
+            if 0 < w.rung { row("bell", Text("Called them loudly: \(w.rung)")) }
+            if 0 < w.broken { row("arrow.clockwise", Text("A copy did not come whole. Asking again")) }
+            switch keep.taking {
+            case .fetching: row("arrow.down.circle.fill", Text("Downloading your history"))
+            case .laying: row("tray.and.arrow.down", Text("Laying your history on this device"))
+            default: EmptyView()
+            }
+        }
+        .font(.subheadline).foregroundColor(.white).frame(maxWidth: 420, alignment: .leading).padding(.horizontal, 24)
+    }
+    private func row(_ glyph: String, _ text: Text) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) { Image(systemName: glyph); text }
+    }
+}
+
 struct MTKeepingSection: View {
     @ObservedObject private var keep = MTKeeping.shared
     private var mineState: LocalizedStringKey {
@@ -1469,7 +1615,7 @@ struct MTKeepingSection: View {
         } header: {
             Text("COPY WITH CONTACTS")
         } footer: {
-            Text("Your copy lives only on phones, never in a cloud: this is Montana's own way of keeping it. It is sealed with your 24 words and cut into parts, and the people you write to keep the parts for you: each sees only a size, never a word. On a new phone your 24 words bring the parts back, and your conversations with them.")
+            Text("This way your copy lives only on phones: Montana's nodes keep none of it. It is sealed with your 24 words and cut into parts, and the people you write to keep the parts for you: each sees only a size, never a word. On a new phone your 24 words bring the parts back, and your conversations with them.")
         }
         .listRowBackground(MTGlassRowPlate())
         Section {
@@ -1766,6 +1912,7 @@ enum MTLinkedDevices {
     /// the store and the seed leave this device; nothing is asked of the keepers or the cloud. «Delete account» runs it after its
     /// own releases; an ended session and a term run out run it alone -- the person's copies stay for the phone.
     @MainActor static func eraseHere() async {
+        MTKeeping.shared.stopTaking()   // a restore under way leaves with the person, so the next words begin their own
         MontanaBackup.sweep(all: true)
         let store = ChatStore.live
         let convs = store.map { s in Array(s.messages.keys) } ?? []

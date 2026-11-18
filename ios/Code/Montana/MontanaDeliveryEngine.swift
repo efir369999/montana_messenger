@@ -221,6 +221,23 @@ final class MontanaDeliveryEngine {
         // first letter, Bluetooth and the box alike. On 2431 the live channel told nothing and T1's words in two chats of the iPad
         // landed as the correspondents', the envelope's name, the person's own, standing over theirs (source envelope below).
         let own = own || (author.map { MTLetterAuthor.mine($0, conv: from, mid: mid, text: text) } ?? false)
+        // NO LETTER OF AN UNPROVEN AUTHOR (OZ 1 p.1.6; the author's word 24464, 17.11.2026: «this must not exist architecturally»):
+        // a letter carrying its author's field while this person's author key is not derived yet can be told neither mine nor
+        // theirs. It stays here for the key and walks in again; it never lands as the correspondent's. With no seed there is no
+        // person to tell, and the letter walks on.
+        if !own, !mirrored, author?.isEmpty == false, MTLetterAuthor.key == nil, MontanaSeed.mnemonic != nil {
+            MontanaTrace.markFolded("rx_unproven", "the author key is not derived yet -- the letter stays mid=\(String(mid.prefix(8)))", window: 10, key: "rx_unproven")
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                self?.receive(from: from, mid: mid, text: text, senderName: senderName, senderGlyph: senderGlyph,
+                              transport: transport, quoteText: quoteText, quoteMid: quoteMid, linkPreview: linkPreview,
+                              sentAt: sentAt, own: false, author: author, mirrored: mirrored)
+            }
+            return
+        }
+        // A WORD NAMES ITS SENDER ONLY FROM A PROVEN CORRESPONDENT: the author field read under this person's key and not found
+        // mine, or a twin's mirrored copy of a word it proved theirs. A letter with no author field names nobody.
+        let theirs = !own && (mirrored || (author?.isEmpty == false && MTLetterAuthor.key != nil))
         // A WORD OF THEIRS ENDS THE INTRODUCTION (26.09): every road lands here, so the proof is read here, before
         // the row lands and its receipt leaves -- a receipt to a peer still in the introduction waits for the pipe.
         // The queue turns at once from the knock at their point to the node and the wake.
@@ -308,6 +325,12 @@ final class MontanaDeliveryEngine {
                     linkPreview: linkPreview, sentAt: sentAt)
             return
         }
+        // A NAME WORD OF NO PROVEN AUTHOR NAMES NOBODY (the author's word 24464): it is answered, so its sender's queue settles.
+        if !theirs, text.hasPrefix(nameMark) {
+            MontanaTrace.markFolded("name_unproven", "a name word of no proven author names nobody peer=\(String(from.prefix(10)))", window: 60, key: "nu:" + from)
+            _ = store.sendDeliveryReceipt(from, msgId: sid, isFromMe: false, text: text)
+            return
+        }
         // A control letter that already spoke is not heard twice (the box repeats; 15.09 13:38).
         // Call and draft words carry a fresh name on every copy and pass; the rest are named once.
         // A ROW LETTER IS NEVER A CONTROL WORD HERE (1638): media, voice and stickers dedup by the
@@ -377,9 +400,9 @@ final class MontanaDeliveryEngine {
             // The envelope's word is a WITNESS of the person's name at the moment the letter was sealed
             // (21.09): it enters the book with that moment, and a letter that slept in the box cannot
             // rename a person back past a fresher word.
-            // A letter with an author field is told mine or theirs only by the person's author key: while it is not derived yet the
-            // envelope names nobody -- a word of the seed's other device would rename the correspondent with the person's own name.
-            if let sn = senderName, !sn.isEmpty, sn.count <= 64, author == nil || MTLetterAuthor.key != nil { store.setPeerName(ref: from, name: sn, at: ChatStore.birthMs(fromMid: mid) ?? sentAt ?? 0, source: "envelope") }
+            // Only a proven correspondent's letter names them (theirs, above): a letter of no proven author -- no author field, or a
+            // word of the seed's other device -- would rename the correspondent with the person's own name (the author's word 24464).
+            if let sn = senderName, !sn.isEmpty, sn.count <= 64, theirs { store.setPeerName(ref: from, name: sn, at: ChatStore.birthMs(fromMid: mid) ?? sentAt ?? 0, source: "envelope") }
             // The envelope's glyph is buried unread: the face is derived from the name ([C-1], 20.09).
         }
         // A missed-call marker letter is an ORDINARY feed row with call styling: the same
@@ -1761,6 +1784,14 @@ final class MontanaDeliveryEngine {
         }
         a[i].tries += 1; a[i].lastTry = now; pace(a)
         let to = it.to, chat = it.chat, text = it.text, m = it.mid
+        // NO LETTER LEAVES WITHOUT ITS AUTHOR (OZ 1 p.1.6; the author's word 24464, 17.11.2026: «this must not exist architecturally»):
+        // sealed before this person's author key was derived, a letter rode with no author field, and the seed's other device told it
+        // neither its own nor the correspondent's -- the sender's own name in its envelope became the correspondent's. The letter
+        // stays in the queue until the key stands; the next attempt seals it signed.
+        guard MTLetterAuthor.key != nil else {
+            MontanaTrace.markFolded("tx_unproven", "the author key is not derived yet -- the letter stays queued mid=\(String(m.prefix(8)))", window: 60, key: "tx_unproven")
+            return
+        }
         // A funeral's burial not yet confirmed by every door is asked again with each of its attempts (buryInBox).
         if let graves = it.boxGraves, !graves.isEmpty, it.tries < burialTries {
             buryInBox(graves, funeral: m, held: Set(it.boxGravesHeld ?? []))

@@ -414,6 +414,17 @@ enum MTNameBook {
     /// True when the word is at least as fresh as the one held and may be applied; the moment is
     /// recorded. An older word is refused out loud (`name_stale`), never silently.
     static func admitDeclared(conv: String, name: String, at: Double, source: String) -> Bool {
+        // THIS PERSON'S OWN NAME IS NEVER A CORRESPONDENT'S (OZ 1 p.1.6; the author's words 24439, 24443, 24446, 17.11.2026: «on T1
+        // the name Alice stood as Demo -- the account's name -- a gross error, do not let it happen architecturally»; «the
+        // correspondent's name must never be absent»). Every road a name rides -- a letter's envelope, a first letter, the NM: word,
+        // a call, an old history, the archive -- can carry a word of this person's other device inside a correspondent's pipe, and
+        // «mine» is not proven on every road (an empty author field proves nothing). So the one door every road passes refuses
+        // this person's own name for anybody else, whoever brings it; only the correspondent's own card, handed at the meeting,
+        // may name a namesake. A refusal changes nothing: the name the correspondent holds stays, nobody is left nameless.
+        if !isCard(source), isOwnName(name) {
+            MontanaTrace.markFolded("name_own", "\(source) word carries this person's own name -- refused peer=\(String(conv.prefix(10)))", window: 60, key: "no:" + conv)
+            return false
+        }
         var m = declaredAts()
         let held = m[conv] ?? 0
         if at < held {
@@ -432,6 +443,14 @@ enum MTNameBook {
         }
         return true
     }
+    /// Whether a name is this person's own, as the profile says it (E2E.myDisplayName): the crown and the case set aside.
+    static func isOwnName(_ name: String) -> Bool {
+        let own = MTCrown.plain(E2E.myDisplayName()).trimmingCharacters(in: .whitespaces)
+        let said = MTCrown.plain(name).trimmingCharacters(in: .whitespaces)
+        return !own.isEmpty && said.caseInsensitiveCompare(own) == .orderedSame
+    }
+    /// The correspondent's own card, handed at the meeting: the one witness no word of this person's other device can be.
+    private static func isCard(_ source: String) -> Bool { source == "card" || source == "card-rescan" }
     private static let declaredAtQueue = DispatchQueue(label: "montana.names.declaredAt", qos: .utility)
     private static let declaredAtLock = NSLock()
     private static var declaredAtEpoch = 0   // raised when the store is replaced under the living: a folded write of the old book is dropped

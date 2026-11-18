@@ -2425,6 +2425,8 @@ struct MainTabView: View {
     /// THE QUESTION OF THE COPY WITH CONTACTS (the author's word 08.10.2026 20:2x UTC: «on by default, and a question at the
     /// opening»): asked once, in the platform's own alert, after the system's question of the notifications is settled.
     @State private var keepAsk = false
+    /// THE QUESTION OF THE COPY IN iCLOUD, its own and asked once (OZ 1 p.1.3, the author's word 24571).
+    @State private var cloudAsk = false
     // THE TABS DO NOT WATCH THE CALL (22.09): the minimized pill watches it where it is drawn
     // (MTMinimizedCallLayer). Watched from here, every second of a call ran this body -- and this body
     // carries the chat list, the drawer, the open chat and every page over them.
@@ -2562,15 +2564,22 @@ struct MainTabView: View {
         }
         .onReceive(scheduleTick) { _ in store.fireDueScheduled() }
         .onChange(of: scenePhase) { _, p in   // the system's question answered and the app back: the copy's question follows
-            if p == .active, MontanaSeed.hasSeed, !MTKeeping.told {
-                MontanaNotifyGate.systemStatus { st in if st != .notDetermined { keepAsk = true } }
-            }
+            if p == .active, MontanaSeed.hasSeed { askBackup() }
         }
-        .alert("Keep your copy with your contacts?", isPresented: $keepAsk) {
-            Button("Keep") { MTKeeping.shared.answer(keep: true) }
-            Button("Not now", role: .cancel) { MTKeeping.shared.answer(keep: false) }
+        // TWO QUESTIONS OF A BACKUP, EACH ON ITS OWN AND EACH ASKED ONCE (OZ 1 p.1.3; the author's word 24571: the encrypted copy
+        // kept with the correspondents is one question, the copy in iCloud another): the contacts first, then iCloud; the nodes keep
+        // nothing. Each is in Settings, Data and Storage, as before.
+        .alert("Keep an encrypted copy with your contacts?", isPresented: $keepAsk) {
+            Button("Keep") { MTKeeping.shared.answer(keep: true); askCloudNext() }
+            Button("Not now", role: .cancel) { MTKeeping.shared.answer(keep: false); askCloudNext() }
         } message: {
-            Text("Your copy lives only on phones, never in a cloud: this is Montana's own way of keeping it. It is sealed with your 24 words and cut into parts, and the people you write to keep the parts for you: each sees only a size, never a word. On a new phone your 24 words bring the parts back, and your conversations with them. In the same way this phone keeps sealed parts for your contacts, up to 1 GB, and cannot open them. Both switches are in Settings → Data and Storage.")
+            Text("Your history is sealed with your 24 words and cut into parts; the people you write to keep the parts and see only their size, never a word. On a new phone your 24 words bring your conversations back from them. This phone also keeps sealed parts for your contacts, up to 1 GB, and cannot open them. Montana's nodes keep no copy. It is in Settings → Data and Storage.")
+        }
+        .alert("Keep a copy in iCloud?", isPresented: $cloudAsk) {
+            Button("Keep in iCloud") { MontanaBackupCloud.answered(); chooseCloud() }
+            Button("Not now", role: .cancel) { MontanaBackupCloud.answered() }
+        } message: {
+            Text("Once a day a copy sealed with your 24 words goes to the iCloud storage of your Apple Account; nobody else can open it, and on a new phone your 24 words bring it back. It is in Settings → Data and Storage.")
         }
     }
 
@@ -2604,6 +2613,17 @@ struct MainTabView: View {
         .onChange(of: ui.overlayChat?.id) { _, id in if id != nil { ui.overlayPage = nil } }
     }
 
+    /// THE BACKUP IN iCLOUD, CHOSEN AT ITS OWN QUESTION (OZ 1 p.1.3): the switch of Data and Storage turned on and the daily road
+    /// asked (CopyInventory.tickSoon, which never seals over a copy iCloud holds and this device has not met); where iCloud
+    /// Drive cannot take it, that page opens and its switch says why.
+    private func chooseCloud() {
+        MontanaBackupCloud.ready { r in
+            guard r else { ui.overlayPage = .keeping; return }
+            UserDefaults.standard.set(true, forKey: MontanaBackupCloud.switchKey)
+            CopyInventory.tickSoon()
+        }
+    }
+
     /// Two questions, one at a time, and each explained in our words before the system asks it.
     ///
     /// The direct link goes first because it is what the app is for; notifications wait for it to
@@ -2618,8 +2638,21 @@ struct MainTabView: View {
         MontanaPhoneNode.shared.autoStart()
         MTNotifyAllowed.shared.read("entry")   // asks again while the system holds no answer, not once for ever (06.10)
         // The copy with contacts is asked after the system's own question, never beside it (two windows explain each other away).
-        guard !MTKeeping.told else { return }
-        MontanaNotifyGate.systemStatus { st in if st != .notDetermined { keepAsk = true } }
+        askBackup()
+    }
+
+    /// THE NEXT UNASKED QUESTION OF A BACKUP, ONE AT A TIME (OZ 1 p.1.3): the copy with contacts first, then iCloud, and
+    /// neither beside the system's own question of the notifications.
+    private func askBackup() {
+        MontanaNotifyGate.systemStatus { st in
+            guard st != .notDetermined else { return }
+            if !MTKeeping.told { keepAsk = true } else if MontanaBackupCloud.unasked { cloudAsk = true }
+        }
+    }
+    /// The question of iCloud follows the answer of the contacts once its alert has left the screen.
+    private func askCloudNext() {
+        guard MontanaBackupCloud.unasked else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { cloudAsk = true }
     }
 
     // pick up attachments from the «Share» menu after warming up the E2E session

@@ -168,10 +168,12 @@ enum ShareSend {
         // The envelope's shape and the walk over the doors live in MTNodeWire — the one owner
         // for the app, this sheet and the landing door (SSOT-CONSOLIDATE, 18.09).
         // The person signs the letter as its author (MTNodeWire.withAuthor): their other devices read it as their own.
+        // No author key, no letter (the author's word 24464): the app sends the same mid signed on its next open.
+        guard let author = MTNodeWire.mirroredAuthorKey() else { diag("send SKIP no-author"); return false }
         guard let plain = MTNodeWire.padEnvelope(MTNodeWire.letterHead(mid: mid, text: text,
                                                                         name: keychainString("wakeMyName"),
                                                                         glyph: keychainString("wakeMyGlyph"),
-                                                                        author: MTNodeWire.mirroredAuthorKey(), secret: secret)) else { return false }
+                                                                        author: author, secret: secret)) else { return false }
         // A quiet failure here is NOT a loss: the app re-enqueues the SAME mid on next open
         // (the guarantee leg) — so the sheet must never buy delivery with minutes of hanging.
         // THE SHEET WALKS AS THE APP DOES (1637, the author's word 16.09; 17.10.2026): boxed at one door is the guarantee, and the

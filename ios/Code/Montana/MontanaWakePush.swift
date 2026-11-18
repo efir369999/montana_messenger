@@ -1642,7 +1642,11 @@ enum MontanaWakePush {
             body.append(tail)
         }
         // The person signs the letter as its author (MTPipeKey.withAuthor): every device of the words reads it as its own.
-        body = secret.withAuthor(body, person: MTLetterAuthor.key, mid: mid, text: text)
+        let signed = secret.withAuthor(body, person: MTLetterAuthor.key, mid: mid, text: text)
+        // A HEAD WITH NO ROOM FOR ITS AUTHOR RIDES THE LONG LETTER'S ROAD (the author's word 24464): withAuthor gives such a body back
+        // unsigned, and an unsigned letter is told by nobody; nil sends it by the long letter's reference, short and signed.
+        guard signed.count != body.count else { return nil }
+        body = signed
         guard let padded = MTNodeWire.padEnvelope(body) else { return nil }
         return MTPipe.sealBody(padded, sharedSecret: secret)?.base64EncodedString()
     }
@@ -2041,8 +2045,8 @@ enum MontanaWakePush {
         if over { body["over"] = true }   // re-depositing the rendezvous card: same bid, fresh term
         // Cargo marks: a random label and the last-chunk flag. No manifest, no size.
         if let cargo { body["cg"] = cargo; if last { body["last"] = true } }
-        // THE MACHINE LAYS THE KEEPING'S COPIES (OZ 3, record 995 = b): a quiet piece asks the machine that takes it to hand it on.
-        if bulk, quiet { body["fan"] = true }
+        // A QUIET PIECE IS TRANSIT LIKE ANY OTHER (the author's words 24394, 24402: the nodes are blind relays): it asks no machine
+        // to hand it on -- the mark «fan» of 2447-2450 was refused 403 and left a new device's restore at 0 (links 24485, 24488).
         guard let payload = try? JSONSerialization.data(withJSONObject: body) else { return false }
         // The refusal's cause IS NAMED. It used to be swallowed by `try?`, and the trace said
         // only «FAIL» — impossible to tell a node refusal from a dropped connection. Precedent
@@ -2069,11 +2073,8 @@ enum MontanaWakePush {
                 // laid 1.3 GB of pieces, and the system's session took two copies of each at once, beside the person's puts and a
                 // call; one stall of the link dropped 7183 of them). A quiet piece's copies go one machine at a time, each after
                 // the person, by the same hedged put and in the same place; a copy that fails costs the redundancy alone.
-                // A machine that says it lays the copies itself (blob_fan, OZ 3, record 995 = b) takes the piece once: the phone
-                // sends a backup's bytes one time, not three. A machine of an older store gets the copies from the phone, as before.
-                if bulk, quiet, doorsHolding("blob_fan").contains(w) {
-                    MontanaTrace.markFolded("blob_fan", "id=\(String(bid.prefix(8))) to=\(URL(string: w)?.host ?? "-") -- the machine lays the copies", window: 30)
-                } else if bulk, quiet {
+                // A relay hands nothing on (the author's word 24394), so the phone lays a quiet piece's copies itself.
+                if bulk, quiet {
                     for c in MontanaBlobUpload.shared.copies(of: bid, besides: w) {
                         guard await yieldToPerson("copy") else { break }
                         let (cc, cw) = await hedgedPut([(c.door, c.url.absoluteString)], payload: payload, bytes: data.count, bid: bid, bulk: true)

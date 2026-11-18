@@ -1217,6 +1217,8 @@ enum MontanaBackup {
         /// from the store's sweep until their letters and shelves stand (see finish).
         var placed = 0
         var landed: [String] = []
+        /// The blocks that came before their conversation's head: filed once the whole copy is read (finish).
+        var late: [Data] = []
         private var sink: FileHandle? = nil
         private var dropping = false
         func close() { try? sink?.close(); sink = nil }
@@ -1236,7 +1238,7 @@ enum MontanaBackup {
             if kind != MontanaBackup.kindTail { hash.update(data: p) }
             switch kind {
             case MontanaBackup.kindBlock:
-                _ = MontanaArchive.absorb(data)
+                if !MontanaArchive.absorbFromCopy(data) { late.append(data) }
                 tally.records += 1
             case MontanaBackup.kindMedia, MontanaBackup.kindStore, MontanaBackup.kindPlace:
                 if dropping {
@@ -1319,6 +1321,12 @@ enum MontanaBackup {
         if let c = taker.card, !layCard(c) { return .failure(.noVault) }
         let laid = taker.card != nil
         if laid { UserDefaults.standard.set(true, forKey: copyLaidKey) }   // this device's history is no source (OZ 1 p.1.2)
+        // THE BLOCKS BEFORE THEIR HEAD (MontanaArchive.absorbFromCopy): every head of the copy is read now, and the card's
+        // tombstones stand -- a block of a deleted conversation stays unfiled.
+        if !taker.late.isEmpty {
+            let filed = taker.late.filter { MontanaArchive.absorbFromCopy($0) }.count
+            MontanaTrace.mark("backup_late", "blocks=\(taker.late.count) filed=\(filed)")
+        }
         let landed = taker.landed
         let feed = taker.feed.flatMap { SeedScope.decodeFeed($0) }
         let outbox = taker.card.flatMap { cardOutbox($0) }
@@ -1386,6 +1394,11 @@ enum MontanaBackupCloud {
         return declared?.keys.sorted().first ?? firstContainer
     }()
     static var on: Bool { UserDefaults.standard.bool(forKey: switchKey) }
+    /// THE QUESTION OF iCLOUD, ASKED ONCE AND ON ITS OWN (OZ 1 p.1.3, the author's word 24571): unasked while the switch is off
+    /// and the person has not answered it.
+    static let askedKey = "mt.backup.icloud.asked"   // NOT-UI: a setting of this person (SeedScope.settingKeys)
+    static var unasked: Bool { !on && !UserDefaults.standard.bool(forKey: askedKey) }
+    static func answered() { UserDefaults.standard.set(true, forKey: askedKey) }
     /// WHETHER THIS DEVICE HAS MET A COPY OF ITS OWN — made one, or taken one back (the critic, 23.09). A device
     /// that has met none and finds one in iCloud is a device that has not been restored yet: its first copy would
     /// be a copy of an empty app, and once iCloud held it the keep rule would take the real one away.

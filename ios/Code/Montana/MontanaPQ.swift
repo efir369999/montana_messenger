@@ -844,6 +844,56 @@ extension MontanaArchive {
     /// history and is filed; otherwise it belongs to another path and this returns false untouched.
     @discardableResult
     static func absorb(_ sealed: Data) -> Bool { fileBlock(sealed).taken }
+    /// A BLOCK OF THE PERSON'S OWN COPY NAMES ITS CONVERSATION BY ITS OWN HEAD (OZ 1, the author's word 24568, 18.11.2026: "on P1
+    /// still no chats though all three T are active"). P1 2451, 17.11.2026 23:52 UTC: the picture of T1 came whole, yet every
+    /// block of a person's chat was refused -- the pipe that makes a conversation held here is re-established only from that
+    /// folder's head, and the head rode in the very block refused. The two chats' media stood in folders with no log, and the
+    /// orphan sweep erased them. On the copy's road alone (never the mirror's, which carried other lives' chats) a head whose
+    /// pipe is this block's conversation makes it held, and the block files under that conversation's label. False: no
+    /// conversation held here and no head of its own yet -- the copy files it once more at its end (MontanaBackup.finish).
+    static func absorbFromCopy(_ sealed: Data) -> Bool {
+        if let (h, _, a) = keys(), let conv = peekConv(sealed, hk: h, acct: a), let ref = headRef(sealed, conv: conv, hk: h, acct: a) {
+            heldLock.withLock { _ = heldHint.insert(ref) }
+        }
+        return fileBlock(sealed).folder != nil
+    }
+    /// A head's pipe, read on the archive's day: the one reading of a pipe head for a restore, a copy's block and the keepers' book.
+    private static func headPipe(_ s: String, day: UInt64) -> MTPipeKey? { MTPipeKey(archiveHead: s, day: day) }
+    /// The form of a pipe's head under the seed on a day: the one writing of it, for a folder's log and for the keepers' book.
+    private static func headForm(_ pipe: MTPipeKey, day: UInt64) -> Data { pipe.archiveHead(day: day) }
+    /// THE KEEPERS' BOOK (OZ 1 p.1.1, the author's words 24507, 24552: on a restore the chats first, each empty at once, then each
+    /// correspondent's letters): the pipe head and the given name of each conversation, no letter and no face. The owner seals it
+    /// under the seed and hands it with every part (MTKeeping.hand); a keeper holds it unread and gives it back with its answer.
+    static func keepersBook(_ convs: [String]) -> Data? {
+        let fd = MTPipeBook.floorDay()
+        let rows: [[String: String]] = convs.compactMap { conv in
+            guard let pipe = MTPipeBook.key(for: conv), pipe.reference == conv else { return nil }
+            var r = ["h": String(decoding: headForm(pipe, day: fd), as: UTF8.self)]
+            if let n = MTNameBook.known(conv), !n.isEmpty { r["n"] = n }
+            return r
+        }
+        guard !rows.isEmpty else { return nil }
+        return try? JSONSerialization.data(withJSONObject: rows)
+    }
+    /// The keepers' book opened on a device of the words: each head re-establishes its pipe as the archive's restore does (headPipe,
+    /// read on the restore's day), and its conversation comes back with the name it was given.
+    static func keepersPipes(_ book: Data) -> [(ref: String, name: String?)] {
+        guard let rows = (try? JSONSerialization.jsonObject(with: book)) as? [[String: String]] else { return [] }
+        let day = MTPipeBook.recoveryDay()
+        return rows.compactMap { r -> (ref: String, name: String?)? in
+            guard let s = r["h"], let k = headPipe(s, day: day), let ref = MTPipeBook.establish(pipe: k) else { return nil }
+            return (ref: ref, name: r["n"])
+        }
+    }
+    /// The conversation a block's own pipe head names, when it is the block's conversation.
+    private static func headRef(_ sealed: Data, conv: Data, hk h: Data, acct a: Data) -> String? {
+        let day = MTPipeBook.recoveryDay()
+        for it in openBlock(sealed, hk: h, acct: a) where it.dir == headDir && it.conv == conv {
+            guard let s = String(data: it.content, encoding: .utf8), let k = headPipe(s, day: day) else { continue }
+            if let ref = k.reference, MontanaQueueKeys.sha256(Data(ref.utf8)) == conv { return ref }
+        }
+        return nil
+    }
     /// The filing itself, with the folder a block of this person's history now stands in (nil when it was taken unfiled).
     private static func fileBlock(_ sealed: Data) -> (taken: Bool, folder: String?) {
         guard let (h, _, a) = keys(), let conv = peekConv(sealed, hk: h, acct: a) else { return (false, nil) }
@@ -1627,6 +1677,7 @@ extension MontanaArchive {
             guard let secret = twinSecret() else { return MontanaTrace.mark("keep_light", "words opened: no history key -- nobody asked") }
             let told = await MTKeeping.knock(secret, ["w": "lw", "f": mine, "at": Int(Date().timeIntervalSince1970)], silent: true, sender: twinDeviceRef)
             MontanaTrace.mark("keep_light", "words opened: the seed's devices asked boxed=\(told ? 1 : 0)")
+            await MainActor.run { MTKeeping.shared.devicesAsked(boxed: told) }
         }
     }
     /// Another device opened these words: this one names its picture of now, as for a joining. A device that holds no history,
@@ -2055,7 +2106,7 @@ extension MontanaArchive {
             // secret's once, from the day the walk erased it (OZ1, decision 126) -- the last head decides at a restore. The day
             // is the book's own (the clock guard, decision 188), so the archive never floors ahead of the book.
             let fd = MTPipeBook.floorDay()
-            content = pipe.archiveHead(day: fd); form = pipe.floored(day: fd).holdsOrigin ? "s" : "f"
+            content = headForm(pipe, day: fd); form = pipe.floored(day: fd).holdsOrigin ? "s" : "f"
         } else {
             content = Data("a:".utf8) + Data(convRef.utf8); form = "a"
         }
@@ -2314,7 +2365,7 @@ extension MontanaArchive {
                         guard let s = String(data: it.content, encoding: .utf8) else { continue }
                         // COMPAT-LOCAL: the head forms s:/a:/n: live only in the sealed archive on the
                         // device, never on the wire; an older archive's bare address is read below.
-                        if let sec = MTPipeKey(archiveHead: s, day: backDay) {
+                        if let sec = headPipe(s, day: backDay) {
                             // The secret re-establishes the pipe once the whole log is read: from there the device
                             // answers for the correspondence again, and the reference is its chat key.
                             headsS += 1
